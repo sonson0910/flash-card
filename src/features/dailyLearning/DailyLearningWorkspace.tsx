@@ -7,7 +7,11 @@ import type { LearningStateOutcome } from '../learning/learningStateController';
 import { getLibraryCardTier } from '../library/libraryViewModel';
 import type { SessionRecapPromotion } from '../practice/SessionRecapModal';
 import type { LanguageProfile } from '../language/languageProfile';
+import type { Firestore } from 'firebase/firestore';
 import { triggerHaptic } from '../../lib/haptics';
+import { db } from '../../lib/firebase';
+import { readyCourseSessionForOwner, useCourseSession } from '../courses/CourseGate';
+import { useVerifiedGamificationState, type VerifiedGamificationState } from '../gamification/verifiedGamificationClient';
 import { firebasePracticeSessionService, practiceTimeZone, type PracticeGamificationOutcome, type PracticeSessionChallenge } from '../practice/practiceSessionService';
 import { cardsForLanguagePair } from '../practice/practiceModel';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
@@ -90,6 +94,8 @@ const WordMatchView = lazy(() => Promise.all([
   import('../practice/WordMatchView'),
   import('../practice/practice-board.css'),
 ]).then(([module]) => ({ default: module.WordMatchView })));
+// Its copy is in the Today catalog, which is already loaded here.
+const IeltsGoalPanel = lazy(() => import('../examProgress/IeltsGoalPanel').then(module => ({ default: module.IeltsGoalPanel })));
 const SessionRecapModal = lazy(() => Promise.all([
   import('../practice/SessionRecapModal'), loadCatalog(getActiveUiLocale(), 'practice'),
 ]).then(([module]) => ({ default: module.SessionRecapModal })));
@@ -226,6 +232,12 @@ export interface DailyLearningWorkspaceProps {
   readonly streak: number;
   readonly studyXpHistory: readonly { readonly date: string; readonly XP: number }[];
   readonly rewardTimeZone?: string;
+  /** Firestore for the reads Today and the recap make themselves; the configured client when absent. */
+  readonly database?: Firestore | null;
+  /** The verified library epoch; the recap's IELTS goal panel stays hidden without it. */
+  readonly verifiedLibraryEpoch?: number | null;
+  /** The app's verified gamification state; Today subscribes to the same documents itself when it is absent. */
+  readonly gamification?: VerifiedGamificationState;
   /** Signed-in learner facts for the Today header (name, verified XP, active goal). */
   readonly learner?: TodayLearnerFacts;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
@@ -407,6 +419,9 @@ export default function DailyLearningWorkspace({
   streak,
   studyXpHistory,
   rewardTimeZone,
+  database,
+  verifiedLibraryEpoch = null,
+  gamification,
   learner,
   loadPracticePool,
   reviewCard,
@@ -422,6 +437,11 @@ export default function DailyLearningWorkspace({
   onListenScopeChange,
 }: DailyLearningWorkspaceProps) {
   const { _, i18n } = useLingui();
+  const firestore = database === undefined ? db : database;
+  // The Firestore SDK shares one listener per document, so this adds no reads when the app also listens.
+  const ownGamification = useVerifiedGamificationState({ ownerId: gamification ? null : ownerId, database: gamification ? null : firestore });
+  const verifiedGamification = gamification ?? ownGamification;
+  const activeCourse = readyCourseSessionForOwner(useCourseSession(), ownerId)?.model.activeCourse ?? null;
   const courseLanguageNames = new Intl.DisplayNames([i18n.locale], { type: 'language' });
   const modeLabels: Readonly<Record<ExerciseMode, string>> = {
     recognition: _(msg({ id: 'today.mode.recognition', message: 'Recognition' })),
@@ -1415,6 +1435,7 @@ export default function DailyLearningWorkspace({
       },
     } : {}),
     listenPilotAvailable: LISTEN_MVP_PILOT_LESSONS.length > 0,
+    ...(ownerId && firestore ? { dailyGoals: verifiedGamification } : {}),
     ...(caughtUp
       ? { caughtUp: {} }
       : {}),
@@ -1441,6 +1462,16 @@ export default function DailyLearningWorkspace({
           {...(todayStreak > 0 ? { streakDays: todayStreak } : {})}
           {...(activeMultiStage.stats.answers ? { bestRun: longestCorrectRun(activeMultiStage.stats.answers) } : {})}
           returnsToToday
+          goalPanel={<Suspense fallback={null}><IeltsGoalPanel
+            ownerId={ownerId}
+            database={firestore}
+            libraryEpoch={verifiedLibraryEpoch}
+            course={activeCourse}
+            isOffline={isOffline}
+            rewardTimeZone={verifiedGamification.rewardTimeZone ?? rewardTimeZone}
+            verifiedHistoryStartedOn={verifiedGamification.reviewActivityByLanguage.en?.coverageStartedOn ?? null}
+            onOpenPath={() => { finishMultiStageSession(false); openPaths(); }}
+          /></Suspense>}
         />
       </Suspense>
     )}

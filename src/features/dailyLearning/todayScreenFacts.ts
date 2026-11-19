@@ -3,6 +3,8 @@
  * learner already has (plan counts, XP, streak, goals); nothing is invented.
  */
 
+import { MATCH_WIN_XP, REVIEW_CARD_XP } from '../../../functions/src/xp-rules';
+
 export type TodayStageId = 'review' | 'new' | 'match' | 'recap';
 
 export interface TodayStageFact {
@@ -74,15 +76,11 @@ export const sessionsToNextLevel = (remainingXp: number, history: readonly { rea
   return Math.max(1, Math.ceil(remainingXp / average));
 };
 
-/** Review XP per card on its first review of the study day, and the Word Match completion award (server rules). */
-const REVIEW_CARD_XP = 2;
-const MATCH_COMPLETION_XP = 20;
-
 /** Most XP the planned session can award; a card already reviewed today earns nothing again. */
 export const sessionXpCeiling = (stages: readonly TodayStageFact[]): number => stages.reduce((total, stage) => {
   if (stage.skipped) return total;
   if (stage.id === 'review' || stage.id === 'new') return total + stage.count * REVIEW_CARD_XP;
-  if (stage.id === 'match') return total + MATCH_COMPLETION_XP;
+  if (stage.id === 'match') return total + MATCH_WIN_XP;
   return total;
 }, 0);
 

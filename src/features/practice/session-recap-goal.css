@@ -1,0 +1,37 @@
+/* The learner's exam goal on the session recap (RecapNext "What this means for IELTS" and the
+   AnimeRecap goal panel). The panel renders nothing when the active goal is not IELTS, so every
+   rule keys on the panel being present and the recap keeps its own layout without it. */
+.practice-recap-panels:empty { display: none; }
+.practice-recap-board .ielts-goal-panel { min-width: 0; text-align: left; }
+
+/* Classic: below the description on phones, and a 470px column beside the headline and the
+   stats on wide screens, with the promoted cards and the actions running full width under both. */
+.practice-recap-board[data-family="classic"] .practice-recap-main > .ielts-goal-panel { width: 100%; max-width: 470px; margin-top: 24px; }
+@media (min-width: 1024px) {
+  .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) {
+    display: grid;
+    width: min(100%, 1180px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 470px);
+    align-content: start;
+    justify-items: start;
+    column-gap: 48px;
+    margin-inline: auto;
+    padding-inline: 48px;
+    text-align: left;
+  }
+  .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) > * { grid-column: 1; }
+  .practice-recap-board[data-family="classic"] .practice-recap-main > .ielts-goal-panel { grid-column: 2; grid-row: 1 / span 4; align-self: start; margin-top: 8px; }
+  .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) > :is(.practice-recap-cards, .practice-recap-progress, .practice-recap-actions) { grid-column: 1 / -1; justify-self: stretch; }
+  .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) > :is(.practice-recap-cards, .practice-recap-progress) { order: 1; }
+  .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) > .practice-recap-actions { order: 2; justify-content: flex-start; }
+  .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) > .practice-recap-cards { justify-content: flex-start; }
+}
+
+/* Crystal: the panel shares the row with "Cards glowed up"; "To revisit" takes the next row, or
+   the left column when nothing glowed up. */
+@media (min-width: 761px) {
+  .practice-recap-panels:has(> .ielts-goal-panel) { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+  .practice-recap-panels:has(> .ielts-goal-panel) > .practice-recap-panel--revisit { grid-column: 1 / -1; }
+  .practice-recap-panels:has(> .ielts-goal-panel):not(:has(> .practice-recap-panel--up)) > .practice-recap-panel--revisit { order: -1; grid-column: auto; }
+  .practice-recap-panels > .ielts-goal-panel:only-child { grid-column: 2; }
+}

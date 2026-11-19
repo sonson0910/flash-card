@@ -190,7 +190,7 @@ export function IeltsGoalPanelView(props: IeltsGoalPanelViewProps) {
   const { family } = useTheme();
   const headingId = useId();
   return (
-    <section className={`ielts-goal-panel ielts-goal-panel--${family} ielts-goal-panel--${props.model.state}`} aria-labelledby={headingId}>
+    <section className={`ielts-goal-panel ielts-goal-panel--${family} ielts-goal-panel--${props.model.state} crystal-chamfer`} aria-labelledby={headingId} data-ielts-goal-panel={props.model.state}>
       {family === 'crystal' ? <CrystalPanel {...props} headingId={headingId} /> : <ClassicPanel {...props} headingId={headingId} />}
     </section>
   );

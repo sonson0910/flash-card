@@ -1,5 +1,6 @@
 import type { ReactNode, RefObject } from 'react';
 import type { HapticStyle } from '../../lib/haptics';
+import type { DailyGoalsSource } from '../dailyGoals/dailyGoalsModel';
 import type { StudyWeekDay } from './todayScreenFacts';
 
 export type LessonMode =
@@ -138,6 +139,8 @@ export interface TodayScreenModel {
     };
   };
   readonly recommendation?: TodayRecommendationPresentation;
+  /** The verified goal counters for the Daily goals panel; the panel is left out without them. */
+  readonly dailyGoals?: DailyGoalsSource & { readonly rewardTimeZone?: string };
   /** Release B pilot availability; absent keeps the existing plan-gated behavior in callers. */
   readonly listenPilotAvailable?: boolean;
 }

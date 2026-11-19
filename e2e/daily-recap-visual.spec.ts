@@ -117,9 +117,47 @@ for (const theme of themes) {
         await expect(recap.getByRole('heading', { name: locale.title })).toBeVisible();
         await expect(recap.locator('[data-count-up]')).toHaveText(theme.family === 'crystal' ? ['83', '175', '12'] : ['12', '83', '175']);
         await expect(recap.getByText(locale.code === 'vi' ? '8 thẻ đến hạn' : '8 cards due', { exact: true })).toBeVisible();
+        await expect(recap.locator('[data-ielts-goal-panel]')).toHaveCount(0);
         await expectAccessibleAndContained(page, `${theme.family} ${theme.mode} ${viewport.name} ${locale.code}`);
         await attachRecap(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-${locale.code}-recap`);
         if (locale.code === 'en') await expect(recap).toHaveScreenshot(`daily-recap-${theme.family}-${theme.mode}-${viewport.name}.png`);
+      }
+    });
+  }
+}
+
+const ieltsGoals = [
+  { id: 'ready', state: 'in-progress', percent: '78%' },
+  { id: 'little', state: 'started', percent: '0%' },
+] as const;
+
+for (const theme of themes) {
+  for (const viewport of viewports) {
+    test(`${theme.family} ${theme.mode} recap shows the IELTS goal at ${viewport.name}`, async ({ page }, testInfo) => {
+      page.on('pageerror', error => { throw error; });
+      await page.setViewportSize(viewport);
+      await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+      await page.addInitScript(({ family, mode }) => {
+        localStorage.setItem('sonflash_theme_family', family);
+        localStorage.setItem('lingoflash_theme', mode);
+        localStorage.setItem('sonflash_theme_follow_system', 'false');
+        localStorage.setItem('sonflash_reduced_motion', 'true');
+      }, theme);
+
+      for (const goal of ieltsGoals) {
+        await page.goto(`${fixtureOrigin}${fixturePath}?locale=en&goal=${goal.id}`);
+        const recap = page.locator('[data-session-recap]');
+        await expect(recap).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
+        const panel = recap.locator(`[data-ielts-goal-panel="${goal.state}"]`);
+        await expect(panel).toBeVisible();
+        await expect(panel.getByRole('heading', { name: theme.family === 'crystal' ? 'IELTS goal' : 'Toward your IELTS goal' })).toBeVisible();
+        if (theme.family === 'classic' && goal.id === 'ready') await expect(panel.getByText(goal.percent, { exact: true })).toBeVisible();
+        // The band pair is the learner's own score and target; the panel never projects one.
+        await expect(panel).not.toContainText(/projected|predict|typical IELTS Reading passage/i);
+        await expectAccessibleAndContained(page, `${theme.family} ${theme.mode} ${viewport.name} IELTS ${goal.id}`);
+        await attachRecap(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-ielts-${goal.id}-recap`);
+        await expect(recap).toHaveScreenshot(`daily-recap-ielts-${goal.id}-${theme.family}-${theme.mode}-${viewport.name}.png`);
       }
     });
   }
