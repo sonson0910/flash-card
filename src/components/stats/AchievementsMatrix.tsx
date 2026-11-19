@@ -1,9 +1,16 @@
-import { ArrowLeft, Award, Flame, Moon, Sparkles, Star, Target, Trophy } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Award, Check, Flame, Lock, Moon, Sparkles, Target, Trophy } from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { msg } from '@lingui/core/macro';
-import { useLingui } from '@lingui/react';
+import { Trans, useLingui } from '@lingui/react';
 import { formatNumber } from '../../lib/format';
+import { Lumi } from '../lumi/Lumi';
+import { CrystalStar } from './CrystalStar';
+import { CrystalPathWings } from '../../features/catalogWorkspace/CrystalPathWings';
+import { useTheme } from '../../features/theme/ThemeProvider';
+import { readLumiEnabled } from '../../features/settings/lumi-preference';
 import type { LibraryStatsViewModel } from '../../features/library/libraryViewModel';
+import './stats-board.css';
+import './achievements-board.css';
 
 interface AchievementsMatrixProps {
   stats: LibraryStatsViewModel;
@@ -16,7 +23,9 @@ export type AchievementBadgeVisualState = 'earned' | 'in-progress' | 'locked';
 /** Stable, locale-independent grouping key for the "nhóm tier" (tier grouping) requirement. */
 export type AchievementBadgeTierKey = 'bud' | 'bloom' | 'star';
 
-interface Badge { id: string; title: string; description: string; tier: string; tierKey: AchievementBadgeTierKey; icon: typeof Trophy; unlocked: boolean; progress: number; current: number; target: number; unit: string; state: AchievementBadgeVisualState; }
+type BadgeUnitKind = 'days' | 'words' | 'xp';
+
+interface Badge { id: string; title: string; description: string; tier: string; tierKey: AchievementBadgeTierKey; icon: typeof Trophy; unlocked: boolean; progress: number; current: number; target: number; unit: string; unitKind: BadgeUnitKind; state: AchievementBadgeVisualState; }
 
 /**
  * A badge is `earned` once unlocked, `in-progress` once the learner has made any real progress
@@ -62,7 +71,10 @@ export function computeAchievementBadgeStats(stats: LibraryStatsViewModel): Achi
 const text = {
   bud: msg({ id: 'stats.tier-bud', message: 'Bud' }), bloom: msg({ id: 'stats.tier-bloom', message: 'Bloom' }), star: msg({ id: 'stats.tier-star', message: 'Star' }),
   days: msg({ id: 'stats.days', message: 'days' }), words: msg({ id: 'stats.words', message: 'words' }), unlocked: msg({ id: 'stats.unlocked', message: 'unlocked' }), progress: msg({ id: 'stats.progress', message: 'Progress' }),
-  cards: msg({ id: 'stats.summary-cards', message: 'Cards' }), reviewed: msg({ id: 'stats.reviewed', message: 'Reviewed' }), learned: msg({ id: 'stats.learned', message: 'Learned' }),
+  reviewed: msg({ id: 'stats.reviewed', message: 'Reviewed' }), mastered: msg({ id: 'stats.mastered', message: 'Mastered' }), learning: msg({ id: 'stats.learning', message: 'Learning' }), notReviewed: msg({ id: 'stats.not-reviewed', message: 'Not reviewed' }),
+  gradeMastered: msg({ id: 'stats.grade-mastered', message: 'Star' }), gradeLearning: msg({ id: 'stats.grade-learning', message: 'Bloom' }), gradeNew: msg({ id: 'stats.grade-new', message: 'Bud' }),
+  studyXp: msg({ id: 'stats.study-xp', message: 'Study XP' }), badges: msg({ id: 'stats.badges', message: 'Badges' }), earned: msg({ id: 'stats.earned', message: 'Earned' }), starTier: msg({ id: 'stats.legend.star-tier', message: 'Star tier' }),
+  cardsByBloom: msg({ id: 'stats.cards-by-bloom', message: 'Cards by bloom' }), lumiLink: msg({ id: 'stats.lumi-link', message: 'Lumi · Link' }),
   inProgress: msg({ id: 'stats.badge-state.in-progress', message: 'In progress' }), locked: msg({ id: 'stats.badge-state.locked', message: 'Not started yet' }), legendLabel: msg({ id: 'stats.legend.label', message: 'Badge status legend' }),
   budRoutine: msg({ id: 'stats.bud-routine', message: 'Bud routine' }), budRoutineDescription: msg({ id: 'stats.bud-routine-description', message: 'Give your study habit three active days.' }),
   bloomingRecall: msg({ id: 'stats.blooming-recall', message: 'Blooming recall' }), bloomingRecallDescription: msg({ id: 'stats.blooming-recall-description', message: 'Help ten words settle into memory.' }),
@@ -70,9 +82,19 @@ const text = {
   brightStudyDay: msg({ id: 'stats.bloom-day', message: 'Bright study day' }), brightStudyDayDescription: msg({ id: 'stats.bloom-day-description', message: 'Gather 100 XP in one day of practice.' }),
   growingCollection: msg({ id: 'stats.star-collection', message: 'Growing collection' }), growingCollectionDescription: msg({ id: 'stats.star-collection-description', message: 'Collect 500 XP from your study sessions.' }),
   gentleNightStudy: msg({ id: 'stats.bud-night-study', message: 'Gentle night study' }), gentleNightStudyDescription: msg({ id: 'stats.bud-night-study-description', message: 'Return for five active study days.' }),
-  studyMilestones: msg({ id: 'stats.study-milestones', message: 'Study milestones' }), wordGarden: msg({ id: 'stats.word-garden', message: 'Your word garden' }), wordGardenDescription: msg({ id: 'stats.word-garden-description', message: 'Small study sessions grow into lasting memory.' }),
-  achievements: msg({ id: 'stats.achievements', message: 'Achievements' }), backToProgress: msg({ id: 'stats.back-to-progress', message: 'Back to Progress' }),
+  studyMilestones: msg({ id: 'stats.study-milestones', message: 'Study milestones' }), achievements: msg({ id: 'stats.achievements', message: 'Achievements' }), backToProgress: msg({ id: 'stats.back-to-progress', message: 'Back to Progress' }),
+  allEarned: msg({ id: 'stats.all-badges-earned', message: 'Every badge is unlocked' }),
 };
+
+const wordGardenTitle = msg({ id: 'stats.word-garden-title', message: 'Your word <0>garden</0>' });
+const nextBadgeMeter = msg({ id: 'stats.next-badge-meter', message: '<0>{current}</0> / {target} {unit} toward {badge}' });
+const remainingCopy = {
+  days: msg({ id: 'stats.remaining-days', message: '{count, plural, one {# day} other {# days}}' }),
+  words: msg({ id: 'stats.remaining-words', message: '{count, plural, one {# word} other {# words}}' }),
+  xp: msg({ id: 'stats.remaining-xp', message: '{count} XP' }),
+} satisfies Record<BadgeUnitKind, ReturnType<typeof msg>>;
+const lumiNextCopy = msg({ id: 'stats.lumi-next', message: '{remaining} to go for <0>{badge}</0>.' });
+const lumiDoneCopy = msg({ id: 'stats.lumi-done', message: 'Every badge is in bloom. Wonderful work!' });
 
 export function findNewlyUnlockedBadgeIds(previous: ReadonlySet<string>, current: ReadonlySet<string>): string[] {
   return [...current].filter(id => !previous.has(id));
@@ -90,8 +112,57 @@ export const achievementBadgeCopy: Record<AchievementBadgeId, {
   night_owl: { title: text.gentleNightStudy, description: text.gentleNightStudyDescription, tier: text.bud, tierKey: 'bud', icon: Moon, unit: text.days },
 };
 
+const unitKindOf = (unit: ReturnType<typeof msg> | 'XP'): BadgeUnitKind => unit === 'XP' ? 'xp' : unit === text.days ? 'days' : 'words';
+
+/** Ring circumference for the 66px radius of the summary ring. */
+const RING_CIRCUMFERENCE = 2 * Math.PI * 66;
+
+/** A badge's progress toward its target, shown no higher than the target once it is unlocked. */
+const shownCurrent = (badge: Badge) => Math.min(badge.current, badge.target);
+
+function Medal({ badge, index }: { readonly badge: Badge; readonly index: number }) {
+  const Icon = badge.icon;
+  const tilt = badge.state === 'earned' ? (index % 3 - 1) * 4 : 0;
+  return <span className="ach-medal" aria-hidden="true" style={{ '--ach-tilt': `${tilt}deg` } as CSSProperties}><Icon size={28} strokeWidth={1.8} /></span>;
+}
+
+function BadgeFoot({ badge, isCrystal }: { readonly badge: Badge; readonly isCrystal: boolean }) {
+  const { _ } = useLingui();
+  if (isCrystal) {
+    return <div className="ach-badge-meter">
+      <span className="ach-track" aria-hidden="true"><span className="ach-fill" style={{ width: `${badge.progress}%` }} /></span>
+      <span className="ach-badge-ratio tabular-nums">{formatNumber(shownCurrent(badge))}/{formatNumber(badge.target)}<span className="sr-only"> {badge.unit}{badge.state === 'locked' ? ` · ${_(text.locked)}` : ''}</span></span>
+    </div>;
+  }
+  if (badge.state === 'earned') return <p className="ach-badge-earned"><Check size={12} strokeWidth={2.4} aria-hidden="true" />{_(text.earned)}</p>;
+  if (badge.state === 'locked') return <p className="ach-badge-locked"><Lock size={11} strokeWidth={2.2} aria-hidden="true" />{_(text.locked)}</p>;
+  return <>
+    <div className="ach-badge-count"><span className="tabular-nums">{formatNumber(badge.current)} / {formatNumber(badge.target)} {badge.unit}</span><span className="tabular-nums">{formatNumber(badge.progress)}%</span></div>
+    <span className="ach-track" aria-hidden="true"><span className="ach-fill transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${badge.progress}%` }} /></span>
+  </>;
+}
+
+function BadgeCard({ badge, index, isCrystal, isNewlyUnlocked }: { readonly badge: Badge; readonly index: number; readonly isCrystal: boolean; readonly isNewlyUnlocked: boolean }) {
+  const { _ } = useLingui();
+  return <article data-badge-id={badge.id} data-newly-unlocked={isNewlyUnlocked || undefined} data-badge-state={badge.state} data-badge-tier={badge.tierKey} className={`ach-badge ${isNewlyUnlocked ? 'achievement-newly-unlocked' : ''}`}>
+    <div className="ach-badge-head">
+      <Medal badge={badge} index={index} />
+      <div className="ach-badge-name"><h3 className="ach-badge-title">{badge.title}</h3><span className="ach-badge-tier">{badge.tier}</span></div>
+    </div>
+    <p className="ach-badge-desc">{badge.description}</p>
+    <div className="ach-badge-foot"><BadgeFoot badge={badge} isCrystal={isCrystal} /></div>
+    {!isCrystal && badge.state === 'earned' && badge.tierKey === 'star' && <span className="ach-badge-sheen" aria-hidden="true" />}
+    {isCrystal && badge.state === 'locked' && <span className="ach-badge-veil" aria-hidden="true">
+      <svg viewBox="0 0 200 120" preserveAspectRatio="none" focusable="false"><polyline className="ach-veil-line" points="0,64 30,52 52,72 84,44 106,66 132,40 158,62 200,48" /><polyline className="ach-veil-spark" points="84,44 90,18 110,4" /></svg>
+      <span className="ach-badge-veil-chip">{_(text.locked)}</span>
+    </span>}
+  </article>;
+}
+
 export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatrixProps) {
   const { _ } = useLingui();
+  const { family } = useTheme();
+  const isCrystal = family === 'crystal';
   const badgeStats = computeAchievementBadgeStats(stats);
   const badges: Badge[] = badgeStats.map(stat => {
     const copy = achievementBadgeCopy[stat.id];
@@ -107,12 +178,13 @@ export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatr
       current: stat.current,
       target: stat.target,
       unit: copy.unit === 'XP' ? 'XP' : _(copy.unit),
+      unitKind: unitKindOf(copy.unit),
       state: resolveAchievementBadgeState(stat),
     };
   });
   const unlockedIds = new Set(badges.filter(badge => badge.unlocked).map(badge => badge.id));
-  const featuredBadge = badges.find(badge => badge.state === 'in-progress') ?? badges[0];
-  const FeaturedIcon = featuredBadge.icon;
+  const allEarned = unlockedIds.size === badges.length;
+  const featuredBadge = badges.find(badge => badge.state === 'in-progress') ?? badges.find(badge => !badge.unlocked) ?? badges[0];
   const unlockedSignature = [...unlockedIds].join('|');
   const previousUnlockedRef = useRef<Set<string> | null>(null);
   const [celebratingIds, setCelebratingIds] = useState<Set<string>>(() => new Set());
@@ -128,50 +200,104 @@ export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatr
     return () => globalThis.clearTimeout(timeout);
   }, [unlockedSignature]);
   const celebrationMessage = badges.filter(badge => celebratingIds.has(badge.id)).map(badge => `${badge.title} ${_(text.unlocked)}`).join('. ');
-  return <section className="achievements-canvas liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 text-[var(--sf-text)] shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-7" aria-labelledby="achievements-heading">
+
+  const unlockedPercent = Math.round(unlockedIds.size / badges.length * 100);
+  const studyXp = stats.xpChartData.reduce((sum, item) => sum + item.XP, 0);
+  const kicker = <p className="ach-kicker">{onBackToProgress ? _(text.achievements) : _(text.studyMilestones)} · {formatNumber(unlockedIds.size)} / {formatNumber(badges.length)} {_(text.unlocked)}</p>;
+  const heading = <h1 id="achievements-heading" className="ach-title text-balance"><Trans {...wordGardenTitle} components={{ 0: <em className="ach-title-accent" /> }} /></h1>;
+  const backButton = onBackToProgress && <button type="button" onClick={onBackToProgress} className="ach-back crystal-chamfer-sm inline-flex min-h-11 cursor-pointer items-center gap-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none"><ArrowLeft size={16} aria-hidden="true" />{_(text.backToProgress)}</button>;
+  const grid = <div data-achievement-grid className="ach-grid">{badges.map((badge, index) => <BadgeCard key={badge.id} badge={badge} index={index} isCrystal={isCrystal} isNewlyUnlocked={celebratingIds.has(badge.id)} />)}</div>;
+
+  if (isCrystal) {
+    const bloomRows = [
+      { kind: 'new', grade: _(text.gradeNew), label: _(text.notReviewed), count: stats.difficultyChart.find(entry => entry.name === 'Not reviewed')?.value ?? 0 },
+      { kind: 'learning', grade: _(text.gradeLearning), label: _(text.learning), count: stats.difficultyChart.find(entry => entry.name === 'Learning')?.value ?? 0 },
+      { kind: 'mastered', grade: _(text.gradeMastered), label: _(text.mastered), count: stats.difficultyChart.find(entry => entry.name === 'Mastered')?.value ?? 0 },
+    ];
+    const remaining = Math.max(0, featuredBadge.target - featuredBadge.current);
+    const lumiMessage = allEarned
+      ? _(lumiDoneCopy)
+      : <Trans {...lumiNextCopy} values={{ remaining: _({ ...remainingCopy[featuredBadge.unitKind], values: { count: remaining } }), badge: featuredBadge.title }} components={{ 0: <span className="ach-lumi-badge" /> }} />;
+    return <section className="achievements-board achievements-board--crystal" aria-labelledby="achievements-heading">
+      <span className="sr-only" aria-live="polite">{celebrationMessage}</span>
+      <div className="ach-crystal" data-achievements-board>
+        <div className="ach-main-head">{heading}{backButton}</div>
+        <aside className="ach-side">
+          <div className="ach-emblem-card crystal-chamfer">
+            <div className="ach-emblem-row">
+              <span className="ach-emblem" aria-hidden="true"><span className="ach-emblem-face">{formatNumber(unlockedIds.size)}</span></span>
+              <div className="min-w-0"><p className="ach-emblem-name">{_(text.badges)}</p>{kicker}</div>
+            </div>
+            <span className="ach-emblem-bar" aria-hidden="true"><span style={{ width: `${unlockedPercent}%` }} /></span>
+          </div>
+          <div className="ach-bloom-card crystal-chamfer" data-achievement-summary>
+            <p className="ach-side-title">{_(text.cardsByBloom)}</p>
+            <ul className="ach-bloom-list">{bloomRows.map(row => <li key={row.kind} data-kind={row.kind}>
+              <span className="ach-grade" aria-hidden="true">{row.grade}</span>
+              <div className="min-w-0 flex-1"><div className="ach-bloom-row"><span>{row.label}</span><span className="tabular-nums">{formatNumber(row.count)}</span></div><span className="ach-bloom-track" aria-hidden="true"><span style={{ width: `${stats.total > 0 ? Math.round(row.count / stats.total * 100) : 0}%` }} /></span></div>
+            </li>)}</ul>
+          </div>
+          {readLumiEnabled() && <div className="ach-lumi-card crystal-chamfer">
+            <Lumi pose="proud" className="ach-lumi-figure motion-reduce:animate-none" />
+            <p className="ach-lumi-copy"><span className="ach-lumi-name">{_(text.lumiLink)}</span><span className="ach-lumi-message">{lumiMessage}</span></p>
+          </div>}
+        </aside>
+        <div className="ach-main-body">
+          <div className="ach-feature-wrap">
+            <CrystalPathWings className="ach-feature-wings" />
+            <div className="ach-feature-rim">
+              <article data-featured-achievement data-badge-id={featuredBadge.id} data-tier={featuredBadge.tierKey} className="ach-feature">
+                <span className="ach-feature-tier">{featuredBadge.tier}</span>
+                <CrystalStar className="ach-feature-star motion-reduce:animate-none" />
+                <h2 className="ach-feature-title">{featuredBadge.title}</h2>
+                <p className="ach-feature-desc">{featuredBadge.description}</p>
+                <div className="ach-feature-progress">
+                  <div className="ach-feature-row"><span>{_(text.progress)}</span><span className="tabular-nums">{formatNumber(shownCurrent(featuredBadge))} / {formatNumber(featuredBadge.target)} {featuredBadge.unit}</span></div>
+                  <span className="ach-feature-track" aria-hidden="true"><span style={{ width: `${featuredBadge.progress}%` }} /></span>
+                </div>
+              </article>
+            </div>
+          </div>
+          <div className="min-w-0"><h2 className="sr-only">{_(text.badges)}</h2>{grid}</div>
+        </div>
+      </div>
+    </section>;
+  }
+
+  return <section className="achievements-board achievements-board--classic" aria-labelledby="achievements-heading">
     <span className="sr-only" aria-live="polite">{celebrationMessage}</span>
-    <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-      <div>{onBackToProgress && <button type="button" onClick={onBackToProgress} className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"><ArrowLeft size={16} aria-hidden="true" />{_(text.backToProgress)}</button>}<p className="premium-kicker uppercase tracking-[0.14em]">{onBackToProgress ? _(text.achievements) : _(text.studyMilestones)} · {formatNumber(unlockedIds.size)} / {formatNumber(badges.length)} {_(text.unlocked)}</p><h2 id="achievements-heading" className="mt-2 text-balance text-3xl font-black tracking-tight sm:text-4xl">{_(text.wordGarden)}</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--sf-text-muted)]">{_(text.wordGardenDescription)}</p></div>
-      <ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-bold text-[var(--sf-text-muted)]" aria-label={_(text.legendLabel)}>
-        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="size-2 rounded-full bg-[var(--sf-brand)]" />{_(text.unlocked)}</li>
-        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="size-2 rounded-full border border-current" />{_(text.inProgress)}</li>
-        <li className="flex items-center gap-1.5"><span aria-hidden="true">🔒</span>{_(text.locked)}</li>
+    {backButton}
+    <header className="ach-hero">
+      <div className="ach-ring" aria-hidden="true">
+        <svg viewBox="0 0 150 150" className="ach-ring-svg" focusable="false">
+          <circle className="ach-ring-track" cx="75" cy="75" r="66" />
+          {unlockedIds.size > 0 && <circle className="ach-ring-value" cx="75" cy="75" r="66" strokeDasharray={`${(RING_CIRCUMFERENCE * unlockedIds.size / badges.length).toFixed(1)} ${RING_CIRCUMFERENCE.toFixed(1)}`} />}
+        </svg>
+        <span className="ach-ring-core"><span className="ach-ring-label">{_(text.unlocked)}</span><span className="ach-ring-number">{formatNumber(unlockedIds.size)}</span></span>
+      </div>
+      <div className="ach-hero-main">
+        {kicker}
+        {heading}
+        <div className="ach-meter" data-featured-achievement data-badge-id={featuredBadge.id}>
+          <div className="ach-meter-row">
+            <span>{allEarned ? _(text.allEarned) : <Trans {...nextBadgeMeter} values={{ current: formatNumber(featuredBadge.current), target: formatNumber(featuredBadge.target), unit: featuredBadge.unit, badge: featuredBadge.title }} components={{ 0: <span className="ach-mono" /> }} />}</span>
+            <span className="tabular-nums">{formatNumber(allEarned ? 100 : featuredBadge.progress)}%</span>
+          </div>
+          <span className="ach-meter-track" aria-hidden="true"><span className="ach-meter-fill" style={{ width: `${allEarned ? 100 : featuredBadge.progress}%` }} /></span>
+        </div>
+      </div>
+      <dl className="ach-tiles" data-achievement-summary>
+        {[[_(text.studyXp), studyXp], [_(text.reviewed), stats.reviewed], [_(text.mastered), stats.learned]].map(([label, value]) => <div key={label as string} className="ach-tile"><dt>{label}</dt><dd className="tabular-nums">{formatNumber(value as number)}</dd></div>)}
+      </dl>
+    </header>
+    <div className="ach-badges-head">
+      <h2 className="ach-badges-title">{_(text.badges)}</h2>
+      <ul className="ach-legend" aria-label={_(text.legendLabel)}>
+        <li><span aria-hidden="true" className="ach-legend-dot ach-legend-dot--earned" />{_(text.earned)}</li>
+        <li><span aria-hidden="true" className="ach-legend-dot ach-legend-dot--star" />{_(text.starTier)}</li>
+        <li><span aria-hidden="true" className="ach-legend-dot ach-legend-dot--progress" />{_(text.inProgress)}</li>
       </ul>
     </div>
-    <div className="flex items-center justify-between gap-3 border-b border-[var(--sf-border)] pb-3"><h3 className="text-xl font-black tracking-tight">{_(text.achievements)}</h3><span className="inline-flex items-center gap-2 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--sf-text)]"><Star size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />{formatNumber(unlockedIds.size)} / {formatNumber(badges.length)}</span></div>
-    <div data-achievements-board className="mt-4">
-      <aside data-achievement-summary className="crystal-chamfer hidden min-h-72 flex-col gap-3 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4">
-        <p className="text-xs font-black uppercase tracking-wider text-[var(--sf-brand-text)]">{_(text.achievements)}</p>
-        {[[_(text.cards), stats.total], [_(text.reviewed), stats.reviewed], [_(text.learned), stats.learned]].map(([label, value]) => <div key={label as string} className="border-b border-[var(--sf-border)] pb-3"><p className="text-xs text-[var(--sf-text-muted)]">{label}</p><strong className="mt-1 block text-2xl font-black tabular-nums">{formatNumber(value as number)}</strong></div>)}
-        <p className="mt-auto text-xs leading-relaxed text-[var(--sf-text-muted)]">{formatNumber(unlockedIds.size)} / {formatNumber(badges.length)} {_(text.unlocked)}</p>
-      </aside>
-      <article data-featured-achievement data-badge-id={featuredBadge.id} className="crystal-chamfer hidden min-h-72 flex-col overflow-hidden rounded-2xl border border-[var(--sf-brand)]/50 bg-[var(--sf-surface-raised)] p-5 text-center shadow-sm">
-        <span className="self-start text-xs font-black uppercase tracking-wider text-[var(--sf-brand-text)]">{featuredBadge.tier}</span><div className="crystal-chamfer-sm mx-auto mt-6 flex size-20 items-center justify-center rounded-full border border-[var(--sf-brand)]/40 bg-[var(--sf-brand)]/15 text-[var(--sf-brand-text)]"><FeaturedIcon size={34} aria-hidden="true" /></div><h4 className="mt-4 text-xl font-black">{featuredBadge.title}</h4><p className="mt-2 text-sm leading-relaxed text-[var(--sf-text-muted)]">{featuredBadge.description}</p>
-        <div className="mt-auto pt-6"><div className="flex justify-between text-xs font-bold text-[var(--sf-text-muted)]"><span>{_(text.progress)}</span><span>{formatNumber(featuredBadge.current)} / {formatNumber(featuredBadge.target)} {featuredBadge.unit}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--sf-surface-muted)]"><div className="h-full rounded-full bg-[var(--sf-brand)]" style={{ width: `${featuredBadge.progress}%` }} /></div></div>
-      </article>
-      <div data-achievement-grid className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{badges.map(badge => {
-        const Icon = badge.icon;
-        const isNewlyUnlocked = celebratingIds.has(badge.id);
-        const cardStateClass = badge.state === 'earned'
-          ? 'border-[var(--sf-brand)]/50 bg-[var(--sf-surface-raised)] shadow-sm'
-          : badge.state === 'locked'
-            ? 'border-[var(--sf-border)] bg-[var(--sf-surface)] opacity-70'
-            : 'border-[var(--sf-border)] bg-[var(--sf-surface)]';
-        return <article key={badge.id} data-badge-id={badge.id} data-newly-unlocked={isNewlyUnlocked || undefined} data-badge-state={badge.state} data-badge-tier={badge.tierKey} className={`crystal-chamfer-sm relative flex flex-col overflow-hidden rounded-2xl border p-4 text-center transition-[border-color,background-color,box-shadow] duration-200 ${isNewlyUnlocked ? 'achievement-newly-unlocked' : ''} ${cardStateClass}`}>
-          <div className={`crystal-chamfer-sm mx-auto flex size-14 shrink-0 items-center justify-center rounded-full border ${badge.unlocked ? 'border-[var(--sf-brand)]/40 bg-[var(--sf-brand)]/15 text-[var(--sf-brand-text)]' : 'border-dashed border-[var(--sf-border)] bg-[var(--sf-surface-muted)] text-[var(--sf-text-muted)]'}`}><Icon size={24} aria-hidden="true" /></div>
-          <div className="mt-3 min-w-0"><h4 className="truncate text-sm font-black text-[var(--sf-text)]">{badge.title}</h4><span className="mt-1 inline-block text-[10px] font-black uppercase tracking-wide text-[var(--sf-brand-text)]">{badge.tier}</span><p className="mt-2 text-xs leading-relaxed text-[var(--sf-text-muted)]">{badge.description}</p></div>
-          <div className="mt-auto pt-4">
-            {badge.state === 'earned'
-              ? <p className="flex justify-center gap-1.5 text-xs font-bold text-[var(--sf-brand-text)]"><span aria-hidden="true">✓</span>{_(text.unlocked)}</p>
-              : badge.state === 'locked'
-                ? <p className="flex justify-center gap-1.5 text-[11px] font-bold text-[var(--sf-text-muted)]"><span aria-hidden="true">🔒</span>{_(text.locked)}</p>
-                : <>
-                    <div className="flex justify-between gap-3 text-[10px] font-bold text-[var(--sf-text-muted)]"><span>{_(text.progress)}</span><span className="tabular-nums">{formatNumber(badge.current)} / {formatNumber(badge.target)} {badge.unit}</span></div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--sf-surface-muted)]"><div className="h-full rounded-full bg-[var(--sf-brand)] transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${badge.progress}%` }} /></div>
-                  </>}
-          </div>
-        </article>;
-      })}</div>
-    </div>
+    <div data-achievements-board>{grid}</div>
   </section>;
 }

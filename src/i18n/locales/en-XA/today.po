@@ -2202,3 +2202,33 @@ msgstr ""
 msgctxt "session.bridge.up-next"
 msgid "Up next"
 msgstr ""
+
+#: src/features/dailyLearning/ProgressScreen.tsx:35
+msgctxt "progress.lumi.link"
+msgid "Lumi · Link"
+msgstr ""
+
+#: src/features/dailyLearning/ProgressScreen.tsx:29
+msgctxt "progress.lumi.due"
+msgid "{count, plural, one {# word is} other {# words are}} due today. Let’s keep them blooming!"
+msgstr ""
+
+#: src/features/dailyLearning/ProgressScreen.tsx:32
+msgctxt "progress.lumi.start"
+msgid "Every review helps your words bloom."
+msgstr ""
+
+#: src/features/dailyLearning/ProgressScreen.tsx:53
+msgctxt "progress.subtitle.mastered"
+msgid "<0>{count}</0> mastered"
+msgstr ""
+
+#: src/features/dailyLearning/ProgressScreen.tsx:31
+msgctxt "progress.lumi.clear"
+msgid "Nothing due right now. Your words are blooming!"
+msgstr ""
+
+#: src/features/dailyLearning/ProgressScreen.tsx:52
+msgctxt "progress.subtitle.reviewed"
+msgid "{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards reviewed}}"
+msgstr ""

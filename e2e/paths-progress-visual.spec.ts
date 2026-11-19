@@ -299,7 +299,7 @@ for (const theme of themes) {
 test('Progress inspects covered review days and returns to range totals', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, '/?view=progress&locale=en');
-  const activity = page.getByRole('region', { name: 'Review activity' });
+  const activity = page.getByRole('region', { name: 'Activity', exact: true });
   const date = activity.getByLabel('Inspect a day');
   await expect(date).toHaveAttribute('min', '2026-03-27');
   await expect.poll(async () => (await date.boundingBox())?.height).toBeGreaterThanOrEqual(44);
@@ -586,7 +586,7 @@ test('approved reviewed catalog selects all 45 real units without horizontal cli
       const selections = viewport.name === 'desktop' ? 15 : 1;
       for (let unitIndex = 0; unitIndex < selections; unitIndex += 1) {
         const unit = units.nth(unitIndex);
-        if (viewport.name === 'desktop') reviewedUnitTitles.add((await unit.locator('span.font-black').innerText()).trim());
+        if (viewport.name === 'desktop') reviewedUnitTitles.add((await unit.locator('span.paths-unit-title').innerText()).trim());
         await unit.click();
         await expect(unit).toHaveAttribute('aria-pressed', 'true');
       }

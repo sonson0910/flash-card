@@ -73,7 +73,8 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('stats-canvas--primary');
     expect(html).toContain('Review activity');
     expect(html).toContain('Memory strength');
-    expect(html.match(/<h2[^>]*>Review activity<\/h2>/g)).toHaveLength(1);
+    expect(html.match(/<h2[^>]*>Activity<\/h2>/g)).toHaveLength(1);
+    expect(html).toContain('role="group" aria-label="Review activity"');
     expect(html).not.toMatch(/<p[^>]*>Review activity<\/p>/);
     expect(html).not.toContain('Account-wide XP and consistency');
     expect(html).not.toContain('Category distribution');
@@ -244,9 +245,9 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('<td>Đã thuộc</td><td>3</td>');
     expect(html).toContain('<td>Đang học</td><td>2</td>');
     expect(html).toContain('<td>Chưa ôn</td><td>1</td>');
-    expect(html).toContain('stroke="var(--sf-heat-4)"');
-    expect(html).toContain('stroke="var(--sf-heat-3)"');
-    expect(html).toContain('stroke="var(--sf-heat-1)"');
+    expect(html).toContain('stroke="var(--st-mastered)"');
+    expect(html).toContain('stroke="var(--st-learning)"');
+    expect(html).toContain('background-color:var(--st-new)');
     expect(html).not.toContain('#10b981');
   });
 

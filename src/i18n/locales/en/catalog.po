@@ -13,161 +13,157 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:440
+#: src/features/catalogWorkspace/CatalogScreen.tsx:547
 msgctxt "catalog.empty.title"
 msgid "No vocabulary found"
 msgstr "No vocabulary found"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:397
+#: src/features/catalogWorkspace/CatalogScreen.tsx:219
+#: src/features/catalogWorkspace/CatalogScreen.tsx:501
 msgctxt "paths.shelf.title"
 msgid "Your shelf"
 msgstr "Your shelf"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:113
+#: src/features/catalogWorkspace/CatalogScreen.tsx:134
 msgctxt "catalog.status.check-reviewed"
 msgid "Check for reviewed catalog"
 msgstr "Check for reviewed catalog"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:405
+#: src/features/catalogWorkspace/CatalogScreen.tsx:512
 msgctxt "paths.roadmap.title"
 msgid "Your learning level"
 msgstr "Your learning level"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:445
+#: src/features/catalogWorkspace/CatalogScreen.tsx:552
 msgctxt "catalog.action.load-more"
 msgid "Load more words"
 msgstr "Load more words"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:405
+#: src/features/catalogWorkspace/CatalogScreen.tsx:512
 msgctxt "paths.roadmap.kicker"
 msgid "Your roadmap"
 msgstr "Your roadmap"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:386
-msgctxt "paths.current.unit-of"
-msgid "Unit {current} of {total}"
-msgstr "Unit {current} of {total}"
-
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:317
+#: src/features/catalogWorkspace/CatalogScreen.tsx:397
 msgid "catalog.card.add-action"
 msgstr "{action} {lemma}"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:295
+#: src/features/catalogWorkspace/CatalogScreen.tsx:375
 msgid "catalog.card.add-to-library"
 msgstr "Add to library"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:292
+#: src/features/catalogWorkspace/CatalogScreen.tsx:372
 msgid "catalog.card.adding"
 msgstr "Adding…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:309
-#: src/features/catalogWorkspace/CatalogScreen.tsx:309
+#: src/features/catalogWorkspace/CatalogScreen.tsx:389
+#: src/features/catalogWorkspace/CatalogScreen.tsx:389
 msgid "catalog.card.collocations"
 msgstr "Collocations"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:308
-#: src/features/catalogWorkspace/CatalogScreen.tsx:308
+#: src/features/catalogWorkspace/CatalogScreen.tsx:388
+#: src/features/catalogWorkspace/CatalogScreen.tsx:388
 msgid "catalog.card.example"
 msgstr "Example"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:290
+#: src/features/catalogWorkspace/CatalogScreen.tsx:370
 msgid "catalog.card.in-library"
 msgstr "In your library"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:313
+#: src/features/catalogWorkspace/CatalogScreen.tsx:393
 msgid "catalog.card.license-missing"
 msgstr "License not provided"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:307
-#: src/features/catalogWorkspace/CatalogScreen.tsx:307
+#: src/features/catalogWorkspace/CatalogScreen.tsx:387
+#: src/features/catalogWorkspace/CatalogScreen.tsx:387
 msgid "catalog.card.meaning"
 msgstr "Meaning"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:314
+#: src/features/catalogWorkspace/CatalogScreen.tsx:394
 msgid "catalog.card.review-missing"
 msgstr "Human review not recorded"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:312
+#: src/features/catalogWorkspace/CatalogScreen.tsx:392
 msgid "catalog.card.source-missing"
 msgstr "Source not provided"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:294
+#: src/features/catalogWorkspace/CatalogScreen.tsx:374
 msgid "catalog.card.try-adding-again"
 msgstr "Try adding again"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:422
+#: src/features/catalogWorkspace/CatalogScreen.tsx:529
 msgid "catalog.filters.cefr"
 msgstr "CEFR level"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:424
+#: src/features/catalogWorkspace/CatalogScreen.tsx:531
 msgid "catalog.filters.part-of-speech"
 msgstr "Part of speech"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:421
+#: src/features/catalogWorkspace/CatalogScreen.tsx:528
 msgid "catalog.filters.search-placeholder"
 msgstr "e.g. analysis…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:425
+#: src/features/catalogWorkspace/CatalogScreen.tsx:532
 msgid "catalog.filters.skill"
 msgstr "Skill"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:423
+#: src/features/catalogWorkspace/CatalogScreen.tsx:530
 msgid "catalog.filters.topic"
 msgstr "Topic"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:65
+#: src/features/catalogWorkspace/CatalogScreen.tsx:75
 msgid "catalog.language.coming-soon"
 msgstr "{names} — coming soon"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:152
+#: src/features/catalogWorkspace/CatalogScreen.tsx:186
 msgid "catalog.personal.keep-learning"
 msgstr "Keep learning"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:152
+#: src/features/catalogWorkspace/CatalogScreen.tsx:186
 msgid "catalog.personal.keep-learning-description"
 msgstr "Cards still building toward mastery."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:153
+#: src/features/catalogWorkspace/CatalogScreen.tsx:187
 msgid "catalog.personal.mastered"
 msgstr "Mastered"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:153
+#: src/features/catalogWorkspace/CatalogScreen.tsx:187
 msgid "catalog.personal.mastered-description"
 msgstr "Cards already retained with confidence."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:166
+#: src/features/catalogWorkspace/CatalogScreen.tsx:223
 msgid "catalog.personal.path-label"
 msgstr "Personal learning path: Review due → Keep learning → Mastered"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:151
+#: src/features/catalogWorkspace/CatalogScreen.tsx:185
 msgid "catalog.personal.review-due"
 msgstr "Review due"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:151
+#: src/features/catalogWorkspace/CatalogScreen.tsx:185
 msgid "catalog.personal.review-due-description"
 msgstr "Cards scheduled for review now."
 
@@ -272,212 +268,284 @@ msgstr "Unknown catalog error."
 msgid "catalog.workspace.updating"
 msgstr "Updating vocabulary…"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:397
-msgctxt "paths.goal.kicker"
-msgid "Choose your goal"
-msgstr "Choose your goal"
-
-#: src/features/catalogWorkspace/CatalogScreen.tsx:263
+#: src/features/catalogWorkspace/CatalogScreen.tsx:343
 msgctxt "paths.unit.continuing"
 msgid "Starting unit…"
 msgstr "Starting unit…"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:445
+#: src/features/catalogWorkspace/CatalogScreen.tsx:552
 msgctxt "catalog.loading.next-page"
 msgid "Loading the next vocabulary page."
 msgstr "Loading the next vocabulary page."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:377
+#: src/features/catalogWorkspace/CatalogScreen.tsx:467
 msgctxt "paths.current.kicker"
 msgid "Your current path"
 msgstr "Your current path"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:391
-msgctxt "paths.current.progress"
-msgid "{started} started · {mastered} mastered"
-msgstr "{started} started · {mastered} mastered"
-
-#: src/features/catalogWorkspace/CatalogScreen.tsx:240
+#: src/features/catalogWorkspace/CatalogScreen.tsx:262
+#: src/features/catalogWorkspace/CatalogScreen.tsx:320
 msgctxt "paths.unit.count"
 msgid "{count} words"
 msgstr "{count} words"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:160
+#: src/features/catalogWorkspace/CatalogScreen.tsx:210
 msgctxt "catalog.action.continue-review"
 msgid "Continue review"
 msgstr "Continue review"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:130
+#: src/features/catalogWorkspace/CatalogScreen.tsx:151
 msgctxt "catalog.status.technical-detail"
 msgid "Technical detail"
 msgstr "Technical detail"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:110
+#: src/features/catalogWorkspace/CatalogScreen.tsx:131
 msgctxt "catalog.status.unavailable-title"
 msgid "Catalog unavailable"
 msgstr "Catalog unavailable"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:180
-#: src/features/catalogWorkspace/CatalogScreen.tsx:196
+#: src/features/catalogWorkspace/CatalogScreen.tsx:276
 msgctxt "paths.selected"
 msgid "Selected"
 msgstr "Selected"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:256
+#: src/features/catalogWorkspace/CatalogScreen.tsx:336
 msgctxt "paths.unit.complete-message"
 msgid "This unit is complete."
 msgstr "This unit is complete."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:421
+#: src/features/catalogWorkspace/CatalogScreen.tsx:528
 msgctxt "catalog.filters.search"
 msgid "Search vocabulary"
 msgstr "Search vocabulary"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:414
+#: src/features/catalogWorkspace/CatalogScreen.tsx:521
 msgctxt "catalog.filters.title"
 msgid "Filters"
 msgstr "Filters"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:304
+#: src/features/catalogWorkspace/CatalogScreen.tsx:384
 msgctxt "catalog.card.cefr"
 msgid "CEFR {level}"
 msgstr "CEFR {level}"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:263
+#: src/features/catalogWorkspace/CatalogScreen.tsx:343
 msgctxt "paths.unit.study"
 msgid "Study this unit"
 msgstr "Study this unit"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:437
+#: src/features/catalogWorkspace/CatalogScreen.tsx:544
 msgctxt "catalog.loading.matches"
 msgid "Loading matching vocabulary…"
 msgstr "Loading matching vocabulary…"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:352
+#: src/features/catalogWorkspace/CatalogScreen.tsx:439
 msgctxt "paths.title"
 msgid "Paths"
 msgstr "Paths"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:138
+#: src/features/catalogWorkspace/CatalogScreen.tsx:159
 msgctxt "catalog.action.retry"
 msgid "Try again"
 msgstr "Try again"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:233
+#: src/features/catalogWorkspace/CatalogScreen.tsx:313
 msgctxt "paths.units.title"
 msgid "Choose a unit"
 msgstr "Choose a unit"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:356
+#: src/features/catalogWorkspace/CatalogScreen.tsx:445
 msgctxt "paths.source.personal"
 msgid "My vocabulary"
 msgstr "My vocabulary"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:263
+#: src/features/catalogWorkspace/CatalogScreen.tsx:343
 msgctxt "paths.unit.prepare-continue"
 msgid "Continue with this unit"
 msgstr "Continue with this unit"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:90
-#: src/features/catalogWorkspace/CatalogScreen.tsx:161
+#: src/features/catalogWorkspace/CatalogScreen.tsx:111
+#: src/features/catalogWorkspace/CatalogScreen.tsx:211
 msgctxt "catalog.action.open-vocabulary"
 msgid "Open vocabulary"
 msgstr "Open vocabulary"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:117
+#: src/features/catalogWorkspace/CatalogScreen.tsx:138
 msgctxt "catalog.status.release-pending"
 msgid "A download will appear after a reviewed release is published."
 msgstr "A download will appear after a reviewed release is published."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:258
-#: src/features/catalogWorkspace/CatalogScreen.tsx:392
+#: src/features/catalogWorkspace/CatalogScreen.tsx:338
+#: src/features/catalogWorkspace/CatalogScreen.tsx:489
 msgctxt "paths.unit.all-complete"
 msgid "All units in this path are complete."
 msgstr "All units in this path are complete."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:315
+#: src/features/catalogWorkspace/CatalogScreen.tsx:395
 msgctxt "catalog.card.learning-context"
 msgid "Learning context:"
 msgstr "Learning context:"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:248
+#: src/features/catalogWorkspace/CatalogScreen.tsx:328
 msgctxt "paths.unit.progress"
 msgid "{introduced} introduced · {mastered} mastered"
 msgstr "{introduced} introduced · {mastered} mastered"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:427
-#: src/features/catalogWorkspace/CatalogScreen.tsx:440
+#: src/features/catalogWorkspace/CatalogScreen.tsx:534
+#: src/features/catalogWorkspace/CatalogScreen.tsx:547
 msgctxt "catalog.filters.clear"
 msgid "Clear all filters"
 msgstr "Clear all filters"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:239
+#: src/features/catalogWorkspace/CatalogScreen.tsx:319
 msgctxt "paths.unit.ordinal"
 msgid "Unit {ordinal}"
 msgstr "Unit {ordinal}"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:346
-msgid "paths.catalog.description"
-msgstr "Choose a reviewed language catalog and follow its ordered learning units."
+#: src/features/catalogWorkspace/CatalogScreen.tsx:59
+msgid "paths.book.kind.everyday"
+msgstr "Everyday"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:343
-msgid "paths.catalog.kicker"
-msgstr "Reviewed catalog"
+#: src/features/catalogWorkspace/CatalogScreen.tsx:57
+#: src/features/catalogWorkspace/CatalogScreen.tsx:58
+msgid "paths.book.kind.exam"
+msgstr "Exam"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:387
+#: src/features/catalogWorkspace/CatalogScreen.tsx:261
+msgid "paths.book.progress"
+msgstr "{mastered} of {total} words mastered · {started} started"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:437
+msgid "paths.crystal.kicker"
+msgstr "Journey <0>//</0> Week {week}"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:478
 msgid "paths.current.roadmap-label"
 msgstr "Current path roadmap"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:183
-msgid "paths.metric.mastered"
-msgstr "mastered"
+#: src/features/catalogWorkspace/CatalogScreen.tsx:491
+msgid "paths.hero.continue-unit"
+msgstr "Continue unit {ordinal}"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:183
-msgid "paths.metric.started"
-msgstr "started"
+#: src/features/catalogWorkspace/CatalogScreen.tsx:484
+msgid "paths.hero.eta"
+msgstr "About {days, plural, one {# day} other {# days}} left at your pace"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:183
-msgid "paths.metric.words"
-msgstr "words"
+#: src/features/catalogWorkspace/CatalogScreen.tsx:466
+msgid "paths.hero.kicker-unit"
+msgstr "Continue · Unit {current} of {total}"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:345
-msgid "paths.personal.description"
-msgstr "Follow practical paths built from cards you already own. Switch to the reviewed catalog whenever you want."
+#: src/features/catalogWorkspace/CatalogScreen.tsx:477
+msgid "paths.hero.route"
+msgstr "Unit route"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:342
-msgid "paths.personal.kicker"
-msgstr "Personal learning paths"
+#: src/features/catalogWorkspace/CatalogScreen.tsx:477
+msgid "paths.hero.route-steps"
+msgstr "// {count} steps"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:355
+#: src/features/catalogWorkspace/CatalogScreen.tsx:493
+msgid "paths.hero.see-all-units"
+msgstr "See all units"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:485
+msgid "paths.hero.started"
+msgstr "{started} started"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:469
+msgid "paths.hero.this-unit"
+msgstr "This unit: <0>{title}</0>."
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:483
+msgid "paths.hero.words-mastered"
+msgstr "<0>{mastered}</0> of {total} words mastered"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:167
+msgid "paths.lumi.link"
+msgstr "Lumi · Link"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:191
+msgid "paths.lumi.review-due"
+msgstr "{count, plural, one {# card is} other {# cards are}} ready for review."
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:429
+msgid "paths.lumi.unit-remaining"
+msgstr "{count, plural, one {# more word} other {# more words}} to finish Unit {ordinal}!"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:207
+msgid "paths.personal.due-count"
+msgstr "{count} due for review today"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:206
+msgid "paths.personal.mastered-count"
+msgstr "<0>{mastered}</0> of {total} cards mastered"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:230
+msgid "paths.personal.step"
+msgstr "Step {step}"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:221
+#: src/features/catalogWorkspace/CatalogScreen.tsx:503
+msgid "paths.shelf.browse"
+msgstr "Browse catalog →"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:502
+msgid "paths.shelf.journeys"
+msgstr "// {count, plural, one {# journey} other {# journeys}}"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:220
+msgid "paths.shelf.steps"
+msgstr "// {count} steps"
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:444
 msgid "paths.source.label"
 msgstr "Path source"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:49
+#: src/features/catalogWorkspace/CatalogScreen.tsx:440
+msgid "paths.subtitle"
+msgstr "Guided word sets, ordered so each word builds on the one before."
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogScreen.tsx:63
 msgid "paths.tier-state.available"
 msgstr "Available"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:51
+#: src/features/catalogWorkspace/CatalogScreen.tsx:65
 msgid "paths.tier-state.completed"
 msgstr "Completed"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:50
+#: src/features/catalogWorkspace/CatalogScreen.tsx:64
 msgid "paths.tier-state.in-progress"
 msgstr "In progress"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:52
+#: src/features/catalogWorkspace/CatalogScreen.tsx:66
 msgid "paths.tier-state.locked"
 msgstr "Locked"
 
@@ -557,165 +625,164 @@ msgid "paths.unit.continue-scope-unavailable"
 msgstr "This unit is unavailable. Reopen Paths and try again."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:227
+#: src/features/catalogWorkspace/CatalogScreen.tsx:307
 msgid "paths.unit.status.active"
 msgstr "In progress"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:225
+#: src/features/catalogWorkspace/CatalogScreen.tsx:305
 msgid "paths.unit.status.complete"
 msgstr "Complete"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:230
+#: src/features/catalogWorkspace/CatalogScreen.tsx:310
 msgid "paths.unit.status.not-started"
 msgstr "Not started"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:183
-#: src/features/catalogWorkspace/CatalogScreen.tsx:195
-#: src/features/catalogWorkspace/CatalogScreen.tsx:229
-#: src/features/catalogWorkspace/CatalogScreen.tsx:391
+#: src/features/catalogWorkspace/CatalogScreen.tsx:262
+#: src/features/catalogWorkspace/CatalogScreen.tsx:275
+#: src/features/catalogWorkspace/CatalogScreen.tsx:309
+#: src/features/catalogWorkspace/CatalogScreen.tsx:486
 msgid "paths.unit.status.unavailable"
 msgstr "Progress unavailable"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:234
+#: src/features/catalogWorkspace/CatalogScreen.tsx:314
 msgid "paths.units.list-label"
 msgstr "Catalog units"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:260
+#: src/features/catalogWorkspace/CatalogScreen.tsx:340
 msgctxt "paths.unit.confirm-disclosure"
 msgid "Any missing unit words will be added to your Library before study."
 msgstr "Any missing unit words will be added to your Library before study."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:110
+#: src/features/catalogWorkspace/CatalogScreen.tsx:131
 msgctxt "catalog.status.no-drafts"
 msgid "Draft vocabulary is never shown here."
 msgstr "Draft vocabulary is never shown here."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:263
+#: src/features/catalogWorkspace/CatalogScreen.tsx:343
 msgctxt "paths.unit.add-and-study"
 msgid "Add missing words and study"
 msgstr "Add missing words and study"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:254
+#: src/features/catalogWorkspace/CatalogScreen.tsx:334
 msgctxt "paths.unit.continue-unavailable"
 msgid "Continue is unavailable until progress can be verified."
 msgstr "Continue is unavailable until progress can be verified."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:158
+#: src/features/catalogWorkspace/CatalogScreen.tsx:199
 msgctxt "catalog.personal.title"
 msgid "Your personal paths"
 msgstr "Your personal paths"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:90
+#: src/features/catalogWorkspace/CatalogScreen.tsx:111
 msgctxt "catalog.personal.status-title"
 msgid "Personal learning mode"
 msgstr "Personal learning mode"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:198
+#: src/features/catalogWorkspace/CatalogScreen.tsx:278
 msgctxt "paths.tier.progress"
 msgid "{mastered} of {total} mastered · {started} started"
 msgstr "{mastered} of {total} mastered · {started} started"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:316
+#: src/features/catalogWorkspace/CatalogScreen.tsx:396
 msgctxt "catalog.card.add-failed"
 msgid "Could not add “{lemma}” to your library. Check your connection or sign in, then try again."
 msgstr "Could not add “{lemma}” to your library. Check your connection or sign in, then try again."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:411
+#: src/features/catalogWorkspace/CatalogScreen.tsx:518
 msgctxt "catalog.explorer.title"
 msgid "Vocabulary explorer"
 msgstr "Vocabulary explorer"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:392
+#: src/features/catalogWorkspace/CatalogScreen.tsx:492
 msgctxt "paths.action.continue"
 msgid "Continue"
 msgstr "Continue"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:278
+#: src/features/catalogWorkspace/CatalogScreen.tsx:358
 msgctxt "catalog.filter.all"
 msgid "All"
 msgstr "All"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:158
+#: src/features/catalogWorkspace/CatalogScreen.tsx:200
 msgctxt "catalog.personal.description"
 msgid "Use your {count} saved cards now. No draft catalog vocabulary is mixed into these paths."
 msgstr "Use your {count} saved cards now. No draft catalog vocabulary is mixed into these paths."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:440
+#: src/features/catalogWorkspace/CatalogScreen.tsx:547
 msgctxt "catalog.empty.path"
 msgid "This reviewed catalog does not contain words for the selected path yet."
 msgstr "This reviewed catalog does not contain words for the selected path yet."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:115
+#: src/features/catalogWorkspace/CatalogScreen.tsx:136
 msgctxt "catalog.status.connect-first-download"
 msgid "Connect to the internet for the first verified download."
 msgstr "Connect to the internet for the first verified download."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:125
+#: src/features/catalogWorkspace/CatalogScreen.tsx:146
 msgctxt "catalog.status.error-title"
 msgid "Catalog needs attention"
 msgstr "Catalog needs attention"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:233
+#: src/features/catalogWorkspace/CatalogScreen.tsx:313
 msgctxt "paths.units.kicker"
 msgid "Catalog units"
 msgstr "Catalog units"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:359
+#: src/features/catalogWorkspace/CatalogScreen.tsx:448
 msgctxt "paths.language.label"
 msgid "Language"
 msgstr "Language"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:252
-#: src/features/catalogWorkspace/CatalogScreen.tsx:391
+#: src/features/catalogWorkspace/CatalogScreen.tsx:332
 msgctxt "paths.unit.eta"
 msgid "Estimated {days, plural, one {# day} other {# days}} left at your pace."
 msgstr "Estimated {days, plural, one {# day} other {# days}} left at your pace."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:158
+#: src/features/catalogWorkspace/CatalogScreen.tsx:198
 msgctxt "catalog.personal.kicker"
 msgid "Built from your library"
 msgstr "Built from your library"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:357
+#: src/features/catalogWorkspace/CatalogScreen.tsx:446
 msgctxt "paths.source.reviewed"
 msgid "Reviewed catalog"
 msgstr "Reviewed catalog"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:445
+#: src/features/catalogWorkspace/CatalogScreen.tsx:552
 msgctxt "catalog.loading.more"
 msgid "Loading more words…"
 msgstr "Loading more words…"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:314
+#: src/features/catalogWorkspace/CatalogScreen.tsx:394
 msgctxt "catalog.card.review"
 msgid "Review:"
 msgstr "Review:"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:313
+#: src/features/catalogWorkspace/CatalogScreen.tsx:393
 msgctxt "catalog.card.license"
 msgid "License:"
 msgstr "License:"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:247
+#: src/features/catalogWorkspace/CatalogScreen.tsx:327
 msgctxt "paths.unit.progress-unavailable"
 msgid "Progress is unavailable until your library can be verified."
 msgstr "Progress is unavailable until your library can be verified."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:312
+#: src/features/catalogWorkspace/CatalogScreen.tsx:392
 msgctxt "catalog.card.source"
 msgid "Source:"
 msgstr "Source:"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:440
+#: src/features/catalogWorkspace/CatalogScreen.tsx:547
 msgctxt "catalog.empty.filtered"
 msgid "Try fewer filters or clear them to see this path again."
 msgstr "Try fewer filters or clear them to see this path again."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:245
+#: src/features/catalogWorkspace/CatalogScreen.tsx:325
 msgctxt "paths.unit.preview"
 msgid "Preview: {title}"
 msgstr "Preview: {title}"
