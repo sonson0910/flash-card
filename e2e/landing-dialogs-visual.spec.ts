@@ -112,6 +112,8 @@ for (const theme of themes) for (const viewport of viewports) {
 
     await page.locator(`[data-library-card-id="${reportCard.id}"] .library-word-open`).click();
     await page.getByRole('button', { name: /Reveal the Vietnamese meaning of resilient/ }).click();
+    // The report action sits in the card back's "Explore more" disclosure.
+    await page.locator('details[data-card-disclosure="learning-tools"] > summary').click();
     await page.getByRole('button', { name: 'Report incorrect card' }).click();
     await expect(page.getByRole('heading', { name: 'Report a wrong card' })).toBeVisible();
     await expectAccessibleAndContained(page, `${theme.family}-${theme.mode}-${viewport.name}-report-request`);
