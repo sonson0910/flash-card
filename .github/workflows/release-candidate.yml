@@ -137,6 +137,7 @@ jobs:
             package-lock.json
             firestore.rules
             firestore.indexes.json
+            storage.rules
             firebase.json
             firebase-applet-config.json
             artifacts/phase6-readiness.json

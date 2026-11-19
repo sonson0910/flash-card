@@ -43,6 +43,7 @@ const firebaseConfig = (overrides = {}) => ({
     predeploy: ['npm run mutate'],
   }],
   hosting: { public: 'dist', predeploy: ['npm run rebuild'] },
+  storage: { rules: 'storage.rules', predeploy: ['npm run mutate'] },
   ...overrides,
 });
 
@@ -63,6 +64,7 @@ const createCandidate = (revision = 'a'.repeat(40)) => {
   fs.writeFileSync(path.join(root, 'package-lock.json'), '{"lockfileVersion":3}\n');
   fs.writeFileSync(path.join(root, 'firestore.rules'), 'rules_version = "2";');
   fs.writeFileSync(path.join(root, 'firestore.indexes.json'), '{"indexes":[]}\n');
+  fs.writeFileSync(path.join(root, 'storage.rules'), 'rules_version = "2";');
   fs.writeFileSync(path.join(root, 'firebase.json'), `${JSON.stringify(firebaseConfig())}\n`);
   fs.writeFileSync(path.join(root, 'firebase-applet-config.json'), JSON.stringify({
     targets: {
@@ -178,6 +180,7 @@ describe('sealed release artifact', () => {
 
     expect(manifest.components.rootPackage).toMatchObject({ path: 'package.json' });
     expect(manifest.components.rootLock).toMatchObject({ path: 'package-lock.json' });
+    expect(manifest.components.storageRules).toMatchObject({ path: 'storage.rules' });
     fs.writeFileSync(path.join(root, 'package.json'), '{"tampered":true}\n');
     expect(() => verifyReleaseArtifact({
       root,
@@ -186,6 +189,25 @@ describe('sealed release artifact', () => {
       expectedWorkflowRunId: '12345',
       expectedCandidateSha256: manifest.candidateSha256,
     })).toThrow(/rootPackage/);
+  });
+
+  it('seals the Storage rules with the deployable candidate', () => {
+    const root = createCandidate('a'.repeat(40));
+    const manifest = sealReleaseArtifact({
+      root,
+      revision: 'a'.repeat(40),
+      workflowRunId: '12345',
+      generatedAt: '2026-08-10T00:00:00.000Z',
+    });
+
+    fs.writeFileSync(path.join(root, 'storage.rules'), 'rules_version = "2"; // tampered');
+    expect(() => verifyReleaseArtifact({
+      root,
+      manifest,
+      expectedRevision: 'a'.repeat(40),
+      expectedWorkflowRunId: '12345',
+      expectedCandidateSha256: manifest.candidateSha256,
+    })).toThrow(/storageRules/);
   });
 
   it('binds deployable files and readiness evidence to one revision and digest', () => {
@@ -340,6 +362,7 @@ describe('sealed release artifact', () => {
         indexes: '../firestore.indexes.json',
       }],
     }],
+    ['Storage Rules path', { storage: { rules: '../storage.rules' } }],
   ])('rejects a firebase config that redirects the %s outside sealed components', (_label, overrides) => {
     const root = createCandidate('e'.repeat(40));
     fs.writeFileSync(path.join(root, 'firebase.json'), JSON.stringify(firebaseConfig(overrides)));
@@ -367,6 +390,7 @@ describe('sealed release artifact', () => {
         indexes: 'firestore.indexes.json',
       }],
       hosting: { public: 'dist' },
+      storage: { rules: 'storage.rules' },
     });
   });
 });
