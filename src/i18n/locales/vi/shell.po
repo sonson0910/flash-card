@@ -1386,8 +1386,13 @@ msgid "shell.level"
 msgstr "Cấp {level}, {xp} XP"
 
 #. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:96
+msgid "shell.level.chip"
+msgstr "<0>Lv</0> {level}"
+
+#. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:93
-#: src/components/shell/DesktopNavigation.tsx:93
+#: src/components/shell/DesktopNavigation.tsx:94
 msgid "shell.level.short"
 msgstr "Lv {level}"
 

@@ -90,7 +90,10 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
       <div data-gsap-header-actions className="claude-shell-actions ml-auto flex items-center">
         <ThemeMenu onOpenSettings={openAppearanceSettings} />
         {hasStreak && <span className="claude-streak" aria-label={_(msg({ id: 'shell.streak', message: '{count} day streak' }).id, { count: streak })}><Flame size={15} fill="currentColor" aria-hidden="true" />{streak}</span>}
-        {hasLevel && <span className="claude-level" aria-label={hasXp ? _(msg({ id: 'shell.level', message: 'Level {level}, {xp} XP' }).id, { level, xp }) : _(msg({ id: 'shell.level.short', message: 'Lv {level}' }).id, { level })}><Trans {...msg({ id: 'shell.level.short', message: 'Lv {level}' })} values={{ level }} />{hasXp && <span className="claude-level-track" aria-hidden="true"><span style={{ width: `${levelProgress}%` }} /></span>}</span>}
+        {hasLevel && <span className="claude-level" aria-label={hasXp ? _(msg({ id: 'shell.level', message: 'Level {level}, {xp} XP' }).id, { level, xp }) : _(msg({ id: 'shell.level.short', message: 'Lv {level}' }).id, { level })}>{family === 'crystal'
+          ? <Trans {...msg({ id: 'shell.level.short', message: 'Lv {level}' })} values={{ level }} />
+          // Classic chips set the "Lv" prefix apart from the number, as on the board.
+          : <Trans {...msg({ id: 'shell.level.chip', message: '<0>Lv</0> {level}' })} values={{ level }} components={{ 0: <span className="claude-level-label" /> }} />}{hasXp && <span className="claude-level-track" aria-hidden="true"><span style={{ width: `${levelProgress}%` }} /></span>}</span>}
         <LanguageMenu onOpenSettings={onOpenSettings ? () => onOpenSettings('language') : undefined} />
         <LibraryManagementMenu
           equippedFrameId={equippedFrameId}

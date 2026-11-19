@@ -1386,8 +1386,13 @@ msgid "shell.level"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:96
+msgid "shell.level.chip"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:93
-#: src/components/shell/DesktopNavigation.tsx:93
+#: src/components/shell/DesktopNavigation.tsx:94
 msgid "shell.level.short"
 msgstr ""
 

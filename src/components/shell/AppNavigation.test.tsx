@@ -44,6 +44,31 @@ describe('app shell navigation', () => {
     expect(html).not.toContain('data-mobile-course');
   });
 
+  it('highlights Vocabulary for its web words sub-view and sets the classic level prefix apart', () => {
+    i18n.load('en', { 'shell.level.chip': '<0>Lv</0> {level}' });
+    const html = renderNavigation(
+      <DesktopNavigation
+        viewMode="web-words"
+        syncIdentity={{ status: 'authenticated', displayName: 'Learner', email: 'learner@example.com', photoUrl: null }}
+        syncStatus={{ isOnline: true, error: null, cloudUnavailable: false }}
+        isDarkMode={false}
+        libraryCountLabel="8 WORDS"
+        level={7}
+        xp={4000}
+        onOpenToday={vi.fn()}
+        onOpenLibrary={vi.fn()}
+        onOpenCatalog={vi.fn()}
+        onOpenProgress={vi.fn()}
+        onSignIn={vi.fn()}
+        onSignOut={vi.fn()}
+      />,
+    );
+
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toMatch(/aria-current="page" class="claude-nav-item"><span>Vocabulary<\/span>/);
+    expect(html).toContain('<span class="claude-level-label">Lv</span> 7');
+  });
+
   it('renders desktop navigation from a vendor-neutral view model', () => {
     const html = renderNavigation(
       <DesktopNavigation
