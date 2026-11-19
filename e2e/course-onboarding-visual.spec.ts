@@ -81,13 +81,13 @@ for (const theme of themes) for (const viewport of viewports) {
     const onboardingBox = await expectBox(onboardingSurface, 'onboarding journey');
     expect(onboardingBox.width, 'onboarding fills the viewport width').toBe(viewport.width);
     expect(onboardingBox.height, 'onboarding fills the viewport height').toBe(viewport.height);
-    await expectScreen(page, testInfo, `course-onboarding-${theme.family}-${theme.mode}-${viewport.name}`);
+    const onboardingScreenshot = await expectScreen(page, testInfo, `course-onboarding-${theme.family}-${theme.mode}-${viewport.name}`);
     await onboarding.getByRole('button', { name: 'Continue' }).click();
     await onboarding.getByRole('button', { name: /Korean/ }).click();
     await onboarding.getByRole('button', { name: 'Continue' }).click();
     await onboarding.getByRole('button', { name: /^TOPIK Target level/ }).click();
     await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
-    await expectScreen(page, testInfo, `course-onboarding-goal-${theme.family}-${theme.mode}-${viewport.name}`);
+    const goalScreenshot = await expectScreen(page, testInfo, `course-onboarding-goal-${theme.family}-${theme.mode}-${viewport.name}`);
 
     await seedCourses(db, testUser.uid);
     await page.reload();
@@ -179,6 +179,9 @@ for (const theme of themes) for (const viewport of viewports) {
     const appearancePosition = await appearance.boundingBox();
     expect(coursePosition && appearancePosition && coursePosition.y < appearancePosition.y).toBeTruthy();
     await expectScreen(page, testInfo, `course-settings-${theme.family}-${theme.mode}-${viewport.name}`);
+    // Compared last so a changed screen still leaves every later capture to review.
+    expect(onboardingScreenshot.image).toMatchSnapshot(`${onboardingScreenshot.name}.png`);
+    expect(goalScreenshot.image).toMatchSnapshot(`${goalScreenshot.name}.png`);
     expect(createScreenshot.image).toMatchSnapshot(`${createScreenshot.name}.png`);
   });
 }
@@ -193,7 +196,7 @@ test('mobile onboarding keeps selected options and actions clear through the stu
   const korean = onboarding.getByRole('button', { name: /Korean/ });
   await korean.click();
   await expect(korean).toHaveAttribute('aria-pressed', 'true');
-  await expectScreen(page, testInfo, 'course-onboarding-target-classic-light-mobile');
+  const targetScreenshot = await expectScreen(page, testInfo, 'course-onboarding-target-classic-light-mobile');
   await onboarding.getByRole('button', { name: 'Continue' }).click();
 
   const topik = onboarding.getByRole('button', { name: /^TOPIK Target level/ });
@@ -201,7 +204,7 @@ test('mobile onboarding keeps selected options and actions clear through the stu
   await expect(topik).toHaveAttribute('aria-pressed', 'true');
   await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
   await expect(onboarding.getByRole('button', { name: 'Back' })).toBeInViewport();
-  await expectScreen(page, testInfo, 'course-onboarding-goal-classic-light-mobile');
+  const goalScreenshot = await expectScreen(page, testInfo, 'course-onboarding-goal-classic-light-mobile');
   await onboarding.getByLabel('Exam or target date (optional)').scrollIntoViewIfNeeded();
   await expect(onboarding.getByLabel('Exam or target date (optional)')).toBeInViewport();
   await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
@@ -225,6 +228,8 @@ test('mobile onboarding keeps selected options and actions clear through the stu
   await expect(createdCards.getByText('annyeonghaseyo', { exact: true })).toBeVisible();
   await expect(createdCards.getByText('hello', { exact: true })).toBeVisible();
   const ahaScreenshot = await expectScreen(page, testInfo, 'course-onboarding-aha-success-classic-light-mobile');
+  expect(targetScreenshot.image).toMatchSnapshot(`${targetScreenshot.name}.png`);
+  expect(goalScreenshot.image).toMatchSnapshot(`${goalScreenshot.name}.png`);
   expect(paceScreenshot.image).toMatchSnapshot(`${paceScreenshot.name}.png`);
   expect(ahaScreenshot.image).toMatchSnapshot(`${ahaScreenshot.name}.png`);
 });
