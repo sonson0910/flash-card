@@ -3,6 +3,8 @@ import { Timestamp, type DocumentReference, type Firestore } from 'firebase-admi
 import { InputValidationError } from './inputValidation.js';
 import { nextReminderAfterScheduledDay, quietHoursEndAfter, studiedOnLocalDay } from './reminderSchedule.js';
 import { reminderTodayUrl } from './reminderAppOrigin.js';
+import { parseStreakState, streakStatus } from './streak-rules.js';
+import { isCount, isStudyDay, studyDaysBetween } from './study-day-rules.js';
 
 // Queued mail holds the learner's address; the collection TTL removes it after delivery.
 export const MAIL_RETENTION_MS = 30 * 24 * 60 * 60_000;
@@ -11,6 +13,17 @@ const ownerFromStatePath = (path: string): string => {
   const match = /^users\/([^/]+)\/reminderState\/current$/.exec(path);
   if (!match) throw new InputValidationError('Reminder state path is invalid.');
   return match[1];
+};
+
+const studyDayIn = (now: Date, timeZone: unknown): string | null => {
+  if (typeof timeZone !== 'string' || !timeZone) return null;
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+    const day = ['year', 'month', 'day'].map(type => parts.find(part => part.type === type)?.value).join('-');
+    return isStudyDay(day) ? day : null;
+  } catch {
+    return null;
+  }
 };
 
 export async function enqueueWeeklyDigest(
@@ -56,16 +69,28 @@ export async function enqueueWeeklyDigest(
     const studiedToday = studiedAt && state.onlyIfNotStudiedToday !== false
       ? studiedOnLocalDay(studiedAt.toDate(), now, state.timezone) : false;
     const stale = now.getTime() - eligibleAt > 24 * 60 * 60_000;
+    const sends = dueCount > 0 && !receipt.exists && Boolean(email) && Boolean(studiedAt) && !studiedToday && !stale;
+    // The run as the next review would find it: missed days use held freezes, and a gap they cannot
+    // bridge ends the run. The stored count alone still shows a run that has already ended.
+    const run = isCount(stats?.verifiedStreak) ? stats.verifiedStreak : 0;
+    const lastStudyDay = isStudyDay(stats?.lastVerifiedStudyDay) ? stats.lastVerifiedStudyDay : null;
+    const today = studyDayIn(now, stats?.rewardTimeZone) ?? studyDayIn(now, state.timezone);
+    const streakRecord = parseStreakState(stats?.streakV1);
+    // Until the server writes the record, freezes are still held in the rewards document.
+    const needsLegacyFreezes = sends && !streakRecord && run > 0 && lastStudyDay !== null && today !== null
+      && studyDaysBetween(lastStudyDay, today) > 1;
+    const legacyFreezes = needsLegacyFreezes
+      ? (await transaction.get(owner.collection('profile').doc('rewards'))).data()?.streakFreezes : 0;
     transaction.update(stateRef, {
       nextWeeklyDigestAt: Timestamp.fromDate(next.at),
       nextWeeklyDigestLocalDay: next.scheduledDay,
       updatedAt: Timestamp.fromDate(now),
     });
-    if (dueCount === 0 || receipt.exists || !email || !studiedAt || studiedToday || stale) return false;
+    if (!sends || !email) return false;
 
-    const streakValue = stats?.verifiedStreak;
-    const streak = Number.isSafeInteger(streakValue) && typeof streakValue === 'number' && streakValue >= 0
-      ? streakValue : 0;
+    const streak = today === null ? run : streakStatus({
+      run, lastStudyDay, today, state: streakRecord, legacyFreezes: isCount(legacyFreezes) ? legacyFreezes : 0,
+    }).length;
     const vi = state.locale === 'vi';
     const subject = vi ? 'Tổng kết tuần học SonFlash' : 'Your SonFlash weekly recap';
     const todayUrl = reminderTodayUrl(projectId, state.locale);
