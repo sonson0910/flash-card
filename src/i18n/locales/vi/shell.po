@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/components/shell/LanguageMenu.tsx:29
+msgctxt "shell.language.settings"
+msgid "Language & course settings"
+msgstr "Cài đặt ngôn ngữ và khóa học"
+
 #: src/components/shell/LibraryManagementMenu.tsx:327
 msgctxt "shell.menu.card-style-standard"
 msgid "Card style: Standard"
@@ -28,7 +33,7 @@ msgctxt "onboarding.goal.heading"
 msgid "Have an exam or <0>goal in mind?</0>"
 msgstr "Bạn có kỳ thi hay <0>mục tiêu nào không?</0>"
 
-#: src/components/shell/DesktopNavigation.tsx:81
+#: src/components/shell/DesktopNavigation.tsx:85
 #: src/features/profileCompletion/ProfileCompletionGate.tsx:80
 msgctxt "shell.brand.mark"
 msgid "S"
@@ -70,7 +75,7 @@ msgctxt "onboarding.pace.option"
 msgid "{count} cards / day"
 msgstr "{count} thẻ / ngày"
 
-#: src/app/AppViewStage.tsx:111
+#: src/app/AppViewStage.tsx:124
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
@@ -239,7 +244,7 @@ msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr "Để sau"
 
-#: src/app/AppViewStage.tsx:119
+#: src/app/AppViewStage.tsx:132
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr "Đang mở cài đặt giao diện…"
@@ -500,8 +505,8 @@ msgctxt "onboarding.aha.create"
 msgid "Add 5 starter cards"
 msgstr "Thêm 5 thẻ khởi đầu"
 
-#: src/components/shell/DesktopNavigation.tsx:67
-#: src/components/shell/FloatingMobileNav.tsx:15
+#: src/components/shell/DesktopNavigation.tsx:69
+#: src/components/shell/FloatingMobileNav.tsx:45
 msgctxt "shell.nav.collection"
 msgid "Collection"
 msgstr "Bộ sưu tập"
@@ -522,7 +527,7 @@ msgid "exam-band-picker.legend"
 msgstr "Band mục tiêu"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:264
+#: src/app/AppRuntime.tsx:266
 msgid "extension.import.course-mismatch-confirm"
 msgstr "Từ này được lưu cho một ngôn ngữ khác với khoá học hiện tại của bạn. Chuyển sang (hoặc tạo) khoá học phù hợp để lưu từ này?"
 
@@ -555,6 +560,11 @@ msgstr "Kiểu thẻ: Kính Zen"
 msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr "Liên kết này mở bản xem trước. Người nhận sẽ tự chọn có thêm bản sao riêng hay không."
+
+#: src/app/AppViewStage.tsx:133
+msgctxt "shell.loading.web-words"
+msgid "Preparing your web words…"
+msgstr "Đang chuẩn bị các từ trên web của bạn…"
 
 #: src/features/onboarding/OnboardingJourney.tsx:363
 msgctxt "onboarding.aha.none-added"
@@ -603,7 +613,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Luyện hội thoại"
 
-#: src/app/AppRuntime.tsx:587
+#: src/app/AppRuntime.tsx:589
 #: src/components/shell/CourseSwitcherControl.tsx:110
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -1151,7 +1161,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr "Tạo khóa học"
 
-#: src/app/AppViewStage.tsx:103
+#: src/app/AppViewStage.tsx:116
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr "Đang chuẩn bị các lộ trình học…"
@@ -1228,7 +1238,7 @@ msgstr "Tài khoản"
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:161
 #: src/components/shell/AppFeedback.tsx:176
-#: src/components/shell/DesktopNavigation.tsx:61
+#: src/components/shell/DesktopNavigation.tsx:63
 #: src/components/shell/LibraryManagementMenu.tsx:188
 #: src/components/shell/LibraryManagementMenu.tsx:203
 msgid "shell.feedback.connecting"
@@ -1281,7 +1291,7 @@ msgstr "Thử đồng bộ lại thư viện"
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:156
-#: src/components/shell/DesktopNavigation.tsx:56
+#: src/components/shell/DesktopNavigation.tsx:58
 #: src/components/shell/LibraryManagementMenu.tsx:198
 msgid "shell.feedback.session-ended"
 msgstr "Phiên đã kết thúc"
@@ -1316,7 +1326,7 @@ msgid "shell.heading.landing"
 msgstr "SonFlash — Học từ vựng thông minh"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:13
+#: src/features/navigation/app-view-headings.ts:14
 msgid "shell.heading.language-drill"
 msgstr "Luyện ngôn ngữ"
 
@@ -1326,7 +1336,7 @@ msgid "shell.heading.library"
 msgstr "Thư viện từ vựng"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:15
+#: src/features/navigation/app-view-headings.ts:16
 msgid "shell.heading.match"
 msgstr "Ghép từ"
 
@@ -1336,7 +1346,7 @@ msgid "shell.heading.progress"
 msgstr "Tiến độ học"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:11
+#: src/features/navigation/app-view-headings.ts:12
 msgid "shell.heading.quiz"
 msgstr "Bài kiểm tra từ vựng"
 
@@ -1346,22 +1356,22 @@ msgid "shell.heading.settings"
 msgstr "Cài đặt và giao diện"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:16
+#: src/features/navigation/app-view-headings.ts:17
 msgid "shell.heading.shadowing"
 msgstr "Luyện bắt chước phát âm"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:12
+#: src/features/navigation/app-view-headings.ts:13
 msgid "shell.heading.spelling"
 msgstr "Luyện chính tả"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:14
+#: src/features/navigation/app-view-headings.ts:15
 msgid "shell.heading.story"
 msgstr "Câu chuyện ngữ cảnh"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:10
+#: src/features/navigation/app-view-headings.ts:11
 msgid "shell.heading.study"
 msgstr "Phiên học"
 
@@ -1371,28 +1381,38 @@ msgid "shell.heading.today"
 msgstr "Kế hoạch học hôm nay"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LanguageMenu.tsx:26
+#: src/features/navigation/app-view-headings.ts:10
+msgid "shell.heading.web-words"
+msgstr "Từ đã lưu từ web"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LanguageMenu.tsx:27
 msgid "shell.language.menu"
 msgstr "Ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LanguageMenu.tsx:25
+#: src/components/shell/LanguageMenu.tsx:26
 msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:576
+#: src/app/AppRuntime.tsx:578
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:89
+#: src/components/shell/DesktopNavigation.tsx:93
 msgid "shell.level"
 msgstr "Cấp {level}, {xp} XP"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:89
-#: src/components/shell/DesktopNavigation.tsx:89
+#: src/components/shell/DesktopNavigation.tsx:96
+msgid "shell.level.chip"
+msgstr "<0>Lv</0> {level}"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:93
+#: src/components/shell/DesktopNavigation.tsx:94
 msgid "shell.level.short"
 msgstr "Lv {level}"
 
@@ -1428,39 +1448,39 @@ msgid "shell.library-menu.zen-toggle-description"
 msgstr "Chuyển giữa chế độ Học tiêu chuẩn và chế độ Kính Zen tối giản"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:66
-#: src/components/shell/DesktopNavigation.tsx:66
-#: src/components/shell/FloatingMobileNav.tsx:19
+#: src/components/shell/DesktopNavigation.tsx:68
+#: src/components/shell/DesktopNavigation.tsx:68
+#: src/components/shell/FloatingMobileNav.tsx:42
 msgid "shell.nav.paths"
 msgstr "Lộ trình"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:68
-#: src/components/shell/DesktopNavigation.tsx:68
-#: src/components/shell/FloatingMobileNav.tsx:21
+#: src/components/shell/DesktopNavigation.tsx:70
+#: src/components/shell/DesktopNavigation.tsx:70
+#: src/components/shell/FloatingMobileNav.tsx:47
 msgid "shell.nav.progress"
 msgstr "Tiến độ"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:65
-#: src/components/shell/DesktopNavigation.tsx:65
-#: src/components/shell/FloatingMobileNav.tsx:18
+#: src/components/shell/DesktopNavigation.tsx:67
+#: src/components/shell/DesktopNavigation.tsx:67
+#: src/components/shell/FloatingMobileNav.tsx:41
 msgid "shell.nav.today"
 msgstr "Hôm nay"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:67
-#: src/components/shell/FloatingMobileNav.tsx:16
+#: src/components/shell/DesktopNavigation.tsx:69
+#: src/components/shell/FloatingMobileNav.tsx:46
 msgid "shell.nav.vocabulary"
 msgstr "Từ vựng"
 
 #. js-lingui-explicit-id
-#: src/components/shell/FloatingMobileNav.tsx:23
+#: src/components/shell/FloatingMobileNav.tsx:49
 msgid "shell.navigation.mobile"
 msgstr "Điều hướng trên di động"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:78
+#: src/components/shell/DesktopNavigation.tsx:82
 msgid "shell.navigation.primary"
 msgstr "Điều hướng chính"
 
@@ -1612,12 +1632,12 @@ msgid "shell.share.translation-unspecified"
 msgstr "Chưa xác định ngôn ngữ dịch"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:88
+#: src/components/shell/DesktopNavigation.tsx:92
 msgid "shell.streak"
 msgstr "Chuỗi {count} ngày"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:58
+#: src/components/shell/DesktopNavigation.tsx:60
 #: src/components/shell/LibraryManagementMenu.tsx:200
 #: src/components/shell/localized-sync-status.ts:20
 #: src/components/shell/localized-sync-status.ts:21
@@ -1630,7 +1650,7 @@ msgid "shell.sync.checking-detail"
 msgstr "Đang xác minh phiên đám mây của bạn."
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:62
+#: src/components/shell/DesktopNavigation.tsx:64
 #: src/components/shell/LibraryManagementMenu.tsx:204
 msgid "shell.sync.device"
 msgstr "Trên thiết bị này"
@@ -1669,7 +1689,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Không thể cập nhật trực tiếp từ đám mây. Hãy thử lại khi kết nối ổn định hơn."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:445
+#: src/app/AppRuntime.tsx:447
 msgid "shell.sync.retry-failed"
 msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
 
@@ -1745,7 +1765,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr "Chọn một giờ và SonFlash sẽ nhắc bạn ôn tập."
 
-#: src/app/AppRuntime.tsx:588
+#: src/app/AppRuntime.tsx:590
 #: src/components/shell/CourseSwitcherControl.tsx:112
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -1841,7 +1861,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr "Hủy"
 
-#: src/app/AppViewStage.tsx:118
+#: src/app/AppViewStage.tsx:131
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr "Đang chuẩn bị tiến độ học…"
@@ -1878,7 +1898,7 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Chọn một ngôn ngữ trước đã. Bạn có thể thêm ngôn ngữ khác trong trình chuyển khóa học."
 
-#: src/app/AppRuntime.tsx:590
+#: src/app/AppRuntime.tsx:592
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Đang chuẩn bị các khóa học của bạn…"
@@ -1924,7 +1944,7 @@ msgid "Manage shared link"
 msgstr "Quản lý liên kết chia sẻ"
 
 #: src/app/AppDeferredViews.tsx:23
-#: src/app/AppRuntime.tsx:83
+#: src/app/AppRuntime.tsx:82
 msgctxt "shell.opening-dialog"
 msgid "Opening dialog"
 msgstr "Đang mở hộp thoại"
@@ -1958,23 +1978,3 @@ msgstr "Đang thêm {count} thẻ vào bộ thẻ mới…"
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Cài đặt giao diện"
-
-#: src/components/shell/LanguageMenu.tsx:29
-msgctxt "shell.language.settings"
-msgid "Language & course settings"
-msgstr "Cài đặt ngôn ngữ và khóa học"
-
-#: src/app/AppViewStage.tsx:133
-msgctxt "shell.loading.web-words"
-msgid "Preparing your web words…"
-msgstr "Đang chuẩn bị các từ trên web của bạn…"
-
-#. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:10
-msgid "shell.heading.web-words"
-msgstr "Từ đã lưu từ web"
-
-#. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:96
-msgid "shell.level.chip"
-msgstr "<0>Lv</0> {level}"

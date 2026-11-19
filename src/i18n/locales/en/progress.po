@@ -64,7 +64,7 @@ msgid "26 weeks"
 msgstr "26 weeks"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:85
+#: src/components/stats/AchievementsMatrix.tsx:87
 msgid "stats.achievements"
 msgstr "Achievements"
 
@@ -99,72 +99,72 @@ msgid "stats.activity-unavailable"
 msgstr "Activity unavailable before coverage began"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:86
+#: src/components/stats/AchievementsMatrix.tsx:88
 msgid "stats.all-badges-earned"
 msgstr "Every badge is unlocked"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:85
+#: src/components/stats/AchievementsMatrix.tsx:87
 msgid "stats.back-to-progress"
 msgstr "Back to Progress"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:78
+#: src/components/stats/AchievementsMatrix.tsx:80
 msgid "stats.badge-state.in-progress"
 msgstr "In progress"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:78
+#: src/components/stats/AchievementsMatrix.tsx:80
 msgid "stats.badge-state.locked"
 msgstr "Not started yet"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:76
+#: src/components/stats/AchievementsMatrix.tsx:78
 msgid "stats.badges"
 msgstr "Badges"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:82
+#: src/components/stats/AchievementsMatrix.tsx:84
 msgid "stats.bloom-day"
 msgstr "Bright study day"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:82
+#: src/components/stats/AchievementsMatrix.tsx:84
 msgid "stats.bloom-day-description"
 msgstr "Gather 100 XP in one day of practice."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:80
+#: src/components/stats/AchievementsMatrix.tsx:82
 msgid "stats.blooming-recall"
 msgstr "Blooming recall"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:80
+#: src/components/stats/AchievementsMatrix.tsx:82
 msgid "stats.blooming-recall-description"
 msgstr "Help ten words settle into memory."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:84
+#: src/components/stats/AchievementsMatrix.tsx:86
 msgid "stats.bud-night-study"
 msgstr "Gentle night study"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:84
+#: src/components/stats/AchievementsMatrix.tsx:86
 msgid "stats.bud-night-study-description"
 msgstr "Return for five active study days."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:79
+#: src/components/stats/AchievementsMatrix.tsx:81
 msgid "stats.bud-routine"
 msgstr "Bud routine"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:79
+#: src/components/stats/AchievementsMatrix.tsx:81
 msgid "stats.bud-routine-description"
 msgstr "Give your study habit three active days."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:77
+#: src/components/stats/AchievementsMatrix.tsx:79
 msgid "stats.cards-by-bloom"
 msgstr "Cards by bloom"
 
@@ -209,29 +209,34 @@ msgid "stats.date"
 msgstr "Date"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:73
+#: src/components/stats/AchievementsMatrix.tsx:75
 msgid "stats.days"
 msgstr "days"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:76
+#: src/components/stats/AchievementsMatrix.tsx:78
 msgid "stats.earned"
 msgstr "Earned"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:75
+#: src/components/stats/AchievementsMatrix.tsx:98
+msgid "stats.earned-count"
+msgstr "{earned} of {total} earned"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:77
 #: src/components/stats/StatsCharts.tsx:56
 msgid "stats.grade-learning"
 msgstr "Bloom"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:75
+#: src/components/stats/AchievementsMatrix.tsx:77
 #: src/components/stats/StatsCharts.tsx:56
 msgid "stats.grade-mastered"
 msgstr "Star"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:75
+#: src/components/stats/AchievementsMatrix.tsx:77
 #: src/components/stats/StatsCharts.tsx:56
 msgid "stats.grade-new"
 msgstr "Bud"
@@ -253,18 +258,18 @@ msgid "stats.inspect-day"
 msgstr "Inspect a day"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:74
+#: src/components/stats/AchievementsMatrix.tsx:76
 #: src/components/stats/StatsCharts.tsx:58
 msgid "stats.learning"
 msgstr "Learning"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:78
+#: src/components/stats/AchievementsMatrix.tsx:80
 msgid "stats.legend.label"
 msgstr "Badge status legend"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:76
+#: src/components/stats/AchievementsMatrix.tsx:78
 msgid "stats.legend.star-tier"
 msgstr "Star tier"
 
@@ -274,27 +279,47 @@ msgid "stats.less"
 msgstr "Less"
 
 #. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:99
+msgid "stats.level"
+msgstr "Level"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:102
+msgid "stats.level-line"
+msgstr "Lv {level} · {xp} / {next} XP"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:100
+msgid "stats.level-meter"
+msgstr "<0>{xp}</0> / {next} XP to Level {level}"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:101
+msgid "stats.level-sessions"
+msgstr "≈ {count, plural, one {# session} other {# sessions}}"
+
+#. js-lingui-explicit-id
 #: src/components/stats/StatsCharts.tsx:57
 msgid "stats.library-breakdown"
 msgstr "Library breakdown"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:97
+#: src/components/stats/AchievementsMatrix.tsx:104
 msgid "stats.lumi-done"
 msgstr "Every badge is in bloom. Wonderful work!"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:77
+#: src/components/stats/AchievementsMatrix.tsx:79
 msgid "stats.lumi-link"
 msgstr "Lumi · Link"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:96
+#: src/components/stats/AchievementsMatrix.tsx:103
 msgid "stats.lumi-next"
 msgstr "{remaining} to go for <0>{badge}</0>."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:74
+#: src/components/stats/AchievementsMatrix.tsx:76
 #: src/components/stats/StatsCharts.tsx:58
 msgid "stats.mastered"
 msgstr "Mastered"
@@ -325,7 +350,7 @@ msgid "stats.more"
 msgstr "More"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:90
+#: src/components/stats/AchievementsMatrix.tsx:92
 msgid "stats.next-badge-meter"
 msgstr "<0>{current}</0> / {target} {unit} toward {badge}"
 
@@ -340,7 +365,7 @@ msgid "stats.no-xp-history"
 msgstr "No XP history yet"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:74
+#: src/components/stats/AchievementsMatrix.tsx:76
 #: src/components/stats/StatsCharts.tsx:58
 msgid "stats.not-reviewed"
 msgstr "Not reviewed"
@@ -356,7 +381,7 @@ msgid "stats.partial-categories"
 msgstr "Current-page data only; the full library is not scanned."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:73
+#: src/components/stats/AchievementsMatrix.tsx:75
 msgid "stats.progress"
 msgstr "Progress"
 
@@ -391,17 +416,17 @@ msgid "stats.recall-rate-hint"
 msgstr "Share of reviews in this range not marked Again."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:92
+#: src/components/stats/AchievementsMatrix.tsx:94
 msgid "stats.remaining-days"
 msgstr "{count, plural, one {# day} other {# days}}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:93
+#: src/components/stats/AchievementsMatrix.tsx:95
 msgid "stats.remaining-words"
 msgstr "{count, plural, one {# word} other {# words}}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:94
+#: src/components/stats/AchievementsMatrix.tsx:96
 msgid "stats.remaining-xp"
 msgstr "{count} XP"
 
@@ -411,7 +436,7 @@ msgid "stats.review-activity-unavailable"
 msgstr "Review activity is unavailable until coverage begins."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:74
+#: src/components/stats/AchievementsMatrix.tsx:76
 msgid "stats.reviewed"
 msgstr "Reviewed"
 
@@ -442,22 +467,22 @@ msgid "stats.show-top-categories"
 msgstr "Show top 5 categories"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:83
+#: src/components/stats/AchievementsMatrix.tsx:85
 msgid "stats.star-collection"
 msgstr "Growing collection"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:83
+#: src/components/stats/AchievementsMatrix.tsx:85
 msgid "stats.star-collection-description"
 msgstr "Collect 500 XP from your study sessions."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:81
+#: src/components/stats/AchievementsMatrix.tsx:83
 msgid "stats.star-keeper"
 msgstr "Star keeper"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:81
+#: src/components/stats/AchievementsMatrix.tsx:83
 msgid "stats.star-keeper-description"
 msgstr "Help fifty words shine as mastered."
 
@@ -468,27 +493,27 @@ msgid "stats.study-activity"
 msgstr "Study activity"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:85
+#: src/components/stats/AchievementsMatrix.tsx:87
 msgid "stats.study-milestones"
 msgstr "Study milestones"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:76
+#: src/components/stats/AchievementsMatrix.tsx:78
 msgid "stats.study-xp"
 msgstr "Study XP"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:72
+#: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.tier-bloom"
 msgstr "Bloom"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:72
+#: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.tier-bud"
 msgstr "Bud"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:72
+#: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.tier-star"
 msgstr "Star"
 
@@ -503,7 +528,7 @@ msgid "stats.total-xp"
 msgstr "total XP"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:73
+#: src/components/stats/AchievementsMatrix.tsx:75
 msgid "stats.unlocked"
 msgstr "unlocked"
 
@@ -513,12 +538,12 @@ msgid "stats.value"
 msgstr "Value"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:89
+#: src/components/stats/AchievementsMatrix.tsx:91
 msgid "stats.word-garden-title"
 msgstr "Your word <0>garden</0>"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:73
+#: src/components/stats/AchievementsMatrix.tsx:75
 msgid "stats.words"
 msgstr "words"
 
@@ -673,28 +698,3 @@ msgstr "Total XP"
 msgctxt "weeklyRecap.action.download"
 msgid "Download PNG"
 msgstr "Download PNG"
-
-#. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:98
-msgid "stats.earned-count"
-msgstr "{earned} of {total} earned"
-
-#. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:99
-msgid "stats.level"
-msgstr "Level"
-
-#. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:102
-msgid "stats.level-line"
-msgstr "Lv {level} · {xp} / {next} XP"
-
-#. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:100
-msgid "stats.level-meter"
-msgstr "<0>{xp}</0> / {next} XP to Level {level}"
-
-#. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:101
-msgid "stats.level-sessions"
-msgstr "≈ {count, plural, one {# session} other {# sessions}}"
