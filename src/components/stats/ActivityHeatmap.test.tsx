@@ -40,7 +40,7 @@ describe('ActivityHeatmap', () => {
       days: { '2026-09-28': { reviewed: 2, again: 1, hard: 0, good: 1, easy: 0 } },
     }} />);
 
-    expect(html.match(/size-3.5/g)).toHaveLength(firstDayOfWeek('en') === 0 ? 35 : 42);
+    expect(html.match(/class="stats-heat-cell"/g)).toHaveLength(firstDayOfWeek('en') === 0 ? 35 : 42);
     expect(html).toContain('Activity unavailable before coverage began');
     expect(html).toContain('Sep 28, 2026: 2 reviews');
     expect(html).toContain('Outside selected range');
@@ -53,7 +53,7 @@ describe('ActivityHeatmap', () => {
     expect(html).toContain('<button type="button" disabled="" aria-label="Sep 19, 2026: Activity unavailable before coverage began"');
     expect(html).toContain('<button type="button" disabled="" aria-label="Sep 29, 2026: Outside selected range"');
     expect(html).toContain('class="flex size-6 shrink-0 items-center justify-center focus-visible:outline-2');
-    expect(html).toContain('<span class="size-3.5 rounded-[4px] border border-[var(--sf-border)] transition-transform hover:scale-125"');
+    expect(html).toContain('<span class="stats-heat-cell" data-level="2" style="background-color:var(--st-heat-2, var(--sf-heat-2))"></span>');
   });
 
   it('defaults review activity to 30 days and keeps XP totals account-wide', () => {
@@ -66,7 +66,7 @@ describe('ActivityHeatmap', () => {
       { date: '2025-01-01', XP: 8 }, { date: '2026-09-28', XP: 12 },
     ]} />);
 
-    expect(reviewHtml.match(/size-3.5/g)).toHaveLength(firstDayOfWeek('en') === 0 ? 35 : 42);
+    expect(reviewHtml.match(/class="stats-heat-cell"/g)).toHaveLength(firstDayOfWeek('en') === 0 ? 35 : 42);
     expect(xpHtml).toContain('<strong class="font-bold text-[var(--sf-text)]">20</strong> total XP');
   });
 

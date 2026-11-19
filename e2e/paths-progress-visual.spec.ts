@@ -299,7 +299,7 @@ for (const theme of themes) {
 test('Progress inspects covered review days and returns to range totals', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, '/?view=progress&locale=en');
-  const activity = page.getByRole('region', { name: 'Review activity' });
+  const activity = page.getByRole('region', { name: 'Activity', exact: true });
   const date = activity.getByLabel('Inspect a day');
   await expect(date).toHaveAttribute('min', '2026-03-27');
   await expect.poll(async () => (await date.boundingBox())?.height).toBeGreaterThanOrEqual(44);

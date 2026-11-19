@@ -15,7 +15,7 @@ interface ActivityHeatmapProps {
 interface DayCell { dateStr: string; xp: number; available: boolean; outsideRange: boolean; level: 0 | 1 | 2 | 3 | 4; }
 
 const WEEKS_TO_SHOW = 20;
-const heatColor = (level: DayCell['level']) => `var(--sf-heat-${level})`;
+const heatColor = (level: DayCell['level']) => `var(--st-heat-${level}, var(--sf-heat-${level}))`;
 
 /** Shared intensity thresholds so every heatmap (this grid, the weekly recap card) paints the same day the same color. */
 export const heatmapLevelForXp = (xp: number): DayCell['level'] => (xp === 0 ? 0 : xp < 30 ? 1 : xp < 70 ? 2 : xp < 150 ? 3 : 4);
@@ -133,37 +133,40 @@ export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey, 
     setHasEarlierWeeks(scroller.scrollLeft > 0);
   }, [weeks.length, interactive]);
 
-  return <div className="w-full space-y-4">
-    <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-      <div className="flex items-center gap-4 text-[var(--sf-text-muted)] font-medium">
-        <span><strong className="font-bold text-[var(--sf-text)]">{formatNumber(activeDaysCount)}</strong> {_(msg({ id: 'stats.active-days', message: 'active days' }))}</span>
-        <span><strong className="font-bold text-[var(--sf-text)]">{formatNumber(total)}</strong> {isReviewActivity ? _(msg({ id: 'stats.total-reviews', message: 'reviews' })) : _(msg({ id: 'stats.total-xp', message: 'total XP' }))}</span>
-      </div>
-      <div className="flex items-center gap-1.5 text-[11px] text-[var(--sf-text-muted)]" aria-label={_(msg({ id: 'stats.heatmap-legend', message: 'Less to more study activity' }))}>
-        <span>{_(msg({ id: 'stats.less', message: 'Less' }))}</span>
-        {([0, 1, 2, 3, 4] as const).map(level => <span key={level} className="inline-block size-3 rounded-[4px] border border-[var(--sf-border)]" style={{ backgroundColor: heatColor(level) }} />)}
-        <span>{_(msg({ id: 'stats.more', message: 'More' }))}</span>
-      </div>
-    </div>
-    <div ref={scrollerRef} onScroll={event => setHasEarlierWeeks(event.currentTarget.scrollLeft > 0)} className={`w-full overflow-x-auto pb-2 scrollbar-none ${hasEarlierWeeks ? '[mask-image:linear-gradient(to_right,transparent,#000_2.5rem)]' : ''}`} tabIndex={0} aria-label={_(msg({ id: 'stats.study-activity', message: 'Study activity' }))}>
-      <section className="grid min-w-max grid-cols-[auto_1fr] gap-2" aria-label={_(msg({ id: 'stats.study-activity', message: 'Study activity' }))}>
-        <div className="mt-5 flex flex-col gap-1.5 pr-1 text-right text-[10px] font-semibold text-[var(--sf-text-muted)]">
-          {labels.map(label => <span key={label} className={`flex items-center justify-end ${interactive ? 'h-6' : 'h-3.5'}`}>{label}</span>)}
+  const legend = <div className="stats-heat-legend" aria-label={_(msg({ id: 'stats.heatmap-legend', message: 'Less to more study activity' }))}>
+    <span>{_(msg({ id: 'stats.less', message: 'Less' }))}</span>
+    {([0, 1, 2, 3, 4] as const).map(level => <span key={level} className="stats-heat-swatch" style={{ backgroundColor: heatColor(level) }} />)}
+    <span>{_(msg({ id: 'stats.more', message: 'More' }))}</span>
+  </div>;
+  const cellStyle = (day: DayCell) => ({ backgroundColor: day.available ? heatColor(day.level) : day.outsideRange ? 'transparent' : 'var(--st-heat-unavailable, var(--sf-surface-muted))' });
+
+  return <div className="stats-heatmap w-full" data-interactive={interactive || undefined}>
+    <div ref={scrollerRef} onScroll={event => setHasEarlierWeeks(event.currentTarget.scrollLeft > 0)} className={`stats-heat-scroller w-full overflow-x-auto pb-2 scrollbar-none focus-visible:outline-2 focus-visible:outline-offset-2 ${hasEarlierWeeks ? '[mask-image:linear-gradient(to_right,transparent,#000_2.5rem)]' : ''}`} tabIndex={0} aria-label={_(msg({ id: 'stats.study-activity', message: 'Study activity' }))}>
+      <section className="stats-heat-grid grid min-w-max grid-cols-[auto_1fr]" aria-label={_(msg({ id: 'stats.study-activity', message: 'Study activity' }))}>
+        <div className="stats-heat-weekdays">
+          {labels.map((label, index) => <span key={label} className="stats-heat-weekday">{index % 2 === 0 ? label : ''}</span>)}
         </div>
-        <div>
-          <div className="mb-1 flex gap-1.5 text-[10px] font-semibold text-[var(--sf-text-muted)]">
-            {monthLabels.map((label, index) => <span key={`${label}-${index}`} className="w-3.5 shrink-0 overflow-visible whitespace-nowrap" style={interactive ? { width: 24 } : undefined}>{label}</span>)}
-          </div>
-          <div className="flex gap-1.5">
-            {weeks.map((week, weekIndex) => <div key={weekIndex} className="flex flex-col gap-1.5">
+        <div className="stats-heat-body">
+          <div className="stats-heat-weeks">
+            {weeks.map((week, weekIndex) => <div key={weekIndex} className="stats-heat-week">
               {week.map(day => {
                 const description = day.available ? `${formatHeatmapDate(day.dateStr, locale)}: ${formatNumber(day.xp)} ${isReviewActivity ? _(msg({ id: 'stats.reviews', message: 'reviews' })) : 'XP'}` : `${formatHeatmapDate(day.dateStr, locale)}: ${day.outsideRange ? _(msg({ id: 'stats.outside-selected-range', message: 'Outside selected range' })) : _(msg({ id: 'stats.activity-unavailable', message: 'Activity unavailable before coverage began' }))}`;
-                return onDaySelect ? <button key={day.dateStr} type="button" disabled={!day.available} aria-pressed={day.available ? selectedDate === day.dateStr : undefined} aria-label={description} className="flex size-6 shrink-0 items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]" title={description} onClick={() => onDaySelect(day.dateStr)}><span className="size-3.5 rounded-[4px] border border-[var(--sf-border)] transition-transform hover:scale-125" style={{ backgroundColor: day.available ? heatColor(day.level) : 'var(--sf-surface-muted)' }} /></button> : <div key={day.dateStr} className="size-3.5 rounded-[4px] border border-[var(--sf-border)] transition-transform hover:scale-125" style={{ backgroundColor: day.available ? heatColor(day.level) : 'var(--sf-surface-muted)' }} title={description}><span className="sr-only">{description}</span></div>;
+                return onDaySelect ? <button key={day.dateStr} type="button" disabled={!day.available} aria-pressed={day.available ? selectedDate === day.dateStr : undefined} aria-label={description} className="flex size-6 shrink-0 items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] stats-heat-button" title={description} onClick={() => onDaySelect(day.dateStr)}><span className="stats-heat-cell" data-level={day.available ? day.level : undefined} style={cellStyle(day)} /></button> : <div key={day.dateStr} className="stats-heat-cell" data-level={day.available ? day.level : undefined} style={cellStyle(day)} title={description}><span className="sr-only">{description}</span></div>;
               })}
             </div>)}
           </div>
+          <div className="stats-heat-months">
+            {monthLabels.map((label, index) => <span key={`${label}-${index}`} className="stats-heat-month">{label}</span>)}
+          </div>
         </div>
       </section>
+    </div>
+    <div className="stats-heat-foot">
+      <div className="stats-heat-summary">
+        <span><strong className="font-bold text-[var(--sf-text)]">{formatNumber(activeDaysCount)}</strong> {_(msg({ id: 'stats.active-days', message: 'active days' }))}</span>
+        <span><strong className="font-bold text-[var(--sf-text)]">{formatNumber(total)}</strong> {isReviewActivity ? _(msg({ id: 'stats.total-reviews', message: 'reviews' })) : _(msg({ id: 'stats.total-xp', message: 'total XP' }))}</span>
+      </div>
+      {legend}
     </div>
   </div>;
 }
