@@ -1339,3 +1339,94 @@ msgstr "Manage shared link"
 msgctxt "shell.share.importing"
 msgid "Adding {count} cards to your new deck…"
 msgstr "Adding {count} cards to your new deck…"
+
+#: src/components/flashcard/CardBack.tsx:265
+#: src/components/flashcard/CardBack.tsx:396
+msgctxt "flashcard.back-to-front"
+msgid "Back to front"
+msgstr "Back to front"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:22
+msgid "flashcard.back.explanation-label"
+msgstr "{language, select, vi {Explanation in Vietnamese} en {Explanation in English} other {Explanation}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:20
+msgid "flashcard.back.in-meaning-language"
+msgstr "{language, select, vi {In Vietnamese} en {In English} other {Meaning}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:21
+msgid "flashcard.back.meaning-label"
+msgstr "{language, select, vi {Vietnamese meaning} en {English meaning} other {Meaning}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:19
+msgid "flashcard.back.meaning-language"
+msgstr "{language, select, vi {Vietnamese} en {English} other {Meaning}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:15
+msgid "flashcard.card.meaning-language-revealed"
+msgstr "{language, select, vi {Vietnamese meaning revealed} en {English meaning revealed} other {Meaning revealed}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:13
+msgid "flashcard.card.showing-meaning-language"
+msgstr "{language, select, vi {Showing the Vietnamese meaning.} en {Showing the English meaning.} other {Showing the meaning.}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:14
+msgid "flashcard.card.showing-word-language"
+msgstr "{language, select, en {Showing the English word.} ko {Showing the Korean word.} ja {Showing the Japanese word.} zh {Showing the Chinese word.} other {Showing the word.}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:16
+msgid "flashcard.card.word-language-revealed"
+msgstr "{language, select, en {English word revealed} ko {Korean word revealed} ja {Japanese word revealed} zh {Chinese word revealed} other {Word revealed}}"
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:40
+msgid "flashcard.hints.hide-readings"
+msgstr "{image, select, yes {Hide image and readings} other {Hide readings}}"
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:39
+msgid "flashcard.hints.show-readings"
+msgstr "{image, select, yes {Show image and readings} other {Show readings}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/LanguageCardFace.tsx:69
+msgid "flashcard.reading.pitch-accent-label"
+msgstr "Pitch accent: {name}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/LanguageCardFace.tsx:68
+msgid "flashcard.reading.pitch-type"
+msgstr "{type, select, heiban {Heiban} atamadaka {Atamadaka} nakadaka {Nakadaka} other {Odaka}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/LanguageCardFace.tsx:211
+msgid "flashcard.reading.toggle-romaji"
+msgstr "Romaji"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:18
+msgid "flashcard.return-to-word-language-label"
+msgstr "{language, select, en {Return to the English side of {word}} ko {Return to the Korean side of {word}} ja {Return to the Japanese side of {word}} zh {Return to the Chinese side of {word}} other {Return to the front of {word}}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:17
+msgid "flashcard.reveal-meaning-language-label"
+msgstr "{language, select, vi {Reveal the Vietnamese meaning of {word}} en {Reveal the English meaning of {word}} other {Reveal the meaning of {word}}}"
+
+#: src/components/flashcard/LanguageCardFace.tsx:195
+msgctxt "flashcard.language-card.phrases"
+msgid "Common phrases"
+msgstr "Common phrases"
+
+#: src/components/flashcard/LanguageCardFace.tsx:176
+msgctxt "flashcard.language-card.example"
+msgid "Example"
+msgstr "Example"

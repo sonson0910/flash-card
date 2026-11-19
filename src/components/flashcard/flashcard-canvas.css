@@ -1954,3 +1954,721 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
     height: 40%;
   }
 }
+
+/* ------------------------------------------------------------------------
+   Language-pack card (Korean, Japanese, Chinese): the front teaches through
+   the reading aids, the example and the common phrases; the back keeps the
+   standard layout with the pack's reading beside the word.
+   The pinyin tone hues come from the language-card boards; where a theme
+   token carries the same hue the token is used, the rest are card-local.
+   ------------------------------------------------------------------------ */
+/* The theme has no CJK font token: the self-hosted Noto Sans subset for the script loads with the
+   card, and the Noto Serif faces of the boards apply where the device has them. */
+:is(.flashcard-face, .flashcard-back)[data-card-kind="language"] {
+  --lang-serif: "Noto Serif CJK KR", "Noto Serif KR", "Noto Sans KR", serif;
+  --lang-sans: "Noto Sans KR", "Noto Sans CJK KR", sans-serif;
+  --lang-tone-1: var(--sf-brand-text);
+  --lang-tone-2: var(--sf-success);
+  --lang-tone-3: var(--sf-rating-easy);
+  --lang-tone-4: var(--sf-danger);
+  --lang-tone-5: var(--sf-text-muted);
+  --lang-pitch: var(--sf-brand);
+  --lang-ruby: var(--flashcard-accent);
+  --lang-mark: var(--sf-brand-text);
+  --lang-mark-bg: color-mix(in srgb, var(--sf-brand) 18%, transparent);
+  --lang-chip-bg: color-mix(in srgb, var(--sf-text) 4%, transparent);
+  --lang-chip-line: color-mix(in srgb, var(--sf-text) 10%, transparent);
+  --lang-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
+  --lang-switch-on: var(--sf-brand);
+}
+
+.flashcard-shell[data-card-kind="language"] :lang(ja) {
+  --lang-serif: "Noto Serif CJK JP", "Noto Serif JP", "Noto Sans JP", serif;
+  --lang-sans: "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+}
+
+.flashcard-shell[data-card-kind="language"] :lang(zh) {
+  --lang-serif: "Noto Serif CJK SC", "Noto Serif SC", "Noto Sans SC", serif;
+  --lang-sans: "Noto Sans SC", "Noto Sans CJK SC", sans-serif;
+}
+
+.flashcard-shell[data-card-kind="language"] :lang(ko) {
+  --lang-serif: "Noto Serif CJK KR", "Noto Serif KR", "Noto Sans KR", serif;
+  --lang-sans: "Noto Sans KR", "Noto Sans CJK KR", sans-serif;
+}
+
+.flashcard-face[data-card-kind="language"][data-card-look="paper"] {
+  --lang-tone-1: #1f5fb8;
+  --lang-tone-3: var(--sf-rating-easy);
+  --lang-tone-4: var(--sf-rating-again);
+  --lang-ruby: var(--sf-brand);
+  --lang-mark: var(--sf-brand);
+  --lang-mark-bg: color-mix(in srgb, var(--sf-brand) 12%, transparent);
+  --lang-chip-bg: var(--sf-surface-raised);
+  --lang-chip-line: color-mix(in srgb, var(--sf-text) 12%, transparent);
+  --lang-accent-line: color-mix(in srgb, var(--sf-brand-hover) 30%, transparent);
+}
+
+.flashcard-face[data-card-kind="language"][data-card-look="crystal"] {
+  --lang-tone-1: var(--sf-success);
+  --lang-tone-2: #9dff9a;
+  --lang-tone-3: var(--sf-reward);
+  --lang-pitch: var(--sf-success);
+  --lang-ruby: var(--sf-success);
+  --lang-holo-text: var(--sf-success);
+  --lang-mark-bg: color-mix(in srgb, var(--sf-brand) 24%, transparent);
+  --lang-chip-bg: color-mix(in srgb, var(--sf-text) 8%, transparent);
+  --lang-chip-line: color-mix(in srgb, var(--sf-text) 16%, transparent);
+  /* The switch lights in the board's holo cyan; its dark label keeps AA contrast on both ends. */
+  --lang-switch-on: linear-gradient(180deg, #7ff6ff, #1aa7c9);
+  --lang-switch-on-text: #031820;
+}
+
+/* The board's light cyan and green tones, deepened just enough for AA on the glass chips. */
+:root[data-theme-family="crystal"]:not(.dark) .flashcard-face[data-card-kind="language"][data-card-look="crystal"] {
+  --lang-tone-1: #086a82;
+  --lang-tone-2: #19672f;
+  --lang-tone-3: #8a5a00;
+  --lang-pitch: var(--sf-brand-text);
+  --lang-ruby: #086a82;
+  --lang-holo-text: #086a82;
+  --lang-mark-bg: color-mix(in srgb, var(--sf-brand) 16%, transparent);
+  --lang-switch-on: linear-gradient(180deg, #7ff6ff, #2bc4e0);
+}
+
+/* The watermark is the first glyph of the word in the target script. */
+.flashcard-face[data-card-kind="language"] .flashcard-art-glyph {
+  top: 40px;
+  right: -30px;
+  font-family: var(--lang-serif);
+  font-size: 260px;
+  font-weight: 700;
+}
+
+.flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-art-glyph {
+  top: 36px;
+  right: -26px;
+  font-family: var(--lang-sans);
+  font-size: 250px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.flashcard-face[data-card-kind="language"][data-card-look="paper"] .flashcard-body-scroll {
+  padding-top: 0;
+}
+
+.flashcard-face[data-card-kind="language"] .flashcard-meta {
+  margin-top: 4px;
+  padding-right: 0;
+}
+
+.flashcard-face[data-card-kind="language"] .flashcard-body-scroll {
+  padding: 0 30px;
+}
+
+.flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-body-scroll {
+  padding: 0 26px;
+}
+
+/* The level chip wraps out of sight when the card's top controls leave it no room. */
+.flashcard-lang-top {
+  flex-wrap: wrap;
+  height: 34px;
+  max-width: calc(100% - 9.5rem);
+  overflow: hidden;
+}
+
+.flashcard-shell:has([data-card-top-controls] > :nth-child(3)) .flashcard-lang-top {
+  max-width: calc(100% - 12.5rem);
+}
+
+.flashcard-shell:has([data-card-top-controls] > :nth-child(4)) .flashcard-lang-top {
+  max-width: calc(100% - 15.5rem);
+}
+
+.flashcard-level-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--lang-chip-bg, color-mix(in srgb, var(--sf-text) 8%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 16%, transparent);
+  color: var(--sf-text);
+  font-family: var(--sf-font-display);
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+/* Headword: the word in its own script, the reading set over it as ruby. */
+.flashcard-lang-headword {
+  container-type: inline-size;
+}
+
+.flashcard-lang-word {
+  margin: 6px 0 0;
+  color: var(--sf-text);
+  font-family: var(--lang-serif);
+  font-size: clamp(40px, calc(100cqi / (var(--headword-chars, 2) * 1.12)), 78px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+}
+
+.flashcard-lang-word:lang(ko) {
+  margin-top: 10px;
+  font-size: clamp(36px, calc(100cqi / (var(--headword-chars, 4) * 1.04)), 70px);
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+}
+
+.flashcard-lang-word:lang(zh) {
+  letter-spacing: 0.06em;
+}
+
+.flashcard-lang-accent {
+  color: var(--flashcard-accent);
+  text-shadow: 0 0 28px color-mix(in srgb, var(--flashcard-accent) 55%, transparent);
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-lang-accent {
+  color: var(--sf-brand);
+  text-shadow: none;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-word {
+  margin-top: 4px;
+  font-family: var(--lang-sans);
+  font-weight: 900;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-word:lang(ko) {
+  margin-top: 8px;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-accent {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 55%, white), var(--sf-brand) 55%, var(--sf-brand-hover));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-brand) 60%, transparent));
+}
+
+.flashcard-lang-rt {
+  color: var(--lang-ruby);
+  font-family: var(--lang-sans);
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  transition: filter 300ms ease;
+}
+
+.flashcard-lang-word ruby[data-tone] .flashcard-lang-rt {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.flashcard-lang-word ruby[data-tone="1"] .flashcard-lang-rt { color: var(--lang-tone-1); }
+.flashcard-lang-word ruby[data-tone="2"] .flashcard-lang-rt { color: var(--lang-tone-2); }
+.flashcard-lang-word ruby[data-tone="3"] .flashcard-lang-rt { color: var(--lang-tone-3); }
+.flashcard-lang-word ruby[data-tone="4"] .flashcard-lang-rt { color: var(--lang-tone-4); }
+.flashcard-lang-word ruby[data-tone="5"] .flashcard-lang-rt { color: var(--lang-tone-5); }
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-rt {
+  font-weight: 700;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-word ruby[data-tone] .flashcard-lang-rt {
+  font-weight: 900;
+}
+
+/* Reading row: listen, then the script's reading aid. */
+.flashcard-lang-reading {
+  gap: 12px;
+  min-height: 46px;
+  margin-top: 14px;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-reading {
+  margin-top: 12px;
+}
+
+.flashcard-lang-headword .flashcard-play-button {
+  width: 44px;
+  height: 44px;
+  border-color: var(--lang-accent-line);
+  background: color-mix(in srgb, var(--sf-brand) 8%, transparent);
+  color: var(--sf-brand-text);
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-lang-headword .flashcard-play-button {
+  background: transparent;
+  color: var(--sf-brand);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-headword .flashcard-play-button {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 72%, white), var(--sf-brand) 45%, var(--sf-brand-hover));
+  color: #fff;
+}
+
+[data-reading-aid] {
+  transition: filter 300ms ease, opacity 300ms ease;
+}
+
+.flashcard-shell[data-card-blind="true"] .flashcard-face [data-reading-aid] {
+  filter: blur(7px);
+  opacity: 0.55;
+  user-select: none;
+}
+
+.flashcard-lang-blocks {
+  gap: 6px;
+}
+
+.flashcard-lang-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  box-sizing: border-box;
+  min-width: 48px;
+  height: 50px;
+  padding: 0 6px;
+  border: 1px solid var(--lang-chip-line);
+  border-radius: 12px;
+  background: var(--lang-chip-bg);
+}
+
+.flashcard-lang-block-text {
+  color: var(--sf-text);
+  font-family: var(--lang-sans);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.flashcard-lang-block-roman {
+  color: var(--sf-brand-text);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-lang-block-roman {
+  color: var(--sf-brand);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-block {
+  min-width: 50px;
+  height: 52px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  box-shadow: inset 0 0 0 1px var(--lang-chip-line);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-block-text {
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-block-roman {
+  color: var(--lang-holo-text);
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.flashcard-lang-kana {
+  gap: 4px;
+}
+
+.flashcard-lang-mora {
+  padding: 3px 7px;
+  border: 0 solid transparent;
+  border-width: 2px 0 2px 2px;
+  color: var(--sf-text);
+  font-family: var(--lang-sans);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.flashcard-lang-mora[data-high="true"] { border-top-color: var(--lang-pitch); }
+.flashcard-lang-mora[data-high="false"] { border-bottom-color: var(--lang-pitch); }
+.flashcard-lang-mora[data-step="true"] { border-left-color: var(--lang-pitch); }
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-mora {
+  border-width: 3px 0 3px 3px;
+  font-weight: 800;
+}
+
+.flashcard-lang-kana-line {
+  color: var(--sf-text-muted);
+  font-size: 12.5px;
+}
+
+.flashcard-lang-romaji {
+  color: var(--sf-brand-text);
+  font-weight: 650;
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-lang-romaji {
+  color: var(--sf-brand);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-kana-line {
+  font-size: 13px;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-romaji {
+  color: var(--lang-holo-text);
+  font-weight: 900;
+}
+
+.flashcard-lang-tones {
+  gap: 8px;
+}
+
+.flashcard-lang-tone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--lang-chip-line);
+  border-radius: 12px;
+  background: var(--lang-chip-bg);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.flashcard-lang-tone svg {
+  stroke-width: 2.6;
+}
+
+.flashcard-lang-tone[data-tone="1"] { color: var(--lang-tone-1); }
+.flashcard-lang-tone[data-tone="2"] { color: var(--lang-tone-2); }
+.flashcard-lang-tone[data-tone="3"] { color: var(--lang-tone-3); }
+.flashcard-lang-tone[data-tone="4"] { color: var(--lang-tone-4); }
+.flashcard-lang-tone[data-tone="5"] { color: var(--lang-tone-5); }
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-tone {
+  height: 46px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  box-shadow: inset 0 0 0 1px var(--lang-chip-line);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+/* Example and phrases */
+.flashcard-lang-label {
+  margin: 0;
+  color: var(--sf-text-muted);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.flashcard-lang-example {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--sf-text) 7%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--sf-text) 3%, transparent);
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-lang-example {
+  border-color: var(--lang-chip-line);
+  background: var(--lang-chip-bg);
+}
+
+.flashcard-lang-example-text {
+  margin: 4px 0 0;
+  color: var(--sf-text);
+  font-family: var(--lang-serif);
+  font-size: 16px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.flashcard-lang-example-text:lang(ja) {
+  font-size: 17px;
+  line-height: 1.9;
+}
+
+.flashcard-lang-example-word {
+  background: linear-gradient(transparent 62%, var(--lang-mark-bg) 62%);
+  color: var(--lang-mark);
+  font-weight: 700;
+}
+
+.flashcard-lang-example-rt {
+  color: var(--sf-text-muted);
+  font-family: var(--lang-sans);
+  font-size: 9.5px;
+  font-weight: 400;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-example {
+  margin-top: 14px;
+  padding: 10px 14px 11px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: color-mix(in srgb, var(--sf-text) 5%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-success) 38%, transparent);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-label {
+  color: var(--sf-brand-text);
+  font-family: var(--sf-font-display);
+  font-size: 11.5px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-example .flashcard-lang-label {
+  color: var(--lang-holo-text);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-example-text {
+  margin-top: 2px;
+  font-family: var(--lang-sans);
+  font-weight: 800;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-example-text:lang(ja) {
+  font-weight: 700;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-example-word {
+  background: linear-gradient(transparent 60%, var(--lang-mark-bg) 60%);
+}
+
+.flashcard-lang-phrases {
+  margin-top: 14px;
+}
+
+.flashcard-lang-phrase-list {
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flashcard-lang-phrase {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px dashed var(--lang-accent-line);
+  border-radius: 10px;
+  color: var(--sf-text);
+  font-family: var(--lang-serif);
+  font-size: 14px;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-phrases {
+  margin-top: 12px;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-phrase-list {
+  margin-top: 5px;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-phrase {
+  border: 0;
+  border-radius: 0;
+  background: var(--lang-chip-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 12%, transparent);
+  font-family: var(--lang-sans);
+  font-size: 13.5px;
+  font-weight: 800;
+  transform: skewX(-10deg);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-phrase > span {
+  transform: skewX(10deg);
+}
+
+/* Korean breaks between words, never inside one. */
+.flashcard-shell[data-card-kind="language"] :lang(ko) {
+  word-break: keep-all;
+}
+
+/* Bottom row: Say it with the speech locale, then the reading switch. */
+.flashcard-lang-actions {
+  gap: 8px;
+  padding: 16px 0;
+}
+
+.flashcard-lang-actions .flashcard-action {
+  gap: 7px;
+  min-height: 44px;
+}
+
+.flashcard-lang-speech-locale {
+  color: var(--sf-text-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* A narrow dock turns Say it into an icon button; the locale goes with its label. */
+@container (max-width: 340px) {
+  .flashcard-lang-speech-locale {
+    display: none;
+  }
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-lang-actions .flashcard-action {
+  border-color: var(--lang-chip-line);
+  background: var(--lang-chip-bg);
+}
+
+.flashcard-lang-switch {
+  padding: 0 12px;
+  color: var(--sf-text-muted);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.flashcard-lang-actions .flashcard-lang-switch[aria-pressed="true"] {
+  border-color: var(--lang-accent-line);
+  background: color-mix(in srgb, var(--sf-brand) 10%, transparent);
+  color: var(--sf-brand-text);
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-lang-actions .flashcard-lang-switch[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--sf-brand) 6%, transparent);
+  color: var(--sf-brand);
+}
+
+.flashcard-lang-switch-track {
+  position: relative;
+  flex-shrink: 0;
+  width: 26px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--lang-chip-line);
+}
+
+.flashcard-lang-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--sf-surface);
+  transition: left 200ms ease;
+}
+
+.flashcard-lang-switch[aria-pressed="true"] .flashcard-lang-switch-track {
+  background: var(--lang-switch-on);
+}
+
+.flashcard-lang-switch[aria-pressed="true"] .flashcard-lang-switch-knob {
+  left: 13px;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-actions {
+  padding: 16px 0 12px;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-actions .flashcard-action {
+  font-weight: 900;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-switch {
+  font-family: var(--sf-font-display);
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-actions .flashcard-lang-switch[aria-pressed="true"] {
+  background: var(--lang-switch-on);
+  color: var(--lang-switch-on-text);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-switch-track,
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-switch[aria-pressed="true"] .flashcard-lang-switch-track {
+  width: 12px;
+  height: 12px;
+  margin: 0 2px;
+  border-radius: 0;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-lang-switch-knob {
+  display: none;
+}
+
+/* Language-pack reveal: the paper card keeps its serif italic line without the ink rule. */
+.flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-reveal-dock {
+  padding: 0 20px 20px;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-reveal {
+  min-height: 56px;
+  font-size: 19px;
+  letter-spacing: 0.06em;
+}
+
+/* Back: the reading beside the word, and the example without quotation marks. */
+.flashcard-back-reading {
+  color: var(--sf-text-muted);
+  font-size: 13px;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-word {
+  font-family: var(--lang-serif);
+  font-size: 18px;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-lang-example-text {
+  margin: 0;
+  font-family: var(--lang-serif);
+  font-size: 18px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-lang-example-text:lang(ja) {
+  line-height: 1.9;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-back-example-word {
+  background: linear-gradient(transparent 62%, color-mix(in srgb, var(--sf-brand) 18%, transparent) 62%);
+  font-weight: 700;
+}
+
+.flashcard-back[data-card-kind="language"] .flashcard-lang-example-rt {
+  font-size: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reading-aid],
+  .flashcard-lang-switch-knob {
+    transition: none;
+  }
+}
+
+html[data-motion="reduced"] :is([data-reading-aid], .flashcard-lang-switch-knob) {
+  transition: none;
+}

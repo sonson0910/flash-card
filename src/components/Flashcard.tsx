@@ -22,6 +22,7 @@ import { CardAiAssistantModal } from './flashcard/CardAiAssistantModal';
 import { CardBack } from './flashcard/CardBack';
 import { CardEffectsLayer, useCardEffects } from './flashcard/CardEffectsLayer';
 import { CardFront } from './flashcard/CardFront';
+import { cardSideAnnouncement, cardSideStatus, isLanguagePackCard } from './flashcard/cardLanguage';
 import { useCardLook } from './flashcard/cardLook';
 import { useFlashcardAudio } from './flashcard/useFlashcardAudio';
 import { useFlashcardSpeechMatch } from './flashcard/useFlashcardSpeechMatch';
@@ -31,6 +32,12 @@ import type { LearningStateOutcome } from '../features/learning/learningStateCon
 import type { EditCardDialogContext } from '../features/cardEdit/EditCardDialog';
 import type { CardData } from '../types/card';
 import { useCourseSession } from '../features/courses/CourseGate';
+
+/** The card group's name: the word, then which of the card's two languages is showing. */
+const cardStatusMessage = msg({ id: 'flashcard.card.status', message: '{word} flashcard. {side}' });
+/** Blind mode on a language-pack card hides the reading aids (and the picture, when there is one). */
+const showReadingsMessage = msg({ id: 'flashcard.hints.show-readings', message: '{image, select, yes {Show image and readings} other {Show readings}}' });
+const hideReadingsMessage = msg({ id: 'flashcard.hints.hide-readings', message: '{image, select, yes {Hide image and readings} other {Hide readings}}' });
 
 const ReportCardDialog = lazy(() => import('../features/cardReport/ReportCardDialog').then(module => ({ default: module.ReportCardDialog })));
 const EditCardDialog = lazy(() => Promise.all([
@@ -114,6 +121,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
   const latestEditOpenChangeRef = useRef(onEditOpenChange);
   latestEditOpenChangeRef.current = onEditOpenChange;
   const [isBlindMode, setIsBlindMode] = useState(false);
+  const [showReading, setShowReading] = useState(true);
+  const isPackCard = isLanguagePackCard(data);
   const [showQuickQuiz, setShowQuickQuiz] = useState(false);
   const [isZenMode] = useZenGlassMode();
   const reduceMotion = useReducedMotion();
@@ -352,18 +361,19 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       role="group"
-      aria-label={i18n._(msg({ id: 'flashcard.card.status', message: '{word} flashcard. {side}' }).id, { word: data.word, side: isFlipped ? _(msg({ id: 'flashcard.card.showing-meaning', message: 'Showing the Vietnamese meaning.' })) : _(msg({ id: 'flashcard.card.showing-word', message: 'Showing the English word.' })) })}
+      aria-label={_({ ...cardStatusMessage, values: { word: data.word, side: cardSideStatus(i18n, data, isFlipped ? 'back' : 'front') } })}
       data-card-side={isFlipped ? 'back' : 'front'}
       data-card-tier={cardTier}
       data-flip-animation={reduceMotion ? 'reduced' : 'spatial'}
       data-card-mode={isZenMode ? 'zen' : 'standard'}
       data-card-look={cardLook}
+      data-card-kind={isPackCard ? 'language' : undefined}
       data-card-hovered={isHovered ? 'true' : 'false'}
       data-card-blind={isBlindMode ? 'true' : 'false'}
       data-card-effects="tilt spotlight aura flip star blind audio tier-rim hover-wings"
     >
       <CardEffectsLayer aura={aura} wings tier={cardTier} isHovered={isHovered} />
-      <span className="sr-only" aria-live="polite">{isFlipped ? <Trans {...msg({ context: 'flashcard.card.meaning-revealed', message: 'Vietnamese meaning revealed' })} /> : <Trans {...msg({ context: 'flashcard.card.word-revealed', message: 'English word revealed' })} />}</span>
+      <span className="sr-only" aria-live="polite">{cardSideAnnouncement(i18n, data, isFlipped ? 'back' : 'front')}</span>
       <AlertDialog.Root
         open={showConfirmDelete}
         onOpenChange={open => {
@@ -658,7 +668,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
               data-selected={isBlindMode ? 'true' : 'false'}
               className="flashcard-chrome-button flex min-h-11 min-w-11 items-center justify-center p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
               title={isBlindMode ? _(msg({ id: 'flashcard.hints.show', message: 'Show hints' })) : _(msg({ id: 'flashcard.hints.hide', message: 'Hide hints' }))}
-              aria-label={isBlindMode ? _(msg({ id: 'flashcard.hints.reveal', message: 'Reveal image and definition' })) : _(msg({ id: 'flashcard.hints.hide-content', message: 'Hide image and definition' }))}
+              aria-label={isPackCard
+                ? isBlindMode
+                  ? _({ ...showReadingsMessage, values: { image: supportedImageUrl ? 'yes' : 'no' } })
+                  : _({ ...hideReadingsMessage, values: { image: supportedImageUrl ? 'yes' : 'no' } })
+                : isBlindMode ? _(msg({ id: 'flashcard.hints.reveal', message: 'Reveal image and definition' })) : _(msg({ id: 'flashcard.hints.hide-content', message: 'Hide image and definition' }))}
               aria-pressed={isBlindMode}
             >
               {isBlindMode ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
@@ -716,6 +730,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
             supportedImageUrl={supportedImageUrl}
             imagePriority={imagePriority}
             isBlindMode={isBlindMode}
+            showReading={showReading}
+            toggleShowReading={() => setShowReading(value => !value)}
             audioSpeed={audioSpeed}
             toggleAudioSpeed={toggleAudioSpeed}
             playAudio={playAudio}

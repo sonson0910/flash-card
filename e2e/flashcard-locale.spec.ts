@@ -83,9 +83,11 @@ test('changing the UI locale updates a mounted card while content languages stay
   await expect(shell.locator('[data-card-headword] h2')).toHaveText('りんご');
 });
 
+// The switch hides the Latin aid of each script: romanization under each Hangul block, romaji under
+// the kana, pinyin over the characters.
 const readingCards = [
-  { language: 'ko', word: '결심', translation: 'quyết tâm', explanation: 'A firm decision.', category: 'TOPIK I', phonetic: '', reading: 'gyeolsim', label: 'Romanization' },
-  { language: 'ja', word: '日本', translation: 'Nhật Bản', explanation: 'The country of Japan.', category: 'JLPT N5', phonetic: 'にっぽん', reading: 'にっぽん', label: 'Reading' },
+  { language: 'ko', word: '결심', translation: 'quyết tâm', explanation: 'A firm decision.', category: 'TOPIK I', phonetic: '', reading: 'gyeol', label: 'Romanization' },
+  { language: 'ja', word: '日本', translation: 'Nhật Bản', explanation: 'The country of Japan.', category: 'JLPT N5', phonetic: 'にっぽん', reading: 'nippon', label: 'Romaji' },
   { language: 'zh', word: '汉语', translation: 'tiếng Hán', explanation: 'The Chinese language.', category: 'HSK 1', phonetic: 'hàn yǔ', reading: 'hàn', label: 'Pinyin' },
 ] as const;
 
@@ -140,7 +142,7 @@ for (const readingCard of readingCards) for (const theme of readingThemes) for (
     const shell = await seedAndOpenReadingCard(page, readingCard, seedCards, seedCourseProfile, signIn);
     const toggle = shell.getByRole('button', { name: new RegExp(`Toggle ${readingCard.label}`) });
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await expect(shell.getByText(readingCard.reading, { exact: false })).toBeVisible();
+    await expect(shell.getByText(readingCard.reading, { exact: false }).first()).toBeVisible();
     const target = await toggle.boundingBox();
     expect(target, 'reading toggle must have a measurable target').not.toBeNull();
     expect(target!.width, 'reading toggle width').toBeGreaterThanOrEqual(44);
@@ -169,7 +171,7 @@ for (const locale of [
     await expect(page.locator('html')).toHaveAttribute('lang', locale.document);
     const toggle = shell.locator('[data-reading-toggle]');
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await expect(shell.getByText(readingCard.reading, { exact: false })).toBeVisible();
+    await expect(shell.getByText(readingCard.reading, { exact: false }).first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), '360px card must not overflow horizontally').toBe(true);
     const screenshot = testInfo.outputPath(`flashcard-reading-ko-${locale.query}-360px.png`);
     await shell.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });

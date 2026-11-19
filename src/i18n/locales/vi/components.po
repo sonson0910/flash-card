@@ -1339,3 +1339,94 @@ msgstr "Quản lý liên kết chia sẻ"
 msgctxt "shell.share.importing"
 msgid "Adding {count} cards to your new deck…"
 msgstr "Đang thêm {count} thẻ vào bộ thẻ mới…"
+
+#: src/components/flashcard/CardBack.tsx:265
+#: src/components/flashcard/CardBack.tsx:396
+msgctxt "flashcard.back-to-front"
+msgid "Back to front"
+msgstr "Quay lại mặt trước"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:22
+msgid "flashcard.back.explanation-label"
+msgstr "{language, select, vi {Giải thích bằng tiếng Việt} en {Giải thích bằng tiếng Anh} other {Giải thích}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:20
+msgid "flashcard.back.in-meaning-language"
+msgstr "{language, select, vi {Nghĩa tiếng Việt} en {Nghĩa tiếng Anh} other {Nghĩa}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:21
+msgid "flashcard.back.meaning-label"
+msgstr "{language, select, vi {Nghĩa tiếng Việt} en {Nghĩa tiếng Anh} other {Nghĩa}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:19
+msgid "flashcard.back.meaning-language"
+msgstr "{language, select, vi {Tiếng Việt} en {Tiếng Anh} other {Nghĩa}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:15
+msgid "flashcard.card.meaning-language-revealed"
+msgstr "{language, select, vi {Đã hiện nghĩa tiếng Việt} en {Đã hiện nghĩa tiếng Anh} other {Đã hiện nghĩa}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:13
+msgid "flashcard.card.showing-meaning-language"
+msgstr "{language, select, vi {Đang hiển thị nghĩa tiếng Việt.} en {Đang hiển thị nghĩa tiếng Anh.} other {Đang hiển thị nghĩa.}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:14
+msgid "flashcard.card.showing-word-language"
+msgstr "{language, select, en {Đang hiển thị từ tiếng Anh.} ko {Đang hiển thị từ tiếng Hàn.} ja {Đang hiển thị từ tiếng Nhật.} zh {Đang hiển thị từ tiếng Trung.} other {Đang hiển thị từ.}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:16
+msgid "flashcard.card.word-language-revealed"
+msgstr "{language, select, en {Đã hiện từ tiếng Anh} ko {Đã hiện từ tiếng Hàn} ja {Đã hiện từ tiếng Nhật} zh {Đã hiện từ tiếng Trung} other {Đã hiện từ}}"
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:40
+msgid "flashcard.hints.hide-readings"
+msgstr "{image, select, yes {Ẩn hình ảnh và phiên âm} other {Ẩn phiên âm}}"
+
+#. js-lingui-explicit-id
+#: src/components/Flashcard.tsx:39
+msgid "flashcard.hints.show-readings"
+msgstr "{image, select, yes {Hiện hình ảnh và phiên âm} other {Hiện phiên âm}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/LanguageCardFace.tsx:69
+msgid "flashcard.reading.pitch-accent-label"
+msgstr "Trọng âm cao độ: {name}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/LanguageCardFace.tsx:68
+msgid "flashcard.reading.pitch-type"
+msgstr "{type, select, heiban {Heiban} atamadaka {Atamadaka} nakadaka {Nakadaka} other {Odaka}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/LanguageCardFace.tsx:211
+msgid "flashcard.reading.toggle-romaji"
+msgstr "Romaji"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:18
+msgid "flashcard.return-to-word-language-label"
+msgstr "{language, select, en {Trở về mặt tiếng Anh của {word}} ko {Trở về mặt tiếng Hàn của {word}} ja {Trở về mặt tiếng Nhật của {word}} zh {Trở về mặt tiếng Trung của {word}} other {Trở về mặt trước của {word}}}"
+
+#. js-lingui-explicit-id
+#: src/components/flashcard/cardLanguage.ts:17
+msgid "flashcard.reveal-meaning-language-label"
+msgstr "{language, select, vi {Xem nghĩa tiếng Việt của {word}} en {Xem nghĩa tiếng Anh của {word}} other {Xem nghĩa của {word}}}"
+
+#: src/components/flashcard/LanguageCardFace.tsx:195
+msgctxt "flashcard.language-card.phrases"
+msgid "Common phrases"
+msgstr "Cụm hay gặp"
+
+#: src/components/flashcard/LanguageCardFace.tsx:176
+msgctxt "flashcard.language-card.example"
+msgid "Example"
+msgstr "Ví dụ"

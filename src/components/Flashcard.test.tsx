@@ -242,7 +242,7 @@ describe('Flashcard mobile controls', () => {
     expect(html).not.toContain('flashcard-reveal-button');
     expect(html).not.toContain('box-border flex-shrink-0 overflow-hidden rounded-b-[31px]');
     expect(html).not.toContain('Flip to the Vietnamese side');
-    expect(html).toContain('aria-label="flashcard.reveal-meaning-label"');
+    expect(html).toContain('aria-label="Reveal the Vietnamese meaning of focus"');
   });
 
   it('keeps the yellow mnemonic hover free of scale and all-property transitions', () => {
@@ -327,6 +327,63 @@ describe('Flashcard mobile controls', () => {
 });
 
 describe('Flashcard language presentation', () => {
+  const koreanCard = {
+    id: 'pack-ko',
+    word: '결심하다',
+    translation: 'quyết tâm',
+    explanation: 'To make a firm decision to do something.',
+    phonetic: '',
+    emoji: '',
+    category: 'TOPIK II',
+    partOfSpeech: 'verb',
+    audioUrl: null,
+    imageUrl: null,
+    language: 'ko',
+    translationLanguage: 'vi',
+    exampleSentence: '올해는 한국어를 꼭 배우기로 결심했어요.',
+    collocations: ['결심을 하다', '굳게 결심하다'],
+  };
+
+  it('shows a language-pack card\'s example and phrases on its front in place of the definition', () => {
+    const front = renderCard(<Flashcard data={koreanCard} />);
+
+    expect(front).toContain('data-card-kind="language"');
+    expect(front).toContain('data-card-section="example"');
+    expect(front).toContain('data-example-word="true" class="flashcard-lang-example-word">결심했어요</span>');
+    expect(front).toContain('data-card-section="phrases"');
+    expect(front).toContain('<span>굳게 결심하다</span>');
+    expect(front).not.toContain('To make a firm decision to do something.');
+    expect(front).toContain('data-reading-toggle="true"');
+    expect(front).toContain('aria-label="Reveal the Vietnamese meaning of 결심하다"');
+    expect(front).toContain('aria-label="결심하다 flashcard. Showing the Korean word."');
+  });
+
+  it('leaves out the example and phrases a language-pack card does not carry', () => {
+    const front = renderCard(<Flashcard data={{ ...koreanCard, exampleSentence: '  ', collocations: [] }} />);
+
+    expect(front).toContain('data-card-kind="language"');
+    expect(front).not.toContain('data-card-section="example"');
+    expect(front).not.toContain('data-card-section="phrases"');
+    expect(front).not.toContain('To make a firm decision to do something.');
+  });
+
+  it('names the card\'s own languages on the back of a language-pack card', () => {
+    const back = renderCard(<Flashcard data={{ ...koreanCard, translationLanguage: 'en', translation: 'to decide' }} initialSide="back" />);
+
+    expect(back).toContain('aria-label="결심하다 flashcard. Showing the English meaning."');
+    expect(back).toContain('aria-label="Return to the Korean side of 결심하다"');
+    expect(back).toContain('>In English<');
+  });
+
+  it('keeps the definition and English names on an English card', () => {
+    const front = renderCard(<Flashcard data={{ ...koreanCard, id: 'english', word: 'decide', language: 'en', exampleSentence: 'We decide today.' }} />);
+
+    expect(front).not.toContain('data-card-kind="language"');
+    expect(front).not.toContain('data-card-section="example"');
+    expect(front).toContain('To make a firm decision to do something.');
+    expect(front).toContain('aria-label="decide flashcard. Showing the English word."');
+  });
+
   it.each(['en', 'ja', 'zh'])('does not add the Korean Hangul breakdown to %s cards', language => {
     const markup = renderCard(<Flashcard data={{
       id: `no-hangul-panel-${language}`,
