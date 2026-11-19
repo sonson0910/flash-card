@@ -794,3 +794,72 @@ describe('achievements record', () => {
     }
   });
 });
+
+describe('study time record', () => {
+  const statsPath = 'users/owner/profile/stats';
+  const run = async (stats: DocumentData | undefined, verifiedAction: Parameters<typeof prepareVerifiedGamification>[3]) => {
+    const test = harness(stats ? { [statsPath]: stats } : {});
+    const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', verifiedAction);
+    return { ...test, prepared, studyTimeV1: prepared.statsPatch.studyTimeV1 as Record<string, unknown> | undefined };
+  };
+  const settled = (overrides: Record<string, unknown> = {}) => ({
+    verifiedXp: 40, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
+    streakV1: settledStreak(), achievementsV1: settledAchievements(), ...overrides,
+  });
+  const at = (iso: string) => new Date(iso);
+
+  it('starts a new account with lifetime coverage and nothing credited to its first review', async () => {
+    const first = await run(undefined, action({ timeZone: 'UTC' }));
+    expect(first.prepared.outcome.studyTimeMs).toBe(0);
+    expect(first.studyTimeV1).toEqual({
+      coverageStartedOn: '2026-03-08', fromFirstAction: true, lastActionAtMs: Date.parse('2026-03-08T10:30:00.000Z'), totalMs: 0, days: {},
+    });
+  });
+
+  it('seeds the chain of an existing account from its last verified review, with no extra read', async () => {
+    const result = await run(
+      settled({ lastVerifiedReviewAt: Timestamp.fromDate(at('2026-03-08T10:29:48.000Z')) }),
+      action({ timeZone: 'UTC' }),
+    );
+    expect(result.reads).toEqual([statsPath, awardPath('word-focus', '2026-03-08')]);
+    expect(result.prepared.outcome.studyTimeMs).toBe(12_000);
+    expect(result.studyTimeV1).toEqual({
+      coverageStartedOn: '2026-03-08', fromFirstAction: false, lastActionAtMs: Date.parse('2026-03-08T10:30:00.000Z'), totalMs: 12_000,
+      days: { '2026-03-08': { activeMs: 12_000, reviewMs: 12_000, timedReviews: 1 } },
+    });
+  });
+
+  it('credits a practice completion from its session start and leaves card creation out', async () => {
+    const stored = {
+      coverageStartedOn: '2026-03-01', fromFirstAction: true, lastActionAtMs: Date.parse('2026-03-08T10:00:00.000Z'), totalMs: 1_000,
+      days: { '2026-03-07': { activeMs: 1_000, reviewMs: 1_000, timedReviews: 1 } },
+    };
+    const practice = await run(settled({ studyTimeV1: stored }), {
+      kind: 'match', receivedAt: at('2026-03-08T10:30:45.000Z'), timeZone: 'UTC', resultXp: 20,
+      practiceStartedAt: at('2026-03-08T10:30:00.000Z'), practiceCards: 6,
+    });
+    expect(practice.prepared.outcome.studyTimeMs).toBe(45_000);
+    expect(practice.studyTimeV1).toMatchObject({
+      totalMs: 46_000, days: { '2026-03-08': { activeMs: 45_000, reviewMs: 0, timedReviews: 0 } },
+    });
+    const create = await run(settled({ studyTimeV1: stored }), action({ kind: 'create', timeZone: 'UTC' }));
+    expect(create.prepared.outcome).not.toHaveProperty('studyTimeMs');
+    expect(create.studyTimeV1).toBeUndefined();
+  });
+
+  it('starts an unusable stored record over and deletes its stale keys', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const result = await run(settled({
+        lastVerifiedReviewAt: Timestamp.fromDate(at('2026-03-08T10:29:00.000Z')),
+        studyTimeV1: { coverageStartedOn: '2026-03-01', fromFirstAction: true, lastActionAtMs: -1, totalMs: 9, days: {}, legacy: 1 },
+      }), action({ timeZone: 'UTC' }));
+      expect(result.prepared.outcome.studyTimeMs).toBe(60_000);
+      expect(isDeleteSentinel(result.studyTimeV1?.legacy)).toBe(true);
+      expect(result.studyTimeV1).toMatchObject({ coverageStartedOn: '2026-03-08', fromFirstAction: false, totalMs: 60_000 });
+      expect(warn).toHaveBeenCalledWith('Stored study time was unusable and starts over.');
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});

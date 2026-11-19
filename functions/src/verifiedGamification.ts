@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { parseAchievementRecords, parseAchievements } from './achievement-rules.js';
 import { backfilledAchievements, evaluateAchievements, isLateHour, loadAchievementBaseline } from './achievements.js';
 import { InputValidationError } from './inputValidation.js';
+import { nextStudyTime, parseStudyTime } from './study-time-rules.js';
 import {
   STREAK_MILESTONE_XP, STREAK_REWARD_RUN, advanceStreak, initialStreakState, isStreakChangeWorthShowing, parseStreakState,
   type StreakChange,
@@ -21,6 +22,7 @@ const DAILY_GOALS_FIELD = 'dailyGoalsV1';
 const DAILY_GOALS_DAYS = 8;
 const STREAK_FIELD = 'streakV1';
 const ACHIEVEMENTS_FIELD = 'achievementsV1';
+const STUDY_TIME_FIELD = 'studyTimeV1';
 const WEB_WANDERER_BADGE = 'web-wanderer';
 
 type ActionKind = 'review' | 'create' | 'quiz' | 'spelling' | 'match';
@@ -43,6 +45,10 @@ export type VerifiedGamificationAction = {
   };
   /** Correct answers of a verified spelling session. */
   correctAnswers?: number;
+  /** Server time the completed practice session started. */
+  practiceStartedAt?: Date;
+  /** Cards in the completed practice session. */
+  practiceCards?: number;
 };
 
 export type VerifiedGamificationOutcome = {
@@ -55,6 +61,8 @@ export type VerifiedGamificationOutcome = {
   xpAwarded?: number;
   reviewActivity?: VerifiedReviewActivity;
   streakChange?: StreakChange;
+  /** Study time credited to this review or practice completion, in milliseconds. */
+  studyTimeMs?: number;
 };
 
 export type PreparedVerifiedGamification = {
@@ -445,6 +453,27 @@ export async function prepareVerifiedGamification(
     before: { verifiedXp: xp, streak: Math.max(streak, streakState.best, heldStreak) },
     after: { verifiedXp: nextXp, streak: Math.max(nextStreak, streakAdvance.state.best, heldStreak) },
   }) : undefined;
+  // Study time is credited to reviews and practice completions; creating a card is not counted.
+  const storedStudyTime = parseStudyTime(stats[STUDY_TIME_FIELD]);
+  if (!storedStudyTime && stats[STUDY_TIME_FIELD] !== undefined) console.warn('Stored study time was unusable and starts over.');
+  const studyTime = action.kind === 'create' ? undefined : nextStudyTime({
+    stored: storedStudyTime,
+    seed: {
+      lastActionAtMs: lastVerifiedReviewAt instanceof Timestamp ? lastVerifiedReviewAt.toMillis() : null,
+      fromFirstAction: !statsSnapshot.exists || (xp === 0 && stats.lastVerifiedStudyDay == null),
+    },
+    action: {
+      atMs: action.receivedAt.getTime(),
+      studyDay,
+      ...(isReview ? {} : {
+        practice: {
+          startedAtMs: action.practiceStartedAt instanceof Date && Number.isFinite(action.practiceStartedAt.getTime())
+            ? action.practiceStartedAt.getTime() : null,
+          cards: isCount(action.practiceCards) ? action.practiceCards : 0,
+        },
+      }),
+    },
+  });
   const streakChange: StreakChange | undefined = isReview && isStreakChangeWorthShowing(streakAdvance.change)
     ? { ...streakAdvance.change, ...(milestoneXp > 0 ? { milestoneXp } : {}) }
     : undefined;
@@ -456,6 +485,7 @@ export async function prepareVerifiedGamification(
       ...(action.kind === 'review' ? { xpAwarded } : {}),
       ...(activityOutcome ? { reviewActivity: activityOutcome } : {}),
       ...(streakChange ? { streakChange } : {}),
+      ...(studyTime ? { studyTimeMs: studyTime.creditMs } : {}),
     },
     statsRef: refs.stats,
     rewardsRef: hasRewardsPatch ? refs.rewards : undefined,
@@ -475,6 +505,7 @@ export async function prepareVerifiedGamification(
       [DAILY_GOALS_FIELD]: replacingMergePatch(stats[DAILY_GOALS_FIELD], dailyGoals),
       [STREAK_FIELD]: replacingMergePatch(stats[STREAK_FIELD], { ...streakAdvance.state }),
       ...(achievements?.patch ? { [ACHIEVEMENTS_FIELD]: achievements.patch } : {}),
+      ...(studyTime ? { [STUDY_TIME_FIELD]: replacingMergePatch(stats[STUDY_TIME_FIELD], { ...studyTime.state }) } : {}),
     },
     ...(xpGained > 0 ? { historyRef: refs.history, historyPatch: { verifiedByDayV1: { [studyDay]: FieldValue.increment(xpGained) } } } : {}),
     hasXpAward,

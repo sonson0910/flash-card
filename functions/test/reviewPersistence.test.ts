@@ -367,6 +367,8 @@ describe('review persistence', () => {
       expect(result.gamification).toMatchObject({
         xp: 14_501, level: 13, streak: 30, events: ['streak', 'levelup'], rewardTimeZone: 'UTC',
         streakChange: { freezesUsed: 0, freezesEarned: 1, milestone: 30, milestoneXp: 100 },
+        // No earlier verified review to chain from, so nothing is credited yet; the replay returns the same.
+        studyTimeMs: 0,
         reviewActivity: {
           targetLanguage: 'en', coverageStartedOn: '2026-09-27',
           days: { '2026-09-27': { reviewed: 1, again: 0, hard: 0, good: 0, easy: 1 } },

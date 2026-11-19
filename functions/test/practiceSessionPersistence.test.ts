@@ -141,6 +141,24 @@ describe('practice session persistence', () => {
     expect(test.writes[0].data.achievementsV1).toMatchObject({ counters: { spellingCorrect: 2, activeDays: 1, bestDayXp: 10 } });
   });
 
+  it('credits the study time since the session started on the server', async () => {
+    const test = harness({
+      'users/owner/cards/card-1': card('card-1', 'hello', 'xin chào'),
+      'users/owner/cards/card-2': card('card-2', 'bye', 'tạm biệt'),
+    });
+    await startPracticeSessionV1(test.database, 'owner', request(), new Date('2026-09-27T10:00:00.000Z'));
+    const path = 'users/owner/practice_sessions/practice-1';
+    test.values.set(path, { ...test.values.get(path)!, createdAt: new Date('2026-09-27T10:00:00.000Z') });
+    const result = await completePracticeSessionV1(test.database, 'owner', {
+      sessionId: 'practice-1', completionId: 'complete-1', timeZone: 'UTC', answers: { responses: { 'card-1': 'hello', 'card-2': 'bye' } },
+    }, new Date('2026-09-27T10:01:00.000Z'));
+    // Two cards are credited at most 20 s each.
+    expect(result.outcome).toMatchObject({ studyTimeMs: 40_000 });
+    expect(test.writes.find(write => write.path === 'users/owner/profile/stats')?.data.studyTimeV1).toMatchObject({
+      fromFirstAction: true, days: { '2026-09-27': { activeMs: 40_000, reviewMs: 0, timedReviews: 0 } },
+    });
+  });
+
   it('accepts legacy spelling answer keys without a target language', async () => {
     const test = harness({
       'users/owner/cards/card-1': card('card-1', 'hello', 'xin chào'),
