@@ -6,12 +6,19 @@
     --pg-edge: var(--sf-border);
     --pg-success-text: color-mix(in srgb, var(--sf-success) 82%, var(--sf-text));
     --pg-warning-text: color-mix(in srgb, var(--sf-reward) 45%, var(--sf-text));
+    --pg-warning-line: color-mix(in srgb, var(--sf-reward) 45%, transparent);
+    --pg-warning-edge: color-mix(in srgb, var(--sf-reward) 60%, transparent);
     display: flex;
     min-height: 100dvh;
     flex-direction: column;
-    background: var(--sf-canvas);
     color: var(--sf-text);
   }
+
+  /* The page background and its fixed grain or star layer come from the app-canvas and
+     claude-app-shell classes on the root; the content sits above that layer as in the shell. */
+  .profile-gate__bar,
+  .profile-gate__main,
+  .profile-gate__footer { position: relative; z-index: 1; }
 
   .profile-gate__bar {
     display: flex;
@@ -228,7 +235,7 @@
   }
 
   .profile-gate__note--warning {
-    border-color: color-mix(in srgb, var(--sf-reward) 45%, transparent);
+    border-color: var(--pg-warning-line);
     background-color: color-mix(in srgb, var(--sf-reward) 12%, var(--sf-surface));
   }
 
@@ -277,9 +284,9 @@
   .profile-gate__fact {
     margin: 0;
     padding: 10px 14px;
-    border: 1px solid color-mix(in srgb, var(--sf-reward) 45%, transparent);
+    border: 1px solid var(--pg-warning-line);
     border-radius: 999px;
-    --sf-chamfer-edge: color-mix(in srgb, var(--sf-reward) 60%, transparent);
+    --sf-chamfer-edge: var(--pg-warning-edge);
   }
 
   .profile-gate__fact dt { color: var(--sf-text-muted); font-size: 11px; font-weight: 700; }
@@ -327,9 +334,9 @@
   .profile-gate__tile--next span { color: var(--sf-brand-text); }
 
   .profile-gate__tile--warning {
-    border-color: color-mix(in srgb, var(--sf-reward) 45%, transparent);
+    border-color: var(--pg-warning-line);
     background-color: color-mix(in srgb, var(--sf-reward) 12%, var(--sf-surface));
-    --sf-chamfer-edge: color-mix(in srgb, var(--sf-reward) 60%, transparent);
+    --sf-chamfer-edge: var(--pg-warning-edge);
   }
 
   .profile-gate__tile--warning strong,
@@ -387,7 +394,11 @@
   html[data-theme-family=crystal]:not(.dark) .profile-gate {
     --pg-accent: color-mix(in srgb, var(--sf-success) 60%, var(--sf-text));
     --pg-success-text: color-mix(in srgb, var(--sf-success) 60%, var(--sf-text));
-    --pg-warning-text: color-mix(in srgb, var(--sf-reward) 30%, var(--sf-text));
+    /* The light reward colour is a pale yellow: it stays the outline, and the label mixes it with the
+       light theme's orange and the text colour to reach AA on the pale panels. */
+    --pg-warning-text: color-mix(in srgb, color-mix(in srgb, var(--sf-reward) 40%, var(--sf-rating-hard)) 55%, var(--sf-text));
+    --pg-warning-line: var(--sf-reward);
+    --pg-warning-edge: var(--sf-reward);
   }
 
   html[data-theme-family=crystal] .profile-gate__pill {
@@ -419,10 +430,26 @@
   }
 
   html[data-theme-family=crystal] .profile-gate__title { text-shadow: 0 0 18px color-mix(in srgb, var(--sf-brand) 45%, transparent); }
+
+  /* Crystal light page titles run from the text colour into crimson, as the light Paths title does;
+     the gradient repeats per line so a wrapped title keeps it on every line. */
+  html[data-theme-family=crystal]:not(.dark) .profile-gate__title {
+    background-image: linear-gradient(180deg, var(--sf-text) 0%, var(--sf-text) 44%, color-mix(in srgb, var(--sf-brand-hover) 90%, var(--sf-text)) 56%, color-mix(in srgb, var(--sf-brand-hover) 65%, var(--sf-text)) 100%);
+    background-size: 100% 1lh;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 2px 0 color-mix(in srgb, var(--sf-surface) 80%, transparent)) drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 26%, transparent));
+  }
   html[data-theme-family=crystal] .profile-gate__panel { box-shadow: none; }
 
   html[data-theme-family=crystal] .profile-gate__field > label,
   html[data-theme-family=crystal] .profile-gate__fact dt { letter-spacing: .06em; text-transform: uppercase; }
+
+  html[data-theme-family=crystal] .profile-gate__control,
+  html[data-theme-family=crystal] .profile-gate__tile,
+  html[data-theme-family=crystal] .profile-gate__fact dd { text-transform: uppercase; }
 
   html[data-theme-family=crystal] .profile-gate__control {
     border-color: transparent;
@@ -439,7 +466,8 @@
   }
 
   html[data-theme-family=crystal] .profile-gate__note--warning {
-    border-color: color-mix(in srgb, var(--sf-reward) 45%, transparent);
+    border-color: var(--pg-warning-line);
+    --sf-chamfer-edge: var(--pg-warning-edge);
     background-color: color-mix(in srgb, var(--sf-reward) 12%, transparent);
   }
 
@@ -473,7 +501,11 @@
   }
 
   /* Classic dark keeps the brand colour for the main action, as on the dark boards. */
-  html[data-theme-family=classic].dark .profile-gate__primary { background-color: var(--sf-brand); color: var(--sf-on-brand); }
+  html[data-theme-family=classic].dark .profile-gate__primary {
+    background-color: var(--sf-brand);
+    box-shadow: 0 16px 40px -14px color-mix(in srgb, var(--sf-brand) 80%, transparent), inset 0 1px 0 color-mix(in srgb, var(--sf-text) 50%, transparent);
+    color: var(--sf-on-brand);
+  }
   html[data-theme-family=classic].dark .profile-gate__primary:hover { background-color: var(--sf-brand-hover); }
 
   @media (max-width: 767px) {

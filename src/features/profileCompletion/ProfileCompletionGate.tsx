@@ -97,7 +97,8 @@ function GateFrame({ family, returnStatus, onSignOut, signOutDisabled, footer, o
 }) {
   const { _ } = useLingui();
   const [accountDataOpen, setAccountDataOpen] = useState(false);
-  return <div className="profile-gate app-canvas">
+  // The app shell's page classes paint the same theme atmosphere behind the gate.
+  return <div className="profile-gate app-canvas claude-app-shell">
     <header className="profile-gate__bar">
       <BrandMark family={family} />
       <span className="profile-gate__pill crystal-chamfer-sm"><Trans {...msg({ id: 'profile-completion.account-access', message: 'Account access' })} /></span>
