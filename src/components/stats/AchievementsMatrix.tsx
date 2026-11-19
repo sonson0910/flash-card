@@ -9,6 +9,8 @@ import { CrystalPathWings } from '../../features/catalogWorkspace/CrystalPathWin
 import { useTheme } from '../../features/theme/ThemeProvider';
 import { readLumiEnabled } from '../../features/settings/lumi-preference';
 import type { LibraryStatsViewModel } from '../../features/library/libraryViewModel';
+import { sessionsToNextLevel } from '../../features/dailyLearning/todayScreenFacts';
+import { achievementsLevelFacts, useAchievementsLearner } from './AchievementsMatrixLearner';
 import './stats-board.css';
 import './achievements-board.css';
 
@@ -93,6 +95,11 @@ const remainingCopy = {
   words: msg({ id: 'stats.remaining-words', message: '{count, plural, one {# word} other {# words}}' }),
   xp: msg({ id: 'stats.remaining-xp', message: '{count} XP' }),
 } satisfies Record<BadgeUnitKind, ReturnType<typeof msg>>;
+const earnedCount = msg({ id: 'stats.earned-count', message: '{earned} of {total} earned' });
+const levelLabel = msg({ id: 'stats.level', message: 'Level' });
+const levelMeter = msg({ id: 'stats.level-meter', message: '<0>{xp}</0> / {next} XP to Level {level}' });
+const levelSessions = msg({ id: 'stats.level-sessions', message: '≈ {count, plural, one {# session} other {# sessions}}' });
+const crystalLevelLine = msg({ id: 'stats.level-line', message: 'Lv {level} · {xp} / {next} XP' });
 const lumiNextCopy = msg({ id: 'stats.lumi-next', message: '{remaining} to go for <0>{badge}</0>.' });
 const lumiDoneCopy = msg({ id: 'stats.lumi-done', message: 'Every badge is in bloom. Wonderful work!' });
 
@@ -203,7 +210,10 @@ export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatr
 
   const unlockedPercent = Math.round(unlockedIds.size / badges.length * 100);
   const studyXp = stats.xpChartData.reduce((sum, item) => sum + item.XP, 0);
-  const kicker = <p className="ach-kicker">{onBackToProgress ? _(text.achievements) : _(text.studyMilestones)} · {formatNumber(unlockedIds.size)} / {formatNumber(badges.length)} {_(text.unlocked)}</p>;
+  // The verified level from the app runtime, when the board is shown to a signed-in learner.
+  const levelFacts = achievementsLevelFacts(useAchievementsLearner());
+  const sessionsLeft = levelFacts ? sessionsToNextLevel(levelFacts.remaining, stats.xpChartData) : null;
+  const kicker = <p className="ach-kicker">{onBackToProgress ? _(text.achievements) : _(text.studyMilestones)} · {_({ ...earnedCount, values: { earned: formatNumber(unlockedIds.size), total: formatNumber(badges.length) } })}</p>;
   const heading = <h1 id="achievements-heading" className="ach-title text-balance"><Trans {...wordGardenTitle} components={{ 0: <em className="ach-title-accent" /> }} /></h1>;
   const backButton = onBackToProgress && <button type="button" onClick={onBackToProgress} className="ach-back crystal-chamfer-sm inline-flex min-h-11 cursor-pointer items-center gap-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none"><ArrowLeft size={16} aria-hidden="true" />{_(text.backToProgress)}</button>;
   const grid = <div data-achievement-grid className="ach-grid">{badges.map((badge, index) => <BadgeCard key={badge.id} badge={badge} index={index} isCrystal={isCrystal} isNewlyUnlocked={celebratingIds.has(badge.id)} />)}</div>;
@@ -228,7 +238,8 @@ export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatr
               <span className="ach-emblem" aria-hidden="true"><span className="ach-emblem-face">{formatNumber(unlockedIds.size)}</span></span>
               <div className="min-w-0"><p className="ach-emblem-name">{_(text.badges)}</p>{kicker}</div>
             </div>
-            <span className="ach-emblem-bar" aria-hidden="true"><span style={{ width: `${unlockedPercent}%` }} /></span>
+            {levelFacts && <p className="ach-emblem-level tabular-nums" data-learner-level={levelFacts.level}>{_({ ...crystalLevelLine, values: { level: formatNumber(levelFacts.level), xp: formatNumber(levelFacts.xp), next: formatNumber(levelFacts.next) } })}</p>}
+            <span className="ach-emblem-bar" aria-hidden="true"><span style={{ width: `${levelFacts ? levelFacts.percent : unlockedPercent}%` }} /></span>
           </div>
           <div className="ach-bloom-card crystal-chamfer" data-achievement-summary>
             <p className="ach-side-title">{_(text.cardsByBloom)}</p>
@@ -264,6 +275,7 @@ export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatr
     </section>;
   }
 
+  const ringFraction = levelFacts ? levelFacts.percent / 100 : unlockedIds.size / badges.length;
   return <section className="achievements-board achievements-board--classic" aria-labelledby="achievements-heading">
     <span className="sr-only" aria-live="polite">{celebrationMessage}</span>
     {backButton}
@@ -271,20 +283,29 @@ export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatr
       <div className="ach-ring" aria-hidden="true">
         <svg viewBox="0 0 150 150" className="ach-ring-svg" focusable="false">
           <circle className="ach-ring-track" cx="75" cy="75" r="66" />
-          {unlockedIds.size > 0 && <circle className="ach-ring-value" cx="75" cy="75" r="66" strokeDasharray={`${(RING_CIRCUMFERENCE * unlockedIds.size / badges.length).toFixed(1)} ${RING_CIRCUMFERENCE.toFixed(1)}`} />}
+          {ringFraction > 0 && <circle className="ach-ring-value" cx="75" cy="75" r="66" strokeDasharray={`${(RING_CIRCUMFERENCE * ringFraction).toFixed(1)} ${RING_CIRCUMFERENCE.toFixed(1)}`} />}
         </svg>
-        <span className="ach-ring-core"><span className="ach-ring-label">{_(text.unlocked)}</span><span className="ach-ring-number">{formatNumber(unlockedIds.size)}</span></span>
+        <span className="ach-ring-core"><span className="ach-ring-label">{levelFacts ? _(levelLabel) : _(text.unlocked)}</span><span className="ach-ring-number">{formatNumber(levelFacts ? levelFacts.level : unlockedIds.size)}</span></span>
       </div>
       <div className="ach-hero-main">
         {kicker}
         {heading}
-        <div className="ach-meter" data-featured-achievement data-badge-id={featuredBadge.id}>
-          <div className="ach-meter-row">
-            <span>{allEarned ? _(text.allEarned) : <Trans {...nextBadgeMeter} values={{ current: formatNumber(featuredBadge.current), target: formatNumber(featuredBadge.target), unit: featuredBadge.unit, badge: featuredBadge.title }} components={{ 0: <span className="ach-mono" /> }} />}</span>
-            <span className="tabular-nums">{formatNumber(allEarned ? 100 : featuredBadge.progress)}%</span>
+        {levelFacts
+          ? <div className="ach-meter" data-learner-level={levelFacts.level}>
+            <div className="ach-meter-row">
+              <span><Trans {...levelMeter} values={{ xp: formatNumber(levelFacts.xp), next: formatNumber(levelFacts.next), level: formatNumber(levelFacts.level + 1) }} components={{ 0: <span className="ach-mono" /> }} /></span>
+              {/* The board estimates the sessions left; without enough recent study days the share of the level stands in. */}
+              <span className="tabular-nums">{sessionsLeft !== null ? _({ ...levelSessions, values: { count: sessionsLeft } }) : `${formatNumber(levelFacts.percent)}%`}</span>
+            </div>
+            <span className="ach-meter-track" aria-hidden="true"><span className="ach-meter-fill" style={{ width: `${levelFacts.percent}%` }} /></span>
           </div>
-          <span className="ach-meter-track" aria-hidden="true"><span className="ach-meter-fill" style={{ width: `${allEarned ? 100 : featuredBadge.progress}%` }} /></span>
-        </div>
+          : <div className="ach-meter" data-featured-achievement data-badge-id={featuredBadge.id}>
+            <div className="ach-meter-row">
+              <span>{allEarned ? _(text.allEarned) : <Trans {...nextBadgeMeter} values={{ current: formatNumber(featuredBadge.current), target: formatNumber(featuredBadge.target), unit: featuredBadge.unit, badge: featuredBadge.title }} components={{ 0: <span className="ach-mono" /> }} />}</span>
+              <span className="tabular-nums">{formatNumber(allEarned ? 100 : featuredBadge.progress)}%</span>
+            </div>
+            <span className="ach-meter-track" aria-hidden="true"><span className="ach-meter-fill" style={{ width: `${allEarned ? 100 : featuredBadge.progress}%` }} /></span>
+          </div>}
       </div>
       <dl className="ach-tiles" data-achievement-summary>
         {[[_(text.studyXp), studyXp], [_(text.reviewed), stats.reviewed], [_(text.mastered), stats.learned]].map(([label, value]) => <div key={label as string} className="ach-tile"><dt>{label}</dt><dd className="tabular-nums">{formatNumber(value as number)}</dd></div>)}

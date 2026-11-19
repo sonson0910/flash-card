@@ -10,6 +10,7 @@ import { useUserReducedMotion } from '../../lib/motionPreference';
 import { useTheme } from '../theme/ThemeProvider';
 import { useFocusModePreference } from './focus-mode-preference';
 import { applyLumiEnabled, readLumiEnabled } from './lumi-preference';
+import { DEFAULT_SETTINGS_SECTION, type SettingsSectionId } from './settings-sections';
 import './settings-theme.css';
 import './settings-screen.css';
 
@@ -22,19 +23,18 @@ const AccountDataSection = lazy(() => Promise.all([
   import('../account/AccountDataSection'), loadCatalog(getActiveUiLocale(), 'account'),
 ]).then(([module]) => ({ default: module.AccountDataSection })));
 
-export const SETTINGS_SECTIONS = ['appearance', 'language', 'reminders', 'sounds', 'data'] as const;
-export type SettingsSectionId = typeof SETTINGS_SECTIONS[number];
-
-/** A `?section=` link opens that section once; the page never writes the parameter back. */
-const readSectionParam = (): SettingsSectionId => {
-  if (typeof window === 'undefined') return 'appearance';
-  const value = new URLSearchParams(window.location.search).get('section');
-  return (SETTINGS_SECTIONS as readonly string[]).includes(value ?? '') ? value as SettingsSectionId : 'appearance';
-};
+export { SETTINGS_SECTIONS, type SettingsSectionId } from './settings-sections';
 
 export interface SettingsScreenProps {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
   readonly focusIntent?: number;
+  /**
+   * The open section. The app runtime passes the URL's `?section=` and pushes a
+   * new one through `onSelectSection`, so back and forward walk the sections.
+   * Without it the screen keeps its own section, starting at `initialSection`.
+   */
+  readonly section?: SettingsSectionId;
+  readonly onSelectSection?: (section: SettingsSectionId) => void;
   readonly initialSection?: SettingsSectionId;
 }
 
@@ -194,9 +194,15 @@ function MenuLabel({ id }: { readonly id: SettingsSectionId }) {
   return <Trans {...msg({ context: 'settings.menu.data', message: 'Data & export' })} />;
 }
 
-export default function SettingsScreen({ headingRef, focusIntent = 0, initialSection }: SettingsScreenProps) {
+export default function SettingsScreen({ headingRef, focusIntent = 0, section: controlledSection, onSelectSection, initialSection }: SettingsScreenProps) {
   const { _ } = useLingui();
-  const [section, setSection] = useState<SettingsSectionId>(() => initialSection ?? readSectionParam());
+  const [localSection, setLocalSection] = useState<SettingsSectionId>(() => initialSection ?? DEFAULT_SETTINGS_SECTION);
+  const section = controlledSection ?? localSection;
+  const selectSection = (next: SettingsSectionId) => {
+    if (next === section) return;
+    setLocalSection(next);
+    onSelectSection?.(next);
+  };
 
   useLayoutEffect(() => {
     if (focusIntent > 0) headingRef?.current?.focus({ preventScroll: true });
@@ -212,7 +218,7 @@ export default function SettingsScreen({ headingRef, focusIntent = 0, initialSec
       <p className="ss-menu__title" aria-hidden="true"><Trans {...msg({ context: 'settings.kicker', message: 'Settings' })} /></p>
       <ul className="ss-menu__list">
         {MENU.map(({ id, icon: Icon }) => <li key={id}>
-          <button type="button" className="ss-menu__item" aria-current={section === id ? 'page' : undefined} onClick={() => setSection(id)}>
+          <button type="button" className="ss-menu__item" aria-current={section === id ? 'page' : undefined} onClick={() => selectSection(id)}>
             <span className="ss-menu__label"><Icon size={17} aria-hidden="true" /><MenuLabel id={id} /></span>
           </button>
         </li>)}

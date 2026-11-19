@@ -3,12 +3,28 @@ import { getReducedMotionScrollBehavior, motionDurations } from '../../lib/motio
 import { getEffectiveReducedMotion } from '../../lib/motionPreference';
 import { useTheme } from '../theme/ThemeProvider';
 import { ENABLED_UI_LOCALES } from '../../i18n/locales';
+import { DEFAULT_SETTINGS_SECTION, readSettingsSection, type SettingsSectionId } from '../settings/settings-sections';
 
 export { applyLegacyThemePreference as applyThemePreference, resolveInitialDarkMode } from '../theme/themePreference';
 export { APP_VIEW_HEADINGS } from './app-view-headings';
 
-export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'study' | 'quiz' | 'story' | 'spelling' | 'language-drill' | 'match' | 'shadowing';
-const ROUTED_VIEW = /^(landing|today|catalog|library|progress|settings)$/;
+/**
+ * Every view the app runtime can show. The routed ones (`ROUTED_VIEW`) are
+ * written to `?view=` and survive reload and browser back/forward.
+ *
+ * Adding a workspace view (for example a Files page): add it to this union and
+ * to `ROUTED_VIEW`, give it a heading in `APP_VIEW_HEADINGS`, render it in
+ * `src/app/AppViewStage.tsx`, decide which shell tab it highlights in
+ * `shellNavigationView` (`src/components/shell/shellTypes.ts`), and exclude it
+ * from `shouldShowViewHeading` when the view renders its own `<h1>`.
+ */
+export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'web-words' | 'study' | 'quiz' | 'story' | 'spelling' | 'language-drill' | 'match' | 'shadowing';
+const ROUTED_VIEW = /^(landing|today|catalog|library|progress|settings|web-words)$/;
+/** Older links opened web words as `?webWords=1` on top of another view; they still open it. */
+const LEGACY_WEB_WORDS_PARAM = 'webWords';
+/** The view a sub-view returns to (`?view=web-words&from=today`). */
+const RETURN_VIEW_PARAM = 'from';
+const SETTINGS_SECTION_PARAM = 'section';
 const isLocaleLandingPath = (pathname: string): boolean => {
   const lower = pathname.replace(/\/$/, '').toLowerCase();
   return !lower || ENABLED_UI_LOCALES.some(locale => locale !== 'en' && lower === `/${locale.toLowerCase()}`);
@@ -18,20 +34,58 @@ export const readAppViewMode = (location: string): AppViewMode => {
   const url = new URL(location, 'https://sonflash.invalid');
   if (/^\/library\/?$/.test(url.pathname)) return 'library';
   if (/^\/landing\/?$/.test(url.pathname)) return 'landing';
+  if (url.searchParams.get(LEGACY_WEB_WORDS_PARAM) === '1') return 'web-words';
   const view = url.searchParams.get('view');
   if (view) return ROUTED_VIEW.test(view) ? view as AppViewMode : 'today';
   return isLocaleLandingPath(url.pathname) && !url.searchParams.get('lesson') ? 'landing' : 'today';
 };
 
+export type WebWordsReturnView = 'today' | 'library' | 'catalog' | 'progress' | 'settings';
+const isWebWordsReturnView = (value: string | null): value is WebWordsReturnView => (
+  value === 'today' || value === 'library' || value === 'catalog' || value === 'progress' || value === 'settings'
+);
+
+/**
+ * Web words is a sub-view of Vocabulary: without a known opener its back link
+ * leads to Vocabulary, as on the board; opened from another view, it returns there.
+ */
+export const readWebWordsReturnView = (location: string): WebWordsReturnView => {
+  const url = new URL(location, 'https://sonflash.invalid');
+  const legacy = url.searchParams.get(LEGACY_WEB_WORDS_PARAM) === '1';
+  const opener = url.searchParams.get(legacy ? 'view' : RETURN_VIEW_PARAM);
+  return isWebWordsReturnView(opener) ? opener : 'library';
+};
+
+export const readSettingsSectionParam = (location: string): SettingsSectionId => (
+  readSettingsSection(new URL(location, 'https://sonflash.invalid').searchParams.get(SETTINGS_SECTION_PARAM))
+);
+
+export interface AppViewTarget {
+  /** For `web-words`: the view its back link returns to. */
+  readonly returnView?: AppViewMode;
+  /** For `settings`: the section to open. */
+  readonly settingsSection?: SettingsSectionId;
+}
+
 export const createAppViewLocation = (
   currentLocation: string,
   viewMode: AppViewMode,
+  target: AppViewTarget = {},
 ): string => {
   const url = new URL(currentLocation, 'https://sonflash.invalid');
   if (/^\/library\/?$/.test(url.pathname)) url.pathname = '/';
   url.searchParams.delete('lesson');
+  url.searchParams.delete(LEGACY_WEB_WORDS_PARAM);
+  url.searchParams.delete(RETURN_VIEW_PARAM);
+  url.searchParams.delete(SETTINGS_SECTION_PARAM);
   if (viewMode === 'landing') url.searchParams.delete('view');
   else url.searchParams.set('view', ROUTED_VIEW.test(viewMode) ? viewMode : 'today');
+  if (viewMode === 'web-words' && target.returnView && target.returnView !== 'library' && isWebWordsReturnView(target.returnView)) {
+    url.searchParams.set(RETURN_VIEW_PARAM, target.returnView);
+  }
+  if (viewMode === 'settings' && target.settingsSection && target.settingsSection !== DEFAULT_SETTINGS_SECTION) {
+    url.searchParams.set(SETTINGS_SECTION_PARAM, target.settingsSection);
+  }
   return `${url.pathname}${url.search}${url.hash}`;
 };
 
@@ -138,16 +192,26 @@ export function useAppNavigation({
     initialViewMode ?? readAppViewMode(viewBrowser.getCurrentUrl())
   ));
   const [viewFocusIntent, setViewFocusIntent] = useState(0);
+  const [settingsSection, setSettingsSectionState] = useState<SettingsSectionId>(() => readSettingsSectionParam(viewBrowser.getCurrentUrl()));
+  const [webWordsReturnView, setWebWordsReturnView] = useState<WebWordsReturnView>(() => readWebWordsReturnView(viewBrowser.getCurrentUrl()));
   const viewHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const previousViewModeRef = useRef(viewMode);
   const currentViewModeRef = useRef(viewMode);
+  const currentSettingsSectionRef = useRef(settingsSection);
   const pendingViewFocusIntentRef = useRef(false);
   currentViewModeRef.current = viewMode;
+  currentSettingsSectionRef.current = settingsSection;
 
   useEffect(() => viewBrowser.listenPopState(() => {
-    const next = readAppViewMode(viewBrowser.getCurrentUrl());
+    const location = viewBrowser.getCurrentUrl();
+    const next = readAppViewMode(location);
+    const nextSection = readSettingsSectionParam(location);
     pendingViewFocusIntentRef.current = next !== currentViewModeRef.current;
-    if (pendingViewFocusIntentRef.current) setViewFocusIntent(intent => intent + 1);
+    // Back and forward between settings sections move focus to the section heading, like a view change.
+    const sectionChanged = next === 'settings' && currentViewModeRef.current === 'settings' && nextSection !== currentSettingsSectionRef.current;
+    if (pendingViewFocusIntentRef.current || sectionChanged) setViewFocusIntent(intent => intent + 1);
+    setSettingsSectionState(nextSection);
+    setWebWordsReturnView(readWebWordsReturnView(location));
     setViewModeState(next);
   }), [viewBrowser]);
 
@@ -166,20 +230,35 @@ export function useAppNavigation({
     });
   }, [bodyElement, getActiveElement, practiceOpenerRef, prefersReducedMotion, scheduler, viewMode]);
 
-  const setViewMode = useCallback((next: AppViewMode) => {
+  const navigate = useCallback((next: AppViewMode, target: AppViewTarget) => {
     pendingViewFocusIntentRef.current = next !== currentViewModeRef.current;
     if (pendingViewFocusIntentRef.current) setViewFocusIntent(intent => intent + 1);
-    setViewModeState(next);
     const current = viewBrowser.getCurrentUrl();
-    const location = createAppViewLocation(current, next);
+    const location = createAppViewLocation(current, next, target);
+    setSettingsSectionState(readSettingsSectionParam(location));
+    setWebWordsReturnView(readWebWordsReturnView(location));
+    setViewModeState(next);
     const currentPath = new URL(current, 'https://sonflash.invalid');
     if (location !== `${currentPath.pathname}${currentPath.search}${currentPath.hash}`) {
       viewBrowser.pushState(location);
     }
   }, [viewBrowser]);
+
+  const setViewMode = useCallback((next: AppViewMode) => {
+    navigate(next, next === 'web-words' ? { returnView: currentViewModeRef.current } : {});
+  }, [navigate]);
+
+  /** Opens settings on one section; every shell entry point links here. */
+  const openSettings = useCallback((section: SettingsSectionId = DEFAULT_SETTINGS_SECTION) => {
+    navigate('settings', { settingsSection: section });
+  }, [navigate]);
+
   return {
     viewMode,
     setViewMode,
+    openSettings,
+    settingsSection,
+    webWordsReturnView,
     viewHeadingRef,
     viewFocusIntent,
     isDarkMode,

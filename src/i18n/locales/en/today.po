@@ -2259,3 +2259,58 @@ msgstr "These cards already follow their normal review schedule."
 msgctxt "webWords.chip.new"
 msgid "New"
 msgstr "New"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:278
+msgid "daily.lesson.submit"
+msgstr "Submit answer"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:141
+msgid "daily.placement.submit"
+msgstr "Submit answer"
+
+#: src/features/dailyLearning/ProgressWorkspace.tsx:77
+msgctxt "progress.mastered.title"
+msgid "Recently mastered"
+msgstr "Recently mastered"
+
+#: src/features/dailyLearning/ProgressWorkspace.tsx:76
+msgctxt "progress.forecast.title"
+msgid "Due today and over the next 13 days"
+msgstr "Due today and over the next 13 days"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:508
+msgid "today.crystal.goal.lesson"
+msgstr "Finish today's lesson"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:515
+msgid "today.crystal.goal.match"
+msgstr "Clear the word match"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:514
+msgid "today.crystal.goal.new"
+msgstr "{count, plural, one {Meet # new word} other {Meet # new words}}"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:512
+msgid "today.crystal.goal.review"
+msgstr "{count, plural, one {Review # card} other {Review # cards}}"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:577
+msgid "today.crystal.goals"
+msgstr "Daily goals"
+
+#: src/features/webWords/WebWordsPage.tsx:176
+msgctxt "webWords.back.paths"
+msgid "Paths"
+msgstr "Paths"
+
+#: src/features/dailyLearning/TodayScreen.tsx:73
+msgctxt "today-screen.adaptive-suggestion"
+msgid "Adaptive suggestion"
+msgstr "Adaptive suggestion"

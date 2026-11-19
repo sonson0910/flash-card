@@ -273,7 +273,7 @@ function TierStep({ tier, selected, progressAvailable, onSelect }: { tier: Catal
     <li className="min-w-0 flex-1">
       <button type="button" onClick={onSelect} disabled={isLocked} aria-pressed={selected} className="catalog-tier-step paths-card crystal-chamfer-sm h-full min-h-12 w-full text-left disabled:cursor-not-allowed disabled:opacity-70">
         <span className="flex items-center gap-2 text-sm font-bold"><Icon className="size-4 shrink-0" aria-hidden="true" />{progressAvailable ? i18n._(stateLabel) : <Trans {...msg({ id: 'paths.unit.status.unavailable', message: 'Progress unavailable' })} />}</span>
-        <span className="paths-card-title mt-2 block">{i18n._(copy.label)}{tier.cefrRange && ` · ${tier.cefrRange}`}{selected && <> · <Trans {...msg({ context: 'paths.selected', message: 'Selected' })} /></>}</span>
+        <span className="paths-card-title mt-2 block">{i18n._(copy.label)}{selected && <> · <Trans {...msg({ context: 'paths.selected', message: 'Selected' })} /></>}</span>
         <span className="mt-1 block text-sm text-[var(--sf-text-muted)]">{i18n._(copy.description)}</span>
         {progressAvailable && <span className="mt-3 block text-xs text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'paths.tier.progress', message: '{mastered} of {total} mastered · {started} started' })} values={{ mastered: formatNumber(tier.mastered), total: formatNumber(tier.total), started: formatNumber(tier.started) }} /></span>}
       </button>

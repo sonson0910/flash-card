@@ -293,6 +293,7 @@
 }
 .ach-emblem-name { margin: 0; font-weight: 900; font-size: 24px; line-height: 1.15; color: var(--st-title); }
 .achievements-board--crystal .ach-kicker { margin-top: 8px; font-family: var(--st-display); font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0; text-transform: none; color: var(--st-crimson-text); }
+.ach-emblem-level { margin: 14px 0 0; font-family: var(--st-display); font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--st-text2); }
 .ach-emblem-bar { position: relative; display: block; margin-top: 16px; height: 10px; transform: skewX(-24deg); background: var(--st-track); overflow: hidden; }
 .ach-emblem-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / .7); }
 

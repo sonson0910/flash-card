@@ -673,3 +673,28 @@ msgstr ""
 msgctxt "weeklyRecap.action.download"
 msgid "Download PNG"
 msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:98
+msgid "stats.earned-count"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:99
+msgid "stats.level"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:102
+msgid "stats.level-line"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:100
+msgid "stats.level-meter"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:101
+msgid "stats.level-sessions"
+msgstr ""

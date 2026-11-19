@@ -230,7 +230,7 @@ msgstr "Không thể đọc từ vựng một cách an toàn."
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:105
 msgid "catalog.workspace.ready"
-msgstr "Danh mục đã duyệt {releaseId} sẵn sàng trên thiết bị này."
+msgstr "Danh mục đã duyệt đã sẵn sàng trên thiết bị này."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:111
@@ -243,7 +243,7 @@ msgid "catalog.workspace.release-missing-online"
 msgstr "Chưa cài bản phát hành danh mục đã duyệt. Bạn có thể kiểm tra kênh phát hành cùng nguồn gốc."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.test.tsx:356
+#: src/features/catalogWorkspace/CatalogScreen.test.tsx:357
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:124
 msgid "catalog.workspace.result-summary"
 msgstr "Hiển thị {count, number}{more} {track} {tier} {count, plural, other {từ}}."

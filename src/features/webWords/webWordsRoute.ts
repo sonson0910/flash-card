@@ -1,90 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
+import { createAppViewLocation, readAppViewMode } from '../navigation/useAppNavigation';
 
 /**
- * WebWords is intentionally NOT a value in the `AppViewMode` union
- * (`src/features/navigation/useAppNavigation.ts`, controller-owned): joining
- * that union would also require touching its `ROUTED_VIEW` regex and the
- * `APP_VIEW_HEADINGS` record for type exhaustiveness. Instead the page opens
- * through its own independent `?webWords=1` query parameter, layered on top
- * of whatever `?view=` is already in the URL (so returning to Today/Library
- * from the browser back button keeps working exactly as before). This keeps
- * every file that owns `AppViewMode` untouched.
+ * Opens the web words view from places that do not hold the app navigation
+ * (the Today strip's "See all" link). The view is a routed app view
+ * (`?view=web-words`) hosted by the app runtime; this pushes the same location
+ * `setViewMode('web-words')` would, remembering the opener for the back link,
+ * and lets the navigation hook pick it up through `popstate`.
  */
-const WEB_WORDS_PARAM = 'webWords';
-
-const readIsActive = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return new URLSearchParams(window.location.search).get(WEB_WORDS_PARAM) === '1';
-};
-
-const pushWebWordsParam = (active: boolean): void => {
-  if (typeof window === 'undefined') return;
-  const url = new URL(window.location.href);
-  if (active) url.searchParams.set(WEB_WORDS_PARAM, '1');
-  else url.searchParams.delete(WEB_WORDS_PARAM);
-  window.history.pushState(null, '', `${url.pathname}?${url.searchParams.toString()}${url.hash}`);
-  window.dispatchEvent(new PopStateEvent('popstate'));
-};
-
-/** Opens the WebWords page from anywhere (e.g. the Today strip's CTA) without importing the page itself. */
 export function openWebWordsRoute(): void {
-  pushWebWordsParam(true);
-}
-
-/** Closes the WebWords page back to whatever `?view=` was already in the URL. */
-export function closeWebWordsRoute(): void {
-  pushWebWordsParam(false);
-}
-
-/**
- * Drops the param without a history entry, for when the learner has already
- * navigated to another view: Back then returns to that view's previous page
- * instead of reopening WebWords over it.
- */
-export function dismissWebWordsRoute(): void {
   if (typeof window === 'undefined') return;
-  const url = new URL(window.location.href);
-  if (!url.searchParams.has(WEB_WORDS_PARAM)) return;
-  url.searchParams.delete(WEB_WORDS_PARAM);
-  window.history.replaceState(window.history.state, '', `${url.pathname}?${url.searchParams.toString()}${url.hash}`);
-}
-
-export function isWebWordsRouteActive(): boolean {
-  return readIsActive();
-}
-
-export interface WebWordsRoute {
-  readonly isOpen: boolean;
-  readonly open: () => void;
-  readonly close: () => void;
-  /** Closes the page in place, without adding a history entry. */
-  readonly dismiss: () => void;
-}
-
-/** Tracks the `?webWords=1` query param across browser navigation (back/forward, pushState from elsewhere). */
-export function useWebWordsRoute(): WebWordsRoute {
-  const [isOpen, setIsOpen] = useState(readIsActive);
-
-  useEffect(() => {
-    const onPopState = () => setIsOpen(readIsActive());
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
-
-  const open = useCallback(() => {
-    openWebWordsRoute();
-    setIsOpen(true);
-  }, []);
-
-  const close = useCallback(() => {
-    closeWebWordsRoute();
-    setIsOpen(false);
-  }, []);
-
-  const dismiss = useCallback(() => {
-    dismissWebWordsRoute();
-    setIsOpen(false);
-  }, []);
-
-  return { isOpen, open, close, dismiss };
+  const current = window.location.href;
+  const location = createAppViewLocation(current, 'web-words', { returnView: readAppViewMode(current) });
+  window.history.pushState(window.history.state, '', location);
+  window.dispatchEvent(new PopStateEvent('popstate'));
 }

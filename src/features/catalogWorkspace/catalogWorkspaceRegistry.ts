@@ -7,7 +7,6 @@ export type CatalogTierId = 'foundation' | 'core' | 'advanced';
 export interface CatalogTierDefinition {
   readonly id: CatalogTierId;
   readonly label: string;
-  readonly cefrRange: string;
 }
 
 export interface CatalogTrackDefinition {
@@ -43,19 +42,19 @@ const englishTracks: readonly CatalogTrackDefinition[] = Object.freeze([
     id: 'ielts',
     label: 'IELTS',
     description: 'IELTS vocabulary across 15 advanced units.',
-    tiers: Object.freeze([{ id: 'advanced' as const, label: 'Advanced', cefrRange: 'B2–C1' }]),
+    tiers: Object.freeze([{ id: 'advanced' as const, label: 'Advanced' }]),
   }),
   Object.freeze({
     id: 'toeic',
     label: 'TOEIC',
     description: 'Workplace and everyday TOEIC vocabulary across 15 core units.',
-    tiers: Object.freeze([{ id: 'core' as const, label: 'Core', cefrRange: 'B1' }]),
+    tiers: Object.freeze([{ id: 'core' as const, label: 'Core' }]),
   }),
   Object.freeze({
     id: 'general',
     label: 'General',
     description: 'General English vocabulary across 15 foundation units.',
-    tiers: Object.freeze([{ id: 'foundation' as const, label: 'Foundation', cefrRange: 'A2' }]),
+    tiers: Object.freeze([{ id: 'foundation' as const, label: 'Foundation' }]),
   }),
 ]);
 

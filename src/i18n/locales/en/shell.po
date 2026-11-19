@@ -1958,3 +1958,23 @@ msgstr "Adding {count} cards to your new deck…"
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Appearance settings"
+
+#: src/components/shell/LanguageMenu.tsx:29
+msgctxt "shell.language.settings"
+msgid "Language & course settings"
+msgstr "Language & course settings"
+
+#: src/app/AppViewStage.tsx:133
+msgctxt "shell.loading.web-words"
+msgid "Preparing your web words…"
+msgstr "Preparing your web words…"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:10
+msgid "shell.heading.web-words"
+msgstr "Words saved from the web"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:96
+msgid "shell.level.chip"
+msgstr "<0>Lv</0> {level}"

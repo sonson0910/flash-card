@@ -673,3 +673,28 @@ msgstr "Total XP"
 msgctxt "weeklyRecap.action.download"
 msgid "Download PNG"
 msgstr "Download PNG"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:98
+msgid "stats.earned-count"
+msgstr "{earned} of {total} earned"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:99
+msgid "stats.level"
+msgstr "Level"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:102
+msgid "stats.level-line"
+msgstr "Lv {level} · {xp} / {next} XP"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:100
+msgid "stats.level-meter"
+msgstr "<0>{xp}</0> / {next} XP to Level {level}"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:101
+msgid "stats.level-sessions"
+msgstr "≈ {count, plural, one {# session} other {# sessions}}"

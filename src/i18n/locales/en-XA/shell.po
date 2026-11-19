@@ -1958,3 +1958,23 @@ msgstr ""
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr ""
+
+#: src/components/shell/LanguageMenu.tsx:29
+msgctxt "shell.language.settings"
+msgid "Language & course settings"
+msgstr ""
+
+#: src/app/AppViewStage.tsx:133
+msgctxt "shell.loading.web-words"
+msgid "Preparing your web words…"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:10
+msgid "shell.heading.web-words"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:96
+msgid "shell.level.chip"
+msgstr ""

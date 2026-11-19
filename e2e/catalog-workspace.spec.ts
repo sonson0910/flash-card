@@ -73,7 +73,7 @@ test('Paths lazily installs the approved release and remains accessible offline'
   expect(requestedCatalogAssets).toEqual([]);
 
   await page.getByRole('button', { name: 'Check for reviewed catalog' }).click();
-  await expect(page.getByText('Reviewed catalog r-261124da6107eb25204587aa is ready on this device.')).toBeVisible();
+  await expect(page.getByText('The reviewed catalog is ready on this device.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Choose a unit' })).toBeVisible();
   await expect(page.getByRole('list', { name: 'Catalog units' }).locator('li')).toHaveCount(15);
   await expect(page.getByRole('heading', { name: 'Vocabulary explorer' })).toBeVisible();
@@ -125,7 +125,7 @@ test('a reviewed Paths unit is persisted and opened as the exact Study deck', as
   await seedCourseProfile();
   await signIn(page, '/?view=catalog&locale=en');
   await page.getByRole('button', { name: 'Check for reviewed catalog' }).click();
-  await expect(page.getByText('Reviewed catalog r-261124da6107eb25204587aa is ready on this device.')).toBeVisible();
+  await expect(page.getByText('The reviewed catalog is ready on this device.')).toBeVisible();
 
   await page.getByRole('button', { name: /^General English/ }).click();
   await page.getByRole('button', { name: /Unit 1 · People and Personal Stories/ }).click();

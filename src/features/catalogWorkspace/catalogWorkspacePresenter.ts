@@ -98,9 +98,8 @@ export function catalogTiersFromSummary(
     const mastered = count?.mastered ?? 0;
     return {
       id: tier.id,
-      label: `${tier.label} · ${tier.cefrRange}`,
+      label: tier.label,
       description: tierDescription[tier.id],
-      cefrRange: tier.cefrRange,
       total,
       started,
       mastered,

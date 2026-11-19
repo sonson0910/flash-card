@@ -1958,3 +1958,23 @@ msgstr "Đang thêm {count} thẻ vào bộ thẻ mới…"
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Cài đặt giao diện"
+
+#: src/components/shell/LanguageMenu.tsx:29
+msgctxt "shell.language.settings"
+msgid "Language & course settings"
+msgstr "Cài đặt ngôn ngữ và khóa học"
+
+#: src/app/AppViewStage.tsx:133
+msgctxt "shell.loading.web-words"
+msgid "Preparing your web words…"
+msgstr "Đang chuẩn bị các từ trên web của bạn…"
+
+#. js-lingui-explicit-id
+#: src/features/navigation/app-view-headings.ts:10
+msgid "shell.heading.web-words"
+msgstr "Từ đã lưu từ web"
+
+#. js-lingui-explicit-id
+#: src/components/shell/DesktopNavigation.tsx:96
+msgid "shell.level.chip"
+msgstr "<0>Lv</0> {level}"

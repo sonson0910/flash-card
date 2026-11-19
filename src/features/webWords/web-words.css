@@ -65,15 +65,10 @@
   --ww-focus: #0a7d99;
 }
 
-/* Placement: inside the learning workspace under the shell header, or over the whole screen. */
-.ww-page[data-placement="workspace"] { position: absolute; inset: 0; z-index: 30; overflow-y: auto; overscroll-behavior: contain; }
-.ww-page[data-placement="screen"] { position: fixed; inset: 0; z-index: 50; overflow-y: auto; background: var(--sf-canvas); }
-#learning-workspace:has(> [data-web-words-page]) { overflow: hidden; }
-/* The view underneath is inert while the page is open; it stays mounted so its state survives. */
-#learning-workspace:has(> [data-web-words-page]) > :not([data-web-words-page]) { opacity: 0; }
-
-.ww-inner { box-sizing: border-box; width: 100%; max-width: 1440px; min-height: 100%; margin: 0 auto; padding: 30px 56px 40px; display: flex; flex-direction: column; }
-:root[data-theme-family="crystal"] .ww-inner { padding: 6px 44px 28px; }
+/* The page is a view inside the learning workspace, which already pads 12px 44px at desktop;
+   this brings the classic page to the board's 30px 56px and leaves Crystal at the workspace's 44px. */
+.ww-inner { box-sizing: border-box; width: 100%; min-height: 100%; padding: 18px 12px 8px; display: flex; flex-direction: column; }
+:root[data-theme-family="crystal"] .ww-inner { padding: 0 0 8px; }
 
 /* Heading row. */
 .ww-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 24px; }
@@ -223,7 +218,7 @@ html[data-lumi="off"] .ww-lumi { display: none; }
   .ww-toolbar { flex: 1 1 100%; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
 }
 @media (max-width: 1023px) {
-  .ww-inner, :root[data-theme-family="crystal"] .ww-inner { padding: 20px 20px calc(112px + env(safe-area-inset-bottom, 0px)); }
+  .ww-inner, :root[data-theme-family="crystal"] .ww-inner { padding: 0; }
   .ww-articles { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 860px) {
@@ -244,7 +239,7 @@ html[data-lumi="off"] .ww-lumi { display: none; }
   .ww-select select { width: 100%; max-width: none; }
 }
 @media (max-width: 640px) {
-  .ww-inner, :root[data-theme-family="crystal"] .ww-inner { padding: 14px 16px calc(92px + env(safe-area-inset-bottom, 0px)); }
+  .ww-inner, :root[data-theme-family="crystal"] .ww-inner { padding: 0; }
   .ww-title { font-size: 34px; }
   :root[data-theme-family="crystal"] .ww-title { font-size: 30px; }
   .ww-subtitle { font-size: 14px; }

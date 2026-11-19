@@ -8,12 +8,12 @@ import type { WebWordsPageState, WebWordsPageActions } from './useWebWordsPage';
 const mocks = vi.hoisted(() => ({ useWebWordsPage: vi.fn() }));
 vi.mock('./useWebWordsPage', () => ({ useWebWordsPage: mocks.useWebWordsPage }));
 
-import { closeWebWordsWorkspaceOnEscape, splitContextAtWord, WebWordsPage } from './WebWordsPage';
+import { closeWebWordsWorkspaceOnEscape, splitContextAtWord, WebWordsPage, type WebWordsPageProps } from './WebWordsPage';
 
 i18n.load('en', {});
 i18n.activate('en');
 
-const render = (placement?: 'workspace' | 'screen') => renderToStaticMarkup(<I18nProvider i18n={i18n}><WebWordsPage ownerId="owner-1" targetLanguage="en" translationLanguage="vi" onClose={vi.fn()} placement={placement} /></I18nProvider>);
+const render = (returnView?: WebWordsPageProps['returnView']) => renderToStaticMarkup(<I18nProvider i18n={i18n}><WebWordsPage ownerId="owner-1" targetLanguage="en" translationLanguage="vi" onClose={vi.fn()} returnView={returnView} /></I18nProvider>);
 
 const noopActions: WebWordsPageActions = {
   setSiteFilter: vi.fn(), setDayFilter: vi.fn(), setTierFilter: vi.fn(),
@@ -139,7 +139,7 @@ describe('WebWordsPage', () => {
     expect(html).toContain('Add to today');
   });
 
-  it('covers the screen without a workspace, fills the workspace inside the shell, and discloses the loaded filtered count for Add all', () => {
+  it('renders in the workspace flow, links back to its opener, and discloses the loaded filtered count for Add all', () => {
     setState({
       status: 'ready',
       groups: [{ key: 'card:card-1', site: null, title: null, url: null, day: 'Today', cards: [webCard()] }],
@@ -147,10 +147,11 @@ describe('WebWordsPage', () => {
     });
 
     const html = render();
-    expect(html).toContain('data-placement="screen"');
+    expect(html).not.toContain('data-placement');
+    expect(html).toMatch(/class="ww-back"><span aria-hidden="true">←<\/span> Vocabulary/);
     expect(html).toContain('Add all 1 to today');
     expect(html).not.toContain('role="dialog"');
-    expect(render('workspace')).toContain('data-placement="workspace"');
+    expect(render('today')).toMatch(/class="ww-back"><span aria-hidden="true">←<\/span> Today/);
   });
 
   it('filters by status with labelled tabs and keeps the site and day filters', () => {

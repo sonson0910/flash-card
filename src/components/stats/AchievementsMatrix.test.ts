@@ -5,6 +5,7 @@ import { I18nProvider } from '@lingui/react';
 import { describe, expect, it } from 'vitest';
 import type { LibraryStatsViewModel } from '../../features/library/libraryViewModel';
 import { achievementBadgeCopy, AchievementsMatrix, findNewlyUnlockedBadgeIds, resolveAchievementBadgeState } from './AchievementsMatrix';
+import { AchievementsLearnerProvider, achievementsLevelFacts } from './AchievementsMatrixLearner';
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -62,7 +63,7 @@ describe('dedicated achievements presentation', () => {
     const html = renderToStaticMarkup(createElement(I18nProvider, { i18n }, createElement(AchievementsMatrix, { stats: stats(), onBackToProgress: () => {} })));
 
     expect(html).toContain('Back to Progress');
-    expect(html).toContain('1 / 6 unlocked');
+    expect(html).toContain('Achievements · 1 of 6 earned');
     expect(html).not.toContain('of 12 earned');
     expect(html.match(/data-badge-state=/g)).toHaveLength(6);
     expect(html).toContain('data-badge-state="earned"');
@@ -74,5 +75,44 @@ describe('dedicated achievements presentation', () => {
     expect(html).toContain('data-achievement-summary');
     expect(html).toContain('data-featured-achievement');
     expect(html).toContain('data-badge-id="streak_3"');
+  });
+});
+
+describe('learner level on the achievements ring', () => {
+  it('shows the verified level, its XP meter and the sessions estimate', () => {
+    const history = [{ date: '2026-09-27', XP: 60 }, { date: '2026-09-28', XP: 100 }];
+    const html = renderToStaticMarkup(createElement(I18nProvider, { i18n }, createElement(
+      AchievementsLearnerProvider, { learner: { level: 3, xp: 640 } },
+      createElement(AchievementsMatrix, { stats: { ...stats(), xpChartData: history }, onBackToProgress: () => {} }),
+    )));
+
+    expect(html).toContain('<span class="ach-ring-label">Level</span><span class="ach-ring-number">3</span>');
+    expect(html).toContain('data-learner-level="3"');
+    expect(html).toMatch(/<span class="ach-mono">640<\/span> \/ 900 XP to Level 4/);
+    // 260 XP left at an average of 80 XP per study day.
+    expect(html).toContain('XP to Level 4</span><span class="tabular-nums">≈ 4 sessions</span>');
+    expect(html).toContain('class="ach-meter-fill" style="width:48%"');
+    expect(html).not.toContain('data-featured-achievement');
+  });
+
+  it('keeps badge progress when no learner level is provided or the level is not usable', () => {
+    expect(achievementsLevelFacts(null)).toBeNull();
+    expect(achievementsLevelFacts({ level: 0, xp: 10 })).toBeNull();
+    expect(achievementsLevelFacts({ level: 2, xp: 150 })).toMatchObject({ start: 100, next: 400, remaining: 250, percent: 17 });
+    const html = renderToStaticMarkup(createElement(I18nProvider, { i18n }, createElement(
+      AchievementsLearnerProvider, { learner: null },
+      createElement(AchievementsMatrix, { stats: stats() }),
+    )));
+    expect(html).toContain('data-featured-achievement');
+    expect(html).not.toContain('data-learner-level');
+  });
+
+  it('shows the share of the level when recent study days cannot support an estimate', () => {
+    const html = renderToStaticMarkup(createElement(I18nProvider, { i18n }, createElement(
+      AchievementsLearnerProvider, { learner: { level: 2, xp: 150 } },
+      createElement(AchievementsMatrix, { stats: stats() }),
+    )));
+    expect(html).toContain('XP to Level 3</span><span class="tabular-nums">17%</span>');
+    expect(html).not.toContain('≈');
   });
 });

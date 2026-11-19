@@ -3,7 +3,8 @@ import { Flame } from 'lucide-react';
 import { Trans, useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { useTheme } from '../../features/theme/ThemeProvider';
-import { isPracticeView, type ShellViewMode, type SyncIdentityViewModel } from './shellTypes';
+import { isPracticeView, shellNavigationView, type ShellViewMode, type SyncIdentityViewModel } from './shellTypes';
+import type { SettingsSectionId } from '../../features/settings/settings-sections';
 import { getShellSyncStatus, type ShellSyncStatusInput } from './shellSyncStatus';
 import { LibraryManagementMenu } from './LibraryManagementMenu';
 import { LanguageMenu } from './LanguageMenu';
@@ -33,7 +34,8 @@ export interface DesktopNavigationProps {
   onOpenLibrary: () => void;
   onOpenCatalog: () => void;
   onOpenProgress: () => void;
-  onOpenSettings?: () => void;
+  /** Opens settings on a section; the theme, language and account menus link to their own section. */
+  onOpenSettings?: (section: SettingsSectionId) => void;
   onSignIn: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
   onRetrySync?: () => void | Promise<void>;
@@ -67,6 +69,8 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
     { view: 'library', classic: <Trans {...msg({ id: 'shell.nav.vocabulary', message: 'Vocabulary' })} />, crystal: <Trans {...msg({ context: 'shell.nav.collection', message: 'Collection' })} />, action: onOpenLibrary },
     { view: 'progress', classic: <Trans {...msg({ id: 'shell.nav.progress', message: 'Progress' })} />, crystal: <Trans {...msg({ id: 'shell.nav.progress', message: 'Progress' })} />, action: onOpenProgress },
   ];
+  const activeView = shellNavigationView(viewMode);
+  const openAppearanceSettings = onOpenSettings ? () => onOpenSettings('appearance') : undefined;
   const hasStreak = typeof streak === 'number' && Number.isFinite(streak) && streak >= 0;
   const hasLevel = typeof level === 'number' && Number.isFinite(level) && level >= 1;
   const hasXp = typeof xp === 'number' && Number.isFinite(xp) && xp >= 0;
@@ -81,19 +85,22 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
         <span className="claude-brand-classic" aria-hidden="true"><Trans {...msg({ context: 'shell.brand.mark', message: 'S' })} /></span><CrystalStar />
         <span className="claude-brand-name"><span>{family === 'crystal' ? 'SON' : 'Son'}</span><em>{family === 'crystal' ? 'FLASH' : 'Flash'}</em></span>
       </button>
-      <div className="claude-nav-items hidden min-w-0 items-center lg:flex">{navigation.map(item => <button key={item.view} type="button" onClick={item.action} data-shell-active={viewMode === item.view ? 'true' : undefined} aria-current={viewMode === item.view ? 'page' : undefined} className="claude-nav-item"><span>{family === 'crystal' ? item.crystal : item.classic}</span></button>)}</div>
+      <div className="claude-nav-items hidden min-w-0 items-center lg:flex">{navigation.map(item => <button key={item.view} type="button" onClick={item.action} data-shell-active={activeView === item.view ? 'true' : undefined} aria-current={activeView === item.view ? 'page' : undefined} className="claude-nav-item"><span>{family === 'crystal' ? item.crystal : item.classic}</span></button>)}</div>
       <CourseSwitcherSlot signedIn={syncIdentity.status === 'authenticated'} />
       <div data-gsap-header-actions className="claude-shell-actions ml-auto flex items-center">
-        <ThemeMenu onOpenSettings={onOpenSettings} />
+        <ThemeMenu onOpenSettings={openAppearanceSettings} />
         {hasStreak && <span className="claude-streak" aria-label={_(msg({ id: 'shell.streak', message: '{count} day streak' }).id, { count: streak })}><Flame size={15} fill="currentColor" aria-hidden="true" />{streak}</span>}
-        {hasLevel && <span className="claude-level" aria-label={hasXp ? _(msg({ id: 'shell.level', message: 'Level {level}, {xp} XP' }).id, { level, xp }) : _(msg({ id: 'shell.level.short', message: 'Lv {level}' }).id, { level })}><Trans {...msg({ id: 'shell.level.short', message: 'Lv {level}' })} values={{ level }} />{hasXp && <span className="claude-level-track" aria-hidden="true"><span style={{ width: `${levelProgress}%` }} /></span>}</span>}
-        <LanguageMenu />
+        {hasLevel && <span className="claude-level" aria-label={hasXp ? _(msg({ id: 'shell.level', message: 'Level {level}, {xp} XP' }).id, { level, xp }) : _(msg({ id: 'shell.level.short', message: 'Lv {level}' }).id, { level })}>{family === 'crystal'
+          ? <Trans {...msg({ id: 'shell.level.short', message: 'Lv {level}' })} values={{ level }} />
+          // Classic chips set the "Lv" prefix apart from the number, as on the board.
+          : <Trans {...msg({ id: 'shell.level.chip', message: '<0>Lv</0> {level}' })} values={{ level }} components={{ 0: <span className="claude-level-label" /> }} />}{hasXp && <span className="claude-level-track" aria-hidden="true"><span style={{ width: `${levelProgress}%` }} /></span>}</span>}
+        <LanguageMenu onOpenSettings={onOpenSettings ? () => onOpenSettings('language') : undefined} />
         <LibraryManagementMenu
           equippedFrameId={equippedFrameId}
           ownedTitleIds={ownedTitleIds}
           isExporting={isExporting}
           isLibraryMutationPending={isLibraryMutationPending}
-          onOpenSettings={onOpenSettings}
+          onOpenSettings={openAppearanceSettings}
           onExportLibrary={onExportLibrary}
           onClearLibrary={onClearLibrary}
           onOpenInsights={onOpenInsights}

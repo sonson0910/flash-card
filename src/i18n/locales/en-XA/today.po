@@ -2259,3 +2259,58 @@ msgstr ""
 msgctxt "webWords.chip.new"
 msgid "New"
 msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:278
+msgid "daily.lesson.submit"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:141
+msgid "daily.placement.submit"
+msgstr ""
+
+#: src/features/dailyLearning/ProgressWorkspace.tsx:77
+msgctxt "progress.mastered.title"
+msgid "Recently mastered"
+msgstr "[Recently mastered]"
+
+#: src/features/dailyLearning/ProgressWorkspace.tsx:76
+msgctxt "progress.forecast.title"
+msgid "Due today and over the next 13 days"
+msgstr "[Due over the next 13 days]"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:508
+msgid "today.crystal.goal.lesson"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:515
+msgid "today.crystal.goal.match"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:514
+msgid "today.crystal.goal.new"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:512
+msgid "today.crystal.goal.review"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:577
+msgid "today.crystal.goals"
+msgstr ""
+
+#: src/features/webWords/WebWordsPage.tsx:176
+msgctxt "webWords.back.paths"
+msgid "Paths"
+msgstr ""
+
+#: src/features/dailyLearning/TodayScreen.tsx:73
+msgctxt "today-screen.adaptive-suggestion"
+msgid "Adaptive suggestion"
+msgstr ""

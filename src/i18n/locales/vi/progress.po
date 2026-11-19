@@ -673,3 +673,28 @@ msgstr "Tổng XP"
 msgctxt "weeklyRecap.action.download"
 msgid "Download PNG"
 msgstr "Tải ảnh PNG"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:98
+msgid "stats.earned-count"
+msgstr "Đã đạt {earned}/{total}"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:99
+msgid "stats.level"
+msgstr "Cấp"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:102
+msgid "stats.level-line"
+msgstr "Cấp {level} · {xp} / {next} XP"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:100
+msgid "stats.level-meter"
+msgstr "<0>{xp}</0> / {next} XP để lên Cấp {level}"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:101
+msgid "stats.level-sessions"
+msgstr "≈ {count, plural, other {# buổi học}}"

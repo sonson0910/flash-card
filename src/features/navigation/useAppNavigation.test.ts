@@ -39,6 +39,8 @@ import {
   createAppViewLocation,
   focusHeadingWithMotionPreference,
   readAppViewMode,
+  readSettingsSectionParam,
+  readWebWordsReturnView,
   resolveInitialDarkMode,
   scheduleViewHeadingFocus,
   useAppNavigation,
@@ -69,6 +71,7 @@ describe('useAppNavigation', () => {
       catalog: 'Learning paths',
       progress: 'Learning progress',
       settings: 'Settings and appearance',
+      'web-words': 'Words saved from the web',
       study: 'Study session',
       quiz: 'Vocabulary quiz',
       spelling: 'Spelling practice',
@@ -77,7 +80,7 @@ describe('useAppNavigation', () => {
       match: 'Word match',
       shadowing: 'Shadowing practice',
     });
-    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(13);
+    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(14);
 
     const navigation = render();
     expect(navigation.viewMode).toBe('landing');
@@ -117,6 +120,35 @@ describe('useAppNavigation', () => {
       .toBe('/?utm_source=appearance&view=settings#options');
     expect(createAppViewLocation('/vi/?utm_source=landing#hero', 'landing'))
       .toBe('/vi/?utm_source=landing#hero');
+  });
+
+  it('routes web words as a sub-view that remembers its opener', () => {
+    expect(readAppViewMode('/?view=web-words')).toBe('web-words');
+    expect(readWebWordsReturnView('/?view=web-words')).toBe('library');
+    expect(readWebWordsReturnView('/?view=web-words&from=progress')).toBe('progress');
+    expect(readWebWordsReturnView('/?view=web-words&from=study')).toBe('library');
+    // Older links layered webWords=1 on the view that opened it.
+    expect(readAppViewMode('/?view=today&lesson=session&webWords=1')).toBe('web-words');
+    expect(readWebWordsReturnView('/?view=today&lesson=session&webWords=1')).toBe('today');
+    expect(createAppViewLocation('/?view=today&lesson=session&locale=en#top', 'web-words', { returnView: 'today' }))
+      .toBe('/?view=web-words&locale=en&from=today#top');
+    expect(createAppViewLocation('/?view=library', 'web-words', { returnView: 'library' })).toBe('/?view=web-words');
+    expect(createAppViewLocation('/?view=web-words&from=today&webWords=1', 'today')).toBe('/?view=today');
+  });
+
+  it('keeps the settings section in the URL and drops it for other views', () => {
+    expect(readSettingsSectionParam('/?view=settings&section=reminders')).toBe('reminders');
+    expect(readSettingsSectionParam('/?view=settings&section=unknown')).toBe('appearance');
+    expect(readSettingsSectionParam('/?view=settings')).toBe('appearance');
+    expect(createAppViewLocation('/?view=today', 'settings', { settingsSection: 'language' })).toBe('/?view=settings&section=language');
+    expect(createAppViewLocation('/?view=settings&section=language', 'settings', { settingsSection: 'appearance' })).toBe('/?view=settings');
+    expect(createAppViewLocation('/?view=settings&section=reminders', 'progress')).toBe('/?view=progress');
+
+    const navigation = render();
+    navigation.openSettings('reminders');
+    const opened = render();
+    expect(opened.viewMode).toBe('settings');
+    expect(opened.settingsSection).toBe('reminders');
   });
 
   it('defaults to dark mode and safely reads an explicit stored preference', () => {

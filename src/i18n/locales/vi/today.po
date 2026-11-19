@@ -2259,3 +2259,58 @@ msgstr "Những thẻ này đã theo lịch ôn tập thông thường."
 msgctxt "webWords.chip.new"
 msgid "New"
 msgstr "Mới"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/LessonScreen.tsx:278
+msgid "daily.lesson.submit"
+msgstr "Gửi câu trả lời"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/PlacementScreen.tsx:141
+msgid "daily.placement.submit"
+msgstr "Gửi câu trả lời"
+
+#: src/features/dailyLearning/ProgressWorkspace.tsx:77
+msgctxt "progress.mastered.title"
+msgid "Recently mastered"
+msgstr "Mới thành thạo"
+
+#: src/features/dailyLearning/ProgressWorkspace.tsx:76
+msgctxt "progress.forecast.title"
+msgid "Due today and over the next 13 days"
+msgstr "Đến hạn hôm nay và trong 13 ngày tới"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:508
+msgid "today.crystal.goal.lesson"
+msgstr "Hoàn thành bài học hôm nay"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:515
+msgid "today.crystal.goal.match"
+msgstr "Hoàn thành Word Match"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:514
+msgid "today.crystal.goal.new"
+msgstr "{count, plural, other {Học # từ mới}}"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:512
+msgid "today.crystal.goal.review"
+msgstr "{count, plural, other {Ôn # thẻ}}"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:577
+msgid "today.crystal.goals"
+msgstr "Mục tiêu hôm nay"
+
+#: src/features/webWords/WebWordsPage.tsx:176
+msgctxt "webWords.back.paths"
+msgid "Paths"
+msgstr "Lộ trình"
+
+#: src/features/dailyLearning/TodayScreen.tsx:73
+msgctxt "today-screen.adaptive-suggestion"
+msgid "Adaptive suggestion"
+msgstr "Gợi ý theo tiến độ"
