@@ -1,12 +1,15 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { Bot, Loader2, Send, Sparkles, X } from 'lucide-react';
+import { ArrowUp, Sparkles, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent, type RefObject } from 'react';
 import type { CardData } from '../../types/card';
 import { currentOwnerId, observeOwner } from '../../features/session/ownerSessionPort';
 import { askCardTutor, type CardTutorTurn } from '../../lib/gemini';
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
+import { Lumi } from '../lumi/Lumi';
+import '../overlay-dialog.css';
+import './CardAiAssistantModal.css';
 
 interface CardAiAssistantModalProps {
   card: CardData;
@@ -17,19 +20,19 @@ interface CardAiAssistantModalProps {
 
 const PRESET_PROMPTS = [
   {
-    label: msg({ id: 'flashcard.ai.work-examples', message: '💼 3 Work examples' }),
+    label: msg({ id: 'flashcard.ai.work-examples', message: '3 work examples' }),
     prompt: 'Give me three realistic work examples for this word.',
   },
   {
-    label: msg({ id: 'flashcard.ai.synonym-nuances', message: '🔍 Synonym nuances' }),
+    label: msg({ id: 'flashcard.ai.synonym-nuances', message: 'Synonym nuances' }),
     prompt: 'How does this word differ from its closest synonyms?',
   },
   {
-    label: msg({ id: 'flashcard.ai.idioms-collocations', message: '🗣️ Natural idioms & collocations' }),
+    label: msg({ id: 'flashcard.ai.idioms-collocations', message: 'Natural idioms & collocations' }),
     prompt: 'Show natural collocations and one example for each.',
   },
   {
-    label: msg({ id: 'flashcard.ai.explain-meaning', message: '📖 Explain this meaning' }),
+    label: msg({ id: 'flashcard.ai.explain-meaning', message: 'Explain this meaning' }),
     prompt: 'Explain this meaning simply and show when to use it.',
   },
 ];
@@ -136,113 +139,121 @@ export function CardAiAssistantModal({
     void askAi(query);
   };
 
+  const phonetic = card.phonetic.trim().replace(/^\/+|\/+$/g, '');
+  const translation = card.translation.trim();
+  const lastQuestion = activeQuestion || turns.at(-1)?.label || turns.at(-1)?.question || '';
+
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[110] bg-[var(--sf-scrim)] backdrop-blur-xs" />
+        <Dialog.Overlay className="crystal-starfield fixed inset-0 z-[110] bg-[var(--sf-scrim)]" />
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-[111] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] p-6 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] sm:p-7 [html[data-theme-family=crystal]_&]:rounded-none [html[data-theme-family=crystal]_&]:crystal-chamfer"
+          className="overlay-dialog-frame card-tutor"
           aria-describedby={`ai-assistant-description-${card.id}`}
           onCloseAutoFocus={event => {
             event.preventDefault();
             restoreFocusRef?.current?.focus({ preventScroll: true });
           }}
         >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--sf-brand)_15%,transparent)] text-[var(--sf-brand-text)]">
-                <Bot size={22} />
-              </div>
-              <div>
-                <Dialog.Title className="text-balance text-lg font-black sm:text-xl">
-                  <Trans {...msg({ context: 'flashcard.ai.tutor-title', message: 'AI Tutor' })} /> · <span lang={card.language || 'en'} className="text-[var(--sf-brand-text)]">{card.word}</span>
+          <div className="overlay-dialog-body">
+            <span aria-hidden="true" className="overlay-dialog-ornament overlay-dialog-ornament-top" />
+            <span aria-hidden="true" className="overlay-dialog-ornament overlay-dialog-ornament-bottom" />
+            <div className="overlay-dialog-header">
+              <span aria-hidden="true" className="card-tutor-mark"><Sparkles /></span>
+              <span aria-hidden="true" className="card-tutor-portrait"><Lumi pose="hint" size={74} /></span>
+              <div className="min-w-0 flex-1">
+                <p className="overlay-dialog-kicker">
+                  <span aria-hidden="true" className="overlay-dialog-kicker-diamond" />
+                  <span className="card-tutor-kicker-classic"><Trans {...msg({ context: 'flashcard.ai.kicker', message: 'AI tutor' })} /></span>
+                  <span className="card-tutor-kicker-crystal"><Trans {...msg({ context: 'flashcard.ai.kicker-lumi', message: 'Lumi · AI tutor' })} /></span>
+                </p>
+                <Dialog.Title className="overlay-dialog-title">
+                  <Trans {...msg({ context: 'flashcard.ai.ask-about', message: 'Ask about <0>{word}</0>' })} values={{ word: card.word }} components={{ 0: <span lang={card.language || 'en'} className="card-tutor-word" /> }} />
                 </Dialog.Title>
-                <Dialog.Description
-                  id={`ai-assistant-description-${card.id}`}
-                  className="mt-0.5 text-xs text-[var(--sf-text-muted)]"
-                >
+                {phonetic || translation ? (
+                  <p className="overlay-dialog-sub card-tutor-sense">
+                    {phonetic ? <span className="card-tutor-ipa">/{phonetic}/</span> : null}
+                    {phonetic && translation ? <span aria-hidden="true"> · </span> : null}
+                    {translation ? <span lang={card.translationLanguage || 'vi'} className="card-tutor-meaning">{translation}</span> : null}
+                  </p>
+                ) : null}
+                <Dialog.Description id={`ai-assistant-description-${card.id}`} className="sr-only">
                   <Trans {...msg({ context: 'flashcard.ai.description', message: 'Ask questions about usage, nuances & practical examples.' })} />
                 </Dialog.Description>
-                <p className="mt-1 text-[11px] font-semibold text-[var(--sf-text-muted)]">
-                  {(card.language || 'en').toUpperCase()} → {(card.translationLanguage || 'vi').toUpperCase()}
-                </p>
               </div>
+              <Dialog.Close className="overlay-dialog-close" aria-label={_(msg({ id: 'flashcard.ai.close', message: 'Close AI tutor' }))}>
+                <span aria-hidden="true" className="overlay-dialog-close-surface"><X /></span>
+              </Dialog.Close>
             </div>
-            <Dialog.Close
-              className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
-              aria-label={_(msg({ id: 'flashcard.ai.close', message: 'Close AI tutor' }))}
-            >
-              <X size={18} />
-            </Dialog.Close>
-          </div>
 
-          <div className="mt-5 space-y-4">
-            <div>
-              <p className="mb-2 text-xs font-bold text-[var(--sf-text-muted)] uppercase tracking-wider">
+            <div className="card-tutor-content">
+              <p id="card-tutor-presets-label" className="sr-only">
                 <Trans {...msg({ context: 'flashcard.ai.quick-suggestions', message: 'Quick Suggestions' })} />
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div role="group" aria-labelledby="card-tutor-presets-label" className="card-tutor-presets">
                 {PRESET_PROMPTS.map((preset, i) => (
                   <button
                     key={i}
                     type="button"
                     disabled={isLoading}
+                    data-active={lastQuestion === _(preset.label.id) ? 'true' : undefined}
                     onClick={() => void askAi(preset.prompt, _(preset.label.id))}
-                    className="flex items-center gap-1.5 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2 text-xs font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50 motion-reduce:transition-none"
+                    className="card-tutor-preset"
                   >
-                    <Sparkles size={13} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
-                    <span>{_(preset.label.id)}</span>
+                    {_(preset.label.id)}
                   </button>
                 ))}
               </div>
+
+              {(turns.length > 0 || isLoading || error) && (
+                <div className="card-tutor-answers" aria-live="polite">
+                  {turns.map((turn, index) => (
+                    <div key={index} className="card-tutor-answer">
+                      <p className="card-tutor-answer-heading">
+                        <Sparkles aria-hidden="true" />
+                        <span className="sr-only"><Trans {...msg({ context: 'flashcard.ai.question', message: 'Q:' })} /> </span>
+                        {turn.label || turn.question}
+                      </p>
+                      <p className="card-tutor-answer-text">{turn.answer}</p>
+                    </div>
+                  ))}
+                  {(isLoading || error) && <div className="card-tutor-answer">
+                    <p className="card-tutor-answer-heading"><Sparkles aria-hidden="true" />{activeQuestion}</p>
+                    {isLoading ? (
+                      <div role="status" className="card-tutor-loading">
+                        <span aria-hidden="true" className="card-tutor-spinner" />
+                        <span><Trans {...msg({ context: 'flashcard.ai.formulating', message: 'AI is formulating an answer…' })} /></span>
+                      </div>
+                    ) : <p className="card-tutor-error">{error}</p>}
+                  </div>}
+                </div>
+              )}
+
+              <form onSubmit={handleCustomSubmit} className="card-tutor-ask">
+                <input
+                  type="text"
+                  aria-label={_(msg({ id: 'flashcard.ai.question-label', message: 'Ask a question about this word' }))}
+                  value={customQuery}
+                  onChange={e => setCustomQuery(e.target.value)}
+                  maxLength={300}
+                  placeholder={i18n._(msg({ id: 'flashcard.ai.placeholder', message: 'Ask anything about “{word}”…' }).id, { word: card.word })}
+                  disabled={isLoading}
+                  className="card-tutor-input"
+                />
+                <button
+                  type="submit"
+                  disabled={!customQuery.trim() || isLoading}
+                  className="card-tutor-send"
+                  aria-label={_(msg({ id: 'flashcard.ai.send', message: 'Send question' }))}
+                >
+                  <span aria-hidden="true" className="card-tutor-send-surface"><ArrowUp /></span>
+                </button>
+              </form>
             </div>
 
-            {(turns.length > 0 || isLoading || error) && (
-              <div className="mt-4 max-h-72 space-y-3 overflow-y-auto" aria-live="polite">
-                {turns.map((turn, index) => (
-                  <div key={index} className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-sm">
-                    <p className="mb-2.5 flex items-center gap-1.5 border-b border-[var(--sf-border)] pb-2 text-xs font-bold text-[var(--sf-brand-text)]">
-                      <span><Trans {...msg({ context: 'flashcard.ai.question', message: 'Q:' })} /></span> {turn.label || turn.question}
-                    </p>
-                    <p className="whitespace-pre-line text-xs leading-relaxed sm:text-sm">{turn.answer}</p>
-                  </div>
-                ))}
-                {(isLoading || error) && <div className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-sm">
-                  <p className="mb-2.5 border-b border-[var(--sf-border)] pb-2 text-xs font-bold text-[var(--sf-brand-text)]">{activeQuestion}</p>
-                  {isLoading ? (
-                  <div className="flex items-center gap-2 py-3 text-xs font-bold text-[var(--sf-text-muted)]">
-                    <Loader2 size={16} className="animate-spin text-[var(--sf-brand)]" />
-                    <span><Trans {...msg({ context: 'flashcard.ai.formulating', message: 'AI is formulating an answer…' })} /></span>
-                  </div>
-                  ) : <p className="text-xs font-semibold text-[var(--sf-danger)]">{error}</p>}
-                </div>}
-              </div>
-            )}
-
-            {/* Custom Query Input */}
-            <form onSubmit={handleCustomSubmit} className="mt-4 flex gap-2">
-              <input
-                type="text"
-                aria-label={_(msg({ id: 'flashcard.ai.question-label', message: 'Ask a question about this word' }))}
-                value={customQuery}
-                onChange={e => setCustomQuery(e.target.value)}
-                maxLength={300}
-                placeholder={i18n._(msg({ id: 'flashcard.ai.placeholder', message: 'Ask anything about “{word}”…' }).id, { word: card.word })}
-                disabled={isLoading}
-                className="min-h-11 flex-1 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 text-xs text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
-              />
-              <button
-                type="submit"
-                disabled={!customQuery.trim() || isLoading}
-                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--sf-brand)] font-extrabold text-[var(--sf-on-brand)] shadow-md transition-[filter,transform] hover:brightness-110 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50 cursor-pointer motion-reduce:transition-none"
-                aria-label={_(msg({ id: 'flashcard.ai.send', message: 'Send question' }))}
-              >
-                <Send size={16} />
-              </button>
-            </form>
-            <div className="flex items-center justify-between gap-2 text-[11px] text-[var(--sf-text-muted)]">
-              <span><Trans {...msg({ context: 'flashcard.ai.usage-note', message: 'AI-generated · each question uses 1 AI request' })} /></span>
-              <span>{customQuery.length}/300</span>
+            <div className="overlay-dialog-footer">
+              <p className="overlay-dialog-note"><Trans {...msg({ context: 'flashcard.ai.usage-note', message: 'AI-generated · each question uses 1 AI request' })} /></p>
+              <p className="overlay-dialog-note card-tutor-count">{customQuery.length}/300</p>
             </div>
           </div>
         </Dialog.Content>
