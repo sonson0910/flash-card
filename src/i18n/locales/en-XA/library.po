@@ -64,12 +64,12 @@ msgctxt "library.clear.export"
 msgid "Export"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:476
+#: src/features/library/LibraryDialogOverlays.tsx:483
 msgctxt "library.insights.learning"
 msgid "Learning"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:502
+#: src/features/library/LibraryDialogOverlays.tsx:512
 msgctxt "library.insights.xp"
 msgid "XP · recent activity"
 msgstr ""
@@ -94,7 +94,7 @@ msgctxt "library.clear.kicker"
 msgid "Danger zone"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:461
+#: src/features/library/LibraryDialogOverlays.tsx:468
 msgctxt "library.insights.loading"
 msgid "Loading your learning data…"
 msgstr ""
@@ -141,7 +141,7 @@ msgctxt "library.import.partial"
 msgid "Import partly complete"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:466
+#: src/features/library/LibraryDialogOverlays.tsx:473
 msgctxt "library.insights.failure"
 msgid "Could not load learning insights. Try again."
 msgstr ""
@@ -173,7 +173,7 @@ msgctxt "library.deck.cancel"
 msgid "Cancel"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:474
+#: src/features/library/LibraryDialogOverlays.tsx:481
 msgctxt "library.insights.total"
 msgid "Total cards"
 msgstr ""
@@ -249,7 +249,7 @@ msgctxt "library.import.failed-items"
 msgid "No cards were imported. Check the failed rows and your connection, then try again."
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:449
+#: src/features/library/LibraryDialogOverlays.tsx:456
 msgctxt "library.insights.description"
 msgid "A truthful view of your memory strength and review momentum."
 msgstr ""
@@ -277,7 +277,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:141
 #: src/features/library/LibraryCardGrid.tsx:407
-#: src/features/library/LibraryDialogOverlays.tsx:516
+#: src/features/library/LibraryDialogOverlays.tsx:526
 msgid "common.close"
 msgstr ""
 
@@ -351,7 +351,7 @@ msgctxt "library.create.title"
 msgid "Create a card"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:503
+#: src/features/library/LibraryDialogOverlays.tsx:513
 msgctxt "library.insights.no-xp"
 msgid "Complete a review to start your activity chart."
 msgstr ""
@@ -367,7 +367,7 @@ msgctxt "library.filters.title"
 msgid "Filters"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:477
+#: src/features/library/LibraryDialogOverlays.tsx:484
 msgctxt "library.insights.due"
 msgid "Due today"
 msgstr ""
@@ -392,7 +392,7 @@ msgstr ""
 msgid "flashcard.memory-hook"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:492
+#: src/features/library/LibraryDialogOverlays.tsx:499
 msgctxt "library.insights.difficulty"
 msgid "Difficulty"
 msgstr ""
@@ -402,7 +402,7 @@ msgctxt "library.grid.empty-title"
 msgid "Your first word starts here"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:482
+#: src/features/library/LibraryDialogOverlays.tsx:489
 msgctxt "library.insights.category"
 msgid "By category"
 msgstr ""
@@ -412,7 +412,7 @@ msgctxt "library.edit-card.deleting"
 msgid "Deleting card…"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:502
+#: src/features/library/LibraryDialogOverlays.tsx:512
 msgctxt "library.insights.xp-total"
 msgid "{count, number} XP"
 msgstr ""
@@ -422,7 +422,7 @@ msgctxt "library.decks.title"
 msgid "Decks ({count, number})"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:447
+#: src/features/library/LibraryDialogOverlays.tsx:454
 msgctxt "library.insights.kicker"
 msgid "Stats · last 30 days"
 msgstr ""
@@ -570,12 +570,12 @@ msgctxt "library.sort.label"
 msgid "Sort"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:488
+#: src/features/library/LibraryDialogOverlays.tsx:495
 msgctxt "library.insights.category-partial"
 msgid "Some cloud categories are still loading."
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:448
+#: src/features/library/LibraryDialogOverlays.tsx:455
 msgctxt "library.insights.title"
 msgid "Learning insights"
 msgstr ""
@@ -1751,17 +1751,17 @@ msgid "library.import.xls-unsupported"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:451
+#: src/features/library/LibraryDialogOverlays.tsx:458
 msgid "library.insights.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:504
+#: src/features/library/LibraryDialogOverlays.tsx:514
 msgid "library.insights.xp-chart"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:505
+#: src/features/library/LibraryDialogOverlays.tsx:515
 msgid "library.insights.xp-point"
 msgstr ""
 
@@ -2079,7 +2079,7 @@ msgctxt "library.card.open-details"
 msgid "Open card"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:467
+#: src/features/library/LibraryDialogOverlays.tsx:474
 msgctxt "common.retry"
 msgid "Retry"
 msgstr ""
@@ -2126,7 +2126,7 @@ msgctxt "library.deck.keep"
 msgid "Keep deck"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:493
+#: src/features/library/LibraryDialogOverlays.tsx:500
 msgctxt "library.insights.no-difficulty"
 msgid "No review ratings yet."
 msgstr ""
@@ -2168,7 +2168,7 @@ msgctxt "common.done"
 msgid "Done"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:475
+#: src/features/library/LibraryDialogOverlays.tsx:482
 msgctxt "library.insights.mastered"
 msgid "Mastered"
 msgstr ""
@@ -2178,7 +2178,7 @@ msgctxt "library.deck.creation-submit"
 msgid "Create deck"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:483
+#: src/features/library/LibraryDialogOverlays.tsx:490
 msgctxt "library.insights.no-category"
 msgid "No category data yet."
 msgstr ""
@@ -2332,7 +2332,7 @@ msgctxt "library.import.status-failed"
 msgid "Import failed"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:470
+#: src/features/library/LibraryDialogOverlays.tsx:477
 msgctxt "library.insights.empty"
 msgid "There is not enough learning data to show insights yet."
 msgstr ""
@@ -2357,7 +2357,7 @@ msgctxt "library.edit-card.retry-save"
 msgid "Retry save"
 msgstr ""
 
-#: src/features/library/LibraryDialogOverlays.tsx:514
+#: src/features/library/LibraryDialogOverlays.tsx:524
 msgctxt "library.insights.open-progress"
 msgid "Open full Progress →"
 msgstr ""

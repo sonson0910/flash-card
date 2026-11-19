@@ -64,12 +64,12 @@ msgctxt "library.clear.export"
 msgid "Export"
 msgstr "Xuất dữ liệu"
 
-#: src/features/library/LibraryDialogOverlays.tsx:476
+#: src/features/library/LibraryDialogOverlays.tsx:483
 msgctxt "library.insights.learning"
 msgid "Learning"
 msgstr "Đang học"
 
-#: src/features/library/LibraryDialogOverlays.tsx:502
+#: src/features/library/LibraryDialogOverlays.tsx:512
 msgctxt "library.insights.xp"
 msgid "XP · recent activity"
 msgstr "XP · hoạt động gần đây"
@@ -94,7 +94,7 @@ msgctxt "library.clear.kicker"
 msgid "Danger zone"
 msgstr "Vùng nguy hiểm"
 
-#: src/features/library/LibraryDialogOverlays.tsx:461
+#: src/features/library/LibraryDialogOverlays.tsx:468
 msgctxt "library.insights.loading"
 msgid "Loading your learning data…"
 msgstr "Đang tải dữ liệu học tập của bạn…"
@@ -141,7 +141,7 @@ msgctxt "library.import.partial"
 msgid "Import partly complete"
 msgstr "Đã nhập một phần"
 
-#: src/features/library/LibraryDialogOverlays.tsx:466
+#: src/features/library/LibraryDialogOverlays.tsx:473
 msgctxt "library.insights.failure"
 msgid "Could not load learning insights. Try again."
 msgstr "Không thể tải thống kê học tập. Hãy thử lại."
@@ -173,7 +173,7 @@ msgctxt "library.deck.cancel"
 msgid "Cancel"
 msgstr "Hủy"
 
-#: src/features/library/LibraryDialogOverlays.tsx:474
+#: src/features/library/LibraryDialogOverlays.tsx:481
 msgctxt "library.insights.total"
 msgid "Total cards"
 msgstr "Tổng số thẻ"
@@ -249,7 +249,7 @@ msgctxt "library.import.failed-items"
 msgid "No cards were imported. Check the failed rows and your connection, then try again."
 msgstr "Không có thẻ nào được nhập. Kiểm tra các dòng lỗi và kết nối của bạn, rồi thử lại."
 
-#: src/features/library/LibraryDialogOverlays.tsx:449
+#: src/features/library/LibraryDialogOverlays.tsx:456
 msgctxt "library.insights.description"
 msgid "A truthful view of your memory strength and review momentum."
 msgstr "Góc nhìn trung thực về độ nhớ và đà ôn tập của bạn."
@@ -277,7 +277,7 @@ msgstr "Hủy"
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:141
 #: src/features/library/LibraryCardGrid.tsx:407
-#: src/features/library/LibraryDialogOverlays.tsx:516
+#: src/features/library/LibraryDialogOverlays.tsx:526
 msgid "common.close"
 msgstr "Đóng"
 
@@ -351,7 +351,7 @@ msgctxt "library.create.title"
 msgid "Create a card"
 msgstr "Tạo thẻ"
 
-#: src/features/library/LibraryDialogOverlays.tsx:503
+#: src/features/library/LibraryDialogOverlays.tsx:513
 msgctxt "library.insights.no-xp"
 msgid "Complete a review to start your activity chart."
 msgstr "Hoàn thành một lượt ôn tập để bắt đầu biểu đồ hoạt động."
@@ -367,7 +367,7 @@ msgctxt "library.filters.title"
 msgid "Filters"
 msgstr "Bộ lọc"
 
-#: src/features/library/LibraryDialogOverlays.tsx:477
+#: src/features/library/LibraryDialogOverlays.tsx:484
 msgctxt "library.insights.due"
 msgid "Due today"
 msgstr "Đến hạn hôm nay"
@@ -392,7 +392,7 @@ msgstr "Sửa thẻ"
 msgid "flashcard.memory-hook"
 msgstr "Mẹo ghi nhớ"
 
-#: src/features/library/LibraryDialogOverlays.tsx:492
+#: src/features/library/LibraryDialogOverlays.tsx:499
 msgctxt "library.insights.difficulty"
 msgid "Difficulty"
 msgstr "Độ khó"
@@ -402,7 +402,7 @@ msgctxt "library.grid.empty-title"
 msgid "Your first word starts here"
 msgstr "Từ đầu tiên bắt đầu ở đây"
 
-#: src/features/library/LibraryDialogOverlays.tsx:482
+#: src/features/library/LibraryDialogOverlays.tsx:489
 msgctxt "library.insights.category"
 msgid "By category"
 msgstr "Theo danh mục"
@@ -412,7 +412,7 @@ msgctxt "library.edit-card.deleting"
 msgid "Deleting card…"
 msgstr "Đang xóa thẻ…"
 
-#: src/features/library/LibraryDialogOverlays.tsx:502
+#: src/features/library/LibraryDialogOverlays.tsx:512
 msgctxt "library.insights.xp-total"
 msgid "{count, number} XP"
 msgstr "{count, number} XP"
@@ -422,7 +422,7 @@ msgctxt "library.decks.title"
 msgid "Decks ({count, number})"
 msgstr "Bộ thẻ ({count, number})"
 
-#: src/features/library/LibraryDialogOverlays.tsx:447
+#: src/features/library/LibraryDialogOverlays.tsx:454
 msgctxt "library.insights.kicker"
 msgid "Stats · last 30 days"
 msgstr "Thống kê · 30 ngày qua"
@@ -570,12 +570,12 @@ msgctxt "library.sort.label"
 msgid "Sort"
 msgstr "Sắp xếp"
 
-#: src/features/library/LibraryDialogOverlays.tsx:488
+#: src/features/library/LibraryDialogOverlays.tsx:495
 msgctxt "library.insights.category-partial"
 msgid "Some cloud categories are still loading."
 msgstr "Một số danh mục trên cloud vẫn đang tải."
 
-#: src/features/library/LibraryDialogOverlays.tsx:448
+#: src/features/library/LibraryDialogOverlays.tsx:455
 msgctxt "library.insights.title"
 msgid "Learning insights"
 msgstr "Thống kê học tập"
@@ -1751,17 +1751,17 @@ msgid "library.import.xls-unsupported"
 msgstr "Không hỗ trợ tệp .xls cũ. Hãy lưu lại tệp dưới dạng .xlsx hoặc .csv rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:451
+#: src/features/library/LibraryDialogOverlays.tsx:458
 msgid "library.insights.close"
 msgstr "Đóng thống kê học tập"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:504
+#: src/features/library/LibraryDialogOverlays.tsx:514
 msgid "library.insights.xp-chart"
 msgstr "Hoạt động XP gần đây"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryDialogOverlays.tsx:505
+#: src/features/library/LibraryDialogOverlays.tsx:515
 msgid "library.insights.xp-point"
 msgstr "{date}: {xp, number} XP"
 
@@ -2079,7 +2079,7 @@ msgctxt "library.card.open-details"
 msgid "Open card"
 msgstr "Mở thẻ"
 
-#: src/features/library/LibraryDialogOverlays.tsx:467
+#: src/features/library/LibraryDialogOverlays.tsx:474
 msgctxt "common.retry"
 msgid "Retry"
 msgstr "Thử lại"
@@ -2126,7 +2126,7 @@ msgctxt "library.deck.keep"
 msgid "Keep deck"
 msgstr "Giữ bộ thẻ"
 
-#: src/features/library/LibraryDialogOverlays.tsx:493
+#: src/features/library/LibraryDialogOverlays.tsx:500
 msgctxt "library.insights.no-difficulty"
 msgid "No review ratings yet."
 msgstr "Chưa có đánh giá ôn tập nào."
@@ -2168,7 +2168,7 @@ msgctxt "common.done"
 msgid "Done"
 msgstr "Xong"
 
-#: src/features/library/LibraryDialogOverlays.tsx:475
+#: src/features/library/LibraryDialogOverlays.tsx:482
 msgctxt "library.insights.mastered"
 msgid "Mastered"
 msgstr "Đã thành thạo"
@@ -2178,7 +2178,7 @@ msgctxt "library.deck.creation-submit"
 msgid "Create deck"
 msgstr "Tạo deck"
 
-#: src/features/library/LibraryDialogOverlays.tsx:483
+#: src/features/library/LibraryDialogOverlays.tsx:490
 msgctxt "library.insights.no-category"
 msgid "No category data yet."
 msgstr "Chưa có dữ liệu danh mục."
@@ -2332,7 +2332,7 @@ msgctxt "library.import.status-failed"
 msgid "Import failed"
 msgstr "Nhập thất bại"
 
-#: src/features/library/LibraryDialogOverlays.tsx:470
+#: src/features/library/LibraryDialogOverlays.tsx:477
 msgctxt "library.insights.empty"
 msgid "There is not enough learning data to show insights yet."
 msgstr "Chưa đủ dữ liệu học tập để hiển thị thống kê."
@@ -2357,7 +2357,7 @@ msgctxt "library.edit-card.retry-save"
 msgid "Retry save"
 msgstr "Thử lưu lại"
 
-#: src/features/library/LibraryDialogOverlays.tsx:514
+#: src/features/library/LibraryDialogOverlays.tsx:524
 msgctxt "library.insights.open-progress"
 msgid "Open full Progress →"
 msgstr "Mở trang Tiến trình đầy đủ →"
