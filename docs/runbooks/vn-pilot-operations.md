@@ -167,6 +167,19 @@ The owner still needs to choose **static guide vs shared document** and a **feed
 
 The final 10-23 decision records continue/fix/change ICP with the plan's metrics and denominators. Keep this runbook as operating procedure; use the pilot decision log for dated evidence and decisions.
 
+## Age-restricted accounts
+
+Every signed-in account completes a one-time profile step before the app opens. The `completeAccountProfile` callable applies the age rule on the server: allowed when the current UTC year minus the birth year is at least 18. When the rule fails, the callable creates `users/{uid}/profile/age_restriction` holding only `restrictedAt`; the birth year is not stored, no profile record, course or card is created, and every later sign-in shows the restricted screen without asking again.
+
+Clearing a marker is a manual operator step, for example after a learner reports a mistyped year from their sign-in address and the owner approves:
+
+1. Do not ask for, copy or record the birth year or any proof of age in tickets, chat or the decision log.
+2. With the production operator credentials above, select the explicit pilot project and named database, open `users/{uid}/profile/age_restriction`, confirm it holds only `restrictedAt`, and delete that one document (Firebase console, or Admin SDK `doc('users/<uid>/profile/age_restriction').delete()`).
+3. Never create or edit `users/{uid}/profile/account` by hand. At the next sign-in the learner sees the profile step again and the server applies the rule to the year they enter; an under-18 year creates the marker again.
+4. Record the date and that a marker was cleared in the decision log, without the account identifier.
+
+Account export includes the marker and the profile record; account deletion removes both.
+
 ## App Check provider switch (one-time)
 
 reCAPTCHA Enterprise bills each assessment beyond the free tier. reCAPTCHA v3 has no assessment fee. The sealed web target in `firebase-applet-config.json` binds `appCheckProvider` and `appCheckSiteKey` together. Both currently use Enterprise. A build environment override cannot change that pair.

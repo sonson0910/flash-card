@@ -44,7 +44,7 @@ describe('legal pages', () => {
     const vietnamese = section(html, 'tieng-viet');
     const english = section(html, 'english');
 
-    expect(html).toContain('Cập nhật: 01/10/2026 · Updated: 01/10/2026');
+    expect(html).toContain('Cập nhật: 19/11/2026 · Updated: 19/11/2026');
     expect(html).toContain('<a href="#tieng-viet" hreflang="vi">');
     expect(html).toContain('<a href="#english" hreflang="en">');
     expect(vietnamese).toContain('<h1 id="privacy-vi">Quyền riêng tư</h1>');
@@ -54,6 +54,9 @@ describe('legal pages', () => {
     expect(vietnamese).toContain('<h2>Lưu giữ và quyền của bạn</h2>');
     expect(vietnamese).toContain('Google Gemini');
     expect(vietnamese).toContain('tối đa 180 ngày');
+    expect(vietnamese).toContain('<h2>Hồ sơ tài khoản và yêu cầu tuổi</h2>');
+    expect(vietnamese).toContain('Máy chủ chỉ dùng năm sinh để kiểm tra yêu cầu từ 18 tuổi');
+    expect(vietnamese).toContain('năm sinh không được lưu');
     expect(english).toContain('<h1 id="privacy-en">Privacy</h1>');
     expect(english).toContain('<h2>Data processed</h2>');
     expect(english).toContain('<h2>Providers and processing locations</h2>');
@@ -61,6 +64,9 @@ describe('legal pages', () => {
     expect(english).toContain('<h2>Retention and your rights</h2>');
     expect(english).toContain('Google Gemini');
     expect(english).toContain('up to 180 days');
+    expect(english).toContain('<h2>Account profile and age requirement</h2>');
+    expect(english).toContain('The server uses the birth year only to check the 18-or-older requirement');
+    expect(english).toContain('it is not stored; the system keeps only the time account creation was paused');
     expect(vietnamese).toContain('href="/terms.html">Điều khoản sử dụng</a>');
     expect(english).toContain('href="/terms.html">Terms of Use</a>');
     expect(vietnamese).toContain('href="/browser-extension-privacy.html">Quyền riêng tư của extension</a>');
