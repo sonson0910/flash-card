@@ -95,14 +95,19 @@ test('Lumi, motion and sound settings persist after reload', async ({ page, sign
 test('reminder schedule saves to the signed-in owner and loads after reload', async ({ page, signIn, seedCourseProfile }) => {
   await seedCourseProfile();
   await signIn(page, '/?view=settings&locale=en');
+  const sections = page.getByRole('navigation', { name: 'Settings sections' });
+  await sections.getByRole('button', { name: 'Reminders' }).click();
+  await expect(sections.getByRole('button', { name: 'Reminders' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('heading', { level: 1, name: 'A nudge, not a nag.' })).toBeVisible();
   const reminders = page.getByRole('region', { name: 'Study reminders' });
   await expect(reminders.getByRole('button', { name: 'Save reminders' })).toBeEnabled();
-  await reminders.getByLabel('Send at').fill('09:30');
+  await reminders.getByLabel('Send at').selectOption('09:30');
   await reminders.getByLabel('Sun', { exact: true }).uncheck();
   await reminders.getByRole('button', { name: 'Save reminders' }).click();
   await expect(reminders.getByRole('status')).toHaveText('Reminder settings saved.');
 
   await page.reload();
+  await sections.getByRole('button', { name: 'Reminders' }).click();
   await expect(reminders.getByLabel('Send at')).toHaveValue('09:30');
   await expect(reminders.getByLabel('Sun', { exact: true })).not.toBeChecked();
 });

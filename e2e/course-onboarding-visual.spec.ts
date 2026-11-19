@@ -147,9 +147,12 @@ for (const theme of themes) for (const viewport of viewports) {
     await expectScreen(page, testInfo, `course-goals-${theme.family}-${theme.mode}-${viewport.name}`);
 
     await page.goto('/?view=settings&locale=en');
-    const settings = page.getByRole('heading', { name: 'Course and learning' }).locator('xpath=ancestor::section');
+    const settingsSections = page.getByRole('navigation', { name: 'Settings sections' });
+    await settingsSections.getByRole('button', { name: 'Language & courses' }).click();
+    await expect(settingsSections.getByRole('button', { name: 'Language & courses' })).toHaveAttribute('aria-current', 'page');
+    const settings = page.getByRole('region', { name: 'Language & courses' });
     await expect(settings).toBeVisible();
-    await expect(settings.getByText('Meaning language')).toBeVisible();
+    await expect(settings.getByText('Meanings and explanations in')).toBeVisible();
     await expect(settings.getByText('Daily pace')).toBeVisible();
     await expect(settings.getByRole('switch')).toBeChecked();
     await expect(settings.getByText('Applies to new cards. Existing card meanings do not change.')).toBeVisible();
@@ -174,10 +177,7 @@ for (const theme of themes) for (const viewport of viewports) {
     for (const control of await settings.locator('select').all()) {
       expect((await expectBox(control, 'course settings select')).height, 'settings selects meet the 44px touch target').toBeGreaterThanOrEqual(44);
     }
-    const appearance = page.getByRole('heading', { name: 'Appearance' }).locator('xpath=ancestor::section');
-    const coursePosition = await settings.boundingBox();
-    const appearancePosition = await appearance.boundingBox();
-    expect(coursePosition && appearancePosition && coursePosition.y < appearancePosition.y).toBeTruthy();
+    await expect(page.getByRole('heading', { level: 1, name: 'Language & courses' })).toBeVisible();
     await expectScreen(page, testInfo, `course-settings-${theme.family}-${theme.mode}-${viewport.name}`);
     expect(createScreenshot.image).toMatchSnapshot(`${createScreenshot.name}.png`);
   });

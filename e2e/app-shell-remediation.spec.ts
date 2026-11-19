@@ -525,9 +525,10 @@ test(meaningLanguageMismatchShareTestTitle, async ({
     const settingsPage = await recipientContext.newPage();
     await blockExternalNetwork(settingsPage);
     await settingsPage.goto('/?view=settings');
-    const meaningLanguage = settingsPage.locator('[data-settings-course-language] select').nth(1);
-    await expect(meaningLanguage).toHaveValue('en');
-    await meaningLanguage.selectOption('vi');
+    await settingsPage.getByRole('navigation', { name: 'Settings sections' }).getByRole('button', { name: 'Language & courses' }).click();
+    const meaningLanguage = settingsPage.locator('[data-settings-course-language] input[name="settings-meaning-language"]');
+    await expect(meaningLanguage.and(settingsPage.locator(':checked'))).toHaveValue('en');
+    await meaningLanguage.and(settingsPage.locator('[value="vi"]')).locator('..').click();
     await expect.poll(async () => (
       (await db.collection('users').doc(recipientId).collection('profile').doc('courses').get())
         .data()?.courses?.[0]?.nativeLanguage
