@@ -19,8 +19,10 @@ export const XP_STREAM_SCHEMA_VERSION = 2;
 const VERIFIED_GAMIFICATION_SCHEMA_VERSION = 1;
 const VERIFIED_HISTORY_FIELD = 'verifiedByDayV1';
 const REVIEW_ACTIVITY_FIELD = 'reviewActivityV1';
-// Written only by the verified-action transaction; a legacy save never reads or writes it.
-const DAILY_GOALS_FIELD = 'dailyGoalsV1';
+// Display-only maps written only by the verified-action transaction. A legacy save never reads
+// or writes them, so it accepts each one whatever it holds: the verified writer resets a
+// malformed value itself, and a bad value must never block a save.
+const VERIFIED_DISPLAY_FIELDS = ['dailyGoalsV1', 'streakV1', 'achievementsV1', 'studyTimeV1', 'wordWeeksV1'] as const;
 const MAX_REVIEW_ACTIVITY_DAYS = 182;
 const MAX_REVIEW_ACTIVITY_LANGUAGES = 16;
 
@@ -397,7 +399,7 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
   const hasVerifiedSchema = verifiedKeys.some(key => Object.prototype.hasOwnProperty.call(source, key));
   const hasVerifiedReviewAt = Object.prototype.hasOwnProperty.call(source, 'lastVerifiedReviewAt');
   const hasReviewActivity = Object.prototype.hasOwnProperty.call(source, REVIEW_ACTIVITY_FIELD);
-  const hasDailyGoals = Object.prototype.hasOwnProperty.call(source, DAILY_GOALS_FIELD);
+  const presentDisplayFields = VERIFIED_DISPLAY_FIELDS.filter(field => Object.prototype.hasOwnProperty.call(source, field));
   if (hasLegacySequenceMap && hasSchemaVersion) {
     throw new GamificationMigrationRequiredError();
   }
@@ -411,7 +413,7 @@ const parseStoredStats = (value: DocumentData | undefined): StoredGamificationSt
     ...(hasVerifiedSchema ? verifiedKeys : []),
     ...(hasVerifiedSchema && hasVerifiedReviewAt ? ['lastVerifiedReviewAt'] : []),
     ...(hasReviewActivity ? [REVIEW_ACTIVITY_FIELD] : []),
-    ...(hasDailyGoals ? [DAILY_GOALS_FIELD] : []),
+    ...presentDisplayFields,
   ];
   if (Object.keys(source).length !== expectedKeys.length
     || Object.keys(source).some(key => !expectedKeys.includes(key))) {
