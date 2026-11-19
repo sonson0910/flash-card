@@ -24,7 +24,8 @@
   font-family: var(--ss-body-font);
 }
 :root.dark:not([data-theme-family="crystal"]) .sf-settings-scope {
-  --ss-text3: #6f808a; --ss-body: #b5c2ca; --ss-text-strong: #f1f6f9;
+  /* The board tone sits under 4.5:1 on the dark glass, so small labels take the lighter step web words uses. */
+  --ss-text3: #8494a0; --ss-body: #b5c2ca; --ss-text-strong: #f1f6f9;
   --ss-line-strong: rgb(255 255 255 / .14); --ss-nav-line: rgb(255 255 255 / .06);
   --ss-surface: var(--sf-surface-glass); --ss-blur: blur(18px); --ss-radius: 22px;
   --ss-accent-soft: rgb(40 211 244 / .12); --ss-accent-line: rgb(40 211 244 / .35);
