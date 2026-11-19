@@ -22,6 +22,7 @@ const secrets = fs.readFileSync('functions/.secret.local', 'utf8');
 assert.match(secrets, /ANALYTICS_PSEUDONYM_KEY=[a-f0-9]{64}/);
 assert.match(secrets, /GEMINI_API_KEY=disabled-in-e2e-emulator/);
 assert.equal(fs.statSync('functions/.secret.local').mode & 0o777, 0o600);
+assert.equal(process.argv[process.argv.indexOf('--only') + 1], 'firestore,auth,functions,storage');
 fs.writeFileSync('child-pid', String(process.pid));
 const mode = ${JSON.stringify(mode)};
 if (mode === 'signal' || mode === 'double-signal') {
