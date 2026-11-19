@@ -1,4 +1,5 @@
 import { getDocFromServer, doc, type DocumentData } from 'firebase/firestore';
+import { fetchLibraryDueCount } from '../../lib/cardRepository';
 import { app, auth, db, getSonFlashFunctions, protectedFunctionsCapability } from '../../lib/firebase';
 
 export type ReminderSettings = {
@@ -17,6 +18,12 @@ export const defaultReminderSettings = (): ReminderSettings => ({
   locale: 'en', quietHours: null, onlyIfNotStudiedToday: true,
   channels: { push: false, emailDigest: false },
 });
+
+/** The owner's due-card count today, which is the number a push reminder would carry. */
+export const loadReminderDueCount = async (uid: string): Promise<number> => {
+  if (!db || auth?.currentUser?.uid !== uid) throw new Error('Sign in to view reminder settings.');
+  return (await fetchLibraryDueCount(db, uid)).due;
+};
 
 const storedTokenKey = (uid: string) => `sonflash_push_token_${encodeURIComponent(uid)}`;
 const sessionTokens = new Map<string, string>();
