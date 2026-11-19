@@ -1,75 +1,163 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { ArrowRight, SkipForward, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Moon, SkipForward, Sparkles, Sun, Vibrate, VibrateOff, Volume2, VolumeX, X } from 'lucide-react';
+import { useState, type KeyboardEvent } from 'react';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { Lumi } from '../../components/lumi/Lumi';
+import { useHapticsSettings } from '../../lib/haptics';
+import { useSoundSettings } from '../../lib/interactionSounds';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import { useFocusModePreference } from '../settings/focus-mode-preference';
-import type { SessionBridgeActions, SessionBridgeModel } from './dailyLearningPresentation';
+import type { SessionBridgeActions, SessionBridgeModel, SessionBridgePreviewCard } from './dailyLearningPresentation';
+import './session-bridge.css';
 
 interface SessionBridgeProps {
   readonly model: SessionBridgeModel;
   readonly actions: SessionBridgeActions;
 }
 
+/** The board sets the first word of the stage name in the accent ink and breaks the rest onto a second line. */
+function StageTitle({ label }: { readonly label: string }) {
+  const space = label.indexOf(' ');
+  if (space < 0) return <em>{label}</em>;
+  return <><em>{label.slice(0, space)}</em><br /><span>{label.slice(space + 1)}</span></>;
+}
+
+function PreviewCard({ card, flipped }: { readonly card: SessionBridgePreviewCard; readonly flipped: boolean }) {
+  const meta = [card.phonetic, card.partOfSpeech].filter(Boolean).join(' · ');
+  return (
+    <span className="session-bridge-card-rotor" data-flipped={flipped || undefined}>
+      <span className="session-bridge-card-face session-bridge-card-front" aria-hidden={flipped || undefined}>
+        <span className="session-bridge-card-chips">
+          {card.sourceSite
+            ? <span className="session-bridge-card-category"><span className="session-bridge-card-site" aria-hidden="true">{card.sourceSite.charAt(0).toUpperCase()}</span><Trans {...msg({ id: 'session.bridge.card.source', message: 'From {site}' })} values={{ site: card.sourceSite }} /></span>
+            : card.category ? <span className="session-bridge-card-category">{card.category}</span> : null}
+        </span>
+        {card.partOfSpeech && <span className="session-bridge-card-kind">{card.partOfSpeech}{card.category ? <span> // {card.category}</span> : null}</span>}
+        <span className="session-bridge-card-word" lang={card.language}>{card.word}</span>
+        {meta && <span className="session-bridge-card-phonetic">{meta}</span>}
+        <span className="session-bridge-card-hint"><Trans {...msg({ id: 'session.bridge.card.flip', message: 'Tap or press <0>Space</0> to flip' })} components={{ 0: <kbd /> }} /></span>
+      </span>
+      <span className="session-bridge-card-face session-bridge-card-back" aria-hidden={flipped ? undefined : true}>
+        <span className="session-bridge-card-kind"><Trans {...msg({ id: 'session.bridge.card.meaning', message: 'Meaning' })} /></span>
+        <span className="session-bridge-card-translation" lang={card.translationLanguage}>{card.translation}</span>
+        {card.exampleSentence && <span className="session-bridge-card-example" lang={card.language}>{card.exampleSentence}</span>}
+      </span>
+    </span>
+  );
+}
+
 /** A full-screen pause between committed stages, using only the current session's data. */
 export function SessionBridge({ model, actions }: SessionBridgeProps) {
   const { _ } = useLingui();
-  const { family } = useTheme();
+  const { family, mode, setMode } = useTheme();
   const { focusModeEnabled } = useFocusModePreference();
-  const showLumi = family === 'crystal' && readLumiEnabled();
+  const { isSoundEnabled } = useSoundSettings();
+  const { isHapticsEnabled } = useHapticsSettings();
+  const [flipped, setFlipped] = useState(false);
+  const crystal = family === 'crystal';
+  const showLumi = crystal && readLumiEnabled();
+  const showCombo = !focusModeEnabled && model.comboCount >= 2;
+  const showXp = !focusModeEnabled && model.xpEarned > 0;
+  const card = model.previewCard;
+  const feedbackLabel = isSoundEnabled
+    ? (isHapticsEnabled ? _(msg({ id: 'session.bridge.feedback.both', message: 'Sound and haptics on' })) : _(msg({ id: 'session.bridge.feedback.sound', message: 'Sound on, haptics off' })))
+    : (isHapticsEnabled ? _(msg({ id: 'session.bridge.feedback.haptics', message: 'Sound off, haptics on' })) : _(msg({ id: 'session.bridge.feedback.none', message: 'Sound and haptics off' })));
+
+  const flipFromKeyboard = (event: KeyboardEvent<HTMLElement>) => {
+    if (!card || event.key !== ' ' || event.defaultPrevented) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('button, a, input, textarea, select, [contenteditable="true"]')) return;
+    event.preventDefault();
+    setFlipped(value => !value);
+  };
 
   return (
-    <section aria-labelledby="session-bridge-heading" className="session-bridge" data-session-shell="bridge">
+    <section aria-labelledby="session-bridge-heading" className="session-bridge" data-family={family} data-session-shell="bridge" onKeyDown={flipFromKeyboard}>
       <header className="session-bridge-header">
         <button type="button" onClick={actions.exit} className="session-bridge-exit" aria-label={_(msg({ id: 'session.bridge.exit', message: 'Exit session' }))}>
-          <X size={19} aria-hidden="true" />
+          <X size={16} aria-hidden="true" />
         </button>
         <ol className="session-bridge-rail" aria-label={_(msg({ id: 'session.bridge.progress', message: 'Session progress' }))}>
-          {model.stages.map(stage => (
+          {model.stages.map((stage, index) => (
             <li key={stage.id} aria-current={stage.current ? 'step' : undefined} data-completed={stage.completed || undefined}>
               <span className="session-bridge-rail-track" aria-hidden="true"><span /></span>
-              <span className="session-bridge-rail-label">{stage.label}</span>
+              <span className="session-bridge-rail-row">
+                <span className="session-bridge-rail-label"><span className="session-bridge-rail-number" aria-hidden="true">{String(index + 1).padStart(2, '0')} </span>{stage.label}</span>
+                {stage.meta && <span className="session-bridge-rail-meta">{stage.meta}</span>}
+              </span>
             </li>
           ))}
         </ol>
+        <span className="session-bridge-feedback" role="img" aria-label={feedbackLabel} title={feedbackLabel}>
+          {isSoundEnabled ? <Volume2 size={15} aria-hidden="true" /> : <VolumeX size={15} aria-hidden="true" />}
+          {isSoundEnabled && <span className="session-bridge-wave" aria-hidden="true"><span /><span /><span /></span>}
+          {isHapticsEnabled ? <Vibrate size={15} aria-hidden="true" /> : <VibrateOff size={15} aria-hidden="true" />}
+        </span>
+        {crystal && (
+          <button type="button" className="session-bridge-theme" onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} aria-pressed={mode === 'dark'} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))}>
+            {mode === 'dark' ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+          </button>
+        )}
       </header>
 
       <GsapEntrance variant="view" className="session-bridge-main">
         <div className="session-bridge-result">
           <p className="session-bridge-eyebrow">{model.completedLabel}</p>
-          {model.stats.map(stat => (
+          {showCombo ? (
+            <div className="session-bridge-combo" data-session-combo={model.comboCount}>
+              <span className="session-bridge-combo-banner" aria-hidden="true" />
+              <strong>×{model.comboCount}</strong>
+              <span className="session-bridge-combo-label"><Trans {...msg({ context: 'session.bridge.combo', message: 'correct answers in a row' })} /></span>
+            </div>
+          ) : model.stats.map(stat => (
             <div key={stat.label} className="session-bridge-stat">
               <strong>{stat.value}</strong>
               <span>{stat.label}</span>
             </div>
           ))}
-          {!focusModeEnabled && model.comboCount >= 2 && (
-            <div className="session-bridge-stat" data-session-combo={model.comboCount}>
-              <strong>×{model.comboCount}</strong>
-              <span><Trans {...msg({ context: 'session.bridge.combo', message: 'Combo' })} /></span>
+          {showCombo && model.recentAnswers.length > 0 && (
+            <ol className="session-bridge-ticks" aria-label={_(msg({ id: 'session.bridge.recent-answers', message: 'Latest answers' }))}>
+              {model.recentAnswers.map((correct, index) => (
+                <li key={index} data-correct={correct || undefined}>
+                  <span className="sr-only">{correct ? _(msg({ id: 'session.bridge.answer.correct', message: 'Remembered' })) : _(msg({ id: 'session.bridge.answer.missed', message: 'Missed' }))}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+          {showXp && <p className="session-bridge-xp"><Trans {...msg({ id: 'session.bridge.xp', message: '+{xp} XP this session' })} values={{ xp: model.xpEarned }} /></p>}
+          {showLumi && (
+            <div className="session-bridge-companion">
+              <Lumi pose="happy" size={170} className="session-bridge-lumi" />
+              <div className="session-bridge-speech">
+                <span className="session-bridge-speech-name"><Trans {...msg({ id: 'session.bridge.lumi.name', message: 'Lumi' })} /></span>
+                <strong><Trans {...msg({ id: 'session.bridge.lumi.title', message: 'Nice rhythm!' })} /></strong>
+                <span><Trans {...msg({ id: 'session.bridge.lumi.body', message: 'Your answers so far are saved.' })} /></span>
+              </div>
             </div>
           )}
-          {showLumi && <Lumi pose="happy" size={110} className="session-bridge-lumi" />}
         </div>
 
         <div className="session-bridge-preview" role="group" aria-label={_(msg({ id: 'session.bridge.preview', message: 'Next stage preview' }))}>
-          {model.previewCard ? (
-            <div className="session-bridge-card">
-              <span className="session-bridge-card-category">{model.previewCard.category}</span>
-              <div className="session-bridge-card-word" lang={model.previewCard.language}>{model.previewCard.word}</div>
-              {model.previewCard.phonetic && <span className="session-bridge-card-phonetic">{model.previewCard.phonetic}</span>}
-              <span className="session-bridge-card-translation">{model.previewCard.translation}</span>
-            </div>
+          <span className="session-bridge-aura" aria-hidden="true" />
+          {card ? (
+            <>
+              <span className="session-bridge-ghosts" aria-hidden="true"><span /><span /><span /></span>
+              <span className="session-bridge-trails" aria-hidden="true"><span /><span /></span>
+              <button type="button" className="session-bridge-card" aria-pressed={flipped} onClick={() => setFlipped(value => !value)}>
+                <PreviewCard card={card} flipped={flipped} />
+              </button>
+            </>
           ) : <Sparkles className="session-bridge-finale" size={92} aria-hidden="true" />}
         </div>
 
         <div className="session-bridge-next">
-          <p className="session-bridge-eyebrow"><Trans {...msg({ context: 'session.bridge.up-next', message: 'Up next' })} /></p>
-          <h1 id="session-bridge-heading" ref={model.headingRef} tabIndex={-1}>{model.nextLabel}</h1>
-          <p className="session-bridge-live" role="status" aria-live="polite">{model.liveMessage}</p>
+          <p className="session-bridge-step">{model.stepLabel}</p>
+          <h1 id="session-bridge-heading" ref={model.headingRef} tabIndex={-1} aria-label={model.nextLabel}><StageTitle label={model.nextLabel} /></h1>
+          {model.nextSummary && <p className="session-bridge-summary">{model.nextSummary}</p>}
           <p className="session-bridge-description">{model.nextDescription}</p>
+          <p className="session-bridge-live" role="status" aria-live="polite">{model.liveMessage}</p>
           {model.skipReason && <p className="session-bridge-skip-reason" role="note">{model.skipReason}</p>}
           <div className="session-bridge-actions">
             <button type="button" onClick={actions.continue} className="session-bridge-primary">

@@ -139,6 +139,27 @@ export function outstandingItems(
   return freshBucket.filter(item => snapshot.has(item.logicalId));
 }
 
+/** One committed rating: the lesson stage it belonged to and whether the learner remembered the card. */
+export interface DailySessionAnswer {
+  readonly stage: 'review' | 'new';
+  readonly correct: boolean;
+}
+
+/** Keeps the stored pointer bounded even when weak-card retries repeat for a long time. */
+export const MAX_SESSION_ANSWERS = 200;
+
+/** The library tiers a card moves through; a review that raises a card's tier is a promotion. */
+export type SessionCardTier = 'new' | 'learning' | 'mastered';
+
+/** A card whose tier rose during this session, from its tier before the session's first rating to its latest tier. */
+export interface DailySessionPromotion {
+  readonly cardId: string;
+  readonly from: SessionCardTier;
+  readonly to: SessionCardTier;
+}
+
+const tierRank: Record<SessionCardTier, number> = { new: 0, learning: 1, mastered: 2 };
+
 export interface DailySessionStats {
   readonly goodCount: number;
   readonly againCount: number;
@@ -146,27 +167,73 @@ export interface DailySessionStats {
   /** Missing on a pointer saved by an older client; unknown awards are never invented. */
   readonly reviewXp?: number;
   readonly matchXp: number;
+  /** Committed answers in order. Missing on a pointer saved by an older client, so no combo is shown. */
+  readonly answers?: readonly DailySessionAnswer[];
+  /** Cards whose committed review raised their tier. Missing on a pointer saved by an older client. */
+  readonly promotions?: readonly DailySessionPromotion[];
 }
 
-export const emptyDailySessionStats: DailySessionStats = { goodCount: 0, againCount: 0, weakCardIds: [], reviewXp: 0, matchXp: 0 };
+export const emptyDailySessionStats: DailySessionStats = { goodCount: 0, againCount: 0, weakCardIds: [], reviewXp: 0, matchXp: 0, answers: [], promotions: [] };
 
 export function applyRatingToStats(
   stats: DailySessionStats,
   cardId: string,
   rating: ReviewRatingValue,
   xpAwarded: number,
+  stage?: DailySessionAnswer['stage'],
 ): DailySessionStats {
   const isPositive = rating === 'good' || rating === 'easy';
   const weakCardIds = isPositive
     ? stats.weakCardIds.filter(id => id !== cardId)
     : [...stats.weakCardIds.filter(id => id !== cardId), cardId];
+  const answers = stage && stats.answers
+    ? [...stats.answers, { stage, correct: isPositive }].slice(-MAX_SESSION_ANSWERS)
+    : stats.answers;
   return {
     goodCount: stats.goodCount + (isPositive ? 1 : 0),
     againCount: stats.againCount + (isPositive ? 0 : 1),
     weakCardIds,
     reviewXp: (stats.reviewXp ?? 0) + xpAwarded,
     matchXp: stats.matchXp,
+    ...(answers ? { answers } : {}),
+    ...(stats.promotions ? { promotions: stats.promotions } : {}),
   };
+}
+
+/**
+ * Records a committed review's tier change for one card. A card keeps the tier it had before its
+ * first rating in this session; a later review only updates where it ended. A card that ends at or
+ * below where it started is not a promotion.
+ */
+export function applyTierChangeToStats(
+  stats: DailySessionStats,
+  cardId: string,
+  before: SessionCardTier,
+  after: SessionCardTier,
+): DailySessionStats {
+  const current = stats.promotions ?? [];
+  const existing = current.find(entry => entry.cardId === cardId);
+  const from = existing?.from ?? before;
+  const others = current.filter(entry => entry.cardId !== cardId);
+  const promotions = tierRank[after] > tierRank[from] ? [...others, { cardId, from, to: after }] : others;
+  if (!existing && promotions === others) return stats;
+  return { ...stats, promotions: promotions.slice(-MAX_SESSION_ANSWERS) };
+}
+
+/** The committed answers of one lesson stage, in the order they were given. */
+export const answersForStage = (stats: DailySessionStats, stage: DailySessionAnswer['stage']): readonly DailySessionAnswer[] => (
+  (stats.answers ?? []).filter(answer => answer.stage === stage)
+);
+
+/** The longest run of consecutive remembered cards. */
+export function longestCorrectRun(answers: readonly DailySessionAnswer[]): number {
+  let best = 0;
+  let run = 0;
+  for (const answer of answers) {
+    run = answer.correct ? run + 1 : 0;
+    best = Math.max(best, run);
+  }
+  return best;
 }
 
 export interface DailySessionPointer {
@@ -215,12 +282,29 @@ const writeStoredJson = (key: string, value?: unknown): void => {
 
 const isStringArray = (value: unknown): value is string[] => Array.isArray(value) && value.every(entry => typeof entry === 'string');
 
+const isSessionAnswerList = (value: unknown): value is DailySessionAnswer[] => Array.isArray(value)
+  && value.length <= MAX_SESSION_ANSWERS
+  && value.every(entry => Boolean(entry) && typeof entry === 'object'
+    && ((entry as Record<string, unknown>).stage === 'review' || (entry as Record<string, unknown>).stage === 'new')
+    && typeof (entry as Record<string, unknown>).correct === 'boolean');
+
+const isSessionCardTier = (value: unknown): value is SessionCardTier => value === 'new' || value === 'learning' || value === 'mastered';
+
+const isPromotionList = (value: unknown): value is DailySessionPromotion[] => Array.isArray(value)
+  && value.length <= MAX_SESSION_ANSWERS
+  && value.every(entry => Boolean(entry) && typeof entry === 'object'
+    && typeof (entry as Record<string, unknown>).cardId === 'string'
+    && isSessionCardTier((entry as Record<string, unknown>).from)
+    && isSessionCardTier((entry as Record<string, unknown>).to));
+
 const isDailySessionStats = (value: unknown): value is DailySessionStats => {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Record<string, unknown>;
   return typeof candidate.goodCount === 'number' && typeof candidate.againCount === 'number'
     && (candidate.reviewXp === undefined || Number.isSafeInteger(candidate.reviewXp) && Number(candidate.reviewXp) >= 0)
-    && typeof candidate.matchXp === 'number' && isStringArray(candidate.weakCardIds);
+    && typeof candidate.matchXp === 'number' && isStringArray(candidate.weakCardIds)
+    && (candidate.answers === undefined || isSessionAnswerList(candidate.answers))
+    && (candidate.promotions === undefined || isPromotionList(candidate.promotions));
 };
 
 const isSessionStageId = (value: unknown): value is SessionStageId => (

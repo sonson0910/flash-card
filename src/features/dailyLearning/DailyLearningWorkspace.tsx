@@ -4,6 +4,8 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import type { CardData, ReviewRatingValue } from '../../types/card';
 import type { LearningStateOutcome } from '../learning/learningStateController';
+import { getLibraryCardTier } from '../library/libraryViewModel';
+import type { SessionRecapPromotion } from '../practice/SessionRecapModal';
 import type { LanguageProfile } from '../language/languageProfile';
 import { triggerHaptic } from '../../lib/haptics';
 import { firebasePracticeSessionService, practiceTimeZone, type PracticeGamificationOutcome, type PracticeSessionChallenge } from '../practice/practiceSessionService';
@@ -30,7 +32,10 @@ import {
   clearDailySessionPointer,
   consumeScheduledFreshPriority,
   emptyDailySessionStats,
+  answersForStage,
   applyRatingToStats,
+  applyTierChangeToStats,
+  longestCorrectRun,
   firstOutstandingStage,
   logicalIdsOf,
   nextOutstandingStage,
@@ -74,7 +79,7 @@ import type {
   TodayScreenModel,
 } from './dailyLearningPresentation';
 import { evidencedStudyStreak, isoDayInTimeZone } from './dailyLearningPresentation';
-import { studyRun } from './todayScreenFacts';
+import { sourceSite, studyRun, studyWeek } from './todayScreenFacts';
 import { subscribeToActiveSessionNewStagePromotions } from './webWordsSessionPriority';
 
 const LessonScreen = lazy(() => import('./LessonScreen').then(module => ({ default: module.LessonScreen })));
@@ -1025,32 +1030,69 @@ export default function DailyLearningWorkspace({
 
   if (activeMultiStage?.phase.kind === 'bridge') {
     const { completedStage, nextStage } = activeMultiStage.phase;
+    const { stagePlan, stats: sessionStats } = activeMultiStage;
     const stageLabel = (id: SessionStageId) => _(sessionStageContent[id].label);
-    const nextCount = sessionStageItemCount(activeMultiStage.stagePlan, nextStage);
+    const nextCount = sessionStageItemCount(stagePlan, nextStage);
+    const stageAnswers = (id: SessionStageId) => (id === 'review' || id === 'new' ? answersForStage(sessionStats, id) : []);
+    const completedAnswers = stageAnswers(completedStage);
+    const answersTracked = sessionStats.answers !== undefined;
+    // A resumed session rebuilds each bucket from outstanding cards only, so a finished stage is
+    // never reported as smaller than what was committed in it.
+    const plannedCount = (id: SessionStageId) => Math.max(sessionStageItemCount(stagePlan, id), stageAnswers(id).length);
+    const stageIndex = (id: SessionStageId) => SESSION_STAGE_ORDER.indexOf(id);
     const stats: SessionBridgeStat[] = committedReviewCount > 0
       ? [{ label: _(msg({ id: 'session.bridge.stat.reviewed', message: 'Reviewed' })), value: String(committedReviewCount) }]
       : [];
-    const preview = nextStage === 'new' ? activeMultiStage.stagePlan.fresh[0]?.card
-      : nextStage === 'match' ? activeMultiStage.stagePlan.match.cards[0] : undefined;
+    const preview = nextStage === 'new' ? stagePlan.fresh[0]?.card
+      : nextStage === 'match' ? stagePlan.match.cards[0] : undefined;
+    const previewSite = preview ? sourceSite(preview.source?.url) : null;
+    const nextWebCount = nextStage === 'new' ? stagePlan.fresh.filter(item => sourceSite(item.card.source?.url)).length : 0;
     const skipReason = (nextStage === 'match' || skippedUnavailableMatchStage(activeMultiStage.stagePlan, completedStage, nextStage))
-      && activeMultiStage.stagePlan.match.skipReason
+      && stagePlan.match.skipReason
       ? _(msg({ id: 'session.stage.match.skip-reason', message: 'Not enough distinct word pairs are available today, so Word Match is skipped.' }))
       : undefined;
+    const nextSummary = nextStage === 'new' && nextCount > 0
+      ? (nextWebCount > 0
+        ? i18n._(msg({ id: 'session.bridge.summary.new-web', message: '{count, plural, one {# word} other {# words}} · {web} from the web' }).id, { count: nextCount, web: nextWebCount })
+        : i18n._(msg({ id: 'session.bridge.summary.new', message: '{count, plural, one {# word} other {# words}}' }).id, { count: nextCount }))
+      : nextStage === 'match' && nextCount > 0
+        ? i18n._(msg({ id: 'session.bridge.summary.match', message: '{count, plural, one {# word pair} other {# word pairs}}' }).id, { count: nextCount })
+        : undefined;
     const model: SessionBridgeModel = {
       headingRef,
       completedStage,
       nextStage,
-      completedLabel: i18n._(msg({ id: 'session.bridge.completed', message: '{stage} done' }).id, { stage: stageLabel(completedStage) }),
+      completedLabel: answersTracked && completedAnswers.length > 0
+        ? i18n._(msg({ id: 'session.bridge.completed-count', message: '{stage} done · {done} of {total}' }).id, {
+          stage: stageLabel(completedStage), done: completedAnswers.length, total: plannedCount(completedStage),
+        })
+        : i18n._(msg({ id: 'session.bridge.completed', message: '{stage} done' }).id, { stage: stageLabel(completedStage) }),
       nextLabel: stageLabel(nextStage),
+      stepLabel: i18n._(msg({ id: 'session.bridge.step', message: 'Part {current} of {total}' }).id, {
+        current: stageIndex(nextStage) + 1, total: SESSION_STAGE_ORDER.length,
+      }),
       nextDescription: _(sessionStageContent[nextStage].description),
+      ...(nextSummary ? { nextSummary } : {}),
       stats,
-      comboCount: committedReviewCount,
-      stages: SESSION_STAGE_ORDER.map(id => ({
-        id, label: stageLabel(id),
-        completed: SESSION_STAGE_ORDER.indexOf(id) <= SESSION_STAGE_ORDER.indexOf(completedStage),
-        current: id === nextStage,
-      })),
-      ...(preview ? { previewCard: { word: preview.word, translation: preview.translation, phonetic: preview.phonetic, category: preview.category, language: preview.language ?? targetLanguage } } : {}),
+      comboCount: longestCorrectRun(completedAnswers),
+      recentAnswers: completedAnswers.slice(-8).map(answer => answer.correct),
+      xpEarned: (sessionStats.reviewXp ?? 0) + sessionStats.matchXp,
+      stages: SESSION_STAGE_ORDER.map(id => {
+        const completed = stageIndex(id) <= stageIndex(completedStage);
+        const planned = id === 'match' ? stagePlan.match.cards.length : plannedCount(id);
+        const done = id === 'match' ? (completed ? planned : 0) : stageAnswers(id).length;
+        return {
+          id, label: stageLabel(id), completed, current: id === nextStage,
+          meta: id === 'recap' || planned === 0 || (id !== 'match' && !answersTracked) ? '' : `${done}/${planned}`,
+        };
+      }),
+      ...(preview ? { previewCard: {
+        word: preview.word, translation: preview.translation, phonetic: preview.phonetic, category: preview.category,
+        language: preview.language ?? targetLanguage, translationLanguage: preview.translationLanguage ?? translationLanguage,
+        ...(preview.partOfSpeech ? { partOfSpeech: preview.partOfSpeech } : {}),
+        ...(previewSite ? { sourceSite: previewSite } : {}),
+        ...(preview.exampleSentence ? { exampleSentence: preview.exampleSentence } : {}),
+      } } : {}),
       ...(skipReason ? { skipReason } : {}),
       canSkipNextStage: nextStage === 'match' && nextCount > 0,
       liveMessage: skipReason ?? (nextStage === 'recap'
@@ -1177,9 +1219,16 @@ export default function DailyLearningWorkspace({
     const recordReview = (result: Awaited<ReturnType<typeof session.rate>>, operationId: string | undefined, cardId: string, rating: ReviewRatingValue) => {
       if (!operationId || recordedReviewOperationIdsRef.current.has(operationId) || !isCurrentLessonScope() || (result.status !== 'advanced' && result.status !== 'completed')) return;
       recordedReviewOperationIdsRef.current.add(operationId);
-      setMultiStage(current => (isCurrentSession(current)
-        ? { ...current, stats: applyRatingToStats(current.stats, cardId, rating, result.xpAwarded) }
-        : current));
+      const before = dailyCardsRef.current.find(card => card.id === cardId);
+      const reviewed = before && result.publication?.kind === 'patch' && result.publication.cardId === cardId
+        ? { ...before, ...result.publication.fields }
+        : undefined;
+      setMultiStage(current => {
+        if (!isCurrentSession(current)) return current;
+        const rated = applyRatingToStats(current.stats, cardId, rating, result.xpAwarded, current.phase.kind === 'lesson' ? current.phase.stage : undefined);
+        const stats = before && reviewed ? applyTierChangeToStats(rated, cardId, getLibraryCardTier(before), getLibraryCardTier(reviewed)) : rated;
+        return { ...current, stats };
+      });
     };
     const feedback = activeLesson.feedback;
     const stage = currentStep?.stage ?? 'review';
@@ -1294,6 +1343,12 @@ export default function DailyLearningWorkspace({
         return card ? [card] : [];
       })
     : [];
+  const sessionPromotions: SessionRecapPromotion[] = activeMultiStage
+    ? (activeMultiStage.stats.promotions ?? []).flatMap(promotion => {
+        const card = dailyCardsRef.current.find(candidate => candidate.id === promotion.cardId);
+        return card ? [{ card, from: promotion.from, to: promotion.to }] : [];
+      })
+    : [];
   const sessionTotalCards = committedReviewCount;
   const sessionXpEarned = activeMultiStage
     ? (activeMultiStage.stats.reviewXp ?? 0) + activeMultiStage.stats.matchXp
@@ -1304,7 +1359,8 @@ export default function DailyLearningWorkspace({
   const todayPreviewCard = plan?.items[0]?.card ?? (matchOnlySession ? todayStagePlan?.match.cards[0] : undefined);
   const isWebCapture = (card: CardData) => Boolean(card.source?.url);
   const todayStreak = evidencedStudyStreak(streak, studyXpHistory, undefined, rewardTimeZone);
-  const todayRun = studyRun(studyXpHistory, isoDayInTimeZone(new Date(), rewardTimeZone), todayStreak);
+  const todayIso = isoDayInTimeZone(new Date(), rewardTimeZone);
+  const todayRun = studyRun(studyXpHistory, todayIso, todayStreak);
 
   const todayModel: TodayScreenModel = {
     headingRef,
@@ -1337,6 +1393,7 @@ export default function DailyLearningWorkspace({
     ...(learner ? { learner } : {}),
     studyRun: todayRun,
     recentStudyXp: studyXpHistory.slice(-14).map(entry => entry.XP),
+    studyWeek: studyWeek(studyXpHistory, todayIso, todayRun),
     ...(plan ? {
       sessionWords: plan.items.slice(0, 5).map(item => ({
         id: item.card.id,
@@ -1380,6 +1437,10 @@ export default function DailyLearningWorkspace({
           xpEarned={sessionXpEarned}
           weakCards={weakCards}
           targetLanguage={targetLanguage}
+          promotions={sessionPromotions}
+          {...(todayStreak > 0 ? { streakDays: todayStreak } : {})}
+          {...(activeMultiStage.stats.answers ? { bestRun: longestCorrectRun(activeMultiStage.stats.answers) } : {})}
+          returnsToToday
         />
       </Suspense>
     )}

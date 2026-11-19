@@ -5,16 +5,13 @@ import {
   Check,
   ChevronDown,
   Eye,
-  Flame,
   Headphones,
   PenLine,
   Puzzle,
   Shuffle,
   Sparkles,
-  X,
   Zap,
 } from 'lucide-react';
-import * as Dialog from '@radix-ui/react-dialog';
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
@@ -25,6 +22,7 @@ import './daily-learning-canvas.css';
 import './today-caught-up.css';
 import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
 import { TodayReadyHero } from './TodayReadyHero';
+import { StreakChip } from './StreakDialog';
 
 export { sessionStageContent } from './TodayReadyHero';
 
@@ -37,9 +35,9 @@ interface TodayScreenProps {
 }
 
 const featuredLessonModes = [
-  { id: 'recognition', label: msg({ id: 'today.mode.recognition.label', message: 'Recognition' }), description: msg({ id: 'today.mode.recognition.description', message: 'Choose the meaning you recognize.' }), tag: msg({ id: 'today.mode.recognition.tag', message: 'Quick recall' }), Icon: Eye, accentColor: 'from-cyan-500/20 to-sky-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30' },
-  { id: 'active-recall', label: msg({ id: 'today.mode.active-recall.label', message: 'Active recall' }), description: msg({ id: 'today.mode.active-recall.description', message: 'Recall the answer without choices.' }), tag: msg({ id: 'today.mode.active-recall.tag', message: 'Deep memory' }), Icon: Brain, accentColor: 'from-indigo-500/20 to-purple-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30' },
-  { id: 'listening', label: msg({ id: 'today.mode.listening.label', message: 'Listening' }), description: msg({ id: 'today.mode.listening.description', message: 'Listen, then identify the word.' }), tag: msg({ id: 'today.mode.listening.tag', message: 'Ear training' }), Icon: Headphones, accentColor: 'from-sky-500/20 to-blue-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30' },
+  { id: 'recognition', label: msg({ id: 'today.mode.recognition.label', message: 'Recognition' }), description: msg({ id: 'today.mode.recognition.description', message: 'Choose the meaning you recognize.' }), tag: msg({ id: 'today.mode.recognition.tag', message: 'Quick recall' }), Icon: Eye, accentColor: 'from-[color-mix(in_srgb,var(--sf-brand)_20%,transparent)] to-[color-mix(in_srgb,var(--sf-brand)_8%,transparent)] text-[var(--sf-brand-text)] border-[color-mix(in_srgb,var(--sf-brand)_30%,transparent)]' },
+  { id: 'active-recall', label: msg({ id: 'today.mode.active-recall.label', message: 'Active recall' }), description: msg({ id: 'today.mode.active-recall.description', message: 'Recall the answer without choices.' }), tag: msg({ id: 'today.mode.active-recall.tag', message: 'Deep memory' }), Icon: Brain, accentColor: 'from-[color-mix(in_srgb,var(--sf-second)_20%,transparent)] to-[color-mix(in_srgb,var(--sf-second)_8%,transparent)] text-[var(--sf-text)] border-[color-mix(in_srgb,var(--sf-second)_30%,transparent)]' },
+  { id: 'listening', label: msg({ id: 'today.mode.listening.label', message: 'Listening' }), description: msg({ id: 'today.mode.listening.description', message: 'Listen, then identify the word.' }), tag: msg({ id: 'today.mode.listening.tag', message: 'Ear training' }), Icon: Headphones, accentColor: 'from-[color-mix(in_srgb,var(--sf-success)_20%,transparent)] to-[color-mix(in_srgb,var(--sf-success)_8%,transparent)] text-[var(--sf-success)] border-[color-mix(in_srgb,var(--sf-success)_30%,transparent)]' },
 ] as const;
 const additionalLessonModes = [
   { id: 'spelling', label: msg({ id: 'today.mode.spelling.label', message: 'Spelling' }), description: msg({ id: 'today.mode.spelling.description', message: 'Type the word from its meaning.' }), Icon: PenLine },
@@ -47,8 +45,8 @@ const additionalLessonModes = [
   { id: 'sentence-building', label: msg({ id: 'today.mode.sentence-building.label', message: 'Sentence building' }), description: msg({ id: 'today.mode.sentence-building.description', message: 'Put every word occurrence in order.' }), Icon: Shuffle },
 ] as const satisfies ReadonlyArray<{ id: LessonMode; label: ReturnType<typeof msg>; description: ReturnType<typeof msg>; Icon: React.ComponentType<{ size?: number; className?: string }> }>;
 
-const primaryButton = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100';
-const secondaryButton = 'min-h-11 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-2.5 font-bold text-[var(--sf-text)] transition-all duration-200 hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const primaryButton = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-[0_10px_24px_-14px_var(--sf-brand)] transition-[transform,filter] duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100';
+const secondaryButton = 'min-h-11 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-2.5 font-bold text-[var(--sf-text)] transition-[transform,border-color,color] duration-200 hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
 
 function PageHeading({ model }: Pick<TodayScreenProps, 'model'>) {
@@ -178,13 +176,13 @@ function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'act
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-1.5">
-            <Zap size={14} className="text-cyan-700 dark:text-cyan-400" />
+            <Zap size={14} className="text-[var(--sf-brand-text)]" />
             <p className="premium-kicker uppercase tracking-[0.14em]">{_(msg({ id: 'today.practice.kicker', message: 'Extra practice' }))}</p>
           </div>
           <h2 id="practice-mode-heading" className="mt-1 text-xl font-black tracking-tight">{_(msg({ id: 'today.practice.title', message: 'Practice your way' }))}</h2>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">{_(msg({ id: 'today.practice.description', message: 'Use another exercise when you want a different kind of recall.' }))}</p>
         </div>
-        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-11 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-all hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer">{_(msg({ id: 'today.practice.more', message: 'More practice' }))}</button>
+        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-11 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-[transform,border-color] hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer">{_(msg({ id: 'today.practice.more', message: 'More practice' }))}</button>
       </div>
       {model.plan && (
         <fieldset className="today-length">
@@ -207,7 +205,7 @@ function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'act
                 <div className={`flex size-9 items-center justify-center rounded-xl border bg-gradient-to-br ${mode.accentColor} shadow-xs transition-transform duration-200 group-hover:scale-110`}>
                   <mode.Icon size={18} />
                 </div>
-                <span className="rounded-full border border-slate-200/90 bg-slate-100/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+                <span className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
                   {_(mode.tag)}
                 </span>
               </div>
@@ -245,35 +243,6 @@ function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'act
 
 const streakChipClass = 'liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[var(--sf-text)] transition-transform hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none';
 
-function StreakChip({ streak, className = streakChipClass }: Pick<TodayScreenProps['model'], 'streak'> & { readonly className?: string }) {
-  const { _ } = useLingui();
-  if (streak === undefined || streak < 1) return null;
-
-  return (
-    <Dialog.Root>
-      <Dialog.Trigger asChild>
-        <button type="button" className={className}>
-          <Flame size={16} className="today-streak-flame text-orange-500" aria-hidden="true" />
-          {_({ ...msg({ id: 'today.streak.chip', message: '{count, plural, one {# study day} other {# study days}}' }), values: { count: streak } })}
-        </button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/72 backdrop-blur-sm motion-reduce:backdrop-blur-none" />
-        <Dialog.Content className="liquid-glass crystal-chamfer fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[28px] border border-[var(--sf-border)] p-6 text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2">
-          <div className="flex items-start gap-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-orange-500/12 text-orange-500"><Flame size={22} aria-hidden="true" /></span>
-            <div className="min-w-0 flex-1">
-              <Dialog.Title className="text-balance text-xl font-black">{_(msg({ id: 'today.streak.title', message: 'Your study rhythm' }))}</Dialog.Title>
-              <Dialog.Description className="mt-2 text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{_({ ...msg({ id: 'today.streak.description', message: 'You have studied for {count, plural, one {# day in a row} other {# days in a row}}. Keep choosing the next helpful study step.' }), values: { count: streak } })}</Dialog.Description>
-            </div>
-            <Dialog.Close className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2" aria-label={i18n._(msg({ id: 'today.streak.close', message: 'Close streak details' }).id)}><X size={18} aria-hidden="true" /></Dialog.Close>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
-
 function LearningJourney({ model, actions }: TodayScreenProps) {
   const { plan } = model;
   const isEmpty = model.status === 'empty';
@@ -294,8 +263,8 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
       </div>
 
       <ol aria-label={i18n._(msg({ id: "today-screen.learning-journey", message: "Learning journey" }))} className="mt-5 grid gap-3 lg:grid-cols-3">
-        <li data-journey-stage="learn" className="flex min-w-0 flex-col rounded-2xl border border-cyan-500/25 bg-cyan-500/5 p-4">
-          <span className="flex size-9 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" aria-hidden="true"><Brain size={18} /></span>
+        <li data-journey-stage="learn" className="flex min-w-0 flex-col rounded-2xl border border-[color-mix(in_srgb,var(--sf-brand)_25%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_5%,transparent)] p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl border border-[color-mix(in_srgb,var(--sf-brand)_30%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] text-[var(--sf-brand-text)]" aria-hidden="true"><Brain size={18} /></span>
           <h3 className="mt-4 text-lg font-black"><Trans {...msg({ context: 'today-screen.learn', message: 'Learn' })} /></h3>
           <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'today-screen.build-recall-with-the-next-scheduled-words', message: 'Build recall with the next scheduled words.' })} /></p>
           <button
@@ -313,8 +282,8 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
           </button>
         </li>
 
-        <li data-journey-stage="immerse" className="flex min-w-0 flex-col rounded-2xl border border-sky-500/25 bg-sky-500/5 p-4">
-          <span className="flex size-9 items-center justify-center rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300" aria-hidden="true"><Headphones size={18} /></span>
+        <li data-journey-stage="immerse" className="flex min-w-0 flex-col rounded-2xl border border-[color-mix(in_srgb,var(--sf-success)_25%,transparent)] bg-[color-mix(in_srgb,var(--sf-success)_5%,transparent)] p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl border border-[color-mix(in_srgb,var(--sf-success)_30%,transparent)] bg-[color-mix(in_srgb,var(--sf-success)_10%,transparent)] text-[var(--sf-success)]" aria-hidden="true"><Headphones size={18} /></span>
           <h3 className="mt-4 text-lg font-black"><Trans {...msg({ context: 'today-screen.immerse', message: 'Immerse' })} /></h3>
           <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{canImmerse ? i18n._(msg({ id: "today.journey.train-your-ear-with-a-focused-listening-lesson", message: "Train your ear with a focused listening lesson." })) : isEmpty ? i18n._(msg({ id: "today.journey.build-a-plan-to-unlock-listening-practice", message: "Build a plan to unlock listening practice." })) : i18n._(msg({ id: "today.journey.a-listening-lesson-is-not-available-yet", message: "A listening lesson is not available yet." }))}</p>
           <button
@@ -329,8 +298,8 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
           </button>
         </li>
 
-        <li data-journey-stage="communicate" className="flex min-w-0 flex-col rounded-2xl border border-violet-500/25 bg-violet-500/5 p-4">
-          <span className="flex size-9 items-center justify-center rounded-xl border border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300" aria-hidden="true"><Sparkles size={18} /></span>
+        <li data-journey-stage="communicate" className="flex min-w-0 flex-col rounded-2xl border border-[color-mix(in_srgb,var(--sf-second)_25%,transparent)] bg-[color-mix(in_srgb,var(--sf-second)_5%,transparent)] p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl border border-[color-mix(in_srgb,var(--sf-second)_30%,transparent)] bg-[color-mix(in_srgb,var(--sf-second)_10%,transparent)] text-[var(--sf-text)]" aria-hidden="true"><Sparkles size={18} /></span>
           <h3 className="mt-4 text-lg font-black"><Trans {...msg({ context: 'today-screen.communicate', message: 'Communicate' })} /></h3>
           <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{isEmpty ? i18n._(msg({ id: "today.journey.build-a-plan-to-unlock-story-shadowing-and-ai-dialogue", message: "Build a plan to unlock Story, Shadowing, and AI Dialogue." })) : i18n._(msg({ id: "today.journey.use-a-bounded-text-mission-story-or-shadowing-practice-with-your-", message: "Use a bounded text mission, story, or shadowing practice with your vocabulary." }))}</p>
           <button
@@ -373,7 +342,7 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
         <div className="daily-zero-copy">
           <p className="premium-kicker uppercase tracking-[0.16em]">{_(msg({ id: 'today.kicker', message: 'Daily learning' }))}</p>
           <PageHeading model={model} />
-          {model.isOffline && <p className="mt-4 rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">{_(msg({ id: 'today.offline', message: "You're offline. Reconnect to start today's session." }))}</p>}
+          {model.isOffline && <p className="mt-4 rounded-xl border border-[color-mix(in_srgb,var(--sf-brand)_70%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] p-3 font-semibold" role="status" aria-live="polite">{_(msg({ id: 'today.offline', message: "You're offline. Reconnect to start today's session." }))}</p>}
           <p className="daily-zero-lede" role="status" aria-live="polite">{model.message} {_(msg({ id: 'today.empty.description', message: 'Add a word you care about, or begin with a reviewed learning path.' }))}</p>
         </div>
         <div className="daily-facet-panel daily-zero-panel">
@@ -401,10 +370,10 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
           <PageHeading model={model} />
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <p className="text-sm font-bold text-[var(--sf-brand-text)]">{model.courseLabel ?? _(msg({ id: 'today.course.fallback', message: 'Your current course' }))}</p>
-            <StreakChip streak={model.streak} />
+            <StreakChip streak={model.streak} run={model.studyRun} week={model.studyWeek} className={streakChipClass} />
           </div>
         </header>
-        {model.isOffline && <p className="mt-4 rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">{_(msg({ id: 'today.offline', message: "You're offline. Reconnect to start today's session." }))}</p>}
+        {model.isOffline && <p className="mt-4 rounded-xl border border-[color-mix(in_srgb,var(--sf-brand)_70%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] p-3 font-semibold" role="status" aria-live="polite">{_(msg({ id: 'today.offline', message: "You're offline. Reconnect to start today's session." }))}</p>}
         <div className="mt-8 flex justify-center">
           <CaughtUpPanel model={model} actions={actions} showLumi={showLumi} />
         </div>
@@ -416,7 +385,7 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
     return (
       <section aria-labelledby="daily-today-heading" className="daily-canvas daily-canvas-today">
         <PageHeading model={model} />
-        <div className="mt-6 max-w-3xl rounded-[28px] border border-rose-500/70 bg-[var(--sf-surface)] p-6 sm:p-8" role="alert" aria-live="assertive">
+        <div className="mt-6 max-w-3xl rounded-[28px] border border-[color-mix(in_srgb,var(--sf-danger)_70%,transparent)] bg-[var(--sf-surface)] p-6 sm:p-8" role="alert" aria-live="assertive">
           <p className="premium-kicker uppercase tracking-[0.16em]">{_(msg({ id: 'today.error.kicker', message: 'Plan unavailable' }))}</p>
           <h2 className="mt-3 text-2xl font-black tracking-tight">{_(msg({ id: 'today.error.title', message: 'Today needs attention' }))}</h2>
           <p className="mt-2 max-w-xl text-[var(--sf-text-muted)]">{model.message}</p>
@@ -437,7 +406,7 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
         translationLanguage={translationLanguage}
         isCrystal={family === 'crystal'}
         showLumi={showLumi}
-        streakChip={<StreakChip streak={model.streak} className="today-chip today-chip--button" />}
+        streakChip={<StreakChip streak={model.streak} run={model.studyRun} week={model.studyWeek} className="today-chip today-chip--button" />}
       />
       <div className="daily-canvas daily-canvas-today today-below mx-auto max-w-6xl space-y-5 sm:space-y-6">
       <RecommendedNext model={model} actions={actions} />

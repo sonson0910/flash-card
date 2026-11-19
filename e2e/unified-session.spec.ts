@@ -332,7 +332,7 @@ for (const theme of themes) {
       await expect(page.getByText(/\d+ cards? due/)).toBeVisible();
       await expectAccessibleAndContained(page, 'Recap');
       await attachScreen(page, testInfo, `${label}-recap`);
-      await page.getByRole('button', { name: 'Continue learning' }).click();
+      await page.getByRole('button', { name: 'Back to Today' }).click();
       await expect(page.locator('#daily-today-heading')).toBeVisible();
       await expect(page).not.toHaveURL(/[?&]lesson=session(?:&|$)/);
     });

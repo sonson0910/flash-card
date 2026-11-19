@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:171
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:174
 msgctxt "weeklyRecap.action.share"
 msgid "Share"
 msgstr "Chia sẻ"
@@ -23,7 +23,7 @@ msgctxt "weeklyRecap.unavailable"
 msgid "Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don't have yet, so they are left out rather than guessed."
 msgstr "Từ của tuần, số từ đã học, tỷ lệ nhớ lại, thời gian học và chuỗi cần một nguồn dữ liệu theo tuần đáng tin cậy mà hiện chưa có, nên được bỏ qua thay vì đoán."
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:168
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:171
 msgctxt "weeklyRecap.export-error"
 msgid "Could not create the image. Please try again."
 msgstr "Không tạo được ảnh. Vui lòng thử lại."
@@ -38,7 +38,7 @@ msgctxt "weeklyRecap.reviews-unavailable"
 msgid "Reviews this week are unavailable until activity covers all seven days."
 msgstr "Chưa có lượt ôn trong tuần này cho đến khi hoạt động bao phủ đủ bảy ngày."
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:161
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:162
 msgctxt "weeklyRecap.caption.label"
 msgid "Caption"
 msgstr "Chú thích"
@@ -461,6 +461,16 @@ msgid "weeklyRecap.caption.suggested-xp"
 msgstr "{xp, number} XP trong tuần này."
 
 #. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:144
+msgid "weeklyRecap.controls.kicker"
+msgstr "Tổng kết tuần <0/> Sẵn sàng chia sẻ"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:145
+msgid "weeklyRecap.controls.title"
+msgstr "Tuần của bạn <0>đến lúc này.</0>"
+
+#. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapDialog.tsx:147
 msgid "weeklyRecap.dialog.close"
 msgstr "Đóng"
@@ -480,6 +490,11 @@ msgstr "Tuần này chưa có hoạt động học nào. Hãy quay lại sau m�
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:67
 msgid "weeklyRecap.heatmap.label"
 msgstr "XP mỗi ngày trong 7 ngày qua"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:127
+msgid "weeklyRecap.hero.total-xp"
+msgstr "XP <0>tuần này</0>"
 
 #. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:60
@@ -508,7 +523,7 @@ msgstr "XP tuần này"
 
 #. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:68
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:138
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:139
 msgid "weeklyRecap.milestones"
 msgstr "Đã mở khóa {unlocked} / {total} cột mốc (từ trước đến nay)"
 
@@ -567,7 +582,7 @@ msgstr "Lượt ôn trong tuần này"
 msgid "weeklyRecap.toggle.total-xp"
 msgstr "Tổng XP"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:172
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:175
 msgctxt "weeklyRecap.action.download"
 msgid "Download PNG"
 msgstr "Tải ảnh PNG"

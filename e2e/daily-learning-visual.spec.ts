@@ -115,8 +115,10 @@ for (const theme of themes) {
 
       const profile = `users/${testUser.uid}/profile`;
       const verified = db.batch();
-      verified.set(db.doc(`${profile}/stats`), { verifiedXp: 30, verifiedStreak: 3, rewardTimeZone: 'UTC' });
-      verified.set(db.doc(`${profile}/xp_history`), { verifiedByDayV1: { [new Date().toISOString().slice(0, 10)]: 30 } });
+      // One XP day per streak day; Today's level forecast needs at least two study days.
+      const dayKey = (daysAgo: number) => new Date(Date.now() - daysAgo * 86_400_000).toISOString().slice(0, 10);
+      verified.set(db.doc(`${profile}/stats`), { verifiedXp: 60, verifiedStreak: 3, rewardTimeZone: 'UTC' });
+      verified.set(db.doc(`${profile}/xp_history`), { verifiedByDayV1: { [dayKey(2)]: 10, [dayKey(1)]: 20, [dayKey(0)]: 30 } });
       verified.set(db.doc(`${profile}/rewards`), { ownedFrameIds: [], ownedTitleIds: [], equippedFrameId: null });
       await verified.commit();
 
@@ -130,6 +132,10 @@ for (const theme of themes) {
       await expect(page.getByRole('button', { name: /Recognition/ })).toBeVisible();
       const streakChip = page.getByRole('button', { name: '3 study days' });
       await expect(streakChip).toBeVisible();
+      // The classic desktop hero carries the level row (TodaySession board); compact and Crystal heroes do not.
+      if (theme.family === 'classic' && viewport.name === 'desktop') {
+        await expect(page.getByText(/^Level \d+ after ≈ \d+ sessions?$/)).toBeVisible();
+      }
       if (viewport.name === 'mobile') {
         const action = await page.locator('[data-primary-learning-action]').boundingBox();
         const dock = await page.locator('.claude-mobile-nav').boundingBox();
@@ -139,7 +145,10 @@ for (const theme of themes) {
       await attachScreen(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-today`);
 
       await streakChip.click();
-      await expect(page.getByRole('dialog', { name: 'Your study rhythm' })).toBeVisible();
+      const streakDialog = page.getByRole('dialog', { name: 'Your streak is safe.' });
+      await expect(streakDialog).toBeVisible();
+      await expect(streakDialog.getByRole('list', { name: 'This week' }).getByRole('listitem')).toHaveCount(7);
+      await expect(streakDialog.locator('li[aria-current="date"]')).toHaveAttribute('data-state', 'done');
       await expectAccessibleAndContained(page, 'Study streak');
       await attachScreen(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-streak`);
       await page.getByRole('button', { name: 'Close streak details' }).click();

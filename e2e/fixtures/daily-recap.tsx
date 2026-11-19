@@ -6,12 +6,29 @@ import { I18nProvider, useUiLocale } from '../../src/i18n/I18nProvider';
 import { loadCatalog } from '../../src/i18n/loadCatalog';
 import { SessionRecapModal } from '../../src/features/practice/SessionRecapModal';
 import { ThemeProvider } from '../../src/features/theme/ThemeProvider';
+import instantImage from '../../src/assets/landing/anime-instant.jpg';
+import immediateImage from '../../src/assets/landing/anime-immediate.jpg';
+import spellingImage from '../../src/assets/landing/anime-spelling.jpg';
 
 const weakCards = [
   { id: 'recap-weak-1', word: 'meticulous', normalizedWord: 'meticulous', translation: 'tỉ mỉ', explanation: '', phonetic: '', emoji: '📝', category: 'Visual acceptance', audioUrl: null, imageUrl: null, language: 'en' },
   { id: 'recap-weak-2', word: 'resilient', normalizedWord: 'resilient', translation: 'kiên cường', explanation: '', phonetic: '', emoji: '💪', category: 'Visual acceptance', audioUrl: null, imageUrl: null, language: 'en' },
   { id: 'recap-weak-3', word: 'nuance', normalizedWord: 'nuance', translation: 'sắc thái', explanation: '', phonetic: '', emoji: '🎨', category: 'Visual acceptance', audioUrl: null, imageUrl: null, language: 'en' },
 ];
+
+const promotedCard = (id: string, word: string, translation: string, imageUrl: string) => ({
+  id, word, normalizedWord: word, translation, explanation: '', phonetic: '', emoji: '', category: 'Visual acceptance', audioUrl: null, imageUrl, language: 'en',
+});
+
+const promotions = [
+  { card: promotedCard('recap-up-1', 'Instant', 'Khoảnh khắc', instantImage), from: 'learning', to: 'mastered' },
+  { card: promotedCard('recap-up-2', 'Immediate', 'Ngay lập tức', immediateImage), from: 'new', to: 'learning' },
+  { card: promotedCard('recap-up-3', 'Spelling', 'Cách đánh vần', spellingImage), from: 'new', to: 'learning' },
+] as const;
+
+// The recap reads tomorrow's due count through its loader; the fixture answers it the way the
+// signed-in learner's library would, so the Next review slot shows a ready count.
+const loadTomorrowDue = () => Promise.resolve(8);
 
 function RecapFixture() {
   const locale = useUiLocale();
@@ -24,12 +41,17 @@ function RecapFixture() {
     open
     onClose={() => undefined}
     onRetryWeak={() => undefined}
+    onViewWeeklyRecap={() => undefined}
     totalCards={12}
-    summary={{ saved: 12, skipped: 0, remaining: 0, pending: 0, failed: 0 }}
     goodCount={10}
     againCount={2}
     xpEarned={175}
     weakCards={weakCards}
+    promotions={promotions}
+    streakDays={13}
+    bestRun={9}
+    returnsToToday
+    loadTomorrowDue={loadTomorrowDue}
   />;
 }
 

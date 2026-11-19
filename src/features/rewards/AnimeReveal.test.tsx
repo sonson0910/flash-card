@@ -3,13 +3,13 @@ import { I18nProvider } from '@lingui/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { createRadixDialogPassthroughMock } from '../../testing/radix-dialog-passthrough';
-import { AnimeReveal } from './AnimeReveal';
+import { AnimeReveal, type AnimeRevealSourcePayload } from './AnimeReveal';
 
 vi.mock('@radix-ui/react-dialog', () => createRadixDialogPassthroughMock());
 i18n.load('en', {});
 i18n.activate('en');
 
-const render = (event: 'tierup' | 'streak' | 'levelup', open = true, payload: { title: string; previousValue: string; currentValue: string; description: string; rewardLabels: string[] } | null = { title: 'Committed event', previousValue: '12', currentValue: '13', description: 'From the committed source.', rewardLabels: ['Reward A'] }) => renderToStaticMarkup(<I18nProvider i18n={i18n}><AnimeReveal
+const render = (event: 'tierup' | 'streak' | 'levelup', open = true, payload: AnimeRevealSourcePayload | null = { title: 'Committed event', previousValue: '12', currentValue: '13', description: 'From the committed source.', rewardLabels: ['Reward A'] }) => renderToStaticMarkup(<I18nProvider i18n={i18n}><AnimeReveal
   open={open} event={event} onContinue={vi.fn()} onEquip={vi.fn()} onLater={vi.fn()} lumiEnabled={false} reducedMotion
   payload={payload ?? undefined}
 /></I18nProvider>);
@@ -27,7 +27,10 @@ describe('AnimeReveal', () => {
   it('renders the level-up equip and later actions, while other events continue', () => {
     expect(render('levelup')).toContain('Use frame');
     expect(render('levelup')).toContain('Later');
-    expect(render('levelup')).toContain('12 <i>→</i> 13');
+    expect(render('levelup')).toContain('LV</small><strong>13</strong>');
+    const sourced = render('levelup', true, { previousValue: '12', currentValue: '13' });
+    expect(sourced).toContain('LV 12 <i>→</i> 13');
+    expect(sourced).toContain('Level up: level 12 to 13');
     expect(render('streak')).toContain('Continue learning');
     expect(render('streak')).toContain('anime-reveal__streak-art');
     expect(render('streak')).not.toContain('Later');

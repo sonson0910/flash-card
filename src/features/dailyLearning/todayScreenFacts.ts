@@ -122,6 +122,60 @@ export const studyRun = (
 /** "Day N" of the run: today counts once the learner has studied, otherwise finishing today makes it the next day. */
 export const runDayNumber = (run: StudyRun): number => run.studiedToday ? Math.max(1, run.days) : run.days + 1;
 
+export type StudyWeekDayState = 'done' | 'missed' | 'today' | 'future';
+
+export interface StudyWeekDay {
+  /** Calendar day in the reward time zone, `yyyy-mm-dd`. */
+  readonly date: string;
+  readonly state: StudyWeekDayState;
+  readonly isToday: boolean;
+  /** Verified XP recorded for the day; 0 when the history has no entry. */
+  readonly xp: number;
+}
+
+const shiftIsoDay = (isoDay: string, days: number): string => {
+  const [year, month, day] = isoDay.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+};
+
+/** Older history snapshots key a day by `Date#toDateString()`; newer ones use an ISO date. */
+const historyDayKey = (value: string): string => {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+};
+
+/**
+ * Monday to Sunday of the week holding `todayIso`. A day is `done` when the verified history
+ * has XP for it or it falls inside the current run (the run can reach further back than the
+ * stored history); an earlier day without study is `missed`, and later days are `future`.
+ */
+export const studyWeek = (
+  history: readonly { readonly date: string; readonly XP: number }[],
+  todayIso: string,
+  run: StudyRun,
+): StudyWeekDay[] => {
+  const xpByDay = new Map<string, number>();
+  for (const entry of history) {
+    if (!Number.isFinite(entry.XP) || entry.XP <= 0) continue;
+    const key = historyDayKey(entry.date);
+    xpByDay.set(key, (xpByDay.get(key) ?? 0) + entry.XP);
+  }
+  const runEnd = run.studiedToday ? todayIso : shiftIsoDay(todayIso, -1);
+  const runStart = run.days > 0 ? shiftIsoDay(runEnd, 1 - run.days) : null;
+  const [year, month, day] = todayIso.split('-').map(Number);
+  const mondayOffset = (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7;
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = shiftIsoDay(todayIso, index - mondayOffset);
+    const xp = xpByDay.get(date) ?? 0;
+    const inRun = runStart !== null && date >= runStart && date <= runEnd;
+    const isToday = index === mondayOffset;
+    const state: StudyWeekDayState = xp > 0 || inRun ? 'done' : isToday ? 'today' : index < mondayOffset ? 'missed' : 'future';
+    return { date, state, isToday, xp };
+  });
+};
+
 /** Longest display name the greeting and Lumi's bubble can hold without wrapping the heading. */
 const GREETING_NAME_MAX = 24;
 

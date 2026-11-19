@@ -1,4 +1,4 @@
-import { Award, Download, Share2 } from 'lucide-react';
+import { Award, Check, Download, Share2, Star } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import type { ReactNode } from 'react';
@@ -75,12 +75,13 @@ function MiniHeatmap({ days }: { readonly days: WeeklyRecapData['days'] }) {
   const { i18n: activeI18n } = useLingui();
   const locale = activeI18n.locale === 'pseudo' ? 'en' : activeI18n.locale || 'en';
   const weekdayFormatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+  const initialFormatter = new Intl.DateTimeFormat(locale, { weekday: 'narrow' });
   return <div className="weekly-recap-card__heatmap-grid" role="list" aria-label={activeI18n._(weeklyRecapCopy.dailyXp)}>
     {days.map(day => {
       const weekday = weekdayFormatter.format(new Date(`${day.dateKey}T12:00:00`));
       return <div key={day.dateKey} role="listitem" className="weekly-recap-card__heatmap-day">
         <span role="img" className="weekly-recap-card__heatmap-cell" style={{ backgroundColor: `var(--weekly-recap-heat-${heatmapLevelForXp(day.xp)})` }} title={`${day.dateKey}: ${formatNumber(day.xp)} XP`} aria-label={`${weekday}, ${day.dateKey}: ${formatNumber(day.xp)} XP`} />
-        <small aria-hidden="true">{weekday.slice(0, 2)}</small>
+        <small aria-hidden="true">{initialFormatter.format(new Date(`${day.dateKey}T12:00:00`))}</small>
       </div>;
     })}
   </div>;
@@ -102,15 +103,15 @@ export function WeeklyRecapScreen({
   const bestDayLabel = data.bestDay
     ? `${data.bestDay.dateKey} · ${formatNumber(data.bestDay.xp)} XP`
     : '—';
-  return <div className="weekly-recap-screen">
+  return <div className="weekly-recap-screen" data-family={isCrystal ? 'crystal' : 'classic'}>
     <section className={`weekly-recap-card${isCrystal ? ' weekly-recap-card--crystal' : ''}${showLumi ? ' weekly-recap-card--with-companion' : ''}`} aria-label={_(weeklyRecapCopy.title)}>
       {isCrystal && <span className="weekly-recap-card__stack" aria-hidden="true" />}
       {showLumi && <Lumi pose="proud" size={104} className="weekly-recap-card__companion" />}
       <header className="weekly-recap-card__header">
-        <div className="weekly-recap-card__brand-line">
-          <span className="weekly-recap-card__brand-mark" aria-hidden="true">S</span>
-          <p className="premium-kicker uppercase tracking-[.16em]">{_(weeklyRecapCopy.weeklyRecap)}</p>
-        </div>
+        {isCrystal
+          ? <Star size={18} fill="currentColor" strokeWidth={0} className="weekly-recap-card__brand-star" aria-hidden="true" />
+          : <span className="weekly-recap-card__brand-mark" aria-hidden="true">S</span>}
+        <p className="weekly-recap-card__kicker">{_(weeklyRecapCopy.weeklyRecap)}</p>
         <p className="weekly-recap-card__range">{dateRangeLabel}</p>
       </header>
 
@@ -123,7 +124,7 @@ export function WeeklyRecapScreen({
         <>
           {selection.totalXp && hasXp && <div className="weekly-recap-card__hero-metric">
             <strong>{formatNumber(data.totalXp)}</strong>
-            <span>{_(weeklyRecapCopy.xpThisWeek)}</span>
+            <span><Trans {...msg({ id: 'weeklyRecap.hero.total-xp', message: 'XP <0>this week</0>' })} components={{ 0: <em /> }} /></span>
           </div>}
           <dl className="weekly-recap-card__metrics">
             {selection.reviewed && reviewedCount !== null && metric(_(weeklyRecapCopy.reviewsThisWeek), formatNumber(reviewedCount))}
@@ -134,15 +135,14 @@ export function WeeklyRecapScreen({
       )}
 
       {selection.heatmap && hasXp && <div className="weekly-recap-card__heatmap"><MiniHeatmap days={data.days} /></div>}
-      {visibleCaption && <p className="weekly-recap-card__range">{visibleCaption}</p>}
+      {visibleCaption && <p className="weekly-recap-card__range weekly-recap-card__caption">{visibleCaption}</p>}
       {selection.milestones && <p className="weekly-recap-card__milestones"><span className="weekly-recap-card__garden" aria-hidden="true"><i /><i /><i /></span><Award size={16} aria-hidden="true" /><Trans {...msg({ id: 'weeklyRecap.milestones', message: '{unlocked} of {total} milestones unlocked (all-time)' })} values={{ unlocked: milestones.unlocked, total: milestones.total }} /></p>}
     </section>
 
     <section className="weekly-recap-controls">
       <header className="weekly-recap-controls__intro">
-        <p className="premium-kicker uppercase tracking-[.16em]">{_(weeklyRecapCopy.weeklyRecap)}</p>
-        <h1>{_(weeklyRecapCopy.title)}</h1>
-        <p className="weekly-recap-controls__date">{dateRangeLabel}</p>
+        <p className="weekly-recap-controls__kicker"><Trans {...msg({ id: 'weeklyRecap.controls.kicker', message: 'Weekly recap <0/> Ready to share' })} components={{ 0: <span className="weekly-recap-controls__kicker-separator" aria-hidden="true" /> }} /></p>
+        <h1><Trans {...msg({ id: 'weeklyRecap.controls.title', message: 'Your week <0>so far.</0>' })} components={{ 0: <em /> }} /></h1>
       </header>
       <div className="weekly-recap-controls__unavailable">
         <Trans {...msg({ context: 'weeklyRecap.unavailable', message: 'Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don\'t have yet, so they are left out rather than guessed.' })} />
@@ -153,15 +153,18 @@ export function WeeklyRecapScreen({
         <legend><Trans {...msg({ context: 'weeklyRecap.selection.legend', message: 'Show on the card' })} /></legend>
         <div>{selectionKeys.map(key => <label key={key} className={selection[key] ? 'is-selected' : undefined}>
           <input type="checkbox" checked={selection[key]} onChange={() => actions.toggleSelection(key)} data-selection-key={key} />
+          {selection[key] && <Check size={13} strokeWidth={2.6} aria-hidden="true" />}
           {_(selectionCopy[key])}
         </label>)}</div>
       </fieldset>
 
-      <label className="weekly-recap-controls__caption" htmlFor="weekly-recap-caption">
-        <Trans {...msg({ context: 'weeklyRecap.caption.label', message: 'Caption' })} />
-        <textarea id="weekly-recap-caption" value={caption} maxLength={WEEKLY_RECAP_CAPTION_MAX_LENGTH} onChange={event => actions.setCaption(event.target.value)} rows={3} className="glass-field" />
-        <span>{caption.length} / {WEEKLY_RECAP_CAPTION_MAX_LENGTH}</span>
-      </label>
+      <div className="weekly-recap-controls__caption">
+        <label htmlFor="weekly-recap-caption"><Trans {...msg({ context: 'weeklyRecap.caption.label', message: 'Caption' })} /></label>
+        <div className="weekly-recap-controls__caption-box">
+          <textarea id="weekly-recap-caption" value={caption} maxLength={WEEKLY_RECAP_CAPTION_MAX_LENGTH} onChange={event => actions.setCaption(event.target.value)} rows={3} />
+          <span>{caption.length} / {WEEKLY_RECAP_CAPTION_MAX_LENGTH}</span>
+        </div>
+      </div>
 
       <p className="weekly-recap-controls__privacy">{_(weeklyRecapCopy.privacy)}</p>
       {lastOutcome && !exportError && <p role="status" aria-live="polite" className="weekly-recap-controls__outcome">{_(outcomeCopy[lastOutcome])}</p>}
