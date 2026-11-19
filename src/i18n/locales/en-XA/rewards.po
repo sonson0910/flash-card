@@ -38,7 +38,7 @@ msgctxt "rewards.reveal.tierup.description"
 msgid "This card is now mastered. Review it again when it is due."
 msgstr "[Thïs cård ïs nØw måstërëd. Rëvïëw ït âgâïn whën ït ïs düë.]"
 
-#: src/features/rewards/AnimeReveal.tsx:70
+#: src/features/rewards/AnimeReveal.tsx:80
 msgctxt "rewards.reveal.later"
 msgid "Later"
 msgstr "[Lâtër]"
@@ -63,6 +63,11 @@ msgctxt "rewards.reveal.levelup.kicker"
 msgid "Level up"
 msgstr "[Lëvël üp]"
 
+#: src/features/rewards/AnimeReveal.tsx:55
+msgctxt "rewards.reveal.levelup.title-reached"
+msgid "Level up: level {current}"
+msgstr ""
+
 #: src/features/rewards/AnimeReveal.tsx:25
 msgctxt "rewards.reveal.streak.title"
 msgid "Streak reached"
@@ -84,14 +89,19 @@ msgid "Use frame"
 msgstr "[Ûsë frâmë]"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:65
+#: src/features/rewards/AnimeReveal.tsx:75
 msgid "rewards.reveal.close"
 msgstr "[Cløsë rëwård]"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:68
+#: src/features/rewards/AnimeReveal.tsx:78
 msgid "rewards.reveal.rewards-label"
 msgstr "[Ûnløckëd rëwårds]"
+
+#: src/features/rewards/AnimeReveal.tsx:54
+msgctxt "rewards.reveal.levelup.title-move"
+msgid "Level up: level {previous} to {current}"
+msgstr ""
 
 #: src/features/rewards/AnimeReveal.tsx:26
 msgctxt "rewards.reveal.levelup.title"
@@ -103,7 +113,7 @@ msgctxt "rewards.reveal.tier.learning"
 msgid "Learning"
 msgstr "[Lëârnïng]"
 
-#: src/features/rewards/AnimeReveal.tsx:69
+#: src/features/rewards/AnimeReveal.tsx:79
 msgctxt "rewards.reveal.equip-error"
 msgid "Could not use this reward. Try again."
 msgstr "[Cøüld nøt üsë thïs rëwård. Trÿ âgâïn.]"

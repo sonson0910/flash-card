@@ -74,7 +74,8 @@ test('authoritative review queues tier, streak, then level rewards and a dismiss
   await expect(page.locator('.anime-reveal')).toHaveAttribute('data-event', 'streak');
   await page.getByRole('button', { name: 'Continue learning' }).click();
   await expect(page.locator('.anime-reveal')).toHaveAttribute('data-event', 'levelup');
-  await expect(page.locator('.anime-reveal__level-art')).toContainText('12 → 13');
+  await expect(page.locator('.anime-reveal__level-art')).toHaveText('LV13');
+  await expect(page.getByRole('dialog', { name: 'Level up: level 12 to 13' })).toBeVisible();
   await page.getByRole('button', { name: 'Later' }).click();
   await expect(page.locator('.anime-reveal')).toHaveCount(0);
   await expectFocusInsideRecap(page);
