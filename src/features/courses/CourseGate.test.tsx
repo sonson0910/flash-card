@@ -52,13 +52,14 @@ describe('CourseProvider', () => {
       act(() => { root.render(<CourseProvider ownerId={null}>{null}</CourseProvider>); });
       act(() => { root.render(<CourseProvider ownerId="owner-1">{null}</CourseProvider>); });
       await act(async () => {
-        await vi.waitFor(() => expect(load).toHaveBeenCalledWith('owner-1'));
+        // The wait covers a real dynamic import, which takes over a second when the whole suite runs.
+        await vi.waitFor(() => expect(load).toHaveBeenCalledWith('owner-1'), { timeout: 10_000 });
       });
     } finally {
       act(() => root.unmount());
       vi.unstubAllGlobals();
     }
-  });
+  }, 15_000);
 
   it('never exposes owner A course to owner B while B is loading or after B fails', async () => {
     const originalLoad = load.getMockImplementation();
