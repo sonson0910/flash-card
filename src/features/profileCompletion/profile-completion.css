@@ -501,7 +501,11 @@
   }
 
   /* Classic dark keeps the brand colour for the main action, as on the dark boards. */
-  html[data-theme-family=classic].dark .profile-gate__primary { background-color: var(--sf-brand); color: var(--sf-on-brand); }
+  html[data-theme-family=classic].dark .profile-gate__primary {
+    background-color: var(--sf-brand);
+    box-shadow: 0 16px 40px -14px color-mix(in srgb, var(--sf-brand) 80%, transparent), inset 0 1px 0 color-mix(in srgb, var(--sf-text) 50%, transparent);
+    color: var(--sf-on-brand);
+  }
   html[data-theme-family=classic].dark .profile-gate__primary:hover { background-color: var(--sf-brand-hover); }
 
   @media (max-width: 767px) {
