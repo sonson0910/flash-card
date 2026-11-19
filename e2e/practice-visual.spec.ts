@@ -20,15 +20,18 @@ const themes = [
   { family: 'crystal', mode: 'light' }, { family: 'crystal', mode: 'dark' },
 ] as const;
 const viewports = [{ name: 'desktop', width: 1440, height: 900 }, { name: '390px', width: 390, height: 844 }] as const;
-const practiceViews = ['quiz', 'quiz-answered', 'spelling', 'spelling-checked', 'story', 'match', 'shadowing'] as const;
+const practiceViews = ['quiz', 'quiz-answered', 'quiz-wrong', 'spelling', 'spelling-checked', 'spelling-wrong', 'story', 'story-word', 'story-error', 'match', 'match-progress', 'shadowing', 'shadowing-result'] as const;
 
 let fixtureServer: ViteDevServer | undefined;
+
+/** Screens taller than a phone: their controls must be reachable by scrolling rather than all on screen at once. */
+const isScrollingView = (view: string | null) => view === 'match' || view === 'match-progress' || view === 'shadowing' || view === 'shadowing-result' || view === 'story' || view === 'story-word';
 
 async function expectAccessibleAndContained(page: Page, label: string) {
   const root = page.locator('[data-practice-visual-view]');
   const view = await root.getAttribute('data-practice-visual-view');
   const surface = view === 'dialog' ? page.getByRole('dialog') : root;
-  const scrollingView = view === 'match' || view === 'shadowing';
+  const scrollingView = isScrollingView(view);
   await expect(surface.getByRole('button').first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, `${label} has horizontal overflow`).toBeLessThanOrEqual(1);
@@ -99,9 +102,10 @@ test('spelling defers submit during IME composition', async ({ page }) => {
   await expect(checks).toHaveText('1');
 });
 
-for (const theme of themes) for (const viewport of viewports) {
-  test(`${theme.family} ${theme.mode} practice views are visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
-    test.setTimeout(90_000);
+// One test per screen, so a changed screen does not hide the result of the ones after it.
+for (const theme of themes) for (const viewport of viewports) for (const view of practiceViews) {
+  test(`${theme.family} ${theme.mode} practice ${view} is visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
+    test.setTimeout(60_000);
     page.on('pageerror', error => { throw error; });
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
@@ -112,30 +116,62 @@ for (const theme of themes) for (const viewport of viewports) {
       localStorage.setItem('sonflash_theme_follow_system', 'false');
       localStorage.setItem('sonflash_reduced_motion', 'true');
     }, theme);
-    for (const view of practiceViews) {
-      const name = `practice-${view}-${theme.family}-${theme.mode}-${viewport.name}`;
-      if (view === 'match') await page.clock.setFixedTime('2026-09-25T09:00:00Z');
-      await page.goto(`${fixtureOrigin}${fixturePath}?view=${view}&locale=en`);
-      await expect(page.locator(`[data-practice-visual-view="${view}"]`)).toBeVisible({ timeout: 15_000 });
-      await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
-      if (theme.mode === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
-      else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
-      if (theme.family === 'crystal') await expect(page.locator('#sonflash-crystal-theme')).toHaveAttribute('href', '/theme-crystal.css');
-      if (view === 'quiz' || view === 'quiz-answered') {
-        const category = page.getByText('IELTS', { exact: true });
-        await expect(category).toBeVisible();
-        expect(await category.evaluate(element => element.getBoundingClientRect().height), 'Quiz category badge stays compact').toBeLessThanOrEqual(44);
-        await expect.poll(() => category.evaluate(element => {
-          const bounds = element.getBoundingClientRect();
-          const painted = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-          return painted === element || element.contains(painted);
-        }), { message: 'Quiz category text is not covered by an answer' }).toBe(true);
-      }
-      await expectAccessibleAndContained(page, name);
-      await expectReducedMotion(page, name);
-      await expectScreen(page, testInfo, name);
-      if (view === 'match' || view === 'shadowing') await expectScrollingControlsReachable(page, testInfo, name);
+    const name = `practice-${view}-${theme.family}-${theme.mode}-${viewport.name}`;
+    if (view.startsWith('match') || view.startsWith('story')) await page.clock.setFixedTime('2026-09-25T09:00:00Z');
+    if (view === 'shadowing-result') {
+      // A stand-in recogniser, so a take can be scored without a microphone or a speech service.
+      await page.addInitScript(() => {
+        (window as unknown as { SpeechRecognition: unknown }).SpeechRecognition = class {
+          onstart?: () => void;
+          start() { (window as unknown as { lastRecognition: unknown }).lastRecognition = this; this.onstart?.(); }
+          stop() {}
+          abort() {}
+        };
+      });
     }
+    await page.goto(`${fixtureOrigin}${fixturePath}?view=${view}&locale=en`);
+    await expect(page.locator(`[data-practice-visual-view="${view}"]`)).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
+    if (theme.mode === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+    else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+    if (theme.family === 'crystal') await expect(page.locator('#sonflash-crystal-theme')).toHaveAttribute('href', '/theme-crystal.css');
+    if (view.startsWith('quiz')) {
+      const category = page.getByText('IELTS', { exact: true });
+      await expect(category).toBeVisible();
+      expect(await category.evaluate(element => element.getBoundingClientRect().height), 'Quiz category badge stays compact').toBeLessThanOrEqual(44);
+      await expect.poll(() => category.evaluate(element => {
+        const bounds = element.getBoundingClientRect();
+        const painted = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        return painted === element || element.contains(painted);
+      }), { message: 'Quiz category text is not covered by an answer' }).toBe(true);
+    }
+    if (view === 'story-word') {
+      const word = page.locator('.practice-story__text [data-story-word]', { hasText: 'context' });
+      await word.click();
+      await expect(word).toHaveAttribute('aria-expanded', 'true');
+    }
+    if (view === 'match-progress') {
+      // One pair matched and the next word chosen, as the match board shows a run in progress.
+      await page.getByRole('button', { name: 'adapt', exact: true }).click();
+      await page.getByRole('button', { name: 'thích nghi', exact: true }).click();
+      const chosen = page.getByRole('button', { name: 'benefit', exact: true });
+      await chosen.click();
+      await expect(chosen).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('[data-state="matched"]')).toHaveCount(2);
+    }
+    if (view === 'shadowing-result') {
+      await page.getByRole('button', { name: 'Start reading' }).click();
+      await page.evaluate(() => {
+        const result = Object.assign([{ transcript: 'Good learners adopt their plan when the evidence changes', confidence: 0.9 }], { isFinal: true });
+        (window as unknown as { lastRecognition: { onresult(event: unknown): void } }).lastRecognition.onresult({ results: [result] });
+      });
+      await expect(page.getByRole('meter', { name: 'Sentence match' })).toBeVisible();
+      await expect(page.locator('[data-mic-status]')).toBeVisible();
+    }
+    await expectAccessibleAndContained(page, name);
+    await expectReducedMotion(page, name);
+    await expectScreen(page, testInfo, name);
+    if (isScrollingView(view)) await expectScrollingControlsReachable(page, testInfo, name);
   });
 }
 
