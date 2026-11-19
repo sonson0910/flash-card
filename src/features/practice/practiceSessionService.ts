@@ -12,6 +12,8 @@ export type PracticeGamificationOutcome = {
   streak: number;
   studyDay: string;
   events: Array<'streak' | 'levelup'>;
+  /** Study time the server credited for the session. */
+  studyTimeMs?: number;
 };
 
 export type PracticeSessionCard = { cardId: string; word: string; translation: string };
@@ -51,7 +53,12 @@ const parseOutcome = (value: unknown): PracticeGamificationOutcome => {
     || !Array.isArray(value.events) || value.events.some(event => event !== 'streak' && event !== 'levelup')) {
     throw new Error('The practice service returned an invalid reward outcome.');
   }
-  return value as PracticeGamificationOutcome;
+  // Display-only: a malformed study time is dropped instead of failing the completed session.
+  const { studyTimeMs, ...outcome } = value;
+  return {
+    ...outcome,
+    ...(Number.isSafeInteger(studyTimeMs) && Number(studyTimeMs) >= 0 ? { studyTimeMs: Number(studyTimeMs) } : {}),
+  } as PracticeGamificationOutcome;
 };
 
 const parseChallenge = (value: unknown): PracticeSessionChallenge => {
