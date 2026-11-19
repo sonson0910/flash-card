@@ -19,7 +19,7 @@ msgid "Card style: Standard"
 msgstr "Kiểu thẻ: Tiêu chuẩn"
 
 #: src/components/shell/DesktopNavigation.tsx:81
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:73
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:80
 msgctxt "shell.brand.mark"
 msgid "S"
 msgstr "S"
@@ -461,7 +461,7 @@ msgid "Collection"
 msgstr "Bộ sưu tập"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:262
+#: src/app/AppRuntime.tsx:264
 msgid "extension.import.course-mismatch-confirm"
 msgstr "Từ này được lưu cho một ngôn ngữ khác với khoá học hiện tại của bạn. Chuyển sang (hoặc tạo) khoá học phù hợp để lưu từ này?"
 
@@ -527,7 +527,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Luyện hội thoại"
 
-#: src/app/AppRuntime.tsx:585
+#: src/app/AppRuntime.tsx:587
 #: src/components/shell/CourseSwitcherControl.tsx:110
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -678,254 +678,259 @@ msgid "Back"
 msgstr "Quay lại"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:94
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:145
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:103
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:160
 msgid "profile-completion.account-access"
 msgstr "Truy cập tài khoản"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:171
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:307
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:118
+msgid "profile-completion.account-data"
+msgstr "Dữ liệu tài khoản"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:186
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:332
 msgid "profile-completion.birth-year"
 msgstr "Năm sinh"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:57
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:58
 msgid "profile-completion.birth-year.format"
 msgstr "Nhập năm sinh gồm bốn chữ số, ví dụ 1994."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:58
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
 msgid "profile-completion.birth-year.future"
 msgstr "Năm sinh không thể ở tương lai."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
 msgid "profile-completion.birth-year.implausible"
 msgstr "Hãy kiểm tra năm sinh. Năm này quá xa trong quá khứ."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:316
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:341
 msgid "profile-completion.birth-year.placeholder"
 msgstr "YYYY"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:61
 msgid "profile-completion.birth-year.rejected"
 msgstr "Hãy kiểm tra năm sinh rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:365
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:390
 msgid "profile-completion.consent"
 msgstr "Tôi từ 18 tuổi trở lên và đồng ý với <terms>Điều khoản</terms> và <privacy>Chính sách quyền riêng tư</privacy>."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:372
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:397
 msgid "profile-completion.consent.required"
 msgstr "Bắt buộc trước khi tiếp tục."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:219
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:235
 msgid "profile-completion.details.eyebrow"
 msgstr "Hoàn tất đăng ký"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:220
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:236
 msgid "profile-completion.details.title"
 msgstr "Thông tin tài khoản của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:64
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:65
 msgid "profile-completion.error.consent-outdated"
 msgstr "Điều khoản hoặc chính sách quyền riêng tư đã thay đổi. Hãy tải lại trang để xem lại."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:147
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:162
 msgid "profile-completion.error.lede"
 msgstr "Hãy kiểm tra kết nối rồi thử lại. Chưa có gì bị thay đổi."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:65
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
 msgid "profile-completion.error.rate-limited"
 msgstr "Bạn đã thử quá nhiều lần. Hãy đợi một lúc rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:150
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:165
 msgid "profile-completion.error.retry"
 msgstr "Thử lại"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:67
 msgid "profile-completion.error.save-failed"
 msgstr "Chưa lưu được thông tin của bạn. Hãy kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:146
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:161
 msgid "profile-completion.error.title"
 msgstr "Chưa kiểm tra được tài khoản của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:213
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:229
 msgid "profile-completion.eyebrow"
 msgstr "Hoàn tất đăng ký · một lần"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:107
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:120
 msgid "profile-completion.help"
 msgstr "Cần trợ giúp?"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:215
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:231
 msgid "profile-completion.lede"
 msgstr "Thiết lập thông tin ngôn ngữ đi cùng tài khoản của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:328
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:353
 msgid "profile-completion.locale"
 msgstr "Ngôn ngữ ứng dụng"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:334
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:359
 msgid "profile-completion.native-language"
 msgstr "Tiếng mẹ đẻ"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:376
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:401
 msgid "profile-completion.note"
 msgstr "Chúng tôi chỉ giữ năm sinh để xác nhận yêu cầu từ 18 tuổi. Năm sinh có trong tệp tải dữ liệu tài khoản và bị xóa khi bạn xóa tài khoản."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:187
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:224
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:202
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:240
 msgid "profile-completion.outcomes.eyebrow"
 msgstr "Quay lại + kết quả"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:235
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:251
 msgid "profile-completion.outcomes.next"
 msgstr "Tiếp theo"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:194
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:231
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:209
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:247
 msgid "profile-completion.outcomes.return"
 msgstr "Quay lại"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:48
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:49
 msgid "profile-completion.outcomes.title"
 msgstr "Luôn thấy rõ bước tiếp theo."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:49
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:50
 msgid "profile-completion.outcomes.title.crystal"
 msgstr "Giữ rõ hành động tiếp theo."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:175
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:190
 msgid "profile-completion.restricted.account"
 msgstr "Tài khoản"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:172
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:187
 msgid "profile-completion.restricted.birth-year"
 msgstr "Chưa đáp ứng yêu cầu"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:161
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:167
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:176
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:182
 msgid "profile-completion.restricted.eyebrow"
 msgstr "Giới hạn độ tuổi"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:190
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:205
 msgid "profile-completion.restricted.gate"
 msgstr "Kiểm tra độ tuổi"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:191
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:206
 msgid "profile-completion.restricted.gate-detail"
 msgstr "Không thể tiếp tục tạo tài khoản."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:163
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:178
 msgid "profile-completion.restricted.lede"
 msgstr "Năm sinh chưa đáp ứng yêu cầu độ tuổi hiện tại của tài khoản."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:180
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:195
 msgid "profile-completion.restricted.note"
 msgstr "Năm sinh của bạn không được lưu. Nếu bạn nhập nhầm, hãy liên hệ hỗ trợ."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:176
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:191
 msgid "profile-completion.restricted.paused"
 msgstr "Tạm dừng tạo tài khoản"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:183
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:198
 msgid "profile-completion.restricted.return"
 msgstr "Quay lại đăng nhập"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:195
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:210
 msgid "profile-completion.restricted.return-detail"
 msgstr "Đăng nhập"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:168
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:183
 msgid "profile-completion.restricted.status"
 msgstr "Trạng thái tài khoản"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:44
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:45
 msgid "profile-completion.restricted.title"
 msgstr "Chúng tôi chưa thể tạo tài khoản này."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:45
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:46
 msgid "profile-completion.restricted.title.crystal"
 msgstr "Tạm dừng tạo tài khoản"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:209
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:225
 msgid "profile-completion.return.footer"
 msgstr "Vị trí quay lại · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:52
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:53
 msgid "profile-completion.return.preserved"
 msgstr "Đã giữ vị trí quay lại · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:53
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:54
 msgid "profile-completion.return.preserved.crystal"
 msgstr "Điểm quay lại · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:236
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:382
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:252
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:407
 msgid "profile-completion.save"
 msgstr "Lưu và tiếp tục"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:381
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:406
 msgid "profile-completion.saving"
 msgstr "Đang lưu…"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:98
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:151
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:107
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:166
 msgid "profile-completion.sign-out"
 msgstr "Đăng xuất"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:40
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:41
 msgid "profile-completion.title"
 msgstr "Cá nhân hóa SonFlash của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:41
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:42
 msgid "profile-completion.title.crystal"
 msgstr "Cá nhân hóa ngay"
 
@@ -1194,7 +1199,7 @@ msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:574
+#: src/app/AppRuntime.tsx:576
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -1482,7 +1487,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Không thể cập nhật trực tiếp từ đám mây. Hãy thử lại khi kết nối ổn định hơn."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:443
+#: src/app/AppRuntime.tsx:445
 msgid "shell.sync.retry-failed"
 msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
 
@@ -1548,7 +1553,7 @@ msgctxt "onboarding.language.subtitle"
 msgid "This sets the app's interface and the language your explanations will be written in."
 msgstr "Lựa chọn này đặt ngôn ngữ giao diện và ngôn ngữ dùng để giải nghĩa cho bạn."
 
-#: src/app/AppRuntime.tsx:586
+#: src/app/AppRuntime.tsx:588
 #: src/components/shell/CourseSwitcherControl.tsx:112
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -1641,7 +1646,7 @@ msgctxt "course.goal.add.date-label"
 msgid "Exam or target date (optional)"
 msgstr "Ngày thi hoặc ngày mục tiêu (không bắt buộc)"
 
-#: src/app/AppRuntime.tsx:588
+#: src/app/AppRuntime.tsx:590
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Đang chuẩn bị các khóa học của bạn…"

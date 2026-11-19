@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures/firebase-emulator';
@@ -151,4 +152,57 @@ test('an under-18 birth year restricts the account without storing the year, and
   await expect(page.getByLabel('Birth year')).toHaveCount(0);
   expect((await db.collection(`users/${testUser.uid}/cards`).limit(1).get()).empty).toBe(true);
   expect((await db.doc(`users/${testUser.uid}/profile/courses`).get()).exists).toBe(false);
+});
+
+test('a restricted account takes its data and deletes itself from the restricted screen', async ({
+  page, db, testUser, adminAuth, signIn, blockExternalNetwork,
+}) => {
+  test.setTimeout(120_000);
+  // Deleting re-authenticates with Google first. Against the Auth emulator that popup is the emulator's
+  // own account picker, so the account carries a google.com identity to pick there.
+  await adminAuth.updateUser(testUser.uid, {
+    providerToLink: { providerId: 'google.com', uid: `google-${testUser.uid}`, email: testUser.email, displayName: 'Restricted learner' },
+  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await blockExternalNetwork(page);
+  // The Firebase Auth popup flow loads Google's iframe API script even against the emulator. Nothing
+  // reaches a Firebase project: every other host stays blocked.
+  await page.route(url => url.hostname === 'apis.google.com', route => route.continue());
+  await signIn(page, '/?view=today&locale=en');
+
+  await expect(profileStep(page)).toBeVisible();
+  await page.getByLabel('Birth year').fill(String(new Date().getUTCFullYear() - 12));
+  await consent(page).check();
+  await page.getByRole('button', { name: 'Save and continue' }).click();
+  await expect(restrictedStep(page)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Account data' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Account data' });
+  await expect(dialog).toBeVisible({ timeout: 15_000 });
+  await expect(dialog.getByRole('button', { name: 'Download cards as Excel' })).toHaveCount(0);
+  await expectNoBlockingAxeViolations(page);
+
+  const downloadEvent = page.waitForEvent('download');
+  await dialog.getByRole('button', { name: 'Download account data (JSON, excluding cards)' }).click();
+  const download = await downloadEvent;
+  const exported = JSON.parse(await readFile(await download.path(), 'utf8')) as { profile: Array<Record<string, unknown>> };
+  expect(exported.profile.map(document => document.id)).toEqual(['age_restriction']);
+  expect(Object.keys(exported.profile[0] ?? {}).sort()).toEqual(['id', 'restrictedAt']);
+
+  await dialog.getByRole('button', { name: 'Delete my account' }).click();
+  await dialog.getByLabel(/Type XÓA TÀI KHOẢN/).fill('XÓA TÀI KHOẢN');
+  const popupEvent = page.waitForEvent('popup');
+  await dialog.getByRole('button', { name: 'Confirm permanent deletion' }).click();
+  const popup = await popupEvent;
+  // The picker attaches its click handlers only once the page has loaded.
+  await popup.waitForLoadState('load');
+  const popupClosed = popup.waitForEvent('close');
+  await popup.locator('.js-reuse-account', { hasText: testUser.email }).click();
+  await popupClosed;
+
+  await expect(page.locator('.landing-canvas')).toBeVisible({ timeout: 60_000 });
+  await expect.poll(() => page.evaluate(() => window.__SONFLASH_TEST__?.getCurrentUid?.() ?? null)).toBeNull();
+  expect((await db.doc(`users/${testUser.uid}/profile/age_restriction`).get()).exists).toBe(false);
+  expect((await db.collection(`users/${testUser.uid}/profile`).limit(1).get()).empty).toBe(true);
+  await expect(adminAuth.getUser(testUser.uid)).rejects.toMatchObject({ code: 'auth/user-not-found' });
 });

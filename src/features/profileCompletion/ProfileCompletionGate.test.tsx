@@ -54,7 +54,14 @@ describe('ProfileCompletionGate', () => {
     expect(html).not.toMatch(/Focused desktop|COMPLETE|Step 3 of 3/);
   });
 
-  it('offers only the way back to sign-in on the restricted screen', () => {
+  it('offers the account data dialog beside the help link while the profile step holds the account', () => {
+    const accountDataButton = /<button type="button" class="profile-gate__link profile-gate__link-button" aria-haspopup="dialog">Account data<\/button>\s*<a class="profile-gate__link" href="[^"]+">Need help\?<\/a>/;
+    expect(render('required')).toMatch(accountDataButton);
+    expect(render('restricted')).toMatch(accountDataButton);
+    expect(render('error')).not.toContain('Account data');
+  });
+
+  it('offers only the way back to sign-in, besides the account data, on the restricted screen', () => {
     const html = render('restricted');
     expect(html).toContain('We cannot create this account yet.');
     expect(html).toContain('Return to sign in');

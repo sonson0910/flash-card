@@ -1,10 +1,11 @@
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { msg } from '@lingui/core/macro';
 import type { MessageDescriptor } from '@lingui/core';
 import { Trans, useLingui } from '@lingui/react';
 import { ChevronLeft, CircleCheck, X } from 'lucide-react';
 import { APPLICATION_SUPPORT_HREF } from '../../components/ApplicationErrorPanel';
 import { useSetUiLocale, useUiLocale } from '../../i18n/I18nProvider';
+import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { UI_LOCALES } from '../../i18n/locales';
 import { NATIVE_LANGUAGE_LABEL } from '../courses/courseLanguageLabels';
 import type { CourseNativeLanguage } from '../courses/courseModel';
@@ -68,6 +69,12 @@ const SUBMIT_PROBLEM: Readonly<Record<'consent-outdated' | 'rate-limited' | 'sav
 
 const legalLinkClass = 'profile-gate__link';
 
+// The same export and deletion dialog the app menu opens; both endpoints stay open to an account without
+// a completed profile, so a learner held at this step can still take or remove their data.
+const AccountDataSection = lazy(() => Promise.all([
+  import('../account/AccountDataSection'), loadCatalog(getActiveUiLocale(), 'account'),
+]).then(([module]) => ({ default: module.AccountDataSection })));
+
 function BrandMark({ family }: { family: Family }) {
   return <span className="claude-brand profile-gate__brand" aria-label="SonFlash" role="img">
     <span className="claude-brand-classic" aria-hidden="true"><Trans {...msg({ context: 'shell.brand.mark', message: 'S' })} /></span>
@@ -79,15 +86,17 @@ function BrandMark({ family }: { family: Family }) {
   </span>;
 }
 
-function GateFrame({ family, returnStatus, onSignOut, signOutDisabled, footer, children }: {
+function GateFrame({ family, returnStatus, onSignOut, signOutDisabled, footer, offerAccountData, children }: {
   family: Family;
   returnStatus: ReactNode;
   onSignOut: () => void;
   signOutDisabled: boolean;
   footer: ReactNode;
+  offerAccountData: boolean;
   children: ReactNode;
 }) {
   const { _ } = useLingui();
+  const [accountDataOpen, setAccountDataOpen] = useState(false);
   return <div className="profile-gate app-canvas">
     <header className="profile-gate__bar">
       <BrandMark family={family} />
@@ -104,8 +113,14 @@ function GateFrame({ family, returnStatus, onSignOut, signOutDisabled, footer, c
     <main className="profile-gate__main">{children}</main>
     <footer className="profile-gate__footer">
       {footer}
-      <a className={legalLinkClass} href={APPLICATION_SUPPORT_HREF}><Trans {...msg({ id: 'profile-completion.help', message: 'Need help?' })} /></a>
+      <div className="profile-gate__footer-links">
+        {offerAccountData && <button type="button" className={`${legalLinkClass} profile-gate__link-button`} aria-haspopup="dialog" onClick={() => setAccountDataOpen(true)}>
+          <Trans {...msg({ id: 'profile-completion.account-data', message: 'Account data' })} />
+        </button>}
+        <a className={legalLinkClass} href={APPLICATION_SUPPORT_HREF}><Trans {...msg({ id: 'profile-completion.help', message: 'Need help?' })} /></a>
+      </div>
     </footer>
+    {accountDataOpen && <Suspense fallback={null}><AccountDataSection open={accountDataOpen} onOpenChange={setAccountDataOpen} /></Suspense>}
   </div>;
 }
 
@@ -139,7 +154,7 @@ export function ProfileCompletionGate({ screen, submit, retry, returnLabel, onSi
   };
 
   if (screen === 'error') {
-    return <GateFrame family={family} returnStatus={null} onSignOut={signOut} signOutDisabled={signingOut} footer={null}>
+    return <GateFrame family={family} returnStatus={null} onSignOut={signOut} signOutDisabled={signingOut} footer={null} offerAccountData={false}>
       <section className="profile-gate__sheet profile-gate__sheet--single max-md:crystal-chamfer max-md:surface-glass" aria-labelledby="profile-gate-title">
         <div className="profile-gate__intro">
           <p className="profile-gate__eyebrow"><Trans {...msg({ id: 'profile-completion.account-access', message: 'Account access' })} /></p>
@@ -155,7 +170,7 @@ export function ProfileCompletionGate({ screen, submit, retry, returnLabel, onSi
   }
 
   if (screen === 'restricted') {
-    return <GateFrame family={family} returnStatus={null} onSignOut={signOut} signOutDisabled={signingOut} footer={null}>
+    return <GateFrame family={family} returnStatus={null} onSignOut={signOut} signOutDisabled={signingOut} footer={null} offerAccountData>
       <div className="profile-gate__sheet max-md:crystal-chamfer max-md:surface-glass" data-screen="restricted">
         <div className="profile-gate__intro">
           <p className="profile-gate__eyebrow"><Trans {...msg({ id: 'profile-completion.restricted.eyebrow', message: 'Age restricted' })} /></p>
@@ -206,6 +221,7 @@ export function ProfileCompletionGate({ screen, submit, retry, returnLabel, onSi
     returnStatus={<p className="profile-gate__return-status"><span className="profile-gate__dot" aria-hidden="true" />{_({ ...RETURN_PRESERVED[family], values: { location } })}</p>}
     onSignOut={signOut}
     signOutDisabled={signingOut}
+    offerAccountData
     footer={<p className="profile-gate__footer-return"><Trans {...msg({ id: 'profile-completion.return.footer', message: 'Return location · {location}' })} values={{ location }} /></p>}
   >
     <div className="profile-gate__sheet max-md:crystal-chamfer max-md:surface-glass" data-screen="complete">

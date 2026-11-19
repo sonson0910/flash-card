@@ -347,7 +347,26 @@
     font-size: 12px;
   }
 
-  .profile-gate__footer > a { display: inline-flex; min-height: 44px; align-items: center; margin-left: auto; }
+  .profile-gate__footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0 16px;
+    margin-left: auto;
+  }
+
+  .profile-gate__footer-links > a,
+  .profile-gate__footer-links > button { display: inline-flex; min-height: 44px; align-items: center; }
+
+  .profile-gate__link-button {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+  }
   .profile-gate__footer-return { margin: 0; }
 
   @media (prefers-reduced-motion: no-preference) {

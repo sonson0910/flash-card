@@ -19,7 +19,7 @@ msgid "Card style: Standard"
 msgstr "Card style: Standard"
 
 #: src/components/shell/DesktopNavigation.tsx:81
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:73
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:80
 msgctxt "shell.brand.mark"
 msgid "S"
 msgstr "S"
@@ -461,7 +461,7 @@ msgid "Collection"
 msgstr "Collection"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:262
+#: src/app/AppRuntime.tsx:264
 msgid "extension.import.course-mismatch-confirm"
 msgstr "This word was saved for a different language than your active course. Switch to (or create) the matching course to save it?"
 
@@ -527,7 +527,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Text practice"
 
-#: src/app/AppRuntime.tsx:585
+#: src/app/AppRuntime.tsx:587
 #: src/components/shell/CourseSwitcherControl.tsx:110
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -678,254 +678,259 @@ msgid "Back"
 msgstr "Back"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:94
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:145
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:103
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:160
 msgid "profile-completion.account-access"
 msgstr "Account access"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:171
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:307
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:118
+msgid "profile-completion.account-data"
+msgstr "Account data"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:186
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:332
 msgid "profile-completion.birth-year"
 msgstr "Birth year"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:57
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:58
 msgid "profile-completion.birth-year.format"
 msgstr "Enter your birth year as four digits, for example 1994."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:58
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
 msgid "profile-completion.birth-year.future"
 msgstr "The birth year cannot be in the future."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
 msgid "profile-completion.birth-year.implausible"
 msgstr "Check the birth year. It is too far in the past."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:316
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:341
 msgid "profile-completion.birth-year.placeholder"
 msgstr "YYYY"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:61
 msgid "profile-completion.birth-year.rejected"
 msgstr "Check your birth year and try again."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:365
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:390
 msgid "profile-completion.consent"
 msgstr "I am 18 or older and I agree to the <terms>Terms</terms> and the <privacy>Privacy policy</privacy>."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:372
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:397
 msgid "profile-completion.consent.required"
 msgstr "Required before continuing."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:219
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:235
 msgid "profile-completion.details.eyebrow"
 msgstr "Complete signup"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:220
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:236
 msgid "profile-completion.details.title"
 msgstr "Your account details"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:64
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:65
 msgid "profile-completion.error.consent-outdated"
 msgstr "The terms or the privacy policy changed. Reload the page to review them."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:147
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:162
 msgid "profile-completion.error.lede"
 msgstr "Check your connection and try again. Nothing was changed."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:65
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
 msgid "profile-completion.error.rate-limited"
 msgstr "Too many attempts. Wait a while, then try again."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:150
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:165
 msgid "profile-completion.error.retry"
 msgstr "Try again"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:67
 msgid "profile-completion.error.save-failed"
 msgstr "We could not save your details. Check your connection and try again."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:146
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:161
 msgid "profile-completion.error.title"
 msgstr "We could not check your account."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:213
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:229
 msgid "profile-completion.eyebrow"
 msgstr "Complete signup · once"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:107
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:120
 msgid "profile-completion.help"
 msgstr "Need help?"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:215
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:231
 msgid "profile-completion.lede"
 msgstr "Set the language details that travel with your account."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:328
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:353
 msgid "profile-completion.locale"
 msgstr "App language"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:334
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:359
 msgid "profile-completion.native-language"
 msgstr "Native language"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:376
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:401
 msgid "profile-completion.note"
 msgstr "We keep your birth year only to confirm the 18+ requirement. It is part of your account data download and is removed when you delete the account."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:187
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:224
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:202
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:240
 msgid "profile-completion.outcomes.eyebrow"
 msgstr "Return + outcomes"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:235
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:251
 msgid "profile-completion.outcomes.next"
 msgstr "Next"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:194
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:231
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:209
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:247
 msgid "profile-completion.outcomes.return"
 msgstr "Return"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:48
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:49
 msgid "profile-completion.outcomes.title"
 msgstr "Keep the next step visible."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:49
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:50
 msgid "profile-completion.outcomes.title.crystal"
 msgstr "Keep the next action clear."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:175
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:190
 msgid "profile-completion.restricted.account"
 msgstr "Account"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:172
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:187
 msgid "profile-completion.restricted.birth-year"
 msgstr "Does not meet requirement"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:161
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:167
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:176
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:182
 msgid "profile-completion.restricted.eyebrow"
 msgstr "Age restricted"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:190
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:205
 msgid "profile-completion.restricted.gate"
 msgstr "Age gate"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:191
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:206
 msgid "profile-completion.restricted.gate-detail"
 msgstr "Account creation cannot continue."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:163
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:178
 msgid "profile-completion.restricted.lede"
 msgstr "The birth year does not meet the current account age requirement."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:180
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:195
 msgid "profile-completion.restricted.note"
 msgstr "Your birth year was not saved. If it was entered by mistake, contact support."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:176
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:191
 msgid "profile-completion.restricted.paused"
 msgstr "Creation paused"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:183
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:198
 msgid "profile-completion.restricted.return"
 msgstr "Return to sign in"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:195
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:210
 msgid "profile-completion.restricted.return-detail"
 msgstr "Sign in"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:168
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:183
 msgid "profile-completion.restricted.status"
 msgstr "Account status"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:44
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:45
 msgid "profile-completion.restricted.title"
 msgstr "We cannot create this account yet."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:45
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:46
 msgid "profile-completion.restricted.title.crystal"
 msgstr "Account creation paused"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:209
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:225
 msgid "profile-completion.return.footer"
 msgstr "Return location · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:52
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:53
 msgid "profile-completion.return.preserved"
 msgstr "Return location preserved · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:53
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:54
 msgid "profile-completion.return.preserved.crystal"
 msgstr "Return anchor · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:236
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:382
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:252
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:407
 msgid "profile-completion.save"
 msgstr "Save and continue"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:381
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:406
 msgid "profile-completion.saving"
 msgstr "Saving…"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:98
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:151
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:107
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:166
 msgid "profile-completion.sign-out"
 msgstr "Sign out"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:40
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:41
 msgid "profile-completion.title"
 msgstr "Make SonFlash yours."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:41
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:42
 msgid "profile-completion.title.crystal"
 msgstr "Make it yours"
 
@@ -1194,7 +1199,7 @@ msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:574
+#: src/app/AppRuntime.tsx:576
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
@@ -1482,7 +1487,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Live cloud updates are unavailable. Retry when your connection improves."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:443
+#: src/app/AppRuntime.tsx:445
 msgid "shell.sync.retry-failed"
 msgstr "Sync could not finish. Your changes remain on this device. Try again."
 
@@ -1548,7 +1553,7 @@ msgctxt "onboarding.language.subtitle"
 msgid "This sets the app's interface and the language your explanations will be written in."
 msgstr "This sets the app's interface and the language your explanations will be written in."
 
-#: src/app/AppRuntime.tsx:586
+#: src/app/AppRuntime.tsx:588
 #: src/components/shell/CourseSwitcherControl.tsx:112
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -1641,7 +1646,7 @@ msgctxt "course.goal.add.date-label"
 msgid "Exam or target date (optional)"
 msgstr "Exam or target date (optional)"
 
-#: src/app/AppRuntime.tsx:588
+#: src/app/AppRuntime.tsx:590
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Preparing your courses…"
