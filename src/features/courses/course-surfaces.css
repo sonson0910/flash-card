@@ -1,0 +1,53 @@
+/* Pieces shared by the course switcher, the add-a-language dialog and the courses surface.
+   These rules are unlayered, so they outrank the crystal-chamfer utilities: Crystal rules here
+   reset the radius themselves and pass gradient fills through --sf-chamfer-fill. */
+
+/* Language tiles: one hue per language, taken from the theme's own tokens. */
+.course-tile {
+  --course-tile-size: 46px;
+  display: inline-grid;
+  width: var(--course-tile-size);
+  height: var(--course-tile-size);
+  flex: none;
+  place-items: center;
+  border-radius: calc(var(--course-tile-size) * .28);
+  background: var(--course-tile-bg, var(--sf-surface-control));
+  color: var(--course-tile-fg, var(--sf-text));
+  font-size: calc(var(--course-tile-size) * .48);
+  font-weight: 700;
+  line-height: 1;
+  --sf-chamfer-fill: var(--course-tile-bg, var(--sf-surface-control));
+  --sf-chamfer-edge: transparent;
+}
+.course-tile[data-course-language='en'] { font-family: var(--sf-font-display); }
+.course-tile[data-course-language='ko'] { --course-tile-bg: var(--sf-text); --course-tile-fg: var(--sf-surface); }
+.course-tile[data-course-language='ja'] { --course-tile-bg: var(--sf-brand); --course-tile-fg: var(--sf-on-brand); }
+.course-tile[data-course-language='en'] { --course-tile-bg: var(--sf-success); --course-tile-fg: var(--sf-on-brand); }
+.course-tile[data-course-language='zh'] { --course-tile-bg: var(--sf-rating-easy); --course-tile-fg: var(--sf-on-brand); }
+.dark .course-tile[data-course-language='ko'] { --course-tile-bg: linear-gradient(145deg, var(--sf-brand-hover), var(--sf-brand)); --course-tile-fg: var(--sf-on-brand); }
+.dark .course-tile[data-course-language='ja'] { --course-tile-bg: linear-gradient(145deg, color-mix(in srgb, var(--sf-second) 45%, white), var(--sf-second)); --course-tile-fg: var(--sf-on-brand); }
+.dark .course-tile[data-course-language='en'] { --course-tile-bg: linear-gradient(145deg, color-mix(in srgb, var(--sf-reward) 45%, white), var(--sf-reward)); --course-tile-fg: var(--sf-on-brand); }
+.dark .course-tile[data-course-language='zh'] { --course-tile-bg: linear-gradient(145deg, color-mix(in srgb, var(--sf-success) 45%, white), var(--sf-success)); --course-tile-fg: var(--sf-on-brand); }
+html[data-theme-family=crystal] .course-tile[data-course-language='ko'] { --course-tile-bg: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 55%, var(--sf-brand-hover)); --course-tile-fg: var(--sf-on-brand); }
+html[data-theme-family=crystal] .course-tile[data-course-language='ja'] { --course-tile-bg: linear-gradient(180deg, color-mix(in srgb, var(--sf-second) 55%, white), var(--sf-second)); --course-tile-fg: var(--sf-on-brand); }
+html[data-theme-family=crystal] .course-tile[data-course-language='en'] { --course-tile-bg: linear-gradient(180deg, color-mix(in srgb, var(--sf-reward) 55%, white), var(--sf-reward)); --course-tile-fg: var(--sf-on-brand); }
+html[data-theme-family=crystal] .course-tile[data-course-language='zh'] { --course-tile-bg: linear-gradient(180deg, color-mix(in srgb, var(--sf-rating-hard) 55%, white), var(--sf-rating-hard)); --course-tile-fg: var(--sf-on-brand); }
+html[data-theme-family=crystal] .course-tile { border-radius: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
+
+/* Due cards. */
+.course-due-pill {
+  display: inline-flex;
+  height: 24px;
+  flex: none;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--sf-surface-raised);
+  color: var(--sf-text-muted);
+  font: 600 12px/1 var(--font-mono);
+  white-space: nowrap;
+}
+.course-due-pill[data-active='true'] { background: var(--sf-text); color: var(--sf-surface); }
+.dark .course-due-pill[data-active='true'] { background: var(--sf-brand); color: var(--sf-on-brand); }
+html[data-theme-family=crystal] .course-due-pill { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; font-weight: 700; letter-spacing: .04em; }
+html[data-theme-family=crystal] .course-due-pill[data-active='true'] { background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover)); color: var(--sf-on-brand); }

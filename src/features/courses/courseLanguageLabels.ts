@@ -17,3 +17,22 @@ export const NATIVE_LANGUAGE_LABEL: Readonly<Record<CourseNativeLanguage, Messag
 export const TARGET_LANGUAGE_FLAG: Readonly<Record<CourseTargetLanguage, string>> = {
   en: '🇬🇧', ko: '🇰🇷', ja: '🇯🇵', zh: '🇨🇳',
 };
+
+/** Each language written in its own script; the translated labels above carry the UI-language name. */
+export const TARGET_ENDONYM: Readonly<Record<CourseTargetLanguage, string>> = {
+  en: 'English', ko: '한국어', ja: '日本語', zh: '中文',
+};
+
+export const NATIVE_ENDONYM: Readonly<Record<CourseNativeLanguage, string>> = {
+  vi: 'Tiếng Việt', en: 'English',
+};
+
+/** One character that stands for the language on course tiles. */
+export const TARGET_GLYPH: Readonly<Record<CourseTargetLanguage, string>> = {
+  en: 'A', ko: '한', ja: 'あ', zh: '中',
+};
+
+/** A first word in the language, shown as a sample on the language cards of the add dialog. */
+export const TARGET_GREETING: Readonly<Record<CourseTargetLanguage, string>> = {
+  en: 'Hello', ko: '안녕하세요', ja: 'こんにちは', zh: '你好',
+};
