@@ -12,7 +12,7 @@
   --st-title: var(--sf-text);
   --st-body: #3d372f;
   --st-text2: var(--sf-text-muted);
-  --st-text3: #8a8072;
+  --st-text3: #776d60;
   --st-line: var(--sf-border);
   --st-line-strong: var(--sf-edge-highlight);
   --st-chip: #fbf8f2;
@@ -45,7 +45,7 @@
   --st-weight: 440;
   --st-title: #f1f6f9;
   --st-body: #b5c2ca;
-  --st-text3: #6f808a;
+  --st-text3: #7d8e98;
   --st-chip: rgb(255 255 255 / .04);
   --st-track: rgb(255 255 255 / .08);
   --st-radius: 22px;
@@ -109,7 +109,7 @@
   --st-title: #081329;
   --st-body: #243553;
   --st-text2: #3f5272;
-  --st-text3: #627392;
+  --st-text3: #58698a;
   --st-line: rgb(13 40 80 / .12);
   --st-line-strong: rgb(13 40 80 / .24);
   --st-chip: rgb(226 244 255 / .9);

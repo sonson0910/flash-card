@@ -251,8 +251,9 @@ function TrackCard({ track, selected, progressAvailable, isCrystal, onSelect }: 
     <button type="button" onClick={onSelect} aria-pressed={selected} className="catalog-track-card paths-book" data-hue={trackBookHue[track.id]}>
       <span className="paths-book-spine" aria-hidden="true" />
       {isCrystal && <span className="paths-book-glyph" aria-hidden="true">{label.charAt(0)}</span>}
-      <span className="paths-book-kind">{i18n._(trackKindMessages[track.id])}{selected && <Check className="paths-book-check" aria-hidden="true" />}</span>
+      {/* The kind chip follows the name in the DOM so the button is announced by its track name first; CSS shows the chip above it. */}
       <span className="paths-book-name">{label}</span>
+      <span className="paths-book-kind">{i18n._(trackKindMessages[track.id])}{selected && <Check className="paths-book-check" aria-hidden="true" />}</span>
       <span className="paths-book-blurb">{i18n._(copy.description)}</span>
       <span className="paths-book-foot">
         <span className="paths-book-track" aria-hidden="true"><span style={{ width: `${progressAvailable ? progress : 0}%` }} /></span>
@@ -499,7 +500,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
           <div className="paths-shelf-head">
             <h2 id="catalog-tracks-heading" className="paths-shelf-title"><Trans {...msg({ context: 'paths.shelf.title', message: 'Your shelf' })} /></h2>
             {isCrystal && <span className="paths-shelf-count"><Trans {...msg({ id: 'paths.shelf.journeys', message: '// {count, plural, one {# journey} other {# journeys}}' })} values={{ count: shelfTracks }} /></span>}
-            <button type="button" className="paths-browse" onClick={() => revealSection('catalog-vocabulary-heading')}><Trans {...msg({ id: 'paths.shelf.browse', message: 'Browse catalog →' })} /></button>
+            <a href="#catalog-vocabulary-heading" className="paths-browse" onClick={event => { event.preventDefault(); revealSection('catalog-vocabulary-heading'); }}><Trans {...msg({ id: 'paths.shelf.browse', message: 'Browse catalog →' })} /></a>
           </div>
           <div className="paths-books">{model.tracks.map(track => <TrackCard key={track.id} track={track} selected={track.id === model.selectedTrack} progressAvailable={progressAvailable} isCrystal={isCrystal} onSelect={() => actions.selectTrack(track.id)} />)}</div>
         </section>
