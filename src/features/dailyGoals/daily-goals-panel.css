@@ -59,7 +59,7 @@
 :root[data-theme-family="crystal"] .daily-goal__bar { height: 9px; border-radius: 0; transform: skewX(-24deg); background: var(--dg-track); }
 :root[data-theme-family="crystal"] .daily-goal__fill { border-radius: 0; background: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%); box-shadow: 0 0 10px rgb(255 42 77 / .5); }
 :root[data-theme-family="crystal"] .daily-goal--win-match .daily-goal__fill { background: linear-gradient(90deg, var(--sf-second), color-mix(in srgb, var(--sf-second) 60%, white)); }
-:root[data-theme-family="crystal"] .daily-goal--keep-streak .daily-goal__fill { background: linear-gradient(90deg, #ff8fb6, var(--sf-brand)); }
+:root[data-theme-family="crystal"] .daily-goal--keep-streak .daily-goal__fill { background: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) 55%, white), var(--sf-brand)); }
 :root[data-theme-family="crystal"] .daily-goal__count { color: var(--dg-muted); font-size: 13px; font-style: italic; font-weight: 700; }
 
 @media (max-width: 420px) {
