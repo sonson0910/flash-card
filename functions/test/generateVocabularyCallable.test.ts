@@ -142,11 +142,11 @@ describe('generateVocabulary callable', () => {
   });
 
   it('cancels only the authenticated owner operation with a validated ID', async () => {
-    cancelWordOperation.mockResolvedValue(true);
+    cancelWordOperation.mockResolvedValue({ cancelled: true, counted: false });
     const { cancelCardGeneration } = await import('../src/index.js');
     const operationId = randomUUID();
     await expect(cancelCardGeneration.run({ auth: { uid: 'owner-1' }, data: { operationId } } as never))
-      .resolves.toEqual({ cancelled: true });
+      .resolves.toEqual({ cancelled: true, counted: false });
     expect(cancelWordOperation).toHaveBeenCalledWith(expect.anything(), 'owner-1', operationId, expect.any(Date));
     await expect(cancelCardGeneration.run({ auth: { uid: 'owner-1' }, data: { operationId: 'bad' } } as never))
       .rejects.toMatchObject({ code: 'invalid-argument' });
@@ -439,6 +439,58 @@ describe('generateVocabulary callable', () => {
       code: 'failed-precondition', details: { reason: 'operation-request-mismatch' },
     });
     expect(runMeteredGemini).not.toHaveBeenCalled();
+  });
+
+  it('refuses a request whose retries are used up as final, and names the reason in the stream', async () => {
+    reserveWordOperation.mockRejectedValue(new AiQuotaError('operation-attempts-exhausted', {
+      reason: 'operation-attempts-exhausted', attempts: 3, maxAttempts: 3,
+    }));
+    const sendChunk = vi.fn(async () => true);
+    const { generateVocabulary } = await import('../src/index.js');
+    const operationId = randomUUID();
+    await expect((generateVocabulary.run as unknown as (request: unknown, response: unknown) => Promise<unknown>)({
+      auth: { uid: 'owner-1' }, acceptsStreaming: true,
+      data: { action: 'word', input: 'apple', operationId },
+    }, { sendChunk, signal: new AbortController().signal })).rejects.toMatchObject({
+      code: 'failed-precondition', details: { reason: 'operation-attempts-exhausted' },
+    });
+    expect(sendChunk.mock.calls.map(([chunk]) => chunk)).toEqual([
+      { operationId, stage: 'reserving' },
+      { operationId, stage: 'error', errorReason: 'operation-attempts-exhausted' },
+    ]);
+    expect(runMeteredGemini).not.toHaveBeenCalled();
+    expect(consumePersistentRateLimits).not.toHaveBeenCalled();
+  });
+
+  it('asks for the fields in the order the dialog fills its steps, with optional alternative translations', async () => {
+    reserveWordOperation.mockResolvedValue({ kind: 'reserved', attemptId: 'attempt-1', periodKey: 'free-2026-09' });
+    settleWordOperation.mockResolvedValue(false);
+    const { generateVocabulary } = await import('../src/index.js');
+    await expect(generateVocabulary.run({
+      auth: { uid: 'owner-1' }, data: { action: 'word', input: 'resilient', operationId: randomUUID() },
+    } as never)).rejects.toMatchObject({ code: 'unavailable' });
+    const request = JSON.parse(runMeteredGemini.mock.calls[0][0].contents);
+    const schema = request.config.responseSchema;
+    expect(schema.propertyOrdering.slice(0, 11)).toEqual([
+      'phonetic', 'partOfSpeech', 'cefrLevel', 'translation', 'explanation', 'explanationTranslation',
+      'exampleSentence', 'exampleTranslation', 'category', 'imageSearchQuery', 'emoji',
+    ]);
+    expect([...schema.propertyOrdering].sort()).toEqual(Object.keys(schema.properties).sort());
+    expect(schema.properties.translationAlternatives).toEqual({ type: 'ARRAY', items: { type: 'STRING' } });
+    expect(schema.required).not.toContain('translationAlternatives');
+    expect(request.contents).toContain(
+      'up to three alternative short translations for other common senses, different from translation; empty array if none',
+    );
+  });
+
+  it('accepts a model result without alternative translations', async () => {
+    reserveWordOperation.mockResolvedValue({ kind: 'reserved', attemptId: 'attempt-1', periodKey: 'free-2026-09' });
+    settleWordOperation.mockResolvedValue(true);
+    loadPilotConfig.mockResolvedValue({ ...PILOT_CONFIG_DEFAULTS, analyticsEnabled: false });
+    const { generateVocabulary } = await import('../src/index.js');
+    await expect(generateVocabulary.run({
+      auth: { uid: 'owner-1' }, data: { action: 'word', input: 'apple', operationId: randomUUID() },
+    } as never)).resolves.toEqual({ result: JSON.parse(FAKE_WORD_RESPONSE.text) });
   });
 
   it('binds part of speech to the operation fingerprint and generation prompt', async () => {

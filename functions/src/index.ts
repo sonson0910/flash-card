@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, type GenerateContentParameters } from '@google/genai';
+import { GoogleGenAI, Type, type GenerateContentParameters, type Schema } from '@google/genai';
 import { createHash, randomUUID } from 'node:crypto';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -691,8 +691,10 @@ export const generateVocabulary = onCall({
       await sendWordError(error);
       if (error instanceof AiQuotaError) {
         if (error.reason === 'ai-card-quota') await emitQuotaEvent(userId, 'card');
+        // An exhausted request is final for this operation ID, so no client retries it automatically.
         const code = error.reason === 'operation-in-flight' ? 'unavailable'
-          : error.reason === 'operation-request-mismatch' ? 'failed-precondition' : 'resource-exhausted';
+          : error.reason === 'operation-request-mismatch' || error.reason === 'operation-attempts-exhausted'
+            ? 'failed-precondition' : 'resource-exhausted';
         throw new HttpsError(code, error.message, error.details);
       }
       throw error;
@@ -739,13 +741,15 @@ export const generateVocabulary = onCall({
       contents: `You are a ${languageLabel} dictionary and vocabulary teacher.
 Provide information for the word represented by this JSON string: ${JSON.stringify(word)}.${contextInstruction}${partOfSpeechInstruction}${phoneticFieldInstruction}
 Return concise translation, explanation, explanationTranslation, IPA phonetic, one emoji, category,
-partOfSpeech, cefrLevel (A1-C2), exampleSentence, exampleTranslation, up to four collocations,
+partOfSpeech, cefrLevel (A1-C2), exampleSentence, exampleTranslation,
+translationAlternatives (up to three alternative short translations for other common senses, different from translation; empty array if none), up to four collocations,
 synonyms and antonyms, register, a concise commonMistake (or empty string), a mnemonic,
 wordFamily with noun/verb/adj/adv forms when they exist (empty string for absent forms), and imageSearchQuery.
 imageSearchQuery must be 3-6 concrete English visual keywords for stock-photo search, aligned with the
 exact meaning selected above and disambiguating polysemous words. Do not request generated art or styles.`,
       config: createAiGenerationConfig('word', {
         responseMimeType: 'application/json',
+        // Fields are requested in the order the Add-a-word dialog fills its steps.
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -754,6 +758,7 @@ exact meaning selected above and disambiguating polysemous words. Do not request
             emoji: { type: Type.STRING }, category: { type: Type.STRING },
             partOfSpeech: { type: Type.STRING }, cefrLevel: { type: Type.STRING },
             exampleSentence: { type: Type.STRING }, exampleTranslation: { type: Type.STRING },
+            translationAlternatives: { type: Type.ARRAY, items: { type: Type.STRING } },
             collocations: { type: Type.ARRAY, items: { type: Type.STRING } },
             synonyms: { type: Type.ARRAY, items: { type: Type.STRING } },
             antonyms: { type: Type.ARRAY, items: { type: Type.STRING } },
@@ -765,10 +770,14 @@ exact meaning selected above and disambiguating polysemous words. Do not request
             }, required: ['noun', 'verb', 'adj', 'adv'] },
             imageSearchQuery: { type: Type.STRING },
           },
+          propertyOrdering: ['phonetic', 'partOfSpeech', 'cefrLevel', 'translation', 'explanation',
+            'explanationTranslation', 'exampleSentence', 'exampleTranslation', 'category', 'imageSearchQuery', 'emoji',
+            'translationAlternatives', 'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake', 'mnemonic',
+            'wordFamily'],
           required: ['translation', 'explanation', 'explanationTranslation', 'phonetic', 'emoji', 'category',
             'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation', 'collocations', 'synonyms',
             'antonyms', 'register', 'commonMistake', 'imageSearchQuery'],
-        },
+        } satisfies Schema,
       }),
     }, generated => parseWordModelJson(generated.text), operationId,
     request.acceptsStreaming && response ? async (field, value) => {
@@ -1063,7 +1072,9 @@ export const cancelCardGeneration = onCall({
     throw new HttpsError('permission-denied', 'The AI account changed.');
   }
   await consumeBudget(userId, 'ai-card-cancel', 120, 'Card generation cancellation limit reached.');
-  return { cancelled: await cancelWordOperation(database, userId, operationId, new Date()) };
+  // `counted` is additive: clients that predate it read only `cancelled`.
+  const { cancelled, counted } = await cancelWordOperation(database, userId, operationId, new Date());
+  return { cancelled, counted };
 });
 
 export const askCardTutor = onCall({
