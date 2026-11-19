@@ -645,4 +645,70 @@ describe('EditCardDialog', () => {
       expect(findByProp(view.tree, 'data-edit-image-remove')).toBeNull();
     });
   });
+
+  describe('photo upload', () => {
+    const photo = new File([new Uint8Array(8)], 'photo.png', { type: 'image/png' });
+    const pick = (tree: unknown) => {
+      const input = findAllByType(tree, 'input').find(element => element.props?.accept === 'image/*');
+      (input!.props!.onChange as (event: unknown) => void)({ currentTarget: { files: [photo], value: 'photo.png' } });
+    };
+    const heldUpload = () => {
+      let resolve!: (url: string) => void;
+      let reject!: (error: unknown) => void;
+      let progress: (fraction: number | null) => void = () => undefined;
+      const cancel = vi.fn(() => reject(Object.assign(new Error('canceled'), { kind: 'canceled' })));
+      const upload = vi.fn((_file: File, onProgress: (fraction: number | null) => void) => {
+        progress = onProgress;
+        return { done: new Promise<string>((res, rej) => { resolve = res; reject = rej; }), cancel };
+      });
+      return { uploader: { upload }, upload, cancel, progress: (fraction: number | null) => progress(fraction), finish: (url: string) => resolve(url), fail: (error: unknown) => reject(error) };
+    };
+    const flush = async () => { for (let index = 0; index < 5; index += 1) await Promise.resolve(); };
+
+    it('offers Upload only when the host passes an uploader', () => {
+      expect(findByProp(render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() }).tree, 'data-edit-image-upload')).toBeNull();
+      const { uploader } = heldUpload();
+      expect(findByProp(render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), imageUpload: uploader }).tree, 'data-edit-image-upload')).not.toBeNull();
+    });
+
+    it('shows progress, then puts the uploaded photo on the draft', async () => {
+      const held = heldUpload();
+      const props = { card, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), imageUpload: held.uploader };
+      pick(render(props).tree);
+      expect(held.upload).toHaveBeenCalledWith(photo, expect.any(Function));
+      held.progress(0.4);
+      let view = render(props);
+      expect(JSON.stringify(findByProp(view.tree, 'role')?.props.children)).toContain('Uploading photo');
+      expect(findByProp(view.tree, 'data-edit-image-upload-cancel')).not.toBeNull();
+      held.finish('https://firebasestorage.googleapis.com/v0/b/demo/o/photo.webp?alt=media&token=t');
+      await flush();
+      view = render(props);
+      expect(findAllByType(view.tree, 'img').some(image => String(image.props?.src).startsWith('https://firebasestorage.googleapis.com/'))).toBe(true);
+      expect(findByProp(view.tree, 'data-edit-image-remove')).not.toBeNull();
+    });
+
+    it('cancels quietly and keeps the previous photo', async () => {
+      const held = heldUpload();
+      const withImage = { ...card, imageUrl: 'https://images.pexels.com/old.jpg' };
+      const props = { card: withImage, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), imageUpload: held.uploader };
+      pick(render(props).tree);
+      (findByProp(render(props).tree, 'data-edit-image-upload-cancel')!.props.onClick as () => void)();
+      await flush();
+      const view = render(props);
+      expect(held.cancel).toHaveBeenCalled();
+      expect(findByProp(view.tree, 'role')).toBeNull();
+      expect(findAllByType(view.tree, 'img').some(image => image.props?.src === 'https://images.pexels.com/old.jpg')).toBe(true);
+    });
+
+    it('explains a full storage allowance without offering a plan', async () => {
+      const held = heldUpload();
+      const props = { card, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), imageUpload: held.uploader };
+      pick(render(props).tree);
+      held.fail(Object.assign(new Error('quota'), { kind: 'quota' }));
+      await flush();
+      const alert = JSON.stringify(findByProp(render(props).tree, 'role')?.props.children);
+      expect(alert).toContain('Your storage is full');
+      expect(alert).not.toMatch(/upgrade|pricing|plan/i);
+    });
+  });
 });

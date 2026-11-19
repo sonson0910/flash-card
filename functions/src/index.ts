@@ -7,6 +7,8 @@ import { getMessaging } from 'firebase-admin/messaging';
 import { defineBoolean, defineSecret, gcloudProject } from 'firebase-functions/params';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { onObjectFinalized } from 'firebase-functions/v2/storage';
+import { getStorage } from 'firebase-admin/storage';
 import { createAiGenerationConfig } from './aiGeneration.js';
 import { collectStructuredWordStream } from './progressiveJsonFields.js';
 import { buildTutorPrompt, loadTutorCard, parseCardTutorRequest, TutorCardNotFoundError } from './cardTutor.js';
@@ -173,6 +175,11 @@ import {
 import { parseSetLatestExamScoreRequest, setLatestExamScore as storeLatestExamScore } from './exam-score-persistence.js';
 import { AccountProfileValidationError, parseCompleteAccountProfileRequest } from './account-profile-contract.js';
 import {
+  bucketFileObjects, configureAccountFileObjects, deleteFile, FileServiceError, finalizeUploadedFile, listFiles,
+  parseFileIdRequest, parseListFilesRequest, parsePrepareFileUploadRequest, parseUpdateFileRequest,
+  prepareFileUpload as reserveFileUpload, updateFileCourse, type BucketLike,
+} from './userFiles.js';
+import {
   AccountProfileConsentOutdatedError,
   AccountProfileOwnerMismatchError,
   AccountProfileStoredDataError,
@@ -230,6 +237,10 @@ const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps()[0] ?? initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
 const adminAuth = getAuth(adminApp);
+const fileObjects = bucketFileObjects(() => getStorage(adminApp).bucket() as unknown as BucketLike);
+// Account deletion removes stored uploads from the project's default bucket. A project without one
+// cannot hold uploads, and its account deletion must not depend on Cloud Storage being enabled.
+configureAccountFileObjects(adminApp.options.storageBucket ? fileObjects : null);
 const legacyLibraryMigrationStore = createFirestoreLegacyLibraryDiscoveryStore(database);
 const pronunciationAssessmentProvider = createPronunciationAssessmentCircuit(
   createPronunciationAssessmentProviderFromEnvironment(),
@@ -2219,5 +2230,119 @@ export const completeAccountProfile = onCall({
       errorName: error instanceof Error ? error.name : 'UnknownError',
     });
     throw new HttpsError('internal', 'Account profile completion could not be completed.');
+  }
+});
+
+const MAX_FILE_UPLOADS_PER_HOUR = 60;
+const MAX_FILE_LISTS_PER_HOUR = 600;
+const MAX_FILE_UPDATES_PER_HOUR = 120;
+const MAX_FILE_DELETES_PER_HOUR = 120;
+
+export const toFileHttpsError = (error: unknown): HttpsError | null => {
+  if (error instanceof InputValidationError) return new HttpsError('invalid-argument', error.message);
+  if (!(error instanceof FileServiceError)) return null;
+  switch (error.reason) {
+    case 'quota':
+      return new HttpsError('resource-exhausted', 'The storage allowance for this account is used up.',
+        { reason: 'storage-quota', ...error.details });
+    case 'size':
+      return new HttpsError('failed-precondition', 'The file is larger than this plan allows.',
+        { reason: 'file-too-large', ...error.details });
+    case 'type':
+      return new HttpsError('invalid-argument', 'This file type is not supported.', { reason: 'file-type' });
+    case 'course-not-found':
+      return new HttpsError('not-found', 'The course was not found.', { reason: 'course-not-found' });
+    case 'not-ready':
+      return new HttpsError('failed-precondition', 'The file is not ready yet.', { reason: 'file-not-ready' });
+    default:
+      return new HttpsError('not-found', 'The file was not found.', { reason: 'file-not-found' });
+  }
+};
+
+const fileOwnerRequest = <T extends { ownerId: string }>(parser: () => T, userId: string): T => {
+  const parsed = parseOrInvalidArgument(parser);
+  if (parsed.ownerId !== userId) {
+    throw new HttpsError('permission-denied', 'File request owner does not match the authenticated owner.');
+  }
+  return parsed;
+};
+
+const fileFailure = (error: unknown, operation: string): never => {
+  const mapped = toFileHttpsError(error);
+  if (mapped) throw mapped;
+  console.error('File operation failed.', { operation, errorName: error instanceof Error ? error.name : 'UnknownError' });
+  throw new HttpsError('internal', 'The file service could not complete this request.');
+};
+
+// Reserves storage for one upload. File names are learner content and are never logged.
+export const prepareFileUpload = onCall({
+  region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
+  timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
+}, async request => {
+  const userId = await requireProfiledUser(request.auth);
+  const parsed = fileOwnerRequest(() => parsePrepareFileUploadRequest(request.data), userId);
+  await consumeBudget(userId, 'file-prepare', MAX_FILE_UPLOADS_PER_HOUR, 'Upload limit reached. Try again later.');
+  try {
+    return await reserveFileUpload(database, userId, parsed, await loadPilotConfig(database));
+  } catch (error) {
+    return fileFailure(error, 'prepare');
+  }
+});
+
+export const listMyFiles = onCall({
+  region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
+  timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
+}, async request => {
+  const userId = await requireProfiledUser(request.auth);
+  fileOwnerRequest(() => parseListFilesRequest(request.data), userId);
+  await consumeBudget(userId, 'file-list', MAX_FILE_LISTS_PER_HOUR, 'File list limit reached. Try again later.');
+  try {
+    return await listFiles(database, userId, await loadPilotConfig(database));
+  } catch (error) {
+    return fileFailure(error, 'list');
+  }
+});
+
+export const updateMyFile = onCall({
+  region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
+  timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
+}, async request => {
+  const userId = await requireProfiledUser(request.auth);
+  const parsed = fileOwnerRequest(() => parseUpdateFileRequest(request.data), userId);
+  await consumeBudget(userId, 'file-update', MAX_FILE_UPDATES_PER_HOUR, 'File update limit reached. Try again later.');
+  try {
+    return { file: await updateFileCourse(database, userId, parsed.fileId, parsed.courseId) };
+  } catch (error) {
+    return fileFailure(error, 'update');
+  }
+});
+
+export const deleteMyFile = onCall({
+  region: REGION, secrets: [analyticsPseudonymKey], enforceAppCheck,
+  timeoutSeconds: 30, memory: '256MiB', maxInstances: 5,
+}, async request => {
+  const userId = await requireProfiledUser(request.auth);
+  const parsed = fileOwnerRequest(() => parseFileIdRequest(request.data), userId);
+  await consumeBudget(userId, 'file-delete', MAX_FILE_DELETES_PER_HOUR, 'File delete limit reached. Try again later.');
+  try {
+    return await deleteFile(database, fileObjects, userId, parsed.fileId);
+  } catch (error) {
+    return fileFailure(error, 'delete');
+  }
+});
+
+// Settles every upload from the stored object itself: the browser's byte count is never trusted.
+export const finalizeFileUpload = onObjectFinalized({
+  region: REGION, timeoutSeconds: 60, memory: '256MiB', maxInstances: 5,
+}, async event => {
+  const bucket = getStorage(adminApp).bucket(event.data.bucket) as unknown as BucketLike;
+  const objects = bucketFileObjects(() => bucket);
+  const outcome = await finalizeUploadedFile(database, objects, {
+    name: event.data.name,
+    size: Number(event.data.size),
+    contentType: event.data.contentType ?? null,
+  }, await loadPilotConfig(database));
+  if (outcome.kind === 'rejected' || outcome.kind === 'deleted-unreserved') {
+    console.warn('Uploaded object was removed.', { outcome: outcome.kind, reason: outcome.kind === 'rejected' ? outcome.reason : null });
   }
 });

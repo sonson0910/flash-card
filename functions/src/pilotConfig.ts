@@ -18,7 +18,19 @@ export interface PilotConfig {
   reviewBaseXp: number;
   serverReviewXp: boolean;
   analyticsEnabled: boolean;
+  /** Total bytes of uploaded files a free account may keep. */
+  freeStorageBytes: number;
+  /** Total bytes of uploaded files a Pro account may keep. */
+  proStorageBytes: number;
+  /** Largest single upload for a free account; never above the Storage Rules object ceiling. */
+  freeMaxFileBytes: number;
+  /** Largest single upload for a Pro account; never above the Storage Rules object ceiling. */
+  proMaxFileBytes: number;
 }
+
+const MIB = 1024 * 1024;
+/** The Storage Rules ceiling for one object; a per-plan file limit above it could never be honoured. */
+const STORAGE_OBJECT_CEILING_BYTES = 50 * MIB;
 
 export const PILOT_CONFIG_DEFAULTS: Readonly<PilotConfig> = Object.freeze({
   freeMonthlyAiCards: 30,
@@ -37,6 +49,10 @@ export const PILOT_CONFIG_DEFAULTS: Readonly<PilotConfig> = Object.freeze({
   reviewBaseXp: REVIEW_CARD_XP,
   serverReviewXp: true,
   analyticsEnabled: true,
+  freeStorageBytes: 100 * MIB,
+  proStorageBytes: 2 * 1024 * MIB,
+  freeMaxFileBytes: 20 * MIB,
+  proMaxFileBytes: 50 * MIB,
 });
 
 const positiveInteger = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) > 0;
@@ -60,6 +76,10 @@ const validators: { [K in keyof PilotConfig]: (value: unknown) => value is Pilot
   reviewBaseXp: positiveInteger,
   serverReviewXp: (value): value is boolean => typeof value === 'boolean',
   analyticsEnabled: (value): value is boolean => typeof value === 'boolean',
+  freeStorageBytes: boundedInteger(1024 * 1024 * MIB),
+  proStorageBytes: boundedInteger(1024 * 1024 * MIB),
+  freeMaxFileBytes: boundedInteger(STORAGE_OBJECT_CEILING_BYTES),
+  proMaxFileBytes: boundedInteger(STORAGE_OBJECT_CEILING_BYTES),
 };
 
 export function parsePilotConfig(value: unknown): { config: PilotConfig; invalidFields: string[] } {

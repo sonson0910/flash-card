@@ -41,10 +41,11 @@ describe('staging Functions deployment', () => {
       'createCourse', 'updateCourse', 'archiveCourse', 'reopenCourse', 'setActiveCourse',
       'addGoal', 'updateGoal', 'removeGoal', 'setLatestExamScore',
       'completeAccountProfile',
+      'prepareFileUpload', 'listMyFiles', 'updateMyFile', 'deleteMyFile', 'finalizeFileUpload',
     ].sort());
     const indexSource = fs.readFileSync('functions/src/index.ts', 'utf8');
     const exportedEndpoints = Array.from(
-      indexSource.matchAll(/export const ([A-Za-z][A-Za-z0-9]*)\s*=\s*(?:onCall|onSchedule|onRequest|courseProfileCallable)\(/g),
+      indexSource.matchAll(/export const ([A-Za-z][A-Za-z0-9]*)\s*=\s*(?:onCall|onSchedule|onRequest|onObjectFinalized|courseProfileCallable)\(/g),
       match => match[1],
     ).sort();
     assert.deepEqual([...existing, ...pilot].sort(), exportedEndpoints);

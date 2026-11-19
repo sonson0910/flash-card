@@ -13,7 +13,7 @@ const PROFILE_REQUIRED = [
   'reportCard', 'getPilotOffer', 'recordPurchaseIntent', 'updateReminderSettings',
   'createSharedDeck', 'createSharedDeckV2', 'revokeSharedDeck', 'migrateLegacyLibrary',
   'createCourse', 'updateCourse', 'archiveCourse', 'reopenCourse', 'setActiveCourse', 'addGoal', 'updateGoal', 'removeGoal',
-  'setLatestExamScore',
+  'setLatestExamScore', 'prepareFileUpload', 'listMyFiles', 'updateMyFile', 'deleteMyFile',
 ] as const;
 
 /** The profile step itself, the account data export and deletion, and calls that end or clean up a session. */

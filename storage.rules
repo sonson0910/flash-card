@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// Learner uploads live at users/{uid}/files/{fileId}. Only the owner may write a new object there,
+// with an accepted content type and no more than the absolute object ceiling. Plan limits, the
+// storage allowance and the file signature are settled by the finalize trigger, which deletes any
+// object without a reservation. Objects are never replaced or deleted from the browser: deletion
+// goes through the deleteMyFile callable so the usage counter stays right.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function acceptedContentType() {
+      return request.resource.contentType == 'application/pdf'
+        || request.resource.contentType == 'application/epub+zip'
+        || request.resource.contentType == 'image/webp'
+        || request.resource.contentType == 'image/png'
+        || request.resource.contentType == 'image/jpeg';
+    }
+
+    match /users/{uid}/files/{fileId} {
+      allow get: if isOwner(uid);
+      // `resource == null` keeps an overwrite of a stored object out of `create`, whichever
+      // operation the backend reports for it.
+      allow create: if isOwner(uid)
+        && resource == null
+        && fileId.matches('^[A-Za-z0-9_-]{20,64}$')
+        && request.resource.size > 0
+        && request.resource.size <= 50 * 1024 * 1024
+        && acceptedContentType();
+      allow list, update, delete: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

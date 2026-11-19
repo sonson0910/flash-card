@@ -39,7 +39,16 @@ export interface EditCardDialogProps {
   onSave(cardId: string, fields: Partial<CardData>): void | Promise<LearningStateOutcome>;
   onDelete?(cardId: string): Promise<boolean>;
   context?: EditCardDialogContext;
+  /** Adds "Upload" beside the photo search when the host has a file service for the learner. */
+  imageUpload?: CardImageUploader;
 }
+
+/** Uploads a photo the learner picked and resolves with the URL to store on the card. */
+export interface CardImageUploader {
+  upload(file: File, onProgress: (fraction: number | null) => void): { readonly done: Promise<string>; cancel(): void };
+}
+
+type ImageUploadFailure = 'quota' | 'type' | 'failed';
 
 export interface EditCardDialogContext {
   kind: 'review';
@@ -84,7 +93,7 @@ function StressedHeadword({ word, phonetic, language }: { word: string; phonetic
   return <>{parts.before}<span className="edit-sheet-stress">{parts.stressed}</span>{parts.after}</>;
 }
 
-export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, context }: EditCardDialogProps) {
+export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, context, imageUpload }: EditCardDialogProps) {
   const { _ } = useLingui();
   // The snapshot is intentionally stable while the sheet is open. A remote
   // update to a field the learner never touched therefore stays out of the
@@ -104,6 +113,11 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
   const [wordError, setWordError] = useState<'invalid' | 'conflict' | 'duplicate' | 'failed' | null>(null);
   const [imageSearching, setImageSearching] = useState(false);
   const [imageSearchFailed, setImageSearchFailed] = useState(false);
+  // `null` progress means the bytes are sent and the service is still confirming the photo.
+  const [imageUploadProgress, setImageUploadProgress] = useState<number | null | undefined>(undefined);
+  const [imageUploadFailure, setImageUploadFailure] = useState<ImageUploadFailure | null>(null);
+  const imageUploadTaskRef = useRef<{ cancel(): void } | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const firstFieldRef = useRef<HTMLTextAreaElement | null>(null);
   const wasOpenRef = useRef(open);
   const cardIdRef = useRef(card.id);
@@ -122,6 +136,14 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
       setWordError(null);
       setImageSearching(false);
       setImageSearchFailed(false);
+      imageUploadTaskRef.current?.cancel();
+      imageUploadTaskRef.current = null;
+      setImageUploadProgress(undefined);
+      setImageUploadFailure(null);
+    }
+    if (!open) {
+      imageUploadTaskRef.current?.cancel();
+      imageUploadTaskRef.current = null;
     }
     wasOpenRef.current = open;
     cardIdRef.current = card.id;
@@ -236,6 +258,37 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
     if (writing) return;
     setDraft(previous => ({ ...previous, imageUrl: '', imageSearchQuery: '' }));
     setImageSearchFailed(false);
+    setImageUploadFailure(null);
+  };
+
+  const imageUploading = imageUploadProgress !== undefined;
+  // The photo is resized in the browser, stored in the learner's files and put on the draft;
+  // nothing reaches the card until the learner saves.
+  const uploadImage = async (file: File | undefined) => {
+    if (!file || !imageUpload || imageUploading || writing) return;
+    setImageUploadFailure(null);
+    setImageSearchFailed(false);
+    setImageUploadProgress(0);
+    const task = imageUpload.upload(file, fraction => setImageUploadProgress(fraction));
+    imageUploadTaskRef.current = task;
+    try {
+      const url = await task.done;
+      if (imageUploadTaskRef.current !== task) return;
+      setDraft(previous => ({ ...previous, imageUrl: url, imageSearchQuery: '' }));
+    } catch (failure) {
+      if (imageUploadTaskRef.current !== task) return;
+      const kind = (failure as { kind?: unknown } | null)?.kind;
+      if (kind !== 'canceled') setImageUploadFailure(kind === 'quota' ? 'quota' : kind === 'type' || kind === 'size' ? 'type' : 'failed');
+    } finally {
+      if (imageUploadTaskRef.current === task) {
+        imageUploadTaskRef.current = null;
+        setImageUploadProgress(undefined);
+      }
+    }
+  };
+
+  const cancelImageUpload = () => {
+    imageUploadTaskRef.current?.cancel();
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -430,14 +483,59 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
           <button
             type="button"
             data-edit-image-find
-            disabled={imageSearching || !cardEditCloudAvailable}
+            disabled={imageSearching || imageUploading || !cardEditCloudAvailable}
             onClick={findAnotherPhoto}
             className="edit-sheet-chip-button"
           >
             {imageSearching ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Search size={14} aria-hidden="true" />}
             <Trans {...msg({ context: 'library.edit-card.find-another-photo', message: 'Find another photo' })} />
           </button>
-          {draft.imageUrl && (
+          {imageUpload ? (
+            <div className="edit-sheet-image-links">
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                tabIndex={-1}
+                className="edit-sheet-image-input"
+                aria-label={_(msg({ id: 'library.edit-card.upload-image-input', message: 'Upload a photo' }))}
+                onChange={event => {
+                  void uploadImage(event.currentTarget.files?.[0]);
+                  event.currentTarget.value = '';
+                }}
+              />
+              {imageUploading ? (
+                <button type="button" data-edit-image-upload-cancel onClick={cancelImageUpload} className="edit-sheet-link-button">
+                  <Trans {...msg({ id: 'library.edit-card.upload-image-cancel', message: 'Cancel upload' })} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  data-edit-image-upload
+                  disabled={imageSearching || writing}
+                  onClick={() => imageInputRef.current?.click()}
+                  aria-label={_(msg({ id: 'library.edit-card.upload-image', message: 'Upload a photo from this device' }))}
+                  className="edit-sheet-link-button"
+                >
+                  <Trans {...msg({ id: 'library.edit-card.upload-image-short', message: 'Upload' })} />
+                </button>
+              )}
+              {draft.imageUrl && !imageUploading && (
+                <>
+                  <span aria-hidden="true" className="edit-sheet-image-links-dot">·</span>
+                  <button
+                    type="button"
+                    data-edit-image-remove
+                    onClick={removeImage}
+                    aria-label={_(msg({ id: 'library.edit-card.remove-image', message: 'Remove image' }))}
+                    className="edit-sheet-link-button"
+                  >
+                    <Trans {...msg({ context: 'library.edit-card.remove-image-short', message: 'Remove' })} />
+                  </button>
+                </>
+              )}
+            </div>
+          ) : draft.imageUrl && (
             <button
               type="button"
               data-edit-image-remove
@@ -450,7 +548,17 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
           )}
         </div>
       </div>
+      {imageUploading && (
+        <p role="status" className="edit-sheet-image-progress">
+          {imageUploadProgress === null
+            ? <Trans {...msg({ id: 'library.edit-card.upload-image-checking', message: 'Checking the photo…' })} />
+            : <Trans {...msg({ id: 'library.edit-card.upload-image-progress', message: 'Uploading photo… {percent}%' })} values={{ percent: Math.round((imageUploadProgress ?? 0) * 100) }} />}
+        </p>
+      )}
       {imageSearchFailed && <p role="alert" className="edit-sheet-field-error">{imageSearchFailedMessage}</p>}
+      {imageUploadFailure === 'quota' && <p role="alert" className="edit-sheet-field-error"><Trans {...msg({ id: 'library.edit-card.upload-image-quota', message: 'Your storage is full. Delete files you no longer need, then try again.' })} /></p>}
+      {imageUploadFailure === 'type' && <p role="alert" className="edit-sheet-field-error"><Trans {...msg({ id: 'library.edit-card.upload-image-type', message: 'Choose a PNG, JPEG, or WebP photo within your plan’s size limit.' })} /></p>}
+      {imageUploadFailure === 'failed' && <p role="alert" className="edit-sheet-field-error"><Trans {...msg({ id: 'library.edit-card.upload-image-failed', message: 'The photo could not be uploaded. Try again.' })} /></p>}
     </div>
   );
 
