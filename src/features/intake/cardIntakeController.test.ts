@@ -1389,3 +1389,243 @@ describe('card intake controller', () => {
     await generation;
   });
 });
+
+describe('card creator streaming, stop and try again', () => {
+  type Generated = Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>;
+  const noMedia = () => Promise.resolve({ audioUrl: null, imageUrl: null });
+
+  const startGeneration = async (setup?: (port: CardIntakeControllerPort) => void) => {
+    const { port } = createFakePort();
+    const generation = deferred<Generated>();
+    vi.mocked(port.generateCard).mockReturnValueOnce(generation.promise);
+    setup?.(port);
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+    const pending = intake.cardCreator.generatePreview();
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledOnce());
+    const request = vi.mocked(port.generateCard).mock.calls[0][0];
+    const field = (name: string, value: unknown) =>
+      request.onProgress?.({ operationId: request.operationId!, stage: 'field', field: name, value });
+    return { port, intake, generation, pending, request, field };
+  };
+
+  it('normalises streamed values the same way as the final card and records their arrival order', async () => {
+    const { intake, generation, pending, field } = await startGeneration();
+
+    field('translation', '  táo  ');
+    field('cefrLevel', ' b1 ');
+    field('partOfSpeech', 'Noun');
+    field('emoji', 42);
+    field('translation', 'quả táo');
+    field('unknownField', 'ignored');
+
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      stage: 'generating',
+      streamedFields: ['translation', 'cefrLevel', 'partOfSpeech'],
+      preview: { translation: 'quả táo', cefrLevel: 'B1', partOfSpeech: 'noun' },
+    });
+    generation.resolve({
+      card: { ...card('apple'), translation: 'quả táo', cefrLevel: 'B1', partOfSpeech: 'noun' },
+      mediaPromise: noMedia(),
+    });
+    await expect(pending).resolves.toMatchObject({ status: 'preview' });
+    expect(intake.getSnapshot().cardCreator.preview).toMatchObject({
+      translation: 'quả táo', cefrLevel: 'B1', partOfSpeech: 'noun',
+    });
+  });
+
+  it('moves to finding the image once the text is complete and shows reconnecting during a retry', async () => {
+    const { intake, generation, pending, request } = await startGeneration();
+
+    request.onProgress?.({ operationId: request.operationId!, stage: 'retrying' });
+    expect(intake.getSnapshot().cardCreator.generationStage).toBe('retrying');
+    request.onProgress?.({
+      operationId: request.operationId!, stage: 'done',
+      result: { translation: 'táo', explanation: 'A fruit.', phonetic: '/ˈæp.əl/' },
+    });
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      generationStage: 'finding-image',
+      streamedFields: ['translation', 'explanation', 'phonetic'],
+      preview: { translation: 'táo', explanation: 'A fruit.', phonetic: '/ˈæp.əl/' },
+    });
+
+    generation.resolve({ card: { ...card('apple'), translation: 'táo' }, mediaPromise: noMedia() });
+    await expect(pending).resolves.toMatchObject({ status: 'preview' });
+    expect(intake.getSnapshot().cardCreator).toMatchObject({ stage: 'preview', generationStage: null });
+  });
+
+  it('accepts only the selected fields during a regeneration and keeps the other values the learner saw', async () => {
+    const { port } = createFakePort();
+    const regeneration = deferred<Generated>();
+    vi.mocked(port.generateCard)
+      .mockResolvedValueOnce({
+        card: { ...card('apple'), translation: 'táo', phonetic: '/a/', exampleSentence: 'An apple.' },
+        mediaPromise: noMedia(),
+      })
+      .mockReturnValueOnce(regeneration.promise);
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+    await intake.cardCreator.generatePreview();
+
+    const pending = intake.cardCreator.regenerate(['meaning']);
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledTimes(2));
+    const request = vi.mocked(port.generateCard).mock.calls[1][0];
+    request.onProgress?.({ operationId: request.operationId!, stage: 'field', field: 'phonetic', value: '/new/' });
+    request.onProgress?.({ operationId: request.operationId!, stage: 'field', field: 'exampleSentence', value: 'Other.' });
+    request.onProgress?.({ operationId: request.operationId!, stage: 'field', field: 'translation', value: 'quả táo' });
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      regenerating: ['meaning'],
+      streamedFields: ['translation'],
+      preview: { translation: 'quả táo', phonetic: '/a/', exampleSentence: 'An apple.' },
+    });
+
+    regeneration.resolve({
+      card: { ...card('apple'), translation: 'quả táo', phonetic: '/new/', exampleSentence: 'Other.' },
+      mediaPromise: noMedia(),
+    });
+    await expect(pending).resolves.toMatchObject({ status: 'preview' });
+    expect(intake.getSnapshot().cardCreator.preview).toMatchObject({
+      translation: 'quả táo', phonetic: '/a/', exampleSentence: 'An apple.',
+    });
+  });
+
+  it('stops before any field arrived, returns to the word and reports the refund', async () => {
+    const { intake, port, pending, request, generation } = await startGeneration(target => {
+      target.cancelGeneration = vi.fn(async () => true);
+    });
+
+    const stopped = intake.cardCreator.stopGeneration!();
+
+    expect(request.signal?.aborted).toBe(true);
+    expect(port.cancelGeneration).toHaveBeenCalledWith(request.operationId);
+    await expect(stopped).resolves.toEqual({ status: 'cancelled' });
+    expect(intake.getSnapshot()).toMatchObject({
+      isSubmitting: false,
+      cardCreator: {
+        open: true,
+        stage: 'input',
+        preview: null,
+        draft: { word: 'apple' },
+        error: { code: 'stopped' },
+        generationOutcome: { kind: 'stopped', partial: false, refunded: true },
+      },
+    });
+    generation.resolve({ card: card('apple'), mediaPromise: noMedia() });
+    await expect(pending).resolves.toEqual({ status: 'cancelled' });
+    expect(intake.getSnapshot().cardCreator.stage).toBe('input');
+  });
+
+  it('keeps a partial card unchecked when the request still counts after a stop', async () => {
+    const { intake, field } = await startGeneration(target => {
+      target.cancelGeneration = vi.fn(async () => false);
+    });
+    field('translation', 'táo');
+
+    await intake.cardCreator.stopGeneration!();
+
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      stage: 'error',
+      preview: { translation: 'táo' },
+      generationOutcome: { kind: 'stopped', partial: true, refunded: false },
+    });
+    intake.cardCreator.updatePreview({ explanation: 'My own note.' });
+    expect(intake.getSnapshot().cardCreator).toMatchObject({ stage: 'error', preview: { explanation: 'My own note.' } });
+    await expect(intake.cardCreator.save()).resolves.toMatchObject({ status: 'failed', error: { code: 'invalid' } });
+  });
+
+  it('makes no refund claim when the cancel answer is unavailable', async () => {
+    const { intake } = await startGeneration(target => {
+      target.cancelGeneration = vi.fn(async () => { throw new Error('offline'); });
+    });
+
+    await intake.cardCreator.stopGeneration!();
+
+    expect(intake.getSnapshot().cardCreator.generationOutcome).toEqual({
+      kind: 'stopped', partial: false, refunded: null,
+    });
+  });
+
+  it('tries again under the same request and keeps the learner edits after a partial failure', async () => {
+    const { port, intake, generation, pending, request, field } = await startGeneration();
+    field('translation', 'táo');
+    field('explanation', 'A fruit.');
+    intake.cardCreator.updatePreview({ translation: 'quả táo của tôi' });
+    generation.reject(new Error('stream broke'));
+    await expect(pending).resolves.toMatchObject({ status: 'failed' });
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      stage: 'error',
+      generationOutcome: { kind: 'failed', partial: true, refunded: null },
+      preview: { translation: 'quả táo của tôi', explanation: 'A fruit.' },
+    });
+    intake.cardCreator.updatePreview({ explanation: 'Edited after the failure.' });
+
+    vi.mocked(port.generateCard).mockResolvedValueOnce({
+      card: { ...card('apple'), translation: 'táo mới', explanation: 'A round fruit.', phonetic: '/a/' },
+      mediaPromise: noMedia(),
+    });
+    await expect(intake.cardCreator.retryGeneration!()).resolves.toMatchObject({ status: 'preview' });
+
+    expect(vi.mocked(port.generateCard).mock.calls[1][0].operationId).toBe(request.operationId);
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      stage: 'preview',
+      generationOutcome: null,
+      preview: { translation: 'quả táo của tôi', explanation: 'Edited after the failure.', phonetic: '/a/' },
+    });
+  });
+
+  it('starts a new request after the server refused another attempt, keeping the partial card', async () => {
+    const { port, intake, generation, pending, request, field } = await startGeneration();
+    field('translation', 'táo');
+    generation.reject(Object.assign(new Error('retries used'), { reason: 'operation-attempts-exhausted' }));
+    await expect(pending).resolves.toMatchObject({ status: 'failed' });
+
+    await intake.cardCreator.retryGeneration!();
+
+    const nextOperationId = vi.mocked(port.generateCard).mock.calls[1][0].operationId;
+    expect(nextOperationId).toMatch(/^[0-9a-f]{8}-/);
+    expect(nextOperationId).not.toBe(request.operationId);
+  });
+
+  it('does not call the server while the browser is offline', async () => {
+    const { port } = createFakePort();
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+    vi.stubGlobal('navigator', { onLine: false });
+    try {
+      await expect(intake.cardCreator.generatePreview()).resolves.toMatchObject({
+        status: 'failed', error: { code: 'offline' },
+      });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(port.findExisting).not.toHaveBeenCalled();
+    expect(port.generateCard).not.toHaveBeenCalled();
+    expect(intake.getSnapshot().cardCreator).toMatchObject({ stage: 'error', error: { code: 'offline' } });
+  });
+
+  it('saves alternative translations that still differ from the kept translation, only on AI cards', async () => {
+    const { port, persistCards } = createFakePort();
+    vi.mocked(port.generateCard).mockResolvedValueOnce({
+      card: { ...card('apple'), translation: 'táo', translationAlternatives: ['quả táo', 'trái táo'] } as CardData,
+      mediaPromise: noMedia(),
+    });
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+    await intake.cardCreator.generatePreview();
+    intake.cardCreator.updatePreview({ translation: 'Quả  táo' });
+
+    await expect(intake.cardCreator.save()).resolves.toMatchObject({ status: 'saved' });
+    expect(persistCards.mock.calls[0][0][0]).toMatchObject({
+      translation: 'Quả  táo', translationAlternatives: ['trái táo'],
+    });
+
+    intake.cardCreator.open();
+    intake.cardCreator.createManualDraft({ word: 'pear', translation: 'lê' });
+    await intake.cardCreator.save();
+    expect(persistCards.mock.calls[1][0][0]).not.toHaveProperty('translationAlternatives');
+  });
+});

@@ -5,6 +5,7 @@ import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { isSupportedImageUrl } from '../../lib/images';
 import { captureFailureMessage } from '../../lib/captureFailureMessage';
 import type { WordGenerationProgress } from '../../lib/gemini';
+import { normalizeTranslationAlternatives, normalizeWordInfoField } from '../../lib/wordInfo';
 import type { CardData } from '../../types/card';
 import {
   createSpreadsheetImportService,
@@ -25,10 +26,17 @@ import {
   type CardCreateResult,
   type CardCreatorActions,
   type CardCreatorDraft,
+  type CardCreatorGenerationOutcome,
   type CardCreatorModel,
   type CardGenerationField,
   type ManualCardDraft,
 } from './card-creator-model';
+
+/**
+ * An AI card can carry alternative translations. The shared card type does not declare the field
+ * yet, so intake keeps it on this wider type; card normalisation drops it until the field exists.
+ */
+export type IntakeCard = CardData & { translationAlternatives?: string[] };
 
 export interface CardMediaPatch {
   audioUrl: string | null;
@@ -69,7 +77,8 @@ export class RequestedDeckUnavailableError extends Error {
 
 export interface CardIntakeControllerPort extends SpreadsheetCardIntakePort {
   captureSession?(): () => boolean;
-  cancelGeneration?(operationId: string): Promise<void>;
+  /** Resolves true when the request was refunded, false when it still counts, null when unknown. */
+  cancelGeneration?(operationId: string): Promise<boolean | null | void>;
   generateCard(request: CardGenerationRequest): Promise<{
     card: CardData;
     mediaPromise: Promise<CardMediaPatch>;
@@ -409,6 +418,29 @@ const creatorRegenerationFields: readonly CardGenerationField[] = [
   'meaning', 'pronunciation', 'examples', 'wordFamily', 'cefr',
 ];
 
+/** The streamed fields each regeneration group may replace; other fields keep their values. */
+const creatorRegenerationStreamFields: Record<CardGenerationField, readonly string[]> = {
+  meaning: ['translation', 'explanation', 'explanationTranslation', 'translationAlternatives'],
+  pronunciation: ['phonetic'],
+  examples: ['exampleSentence', 'exampleTranslation'],
+  wordFamily: ['wordFamily'],
+  cefr: ['cefrLevel'],
+};
+
+/** The server refuses a fourth attempt of one request; the next try must start a new one. */
+const ATTEMPTS_EXHAUSTED_REASON = 'operation-attempts-exhausted';
+
+const errorReason = (error: unknown, seen = new Set<object>()): string => {
+  if (!error || typeof error !== 'object' || seen.has(error)) return '';
+  seen.add(error);
+  const reason = (error as { reason?: unknown }).reason;
+  if (typeof reason === 'string') return reason;
+  return errorReason((error as { cause?: unknown }).cause, seen);
+};
+
+const isBrowserOffline = (): boolean =>
+  typeof navigator !== 'undefined' && navigator.onLine === false;
+
 const creatorPreviewFields = [
   'translation', 'explanation', 'explanationTranslation', 'phonetic', 'emoji',
   'category', 'customDeck', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
@@ -431,6 +463,12 @@ const createCardCreatorError = (
   cause?: unknown,
 ): CardCreateError => ({ code, message, ...(cause === undefined ? {} : { cause }) });
 
+const creatorStreamFields = new Set<string>([
+  ...creatorPreviewFields.filter(field => field !== 'customDeck' && field !== 'audioUrl' && field !== 'imageUrl'),
+  'partOfSpeech',
+  'translationAlternatives',
+]);
+
 const creatorPatch = (patch: Partial<CardData>): Partial<CardData> => {
   const safe = {} as Partial<CardData>;
   for (const field of creatorPreviewFields) {
@@ -447,11 +485,14 @@ const mergeRegeneratedFields = (
   fields: readonly CardGenerationField[],
 ): CardData => {
   const selected = new Set(fields.length > 0 ? fields : creatorRegenerationFields);
-  const next: CardData = { ...current };
+  const next: IntakeCard = { ...current };
   if (selected.has('meaning')) {
     next.translation = generated.translation;
     next.explanation = generated.explanation;
     next.explanationTranslation = generated.explanationTranslation;
+    const alternatives = (generated as IntakeCard).translationAlternatives;
+    if (alternatives?.length) next.translationAlternatives = alternatives;
+    else delete next.translationAlternatives;
   }
   if (selected.has('pronunciation')) next.phonetic = generated.phonetic;
   if (selected.has('examples')) {
@@ -763,6 +804,13 @@ export function createCardIntakeController({
     try { draftPort?.clearOperation?.(); } catch { /* storage is optional */ }
   };
 
+  /** Starts the next try under a new request while keeping the preview and the learner's edits. */
+  const forgetCreatorOperationId = () => {
+    creatorOperation = null;
+    draftOperation = null;
+    try { draftPort?.clearOperation?.(); } catch { /* storage is optional */ }
+  };
+
   const cancelCreatorGeneration = () => {
     const cancellingId = snapshot.cardCreator.stage === 'generating' ? creatorOperation?.id : null;
     creatorGenerationAbort?.abort();
@@ -837,6 +885,7 @@ export function createCardIntakeController({
         preview: nextPreview,
         duplicate: requestChanged ? null : current.duplicate,
         error: requestChanged ? null : current.error,
+        ...(requestChanged ? { streamedFields: [], regenerating: [], generationOutcome: null } : {}),
       },
     });
     try {
@@ -882,6 +931,9 @@ export function createCardIntakeController({
         completedAiRequests: 0,
         duplicate: null,
         error,
+        streamedFields: [],
+        regenerating: [],
+        generationOutcome: null,
       },
     });
     try {
@@ -896,7 +948,10 @@ export function createCardIntakeController({
     const current = snapshot.cardCreator;
     if (!current.preview) return;
     const nextPatch = creatorPatch(patch);
-    if (current.stage === 'generating') Object.keys(nextPatch).forEach(field => {
+    // An unfinished card stays unfinished when the learner edits it: saving still waits for a
+    // complete generation or for "Add manually", and Try again keeps these edits.
+    const unfinished = current.stage === 'error' && current.generationOutcome?.partial === true;
+    if (current.stage === 'generating' || unfinished) Object.keys(nextPatch).forEach(field => {
       creatorEditedFields.add(field as keyof CardData);
     });
     const nextPreview: CardData = { ...current.preview, ...nextPatch };
@@ -906,14 +961,15 @@ export function createCardIntakeController({
     publishCardCreator({
       preview: nextPreview,
       draft: nextDraft,
-      stage: current.stage === 'generating' || current.stage === 'saving' ? current.stage : 'preview',
-      error: null,
+      stage: current.stage === 'generating' || current.stage === 'saving' || unfinished ? current.stage : 'preview',
+      error: unfinished ? current.error : null,
       duplicate: null,
     });
   };
 
   const generateCardCreatorPreview = async (
     regenerateFields?: readonly CardGenerationField[],
+    mode: 'fresh' | 'retry' = 'fresh',
   ): Promise<CardCreateResult> => {
     const current = snapshot.cardCreator;
     if (activeOperation) return { status: 'busy' };
@@ -942,6 +998,7 @@ export function createCardIntakeController({
     const partOfSpeechHint = draft.partOfSpeech;
     const requestedDeck = draft.deck;
     const isRegeneration = Boolean(regenerateFields);
+    const isRetry = mode === 'retry';
     const selectedFields = (regenerateFields ?? []).filter((field): field is CardGenerationField =>
       creatorRegenerationFields.includes(field),
     );
@@ -953,11 +1010,21 @@ export function createCardIntakeController({
     if (!isRegeneration && current.preview && current.stage === 'preview' && creatorOperation) {
       return { status: 'preview', card: current.preview, operationId: creatorOperation.id };
     }
+    if (isBrowserOffline()) {
+      // Without a connection the request cannot reach the server, so nothing is reserved or charged.
+      const error = createCardCreatorError('offline', 'You are offline. Reconnect to generate a card, or add it manually.');
+      publishCardCreator({ stage: 'error', generationStage: null, error, duplicate: null });
+      return { status: 'failed', error };
+    }
 
-    if (isRegeneration) {
+    if (isRegeneration && !isRetry) {
       clearCreatorOperation(true);
     }
-    creatorEditedFields.clear();
+    // Try again keeps what the learner already edited; a new request starts from a clean slate.
+    if (!isRetry) creatorEditedFields.clear();
+    const regenerationScope = isRegeneration
+      ? new Set(selectedFields.flatMap(field => creatorRegenerationStreamFields[field]))
+      : null;
     const invocation = ++creatorInvocation;
     const lifecycle = creatorLifecycle;
     const controllerGeneration = controllerLifecycle;
@@ -972,6 +1039,9 @@ export function createCardIntakeController({
         draft,
         duplicate: null,
         error: null,
+        streamedFields: isRetry ? current.streamedFields : [],
+        regenerating: isRegeneration ? selectedFields : [],
+        generationOutcome: null,
       },
     });
     let existingCards = new Map<string, CardData>();
@@ -1036,16 +1106,44 @@ export function createCardIntakeController({
       try { draftPort?.writeOperation?.(draftOperation); } catch { /* storage is optional */ }
     }
 
-    const initialPreview = isRegeneration ? current.preview : manualCardFromDraft({
+    const keepsPreview = isRegeneration || (isRetry && current.preview !== null);
+    const initialPreview = keepsPreview ? current.preview : manualCardFromDraft({
       word: normalizedWord, translation: '', deck: requestedDeck, partOfSpeech: partOfSpeechHint,
     }, language, now(), true);
-    if (initialPreview && !isRegeneration) publishCardCreator({ preview: {
+    if (initialPreview && !keepsPreview) publishCardCreator({ preview: {
       ...initialPreview, origin: 'ai',
       category: '', emoji: '',
     } });
     const generationPreview = snapshot.cardCreator.preview;
     const generationAbort = new AbortController();
     creatorGenerationAbort = generationAbort;
+
+    // Each streamed value goes through the same normaliser as the final card, so an unedited value
+    // never changes when the card completes. A regeneration only accepts the fields it was asked for.
+    const applyStreamedField = (field: string, raw: unknown, arrived: Set<keyof CardData>, preview: IntakeCard) => {
+      if (!creatorStreamFields.has(field) || (regenerationScope && !regenerationScope.has(field))) return preview;
+      const normalized = normalizeWordInfoField(field, raw, { translation: preview.translation });
+      if (normalized === undefined) return preview;
+      if (field !== 'translationAlternatives') arrived.add(field as keyof CardData);
+      if (creatorEditedFields.has(field as keyof CardData)) return preview;
+      const value = field === 'partOfSpeech' && typeof normalized === 'string'
+        ? normalizePartOfSpeech(normalized)
+        : normalized;
+      return { ...preview, [field]: value } as IntakeCard;
+    };
+    const publishStreamed = (entries: ReadonlyArray<readonly [string, unknown]>) => {
+      const before = snapshot.cardCreator.preview;
+      if (!before) return;
+      const arrived = new Set<keyof CardData>(snapshot.cardCreator.streamedFields);
+      const order = [...snapshot.cardCreator.streamedFields];
+      let preview: IntakeCard = before;
+      for (const [field, raw] of entries) {
+        preview = applyStreamedField(field, raw, arrived, preview);
+      }
+      for (const field of arrived) if (!order.includes(field)) order.push(field);
+      if (preview === before && order.length === snapshot.cardCreator.streamedFields.length) return;
+      publishCardCreator({ preview, streamedFields: order });
+    };
 
     try {
       const generated = await port.generateCard({
@@ -1059,18 +1157,21 @@ export function createCardIntakeController({
           if (progress.operationId !== creatorOperation?.id
             || !isCreatorInvocationCurrent(invocation, lifecycle, controllerGeneration)
             || snapshot.cardCreator.stage !== 'generating') return;
-          if (progress.stage === 'reserving' || progress.stage === 'drafting') {
+          if (progress.stage === 'reserving' || progress.stage === 'drafting' || progress.stage === 'retrying') {
             publishCardCreator({ generationStage: progress.stage });
             return;
           }
-          if (progress.stage !== 'field' || !progress.field
-            || !creatorPreviewFields.includes(progress.field as typeof creatorPreviewFields[number])
-            || creatorEditedFields.has(progress.field as keyof CardData)) return;
-          const value = progress.value;
-          const valid = typeof value === 'string' || (Array.isArray(value) && value.every(item => typeof item === 'string'))
-            || (progress.field === 'wordFamily' && value !== null && typeof value === 'object' && !Array.isArray(value));
-          if (!valid || !snapshot.cardCreator.preview) return;
-          publishCardCreator({ preview: { ...snapshot.cardCreator.preview, [progress.field]: value } });
+          if (progress.stage === 'done') {
+            // A replayed request sends only its final card, so its fields count as arrived here.
+            const result = progress.result;
+            if (result && typeof result === 'object' && !Array.isArray(result)) {
+              publishStreamed(Object.entries(result as Record<string, unknown>));
+            }
+            publishCardCreator({ generationStage: 'finding-image' });
+            return;
+          }
+          if (progress.stage !== 'field' || !progress.field) return;
+          publishStreamed([[progress.field, progress.value]]);
         },
         signal: generationAbort.signal,
       });
@@ -1078,7 +1179,7 @@ export function createCardIntakeController({
         void generated.mediaPromise.catch(() => undefined);
         return { status: 'cancelled' };
       }
-      const generatedCard: CardData = {
+      const generatedCard: IntakeCard = {
         ...generated.card,
         id: current.preview?.id ?? generated.card.id,
         origin: 'ai',
@@ -1096,6 +1197,8 @@ export function createCardIntakeController({
       );
       if (!isRegeneration) creatorMediaPromise = mediaResult;
       if (isRegeneration) void mediaResult;
+      // The streamed preview already holds only the selected groups, so unselected fields keep the
+      // values the learner saw before regenerating.
       const preview = isRegeneration
         ? mergeRegeneratedFields(snapshot.cardCreator.preview!, generatedCard, selectedFields)
         : generatedCard;
@@ -1113,18 +1216,21 @@ export function createCardIntakeController({
         completedAiRequests: snapshot.cardCreator.completedAiRequests + 1,
         duplicate: null,
         error: null,
+        generationOutcome: null,
       });
       return { status: 'preview', card: preview, operationId: nextOperationId };
     } catch (error) {
       if (!isCreatorInvocationCurrent(invocation, lifecycle, controllerGeneration)) {
         return { status: 'cancelled' };
       }
+      if (errorReason(error) === ATTEMPTS_EXHAUSTED_REASON) forgetCreatorOperationId();
       const createError = createCardCreatorError(
         'generation',
         error instanceof RequestedDeckUnavailableError ? error.message : captureFailureMessage(error),
         error,
       );
       diagnostics.generationFailed?.(error);
+      const partial = snapshot.cardCreator.streamedFields.length > 0;
       publishCardCreator({
         stage: 'error',
         generationStage: null,
@@ -1132,6 +1238,7 @@ export function createCardIntakeController({
           ? current.preview
           : snapshot.cardCreator.preview,
         error: createError,
+        generationOutcome: partial ? { kind: 'failed', partial: true, refunded: null } : null,
       });
       return { status: 'failed', error: createError };
     } finally {
@@ -1152,6 +1259,62 @@ export function createCardIntakeController({
     return generateCardCreatorPreview(fields);
   };
 
+  const retryCardCreatorGeneration = () => {
+    const { regenerating } = snapshot.cardCreator;
+    return generateCardCreatorPreview(regenerating.length > 0 ? regenerating : undefined, 'retry');
+  };
+
+  /**
+   * Stops the running generation and asks the server whether the request still counts. A stop before
+   * any field arrived normally refunds it, so the dialog returns to the word; once part of the card
+   * arrived the request is kept and the partial card stays, unchecked.
+   */
+  const stopCardCreatorGeneration = async (): Promise<CardCreateResult> => {
+    const current = snapshot.cardCreator;
+    if (current.stage !== 'generating' || activeOperation !== 'creator-generate') return { status: 'busy' };
+    const operationId = creatorOperation?.id ?? null;
+    creatorInvocation += 1;
+    const invocation = creatorInvocation;
+    const lifecycle = creatorLifecycle;
+    const controllerGeneration = controllerLifecycle;
+    creatorGenerationAbort?.abort();
+    creatorGenerationAbort = null;
+    activeOperation = null;
+    // The pipeline reads the request's owner synchronously, so the cancel starts before any await.
+    let cancellation: Promise<boolean | null | void>;
+    try {
+      cancellation = operationId && port.cancelGeneration
+        ? port.cancelGeneration(operationId)
+        : Promise.resolve(null);
+    } catch {
+      cancellation = Promise.resolve(null);
+    }
+    const partial = current.streamedFields.length > 0;
+    const isRegeneration = current.regenerating.length > 0;
+    const stopError = createCardCreatorError('stopped', 'Generation stopped.');
+    const outcome = (refunded: boolean | null): CardCreatorGenerationOutcome => ({ kind: 'stopped', partial, refunded });
+    const settled = (refunded: boolean | null): Partial<CardCreatorModel> => partial
+      ? { stage: 'error', generationStage: null, error: stopError, generationOutcome: outcome(refunded) }
+      : {
+        stage: isRegeneration ? 'preview' : 'input',
+        generationStage: null,
+        preview: isRegeneration ? snapshot.cardCreator.preview : null,
+        error: stopError,
+        generationOutcome: outcome(refunded),
+      };
+    publish({ isSubmitting: false, cardCreator: { ...snapshot.cardCreator, ...settled(null) } });
+    let refunded: boolean | null = null;
+    try {
+      const result = await cancellation;
+      refunded = typeof result === 'boolean' ? result : null;
+    } catch {
+      refunded = null;
+    }
+    if (!isCreatorInvocationCurrent(invocation, lifecycle, controllerGeneration)) return { status: 'cancelled' };
+    publishCardCreator({ generationOutcome: outcome(refunded) });
+    return { status: 'cancelled' };
+  };
+
   const saveCardCreator = async (): Promise<CardCreateResult> => {
     const current = snapshot.cardCreator;
     if (activeOperation) return { status: 'busy' };
@@ -1160,10 +1323,16 @@ export function createCardIntakeController({
       publishCardCreator({ stage: 'error', error });
       return { status: 'failed', error };
     }
-    const candidate: CardData = {
-      ...current.preview,
+    const { translationAlternatives, ...previewFields } = current.preview as IntakeCard;
+    // Alternatives belong only to AI cards and must still differ from the translation the learner kept.
+    const alternatives = current.mode === 'ai'
+      ? normalizeTranslationAlternatives(translationAlternatives, previewFields.translation)
+      : [];
+    const candidate: IntakeCard = {
+      ...previewFields,
       origin: current.mode === 'manual' ? 'manual' : 'ai',
       customDeck: current.draft.deck || current.preview.customDeck || null,
+      ...(alternatives.length > 0 ? { translationAlternatives: alternatives } : {}),
     };
     const invocation = ++creatorInvocation;
     const lifecycle = creatorLifecycle;
@@ -1419,6 +1588,8 @@ export function createCardIntakeController({
       generatePreview: () => generateCardCreatorPreview(),
       updatePreview: updateCardCreatorPreview,
       regenerate: regenerateCardCreator,
+      stopGeneration: stopCardCreatorGeneration,
+      retryGeneration: retryCardCreatorGeneration,
       createManualDraft: createManualCardCreatorDraft,
       save: saveCardCreator,
       cancel: cancelCardCreator,
