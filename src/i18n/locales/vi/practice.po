@@ -453,6 +453,11 @@ msgctxt "recap.tomorrow"
 msgid "Tomorrow"
 msgstr "Ngày mai"
 
+#: src/features/practice/SessionRecapModal.tsx:390
+msgctxt "recap.xp-unit"
+msgid "XP"
+msgstr "XP"
+
 #: src/features/practice/SessionRecapModal.tsx:288
 msgctxt "recap.streak-day"
 msgid "Day {count}"

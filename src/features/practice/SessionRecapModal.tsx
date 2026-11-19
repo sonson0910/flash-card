@@ -387,7 +387,7 @@ export function SessionRecapModal({
                     {goodCount > 0 && <span data-part="good" style={{ width: `${goodShare}%` }} />}
                   </span>
                 </StatTile>
-                <StatTile label={<Trans {...msg({ context: 'recap.experience', message: 'Experience' })} />} value={<><span aria-hidden="true">+</span><CountUp to={xpEarned} /> <small className="practice-recap-unit">XP</small></>}>
+                <StatTile label={<Trans {...msg({ context: 'recap.experience', message: 'Experience' })} />} value={<><span aria-hidden="true">+</span><CountUp to={xpEarned} /> <small className="practice-recap-unit"><Trans {...msg({ context: 'recap.xp-unit', message: 'XP' })} /></small></>}>
                   <p className="practice-recap-stat-sub">{remembered} · {toRevisit}</p>
                 </StatTile>
                 {showStreak && (
