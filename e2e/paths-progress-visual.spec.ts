@@ -268,8 +268,9 @@ for (const theme of themes) {
       await expect(page.getByRole('heading', { level: 1, name: /progress/i })).toBeVisible();
       await expect(page.getByRole('region', { name: /study activity/i })).toBeVisible();
       await expect(page.locator('[data-native-chart="xp"]')).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'Due today and over the next 13 days' })).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'Recently mastered' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Coming up' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: theme.family === 'crystal' ? 'New stars' : 'Recently mastered' })).toBeVisible();
+      await expect(page.locator('.progress-board-header').getByRole('group', { name: 'Review activity' })).toBeVisible();
       await expectAccessibleAndContained(page, 'Progress');
       await expectReducedMotion(page, 'Progress');
       await attachScreen(page, testInfo, `progress-${theme.family}-${theme.mode}-${viewport.name}`);
@@ -320,7 +321,7 @@ test('Progress inspects covered review days and returns to range totals', async 
   await expect(activity.getByRole('status')).toHaveText('Sep 22, 2026: 0 reviews');
   await expect(activity.locator('dt').filter({ hasText: 'Good' }).locator('..').locator('dd')).toHaveText('0');
 
-  await activity.getByRole('button', { name: '30 days' }).click();
+  await page.locator('.progress-board-header').getByRole('button', { name: '30 days' }).click();
   await expect(date).toHaveValue('');
   await expect(date).toHaveAttribute('min', '2026-08-26');
   await expect(activity.getByRole('status')).toHaveCount(0);

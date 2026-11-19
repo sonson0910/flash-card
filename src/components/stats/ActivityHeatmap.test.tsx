@@ -2,7 +2,7 @@ import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { renderToStaticMarkup as renderReactToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ActivityHeatmap, dayInTimeZone, firstDayOfWeek, formatHeatmapDate, weekdayLabels } from './ActivityHeatmap';
+import { ActivityHeatmap, dayInTimeZone, formatHeatmapDate, weekdayLabels } from './ActivityHeatmap';
 
 const renderToStaticMarkup = (node: React.ReactNode) => renderReactToStaticMarkup(<I18nProvider i18n={i18n}>{node}</I18nProvider>);
 
@@ -26,9 +26,13 @@ describe('ActivityHeatmap', () => {
     expect(html).toContain('aria-label="Study activity"');
   });
 
-  it.each([['en-US', 0], ['vi', 1], ['ja', 0]])('uses the locale first weekday for %s', (locale, firstDay) => {
-    expect(firstDayOfWeek(locale)).toBe(firstDay);
-    expect(weekdayLabels(locale)).toHaveLength(7);
+  it.each(['en-US', 'vi', 'ja'])('starts weeks on Monday for %s', locale => {
+    const labels = weekdayLabels(locale);
+    const monday = new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(2026, 0, 5));
+    const sunday = new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(2026, 0, 4));
+    expect(labels).toHaveLength(7);
+    expect(labels[0]).toBe(monday);
+    expect(labels[6]).toBe(sunday);
     expect(formatHeatmapDate('2026-08-26', locale)).not.toBe('2026-08-26');
   });
 
@@ -40,7 +44,7 @@ describe('ActivityHeatmap', () => {
       days: { '2026-09-28': { reviewed: 2, again: 1, hard: 0, good: 1, easy: 0 } },
     }} />);
 
-    expect(html.match(/class="stats-heat-cell"/g)).toHaveLength(firstDayOfWeek('en') === 0 ? 35 : 42);
+    expect(html.match(/class="stats-heat-cell"/g)).toHaveLength(42);
     expect(html).toContain('Activity unavailable before coverage began');
     expect(html).toContain('Sep 28, 2026: 2 reviews');
     expect(html).toContain('Outside selected range');
@@ -66,7 +70,7 @@ describe('ActivityHeatmap', () => {
       { date: '2025-01-01', XP: 8 }, { date: '2026-09-28', XP: 12 },
     ]} />);
 
-    expect(reviewHtml.match(/class="stats-heat-cell"/g)).toHaveLength(firstDayOfWeek('en') === 0 ? 35 : 42);
+    expect(reviewHtml.match(/class="stats-heat-cell"/g)).toHaveLength(42);
     expect(xpHtml).toContain('<strong class="font-bold text-[var(--sf-text)]">20</strong> total XP');
   });
 

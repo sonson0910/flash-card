@@ -69,16 +69,44 @@ describe('ProgressWorkspace learning activity gate', () => {
     }
 
     expect(html).toContain('Complete a review to begin your progress history.');
-    expect(html).toContain('Due today and over the next 13 days');
+    expect(html).toContain('Coming up');
+    expect(html).toContain('Cards due, next 14 days');
     expect(html).toMatch(/<time dateTime="2026-09-27"[^>]*>Today<\/time>/);
-    expect(html).toContain('2026-09-28');
-    expect(html.match(/class="grid min-w-0 gap-1"/g)).toHaveLength(14);
+    expect(html).toMatch(/<time dateTime="2026-09-28"[^>]*>Mon<\/time>/);
+    expect(html.match(/<ol data-due-timeline[^>]*>[\s\S]*?<\/ol>/)?.[0].match(/<li\b/g)).toHaveLength(14);
     expect(html).toContain('height:0%');
     expect(html).toContain('height:25%');
     expect(html).toContain('height:100%');
     expect(html).toContain('benefit');
     expect(html).toContain('lợi ích');
     expect(html).not.toContain('Loading progress charts');
+  });
+
+  it('links the mastered count to Vocabulary and puts the review range in the page header', () => {
+    const openMasteredVocabulary = vi.fn();
+    const html = renderProgress(<ProgressWorkspace
+      darkMode={false} isOffline={false} stats={stats({
+        reviewed: 3, learned: 2,
+        recentlyMastered: [{ id: 'mastered-1', word: 'benefit', translation: 'lợi ích', masteredAt: '2026-09-27T18:30:00.000Z' }],
+        reviewActivity: { coverageStartedOn: '2026-09-01', days: {} }, rewardTimeZone: 'UTC',
+      })} isStatsLoading={false} statsError={null}
+      continueReview={vi.fn()} openVocabulary={vi.fn()} openMasteredVocabulary={openMasteredVocabulary}
+    />);
+
+    expect(html).toContain('aria-label="All 2 mastered cards in Vocabulary"');
+    expect(html).toContain('All 2');
+    expect(html).toMatch(/<header class="progress-board-header">[\s\S]*role="group" aria-label="Review activity"[\s\S]*<\/header>/);
+    expect(html).toMatch(/aria-pressed="true"[^>]*><span>26 weeks<\/span>/);
+  });
+
+  it('leaves the range switch out without verified review activity', () => {
+    const html = renderProgress(<ProgressWorkspace
+      darkMode={false} isOffline={false} stats={stats({ reviewed: 3 })} isStatsLoading={false} statsError={null}
+      continueReview={vi.fn()} openVocabulary={vi.fn()}
+    />);
+
+    expect(html).not.toContain('aria-label="Review activity"');
+    expect(html).not.toContain('mastered cards in Vocabulary');
   });
 
   it('does not label yesterday’s cached count Today after local midnight', () => {
@@ -99,7 +127,7 @@ describe('ProgressWorkspace learning activity gate', () => {
     }
     expect(html).toContain('Forecast is unavailable');
     expect(html).not.toContain('dateTime="2026-09-28"');
-    expect(html).not.toContain('class="grid min-w-0 gap-1"');
+    expect(html).not.toContain('data-due-timeline');
     expect(html).toContain('Your saved progress');
     expect(html).not.toContain('Review 1 due word');
     expect(html).not.toContain('Your scheduled review is clear');

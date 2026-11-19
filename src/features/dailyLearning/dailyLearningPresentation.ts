@@ -383,6 +383,8 @@ export interface ProgressScreenModel {
   readonly dueToday: number | null;
   readonly isOffline: boolean;
   readonly hasVocabulary: boolean;
+  /** The review activity range; the header shows the range switch only with it. */
+  readonly reviewRangeDays?: 30 | 182;
 }
 
 export interface ProgressScreenProps {
@@ -390,6 +392,7 @@ export interface ProgressScreenProps {
   readonly actions: {
     readonly startReview: () => void;
     readonly openVocabulary: () => void;
+    readonly changeReviewRange?: (days: 30 | 182) => void;
   };
   readonly children?: ReactNode;
 }

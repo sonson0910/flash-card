@@ -130,6 +130,18 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('Coverage begins 2026-09-20; this range is partial.');
   });
 
+  it('follows a range chosen by the page and leaves the switch to the page', () => {
+    const html = renderToStaticMarkup(<StatsCharts darkMode={false} section="primary" reviewRangeDays={30} data={{
+      xpChartData: [], difficultyChart: [], categoryChart: [], categoryChartIsPartial: false,
+      rewardTimeZone: 'Asia/Ho_Chi_Minh',
+      reviewActivity: { coverageStartedOn: '2026-01-01', days: {} },
+    }} />);
+
+    expect(html).toContain('Reviews per day, last 30 days');
+    expect(html).not.toContain('26 weeks');
+    expect(html).not.toContain('role="group"');
+  });
+
   it('leaves review activity unavailable without the server reward time zone', () => {
     const html = renderToStaticMarkup(<StatsCharts darkMode={false} data={{
       xpChartData: [], difficultyChart: [], categoryChart: [], categoryChartIsPartial: false,

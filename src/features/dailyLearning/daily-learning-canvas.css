@@ -43,14 +43,8 @@
 .progress-canvas .liquid-glass, [aria-labelledby="daily-progress-heading"] .liquid-glass { border-radius: var(--sf-card-radius, 20px) !important; background: var(--daily-panel); box-shadow: 0 24px 54px -38px var(--sf-shadow); }
 .progress-canvas > .liquid-glass > div:last-child, [aria-labelledby="daily-progress-heading"] > .liquid-glass > div:last-child { background: color-mix(in srgb, var(--sf-surface-raised) 64%, transparent); }
 .progress-canvas [data-progress-evidence] > div, [aria-labelledby="daily-progress-heading"] [data-progress-evidence] > div { border-radius: 10px !important; background: var(--sf-surface-raised); box-shadow: none; }
-.stats-canvas { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(20rem, .9fr); gap: 1.25rem; }
-.stats-canvas > section:first-child { grid-row: span 2; }
-.stats-canvas > .grid { display: contents; }
-.stats-canvas > .grid > section { min-width: 0; }
-.stats-canvas .liquid-glass, .achievements-canvas { border-radius: var(--sf-card-radius, 20px) !important; background: var(--daily-panel); box-shadow: 0 24px 54px -38px var(--sf-shadow); }
-.stats-canvas > section:first-child > div:last-child { min-height: 17rem; }
+.achievements-canvas { border-radius: var(--sf-card-radius, 20px) !important; background: var(--daily-panel); box-shadow: 0 24px 54px -38px var(--sf-shadow); }
 .achievements-canvas { margin-top: 1.25rem; }
-@media (min-width: 64rem) { [data-due-timeline] { grid-template-columns: repeat(14,1fr); } }
 @media (min-width: 80rem) {
   .achievements-canvas [data-achievement-grid] { grid-template-columns: repeat(6,1fr); }
   :root[data-theme-family="crystal"] .achievements-canvas [data-achievements-board] { display: grid; grid-template-columns: 3fr 4fr 7fr; gap: 1rem; }

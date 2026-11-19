@@ -5,12 +5,15 @@ import { msg } from '@lingui/core/macro';
 import { formatNumber } from '../../lib/format';
 import { useTheme } from '../../features/theme/ThemeProvider';
 import { ActivityHeatmap, dayInTimeZone, formatHeatmapDate } from './ActivityHeatmap';
+import { ReviewRangeToggle, type ReviewRangeDays } from './ReviewRangeToggle';
 import './stats-board.css';
 import type { ReviewActivity, ReviewActivityDay } from '../../features/gamification/verifiedGamificationClient';
 
 interface StatsChartsProps {
   darkMode: boolean;
   section?: 'primary' | 'secondary' | 'all';
+  /** The page's review range. When set, the page draws the range switch and the activity panel follows it. */
+  reviewRangeDays?: ReviewRangeDays;
   data: {
     xpChartData: Array<{ date: string; XP: number }>;
     difficultyChart: Array<{ name: string; value: number }>;
@@ -33,7 +36,7 @@ function AccessibleChartTable({ caption, firstColumn, rows, emptyMessage, valueL
 const XP_CHART = { width: 640, height: 240, left: 44, right: 18, top: 16, bottom: 42 } as const;
 const emptyReviewDay: ReviewActivityDay = { reviewed: 0, again: 0, hard: 0, good: 0, easy: 0 };
 const emptyChartClass = 'flex h-full w-full items-center justify-center font-bold text-[var(--sf-text-muted)]';
-const chartGridClass = 'stats-grid grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_400px]';
+const chartGridClass = 'stats-grid grid grid-cols-1 gap-5';
 const primaryChartPanelClass = 'stats-panel crystal-chamfer min-w-0 p-4 sm:px-[26px] sm:py-6';
 const secondaryChartPanelClass = 'stats-panel crystal-chamfer min-w-0 p-5 sm:px-[26px] sm:py-6';
 const panelTitleClass = 'stats-panel-title text-balance';
@@ -124,13 +127,17 @@ function CategoryChart({ entries, noData, showAll, showTop }: { entries: Array<{
   return <div className="flex flex-col justify-center gap-3 py-2">{visibleEntries.map((entry, index) => <div key={`${entry.name}-${index}`} className="grid grid-cols-[minmax(5rem,8rem)_1fr_auto] items-center gap-3 text-xs"><span className="break-words text-right font-semibold text-[var(--sf-text-muted)]">{entry.name}</span><span className="h-5 overflow-hidden rounded-r-md bg-[var(--sf-surface-muted)]"><span data-chart-motion="bar" className="chart-bar-reveal block h-full min-w-0 rounded-r-md bg-[var(--sf-brand)]" style={{ width: `${entry.value > 0 ? Math.max(2, (entry.value / maximum) * 100) : 0}%` }} /></span><span className="min-w-8 text-right font-bold tabular-nums text-[var(--sf-text)]">{formatNumber(entry.value)}</span></div>)}{sortedEntries.length > 5 && <div className="mt-2 flex justify-center border-t border-[var(--sf-border)] pt-3"><button type="button" onClick={() => setIsExpanded(prev => !prev)} className="flex min-h-11 items-center gap-1.5 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2 text-xs font-bold text-[var(--sf-text)] shadow-xs transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-expanded={isExpanded}><span>{isExpanded ? showTop : showAll(sortedEntries.length)}</span><ChevronDown size={14} className={`transition-transform duration-200 motion-reduce:transition-none ${isExpanded ? 'rotate-180' : ''}`} /></button></div>}</div>;
 }
 
-export default function StatsCharts({ data, section = 'all' }: StatsChartsProps) {
+export default function StatsCharts({ data, section = 'all', reviewRangeDays: pageRangeDays }: StatsChartsProps) {
   const { _, i18n } = useLingui();
   const { family } = useTheme();
   const isCrystal = family === 'crystal';
   const locale = i18n.locale || 'en';
-  const [reviewRangeDays, setReviewRangeDays] = useState<30 | 182>(182);
-  const [selectedReviewDate, setSelectedReviewDate] = useState('');
+  const [ownRangeDays, setOwnRangeDays] = useState<ReviewRangeDays>(182);
+  const reviewRangeDays = pageRangeDays ?? ownRangeDays;
+  // An inspected day belongs to the range it was picked in; a new range shows its totals again.
+  const [selectedReview, setSelectedReview] = useState<{ readonly date: string; readonly range: ReviewRangeDays }>({ date: '', range: reviewRangeDays });
+  const selectedReviewDate = selectedReview.range === reviewRangeDays ? selectedReview.date : '';
+  const setSelectedReviewDate = (date: string) => setSelectedReview({ date, range: reviewRangeDays });
   const noHistory = _(text.noHistory); const noData = _(text.noData);
   const memoryLabels: Record<string, string> = { Mastered: _(text.mastered), Learning: _(text.learning), 'Not reviewed': _(text.notReviewed) };
   const memoryGrades: Record<string, string> = { Mastered: _(text.gradeMastered), Learning: _(text.gradeLearning), 'Not reviewed': _(text.gradeNew) };
@@ -150,11 +157,10 @@ export default function StatsCharts({ data, section = 'all' }: StatsChartsProps)
   const recallPercent = gradedReviews > 0 ? Math.round((gradedReviews - recallTotals.again) / gradedReviews * 100) : null;
   const showPrimary = section !== 'secondary';
   const showSecondary = section !== 'primary';
-  const rangeButtonClass = 'stats-range-button min-h-11 px-3.5 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
   return <div className={`stats-canvas${section === 'primary' ? ' stats-canvas--primary' : ''}`}>
     {showPrimary && <div className={chartGridClass}>
       <section className={`${primaryChartPanelClass} stats-activity`} aria-labelledby="review-activity-title">
-        <div className="stats-panel-head"><h2 id="review-activity-title" className={panelTitleClass}>{_(text.activityTitle)}</h2>{reviewActivity && <span className={panelNoteClass}>{_(reviewRangeDays === 30 ? text.activityNote30 : text.activityNote26)}</span>}{reviewActivity && <div className="stats-range" role="group" aria-label={_(text.heatmapTitle)}><button type="button" onClick={() => { setReviewRangeDays(30); setSelectedReviewDate(''); }} aria-pressed={reviewRangeDays === 30} className={rangeButtonClass}><span><Trans {...msg({ context: 'stats.review-range-30-days', message: '30 days' })} /></span></button><button type="button" onClick={() => { setReviewRangeDays(182); setSelectedReviewDate(''); }} aria-pressed={reviewRangeDays === 182} className={rangeButtonClass}><span><Trans {...msg({ context: 'stats.review-range-26-weeks', message: '26 weeks' })} /></span></button></div>}</div>
+        <div className="stats-panel-head"><h2 id="review-activity-title" className={panelTitleClass}>{_(text.activityTitle)}</h2>{reviewActivity && <span className={panelNoteClass}>{_(reviewRangeDays === 30 ? text.activityNote30 : text.activityNote26)}</span>}{reviewActivity && pageRangeDays === undefined && <ReviewRangeToggle value={ownRangeDays} onChange={setOwnRangeDays} />}</div>
         {reviewActivity ? <><ActivityHeatmap entries={[]} reviewActivity={reviewActivity} rangeDays={reviewRangeDays} todayKey={todayKey ?? ''} selectedDate={selectedReviewDate} onDaySelect={setSelectedReviewDate} /><div className="stats-inspect"><label className="stats-inspect-label"><span className="block">{_(text.inspectDay)}</span><input type="date" min={availableStartKey} max={todayKey} value={selectedReviewDay ? selectedReviewDate : ''} disabled={availableStartKey > (todayKey ?? '')} onChange={event => { const date = event.target.value; setSelectedReviewDate(date && todayKey && reviewDayInRange(reviewActivity, date, rangeStartKey, todayKey) ? date : ''); }} className="glass-field stats-inspect-input mt-1 min-h-11 px-3 focus-visible:outline-2 focus-visible:outline-offset-2" /></label>{selectedReviewDay && <button type="button" onClick={() => setSelectedReviewDate('')} className="stats-quiet-button min-h-11 px-3 focus-visible:outline-2 focus-visible:outline-offset-2">{_(text.showRangeTotals)}</button>}<dl className="stats-recall grid grid-cols-2 gap-2 sm:grid-cols-4"><div><dt className={mutedTextClass}>{_(text.again)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).again)}</dd></div><div><dt className={mutedTextClass}>{_(text.hard)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).hard)}</dd></div><div><dt className={mutedTextClass}>{_(text.good)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).good)}</dd></div><div><dt className={mutedTextClass}>{_(text.easy)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).easy)}</dd></div></dl></div>{selectedReviewDay && <p className="stats-selected-day" role="status">{formatHeatmapDate(selectedReviewDate, locale)}: {formatNumber(selectedReviewDay.reviewed)} {_(text.reviews)}</p>}{partialCoverage && <p className="stats-footnote"><Trans {...msg({ context: 'stats.review-activity-partial', message: 'Coverage begins {date}; this range is partial.' })} values={{ date: reviewActivity.coverageStartedOn }} /></p>}</> : <p className="stats-footnote">{_(text.activityUnavailable)}</p>}</section>
       <section className={`${primaryChartPanelClass} stats-mastery`} aria-labelledby="mastery-chart-title"><h2 id="mastery-chart-title" className={panelTitleClass}>{_(text.masteryTitle)}</h2><AccessibleChartTable caption={_(text.memoryData)} firstColumn={_(text.memoryStatus)} valueLabel={_(text.value)} rows={memoryEntries.map(entry => ({ label: entry.name, value: entry.value }))} emptyMessage={noData} /><div className="stats-mastery-chart min-h-44 w-full" role="img" aria-label={_(text.memoryChart)} data-native-chart="memory"><MemoryChart entries={memoryEntries} noData={noData} masteredLabel={_(text.ringMastered)} isCrystal={isCrystal} /></div>{recallPercent !== null && <dl className="stats-mastery-foot"><div className="stats-mastery-fact crystal-chamfer-sm" title={_(text.recallRateHint)}><dt>{_(text.recallRate)}</dt><dd>{formatNumber(recallPercent)}%</dd></div></dl>}</section>
     </div>}
