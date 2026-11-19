@@ -1,0 +1,341 @@
+/* Practice picker: a centred dialog on desktop and a bottom sheet below 640px. The chrome comes
+   from overlay-dialog.css; this file draws the mode rows, the key hints and the sheet layout. */
+
+.practice-picker { max-width: 35rem; }
+html[data-theme-family="crystal"] .practice-picker { max-width: 36.25rem; }
+
+.practice-picker-grab,
+.practice-picker-count,
+.practice-picker-glyph-sheet,
+.practice-picker-title-short,
+.practice-picker-row-chevron,
+.practice-picker-row-lock-icon { display: none; }
+
+.practice-picker-list {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding: 20px 26px 22px;
+  overscroll-behavior: contain;
+}
+html[data-theme-family="crystal"] .practice-picker-list { padding: 4px 26px 18px; }
+
+.practice-picker-row {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 70px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px 12px 12px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--od-fr, 14px);
+  color: var(--sf-text);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+html[data-theme-family="classic"] .practice-picker-row { background: var(--od-row-bg); }
+.practice-picker-row:not(:disabled):hover { border-color: var(--od-accent-line); }
+.practice-picker-row:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+.practice-picker-row:disabled { cursor: default; }
+.practice-picker-row[data-state="locked"] { opacity: .55; cursor: not-allowed; }
+html[data-theme-family="classic"] .practice-picker-row[data-state="loading"] {
+  border-color: var(--od-accent-line);
+  background: var(--od-accent-soft);
+}
+html[data-theme-family="classic"].dark .practice-picker-row[data-state="loading"] { box-shadow: 0 0 30px -12px rgb(40 211 244 / .6); }
+
+.practice-picker-row-strip { display: none; }
+
+.practice-picker-row-icon {
+  display: flex;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--od-accent-soft);
+  color: var(--sf-brand-text);
+}
+.practice-picker-row-icon svg { width: 20px; height: 20px; }
+.practice-picker-row[data-state="locked"] .practice-picker-row-icon { background: var(--sf-surface-raised); color: var(--od-subtle); }
+
+.practice-picker-row-text { display: flex; min-width: 0; flex: 1 1 auto; flex-direction: column; gap: 3px; }
+.practice-picker-row-head { display: flex; align-items: baseline; gap: 8px; }
+.practice-picker-row-name { color: var(--sf-text); font-size: 15px; font-weight: 650; }
+.practice-picker-row-time { color: var(--od-subtle); font-family: "Geist Mono", ui-monospace, monospace; font-size: 11.5px; white-space: nowrap; }
+.practice-picker-row-desc { color: var(--sf-text-muted); font-size: 13px; line-height: 1.4; text-wrap: pretty; }
+
+.practice-picker-row-status {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--sf-brand-text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.practice-picker-spinner {
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border: 2px solid var(--od-accent-line);
+  border-top-color: var(--sf-brand);
+  border-radius: 50%;
+  animation: practice-picker-spin 900ms linear infinite;
+}
+@keyframes practice-picker-spin { to { transform: rotate(360deg); } }
+
+.practice-picker-row-lock {
+  display: flex;
+  height: 26px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--sf-border);
+  border-radius: 999px;
+  background: var(--sf-surface-raised);
+  color: var(--sf-text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.practice-picker-row-lock svg { width: 11px; height: 11px; }
+
+.practice-picker-row-key {
+  display: flex;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sf-border);
+  border-radius: 7px;
+  color: var(--od-subtle);
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.practice-picker-keys { display: inline-flex; align-items: center; gap: 3px; margin-inline: 2px; }
+.practice-picker-keys kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--sf-border);
+  border-radius: 5px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: inherit;
+}
+
+/* Crystal rows: chamfered chips with a left strip, hexagon icons and skewed key badges. */
+html[data-theme-family="crystal"] .practice-picker-row {
+  --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control));
+  min-height: 74px;
+  padding: 10px 16px 10px 12px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+}
+html[data-theme-family="crystal"] .practice-picker-row[data-state="loading"] {
+  --sf-chamfer-fill: linear-gradient(var(--od-loading-bg), var(--od-loading-bg));
+  --sf-chamfer-edge: color-mix(in srgb, var(--sf-success) 45%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-success) 45%, transparent);
+}
+html[data-theme-family="crystal"] .practice-picker-row:not(:disabled):hover { box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+html[data-theme-family="crystal"] .practice-picker-row:focus-visible { outline-offset: -3px; }
+html[data-theme-family="crystal"] .practice-picker-row-strip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+  width: 3px;
+  background: var(--od-crimson);
+}
+html[data-theme-family="crystal"] .practice-picker-row[data-state="loading"] .practice-picker-row-strip { background: var(--od-holo); }
+html[data-theme-family="crystal"] .practice-picker-row[data-state="locked"] .practice-picker-row-strip { background: var(--sf-border); }
+html[data-theme-family="crystal"] .practice-picker-row-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 0;
+  background: var(--od-crimson);
+  color: #fff;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+html[data-theme-family="crystal"] .practice-picker-row[data-state="loading"] .practice-picker-row-icon { background: var(--od-holo-fill); color: var(--od-holo-ink); }
+html[data-theme-family="crystal"] .practice-picker-row[data-state="locked"] .practice-picker-row-icon { background: var(--sf-border); color: var(--od-subtle); }
+html[data-theme-family="crystal"] .practice-picker-row-head { gap: 10px; }
+html[data-theme-family="crystal"] .practice-picker-row-name {
+  font-family: var(--sf-font-display);
+  font-size: 19px;
+  font-style: italic;
+  font-weight: 800;
+  line-height: 1.1;
+}
+html[data-theme-family="crystal"] .practice-picker-row-status {
+  color: var(--od-holo-text);
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+html[data-theme-family="crystal"] .practice-picker-spinner { width: 14px; height: 14px; border-color: var(--sf-border); border-top-color: var(--od-holo); }
+html[data-theme-family="crystal"] .practice-picker-row-lock {
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+  clip-path: var(--nk-chamfer-sm);
+  font-weight: 700;
+}
+html[data-theme-family="crystal"] .practice-picker-row-key {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 0;
+  background: var(--od-crimson);
+  box-shadow: var(--od-primary-glow);
+  color: #fff;
+  font-family: var(--sf-font-display);
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 900;
+  transform: skewX(-12deg);
+}
+html[data-theme-family="crystal"] .practice-picker-keys {
+  gap: 4px;
+  margin-inline: 0 2px;
+  padding: 2px 6px;
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  color: var(--sf-text-muted);
+  font-family: "Geist Mono", ui-monospace, monospace;
+}
+html[data-theme-family="crystal"] .practice-picker-keys kbd { padding: 0; border: 0; }
+html[data-theme-family="crystal"] .practice-picker-note-press { display: none; }
+
+/* Below 640px the picker is a bottom sheet: grab handle, short title, chevrons instead of key
+   hints, and a tinted icon per mode. The footer's keyboard hint has no use on touch. */
+@media (max-width: 639px) {
+  .practice-picker.overlay-dialog-frame {
+    inset: auto 0 0;
+    width: 100%;
+    max-width: none;
+    max-height: calc(100dvh - 1.5rem);
+    margin: 0;
+  }
+  html[data-theme-family="classic"] .practice-picker.overlay-dialog-frame {
+    border-width: 1px 0 0;
+    border-radius: 28px 28px 0 0;
+  }
+  .practice-picker .overlay-dialog-body { padding: 10px 16px 26px; }
+  html[data-theme-family="crystal"] .practice-picker .overlay-dialog-body { margin-bottom: 0; }
+  .practice-picker-grab {
+    display: block;
+    width: 40px;
+    height: 5px;
+    flex-shrink: 0;
+    margin: 0 auto;
+    border-radius: 5px;
+    background: var(--sf-edge-highlight);
+  }
+  .practice-picker .overlay-dialog-header {
+    align-items: flex-end;
+    padding: 16px 6px 12px;
+    border-bottom: 0;
+  }
+  .practice-picker .overlay-dialog-kicker,
+  .practice-picker .overlay-dialog-sub,
+  .practice-picker-title-long,
+  .practice-picker .overlay-dialog-footer { display: none; }
+  .practice-picker-title-short { display: inline; }
+  .practice-picker .overlay-dialog-title { margin: 0; font-size: 30px; line-height: 1; }
+  .practice-picker-count { display: block; margin: 5px 0 0; color: var(--sf-text-muted); font-size: 13px; }
+  .practice-picker .overlay-dialog-close { margin: 0 -4px -6px 0; }
+  .practice-picker-list { padding: 0; overflow-y: auto; }
+  html[data-theme-family="crystal"] .practice-picker-list { padding: 0; }
+
+  html[data-theme-family="classic"] .practice-picker-row {
+    height: 70px;
+    min-height: 70px;
+    gap: 12px;
+    padding: 0 14px 0 10px;
+    border-radius: 18px;
+    background: var(--sf-surface-control);
+  }
+  html[data-theme-family="classic"] .practice-picker-row:first-child,
+  html[data-theme-family="classic"] .practice-picker-row[data-state="loading"] {
+    border-color: var(--od-accent-line);
+    background: var(--od-accent-soft);
+  }
+  html[data-theme-family="classic"] .practice-picker-row[data-state="locked"] { opacity: .62; background: transparent; }
+  html[data-theme-family="classic"] .practice-picker-row-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: var(--pp-icon-bg, var(--od-accent-soft));
+    color: var(--pp-icon-fg, var(--sf-brand-text));
+  }
+  html[data-theme-family="classic"] .practice-picker-row-icon svg { width: 22px; height: 22px; }
+  html[data-theme-family="classic"] .practice-picker-glyph-wide { display: none; }
+  html[data-theme-family="classic"] .practice-picker-glyph-sheet { display: block; }
+  html[data-theme-family="classic"].dark .practice-picker-row:first-child .practice-picker-row-icon { box-shadow: 0 0 20px -6px rgb(40 211 244 / .6); }
+  html[data-theme-family="classic"] .practice-picker-row-text { gap: 2px; }
+  html[data-theme-family="classic"] .practice-picker-row-name { font-size: 15.5px; }
+  html[data-theme-family="classic"] .practice-picker-row-desc { font-size: 12.5px; line-height: 1.35; }
+  html[data-theme-family="classic"] .practice-picker-row[data-state="locked"] .practice-picker-row-desc { color: var(--od-subtle); }
+  .practice-picker-row-time,
+  .practice-picker-row-key,
+  .practice-picker-row-lock { display: none; }
+  .practice-picker-row-chevron,
+  .practice-picker-row-lock-icon { display: block; width: 16px; height: 16px; flex-shrink: 0; color: var(--od-subtle); }
+  .practice-picker-row[data-state="locked"] .practice-picker-row-chevron,
+  .practice-picker-row:not([data-state="locked"]) .practice-picker-row-lock-icon,
+  .practice-picker-row[data-state="loading"] .practice-picker-row-chevron { display: none; }
+  .practice-picker-row-status { font-size: 12px; }
+
+  html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="spelling"],
+  html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="language-drill"] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-success) 10%, transparent);
+    --pp-icon-fg: color-mix(in srgb, var(--sf-success) 88%, black);
+  }
+  html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="match"] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-reward) 14%, transparent);
+    --pp-icon-fg: color-mix(in srgb, var(--sf-reward) 72%, black);
+  }
+  html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="shadowing"] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-text) 7%, transparent);
+    --pp-icon-fg: var(--sf-text);
+  }
+  html[data-theme-family="classic"].dark .practice-picker-row[data-practice-choice="spelling"],
+  html[data-theme-family="classic"].dark .practice-picker-row[data-practice-choice="language-drill"] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-second) 18%, transparent);
+    --pp-icon-fg: color-mix(in srgb, var(--sf-second) 55%, white);
+  }
+  html[data-theme-family="classic"].dark .practice-picker-row[data-practice-choice="match"] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-reward) 14%, transparent);
+    --pp-icon-fg: var(--sf-reward);
+  }
+  html[data-theme-family="classic"].dark .practice-picker-row[data-practice-choice="shadowing"] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-success) 14%, transparent);
+    --pp-icon-fg: color-mix(in srgb, var(--sf-success) 70%, white);
+  }
+  html[data-theme-family="classic"] .practice-picker-row[data-state="locked"] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-text) 4%, transparent);
+    --pp-icon-fg: var(--od-subtle);
+  }
+
+  html[data-theme-family="crystal"] .practice-picker-row { min-height: 70px; padding: 8px 14px 8px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .practice-picker-row { transition: none; }
+  .practice-picker-spinner { animation: none; }
+}
+html[data-motion="reduced"] .practice-picker-spinner { animation: none; }
