@@ -935,6 +935,18 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // The one-time account profile and the age-restriction marker are written
+    // only by the completeAccountProfile callable. Owners may read their own.
+    match /users/{userId}/profile/account {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
+    match /users/{userId}/profile/age_restriction {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
     match /users/{userId}/profile/stats {
       // Admin writers validate nested review activity; clients cannot mutate stats.
       allow read: if isOwner(userId);
@@ -1061,6 +1073,8 @@ service cloud.firestore {
       // profileDocId != 'plan'
       // profileDocId != 'xp_history'
       // profileDocId != 'resource_usage'
+      // profileDocId != 'account'
+      // profileDocId != 'age_restriction'
       allow read, write: if false;
     }
 

@@ -7,6 +7,7 @@ import { analyticsPseudonym } from '../src/analyticsEvents.js';
 import { ACCOUNT_RATE_SCOPES, beginAccountDeletion, exportAccountData,
   finalizeDueDeletions, isAccountDeleting, resumeAccountDeletion } from '../src/accountData.js';
 import { budgetDocumentId } from '../src/rateLimiter.js';
+import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '../src/account-profile-contract.js';
 import { resumeDeletionWithAudit } from '../src/pilotOperator.js';
 import { assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -143,6 +144,51 @@ describeWithEmulator('account export and deletion', () => {
       .toMatchObject({ status: 'done' });
     expect((await database.collection('account_tombstones').doc(pid).get()).data()).not.toHaveProperty('uid');
   }, 40_000);
+
+  it('exports the account profile and age-restriction marker written by the callable, then deletes both', async () => {
+    process.env.ANALYTICS_PSEUDONYM_KEY = key;
+    const { completeAccountProfile } = await import('../src/index.js');
+    const adult = `profile-${randomUUID()}`;
+    const minor = `restricted-${randomUUID()}`;
+    const currentYear = new Date().getUTCFullYear();
+    const request = (ownerId: string, birthYear: number) => ({
+      ownerId, birthYear, uiLocale: 'vi', nativeLanguage: 'vi',
+      consent: { accepted: true, termsVersion: CURRENT_TERMS_VERSION, privacyVersion: CURRENT_PRIVACY_VERSION },
+    });
+
+    const first = await completeAccountProfile.run({ auth: { uid: adult }, data: request(adult, currentYear - 30) } as never);
+    expect(first).toMatchObject({ status: 'complete', profile: { birthYear: currentYear - 30, uiLocale: 'vi' } });
+    const recordReference = database.doc(`users/${adult}/profile/account`);
+    const writtenAt = (await recordReference.get()).updateTime;
+    const second = await completeAccountProfile.run({
+      auth: { uid: adult }, data: { ...request(adult, currentYear - 40), uiLocale: 'en' },
+    } as never);
+    expect(second).toEqual(first);
+    expect((await recordReference.get()).updateTime?.isEqual(writtenAt!)).toBe(true);
+
+    const restricted = await completeAccountProfile.run({ auth: { uid: minor }, data: request(minor, currentYear - 12) } as never);
+    expect(restricted).toMatchObject({ status: 'restricted' });
+    const marker = (await database.doc(`users/${minor}/profile/age_restriction`).get()).data();
+    expect(Object.keys(marker ?? {})).toEqual(['restrictedAt']);
+    expect((await database.doc(`users/${minor}/profile/account`).get()).exists).toBe(false);
+    expect((await database.collection('users').doc(minor).collection('profile').get()).docs.map(doc => doc.id))
+      .toEqual(['age_restriction']);
+    expect(await completeAccountProfile.run({ auth: { uid: minor }, data: request(minor, currentYear - 30) } as never))
+      .toEqual(restricted);
+
+    const adultExport = await exportAccountData(database, adult, key) as { profile: Array<Record<string, unknown>> };
+    expect(adultExport.profile).toContainEqual({ id: 'account', ...(first as { profile: object }).profile });
+    const minorExport = await exportAccountData(database, minor, key) as { profile: Array<Record<string, unknown>> };
+    expect(minorExport.profile).toEqual([{ id: 'age_restriction', ...marker }]);
+
+    for (const uid of [adult, minor]) {
+      const { auth } = fakeAuth();
+      expect(await beginAccountDeletion(database, auth, uid, key, now)).toBe('waiting');
+      expect((await database.collection('users').doc(uid).listCollections()).length).toBe(0);
+      expect((await database.collection('_functionRateLimitBudgets')
+        .doc(budgetDocumentId(uid, 'account-profile')).get()).exists).toBe(false);
+    }
+  }, 30_000);
 
   it('resumes after Auth deletion failed and after the Auth user is gone', async () => {
     const uid = `resume-${randomUUID()}`;

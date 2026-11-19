@@ -167,6 +167,13 @@ import {
   type CourseProfileMutationName,
   type CourseProfileMutationRequest,
 } from './course-profile-persistence.js';
+import { AccountProfileValidationError, parseCompleteAccountProfileRequest } from './account-profile-contract.js';
+import {
+  AccountProfileConsentOutdatedError,
+  AccountProfileOwnerMismatchError,
+  AccountProfileStoredDataError,
+  completeAccountProfile as completeStoredAccountProfile,
+} from './account-profile-persistence.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const analyticsPseudonymKey = defineSecret('ANALYTICS_PSEUDONYM_KEY');
@@ -210,6 +217,7 @@ const MAX_CLEAR_LIBRARY_PAGES_PER_HOUR = 120;
 const MAX_CARD_HEADWORD_RENAMES_PER_HOUR = 30;
 const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
 const MAX_COURSE_PROFILE_MUTATIONS_PER_HOUR = 120;
+const MAX_ACCOUNT_PROFILE_COMPLETIONS_PER_HOUR = 20;
 const MAX_CARD_REVIEWS_PER_SERVICE_HOUR = 6_000;
 const MAX_LIBRARY_FACET_UPDATES_PER_SERVICE_HOUR = 1_200;
 const MAX_LEGACY_LIBRARY_MIGRATIONS_PER_HOUR = 30;
@@ -437,6 +445,18 @@ export const toCourseProfileHttpsError = (error: unknown): HttpsError | null => 
   }
   if (error instanceof CourseProfileConflictError) {
     return new HttpsError('failed-precondition', error.message, { reason: error.reason, ...error.details });
+  }
+  return null;
+};
+
+export const toAccountProfileHttpsError = (error: unknown): HttpsError | null => {
+  if (error instanceof AccountProfileValidationError) return new HttpsError('invalid-argument', error.message);
+  if (error instanceof AccountProfileOwnerMismatchError) return new HttpsError('permission-denied', error.message);
+  if (error instanceof AccountProfileConsentOutdatedError) {
+    return new HttpsError('failed-precondition', error.message, { reason: 'consent-outdated' });
+  }
+  if (error instanceof AccountProfileStoredDataError) {
+    return new HttpsError('failed-precondition', error.message, { reason: 'profile-invalid' });
   }
   return null;
 };
@@ -2105,3 +2125,38 @@ export const setActiveCourse = courseProfileCallable('setActiveCourse');
 export const addGoal = courseProfileCallable('addGoal');
 export const updateGoal = courseProfileCallable('updateGoal');
 export const removeGoal = courseProfileCallable('removeGoal');
+
+// Completes the one-time account profile. Logs never include the submitted values.
+export const completeAccountProfile = onCall({
+  region: REGION,
+  secrets: [analyticsPseudonymKey],
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = await requireUser(request.auth);
+  let parsedRequest;
+  try {
+    parsedRequest = parseCompleteAccountProfileRequest(request.data);
+  } catch (error) {
+    const mapped = toAccountProfileHttpsError(error);
+    if (mapped) throw mapped;
+    throw error;
+  }
+  if (parsedRequest.ownerId !== userId) {
+    throw new HttpsError('permission-denied', 'Account profile request owner does not match the authenticated owner.');
+  }
+  await consumeBudget(userId, 'account-profile', MAX_ACCOUNT_PROFILE_COMPLETIONS_PER_HOUR,
+    'Profile completion limit reached. Try again later.');
+  try {
+    return await completeStoredAccountProfile(database, userId, parsedRequest);
+  } catch (error) {
+    const mapped = toAccountProfileHttpsError(error);
+    if (mapped) throw mapped;
+    console.error('Account profile completion failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'Account profile completion could not be completed.');
+  }
+});

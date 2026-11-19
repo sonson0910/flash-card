@@ -15,6 +15,7 @@ export const ACCOUNT_RATE_SCOPES = [
   'practice-session-complete', 'reward-frame-equip',
   'clear-library-page', 'card-headword-rename', 'bulk-card-mutation', 'course-profile',
   'reminder-settings', 'push-token-revoke', 'push-session-end', 'ai-card-cancel', 'ai-tutor-turn',
+  'account-profile',
 ] as const;
 
 const jsonValue = (value: unknown): unknown => {

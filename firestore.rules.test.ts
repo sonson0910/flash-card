@@ -2389,6 +2389,48 @@ describe('Firestore security rules', () => {
     await assertFails(setDoc(doc(owner, 'users/owner/profile/courses'), { courses: [], activeCourseId: null }));
   });
 
+  it('keeps the account profile and the age-restriction marker owner-readable and server-owned', async () => {
+    const record = {
+      birthYear: 1990,
+      uiLocale: 'en',
+      nativeLanguage: 'vi',
+      termsVersion: '2026-10-01',
+      privacyVersion: '2026-11-19',
+      consentAcceptedAt: '2026-11-19T00:00:00.000Z',
+      completedAt: '2026-11-19T00:00:00.000Z',
+    };
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/account'), record);
+      await setDoc(doc(context.firestore(), 'users/restricted/profile/age_restriction'), {
+        restrictedAt: '2026-11-19T00:00:00.000Z',
+      });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const restricted = testEnvironment.authenticatedContext('restricted').firestore();
+    const intruder = testEnvironment.authenticatedContext('intruder').firestore();
+    const signedOut = testEnvironment.unauthenticatedContext().firestore();
+
+    await assertSucceeds(getDoc(doc(owner, 'users/owner/profile/account')));
+    await assertSucceeds(getDoc(doc(restricted, 'users/restricted/profile/age_restriction')));
+    await assertSucceeds(getDoc(doc(owner, 'users/owner/profile/age_restriction')));
+    await assertFails(getDoc(doc(intruder, 'users/owner/profile/account')));
+    await assertFails(getDoc(doc(intruder, 'users/restricted/profile/age_restriction')));
+    await assertFails(getDoc(doc(signedOut, 'users/owner/profile/account')));
+
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/account'), { ...record, birthYear: 1991 }));
+    await assertFails(updateDoc(doc(owner, 'users/owner/profile/account'), { uiLocale: 'vi' }));
+    await assertFails(deleteDoc(doc(owner, 'users/owner/profile/account')));
+    await assertFails(setDoc(doc(restricted, 'users/restricted/profile/account'), record));
+    await assertFails(deleteDoc(doc(restricted, 'users/restricted/profile/age_restriction')));
+    await assertFails(updateDoc(doc(restricted, 'users/restricted/profile/age_restriction'), {
+      restrictedAt: '2020-01-01T00:00:00.000Z',
+    }));
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/age_restriction'), {
+      restrictedAt: '2026-11-19T00:00:00.000Z',
+    }));
+    await assertFails(setDoc(doc(intruder, 'users/owner/profile/account'), record));
+  });
+
   it('keeps language metadata independent from plain identity while preserving immutability', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
     const cardId = 'course-ko-plain-card';
