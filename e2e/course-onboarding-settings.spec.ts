@@ -1,6 +1,7 @@
 import { expect, test } from './fixtures/firebase-emulator';
 
 test('course switcher exposes goals, switches active courses, and keeps course settings visible', async ({ page, db, testUser, signIn, blockExternalNetwork }) => {
+  test.setTimeout(60_000);
   await db.collection('users').doc(testUser.uid).collection('profile').doc('courses').set({
     activeCourseId: 'course-en',
     courses: [
@@ -25,39 +26,66 @@ test('course switcher exposes goals, switches active courses, and keeps course s
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Courses' });
   await expect(dialog).toBeVisible();
-  await dialog.getByRole('listitem').filter({ hasText: 'English ← Vietnamese' })
-    .getByRole('button', { name: 'Manage goals' }).click();
-  const goalRow = dialog.locator('.claude-course-goals-panel li');
+  const englishRow = dialog.getByRole('button', { name: /English.*Vietnamese/ });
+  await expect(englishRow).toHaveAttribute('aria-current', 'true');
+  await expect(englishRow).toContainText('IELTS 7.0');
+  await dialog.getByRole('button', { name: 'Manage courses' }).click();
+  await expect(dialog).toHaveCount(0);
+  const courses = page.getByRole('dialog', { name: 'Your languages' });
+  await expect(courses).toBeVisible();
+  await courses.locator('.course-card[data-course-language="en"]').getByRole('button', { name: 'Manage goals' }).click();
+  const goalRow = courses.locator('.claude-course-goals-panel li');
   await expect(goalRow.getByText('IELTS', { exact: true })).toBeVisible();
-  await expect(goalRow.getByText('7.0', { exact: true })).toBeVisible();
-  await expect(goalRow.getByText('2026-12-01', { exact: true })).toBeVisible();
+  await expect(goalRow.getByText('7.0 · 2026-12-01', { exact: true })).toBeVisible();
+  await expect(goalRow.getByRole('group', { name: 'Your latest IELTS score' })).toBeVisible();
   await goalRow.getByRole('button', { name: 'Edit goal' }).click();
-  await goalRow.getByRole('textbox', { name: 'Level or target (optional)' }).fill('7.5');
+  const band = goalRow.getByRole('group', { name: 'Target band' });
+  await expect(band.getByRole('radio', { name: '7.0' })).toBeChecked();
+  await band.getByRole('radio', { name: '7.5' }).check();
+  await expect(band.getByRole('radio', { name: '7.5' })).toBeChecked();
   await goalRow.getByLabel('Exam or target date (optional)').fill('2027-01-15');
   await goalRow.getByRole('button', { name: 'Save goal' }).click();
-  await expect(goalRow.getByText('7.5', { exact: true })).toBeVisible();
-  await expect(goalRow.getByText('2027-01-15', { exact: true })).toBeVisible();
+  // The save goes through a course callable, which can be cold on the first call of a run.
+  await expect(goalRow.getByText('7.5 · 2027-01-15', { exact: true })).toBeVisible({ timeout: 30_000 });
   const savedProfile = await db.collection('users').doc(testUser.uid).collection('profile').doc('courses').get();
   expect(savedProfile.data()?.courses?.find((course: { id: string }) => course.id === 'course-en')
     ?.goals?.find((goal: { id: string }) => goal.id === 'goal-ielts'))
     .toEqual(expect.objectContaining({ level: '7.5', targetDate: '2027-01-15' }));
-  await dialog.getByRole('button', { name: 'Back to courses' }).click();
-  await dialog.getByRole('button', { name: /Korean.*Vietnamese/ }).click();
-  await expect(trigger).toHaveText(/Korean/);
+  await courses.getByRole('button', { name: 'Back to courses' }).click();
+  await courses.getByRole('button', { name: 'Close courses' }).click();
+  await expect(courses).toHaveCount(0);
   await expect(trigger).toBeFocused();
-  await expect(page.locator('.claude-course-switcher').getByRole('status')).toHaveText('Switched to Korean');
+
+  await trigger.click();
+  await dialog.getByRole('button', { name: /Korean.*Vietnamese/ }).click();
+  // The first switch of a run reaches a cold course callable in the emulator.
+  await expect(trigger).toHaveText(/Korean/, { timeout: 30_000 });
+  await expect(trigger).toBeFocused();
+  const toast = page.locator('.course-switched-toast');
+  await expect(toast).toContainText('Switched to 한국어');
+  await toast.getByRole('button', { name: 'Back to English' }).click();
+  await expect(trigger).toHaveText(/English/);
+  await expect(toast).toContainText('Switched to English');
+  await toast.getByRole('button', { name: 'Back to 한국어' }).click();
+  await expect(trigger).toHaveText(/Korean/);
+
   await trigger.click();
   await dialog.getByRole('button', { name: 'Add a language' }).click();
-  const targets = dialog.locator('.course-target-card');
-  const japanese = targets.filter({ hasText: 'Japanese' });
-  const chinese = targets.filter({ hasText: 'Chinese' });
-  await expect(targets).toHaveCount(2);
-  await expect(japanese).toHaveAttribute('aria-pressed', 'true');
-  await expect(chinese).toHaveAttribute('aria-pressed', 'false');
-  await chinese.click();
-  await expect(chinese).toHaveAttribute('aria-pressed', 'true');
-  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  const addLanguage = page.getByRole('dialog', { name: 'Add a language' });
+  const targets = addLanguage.locator('.course-target-card');
+  await expect(targets).toHaveCount(4);
+  await expect(addLanguage.getByRole('radio', { name: /English/ })).toBeDisabled();
+  await expect(addLanguage.getByRole('radio', { name: /Korean/ })).toBeDisabled();
+  await expect(addLanguage.getByRole('radio', { name: /Japanese/ })).toBeChecked();
+  await expect(addLanguage.getByRole('radio', { name: /Chinese/ })).not.toBeChecked();
+  await targets.filter({ hasText: 'Chinese' }).click();
+  await expect(addLanguage.getByRole('radio', { name: /Chinese/ })).toBeChecked();
+  await expect(addLanguage.getByRole('button', { name: 'Add 中文' })).toBeEnabled();
+  await addLanguage.getByRole('button', { name: 'Cancel' }).click();
+  await expect(addLanguage).toHaveCount(0);
+  await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Close' }).click();
+  await expect(dialog).toHaveCount(0);
 
   await page.goto('/?view=settings&locale=en');
   await expect(page.getByRole('heading', { name: 'Make your study space yours' })).toBeVisible();
@@ -113,7 +141,7 @@ test('switching courses isolates Library cards and spelling practice by language
 
   await trigger.click();
   await page.getByRole('dialog', { name: 'Courses' }).getByRole('button', { name: /Korean.*Vietnamese/ }).click();
-  await expect(trigger).toHaveText(/Korean/);
+  await expect(trigger).toHaveText(/Korean/, { timeout: 30_000 });
   await expect(koreanCard).toBeVisible({ timeout: 15_000 });
   await expect(englishCard).toHaveCount(0);
 
@@ -141,6 +169,7 @@ test('switching courses isolates Library cards and spelling practice by language
 });
 
 test('a new signed-in learner advances from language selection to a target choice', async ({ page, db, testUser, signIn, blockExternalNetwork }, testInfo) => {
+  test.setTimeout(90_000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await blockExternalNetwork(page);
   await signIn(page, '/?view=today&locale=en');
@@ -155,23 +184,74 @@ test('a new signed-in learner advances from language selection to a target choic
   await dialog.getByRole('button', { name: /Korean/ }).click();
   await expect(continueButton).toBeEnabled();
   await continueButton.click();
-  await dialog.getByRole('button', { name: /^TOPIK\b/ }).click();
-  await expect(dialog.getByRole('textbox', { name: 'Level or target (optional)' })).toBeVisible();
+
+  // The goal comes first; an exam goal adds the score and countdown step.
+  const progress = dialog.getByRole('progressbar', { name: 'Setup progress' });
+  await expect(dialog.getByRole('heading', { name: 'What are you learning for?' })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: /^Just curious/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(progress).toHaveAttribute('aria-valuetext', '3 / 6');
+  const examGoal = dialog.getByRole('button', { name: /^Pass TOPIK/ });
+  await examGoal.click();
+  await expect(examGoal).toHaveAttribute('aria-pressed', 'true');
+  await expect(progress).toHaveAttribute('aria-valuetext', '3 / 7');
+  await continueButton.click();
+  await expect(dialog.getByRole('heading', { name: 'Which test, and what score?' })).toBeVisible();
+  const exams = dialog.getByRole('group', { name: 'Exam' });
+  await expect(exams.getByRole('button', { name: 'TOPIK', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  const countdown = dialog.getByRole('region', { name: 'Countdown' });
+  await expect(countdown).toContainText('Pick a date to start your countdown.');
   await dialog.getByRole('textbox', { name: 'Level or target (optional)' }).fill('TOPIK II');
-  await dialog.getByLabel('Exam or target date (optional)').fill('2027-01-17');
+  const examDate = await page.evaluate(() => {
+    const date = new Date();
+    date.setDate(date.getDate() + 30);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  });
+  await dialog.getByLabel('Exam date (optional)').fill(examDate);
+  await expect(countdown.locator('.onb-countdown-number')).toHaveText('30');
+  await expect(countdown).toContainText('days to TOPIK');
+  await expect(countdown).toContainText('5 weeks until exam day.');
+  await expect(dialog.locator('.onb-footer-note')).toHaveText(`Selected: TOPIK · TOPIK II · ${examDate}`);
   await page.screenshot({ path: testInfo.outputPath('onboarding-goal-details.png'), animations: 'disabled', caret: 'hide' });
+
+  // Changing the language drops the goal chosen for the old one.
+  await dialog.getByRole('button', { name: 'Back' }).click();
   await dialog.getByRole('button', { name: 'Back' }).click();
   await dialog.getByRole('button', { name: /Chinese/ }).click();
-  await continueButton.click();
-  await expect(dialog.getByRole('textbox', { name: 'Level or target (optional)' })).toHaveCount(0);
   await expect(dialog.getByLabel('Chinese script')).toHaveValue('hans');
   await dialog.getByLabel('Chinese script').selectOption('hant');
   await expect(dialog.getByLabel('Chinese script')).toHaveValue('hant');
   await page.screenshot({ path: testInfo.outputPath('onboarding-chinese-script.png'), animations: 'disabled', caret: 'hide' });
   await continueButton.click();
-  await expect(dialog.getByRole('heading', { name: 'How many cards a day?' })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: /^Just curious/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(progress).toHaveAttribute('aria-valuetext', '3 / 6');
   await continueButton.click();
-  await dialog.getByRole('button', { name: 'Skip for now' }).last().click();
+
+  await expect(dialog.getByRole('heading', { name: 'How many new words each day?' })).toBeVisible();
+  await expect(dialog.locator('.onb-projection')).toHaveText('70new words a week in your plan at 10 a day.');
+  await dialog.getByRole('button', { name: 'Try 5 cards' }).click();
+
+  // The trial grades the real starter cards the server wrote for this course.
+  // The starter cards are written by a callable before the trial opens; it can be cold on its first call.
+  await expect(dialog.getByRole('heading', { name: 'Flip each card, then grade yourself.' })).toBeVisible({ timeout: 30_000 });
+  const firstCard = dialog.getByRole('group', { name: /^你好 flashcard/ });
+  await expect(firstCard).toBeVisible({ timeout: 15_000 });
+  await expect(firstCard).toHaveAccessibleName(/Showing the English word/);
+  await firstCard.getByRole('button', { name: /^Reveal the .*meaning of 你好$/ }).click();
+  await expect(firstCard).toHaveAccessibleName(/meaning/);
+  await expect(firstCard).toContainText('hello');
+  const words = dialog.getByRole('list', { name: 'Your first 5 cards' }).getByRole('listitem');
+  await expect(words).toHaveCount(5);
+  const grades = dialog.getByRole('group', { name: 'Did you know this word?' });
+  for (const answer of ['Got it', 'Forgot', 'Got it', 'Got it', 'Forgot']) {
+    await grades.getByRole('button', { name: answer }).click();
+  }
+  await expect(dialog.getByRole('heading', { name: 'You knew 3 of 5.' })).toBeVisible();
+  await expect(grades).toHaveCount(0);
+  await expect(words.filter({ hasText: 'Again' })).toHaveCount(2);
+  await expect.poll(async () => (await db.collection('users').doc(testUser.uid).collection('cards').where('language', '==', 'zh').get()).size).toBe(5);
+
+  await dialog.getByRole('button', { name: 'Set my reminder' }).click();
+  await expect(dialog.getByRole('heading', { name: 'When should we nudge you?' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Start learning' }).click();
   await expect(dialog).toHaveCount(0, { timeout: 15_000 });
   await expect(page.locator('.claude-course-switcher-trigger')).toHaveText(/Chinese/);
@@ -190,8 +270,8 @@ test('onboarding keeps reminder save failure visible until the learner explicitl
   await dialog.getByRole('button', { name: /Korean/ }).click();
   await dialog.getByRole('button', { name: 'Continue' }).click();
   await dialog.getByRole('button', { name: 'Continue' }).click();
-  await dialog.getByRole('button', { name: 'Continue' }).click();
-  await dialog.getByRole('button', { name: 'Skip for now' }).last().click();
+  await dialog.getByRole('button', { name: 'Try 5 cards' }).click();
+  await dialog.getByRole('button', { name: 'Set my reminder' }).click();
 
   const reminders = dialog.getByRole('region', { name: 'Study reminders' });
   await expect(reminders.getByRole('button', { name: 'Save reminders' })).toBeEnabled();
