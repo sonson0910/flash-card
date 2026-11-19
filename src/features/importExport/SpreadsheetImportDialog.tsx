@@ -4,6 +4,7 @@ import { Trans, useLingui } from '@lingui/react';
 import { Check, Download, Loader2, RotateCcw, X } from 'lucide-react';
 import type { RefObject } from 'react';
 import type { SpreadsheetImportIssue, SpreadsheetImportProgress, SpreadsheetImportResult, SpreadsheetImportSummary } from './spreadsheetImportService';
+import '../library/library-dialog-overlays.css';
 import './spreadsheet-import-dialog.css';
 
 export interface SpreadsheetColumnMapping {
@@ -81,26 +82,26 @@ export function SpreadsheetImportDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="spreadsheet-import-overlay" />
+        <Dialog.Overlay className="library-dialog-overlay" />
         <Dialog.Content
-          className="spreadsheet-import-dialog"
+          className="library-dialog-frame library-dialog-frame--import"
           onCloseAutoFocus={event => restoreSpreadsheetImportFocus(event, restoreFocusRef)}
         >
-          <header className="spreadsheet-import-header">
+          <header className="library-dialog-header">
             <div>
-              <p className="spreadsheet-import-kicker"><Trans {...msg({ context: 'library.import.kicker', message: 'Import' })} /></p>
-              <Dialog.Title className="spreadsheet-import-title"><Trans {...msg({ context: 'library.import.dialog-title', message: 'Import from spreadsheet' })} /></Dialog.Title>
-              <Dialog.Description className="spreadsheet-import-description">
+              <p className="library-dialog-kicker"><Trans {...msg({ context: 'library.import.kicker', message: 'Import' })} /></p>
+              <Dialog.Title className="library-dialog-title"><Trans {...msg({ context: 'library.import.dialog-title', message: 'Import from spreadsheet' })} /></Dialog.Title>
+              <Dialog.Description className="library-dialog-description">
                 {fileName ? <code>{fileName}</code> : <Trans {...msg({ context: 'library.import.waiting-file', message: 'Preparing the selected file' })} />}
                 {result || progress?.summary ? <span> · <Trans {...msg({ context: 'library.import.rows-count', message: '{count, plural, one {# row} other {# rows}}' })} values={{ count: result?.summary.total ?? progress?.summary?.total ?? 0 }} /></span> : null}
               </Dialog.Description>
             </div>
-            <Dialog.Close className="spreadsheet-import-close" aria-label={i18n._(msg({ id: 'library.close', message: 'Close' }))}>
+            <Dialog.Close className="library-dialog-icon-button" aria-label={i18n._(msg({ id: 'library.close', message: 'Close' }))}>
               <X size={17} aria-hidden="true" />
             </Dialog.Close>
           </header>
 
-          <div className="spreadsheet-import-body" tabIndex={0}>
+          <div className="library-dialog-body library-dialog-body--import" tabIndex={0}>
             {isImporting ? (
               <div className="spreadsheet-import-progress" role="status" aria-live="polite">
                 <div className="spreadsheet-import-progress-heading">
@@ -110,7 +111,7 @@ export function SpreadsheetImportDialog({
                   ) : (
                     <strong><Trans {...msg({ context: 'library.import.preparing', message: 'Reading your spreadsheet…' })} /></strong>
                   )}
-                  {progress ? <span>{progress.word}</span> : null}
+                  {progress?.word ? <span className="spreadsheet-import-current"><Trans {...msg({ context: 'library.import.current-label', message: 'current:' })} /> <b>{progress.word}</b></span> : null}
                 </div>
                 {progress && progress.total > 0 ? <progress value={progress.current} max={progress.total}><Trans {...msg({ context: 'library.import.progress-fallback', message: '{current} of {total}' })} values={{ current: progress.current, total: progress.total }} /></progress> : <div className="spreadsheet-import-indeterminate" />}
                 <p><Trans {...msg({ context: 'library.import.background', message: 'You can close this — the import keeps running in the background.' })} /></p>
@@ -127,15 +128,15 @@ export function SpreadsheetImportDialog({
             {!isImporting && mapping.length > 0 ? <ImportMapping mapping={mapping} /> : null}
           </div>
 
-          <footer className="spreadsheet-import-footer">
+          <footer className="library-dialog-footer spreadsheet-import-footer">
             {hasErrorReport && onDownloadErrorReport ? (
-              <button type="button" onClick={onDownloadErrorReport} className="spreadsheet-import-button spreadsheet-import-button--secondary">
+              <button type="button" onClick={onDownloadErrorReport} className="library-dialog-button library-dialog-button--secondary">
                 <Download size={15} aria-hidden="true" />
                 <Trans {...msg({ context: 'library.import.download-errors', message: 'Download error report' })} />
               </button>
             ) : <span />}
             <Dialog.Close asChild>
-              <button type="button" className="spreadsheet-import-button spreadsheet-import-button--primary">
+              <button type="button" className="library-dialog-button library-dialog-button--primary">
                 {isSuccess ? <Check size={15} aria-hidden="true" /> : null}
                 {isImporting ? <Trans {...msg({ id: 'common.close', message: 'Close' })} /> : <Trans {...msg({ context: 'common.done', message: 'Done' })} />}
               </button>
@@ -151,8 +152,8 @@ function ImportResultPanel({ result, mapping }: { result: SpreadsheetImportResul
   const isCompleted = result.status === 'completed';
   return (
     <div className="spreadsheet-import-result" aria-live={isCompleted ? 'polite' : 'assertive'} role={isCompleted ? 'status' : 'alert'}>
-      <div className={`spreadsheet-import-result-heading${isCompleted ? ' is-complete' : ''}`}>
-        {isCompleted ? <Check size={19} aria-hidden="true" /> : <RotateCcw size={19} aria-hidden="true" />}
+      <div className={`spreadsheet-import-result-heading is-${result.status}`}>
+        {isCompleted ? <Check size={18} aria-hidden="true" /> : <RotateCcw size={18} aria-hidden="true" />}
         <strong>{isCompleted ? <Trans {...msg({ context: 'library.import.complete', message: 'Import complete' })} /> : result.status === 'partial' ? <Trans {...msg({ context: 'library.import.partial', message: 'Import partly complete' })} /> : <Trans {...msg({ context: 'library.import.status-failed', message: 'Import failed' })} />}</strong>
       </div>
       <p className="spreadsheet-import-result-message"><ImportResultDescription result={result} /></p>
@@ -179,24 +180,27 @@ function ImportSummaryPanel({ summary, issues, omittedIssues, inProgress = false
 
   return (
     <div className="spreadsheet-import-result">
-      {inProgress ? <strong><Trans {...msg({ context: 'library.import.results-so-far', message: 'Results so far' })} /></strong> : null}
-      <dl className="spreadsheet-import-summary">
-        {rows.map(row => <div key={row.id}><dt>{row.label}<small>{row.hint}</small></dt><dd>{row.value.toLocaleString()}</dd></div>)}
-      </dl>
-      {issues.length > 0 ? <ImportIssues issues={issues} omittedIssues={omittedIssues} /> : null}
+      {inProgress ? <div className="spreadsheet-import-summary-heading"><strong><Trans {...msg({ context: 'library.import.results-so-far', message: 'Results so far' })} /></strong></div> : null}
+      <div className="spreadsheet-import-summary">
+        <dl>
+          {rows.map(row => <div key={row.id} className={`spreadsheet-import-row is-${row.id}${row.id === 'failed' && row.value > 0 ? ' has-issues' : ''}`}><dt>{row.label}<small>{row.hint}</small></dt><dd>{row.value.toLocaleString()}</dd></div>)}
+        </dl>
+        {issues.length > 0 ? <ImportIssues issues={issues} omittedIssues={omittedIssues} /> : null}
+      </div>
     </div>
   );
 }
 
 function ImportIssues({ issues, omittedIssues }: { issues: readonly SpreadsheetImportIssue[]; omittedIssues: number }) {
   const visible = issues.slice(0, 10);
-  return <section className="spreadsheet-import-mapping">
-    <h3><Trans {...msg({ context: 'library.import.issues-title', message: 'Rows needing attention' })} /></h3>
+  return <section className="spreadsheet-import-issues" aria-labelledby="spreadsheet-import-issues-title">
+    <h3 id="spreadsheet-import-issues-title" className="sr-only"><Trans {...msg({ context: 'library.import.issues-title', message: 'Rows needing attention' })} /></h3>
     <ul>
       {visible.map((issue, index) => <li key={`${issue.sourceRow}-${issue.sourceColumn ?? 0}-${index}`}>
         <strong><Trans {...msg({ context: 'library.import.issue-row', message: 'Row {row, number}' })} values={{ row: issue.sourceRow }} /></strong>
-        {issue.sourceColumn ? <span><Trans {...msg({ context: 'library.import.issue-column', message: 'Column {column, number}' })} values={{ column: issue.sourceColumn }} /></span> : null}
-        {issue.word ? <code>{issue.word}</code> : null}
+        {issue.sourceColumn ? <span className="spreadsheet-import-issue-column"><Trans {...msg({ context: 'library.import.issue-column', message: 'Column {column, number}' })} values={{ column: issue.sourceColumn }} /></span> : null}
+        <span aria-hidden="true">·</span>
+        {issue.word ? <span className="spreadsheet-import-issue-word">“{issue.word}”</span> : null}
         <span>{issue.kind === 'pending' ? <Trans {...msg({ context: 'library.import.issue-pending', message: 'Save not confirmed' })} /> : issue.kind === 'duplicate' ? <Trans {...msg({ context: 'library.import.issue-duplicate', message: 'Duplicate' })} /> : issue.kind === 'invalid' ? <Trans {...msg({ context: 'library.import.issue-invalid', message: 'Invalid row' })} /> : issue.kind === 'generation' ? <Trans {...msg({ context: 'library.import.issue-generation', message: 'Not generated' })} /> : <Trans {...msg({ context: 'library.import.issue-failed', message: 'Could not save' })} />}</span>
       </li>)}
     </ul>
