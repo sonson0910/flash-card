@@ -2,7 +2,7 @@ import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { Check, ImageOff, Loader2, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, ImageOff, Loader2, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
@@ -13,6 +13,10 @@ import {
   renameOwnCardHeadword,
 } from './cardEditService';
 import { fetchImageUrl, getDisplayImageUrl } from '../../lib/images';
+import { formatDate } from '../../lib/format';
+import { splitStressedWord } from '../library/libraryCardFace';
+import '../library/library-dialog-overlays.css';
+import './edit-card-sheet.css';
 import {
   canEditPartOfSpeech,
   createEditCardDraft,
@@ -71,22 +75,14 @@ const isDisplayableSourceUrl = (value: string | undefined): value is string => {
   }
 };
 
-const fieldRows = (key: EditableCardField) => {
-  if (key === 'translation') return 2;
-  if (key === 'phonetic') return 1;
-  if (key === 'mnemonic') return 3;
-  return 3;
-};
+const fieldMaxLength = Object.fromEntries(EDIT_CARD_FIELDS.map(({ key, maxLength }) => [key, maxLength])) as Record<EditableCardField, number>;
 
-const textareaClass = 'mt-1.5 min-h-12 w-full resize-y rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 py-3 text-sm leading-6 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] outline-none placeholder:text-[var(--sf-text-muted)] focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
-const fieldClasses = (key: EditableCardField) => `${textareaClass}${key === 'phonetic' ? ' font-mono' : ''}${key === 'mnemonic' ? ' border-[color-mix(in_srgb,var(--sf-reward)_45%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-reward)_9%,var(--sf-surface-control))]' : ''}`;
-
-const secondaryButtonClass = 'flex min-h-11 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
-const dangerButtonClass = 'flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--sf-danger)] px-5 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
-const textInputClass = 'mt-1.5 min-h-11 w-full rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 text-sm text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
-const dirtyBadgeClass = 'shrink-0 rounded-md border border-[color-mix(in_srgb,var(--sf-reward)_60%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-reward)_14%,var(--sf-surface))] px-1.5 py-0.5 text-[10px] font-black uppercase tracking-[.08em] text-[var(--sf-reward)]';
-const fieldLabelClass = 'block text-xs font-black uppercase tracking-[.12em] text-[var(--sf-text-muted)]';
-const noteClass = 'rounded-[var(--sf-card-radius)] border border-dashed border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-xs leading-5 text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+/** Splits the headword so the stressed syllable can carry the accent colour. */
+function StressedHeadword({ word, phonetic, language }: { word: string; phonetic?: string; language: string }) {
+  const parts = splitStressedWord(word, phonetic, language);
+  if (!parts) return <>{word}</>;
+  return <>{parts.before}<span className="edit-sheet-stress">{parts.stressed}</span>{parts.after}</>;
+}
 
 export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, context }: EditCardDialogProps) {
   const { _ } = useLingui();
@@ -298,43 +294,225 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
     setDeleteStatus('failure');
   };
 
+  const isReview = context?.kind === 'review';
+  const reviewCount = openedCard.fsrs?.reps ?? openedCard.reviews;
+  const addedAt = openedCard.createdAt ? new Date(openedCard.createdAt) : null;
+  const cardFacts = [
+    openedCard.customDeck || null,
+    addedAt && !Number.isNaN(addedAt.getTime()) ? _({ ...msg({ id: 'library.edit-card.added-on', message: 'Added {date}' }), values: { date: formatDate(addedAt, { day: 'numeric', month: 'short' }) } }) : null,
+    typeof reviewCount === 'number' && reviewCount > 0 ? _({ ...msg({ id: 'library.edit-card.reviewed-count', message: '{count, plural, one {Reviewed # time} other {Reviewed # times}}' }), values: { count: reviewCount } }) : null,
+  ].filter((fact): fact is string => Boolean(fact));
+
+  const updateDraft = (key: keyof EditCardDraft, value: string) => {
+    setDraft(previous => ({ ...previous, [key]: value }));
+    setError(null);
+  };
+
+  const textField = (key: Exclude<EditableCardField, 'phonetic'>, rows = 1) => (
+    <label key={key} className={`edit-sheet-field edit-sheet-field--${key}`}>
+      <span className="edit-sheet-label">{_(fieldLabels[key])}</span>
+      <textarea
+        data-edit-field={key}
+        ref={key === 'translation' ? firstFieldRef : undefined}
+        value={draft[key]}
+        lang={isNativeField(key) ? nativeLanguage : targetLanguage}
+        dir="auto"
+        maxLength={fieldMaxLength[key]}
+        rows={rows}
+        onChange={event => updateDraft(key, event.target.value)}
+        className="edit-sheet-input edit-sheet-textarea"
+      />
+    </label>
+  );
+
+  const phoneticInput = (inline: boolean) => (
+    <input
+      data-edit-field="phonetic"
+      aria-label="IPA"
+      value={draft.phonetic}
+      lang={targetLanguage}
+      dir="ltr"
+      maxLength={fieldMaxLength.phonetic}
+      onChange={event => updateDraft('phonetic', event.target.value)}
+      className={inline ? 'edit-sheet-word-ipa' : 'edit-sheet-input edit-sheet-input--mono'}
+    />
+  );
+
+  const wordField = (
+    <div className="edit-sheet-field edit-sheet-field--word">
+      <span className="edit-sheet-label"><Trans {...msg({ id: 'library.edit-card.word', message: 'Word' })} /></span>
+      <div className="edit-sheet-word">
+        {canRenameWord ? (
+          <input
+            data-edit-word-input
+            aria-label={_(msg({ id: 'library.edit-card.word', message: 'Word' }))}
+            value={wordDraft}
+            lang={targetLanguage}
+            dir="auto"
+            maxLength={MAX_HEADWORD_LENGTH}
+            disabled={writing}
+            onChange={event => {
+              setWordDraft(event.target.value);
+              setWordError(null);
+            }}
+            onKeyDown={event => {
+              if (event.key !== 'Enter') return;
+              event.preventDefault();
+              void saveWord();
+            }}
+            className="edit-sheet-word-input"
+          />
+        ) : (
+          <span lang={targetLanguage} className="edit-sheet-word-input edit-sheet-word-input--static">{openedCard.word}</span>
+        )}
+        {isReview && phoneticInput(true)}
+        {canRenameWord && (
+          <button
+            type="button"
+            data-edit-word-save
+            aria-label={_(msg({ id: 'library.edit-card.save-word', message: 'Save word' }))}
+            disabled={writing || !wordDraft.trim() || wordDraft.trim() === openedCard.word}
+            onClick={() => saveWord()}
+            className="edit-sheet-word-save"
+          >
+            {renamingWord ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Check size={16} aria-hidden="true" />}
+          </button>
+        )}
+      </div>
+      {wordErrorMessage && <p role="alert" className="edit-sheet-field-error">{wordErrorMessage}</p>}
+    </div>
+  );
+
+  const partOfSpeechField = (
+    <div className="edit-sheet-field edit-sheet-field--part-of-speech">
+      <span className="edit-sheet-label"><Trans {...msg({ id: 'library.edit-card.part-of-speech', message: 'Part of speech' })} /></span>
+      {canEditPartOfSpeech(openedCard) ? (
+        <input
+          data-edit-partofspeech-input
+          aria-label={_(msg({ id: 'library.edit-card.part-of-speech', message: 'Part of speech' }))}
+          value={draft.partOfSpeech}
+          maxLength={MAX_PART_OF_SPEECH_LENGTH}
+          onChange={event => updateDraft('partOfSpeech', event.target.value)}
+          className="edit-sheet-input"
+        />
+      ) : (
+        <>
+          <span aria-disabled="true" className="edit-sheet-input edit-sheet-input--locked">{openedCard.partOfSpeech || '—'}</span>
+          <p className="edit-sheet-hint"><Trans {...msg({ context: 'library.edit-card.part-of-speech-locked', message: 'Locked to this card\'s published sense.' })} /></p>
+        </>
+      )}
+    </div>
+  );
+
+  const categoryField = (
+    <label className="edit-sheet-field edit-sheet-field--category">
+      <span className="edit-sheet-label"><Trans {...msg({ context: 'library.edit-card.category', message: 'Category' })} /></span>
+      <input
+        data-edit-category-input
+        value={draft.category}
+        maxLength={MAX_CATEGORY_LENGTH}
+        onChange={event => updateDraft('category', event.target.value)}
+        className="edit-sheet-input"
+      />
+    </label>
+  );
+
+  const imageField = (
+    <div className="edit-sheet-field edit-sheet-field--image">
+      <span className="edit-sheet-label"><Trans {...msg({ context: 'library.edit-card.image', message: 'Image' })} /></span>
+      <div className="edit-sheet-image">
+        {draft.imageUrl ? (
+          <img src={getDisplayImageUrl(draft.imageUrl)} alt="" className="edit-sheet-image-thumb" />
+        ) : (
+          <div aria-hidden="true" className="edit-sheet-image-thumb edit-sheet-image-thumb--empty"><ImageOff size={18} /></div>
+        )}
+        <div className="edit-sheet-image-actions">
+          <button
+            type="button"
+            data-edit-image-find
+            disabled={imageSearching || !cardEditCloudAvailable}
+            onClick={findAnotherPhoto}
+            className="edit-sheet-chip-button"
+          >
+            {imageSearching ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Search size={14} aria-hidden="true" />}
+            <Trans {...msg({ context: 'library.edit-card.find-another-photo', message: 'Find another photo' })} />
+          </button>
+          {draft.imageUrl && (
+            <button
+              type="button"
+              data-edit-image-remove
+              onClick={removeImage}
+              aria-label={_(msg({ id: 'library.edit-card.remove-image', message: 'Remove image' }))}
+              className="edit-sheet-link-button"
+            >
+              <Trans {...msg({ context: 'library.edit-card.remove-image-short', message: 'Remove' })} />
+            </button>
+          )}
+        </div>
+      </div>
+      {imageSearchFailed && <p role="alert" className="edit-sheet-field-error">{imageSearchFailedMessage}</p>}
+    </div>
+  );
+
+  const deleteButton = onDelete && (
+    <button type="button" data-edit-delete onClick={() => { setDeleteStatus('idle'); setConfirmation('delete'); }} disabled={writing} className="edit-sheet-delete">
+      <Trash2 size={16} aria-hidden="true" />
+      <Trans {...msg({ id: 'library.card.delete', message: 'Delete card' })} />
+    </button>
+  );
+
+  const sourceNote = openedCard.source && (openedCard.source.url || openedCard.source.title) && (
+    <p data-edit-source-note className="edit-sheet-note">
+      <span className="edit-sheet-note-label"><Trans {...msg({ context: 'library.edit-card.source-label', message: 'Captured from' })} /></span>{' '}
+      {isDisplayableSourceUrl(openedCard.source.url) ? (
+        <a href={openedCard.source.url} target="_blank" rel="noopener noreferrer">
+          {openedCard.source.title || openedCard.source.url}
+        </a>
+      ) : (
+        <span>{openedCard.source.title}</span>
+      )}
+    </p>
+  );
+
   return (
     <>
       <Dialog.Root open={open} onOpenChange={handleDialogOpenChange}>
         <Dialog.Portal>
-          <div data-edit-preview-backdrop aria-hidden="true" style={{ background: 'var(--sf-canvas)' }} className="pointer-events-none fixed inset-0 z-[99] hidden items-center justify-center pr-[440px] [html[data-theme-family=crystal]_&]:pr-[540px] md:flex">
-            <div className="w-[min(400px,34vw)] overflow-hidden rounded-[var(--sf-card-radius)] border border-[color-mix(in_srgb,var(--sf-brand)_55%,var(--sf-border))] bg-[var(--sf-card-bg)] shadow-[0_30px_70px_-30px_var(--sf-shadow)] [html[data-theme-family=crystal]_&]:crystal-chamfer">
-              {previewCard.imageUrl ? <img src={previewCard.imageUrl} alt="" className="h-48 w-full object-cover [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" /> : <div className="flex h-48 items-center justify-center bg-[var(--sf-surface-raised)] text-6xl font-black text-[var(--sf-brand-text)]">{previewCard.word.slice(0, 1).toUpperCase()}</div>}
-              <div className="p-6">
-                <p className="text-[10px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">{previewCard.partOfSpeech || 'Card preview'} <Trans {...msg({ context: 'library.edit-card.editing-badge', message: '· editing' })} /></p>
-                <p className="mt-2 font-serif text-5xl font-bold leading-none text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">{previewCard.word}</p>
-                <p className="mt-2 font-mono text-sm text-[var(--sf-text-muted)]">{previewCard.phonetic || '—'}</p>
-                <div className="mt-16 flex items-center gap-2 border-t border-[var(--sf-border)] pt-3">
-                  <p className="min-w-0 truncate font-serif text-2xl font-semibold text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">{previewCard.translation || '—'}</p>
-                  {dirty && <span className={dirtyBadgeClass}><Trans {...msg({ context: 'library.edit-card.unsaved-badge', message: 'Unsaved' })} /></span>}
+          {isReview && (
+            <div data-edit-preview-backdrop aria-hidden="true" className="edit-sheet-backdrop">
+              <div className="edit-sheet-preview-card">
+                {previewCard.imageUrl ? <img src={previewCard.imageUrl} alt="" className="edit-sheet-preview-image" /> : <div className="edit-sheet-preview-image edit-sheet-preview-image--letter">{previewCard.word.slice(0, 1).toUpperCase()}</div>}
+                <div className="edit-sheet-preview-body">
+                  <p className="edit-sheet-preview-kicker">{previewCard.partOfSpeech || _(msg({ id: 'library.edit-card.preview-fallback', message: 'Card preview' }))} <Trans {...msg({ context: 'library.edit-card.editing-badge', message: '· editing' })} /></p>
+                  <p lang={targetLanguage} className="edit-sheet-preview-word"><StressedHeadword word={previewCard.word} phonetic={previewCard.phonetic} language={targetLanguage} /></p>
+                  <p className="edit-sheet-preview-ipa">{previewCard.phonetic || '—'}</p>
+                  <div className="edit-sheet-preview-meaning">
+                    <p lang={nativeLanguage}>{previewCard.translation || '—'}</p>
+                    {dirty && <span className="edit-sheet-dirty"><Trans {...msg({ context: 'library.edit-card.unsaved-badge', message: 'Unsaved' })} /></span>}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <Dialog.Overlay data-edit-overlay className="fixed inset-0 z-[98] bg-slate-950/75 backdrop-blur-sm" />
+          )}
+          <Dialog.Overlay data-edit-overlay className={`edit-sheet-overlay${isReview ? ' edit-sheet-overlay--review' : ''}`} />
           <Dialog.Content
             data-card-edit-sheet
             onOpenAutoFocus={event => {
               event.preventDefault();
               firstFieldRef.current?.focus();
             }}
-            className="fixed inset-x-0 bottom-0 z-[101] flex max-h-[min(92dvh,780px)] w-full translate-x-0 translate-y-0 flex-col overflow-hidden rounded-t-[28px] border border-b-0 border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl outline-none md:inset-y-0 md:left-auto md:right-0 md:top-0 md:max-h-none md:w-[440px] md:rounded-none md:border-b md:border-r-0 md:border-t-0 md:border-l [html[data-theme-family=crystal]_&]:crystal-chamfer [html[data-theme-family=crystal]_&]:md:w-[540px]"
+            className={`edit-sheet ${isReview ? 'edit-sheet--review' : 'edit-sheet--dialog'}`}
           >
-            <div aria-hidden="true" className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[var(--sf-border)] md:hidden" />
-            <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 pb-4 pt-4 sm:px-7 sm:pt-5 md:px-[26px]">
-              <div className="min-w-0">
-                <p className="font-display text-[11px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">
-                  {context ? <Trans {...msg({ id: 'library.edit-card.review-kicker', message: 'Card {current} of {total}' })} values={{ current: context.current, total: context.total }} /> : <Trans {...msg({ context: 'library.edit-card.kicker', message: 'Card editor' })} />}
+            <div aria-hidden="true" className="edit-sheet-grabber" />
+            <header className="edit-sheet-header">
+              <div className="edit-sheet-heading">
+                <p className="edit-sheet-kicker">
+                  {context ? <Trans {...msg({ id: 'library.edit-card.review-kicker', message: 'Card {current} of {total}' })} values={{ current: context.current, total: context.total }} /> : cardFacts.length ? cardFacts.join(' · ') : <Trans {...msg({ context: 'library.edit-card.kicker', message: 'Card editor' })} />}
                 </p>
-                <Dialog.Title className="mt-1 font-serif text-3xl font-bold tracking-tight text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">
+                <Dialog.Title className="edit-sheet-title">
                   <Trans {...msg({ context: 'library.edit-card.title', message: 'Edit card' })} />
                 </Dialog.Title>
-                <Dialog.Description className="mt-2 max-w-[34rem] text-sm leading-6 text-[var(--sf-text-muted)]">
+                <Dialog.Description className="sr-only">
                   {context ? <Trans {...msg({ id: 'library.edit-card.review-description', message: 'This review stays paused while you edit. Your review history stays intact.' })} /> : <Trans {...msg({ context: 'library.edit-card.description', message: 'Changes update this card while its review history stays intact.' })} />}
                 </Dialog.Description>
               </div>
@@ -342,215 +520,92 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                 type="button"
                 aria-label={_(msg({ id: 'library.edit-card.close', message: 'Close editor' }))}
                 onClick={() => closeSheet()}
-                className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
+                className="edit-sheet-close"
               >
-                <X size={18} aria-hidden="true" />
+                <X size={16} aria-hidden="true" />
               </button>
             </header>
 
-              <form id="edit-card-form" onSubmit={submit} aria-busy={writing} className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-7 md:px-[26px]">
+            <form id="edit-card-form" onSubmit={submit} aria-busy={writing} className="edit-sheet-form">
+              <div className="edit-sheet-scroll">
               <fieldset disabled={writing} className="contents">
-              <section data-edit-preview aria-label={_(msg({ id: 'library.edit-card.draft-preview', message: 'Draft preview' }))} className="rounded-[var(--sf-card-radius)] border border-[color-mix(in_srgb,var(--sf-brand)_35%,var(--sf-border))] bg-[var(--sf-card-bg)] p-3 shadow-[var(--sf-panel-shadow)] md:hidden [html[data-theme-family=crystal]_&]:crystal-chamfer">
-                <div className="flex min-w-0 gap-3">
-                  {previewCard.imageUrl ? (
-                    <img src={previewCard.imageUrl} alt={`Illustration for ${previewCard.word}`} className="size-20 shrink-0 rounded-[calc(var(--sf-card-radius)*.65)] object-cover [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" />
-                  ) : (
-                    <div aria-hidden="true" className="flex size-20 shrink-0 items-center justify-center rounded-[calc(var(--sf-card-radius)*.65)] bg-[var(--sf-surface-raised)] text-2xl font-black text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">{previewCard.word.slice(0, 1).toUpperCase()}</div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="truncate text-[10px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]">{previewCard.partOfSpeech || 'Card preview'}</p>
-                      {dirty && <span data-edit-dirty className={dirtyBadgeClass}><Trans {...msg({ context: 'library.edit-card.unsaved-badge', message: 'Unsaved' })} /></span>}
-                    </div>
-                    <h3 data-preview-word lang={targetLanguage} className="mt-1 truncate font-serif text-2xl font-bold leading-none text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">{previewCard.word}</h3>
-                    <p data-preview-phonetic lang={targetLanguage} className="mt-1 truncate font-mono text-xs text-[var(--sf-text-muted)]">{previewCard.phonetic || '—'}</p>
-                    <p data-preview-translation lang={nativeLanguage} className="mt-2 line-clamp-2 font-serif text-lg font-semibold text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:font-black [html[data-theme-family=crystal]_&]:italic">{previewCard.translation || '—'}</p>
-                  </div>
-                </div>
-                {(previewCard.explanation || previewCard.exampleSentence || previewCard.mnemonic) && (
-                  <div className="mt-3 grid gap-1.5 border-t border-[var(--sf-border)] pt-2 text-xs leading-5 text-[var(--sf-text-muted)]">
-                    {previewCard.explanation && <p data-preview-explanation className="line-clamp-2">{previewCard.explanation}</p>}
-                    {previewCard.exampleSentence && <p data-preview-example className="line-clamp-2 italic">“{previewCard.exampleSentence}”</p>}
-                    {previewCard.mnemonic && <p data-preview-mnemonic className="line-clamp-2 text-[var(--sf-reward)]">💡 {previewCard.mnemonic}</p>}
-                  </div>
+              <section data-edit-preview aria-label={_(msg({ id: 'library.edit-card.draft-preview', message: 'Draft preview' }))} className="edit-sheet-mobile-preview md:hidden">
+                {previewCard.imageUrl ? (
+                  <img src={previewCard.imageUrl} alt={`Illustration for ${previewCard.word}`} className="edit-sheet-mobile-preview-image" />
+                ) : (
+                  <div aria-hidden="true" className="edit-sheet-mobile-preview-image edit-sheet-mobile-preview-image--letter">{previewCard.word.slice(0, 1).toUpperCase()}</div>
                 )}
+                <div className="edit-sheet-mobile-preview-body">
+                  <div className="edit-sheet-mobile-preview-top">
+                    <p className="edit-sheet-preview-kicker">{previewCard.partOfSpeech || _(msg({ id: 'library.edit-card.preview-fallback', message: 'Card preview' }))}</p>
+                    {dirty && <span data-edit-dirty className="edit-sheet-dirty"><Trans {...msg({ context: 'library.edit-card.unsaved-badge', message: 'Unsaved' })} /></span>}
+                  </div>
+                  <h3 data-preview-word lang={targetLanguage} className="edit-sheet-mobile-preview-word"><StressedHeadword word={previewCard.word} phonetic={previewCard.phonetic} language={targetLanguage} /></h3>
+                  <p data-preview-phonetic lang={targetLanguage} className="edit-sheet-preview-ipa">{previewCard.phonetic || '—'}</p>
+                  <p data-preview-translation lang={nativeLanguage} className="edit-sheet-mobile-preview-meaning">{previewCard.translation || '—'}</p>
+                </div>
               </section>
 
-              <section className="mt-4 grid gap-3" aria-label={_(msg({ id: 'library.edit-card.card-fields', message: 'Card fields' }))}>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="min-w-0">
-                    <span className={fieldLabelClass}><Trans {...msg({ id: 'library.edit-card.word', message: 'Word' })} /></span>
-                    {canRenameWord ? (
-                      <div className="mt-1.5 flex min-w-0 gap-1.5">
-                        <input
-                          data-edit-word-input
-                          aria-label={_(msg({ id: 'library.edit-card.word', message: 'Word' }))}
-                          value={wordDraft}
-                          lang={targetLanguage}
-                          dir="auto"
-                          maxLength={MAX_HEADWORD_LENGTH}
-                          disabled={writing}
-                          onChange={event => {
-                            setWordDraft(event.target.value);
-                            setWordError(null);
-                          }}
-                          onKeyDown={event => {
-                            if (event.key !== 'Enter') return;
-                            event.preventDefault();
-                            void saveWord();
-                          }}
-                          className="min-h-11 min-w-0 flex-1 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 font-serif text-lg font-bold text-[var(--sf-text)] outline-none focus-visible:border-[var(--sf-brand)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sf-brand)_24%,transparent)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
-                        />
-                        <button
-                          type="button"
-                          data-edit-word-save
-                          aria-label={_(msg({ id: 'library.edit-card.save-word', message: 'Save word' }))}
-                          disabled={writing || !wordDraft.trim() || wordDraft.trim() === openedCard.word}
-                          onClick={() => saveWord()}
-                          className="flex size-11 shrink-0 items-center justify-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
-                        >
-                          {renamingWord ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Check size={16} aria-hidden="true" />}
-                        </button>
-                      </div>
-                    ) : (
-                      <span lang={targetLanguage} className="mt-1.5 flex min-h-11 items-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 font-serif text-lg font-bold text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">{openedCard.word}</span>
-                    )}
-                    {wordErrorMessage && <p role="alert" className="mt-1.5 text-xs font-semibold text-[var(--sf-danger)]">{wordErrorMessage}</p>}
-                  </div>
-                  <div className="min-w-0">
-                    <span className={fieldLabelClass}><Trans {...msg({ id: 'library.edit-card.part-of-speech', message: 'Part of speech' })} /></span>
-                    {canEditPartOfSpeech(openedCard) ? (
-                      <input
-                        data-edit-partofspeech-input
-                        aria-label={_(msg({ id: 'library.edit-card.part-of-speech', message: 'Part of speech' }))}
-                        value={draft.partOfSpeech}
-                        maxLength={MAX_PART_OF_SPEECH_LENGTH}
-                        onChange={event => {
-                          setDraft(previous => ({ ...previous, partOfSpeech: event.target.value }));
-                          setError(null);
-                        }}
-                        className={textInputClass}
-                      />
-                    ) : (
-                      <>
-                        <span aria-disabled="true" className="mt-1.5 flex min-h-11 items-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-4 text-sm text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">{openedCard.partOfSpeech || '—'}</span>
-                        <p className="mt-1 text-[11px] text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'library.edit-card.part-of-speech-locked', message: 'Locked to this card\'s published sense.' })} /></p>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="block min-w-0 sm:col-span-2">
-                    <span className={fieldLabelClass}><Trans {...msg({ context: 'library.edit-card.category', message: 'Category' })} /></span>
-                    <input
-                      data-edit-category-input
-                      value={draft.category}
-                      maxLength={MAX_CATEGORY_LENGTH}
-                      onChange={event => {
-                        setDraft(previous => ({ ...previous, category: event.target.value }));
-                        setError(null);
-                      }}
-                      className={textInputClass}
-                    />
-                  </label>
-                  <div className="min-w-0 sm:col-span-2">
-                    <span className={fieldLabelClass}><Trans {...msg({ context: 'library.edit-card.image', message: 'Image' })} /></span>
-                    <div className="mt-1.5 flex min-w-0 items-center gap-2">
-                      {draft.imageUrl ? (
-                        <img src={getDisplayImageUrl(draft.imageUrl)} alt="" className="size-11 shrink-0 rounded-[calc(var(--sf-card-radius)*.65)] object-cover [html[data-theme-family=crystal]_&]:crystal-chamfer-sm" />
-                      ) : (
-                        <div aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-[calc(var(--sf-card-radius)*.65)] border border-dashed border-[var(--sf-border)] text-[10px] font-black uppercase text-[var(--sf-text-muted)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"><ImageOff size={16} /></div>
-                      )}
-                      <button
-                        type="button"
-                        data-edit-image-find
-                        disabled={imageSearching || !cardEditCloudAvailable}
-                        onClick={findAnotherPhoto}
-                        className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
-                      >
-                        {imageSearching && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
-                        <Trans {...msg({ context: 'library.edit-card.find-another-photo', message: 'Find another photo' })} />
-                      </button>
-                      {draft.imageUrl && (
-                        <button
-                          type="button"
-                          data-edit-image-remove
-                          onClick={removeImage}
-                          aria-label={_(msg({ id: 'library.edit-card.remove-image', message: 'Remove image' }))}
-                          className="flex size-11 shrink-0 items-center justify-center rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-danger)] focus-visible:outline-2 focus-visible:outline-offset-2 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
-                        >
-                          <X size={14} aria-hidden="true" />
-                        </button>
-                      )}
+              <section className="edit-sheet-fields" aria-label={_(msg({ id: 'library.edit-card.card-fields', message: 'Card fields' }))}>
+                {isReview ? (
+                  <>
+                    {wordField}
+                    {textField('translation', 3)}
+                    {textField('exampleSentence')}
+                    {imageField}
+                    <div className="edit-sheet-pair">
+                      {categoryField}
+                      {partOfSpeechField}
                     </div>
-                    {imageSearchFailed && <p role="alert" className="mt-1.5 text-xs font-semibold text-[var(--sf-danger)]">{imageSearchFailedMessage}</p>}
+                    <details className="edit-sheet-more">
+                      <summary><Trans {...msg({ context: 'library.edit-card.more-fields', message: 'Definition, translations and memory hook' })} /></summary>
+                      <div className="edit-sheet-more-fields">
+                        {textField('explanation', 2)}
+                        {textField('explanationTranslation', 2)}
+                        {textField('exampleTranslation')}
+                        {textField('mnemonic', 2)}
+                      </div>
+                    </details>
+                  </>
+                ) : (
+                  <div className="edit-sheet-grid">
+                    {wordField}
+                    {partOfSpeechField}
+                    {textField('translation')}
+                    <label className="edit-sheet-field edit-sheet-field--phonetic">
+                      <span className="edit-sheet-label">IPA</span>
+                      {phoneticInput(false)}
+                    </label>
+                    {textField('explanation')}
+                    {textField('explanationTranslation')}
+                    {textField('exampleSentence')}
+                    {textField('exampleTranslation')}
+                    {textField('mnemonic', 2)}
+                    {imageField}
+                    {categoryField}
                   </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {EDIT_CARD_FIELDS.map(({ key, maxLength }) => {
-                    const isFullWidth = key !== 'phonetic';
-                    const fieldLanguage = isNativeField(key) ? nativeLanguage : targetLanguage;
-                    return (
-                      <label key={key} className={`block min-w-0 ${isFullWidth ? 'sm:col-span-2' : ''}`}>
-                        <span className={`block text-xs font-black uppercase tracking-[.12em] ${key === 'mnemonic' ? 'text-[var(--sf-reward)]' : 'text-[var(--sf-text-muted)]'}`}>{fieldLabels[key] ? _(fieldLabels[key]) : 'IPA'}</span>
-                        <textarea
-                          ref={key === 'translation' ? firstFieldRef : undefined}
-                          value={draft[key]}
-                          lang={fieldLanguage}
-                          dir="auto"
-                          maxLength={maxLength}
-                          rows={fieldRows(key)}
-                          onChange={event => {
-                            setDraft(previous => ({ ...previous, [key]: event.target.value }));
-                            setError(null);
-                          }}
-                          className={fieldClasses(key)}
-                        />
-                      </label>
-                    );
-                  })}
-                </div>
-
-                <p data-edit-contract-note className={noteClass}>
-                  <Trans {...msg({ context: 'library.edit-card.contract-note', message: 'Part of speech, deck, bookmark, tags and difficulty cannot be changed here yet.' })} />
-                </p>
-                {openedCard.source && (openedCard.source.url || openedCard.source.title) && (
-                  <p data-edit-source-note className={noteClass}>
-                    <span className="font-black uppercase tracking-[.12em]"><Trans {...msg({ context: 'library.edit-card.source-label', message: 'Captured from' })} /></span>{' '}
-                    {isDisplayableSourceUrl(openedCard.source.url) ? (
-                      <a
-                        href={openedCard.source.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-[var(--sf-brand-text)] underline-offset-4 hover:underline"
-                      >
-                        {openedCard.source.title || openedCard.source.url}
-                      </a>
-                    ) : (
-                      <span>{openedCard.source.title}</span>
-                    )}
-                  </p>
                 )}
-                <p className="flex gap-2 rounded-[var(--sf-card-radius)] border border-[color-mix(in_srgb,var(--sf-success)_45%,var(--sf-border))] bg-[color-mix(in_srgb,var(--sf-success)_10%,var(--sf-surface))] px-4 py-3 text-sm leading-6 text-[var(--sf-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
-                  <Check size={16} className="mt-1 shrink-0 text-[var(--sf-success)]" aria-hidden="true" />
+                {sourceNote}
+                <p className="edit-sheet-history">
+                  <Check size={16} aria-hidden="true" />
                   <span><Trans {...msg({ context: 'library.edit-card.history-note', message: 'Your review history is kept. Changes appear on this card right away.' })} /></span>
                 </p>
-                {errorMessage && <p role="alert" className="rounded-[var(--sf-card-radius)] border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] px-4 py-3 text-sm font-semibold text-[var(--sf-danger)]">{errorMessage}</p>}
+                {errorMessage && <p role="alert" className="edit-sheet-error">{errorMessage}</p>}
+                {isReview && deleteButton}
               </section>
               </fieldset>
+              </div>
 
-              <footer className="sticky bottom-[-1rem] z-10 mt-5 flex flex-col-reverse gap-2 border-t border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] py-4 sm:flex-row sm:items-center sm:justify-end md:bottom-[-1rem]">
-                {onDelete && <button type="button" data-edit-delete onClick={() => { setDeleteStatus('idle'); setConfirmation('delete'); }} disabled={writing} className="mr-auto flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-[var(--sf-danger)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60"><Trash2 size={16} aria-hidden="true" /><Trans {...msg({ id: 'library.card.delete', message: 'Delete card' })} /></button>}
-                <span className="mr-auto hidden text-xs text-[var(--sf-text-muted)] sm:block"><kbd className="rounded border border-[var(--sf-border)] px-1.5 py-0.5 font-mono text-[10px]"><Trans {...msg({ context: 'library.edit-card.esc-key', message: 'Esc' })} /></kbd> <Trans {...msg({ context: 'library.edit-card.back-to-card', message: 'back to card' })} /></span>
-                <button type="button" onClick={() => closeSheet()} disabled={writing} className={secondaryButtonClass}>
-                  <span>{dirty ? 'Discard' : <Trans {...msg({ context: 'library.edit-card.cancel', message: 'Cancel' })} />}</span>
+              <footer className="edit-sheet-footer">
+                {!isReview && deleteButton}
+                {isReview && <span className="edit-sheet-esc"><kbd><Trans {...msg({ context: 'library.edit-card.esc-key', message: 'Esc' })} /></kbd> <Trans {...msg({ context: 'library.edit-card.back-to-card', message: 'back to card' })} /></span>}
+                <button type="button" onClick={() => closeSheet()} disabled={writing} className="edit-sheet-button">
+                  <span>{dirty ? <Trans {...msg({ context: 'library.edit-card.discard', message: 'Discard' })} /> : <Trans {...msg({ context: 'library.edit-card.cancel', message: 'Cancel' })} />}</span>
                 </button>
-                <button type="submit" disabled={writing} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-5 text-sm font-bold text-[var(--sf-on-brand)] shadow-md transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+                <button type="submit" disabled={writing} className="edit-sheet-button edit-sheet-button--primary">
                   {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
-                  <span>{saving ? <Trans {...msg({ context: 'library.edit-card.saving', message: 'Saving changes…' })} /> : error === 'save-failed' ? 'Retry save' : context ? <Trans {...msg({ id: 'library.edit-card.save-resume', message: 'Save & resume' })} /> : <Trans {...msg({ context: 'library.edit-card.save', message: 'Save changes' })} />}</span>
-                  {!saving && <kbd className="hidden rounded bg-black/15 px-1.5 py-0.5 font-mono text-[10px] sm:inline">⌘↵</kbd>}
+                  <span>{saving ? <Trans {...msg({ context: 'library.edit-card.saving', message: 'Saving changes…' })} /> : error === 'save-failed' ? <Trans {...msg({ context: 'library.edit-card.retry-save', message: 'Retry save' })} /> : context ? <Trans {...msg({ id: 'library.edit-card.save-resume', message: 'Save & resume' })} /> : <Trans {...msg({ context: 'library.edit-card.save', message: 'Save changes' })} />}</span>
+                  {isReview && !saving && <kbd aria-hidden="true">⌘↵</kbd>}
                 </button>
               </footer>
             </form>
@@ -560,18 +615,28 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
 
       <AlertDialog.Root open={confirmation !== null} onOpenChange={nextOpen => { if (!nextOpen && !deleting) setConfirmation(null); }}>
         <AlertDialog.Portal>
-          <AlertDialog.Overlay className="fixed inset-0 z-[110] bg-slate-950/55 backdrop-blur-sm" />
-          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[var(--sf-card-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] p-6 text-[var(--sf-text)] shadow-2xl outline-none [html[data-theme-family=crystal]_&]:crystal-chamfer">
-            <AlertDialog.Title className="font-serif text-2xl font-bold [html[data-theme-family=crystal]_&]:font-display [html[data-theme-family=crystal]_&]:italic">{confirmation === 'delete' ? <Trans {...msg({ context: 'library.delete.title', message: 'Delete card?' })} /> : <Trans {...msg({ context: 'library.edit-card.discard-title', message: 'Discard unsaved changes?' })} />}</AlertDialog.Title>
-            <AlertDialog.Description className="mt-2 text-sm leading-6 text-[var(--sf-text-muted)]">
-              {confirmation === 'delete' ? <><Trans {...msg({ context: 'library.delete.description', message: 'This will permanently remove {word} from your library.' })} values={{ word: openedCard.word }} /> {dirty && <Trans {...msg({ context: 'library.edit-card.discard-description', message: 'Your remaining draft will be removed.' })} />}</> : <Trans {...msg({ context: 'library.edit-card.discard-description', message: 'Your remaining draft will be removed.' })} />}
-            </AlertDialog.Description>
-            {confirmation === 'delete' && deleteStatus === 'failure' && <p role="alert" className="mt-3 text-sm font-semibold text-[var(--sf-danger)]"><Trans {...msg({ context: 'library.edit-card.delete-failed', message: 'This card could not be deleted. Try again.' })} /></p>}
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <AlertDialog.Overlay className="library-dialog-overlay library-dialog-overlay--danger edit-sheet-confirm-overlay" />
+          <AlertDialog.Content className="library-dialog-frame library-dialog-frame--danger edit-sheet-confirm">
+            <div className="library-dialog-header">
+              <div className="library-dialog-heading-with-icon">
+                <span className="library-dialog-danger-icon" aria-hidden="true">{confirmation === 'delete' ? <Trash2 size={22} /> : <AlertTriangle size={22} />}</span>
+                <div>
+                  <AlertDialog.Title className="library-dialog-title">{confirmation === 'delete' ? <Trans {...msg({ context: 'library.delete.title', message: 'Delete card?' })} /> : <Trans {...msg({ context: 'library.edit-card.discard-title', message: 'Discard unsaved changes?' })} />}</AlertDialog.Title>
+                </div>
+              </div>
+            </div>
+            <div className="library-dialog-body">
+              <AlertDialog.Description className="library-dialog-description library-dialog-description--body">
+                {confirmation === 'delete' ? <><Trans {...msg({ context: 'library.delete.description', message: 'This will permanently remove {word} from your library.' })} values={{ word: openedCard.word }} /> {dirty && <Trans {...msg({ context: 'library.edit-card.discard-description', message: 'Your remaining draft will be removed.' })} />}</> : <Trans {...msg({ context: 'library.edit-card.discard-description', message: 'Your remaining draft will be removed.' })} />}
+              </AlertDialog.Description>
+              {confirmation === 'delete' && deleteStatus === 'failure' && <p role="alert" className="library-dialog-error"><Trans {...msg({ context: 'library.edit-card.delete-failed', message: 'This card could not be deleted. Try again.' })} /></p>}
+            </div>
+            <div className="library-dialog-footer">
+              <span aria-hidden="true" />
               <AlertDialog.Cancel asChild>
-                <button type="button" disabled={deleting} className={secondaryButtonClass}>{confirmation === 'delete' ? <Trans {...msg({ context: 'common.cancel', message: 'Cancel' })} /> : <Trans {...msg({ context: 'library.edit-card.keep-editing', message: 'Keep editing' })} />}</button>
+                <button type="button" disabled={deleting} className="library-dialog-button library-dialog-button--secondary">{confirmation === 'delete' ? <Trans {...msg({ context: 'common.cancel', message: 'Cancel' })} /> : <Trans {...msg({ context: 'library.edit-card.keep-editing', message: 'Keep editing' })} />}</button>
               </AlertDialog.Cancel>
-              <button type="button" data-edit-delete-confirm={confirmation === 'delete' || undefined} onClick={confirmation === 'delete' ? deleteCard : () => closeSheet(true)} disabled={deleting} className={dangerButtonClass}>
+              <button type="button" data-edit-delete-confirm={confirmation === 'delete' || undefined} onClick={confirmation === 'delete' ? deleteCard : () => closeSheet(true)} disabled={deleting} aria-busy={deleting} className="library-dialog-button library-dialog-button--danger">
                 {deleting && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
                 <span>{confirmation === 'delete' ? deleting ? <Trans {...msg({ context: 'library.edit-card.deleting', message: 'Deleting card…' })} /> : deleteStatus === 'failure' ? <Trans {...msg({ context: 'library.edit-card.retry-delete', message: 'Retry delete' })} /> : <Trans {...msg({ context: 'library.delete.confirm', message: 'Delete card' })} /> : <Trans {...msg({ context: 'library.edit-card.discard-confirm', message: 'Discard changes' })} />}</span>
               </button>

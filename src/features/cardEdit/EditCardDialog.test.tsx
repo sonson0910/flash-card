@@ -446,11 +446,20 @@ describe('EditCardDialog', () => {
     expect(rendered).toContain('library.edit-card.save-resume');
   });
 
-  it('keeps the compact draft preview for the mobile sheet while desktop uses the canvas preview backdrop', () => {
+  it('keeps the compact draft preview for the mobile sheet while a paused review shows the canvas preview backdrop', () => {
+    const review = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), context: { kind: 'review', current: 8, total: 20 } });
+
+    expect(findByProp(review.tree, 'data-edit-preview')?.props.className).toContain('md:hidden');
+    expect(findByProp(review.tree, 'data-edit-preview-backdrop')).not.toBeNull();
+    expect(findByProp(review.tree, 'data-card-edit-sheet')?.props.className).toContain('edit-sheet--review');
+  });
+
+  it('edits a library card in a centred dialog without the review preview backdrop', () => {
     const view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
 
     expect(findByProp(view.tree, 'data-edit-preview')?.props.className).toContain('md:hidden');
-    expect(findByProp(view.tree, 'data-edit-preview-backdrop')).not.toBeNull();
+    expect(findByProp(view.tree, 'data-edit-preview-backdrop')).toBeNull();
+    expect(findByProp(view.tree, 'data-card-edit-sheet')?.props.className).toContain('edit-sheet--dialog');
   });
 
   it('omits the captured-source note for a card with no source metadata', () => {
