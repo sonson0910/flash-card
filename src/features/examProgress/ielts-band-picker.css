@@ -18,6 +18,6 @@
 /* Crystal Star chips. */
 :root[data-theme-family="crystal"] .ielts-band-picker__legend { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; }
 :root[data-theme-family="crystal"] .ielts-band-picker__value { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
-:root[data-theme-family="crystal"] .ielts-band-picker__input:checked + .ielts-band-picker__value { background: linear-gradient(180deg, #e0173f, #a30c2d); box-shadow: none; color: #fff; }
+:root[data-theme-family="crystal"] .ielts-band-picker__input:checked + .ielts-band-picker__value { background: linear-gradient(180deg, #e0173f, #a30c2d); box-shadow: none; color: var(--sf-on-primary); }
 /* The chamfer clips an outside outline, so the Crystal focus ring sits inside the chip. */
 :root[data-theme-family="crystal"] .ielts-band-picker__input:focus-visible + .ielts-band-picker__value { outline: 2px solid var(--sf-text); outline-offset: -4px; }
