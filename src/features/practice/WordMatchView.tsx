@@ -1,4 +1,4 @@
-import { Flame, RotateCcw, Timer, Trophy, X, Zap } from 'lucide-react';
+import { Check, Flame, RotateCcw, Timer, Trophy, Zap } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -8,7 +8,9 @@ import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
 import { useFocusModePreference } from '../settings/focus-mode-preference';
+import { PracticeTopBar } from './practice-board-parts';
 import { createWordMatchRound } from './practiceModel';
+import './practice-board.css';
 
 interface WordMatchViewProps {
   cards: CardData[];
@@ -32,8 +34,11 @@ interface MatchTile {
 
 const GAME_DURATION_SECONDS = 60;
 const PAIRS_PER_ROUND = 6;
-const retryActionClass = 'mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
-const secondaryActionClass = 'flex min-h-12 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
+/** Radius of the countdown ring inside its 220-unit box. */
+const TIMER_RADIUS = 100;
+const retryActionClass = 'practice-secondary practice-match__retry crystal-chamfer-sm min-h-11 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
+const primaryActionClass = 'practice-primary crystal-chamfer-sm min-h-12 transition-colors disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
+const secondaryActionClass = 'practice-secondary crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
 
 function shuffleArray<T>(items: T[]): T[] {
   const arr = [...items];
@@ -251,97 +256,129 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
     const isMismatched = mismatchedIds.has(tile.id);
     const language = tile.type === 'word' ? targetLanguage : nativeLanguage;
 
+    // A matched pair stays in its place, dimmed, so the board does not reshuffle under the learner.
     if (isMatched) {
-      return <div key={tile.id} className="flex min-h-15 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-500/5 px-4 py-3 opacity-35 pointer-events-none scale-[.98] transition-transform motion-reduce:transition-none sm:min-h-16 sm:rounded-2xl">
-        <span lang={language} className="text-sm font-semibold text-emerald-600 line-through">{tile.text}</span>
-      </div>;
+      return (
+        <div key={tile.id} className="practice-match__tile crystal-chamfer" data-kind={tile.type} data-state="matched">
+          <span lang={language} className="practice-match__text">{tile.text}</span>
+          <span className="practice-match__tag">
+            <Check size={15} aria-hidden="true" />
+            <span className="sr-only"><Trans {...msg({ context: 'practice.match.matched', message: 'Matched' })} /></span>
+          </span>
+        </div>
+      );
     }
 
-    return <button key={tile.id} type="button" onClick={() => handleTileClick(tile)} lang={language}
-      className={`flex min-h-15 items-center justify-between rounded-xl border surface-glass px-4 py-3 text-left text-base font-semibold shadow-[var(--sf-panel-shadow)] transition-[border-color,background-color,box-shadow,transform] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none sm:min-h-16 sm:rounded-2xl sm:text-lg ${
-        isMismatched
-          ? 'border-rose-400 bg-rose-500/20 text-rose-600 dark:text-rose-300 motion-safe:animate-shake'
-          : isSelected
-            ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_14%,var(--sf-surface))] text-[var(--sf-brand-text)] ring-2 ring-[color-mix(in_srgb,var(--sf-brand)_35%,transparent)]'
-            : 'border-[var(--sf-border)] text-[var(--sf-text)] hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)]'
-      }`}
-    >
-      <span className="break-words leading-snug">{tile.text}</span>
-    </button>;
+    const state = isMismatched ? 'wrong' : isSelected ? 'selected' : 'idle';
+    return (
+      <button
+        key={tile.id}
+        type="button"
+        onClick={() => handleTileClick(tile)}
+        lang={language}
+        aria-pressed={isSelected}
+        data-kind={tile.type}
+        data-state={state}
+        className={`practice-match__tile crystal-chamfer transition-[border-color,background-color,box-shadow,transform] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${
+          isMismatched ? 'motion-safe:animate-shake' : isSelected ? 'ring-2' : ''
+        }`}
+      >
+        <span className="practice-match__text">{tile.text}</span>
+        {state !== 'idle' && (
+          <span className="practice-match__tag" aria-hidden="true">
+            {isMismatched
+              ? <Trans {...msg({ context: 'practice.match.not-a-pair', message: 'Not a pair' })} />
+              : <Trans {...msg({ context: 'practice.match.selected', message: 'Selected' })} />}
+          </span>
+        )}
+      </button>
+    );
   };
 
+  const minutes = Math.floor(timeLeft / 60);
+  const clock = `${minutes}:${String(timeLeft % 60).padStart(2, '0')}`;
+  const timeFraction = Math.max(0, Math.min(1, timeLeft / GAME_DURATION_SECONDS));
+  const ringLength = 2 * Math.PI * TIMER_RADIUS;
+
   return (
-    <div className="practice-board practice-board--match mx-auto flex h-full max-w-6xl flex-col px-1 py-3 sm:px-4 sm:py-6">
-      <div className="mb-5 flex w-full items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={completionStatus === 'verifying'}
-          className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
-          aria-label={_(msg({ id: 'practice.match.close', message: 'Close word match' }))}
-        >
-          <X size={24} />
-        </button>
-
-        <p className="hidden min-w-0 flex-1 truncate font-display text-xs font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)] sm:block">
-          <Trans {...msg({ context: 'practice.match.title', message: 'Word match · 60 seconds' })} />
-        </p>
-        {!focusModeEnabled && matchesCount >= 2 && <span data-practice-combo={matchesCount} className="rounded-full border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1.5 text-xs font-black text-[var(--sf-brand-text)]"><Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: matchesCount }} /></span>}
-        <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--sf-brand)_28%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] px-3 py-2 text-xs font-black text-[var(--sf-brand-text)]">
-          <Flame size={15} className="text-amber-500" />
-          <span>{matchesCount} / {pairCount}</span>
-        </div>
-      </div>
-
-      <div className="mb-5 text-center sm:hidden">
-        <h2 className="font-display text-lg font-black uppercase tracking-[.12em] text-[var(--sf-text)]">
-          <Trans {...msg({ context: 'practice.match.title', message: 'Word match · 60 seconds' })} />
-        </h2>
-      </div>
+    <div className="practice-board practice-board--match practice-stage" data-practice-mode="match">
+      <PracticeTopBar
+        closeLabel={<Trans {...msg({ context: 'practice.match.close', message: 'Close word match' })} />}
+        closeAriaLabel={_(msg({ id: 'practice.match.close', message: 'Close word match' }))}
+        closeDisabled={completionStatus === 'verifying'}
+        onClose={onClose}
+        mode={<Trans {...msg({ context: 'practice.match.mode', message: 'Word match' })} />}
+        detail={<Trans {...msg({ context: 'practice.match.mode-detail', message: '60-second run' })} />}
+      />
 
       {!isGameOver && !isVictory ? (
         <>
-          <div className="grid w-full items-center gap-5 sm:grid-cols-[minmax(0,1fr)_11rem_minmax(0,1fr)] sm:gap-10">
-            <div className="grid gap-2.5 sm:gap-3">{tiles.filter(tile => tile.type === 'word').map(renderTile)}</div>
-            <div className="order-first mx-auto flex size-32 flex-col items-center justify-center rounded-full border-4 border-[color-mix(in_srgb,var(--sf-brand)_32%,var(--sf-border))] surface-glass text-center shadow-[var(--sf-panel-shadow)] sm:order-none sm:size-40">
-              <Timer size={18} className="mb-1 text-[var(--sf-brand-text)]" aria-hidden="true" />
-              <span className={`font-mono text-4xl font-black tabular-nums ${timeLeft <= 10 ? 'text-rose-500 motion-safe:animate-pulse' : 'text-[var(--sf-brand-text)]'}`}><Trans {...msg({ context: 'practice.match.seconds', message: '{seconds}s' })} values={{ seconds: timeLeft }} /></span>
-              <span className="mt-1 text-[10px] font-black uppercase tracking-[.14em] text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'practice.match.pairs', message: 'Pairs' })} /></span>
-              <span className="text-sm font-black text-[var(--sf-text)]">{matchesCount} / {pairCount}</span>
+          <div className="practice-match">
+            <div className="practice-match__column" role="group" aria-label={targetLanguageName}>
+              {tiles.filter(tile => tile.type === 'word').map(renderTile)}
             </div>
-            <div className="grid gap-2.5 sm:gap-3">{tiles.filter(tile => tile.type === 'translation').map(renderTile)}</div>
+            <div className="practice-match__center">
+              <div className="practice-match__timer" data-low={timeLeft <= 10 || undefined} role="timer" aria-label={_({ ...msg({ id: 'practice.match.seconds-left', message: '{seconds, plural, one {# second left} other {# seconds left}}' }), values: { seconds: timeLeft } })}>
+                <svg viewBox="0 0 220 220" aria-hidden="true">
+                  <circle className="practice-match__ring-track" cx="110" cy="110" r={TIMER_RADIUS} />
+                  <circle
+                    className="practice-match__ring"
+                    cx="110"
+                    cy="110"
+                    r={TIMER_RADIUS}
+                    strokeDasharray={`${ringLength * timeFraction} ${ringLength}`}
+                    transform="rotate(-90 110 110)"
+                  />
+                </svg>
+                <span className="practice-match__clock" aria-hidden="true">{clock}</span>
+                <span className="practice-match__clock-label" aria-hidden="true"><Trans {...msg({ context: 'practice.match.left', message: 'left' })} /></span>
+              </div>
+              <p className="practice-match__pairs">
+                <span className="practice-match__pairs-count">{matchesCount} / {pairCount}</span>
+                <span className="practice-match__pairs-label"><Trans {...msg({ context: 'practice.match.pairs-matched', message: 'pairs matched' })} /></span>
+              </p>
+              {!focusModeEnabled && matchesCount >= 2 && (
+                <span data-practice-combo={matchesCount} className="practice-match__combo crystal-chamfer-sm">
+                  <Flame size={14} aria-hidden="true" />
+                  <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: matchesCount }} />
+                </span>
+              )}
+            </div>
+            <div className="practice-match__column" role="group" aria-label={nativeLanguageName}>
+              {tiles.filter(tile => tile.type === 'translation').map(renderTile)}
+            </div>
           </div>
-          <p className="mt-5 text-center text-xs text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'practice.match.instruction', message: 'Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}.' })} values={{ targetLanguageName, nativeLanguageName }} /></p>
+          <p className="practice-match__hint"><Trans {...msg({ context: 'practice.match.instruction', message: 'Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}.' })} values={{ targetLanguageName, nativeLanguageName }} /></p>
         </>
       ) : isVictory ? (
-        <div className="mx-auto w-full max-w-xl rounded-[28px] border border-emerald-400/40 surface-glass p-6 text-center shadow-[var(--sf-panel-shadow)] sm:p-8 crystal-chamfer">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-lg shadow-[var(--sf-shadow)]">
-            <Trophy size={32} />
+        <div className="practice-results practice-match__result crystal-chamfer surface-glass" data-outcome="complete">
+          <div className="practice-match__result-icon crystal-chamfer-sm">
+            <Trophy size={30} aria-hidden="true" />
           </div>
-          <h3 className="mt-4 text-2xl font-black text-[var(--sf-text)]">
+          <h3 className="practice-match__result-title">
             <Trans {...msg({ context: 'practice.match.complete-title', message: 'Pairs complete' })} />
           </h3>
-          <p className="mt-1 text-sm text-[var(--sf-text-muted)]">
+          <p className="practice-match__result-copy">
             <Trans {...msg({ context: 'practice.match.complete-copy', message: 'You matched all {pairCount} pairs in {seconds} seconds.' })} values={{ pairCount, seconds: GAME_DURATION_SECONDS - timeLeft }} />
           </p>
 
           {completionStatus === 'verifying' && (
-            <p className="mt-6 text-sm font-bold text-[var(--sf-text-muted)]" role="status">
+            <p className="practice-match__status" role="status">
               <Trans {...msg({ context: 'practice.match.verifying-reward', message: 'Verifying your result…' })} />
             </p>
           )}
           {completionStatus === 'confirmed' && (
-            <div className="mt-6 inline-flex items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-2.5 text-sm font-black text-amber-600 dark:text-amber-300">
-              <Zap size={18} className="text-amber-500" />
+            <p className="practice-match__reward crystal-chamfer-sm">
+              <Zap size={17} aria-hidden="true" />
               <span>{awardedXp > 0
                 ? <Trans {...msg({ context: 'practice.match.verified-xp', message: 'Verified +{awardedXp} XP' })} values={{ awardedXp }} />
                 : <Trans {...msg({ context: 'practice.match.verified-no-xp', message: 'Result verified' })} />}
               </span>
-            </div>
+            </p>
           )}
           {completionStatus === 'failed' && (
-            <div className="mt-6">
-              <p className="text-sm font-bold text-rose-600 dark:text-rose-300" role="alert">
+            <div className="practice-match__status">
+              <p className="practice-match__alert" role="alert">
                 <Trans {...msg({ context: 'practice.match.verification-failed', message: 'We could not verify your result. Your completed pairs are still here.' })} />
               </p>
               <button
@@ -354,13 +391,13 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
             </div>
           )}
           {completionStatus === 'unavailable' && (
-            <p className="mt-6 text-sm font-bold text-[var(--sf-text-muted)]" role="status">
+            <p className="practice-match__status" role="status">
               <Trans {...msg({ context: 'practice.match.no-reward', message: 'This round did not award XP.' })} />
             </p>
           )}
           {completionStatus === 'new-round-failed' && (
-            <div className="mt-6">
-              <p className="text-sm font-bold text-rose-600 dark:text-rose-300" role="alert">
+            <div className="practice-match__status">
+              <p className="practice-match__alert" role="alert">
                 <Trans {...msg({ context: 'practice.match.new-round-failed', message: 'We could not start a new verified round. Check your connection and try again.' })} />
               </p>
               <button
@@ -373,14 +410,14 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
             </div>
           )}
 
-          <div className="mt-8 flex justify-center gap-3">
+          <div className="practice-match__result-actions">
             <button
               type="button"
               onClick={() => void restartGame()}
               disabled={isStartingNewRound || completionStatus === 'verifying'}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] disabled:cursor-wait disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              className={primaryActionClass}
             >
-              <RotateCcw size={16} />
+              <RotateCcw size={16} aria-hidden="true" />
               <span>{isStartingNewRound
                 ? <Trans {...msg({ context: 'practice.match.starting-new-round', message: 'Starting new round…' })} />
                 : <Trans {...msg({ context: 'practice.match.new-round', message: 'New round' })} />}
@@ -397,24 +434,24 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
           </div>
         </div>
       ) : (
-        <div className="mx-auto w-full max-w-xl rounded-[28px] border border-rose-400/30 surface-glass p-6 text-center shadow-[var(--sf-panel-shadow)] sm:p-8 crystal-chamfer">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-rose-500/15 text-rose-500">
-            <Timer size={32} />
+        <div className="practice-results practice-match__result crystal-chamfer surface-glass" data-outcome="time-up">
+          <div className="practice-match__result-icon crystal-chamfer-sm">
+            <Timer size={30} aria-hidden="true" />
           </div>
-          <h3 className="mt-4 text-2xl font-black text-[var(--sf-text)]">
+          <h3 className="practice-match__result-title">
             <Trans {...msg({ context: 'practice.match.time-up', message: 'Time is up' })} />
           </h3>
-          <p className="mt-1 text-sm text-[var(--sf-text-muted)]">
+          <p className="practice-match__result-copy">
             <Trans {...msg({ context: 'practice.match.time-up-copy', message: 'You matched {matchesCount} of {pairCount} pairs.' })} values={{ matchesCount, pairCount }} />
           </p>
 
-          <div className="mt-8 flex justify-center gap-3">
+          <div className="practice-match__result-actions">
             <button
               type="button"
               onClick={() => void restartGame()}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              className={primaryActionClass}
             >
-              <RotateCcw size={16} />
+              <RotateCcw size={16} aria-hidden="true" />
               <span><Trans {...msg({ context: 'practice.match.try-again', message: 'Try again' })} /></span>
             </button>
             <button

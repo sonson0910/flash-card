@@ -28,10 +28,21 @@ describe('WordMatchView', () => {
     expect(html).toContain('Word match');
     expect(html).toContain('serendipity');
     expect(html).toContain('sự may mắn tình cờ');
-    expect(html).toContain('60s');
+    expect(html).toContain('1:00');
+    expect(html).toContain('role="timer"');
     expect(html).toContain('lang="en"');
     expect(html).toContain('lang="vi"');
     expect(html).not.toContain('data-practice-combo');
+  });
+
+  it('starts every tile unmatched beside a full countdown ring', () => {
+    const html = render(sampleCards);
+
+    expect(html.match(/data-state="idle"/g)).toHaveLength(12);
+    expect(html).not.toContain('data-state="matched"');
+    expect(html.match(/aria-pressed="false" data-kind=/g)).toHaveLength(12);
+    expect(html).toContain('aria-label="60 seconds left"');
+    expect(html).toContain('pairs matched');
   });
 
   it('renders empty when no cards match', () => {

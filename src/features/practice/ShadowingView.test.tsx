@@ -47,6 +47,7 @@ describe('ShadowingView', () => {
     expect(html).toContain('aria-valuemax="8"');
     expect(html).toContain('aria-valuenow="1"');
     expect(html.match(/<i(?=[ >])/g)).toHaveLength(8);
-    expect(html).toContain('data-complete="true"');
+    expect(html).toContain('data-state="current"');
+    expect(html.match(/data-state="pending"/g)).toHaveLength(7);
   });
 });

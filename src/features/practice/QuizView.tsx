@@ -1,20 +1,19 @@
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react";
-import {
-  CheckCircle2,
-  ChevronRight,
-  Trophy,
-  X,
-  XCircle,
-} from "lucide-react";
-import { useEffect, useRef } from "react";
+import { ArrowRight, Check, Trophy, X, Zap } from "lucide-react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { headwordStressParts } from "../../components/flashcard/CardHeadword";
 import { GsapEntrance } from "../../components/motion/GsapEntrance";
 import { Lumi } from "../../components/lumi/Lumi";
-import { readLumiEnabled } from "../settings/lumi-preference";
-import { useFocusModePreference } from "../settings/focus-mode-preference";
-import { useTheme } from "../theme/ThemeProvider";
 import { isSupportedImageUrl } from "../../lib/images";
+import { parseSyllables } from "../../lib/syllableParser";
+import type { CardData } from "../../types/card";
+import { getLibraryCardTier } from "../library/libraryViewModel";
+import { useFocusModePreference } from "../settings/focus-mode-preference";
+import { EnterKeyHint, LumiCoach, PracticeCount, PracticeTopBar, practiceSegments, useCrystalLumi } from "./practice-board-parts";
 import { isQuizAnswerCorrect, type QuizQuestion } from "./practiceModel";
+import { moveFocus } from "./practice-focus";
+import "./practice-board.css";
 
 interface QuizViewProps {
   questions: QuizQuestion[];
@@ -22,6 +21,8 @@ interface QuizViewProps {
   selectedAnswer: string | null;
   answeredCorrectly: boolean | null;
   score: number;
+  /** Real per-question results so far, indexed like `questions`. */
+  outcomes?: readonly boolean[];
   showResults: boolean;
   savingResult?: boolean;
   onSelect: (answer: string) => void;
@@ -41,12 +42,64 @@ export function languageName(language: string, locale: string) {
   }
 }
 
+/** Times the learner has reviewed a card, from whichever review record the card carries. */
+export function cardReviewCount(card: CardData) {
+  return card.reviews ?? card.reviewHistory?.length ?? card.fsrs?.reps ?? 0;
+}
+
+/** Splits an example sentence around the first whole-word use of `word`. */
+export function splitExample(sentence: string, word: string) {
+  const target = word.trim();
+  if (!target) return null;
+  const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`(^|[^\\p{L}\\p{N}])(${escaped})(?=$|[^\\p{L}\\p{N}])`, "iu").exec(sentence);
+  if (!match) return null;
+  const start = match.index + match[1].length;
+  return { before: sentence.slice(0, start), match: match[2], after: sentence.slice(start + match[2].length) };
+}
+
+/** The prompt headword with the board's accent: the stressed syllable, or the last word of a phrase. */
+export function PromptWord({ card, text }: { card: CardData; text: string }) {
+  const stress = text === card.word ? headwordStressParts(card) : null;
+  if (stress) return <>{stress.stressed}<em>{stress.rest}</em></>;
+  const words = text.trim().split(/\s+/);
+  if (words.length > 1) return <>{words.slice(0, -1).join(" ")} <em>{words[words.length - 1]}</em></>;
+  return <>{text}</>;
+}
+
+function TierLine({ card }: { card: CardData }) {
+  const tier = getLibraryCardTier(card);
+  const seen = cardReviewCount(card);
+  return (
+    <p className="practice-prompt__state" data-tier={tier}>
+      <span aria-hidden="true" className="practice-prompt__dot" />
+      {tier === "new" ? (
+        <Trans {...msg({ context: "practice.card-state.new", message: "New word" })} />
+      ) : tier === "mastered" ? (
+        <Trans {...msg({ context: "practice.card-state.mastered", message: "Mastered" })} />
+      ) : (
+        <Trans {...msg({ context: "practice.card-state.learning", message: "Learning" })} />
+      )}
+      {seen > 0 && (
+        <>
+          {" · "}
+          <Trans
+            {...msg({ context: "practice.card-state.seen", message: "{count, plural, one {seen # time} other {seen # times}}" })}
+            values={{ count: seen }}
+          />
+        </>
+      )}
+    </p>
+  );
+}
+
 export function QuizView({
   questions,
   currentIndex,
   selectedAnswer,
   answeredCorrectly,
   score,
+  outcomes,
   showResults,
   savingResult = false,
   onSelect,
@@ -59,8 +112,8 @@ export function QuizView({
   const _ = (
     descriptor: ReturnType<typeof msg>,
     values?: Record<string, unknown>,
-  ) => i18n._(descriptor.id, values);
-  const showLumi = useTheme().family === "crystal" && readLumiEnabled();
+  ) => i18n._(descriptor.id, values, { message: descriptor.message });
+  const showLumi = useCrystalLumi();
   const { focusModeEnabled } = useFocusModePreference();
   const answeredCount = currentIndex + (selectedAnswer === null ? 0 : 1);
   const question = questions[currentIndex];
@@ -71,11 +124,32 @@ export function QuizView({
   useEffect(() => {
     const returnedFromResults = previousShowResultsRef.current && !showResults;
     previousShowResultsRef.current = showResults;
-    if (showResults) return void resultsHeadingRef.current?.focus();
-    if (selectedAnswer !== null) return void nextButtonRef.current?.focus();
+    if (showResults) return void moveFocus(resultsHeadingRef.current);
+    if (selectedAnswer !== null) return void moveFocus(nextButtonRef.current);
     if (currentIndex > 0 || returnedFromResults)
-      questionHeadingRef.current?.focus();
+      moveFocus(questionHeadingRef.current);
   }, [currentIndex, selectedAnswer, showResults]);
+  useEffect(() => {
+    if (showResults || !question) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest?.("input, textarea, select, [contenteditable='true'], [role='dialog']")) return;
+      if (selectedAnswer === null) {
+        const option = /^[1-9]$/.test(event.key) ? question.options[Number(event.key) - 1] : undefined;
+        if (option === undefined) return;
+        event.preventDefault();
+        onSelect(option);
+        return;
+      }
+      if (event.key === "Enter" && !target?.closest?.("button, a")) {
+        event.preventDefault();
+        if (!savingResult) onNext();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onNext, onSelect, question, savingResult, selectedAnswer, showResults]);
   if (!question && !showResults) return null;
   const accuracy = questions.length
     ? Math.round((score / questions.length) * 100)
@@ -85,10 +159,12 @@ export function QuizView({
   const locale = i18n.locale || "en";
   const targetLanguageName = languageName(targetLanguage, locale);
   const nativeLanguageName = languageName(nativeLanguage, locale);
-  const answerLanguage =
-    question?.type === "target-to-native" ? nativeLanguage : targetLanguage;
+  const targetToNative = question?.type === "target-to-native";
+  const answerLanguage = targetToNative ? nativeLanguage : targetLanguage;
+  const promptLanguage = targetToNative ? targetLanguage : nativeLanguage;
+  const answered = selectedAnswer !== null;
   const questionPrompt =
-    question?.type === "target-to-native" ? (
+    targetToNative ? (
       <Trans
         {...msg({ id: 'practice.quiz.target-to-native-question', message: 'What does {word} mean in {nativeLanguageName}?' })}
         values={{
@@ -109,18 +185,36 @@ export function QuizView({
         }}
       />
     );
+  let streak = 0;
+  if (outcomes) for (let index = answeredCount - 1; index >= 0 && outcomes[index] === true; index -= 1) streak += 1;
+  const segments = practiceSegments(questions.length, answeredCount, outcomes);
+  const card = question?.card;
+  const example = card?.exampleSentence?.trim() ? card.exampleSentence.trim() : "";
+  const exampleParts = card && example ? splitExample(example, card.word) : null;
+  const syllables = card && targetLanguage === "en" ? parseSyllables(card.word, card.phonetic) : null;
+  const explanationWord = syllables?.hasMultipleSyllables ? syllables.syllables.map(part => part.text).join("·") : card?.word;
+  const hasExplanation = Boolean(card && (card.explanation?.trim() || card.phonetic?.trim()));
+  const meta = [card?.partOfSpeech?.trim(), targetLanguage === "en" ? card?.phonetic?.trim() : ""].filter(Boolean) as string[];
+  let coach: { pose: "thinking" | "happy" | "oops"; heading: ReactNode; body?: ReactNode } | null = null;
+  if (showLumi && card) {
+    coach = !answered
+      ? { pose: "thinking", heading: <Trans {...msg({ context: "practice.quiz.lumi.ask", message: "Which one fits?" })} /> }
+      : answeredCorrectly
+        ? { pose: "happy", heading: <Trans {...msg({ context: "practice.quiz.lumi.right", message: "That's it!" })} />, body: <><span lang={targetLanguage}>{card.word}</span> = <span lang={nativeLanguage}>{card.translation}</span></> }
+        : { pose: "oops", heading: <Trans {...msg({ context: "practice.quiz.lumi.almost", message: "Almost!" })} />, body: <><span lang={targetLanguage}>{card.word}</span> = <span lang={nativeLanguage}>{card.translation}</span></> };
+  }
   return (
-    <div className="practice-board practice-board--quiz mx-auto flex max-w-6xl flex-col items-center py-4 sm:py-8">
+    <div className="practice-board practice-board--quiz practice-stage" data-practice-mode="quiz">
       {showResults ? (
         <GsapEntrance
           animationKey="quiz-results"
           variant="result"
-          className="crystal-chamfer w-full max-w-2xl rounded-[28px] border border-[var(--sf-border)] surface-glass p-6 text-center text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] sm:p-8"
+          className="practice-results crystal-chamfer surface-glass"
           aria-labelledby="quiz-results-heading"
         >
           <div
             data-color-role="reward"
-            className="relative mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-amber-100 text-[var(--sf-reward)] dark:bg-amber-950/30"
+            className="practice-results__medal"
             aria-hidden="true"
           >
             <Trophy size={44} />
@@ -130,36 +224,36 @@ export function QuizView({
             id="quiz-results-heading"
             ref={resultsHeadingRef}
             tabIndex={-1}
-            className="mb-2 text-balance text-3xl font-black tracking-tight focus-visible:outline-2"
+            className="practice-results__title focus-visible:outline-2"
           >
             <Trans {...msg({ context: 'practice.quiz.complete', message: 'Quiz complete' })} />
           </h2>
-          <p className="mb-6 text-pretty text-sm font-medium text-[var(--sf-text-muted)]">
+          <p className="practice-results__subtitle">
             <Trans
               {...msg({ context: 'practice.quiz.results-subtitle', message: 'Your vocabulary review results' })}
             />
           </p>
-          <div className="mx-auto mb-8 grid max-w-sm grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4">
-              <span className="block text-xs font-bold text-[var(--sf-text-muted)]">
+          <div className="practice-results__stats">
+            <div>
+              <span>
                 <Trans
                   {...msg({ context: 'practice.results.correct-answers', message: 'Correct answers' })}
                 />
               </span>
-              <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
+              <b data-tone="good">
                 {score} / {questions.length}
-              </span>
+              </b>
             </div>
-            <div className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4">
-              <span className="block text-xs font-bold text-[var(--sf-text-muted)]">
+            <div>
+              <span>
                 <Trans {...msg({ context: 'practice.results.accuracy', message: 'Accuracy' })} />
               </span>
-              <span className="text-3xl font-black text-[var(--sf-brand-text)]">
+              <b data-tone="brand">
                 {accuracy}%
-              </span>
+              </b>
             </div>
           </div>
-          <div className="mx-auto mb-8 max-w-md rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-sm font-medium text-[var(--sf-text-muted)]">
+          <p className="practice-results__note">
             {score === questions.length ? (
               <Trans
                 {...msg({ context: 'practice.results.perfect', message: 'Perfect. You answered every question correctly.' })}
@@ -173,20 +267,20 @@ export function QuizView({
                 {...msg({ context: 'practice.results.keep-practising', message: 'Keep practising until the difficult words feel automatic.' })}
               />
             )}
-          </div>
-          <div className="flex flex-wrap justify-center gap-3">
+          </p>
+          <div className="practice-results__actions">
             <button
               data-color-role="primary"
               type="button"
               onClick={onRestart}
-              className="brand-action crystal-chamfer min-h-12 rounded-xl bg-[var(--sf-brand)] px-6 py-3 font-bold text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 motion-reduce:transition-none"
+              className="practice-primary crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
               <Trans {...msg({ context: 'practice.actions.try-again', message: 'Try again' })} />
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="crystal-chamfer min-h-12 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 py-3 font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none"
+              className="practice-secondary crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
               <Trans
                 {...msg({ context: 'practice.actions.back-to-library', message: 'Back to library' })}
@@ -194,115 +288,140 @@ export function QuizView({
             </button>
           </div>
         </GsapEntrance>
-      ) : question ? (
-        <div className="w-full">
-          <div className="mb-6 flex items-center justify-between px-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex min-h-11 items-center gap-2 rounded-xl px-2 py-2 text-sm font-bold text-[var(--sf-text-muted)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2"
-            >
-              <X size={18} aria-hidden="true" />
-              <Trans {...msg({ context: 'practice.actions.exit', message: 'Exit' })} />
-            </button>
-            {!focusModeEnabled && answeredCount >= 2 && <span data-practice-combo={answeredCount} className="rounded-full border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1.5 text-xs font-black text-[var(--sf-brand-text)]"><Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} /></span>}
-            <div className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-1.5 text-xs font-bold text-[var(--sf-text)]">
-              <Trans
-                {...msg({ context: 'practice.score', message: 'Score: {score} / {total}' })}
-                values={{ score, total: questions.length }}
-              />
-            </div>
-          </div>
+      ) : question && card ? (
+        <>
+          <PracticeTopBar
+            closeLabel={<Trans {...msg({ context: 'practice.actions.exit', message: 'Exit' })} />}
+            onClose={onClose}
+            mode={<Trans {...msg({ context: 'practice.quiz.mode', message: 'Quiz' })} />}
+            detail={targetLanguageName}
+            progressLabel={_(msg({ id: "practice.quiz.progress", message: "Quiz progress" }))}
+            segments={segments}
+            progressValue={answeredCount}
+            chip={!focusModeEnabled && answeredCount >= 2 ? (
+              <span data-practice-combo={answeredCount} className="practice-chip">
+                <Zap size={14} aria-hidden="true" />
+                <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} />
+              </span>
+            ) : undefined}
+            count={<PracticeCount current={answeredCount} total={questions.length} />}
+          />
+          <p className="sr-only">
+            <Trans
+              {...msg({ context: 'practice.score', message: 'Score: {score} / {total}' })}
+              values={{ score, total: questions.length }}
+            />
+            {streak >= 2 && <>{" "}<Trans {...msg({ context: 'practice.quiz.streak', message: '{count} in a row' })} values={{ count: streak }} /></>}
+          </p>
           <GsapEntrance
             animationKey={currentIndex}
             variant="step"
             onEntered={() => {
               if (currentIndex > 0 && selectedAnswer === null)
-                questionHeadingRef.current?.focus();
+                moveFocus(questionHeadingRef.current);
             }}
-            className="relative mb-6 grid gap-5 text-[var(--sf-text)] lg:grid-cols-[minmax(19rem,.78fr)_minmax(26rem,1.22fr)] lg:items-center lg:gap-8"
+            className="practice-quiz"
+            data-lumi={coach ? "true" : undefined}
             aria-labelledby="quiz-question-heading"
           >
-            <div data-quiz-question-panel className="crystal-chamfer relative flex min-h-64 w-full flex-col justify-end rounded-[28px] border border-[var(--sf-border)] surface-glass p-6 pt-24 shadow-[var(--sf-panel-shadow)] sm:min-h-80 sm:p-8 sm:pt-28">
-              <div className="absolute right-4 top-4 z-10 max-w-40 break-words rounded-xl bg-[var(--sf-brand)] px-2.5 py-1 text-center text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)]">
-                {question.card.category}
+            {coach && (
+              <LumiCoach pose={coach.pose} heading={coach.heading} className="practice-quiz__lumi">
+                {coach.body}
+              </LumiCoach>
+            )}
+            <section data-quiz-question-panel className="practice-prompt crystal-chamfer" aria-label={_(msg({ id: "practice.quiz.prompt-card", message: "Prompt card" }))}>
+              <div className="practice-prompt__top">
+                <p className="practice-prompt__direction">
+                  <span>{targetToNative ? targetLanguageName : nativeLanguageName}</span>
+                  <ArrowRight size={13} aria-hidden="true" />
+                  <span data-accent>{targetToNative ? nativeLanguageName : targetLanguageName}</span>
+                </p>
+                <span className="practice-prompt__badge">{card.category}</span>
               </div>
-              {isSupportedImageUrl(question.card.imageUrl) && (
-                <div className="absolute left-6 top-6 z-10 size-16 overflow-hidden rounded-2xl shadow-md">
-                  <img
-                    src={question.card.imageUrl!}
-                    alt={_(
-                      msg({
-                        id: "practice.quiz.illustration-alt",
-                        message: "Illustration for {word}",
-                      }),
-                      { word: question.card.word },
-                    )}
-                    width={80}
-                    height={80}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              )}
-              <span className="mb-2 block font-display text-xs font-bold uppercase tracking-[.12em] text-[var(--sf-text-muted)]">
-                <Trans
-                  {...msg({ context: 'practice.question-progress', message: 'Question {current} / {total}' })}
-                  values={{
-                    current: currentIndex + 1,
-                    total: questions.length,
-                  }}
+              {isSupportedImageUrl(card.imageUrl) && (
+                <img
+                  src={card.imageUrl!}
+                  alt={_(
+                    msg({
+                      id: "practice.quiz.illustration-alt",
+                      message: "Illustration for {word}",
+                    }),
+                    { word: card.word },
+                  )}
+                  width={80}
+                  height={80}
+                  className="practice-prompt__image"
                 />
-              </span>
+              )}
+              <p className="practice-prompt__word" lang={promptLanguage}>
+                <PromptWord card={card} text={targetToNative ? card.word : card.translation} />
+              </p>
+              {meta.length > 0 && <p className="practice-prompt__meta" lang={targetLanguage}>{meta.join(" · ")}</p>}
+              {example && (
+                <p className="practice-prompt__example" lang={targetLanguage}>
+                  “{exampleParts ? (
+                    <>
+                      {exampleParts.before}
+                      {answered ? <mark>{exampleParts.match}</mark> : <><span className="practice-prompt__blank" aria-hidden="true" /><span className="sr-only">…</span></>}
+                      {exampleParts.after}
+                    </>
+                  ) : example}”
+                </p>
+              )}
+              <div className="practice-prompt__foot">
+                <TierLine card={card} />
+                <span className="practice-prompt__progress">
+                  <Trans
+                    {...msg({ context: 'practice.question-progress', message: 'Question {current} / {total}' })}
+                    values={{
+                      current: currentIndex + 1,
+                      total: questions.length,
+                    }}
+                  />
+                </span>
+              </div>
+            </section>
+            <div className="practice-quiz__answers">
               <h3
                 id="quiz-question-heading"
                 ref={questionHeadingRef}
                 tabIndex={-1}
-                className="text-balance text-2xl font-extrabold leading-tight focus-visible:outline-2 sm:text-4xl"
+                className="practice-quiz__question focus-visible:outline-2 focus-visible:outline-offset-4"
               >
                 {questionPrompt}
               </h3>
-            </div>
-            <p
-              className="sr-only"
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {selectedAnswer !== null &&
-                (answeredCorrectly ? (
-                  <Trans
-                    {...msg({ id: 'practice.feedback.correct', message: 'Correct answer.' })}
-                  />
-                ) : (
-                  <>
+              <p
+                className="sr-only"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {answered &&
+                  (answeredCorrectly ? (
                     <Trans
-                      {...msg({ context: 'practice.feedback.incorrect-prefix', message: 'Incorrect. The correct answer is' })}
-                    />{" "}
-                    <span lang={answerLanguage}>
-                      “{question.correctAnswer}”.
-                    </span>
-                  </>
-                ))}
-            </p>
-{onLearnFirst && <button type="button" onClick={onLearnFirst} className="my-4 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 font-bold"><Trans {...msg({ context: 'practice.learn-first', message: 'I don\'t know this — learn first' })} /></button>}
-            <fieldset className="min-w-0 w-full lg:self-center">
-              <legend className="mb-3 font-display text-xs font-bold uppercase tracking-[.12em] text-[var(--sf-text-muted)]">
-                <Trans
-                  {...msg({ context: 'practice.quiz.choose-answer', message: 'Choose one answer' })}
-                />
-              </legend>
-              <div className="grid grid-cols-1 gap-3">
+                      {...msg({ id: 'practice.feedback.correct', message: 'Correct answer.' })}
+                    />
+                  ) : (
+                    <>
+                      <Trans
+                        {...msg({ context: 'practice.feedback.incorrect-prefix', message: 'Incorrect. The correct answer is' })}
+                      />{" "}
+                      <span lang={answerLanguage}>
+                        “{question.correctAnswer}”.
+                      </span>
+                    </>
+                  ))}
+              </p>
+              <fieldset className="practice-quiz__options">
+                <legend className="sr-only">
+                  <Trans
+                    {...msg({ context: 'practice.quiz.choose-answer', message: 'Choose one answer' })}
+                  />
+                </legend>
                 {question.options.map((option, optionIndex) => {
                   const correct = isQuizAnswerCorrect(question, option);
                   const selected = selectedAnswer === option;
-                  const answered = selectedAnswer !== null;
-                  const style = answered
-                    ? correct
-                      ? "border-emerald-500 bg-emerald-50 font-extrabold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400"
-                      : selected
-                        ? "border-rose-500 bg-rose-50 font-extrabold text-rose-700 dark:bg-rose-950/20 dark:text-rose-400"
-                        : "cursor-not-allowed border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)]"
-                    : "border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text)] hover:border-[var(--sf-brand)]";
+                  const state = !answered ? "idle" : correct ? "correct" : selected ? "wrong" : "dim";
                   return (
                     <button
                       type="button"
@@ -311,99 +430,89 @@ export function QuizView({
                       onClick={() => onSelect(option)}
                       disabled={answered}
                       aria-pressed={selected}
-                      className={`crystal-chamfer flex min-h-[4.75rem] min-w-0 w-full items-center justify-between gap-3 rounded-xl border-2 p-4 text-left text-lg font-semibold capitalize transition-colors focus-visible:outline-2 motion-reduce:transition-none ${style}`}
+                      data-state={state}
+                      className="practice-option crystal-chamfer min-w-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                     >
-                      <span
-                        aria-hidden="true"
-                        className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-current/20 text-xs font-black"
-                      >
+                      <span aria-hidden="true" className="practice-option__key">
                         {optionIndex + 1}
                       </span>
-                      <span className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere]">
+                      <span className="practice-option__text min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere]">
                         {option}
                       </span>
-                      {answered && correct && (
-                        <CheckCircle2
-                          size={16}
-                          className="shrink-0 text-emerald-500"
-                          aria-hidden="true"
-                        />
+                      {state === "wrong" && (
+                        <span className="practice-option__tag" aria-hidden="true">
+                          <Trans {...msg({ context: 'practice.quiz.your-answer', message: 'Your answer' })} />
+                        </span>
+                      )}
+                      {state === "correct" && (
+                        <span className="practice-option__tag" aria-hidden="true">
+                          <Check size={13} strokeWidth={3} />
+                          <Trans {...msg({ context: 'practice.feedback.correct-short', message: 'Correct' })} />
+                        </span>
                       )}
                     </button>
                   );
                 })}
-              </div>
-            </fieldset>
-            {selectedAnswer !== null && (
-              <GsapEntrance
-                animationKey={`${currentIndex}-feedback`}
-                variant="feedback"
-                className="flex w-full flex-col items-center gap-4 border-t border-[var(--sf-border)] pt-5 text-center lg:col-start-2"
-              >
-                <div aria-hidden="true">
-                  {answeredCorrectly ? (
-                    <span className="flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-400">
-                      <CheckCircle2 size={17} />
-                      <Trans
-                        {...msg({ context: 'practice.feedback.correct-short', message: 'Correct' })}
-                      />
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2 text-sm font-bold text-rose-600 dark:text-rose-400">
-                      <XCircle size={17} />
-                      <Trans
-                        {...msg({ context: 'practice.feedback.correct-answer', message: 'The correct answer is' })}
-                      />{" "}
-                      <span
-                        lang={answerLanguage}
-                        className="font-black capitalize underline"
-                      >
-                        “{question.correctAnswer}”
-                      </span>
-                    </span>
-                  )}
-                </div>
-                <button
-                  data-color-role="primary"
-                  ref={nextButtonRef}
-                  type="button"
-                  onClick={onNext}
-                  disabled={savingResult}
-                  aria-busy={savingResult}
-                  className="brand-action crystal-chamfer flex min-h-11 items-center gap-1 rounded-xl bg-[var(--sf-brand)] px-6 py-2.5 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 motion-reduce:transition-none"
-                >
-                  {savingResult ? (
-                    <Trans {...msg({ context: 'practice.actions.saving-result', message: 'Saving result…' })} />
-                  ) : currentIndex === questions.length - 1 ? (
-                    <Trans
-                      {...msg({ context: 'practice.actions.view-results', message: 'View results' })}
-                    />
-                  ) : (
-                    <Trans {...msg({ context: 'practice.actions.next', message: 'Next' })} />
-                  )}{" "}
-                  <ChevronRight size={14} aria-hidden="true" />
+              </fieldset>
+              {!answered && onLearnFirst && (
+                <button type="button" onClick={onLearnFirst} className="practice-link min-h-11 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none">
+                  <Trans {...msg({ context: 'practice.learn-first', message: 'I don\'t know this — learn first' })} />
                 </button>
-              </GsapEntrance>
-            )}
+              )}
+              {answered && hasExplanation && (
+                <div className="practice-explain crystal-chamfer-sm">
+                  <span className="practice-explain__icon" aria-hidden="true" />
+                  <p>
+                    <b lang={targetLanguage}>{explanationWord}</b>
+                    {card.phonetic?.trim() && <> <span className="practice-explain__ipa" lang={targetLanguage}>{card.phonetic.trim()}</span></>}
+                    {card.explanation?.trim() && <> <span lang={targetLanguage}>{card.explanation.trim()}</span></>}
+                  </p>
+                </div>
+              )}
+              {answered && (
+                <GsapEntrance
+                  animationKey={`${currentIndex}-feedback`}
+                  variant="feedback"
+                  className="practice-quiz__continue"
+                  data-quiz-feedback
+                  data-outcome={answeredCorrectly ? "correct" : "wrong"}
+                >
+                  {!answeredCorrectly && (
+                    <div className="practice-sheet__copy" aria-hidden="true">
+                      <p className="practice-sheet__title">
+                        <X size={16} strokeWidth={3} />
+                        <Trans {...msg({ context: 'practice.quiz.not-quite', message: 'Not quite.' })} />
+                      </p>
+                      <p>
+                        <b lang={promptLanguage}>{targetToNative ? card.word : card.translation}</b> = <span lang={answerLanguage}>“{question.correctAnswer}”</span>
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    data-color-role="primary"
+                    ref={nextButtonRef}
+                    type="button"
+                    onClick={onNext}
+                    disabled={savingResult}
+                    aria-busy={savingResult}
+                    className="practice-primary crystal-chamfer-sm min-h-14 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                  >
+                    {savingResult ? (
+                      <Trans {...msg({ context: 'practice.actions.saving-result', message: 'Saving result…' })} />
+                    ) : currentIndex === questions.length - 1 ? (
+                      <Trans
+                        {...msg({ context: 'practice.actions.view-results', message: 'View results' })}
+                      />
+                    ) : (
+                      <Trans {...msg({ context: 'practice.actions.next', message: 'Next' })} />
+                    )}
+                    {!savingResult && <EnterKeyHint />}
+                  </button>
+                </GsapEntrance>
+              )}
+            </div>
           </GsapEntrance>
-          <div
-            className="h-1 w-full overflow-hidden rounded-full bg-[var(--sf-surface-raised)]"
-            role="progressbar"
-            aria-label={_(
-              msg({ id: "practice.quiz.progress", message: "Quiz progress" }),
-            )}
-            aria-valuemin={0}
-            aria-valuemax={questions.length}
-            aria-valuenow={currentIndex + (selectedAnswer !== null ? 1 : 0)}
-          >
-            <div
-              className="h-full w-full origin-left bg-[var(--sf-brand)] transition-transform duration-200 motion-reduce:transition-none"
-              style={{
-                transform: `scaleX(${(currentIndex + (selectedAnswer !== null ? 1 : 0)) / questions.length})`,
-              }}
-            />
-          </div>
-        </div>
+        </>
       ) : null}
     </div>
   );
