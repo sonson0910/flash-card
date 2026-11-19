@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:171
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:174
 msgctxt "weeklyRecap.action.share"
 msgid "Share"
 msgstr "Share"
@@ -23,7 +23,7 @@ msgctxt "weeklyRecap.unavailable"
 msgid "Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don't have yet, so they are left out rather than guessed."
 msgstr "Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don't have yet, so they are left out rather than guessed."
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:168
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:171
 msgctxt "weeklyRecap.export-error"
 msgid "Could not create the image. Please try again."
 msgstr "Could not create the image. Please try again."
@@ -38,7 +38,7 @@ msgctxt "weeklyRecap.reviews-unavailable"
 msgid "Reviews this week are unavailable until activity covers all seven days."
 msgstr "Reviews this week are unavailable until activity covers all seven days."
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:161
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:162
 msgctxt "weeklyRecap.caption.label"
 msgid "Caption"
 msgstr "Caption"
@@ -461,6 +461,16 @@ msgid "weeklyRecap.caption.suggested-xp"
 msgstr "{xp, number} XP this week."
 
 #. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:144
+msgid "weeklyRecap.controls.kicker"
+msgstr "Weekly recap <0/> Ready to share"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:145
+msgid "weeklyRecap.controls.title"
+msgstr "Your week <0>so far.</0>"
+
+#. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapDialog.tsx:147
 msgid "weeklyRecap.dialog.close"
 msgstr "Close"
@@ -480,6 +490,11 @@ msgstr "No study activity yet this week. Come back after a review to see your re
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:67
 msgid "weeklyRecap.heatmap.label"
 msgstr "Daily XP for the last 7 days"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:127
+msgid "weeklyRecap.hero.total-xp"
+msgstr "XP <0>this week</0>"
 
 #. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:60
@@ -508,7 +523,7 @@ msgstr "XP this week"
 
 #. js-lingui-explicit-id
 #: src/features/weeklyRecap/WeeklyRecapScreen.tsx:68
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:138
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:139
 msgid "weeklyRecap.milestones"
 msgstr "{unlocked} of {total} milestones unlocked (all-time)"
 
@@ -567,7 +582,7 @@ msgstr "Reviews this week"
 msgid "weeklyRecap.toggle.total-xp"
 msgstr "Total XP"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:172
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:175
 msgctxt "weeklyRecap.action.download"
 msgid "Download PNG"
 msgstr "Download PNG"

@@ -47,7 +47,7 @@ describe('WeeklyRecapScreen', () => {
   it('renders only the metrics that are toggled on', () => {
     const selection = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'bestDay');
     const html = render(<WeeklyRecapScreen {...baseProps({ selection })} />);
-    expect(html).toContain('XP this week');
+    expect(html).toContain('XP <em>this week</em>');
     // "Best day" still appears once, as the always-visible toggle checkbox label; the metric card itself is gone.
     expect(html.match(/Best day/g)).toHaveLength(1);
   });
@@ -79,7 +79,8 @@ describe('WeeklyRecapScreen', () => {
     const html = render(<WeeklyRecapScreen {...baseProps({ data: data({ totalXp: 0, activeDays: 0, bestDay: null, reviewedCount: 9 }) })} />);
     const [card] = html.split('<section class="weekly-recap-controls"');
     expect(card).toContain('<dd>9</dd>');
-    expect(card).not.toContain('XP this week');
+    expect(card).not.toContain('XP <em>this week</em>');
+    expect(card).not.toContain('weekly-recap-card__hero-metric');
     expect(card).not.toContain('Active days');
     expect(html).not.toContain('data-selection-key="activeDays"');
     expect(html).not.toContain('data-selection-key="heatmap"');
