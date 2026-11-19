@@ -18,6 +18,7 @@ The four source sets are `classic-dark`, `classic-light`, `crystal-dark`, and
 | `--sf-card-front` | `cardBg` | `cardFront` |
 | `--sf-metal` | flat `textStrong` gradient | `metal` |
 | `--sf-tier-bud`, `--sf-tier-bloom`, `--sf-tier-star` | New `lineStrong`, Learning `accent`, Mastered `gold` (ProgressScreen legend) | `tier.new.color`, `tier.learning.color`, `tier.mastered.color` |
+| `--sf-avatar-bg` | `avatarBg` | the ANAV account hexagon gradient |
 | `--sf-book-terracotta`, `-ink`, `-ochre`, `-moss`, `-violet`, `-teal`, `--sf-book-foil` | light: PathsScreen `lightCloth` and title foil; dark: `darkHue` tints and `textStrong` | AnimePaths `hue.*.tint` (crimson, cyan, gold, navy, pink, holo) and `textStrong` |
 | `--nk-chamfer`, `--nk-chamfer-sm`, `--nk-snap`, `--nk-stars`, `--nk-wing-opacity` | normalized defaults | `chamfer`, `chamferSm`, `snap`, `stars`, `wingOpacity` |
 

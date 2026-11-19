@@ -21,6 +21,7 @@
   --sf-metal: linear-gradient(180deg, #1d1a16, #1d1a16);
   --sf-tier-bud: rgb(29 26 22 / 0.18); --sf-tier-bloom: #b4461a; --sf-tier-star: #b8862b;
   --sf-book-terracotta: #9c3d17; --sf-book-ink: #23201b; --sf-book-ochre: #a4731f; --sf-book-moss: #2f5a3a; --sf-book-violet: #4a3d5e; --sf-book-teal: #1f5157; --sf-book-foil: #f4e2b0;
+  --sf-avatar-bg: #e8dfcf;
   --nk-chamfer: none; --nk-chamfer-sm: none; --nk-snap: cubic-bezier(0.16, 1, 0.3, 1); --nk-stars: none; --nk-wing-opacity: 0;
 }
 
@@ -48,5 +49,6 @@
   --sf-metal: linear-gradient(180deg, #f1f6f9, #f1f6f9);
   --sf-tier-bud: rgb(255 255 255 / 0.14); --sf-tier-bloom: #28d3f4; --sf-tier-star: #f5ae39;
   --sf-book-terracotta: rgb(237 83 80 / 0.4); --sf-book-ink: rgb(40 211 244 / 0.35); --sf-book-ochre: rgb(245 174 57 / 0.4); --sf-book-moss: rgb(117 208 121 / 0.3); --sf-book-violet: rgb(150 108 215 / 0.5); --sf-book-teal: rgb(40 211 244 / 0.45); --sf-book-foil: #f1f6f9;
+  --sf-avatar-bg: linear-gradient(145deg, #1d3a48, #142730);
   --nk-chamfer: none; --nk-chamfer-sm: none; --nk-snap: cubic-bezier(0.16, 1, 0.3, 1); --nk-stars: none; --nk-wing-opacity: 0;
 }
