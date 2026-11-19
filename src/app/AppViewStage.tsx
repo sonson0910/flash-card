@@ -122,7 +122,7 @@ export function AppViewStage({
       else window.history.replaceState({}, '', location);
     };
     return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.today', message: 'Preparing today’s learning plan…' })} />)}><div className="async-content-enter" data-async-content="today"><DailyLearningWorkspace
-      ownerId={ownerId} languageProfile={languageProfile} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson} streak={streak} studyXpHistory={stats.xpChartData} rewardTimeZone={rewardTimeZone} {...(learner ? { learner } : {})}
+      ownerId={ownerId} database={database} verifiedLibraryEpoch={verifiedLibraryEpoch} languageProfile={languageProfile} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson} streak={streak} studyXpHistory={stats.xpChartData} rewardTimeZone={rewardTimeZone} {...(learner ? { learner } : {})}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice} openWeeklyRecap={openWeeklyRecap} onVerifiedPracticeOutcome={onVerifiedPracticeOutcome}
       adoptCatalogCards={adoptCatalogCards} onPracticePhrase={onPracticePhrase} onListenScopeChange={onListenScopeChange}

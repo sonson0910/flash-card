@@ -46,7 +46,7 @@ test('deleting and undoing a device card preserves learning data after reload', 
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete card' }).click();
   await expect(flashcard).toHaveCount(0);
   const undo = page.locator('[data-undo-toast]');
-  await expect(undo).toContainText('Card deleted.');
+  await expect(undo).toContainText('Card deleted');
   await undo.getByRole('button', { name: /^Undo/ }).click();
   await expect(undo).toHaveCount(0);
   await expect(flashcard).toBeVisible();

@@ -75,7 +75,7 @@ export function useLibraryMutationFeedback({
       if (token) {
         offerUndo(token.ownerId, {
           id: token.lifecycleId,
-          message: _(msg({ id: 'shell.undo.card-deleted', message: 'Card deleted.' })),
+          message: _(msg({ id: 'shell.undo.card-deleted', message: 'Card deleted' })),
           subject: token.card.word,
           onUndo: () => {
             void commands.restoreCard(token).then(restored => {

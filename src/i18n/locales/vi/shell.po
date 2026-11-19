@@ -1727,7 +1727,7 @@ msgstr "Chuyển giữa chế độ sáng và tối"
 #. js-lingui-explicit-id
 #: src/app/use-library-mutation-feedback.ts:78
 msgid "shell.undo.card-deleted"
-msgstr "Đã xóa thẻ."
+msgstr "Đã xóa thẻ"
 
 #. js-lingui-explicit-id
 #: src/components/ui/UndoToast.tsx:163

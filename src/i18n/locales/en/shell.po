@@ -1727,7 +1727,7 @@ msgstr "Switch light and dark mode"
 #. js-lingui-explicit-id
 #: src/app/use-library-mutation-feedback.ts:78
 msgid "shell.undo.card-deleted"
-msgstr "Card deleted."
+msgstr "Card deleted"
 
 #. js-lingui-explicit-id
 #: src/components/ui/UndoToast.tsx:163

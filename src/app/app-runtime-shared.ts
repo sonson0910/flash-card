@@ -261,6 +261,8 @@ export const overlayLearningProps = (learning: LearningRuntime) => ({
   ...practiceOverlayActions(learning.actions.practice),
   practiceCards: learning.model.libraryScreen.model.grid.filteredCards,
   visibleLibraryCount: learning.model.libraryScreen.navigation.practiceLibraryCount,
+  // The main library counts as a deck, as on the Vocabulary screen.
+  deckCount: learning.model.customDecks.length + 1,
   clearAll: learning.actions.clearAll,
   clearStatus: learning.model.clearStatus,
   clearError: learning.model.clearError,
