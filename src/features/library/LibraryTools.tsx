@@ -129,7 +129,7 @@ const partOfSpeechMessages = {
 
 const assistantButtonClass = 'flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-brand-text)] cursor-pointer';
 const filterLabelClass = 'mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]';
-const filterSelectClass = 'min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]';
+const filterSelectClass = 'min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)]';
 
 type DeckDeletionOwnerId = string | null | undefined;
 type DeckDeletionIntent = { name: string; ownerId: DeckDeletionOwnerId };
@@ -254,7 +254,7 @@ export function DeckCreationForm({
           onChange={event => onChange(event.target.value)}
           placeholder={i18n._(msg({ id: "library-tools.ielts-travel", message: "IELTS, Travel…" }))}
           disabled={isCreating}
-          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait disabled:opacity-70"
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
         />
         <button
           type="submit"
@@ -682,7 +682,7 @@ export function LibraryTools({
                 spellCheck={false}
                 placeholder={i18n._(msg({ id: 'library.create.word-placeholder', message: 'Type an English word (e.g. serendipity)…' }))}
                 disabled={isLoading}
-                className={`min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none disabled:cursor-wait ${
+                className={`min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-wait ${
                   isLoading ? 'border-[var(--sf-brand)]' : ''
                 }`}
               />
@@ -706,7 +706,7 @@ export function LibraryTools({
               value={validGenerationDeck}
               onChange={event => setGenerationDeck(event.target.value)}
               disabled={isLoading}
-              className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
+              className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
             >
               <option value=""><Trans {...msg({ context: 'library-tools.unassigned', message: 'Unassigned' })} /></option>
               {customDecks.map(deck => <option key={deck} value={deck}>{deck}</option>)}
@@ -719,7 +719,7 @@ export function LibraryTools({
             data-color-role="primary"
             disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"
-              className="shimmer-sweep brand-action flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-[background-color,box-shadow,transform] duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
+              className="shimmer-sweep brand-action flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-[0_10px_24px_-14px_var(--sf-brand)] transition-[background-color,box-shadow,transform] duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             <span>
@@ -829,7 +829,7 @@ export function LibraryTools({
                 value={searchQuery}
                 onChange={event => setSearchQuery(event.target.value)}
                 placeholder={i18n._(msg({ id: 'library.filters.search-placeholder', message: 'Search English words…' }))}
-                className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] py-2 pl-9 pr-8 text-xs font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus:outline-none"
+                className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] py-2 pl-9 pr-8 text-xs font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
               />
               {searchQuery && (
                 <button
@@ -940,7 +940,7 @@ export function LibraryTools({
                         aria-label={i18n._(msg({ id: 'library.filters.cloud-date-label', message: 'Filter cloud cards by date created' }))}
                         value={activeDate === 'All' ? '' : dateLabelToQueryDate(activeDate) || ''}
                         onChange={event => setActiveDate(event.target.value || 'All')}
-                        className="min-h-11 min-w-0 flex-1 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] outline-none focus:border-[var(--sf-brand)]"
+                        className="min-h-11 min-w-0 flex-1 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)]"
                       />
                       <button
                         type="button"
