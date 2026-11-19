@@ -2416,3 +2416,203 @@ msgstr "Adding {count} cards to your new deck…"
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Appearance settings"
+
+#: src/features/onboarding/ReminderPhonePreview.tsx:25
+msgctxt "onboarding.phone.label"
+msgid "Reminder preview"
+msgstr "Reminder preview"
+
+#: src/features/onboarding/OnboardingJourney.tsx:124
+msgctxt "onboarding.lumi.script.title"
+msgid "A new alphabet!"
+msgstr "A new alphabet!"
+
+#: src/features/onboarding/HangulPrimer.tsx:49
+msgctxt "onboarding.primer.heading"
+msgid "Read <0>Hangul</0> before your first words"
+msgstr "Read <0>Hangul</0> before your first words"
+
+#: src/features/onboarding/ReminderPhonePreview.tsx:36
+msgctxt "onboarding.phone.countdown"
+msgid "{goal} in {days, plural, one {# day} other {# days}}"
+msgstr "{goal} in {days, plural, one {# day} other {# days}}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:123
+msgctxt "onboarding.lumi.level.title"
+msgid "Where do we start?"
+msgstr "Where do we start?"
+
+#: src/features/onboarding/HangulPrimer.tsx:76
+msgctxt "onboarding.primer.block.meaning"
+msgid "Korea"
+msgstr "Korea"
+
+#: src/features/onboarding/OnboardingJourney.tsx:521
+msgctxt "onboarding.level.heading"
+msgid "Where are you <0>starting from?</0>"
+msgstr "Where are you <0>starting from?</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:523
+msgctxt "onboarding.level.label"
+msgid "Starting level"
+msgstr "Starting level"
+
+#: src/features/onboarding/OnboardingJourney.tsx:87
+msgctxt "onboarding.level.core"
+msgid "Core"
+msgstr "Core"
+
+#: src/features/onboarding/OnboardingJourney.tsx:565
+msgctxt "onboarding.pace.estimate"
+msgid "About {minutes} min a day for new words, plus the reviews that come due."
+msgstr "About {minutes} min a day for new words, plus the reviews that come due."
+
+#: src/features/onboarding/HangulPrimer.tsx:80
+msgctxt "onboarding.primer.consonants"
+msgid "Basic consonants"
+msgstr "Basic consonants"
+
+#: src/features/onboarding/HangulPrimer.tsx:65
+msgctxt "onboarding.primer.block.parts"
+msgid "first consonant + vowel + final consonant"
+msgstr "first consonant + vowel + final consonant"
+
+#: src/features/courses/CoursesSurface.tsx:95
+msgctxt "course.manage.stat.new"
+msgid "New words"
+msgstr "New words"
+
+#: src/features/courses/CoursesSurface.tsx:104
+msgctxt "course.manage.progress"
+msgid "{reviewed} / {total} reviewed"
+msgstr "{reviewed} / {total} reviewed"
+
+#: src/features/onboarding/HangulPrimer.tsx:65
+msgctxt "onboarding.primer.block.title"
+msgid "Build one syllable block"
+msgstr "Build one syllable block"
+
+#: src/features/onboarding/OnboardingJourney.tsx:94
+msgctxt "onboarding.level.advanced.description"
+msgid "You are at ease with most topics and want precise words."
+msgstr "You are at ease with most topics and want precise words."
+
+#: src/features/onboarding/OnboardingJourney.tsx:522
+msgctxt "onboarding.level.subtitle"
+msgid "Pick the level that sounds most like your {language}. It is your own answer, not a test, and it is optional."
+msgstr "Pick the level that sounds most like your {language}. It is your own answer, not a test, and it is optional."
+
+#: src/features/onboarding/HangulPrimer.tsx:57
+msgctxt "onboarding.primer.reader"
+msgid "I can already read Hangul"
+msgstr "I can already read Hangul"
+
+#: src/features/onboarding/ReminderPhonePreview.tsx:32
+msgctxt "onboarding.phone.now"
+msgid "now"
+msgstr "now"
+
+#: src/features/onboarding/HangulPrimer.tsx:81
+msgctxt "onboarding.primer.vowels"
+msgid "Basic vowels"
+msgstr "Basic vowels"
+
+#: src/features/onboarding/HangulPrimer.tsx:58
+msgctxt "onboarding.primer.reader.description"
+msgid "Show Korean only."
+msgstr "Show Korean only."
+
+#: src/features/onboarding/HangulPrimer.tsx:54
+msgctxt "onboarding.primer.learning.description"
+msgid "Show romanization next to Korean on my cards."
+msgstr "Show romanization next to Korean on my cards."
+
+#: src/features/onboarding/HangulPrimer.tsx:61
+msgctxt "onboarding.primer.note"
+msgid "You can turn romanization on or off any time in Settings."
+msgstr "You can turn romanization on or off any time in Settings."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:139
+msgid "latest-score-editor.draft-hint"
+msgstr "Optional. It is saved with your course when you finish."
+
+#: src/features/onboarding/OnboardingJourney.tsx:123
+msgctxt "onboarding.lumi.level.body"
+msgid "Pick what sounds like you. A guess is fine."
+msgstr "Pick what sounds like you. A guess is fine."
+
+#: src/features/onboarding/OnboardingJourney.tsx:538
+msgctxt "onboarding.primer.footer"
+msgid "Romanization stays as you choose it here until you change it in Settings."
+msgstr "Romanization stays as you choose it here until you change it in Settings."
+
+#: src/features/onboarding/OnboardingJourney.tsx:86
+msgctxt "onboarding.level.foundation"
+msgid "Foundation"
+msgstr "Foundation"
+
+#: src/features/onboarding/OnboardingJourney.tsx:369
+msgctxt "onboarding.eyebrow.script"
+msgid "Alphabet"
+msgstr "Alphabet"
+
+#: src/features/onboarding/OnboardingJourney.tsx:93
+msgctxt "onboarding.level.core.description"
+msgid "You handle everyday topics and want a wider range."
+msgstr "You handle everyday topics and want a wider range."
+
+#: src/features/onboarding/HangulPrimer.tsx:53
+msgctxt "onboarding.primer.learning"
+msgid "I’m still learning to read"
+msgstr "I’m still learning to read"
+
+#: src/features/onboarding/OnboardingJourney.tsx:554
+msgctxt "onboarding.pace.minutes"
+msgid "≈ {minutes} min a day"
+msgstr "≈ {minutes} min a day"
+
+#: src/features/onboarding/ReminderPhonePreview.tsx:33
+msgctxt "onboarding.phone.body"
+msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
+msgstr "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
+
+#: src/features/onboarding/HangulPrimer.tsx:51
+msgctxt "onboarding.primer.choice-label"
+msgid "Reading aid"
+msgstr "Reading aid"
+
+#: src/features/onboarding/HangulPrimer.tsx:64
+msgctxt "onboarding.primer.block.label"
+msgid "Build one syllable block"
+msgstr "Build one syllable block"
+
+#: src/features/onboarding/OnboardingJourney.tsx:368
+msgctxt "onboarding.eyebrow.level-start"
+msgid "Your level"
+msgstr "Your level"
+
+#: src/features/onboarding/OnboardingJourney.tsx:92
+msgctxt "onboarding.level.foundation.description"
+msgid "New to the language, or you know a few words."
+msgstr "New to the language, or you know a few words."
+
+#: src/features/onboarding/ReminderPhonePreview.tsx:38
+msgctxt "onboarding.phone.caption"
+msgid "How your reminder looks when it arrives."
+msgstr "How your reminder looks when it arrives."
+
+#: src/features/onboarding/OnboardingJourney.tsx:88
+msgctxt "onboarding.level.advanced"
+msgid "Advanced"
+msgstr "Advanced"
+
+#: src/features/onboarding/HangulPrimer.tsx:50
+msgctxt "onboarding.primer.subtitle"
+msgid "Hangul has 14 basic consonants and 10 basic vowels. They stack into one block per syllable, so once you know the letters you can sound out any word."
+msgstr "Hangul has 14 basic consonants and 10 basic vowels. They stack into one block per syllable, so once you know the letters you can sound out any word."
+
+#: src/features/onboarding/OnboardingJourney.tsx:124
+msgctxt "onboarding.lumi.script.body"
+msgid "Each block is one syllable. You’ll read it in no time."
+msgstr "Each block is one syllable. You’ll read it in no time."

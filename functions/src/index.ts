@@ -168,6 +168,7 @@ import {
   CourseProfileConflictError,
   CourseProfileOwnerMismatchError,
   CourseProfileStoredDataError,
+  createdCourseIds,
   parseCourseProfileMutationRequest,
   type CourseProfileMutationName,
   type CourseProfileMutationRequest,
@@ -2152,7 +2153,8 @@ const courseProfileCallable = (operation: CourseProfileMutationName) => onCall({
     'Course profile update limit reached. Try again later.');
   try {
     const profile = await applyCourseProfileMutation(database, userId, parsedRequest);
-    return { profile };
+    const created = createdCourseIds(profile, parsedRequest);
+    return created ? { profile, created } : { profile };
   } catch (error) {
     const mapped = toCourseProfileHttpsError(error);
     if (mapped) throw mapped;

@@ -69,6 +69,22 @@ async function seedCourses(db: Firestore, ownerId: string) {
   });
 }
 
+/** Five Korean cards: three never reviewed and two reviewed, none due, so the due count read before them stays true. */
+async function seedKoreanCards(db: Firestore, ownerId: string) {
+  const cards = db.collection('users').doc(ownerId).collection('cards');
+  const batch = db.batch();
+  for (const [index, word] of ['학교', '친구', '책', '사람', '물'].entries()) {
+    const reviewed = index < 2;
+    batch.set(cards.doc(`course-surface-ko-${index}`), {
+      id: `course-surface-ko-${index}`, word, normalizedWord: word, translation: `nghĩa ${index + 1}`,
+      language: 'ko', translationLanguage: 'vi', difficulty: reviewed ? 'good' : 'unrated', reviews: reviewed ? 2 : 0,
+      ...(reviewed ? { nextReviewDate: '2099-01-01T00:00:00.000Z' } : {}),
+      libraryEpoch: 0, createdAt: `2026-01-01T00:0${index}:00.000Z`,
+    });
+  }
+  await batch.commit();
+}
+
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} courses, goals, settings and onboarding capture at ${viewport.name}`, async ({ page, db, testUser, signIn, blockExternalNetwork }, testInfo) => {
     await prepareTheme(page, theme, viewport);
@@ -85,7 +101,7 @@ for (const theme of themes) for (const viewport of viewports) {
     const onboarding = page.getByRole('dialog', { name: 'Set up your course' });
     await expect(onboarding.getByRole('heading', { name: 'Choose your language' })).toBeVisible();
     await expect(onboarding.getByRole('button', { name: 'English' })).toBeVisible();
-    await expect(onboarding.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '1 / 6');
+    await expect(onboarding.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '1 / 7');
     const onboardingSurface = page.locator('.claude-onboarding-journey');
     const onboardingBox = await expectBox(onboardingSurface, 'onboarding journey');
     expect(onboardingBox.width, 'onboarding fills the viewport width').toBe(viewport.width);
@@ -97,7 +113,7 @@ for (const theme of themes) for (const viewport of viewports) {
     const examGoal = onboarding.getByRole('button', { name: /^Pass TOPIK/ });
     await examGoal.click();
     await expect(examGoal).toHaveAttribute('aria-pressed', 'true');
-    await expect(onboarding.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '3 / 7');
+    await expect(onboarding.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '3 / 9');
     await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
     const goalScreenshot = await expectScreen(page, testInfo, `course-onboarding-goal-${theme.family}-${theme.mode}-${viewport.name}`);
 
@@ -173,6 +189,8 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(addLanguage).toHaveCount(0);
 
     await expect(courses).toBeVisible();
+    // Cards arrive after the switcher read its due counts; the courses surface counts them when it opens.
+    await seedKoreanCards(db, testUser.uid);
     await courses.getByRole('button', { name: 'Manage courses' }).click();
     const manage = page.getByRole('dialog', { name: theme.family === 'crystal' ? 'Pick your star' : 'Your languages' });
     await expect(manage).toBeVisible();
@@ -180,6 +198,14 @@ for (const theme of themes) for (const viewport of viewports) {
     const koreanCard = manage.locator('.course-card[data-course-language="ko"]');
     await expect(koreanCard.locator('.course-card__select')).toHaveAttribute('aria-current', 'true');
     await expect(koreanCard).toContainText('TOPIK II');
+    await expect(koreanCard.locator('[data-stat="new"] .course-card__stat-value')).toHaveText('3');
+    await expect(koreanCard.locator('.course-card__progress-text')).toHaveText('2 / 5 reviewed');
+    const bar = await expectBox(koreanCard.locator('.course-card__bar'), 'course progress bar');
+    const fill = await expectBox(koreanCard.locator('.course-card__bar-fill'), 'course progress fill');
+    expect(fill.width / bar.width, 'the bar shows the reviewed share of the course').toBeCloseTo(0.4, 1);
+    const englishCard = manage.locator('.course-card[data-course-language="en"]');
+    await expect(englishCard.locator('[data-stat="new"] .course-card__stat-value')).toHaveText('0');
+    await expect(englishCard.locator('.course-card__bar')).toHaveCount(0);
     for (const [scope, name] of [[manage, 'Close courses'], [koreanCard, 'Manage goals'], [koreanCard, 'Archive course']] as const) {
       const box = await expectBox(scope.getByRole('button', { name, exact: true }), `${name} control`);
       expect(box.width, `${name} width meets the 44px touch target`).toBeGreaterThanOrEqual(44);
@@ -260,10 +286,29 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(onboarding.getByRole('button', { name: /^Just curious/ })).toHaveAttribute('aria-pressed', 'true');
     await onboarding.getByRole('button', { name: 'Continue' }).click();
 
+    await expect(onboarding.getByRole('heading', { name: 'Where are you starting from?' })).toBeVisible();
+    await expect(onboarding.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '4 / 8');
+    const levels = onboarding.getByRole('group', { name: 'Starting level' }).getByRole('button');
+    await expect(levels).toHaveCount(3);
+    for (const level of await levels.all()) {
+      expect((await expectBox(level, 'starting level')).height, 'starting levels meet the 44px touch target').toBeGreaterThanOrEqual(44);
+    }
+    await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
+    const levelScreenshot = await expectScreen(page, testInfo, `course-onboarding-level-${theme.family}-${theme.mode}-${viewport.name}`);
+    await onboarding.getByRole('button', { name: 'Continue' }).click();
+
+    await expect(onboarding.getByRole('heading', { name: 'Read Hangul before your first words' })).toBeVisible();
+    await expect(onboarding.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '5 / 8');
+    await expect(onboarding.getByRole('region', { name: 'Basic consonants' }).locator('.onb-primer-jamo')).toHaveCount(14);
+    await expect(onboarding.getByRole('region', { name: 'Basic vowels' }).locator('.onb-primer-jamo')).toHaveCount(10);
+    const primerScreenshot = await expectScreen(page, testInfo, `course-onboarding-script-${theme.family}-${theme.mode}-${viewport.name}`);
+    await onboarding.getByRole('button', { name: 'Continue' }).click();
+
     await expect(onboarding.getByRole('heading', { name: 'How many new words each day?' })).toBeVisible();
-    await expect(onboarding.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '4 / 6');
+    await expect(onboarding.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '6 / 8');
     await expect(onboarding.locator('.onboarding-pace-grid > button')).toHaveCount(4);
-    await expect(onboarding.locator('.onb-projection')).toHaveText('70new words a week in your plan at 10 a day.');
+    await expect(onboarding.locator('.onb-pace-minutes')).toHaveText(['≈ 4 min a day', '≈ 7 min a day', '≈ 10 min a day', '≈ 14 min a day']);
+    await expect(onboarding.locator('.onb-projection')).toHaveText('70new words a week in your plan at 10 a day.About 7 min a day for new words, plus the reviews that come due.');
     const paceScreenshot = await expectScreen(page, testInfo, `course-onboarding-daily-pace-${theme.family}-${theme.mode}-${viewport.name}`);
 
     await onboarding.getByRole('button', { name: 'Try 5 cards' }).click();
@@ -281,9 +326,13 @@ for (const theme of themes) for (const viewport of viewports) {
     await onboarding.getByRole('button', { name: 'Set my reminder' }).click();
     await expect(onboarding.getByRole('heading', { name: 'When should we nudge you?' })).toBeVisible();
     await expect(onboarding.getByRole('region', { name: 'Study reminders' }).getByRole('button', { name: 'Save reminders' })).toBeEnabled();
+    // The preview counts the five starter cards; this learner chose no exam, so it shows no countdown.
+    const preview = onboarding.getByRole('figure', { name: 'Reminder preview' });
+    await expect(preview).toContainText('5 cards are ready for review.');
+    await expect(preview.locator('.onb-phone-countdown')).toHaveCount(0);
     const reminderScreenshot = await expectScreen(page, testInfo, `course-onboarding-reminder-${theme.family}-${theme.mode}-${viewport.name}`);
 
-    for (const screen of [paceScreenshot, trialScreenshot, trialDoneScreenshot, reminderScreenshot]) {
+    for (const screen of [levelScreenshot, primerScreenshot, paceScreenshot, trialScreenshot, trialDoneScreenshot, reminderScreenshot]) {
       expect(screen.image).toMatchSnapshot(`${screen.name}.png`);
     }
   });
@@ -315,6 +364,13 @@ test('mobile onboarding keeps selected options and actions clear through the stu
   await expect(onboarding.getByLabel('Exam date (optional)')).toBeInViewport();
   await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
   await expect(onboarding.getByRole('button', { name: 'Back' })).toBeInViewport();
+  await onboarding.getByRole('button', { name: 'Continue' }).click();
+
+  await expect(onboarding.getByRole('heading', { name: 'Where are you starting from?' })).toBeVisible();
+  await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
+  await onboarding.getByRole('button', { name: 'Continue' }).click();
+  await expect(onboarding.getByRole('heading', { name: 'Read Hangul before your first words' })).toBeVisible();
+  await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
   await onboarding.getByRole('button', { name: 'Continue' }).click();
 
   const pace = onboarding.locator('.onboarding-pace-grid > button').filter({ hasText: 'Recommended' });
@@ -354,6 +410,10 @@ test('desktop onboarding presents the four pace choices in one row', async ({ pa
   await onboarding.getByRole('button', { name: 'Continue' }).click();
   await onboarding.getByRole('button', { name: /Korean/ }).click();
   await onboarding.getByRole('button', { name: 'Continue' }).click();
+  await onboarding.getByRole('button', { name: 'Continue' }).click();
+  await expect(onboarding.getByRole('heading', { name: 'Where are you starting from?' })).toBeVisible();
+  await onboarding.getByRole('button', { name: 'Continue' }).click();
+  await expect(onboarding.getByRole('heading', { name: 'Read Hangul before your first words' })).toBeVisible();
   await onboarding.getByRole('button', { name: 'Continue' }).click();
   const paceCards = onboarding.locator('.onboarding-pace-grid > button');
   await expect(paceCards).toHaveCount(4);

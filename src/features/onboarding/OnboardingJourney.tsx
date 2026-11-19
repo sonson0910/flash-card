@@ -12,12 +12,20 @@ import { examGoalKindsFor, goalKindsFor, isExamGoalKind } from '../courses/cours
 import { NATIVE_ENDONYM, NATIVE_LANGUAGE_LABEL, TARGET_ENDONYM, TARGET_GLYPH, TARGET_LANGUAGE_LABEL } from '../courses/courseLanguageLabels';
 import { IELTS_GOAL_KIND } from '../../../functions/src/course-profile-contract';
 import { IeltsBandPicker } from '../examProgress/IeltsBandPicker';
+import { LatestExamScoreDraft } from '../examProgress/LatestExamScoreEditor';
+import { saveLatestExamScore, type LatestExamScoreRequest } from '../examProgress/latestExamScore';
+import { defaultLatestExamScorePorts } from '../examProgress/latestExamScorePorts';
+import type { CreatedCourseIds } from '../courses/coursePort';
+import { STARTING_TIERS, writeStartingTier, type StartingTier } from '../courses/courseStartingTier';
+import { stageMinutes } from '../dailyLearning/todayScreenFacts';
 import { DAILY_PACE_OPTIONS, writeDailyPace, type DailyPace } from '../settings/dailyPacePreference';
 import { ReminderSettingsSection } from '../reminders/ReminderSettingsSection';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import { useTheme } from '../theme/ThemeProvider';
 import type { StarterCardOutcome } from './createStarterCards';
 import { createOwnerStarterCards } from './createOwnerStarterCards';
+import { HangulPrimer } from './HangulPrimer';
+import { ReminderPhonePreview } from './ReminderPhonePreview';
 import { clearOnboardingDraft, readOnboardingDraft, writeOnboardingDraft } from './onboardingDraft';
 import { StarterCardTrial } from './StarterCardTrial';
 import { starterCardsFor } from './starterCardCatalog';
@@ -26,7 +34,7 @@ import './onboarding-journey.css';
 import {
   MAX_COUNTDOWN_WEEKS, clearOnboardingInProgress, clearOnboardingResumeStep, countdownWeeks, daysUntilGoalDate,
   markOnboardingInProgress, nextOnboardingStep, onboardingStepsFor, previousOnboardingStep, readOnboardingResumeStep,
-  writeOnboardingResumeStep, type OnboardingStepId,
+  SCRIPT_PRIMER_LANGUAGES, writeOnboardingResumeStep, type OnboardingStepId,
 } from './onboardingModel';
 
 const primaryButtonClass = 'onb-primary';
@@ -71,6 +79,24 @@ const PACE_TAG: Readonly<Record<DailyPace, MessageDescriptor>> = {
   20: msg({ context: 'onboarding.pace.tag.intense', message: 'Intense' }),
 };
 
+/** Steps whose content can run past a phone screen; their footer stays on screen while it scrolls. */
+const STICKY_FOOTER_STEPS: ReadonlySet<OnboardingStepId> = new Set(['goal', 'exam', 'level', 'script']);
+
+const LEVEL_LABEL: Readonly<Record<StartingTier, MessageDescriptor>> = {
+  foundation: msg({ context: 'onboarding.level.foundation', message: 'Foundation' }),
+  core: msg({ context: 'onboarding.level.core', message: 'Core' }),
+  advanced: msg({ context: 'onboarding.level.advanced', message: 'Advanced' }),
+};
+
+const LEVEL_DESCRIPTION: Readonly<Record<StartingTier, MessageDescriptor>> = {
+  foundation: msg({ context: 'onboarding.level.foundation.description', message: 'New to the language, or you know a few words.' }),
+  core: msg({ context: 'onboarding.level.core.description', message: 'You handle everyday topics and want a wider range.' }),
+  advanced: msg({ context: 'onboarding.level.advanced.description', message: 'You are at ease with most topics and want precise words.' }),
+};
+
+/** Minutes the learner's daily new words take, with the same per-card time the Today plan uses. */
+export const paceMinutes = (pace: DailyPace): number => stageMinutes({ id: 'new', count: pace, skipped: false });
+
 function SelectionMark({ on }: { readonly on: boolean }) {
   return <span className="onb-mark" data-on={on} aria-hidden="true"><Check size={14} strokeWidth={3} /></span>;
 }
@@ -94,6 +120,8 @@ function LumiGuide({ step }: { readonly step: OnboardingStepId }) {
     target: [_(msg({ context: 'onboarding.lumi.target.title', message: 'What shall we learn?' })), _(msg({ context: 'onboarding.lumi.target.body', message: 'Pick one language for now. You can add more from the course switcher.' }))],
     goal: [_(msg({ context: 'onboarding.lumi.goal.title', message: 'Got a goal in mind?' })), _(msg({ context: 'onboarding.lumi.goal.body', message: 'Choose a path and your cards will follow it.' }))],
     exam: [_(msg({ context: 'onboarding.lumi.exam.title', message: 'When is the big day?' })), _(msg({ context: 'onboarding.lumi.exam.body', message: 'Set a date and I’ll count the days down with you.' }))],
+    level: [_(msg({ context: 'onboarding.lumi.level.title', message: 'Where do we start?' })), _(msg({ context: 'onboarding.lumi.level.body', message: 'Pick what sounds like you. A guess is fine.' }))],
+    script: [_(msg({ context: 'onboarding.lumi.script.title', message: 'A new alphabet!' })), _(msg({ context: 'onboarding.lumi.script.body', message: 'Each block is one syllable. You’ll read it in no time.' }))],
     pace: [_(msg({ context: 'onboarding.lumi.pace.title', message: 'How fast shall we go?' })), _(msg({ context: 'onboarding.lumi.pace.body', message: 'Start small. You can change this later.' }))],
     aha: [_(msg({ context: 'onboarding.lumi.trial.title', message: 'Flip your first cards!' })), _(msg({ context: 'onboarding.lumi.trial.body', message: 'Turn a card to see its meaning, then tell me if you knew it.' }))],
     reminder: [_(msg({ context: 'onboarding.lumi.reminder.title', message: 'Want a nudge?' })), _(msg({ context: 'onboarding.lumi.reminder.body', message: 'Pick a time and SonFlash will remind you to review.' }))],
@@ -146,6 +174,7 @@ export const onboardingCourseInput = ({
   goalLevel,
   goalTargetDate,
   zhScript,
+  romanization = null,
 }: {
   readonly targetLanguage: CourseTargetLanguage;
   readonly nativeLanguage: CourseNativeLanguage;
@@ -153,13 +182,32 @@ export const onboardingCourseInput = ({
   readonly goalLevel: string;
   readonly goalTargetDate: string;
   readonly zhScript: 'hans' | 'hant' | null;
-}): CreateCourseInput => ({
-  targetLanguage,
-  nativeLanguage,
-  activateOnCreate: true,
-  goals: goalKind ? [{ kind: goalKind, level: goalLevel.trim() || null, targetDate: goalTargetDate || null }] : [],
-  ...(targetLanguage === 'zh' ? { preferences: { zhScript: zhScript ?? 'hans' } } : {}),
-});
+  readonly romanization?: boolean | null;
+}): CreateCourseInput => {
+  const preferences = {
+    ...(targetLanguage === 'zh' ? { zhScript: zhScript ?? 'hans' as const } : {}),
+    ...(romanization !== null && SCRIPT_PRIMER_LANGUAGES.includes(targetLanguage) ? { showRomanization: romanization } : {}),
+  };
+  return {
+    targetLanguage,
+    nativeLanguage,
+    activateOnCreate: true,
+    goals: goalKind ? [{ kind: goalKind, level: goalLevel.trim() || null, targetDate: goalTargetDate || null }] : [],
+    ...(Object.keys(preferences).length > 0 ? { preferences } : {}),
+  };
+};
+
+/** The latest-score save that follows a create, once the new IELTS goal has an id. */
+export const onboardingLatestScoreRequest = (
+  ownerId: string,
+  created: CreatedCourseIds | null | undefined,
+  goalKind: string | null,
+  latestScore: string | null,
+): LatestExamScoreRequest | null => {
+  if (!created || goalKind !== IELTS_GOAL_KIND || !latestScore) return null;
+  const goal = created.goals.find(candidate => candidate.kind === IELTS_GOAL_KIND);
+  return goal ? { ownerId, courseId: created.courseId, goalId: goal.id, latestScore } : null;
+};
 
 export function useOnboardingReminderSaveLock() {
   const [state, setState] = useState({ saving: false, failed: false });
@@ -210,6 +258,9 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const [goalTargetDate, setGoalTargetDate] = useState(saved.draft?.goalTargetDate ?? '');
   const [zhScript, setZhScript] = useState<'hans' | 'hant' | null>(saved.draft?.zhScript ?? null);
   const [pace, setPace] = useState<DailyPace>(saved.draft?.pace ?? 10);
+  const [latestScore, setLatestScore] = useState<string | null>(saved.draft?.latestScore ?? null);
+  const [startingTier, setStartingTier] = useState<StartingTier | null>(saved.draft?.startingTier ?? null);
+  const [romanization, setRomanization] = useState<boolean | null>(saved.draft?.romanization ?? null);
   const [ahaOutcome, setAhaOutcome] = useState<StarterCardOutcome | 'pending' | 'error' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dismissedForSession, setDismissedForSession] = useState(false);
@@ -218,8 +269,10 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   useEffect(() => {
     markOnboardingInProgress(ownerId);
     writeOnboardingResumeStep(ownerId, step);
-    writeOnboardingDraft(ownerId, { nativeLanguage, targetLanguage, goalKind, goalLevel, goalTargetDate, zhScript, pace });
-  }, [ownerId, step, nativeLanguage, targetLanguage, goalKind, goalLevel, goalTargetDate, zhScript, pace]);
+    writeOnboardingDraft(ownerId, {
+      nativeLanguage, targetLanguage, goalKind, goalLevel, goalTargetDate, zhScript, pace, latestScore, startingTier, romanization,
+    });
+  }, [ownerId, step, nativeLanguage, targetLanguage, goalKind, goalLevel, goalTargetDate, zhScript, pace, latestScore, startingTier, romanization]);
 
   // Escape closes the overlay for this session only, the same as any other
   // dialog in the shell. Nothing is persisted: a real profile still does not
@@ -235,7 +288,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
 
   if (dismissedForSession) return null;
 
-  const steps = onboardingStepsFor(goalKind !== null);
+  const steps = onboardingStepsFor(goalKind !== null, targetLanguage);
   const targetOptions = COURSE_TARGET_LANGUAGES.filter(language => language !== nativeLanguage);
   const goalOptions = targetLanguage ? goalKindsFor(targetLanguage) : [];
   const examOptions = targetLanguage ? examGoalKindsFor(targetLanguage) : [];
@@ -255,7 +308,10 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   };
 
   const chooseGoal = (kind: string | null) => {
-    if (kind !== goalKind && (kind === IELTS_GOAL_KIND || goalKind === IELTS_GOAL_KIND)) setGoalLevel('');
+    if (kind !== goalKind && (kind === IELTS_GOAL_KIND || goalKind === IELTS_GOAL_KIND)) {
+      setGoalLevel('');
+      setLatestScore(null);
+    }
     setGoalKind(kind);
   };
 
@@ -280,13 +336,17 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     if (!targetLanguage || reminderSaveLocked) return;
     setError(null);
     const result = await actions.createCourse(onboardingCourseInput({
-      targetLanguage, nativeLanguage, goalKind, goalLevel, goalTargetDate, zhScript,
+      targetLanguage, nativeLanguage, goalKind, goalLevel, goalTargetDate, zhScript, romanization,
     }));
     if (!result.ok) { setError(result.error.message); return; }
+    const scoreRequest = onboardingLatestScoreRequest(ownerId, result.created, goalKind, latestScore);
     writeDailyPace(pace);
+    if (startingTier) writeStartingTier(ownerId, targetLanguage, startingTier);
     clearOnboardingDraft(ownerId);
     clearOnboardingResumeStep(ownerId);
     clearOnboardingInProgress(ownerId);
+    // The journey closes as soon as the new course arrives; a failed save leaves the score to the course goals panel.
+    if (scoreRequest) void saveLatestExamScore(defaultLatestExamScorePorts().call, scoreRequest).catch(() => undefined);
   };
 
   const crystal = family === 'crystal';
@@ -305,6 +365,8 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     exam: examGoal
       ? _(msg({ context: 'onboarding.eyebrow.exam', message: 'Your exam' }))
       : _(msg({ context: 'onboarding.eyebrow.level', message: 'Your target' })),
+    level: _(msg({ context: 'onboarding.eyebrow.level-start', message: 'Your level' })),
+    script: _(msg({ context: 'onboarding.eyebrow.script', message: 'Alphabet' })),
     pace: _(msg({ context: 'onboarding.eyebrow.pace', message: 'Daily pace' })),
     aha: _(msg({ context: 'onboarding.eyebrow.aha', message: 'First cards' })),
     reminder: _(msg({ context: 'onboarding.eyebrow.reminder', message: 'Reminders' })),
@@ -348,6 +410,8 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
               setGoalKind(null);
               setGoalLevel('');
               setGoalTargetDate('');
+              setLatestScore(null);
+              setRomanization(null);
               setAhaOutcome(null);
             }
             setTargetLanguage(language);
@@ -427,7 +491,10 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
         </div>}
         <div className="onb-goal-fields" data-goal-kind={selectedGoal.kind}>
           {selectedGoal.kind === IELTS_GOAL_KIND
-            ? <div className="onb-goal-band"><IeltsBandPicker value={goalLevel || null} onChange={setGoalLevel} /></div>
+            ? <>
+              <div className="onb-goal-band"><IeltsBandPicker value={goalLevel || null} onChange={setGoalLevel} /></div>
+              <div className="onb-goal-band onb-goal-latest"><LatestExamScoreDraft value={latestScore} onChange={setLatestScore} /></div>
+            </>
             : <label className={goalLabelClass}><Trans {...msg({ context: 'course.goal.add.level-label', message: 'Level or target (optional)' })} />
               <input className={goalFieldClass} value={goalLevel} onChange={event => setGoalLevel(event.target.value)} placeholder={_(selectedGoal.levelHint)} maxLength={32} />
             </label>}
@@ -447,6 +514,32 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   // A resumed draft can name a goal this course no longer offers; the learner just walks on.
   if (step === 'exam' && !selectedGoal) footer = <>{backButton}{continueButton()}</>;
 
+  if (step === 'level') {
+    const languageName = targetLanguage ? _(TARGET_LANGUAGE_LABEL[targetLanguage]) : '';
+    content = <>
+      {eyebrow}
+      <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.level.heading', message: 'Where are you <0>starting from?</0>' })} components={accent} /></h2>
+      <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.level.subtitle', message: 'Pick the level that sounds most like your {language}. It is your own answer, not a test, and it is optional.' })} values={{ language: languageName }} /></p>
+      <div className="onb-level-list" role="group" aria-label={_(msg({ context: 'onboarding.level.label', message: 'Starting level' }))}>
+        {STARTING_TIERS.map((tier, index) => <button key={tier} type="button" aria-pressed={startingTier === tier} className={`${optionButtonClass} onb-level-option`} onClick={() => setStartingTier(tier)}>
+          <span className="onb-level-index" aria-hidden="true">{index + 1}</span>
+          <span className="onb-level-text"><span className="onb-option-name">{_(LEVEL_LABEL[tier])}</span><span className="onb-option-sub">{_(LEVEL_DESCRIPTION[tier])}</span></span>
+          <SelectionMark on={startingTier === tier} />
+        </button>)}
+      </div>
+    </>;
+    footer = <>{backButton}{continueButton()}</>;
+  }
+
+  if (step === 'script') {
+    content = <HangulPrimer eyebrow={eyebrow} romanization={romanization} onChoose={setRomanization} />;
+    footer = <>
+      {backButton}
+      <p className="onb-footer-note"><Trans {...msg({ context: 'onboarding.primer.footer', message: 'Romanization stays as you choose it here until you change it in Settings.' })} /></p>
+      {continueButton()}
+    </>;
+  }
+
   if (step === 'pace') {
     layout = 'center';
     const planDays = daysLeft !== null && daysLeft > 0 ? daysLeft : null;
@@ -458,6 +551,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
         {DAILY_PACE_OPTIONS.map(option => <button key={option} type="button" aria-pressed={pace === option} className={`${optionButtonClass} onb-pace-card`} onClick={() => setPace(option)}>
           <span className="onb-pace-number">{option}</span>
           <span className="onb-option-sub"><Trans {...msg({ context: 'onboarding.pace.unit', message: 'cards / day' })} /></span>
+          <span className="onb-pace-minutes"><Trans {...msg({ context: 'onboarding.pace.minutes', message: '≈ {minutes} min a day' })} values={{ minutes: paceMinutes(option) }} /></span>
           <span className="onb-pace-tag">{_(PACE_TAG[option])}</span>
           <SelectionMark on={pace === option} />
         </button>)}
@@ -468,6 +562,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
           {planDays !== null
             ? <Trans {...msg({ context: 'onboarding.pace.plan.dated', message: 'new words in your plan by {date}: {pace} a day for {days, plural, one {# day} other {# days}}.' })} values={{ date: formatGoalDate(goalTargetDate, i18n.locale), pace, days: planDays }} />
             : <Trans {...msg({ context: 'onboarding.pace.plan.weekly', message: 'new words a week in your plan at {pace} a day.' })} values={{ pace }} />}
+          <span className="onb-projection-estimate"><Trans {...msg({ context: 'onboarding.pace.estimate', message: 'About {minutes} min a day for new words, plus the reviews that come due.' })} values={{ minutes: paceMinutes(pace) }} /></span>
         </span>
       </p>
     </>;
@@ -504,13 +599,17 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   }
 
   if (step === 'reminder') {
-    content = <>
-      {eyebrow}
-      <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.reminder.title', message: 'When should we <0>nudge you?</0>' })} components={accent} /></h2>
-      <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.reminder.description', message: 'Choose when SonFlash can remind you to review.' })} /></p>
-      <div className="onb-reminder-panel"><ReminderSettingsSection initialOwnerId={ownerId} embedded onSaveStateChange={onReminderSaveStateChange} onSkip={skipFailedSave} /></div>
-      {error && <p className="onb-message" data-tone="danger" role="alert">{error}</p>}
-    </>;
+    const starterCards = ahaOutcome !== null && ahaOutcome !== 'pending' && ahaOutcome !== 'error' ? ahaOutcome.created.length : null;
+    content = <div className="onb-reminder">
+      <div className="onb-reminder-form">
+        {eyebrow}
+        <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.reminder.title', message: 'When should we <0>nudge you?</0>' })} components={accent} /></h2>
+        <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.reminder.description', message: 'Choose when SonFlash can remind you to review.' })} /></p>
+        <div className="onb-reminder-panel"><ReminderSettingsSection initialOwnerId={ownerId} embedded onSaveStateChange={onReminderSaveStateChange} onSkip={skipFailedSave} /></div>
+        {error && <p className="onb-message" data-tone="danger" role="alert">{error}</p>}
+      </div>
+      <ReminderPhonePreview cardCount={starterCards} countdown={daysLeft !== null && daysLeft > 0 ? { days: daysLeft, goal: goalName } : null} />
+    </div>;
     footer = <>
       {backButton}
       <button type="button" className={responsivePrimaryButtonClass} disabled={model.pending || reminderSaveLocked} onClick={() => void finish()}><PrimaryLabel><Trans {...msg({ context: 'onboarding.finish', message: 'Start learning' })} /></PrimaryLabel></button>
@@ -538,7 +637,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
       <div className="onb-body" data-lumi={showLumi}>
         {showLumi && <LumiGuide step={step} />}
         <main className="onb-main" data-layout={layout}><div className="onb-content">{content}</div></main>
-        {footer && <div className={`onboarding-journey__footer onb-footer${step === 'goal' || step === 'exam' ? ' onboarding-journey__footer--sticky' : ''}`} style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>{footer}</div>}
+        {footer && <div className={`onboarding-journey__footer onb-footer${STICKY_FOOTER_STEPS.has(step) ? ' onboarding-journey__footer--sticky' : ''}`} style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>{footer}</div>}
       </div>
     </div>
   </div>;

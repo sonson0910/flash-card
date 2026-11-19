@@ -30,11 +30,13 @@ const card = {
   reviewHistory: [{ rating: 'good', reviewedAt: '2026-09-23T08:00:00.000Z', elapsedDays: 4, scheduledDays: 8 }],
 };
 
-test('deleting and undoing a device card preserves learning data after reload', async ({ page, db, testUser, seedCards, signIn, blockExternalNetwork }) => {
+test('deleting and undoing a device card preserves learning data after reload', async ({ page, db, testUser, seedCards, seedCourseProfile, signIn, blockExternalNetwork }) => {
   // Undo calls the createCard Cloud Function; test:e2e:emulator now runs the
   // Functions emulator alongside Firestore/Auth (see firebase.json and
   // scripts/run-e2e-functions-emulator.mjs), so this exercises the real
   // callable instead of skipping it.
+  // A returning learner: deleting the only card must not open first-run onboarding over the Undo.
+  await seedCourseProfile();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await seedCards([card]);
   await blockExternalNetwork(page);

@@ -30,18 +30,26 @@ describe('onboarding step order', () => {
     expect(previousOnboardingStep('language')).toBeNull();
   });
 
-  it('follows the goal with the exam step, then pace, the card trial and reminders', () => {
-    expect([...ONBOARDING_STEPS]).toEqual(['language', 'target', 'goal', 'exam', 'pace', 'aha', 'reminder']);
-    expect(onboardingStepsFor(true)).toEqual(ONBOARDING_STEPS);
+  it('follows the goal with the exam step, the starting level, the script primer, then pace, the card trial and reminders', () => {
+    expect([...ONBOARDING_STEPS]).toEqual(['language', 'target', 'goal', 'exam', 'level', 'script', 'pace', 'aha', 'reminder']);
+    expect(onboardingStepsFor(true, 'ko')).toEqual(ONBOARDING_STEPS);
   });
 
   it('drops the exam step when the learner has no goal', () => {
-    const steps = onboardingStepsFor(false);
-    expect(steps).toEqual(['language', 'target', 'goal', 'pace', 'aha', 'reminder']);
-    expect(nextOnboardingStep('goal', steps)).toBe('pace');
-    expect(previousOnboardingStep('pace', steps)).toBe('goal');
-    expect(nextOnboardingStep('goal', onboardingStepsFor(true))).toBe('exam');
-    expect(previousOnboardingStep('pace', onboardingStepsFor(true))).toBe('exam');
+    const steps = onboardingStepsFor(false, 'en');
+    expect(steps).toEqual(['language', 'target', 'goal', 'level', 'pace', 'aha', 'reminder']);
+    expect(nextOnboardingStep('goal', steps)).toBe('level');
+    expect(previousOnboardingStep('level', steps)).toBe('goal');
+    expect(nextOnboardingStep('goal', onboardingStepsFor(true, 'en'))).toBe('exam');
+    expect(previousOnboardingStep('level', onboardingStepsFor(true, 'en'))).toBe('exam');
+  });
+
+  it('shows the script primer only for a language whose script comes first', () => {
+    expect(onboardingStepsFor(true, 'ko')).toContain('script');
+    expect(nextOnboardingStep('level', onboardingStepsFor(false, 'ko'))).toBe('script');
+    expect(previousOnboardingStep('pace', onboardingStepsFor(false, 'ko'))).toBe('script');
+    for (const language of ['en', 'ja', 'zh'] as const) expect(onboardingStepsFor(true, language)).not.toContain('script');
+    expect(onboardingStepsFor(true)).not.toContain('script');
   });
 
   it('rejects an unknown step id', () => {

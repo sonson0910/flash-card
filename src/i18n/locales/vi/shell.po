@@ -2416,3 +2416,203 @@ msgstr "Đang thêm {count} thẻ vào bộ thẻ mới…"
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Cài đặt giao diện"
+
+#: src/features/onboarding/ReminderPhonePreview.tsx:25
+msgctxt "onboarding.phone.label"
+msgid "Reminder preview"
+msgstr "Xem trước lời nhắc"
+
+#: src/features/onboarding/OnboardingJourney.tsx:124
+msgctxt "onboarding.lumi.script.title"
+msgid "A new alphabet!"
+msgstr "Một bảng chữ cái mới!"
+
+#: src/features/onboarding/HangulPrimer.tsx:49
+msgctxt "onboarding.primer.heading"
+msgid "Read <0>Hangul</0> before your first words"
+msgstr "Đọc <0>Hangul</0> trước những từ đầu tiên"
+
+#: src/features/onboarding/ReminderPhonePreview.tsx:36
+msgctxt "onboarding.phone.countdown"
+msgid "{goal} in {days, plural, one {# day} other {# days}}"
+msgstr "{goal} sau {days, plural, other {# ngày}}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:123
+msgctxt "onboarding.lumi.level.title"
+msgid "Where do we start?"
+msgstr "Mình bắt đầu từ đâu nhé?"
+
+#: src/features/onboarding/HangulPrimer.tsx:76
+msgctxt "onboarding.primer.block.meaning"
+msgid "Korea"
+msgstr "Hàn Quốc"
+
+#: src/features/onboarding/OnboardingJourney.tsx:521
+msgctxt "onboarding.level.heading"
+msgid "Where are you <0>starting from?</0>"
+msgstr "Bạn đang <0>bắt đầu từ đâu?</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:523
+msgctxt "onboarding.level.label"
+msgid "Starting level"
+msgstr "Trình độ bắt đầu"
+
+#: src/features/onboarding/OnboardingJourney.tsx:87
+msgctxt "onboarding.level.core"
+msgid "Core"
+msgstr "Cốt lõi"
+
+#: src/features/onboarding/OnboardingJourney.tsx:565
+msgctxt "onboarding.pace.estimate"
+msgid "About {minutes} min a day for new words, plus the reviews that come due."
+msgstr "Khoảng {minutes} phút mỗi ngày cho từ mới, cộng thêm các thẻ đến hạn ôn tập."
+
+#: src/features/onboarding/HangulPrimer.tsx:80
+msgctxt "onboarding.primer.consonants"
+msgid "Basic consonants"
+msgstr "Phụ âm cơ bản"
+
+#: src/features/onboarding/HangulPrimer.tsx:65
+msgctxt "onboarding.primer.block.parts"
+msgid "first consonant + vowel + final consonant"
+msgstr "phụ âm đầu + nguyên âm + phụ âm cuối"
+
+#: src/features/courses/CoursesSurface.tsx:95
+msgctxt "course.manage.stat.new"
+msgid "New words"
+msgstr "Từ mới"
+
+#: src/features/courses/CoursesSurface.tsx:104
+msgctxt "course.manage.progress"
+msgid "{reviewed} / {total} reviewed"
+msgstr "Đã ôn {reviewed} / {total}"
+
+#: src/features/onboarding/HangulPrimer.tsx:65
+msgctxt "onboarding.primer.block.title"
+msgid "Build one syllable block"
+msgstr "Ghép một khối âm tiết"
+
+#: src/features/onboarding/OnboardingJourney.tsx:94
+msgctxt "onboarding.level.advanced.description"
+msgid "You are at ease with most topics and want precise words."
+msgstr "Bạn tự tin với hầu hết chủ đề và muốn dùng từ chính xác hơn."
+
+#: src/features/onboarding/OnboardingJourney.tsx:522
+msgctxt "onboarding.level.subtitle"
+msgid "Pick the level that sounds most like your {language}. It is your own answer, not a test, and it is optional."
+msgstr "Chọn mức giống với trình độ {language} của bạn nhất. Đây là câu trả lời của bạn, không phải bài kiểm tra, và bạn có thể bỏ qua."
+
+#: src/features/onboarding/HangulPrimer.tsx:57
+msgctxt "onboarding.primer.reader"
+msgid "I can already read Hangul"
+msgstr "Tôi đã đọc được Hangul"
+
+#: src/features/onboarding/ReminderPhonePreview.tsx:32
+msgctxt "onboarding.phone.now"
+msgid "now"
+msgstr "bây giờ"
+
+#: src/features/onboarding/HangulPrimer.tsx:81
+msgctxt "onboarding.primer.vowels"
+msgid "Basic vowels"
+msgstr "Nguyên âm cơ bản"
+
+#: src/features/onboarding/HangulPrimer.tsx:58
+msgctxt "onboarding.primer.reader.description"
+msgid "Show Korean only."
+msgstr "Chỉ hiện tiếng Hàn."
+
+#: src/features/onboarding/HangulPrimer.tsx:54
+msgctxt "onboarding.primer.learning.description"
+msgid "Show romanization next to Korean on my cards."
+msgstr "Hiện phiên âm Latin cạnh tiếng Hàn trên thẻ của tôi."
+
+#: src/features/onboarding/HangulPrimer.tsx:61
+msgctxt "onboarding.primer.note"
+msgid "You can turn romanization on or off any time in Settings."
+msgstr "Bạn có thể bật hoặc tắt phiên âm Latin bất cứ lúc nào trong Cài đặt."
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:139
+msgid "latest-score-editor.draft-hint"
+msgstr "Không bắt buộc. Điểm được lưu cùng khóa học khi bạn hoàn tất."
+
+#: src/features/onboarding/OnboardingJourney.tsx:123
+msgctxt "onboarding.lumi.level.body"
+msgid "Pick what sounds like you. A guess is fine."
+msgstr "Chọn mức giống bạn nhất. Đoán cũng được."
+
+#: src/features/onboarding/OnboardingJourney.tsx:538
+msgctxt "onboarding.primer.footer"
+msgid "Romanization stays as you choose it here until you change it in Settings."
+msgstr "Phiên âm Latin giữ như bạn chọn ở đây cho đến khi bạn đổi trong Cài đặt."
+
+#: src/features/onboarding/OnboardingJourney.tsx:86
+msgctxt "onboarding.level.foundation"
+msgid "Foundation"
+msgstr "Nền tảng"
+
+#: src/features/onboarding/OnboardingJourney.tsx:369
+msgctxt "onboarding.eyebrow.script"
+msgid "Alphabet"
+msgstr "Bảng chữ cái"
+
+#: src/features/onboarding/OnboardingJourney.tsx:93
+msgctxt "onboarding.level.core.description"
+msgid "You handle everyday topics and want a wider range."
+msgstr "Bạn xoay xở được các chủ đề hằng ngày và muốn mở rộng vốn từ."
+
+#: src/features/onboarding/HangulPrimer.tsx:53
+msgctxt "onboarding.primer.learning"
+msgid "I’m still learning to read"
+msgstr "Tôi vẫn đang học đọc"
+
+#: src/features/onboarding/OnboardingJourney.tsx:554
+msgctxt "onboarding.pace.minutes"
+msgid "≈ {minutes} min a day"
+msgstr "≈ {minutes} phút mỗi ngày"
+
+#: src/features/onboarding/ReminderPhonePreview.tsx:33
+msgctxt "onboarding.phone.body"
+msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
+msgstr "{count, plural, other {# thẻ đến hạn ôn tập.}}"
+
+#: src/features/onboarding/HangulPrimer.tsx:51
+msgctxt "onboarding.primer.choice-label"
+msgid "Reading aid"
+msgstr "Hỗ trợ đọc"
+
+#: src/features/onboarding/HangulPrimer.tsx:64
+msgctxt "onboarding.primer.block.label"
+msgid "Build one syllable block"
+msgstr "Ghép một khối âm tiết"
+
+#: src/features/onboarding/OnboardingJourney.tsx:368
+msgctxt "onboarding.eyebrow.level-start"
+msgid "Your level"
+msgstr "Trình độ của bạn"
+
+#: src/features/onboarding/OnboardingJourney.tsx:92
+msgctxt "onboarding.level.foundation.description"
+msgid "New to the language, or you know a few words."
+msgstr "Mới bắt đầu với ngôn ngữ này, hoặc mới biết vài từ."
+
+#: src/features/onboarding/ReminderPhonePreview.tsx:38
+msgctxt "onboarding.phone.caption"
+msgid "How your reminder looks when it arrives."
+msgstr "Lời nhắc của bạn sẽ hiện như thế này."
+
+#: src/features/onboarding/OnboardingJourney.tsx:88
+msgctxt "onboarding.level.advanced"
+msgid "Advanced"
+msgstr "Nâng cao"
+
+#: src/features/onboarding/HangulPrimer.tsx:50
+msgctxt "onboarding.primer.subtitle"
+msgid "Hangul has 14 basic consonants and 10 basic vowels. They stack into one block per syllable, so once you know the letters you can sound out any word."
+msgstr "Hangul có 14 phụ âm cơ bản và 10 nguyên âm cơ bản. Chúng ghép thành một khối cho mỗi âm tiết, nên khi đã biết các chữ cái, bạn có thể đánh vần bất kỳ từ nào."
+
+#: src/features/onboarding/OnboardingJourney.tsx:124
+msgctxt "onboarding.lumi.script.body"
+msgid "Each block is one syllable. You’ll read it in no time."
+msgstr "Mỗi khối là một âm tiết. Bạn sẽ đọc được ngay thôi."

@@ -16,6 +16,18 @@ export interface CourseProfileRead {
   readonly profile: CourseProfile;
 }
 
+/** The ids a create produced; goal ids follow the requested goals' order, keyed by goal kind. */
+export interface CreatedCourseIds {
+  readonly courseId: string;
+  readonly goals: readonly { readonly kind: string; readonly id: string }[];
+}
+
+export interface CreateCourseResult {
+  readonly profile: CourseProfile;
+  /** Null only when the returned profile does not hold the requested course. */
+  readonly created: CreatedCourseIds | null;
+}
+
 export type CourseProfileListener = (read: CourseProfileRead) => void;
 export type CourseProfileErrorListener = (error: CourseError) => void;
 
@@ -33,7 +45,7 @@ export interface CoursePort {
     onProfile: CourseProfileListener,
     onError: CourseProfileErrorListener,
   ): () => void;
-  createCourse(ownerId: string | null, input: CreateCourseInput): Promise<CourseProfile>;
+  createCourse(ownerId: string | null, input: CreateCourseInput): Promise<CreateCourseResult>;
   updateCourse(ownerId: string | null, courseId: string, input: UpdateCourseInput): Promise<CourseProfile>;
   archiveCourse(ownerId: string | null, courseId: string): Promise<CourseProfile>;
   reopenCourse(ownerId: string | null, courseId: string): Promise<CourseProfile>;

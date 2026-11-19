@@ -1,28 +1,40 @@
+import type { CourseTargetLanguage } from '../courses/courseModel';
+
 /**
  * The branched onboarding journey: native/UI language, the language to learn,
  * an optional goal, the exam or level details with a countdown to its date,
- * daily pace, a 5-card flashcard trial, then the reminder choice. Every step
- * here is a pure, orderable id — the actual UI in `OnboardingJourney.tsx`
- * reads this array instead of hard-coding "what's next", so step order
- * changes never need to touch branching logic twice.
+ * the learner's own starting level, a script primer where the language has a
+ * script to learn first, daily pace, a 5-card flashcard trial, then the
+ * reminder choice. Every step here is a pure, orderable id — the actual UI in
+ * `OnboardingJourney.tsx` reads this array instead of hard-coding "what's
+ * next", so step order changes never need to touch branching logic twice.
  */
 export const ONBOARDING_STEPS = [
   'language',
   'target',
   'goal',
   'exam',
+  'level',
+  'script',
   'pace',
   'aha',
   'reminder',
 ] as const;
 export type OnboardingStepId = (typeof ONBOARDING_STEPS)[number];
 
+/** Target languages whose script gets a primer step before the first cards. */
+export const SCRIPT_PRIMER_LANGUAGES: readonly CourseTargetLanguage[] = ['ko'];
+
 /**
  * The exam step holds the chosen goal's score, level and date, so a learner
- * without a goal never sees it and it drops out of the progress count.
+ * without a goal never sees it and it drops out of the progress count. The
+ * script primer only appears for a language that has one.
  */
-export const onboardingStepsFor = (hasGoal: boolean): readonly OnboardingStepId[] =>
-  hasGoal ? ONBOARDING_STEPS : ONBOARDING_STEPS.filter(step => step !== 'exam');
+export const onboardingStepsFor = (
+  hasGoal: boolean,
+  targetLanguage: CourseTargetLanguage | null = null,
+): readonly OnboardingStepId[] => ONBOARDING_STEPS.filter(step => (step !== 'exam' || hasGoal)
+  && (step !== 'script' || (targetLanguage !== null && SCRIPT_PRIMER_LANGUAGES.includes(targetLanguage))));
 
 export const firstOnboardingStep = (): OnboardingStepId => ONBOARDING_STEPS[0];
 
