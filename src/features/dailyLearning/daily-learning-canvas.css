@@ -12,6 +12,15 @@
 .daily-canvas-today .practice-bento-card { background: var(--sf-surface-raised); border: 1px solid var(--sf-border); border-radius: 14px; box-shadow: 0 12px 28px -25px var(--sf-shadow); }
 .daily-canvas-today .practice-bento-card:hover { transform: translateY(-2px); border-color: var(--sf-brand); }
 .daily-canvas-today > .grid { align-items: start; }
+/* Recommended next: a compact row under Today's sections. */
+.today-recommended { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 12px 10px 18px; border: 1px solid var(--sf-border); }
+:root:not([data-theme-family="crystal"]) .today-recommended { border-radius: 16px; background: var(--sf-surface); }
+:root[data-theme-family="crystal"] .today-recommended { border-radius: 0; --sf-chamfer-fill: var(--sf-surface-glass); }
+.today-recommended-icon { flex: none; color: var(--sf-brand-text); }
+.today-recommended-copy { display: flex; min-width: 0; flex: 1 1 16rem; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.daily-canvas .today-recommended-title { margin: 0; font-size: 15px; letter-spacing: 0; }
+.today-recommended-reason { margin: 0; color: var(--sf-text-muted); font-size: 13.5px; line-height: 1.45; }
+.today-recommended-action { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-left: auto; }
 .daily-facet-panel { position: relative; overflow: hidden; border: 1px solid var(--sf-border); border-radius: var(--sf-card-radius, 20px); background: var(--sf-surface); box-shadow: 0 26px 58px -40px var(--sf-shadow); }
 .daily-zero { min-height: min(680px, calc(100vh - 10rem)); display: grid; grid-template-columns: minmax(0, 1fr) minmax(22rem, .82fr); align-items: center; gap: clamp(2rem, 6vw, 6rem); padding: clamp(1.5rem, 5vw, 4rem); }
 .daily-zero-copy { align-self: center; }
