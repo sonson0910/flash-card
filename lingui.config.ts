@@ -7,6 +7,7 @@ const areas = {
     'src/components/RecoverableActionFeedback.tsx', 'src/components/ui/UndoToast.tsx',
     'src/features/courses', 'src/features/onboarding', 'src/features/offlineApp/OfflineReadiness.tsx',
     'src/features/examProgress/IeltsBandPicker.tsx', 'src/features/examProgress/LatestExamScoreEditor.tsx',
+    'src/features/profileCompletion',
   ],
   components: [
     'src/components/*.tsx', 'src/components/flashcard', 'src/components/motion', 'src/components/study', 'src/components/ui',

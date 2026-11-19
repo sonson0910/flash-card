@@ -12,6 +12,7 @@ import { ReminderSettingsSection } from '../reminders/ReminderSettingsSection';
 import type { StarterCardOutcome } from './createStarterCards';
 import { createOwnerStarterCards } from './createOwnerStarterCards';
 import { clearOnboardingDraft, readOnboardingDraft, writeOnboardingDraft } from './onboardingDraft';
+import { useAccountProfileNativeLanguage } from '../profileCompletion/AccountProfileContext';
 import './onboarding-journey.css';
 import {
   clearOnboardingInProgress, clearOnboardingResumeStep, markOnboardingInProgress,
@@ -97,10 +98,11 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const uiLocale = useUiLocale();
   const setUiLocale = useSetUiLocale();
   const { actions, model } = useCourseSession();
+  const profileNativeLanguage = useAccountProfileNativeLanguage();
   const [saved] = useState(() => ({ step: readOnboardingResumeStep(ownerId), draft: readOnboardingDraft(ownerId) }));
   const [step, setStep] = useState<OnboardingStepId>(() =>
     saved.draft?.targetLanguage || saved.step === 'language' || saved.step === 'target' ? saved.step : 'target');
-  const [nativeLanguage, setNativeLanguage] = useState<CourseNativeLanguage>(saved.draft?.nativeLanguage ?? (uiLocale === 'en' ? 'en' : 'vi'));
+  const [nativeLanguage, setNativeLanguage] = useState<CourseNativeLanguage>(saved.draft?.nativeLanguage ?? profileNativeLanguage ?? (uiLocale === 'en' ? 'en' : 'vi'));
   const [targetLanguage, setTargetLanguage] = useState<CourseTargetLanguage | null>(saved.draft?.targetLanguage ?? null);
   const [goalKind, setGoalKind] = useState<string | null>(saved.draft?.goalKind ?? null);
   const [goalLevel, setGoalLevel] = useState(saved.draft?.goalLevel ?? '');

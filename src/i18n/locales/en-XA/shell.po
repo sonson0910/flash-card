@@ -19,6 +19,7 @@ msgid "Card style: Standard"
 msgstr ""
 
 #: src/components/shell/DesktopNavigation.tsx:81
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:80
 msgctxt "shell.brand.mark"
 msgid "S"
 msgstr ""
@@ -43,12 +44,12 @@ msgctxt "shell.share.fact-revoke"
 msgid "You can revoke this link at any time."
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:223
+#: src/features/onboarding/OnboardingJourney.tsx:225
 msgctxt "onboarding.goal.none"
 msgid "No specific goal yet"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:262
+#: src/features/onboarding/OnboardingJourney.tsx:264
 msgctxt "onboarding.pace.option"
 msgid "{count} cards / day"
 msgstr ""
@@ -68,7 +69,7 @@ msgctxt "shell.share.cards-count"
 msgid "{count, plural, one {# card} other {# cards}}"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:196
+#: src/features/onboarding/OnboardingJourney.tsx:198
 msgctxt "onboarding.target.title"
 msgid "What are you learning?"
 msgstr ""
@@ -95,12 +96,12 @@ msgstr ""
 
 #: src/features/courses/CourseGoalsPanel.tsx:50
 #: src/features/courses/CourseGoalsPanel.tsx:93
-#: src/features/onboarding/OnboardingJourney.tsx:236
+#: src/features/onboarding/OnboardingJourney.tsx:238
 msgctxt "course.goal.add.level-label"
 msgid "Level or target (optional)"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:182
+#: src/features/onboarding/OnboardingJourney.tsx:184
 msgctxt "onboarding.language.title"
 msgid "Choose your language"
 msgstr ""
@@ -195,8 +196,8 @@ msgctxt "shell.footer.status"
 msgid "STATUS:"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:178
-#: src/features/onboarding/OnboardingJourney.tsx:279
+#: src/features/onboarding/OnboardingJourney.tsx:180
+#: src/features/onboarding/OnboardingJourney.tsx:281
 msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr ""
@@ -206,12 +207,12 @@ msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:308
+#: src/features/onboarding/OnboardingJourney.tsx:310
 msgctxt "onboarding.finish"
 msgid "Start learning"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:277
+#: src/features/onboarding/OnboardingJourney.tsx:279
 msgctxt "onboarding.aha.subtitle"
 msgid "Five common words to get you started."
 msgstr ""
@@ -428,7 +429,7 @@ msgctxt "shell.practice-menu.description"
 msgid "Choose a different way to practice with words from your library."
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:283
+#: src/features/onboarding/OnboardingJourney.tsx:285
 msgctxt "onboarding.aha.error"
 msgid "Something went wrong adding cards. You can add them later from the library."
 msgstr ""
@@ -448,7 +449,7 @@ msgctxt "shell.share.done"
 msgid "Done"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:278
+#: src/features/onboarding/OnboardingJourney.tsx:280
 msgctxt "onboarding.aha.create"
 msgid "Add 5 starter cards"
 msgstr ""
@@ -465,11 +466,11 @@ msgid "exam-band-picker.legend"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:256
+#: src/app/AppRuntime.tsx:264
 msgid "extension.import.course-mismatch-confirm"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:288
+#: src/features/onboarding/OnboardingJourney.tsx:290
 msgctxt "onboarding.aha.success"
 msgid "Added {count} cards to your library."
 msgstr ""
@@ -489,7 +490,7 @@ msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:289
+#: src/features/onboarding/OnboardingJourney.tsx:291
 msgctxt "onboarding.aha.none-added"
 msgid "No cards were added."
 msgstr ""
@@ -516,7 +517,7 @@ msgctxt "shell.practice-menu.kicker"
 msgid "Practice"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:281
+#: src/features/onboarding/OnboardingJourney.tsx:283
 msgctxt "onboarding.aha.pending"
 msgid "Adding your cards…"
 msgstr ""
@@ -531,7 +532,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr ""
 
-#: src/app/AppRuntime.tsx:568
+#: src/app/AppRuntime.tsx:587
 #: src/components/shell/CourseSwitcherControl.tsx:110
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -637,18 +638,18 @@ msgstr ""
 msgid "latest-score-editor.unreadable"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:243
+#: src/features/onboarding/OnboardingJourney.tsx:245
 msgctxt "settings.course.script"
 msgid "Chinese script"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:219
-#: src/features/onboarding/OnboardingJourney.tsx:223
+#: src/features/onboarding/OnboardingJourney.tsx:221
+#: src/features/onboarding/OnboardingJourney.tsx:225
 msgctxt "onboarding.goal.subtitle"
 msgid "Optional. You can add or change this later in the course switcher."
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:258
+#: src/features/onboarding/OnboardingJourney.tsx:260
 msgctxt "onboarding.pace.title"
 msgid "How many cards a day?"
 msgstr ""
@@ -683,7 +684,7 @@ msgctxt "course.goal.completed"
 msgid "(completed)"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:303
+#: src/features/onboarding/OnboardingJourney.tsx:305
 msgctxt "onboarding.reminder.title"
 msgid "Daily reminders"
 msgstr ""
@@ -703,12 +704,12 @@ msgctxt "course.create.target-label"
 msgid "Learn"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:246
+#: src/features/onboarding/OnboardingJourney.tsx:248
 msgctxt "settings.course.script.traditional"
 msgid "Traditional"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:304
+#: src/features/onboarding/OnboardingJourney.tsx:306
 msgctxt "onboarding.reminder.description"
 msgid "Choose when SonFlash can remind you to review."
 msgstr ""
@@ -729,7 +730,7 @@ msgid "Add a vocabulary card with a word and meaning first."
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:172
+#: src/features/onboarding/OnboardingJourney.tsx:174
 msgid "onboarding.title"
 msgstr ""
 
@@ -743,12 +744,269 @@ msgctxt "shell.share.words-inside"
 msgid "A few words inside"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:212
-#: src/features/onboarding/OnboardingJourney.tsx:250
-#: src/features/onboarding/OnboardingJourney.tsx:268
-#: src/features/onboarding/OnboardingJourney.tsx:307
+#: src/features/onboarding/OnboardingJourney.tsx:214
+#: src/features/onboarding/OnboardingJourney.tsx:252
+#: src/features/onboarding/OnboardingJourney.tsx:270
+#: src/features/onboarding/OnboardingJourney.tsx:309
 msgctxt "onboarding.back"
 msgid "Back"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:103
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:160
+msgid "profile-completion.account-access"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:118
+msgid "profile-completion.account-data"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:186
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:332
+msgid "profile-completion.birth-year"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:58
+msgid "profile-completion.birth-year.format"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
+msgid "profile-completion.birth-year.future"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
+msgid "profile-completion.birth-year.implausible"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:341
+msgid "profile-completion.birth-year.placeholder"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:61
+msgid "profile-completion.birth-year.rejected"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:390
+msgid "profile-completion.consent"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:397
+msgid "profile-completion.consent.required"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:235
+msgid "profile-completion.details.eyebrow"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:236
+msgid "profile-completion.details.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:65
+msgid "profile-completion.error.consent-outdated"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:162
+msgid "profile-completion.error.lede"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
+msgid "profile-completion.error.rate-limited"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:165
+msgid "profile-completion.error.retry"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:67
+msgid "profile-completion.error.save-failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:161
+msgid "profile-completion.error.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:229
+msgid "profile-completion.eyebrow"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:120
+msgid "profile-completion.help"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:231
+msgid "profile-completion.lede"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:353
+msgid "profile-completion.locale"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:359
+msgid "profile-completion.native-language"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:401
+msgid "profile-completion.note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:202
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:240
+msgid "profile-completion.outcomes.eyebrow"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:251
+msgid "profile-completion.outcomes.next"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:209
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:247
+msgid "profile-completion.outcomes.return"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:49
+msgid "profile-completion.outcomes.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:50
+msgid "profile-completion.outcomes.title.crystal"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:190
+msgid "profile-completion.restricted.account"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:187
+msgid "profile-completion.restricted.birth-year"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:176
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:182
+msgid "profile-completion.restricted.eyebrow"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:205
+msgid "profile-completion.restricted.gate"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:206
+msgid "profile-completion.restricted.gate-detail"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:178
+msgid "profile-completion.restricted.lede"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:195
+msgid "profile-completion.restricted.note"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:191
+msgid "profile-completion.restricted.paused"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:198
+msgid "profile-completion.restricted.return"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:210
+msgid "profile-completion.restricted.return-detail"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:183
+msgid "profile-completion.restricted.status"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:45
+msgid "profile-completion.restricted.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:46
+msgid "profile-completion.restricted.title.crystal"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:225
+msgid "profile-completion.return.footer"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:53
+msgid "profile-completion.return.preserved"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:54
+msgid "profile-completion.return.preserved.crystal"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:252
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:407
+msgid "profile-completion.save"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:406
+msgid "profile-completion.saving"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:107
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:166
+msgid "profile-completion.sign-out"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:41
+msgid "profile-completion.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:42
+msgid "profile-completion.title.crystal"
 msgstr ""
 
 #: src/app/AppDeferredViews.tsx:35
@@ -776,7 +1034,7 @@ msgstr ""
 msgid "rewards.reveal.streak.badge"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:218
+#: src/features/onboarding/OnboardingJourney.tsx:220
 msgctxt "onboarding.goal.title"
 msgid "Have an exam or goal in mind?"
 msgstr ""
@@ -1016,7 +1274,7 @@ msgid "shell.language.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:557
+#: src/app/AppRuntime.tsx:576
 msgid "shell.learning-workspace"
 msgstr ""
 
@@ -1304,7 +1562,7 @@ msgid "shell.sync.paused-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:437
+#: src/app/AppRuntime.tsx:445
 msgid "shell.sync.retry-failed"
 msgstr ""
 
@@ -1355,7 +1613,7 @@ msgstr ""
 msgid "shell.undo.restore-failed"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:297
+#: src/features/onboarding/OnboardingJourney.tsx:299
 msgctxt "onboarding.aha.quota-note"
 msgid "Your monthly Free card allowance is almost used up, so {count} card(s) were not added."
 msgstr ""
@@ -1365,12 +1623,12 @@ msgctxt "shell.share.more-cards"
 msgid "+{count} more"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:183
+#: src/features/onboarding/OnboardingJourney.tsx:185
 msgctxt "onboarding.language.subtitle"
 msgid "This sets the app's interface and the language your explanations will be written in."
 msgstr ""
 
-#: src/app/AppRuntime.tsx:569
+#: src/app/AppRuntime.tsx:588
 #: src/components/shell/CourseSwitcherControl.tsx:112
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -1391,7 +1649,7 @@ msgctxt "course.switcher.no-active"
 msgid "Choose a course"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:245
+#: src/features/onboarding/OnboardingJourney.tsx:247
 msgctxt "settings.course.script.simplified"
 msgid "Simplified"
 msgstr ""
@@ -1458,12 +1716,12 @@ msgstr ""
 
 #: src/features/courses/CourseGoalsPanel.tsx:54
 #: src/features/courses/CourseGoalsPanel.tsx:97
-#: src/features/onboarding/OnboardingJourney.tsx:239
+#: src/features/onboarding/OnboardingJourney.tsx:241
 msgctxt "course.goal.add.date-label"
 msgid "Exam or target date (optional)"
 msgstr ""
 
-#: src/app/AppRuntime.tsx:571
+#: src/app/AppRuntime.tsx:590
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr ""
@@ -1503,13 +1761,13 @@ msgctxt "shell.share.manage"
 msgid "Manage shared link"
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:275
+#: src/features/onboarding/OnboardingJourney.tsx:277
 msgctxt "onboarding.aha.title"
 msgid "Let's add your first cards"
 msgstr ""
 
 #: src/app/AppDeferredViews.tsx:23
-#: src/app/AppRuntime.tsx:80
+#: src/app/AppRuntime.tsx:83
 msgctxt "shell.opening-dialog"
 msgid "Opening dialog"
 msgstr ""
@@ -1524,12 +1782,12 @@ msgctxt "course.error.generic"
 msgid "That course action did not go through. Please try again."
 msgstr ""
 
-#: src/features/onboarding/OnboardingJourney.tsx:192
-#: src/features/onboarding/OnboardingJourney.tsx:213
-#: src/features/onboarding/OnboardingJourney.tsx:251
-#: src/features/onboarding/OnboardingJourney.tsx:269
-#: src/features/onboarding/OnboardingJourney.tsx:284
-#: src/features/onboarding/OnboardingJourney.tsx:298
+#: src/features/onboarding/OnboardingJourney.tsx:194
+#: src/features/onboarding/OnboardingJourney.tsx:215
+#: src/features/onboarding/OnboardingJourney.tsx:253
+#: src/features/onboarding/OnboardingJourney.tsx:271
+#: src/features/onboarding/OnboardingJourney.tsx:286
+#: src/features/onboarding/OnboardingJourney.tsx:300
 msgctxt "onboarding.continue"
 msgid "Continue"
 msgstr ""

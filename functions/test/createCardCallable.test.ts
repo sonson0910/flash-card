@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 
-vi.mock('../src/accountData.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/accountData.js')>(), isAccountDeleting: vi.fn(async () => false) }));
+vi.mock('../src/accountData.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/accountData.js')>(), isAccountDeleting: vi.fn(async () => false), readAccountAccess: vi.fn(async () => ({ deleting: false, profiled: true })) }));
 
 const persistence = vi.hoisted(() => ({ create: vi.fn() }));
 vi.mock('../src/cardPersistence.js', async importOriginal => ({

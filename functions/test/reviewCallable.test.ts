@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('../src/accountData.js', async importOriginal => ({
   ...await importOriginal<typeof import('../src/accountData.js')>(),
   isAccountDeleting: vi.fn(async () => false),
+  readAccountAccess: vi.fn(async () => ({ deleting: false, profiled: true })),
 }));
 import { createReviewCardHandler, toReviewHttpsError } from '../src/index.js';
 import { ReviewPersistenceConflictError } from '../src/reviewPersistence.js';

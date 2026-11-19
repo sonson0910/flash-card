@@ -233,6 +233,19 @@ describe('Firestore rules source invariants', () => {
     expect(genericProfileMatch).toContain("profileDocId != 'xp_history'");
   });
 
+  it('keeps the account profile and the age-restriction marker server-written', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    for (const name of ['account', 'age_restriction']) {
+      const match = extractRulesBlock(rules, `match /users/{userId}/profile/${name}`);
+      expect(match).toMatch(/allow read: if isOwner\(userId\);/);
+      expect(match).toMatch(/allow create, update, delete: if false;/);
+      expect(match).not.toMatch(/allow (write|create|update|delete): if (?!false)/);
+    }
+    const genericProfileMatch = extractRulesBlock(rules, 'match /users/{userId}/profile/{profileDocId}');
+    expect(genericProfileMatch).toContain("profileDocId != 'account'");
+    expect(genericProfileMatch).toContain("profileDocId != 'age_restriction'");
+  });
+
   it('enforces revisioned creates, monotonic updates and tombstone-backed deletes', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const cardMatch = rules.match(

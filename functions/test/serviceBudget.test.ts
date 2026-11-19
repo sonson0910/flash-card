@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 vi.mock('../src/pilotConfig.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/pilotConfig.js')>(), loadPilotConfig: vi.fn(async () => ({ analyticsEnabled: false })) }));
-vi.mock('../src/accountData.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/accountData.js')>(), isAccountDeleting: vi.fn(async () => false) }));
+vi.mock('../src/accountData.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/accountData.js')>(), isAccountDeleting: vi.fn(async () => false), readAccountAccess: vi.fn(async () => ({ deleting: false, profiled: true })) }));
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { describe, expect, it, vi } from 'vitest';
