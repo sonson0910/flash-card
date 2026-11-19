@@ -863,3 +863,71 @@ describe('study time record', () => {
     }
   });
 });
+
+describe('weekly words record', () => {
+  const statsPath = 'users/owner/profile/stats';
+  const run = async (stats: DocumentData, verifiedAction: Parameters<typeof prepareVerifiedGamification>[3]) => {
+    const test = harness({ [statsPath]: stats });
+    const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', verifiedAction);
+    return { ...test, prepared, wordWeeksV1: prepared.statsPatch.wordWeeksV1 as Record<string, unknown> | undefined };
+  };
+  const settled = (overrides: Record<string, unknown> = {}) => ({
+    verifiedXp: 40, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
+    streakV1: settledStreak(), achievementsV1: settledAchievements(), ...overrides,
+  });
+  const card = (fields: Record<string, unknown> = {}) => ({
+    firstReview: false, firstEasy: false, started: false, mastered: false, reviewTimesMs: [], ...fields,
+  });
+
+  it.each([
+    // 00:10 on Monday in Ho Chi Minh City; the answer at 23:50 belongs to the week before.
+    ['Asia/Saigon', '2026-11-22T17:10:00.000Z', ['2026-11-22T16:50:00.000Z', '2026-11-22T17:05:00.000Z'], '2026-11-23'],
+    // 00:30 on the Monday after summer time began in Paris; 23:30 on Sunday belongs to the week before.
+    ['Europe/Paris', '2026-03-29T22:30:00.000Z', ['2026-03-29T21:30:00.000Z', '2026-03-29T22:20:00.000Z'], '2026-03-30'],
+  ])('counts the reviews of a card in the Monday week of %s', async (timeZone, receivedAt, earlier, monday) => {
+    const result = await run(settled({ rewardTimeZone: timeZone }), action({
+      receivedAt: new Date(receivedAt), timeZone,
+      reviewedCard: card({ mastered: true, reviewTimesMs: [...earlier, receivedAt].map(time => Date.parse(time)) }),
+    }));
+    expect(result.reads).toEqual([statsPath, awardPath('word-focus', monday)]);
+    expect(result.wordWeeksV1).toEqual({
+      coverageStartedOn: monday, fromFirstAction: false,
+      daysByLanguage: { en: { [monday]: { started: 0, mastered: 1 } } },
+      bestWeekByLanguage: {},
+      wordOfWeekByLanguage: { en: { [monday]: { cardId: 'word-focus', reviews: 2 } } },
+    });
+  });
+
+  it('counts a started word for a new account and leaves card creation and practice out', async () => {
+    const test = harness();
+    const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({
+      timeZone: 'UTC', reviewedCard: card({ firstReview: true, started: true, reviewTimesMs: [Date.parse('2026-03-08T10:30:00.000Z')] }),
+    }));
+    expect(prepared.statsPatch.wordWeeksV1).toMatchObject({
+      coverageStartedOn: '2026-03-08', fromFirstAction: true, daysByLanguage: { en: { '2026-03-08': { started: 1, mastered: 0 } } },
+    });
+    expect((await run(settled(), action({ kind: 'create', timeZone: 'UTC' }))).wordWeeksV1).toBeUndefined();
+    expect((await run(settled(), {
+      kind: 'quiz', receivedAt: new Date('2026-03-08T10:30:00.000Z'), timeZone: 'UTC', resultXp: 10,
+    })).wordWeeksV1).toBeUndefined();
+  });
+
+  it('starts an unusable stored record over and deletes its stale keys', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const result = await run(settled({
+        wordWeeksV1: {
+          coverageStartedOn: '2026-03-01', fromFirstAction: true,
+          daysByLanguage: { en: { '2026-03-02': { started: -1, mastered: 0 } } }, bestWeekByLanguage: {}, wordOfWeekByLanguage: {},
+        },
+      }), action({ timeZone: 'UTC', reviewedCard: card({ started: true }) }));
+      expect(isDeleteSentinel((result.wordWeeksV1?.daysByLanguage as Record<string, Record<string, unknown>>).en['2026-03-02'])).toBe(true);
+      expect(result.wordWeeksV1).toMatchObject({
+        coverageStartedOn: '2026-03-08', fromFirstAction: false, daysByLanguage: { en: { '2026-03-08': { started: 1, mastered: 0 } } },
+      });
+      expect(warn).toHaveBeenCalledWith('Stored weekly words were unusable and start over.');
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});

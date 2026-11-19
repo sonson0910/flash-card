@@ -5,10 +5,12 @@ import { parseAchievementRecords, parseAchievements } from './achievement-rules.
 import { backfilledAchievements, evaluateAchievements, isLateHour, loadAchievementBaseline } from './achievements.js';
 import { InputValidationError } from './inputValidation.js';
 import { nextStudyTime, parseStudyTime } from './study-time-rules.js';
+import { isCourseLanguage, nextWordWeeks, parseWordWeeks } from './word-week-rules.js';
 import {
   STREAK_MILESTONE_XP, STREAK_REWARD_RUN, advanceStreak, initialStreakState, isStreakChangeWorthShowing, parseStreakState,
   type StreakChange,
 } from './streak-rules.js';
+import { shiftStudyDay, weekStartOf } from './study-day-rules.js';
 import { CREATE_CARD_XP, REVIEW_CARD_XP } from './xp-rules.js';
 
 const VERIFIED_SCHEMA_VERSION = 1;
@@ -23,6 +25,7 @@ const DAILY_GOALS_DAYS = 8;
 const STREAK_FIELD = 'streakV1';
 const ACHIEVEMENTS_FIELD = 'achievementsV1';
 const STUDY_TIME_FIELD = 'studyTimeV1';
+const WORD_WEEKS_FIELD = 'wordWeeksV1';
 const WEB_WANDERER_BADGE = 'web-wanderer';
 
 type ActionKind = 'review' | 'create' | 'quiz' | 'spelling' | 'match';
@@ -42,6 +45,12 @@ export type VerifiedGamificationAction = {
     firstReview: boolean;
     /** Rated Easy for the first time: not Easy now and no Easy in its history. */
     firstEasy: boolean;
+    /** The card had no review evidence at all, so this review starts it. */
+    started: boolean;
+    /** This review made the card mastered. */
+    mastered: boolean;
+    /** Server-bounded times of every review in the card's history, this one included. */
+    reviewTimesMs: number[];
   };
   /** Correct answers of a verified spelling session. */
   correctAnswers?: number;
@@ -289,6 +298,17 @@ const replacingMergePatch = (stored: unknown, next: Record<string, unknown>): Do
 
 const levelForXp = (xp: number) => Math.floor(Math.sqrt(xp / 100)) + 1;
 
+// Reviews whose time falls in the Monday week of `studyDay` in the account's time zone.
+const reviewsInWeekOf = (timesMs: unknown, studyDay: string, timeZone: string): number => {
+  if (!Array.isArray(timesMs)) return 0;
+  const weekStart = weekStartOf(studyDay);
+  const weekEnd = shiftStudyDay(weekStart, 6);
+  return timesMs.filter(time => typeof time === 'number' && Number.isFinite(time)).filter(time => {
+    const day = dayInTimeZone(new Date(time), timeZone);
+    return day >= weekStart && day <= weekEnd;
+  }).length;
+};
+
 const xpFor = (action: VerifiedGamificationAction): number => {
   if (action.kind === 'review') return REVIEW_CARD_XP;
   if (action.kind === 'create') return CREATE_CARD_XP;
@@ -453,6 +473,8 @@ export async function prepareVerifiedGamification(
     before: { verifiedXp: xp, streak: Math.max(streak, streakState.best, heldStreak) },
     after: { verifiedXp: nextXp, streak: Math.max(nextStreak, streakAdvance.state.best, heldStreak) },
   }) : undefined;
+  // Coverage of the study time and weekly word records began with the account's first verified action.
+  const fromFirstAction = !statsSnapshot.exists || (xp === 0 && stats.lastVerifiedStudyDay == null);
   // Study time is credited to reviews and practice completions; creating a card is not counted.
   const storedStudyTime = parseStudyTime(stats[STUDY_TIME_FIELD]);
   if (!storedStudyTime && stats[STUDY_TIME_FIELD] !== undefined) console.warn('Stored study time was unusable and starts over.');
@@ -460,7 +482,7 @@ export async function prepareVerifiedGamification(
     stored: storedStudyTime,
     seed: {
       lastActionAtMs: lastVerifiedReviewAt instanceof Timestamp ? lastVerifiedReviewAt.toMillis() : null,
-      fromFirstAction: !statsSnapshot.exists || (xp === 0 && stats.lastVerifiedStudyDay == null),
+      fromFirstAction,
     },
     action: {
       atMs: action.receivedAt.getTime(),
@@ -474,6 +496,22 @@ export async function prepareVerifiedGamification(
       }),
     },
   });
+  // Weekly words count reviews in a course language, from facts only the review path holds.
+  const storedWordWeeks = parseWordWeeks(stats[WORD_WEEKS_FIELD]);
+  if (!storedWordWeeks && stats[WORD_WEEKS_FIELD] !== undefined) console.warn('Stored weekly words were unusable and start over.');
+  const reviewedCard = isReview ? action.reviewedCard : undefined;
+  const wordWeeks = reviewedCard && isCourseLanguage(action.targetLanguage) ? nextWordWeeks({
+    stored: storedWordWeeks,
+    fromFirstAction,
+    review: {
+      studyDay,
+      language: action.targetLanguage,
+      cardId: action.cardId!,
+      started: reviewedCard.started === true,
+      mastered: reviewedCard.mastered === true,
+      reviewsThisWeek: reviewsInWeekOf(reviewedCard.reviewTimesMs, studyDay, timeZone),
+    },
+  }) : undefined;
   const streakChange: StreakChange | undefined = isReview && isStreakChangeWorthShowing(streakAdvance.change)
     ? { ...streakAdvance.change, ...(milestoneXp > 0 ? { milestoneXp } : {}) }
     : undefined;
@@ -506,6 +544,7 @@ export async function prepareVerifiedGamification(
       [STREAK_FIELD]: replacingMergePatch(stats[STREAK_FIELD], { ...streakAdvance.state }),
       ...(achievements?.patch ? { [ACHIEVEMENTS_FIELD]: achievements.patch } : {}),
       ...(studyTime ? { [STUDY_TIME_FIELD]: replacingMergePatch(stats[STUDY_TIME_FIELD], { ...studyTime.state }) } : {}),
+      ...(wordWeeks ? { [WORD_WEEKS_FIELD]: replacingMergePatch(stats[WORD_WEEKS_FIELD], { ...wordWeeks }) } : {}),
     },
     ...(xpGained > 0 ? { historyRef: refs.history, historyPatch: { verifiedByDayV1: { [studyDay]: FieldValue.increment(xpGained) } } } : {}),
     hasXpAward,

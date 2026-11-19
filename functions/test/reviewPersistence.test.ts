@@ -408,7 +408,7 @@ describe('review persistence', () => {
     }
   });
 
-  it('tells the achievements record whether a card is reviewed or rated Easy for the first time', async () => {
+  it('tells the stats records whether a card is reviewed, started or rated Easy for the first time', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-27T12:00:00.000Z'));
     try {
@@ -420,16 +420,43 @@ describe('review persistence', () => {
         await applyReviewForOwner(test.database, 'owner', reviewRequest({
           rating: 'easy', fields: scheduleReviewTransition(stored, 'easy', new Date('2026-08-24T00:00:00.000Z')),
         }));
-        return test.writes.find(write => write.path === 'users/owner/profile/stats')?.data.achievementsV1.counters;
+        const stats = test.writes.find(write => write.path === 'users/owner/profile/stats');
+        if (!stats) throw new Error('stats were not written');
+        return stats.data;
       };
       // Never reviewed: the card counts and its first Easy counts.
-      expect(await reviewEasy(baseCard())).toMatchObject({ reviewedCards: 1, masteredWords: 1 });
+      expect((await reviewEasy(baseCard())).achievementsV1.counters).toMatchObject({ reviewedCards: 1, masteredWords: 1 });
       // Rated Easy before and later demoted: already counted on both.
       const demoted = {
         ...baseCard([{ rating: 'easy', reviewedAt: '2026-08-20T00:00:00.000Z', scheduledDays: 4, elapsedDays: 0 }]),
         reviews: 1, difficulty: 'good',
       };
-      expect(await reviewEasy(demoted)).toMatchObject({ reviewedCards: 1, masteredWords: 0 });
+      const again = await reviewEasy(demoted);
+      expect(again.achievementsV1.counters).toMatchObject({ reviewedCards: 1, masteredWords: 0 });
+      // The weekly words count a mastery each time it happens, but a card is started only once.
+      expect(again.wordWeeksV1.daysByLanguage).toEqual({ en: { '2026-09-27': { started: 0, mastered: 1 } } });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('counts a new card rated Easy as started and mastered in its course language, with its review this week', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00.000Z'));
+    try {
+      const test = harness();
+      test.values.set('users/owner/profile/stats', snapshot(true, {
+        rewardTimeZone: 'UTC', verifiedXp: 10, verifiedStreak: 1, lastVerifiedStudyDay: '2026-09-26',
+      }));
+      const reviewedAt = '2026-09-27T11:59:00.000Z';
+      await applyReviewForOwner(test.database, 'owner', reviewRequest({
+        rating: 'easy', reviewedAt, fields: scheduleReviewTransition(baseCard(), 'easy', new Date(reviewedAt)),
+      }));
+      expect(test.writes.find(write => write.path === 'users/owner/profile/stats')?.data.wordWeeksV1).toMatchObject({
+        coverageStartedOn: '2026-09-27',
+        daysByLanguage: { en: { '2026-09-27': { started: 1, mastered: 1 } } },
+        wordOfWeekByLanguage: { en: { '2026-09-21': { cardId: 'word-focus', reviews: 1 } } },
+      });
     } finally {
       vi.useRealTimers();
     }

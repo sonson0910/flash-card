@@ -289,6 +289,12 @@ const receiptResult = (value: unknown): ReviewPersistenceResult | null => {
   };
 };
 
+// A card the library shows as new: never reviewed by any scheduler the app has used.
+const hasReviewEvidence = (card: CardRecord): boolean => Number(card.reviews ?? 0) > 0
+  || (Array.isArray(card.reviewHistory) && card.reviewHistory.length > 0)
+  || Number((card.fsrs as Record<string, unknown> | undefined)?.reps ?? 0) > 0
+  || Boolean(card.nextReviewDate);
+
 const isMastered = (card: CardRecord): boolean => card.difficulty === 'easy'
   || Number(card.interval ?? (card.fsrs as Record<string, unknown> | undefined)?.scheduledDays ?? 0) >= 21;
 
@@ -449,6 +455,9 @@ export async function applyReviewForOwner(
             firstReview: Number(stored.reviews ?? 0) === 0,
             firstEasy: request.rating === 'easy' && stored.difficulty !== 'easy'
               && !previousHistory.some(entry => entry?.rating === 'easy'),
+            started: !hasReviewEvidence(stored),
+            mastered: isMastered(candidate) && !isMastered(stored),
+            reviewTimesMs: resultHistory.map(entry => Date.parse(String(entry?.reviewedAt))).filter(Number.isFinite),
           },
         });
         gamification = preparedGamification.outcome;
