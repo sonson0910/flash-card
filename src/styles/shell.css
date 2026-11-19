@@ -210,6 +210,8 @@ html[data-theme-family=crystal] .claude-app-shell[data-view=files] .claude-works
 }
 @media (max-width: 1023px) {
   .claude-app-shell[data-view=files] .claude-workspace-inner,html[data-theme-family=crystal] .claude-app-shell[data-view=files] .claude-workspace-inner { --sf-files-gutter: 20px; padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+  /* The classic bar floats 18px above the edge, so its top sits higher than the docked Crystal bar. */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-app-shell[data-view=files] .claude-workspace-inner { padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (max-width: 640px) {
   .claude-app-shell[data-view=files] .claude-workspace-inner,html[data-theme-family=crystal] .claude-app-shell[data-view=files] .claude-workspace-inner { --sf-files-gutter: 16px; }

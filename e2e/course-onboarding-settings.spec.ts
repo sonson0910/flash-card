@@ -244,7 +244,7 @@ test('a new signed-in learner advances from language selection to a target choic
   await expect(dialog.getByRole('heading', { name: 'Flip each card, then grade yourself.' })).toBeVisible({ timeout: 30_000 });
   const firstCard = dialog.getByRole('group', { name: /^你好 flashcard/ });
   await expect(firstCard).toBeVisible({ timeout: 15_000 });
-  await expect(firstCard).toHaveAccessibleName(/Showing the English word/);
+  await expect(firstCard).toHaveAccessibleName(/Showing the Chinese word/);
   await firstCard.getByRole('button', { name: /^Reveal the .*meaning of 你好$/ }).click();
   await expect(firstCard).toHaveAccessibleName(/meaning/);
   await expect(firstCard).toContainText('hello');
@@ -254,7 +254,7 @@ test('a new signed-in learner advances from language selection to a target choic
   await grades.getByRole('button', { name: 'Got it' }).click();
   // Onboarding is a dialog; a tap on the card face must still turn the card it hosts.
   const secondCard = dialog.getByRole('group', { name: / flashcard/ });
-  await expect(secondCard).toHaveAccessibleName(/Showing the English word/);
+  await expect(secondCard).toHaveAccessibleName(/Showing the Chinese word/);
   await secondCard.locator('[data-flashcard-stage]').click({ position: { x: 16, y: 120 } });
   await expect(secondCard).toHaveAccessibleName(/meaning/);
   for (const answer of ['Forgot', 'Got it', 'Got it', 'Forgot']) {

@@ -388,7 +388,8 @@ test('mobile onboarding keeps selected options and actions clear through the stu
   const firstCard = onboarding.getByRole('group', { name: /^안녕하세요 flashcard/ });
   await expect(firstCard).toBeVisible({ timeout: 30_000 });
   await expect(firstCard.getByText('안녕하세요', { exact: true })).toBeVisible();
-  await expect(firstCard.getByText('annyeonghaseyo', { exact: true })).toBeVisible();
+  // Korean cards show the romanization under each syllable block.
+  await expect(firstCard.locator('[data-reading-romanization]')).toHaveText(['an', 'nyeong', 'ha', 'se', 'yo']);
   const createdCards = onboarding.getByRole('list', { name: 'Your first 5 cards' }).getByRole('listitem');
   await expect(createdCards).toHaveCount(5);
   for (const name of ['Forgot', 'Got it']) {
