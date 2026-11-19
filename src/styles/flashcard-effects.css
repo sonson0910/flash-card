@@ -250,11 +250,12 @@
   }
 }
 /* Constrained devices drop the glass blur. Plain glass panels fall back to the surface token;
-   card looks ([data-card-look]) keep their own opaque surface and tier rim. */
+   card looks ([data-card-look]) keep their own opaque surface and tier rim. The card-look filter
+   sits in :where() so it adds no specificity and the Zen slab's fixed dark surface still wins. */
 @media (max-width: 1180px), (hover: none), (pointer: coarse) {
-  .flashcard-panel:not([data-card-look]),
+  .flashcard-panel:where(:not([data-card-look])),
   .zen-glass-slab,
-  .dark .flashcard-panel:not([data-card-look]),
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -269,7 +270,7 @@
     background: #081418;
   }
 }
-html[data-save-data="true"] :is(.flashcard-panel:not([data-card-look]), .zen-glass-slab) {
+html[data-save-data="true"] :is(.flashcard-panel:where(:not([data-card-look])), .zen-glass-slab) {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   background: var(--sf-surface);
@@ -284,7 +285,7 @@ html[data-save-data="true"] .zen-glass-slab {
 @supports not (
   (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))
 ) {
-  .flashcard-panel:not([data-card-look]),
+  .flashcard-panel:where(:not([data-card-look])),
   .zen-glass-slab {
     background: var(--sf-surface);
   }
@@ -293,9 +294,9 @@ html[data-save-data="true"] .zen-glass-slab {
   }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .flashcard-panel:not([data-card-look]),
+  .flashcard-panel:where(:not([data-card-look])),
   .zen-glass-slab,
-  .dark .flashcard-panel:not([data-card-look]),
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;

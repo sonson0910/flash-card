@@ -584,7 +584,8 @@
 
 /* Tablet-class devices have a much smaller compositing budget than desktops.
    Their wide viewport used to select the full desktop effect stack on iPad. Flashcard card looks
-   ([data-card-look]) keep their own opaque surface and tier rim; only plain glass is flattened. */
+   ([data-card-look]) keep their own opaque surface and tier rim; only plain glass is flattened.
+   The card-look filter sits in :where() so it adds no specificity over the Zen slab rules. */
 @media (max-width: 1180px), (hover: none), (pointer: coarse) {
   .ambient-orb,
   .app-canvas::before {
@@ -595,9 +596,9 @@
   .liquid-glass,
   .liquid-control,
   .liquid-content-dock,
-  .flashcard-panel:not([data-card-look]),
+  .flashcard-panel:where(:not([data-card-look])),
   .zen-glass-slab,
-  .dark .flashcard-panel:not([data-card-look]),
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -618,7 +619,7 @@
   .dark .liquid-glass,
   .dark .liquid-control,
   .dark .liquid-content-dock,
-  .dark .flashcard-panel:not([data-card-look]),
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
@@ -629,7 +630,7 @@ html[data-save-data="true"] .app-canvas::before {
   display: none;
 }
 
-html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control, .liquid-content-dock, .flashcard-panel:not([data-card-look]), .zen-glass-slab) {
+html[data-save-data="true"] :is(.premium-surface, .liquid-glass, .liquid-control, .liquid-content-dock, .flashcard-panel:where(:not([data-card-look])), .zen-glass-slab) {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   background: var(--sf-surface);
@@ -649,7 +650,7 @@ html[data-save-data="true"] .zen-glass-slab {
   .liquid-glass,
   .liquid-control,
   .liquid-content-dock,
-  .flashcard-panel:not([data-card-look]),
+  .flashcard-panel:where(:not([data-card-look])),
   .zen-glass-slab {
     background: var(--sf-surface);
   }
@@ -662,7 +663,7 @@ html[data-save-data="true"] .zen-glass-slab {
   .dark .liquid-glass,
   .dark .liquid-control,
   .dark .liquid-content-dock,
-  .dark .flashcard-panel:not([data-card-look]),
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
@@ -673,9 +674,9 @@ html[data-save-data="true"] .zen-glass-slab {
   .liquid-glass,
   .liquid-control,
   .liquid-content-dock,
-  .flashcard-panel:not([data-card-look]),
+  .flashcard-panel:where(:not([data-card-look])),
   .zen-glass-slab,
-  .dark .flashcard-panel:not([data-card-look]),
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -696,7 +697,7 @@ html[data-save-data="true"] .zen-glass-slab {
   .dark .liquid-glass,
   .dark .liquid-control,
   .dark .liquid-content-dock,
-  .dark .flashcard-panel:not([data-card-look]),
+  .dark .flashcard-panel:where(:not([data-card-look])),
   .dark .zen-glass-slab {
     background: var(--sf-surface);
   }
