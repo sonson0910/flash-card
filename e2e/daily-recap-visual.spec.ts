@@ -153,8 +153,9 @@ for (const theme of themes) {
         await expect(panel).toBeVisible();
         await expect(panel.getByRole('heading', { name: theme.family === 'crystal' ? 'IELTS goal' : 'Toward your IELTS goal' })).toBeVisible();
         if (theme.family === 'classic' && goal.id === 'ready') await expect(panel.getByText(goal.percent, { exact: true })).toBeVisible();
-        // The band pair is the learner's own score and target; the panel never projects one.
-        await expect(panel).not.toContainText(/projected|predict|typical IELTS Reading passage/i);
+        // The band pair is the learner's own score and target; the panel never projects one and says so.
+        await expect(panel).toContainText(theme.family === 'crystal' ? 'Vocabulary progress, not an IELTS score.' : 'Not an IELTS score or a prediction.');
+        await expect(panel).not.toContainText(/projected|predicted|you will (?:score|reach)|typical IELTS Reading passage/i);
         await expectAccessibleAndContained(page, `${theme.family} ${theme.mode} ${viewport.name} IELTS ${goal.id}`);
         await attachRecap(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-ielts-${goal.id}-recap`);
         await expect(recap).toHaveScreenshot(`daily-recap-ielts-${goal.id}-${theme.family}-${theme.mode}-${viewport.name}.png`);
