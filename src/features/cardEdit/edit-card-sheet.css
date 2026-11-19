@@ -2,7 +2,7 @@
    the card; from the library it is a centred dialog. On phones both are a
    bottom sheet. */
 .edit-sheet {
-  --es-text-3: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface));
+  --es-text-3: var(--sf-text-muted);
   --es-input-bg: var(--sf-surface);
   --es-input-border: color-mix(in srgb, var(--sf-text) 14%, transparent);
   --es-input-radius: 12px;
@@ -26,6 +26,7 @@
   box-shadow: 0 -24px 60px -30px color-mix(in srgb, var(--sf-text) 55%, transparent);
   outline: 0;
 }
+:root.dark .edit-sheet { --es-text-3: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); }
 
 :root.dark .edit-sheet {
   --es-input-bg: var(--sf-surface-control);

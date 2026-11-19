@@ -232,7 +232,12 @@ for (const theme of themes) for (const viewport of viewports) for (const [group,
       if (dialog === 'edit' || dialog === 'edit-review') {
         const backdropPreview = page.locator('[data-edit-preview-backdrop]');
         const sheetPreview = page.locator('[data-edit-preview]');
-        if (viewport.name === 'desktop') {
+        if (dialog === 'edit') {
+          // From the library the editor is a centred dialog with no card behind it.
+          await expect(backdropPreview).toHaveCount(0);
+          if (viewport.name === 'desktop') await expect(sheetPreview).toBeHidden();
+          else await expect(sheetPreview).toBeVisible();
+        } else if (viewport.name === 'desktop') {
           await expect(backdropPreview).toBeVisible();
           await expect(sheetPreview).toBeHidden();
           const previewLayer = await backdropPreview.evaluate(element => Number(getComputedStyle(element).zIndex));

@@ -9,7 +9,7 @@
 .library-dialog-overlay--danger { background: color-mix(in srgb, var(--sf-scrim, rgb(7 10 20 / .78)) 88%, var(--sf-danger)); }
 
 .library-dialog-frame {
-  --ld-text-3: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface));
+  --ld-text-3: var(--sf-text-muted);
   --ld-body: color-mix(in srgb, var(--sf-text) 60%, var(--sf-text-muted));
   --ld-chip: var(--sf-surface-raised);
   --ld-radius: 18px;
