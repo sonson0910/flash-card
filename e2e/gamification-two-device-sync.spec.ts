@@ -134,9 +134,10 @@ test('active course and reading preference stay in sync across two signed-in dev
     const peerPage = await peerContext.newPage();
     await blockExternalNetwork(page);
     await blockExternalNetwork(peerPage);
+    // Settings opens on Appearance; the course lives in its own linkable section.
     await Promise.all([
-      signIn(page, '/?view=settings&locale=en'),
-      signIn(peerPage, '/?view=settings&locale=en'),
+      signIn(page, '/?view=settings&section=language&locale=en'),
+      signIn(peerPage, '/?view=settings&section=language&locale=en'),
     ]);
 
     const activeCourse = (target: typeof page) => target.locator('[data-settings-active-course]');
