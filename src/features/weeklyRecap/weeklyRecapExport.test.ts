@@ -108,14 +108,14 @@ describe('drawWeeklyRecapCard', () => {
     });
 
     expect(calls.fillText).toContain('SONFLASH · TỔNG KẾT TUẦN');
-    expect(calls.fillText).toContain('XP TUẦN NÀY');
+    expect(calls.fillText).toContain('XP tuần này');
     expect(calls.fillText).toContain('3 / 7 Ngày học');
     expect(calls.fillText.some(text => text.includes('Ngày tốt nhất'))).toBe(true);
     expect(calls.fillText).toContain('XP MỖI NGÀY TRONG 7 NGÀY QUA');
     expect(calls.fillText).toContain('Đã mở khóa 2 / 6 cột mốc (từ trước đến nay)');
-    expect(calls.fillText).toContain('Th');
+    expect(calls.fillText).toContain('T2');
     expect(calls.fillText).toContain('CN');
-    expect(calls.fillText).not.toContain('Mo');
+    expect(calls.fillText).not.toContain('M');
   });
 
   it('omits a field entirely when the selection turns it off', () => {
@@ -159,7 +159,7 @@ describe('drawWeeklyRecapCard', () => {
     });
     expect(calls.fillText).toContain('9');
     expect(calls.fillText).toContain('Reviews this week');
-    expect(calls.fillText).not.toContain('XP THIS WEEK');
+    expect(calls.fillText).not.toContain(englishCopy.xpThisWeek);
     expect(calls.fillText.some(text => text.includes('active days'))).toBe(false);
     expect(calls.fillText).not.toContain('DAILY XP');
   });
