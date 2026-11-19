@@ -24,6 +24,7 @@ import type { LegacyMigrationIssue } from '../librarySession/ownerLibrarySession
 import { formatNumber, formatRelativeTime } from '../../lib/format';
 import { getLibraryCardTier, isLibraryCardDue, sortLibraryCards, type LibrarySortOrder } from './libraryViewModel';
 import { getLibraryGridLoadingLabel } from './libraryLoading';
+import { getLibraryCoverTone, splitStressedWord } from './libraryCardFace';
 import { getRelativeReviewDays } from './libraryPresentation';
 import { ALL_PRACTICE_DECK_SCOPE, libraryDeckForPracticeScope, type PracticeDeckScope } from '../../lib/practiceScope';
 
@@ -356,6 +357,7 @@ export function LibraryCardGrid({
         {cards.map(card => {
           const cardTier = getLibraryCardTier(card);
           const due = isLibraryCardDue(card);
+          const stress = splitStressedWord(card.word, card.phonetic, card.language);
           const openFromRow = (event: MouseEvent<HTMLElement>) => {
             if (!cardIsInteractive(event)) openCard(card, event.currentTarget);
           };
@@ -366,20 +368,20 @@ export function LibraryCardGrid({
             }
           };
           return <article key={card.id} className={`library-word-card library-word-card--${cardTier}`} data-library-card-row="true" data-library-card-id={card.id} tabIndex={0} onClick={openFromRow} onKeyDown={onRowKeyDown}>
-            <div className="library-word-cover">
+            <div className={`library-word-cover library-word-cover--${getLibraryCoverTone(card.category)}`}>
               {card.imageUrl ? <img src={card.imageUrl} alt="" loading="lazy" /> : <><span aria-hidden="true">{card.word.charAt(0).toUpperCase() || '·'}</span><small>{card.category}</small></>}
               <b className="library-word-grade">{gradeLabel(cardTier)}</b>
-              {due && <b className="library-word-due"><span aria-hidden="true">!</span><Trans {...msg({ context: 'library.filters.due-short', message: 'Due' })} /></b>}
+              {due && <b className="library-word-due"><span aria-hidden="true" /><Trans {...msg({ context: 'library.filters.due-short', message: 'Due' })} /></b>}
               {card.bookmarked && (
                 <Star className="library-word-star" size={15} fill="currentColor" aria-label={catalog._(msg({ id: 'library.card.starred', message: 'Starred' }))}/>
               )}
             </div>
             <div className="library-word-body">
               <p className="library-word-meta"><i aria-hidden="true"/> {tierLabel(cardTier)} <span aria-hidden="true">·</span> {card.partOfSpeech ?? <Trans {...msg({ context: 'library.card.word', message: 'word' })} />}</p>
-              <h3 lang={card.language}>{card.word}</h3>
+              <h3 lang={card.language}>{stress ? <>{stress.before}<span className="library-word-stress">{stress.stressed}</span>{stress.after}</> : card.word}</h3>
               {card.phonetic && <code>{card.phonetic}</code>}
-              <div className="library-word-translation-row"><p className="library-word-translation">{card.translation}</p><span>{nextLabel(card)}</span></div>
-              <button type="button" ref={node => { if (node && detailCardId === card.id) detailTriggerRef.current = node; }} className="library-word-open" onClick={event => { event.stopPropagation(); openCard(card, event.currentTarget); }}><Trans {...msg({ context: 'library.card.open-details', message: 'Open card' })} /></button>
+              <div className="library-word-translation-row"><p className="library-word-translation">{card.translation}</p><span className={due ? 'is-due' : undefined}>{nextLabel(card)}</span></div>
+              <button type="button" ref={node => { if (node && detailCardId === card.id) detailTriggerRef.current = node; }} className="library-word-open" onClick={event => { event.stopPropagation(); openCard(card, event.currentTarget); }}><span><Trans {...msg({ context: 'library.card.open-details', message: 'Open card' })} /></span></button>
             </div>
             <div className="library-word-controls" onClick={event => event.stopPropagation()}>
               <label className="library-word-select"><input type="checkbox" checked={selectedIds.has(card.id)} onChange={() => toggleSelected(card.id)} aria-label={catalog._(msg({ id: 'library.card.select', message: 'Select card' }))}/><span className="sr-only"><Trans {...msg({ id: 'library.card.select', message: 'Select card' })} /></span></label>

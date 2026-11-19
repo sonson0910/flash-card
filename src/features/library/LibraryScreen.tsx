@@ -375,7 +375,7 @@ function LibraryCanvasRail({
 }) {
   const { tools } = model;
   const { i18n } = useLingui();
-  const filter = (key: string, label: ReactNode, selected: boolean, onClick: () => void) => <button key={key} type="button" aria-pressed={selected} className={selected ? 'is-active' : ''} onClick={onClick}>{label}</button>;
+  const filter = (key: string, label: ReactNode, selected: boolean, onClick: () => void) => <button key={key} type="button" data-library-filter={key} aria-pressed={selected} className={selected ? 'is-active' : ''} onClick={onClick}>{label}</button>;
   const deck = (key: string, name: ReactNode, selected: boolean, count: number, onClick: () => void) => <button key={key} type="button" role="tab" aria-selected={selected} className={selected ? 'is-active' : ''} onClick={onClick}><span>{name}</span><small>{count}</small></button>;
   const filterMark = (mark: ReactNode) => <span className="library-filter-mark" aria-hidden="true">{mark}</span>;
   return <div className="library-canvas-rail">
