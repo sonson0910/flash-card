@@ -90,8 +90,8 @@ describe('learner level on the achievements ring', () => {
     expect(html).toContain('data-learner-level="3"');
     expect(html).toMatch(/<span class="ach-mono">640<\/span> \/ 900 XP to Level 4/);
     // 260 XP left at an average of 80 XP per study day.
-    expect(html).toContain('≈ 4 sessions');
-    expect(html).toContain('48%');
+    expect(html).toContain('XP to Level 4</span><span class="tabular-nums">≈ 4 sessions</span>');
+    expect(html).toContain('class="ach-meter-fill" style="width:48%"');
     expect(html).not.toContain('data-featured-achievement');
   });
 
@@ -105,5 +105,14 @@ describe('learner level on the achievements ring', () => {
     )));
     expect(html).toContain('data-featured-achievement');
     expect(html).not.toContain('data-learner-level');
+  });
+
+  it('shows the share of the level when recent study days cannot support an estimate', () => {
+    const html = renderToStaticMarkup(createElement(I18nProvider, { i18n }, createElement(
+      AchievementsLearnerProvider, { learner: { level: 2, xp: 150 } },
+      createElement(AchievementsMatrix, { stats: stats() }),
+    )));
+    expect(html).toContain('XP to Level 3</span><span class="tabular-nums">17%</span>');
+    expect(html).not.toContain('≈');
   });
 });

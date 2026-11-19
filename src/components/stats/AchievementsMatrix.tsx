@@ -293,8 +293,9 @@ export function AchievementsMatrix({ stats, onBackToProgress }: AchievementsMatr
         {levelFacts
           ? <div className="ach-meter" data-learner-level={levelFacts.level}>
             <div className="ach-meter-row">
-              <span><Trans {...levelMeter} values={{ xp: formatNumber(levelFacts.xp), next: formatNumber(levelFacts.next), level: formatNumber(levelFacts.level + 1) }} components={{ 0: <span className="ach-mono" /> }} />{sessionsLeft !== null && <> · {_({ ...levelSessions, values: { count: sessionsLeft } })}</>}</span>
-              <span className="tabular-nums">{formatNumber(levelFacts.percent)}%</span>
+              <span><Trans {...levelMeter} values={{ xp: formatNumber(levelFacts.xp), next: formatNumber(levelFacts.next), level: formatNumber(levelFacts.level + 1) }} components={{ 0: <span className="ach-mono" /> }} /></span>
+              {/* The board estimates the sessions left; without enough recent study days the share of the level stands in. */}
+              <span className="tabular-nums">{sessionsLeft !== null ? _({ ...levelSessions, values: { count: sessionsLeft } }) : `${formatNumber(levelFacts.percent)}%`}</span>
             </div>
             <span className="ach-meter-track" aria-hidden="true"><span className="ach-meter-fill" style={{ width: `${levelFacts.percent}%` }} /></span>
           </div>
