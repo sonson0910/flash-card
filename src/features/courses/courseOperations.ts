@@ -5,6 +5,7 @@ import {
   createCourseRecord,
   createGoalRecord,
   CourseError,
+  CourseProfileValidationError,
   MAX_COURSES_PER_PROFILE,
   normalizeCreateCourseInput,
   normalizeCreateGoalInput,
@@ -21,6 +22,7 @@ import {
   type UpdateCourseInput,
   type UpdateGoalInput,
 } from './courseModel';
+import { updatedGoalLevel } from '../../../functions/src/course-profile-contract';
 
 type IdFactory = (kind: 'course' | 'goal') => string;
 type Clock = () => string;
@@ -205,6 +207,16 @@ export const addGoalToProfile = (
   });
 };
 
+// Mirrors the server: IELTS goal levels must be a band, except a level resent unchanged.
+const updatedLevel = (goal: CourseGoal, level: string | null): string | null => {
+  try {
+    return updatedGoalLevel(goal, level);
+  } catch (error) {
+    if (error instanceof CourseProfileValidationError) throw new CourseError('profile-invalid', error.message, {}, error);
+    throw error;
+  }
+};
+
 export const updateGoalInProfile = (
   profile: CourseProfile,
   courseId: string,
@@ -222,7 +234,7 @@ export const updateGoalInProfile = (
     ...course,
     goals: course.goals.map(goal => goal.id !== id ? goal : parseGoalRecord({
       ...goal,
-      ...(patch.level === undefined ? {} : { level: patch.level }),
+      ...(patch.level === undefined ? {} : { level: updatedLevel(goal, patch.level) }),
       ...(patch.targetDate === undefined ? {} : { targetDate: patch.targetDate }),
       ...(patch.status === undefined ? {} : { status: patch.status }),
     })),
