@@ -37,7 +37,7 @@ export function RecoverableActionFeedback({
             event.stopPropagation();
             onRetry();
           }}
-          className="min-h-11 shrink-0 rounded-lg border border-current px-3 font-bold transition-colors hover:bg-rose-100 dark:hover:bg-rose-900"
+          className="min-h-11 shrink-0 rounded-lg border border-current px-3 font-bold transition-colors hover:bg-[color-mix(in_srgb,var(--sf-danger)_14%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-danger)] motion-reduce:transition-none"
         >
           {retryLabel}
         </button>
@@ -50,7 +50,7 @@ export function RecoverableActionFeedback({
           event.stopPropagation();
           onDismiss();
         }}
-        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-rose-100 dark:hover:bg-rose-900"
+        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-[color-mix(in_srgb,var(--sf-danger)_14%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-danger)] motion-reduce:transition-none"
         aria-label={dismissLabel}
       >
         <X size={16} aria-hidden="true" />

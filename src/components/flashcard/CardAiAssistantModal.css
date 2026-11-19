@@ -1,0 +1,241 @@
+/* Card tutor dialog. The chrome comes from overlay-dialog.css; this file draws the tutor's header
+   mark, the preset chips, the answer panels and the ask field for both theme families. */
+
+.overlay-dialog-frame.card-tutor { z-index: 111; max-width: 37.5rem; }
+html[data-theme-family="crystal"] .overlay-dialog-frame.card-tutor { max-width: 38.75rem; }
+.overlay-dialog-frame.card-tutor:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+
+.card-tutor-mark {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: var(--sf-text);
+  color: var(--sf-surface);
+}
+html[data-theme-family="classic"].dark .card-tutor-mark {
+  background: linear-gradient(135deg, #6bdbef 0%, #33c5f8 40%, #7f81e6 100%);
+  box-shadow: 0 8px 22px -10px rgb(40 211 244 / .7);
+  color: var(--sf-on-brand);
+}
+.card-tutor-mark svg { width: 16px; height: 16px; fill: currentColor; }
+.card-tutor-portrait,
+.card-tutor-kicker-crystal { display: none; }
+
+html[data-theme-family="crystal"] .card-tutor-mark,
+html[data-theme-family="crystal"] .card-tutor-kicker-classic { display: none; }
+html[data-theme-family="crystal"] .card-tutor-kicker-crystal { display: inline; }
+html[data-theme-family="crystal"] .card-tutor .overlay-dialog-kicker { color: var(--od-holo-text); }
+html[data-theme-family="crystal"] .card-tutor-portrait {
+  display: block;
+  width: 74px;
+  height: 74px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  clip-path: var(--nk-chamfer-sm);
+}
+html[data-theme-family="crystal"] .card-tutor-portrait img { display: block; width: 100%; height: 100%; }
+html[data-theme-family="crystal"] .card-tutor-word {
+  background: var(--od-crimson);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-right: .08em;
+}
+
+.card-tutor-sense { margin-top: 6px; }
+.card-tutor-ipa { font-family: "Geist Mono", ui-monospace, monospace; font-size: 12.5px; }
+html[data-theme-family="crystal"] .card-tutor-meaning { color: var(--sf-brand-text); font-weight: 600; }
+
+.card-tutor-content {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding: 18px 26px 22px;
+  overscroll-behavior: contain;
+}
+html[data-theme-family="crystal"] .card-tutor-content { padding: 4px 26px 18px; }
+
+.card-tutor-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+/* The chips draw at the board's 34px; the pseudo-element extends the touch target to 44px. */
+.card-tutor-preset {
+  position: relative;
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid var(--sf-border);
+  border-radius: 999px;
+  background: var(--sf-surface-raised);
+  color: var(--sf-text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+.card-tutor-preset::after { content: ""; position: absolute; inset: -5px 0; }
+.card-tutor-preset:not(:disabled):hover { border-color: var(--od-accent-line); color: var(--sf-brand-text); }
+.card-tutor-preset:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+.card-tutor-preset:disabled { cursor: wait; opacity: .6; }
+.card-tutor-preset[data-active] { border-color: var(--od-accent-line); background: var(--od-accent-soft); color: var(--sf-brand-text); }
+html[data-theme-family="crystal"] .card-tutor-preset {
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .02em;
+  transform: skewX(-8deg);
+}
+html[data-theme-family="crystal"] .card-tutor-preset:not(:disabled):hover { box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text); }
+html[data-theme-family="crystal"] .card-tutor-preset[data-active] { background: var(--od-crimson); box-shadow: var(--od-primary-glow); color: #fff; }
+
+.card-tutor-answers { display: flex; flex-direction: column; gap: 10px; }
+.card-tutor-answer {
+  padding: 18px 20px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--od-fr, 14px);
+  background: var(--sf-surface-raised);
+}
+html[data-theme-family="crystal"] .card-tutor-answer {
+  padding: 16px 18px 14px;
+  border: 0;
+  border-radius: 0;
+  background: var(--od-inner);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--od-holo) 30%, transparent);
+  clip-path: var(--nk-chamfer);
+}
+.card-tutor-answer-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  color: var(--sf-brand-text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.card-tutor-answer-heading svg { width: 13px; height: 13px; flex-shrink: 0; }
+html[data-theme-family="crystal"] .card-tutor-answer-heading {
+  color: var(--od-holo-text);
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.card-tutor-answer-text { margin: 0; color: var(--sf-text); font-size: 14px; line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; }
+.card-tutor-loading { display: flex; align-items: center; gap: 8px; color: var(--sf-text-muted); font-size: 13px; font-weight: 600; }
+.card-tutor-spinner {
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border: 2px solid var(--od-accent-line, var(--sf-border));
+  border-top-color: var(--sf-brand);
+  border-radius: 50%;
+  animation: card-tutor-spin 900ms linear infinite;
+}
+html[data-theme-family="crystal"] .card-tutor-spinner { border-color: var(--sf-border); border-top-color: var(--od-holo); }
+@keyframes card-tutor-spin { to { transform: rotate(360deg); } }
+.card-tutor-error { margin: 0; color: var(--sf-danger); font-size: 13px; font-weight: 600; }
+
+.card-tutor-ask {
+  display: flex;
+  height: 50px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 3px 0 16px;
+  border: 1px solid var(--od-accent-line);
+  border-radius: var(--od-fr, 14px);
+  background: var(--sf-surface-control);
+  box-shadow: 0 0 0 4px var(--od-accent-soft);
+}
+.card-tutor-ask:focus-within { border-color: var(--sf-brand); }
+.card-tutor-input {
+  min-width: 0;
+  height: 44px;
+  flex: 1 1 auto;
+  border: 0;
+  background: transparent;
+  color: var(--sf-text);
+  font-size: 14px;
+}
+.card-tutor-input::placeholder { color: var(--od-subtle); }
+.card-tutor-input:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; border-radius: 6px; }
+.card-tutor-send {
+  display: flex;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--sf-on-brand);
+  cursor: pointer;
+}
+.card-tutor-send:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: -1px; }
+.card-tutor-send:disabled { cursor: not-allowed; opacity: .5; }
+.card-tutor-send-surface {
+  display: flex;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--od-primary-bg, var(--sf-brand));
+  color: var(--sf-surface);
+}
+html[data-theme-family="classic"].dark .card-tutor-send-surface { color: var(--sf-on-brand); }
+.card-tutor-send-surface svg { width: 17px; height: 17px; stroke-width: 2.4px; }
+html[data-theme-family="crystal"] .card-tutor-ask {
+  height: 48px;
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--od-holo) 45%, transparent);
+  clip-path: var(--nk-chamfer-sm);
+}
+html[data-theme-family="crystal"] .card-tutor-ask:focus-within { box-shadow: inset 0 0 0 2px var(--od-holo); }
+html[data-theme-family="crystal"] .card-tutor-input:focus-visible { outline: 0; }
+html[data-theme-family="crystal"] .card-tutor-send { border-radius: 0; }
+html[data-theme-family="crystal"] .card-tutor-send:focus-visible { outline: 0; }
+html[data-theme-family="crystal"] .card-tutor-send:focus-visible .card-tutor-send-surface { box-shadow: 0 0 0 2px var(--sf-text) inset; }
+html[data-theme-family="crystal"] .card-tutor-send-surface {
+  width: 40px;
+  height: 40px;
+  border-radius: 0;
+  background: var(--od-crimson);
+  color: #fff;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+.card-tutor-count { margin-left: auto; font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 639px) {
+  .card-tutor .overlay-dialog-header { padding-right: 16px; padding-left: 20px; }
+  .card-tutor-content { padding-right: 20px; padding-left: 20px; }
+  html[data-theme-family="crystal"] .card-tutor-content { padding-right: 20px; padding-left: 20px; }
+  .card-tutor .overlay-dialog-footer { padding-right: 20px; padding-left: 20px; }
+  .card-tutor-mark { display: none; }
+  html[data-theme-family="crystal"] .card-tutor-portrait { width: 56px; height: 56px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-tutor-preset { transition: none; }
+  .card-tutor-spinner { animation: none; }
+}
+html[data-motion="reduced"] .card-tutor-spinner { animation: none; }

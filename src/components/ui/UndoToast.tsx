@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FocusEvent } from 'react';
 import { Trans } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
@@ -132,11 +132,13 @@ export function UndoToast({ toast, onDismiss, stacked = false }: UndoToastProps)
       }}
       className={`notification-toast undo-toast pointer-events-auto ${positionClasses}`}
     >
+      {/* The undo window is only offered after a deletion, so the toast leads with the delete glyph. */}
+      <Trash2 size={15} aria-hidden="true" className="undo-toast-icon" />
       <span className={`undo-toast-message${toast.subject ? ' undo-toast-message--with-subject' : ''}`}>
         <span className="undo-toast-copy">{toast.message}</span>
         {toast.subject ? (
           <>
-            <span aria-hidden="true">·</span>
+            <span className="undo-toast-separator" aria-hidden="true"> · </span>
             <span className="undo-toast-subject">{toast.subject}</span>
           </>
         ) : null}
