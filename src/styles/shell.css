@@ -27,9 +27,10 @@
 .claude-topbar-nav { width: 100%; }
 .claude-topbar-inner { height: 100%; padding: 0 56px; gap: 28px; }
 .claude-brand { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-width: 44px; min-height: 44px; color: var(--sf-text); text-decoration: none; }
-.claude-brand-classic { display: grid; width: 30px; height: 30px; flex: none; place-items: center; border-radius: 9px; background: var(--sf-text); color: var(--sf-on-brand); font: italic 500 18px var(--sf-font-display); }
-.dark .claude-brand-classic { background: linear-gradient(145deg, var(--sf-brand-text), var(--sf-brand) 45%, var(--sf-second)); box-shadow: 0 0 20px -4px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
+.claude-brand-classic { display: grid; width: 30px; height: 30px; flex: none; place-items: center; border-radius: 9px; background: var(--sf-logo-bg); box-shadow: var(--sf-logo-shadow); color: var(--sf-logo-text); font: italic 500 18px var(--sf-font-display); }
 .claude-brand-star { display: none; flex: none; }
+.claude-brand-star-face { fill: var(--sf-star-face); }
+.claude-brand-star-shade { fill: var(--sf-star-shade); }
 .claude-brand-name { color: var(--sf-text); font: 450 22px/1 var(--sf-font-display); letter-spacing: -.01em; white-space: nowrap; }
 .claude-brand-name em { color: var(--sf-brand); font-style: italic; font-weight: inherit; }
 .dark .claude-brand-name em { font-style: normal; }
@@ -39,23 +40,26 @@
 .claude-nav-item[data-shell-active=true] { color: var(--sf-text); background-color: color-mix(in srgb, var(--sf-text) 8%, transparent); }
 :is(html[data-theme-family=classic], html:not([data-theme-family])):not(.dark) .claude-nav-item[data-shell-active=true] { color: var(--sf-on-brand); background-color: var(--sf-text); }
 .claude-shell-actions { flex: none; gap: 10px; }
+/* The board's 40px theme toggle, drawn inside the 45px hit box. */
 .claude-theme-menu { gap: 4px; }
 .claude-theme-quick-toggle,.claude-theme-picker,.claude-language-menu > button { width: 45px; height: 45px; flex: none; border: 2.5px solid transparent; border-radius: 50%; background: var(--sf-surface-raised) padding-box; box-shadow: inset 0 0 0 1px var(--sf-border); color: var(--sf-text-muted); }
 .claude-theme-quick-toggle:hover,.claude-theme-picker:hover,.claude-language-menu > button:hover { color: var(--sf-text); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
-.claude-theme-menu-popover,.claude-language-menu-popover,.claude-account-menu { max-height: min(70dvh, 32rem); overflow-y: auto; overscroll-behavior: contain; }
+.claude-theme-menu-popover,.claude-language-menu-popover { max-height: min(70dvh, 32rem); overflow-y: auto; overscroll-behavior: contain; }
 .claude-streak,.claude-level { display: inline-flex; height: 38px; min-height: 38px; align-items: center; justify-content: center; gap: 7px; padding: 0 14px 0 11px; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--sf-surface-raised); color: var(--sf-text); font-size: 13px; font-weight: 600; line-height: 1; white-space: nowrap; }
 /* The streak chip is the board's warm chip: amber on Midnight Aurora, rust on Ink & Paper. */
-.claude-streak { border-color: color-mix(in srgb, var(--sf-brand-text) 22%, transparent); color: var(--sf-brand-text); }
-.dark .claude-streak { border-color: color-mix(in srgb, var(--sf-reward) 28%, transparent); background: color-mix(in srgb, var(--sf-reward) 8%, transparent); color: var(--sf-reward); }
+.claude-streak { border-color: var(--sf-warm-line); background: var(--sf-warm-bg); color: var(--sf-warm); }
+.claude-streak-flame { flex: none; }
 .claude-level { padding: 0 14px; gap: 8px; }
 .claude-level-label { color: var(--sf-text-muted); font: 500 12px/1 var(--sf-font-mono); }
 .claude-level-track { display: none; width: 76px; height: 6px; overflow: hidden; border-radius: 999px; background: var(--sf-border); }
 .claude-level-track > span { display: block; height: 100%; background: var(--sf-brand); }
 .claude-language-menu > button { display: flex; align-items: center; justify-content: center; }
-.claude-account-trigger { width: 45px; height: 45px; min-height: 45px; padding: 0; overflow: hidden; border: 2.5px solid transparent; border-radius: 50%; background: var(--sf-avatar-bg) padding-box; box-shadow: inset 0 0 0 1px var(--sf-border); color: var(--sf-text); font-size: 13px; font-weight: 700; }
 .claude-account-trigger img { width: 100%; height: 100%; object-fit: cover; }
-.claude-account-menu { width: min(20rem, calc(100vw - 1.5rem)); max-height: min(calc(100dvh - 6rem), 40rem); }
 .claude-course-switcher-slot { flex: none; }
+.claude-topbar .claude-nav-items { margin-left: 10px; }
+/* Theme and language controls: the header keeps them while it has room; below that the account
+   menu renders its own copy (only one copy is displayed at a time, so names stay unique). */
+.account-menu-preferences { display: none; }
 .claude-workspace-inner { min-height: 100%; }
 .claude-app-shell .app-footer-bar { display: none; }
 
@@ -63,36 +67,32 @@
 .claude-app-shell:has(:is([data-session-shell="bridge"], [aria-labelledby="daily-lesson-heading"], [data-session-shell="placement"], [data-active-daily-match])) :is(.claude-topbar, .claude-mobile-nav, [data-offline-readiness]) { display: none; }
 .claude-app-shell:has(:is([data-session-shell="bridge"], [aria-labelledby="daily-lesson-heading"], [data-session-shell="placement"], [data-active-daily-match])) .claude-workspace-inner { max-width: none; padding: 0; }
 
-html[data-theme-family=crystal] { --shell-crimson: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 80%, white), var(--sf-brand) 45%, var(--sf-brand-hover)); --shell-text-strong: #fff; }
-html[data-theme-family=crystal]:not(.dark) { --shell-crimson: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 80%, white), #e0173f 50%, #a30c2d); --shell-text-strong: #081329; }
-html[data-theme-family=crystal] .claude-app-shell { font-family: var(--sf-font-body); background: var(--sf-canvas); }
+html[data-theme-family=crystal] .claude-app-shell { font-family: var(--sf-font-body); background: var(--sf-space), var(--sf-canvas); }
 html[data-theme-family=crystal] .claude-app-shell::before { opacity: 1; background-image: var(--nk-stars); mix-blend-mode: normal; }
-html[data-theme-family=crystal]:not(.dark) .claude-app-shell { background: radial-gradient(ellipse 50% 40% at 70% 20%,rgb(255 190 215 / .55),transparent 70%),radial-gradient(ellipse 45% 40% at 20% 80%,rgb(255 84 112 / .18),transparent 70%),linear-gradient(115deg,#a9dcff 0%,#c7ebff 24%,#b5e6ff 46%,#c9f6f4 66%,#9fd6ff 88%,#b8e4ff 100%); }
-html[data-theme-family=crystal].dark .claude-app-shell { background: radial-gradient(ellipse 55% 45% at 18% 18%,rgb(16 42 92 / .55),transparent 70%),radial-gradient(ellipse 50% 45% at 85% 72%,rgb(10 50 110 / .5),transparent 70%),radial-gradient(ellipse 45% 35% at 62% 8%,rgb(179 15 51 / .3),transparent 70%),#04060c; }
 html[data-theme-family=crystal] .claude-topbar { height: 78px; border: 0; }
 html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 44px; gap: 24px; }
 html[data-theme-family=crystal] .claude-brand-classic { display: none; }
-html[data-theme-family=crystal] .claude-brand-star { display: block; filter: drop-shadow(0 0 10px rgb(255 42 77 / .7)); }
-html[data-theme-family=crystal] .claude-brand-name { color: var(--shell-text-strong); font: italic 900 26px/1 var(--sf-font-display); letter-spacing: .01em; text-shadow: 0 0 18px color-mix(in srgb, var(--sf-brand) 45%, transparent); }
+html[data-theme-family=crystal] .claude-brand-star { display: block; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--sf-brand) 70%, transparent)); }
+html[data-theme-family=crystal] .claude-brand-name { color: var(--sf-text-strong); font: italic 900 26px/1 var(--sf-font-display); letter-spacing: .01em; text-shadow: 0 0 18px color-mix(in srgb, var(--sf-brand) 45%, transparent); }
 html[data-theme-family=crystal] .claude-brand-name em { color: var(--sf-brand-text); font-style: inherit; }
-html[data-theme-family=crystal] .claude-nav-items { margin-left: 16px; }
+html[data-theme-family=crystal] .claude-topbar .claude-nav-items { margin-left: 16px; }
 html[data-theme-family=crystal] .claude-nav-item { padding: 0 20px; border-radius: 0; transform: skewX(-16deg); font: italic 700 15px/1 var(--sf-font-display); letter-spacing: .06em; text-transform: uppercase; }
 html[data-theme-family=crystal] .claude-nav-item > span { transform: skewX(16deg); }
 html[data-theme-family=crystal] .claude-nav-item:hover { color: var(--sf-text); background-color: color-mix(in srgb, var(--sf-text) 8%, transparent); }
-html[data-theme-family=crystal] .claude-nav-item[data-shell-active=true] { color: #fff; background-image: var(--shell-crimson); box-shadow: 0 12px 28px -8px color-mix(in srgb, var(--sf-brand-hover) 60%, transparent); }
+html[data-theme-family=crystal] .claude-nav-item[data-shell-active=true] { color: var(--sf-on-primary); background-image: var(--sf-primary-bg); box-shadow: 0 12px 28px -8px color-mix(in srgb, var(--sf-brand-hover) 60%, transparent); }
 /* ANAV controls are 42px chamfered chips with an inset line, drawn inside the 45px hit box. */
 html[data-theme-family=crystal] .claude-theme-quick-toggle,html[data-theme-family=crystal] .claude-theme-picker,html[data-theme-family=crystal] .claude-language-menu > button { border: 0; border-radius: 0; clip-path: polygon(11.5px 1.5px, calc(100% - 1.5px) 1.5px, calc(100% - 1.5px) calc(100% - 11.5px), calc(100% - 11.5px) calc(100% - 1.5px), 1.5px calc(100% - 1.5px), 1.5px 11.5px); background: var(--sf-surface-control); box-shadow: inset 0 0 0 2.5px var(--sf-edge-highlight); color: var(--sf-text); }
 html[data-theme-family=crystal] .claude-theme-quick-toggle:hover,html[data-theme-family=crystal] .claude-theme-picker:hover,html[data-theme-family=crystal] .claude-language-menu > button:hover { background: var(--sf-surface-raised); }
 /* A clip-path also clips an outside focus outline, so clipped controls draw it inside their shape. */
 html[data-theme-family=crystal] :is(.claude-theme-quick-toggle,.claude-theme-picker,.claude-language-menu > button,.claude-account-trigger):focus-visible { outline-offset: -4px; }
-html[data-theme-family=crystal] .claude-account-trigger:focus-visible { outline-color: #fff; }
-html[data-theme-family=crystal] .claude-streak { height: 42px; min-height: 42px; padding: 0 16px 0 12px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); color: #fff; background: var(--shell-crimson); gap: 6px; font: italic 800 17px/1 var(--sf-font-display); }
-html[data-theme-family=crystal] .claude-streak svg { color: var(--sf-reward); }
-html[data-theme-family=crystal] .claude-level { height: 42px; min-height: 42px; gap: 9px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-second-text); font: italic 800 15px/1 var(--sf-font-display); text-transform: uppercase; }
+html[data-theme-family=crystal] .claude-account-trigger:focus-visible { outline-color: var(--sf-on-primary); }
+html[data-theme-family=crystal] .claude-streak { height: 42px; min-height: 42px; padding: 0 16px 0 12px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); color: var(--sf-on-primary); background: var(--sf-primary-bg); gap: 6px; font: italic 800 17px/1 var(--sf-font-display); }
+html[data-theme-family=crystal] .claude-streak svg { color: var(--sf-warm); }
+html[data-theme-family=crystal] .claude-level { height: 42px; min-height: 42px; gap: 9px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-holo-text); font: italic 800 15px/1 var(--sf-font-display); text-transform: uppercase; }
 html[data-theme-family=crystal] .claude-level-label { color: inherit; font: inherit; }
 html[data-theme-family=crystal] .claude-level-track { display: inline-block; transform: skewX(-20deg); }
 html[data-theme-family=crystal] .claude-level-track > span { background: linear-gradient(90deg, var(--sf-second), color-mix(in srgb, var(--sf-brand) 80%, white), var(--sf-brand)); }
-html[data-theme-family=crystal] .claude-account-trigger { border: 0; border-radius: 0; clip-path: polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%); color: #fff; background: var(--sf-avatar-bg); box-shadow: none; font: italic 800 14px/1 var(--sf-font-display); }
+html[data-theme-family=crystal] .claude-account-trigger { border: 0; border-radius: 0; clip-path: polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%); color: var(--sf-avatar-text); background: var(--sf-avatar-bg); box-shadow: none; font: italic 800 14px/1 var(--sf-font-display); }
 html[data-theme-family=crystal] .claude-workspace-inner { padding-left: 44px; padding-right: 44px; }
 
 /* AnimeMobile (Crystal) uses a full-width four-tab rail; classic floats it below (MobileToday). */
@@ -104,53 +104,86 @@ html[data-theme-family=crystal] .claude-workspace-inner { padding-left: 44px; pa
 /* MobileToday: classic floats a rounded glass tab bar above the page; the active tab tints a
    pill behind its icon instead of filling the whole tab. The icon is either a bare svg or a
    .claude-mobile-nav-icon wrapper around it. */
-:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav { left: 14px; right: 14px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); height: 68px; gap: 0; padding: 0; border: 1px solid var(--sf-border); border-radius: 22px; background: color-mix(in srgb, var(--sf-surface) 94%, transparent); box-shadow: 0 12px 30px -16px var(--sf-shadow); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
-:is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-mobile-nav { background: color-mix(in srgb, var(--sf-surface) 72%, transparent); box-shadow: 0 20px 40px -20px rgb(0 0 0 / .9); }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav { left: 14px; right: 14px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); height: 68px; gap: 0; padding: 0; border: 1px solid var(--sf-border); border-radius: 22px; background: var(--sf-tab-bg); box-shadow: var(--sf-tab-shadow); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item { gap: 4px; border-radius: 22px; font-size: 11px; font-weight: 600; }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item > :is(svg, .claude-mobile-nav-icon) { display: grid; place-items: center; box-sizing: content-box; width: 18px; height: 18px; padding: 5px 13px; border-radius: 14px; }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item:hover { background: transparent; }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item:hover > :is(svg, .claude-mobile-nav-icon) { background: color-mix(in srgb, var(--sf-text) 6%, transparent); }
-:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item[data-shell-active=true] { color: var(--sf-text); background: transparent; }
-:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item[data-shell-active=true] > :is(svg, .claude-mobile-nav-icon) { background: color-mix(in srgb, var(--sf-brand) 12%, transparent); }
-:is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-mobile-nav-item[data-shell-active=true] > :is(svg, .claude-mobile-nav-icon) { background: color-mix(in srgb, var(--sf-brand) 16%, transparent); }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item[data-shell-active=true] { color: var(--sf-tab-active-text); background: transparent; }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item[data-shell-active=true] > :is(svg, .claude-mobile-nav-icon) { background: var(--sf-tab-active); }
 @media (prefers-reduced-transparency: reduce) {
   :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav { background: var(--sf-surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
-html[data-theme-family=crystal] .claude-mobile-nav { border-top: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--sf-surface) 92%, transparent), color-mix(in srgb, var(--sf-canvas) 98%, transparent)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sf-brand) 55%, transparent); }
-html[data-theme-family=crystal]:not(.dark) .claude-mobile-nav { background: linear-gradient(180deg, rgb(236 248 255 / .94), rgb(212 236 255 / .98)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sf-brand-hover) 55%, transparent); }
+html[data-theme-family=crystal] .claude-mobile-nav { border-top: 0; background: var(--sf-tab-bg); box-shadow: var(--sf-tab-shadow); }
 html[data-theme-family=crystal] .claude-mobile-nav-item { border-radius: 0; transform: skewX(-14deg); font: italic 700 10.5px/1 var(--sf-font-display); letter-spacing: .06em; text-transform: uppercase; }
 html[data-theme-family=crystal] .claude-mobile-nav-item > :is(svg, span) { transform: skewX(14deg); }
 html[data-theme-family=crystal] .claude-mobile-nav-item:hover { background: color-mix(in srgb, var(--sf-text) 6%, transparent); }
-html[data-theme-family=crystal] .claude-mobile-nav-item[data-shell-active=true] { color: #fff; background: var(--shell-crimson); box-shadow: 0 0 18px -2px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
+html[data-theme-family=crystal] .claude-mobile-nav-item[data-shell-active=true] { color: var(--sf-tab-active-text); background: var(--sf-tab-active); box-shadow: 0 0 18px -2px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
 
+/* LangCourses: the course chip follows the brand. Below 1440px its "from" line gives way to the
+   navigation, and Crystal tightens its rail. */
+@media (max-width: 1439px) {
+  .claude-topbar .course-trigger__from { display: none; }
+  html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 32px; gap: 18px; }
+  html[data-theme-family=crystal] .claude-nav-item { padding: 0 15px; }
+  html[data-theme-family=crystal] .claude-level-track { display: none; }
+}
+/* Below 1280px the theme picker and language menu move into the account menu. */
 @media (max-width: 1279px) {
   .claude-topbar-inner,html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 24px; gap: 16px; }
-  .claude-course-switcher-slot { display: none; }
+  .claude-shell-actions > .claude-theme-menu > .claude-theme-picker,
+  .claude-shell-actions > .claude-language-menu { display: none; }
+  .claude-shell-actions > .claude-theme-menu { gap: 0; }
+  .account-menu-preferences { display: flex; }
+  .account-menu-preferences .claude-theme-quick-toggle { display: none; }
 }
+/* With the navigation still in the header, the course chip shows only its glyph; the course name
+   stays in the button's accessible name. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .claude-topbar .claude-course-switcher-trigger[data-course-language] { gap: 6px; padding-right: 10px; }
+  .claude-topbar .claude-course-switcher-trigger[data-course-language] .course-trigger__name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  html[data-theme-family=crystal] .claude-topbar .claude-brand-name { display: none; }
+}
+/* Below lg the navigation moves to the bottom bar and the theme toggle joins the account menu. */
 @media (max-width: 1023px) {
   .claude-topbar-inner,html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 20px; gap: 16px; }
-  .claude-topbar[data-mobile-course] .claude-course-switcher-slot { display: flex; }
   .claude-topbar[data-mobile-course] .claude-course-switcher-panel { background: var(--sf-surface); }
-  .claude-shell-actions { gap: 6px; }
-  .claude-level,.claude-streak { display: none; }
+  .claude-shell-actions { gap: 8px; }
+  .claude-shell-actions > .claude-theme-menu { display: none; }
+  .account-menu-preferences .claude-theme-quick-toggle { display: flex; }
+  .claude-topbar .claude-course-switcher-slot { min-width: 0; flex: 0 1 auto; }
+  .claude-topbar .claude-course-switcher { min-width: 0; max-width: 100%; }
+  .claude-topbar .claude-course-switcher-trigger { max-width: 100%; }
+  .claude-topbar .claude-course-switcher-trigger > .truncate { max-width: 8rem; }
   .claude-workspace-inner,html[data-theme-family=crystal] .claude-workspace-inner { padding-left: 20px; padding-right: 20px; }
 }
+/* MobileToday (classic) and AnimeMobile (Crystal): brand, streak chip and avatar. A signed-in
+   learner's course chip takes the wordmark's place, as on LangMobile. */
 @media (max-width: 640px) {
-  .claude-topbar,html[data-theme-family=crystal] .claude-topbar { height: 66px; }
+  .claude-topbar { height: 64px; }
+  html[data-theme-family=crystal] .claude-topbar { height: 54px; }
   .claude-topbar[data-mobile-course],html[data-theme-family=crystal] .claude-topbar[data-mobile-course] { z-index: 50; }
-  .claude-topbar[data-mobile-course] .claude-topbar-nav { height: 66px; }
-  .claude-topbar[data-mobile-course] .claude-course-switcher-slot { position: static; flex: 0 1 auto; min-width: 0; max-width: 7.25rem; }
-  .claude-topbar[data-mobile-course] .claude-course-switcher { min-width: 0; max-width: 100%; }
-  .claude-topbar[data-mobile-course] .claude-course-switcher-trigger { max-width: 100%; padding-inline: .5rem; gap: .25rem; }
-  .claude-topbar[data-mobile-course] .claude-course-switcher-trigger > .truncate { max-width: 4rem; }
-  .claude-topbar-inner,html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 16px; gap: 12px; }
-  .claude-brand { gap: 6px; }
-  .claude-brand-classic { width: 26px; height: 26px; }
-  .claude-brand-star { width: 32px; height: 32px; }
-  .claude-brand-name { font-size: 17px; }
-  html[data-theme-family=crystal] .claude-brand-name { font-size: 19px; }
-  .claude-shell-actions { gap: 4px; }
-  .claude-theme-menu { gap: 0; }
+  .claude-topbar-inner,html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 20px; gap: 10px; }
+  html[data-theme-family=crystal] .claude-topbar-inner { gap: 8px; }
+  .claude-brand { gap: 10px; }
+  .claude-brand-name { font-size: 21px; font-weight: 400; }
+  html[data-theme-family=crystal] .claude-brand { gap: 8px; }
+  html[data-theme-family=crystal] .claude-brand-star { width: 28px; height: 28px; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--sf-brand) 70%, transparent)); }
+  html[data-theme-family=crystal] .claude-brand-name { font-size: 21px; letter-spacing: 0; text-shadow: none; }
+  .claude-topbar:has(.claude-course-switcher-slot) .claude-brand-name { display: none; }
+  .claude-topbar .claude-course-switcher-trigger { gap: 8px; padding: 0 11px 0 4px; }
+  .claude-topbar .claude-course-switcher-trigger > .truncate { max-width: 5.5rem; }
+  .claude-topbar .course-tile.course-trigger__glyph { font-size: 15px; }
+  .claude-topbar .course-trigger__chevron { width: 13px; height: 13px; }
+  .claude-shell-actions { gap: 10px; }
+  html[data-theme-family=crystal] .claude-shell-actions { gap: 8px; }
+  .claude-level { display: none; }
+  .claude-streak { height: 34px; min-height: 34px; gap: 6px; padding: 0 12px 0 10px; }
+  .claude-streak-flame { width: 14px; height: 14px; }
+  html[data-theme-family=crystal] .claude-streak { height: 34px; min-height: 34px; gap: 5px; padding: 0 12px 0 9px; font-size: 15px; }
+  .claude-app-shell .account-menu-trigger { font-size: 12px; }
+  /* AnimeMobile's 36px hexagon, centred in the 44px target. */
+  html[data-theme-family=crystal] .claude-app-shell .account-menu-trigger { clip-path: polygon(50% 4px, calc(100% - 4px) 13px, calc(100% - 4px) calc(100% - 13px), 50% calc(100% - 4px), 4px calc(100% - 13px), 4px 13px); font-size: 13px; font-weight: 800; }
   .claude-workspace-inner,html[data-theme-family=crystal] .claude-workspace-inner { padding: 14px 16px calc(92px + env(safe-area-inset-bottom, 0px)); }
   /* MobileToday places the violet glow behind the header and the cyan one beside the session card. */
   :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell {
@@ -158,15 +191,10 @@ html[data-theme-family=crystal] .claude-mobile-nav-item[data-shell-active=true] 
     --shell-aurora-cyan-at: calc(100% - 50px) 560px;
   }
 }
-@media (max-width: 480px) {
-  .claude-topbar-inner,html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 12px; gap: 8px; }
-  .claude-brand-name { display: none; }
-  .claude-shell-actions { gap: 2px; }
-  .claude-theme-quick-toggle,.claude-theme-picker,.claude-language-menu > button,.claude-account-trigger { width: 45px; }
-}
 @media (max-width: 379px) {
-  .claude-topbar[data-mobile-course] .claude-course-switcher-trigger { padding-inline: .375rem; gap: .1875rem; }
-  .claude-topbar[data-mobile-course] .claude-course-switcher-trigger > .truncate { max-width: 0; }
+  .claude-topbar-inner,html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 14px; gap: 8px; }
+  .claude-shell-actions,html[data-theme-family=crystal] .claude-shell-actions { gap: 6px; }
+  .claude-topbar .claude-course-switcher-trigger > .truncate { max-width: 3.75rem; }
 }
 .claude-app-shell[data-view=study] .claude-workspace-inner,.claude-app-shell[data-view=quiz] .claude-workspace-inner,.claude-app-shell[data-view=spelling] .claude-workspace-inner,.claude-app-shell[data-view=story] .claude-workspace-inner,.claude-app-shell[data-view=match] .claude-workspace-inner,.claude-app-shell[data-view=shadowing] .claude-workspace-inner { max-width: none; padding: 0; }
 /* My files fills what the header, the offline card and (below 1024px) the floating bar leave, as the

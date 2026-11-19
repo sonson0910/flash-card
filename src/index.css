@@ -137,75 +137,6 @@
     mix-blend-mode: overlay;
   }
 
-  .ambient-orb {
-    position: fixed;
-    z-index: 0;
-    border-radius: 9999px;
-    pointer-events: none;
-    filter: blur(36px);
-    opacity: 0.38;
-    transform: translate3d(0, 0, 0);
-    contain: layout paint;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-  }
-
-  .ambient-orb-a {
-    left: -6rem;
-    top: 12%;
-    width: 28rem;
-    height: 28rem;
-    background: radial-gradient(
-      circle at 50% 50%,
-      rgb(2 132 199 / 0.12),
-      rgb(14 165 233 / 0.04) 60%,
-      transparent 72%
-    );
-  }
-
-  .ambient-orb-b {
-    right: -8rem;
-    top: 6%;
-    width: 34rem;
-    height: 34rem;
-    background: radial-gradient(
-      circle at 50% 50%,
-      rgb(14 165 233 / 0.1),
-      rgb(99 102 241 / 0.04) 60%,
-      transparent 72%
-    );
-  }
-
-  .ambient-orb-c {
-    bottom: -10rem;
-    left: 35%;
-    width: 36rem;
-    height: 36rem;
-    background: radial-gradient(circle, rgb(2 132 199 / 0.08), transparent 68%);
-  }
-
-  .dark .ambient-orb-a {
-    background: radial-gradient(
-      circle at 50% 50%,
-      rgb(8 145 178 / 0.28),
-      rgb(14 116 144 / 0.08) 58%,
-      transparent 72%
-    );
-  }
-
-  .dark .ambient-orb-b {
-    background: radial-gradient(
-      circle at 50% 50%,
-      rgb(14 116 144 / 0.24),
-      rgb(99 102 241 / 0.08) 60%,
-      transparent 73%
-    );
-  }
-
-  .dark .ambient-orb-c {
-    background: radial-gradient(circle, rgb(8 145 178 / 0.16), transparent 68%);
-  }
-
   .premium-surface {
     border: 1px solid var(--sf-border);
     background: var(--sf-surface-glass);
@@ -399,26 +330,6 @@
     animation: motion-overlay-out var(--motion-fast) ease-in both;
   }
 
-  .liquid-hero {
-    background:
-      radial-gradient(
-        circle at 76% 12%,
-        rgb(8 145 178 / 0.09),
-        transparent 28%
-      ),
-      linear-gradient(135deg, var(--sf-surface-glass), rgb(241 245 245 / 0.72));
-  }
-
-  .dark .liquid-hero {
-    background:
-      radial-gradient(
-        circle at 76% 12%,
-        rgb(8 145 178 / 0.11),
-        transparent 30%
-      ),
-      linear-gradient(135deg, var(--sf-surface-raised), var(--sf-surface));
-  }
-
   @media (hover: hover) and (pointer: fine) {
     button:not(:disabled),
     [role="button"]:not([aria-disabled="true"]) {
@@ -587,7 +498,6 @@
    ([data-card-look]) keep their own opaque surface and tier rim; only plain glass is flattened.
    The card-look filter sits in :where() so it adds no specificity over the Zen slab rules. */
 @media (max-width: 1180px), (hover: none), (pointer: coarse) {
-  .ambient-orb,
   .app-canvas::before {
     display: none;
   }
@@ -625,7 +535,6 @@
   }
 }
 
-html[data-save-data="true"] .ambient-orb,
 html[data-save-data="true"] .app-canvas::before {
   display: none;
 }
@@ -835,7 +744,6 @@ html[data-save-data="true"] .zen-glass-slab {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ambient-orb,
   .notification-toast,
   .notification-toast-icon,
   [data-motion-overlay] {
