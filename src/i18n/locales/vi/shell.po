@@ -1978,3 +1978,486 @@ msgstr "Đang thêm {count} thẻ vào bộ thẻ mới…"
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Cài đặt giao diện"
+
+#: src/features/onboarding/OnboardingJourney.tsx:117
+msgctxt "onboarding.countdown.label"
+msgid "Countdown"
+msgstr "Đếm ngược"
+
+#: src/features/courses/ManageCoursesDialog.tsx:80
+msgctxt "course.manage.stat.goal"
+msgid "Goal"
+msgstr "Mục tiêu"
+
+#: src/features/courses/ManageCoursesDialog.tsx:164
+msgctxt "course.manage.kicker"
+msgid "My languages · {count} active · meanings in {language}"
+msgstr "Ngôn ngữ của tôi · {count} đang học · nghĩa bằng {language}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:120
+msgctxt "onboarding.countdown.past"
+msgid "This date has already passed. Pick a date ahead."
+msgstr "Ngày này đã qua. Hãy chọn một ngày phía trước."
+
+#: src/features/onboarding/OnboardingJourney.tsx:478
+msgctxt "onboarding.pace.try"
+msgid "Try {count} cards"
+msgstr "Thử {count} thẻ"
+
+#: src/features/onboarding/OnboardingJourney.tsx:456
+msgctxt "onboarding.pace.subtitle"
+msgid "New words added to your reviews each day. You can change this any time in Settings."
+msgstr "Số từ mới được thêm vào lượt ôn mỗi ngày. Bạn có thể đổi bất cứ lúc nào trong Cài đặt."
+
+#: src/features/onboarding/OnboardingJourney.tsx:382
+msgctxt "onboarding.goal.subtitle"
+msgid "Pick one. You can change it any time from the course switcher."
+msgstr "Chọn một mục tiêu. Bạn có thể đổi bất cứ lúc nào từ trình chuyển khóa học."
+
+#: src/features/courses/ManageCoursesDialog.tsx:114
+msgctxt "course.manage.new-language"
+msgid "New language"
+msgstr "Ngôn ngữ mới"
+
+#: src/features/courses/ManageCoursesDialog.tsx:178
+msgctxt "course.manage.close"
+msgid "Close courses"
+msgstr "Đóng danh sách khóa học"
+
+#: src/features/onboarding/OnboardingJourney.tsx:119
+msgctxt "onboarding.countdown.empty"
+msgid "Pick a date to start your countdown."
+msgstr "Chọn một ngày để bắt đầu đếm ngược."
+
+#: src/features/onboarding/OnboardingJourney.tsx:381
+msgctxt "onboarding.goal.heading"
+msgid "What are you <0>learning for?</0>"
+msgstr "Bạn học <0>để làm gì?</0>"
+
+#: src/features/onboarding/StarterCardTrial.tsx:84
+msgctxt "onboarding.trial.state.known"
+msgid "Got it"
+msgstr "Đã nhớ"
+
+#: src/features/onboarding/OnboardingJourney.tsx:509
+msgctxt "onboarding.reminder.title"
+msgid "When should we <0>nudge you?</0>"
+msgstr "Khi nào mình nên <0>nhắc bạn?</0>"
+
+#: src/features/courses/AddCourseDialog.tsx:138
+msgctxt "course.add.subtitle"
+msgid "Your current courses stay as they are. Each language gets its own cards, goals and daily queue."
+msgstr "Các khóa hiện có vẫn giữ nguyên. Mỗi ngôn ngữ có thẻ, mục tiêu và hàng ôn mỗi ngày riêng."
+
+#: src/components/shell/CourseSwitcherControl.tsx:74
+#: src/features/courses/CourseVisuals.tsx:56
+#: src/features/courses/ManageCoursesDialog.tsx:203
+msgctxt "course.due-count"
+msgid "{count} due"
+msgstr "{count} đến hạn"
+
+#: src/features/courses/ManageCoursesDialog.tsx:202
+msgctxt "course.manage.study"
+msgid "Start {language} lesson"
+msgstr "Bắt đầu bài {language}"
+
+#: src/features/courses/ManageCoursesDialog.tsx:67
+msgctxt "course.manage.active-tag"
+msgid "Active"
+msgstr "Đang học"
+
+#: src/features/onboarding/OnboardingJourney.tsx:96
+msgctxt "onboarding.lumi.exam.title"
+msgid "When is the big day?"
+msgstr "Khi nào là ngày quan trọng?"
+
+#: src/features/onboarding/StarterCardTrial.tsx:48
+msgctxt "onboarding.trial.heading"
+msgid "Flip each card, then <0>grade yourself.</0>"
+msgstr "Lật từng thẻ, rồi <0>tự chấm mình.</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:436
+msgctxt "onboarding.exam.date-label"
+msgid "Exam date (optional)"
+msgstr "Ngày thi (không bắt buộc)"
+
+#: src/features/onboarding/OnboardingJourney.tsx:131
+msgctxt "onboarding.countdown.weeks.exam"
+msgid "{weeks, plural, one {# week} other {# weeks}} until exam day."
+msgstr "Còn {weeks, plural, other {# tuần}} đến ngày thi."
+
+#: src/features/onboarding/OnboardingJourney.tsx:70
+msgctxt "onboarding.pace.tag.serious"
+msgid "Serious"
+msgstr "Nghiêm túc"
+
+#: src/features/onboarding/OnboardingJourney.tsx:418
+msgctxt "onboarding.exam.level-heading"
+msgid "What level, and <0>by when?</0>"
+msgstr "Trình độ nào, và <0>đến khi nào?</0>"
+
+#: src/features/courses/ManageCoursesDialog.tsx:175
+msgctxt "course.manage.switched"
+msgid "Switched to {language}"
+msgstr "Đã chuyển sang {language}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:425
+msgctxt "onboarding.exam.choice-label"
+msgid "Exam"
+msgstr "Kỳ thi"
+
+#: src/features/onboarding/StarterCardTrial.tsx:85
+msgctxt "onboarding.trial.state.again"
+msgid "Again"
+msgstr "Ôn lại"
+
+#: src/components/shell/CourseSwitcherControl.tsx:189
+msgctxt "course.switcher.manage"
+msgid "Manage courses"
+msgstr "Quản lý khóa học"
+
+#: src/features/onboarding/OnboardingJourney.tsx:64
+msgctxt "onboarding.goal.description.conversation"
+msgid "Everyday phrases for trips and people."
+msgstr "Những câu thường ngày cho chuyến đi và khi gặp gỡ mọi người."
+
+#: src/features/onboarding/OnboardingJourney.tsx:69
+msgctxt "onboarding.pace.tag.recommended"
+msgid "Recommended"
+msgstr "Khuyên dùng"
+
+#: src/features/onboarding/OnboardingJourney.tsx:460
+msgctxt "onboarding.pace.unit"
+msgid "cards / day"
+msgstr "thẻ / ngày"
+
+#: src/features/onboarding/OnboardingJourney.tsx:96
+msgctxt "onboarding.lumi.exam.body"
+msgid "Set a date and I’ll count the days down with you."
+msgstr "Chọn một ngày và mình sẽ cùng bạn đếm ngược."
+
+#: src/features/onboarding/OnboardingJourney.tsx:307
+msgctxt "onboarding.eyebrow.level"
+msgid "Your target"
+msgstr "Mục tiêu của bạn"
+
+#: src/features/courses/AddCourseDialog.tsx:68
+msgctxt "course.add.languages-label"
+msgid "I want to learn"
+msgstr "Tôi muốn học"
+
+#: src/features/onboarding/OnboardingJourney.tsx:98
+msgctxt "onboarding.lumi.trial.title"
+msgid "Flip your first cards!"
+msgstr "Lật những thẻ đầu tiên nào!"
+
+#: src/features/onboarding/OnboardingJourney.tsx:118
+msgctxt "onboarding.countdown.kicker"
+msgid "Countdown"
+msgstr "Đếm ngược"
+
+#: src/features/onboarding/OnboardingJourney.tsx:71
+msgctxt "onboarding.pace.tag.intense"
+msgid "Intense"
+msgstr "Cấp tốc"
+
+#: src/features/courses/ManageCoursesDialog.tsx:84
+msgctxt "course.manage.stat.target"
+msgid "Target"
+msgstr "Mức cần đạt"
+
+#: src/features/courses/ManageCoursesDialog.tsx:66
+msgctxt "course.manage.card-index"
+msgid "Course {number}"
+msgstr "Khóa {number}"
+
+#: src/components/shell/CourseSwitcherControl.tsx:75
+msgctxt "course.switcher.switched-extension"
+msgid "the extension now saves new words here"
+msgstr "tiện ích giờ lưu từ mới vào đây"
+
+#: src/features/courses/CourseVisuals.tsx:48
+msgctxt "course.native-line"
+msgid "from {language}"
+msgstr "từ {language}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:98
+msgctxt "onboarding.lumi.trial.body"
+msgid "Turn a card to see its meaning, then tell me if you knew it."
+msgstr "Lật thẻ để xem nghĩa, rồi cho mình biết bạn có nhớ không nhé."
+
+#: src/features/courses/ManageCoursesDialog.tsx:207
+msgctxt "course.manage.reading-aid"
+msgid "Reading aid"
+msgstr "Hỗ trợ đọc"
+
+#: src/components/shell/CourseSwitcherControl.tsx:199
+msgctxt "course.switcher.change-languages"
+msgid "Change"
+msgstr "Đổi"
+
+#: src/features/onboarding/StarterCardTrial.tsx:52
+msgctxt "onboarding.trial.result-body"
+msgid "All {total} cards are already in your library, ready for your first review."
+msgstr "Cả {total} thẻ đã có trong thư viện của bạn, sẵn sàng cho lượt ôn đầu tiên."
+
+#: src/features/courses/ManageCoursesDialog.tsx:165
+msgctxt "course.manage.kicker.no-active"
+msgid "My languages · {count} active"
+msgstr "Ngôn ngữ của tôi · {count} đang học"
+
+#: src/features/onboarding/StarterCardTrial.tsx:69
+msgctxt "onboarding.trial.again"
+msgid "Forgot"
+msgstr "Quên rồi"
+
+#: src/features/onboarding/StarterCardTrial.tsx:86
+msgctxt "onboarding.trial.state.pending"
+msgid "Not yet"
+msgstr "Chưa chấm"
+
+#: src/features/courses/ManageCoursesDialog.tsx:46
+msgctxt "course.manage.reading-aid.romanization-off"
+msgid "Romanization off"
+msgstr "Tắt phiên âm Latin"
+
+#: src/features/courses/ManageCoursesDialog.tsx:169
+msgctxt "course.manage.title.crystal"
+msgid "Pick your <0>star</0>"
+msgstr "Chọn <0>ngôi sao</0> của bạn"
+
+#: src/features/courses/AddCourseDialog.tsx:137
+msgctxt "course.add.title"
+msgid "Add a <0>language</0>"
+msgstr "Thêm một <0>ngôn ngữ</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:132
+msgctxt "onboarding.countdown.weeks.goal"
+msgid "{weeks, plural, one {# week} other {# weeks}} until your target date."
+msgstr "Còn {weeks, plural, other {# tuần}} đến ngày mục tiêu."
+
+#: src/features/onboarding/StarterCardTrial.tsx:73
+msgctxt "onboarding.trial.known"
+msgid "Got it"
+msgstr "Đã nhớ"
+
+#: src/features/courses/AddCourseDialog.tsx:116
+msgctxt "course.add.submit"
+msgid "Add {language}"
+msgstr "Thêm {language}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:470
+msgctxt "onboarding.pace.plan.weekly"
+msgid "new words a week in your plan at {pace} a day."
+msgstr "từ mới mỗi tuần trong kế hoạch của bạn, với {pace} từ mỗi ngày."
+
+#: src/features/onboarding/OnboardingJourney.tsx:63
+msgctxt "onboarding.goal.description.business"
+msgid "Speak up in meetings with confident, precise words."
+msgstr "Tự tin phát biểu trong cuộc họp với vốn từ chính xác."
+
+#: src/features/onboarding/OnboardingJourney.tsx:403
+msgctxt "onboarding.goal.curious.description"
+msgid "No exam or deadline. Grow a vocabulary that feels like yours."
+msgstr "Không thi cử hay hạn chót. Xây vốn từ theo cách của riêng bạn."
+
+#: src/features/courses/ManageCoursesDialog.tsx:41
+msgctxt "course.manage.reading-aid.simplified"
+msgid "Simplified characters"
+msgstr "Chữ giản thể"
+
+#: src/features/courses/ManageCoursesDialog.tsx:122
+msgctxt "course.manage.add-language"
+msgid "Add {language}"
+msgstr "Thêm {language}"
+
+#: src/features/onboarding/StarterCardTrial.tsx:66
+msgctxt "onboarding.trial.grade-label"
+msgid "Did you know this word?"
+msgstr "Bạn có nhớ từ này không?"
+
+#: src/features/courses/ManageCoursesDialog.tsx:195
+msgctxt "course.manage.lumi.due"
+msgid "{count, plural, one {# card is due right now.} other {# cards are due right now.}}"
+msgstr "{count, plural, other {# thẻ đang chờ ôn ngay lúc này.}}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:387
+msgctxt "onboarding.goal.exam"
+msgid "Pass {exams}"
+msgstr "Thi đậu {exams}"
+
+#: src/features/onboarding/StarterCardTrial.tsx:47
+msgctxt "onboarding.trial.result"
+msgid "You knew <0>{known} of {total}.</0>"
+msgstr "Bạn đã nhớ <0>{known}/{total} thẻ.</0>"
+
+#: src/features/courses/AddCourseDialog.tsx:97
+msgctxt "course.add.native-hint"
+msgid "your native language"
+msgstr "tiếng mẹ đẻ của bạn"
+
+#: src/features/onboarding/OnboardingJourney.tsx:469
+msgctxt "onboarding.pace.plan.dated"
+msgid "new words in your plan by {date}: {pace} a day for {days, plural, one {# day} other {# days}}."
+msgstr "từ mới trong kế hoạch của bạn đến {date}: {pace} từ mỗi ngày trong {days, plural, other {# ngày}}."
+
+#: src/components/shell/CourseSwitcherControl.tsx:196
+#: src/features/courses/ManageCoursesDialog.tsx:208
+msgctxt "course.manage.meanings-in"
+msgid "Meanings in"
+msgstr "Nghĩa bằng"
+
+#: src/features/onboarding/OnboardingJourney.tsx:62
+msgctxt "onboarding.goal.description.study-abroad"
+msgid "Words for lectures, campus life and daily errands."
+msgstr "Từ vựng cho giờ giảng, đời sống ký túc xá và việc vặt hằng ngày."
+
+#: src/features/courses/AddCourseDialog.tsx:80
+msgctxt "course.add.language-selected"
+msgid "Selected"
+msgstr "Đã chọn"
+
+#: src/features/onboarding/OnboardingJourney.tsx:422
+msgctxt "onboarding.exam.subtitle"
+msgid "Your target and test date. Both are optional and you can change them later."
+msgstr "Mục tiêu và ngày thi của bạn. Cả hai đều không bắt buộc và có thể đổi sau."
+
+#: src/features/onboarding/OnboardingJourney.tsx:417
+msgctxt "onboarding.exam.heading"
+msgid "Which test, and <0>what score?</0>"
+msgstr "Thi gì, và <0>đạt bao nhiêu?</0>"
+
+#: src/features/courses/ManageCoursesDialog.tsx:206
+msgctxt "course.manage.extension-saves-to"
+msgid "Extension saves to"
+msgstr "Tiện ích lưu vào"
+
+#: src/components/shell/CourseSwitcherControl.tsx:175
+msgctxt "course.switcher.shared-progress"
+msgid "Level, XP and streak are shared"
+msgstr "Cấp độ, XP và chuỗi ngày học dùng chung"
+
+#: src/features/onboarding/StarterCardTrial.tsx:59
+msgctxt "onboarding.trial.position"
+msgid "Card {position} of {total}"
+msgstr "Thẻ {position}/{total}"
+
+#: src/components/shell/CourseSwitcherControl.tsx:192
+msgctxt "course.switcher.extension-note"
+msgid "The browser extension saves new words to your active course."
+msgstr "Tiện ích trình duyệt lưu từ mới vào khóa đang học."
+
+#: src/components/shell/CourseSwitcherControl.tsx:174
+msgctxt "course.switcher.heading"
+msgid "Your <0>courses</0>"
+msgstr "<0>Khóa học</0> của bạn"
+
+#: src/components/shell/CourseSwitcherControl.tsx:194
+msgctxt "course.switcher.app-language"
+msgid "App language"
+msgstr "Ngôn ngữ ứng dụng"
+
+#: src/features/onboarding/OnboardingJourney.tsx:124
+msgctxt "onboarding.countdown.days"
+msgid "{days, plural, one {day to {goal}} other {days to {goal}}}"
+msgstr "{days, plural, other {ngày đến {goal}}}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:388
+msgctxt "onboarding.goal.exam.description"
+msgid "Set a target score and count down to your test date."
+msgstr "Đặt điểm mục tiêu và đếm ngược đến ngày thi."
+
+#: src/features/courses/ManageCoursesDialog.tsx:87
+msgctxt "course.manage.goal-date"
+msgid "Exam date {date}"
+msgstr "Ngày thi {date}"
+
+#: src/features/courses/ManageCoursesDialog.tsx:76
+msgctxt "course.manage.stat.due"
+msgid "Due"
+msgstr "Đến hạn"
+
+#: src/features/courses/ManageCoursesDialog.tsx:45
+msgctxt "course.manage.reading-aid.romanization-on"
+msgid "Romanization on"
+msgstr "Hiện phiên âm Latin"
+
+#: src/features/onboarding/OnboardingJourney.tsx:403
+msgctxt "onboarding.goal.curious"
+msgid "Just curious"
+msgstr "Chỉ tò mò thôi"
+
+#: src/features/onboarding/OnboardingJourney.tsx:423
+msgctxt "onboarding.exam.level-subtitle"
+msgid "Both are optional and you can change them later."
+msgstr "Cả hai đều không bắt buộc và có thể đổi sau."
+
+#: src/features/courses/ManageCoursesDialog.tsx:193
+msgctxt "course.manage.lumi.kicker"
+msgid "Lumi · link"
+msgstr "Lumi · kết nối"
+
+#: src/features/onboarding/OnboardingJourney.tsx:306
+msgctxt "onboarding.eyebrow.exam"
+msgid "Your exam"
+msgstr "Kỳ thi của bạn"
+
+#: src/features/courses/AddCourseDialog.tsx:91
+msgctxt "course.add.native-label"
+msgid "Explain meanings in"
+msgstr "Giải nghĩa bằng"
+
+#: src/features/onboarding/OnboardingJourney.tsx:437
+msgctxt "onboarding.exam.target-date-label"
+msgid "Target date (optional)"
+msgstr "Ngày mục tiêu (không bắt buộc)"
+
+#: src/features/onboarding/StarterCardTrial.tsx:53
+msgctxt "onboarding.trial.body"
+msgid "Turn the card to see its meaning. These cards are already in your library."
+msgstr "Lật thẻ để xem nghĩa. Những thẻ này đã có trong thư viện của bạn."
+
+#: src/features/courses/AddCourseDialog.tsx:79
+msgctxt "course.add.language-added"
+msgid "Added"
+msgstr "Đã thêm"
+
+#: src/features/onboarding/OnboardingJourney.tsx:68
+msgctxt "onboarding.pace.tag.light"
+msgid "Light"
+msgstr "Nhẹ nhàng"
+
+#: src/features/courses/ManageCoursesDialog.tsx:170
+msgctxt "course.manage.title"
+msgid "Your <0>languages</0>"
+msgstr "<0>Ngôn ngữ</0> của bạn"
+
+#: src/components/shell/CourseSwitcherControl.tsx:78
+msgctxt "course.switcher.switch-back"
+msgid "Back to {language}"
+msgstr "Quay lại {language}"
+
+#: src/features/courses/ManageCoursesDialog.tsx:40
+msgctxt "course.manage.reading-aid.traditional"
+msgid "Traditional characters"
+msgstr "Chữ phồn thể"
+
+#: src/features/onboarding/OnboardingJourney.tsx:502
+msgctxt "onboarding.aha.next"
+msgid "Set my reminder"
+msgstr "Đặt lời nhắc"
+
+#: src/features/onboarding/OnboardingJourney.tsx:455
+msgctxt "onboarding.pace.heading"
+msgid "How many new words <0>each day?</0>"
+msgstr "Mỗi ngày học <0>bao nhiêu từ mới?</0>"
+
+#: src/features/courses/ManageCoursesDialog.tsx:194
+msgctxt "course.manage.lumi.title"
+msgid "Ready for {language}?"
+msgstr "Sẵn sàng học {language} chưa?"
+
+#: src/features/onboarding/StarterCardTrial.tsx:78
+msgctxt "onboarding.trial.list-label"
+msgid "Your first {total} cards"
+msgstr "{total} thẻ đầu tiên của bạn"

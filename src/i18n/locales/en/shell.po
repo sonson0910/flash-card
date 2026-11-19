@@ -1978,3 +1978,486 @@ msgstr "Adding {count} cards to your new deck…"
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Appearance settings"
+
+#: src/features/onboarding/OnboardingJourney.tsx:117
+msgctxt "onboarding.countdown.label"
+msgid "Countdown"
+msgstr "Countdown"
+
+#: src/features/courses/ManageCoursesDialog.tsx:80
+msgctxt "course.manage.stat.goal"
+msgid "Goal"
+msgstr "Goal"
+
+#: src/features/courses/ManageCoursesDialog.tsx:164
+msgctxt "course.manage.kicker"
+msgid "My languages · {count} active · meanings in {language}"
+msgstr "My languages · {count} active · meanings in {language}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:120
+msgctxt "onboarding.countdown.past"
+msgid "This date has already passed. Pick a date ahead."
+msgstr "This date has already passed. Pick a date ahead."
+
+#: src/features/onboarding/OnboardingJourney.tsx:478
+msgctxt "onboarding.pace.try"
+msgid "Try {count} cards"
+msgstr "Try {count} cards"
+
+#: src/features/onboarding/OnboardingJourney.tsx:456
+msgctxt "onboarding.pace.subtitle"
+msgid "New words added to your reviews each day. You can change this any time in Settings."
+msgstr "New words added to your reviews each day. You can change this any time in Settings."
+
+#: src/features/onboarding/OnboardingJourney.tsx:382
+msgctxt "onboarding.goal.subtitle"
+msgid "Pick one. You can change it any time from the course switcher."
+msgstr "Pick one. You can change it any time from the course switcher."
+
+#: src/features/courses/ManageCoursesDialog.tsx:114
+msgctxt "course.manage.new-language"
+msgid "New language"
+msgstr "New language"
+
+#: src/features/courses/ManageCoursesDialog.tsx:178
+msgctxt "course.manage.close"
+msgid "Close courses"
+msgstr "Close courses"
+
+#: src/features/onboarding/OnboardingJourney.tsx:119
+msgctxt "onboarding.countdown.empty"
+msgid "Pick a date to start your countdown."
+msgstr "Pick a date to start your countdown."
+
+#: src/features/onboarding/OnboardingJourney.tsx:381
+msgctxt "onboarding.goal.heading"
+msgid "What are you <0>learning for?</0>"
+msgstr "What are you <0>learning for?</0>"
+
+#: src/features/onboarding/StarterCardTrial.tsx:84
+msgctxt "onboarding.trial.state.known"
+msgid "Got it"
+msgstr "Got it"
+
+#: src/features/onboarding/OnboardingJourney.tsx:509
+msgctxt "onboarding.reminder.title"
+msgid "When should we <0>nudge you?</0>"
+msgstr "When should we <0>nudge you?</0>"
+
+#: src/features/courses/AddCourseDialog.tsx:138
+msgctxt "course.add.subtitle"
+msgid "Your current courses stay as they are. Each language gets its own cards, goals and daily queue."
+msgstr "Your current courses stay as they are. Each language gets its own cards, goals and daily queue."
+
+#: src/components/shell/CourseSwitcherControl.tsx:74
+#: src/features/courses/CourseVisuals.tsx:56
+#: src/features/courses/ManageCoursesDialog.tsx:203
+msgctxt "course.due-count"
+msgid "{count} due"
+msgstr "{count} due"
+
+#: src/features/courses/ManageCoursesDialog.tsx:202
+msgctxt "course.manage.study"
+msgid "Start {language} lesson"
+msgstr "Start {language} lesson"
+
+#: src/features/courses/ManageCoursesDialog.tsx:67
+msgctxt "course.manage.active-tag"
+msgid "Active"
+msgstr "Active"
+
+#: src/features/onboarding/OnboardingJourney.tsx:96
+msgctxt "onboarding.lumi.exam.title"
+msgid "When is the big day?"
+msgstr "When is the big day?"
+
+#: src/features/onboarding/StarterCardTrial.tsx:48
+msgctxt "onboarding.trial.heading"
+msgid "Flip each card, then <0>grade yourself.</0>"
+msgstr "Flip each card, then <0>grade yourself.</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:436
+msgctxt "onboarding.exam.date-label"
+msgid "Exam date (optional)"
+msgstr "Exam date (optional)"
+
+#: src/features/onboarding/OnboardingJourney.tsx:131
+msgctxt "onboarding.countdown.weeks.exam"
+msgid "{weeks, plural, one {# week} other {# weeks}} until exam day."
+msgstr "{weeks, plural, one {# week} other {# weeks}} until exam day."
+
+#: src/features/onboarding/OnboardingJourney.tsx:70
+msgctxt "onboarding.pace.tag.serious"
+msgid "Serious"
+msgstr "Serious"
+
+#: src/features/onboarding/OnboardingJourney.tsx:418
+msgctxt "onboarding.exam.level-heading"
+msgid "What level, and <0>by when?</0>"
+msgstr "What level, and <0>by when?</0>"
+
+#: src/features/courses/ManageCoursesDialog.tsx:175
+msgctxt "course.manage.switched"
+msgid "Switched to {language}"
+msgstr "Switched to {language}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:425
+msgctxt "onboarding.exam.choice-label"
+msgid "Exam"
+msgstr "Exam"
+
+#: src/features/onboarding/StarterCardTrial.tsx:85
+msgctxt "onboarding.trial.state.again"
+msgid "Again"
+msgstr "Again"
+
+#: src/components/shell/CourseSwitcherControl.tsx:189
+msgctxt "course.switcher.manage"
+msgid "Manage courses"
+msgstr "Manage courses"
+
+#: src/features/onboarding/OnboardingJourney.tsx:64
+msgctxt "onboarding.goal.description.conversation"
+msgid "Everyday phrases for trips and people."
+msgstr "Everyday phrases for trips and people."
+
+#: src/features/onboarding/OnboardingJourney.tsx:69
+msgctxt "onboarding.pace.tag.recommended"
+msgid "Recommended"
+msgstr "Recommended"
+
+#: src/features/onboarding/OnboardingJourney.tsx:460
+msgctxt "onboarding.pace.unit"
+msgid "cards / day"
+msgstr "cards / day"
+
+#: src/features/onboarding/OnboardingJourney.tsx:96
+msgctxt "onboarding.lumi.exam.body"
+msgid "Set a date and I’ll count the days down with you."
+msgstr "Set a date and I’ll count the days down with you."
+
+#: src/features/onboarding/OnboardingJourney.tsx:307
+msgctxt "onboarding.eyebrow.level"
+msgid "Your target"
+msgstr "Your target"
+
+#: src/features/courses/AddCourseDialog.tsx:68
+msgctxt "course.add.languages-label"
+msgid "I want to learn"
+msgstr "I want to learn"
+
+#: src/features/onboarding/OnboardingJourney.tsx:98
+msgctxt "onboarding.lumi.trial.title"
+msgid "Flip your first cards!"
+msgstr "Flip your first cards!"
+
+#: src/features/onboarding/OnboardingJourney.tsx:118
+msgctxt "onboarding.countdown.kicker"
+msgid "Countdown"
+msgstr "Countdown"
+
+#: src/features/onboarding/OnboardingJourney.tsx:71
+msgctxt "onboarding.pace.tag.intense"
+msgid "Intense"
+msgstr "Intense"
+
+#: src/features/courses/ManageCoursesDialog.tsx:84
+msgctxt "course.manage.stat.target"
+msgid "Target"
+msgstr "Target"
+
+#: src/features/courses/ManageCoursesDialog.tsx:66
+msgctxt "course.manage.card-index"
+msgid "Course {number}"
+msgstr "Course {number}"
+
+#: src/components/shell/CourseSwitcherControl.tsx:75
+msgctxt "course.switcher.switched-extension"
+msgid "the extension now saves new words here"
+msgstr "the extension now saves new words here"
+
+#: src/features/courses/CourseVisuals.tsx:48
+msgctxt "course.native-line"
+msgid "from {language}"
+msgstr "from {language}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:98
+msgctxt "onboarding.lumi.trial.body"
+msgid "Turn a card to see its meaning, then tell me if you knew it."
+msgstr "Turn a card to see its meaning, then tell me if you knew it."
+
+#: src/features/courses/ManageCoursesDialog.tsx:207
+msgctxt "course.manage.reading-aid"
+msgid "Reading aid"
+msgstr "Reading aid"
+
+#: src/components/shell/CourseSwitcherControl.tsx:199
+msgctxt "course.switcher.change-languages"
+msgid "Change"
+msgstr "Change"
+
+#: src/features/onboarding/StarterCardTrial.tsx:52
+msgctxt "onboarding.trial.result-body"
+msgid "All {total} cards are already in your library, ready for your first review."
+msgstr "All {total} cards are already in your library, ready for your first review."
+
+#: src/features/courses/ManageCoursesDialog.tsx:165
+msgctxt "course.manage.kicker.no-active"
+msgid "My languages · {count} active"
+msgstr "My languages · {count} active"
+
+#: src/features/onboarding/StarterCardTrial.tsx:69
+msgctxt "onboarding.trial.again"
+msgid "Forgot"
+msgstr "Forgot"
+
+#: src/features/onboarding/StarterCardTrial.tsx:86
+msgctxt "onboarding.trial.state.pending"
+msgid "Not yet"
+msgstr "Not yet"
+
+#: src/features/courses/ManageCoursesDialog.tsx:46
+msgctxt "course.manage.reading-aid.romanization-off"
+msgid "Romanization off"
+msgstr "Romanization off"
+
+#: src/features/courses/ManageCoursesDialog.tsx:169
+msgctxt "course.manage.title.crystal"
+msgid "Pick your <0>star</0>"
+msgstr "Pick your <0>star</0>"
+
+#: src/features/courses/AddCourseDialog.tsx:137
+msgctxt "course.add.title"
+msgid "Add a <0>language</0>"
+msgstr "Add a <0>language</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:132
+msgctxt "onboarding.countdown.weeks.goal"
+msgid "{weeks, plural, one {# week} other {# weeks}} until your target date."
+msgstr "{weeks, plural, one {# week} other {# weeks}} until your target date."
+
+#: src/features/onboarding/StarterCardTrial.tsx:73
+msgctxt "onboarding.trial.known"
+msgid "Got it"
+msgstr "Got it"
+
+#: src/features/courses/AddCourseDialog.tsx:116
+msgctxt "course.add.submit"
+msgid "Add {language}"
+msgstr "Add {language}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:470
+msgctxt "onboarding.pace.plan.weekly"
+msgid "new words a week in your plan at {pace} a day."
+msgstr "new words a week in your plan at {pace} a day."
+
+#: src/features/onboarding/OnboardingJourney.tsx:63
+msgctxt "onboarding.goal.description.business"
+msgid "Speak up in meetings with confident, precise words."
+msgstr "Speak up in meetings with confident, precise words."
+
+#: src/features/onboarding/OnboardingJourney.tsx:403
+msgctxt "onboarding.goal.curious.description"
+msgid "No exam or deadline. Grow a vocabulary that feels like yours."
+msgstr "No exam or deadline. Grow a vocabulary that feels like yours."
+
+#: src/features/courses/ManageCoursesDialog.tsx:41
+msgctxt "course.manage.reading-aid.simplified"
+msgid "Simplified characters"
+msgstr "Simplified characters"
+
+#: src/features/courses/ManageCoursesDialog.tsx:122
+msgctxt "course.manage.add-language"
+msgid "Add {language}"
+msgstr "Add {language}"
+
+#: src/features/onboarding/StarterCardTrial.tsx:66
+msgctxt "onboarding.trial.grade-label"
+msgid "Did you know this word?"
+msgstr "Did you know this word?"
+
+#: src/features/courses/ManageCoursesDialog.tsx:195
+msgctxt "course.manage.lumi.due"
+msgid "{count, plural, one {# card is due right now.} other {# cards are due right now.}}"
+msgstr "{count, plural, one {# card is due right now.} other {# cards are due right now.}}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:387
+msgctxt "onboarding.goal.exam"
+msgid "Pass {exams}"
+msgstr "Pass {exams}"
+
+#: src/features/onboarding/StarterCardTrial.tsx:47
+msgctxt "onboarding.trial.result"
+msgid "You knew <0>{known} of {total}.</0>"
+msgstr "You knew <0>{known} of {total}.</0>"
+
+#: src/features/courses/AddCourseDialog.tsx:97
+msgctxt "course.add.native-hint"
+msgid "your native language"
+msgstr "your native language"
+
+#: src/features/onboarding/OnboardingJourney.tsx:469
+msgctxt "onboarding.pace.plan.dated"
+msgid "new words in your plan by {date}: {pace} a day for {days, plural, one {# day} other {# days}}."
+msgstr "new words in your plan by {date}: {pace} a day for {days, plural, one {# day} other {# days}}."
+
+#: src/components/shell/CourseSwitcherControl.tsx:196
+#: src/features/courses/ManageCoursesDialog.tsx:208
+msgctxt "course.manage.meanings-in"
+msgid "Meanings in"
+msgstr "Meanings in"
+
+#: src/features/onboarding/OnboardingJourney.tsx:62
+msgctxt "onboarding.goal.description.study-abroad"
+msgid "Words for lectures, campus life and daily errands."
+msgstr "Words for lectures, campus life and daily errands."
+
+#: src/features/courses/AddCourseDialog.tsx:80
+msgctxt "course.add.language-selected"
+msgid "Selected"
+msgstr "Selected"
+
+#: src/features/onboarding/OnboardingJourney.tsx:422
+msgctxt "onboarding.exam.subtitle"
+msgid "Your target and test date. Both are optional and you can change them later."
+msgstr "Your target and test date. Both are optional and you can change them later."
+
+#: src/features/onboarding/OnboardingJourney.tsx:417
+msgctxt "onboarding.exam.heading"
+msgid "Which test, and <0>what score?</0>"
+msgstr "Which test, and <0>what score?</0>"
+
+#: src/features/courses/ManageCoursesDialog.tsx:206
+msgctxt "course.manage.extension-saves-to"
+msgid "Extension saves to"
+msgstr "Extension saves to"
+
+#: src/components/shell/CourseSwitcherControl.tsx:175
+msgctxt "course.switcher.shared-progress"
+msgid "Level, XP and streak are shared"
+msgstr "Level, XP and streak are shared"
+
+#: src/features/onboarding/StarterCardTrial.tsx:59
+msgctxt "onboarding.trial.position"
+msgid "Card {position} of {total}"
+msgstr "Card {position} of {total}"
+
+#: src/components/shell/CourseSwitcherControl.tsx:192
+msgctxt "course.switcher.extension-note"
+msgid "The browser extension saves new words to your active course."
+msgstr "The browser extension saves new words to your active course."
+
+#: src/components/shell/CourseSwitcherControl.tsx:174
+msgctxt "course.switcher.heading"
+msgid "Your <0>courses</0>"
+msgstr "Your <0>courses</0>"
+
+#: src/components/shell/CourseSwitcherControl.tsx:194
+msgctxt "course.switcher.app-language"
+msgid "App language"
+msgstr "App language"
+
+#: src/features/onboarding/OnboardingJourney.tsx:124
+msgctxt "onboarding.countdown.days"
+msgid "{days, plural, one {day to {goal}} other {days to {goal}}}"
+msgstr "{days, plural, one {day to {goal}} other {days to {goal}}}"
+
+#: src/features/onboarding/OnboardingJourney.tsx:388
+msgctxt "onboarding.goal.exam.description"
+msgid "Set a target score and count down to your test date."
+msgstr "Set a target score and count down to your test date."
+
+#: src/features/courses/ManageCoursesDialog.tsx:87
+msgctxt "course.manage.goal-date"
+msgid "Exam date {date}"
+msgstr "Exam date {date}"
+
+#: src/features/courses/ManageCoursesDialog.tsx:76
+msgctxt "course.manage.stat.due"
+msgid "Due"
+msgstr "Due"
+
+#: src/features/courses/ManageCoursesDialog.tsx:45
+msgctxt "course.manage.reading-aid.romanization-on"
+msgid "Romanization on"
+msgstr "Romanization on"
+
+#: src/features/onboarding/OnboardingJourney.tsx:403
+msgctxt "onboarding.goal.curious"
+msgid "Just curious"
+msgstr "Just curious"
+
+#: src/features/onboarding/OnboardingJourney.tsx:423
+msgctxt "onboarding.exam.level-subtitle"
+msgid "Both are optional and you can change them later."
+msgstr "Both are optional and you can change them later."
+
+#: src/features/courses/ManageCoursesDialog.tsx:193
+msgctxt "course.manage.lumi.kicker"
+msgid "Lumi · link"
+msgstr "Lumi · link"
+
+#: src/features/onboarding/OnboardingJourney.tsx:306
+msgctxt "onboarding.eyebrow.exam"
+msgid "Your exam"
+msgstr "Your exam"
+
+#: src/features/courses/AddCourseDialog.tsx:91
+msgctxt "course.add.native-label"
+msgid "Explain meanings in"
+msgstr "Explain meanings in"
+
+#: src/features/onboarding/OnboardingJourney.tsx:437
+msgctxt "onboarding.exam.target-date-label"
+msgid "Target date (optional)"
+msgstr "Target date (optional)"
+
+#: src/features/onboarding/StarterCardTrial.tsx:53
+msgctxt "onboarding.trial.body"
+msgid "Turn the card to see its meaning. These cards are already in your library."
+msgstr "Turn the card to see its meaning. These cards are already in your library."
+
+#: src/features/courses/AddCourseDialog.tsx:79
+msgctxt "course.add.language-added"
+msgid "Added"
+msgstr "Added"
+
+#: src/features/onboarding/OnboardingJourney.tsx:68
+msgctxt "onboarding.pace.tag.light"
+msgid "Light"
+msgstr "Light"
+
+#: src/features/courses/ManageCoursesDialog.tsx:170
+msgctxt "course.manage.title"
+msgid "Your <0>languages</0>"
+msgstr "Your <0>languages</0>"
+
+#: src/components/shell/CourseSwitcherControl.tsx:78
+msgctxt "course.switcher.switch-back"
+msgid "Back to {language}"
+msgstr "Back to {language}"
+
+#: src/features/courses/ManageCoursesDialog.tsx:40
+msgctxt "course.manage.reading-aid.traditional"
+msgid "Traditional characters"
+msgstr "Traditional characters"
+
+#: src/features/onboarding/OnboardingJourney.tsx:502
+msgctxt "onboarding.aha.next"
+msgid "Set my reminder"
+msgstr "Set my reminder"
+
+#: src/features/onboarding/OnboardingJourney.tsx:455
+msgctxt "onboarding.pace.heading"
+msgid "How many new words <0>each day?</0>"
+msgstr "How many new words <0>each day?</0>"
+
+#: src/features/courses/ManageCoursesDialog.tsx:194
+msgctxt "course.manage.lumi.title"
+msgid "Ready for {language}?"
+msgstr "Ready for {language}?"
+
+#: src/features/onboarding/StarterCardTrial.tsx:78
+msgctxt "onboarding.trial.list-label"
+msgid "Your first {total} cards"
+msgstr "Your first {total} cards"
