@@ -258,6 +258,13 @@ function ProfileCompletionForm({ submit }: { submit: AccountProfileGate['submit'
   const [consentMissing, setConsentMissing] = useState(false);
   const [submitProblem, setSubmitProblem] = useState<keyof typeof SUBMIT_PROBLEM | null>(null);
   const [pending, setPending] = useState(false);
+  // The gate is mounted once per signed-in owner, so a form that is gone when the save returns
+  // belonged to an account that has since signed out or switched; its result must not touch this device.
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
   const yearErrorId = `${id}-birth-year-error`;
   const consentHintId = `${id}-consent-hint`;
 
@@ -286,10 +293,12 @@ function ProfileCompletionForm({ submit }: { submit: AccountProfileGate['submit'
     setPending(true);
     try {
       const outcome = await submit(accountProfileSubmission(birthYear.trim(), locale, nativeLanguage));
+      if (!mountedRef.current) return;
       if (outcome.status === 'complete' && isAccountUiLocale(outcome.profile.uiLocale)) {
         void setUiLocale(outcome.profile.uiLocale);
       }
     } catch (error) {
+      if (!mountedRef.current) return;
       const code = error instanceof AccountProfileError ? error.code : 'save-failed';
       if (code === 'invalid') {
         setYearProblem('rejected');
