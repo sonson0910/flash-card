@@ -6,6 +6,7 @@ import { CountUp } from '../../components/motion/CountUp';
 import { Lumi } from '../../components/lumi/Lumi';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
+import { ReviewRangeToggle } from '../../components/stats/ReviewRangeToggle';
 import './daily-learning-canvas.css';
 import '../../components/stats/stats-board.css';
 import './progress-screen.css';
@@ -70,6 +71,7 @@ export function ProgressScreen({ model, actions, children }: ProgressScreenProps
       </div>
       <Subtitle model={model} />
       {showLumi && <LumiLink model={model} />}
+      {model.status !== 'error' && model.reviewRangeDays && actions.changeReviewRange && <ReviewRangeToggle value={model.reviewRangeDays} onChange={actions.changeReviewRange} className="progress-board-range" />}
       {model.isOffline && <p className="progress-board-offline" role="status" aria-live="polite"><Trans {...msg({ context: 'progress.offline.reconnect', message: 'You’re offline. Reconnect to review and save your progress.' })} /></p>}
     </header>
     {model.status === 'error' ? <div className="progress-board-error stats-panel crystal-chamfer max-w-3xl p-6 sm:p-8" role="alert"><p className="progress-summary-kicker"><Trans {...msg({ context: 'progress.error.kicker', message: 'Progress unavailable' })} /></p><h2 className="stats-panel-title mt-3"><Trans {...msg({ context: 'progress.error.title', message: 'Progress needs attention' })} /></h2><p className="progress-summary-copy mt-2">{model.message}</p></div> : <>{model.status === 'ready' && insights}<Summary model={model} actions={actions} />{model.status !== 'ready' && insights}</>}

@@ -29,6 +29,16 @@
 .progress-board-stat strong { font-weight: 500; }
 .progress-board-dot { color: var(--st-text2); }
 .progress-board.progress-board > header > .progress-board-offline { flex-basis: 100%; margin-top: 8px; font-size: 12px; font-weight: 500; color: var(--st-text2); }
+/* The review range switch ends the header row: beside the title block in classic, after Lumi in Crystal. */
+.progress-board.progress-board > header > .progress-board-range { margin-left: auto; align-self: flex-end; }
+.progress-board.progress-board > header > .progress-board-lumi ~ .progress-board-range { margin-left: 0; }
+:root:not([data-theme-family='crystal']) .progress-board.progress-board > header.progress-board-header:has(> .progress-board-range) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+:root:not([data-theme-family='crystal']) .progress-board.progress-board > header.progress-board-header:has(> .progress-board-range) > * { grid-column: 1; }
+:root:not([data-theme-family='crystal']) .progress-board.progress-board > header.progress-board-header > .progress-board-range { grid-column: 2; grid-row: 1 / span 2; margin-left: 0; }
 
 /* Insights grid: activity and mastery, then forecast and recently mastered, with the board's 400px side column. */
 .progress-board-insights > div > :not(:last-child) { margin-block-end: 20px; }
@@ -37,8 +47,8 @@
   .progress-board-insights > div > section { grid-template-columns: minmax(0, 1fr) 400px; }
 }
 
-/* Forecast and recently mastered panels */
-.progress-board-insights > div > section > div {
+/* Forecast and recently mastered panels: the same panel treatment as the stats panels above them. */
+.progress-evidence > div {
   padding: 22px 26px;
   border: 1px solid var(--st-line);
   border-radius: var(--st-radius);
@@ -46,41 +56,58 @@
   -webkit-backdrop-filter: var(--st-blur);
   backdrop-filter: var(--st-blur);
 }
-:root:not([data-theme-family='crystal']) .progress-board-insights > div > section > div { background: var(--st-panel-bg); }
-:root[data-theme-family='crystal'] .progress-board-insights > div > section > div { --sf-chamfer-fill: var(--st-panel-bg); --sf-chamfer-edge: var(--st-line-strong); }
-.progress-board-insights > div > section > div > h2 {
-  margin: 0;
-  font-family: var(--st-display);
-  font-optical-sizing: auto;
-  font-size: 24px;
-  font-weight: var(--st-weight);
-  line-height: 1.2;
-  color: var(--st-title);
-}
-.progress-board-insights > div > section > div > p { font-size: 13px; color: var(--st-text2); }
+:root:not([data-theme-family='crystal']) .progress-evidence > div { background: var(--st-panel-bg); }
+:root[data-theme-family='crystal'] .progress-evidence > div { --sf-chamfer-fill: var(--st-panel-bg); --sf-chamfer-edge: var(--st-line-strong); }
+.progress-panel-empty { margin-top: 12px; font-size: 13px; color: var(--st-text2); }
+.progress-accent { font-style: italic; color: var(--st-mastered); }
 
-.progress-board [data-due-timeline] {
-  margin-top: 16px;
+.progress-forecast-days {
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 16px 8px;
   align-items: end;
 }
 @media (min-width: 768px) {
-  .progress-board [data-due-timeline] { grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 12px; }
+  .progress-forecast-days { grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 12px; }
 }
-.progress-board [data-due-timeline] > li { display: flex; flex-direction: column-reverse; align-items: center; gap: 6px; }
-.progress-board [data-due-timeline] > li > time { max-width: 100%; font-size: 11px; color: var(--st-text3); }
-.progress-board [data-due-timeline] > li > span { width: 100%; height: 120px; display: flex; align-items: flex-end; border: 0; }
-.progress-board [data-due-timeline] > li > span > span { border-radius: 8px 8px 3px 3px; background: var(--st-track); }
-.progress-board [data-due-timeline] > li > strong { font-family: var(--st-mono); font-size: 11px; font-weight: 400; color: var(--st-text3); }
-.progress-board [data-due-timeline] > li:first-child > span > span { background: var(--st-accent); box-shadow: var(--st-today-glow); }
-.progress-board [data-due-timeline] > li:nth-child(2) > span > span { background: var(--st-tomorrow); }
-.progress-board [data-due-timeline] > li:first-child > strong { color: var(--st-accent-text); }
-.progress-board [data-due-timeline] > li:first-child > time { font-weight: 650; color: var(--st-title); }
+/* The label comes first for screen readers ("Today, 12"); the count is drawn above the bar. */
+.progress-forecast-days > li { min-width: 0; display: flex; flex-direction: column-reverse; align-items: center; gap: 6px; }
+.progress-forecast-days time { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--st-text3); }
+.progress-forecast-bar { width: 100%; height: 104px; display: flex; align-items: flex-end; }
+.progress-forecast-bar > span { width: 100%; border-radius: 8px 8px 3px 3px; background: var(--st-track); }
+.progress-forecast-count { font-family: var(--st-body-font); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--st-text3); }
+.progress-forecast-days > li[data-forecast-day='today'] .progress-forecast-bar > span { background: var(--st-accent); box-shadow: var(--st-today-glow); }
+.progress-forecast-days > li[data-forecast-day='tomorrow'] .progress-forecast-bar > span { background: var(--st-tomorrow); }
+.progress-forecast-days > li[data-forecast-day='today'] .progress-forecast-count { font-weight: 700; color: var(--st-accent-text); }
+.progress-forecast-days > li[data-forecast-day='today'] time { font-weight: 650; color: var(--st-title); }
 
-.progress-board-insights > div > section > div:last-child > ul { margin-top: 18px; gap: 12px; }
-.progress-board-insights > div > section > div:last-child > ul > li {
+.progress-mastered-all {
+  min-height: 44px;
+  margin: -12px -6px -12px auto;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--st-accent-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* Ink & Paper draws the link in the mastered gold, darkened to keep AA contrast on paper. */
+:root:not(.dark):not([data-theme-family='crystal']) .progress-mastered-all { color: color-mix(in srgb, var(--st-mastered) 72%, var(--st-title)); }
+.progress-mastered-all:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .progress-mastered-all:hover { text-decoration: underline; text-underline-offset: 3px; }
+}
+.progress-mastered-cards { margin: 18px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.progress-mastered-cards > li {
+  position: relative;
+  min-width: 0;
   min-height: 76px;
   box-sizing: border-box;
   padding: 12px 14px;
@@ -92,7 +119,10 @@
   flex-direction: column;
   justify-content: space-between;
 }
-.progress-board-insights > div > section > div:last-child > ul > li > p:first-child {
+.progress-mastered-word {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--st-display);
   font-optical-sizing: auto;
   font-size: 22px;
@@ -100,8 +130,8 @@
   line-height: 1.05;
   color: var(--st-title);
 }
-.progress-board-insights > div > section > div:last-child > ul > li > p:nth-child(2) { margin-top: 4px; font-size: 12px; color: var(--st-text2); }
-.progress-board-insights > div > section > div:last-child > ul > li > time { margin-top: 6px; font-family: var(--st-mono); font-size: 11px; color: var(--st-text3); }
+.progress-mastered-meaning { margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--st-text2); }
+.progress-mastered-date { margin-top: 6px; font-family: var(--st-mono); font-size: 11px; color: var(--st-text3); }
 
 /* Summary: the next review action and supporting evidence. */
 .progress-summary-copy { font-size: 14px; line-height: 1.55; color: var(--st-text2); }
@@ -153,6 +183,7 @@
   text-transform: uppercase;
 }
 :root[data-theme-family='crystal'] .progress-board-subtitle { flex-basis: auto; margin: 0 0 6px; }
+:root[data-theme-family='crystal'] .progress-board.progress-board > header > .progress-board-range { margin-bottom: 6px; }
 :root[data-theme-family='crystal'] .progress-board-stat { color: var(--st-text2); }
 :root[data-theme-family='crystal'] .progress-board-stat strong { font-family: var(--st-display); font-weight: 600; color: var(--st-title); }
 :root[data-theme-family='crystal'] .progress-board-lumi { margin-left: auto; display: flex; align-items: flex-end; gap: 4px; }
@@ -188,8 +219,9 @@
 }
 :root[data-theme-family='crystal'] .progress-board-lumi-message { display: block; margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: var(--st-title); }
 
-:root[data-theme-family='crystal'] .progress-board-insights > div > section > div { padding: 18px 22px; border-radius: 0; }
-:root[data-theme-family='crystal'] .progress-board-insights > div > section > div > h2 {
+/* Unlayered rules outrank the chamfer utility, so the corner radius and fills are set per family. */
+:root[data-theme-family='crystal'] .progress-evidence > div { padding: 18px 22px; border-radius: 0; }
+:root[data-theme-family='crystal'] .progress-evidence .stats-panel-title {
   font-style: italic;
   font-weight: 800;
   font-size: 15px;
@@ -197,23 +229,34 @@
   text-transform: uppercase;
   color: var(--st-crimson-text);
 }
-:root[data-theme-family='crystal'] .progress-board-insights > div > section > div:last-child > h2 { color: var(--st-gold-text); }
-:root[data-theme-family='crystal'] .progress-board [data-due-timeline] > li > span > span { border-radius: 0; transform: skewX(-12deg); background: var(--st-bar); }
-:root[data-theme-family='crystal'] .progress-board [data-due-timeline] > li:first-child > span > span { background: var(--st-primary); box-shadow: 0 0 18px rgb(255 42 77 / .8); }
-:root[data-theme-family='crystal'] .progress-board [data-due-timeline] > li:nth-child(2) > span > span { background: var(--st-tomorrow); }
-:root[data-theme-family='crystal'] .progress-board [data-due-timeline] > li > strong { font-family: var(--st-display); font-style: italic; font-weight: 900; font-size: 15px; }
-:root[data-theme-family='crystal'] .progress-board [data-due-timeline] > li:nth-child(2) > strong { color: var(--st-pink-text); }
-:root[data-theme-family='crystal'] .progress-board [data-due-timeline] > li > time { font-family: var(--st-display); font-style: italic; font-weight: 700; font-size: 12px; letter-spacing: .04em; }
-:root[data-theme-family='crystal'] .progress-board [data-due-timeline] > li:first-child > time { font-weight: 900; }
-:root[data-theme-family='crystal'] .progress-board-insights > div > section > div:last-child > ul > li {
+:root[data-theme-family='crystal'] .progress-mastered .stats-panel-title { color: var(--st-gold-text); }
+:root[data-theme-family='crystal'] .progress-mastered-all {
+  color: var(--st-crimson-text);
+  font-family: var(--st-display);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+:root[data-theme-family='crystal'] .progress-forecast-bar { height: 150px; }
+:root[data-theme-family='crystal'] .progress-forecast-bar > span { border-radius: 0; transform: skewX(-12deg); background: var(--st-bar); }
+:root[data-theme-family='crystal'] .progress-forecast-days > li[data-forecast-day='today'] .progress-forecast-bar > span { background: var(--st-primary); box-shadow: 0 0 18px color-mix(in srgb, var(--sf-brand) 80%, transparent); }
+:root[data-theme-family='crystal'] .progress-forecast-days > li[data-forecast-day='tomorrow'] .progress-forecast-bar > span { background: var(--st-tomorrow); }
+:root[data-theme-family='crystal'] .progress-forecast-count { font-family: var(--st-display); font-style: italic; font-weight: 900; font-size: 15px; color: var(--st-text2); }
+:root[data-theme-family='crystal'] .progress-forecast-days > li[data-forecast-day='tomorrow'] .progress-forecast-count { color: var(--st-pink-text); }
+:root[data-theme-family='crystal'] .progress-forecast-days time { font-family: var(--st-display); font-style: italic; font-weight: 700; font-size: 12px; letter-spacing: .04em; }
+:root[data-theme-family='crystal'] .progress-forecast-days > li[data-forecast-day='today'] time { font-weight: 900; }
+:root[data-theme-family='crystal'] .progress-mastered-cards > li {
+  min-height: 92px;
   border: 2px solid transparent;
   border-radius: 0;
   clip-path: var(--nk-chamfer-sm);
   background: linear-gradient(var(--st-panel-solid), var(--st-panel-solid)) padding-box, var(--st-rim-mastered) border-box;
   box-shadow: none;
 }
-:root[data-theme-family='crystal'] .progress-board-insights > div > section > div:last-child > ul > li > p:first-child { font-style: italic; font-weight: 900; font-size: 21px; }
-:root[data-theme-family='crystal'] .progress-board-insights > div > section > div:last-child > ul > li > p:nth-child(2) { font-size: 13px; font-weight: 700; color: var(--st-text2); }
+:root[data-theme-family='crystal'] .progress-mastered-word { font-style: italic; font-weight: 900; font-size: 21px; }
+:root[data-theme-family='crystal'] .progress-mastered-meaning { font-size: 13px; font-weight: 700; color: var(--st-text2); }
+:root[data-theme-family='crystal'] .progress-mastered-chip { position: absolute; top: 6px; right: 8px; width: auto; height: 18px; padding: 0 8px; font-size: 10px; background: var(--st-rim-mastered); }
 
 :root[data-theme-family='crystal'] .progress-summary-kicker { font-family: var(--st-display); font-style: italic; font-weight: 800; letter-spacing: .12em; }
 :root[data-theme-family='crystal'] .progress-board .progress-metric.progress-metric {
@@ -240,9 +283,12 @@
 }
 
 @media (max-width: 639px) {
+  :root:not([data-theme-family='crystal']) .progress-board.progress-board > header.progress-board-header:has(> .progress-board-range) { grid-template-columns: minmax(0, 1fr); }
+  :root:not([data-theme-family='crystal']) .progress-board.progress-board > header.progress-board-header > .progress-board-range { grid-column: 1; grid-row: auto; }
+  .progress-board.progress-board > header > .progress-board-range { flex-basis: 100%; margin-top: 14px; }
   .progress-board.progress-board > header h1.progress-board-title,
   :root[data-theme-family='crystal'] .progress-board.progress-board > header h1.progress-board-title { font-size: 44px !important; }
-  .progress-board-insights > div > section > div { padding: 18px; }
+  .progress-evidence > div { padding: 18px; }
   :root[data-theme-family='crystal'] .progress-board-subtitle { flex-basis: 100%; margin: 8px 0 0; }
   :root[data-theme-family='crystal'] .progress-board-lumi { margin-left: 0; margin-top: 10px; flex-basis: 100%; }
   :root[data-theme-family='crystal'] .progress-board-lumi-figure { width: 64px; height: 64px; }

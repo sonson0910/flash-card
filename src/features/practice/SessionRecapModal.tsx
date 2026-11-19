@@ -15,6 +15,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import type { CardData } from '../../types/card';
 import { loadTomorrowDueCount } from './session-recap-service';
 import './practice-board.css';
+import './session-recap-goal.css';
 import type { StudyReviewSummary } from './practiceSessionLifecycle';
 
 export type SessionRecapTier = 'new' | 'learning' | 'mastered';
@@ -48,6 +49,8 @@ interface SessionRecapModalProps {
   returnsToToday?: boolean;
   /** Reads how many cards are due tomorrow; defaults to the signed-in learner's library. */
   loadTomorrowDue?: (targetLanguage?: string) => Promise<number>;
+  /** The learner's exam goal panel. It may render nothing (no IELTS goal), and the layout closes up. */
+  goalPanel?: ReactNode;
 }
 
 type TomorrowDueResult = { status: 'loading' | 'ready' | 'error'; count?: number };
@@ -209,7 +212,7 @@ function CrystalBurst() {
 
 export function SessionRecapModal({
   open, onClose, onViewWeeklyRecap, onRetryWeak, totalCards, goodCount, againCount, xpEarned, weakCards, targetLanguage, summary,
-  promotions = [], streakDays, bestRun, returnsToToday = false, loadTomorrowDue = loadTomorrowDueCount,
+  promotions = [], streakDays, bestRun, returnsToToday = false, loadTomorrowDue = loadTomorrowDueCount, goalPanel,
 }: SessionRecapModalProps) {
   const { _ } = useLingui();
   const { family, mode, setMode } = useTheme();
@@ -328,7 +331,7 @@ export function SessionRecapModal({
               </dl>
               {progressLine}
 
-              {(shownPromotions.length > 0 || weakCards.length > 0) && (
+              {(shownPromotions.length > 0 || weakCards.length > 0 || goalPanel) && (
                 <div className="practice-recap-panels">
                   {shownPromotions.length > 0 && (
                     <section className="practice-recap-panel practice-recap-panel--up" aria-labelledby="practice-recap-up-heading">
@@ -336,6 +339,7 @@ export function SessionRecapModal({
                       <ul className="practice-recap-cards">{shownPromotions.map(promotion => <PromotedCard key={promotion.card.id} promotion={promotion} crystal />)}</ul>
                     </section>
                   )}
+                  {goalPanel}
                   {weakCards.length > 0 && (
                     <section className="practice-recap-panel practice-recap-panel--revisit" aria-labelledby="practice-recap-revisit-heading">
                       <h2 id="practice-recap-revisit-heading" className="practice-recap-panel-heading"><Trans {...msg({ context: 'recap.needs-review', message: 'To revisit' })} /> <span>// {formatNumber(weakCards.length)}</span></h2>
@@ -373,6 +377,7 @@ export function SessionRecapModal({
                 <Trans {...msg({ context: 'recap.headline', message: '{count, plural, one {<0>#</0> word, <1>locked in.</1>} other {<0>#</0> words, <1>locked in.</1>}}' })} values={{ count: saved }} components={{ 0: <CountUp to={saved} />, 1: <em /> }} />
               </p>
               <Dialog.Description id="session-recap-description" className="practice-recap-sub">{description}</Dialog.Description>
+              {goalPanel}
 
               {shownPromotions.length > 0 && (
                 <ul className="practice-recap-cards" aria-label={_(msg({ id: 'recap.cards-up-label', message: 'Words that moved up a level' }))}>

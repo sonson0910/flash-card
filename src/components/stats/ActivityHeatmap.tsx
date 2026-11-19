@@ -30,22 +30,15 @@ const activityDateKey = (value: string): string => {
 
 const localDate = (dateKey: string): Date => new Date(`${dateKey}T12:00:00`);
 
-export const firstDayOfWeek = (locale: string): number => {
-  const supportedLocale = locale === 'pseudo' ? 'en' : locale;
-  try {
-    const weekInfo = (new Intl.Locale(supportedLocale) as Intl.Locale & { getWeekInfo?: () => { firstDay: number } }).getWeekInfo?.();
-    if (weekInfo) return weekInfo.firstDay % 7;
-  } catch { /* Use the documented fallback for invalid or unavailable locales. */ }
-  return supportedLocale === 'en-US' || /^(ja|ko)(-|$)/i.test(supportedLocale) ? 0 : 1;
-};
+/** Weeks start on Monday in every locale, as the Progress board draws the grid (Mon, Wed, Fri, Sun). */
+export const HEATMAP_WEEK_START = 1;
 
 export const weekdayLabels = (locale: string): string[] => {
-  const firstDay = firstDayOfWeek(locale);
   const sunday = new Date(2026, 0, 4);
   const formatter = new Intl.DateTimeFormat(locale === 'pseudo' ? 'en' : locale, { weekday: 'short' });
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(sunday);
-    date.setDate(sunday.getDate() + ((firstDay + index) % 7));
+    date.setDate(sunday.getDate() + ((HEATMAP_WEEK_START + index) % 7));
     return formatter.format(date);
   });
 };
@@ -77,7 +70,7 @@ export function ActivityHeatmap({ entries, reviewActivity, rangeDays, todayKey, 
     const today = reviewActivity && todayKey && /^\d{4}-\d{2}-\d{2}$/.test(todayKey)
       ? localDate(todayKey)
       : new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const firstDay = firstDayOfWeek(locale);
+    const firstDay = HEATMAP_WEEK_START;
     const isReviewActivity = Boolean(reviewActivity);
     const endDate = isReviewActivity ? today : new Date(today);
     if (!isReviewActivity) endDate.setDate(today.getDate() + ((firstDay + 6 - today.getDay()) % 7));

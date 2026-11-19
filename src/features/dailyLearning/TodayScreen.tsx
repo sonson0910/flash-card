@@ -10,6 +10,7 @@ import {
   Puzzle,
   Shuffle,
   Sparkles,
+  ArrowRight,
   Zap,
 } from 'lucide-react';
 import { i18n } from '@lingui/core';
@@ -64,25 +65,22 @@ function RecommendedNext({ model, actions }: TodayScreenProps) {
   if (!recommendation) return null;
   const modeLabel = _([...featuredLessonModes, ...additionalLessonModes].find(mode => mode.id === recommendation.mode)!.label);
 
+  // A compact row under the board's sections: the board has no slot for it, and it is Today's
+  // only entry into the adaptive practice suggestion.
   return (
-    <section data-recommended-next="true" aria-labelledby="recommended-next-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <Sparkles size={14} className="text-[var(--sf-brand-text)]" aria-hidden="true" />
-            <p className="premium-kicker uppercase tracking-[0.14em]"><Trans {...msg({ context: 'today-screen.adaptive-suggestion', message: 'Adaptive suggestion' })} /></p>
-          </div>
-          <h2 id="recommended-next-heading" className="mt-1 text-xl font-black tracking-tight"><Trans {...msg({ context: 'today-screen.recommended-next', message: 'Recommended next' })} /></h2>
-          <p className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">{recommendation.reason} · {modeLabel}</p>
-        </div>
-        <button
-          type="button"
-          data-recommended-next-action="true"
-          aria-label={i18n._(msg({ id: "today.recommended.aria", message: "Recommended next: start {mode}" }).id, { mode: modeLabel.toLowerCase() })}
-          onClick={actions.startRecommended}
-          className={`${primaryButton} w-full text-sm sm:w-auto`}
-        ><Trans {...msg({ context: 'today-screen.start-recommended-lesson', message: 'Start recommended lesson' })} /></button>
+    <section data-recommended-next="true" aria-labelledby="recommended-next-heading" className="today-recommended crystal-chamfer-sm">
+      <Sparkles size={16} className="today-recommended-icon" aria-hidden="true" />
+      <div className="today-recommended-copy">
+        <h2 id="recommended-next-heading" className="today-recommended-title"><Trans {...msg({ context: 'today-screen.recommended-next', message: 'Recommended next' })} /></h2>
+        <p className="today-recommended-reason">{recommendation.reason} · {modeLabel}</p>
       </div>
+      <button
+        type="button"
+        data-recommended-next-action="true"
+        aria-label={i18n._(msg({ id: "today.recommended.aria", message: "Recommended next: start {mode}" }).id, { mode: modeLabel.toLowerCase() })}
+        onClick={actions.startRecommended}
+        className={`${secondaryButton} today-recommended-action text-sm`}
+      ><Trans {...msg({ context: 'today-screen.start-recommended-lesson', message: 'Start recommended lesson' })} /><ArrowRight size={14} aria-hidden="true" /></button>
     </section>
   );
 }
@@ -409,7 +407,6 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
         streakChip={<StreakChip streak={model.streak} run={model.studyRun} week={model.studyWeek} className="today-chip today-chip--button" />}
       />
       <div className="daily-canvas daily-canvas-today today-below mx-auto max-w-6xl space-y-5 sm:space-y-6">
-      <RecommendedNext model={model} actions={actions} />
       <LearningJourney model={model} actions={actions} />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
         <PracticeModes model={model} actions={actions} />
@@ -422,6 +419,7 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
           </aside>
         )}
       </div>
+      <RecommendedNext model={model} actions={actions} />
       </div>
     </div>
   );

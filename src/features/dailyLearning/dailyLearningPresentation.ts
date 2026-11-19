@@ -1,5 +1,6 @@
 import type { ReactNode, RefObject } from 'react';
 import type { HapticStyle } from '../../lib/haptics';
+import type { DailyGoalsSource } from '../dailyGoals/dailyGoalsModel';
 import type { StudyWeekDay } from './todayScreenFacts';
 
 export type LessonMode =
@@ -138,6 +139,8 @@ export interface TodayScreenModel {
     };
   };
   readonly recommendation?: TodayRecommendationPresentation;
+  /** The verified goal counters for the Daily goals panel; the panel is left out without them. */
+  readonly dailyGoals?: DailyGoalsSource & { readonly rewardTimeZone?: string };
   /** Release B pilot availability; absent keeps the existing plan-gated behavior in callers. */
   readonly listenPilotAvailable?: boolean;
 }
@@ -328,6 +331,12 @@ export type PlacementScreenModel =
       readonly promptLanguage?: string;
       readonly selectedId: string | null;
       readonly options: readonly LessonChoicePresentation[];
+      /** The word being asked about; `prompt` is then the question about it. */
+      readonly word?: string;
+      readonly phonetic?: string;
+      readonly canPlayAudio?: boolean;
+      /** The running estimate; absent until there are enough answers to evaluate. */
+      readonly estimate?: { readonly tier: 'foundation' | 'core' | 'advanced'; readonly confidence: 'low' | 'medium' | 'high' };
     }
   | {
       readonly headingRef?: RefObject<HTMLHeadingElement | null>;
@@ -359,6 +368,9 @@ export interface PlacementScreenActions {
   readonly retry: () => void;
   readonly openPaths: () => void;
   readonly exit: () => void;
+  /** Counts the current question as not known and moves on. */
+  readonly markUnsure?: () => void;
+  readonly playAudio?: () => void;
 }
 
 export interface ProgressScreenModel {
@@ -371,6 +383,8 @@ export interface ProgressScreenModel {
   readonly dueToday: number | null;
   readonly isOffline: boolean;
   readonly hasVocabulary: boolean;
+  /** The review activity range; the header shows the range switch only with it. */
+  readonly reviewRangeDays?: 30 | 182;
 }
 
 export interface ProgressScreenProps {
@@ -378,6 +392,7 @@ export interface ProgressScreenProps {
   readonly actions: {
     readonly startReview: () => void;
     readonly openVocabulary: () => void;
+    readonly changeReviewRange?: (days: 30 | 182) => void;
   };
   readonly children?: ReactNode;
 }

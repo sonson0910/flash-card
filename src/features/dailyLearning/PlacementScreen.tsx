@@ -14,10 +14,8 @@ import './lesson-placement-canvas.css';
 /** The running estimate from the placement engine; absent until enough answers exist to evaluate. */
 interface PlacementEstimate { readonly tier: PlacementTier; readonly confidence: PlacementConfidence; }
 
-/** Optional facts a caller can attach to a question; the screen renders only what it receives. */
-type PlacementQuestionExtras = { readonly word?: string; readonly phonetic?: string; readonly estimate?: PlacementEstimate; readonly canPlayAudio?: boolean };
-type PlacementModel = PlacementScreenModel & PlacementQuestionExtras;
-type PlacementActions = PlacementScreenActions & { readonly markUnsure?: () => void; readonly playAudio?: () => void };
+type PlacementModel = PlacementScreenModel;
+type PlacementActions = PlacementScreenActions;
 
 interface PlacementScreenProps { readonly model: PlacementModel; readonly actions: PlacementActions; }
 
@@ -138,7 +136,7 @@ function Question({ model, actions, showLumi }: { readonly model: Extract<Placem
           </div>
         </fieldset>
         <div className="placement-action-row">
-          <button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className="lesson-primary placement-submit">{_(msg({ id: 'daily.placement.submit', message: 'Submit answer' }))}</button>
+          <button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className="lesson-primary placement-submit">{_(msg({ id: 'daily.placement.next-question', message: 'Next question' }))}</button>
           {actions.markUnsure && <button type="button" onClick={actions.markUnsure} className="lesson-link">{_(msg({ id: 'daily.placement.unsure', message: 'I’m not sure' }))}</button>}
         </div>
         {!showLumi && <p className="placement-guidance-copy">{lumiCopy}</p>}

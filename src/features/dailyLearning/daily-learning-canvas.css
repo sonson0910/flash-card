@@ -12,6 +12,15 @@
 .daily-canvas-today .practice-bento-card { background: var(--sf-surface-raised); border: 1px solid var(--sf-border); border-radius: 14px; box-shadow: 0 12px 28px -25px var(--sf-shadow); }
 .daily-canvas-today .practice-bento-card:hover { transform: translateY(-2px); border-color: var(--sf-brand); }
 .daily-canvas-today > .grid { align-items: start; }
+/* Recommended next: a compact row under Today's sections. */
+.today-recommended { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 12px 10px 18px; border: 1px solid var(--sf-border); }
+:root:not([data-theme-family="crystal"]) .today-recommended { border-radius: 16px; background: var(--sf-surface); }
+:root[data-theme-family="crystal"] .today-recommended { border-radius: 0; --sf-chamfer-fill: var(--sf-surface-glass); }
+.today-recommended-icon { flex: none; color: var(--sf-brand-text); }
+.today-recommended-copy { display: flex; min-width: 0; flex: 1 1 16rem; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.daily-canvas .today-recommended-title { margin: 0; font-size: 15px; letter-spacing: 0; }
+.today-recommended-reason { margin: 0; color: var(--sf-text-muted); font-size: 13.5px; line-height: 1.45; }
+.today-recommended-action { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-left: auto; }
 .daily-facet-panel { position: relative; overflow: hidden; border: 1px solid var(--sf-border); border-radius: var(--sf-card-radius, 20px); background: var(--sf-surface); box-shadow: 0 26px 58px -40px var(--sf-shadow); }
 .daily-zero { min-height: min(680px, calc(100vh - 10rem)); display: grid; grid-template-columns: minmax(0, 1fr) minmax(22rem, .82fr); align-items: center; gap: clamp(2rem, 6vw, 6rem); padding: clamp(1.5rem, 5vw, 4rem); }
 .daily-zero-copy { align-self: center; }
@@ -34,14 +43,8 @@
 .progress-canvas .liquid-glass, [aria-labelledby="daily-progress-heading"] .liquid-glass { border-radius: var(--sf-card-radius, 20px) !important; background: var(--daily-panel); box-shadow: 0 24px 54px -38px var(--sf-shadow); }
 .progress-canvas > .liquid-glass > div:last-child, [aria-labelledby="daily-progress-heading"] > .liquid-glass > div:last-child { background: color-mix(in srgb, var(--sf-surface-raised) 64%, transparent); }
 .progress-canvas [data-progress-evidence] > div, [aria-labelledby="daily-progress-heading"] [data-progress-evidence] > div { border-radius: 10px !important; background: var(--sf-surface-raised); box-shadow: none; }
-.stats-canvas { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(20rem, .9fr); gap: 1.25rem; }
-.stats-canvas > section:first-child { grid-row: span 2; }
-.stats-canvas > .grid { display: contents; }
-.stats-canvas > .grid > section { min-width: 0; }
-.stats-canvas .liquid-glass, .achievements-canvas { border-radius: var(--sf-card-radius, 20px) !important; background: var(--daily-panel); box-shadow: 0 24px 54px -38px var(--sf-shadow); }
-.stats-canvas > section:first-child > div:last-child { min-height: 17rem; }
+.achievements-canvas { border-radius: var(--sf-card-radius, 20px) !important; background: var(--daily-panel); box-shadow: 0 24px 54px -38px var(--sf-shadow); }
 .achievements-canvas { margin-top: 1.25rem; }
-@media (min-width: 64rem) { [data-due-timeline] { grid-template-columns: repeat(14,1fr); } }
 @media (min-width: 80rem) {
   .achievements-canvas [data-achievement-grid] { grid-template-columns: repeat(6,1fr); }
   :root[data-theme-family="crystal"] .achievements-canvas [data-achievements-board] { display: grid; grid-template-columns: 3fr 4fr 7fr; gap: 1rem; }
@@ -75,6 +78,6 @@
 :root[data-theme-family="crystal"] .daily-facet-action { border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-brand); box-shadow: 0 0 20px -4px rgb(255 42 77 / .75); }
 :root[data-theme-family="crystal"] .daily-ghost-action { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); box-shadow: inset 0 0 0 1px var(--sf-border); }
 :root[data-theme-family="crystal"] .daily-canvas [data-progress-evidence] > div { clip-path: var(--nk-chamfer-sm); }
-:root[data-theme-family="crystal"] .stats-canvas .liquid-glass, :root[data-theme-family="crystal"] .achievements-canvas { border: 0 !important; clip-path: var(--nk-chamfer); box-shadow: inset 0 0 0 1px var(--sf-border), 0 15px 35px -30px rgb(0 0 0 / .8); }
+:root[data-theme-family="crystal"] .achievements-canvas { border: 0 !important; clip-path: var(--nk-chamfer); box-shadow: inset 0 0 0 1px var(--sf-border), 0 15px 35px -30px rgb(0 0 0 / .8); }
 :root[data-theme-family="crystal"] .stats-canvas [data-native-chart="xp"] { background-image: linear-gradient(var(--sf-border) 1px, transparent 1px), linear-gradient(90deg, var(--sf-border) 1px, transparent 1px); background-size: 100% 25%, 20% 100%; }
-@media (max-width: 639px) { .daily-canvas-today > header { display: block; } .daily-zero { min-height: calc(100vh - 8rem); display: block; padding: 1.5rem 0; } .daily-zero h1 { font-size: clamp(4.5rem, 25vw, 6rem) !important; } .daily-zero-panel { min-height: 22rem; margin-top: 2rem; padding: 1.25rem; } .daily-zero-panel-copy { padding-top: 7rem; } .daily-zero-lumi { right: .75rem; } .daily-zero-lumi img { width: 7.5rem !important; height: auto !important; } .daily-zero-actions > * { width: 100%; } [data-session-shell="lesson"] { padding-inline: 1.25rem; } [data-session-shell="lesson"] > header h1, .daily-placement-canvas > h1 { font-size: 2.35rem !important; } .daily-placement-canvas { padding-top: 1rem; } .daily-placement-canvas [data-session-shell="placement"] > div:last-child { grid-template-columns: 1fr; } .daily-placement-canvas [data-session-shell="placement"] aside { display: none; } .stats-canvas { display: block; } .stats-canvas > section, .stats-canvas > .grid > section { margin-bottom: 1rem; } .stats-canvas > section:first-child > div:last-child { min-height: 14rem; } }
+@media (max-width: 639px) { .daily-canvas-today > header { display: block; } .daily-zero { min-height: calc(100vh - 8rem); display: block; padding: 1.5rem 0; } .daily-zero h1 { font-size: clamp(4.5rem, 25vw, 6rem) !important; } .daily-zero-panel { min-height: 22rem; margin-top: 2rem; padding: 1.25rem; } .daily-zero-panel-copy { padding-top: 7rem; } .daily-zero-lumi { right: .75rem; } .daily-zero-lumi img { width: 7.5rem !important; height: auto !important; } .daily-zero-actions > * { width: 100%; } }

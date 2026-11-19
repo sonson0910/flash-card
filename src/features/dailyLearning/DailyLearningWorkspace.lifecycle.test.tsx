@@ -18,7 +18,7 @@ vi.mock('./LessonScreen', () => ({
     <section>
       <p>{model.card?.word}</p>
       <button type="button" onClick={actions.playAudio}>Play audio</button>
-      <button type="button" onClick={actions.submitAnswer}>Submit answer</button>
+      <button type="button" onClick={actions.submitAnswer}>Check</button>
       <button type="button" onClick={() => actions.rate('good')}>Rate good</button>
     </section>
   ),
@@ -187,8 +187,8 @@ describe('DailyLearningWorkspace audio lifecycle', () => {
       if (!play) throw new Error('Play audio button was not rendered.');
       await act(async () => { invokeClick(play); await flushReact(); });
 
-      const submit = findButton(container, 'Submit answer');
-      if (!submit) throw new Error('Submit answer button was not rendered.');
+      const submit = findButton(container, 'Check');
+      if (!submit) throw new Error('Check button was not rendered.');
       await act(async () => { invokeClick(submit); await flushReact(); });
 
       const rate = findButton(container, 'Rate good');

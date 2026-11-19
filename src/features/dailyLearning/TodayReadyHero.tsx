@@ -4,6 +4,7 @@ import { Trans, useLingui } from '@lingui/react';
 import { ArrowRight, CalendarDays, Globe2, Play, Plus, RefreshCw, Sparkles, Star, Zap } from 'lucide-react';
 import type { CardData } from '../../types/card';
 import { Lumi } from '../../components/lumi/Lumi';
+import { DailyGoalsPanel } from '../dailyGoals/DailyGoalsPanel';
 import { openWebWordsRoute } from '../webWords/webWordsRoute';
 import type { WebWordsPreview } from '../webWords/useWebWordsPreview';
 import type { TodayScreenActions, TodayScreenModel, TodaySessionWord } from './dailyLearningPresentation';
@@ -504,19 +505,7 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
   const day = runDayNumber(facts.run);
   const number = new Intl.NumberFormat(i18n.locale);
   const name = greetingName(model.learner?.name);
-  const goals = [
-    { id: 'lesson', label: _(msg({ id: 'today.crystal.goal.lesson', message: "Finish today's lesson" })), xp: facts.xpCeiling, total: 1 },
-    ...facts.stages.filter(stage => !stage.skipped && (stage.id === 'review' || stage.id === 'new' || stage.id === 'match')).map(stage => ({
-      id: stage.id,
-      label: stage.id === 'review'
-        ? _({ ...msg({ id: 'today.crystal.goal.review', message: '{count, plural, one {Review # card} other {Review # cards}}' }), values: { count: stage.count } })
-        : stage.id === 'new'
-          ? _({ ...msg({ id: 'today.crystal.goal.new', message: '{count, plural, one {Meet # new word} other {Meet # new words}}' }), values: { count: stage.count } })
-          : _(msg({ id: 'today.crystal.goal.match', message: 'Clear the word match' })),
-      xp: stage.id === 'match' ? sessionXpCeiling([stage]) : stage.count * 2,
-      total: stage.id === 'match' ? 1 : stage.count,
-    })),
-  ].slice(0, 3);
+  const planHasMatch = facts.stages.some(stage => stage.id === 'match' && !stage.skipped);
 
   return (
     <section aria-labelledby="daily-today-heading" className="today-crystal" data-today-ready="true">
@@ -571,22 +560,8 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
           </div>
           <StageRail model={model} facts={facts} variant="crystal" />
         </section>
-        <div className={`today-crystal-row${facts.level ? '' : ' today-crystal-row--single'}`}>
-          <section className="today-crystal-panel today-crystal-goals" aria-labelledby="today-crystal-goals-heading">
-            <div className="today-crystal-panel-head">
-              <h2 id="today-crystal-goals-heading"><span className="today-crystal-diamond" aria-hidden="true" />{_(msg({ id: 'today.crystal.goals', message: 'Daily goals' }))}</h2>
-            </div>
-            <ul>
-              {goals.map((goal, index) => (
-                <li key={goal.id} className={`today-crystal-goal today-crystal-goal--${index}`}>
-                  <span className="today-crystal-goal-label">{goal.label}</span>
-                  {goal.xp > 0 && <span className="today-crystal-goal-xp">+{goal.xp}XP</span>}
-                  <span className="today-crystal-goal-bar" aria-hidden="true"><span style={{ width: '0%' }} /></span>
-                  <span className="today-crystal-goal-count">0/{goal.total}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+        {(model.dailyGoals || facts.level) && <div className={`today-crystal-row${facts.level && model.dailyGoals ? '' : ' today-crystal-row--single'}`}>
+          {model.dailyGoals && <DailyGoalsPanel gamification={model.dailyGoals} planHasMatch={planHasMatch} />}
           {facts.level && (
             <section className="today-crystal-panel today-crystal-level" aria-labelledby="today-crystal-level-heading">
               <h2 id="today-crystal-level-heading">{_(msg({ id: 'today.crystal.level', message: 'Level' }))}</h2>
@@ -596,7 +571,7 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
               <p className="today-crystal-level-next">{_({ ...msg({ id: 'today.crystal.level-next', message: '+{xp} XP to Lv {level}' }), values: { xp: number.format(facts.level.remaining), level: facts.level.level + 1 } })}</p>
             </section>
           )}
-        </div>
+        </div>}
         <section className="today-crystal-panel today-crystal-words" aria-labelledby="today-words-heading" data-today-words="true">
           <WordsPanel
             model={model}

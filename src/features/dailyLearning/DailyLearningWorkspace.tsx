@@ -8,12 +8,15 @@ import { getLibraryCardTier } from '../library/libraryViewModel';
 import type { SessionRecapPromotion } from '../practice/SessionRecapModal';
 import type { LanguageProfile } from '../language/languageProfile';
 import { triggerHaptic } from '../../lib/haptics';
+import { readyCourseSessionForOwner, useCourseSession } from '../courses/CourseGate';
+import { useVerifiedGamificationState, type VerifiedGamificationState } from '../gamification/verifiedGamificationClient';
 import { firebasePracticeSessionService, practiceTimeZone, type PracticeGamificationOutcome, type PracticeSessionChallenge } from '../practice/practiceSessionService';
 import { cardsForLanguagePair } from '../practice/practiceModel';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { buildDailyLessonSteps, buildDailyPlan, logicalIdentity, type DailyPlan, type DailyPlanItem } from './dailyPlan';
 import { createDailyPracticePoolRuntime } from './dailyPracticePoolRuntime';
 import { createDailySessionController } from './dailySessionController';
+import { configuredTodayDatabase, type TodayDatabase } from './todayDatabase';
 import { readDailyLearningUrlState, type DailyLessonMode } from './dailyLearningUrl';
 import { normalizeCardWord } from '../../lib/cardIdentity';
 import { currentLessonStep } from './lessonReducer';
@@ -90,6 +93,8 @@ const WordMatchView = lazy(() => Promise.all([
   import('../practice/WordMatchView'),
   import('../practice/practice-board.css'),
 ]).then(([module]) => ({ default: module.WordMatchView })));
+// Its copy is in the Today catalog, which is already loaded here.
+const IeltsGoalPanel = lazy(() => import('../examProgress/IeltsGoalPanel').then(module => ({ default: module.IeltsGoalPanel })));
 const SessionRecapModal = lazy(() => Promise.all([
   import('../practice/SessionRecapModal'), loadCatalog(getActiveUiLocale(), 'practice'),
 ]).then(([module]) => ({ default: module.SessionRecapModal })));
@@ -226,6 +231,12 @@ export interface DailyLearningWorkspaceProps {
   readonly streak: number;
   readonly studyXpHistory: readonly { readonly date: string; readonly XP: number }[];
   readonly rewardTimeZone?: string;
+  /** Firestore for the reads Today and the recap make themselves; the configured client when absent. */
+  readonly database?: TodayDatabase;
+  /** The verified library epoch; the recap's IELTS goal panel stays hidden without it. */
+  readonly verifiedLibraryEpoch?: number | null;
+  /** The app's verified gamification state; Today subscribes to the same documents itself when it is absent. */
+  readonly gamification?: VerifiedGamificationState;
   /** Signed-in learner facts for the Today header (name, verified XP, active goal). */
   readonly learner?: TodayLearnerFacts;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
@@ -407,6 +418,9 @@ export default function DailyLearningWorkspace({
   streak,
   studyXpHistory,
   rewardTimeZone,
+  database,
+  verifiedLibraryEpoch = null,
+  gamification,
   learner,
   loadPracticePool,
   reviewCard,
@@ -422,6 +436,11 @@ export default function DailyLearningWorkspace({
   onListenScopeChange,
 }: DailyLearningWorkspaceProps) {
   const { _, i18n } = useLingui();
+  const firestore = database === undefined ? configuredTodayDatabase() : database;
+  // The Firestore SDK shares one listener per document, so this adds no reads when the app also listens.
+  const ownGamification = useVerifiedGamificationState({ ownerId: gamification ? null : ownerId, database: gamification ? null : firestore });
+  const verifiedGamification = gamification ?? ownGamification;
+  const activeCourse = readyCourseSessionForOwner(useCourseSession(), ownerId)?.model.activeCourse ?? null;
   const courseLanguageNames = new Intl.DisplayNames([i18n.locale], { type: 'language' });
   const modeLabels: Readonly<Record<ExerciseMode, string>> = {
     recognition: _(msg({ id: 'today.mode.recognition', message: 'Recognition' })),
@@ -1189,25 +1208,51 @@ export default function DailyLearningWorkspace({
       headingRef, status: 'intro', message: _(msg({ id: 'today.placement.intro', message: 'Check your current vocabulary evidence in 6–12 questions.' })),
       eligibleCount: readyCheck?.items.length ?? 0,
     };
-    else model = {
-      headingRef, status: 'question', message: i18n._(msg({ id: 'today.question.progress', message: 'Question {current} of {total}.' }).id, { current: placementIndex + 1, total: readyCheck.items.length }),
-      current: placementIndex + 1, total: readyCheck.items.length, prompt: question.prompt,
-      promptLanguage: promptLanguageFor(question, item.card, i18n.locale), selectedId: placementChoice,
-      options: question.options.map(option => ({ id: option, label: option, language: item.card.translationLanguage || 'vi' })),
+    else {
+      // The running estimate needs as many answers as the final result; before that the ladder says so.
+      const running = evaluatePlacement(readyCheck, placementAnswers);
+      const phonetic = item.card.phonetic?.trim();
+      model = {
+        headingRef, status: 'question', message: i18n._(msg({ id: 'today.question.progress', message: 'Question {current} of {total}.' }).id, { current: placementIndex + 1, total: readyCheck.items.length }),
+        current: placementIndex + 1, total: readyCheck.items.length,
+        word: question.prompt, prompt: _(msg({ id: 'daily.placement.meaning-question', message: 'What does it mean?' })),
+        ...(phonetic ? { phonetic } : {}),
+        canPlayAudio: Boolean(item.card.audioUrl),
+        ...(running.status === 'complete' ? { estimate: { tier: running.recommendation, confidence: running.confidence } } : {}),
+        promptLanguage: promptLanguageFor(question, item.card, i18n.locale), selectedId: placementChoice,
+        options: question.options.map(option => ({ id: option, label: option, language: item.card.translationLanguage || 'vi' })),
+      };
+    }
+    const recordPlacementAnswer = (correct: boolean) => {
+      if (!readyCheck || !item || question?.mode !== 'recognition') return;
+      cancelLessonAudio();
+      const answers = { ...placementAnswers, [item.card.id]: correct };
+      setPlacementAnswers(answers);
+      if (placementIndex + 1 >= readyCheck.items.length) setPlacementResult(evaluatePlacement(readyCheck, answers));
+      else { setPlacementIndex(index => index + 1); setPlacementChoice(null); }
+      setHeadingFocusIntent(intent => intent + 1);
     };
     return <Suspense fallback={interactionFallback}><PlacementScreen model={model} actions={{
       start: () => { setPlacementCheck(availablePlacement); setPlacementIndex(0); setPlacementChoice(null); setPlacementAnswers({}); setPlacementResult(null); setHeadingFocusIntent(intent => intent + 1); },
       chooseAnswer: setPlacementChoice,
       submitAnswer: () => {
-        if (!readyCheck || !item || !placementChoice || question?.mode !== 'recognition') return;
-        const answers = { ...placementAnswers, [item.card.id]: placementChoice === question.answer };
-        setPlacementAnswers(answers);
-        if (placementIndex + 1 >= readyCheck.items.length) setPlacementResult(evaluatePlacement(readyCheck, answers));
-        else { setPlacementIndex(index => index + 1); setPlacementChoice(null); }
-        setHeadingFocusIntent(intent => intent + 1);
+        if (!placementChoice || question?.mode !== 'recognition') return;
+        recordPlacementAnswer(placementChoice === question.answer);
+      },
+      // An unsure answer counts as a word the learner does not know yet.
+      markUnsure: () => recordPlacementAnswer(false),
+      playAudio: () => {
+        cancelLessonAudio();
+        const url = item?.card.audioUrl;
+        if (!url) return;
+        const audio = new Audio(url);
+        lessonAudioRef.current = audio;
+        void audio.play().catch(() => {
+          if (lessonAudioRef.current === audio) lessonAudioRef.current = null;
+        });
       },
       retry: () => void load(), openPaths,
-      exit: () => { setPlacementIndex(-1); setPlacementResult(null); navigateLesson(null); },
+      exit: () => { cancelLessonAudio(); setPlacementIndex(-1); setPlacementResult(null); navigateLesson(null); },
     }} /></Suspense>;
   }
 
@@ -1415,6 +1460,7 @@ export default function DailyLearningWorkspace({
       },
     } : {}),
     listenPilotAvailable: LISTEN_MVP_PILOT_LESSONS.length > 0,
+    ...(ownerId && firestore ? { dailyGoals: verifiedGamification } : {}),
     ...(caughtUp
       ? { caughtUp: {} }
       : {}),
@@ -1441,6 +1487,16 @@ export default function DailyLearningWorkspace({
           {...(todayStreak > 0 ? { streakDays: todayStreak } : {})}
           {...(activeMultiStage.stats.answers ? { bestRun: longestCorrectRun(activeMultiStage.stats.answers) } : {})}
           returnsToToday
+          goalPanel={<Suspense fallback={null}><IeltsGoalPanel
+            ownerId={ownerId}
+            database={firestore}
+            libraryEpoch={verifiedLibraryEpoch}
+            course={activeCourse}
+            isOffline={isOffline}
+            rewardTimeZone={verifiedGamification.rewardTimeZone ?? rewardTimeZone}
+            verifiedHistoryStartedOn={verifiedGamification.reviewActivityByLanguage.en?.coverageStartedOn ?? null}
+            onOpenPath={() => { finishMultiStageSession(false); openPaths(); }}
+          /></Suspense>}
         />
       </Suspense>
     )}

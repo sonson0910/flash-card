@@ -921,7 +921,6 @@ html[data-theme-family='crystal'] .placement-fact { border: 0; border-radius: 0;
 @media (max-width: 760px) {
   .lesson-canvas,
   .placement-canvas { padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px)); }
-  .lesson-canvas[data-session-shell='lesson'] { padding-inline: 0; }
   .lesson-topbar { display: grid; height: auto; grid-template-columns: 44px minmax(0, 1fr) auto auto; gap: 10px 12px; padding: 12px 16px 4px; }
   .lesson-topbar .lesson-progress { grid-column: 1 / -1; grid-row: 2; width: 100%; margin: 0; }
   .lesson-segments { width: 100%; }

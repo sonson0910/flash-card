@@ -1784,3 +1784,110 @@ msgstr "Listen"
 msgctxt "languagePractice.action.hint"
 msgid "Hint"
 msgstr "Hint"
+
+#: src/features/practice/StoryView.tsx:174
+msgctxt "practice.story.vocabulary-subtitle"
+msgid "A story built from your own vocabulary"
+msgstr "A story built from your own vocabulary"
+
+#: src/features/practice/rich-story-view.tsx:119
+msgctxt "rich-story-view.context-story"
+msgid "Context story"
+msgstr "Context story"
+
+#: src/features/practice/rich-story-view.tsx:153
+msgctxt "rich-story-view.read-the-scenes"
+msgid "Read the scenes"
+msgstr "Read the scenes"
+
+#: src/features/practice/WordMatchView.tsx:287
+#: src/features/practice/WordMatchView.tsx:298
+msgctxt "practice.match.title"
+msgid "Word match · 60 seconds"
+msgstr "Word match · 60 seconds"
+
+#: src/features/practice/ShadowingView.tsx:213
+msgctxt "practice.shadowing.listen"
+msgid "Listen"
+msgstr "Listen"
+
+#: src/features/practice/rich-story-view.tsx:222
+msgctxt "rich-story-view.create-another-story"
+msgid "Create another story"
+msgstr "Create another story"
+
+#: src/features/practice/rich-story-view.tsx:148
+msgctxt "rich-story-view.an-ephemeral-ai-generated-lesson-from-your-vocabulary"
+msgid "An ephemeral AI-generated lesson from your vocabulary"
+msgstr "An ephemeral AI-generated lesson from your vocabulary"
+
+#: src/features/practice/rich-story-view.tsx:137
+msgctxt "rich-story-view.story-generation-stopped"
+msgid "Story generation stopped"
+msgstr "Story generation stopped"
+
+#: src/features/practice/WordMatchView.tsx:308
+msgctxt "practice.match.seconds"
+msgid "{seconds}s"
+msgstr "{seconds}s"
+
+#. js-lingui-explicit-id
+#: src/features/practice/rich-story-view.tsx:110
+msgid "practice.rich-story.generating-story"
+msgstr "Generating story…"
+
+#. js-lingui-explicit-id
+#: src/features/practice/rich-story-view.tsx:91
+#: src/features/practice/rich-story-view.tsx:96
+msgid "practice.rich-story.speech-playback-is-unavailable-read-the-english-text-below"
+msgstr "Speech playback is unavailable. Read the English text below."
+
+#: src/features/practice/StoryView.tsx:97
+msgctxt "practice.story.context"
+msgid "Context story"
+msgstr "Context story"
+
+#. js-lingui-explicit-id
+#: src/features/practice/rich-story-view.tsx:116
+msgid "rich-story-view.close-story"
+msgstr "Close story"
+
+#: src/features/practice/StoryView.tsx:169
+msgctxt "practice.story.reading-context"
+msgid "Reading in context"
+msgstr "Reading in context"
+
+#: src/features/practice/WordMatchView.tsx:309
+msgctxt "practice.match.pairs"
+msgid "Pairs"
+msgstr "Pairs"
+
+#: src/features/practice/rich-story-view.tsx:163
+msgctxt "rich-story-view.scene"
+msgid "Scene"
+msgstr "Scene"
+
+#: src/features/practice/ShadowingView.tsx:181
+msgctxt "practice.shadowing.title"
+msgid "Shadowing · say it after me"
+msgstr "Shadowing · say it after me"
+
+#: src/features/practice/rich-story-view.tsx:125
+msgctxt "rich-story-view.creating-your-story"
+msgid "Creating your story…"
+msgstr "Creating your story…"
+
+#: src/features/practice/rich-story-view.tsx:140
+msgctxt "rich-story-view.try-again"
+msgid "Try again"
+msgstr "Try again"
+
+#: src/features/practice/QuizView.tsx:355
+msgctxt "practice.feedback.correct-answer"
+msgid "The correct answer is"
+msgstr "The correct answer is"
+
+#: src/features/practice/ShadowingView.tsx:274
+msgctxt "practice.shadowing.accuracy"
+msgid "Accuracy: {score}%"
+msgstr "Accuracy: {score}%"

@@ -1784,3 +1784,110 @@ msgstr "Nghe"
 msgctxt "languagePractice.action.hint"
 msgid "Hint"
 msgstr "Gợi ý"
+
+#: src/features/practice/StoryView.tsx:174
+msgctxt "practice.story.vocabulary-subtitle"
+msgid "A story built from your own vocabulary"
+msgstr "Câu chuyện được tạo từ từ vựng của bạn"
+
+#: src/features/practice/rich-story-view.tsx:119
+msgctxt "rich-story-view.context-story"
+msgid "Context story"
+msgstr "Câu chuyện theo ngữ cảnh"
+
+#: src/features/practice/rich-story-view.tsx:153
+msgctxt "rich-story-view.read-the-scenes"
+msgid "Read the scenes"
+msgstr "Đọc các đoạn truyện"
+
+#: src/features/practice/WordMatchView.tsx:287
+#: src/features/practice/WordMatchView.tsx:298
+msgctxt "practice.match.title"
+msgid "Word match · 60 seconds"
+msgstr "Ghép từ · 60 giây"
+
+#: src/features/practice/ShadowingView.tsx:213
+msgctxt "practice.shadowing.listen"
+msgid "Listen"
+msgstr "Nghe"
+
+#: src/features/practice/rich-story-view.tsx:222
+msgctxt "rich-story-view.create-another-story"
+msgid "Create another story"
+msgstr "Tạo câu chuyện khác"
+
+#: src/features/practice/rich-story-view.tsx:148
+msgctxt "rich-story-view.an-ephemeral-ai-generated-lesson-from-your-vocabulary"
+msgid "An ephemeral AI-generated lesson from your vocabulary"
+msgstr "Bài học tạm thời do AI tạo từ vốn từ của bạn"
+
+#: src/features/practice/rich-story-view.tsx:137
+msgctxt "rich-story-view.story-generation-stopped"
+msgid "Story generation stopped"
+msgstr "Đã dừng tạo câu chuyện"
+
+#: src/features/practice/WordMatchView.tsx:308
+msgctxt "practice.match.seconds"
+msgid "{seconds}s"
+msgstr "{seconds} giây"
+
+#. js-lingui-explicit-id
+#: src/features/practice/rich-story-view.tsx:110
+msgid "practice.rich-story.generating-story"
+msgstr "Đang tạo câu chuyện…"
+
+#. js-lingui-explicit-id
+#: src/features/practice/rich-story-view.tsx:91
+#: src/features/practice/rich-story-view.tsx:96
+msgid "practice.rich-story.speech-playback-is-unavailable-read-the-english-text-below"
+msgstr "Không thể phát giọng đọc. Hãy đọc phần tiếng Anh bên dưới."
+
+#: src/features/practice/StoryView.tsx:97
+msgctxt "practice.story.context"
+msgid "Context story"
+msgstr "Câu chuyện ngữ cảnh"
+
+#. js-lingui-explicit-id
+#: src/features/practice/rich-story-view.tsx:116
+msgid "rich-story-view.close-story"
+msgstr "Đóng câu chuyện"
+
+#: src/features/practice/StoryView.tsx:169
+msgctxt "practice.story.reading-context"
+msgid "Reading in context"
+msgstr "Đọc trong ngữ cảnh"
+
+#: src/features/practice/WordMatchView.tsx:309
+msgctxt "practice.match.pairs"
+msgid "Pairs"
+msgstr "Cặp"
+
+#: src/features/practice/rich-story-view.tsx:163
+msgctxt "rich-story-view.scene"
+msgid "Scene"
+msgstr "Đoạn"
+
+#: src/features/practice/ShadowingView.tsx:181
+msgctxt "practice.shadowing.title"
+msgid "Shadowing · say it after me"
+msgstr "Nhại theo · đọc theo tôi"
+
+#: src/features/practice/rich-story-view.tsx:125
+msgctxt "rich-story-view.creating-your-story"
+msgid "Creating your story…"
+msgstr "Đang tạo câu chuyện của bạn…"
+
+#: src/features/practice/rich-story-view.tsx:140
+msgctxt "rich-story-view.try-again"
+msgid "Try again"
+msgstr "Thử lại"
+
+#: src/features/practice/QuizView.tsx:355
+msgctxt "practice.feedback.correct-answer"
+msgid "The correct answer is"
+msgstr "Đáp án đúng là"
+
+#: src/features/practice/ShadowingView.tsx:274
+msgctxt "practice.shadowing.accuracy"
+msgid "Accuracy: {score}%"
+msgstr "Độ chính xác: {score}%"

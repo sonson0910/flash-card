@@ -2,6 +2,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
 
 const recapDialog = vi.hoisted(() => vi.fn(() => null));
@@ -46,13 +47,13 @@ it('opens a requested recap once only after current-owner stats settle', async (
   const root = createRoot(installMinimalReactDom());
   const render = async (ownerId: string, loading: boolean, settled: boolean, targetLanguage = 'en') => {
     await act(async () => {
-      root.render(<ProgressWorkspace
+      root.render(<I18nProvider i18n={i18n}><ProgressWorkspace
         key={ownerId} ownerId={ownerId} targetLanguage={targetLanguage} darkMode={false} isOffline={false}
         stats={stats} isStatsLoading={loading} statsError={null}
         continueReview={vi.fn()} openVocabulary={vi.fn()}
         weeklyRecapRequestOwnerId="owner-a" weeklyRecapRequestSettled={settled}
         onWeeklyRecapRequestConsumed={onConsumed}
-      />);
+      /></I18nProvider>);
       await Promise.resolve();
     });
   };
@@ -79,13 +80,13 @@ it('opens the saved recap after a failed refresh and marks its source', async ()
   const onConsumed = vi.fn();
   const root = createRoot(installMinimalReactDom());
   await act(async () => {
-    root.render(<ProgressWorkspace
+    root.render(<I18nProvider i18n={i18n}><ProgressWorkspace
       ownerId="owner-a" darkMode={false} isOffline={false}
       stats={stats} isStatsLoading={false} statsError="Cloud unavailable"
       continueReview={vi.fn()} openVocabulary={vi.fn()}
       weeklyRecapRequestOwnerId="owner-a" weeklyRecapRequestSettled
       onWeeklyRecapRequestConsumed={onConsumed}
-    />);
+    /></I18nProvider>);
     await Promise.resolve();
   });
 

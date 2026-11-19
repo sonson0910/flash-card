@@ -295,7 +295,9 @@ test('a persistent Chromium profile reopens the cached workspace after all clien
     await expect(reopened.getByRole('heading', { name: 'Your library' })).toBeVisible();
     await expect(reopened.getByText('resilient', { exact: true }).first()).toBeVisible();
     await reopened.goto(`${fixture.origin}/?view=today`);
-    await expect(reopened.getByRole('heading', { level: 1, name: /^Today:/ })).toBeVisible();
+    // Today's one page heading greets the learner and states today's study time.
+    await expect(reopened.getByRole('heading', { level: 1, name: /^Good (?:morning|afternoon|evening)\b.* \d+ minutes? today\.$/ })).toBeVisible();
+    await expect(reopened.getByRole('heading', { level: 1 })).toHaveCount(1);
     await expect(reopened.getByRole('button', { name: /Learn:/ }).first()).toBeVisible();
   } finally {
     await context?.close();

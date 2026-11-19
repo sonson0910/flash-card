@@ -96,6 +96,10 @@ async function expectReducedProgressMotion(page: Page) {
   expect(durations.every(duration => duration <= 1)).toBe(true);
 }
 
+// A fixed clock keeps the study day, the streak week and the Daily goals countdown stable. It lies
+// in the past so the emulator's sign-in tokens never look expired to the page.
+const fixedNow = new Date('2026-11-16T09:30:00.000Z');
+
 test.beforeEach(async ({ page, seedCards, blockExternalNetwork }) => {
   await blockExternalNetwork(page);
   await seedCards(cards);
@@ -113,11 +117,16 @@ for (const theme of themes) {
         localStorage.setItem('sonflash_theme_follow_system', 'false');
       }, theme);
 
+      await page.clock.setFixedTime(fixedNow);
       const profile = `users/${testUser.uid}/profile`;
       const verified = db.batch();
       // One XP day per streak day; Today's level forecast needs at least two study days.
-      const dayKey = (daysAgo: number) => new Date(Date.now() - daysAgo * 86_400_000).toISOString().slice(0, 10);
-      verified.set(db.doc(`${profile}/stats`), { verifiedXp: 60, verifiedStreak: 3, rewardTimeZone: 'UTC' });
+      const dayKey = (daysAgo: number) => new Date(fixedNow.getTime() - daysAgo * 86_400_000).toISOString().slice(0, 10);
+      verified.set(db.doc(`${profile}/stats`), {
+        verifiedXp: 60, verifiedStreak: 3, rewardTimeZone: 'UTC', lastVerifiedStudyDay: dayKey(0),
+        // The server's day counters: six cards studied today and no match won yet.
+        dailyGoalsV1: { coverageStartedOn: dayKey(2), days: { [dayKey(1)]: { studiedCards: 10, matchWins: 1 }, [dayKey(0)]: { studiedCards: 6, matchWins: 0 } } },
+      });
       verified.set(db.doc(`${profile}/xp_history`), { verifiedByDayV1: { [dayKey(2)]: 10, [dayKey(1)]: 20, [dayKey(0)]: 30 } });
       verified.set(db.doc(`${profile}/rewards`), { ownedFrameIds: [], ownedTitleIds: [], equippedFrameId: null });
       await verified.commit();
@@ -135,6 +144,17 @@ for (const theme of themes) {
       // The classic desktop hero carries the level row (TodaySession board); compact and Crystal heroes do not.
       if (theme.family === 'classic' && viewport.name === 'desktop') {
         await expect(page.getByText(/^Level \d+ after ≈ \d+ sessions?$/)).toBeVisible();
+      }
+      const dailyGoals = page.locator('[data-daily-goals]');
+      if (theme.family === 'crystal') {
+        // Only the verified counters and the XP the server grants: 6 of 10 cards, +20 XP for 10 first reviews.
+        await expect(dailyGoals).toContainText('Resets in 14 h 30 min');
+        await expect(dailyGoals.getByRole('progressbar', { name: 'Study 10 cards' })).toHaveAttribute('aria-valuenow', '6');
+        await expect(dailyGoals).toContainText('+20 XP');
+        await expect(dailyGoals.getByRole('progressbar', { name: 'Keep your 3-day streak' })).toHaveAttribute('aria-valuenow', '1');
+      } else {
+        // The TodaySession board has the goal line instead of a goal panel.
+        await expect(dailyGoals).toHaveCount(0);
       }
       if (viewport.name === 'mobile') {
         const action = await page.locator('[data-primary-learning-action]').boundingBox();

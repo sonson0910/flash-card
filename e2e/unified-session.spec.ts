@@ -160,7 +160,7 @@ async function clickAfterRewards(page: Page, action: Locator) {
 }
 
 async function waitForNextQuestionOrCompletion(page: Page, complete: Locator) {
-  const submitButton = page.getByRole('button', { name: 'Submit answer' });
+  const submitButton = page.getByRole('button', { name: 'Check', exact: true });
   const reward = page.locator('.anime-reveal');
   for (let index = 0; index < 5; index += 1) {
     await expect(submitButton.or(complete).or(reward)).toBeVisible({ timeout: 15_000 });
@@ -181,12 +181,12 @@ async function waitForNextQuestionOrCompletion(page: Page, complete: Locator) {
 async function rateCurrentQuestion(page: Page, complete: Locator): Promise<void> {
   await dismissRewards(page);
   await clickAfterRewards(page, page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first());
-  await clickAfterRewards(page, page.getByRole('button', { name: 'Submit answer' }));
+  await clickAfterRewards(page, page.getByRole('button', { name: 'Check', exact: true }));
   await expect(page.locator('[data-lesson-feedback]')).toBeVisible();
   await clickAfterRewards(page, page.getByRole('button', { name: 'Good' }));
   // `AnswerControl`'s <fieldset> is the same DOM node across questions (only
   // its `disabled` attribute and options change), so waiting for its "group"
-  // role to reappear never proves advancement. "Submit answer" is only
+  // role to reappear never proves advancement. "Check" is only
   // rendered while `model.status === 'answering'` (LessonScreen.tsx), so its
   // remount is the real signal that a fresh question is ready.
   await waitForNextQuestionOrCompletion(page, complete);
@@ -213,7 +213,7 @@ async function runLessonStage(
 
   const complete = page.getByRole('heading', { level: 1, name: 'Lesson complete' });
   await page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first().click();
-  await page.getByRole('button', { name: 'Submit answer' }).click();
+  await page.getByRole('button', { name: 'Check', exact: true }).click();
   await expect(page.locator('[data-lesson-feedback]')).toBeVisible();
   if (onBack) await onBack();
   await clickAfterRewards(page, page.getByRole('button', { name: 'Good' }));
@@ -270,7 +270,7 @@ for (const theme of themes) {
         async () => {
           await expectAccessibleAndContained(page, 'Review front');
           await attachScreen(page, testInfo, `${label}-review-front`);
-          const submit = page.getByRole('button', { name: 'Submit answer' });
+          const submit = page.getByRole('button', { name: 'Check', exact: true });
           await attachReachableControls(page, testInfo, `${label}-review-front`, submit, submit);
         },
         async () => {
