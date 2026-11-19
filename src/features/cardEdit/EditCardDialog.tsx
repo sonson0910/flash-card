@@ -328,7 +328,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
   const phoneticInput = (inline: boolean) => (
     <input
       data-edit-field="phonetic"
-      aria-label="IPA"
+      aria-label={_(msg({ id: 'library.edit-card.phonetic', message: 'IPA' }))}
       value={draft.phonetic}
       lang={targetLanguage}
       dir="ltr"
@@ -573,7 +573,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                     {partOfSpeechField}
                     {textField('translation')}
                     <label className="edit-sheet-field edit-sheet-field--phonetic">
-                      <span className="edit-sheet-label">IPA</span>
+                      <span className="edit-sheet-label">{_(msg({ id: 'library.edit-card.phonetic', message: 'IPA' }))}</span>
                       {phoneticInput(false)}
                     </label>
                     {textField('explanation')}

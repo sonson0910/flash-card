@@ -1454,6 +1454,12 @@ msgid "library.edit-card.part-of-speech"
 msgstr "Từ loại"
 
 #. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:331
+#: src/features/cardEdit/EditCardDialog.tsx:576
+msgid "library.edit-card.phonetic"
+msgstr "IPA"
+
+#. js-lingui-explicit-id
 #: src/features/cardEdit/EditCardDialog.tsx:486
 #: src/features/cardEdit/EditCardDialog.tsx:540
 msgid "library.edit-card.preview-fallback"
