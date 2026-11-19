@@ -1,4 +1,4 @@
-import { IELTS_GOAL_KIND, parseIeltsBand } from '../../../functions/src/course-profile-contract';
+import { IELTS_GOAL_KIND, parseIeltsBand, type CourseGoal } from '../../../functions/src/course-profile-contract';
 
 /**
  * Real counts for the reviewed SonFlash IELTS word path. Nothing here estimates an exam band:
@@ -57,6 +57,14 @@ export interface IeltsGoalModel {
   /** True when the exam falls in the current study year, so its date can leave the year out. */
   readonly examThisYear: boolean;
 }
+
+/**
+ * The goal the IELTS panel reads: the course's active IELTS goal, the one whose band the goal
+ * editor and onboarding write. Goal kinds are unique within a course, so a course that also has
+ * other goals, in any order, still shows its IELTS target.
+ */
+export const activeIeltsGoal = (course: { readonly goals: readonly CourseGoal[] } | null | undefined): CourseGoal | null =>
+  course?.goals.find(goal => goal.kind === IELTS_GOAL_KIND && goal.status === 'active') ?? null;
 
 export const MIN_PACE_HISTORY_DAYS = 14;
 export const MIN_PACE_MASTERED_WORDS = 3;
