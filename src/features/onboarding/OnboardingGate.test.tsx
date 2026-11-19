@@ -12,6 +12,11 @@ import { writeOnboardingResumeStep } from './onboardingModel';
 
 // Step headings wrap their accent words in an inline element, so compare the rendered text.
 const visibleText = (html: string) => html.replace(/<[^>]+>/g, '');
+const localDateFromToday = (days: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -140,8 +145,9 @@ describe('OnboardingGate', () => {
         <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId="owner-resume" /></CourseContext.Provider>
       </I18nProvider>);
 
-      expect(html).toContain('aria-valuenow="6"');
-      expect(visibleText(html)).toContain('Daily reminders');
+      expect(html).toContain('aria-valuenow="7"');
+      expect(html).toContain('aria-valuemax="7"');
+      expect(visibleText(html)).toContain('When should we nudge you?');
       expect(html).toContain('Choose when SonFlash can remind you to review.');
       expect(html).toContain('aria-label="Study reminders"');
       expect(html).toContain('Loading reminders…');
@@ -186,10 +192,13 @@ describe('OnboardingGate', () => {
 
       expect(html).toContain('onboarding-pace-grid');
       expect(html).toContain('sm:grid-cols-4');
-      expect(html).toContain('5 cards / day');
-      expect(html).toContain('10 cards / day');
-      expect(html).toContain('15 cards / day');
-      expect(html).toContain('20 cards / day');
+      for (const [count, tag] of [[5, 'Light'], [10, 'Recommended'], [15, 'Serious'], [20, 'Intense']] as const) {
+        expect(html).toContain(`<span class="onb-pace-number">${count}</span><span class="onb-option-sub">cards / day</span><span class="onb-pace-tag">${tag}</span>`);
+      }
+      // Without a goal date the plan restates the chosen pace over one week, and the exam step is not counted.
+      expect(visibleText(html)).toContain('70new words a week in your plan at 10 a day.');
+      expect(html).toContain('aria-valuemax="6"');
+      expect(html).toContain('Try 5 cards');
     } finally {
       vi.unstubAllGlobals();
     }
@@ -211,9 +220,89 @@ describe('OnboardingGate', () => {
         <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId="owner-goal" /></CourseContext.Provider>
       </I18nProvider>);
 
-      expect(html).toMatch(/aria-pressed="true"[^>]*>[\s\S]*?IELTS/);
-      expect(html.match(/aria-pressed="(?:true|false)"/g)).toHaveLength(6);
+      // IELTS and TOEIC share one exam card; study abroad, business, conversation and "just curious" follow.
+      expect(html).toMatch(/aria-pressed="true"[^>]*>[\s\S]*?Pass IELTS \/ TOEIC/);
+      expect(html.match(/aria-pressed="(?:true|false)"/g)).toHaveLength(5);
+      expect(visibleText(html)).toContain('What are you learning for?');
       expect(html).toContain('Continue');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('resumes at the exam step with band chips and a countdown to the goal date', () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+    });
+    try {
+      writeOnboardingResumeStep('owner-exam', 'exam');
+      writeOnboardingDraft('owner-exam', {
+        nativeLanguage: 'vi', targetLanguage: 'en', goalKind: 'ielts', goalLevel: '7.0',
+        goalTargetDate: localDateFromToday(30), zhScript: null, pace: 10,
+      });
+      const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+        <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId="owner-exam" /></CourseContext.Provider>
+      </I18nProvider>);
+      const text = visibleText(html);
+
+      expect(html).toContain('aria-valuenow="4"');
+      expect(text).toContain('Which test, and what score?');
+      expect(html).toMatch(/aria-pressed="true"[^>]*>IELTS</);
+      expect(html).toMatch(/aria-pressed="false"[^>]*>TOEIC</);
+      expect(html).toMatch(/checked="" value="7\.0"/);
+      expect(text).toContain('Exam date (optional)');
+      expect(text).toContain('30days to IELTS');
+      expect(html.match(/data-week="/g)).toHaveLength(5);
+      expect(text).toContain('5 weeks until exam day.');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('restates the pace over the days left until the goal date as the learner\'s own plan', () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+    });
+    try {
+      writeOnboardingResumeStep('owner-plan', 'pace');
+      writeOnboardingDraft('owner-plan', {
+        nativeLanguage: 'vi', targetLanguage: 'ko', goalKind: 'topik', goalLevel: 'TOPIK II',
+        goalTargetDate: localDateFromToday(40), zhScript: null, pace: 15,
+      });
+      const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+        <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId="owner-plan" /></CourseContext.Provider>
+      </I18nProvider>);
+
+      expect(html).toContain('<span class="onb-projection-number">600</span>');
+      expect(visibleText(html)).toMatch(/new words in your plan by .+: 15 a day for 40 days\./);
+      expect(html).toContain('aria-valuemax="7"');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('sends a resumed exam step without a goal back to the goal choice', () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+    });
+    try {
+      writeOnboardingResumeStep('owner-no-goal', 'exam');
+      writeOnboardingDraft('owner-no-goal', {
+        nativeLanguage: 'vi', targetLanguage: 'ja', goalKind: null, goalLevel: '',
+        goalTargetDate: '', zhScript: null, pace: 10,
+      });
+      const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+        <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId="owner-no-goal" /></CourseContext.Provider>
+      </I18nProvider>);
+
+      expect(html).toContain('data-onboarding-step="goal"');
+      expect(html).toContain('aria-valuemax="6"');
     } finally {
       vi.unstubAllGlobals();
     }

@@ -291,7 +291,7 @@ html:not([data-theme-family='crystal']) :is(.onb-option, .onboarding-journey__go
 }
 
 .onb-pace-card {
-  min-height: 150px;
+  min-height: 200px;
   align-items: center;
   justify-content: center;
   padding: 22px 20px;
@@ -302,14 +302,55 @@ html:not([data-theme-family='crystal']) :is(.onb-option, .onboarding-journey__go
 .onb-pace-number {
   color: var(--sf-text);
   font-family: var(--sf-font-display);
-  font-size: 48px;
+  font-size: 72px;
   font-weight: var(--onb-display-weight);
   letter-spacing: -.03em;
-  line-height: 1;
+  line-height: .9;
 }
 
 .onb-pace-card[aria-pressed='true'] .onb-pace-number { color: var(--onb-accent); }
-.onb-pace-card .onb-option-sub { margin-top: 8px; font-size: 13px; }
+.onb-pace-card .onb-option-sub { margin-top: 4px; font-size: 13px; }
+
+.onb-pace-tag {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--onb-icon-bg);
+  color: var(--sf-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.onb-pace-card[aria-pressed='true'] .onb-pace-tag { background: var(--onb-accent-soft); color: var(--onb-accent); }
+
+.onb-projection {
+  display: flex;
+  width: min(720px, 100%);
+  align-items: center;
+  margin: 34px auto 0;
+  padding: 22px 28px;
+  gap: 22px;
+  border: 1px solid color-mix(in srgb, var(--sf-reward) 35%, transparent);
+  border-radius: var(--onb-radius);
+  background: color-mix(in srgb, var(--sf-reward) 8%, transparent);
+  text-align: left;
+}
+
+.onb-projection-number {
+  flex: none;
+  color: color-mix(in srgb, var(--sf-reward) 70%, var(--sf-text));
+  font-family: var(--sf-font-display);
+  font-size: 48px;
+  font-weight: var(--onb-display-weight);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dark .onb-projection-number { color: var(--sf-reward); }
+.onb-projection-text { color: var(--sf-text); font-size: 15px; line-height: 1.5; }
 .onb-pace-card .onb-mark { display: none; }
 
 /* Goal cards ----------------------------------------------------------------------------- */
@@ -387,6 +428,11 @@ html:not([data-theme-family='crystal']) :is(.onb-option, .onboarding-journey__go
 }
 
 .onb-field-label { display: flex; flex-direction: column; gap: 8px; color: var(--sf-text-muted); font-size: 13px; font-weight: 600; }
+
+/* IELTS band chips take the whole row; the date field follows underneath. */
+.onb-goal-band { grid-column: 1 / -1; min-width: 0; }
+.onb-goal-band .ielts-band-picker__legend { color: var(--sf-text-muted); font-size: 13px; }
+.onb-goal-band .ielts-band-picker__chips { grid-template-columns: repeat(auto-fill, minmax(3.25rem, 1fr)); }
 
 .onb-field {
   min-height: 48px;
@@ -486,6 +532,181 @@ html:not([data-theme-family='crystal']) :is(.onb-option, .onboarding-journey__go
   .onb-option,
   .onboarding-journey__goal-card { transition: none; }
 }
+
+/* Shared step pieces ---------------------------------------------------------------------- */
+.onb-kicker {
+  margin: 0;
+  color: var(--sf-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.onb-title--compact { font-size: clamp(34px, 3.9vw, 56px); }
+.onb-target-options { display: flex; max-width: 320px; margin-top: 24px; flex-direction: column; }
+
+/* Exam: target, date and the countdown to it ------------------------------------------------- */
+.onb-exam {
+  display: grid;
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  align-items: center;
+  gap: 48px;
+  grid-template-columns: minmax(0, 1fr) 420px;
+}
+
+.onb-exam .onb-goal-fields { max-width: 560px; margin: 30px 0 0; }
+
+.onb-chip-row { display: flex; flex-wrap: wrap; margin-top: 30px; gap: 8px; }
+
+.onb-chip {
+  min-height: 46px;
+  padding: 0 22px;
+  border: 1px solid var(--onb-line);
+  border-radius: 999px;
+  background: var(--onb-icon-bg);
+  color: var(--sf-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.onb-chip[aria-pressed='true'] { border-color: transparent; background: var(--onb-primary-bg); color: var(--onb-primary-text); }
+.onb-chip:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+
+.onb-countdown {
+  position: relative;
+  display: flex;
+  min-height: 460px;
+  flex-direction: column;
+  padding: 34px;
+  overflow: hidden;
+  border: 1px solid var(--onb-line);
+  border-radius: var(--onb-radius);
+  background: var(--onb-card);
+  box-shadow: 0 20px 40px -28px var(--sf-shadow);
+}
+
+html:not([data-theme-family='crystal']).dark .onb-countdown {
+  border: 1.5px solid transparent;
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, color-mix(in srgb, var(--sf-second) 30%, transparent), transparent 70%) padding-box,
+    linear-gradient(var(--sf-surface-raised), var(--sf-surface-raised)) padding-box,
+    var(--onb-rim) border-box;
+  box-shadow: var(--onb-card-on-shadow);
+}
+
+.onb-countdown-days { display: flex; margin: auto 0 0; flex-direction: column; }
+
+.onb-countdown-number {
+  color: var(--sf-text);
+  font-family: var(--sf-font-display);
+  font-optical-sizing: auto;
+  font-size: 150px;
+  font-weight: var(--onb-display-weight);
+  letter-spacing: -.05em;
+  line-height: .85;
+}
+
+.onb-countdown-unit {
+  margin-top: 8px;
+  color: var(--onb-accent);
+  font-family: var(--sf-font-display);
+  font-size: 30px;
+  font-style: var(--onb-em-style);
+}
+
+.onb-weeks { display: flex; margin-top: 26px; gap: 4px; }
+.onb-weeks > span { height: 26px; flex: 1; border-radius: 5px; background: var(--onb-track); }
+.onb-weeks > [data-week='now'] { background: var(--sf-brand); }
+.onb-weeks > [data-week='goal'] { background: var(--sf-reward); }
+.onb-countdown-note { margin: 12px 0 0; color: var(--sf-text-muted); font-size: 13px; }
+
+.onb-countdown-empty {
+  margin: auto 0 0;
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-display);
+  font-size: 26px;
+  line-height: 1.25;
+}
+
+/* Flashcard trial: the real card on the left, the learner's own tally on the right ------------- */
+.onb-trial {
+  display: grid;
+  width: min(1160px, 100%);
+  margin: 0 auto;
+  align-content: center;
+  column-gap: 70px;
+  grid-template-areas: 'deck head' 'deck list';
+  grid-template-columns: minmax(0, 1fr) 460px;
+  grid-template-rows: auto 1fr;
+}
+
+.onb-trial-head { align-self: end; grid-area: head; }
+.onb-trial-deck { display: flex; flex-direction: column; align-items: center; grid-area: deck; }
+
+.onb-trial-count {
+  margin: 0 0 12px;
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-mono, ui-monospace, monospace);
+  font-size: 12px;
+}
+
+.onb-trial-card { width: min(380px, 100%); }
+.onb-trial-card .flashcard-shell { max-width: 380px; height: 500px; }
+.onb-trial-card-loading { height: 500px; border-radius: var(--sf-card-radius); background: var(--onb-card); }
+
+.onb-trial-grade { display: flex; width: min(380px, 100%); margin-top: 14px; gap: 8px; }
+
+.onb-trial-grade > button {
+  display: inline-flex;
+  min-height: 46px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.onb-trial-again { border: 1px solid var(--onb-line); background: transparent; color: var(--sf-danger); }
+.onb-trial-known { border: 0; background: var(--onb-primary-bg); color: var(--onb-primary-text); }
+.onb-trial-grade > button:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+
+.onb-trial-list { display: flex; align-self: start; margin: 26px 0 0; padding: 0; gap: 8px; grid-area: list; list-style: none; }
+
+.onb-trial-word {
+  display: flex;
+  min-width: 0;
+  min-height: 62px;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 4px;
+  border: 1px solid var(--onb-line);
+  border-radius: 14px;
+  background: var(--onb-icon-bg);
+}
+
+.onb-trial-word[data-state='known'] { border-color: color-mix(in srgb, var(--sf-success) 40%, transparent); background: color-mix(in srgb, var(--sf-success) 10%, transparent); }
+.onb-trial-word[data-state='again'] { border-color: color-mix(in srgb, var(--sf-danger) 40%, transparent); background: color-mix(in srgb, var(--sf-danger) 10%, transparent); }
+
+.onb-trial-word-text {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--sf-text);
+  font-family: var(--sf-font-display);
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onb-trial-word-state { color: var(--sf-text-muted); font-size: 11px; font-weight: 600; }
+.onb-trial-word[data-state='known'] .onb-trial-word-state { color: var(--sf-success); }
+.onb-trial-word[data-state='again'] .onb-trial-word-state { color: var(--sf-danger); }
 
 /* Crystal -------------------------------------------------------------------------------- */
 html[data-theme-family='crystal'] .claude-onboarding-journey {
@@ -819,6 +1040,29 @@ html[data-theme-family='crystal'] :is(.onb-field, .onb-starter-card) {
 html[data-theme-family='crystal'] .onb-field:focus-visible { outline-offset: -3px; }
 html[data-theme-family='crystal'] .onb-goal-fields { margin-inline: 0; }
 html[data-theme-family='crystal'] .onb-pace-grid { margin-inline: 0; }
+html[data-theme-family='crystal'] .onb-kicker { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 700; letter-spacing: .16em; }
+
+html[data-theme-family='crystal'] :is(.onb-chip, .onb-trial-grade > button, .onb-trial-word, .onb-projection, .onb-pace-tag) { border-radius: 0; }
+html[data-theme-family='crystal'] .onb-chip { border: 0; background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--onb-panel-edge); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+html[data-theme-family='crystal'] .onb-chip[aria-pressed='true'] { background: var(--onb-primary-bg); box-shadow: none; color: white; }
+html[data-theme-family='crystal'] :is(.onb-chip, .onb-trial-grade > button):focus-visible { outline-offset: -4px; }
+
+html[data-theme-family='crystal'] .onb-countdown {
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-glass);
+  box-shadow: inset 0 0 0 1px var(--onb-panel-edge);
+}
+
+html[data-theme-family='crystal'] .onb-countdown-number { font-style: italic; font-weight: 900; }
+html[data-theme-family='crystal'] .onb-countdown-unit { color: var(--sf-brand-text); font-style: italic; font-weight: 800; text-transform: uppercase; }
+html[data-theme-family='crystal'] .onb-weeks > span { border-radius: 0; transform: skewX(-20deg); }
+html[data-theme-family='crystal'] .onb-projection { clip-path: var(--nk-chamfer-sm); }
+html[data-theme-family='crystal'] .onb-projection-number { font-style: italic; font-weight: 900; }
+html[data-theme-family='crystal'] .onb-trial-known { background: var(--onb-primary-bg); color: white; font-family: var(--sf-font-display); font-style: italic; font-weight: 900; text-transform: uppercase; }
+html[data-theme-family='crystal'] .onb-trial-again { border: 0; background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--onb-panel-edge); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; text-transform: uppercase; }
+html[data-theme-family='crystal'] .onb-trial-word { border: 0; box-shadow: inset 0 0 0 1px var(--onb-panel-edge); }
+html[data-theme-family='crystal'] .onb-trial-word-text { font-style: italic; font-weight: 800; }
 
 /* Narrow screens --------------------------------------------------------------------------- */
 @media (max-width: 1279px) {
@@ -849,6 +1093,14 @@ html[data-theme-family='crystal'] .onb-pace-grid { margin-inline: 0; }
 
   .onboarding-journey__goal-grid,
   .onboarding-journey__goal-grid[data-goal-count] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .onb-exam { gap: 24px; grid-template-columns: minmax(0, 1fr); }
+  .onb-countdown { min-height: 0; }
+  .onb-countdown-days { margin-top: 24px; }
+  .onb-countdown-empty { margin-top: 18px; }
+
+  .onb-trial { row-gap: 24px; grid-template-areas: 'head' 'deck' 'list'; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .onb-trial-list { margin-top: 0; }
 }
 
 @media (max-width: 639px) {
@@ -933,6 +1185,18 @@ html[data-theme-family='crystal'] .onb-pace-grid { margin-inline: 0; }
   .onb-pace-grid { margin-top: 24px; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .onb-pace-card { min-height: 96px; padding: 16px; }
   .onb-pace-number { font-size: 34px; }
+  .onb-pace-tag { margin-top: 8px; }
+  .onb-projection { margin-top: 20px; padding: 16px 18px; gap: 14px; }
+  .onb-projection-number { font-size: 34px; }
+  .onb-projection-text { font-size: 13.5px; }
+  .onb-chip-row { margin-top: 20px; }
+  .onb-exam .onb-goal-fields { margin-top: 20px; }
+  .onb-countdown { padding: 22px; }
+  .onb-countdown-number { font-size: 96px; }
+  .onb-countdown-unit { font-size: 22px; }
+  .onb-trial-card .flashcard-shell,
+  .onb-trial-card-loading { height: clamp(440px, 62dvh, 500px); }
+  .onb-trial-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
   .onb-starter-cards { grid-template-columns: minmax(0, 1fr); }
   .onb-actions { flex-direction: column; }
 
