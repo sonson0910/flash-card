@@ -445,7 +445,7 @@ describe('generateVocabulary callable', () => {
     reserveWordOperation.mockRejectedValue(new AiQuotaError('operation-attempts-exhausted', {
       reason: 'operation-attempts-exhausted', attempts: 3, maxAttempts: 3,
     }));
-    const sendChunk = vi.fn(async () => true);
+    const sendChunk = vi.fn(async (_chunk: unknown) => true);
     const { generateVocabulary } = await import('../src/index.js');
     const operationId = randomUUID();
     await expect((generateVocabulary.run as unknown as (request: unknown, response: unknown) => Promise<unknown>)({
