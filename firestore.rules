@@ -941,6 +941,13 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Latest exam scores the learner reports for their goals. The setLatestExamScore callable
+    // validates and performs every write; owners may only read their own document.
+    match /users/{userId}/profile/exam_scores {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
     match /users/{userId}/reminderState/{stateId} {
       allow get: if isOwner(userId) && stateId == 'current';
       allow list, create, update, delete: if false;
@@ -1061,6 +1068,7 @@ service cloud.firestore {
       // profileDocId != 'plan'
       // profileDocId != 'xp_history'
       // profileDocId != 'resource_usage'
+      // profileDocId != 'exam_scores'
       allow read, write: if false;
     }
 
