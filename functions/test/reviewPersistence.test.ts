@@ -1,4 +1,5 @@
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 import { describe, expect, it, vi } from 'vitest';
 import {
   applyReviewForOwner,
@@ -10,6 +11,8 @@ import { scheduleReviewTransition } from '../src/reviewScheduler.js';
 import { resolveJapanesePitchAccent } from '../src/japanesePitch.js';
 import { canonicalCard } from '../src/cardPersistence.js';
 import { createHash } from 'node:crypto';
+import { servedReviewOutcome } from './support/review-outcome.js';
+import { steadyStats } from './support/steady-stats.js';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
   exists,
@@ -457,6 +460,56 @@ describe('review persistence', () => {
         daysByLanguage: { en: { '2026-09-27': { started: 1, mastered: 1 } } },
         wordOfWeekByLanguage: { en: { '2026-09-21': { cardId: 'word-focus', reviews: 1 } } },
       });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('reads and writes only the documents a verified review always has once the stats records exist', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-19T13:00:00.000Z'));
+    try {
+      const test = harness();
+      test.values.set('users/owner/profile/stats', snapshot(true, steadyStats()));
+      const reviewedAt = '2026-11-19T12:59:30.000Z';
+      await applyReviewForOwner(test.database, 'owner', reviewRequest({
+        reviewedAt, timeZone: 'Asia/Saigon', fields: scheduleReviewTransition(baseCard(), 'good', new Date(reviewedAt)),
+      }));
+      const awarded = awardPath('word-focus', '2026-11-19');
+      expect(test.reads).toEqual([
+        'users/owner/review_receipts/word-focus:device-a:review-1', 'users/owner/profile/library_migration_fence',
+        'users/owner/profile/library_state', 'users/owner/cards/word-focus', 'users/owner/profile/stats', awarded,
+      ]);
+      expect(test.writes.map(write => write.path)).toEqual([
+        'users/owner/cards/word-focus', 'users/owner/profile/stats', 'users/owner/profile/xp_history', awarded,
+        'users/owner/review_receipts/word-focus:device-a:review-1',
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('serves the recorded review outcome that clients parse', async () => {
+    // The first answer on Monday 23 November in Ho Chi Minh City, ten seconds after midnight and twenty
+    // seconds after the answer before it: the streak reaches seven days and the weekly freezes refill.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-22T17:00:10.000Z'));
+    try {
+      const test = harness();
+      const stats = steadyStats();
+      const previousAnswerAt = Date.parse('2026-11-22T16:59:50.000Z');
+      test.values.set('users/owner/profile/stats', snapshot(true, {
+        ...stats,
+        verifiedStreak: 6, lastVerifiedStudyDay: '2026-11-22', lastVerifiedReviewAt: Timestamp.fromMillis(previousAnswerAt),
+        streakV1: { ...stats.streakV1, freezes: 1, best: 6, bestCountedFrom: '2026-11-17', days: { '2026-11-22': 'studied' } },
+        studyTimeV1: { ...stats.studyTimeV1, lastActionAtMs: previousAnswerAt, days: { '2026-11-22': { activeMs: 90_000, reviewMs: 90_000, timedReviews: 6 } } },
+      }));
+      const reviewedAt = '2026-11-22T17:00:10.000Z';
+      const served = await applyReviewForOwner(test.database, 'owner', reviewRequest({
+        reviewedAt, timeZone: 'Asia/Saigon', fields: scheduleReviewTransition(baseCard(), 'good', new Date(reviewedAt)),
+      }));
+      // The callable sends the result as JSON.
+      expect(JSON.parse(JSON.stringify(served))).toEqual(servedReviewOutcome);
     } finally {
       vi.useRealTimers();
     }

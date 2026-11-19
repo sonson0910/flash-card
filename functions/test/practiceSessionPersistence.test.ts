@@ -7,6 +7,7 @@ import {
   startPracticeSessionV1,
   type StartPracticeSessionV1Request,
 } from '../src/practiceSessionPersistence.js';
+import { steadyStats } from './support/steady-stats.js';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({ exists, data: () => data } as DocumentSnapshot);
 
@@ -157,6 +158,24 @@ describe('practice session persistence', () => {
     expect(test.writes.find(write => write.path === 'users/owner/profile/stats')?.data.studyTimeV1).toMatchObject({
       fromFirstAction: true, days: { '2026-09-27': { activeMs: 40_000, reviewMs: 0, timedReviews: 0 } },
     });
+  });
+
+  it('reads and writes only the documents a practice completion always has once the stats records exist', async () => {
+    const test = harness({
+      'users/owner/cards/card-1': card('card-1', 'hello', 'xin chào'),
+      'users/owner/cards/card-2': card('card-2', 'bye', 'tạm biệt'),
+      'users/owner/profile/stats': steadyStats(),
+    });
+    await startPracticeSessionV1(test.database, 'owner', request(), new Date('2026-11-19T12:59:00.000Z'));
+    test.reads.length = 0;
+    test.writes.length = 0;
+    await completePracticeSessionV1(test.database, 'owner', {
+      sessionId: 'practice-1', completionId: 'complete-1', timeZone: 'Asia/Saigon', answers: { responses: { 'card-1': 'hello', 'card-2': 'bye' } },
+    }, new Date('2026-11-19T13:00:00.000Z'));
+    expect(test.reads).toEqual(['users/owner/practice_sessions/practice-1', 'users/owner/profile/stats']);
+    expect(test.writes.map(write => write.path)).toEqual([
+      'users/owner/profile/stats', 'users/owner/profile/xp_history', 'users/owner/practice_sessions/practice-1',
+    ]);
   });
 
   it('accepts legacy spelling answer keys without a target language', async () => {
