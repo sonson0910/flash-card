@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as serverXpRules from '../../../functions/src/xp-rules';
+import { sessionXpCeiling } from '../dailyLearning/todayScreenFacts';
 import { buildDailyGoals, type DailyGoalsInput } from './dailyGoalsModel';
 
 const HCM = 'Asia/Ho_Chi_Minh';
@@ -27,6 +28,15 @@ describe('daily goals model', () => {
     expect(goal(model, 'win-match')).toMatchObject({ xp: serverXpRules.MATCH_WIN_XP });
     expect(goal(model, 'keep-streak')).not.toHaveProperty('xp');
     expect(model.goals.map(item => item.id)).toEqual(['study-cards', 'win-match', 'keep-streak']);
+  });
+
+  it('agrees with the XP amounts the Today session ceiling still keeps locally', () => {
+    // The Today screen keeps its own copies of these amounts; this fails if either side drifts.
+    expect(sessionXpCeiling([
+      { id: 'review', count: 3, skipped: false },
+      { id: 'new', count: 2, skipped: false },
+      { id: 'match', count: 1, skipped: false },
+    ])).toBe(5 * serverXpRules.REVIEW_CARD_XP + serverXpRules.MATCH_WIN_XP);
   });
 
   it('reads today from the server counters in the reward time zone and caps the bar at the target', () => {
