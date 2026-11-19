@@ -674,6 +674,11 @@ msgctxt "course.native-line"
 msgid "from {language}"
 msgstr "từ {language}"
 
+#: src/features/onboarding/OnboardingJourney.tsx:98
+msgctxt "onboarding.lumi.trial.body"
+msgid "Turn a card to see its meaning, then tell me if you knew it."
+msgstr "Lật thẻ để xem nghĩa, rồi cho mình biết bạn có nhớ không nhé."
+
 #: src/features/onboarding/OnboardingJourney.tsx:97
 msgctxt "onboarding.lumi.pace.body"
 msgid "Start small. You can change this later."
@@ -836,11 +841,6 @@ msgstr "Mọi ngôn ngữ được hỗ trợ đều đã có khóa học. Hãy 
 msgctxt "onboarding.lumi.pace.title"
 msgid "How fast shall we go?"
 msgstr "Mình học nhanh cỡ nào nhé?"
-
-#: src/features/onboarding/OnboardingJourney.tsx:98
-msgctxt "onboarding.lumi.trial.body"
-msgid "Tap a card to see its meaning, then tell me if you knew it."
-msgstr "Chạm vào thẻ để xem nghĩa, rồi cho mình biết bạn có nhớ không nhé."
 
 #: src/features/onboarding/StarterCardTrial.tsx:73
 msgctxt "onboarding.trial.known"
@@ -2250,8 +2250,8 @@ msgstr "Tiến độ thiết lập"
 
 #: src/features/onboarding/StarterCardTrial.tsx:53
 msgctxt "onboarding.trial.body"
-msgid "Tap the card to see its meaning. These cards are already in your library."
-msgstr "Chạm vào thẻ để xem nghĩa. Những thẻ này đã có trong thư viện của bạn."
+msgid "Turn the card to see its meaning. These cards are already in your library."
+msgstr "Lật thẻ để xem nghĩa. Những thẻ này đã có trong thư viện của bạn."
 
 #: src/components/AppOverlays.tsx:144
 msgctxt "shell.share.empty-title"

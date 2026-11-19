@@ -95,7 +95,7 @@ function LumiGuide({ step }: { readonly step: OnboardingStepId }) {
     goal: [_(msg({ context: 'onboarding.lumi.goal.title', message: 'Got a goal in mind?' })), _(msg({ context: 'onboarding.lumi.goal.body', message: 'Choose a path and your cards will follow it.' }))],
     exam: [_(msg({ context: 'onboarding.lumi.exam.title', message: 'When is the big day?' })), _(msg({ context: 'onboarding.lumi.exam.body', message: 'Set a date and I’ll count the days down with you.' }))],
     pace: [_(msg({ context: 'onboarding.lumi.pace.title', message: 'How fast shall we go?' })), _(msg({ context: 'onboarding.lumi.pace.body', message: 'Start small. You can change this later.' }))],
-    aha: [_(msg({ context: 'onboarding.lumi.trial.title', message: 'Flip your first cards!' })), _(msg({ context: 'onboarding.lumi.trial.body', message: 'Tap a card to see its meaning, then tell me if you knew it.' }))],
+    aha: [_(msg({ context: 'onboarding.lumi.trial.title', message: 'Flip your first cards!' })), _(msg({ context: 'onboarding.lumi.trial.body', message: 'Turn a card to see its meaning, then tell me if you knew it.' }))],
     reminder: [_(msg({ context: 'onboarding.lumi.reminder.title', message: 'Want a nudge?' })), _(msg({ context: 'onboarding.lumi.reminder.body', message: 'Pick a time and SonFlash will remind you to review.' }))],
   };
   const [title, body] = lines[step];

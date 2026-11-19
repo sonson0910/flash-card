@@ -50,7 +50,7 @@ export function StarterCardTrial({ cards, eyebrow }: StarterCardTrialProps) {
       <p className="onb-subtitle">
         {done
           ? <Trans {...msg({ context: 'onboarding.trial.result-body', message: 'All {total} cards are already in your library, ready for your first review.' })} values={{ total: cards.length }} />
-          : <Trans {...msg({ context: 'onboarding.trial.body', message: 'Tap the card to see its meaning. These cards are already in your library.' })} />}
+          : <Trans {...msg({ context: 'onboarding.trial.body', message: 'Turn the card to see its meaning. These cards are already in your library.' })} />}
       </p>
     </div>
 
