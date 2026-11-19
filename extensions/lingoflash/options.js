@@ -47,6 +47,7 @@ const selectionIconStatus = document.getElementById('selection-icon-status');
 const selectionIconSitesList = document.getElementById('selection-icon-sites');
 const selectionIconEmpty = document.getElementById('selection-icon-empty');
 const saveButton = document.getElementById('save-settings');
+const openShortcutsButton = document.getElementById('open-shortcuts');
 let currentSettings = { ...DEFAULT_SETTINGS };
 
 const setStatus = (message = '', tone = '') => {
@@ -162,7 +163,22 @@ const addSelectionIconSite = async () => {
   }
 };
 
+// Safari keeps extension shortcuts in its own settings, which no extension
+// page can open, so the link is only offered where the browser has a
+// shortcuts page (the same answer the popup's shortcut row uses).
+const loadShortcutAvailability = async () => {
+  if (!openShortcutsButton) return;
+  try {
+    const response = await sendMessage({ type: 'GET_SHORTCUTS' });
+    if (!response?.ok) throw new Error(response?.error || 'shortcuts unavailable');
+    openShortcutsButton.hidden = response.shortcutSettingsAvailable === false;
+  } catch {
+    openShortcutsButton.hidden = true;
+  }
+};
+
 const load = async () => {
+  void loadShortcutAvailability();
   try {
     applySettings(await readSettings());
     await loadSelectionIconSites();
@@ -218,5 +234,11 @@ form.addEventListener('submit', event => {
 });
 
 addSelectionIconSiteButton?.addEventListener('click', () => { void addSelectionIconSite(); });
+
+openShortcutsButton?.addEventListener('click', () => {
+  void sendMessage({ type: 'OPEN_SHORTCUTS' }).then(response => {
+    if (!response?.ok) throw new Error(response?.error || t('errorOpenShortcuts', undefined, 'Không thể mở cài đặt phím tắt.'));
+  }).catch(error => setStatus(error instanceof Error ? error.message : t('errorOpenShortcuts', undefined, 'Không thể mở cài đặt phím tắt.'), 'error'));
+});
 
 void courseUiLocaleReady.then(() => load());

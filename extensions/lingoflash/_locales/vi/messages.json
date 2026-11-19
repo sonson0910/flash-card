@@ -156,6 +156,7 @@
   "optionsSiteRemoveFailed": { "message": "Không thể tắt floating icon." },
   "optionsSitesLoadFailed": { "message": "Không thể đọc danh sách website đã cấp quyền." },
   "optionsPrivacyLink": { "message": "Đọc chính sách quyền riêng tư" },
+  "optionsShortcutsLink": { "message": "Phím tắt Chrome" },
 
   "bubbleBrand": { "message": "SONFLASH v$VERSION$", "placeholders": { "version": { "content": "$1" } } },
   "bubbleBrandNoVersion": { "message": "SONFLASH" },

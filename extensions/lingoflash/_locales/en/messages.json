@@ -156,6 +156,7 @@
   "optionsSiteRemoveFailed": { "message": "Could not turn off the floating icon." },
   "optionsSitesLoadFailed": { "message": "Could not read the list of allowed websites." },
   "optionsPrivacyLink": { "message": "Read the privacy policy" },
+  "optionsShortcutsLink": { "message": "Keyboard shortcuts" },
 
   "bubbleBrand": { "message": "SONFLASH v$VERSION$", "placeholders": { "version": { "content": "$1" } } },
   "bubbleBrandNoVersion": { "message": "SONFLASH" },
