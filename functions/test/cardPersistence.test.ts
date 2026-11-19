@@ -937,15 +937,19 @@ describe('card persistence', () => {
     expect(plain).not.toHaveProperty('learnerDifficulty');
     expect(canonicalCard({ ...card, tags: Array.from({ length: 8 }, (_, index) => `t${index}`) }).tags).toHaveLength(8);
     expect(canonicalCard({ ...card, tags: ['x'.repeat(32)] }).tags).toEqual(['x'.repeat(32)]);
+    // Length is counted in code points, as the Rules regex engine counts it.
+    expect(canonicalCard({ ...card, tags: ['📚'.repeat(32)] }).tags).toEqual(['📚'.repeat(32)]);
   });
 
   it('rejects tags beyond the limits and difficulty outside the learner labels', () => {
     for (const tags of [
       Array.from({ length: 9 }, (_, index) => `t${index}`),
       ['x'.repeat(33)],
+      ['📚'.repeat(33)],
       ['a,b'],
       ['line\nbreak'],
       [' padded'],
+      ['padded\t'],
       [''],
       [7],
       ['news', 'news'],

@@ -115,10 +115,11 @@ const CARD_DIFFICULTIES = new Set(['easy', 'good', 'hard', 'unrated']);
 /** The learner's own label. Scheduling, plans and statistics never read it. */
 const LEARNER_DIFFICULTIES = new Set(['easy', 'medium', 'hard']);
 const MAX_CARD_TAGS = 8;
-const MAX_CARD_TAG_LENGTH = 32;
-// No surrounding whitespace, comma or line break, so a tag survives a
-// spreadsheet round trip and matches the Rules check of the same field.
-const CARD_TAG_PATTERN = /^[^\s,](?:[^,\r\n]*[^\s,])?$/;
+// 1-32 code points with no surrounding whitespace, comma or line break, so a
+// tag survives a spreadsheet round trip. This is the Rules pattern for the
+// same field: Rules regexes are RE2, which counts code points and whose \s is
+// the ASCII set spelled out here, so a tag one side accepts the other does too.
+const CARD_TAG_PATTERN = /^[^\t\n\f\r ,](?:[^,\r\n]{0,30}[^\t\n\f\r ,])?$/u;
 const MAX_TRANSLATION_ALTERNATIVES = 3;
 const REVIEW_RATINGS = new Set(['again', 'hard', 'good', 'easy']);
 const AUDIO_HOSTS = new Set(['api.dictionaryapi.dev', 'ssl.gstatic.com']);
@@ -188,7 +189,7 @@ const parseCardTags = (value: unknown): string[] | undefined => {
   if (!Array.isArray(value) || value.length > MAX_CARD_TAGS) {
     throw new InputValidationError('Card field "tags" is invalid.');
   }
-  if (value.some(tag => typeof tag !== 'string' || tag.length > MAX_CARD_TAG_LENGTH || !CARD_TAG_PATTERN.test(tag))
+  if (value.some(tag => typeof tag !== 'string' || !CARD_TAG_PATTERN.test(tag))
     || new Set(value).size !== value.length) {
     throw new InputValidationError('Card field "tags" is invalid.');
   }
