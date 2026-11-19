@@ -323,7 +323,7 @@ export function LibraryManagementMenu({
                 className={menuItemClass}
                 title={_(msg({ id: 'shell.library-menu.zen-toggle-description', message: 'Toggle between Standard Learning mode and Zen Minimalist Glass mode' }))}
               >
-                <Sparkles size={17} aria-hidden="true" className={isZenMode ? 'text-cyan-600 dark:text-cyan-400 shrink-0 animate-pulse' : 'text-slate-400 shrink-0'} />
+                <Sparkles size={17} aria-hidden="true" className={isZenMode ? 'shrink-0 animate-pulse text-[var(--sf-brand-text)] motion-reduce:animate-none' : 'shrink-0 text-[var(--sf-text-muted)]'} />
                 <span className="truncate">{isZenMode ? <Trans {...msg({ context: 'shell.menu.card-style-zen', message: 'Card style: Zen Glass' })} /> : <Trans {...msg({ context: 'shell.menu.card-style-standard', message: 'Card style: Standard' })} />}</span>
               </button>
               {onOpenInsights && (
@@ -350,7 +350,7 @@ export function LibraryManagementMenu({
                   onClick={() => { setIsOpen(false); void onExportLibrary(); }}
                   className={menuItemClass}
                 >
-                  {isExporting ? <Loader2 size={17} className="animate-spin text-cyan-600 shrink-0 motion-reduce:animate-none" aria-hidden="true" /> : <Download size={17} aria-hidden="true" className="shrink-0" />}
+                  {isExporting ? <Loader2 size={17} className="shrink-0 animate-spin text-[var(--sf-brand-text)] motion-reduce:animate-none" aria-hidden="true" /> : <Download size={17} aria-hidden="true" className="shrink-0" />}
                   <span className="truncate">{isExporting ? <Trans {...msg({ context: 'shell.menu.exporting', message: 'Exporting library…' })} /> : <Trans {...msg({ context: 'shell.menu.export', message: 'Export library to Excel' })} />}</span>
                 </button>
               )}

@@ -205,22 +205,40 @@ html[data-theme-family="crystal"] [data-undo-toast] {
   cursor: pointer;
 }
 
-.notification-toast-actions { margin-top: 8px; }
+/* The button keeps a 44px touch target; its label draws the compact board chip inside it. The
+   negative margins keep the chip at the board's spacing from the message and the toast edge. */
+.notification-toast-actions { margin: 0 0 -8px; }
 
 .notification-toast-action {
   display: inline-flex;
   min-height: 44px;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 12px;
-  border: 1px solid var(--notification-line);
-  border-radius: 9px;
-  background: var(--notification-icon-bg);
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--notification-fg);
   font-size: 12.5px;
   font-weight: 650;
   cursor: pointer;
+}
+
+.notification-toast-action-label {
+  position: relative;
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--notification-line);
+  border-radius: 8px;
+  background: var(--notification-icon-bg);
+}
+
+.notification-toast-action:focus-visible { outline: 0; }
+.notification-toast-action:focus-visible .notification-toast-action-label {
+  outline: 2px solid var(--sf-brand);
+  outline-offset: 2px;
 }
 
 .notification-toast-action:disabled { cursor: wait; opacity: .65; }
@@ -231,6 +249,10 @@ html[data-theme-family="classic"] [data-notification-toast] {
   border-radius: 16px;
   box-shadow: var(--feedback-shadow);
 }
+
+/* The shared toast layer draws an accent strip on the left edge; the classic board outlines the
+   whole toast in its tone instead. */
+html[data-theme-family="classic"] [data-notification-toast]::before { display: none; }
 
 html[data-theme-family="classic"] .notification-toast-title {
   color: var(--notification-fg);
@@ -284,25 +306,32 @@ html[data-theme-family="crystal"] .notification-toast-message {
 }
 
 html[data-theme-family="crystal"] .notification-toast-action {
-  min-height: 44px;
-  border: 0;
-  border-radius: 0;
-  background: var(--notification-icon-bg);
-  box-shadow: inset 0 0 0 1px var(--notification-line);
-  color: var(--notification-fg);
   font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
   font-size: 13px;
   font-style: italic;
   font-weight: 800;
-  transform: skewX(-12deg);
-  clip-path: var(--nk-chamfer-sm);
 }
 
+/* Crystal skews and chamfers the chip on a pseudo-element, so the text stays upright and the clip
+   never trims the button's touch target. */
 html[data-theme-family="crystal"] .notification-toast-action-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transform: skewX(12deg);
+  isolation: isolate;
+  min-height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+html[data-theme-family="crystal"] .notification-toast-action-label::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: var(--notification-icon-bg);
+  box-shadow: inset 0 0 0 1px var(--notification-line);
+  clip-path: var(--nk-chamfer-sm);
+  content: "";
+  transform: skewX(-12deg);
 }
 
 html[data-theme-family="crystal"] .notification-toast-dismiss:hover { background: rgb(255 255 255 / .08); }
@@ -328,6 +357,13 @@ html[data-theme-family] [data-notification-toast]::after { display: none; }
 
 [data-undo-toast].notification-toast::before,
 [data-undo-toast].notification-toast::after { display: none; }
+
+.undo-toast-icon {
+  flex: 0 0 auto;
+  opacity: .7;
+}
+
+html[data-theme-family="crystal"] .undo-toast-icon { opacity: .9; }
 
 .undo-toast-message {
   min-width: 0;
@@ -456,7 +492,7 @@ html[data-theme-family="crystal"] .undo-toast-dismiss { color: var(--feedback-di
 
 html[data-theme-family="crystal"] .undo-toast-progress { box-shadow: 0 0 8px var(--undo-accent); }
 
-:is(.notification-toast-action, .notification-toast-dismiss, .undo-toast-action, .undo-toast-dismiss):focus-visible {
+:is(.notification-toast-dismiss, .undo-toast-action, .undo-toast-dismiss):focus-visible {
   outline: 2px solid var(--sf-brand);
   outline-offset: 2px;
 }

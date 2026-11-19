@@ -3,7 +3,6 @@ import {
   CheckCircle2,
   CloudOff,
   Loader2,
-  RotateCcw,
   WifiOff,
   X,
   type LucideIcon,
@@ -86,7 +85,7 @@ function NotificationToast({
                 className="notification-toast-action"
               >
                 <span className="notification-toast-action-label">
-                  {busy ? <Loader2 size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <RotateCcw size={14} aria-hidden="true" />}
+                  {busy ? <Loader2 size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : null}
                   {busy && actionBusyLabel ? actionBusyLabel : actionLabel}
                 </span>
               </button>

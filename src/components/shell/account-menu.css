@@ -267,7 +267,6 @@
   outline-offset: -2px;
 }
 
-.account-menu-sync-action > svg,
 .account-menu-primary-action > svg {
   color: var(--sf-brand-text);
 }
@@ -335,7 +334,24 @@ html[data-theme-family="crystal"] .account-menu-status {
 
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="synced"] {
   background: rgb(26 167 201 / 0.12);
-  color: var(--sf-brand-text);
+  color: #0a7d99;
+}
+
+html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="synced"] {
+  background: rgb(94 242 255 / 0.07);
+  color: var(--sf-success);
+}
+
+html[data-theme-family="crystal"] .account-menu-name {
+  font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 800;
+}
+
+html[data-theme-family="crystal"] .account-menu-email {
+  font-family: inherit;
+  font-size: 12px;
 }
 
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="session-lost"],
@@ -366,17 +382,16 @@ html[data-theme-family="crystal"] .account-menu-divider {
 html[data-theme-family="crystal"] .account-menu-item {
   border-radius: 0;
   clip-path: var(--nk-chamfer-sm, polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%));
-  font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
-  font-size: 13px;
-  font-style: italic;
-  font-weight: 800;
+  font-size: 13.5px;
+  font-weight: 600;
 }
 
 html[data-theme-family="crystal"] .account-menu-item > svg {
-  color: var(--sf-brand-text);
+  color: inherit;
 }
 
-html[data-theme-family="crystal"] .account-menu-item:hover:not(:disabled) {
+html[data-theme-family="crystal"] .account-menu-item:hover:not(:disabled),
+html[data-theme-family="crystal"] .account-menu-item:focus-visible {
   background: color-mix(in srgb, var(--sf-brand) 9%, var(--sf-surface));
   box-shadow: inset 3px 0 0 var(--sf-brand);
 }
@@ -388,6 +403,26 @@ html[data-theme-family="crystal"] .account-menu-danger-action {
 
 html[data-theme-family="crystal"] .account-menu-danger-action > svg {
   color: #c40f35;
+}
+
+html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="session-lost"],
+html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="needs-attention"],
+html[data-theme-family="crystal"].dark .account-menu-danger-action,
+html[data-theme-family="crystal"].dark .account-menu-danger-action > svg {
+  color: var(--sf-brand-text);
+}
+
+html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="offline"],
+html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="cloud-paused"],
+html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="device"] {
+  color: #ffd166;
+}
+
+html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="checking"],
+html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="syncing"],
+html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="queued"],
+html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="saving-offline"] {
+  color: #8fc4ff;
 }
 
 @media (prefers-reduced-motion: reduce) {
