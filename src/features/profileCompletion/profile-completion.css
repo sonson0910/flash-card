@@ -9,9 +9,14 @@
     display: flex;
     min-height: 100dvh;
     flex-direction: column;
-    background: var(--sf-canvas);
     color: var(--sf-text);
   }
+
+  /* The page background and its fixed grain or star layer come from the app-canvas and
+     claude-app-shell classes on the root; the content sits above that layer as in the shell. */
+  .profile-gate__bar,
+  .profile-gate__main,
+  .profile-gate__footer { position: relative; z-index: 1; }
 
   .profile-gate__bar {
     display: flex;
