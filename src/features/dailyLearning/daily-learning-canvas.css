@@ -50,10 +50,10 @@
 }
 .daily-canvas [data-session-shell], [data-session-shell] { max-width: 60rem; margin-inline: auto; }
 .daily-canvas [data-session-shell="bridge"], [data-session-shell="bridge"] { max-width: none; margin: 0; }
-:root[data-theme-family="classic"] .daily-canvas :is(h1, h2, h3) { font-family: Fraunces, Georgia, serif; font-weight: 650; }
+:root[data-theme-family="classic"] .daily-canvas :is(h1, h2, h3) { font-family: var(--sf-font-display); font-weight: 650; }
 :root[data-theme-family="classic"] :is(.progress-canvas, [aria-labelledby="daily-progress-heading"]) .premium-kicker, :root[data-theme-family="classic"] .daily-canvas-today .premium-kicker { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; }
 :root[data-theme-family="crystal"] .daily-canvas { --daily-panel: var(--sf-surface-glass); }
-:root[data-theme-family="crystal"] .daily-canvas :is(h1, h2, h3) { font-family: Kanit, sans-serif; font-style: italic; font-weight: 900; letter-spacing: .015em; }
+:root[data-theme-family="crystal"] .daily-canvas :is(h1, h2, h3) { font-family: var(--sf-font-display); font-style: italic; font-weight: 900; letter-spacing: .015em; }
 :root[data-theme-family="crystal"] [aria-labelledby="daily-progress-heading"] > header { min-height: 5.5rem; align-items: flex-end; }
 :root[data-theme-family="crystal"] [aria-labelledby="daily-progress-heading"] > header h1 { font-family: Kanit, sans-serif; font-style: italic; font-weight: 900; font-size: clamp(3.25rem, 5vw, 4.25rem) !important; letter-spacing: .01em !important; background: linear-gradient(180deg, #fff, #ff8fa3 52%, #fff); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .6)); }
 :root[data-theme-family="crystal"] [aria-labelledby="daily-progress-heading"] > .liquid-glass { border: 0 !important; clip-path: var(--nk-chamfer); box-shadow: inset 0 0 0 1px var(--sf-border), 0 18px 38px -32px rgb(0 0 0 / .8); }
@@ -67,6 +67,7 @@
    night theme disappear or turn muddy there, so light gets navy-to-crimson ink and pastel glows. */
 :root[data-theme-family="crystal"]:not(.dark) :is(.progress-canvas, [aria-labelledby="daily-progress-heading"]) > header h1 { background: linear-gradient(180deg, #0d1a33 0%, #0d1a33 44%, #a30c2d 56%, #7a0820 100%); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 2px 0 rgb(255 255 255 / .8)) drop-shadow(0 0 14px rgb(255 84 112 / .26)); }
 :root[data-theme-family="crystal"]:not(.dark) .daily-zero { background: radial-gradient(ellipse 55% 55% at 84% 20%, rgb(255 143 182 / .34), transparent 70%), radial-gradient(ellipse 60% 60% at 10% 92%, rgb(94 242 255 / .26), transparent 70%); }
+:root[data-theme-family="crystal"]:not(.dark) .daily-canvas-today > header h1 { background: linear-gradient(180deg, #0d1a33 0%, #0d1a33 44%, #a30c2d 56%, #7a0820 100%); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 2px 0 rgb(255 255 255 / .8)) drop-shadow(0 0 14px rgb(255 84 112 / .26)); }
 :root[data-theme-family="crystal"]:not(.dark) .daily-zero h1 { background: linear-gradient(180deg, #0d1a33 0%, #0d1a33 44%, #a30c2d 56%, #7a0820 100%); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 2px 0 rgb(255 255 255 / .8)) drop-shadow(0 0 14px rgb(255 84 112 / .26)); }
 :root[data-theme-family="crystal"] .daily-zero-panel { border: 0; clip-path: var(--nk-chamfer); background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--sf-border), 0 0 30px -16px rgb(255 42 77 / .55); }
 :root[data-theme-family="crystal"] .daily-zero-panel::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(135deg, transparent 0 56%, rgb(255 42 77 / .12) 56% 58%, transparent 58%), var(--nk-stars); opacity: .75; }

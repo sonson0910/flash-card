@@ -24,7 +24,7 @@
 @keyframes today-caught-up-star-pop { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
 @media (prefers-reduced-motion: no-preference) { :root[data-theme-family="crystal"] .today-caught-up-star { animation: today-caught-up-star-pop 2.4s var(--nk-snap) infinite; } }
 :root[data-theme-family="crystal"] .today-caught-up-lumi { display: block; width: 108px; height: 108px; flex: 0 0 108px; margin-left: auto; }
-:root[data-theme-family="crystal"] .today-caught-up-title { margin: 0; font-family: Kanit, sans-serif; font-size: 32px; font-style: italic; font-weight: 900; line-height: 1.05; letter-spacing: .015em; }
+:root[data-theme-family="crystal"] .today-caught-up-title { margin: 0; font-family: var(--sf-font-display); font-size: 32px; font-style: italic; font-weight: 900; line-height: 1.05; letter-spacing: .015em; }
 :root[data-theme-family="crystal"] .today-caught-up-gold { color: #8a5a00; }
 :root[data-theme-family="crystal"].dark .today-caught-up-gold { color: #ffd166; }
 :root[data-theme-family="crystal"] .today-caught-up-status { margin-top: 6px; }

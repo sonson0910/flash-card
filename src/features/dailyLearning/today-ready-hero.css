@@ -150,7 +150,7 @@
 
 /* Crystal Star (AnimeToday). */
 :root[data-theme-family="crystal"] .today-ready-page {
-  --tc-display: 'Kanit', 'Nunito', system-ui, sans-serif; --tc-body: 'Nunito', system-ui, sans-serif; --tc-mono: 'Geist Mono', ui-monospace, monospace;
+  --tc-display: var(--sf-font-display); --tc-body: 'Nunito', system-ui, sans-serif; --tc-mono: 'Geist Mono', ui-monospace, monospace;
   --tc-text-strong: #081329; --tc-body-text: #243553; --tc-text2: #3f5272; --tc-text3: #627392;
   --tc-panel: linear-gradient(160deg, rgb(238 249 255 / .9), rgb(208 234 255 / .86)); --tc-panel-solid: #e6f5ff;
   --tc-edge: rgb(224 23 63 / .55); --tc-edge2: rgb(26 167 201 / .45); --tc-line: rgb(13 40 80 / .12); --tc-line-strong: rgb(13 40 80 / .24);

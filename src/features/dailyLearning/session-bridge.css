@@ -15,7 +15,7 @@
   --sb-primary-bg: #1d1a16; --sb-primary-text: #fbf6ec; --sb-primary-shadow: 0 14px 28px -14px rgb(29 26 22 / .9); --sb-btn-radius: 999px;
   --sb-secondary-bg: #fffcf5;
   --sb-ambient: radial-gradient(rgb(29 26 22 / .08) 1px, transparent 1.2px) 0 0 / 28px 28px;
-  --sb-serif: Fraunces, Georgia, serif; --sb-mono: 'Geist Mono', ui-monospace, monospace;
+  --sb-serif: var(--sf-font-display); --sb-mono: 'Geist Mono', ui-monospace, monospace;
   position: relative; isolation: isolate; display: flex; width: 100%; min-height: 100dvh; flex-direction: column; overflow: hidden;
   background: var(--sf-canvas); color: var(--sf-text);
 }
@@ -131,9 +131,8 @@ html[data-theme-family="crystal"] .session-bridge {
   --cb-card-back: linear-gradient(115deg, rgb(255 214 236 / .22), rgb(207 238 255 / .18) 50%, rgb(255 227 241 / .22)), linear-gradient(180deg, #141a2a, #090c16);
   --cb-rim: linear-gradient(150deg, #e9feff, #5ef2ff 40%, #1aa7c9 75%, #e9feff); --cb-rim-soft: rgb(94 242 255 / .5); --cb-beam: rgb(255 255 255 / .08);
   --cb-title-metal: linear-gradient(180deg, #fff 0%, #ffe3ea 46%, #ff8fa3 54%, #fff 100%); --cb-title-shadow: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .6));
-  --cb-display: Kanit, Nunito, system-ui, sans-serif; --cb-body-font: Nunito, system-ui, sans-serif;
+  --cb-display: var(--sf-font-display);
   background: radial-gradient(ellipse 55% 45% at 18% 18%, rgb(16 42 92 / .55), transparent 70%), radial-gradient(ellipse 50% 45% at 85% 72%, rgb(10 50 110 / .5), transparent 70%), radial-gradient(ellipse 45% 35% at 62% 8%, rgb(179 15 51 / .3), transparent 70%), radial-gradient(ellipse 40% 30% at 30% 95%, rgb(122 8 32 / .35), transparent 70%), var(--sf-canvas);
-  font-family: var(--cb-body-font);
 }
 html[data-theme-family="crystal"]:not(.dark) .session-bridge {
   --cb-text-strong: #081329; --cb-text2: #3f5272; --cb-text3: #3f5272; --cb-body: #243553; --cb-holo: #065a6e; --cb-crimson: #a30c2d;
