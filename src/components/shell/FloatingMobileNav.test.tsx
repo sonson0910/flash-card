@@ -63,4 +63,13 @@ describe('FloatingMobileNav', () => {
     expect(html).toContain('Progress');
     expect(html).not.toContain('Friends');
   });
+
+  it('highlights Vocabulary while its web words sub-view is open', () => {
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+      <FloatingMobileNav activeView="web-words" onSelectView={vi.fn()} />
+    </I18nProvider>);
+
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toMatch(/aria-current="page"[^>]*><span class="claude-mobile-nav-icon"[^]*?>Vocabulary<\/span>/);
+  });
 });

@@ -18,7 +18,7 @@ msgctxt "settings.data.open"
 msgid "Open data & export"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:224
+#: src/features/settings/settings-screen.tsx:230
 msgctxt "settings.reminders.page-title"
 msgid "A nudge, <0>not a nag.</0>"
 msgstr ""
@@ -113,7 +113,7 @@ msgctxt "settings.course.ui-language"
 msgid "App language"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:224
+#: src/features/settings/settings-screen.tsx:230
 msgctxt "settings.reminders.description"
 msgid "We remind you once a day, only when cards are waiting."
 msgstr ""
@@ -308,7 +308,7 @@ msgctxt "settings.reminders.loading"
 msgid "Loading reminders…"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:223
+#: src/features/settings/settings-screen.tsx:229
 msgctxt "settings.language.description"
 msgid "The app speaks one language. Each course teaches another."
 msgstr ""
@@ -393,7 +393,7 @@ msgctxt "settings.reminders.sign-in"
 msgid "Sign in to set reminders."
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:212
+#: src/features/settings/settings-screen.tsx:218
 msgctxt "settings.kicker"
 msgid "Settings"
 msgstr ""
@@ -423,7 +423,7 @@ msgctxt "settings.reminders.save"
 msgid "Save reminders"
 msgstr ""
 
-#: src/features/settings/settings-screen.tsx:223
+#: src/features/settings/settings-screen.tsx:229
 msgctxt "settings.language.title"
 msgid "Language & <0>courses</0>"
 msgstr ""
@@ -515,7 +515,7 @@ msgid "settings.haptics.preview"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:211
+#: src/features/settings/settings-screen.tsx:217
 msgid "settings.menu.label"
 msgstr ""
 
@@ -651,7 +651,7 @@ msgstr ""
 
 #: src/features/settings/settings-screen.tsx:148
 #: src/features/settings/settings-screen.tsx:158
-#: src/features/settings/settings-screen.tsx:206
+#: src/features/settings/settings-screen.tsx:212
 msgctxt "settings.sounds.eyebrow"
 msgid "Sounds & haptics"
 msgstr ""

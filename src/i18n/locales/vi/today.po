@@ -18,7 +18,7 @@ msgctxt "progress.weeklyRecap.open"
 msgid "View weekly recap"
 msgstr "Xem tổng kết tuần"
 
-#: src/features/webWords/WebWordsPage.tsx:232
+#: src/features/webWords/WebWordsPage.tsx:207
 msgctxt "webWords.lumi.tag"
 msgid "Lumi · Link"
 msgstr "Lumi · Link"
@@ -48,7 +48,7 @@ msgctxt "today-screen.start-recommended-lesson"
 msgid "Start recommended lesson"
 msgstr "Bắt đầu bài học được gợi ý"
 
-#: src/features/webWords/WebWordsPage.tsx:251
+#: src/features/webWords/WebWordsPage.tsx:226
 msgctxt "webWords.filter.site.label"
 msgid "Site"
 msgstr "Trang web"
@@ -58,7 +58,7 @@ msgctxt "progress.metric.mastered"
 msgid "Mastered"
 msgstr "Đã thành thạo"
 
-#: src/features/webWords/WebWordsPage.tsx:321
+#: src/features/webWords/WebWordsPage.tsx:296
 msgctxt "webWords.status.empty-batch"
 msgid "No web words for this course are in this batch. Load more to keep looking."
 msgstr "Không có từ web nào cho khóa học này trong lô này. Hãy tải thêm để tiếp tục tìm."
@@ -68,12 +68,12 @@ msgctxt "progress.offline.reconnect"
 msgid "You’re offline. Reconnect to review and save your progress."
 msgstr "Bạn đang ngoại tuyến. Hãy kết nối lại để ôn tập và lưu tiến độ."
 
-#: src/features/webWords/WebWordsPage.tsx:233
+#: src/features/webWords/WebWordsPage.tsx:208
 msgctxt "webWords.lumi.text"
 msgid "I keep the whole sentence, so you remember the context."
 msgstr "Mình giữ cả câu gốc, để bạn nhớ ngữ cảnh."
 
-#: src/features/webWords/WebWordsPage.tsx:288
+#: src/features/webWords/WebWordsPage.tsx:263
 msgctxt "webWords.feedback.not-added"
 msgid "These cards were not added to today's new-word stage. You can study them elsewhere or try again later."
 msgstr "Những thẻ này chưa được thêm vào chặng từ mới hôm nay. Bạn có thể học chúng ở nơi khác hoặc thử lại sau."
@@ -83,8 +83,8 @@ msgctxt "progress.empty.title"
 msgid "Your learning story starts here"
 msgstr "Câu chuyện học tập của bạn bắt đầu từ đây"
 
-#: src/features/webWords/WebWordsPage.tsx:89
-#: src/features/webWords/WebWordsPage.tsx:204
+#: src/features/webWords/WebWordsPage.tsx:90
+#: src/features/webWords/WebWordsPage.tsx:181
 msgctxt "webWords.chip.learning"
 msgid "Learning"
 msgstr "Đang học"
@@ -621,7 +621,7 @@ msgctxt "progress.mastered.title"
 msgid "Recently mastered"
 msgstr "Mới thành thạo"
 
-#: src/features/webWords/WebWordsPage.tsx:297
+#: src/features/webWords/WebWordsPage.tsx:272
 msgctxt "webWords.status.loading"
 msgid "Loading your web words…"
 msgstr "Đang tải từ trên web của bạn…"
@@ -636,17 +636,17 @@ msgctxt "progress.forecast.unavailable"
 msgid "Forecast is unavailable while saved progress is loading."
 msgstr "Dự báo chưa sẵn sàng khi tiến độ đã lưu đang tải."
 
-#: src/features/webWords/WebWordsPage.tsx:333
+#: src/features/webWords/WebWordsPage.tsx:308
 msgctxt "webWords.actions.load-more"
 msgid "Load more"
 msgstr "Tải thêm"
 
-#: src/features/webWords/WebWordsPage.tsx:302
+#: src/features/webWords/WebWordsPage.tsx:277
 msgctxt "webWords.status.signed-out"
 msgid "Sign in to see words you saved from the web."
 msgstr "Đăng nhập để xem các từ bạn đã lưu từ web."
 
-#: src/features/webWords/WebWordsPage.tsx:202
+#: src/features/webWords/WebWordsPage.tsx:179
 msgctxt "webWords.tab.all"
 msgid "All {count}"
 msgstr "Tất cả {count}"
@@ -765,23 +765,23 @@ msgstr "{percent}%"
 msgid "exam-progress.set-target"
 msgstr "Đặt band mục tiêu"
 
-#: src/features/webWords/WebWordsPage.tsx:290
+#: src/features/webWords/WebWordsPage.tsx:265
 msgctxt "webWords.feedback.some-scheduled-normal-review"
 msgid "Other selected cards follow their normal review schedule."
 msgstr "Các thẻ được chọn khác theo lịch ôn tập thông thường."
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:81
+#: src/features/webWords/WebWordsPage.tsx:82
 msgid "flashcard.tier.learning"
 msgstr "Nở"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:82
+#: src/features/webWords/WebWordsPage.tsx:83
 msgid "flashcard.tier.mastered"
 msgstr "Sao"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:80
+#: src/features/webWords/WebWordsPage.tsx:81
 msgid "flashcard.tier.new"
 msgstr "Nụ"
 
@@ -790,7 +790,7 @@ msgctxt "progress.error.title"
 msgid "Progress needs attention"
 msgstr "Tiến độ cần được xử lý"
 
-#: src/features/webWords/WebWordsPage.tsx:239
+#: src/features/webWords/WebWordsPage.tsx:214
 msgctxt "webWords.filter.status.label"
 msgid "Status"
 msgstr "Trạng thái"
@@ -835,11 +835,6 @@ msgctxt "today-screen.one-learning-loop"
 msgid "One learning loop"
 msgstr "Một vòng học tập"
 
-#: src/features/webWords/WebWordsPage.tsx:199
-msgctxt "webWords.back.default"
-msgid "Back"
-msgstr "Quay lại"
-
 #: src/features/dailyLearning/TodayScreen.tsx:269
 msgctxt "today-screen.build-recall-with-the-next-scheduled-words"
 msgid "Build recall with the next scheduled words."
@@ -861,7 +856,7 @@ msgctxt "progress.subtitle.mastered"
 msgid "<0>{count}</0> mastered"
 msgstr "<0>{count}</0> từ đã thuộc"
 
-#: src/features/webWords/WebWordsPage.tsx:274
+#: src/features/webWords/WebWordsPage.tsx:249
 msgctxt "webWords.actions.add-selected-to-session"
 msgid "Add to today’s session"
 msgstr "Thêm vào buổi học hôm nay"
@@ -876,7 +871,7 @@ msgctxt "daily-learning-workspace.back-to-today"
 msgid "Back to Today"
 msgstr "Về Hôm nay"
 
-#: src/features/webWords/WebWordsPage.tsx:268
+#: src/features/webWords/WebWordsPage.tsx:243
 msgctxt "webWords.selection.count"
 msgid "{count, plural, one {# word selected} other {# words selected}}"
 msgstr "Đã chọn {count} từ"
@@ -891,43 +886,43 @@ msgctxt "progress.achievements.open"
 msgid "View achievements"
 msgstr "Xem thành tích"
 
-#: src/features/webWords/WebWordsPage.tsx:306
+#: src/features/webWords/WebWordsPage.tsx:281
 msgctxt "webWords.status.error"
 msgid "Web words could not load. Try again."
 msgstr "Không tải được từ trên web. Hãy thử lại."
 
-#: src/features/webWords/WebWordsPage.tsx:275
+#: src/features/webWords/WebWordsPage.tsx:250
 msgctxt "webWords.actions.add-all-to-session"
 msgid "Add all {count} to today’s session"
 msgstr "Thêm cả {count} từ vào buổi học hôm nay"
 
-#: src/features/webWords/WebWordsPage.tsx:313
+#: src/features/webWords/WebWordsPage.tsx:288
 msgctxt "webWords.status.empty.description"
 msgid "Save a word while reading on the web, and it will show up here."
 msgstr "Lưu một từ khi đọc trên web, nó sẽ xuất hiện ở đây."
 
-#: src/features/webWords/WebWordsPage.tsx:195
+#: src/features/webWords/WebWordsPage.tsx:172
 msgctxt "webWords.back.library"
 msgid "Vocabulary"
 msgstr "Từ vựng"
 
-#: src/features/webWords/WebWordsPage.tsx:287
+#: src/features/webWords/WebWordsPage.tsx:262
 msgctxt "webWords.feedback.added-partial"
 msgid "Added the words that fit today; the rest are queued for a later session."
 msgstr "Đã thêm các từ phù hợp hôm nay; các từ còn lại được xếp vào phiên sau."
 
-#: src/features/webWords/WebWordsPage.tsx:90
-#: src/features/webWords/WebWordsPage.tsx:205
+#: src/features/webWords/WebWordsPage.tsx:91
+#: src/features/webWords/WebWordsPage.tsx:182
 msgctxt "webWords.chip.known"
 msgid "Known"
 msgstr "Đã thuộc"
 
-#: src/features/webWords/WebWordsPage.tsx:286
+#: src/features/webWords/WebWordsPage.tsx:261
 msgctxt "webWords.feedback.added"
 msgid "Added to today's new words."
 msgstr "Đã thêm vào từ mới của hôm nay."
 
-#: src/features/webWords/WebWordsPage.tsx:227
+#: src/features/webWords/WebWordsPage.tsx:202
 msgctxt "webWords.page.description"
 msgid "Saved with the SonFlash extension — each one keeps the sentence you found it in."
 msgstr "Lưu bằng tiện ích SonFlash — mỗi từ giữ lại câu bạn đã gặp nó."
@@ -942,7 +937,7 @@ msgctxt "today-screen.communicate"
 msgid "Communicate"
 msgstr "Giao tiếp"
 
-#: src/features/webWords/WebWordsPage.tsx:196
+#: src/features/webWords/WebWordsPage.tsx:173
 msgctxt "webWords.back.today"
 msgid "Today"
 msgstr "Hôm nay"
@@ -952,7 +947,7 @@ msgctxt "progress.loading.title"
 msgid "Your saved progress"
 msgstr "Tiến độ đã lưu của bạn"
 
-#: src/features/webWords/WebWordsPage.tsx:125
+#: src/features/webWords/WebWordsPage.tsx:126
 msgctxt "webWords.group.open"
 msgid "Open {title} in a new tab"
 msgstr "Mở {title} trong thẻ mới"
@@ -1192,12 +1187,12 @@ msgctxt "daily-learning-workspace.immerse-listen"
 msgid "Immerse · Listen"
 msgstr "Đắm mình · Nghe"
 
-#: src/features/webWords/WebWordsPage.tsx:258
+#: src/features/webWords/WebWordsPage.tsx:233
 msgctxt "webWords.filter.day.label"
 msgid "Day"
 msgstr "Ngày"
 
-#: src/features/webWords/WebWordsPage.tsx:312
+#: src/features/webWords/WebWordsPage.tsx:287
 msgctxt "webWords.status.empty.title"
 msgid "No web words yet"
 msgstr "Chưa có từ nào từ web"
@@ -1416,7 +1411,7 @@ msgstr "Kế hoạch chưa khả dụng"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayScreen.tsx:392
-#: src/features/webWords/WebWordsPage.tsx:307
+#: src/features/webWords/WebWordsPage.tsx:282
 msgid "today.error.retry"
 msgstr "Thử lại"
 
@@ -2154,7 +2149,7 @@ msgstr "{count} từ lưu gần nhất · {inSession} trong buổi học hôm na
 msgid "today.words.web.title"
 msgstr "Từ bạn gặp trên web"
 
-#: src/features/webWords/WebWordsPage.tsx:121
+#: src/features/webWords/WebWordsPage.tsx:122
 msgctxt "webWords.group.word-count"
 msgid "{count, plural, one {# word} other {# words}}"
 msgstr "{count, plural, other {# từ}}"
@@ -2169,47 +2164,52 @@ msgctxt "today-screen.learn-immerse-communicate"
 msgid "Learn → Immerse → Communicate"
 msgstr "Học → Đắm mình → Giao tiếp"
 
-#: src/features/webWords/WebWordsPage.tsx:226
+#: src/features/webWords/WebWordsPage.tsx:201
 msgctxt "webWords.page.heading"
 msgid "<0>Words you met</0> <1>on the web</1>"
 msgstr "<0>Những từ bạn gặp</0> <1>trên web</1>"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:148
+#: src/features/webWords/WebWordsPage.tsx:149
 msgid "webWords.card.select-label"
 msgstr "Chọn {word}"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:260
+#: src/features/webWords/WebWordsPage.tsx:235
 msgid "webWords.filter.day.all"
 msgstr "Tất cả các ngày"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:253
+#: src/features/webWords/WebWordsPage.tsx:228
 msgid "webWords.filter.site.all"
 msgstr "Tất cả trang web"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:108
+#: src/features/webWords/WebWordsPage.tsx:109
 msgid "webWords.group.untitled"
 msgstr "Bản thu thập không tiêu đề"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:224
+#: src/features/webWords/WebWordsPage.tsx:199
 msgid "webWords.page.close-label"
 msgstr "Đóng từ trên web"
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:215
+#: src/features/webWords/WebWordsPage.tsx:190
 msgid "webWords.page.title"
 msgstr "Từ trên web"
+
+#: src/features/webWords/WebWordsPage.tsx:176
+msgctxt "webWords.back.paths"
+msgid "Paths"
+msgstr "Lộ trình"
 
 #: src/features/dailyLearning/ProgressWorkspace.tsx:76
 msgctxt "progress.forecast.today"
 msgid "Today"
 msgstr "Hôm nay"
 
-#: src/features/webWords/WebWordsPage.tsx:198
+#: src/features/webWords/WebWordsPage.tsx:175
 msgctxt "webWords.back.settings"
 msgid "Settings"
 msgstr "Cài đặt"
@@ -2244,18 +2244,18 @@ msgctxt "today-screen.adaptive-suggestion"
 msgid "Adaptive suggestion"
 msgstr "Gợi ý theo tiến độ"
 
-#: src/features/webWords/WebWordsPage.tsx:197
+#: src/features/webWords/WebWordsPage.tsx:174
 msgctxt "webWords.back.progress"
 msgid "Progress"
 msgstr "Tiến độ"
 
-#: src/features/webWords/WebWordsPage.tsx:289
+#: src/features/webWords/WebWordsPage.tsx:264
 msgctxt "webWords.feedback.scheduled-normal-review"
 msgid "These cards already follow their normal review schedule."
 msgstr "Những thẻ này đã theo lịch ôn tập thông thường."
 
-#: src/features/webWords/WebWordsPage.tsx:88
-#: src/features/webWords/WebWordsPage.tsx:203
+#: src/features/webWords/WebWordsPage.tsx:89
+#: src/features/webWords/WebWordsPage.tsx:180
 msgctxt "webWords.chip.new"
 msgid "New"
 msgstr "Mới"

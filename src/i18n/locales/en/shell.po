@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/components/shell/LanguageMenu.tsx:29
+msgctxt "shell.language.settings"
+msgid "Language & course settings"
+msgstr "Language & course settings"
+
 #: src/components/shell/LibraryManagementMenu.tsx:327
 msgctxt "shell.menu.card-style-standard"
 msgid "Card style: Standard"
@@ -23,7 +28,7 @@ msgctxt "onboarding.goal.heading"
 msgid "Have an exam or <0>goal in mind?</0>"
 msgstr "Have an exam or <0>goal in mind?</0>"
 
-#: src/components/shell/DesktopNavigation.tsx:81
+#: src/components/shell/DesktopNavigation.tsx:85
 #: src/features/profileCompletion/ProfileCompletionGate.tsx:80
 msgctxt "shell.brand.mark"
 msgid "S"
@@ -65,7 +70,7 @@ msgctxt "onboarding.pace.option"
 msgid "{count} cards / day"
 msgstr "{count} cards / day"
 
-#: src/app/AppViewStage.tsx:111
+#: src/app/AppViewStage.tsx:121
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr "Preparing today’s learning plan…"
@@ -228,7 +233,7 @@ msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr "Skip for now"
 
-#: src/app/AppViewStage.tsx:119
+#: src/app/AppViewStage.tsx:129
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr "Preparing appearance settings…"
@@ -490,8 +495,8 @@ msgctxt "onboarding.aha.create"
 msgid "Add 5 starter cards"
 msgstr "Add 5 starter cards"
 
-#: src/components/shell/DesktopNavigation.tsx:67
-#: src/components/shell/FloatingMobileNav.tsx:15
+#: src/components/shell/DesktopNavigation.tsx:69
+#: src/components/shell/FloatingMobileNav.tsx:45
 msgctxt "shell.nav.collection"
 msgid "Collection"
 msgstr "Collection"
@@ -512,7 +517,7 @@ msgid "exam-band-picker.legend"
 msgstr "Target band"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:264
+#: src/app/AppRuntime.tsx:266
 msgid "extension.import.course-mismatch-confirm"
 msgstr "This word was saved for a different language than your active course. Switch to (or create) the matching course to save it?"
 
@@ -545,6 +550,11 @@ msgstr "Card style: Zen Glass"
 msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr "This link opens a preview. The recipient decides whether to add a separate copy."
+
+#: src/app/AppViewStage.tsx:130
+msgctxt "shell.loading.web-words"
+msgid "Preparing your web words…"
+msgstr "Preparing your web words…"
 
 #: src/features/onboarding/OnboardingJourney.tsx:363
 msgctxt "onboarding.aha.none-added"
@@ -588,7 +598,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Text practice"
 
-#: src/app/AppRuntime.tsx:587
+#: src/app/AppRuntime.tsx:589
 #: src/components/shell/CourseSwitcherControl.tsx:110
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -1131,7 +1141,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr "Create course"
 
-#: src/app/AppViewStage.tsx:103
+#: src/app/AppViewStage.tsx:113
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr "Preparing learning paths…"
@@ -1208,7 +1218,7 @@ msgstr "Account"
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:162
 #: src/components/shell/AppFeedback.tsx:177
-#: src/components/shell/DesktopNavigation.tsx:61
+#: src/components/shell/DesktopNavigation.tsx:63
 #: src/components/shell/LibraryManagementMenu.tsx:188
 #: src/components/shell/LibraryManagementMenu.tsx:203
 msgid "shell.feedback.connecting"
@@ -1261,7 +1271,7 @@ msgstr "Retry syncing your library"
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:157
-#: src/components/shell/DesktopNavigation.tsx:56
+#: src/components/shell/DesktopNavigation.tsx:58
 #: src/components/shell/LibraryManagementMenu.tsx:198
 msgid "shell.feedback.session-ended"
 msgstr "Session ended"
@@ -1296,7 +1306,7 @@ msgid "shell.heading.landing"
 msgstr "SonFlash — Smart Vocabulary Learning"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:13
+#: src/features/navigation/app-view-headings.ts:14
 msgid "shell.heading.language-drill"
 msgstr "Language drill"
 
@@ -1306,7 +1316,7 @@ msgid "shell.heading.library"
 msgstr "Vocabulary library"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:15
+#: src/features/navigation/app-view-headings.ts:16
 msgid "shell.heading.match"
 msgstr "Word match"
 
@@ -1316,7 +1326,7 @@ msgid "shell.heading.progress"
 msgstr "Learning progress"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:11
+#: src/features/navigation/app-view-headings.ts:12
 msgid "shell.heading.quiz"
 msgstr "Vocabulary quiz"
 
@@ -1326,22 +1336,22 @@ msgid "shell.heading.settings"
 msgstr "Settings and appearance"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:16
+#: src/features/navigation/app-view-headings.ts:17
 msgid "shell.heading.shadowing"
 msgstr "Shadowing practice"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:12
+#: src/features/navigation/app-view-headings.ts:13
 msgid "shell.heading.spelling"
 msgstr "Spelling practice"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:14
+#: src/features/navigation/app-view-headings.ts:15
 msgid "shell.heading.story"
 msgstr "Context story"
 
 #. js-lingui-explicit-id
-#: src/features/navigation/app-view-headings.ts:10
+#: src/features/navigation/app-view-headings.ts:11
 msgid "shell.heading.study"
 msgstr "Study session"
 
@@ -1351,28 +1361,33 @@ msgid "shell.heading.today"
 msgstr "Today learning plan"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LanguageMenu.tsx:26
+#: src/features/navigation/app-view-headings.ts:10
+msgid "shell.heading.web-words"
+msgstr "Words saved from the web"
+
+#. js-lingui-explicit-id
+#: src/components/shell/LanguageMenu.tsx:27
 msgid "shell.language.menu"
 msgstr "Language"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LanguageMenu.tsx:25
+#: src/components/shell/LanguageMenu.tsx:26
 msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:576
+#: src/app/AppRuntime.tsx:578
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:89
+#: src/components/shell/DesktopNavigation.tsx:93
 msgid "shell.level"
 msgstr "Level {level}, {xp} XP"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:89
-#: src/components/shell/DesktopNavigation.tsx:89
+#: src/components/shell/DesktopNavigation.tsx:93
+#: src/components/shell/DesktopNavigation.tsx:93
 msgid "shell.level.short"
 msgstr "Lv {level}"
 
@@ -1408,39 +1423,39 @@ msgid "shell.library-menu.zen-toggle-description"
 msgstr "Toggle between Standard Learning mode and Zen Minimalist Glass mode"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:66
-#: src/components/shell/DesktopNavigation.tsx:66
-#: src/components/shell/FloatingMobileNav.tsx:19
+#: src/components/shell/DesktopNavigation.tsx:68
+#: src/components/shell/DesktopNavigation.tsx:68
+#: src/components/shell/FloatingMobileNav.tsx:42
 msgid "shell.nav.paths"
 msgstr "Paths"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:68
-#: src/components/shell/DesktopNavigation.tsx:68
-#: src/components/shell/FloatingMobileNav.tsx:21
+#: src/components/shell/DesktopNavigation.tsx:70
+#: src/components/shell/DesktopNavigation.tsx:70
+#: src/components/shell/FloatingMobileNav.tsx:47
 msgid "shell.nav.progress"
 msgstr "Progress"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:65
-#: src/components/shell/DesktopNavigation.tsx:65
-#: src/components/shell/FloatingMobileNav.tsx:18
+#: src/components/shell/DesktopNavigation.tsx:67
+#: src/components/shell/DesktopNavigation.tsx:67
+#: src/components/shell/FloatingMobileNav.tsx:41
 msgid "shell.nav.today"
 msgstr "Today"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:67
-#: src/components/shell/FloatingMobileNav.tsx:16
+#: src/components/shell/DesktopNavigation.tsx:69
+#: src/components/shell/FloatingMobileNav.tsx:46
 msgid "shell.nav.vocabulary"
 msgstr "Vocabulary"
 
 #. js-lingui-explicit-id
-#: src/components/shell/FloatingMobileNav.tsx:23
+#: src/components/shell/FloatingMobileNav.tsx:49
 msgid "shell.navigation.mobile"
 msgstr "Mobile navigation"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:78
+#: src/components/shell/DesktopNavigation.tsx:82
 msgid "shell.navigation.primary"
 msgstr "Primary navigation"
 
@@ -1592,12 +1607,12 @@ msgid "shell.share.translation-unspecified"
 msgstr "Translation language unspecified"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:88
+#: src/components/shell/DesktopNavigation.tsx:92
 msgid "shell.streak"
 msgstr "{count} day streak"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:58
+#: src/components/shell/DesktopNavigation.tsx:60
 #: src/components/shell/LibraryManagementMenu.tsx:200
 #: src/components/shell/localized-sync-status.ts:20
 #: src/components/shell/localized-sync-status.ts:21
@@ -1610,7 +1625,7 @@ msgid "shell.sync.checking-detail"
 msgstr "Verifying your cloud session."
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:62
+#: src/components/shell/DesktopNavigation.tsx:64
 #: src/components/shell/LibraryManagementMenu.tsx:204
 msgid "shell.sync.device"
 msgstr "On this device"
@@ -1649,7 +1664,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Live cloud updates are unavailable. Retry when your connection improves."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:445
+#: src/app/AppRuntime.tsx:447
 msgid "shell.sync.retry-failed"
 msgstr "Sync could not finish. Your changes remain on this device. Try again."
 
@@ -1725,7 +1740,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr "Pick a time and SonFlash will remind you to review."
 
-#: src/app/AppRuntime.tsx:588
+#: src/app/AppRuntime.tsx:590
 #: src/components/shell/CourseSwitcherControl.tsx:112
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -1821,7 +1836,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/app/AppViewStage.tsx:118
+#: src/app/AppViewStage.tsx:128
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr "Preparing learning progress…"
@@ -1853,7 +1868,7 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Pick one language for now. You can add more from the course switcher."
 
-#: src/app/AppRuntime.tsx:590
+#: src/app/AppRuntime.tsx:592
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Preparing your courses…"
@@ -1899,7 +1914,7 @@ msgid "Manage shared link"
 msgstr "Manage shared link"
 
 #: src/app/AppDeferredViews.tsx:23
-#: src/app/AppRuntime.tsx:83
+#: src/app/AppRuntime.tsx:82
 msgctxt "shell.opening-dialog"
 msgid "Opening dialog"
 msgstr "Opening dialog"

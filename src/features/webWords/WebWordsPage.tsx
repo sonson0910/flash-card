@@ -1,10 +1,10 @@
-import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
+import { useLayoutEffect, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { Trans, useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { ExternalLink, Plus } from 'lucide-react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { displayCardDate } from '../library/libraryPresentation';
-import { readAppViewMode } from '../navigation/useAppNavigation';
+import type { WebWordsReturnView } from '../navigation/useAppNavigation';
 import { useWebWordsPage } from './useWebWordsPage';
 import { getLibraryCardTier, type LibraryCardTier } from '../library/libraryViewModel';
 import type { WebWordsArticleGroup } from './webWordsGrouping';
@@ -14,12 +14,13 @@ export interface WebWordsPageProps {
   readonly ownerId: string | null;
   readonly targetLanguage: string | null;
   readonly translationLanguage: string | null;
+  /** Returns to `returnView`; the app runtime hosts the page as the `web-words` view. */
   readonly onClose: () => void;
-  /**
-   * `workspace` fills the app's learning workspace under the shell header;
-   * `screen` (the default) covers the whole viewport when there is no shell to sit in.
-   */
-  readonly placement?: 'workspace' | 'screen';
+  /** Where the back link leads; web words is a sub-view of Vocabulary. */
+  readonly returnView?: WebWordsReturnView;
+  /** Receives focus when the learner navigates to the view, like every other view heading. */
+  readonly headingRef?: RefObject<HTMLHeadingElement | null>;
+  readonly focusIntent?: number;
 }
 
 export const closeWebWordsWorkspaceOnEscape = (
@@ -160,43 +161,19 @@ function StateMessage({ children }: { readonly children: ReactNode }) {
   return <div className="ww-state crystal-chamfer">{children}</div>;
 }
 
-const currentBackView = () => (typeof window === 'undefined' ? null : readAppViewMode(window.location.href));
-
-export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onClose, placement = 'screen' }: WebWordsPageProps) {
+export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onClose, returnView = 'library', headingRef, focusIntent = 0 }: WebWordsPageProps) {
   const { state, actions } = useWebWordsPage({ ownerId, targetLanguage, translationLanguage });
   const { _ } = useLingui();
-  const sectionRef = useRef<HTMLElement | null>(null);
-  const openerRef = useRef<HTMLElement | null>(null);
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  useEffect(() => {
-    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const page = sectionRef.current;
-    const host = page?.parentElement ?? null;
-    // Whatever shares the page's container sits underneath it, so it leaves the tab order and the accessibility tree.
-    const covered = host && host !== document.getElementById('root')
-      ? Array.from(host.children).filter((element): element is HTMLElement => element instanceof HTMLElement && element !== page && !element.inert)
-      : [];
-    const appRoot = placement === 'screen' ? document.getElementById('root') : null;
-    const isPortaled = Boolean(appRoot && page && !appRoot.contains(page));
-    const wasInert = appRoot?.inert ?? false;
-    for (const element of covered) element.inert = true;
-    if (isPortaled && appRoot) appRoot.inert = true;
-    if (placement === 'workspace' && host) host.scrollTop = 0;
-    closeButtonRef.current?.focus();
-    return () => {
-      for (const element of covered) element.inert = false;
-      if (isPortaled && appRoot) appRoot.inert = wasInert;
-      if (openerRef.current?.isConnected) openerRef.current.focus();
-    };
-  }, [placement]);
+  useLayoutEffect(() => {
+    if (focusIntent > 0) headingRef?.current?.focus({ preventScroll: true });
+  }, [focusIntent, headingRef]);
 
-  const backView = currentBackView();
-  const backLabel = backView === 'library' ? _(msg({ context: 'webWords.back.library', message: 'Vocabulary' }))
-    : backView === 'today' ? _(msg({ context: 'webWords.back.today', message: 'Today' }))
-      : backView === 'progress' ? _(msg({ context: 'webWords.back.progress', message: 'Progress' }))
-        : backView === 'settings' ? _(msg({ context: 'webWords.back.settings', message: 'Settings' }))
-          : _(msg({ context: 'webWords.back.default', message: 'Back' }));
+  const backLabel = returnView === 'library' ? _(msg({ context: 'webWords.back.library', message: 'Vocabulary' }))
+    : returnView === 'today' ? _(msg({ context: 'webWords.back.today', message: 'Today' }))
+      : returnView === 'progress' ? _(msg({ context: 'webWords.back.progress', message: 'Progress' }))
+        : returnView === 'settings' ? _(msg({ context: 'webWords.back.settings', message: 'Settings' }))
+          : _(msg({ context: 'webWords.back.paths', message: 'Paths' }));
 
   const statusTabs: readonly { readonly value: LibraryCardTier | null; readonly label: ReactNode }[] = [
     { value: null, label: <Trans {...msg({ context: 'webWords.tab.all', message: 'All {count}' })} values={{ count: state.statusScopeCount }} /> },
@@ -209,9 +186,7 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
 
   return (
     <section
-      ref={sectionRef}
       data-web-words-page
-      data-placement={placement}
       aria-label={_(msg({ id: 'webWords.page.title', message: 'Web words' }))}
       onKeyDown={event => closeWebWordsWorkspaceOnEscape(event, onClose)}
       className="ww-page"
@@ -219,11 +194,11 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
       <div className="ww-inner">
         <header className="ww-head">
           <div className="ww-head__text">
-            <button ref={closeButtonRef} type="button" onClick={onClose} className="ww-back">
+            <button type="button" onClick={onClose} className="ww-back">
               <span aria-hidden="true">←</span> {backLabel}
               <span className="sr-only"> · <Trans {...msg({ id: 'webWords.page.close-label', message: 'Close web words' })} /></span>
             </button>
-            <h1 className="ww-title"><Trans {...msg({ context: 'webWords.page.heading', message: '<0>Words you met</0> <1>on the web</1>' })} components={{ 0: <span className="ww-title__lead" />, 1: <em /> }} /></h1>
+            <h1 ref={headingRef} tabIndex={-1} className="ww-title"><Trans {...msg({ context: 'webWords.page.heading', message: '<0>Words you met</0> <1>on the web</1>' })} components={{ 0: <span className="ww-title__lead" />, 1: <em /> }} /></h1>
             <p className="ww-subtitle"><Trans {...msg({ context: 'webWords.page.description', message: 'Saved with the SonFlash extension — each one keeps the sentence you found it in.' })} /></p>
           </div>
           <div className="ww-lumi" data-web-words-lumi>

@@ -18,7 +18,7 @@ msgctxt "settings.data.open"
 msgid "Open data & export"
 msgstr "Open data & export"
 
-#: src/features/settings/settings-screen.tsx:224
+#: src/features/settings/settings-screen.tsx:230
 msgctxt "settings.reminders.page-title"
 msgid "A nudge, <0>not a nag.</0>"
 msgstr "A nudge, <0>not a nag.</0>"
@@ -113,7 +113,7 @@ msgctxt "settings.course.ui-language"
 msgid "App language"
 msgstr "App language"
 
-#: src/features/settings/settings-screen.tsx:224
+#: src/features/settings/settings-screen.tsx:230
 msgctxt "settings.reminders.description"
 msgid "We remind you once a day, only when cards are waiting."
 msgstr "We remind you once a day, only when cards are waiting."
@@ -308,7 +308,7 @@ msgctxt "settings.reminders.loading"
 msgid "Loading reminders…"
 msgstr "Loading reminders…"
 
-#: src/features/settings/settings-screen.tsx:223
+#: src/features/settings/settings-screen.tsx:229
 msgctxt "settings.language.description"
 msgid "The app speaks one language. Each course teaches another."
 msgstr "The app speaks one language. Each course teaches another."
@@ -393,7 +393,7 @@ msgctxt "settings.reminders.sign-in"
 msgid "Sign in to set reminders."
 msgstr "Sign in to set reminders."
 
-#: src/features/settings/settings-screen.tsx:212
+#: src/features/settings/settings-screen.tsx:218
 msgctxt "settings.kicker"
 msgid "Settings"
 msgstr "Settings"
@@ -423,7 +423,7 @@ msgctxt "settings.reminders.save"
 msgid "Save reminders"
 msgstr "Save reminders"
 
-#: src/features/settings/settings-screen.tsx:223
+#: src/features/settings/settings-screen.tsx:229
 msgctxt "settings.language.title"
 msgid "Language & <0>courses</0>"
 msgstr "Language & <0>courses</0>"
@@ -515,7 +515,7 @@ msgid "settings.haptics.preview"
 msgstr "Try a haptic pulse"
 
 #. js-lingui-explicit-id
-#: src/features/settings/settings-screen.tsx:211
+#: src/features/settings/settings-screen.tsx:217
 msgid "settings.menu.label"
 msgstr "Settings sections"
 
@@ -651,7 +651,7 @@ msgstr "{count, plural, one {card ready for review} other {cards ready for revie
 
 #: src/features/settings/settings-screen.tsx:148
 #: src/features/settings/settings-screen.tsx:158
-#: src/features/settings/settings-screen.tsx:206
+#: src/features/settings/settings-screen.tsx:212
 msgctxt "settings.sounds.eyebrow"
 msgid "Sounds & haptics"
 msgstr "Sounds & haptics"

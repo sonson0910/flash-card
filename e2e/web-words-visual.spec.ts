@@ -144,7 +144,7 @@ for (const theme of themes) for (const viewport of viewports) {
       localStorage.setItem('sonflash_reduced_motion', 'true');
     }, theme);
     await blockExternalNetwork(page);
-    await signIn(page, '/?view=today&locale=en&webWords=1');
+    await signIn(page, '/?view=web-words&locale=en');
 
     const workspace = page.getByRole('region', { name: 'Web words' });
     await expect(workspace).toBeVisible();

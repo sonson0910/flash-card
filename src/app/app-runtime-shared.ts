@@ -164,16 +164,17 @@ export const studyShortcut = (event: {
   return event.key === 'ArrowLeft' ? 'previous' : null;
 };
 
+/** Views that render their own `<h1>` (and take the heading focus) skip the shell's screen-reader heading. */
 export const shouldShowViewHeading = (viewMode: string): boolean =>
-  !['catalog', 'today', 'progress', 'settings'].includes(viewMode);
+  !['catalog', 'today', 'progress', 'settings', 'web-words'].includes(viewMode);
 
-export const desktopNavigationActions = <T>(setViewMode: (view: T) => void) => ({
+export const desktopNavigationActions = <T, S>(setViewMode: (view: T) => void, openSettings: (section: S) => void) => ({
   onOpenLanding: () => setViewMode('landing' as T),
   onOpenToday: () => setViewMode('today' as T),
   onOpenLibrary: () => setViewMode('library' as T),
   onOpenCatalog: () => setViewMode('catalog' as T),
   onOpenProgress: () => setViewMode('progress' as T),
-  onOpenSettings: () => setViewMode('settings' as T),
+  onOpenSettings: openSettings,
 });
 
 export const viewStageNavigationActions = <T>(setViewMode: (view: T) => void) => ({

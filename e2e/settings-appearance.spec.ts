@@ -112,6 +112,35 @@ test('reminder schedule saves to the signed-in owner and loads after reload', as
   await expect(reminders.getByLabel('Sun', { exact: true })).not.toBeChecked();
 });
 
+test('settings sections live in the URL and follow browser history', async ({ page, signIn, seedCourseProfile }) => {
+  await seedCourseProfile();
+  await signIn(page, '/?view=settings&section=reminders&locale=en');
+  const sections = page.getByRole('navigation', { name: 'Settings sections' });
+  await expect(sections.getByRole('button', { name: 'Reminders' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('heading', { level: 1, name: 'A nudge, not a nag.' })).toBeVisible();
+
+  await sections.getByRole('button', { name: 'Sounds & haptics' }).click();
+  await expect(page).toHaveURL(/[?&]section=sounds(?:&|$)/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Sounds & haptics' })).toBeVisible();
+
+  await page.goBack();
+  await expect(page).toHaveURL(/[?&]section=reminders(?:&|$)/);
+  await expect(sections.getByRole('button', { name: 'Reminders' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('heading', { level: 1, name: 'A nudge, not a nag.' })).toBeFocused();
+  await page.goForward();
+  await expect(sections.getByRole('button', { name: 'Sounds & haptics' })).toHaveAttribute('aria-current', 'page');
+
+  // The shell's language and theme menus link straight to their sections.
+  await page.getByRole('button', { name: 'Choose language' }).click();
+  await page.getByRole('menuitem', { name: 'Language & course settings' }).click();
+  await expect(page).toHaveURL(/[?&]section=language(?:&|$)/);
+  await expect(sections.getByRole('button', { name: 'Language & courses' })).toHaveAttribute('aria-current', 'page');
+  await page.getByRole('button', { name: 'Choose theme' }).click();
+  await page.getByRole('menuitem', { name: 'More appearance options' }).click();
+  await expect(page).not.toHaveURL(/[?&]section=/);
+  await expect(page.getByRole('heading', { name: 'Make your study space yours' })).toBeVisible();
+});
+
 test('mobile shell opens settings and keeps the page inside 390px', async ({ page, seedCourseProfile, signIn }) => {
   await seedCourseProfile();
   await page.setViewportSize({ width: 390, height: 844 });

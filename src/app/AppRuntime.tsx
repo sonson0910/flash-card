@@ -76,7 +76,6 @@ import { OfflineReadiness } from '../features/offlineApp/OfflineReadiness';
 import type { ListenPracticeHandoff, ListenPracticeScope } from './AppViewStage';
 
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
-const WebWordsRouteHost = lazy(() => import('../features/webWords/WebWordsRouteHost').then(module => ({ default: module.WebWordsRouteHost })));
 const AnimeReveal = lazy(() => Promise.all([
   import('../features/rewards/AnimeReveal'), loadCatalog(getActiveUiLocale(), 'rewards'),
 ]).then(([module]) => ({ default: module.AnimeReveal })));
@@ -204,6 +203,9 @@ export default function AppRuntime({
   const {
     viewMode,
     setViewMode,
+    openSettings,
+    settingsSection,
+    webWordsReturnView,
     viewHeadingRef,
     viewFocusIntent,
     isDarkMode,
@@ -526,7 +528,7 @@ export default function AppRuntime({
         {...onboardingLibrary} />
 
       <DesktopNavigation
-        {...desktopNavigationActions(setViewMode)}
+        {...desktopNavigationActions(setViewMode, openSettings)}
         {...desktopCourseProps(
           courseScopeReady,
           libraryCountLabel,
@@ -602,6 +604,10 @@ export default function AppRuntime({
               isDarkMode={isDarkMode}
               headingRef={viewHeadingRef}
               focusIntent={viewFocusIntent}
+              settingsSection={settingsSection}
+              openSettings={openSettings}
+              webWordsReturnView={webWordsReturnView}
+              returnFromWebWords={() => setViewMode(webWordsReturnView)}
               openMorePractice={openPractice}
               onPracticePhrase={handlePracticePhrase}
               onListenScopeChange={handleListenScopeChange}
@@ -679,12 +685,6 @@ export default function AppRuntime({
             onExportLibrary={libraryActions.exportLibrary}
             onOpenProgress={() => setViewMode('progress')}
           />
-        </Suspense>
-      )}
-
-      {courseScopeReady && user && viewMode !== 'landing' && (
-        <Suspense fallback={null}>
-          <WebWordsRouteHost ownerId={user.uid} targetLanguage={targetLanguage} translationLanguage={languageProfile.target.code} />
         </Suspense>
       )}
 

@@ -1,10 +1,10 @@
 import { expect, test } from './fixtures/firebase-emulator';
 
 /**
- * The WebWords page is mounted in `src/app/AppRuntime.tsx` via the lazy
- * `WebWordsRouteHost` (backed by `useWebWordsRoute()`'s `?webWords=1` query
- * param, `src/features/webWords/webWordsRoute.ts`), so `?webWords=1` renders
- * the workspace below normally.
+ * Web words is a routed app view (`?view=web-words`) rendered by
+ * `src/app/AppViewStage.tsx`. It is a sub-view of Vocabulary: the shell
+ * highlights Vocabulary while it is open, and its back link returns to the
+ * view that opened it (Vocabulary when opened from a link).
  */
 
 const webCard = (overrides: Record<string, unknown>) => ({
@@ -119,9 +119,10 @@ test.describe('WebWords page', () => {
     await expect(strip).toContainText(/saved words? ·/);
 
     await strip.getByRole('button', { name: 'See all with their sentences' }).click();
-    await expect(page).toHaveURL(/webWords=1/);
+    await expect(page).toHaveURL(/[?&]view=web-words&from=today(?:&|$)/);
     const workspace = page.getByRole('region', { name: 'Web words' });
     await expect(workspace).toBeVisible();
+    await expect(page.locator('nav.app-navigation [aria-current="page"]')).toHaveText('Vocabulary');
 
     const group = workspace.getByText('A piece worth reading');
     await expect(group).toBeVisible();
@@ -130,6 +131,13 @@ test.describe('WebWords page', () => {
 
     await expect(workspace.getByText(/were not added to today's new-word stage/i)).toBeVisible();
     await workspace.getByRole('button', { name: 'Close web words' }).first().click();
+    await expect(workspace).toBeHidden();
+    await expect(page).toHaveURL(/[?&]view=today(?:&|$)/);
+
+    // Browser back reopens web words, and forward returns to Today.
+    await page.goBack();
+    await expect(workspace).toBeVisible();
+    await page.goForward();
     await expect(workspace).toBeHidden();
 
     await page.getByRole('button', { name: "Start today's session" }).click();
@@ -198,11 +206,11 @@ test.describe('WebWords page', () => {
         startedAt: new Date().toISOString(),
       }));
     }, { sessionKey: `sonflash:daily-session:${testUser.uid}`, ownerId: testUser.uid });
+    // Older links layered `webWords=1` on another view; they still open the web words view.
     await page.goto('/?view=today&lesson=session&webWords=1&locale=en');
-    await expect(page.getByRole('heading', { level: 1, name: 'Lesson' })).toBeVisible();
-
     const workspace = page.getByRole('region', { name: 'Web words' });
     await expect(workspace).toBeVisible();
+    await expect(workspace.getByRole('heading', { level: 1, name: 'Words you met on the web' })).toBeVisible();
     await workspace.getByRole('checkbox', { name: /lucid/i }).check();
     await workspace.getByRole('button', { name: 'Add to today' }).click();
     await expect(workspace.getByText("Added to today's new words.")).toBeVisible();
@@ -219,5 +227,24 @@ test.describe('WebWords page', () => {
     expect(pointerAfterRepeat?.freshLogicalIds).toHaveLength(2);
     await page.keyboard.press('Escape');
     await expect(workspace).toBeHidden();
+    await expect(page).toHaveURL(/[?&]view=today(?:&|$)/);
+    await expect(page).not.toHaveURL(/webWords=|lesson=/);
+  });
+
+  test('opens from a link as a sub-view of Vocabulary', async ({ page, seedCards, signIn, blockExternalNetwork }) => {
+    await seedCards([webCard({
+      id: 'linked-word', word: 'linked', translation: 'được liên kết',
+      source: { url: 'https://example.com/linked', title: 'Linked article', capturedAt: '2026-09-26T09:00:00.000Z' },
+    })]);
+    await blockExternalNetwork(page);
+    await signIn(page, '/?view=web-words&locale=en');
+
+    const workspace = page.getByRole('region', { name: 'Web words' });
+    await expect(workspace.getByText('Linked article')).toBeVisible();
+    const back = workspace.getByRole('button', { name: /Vocabulary/ });
+    await expect(back).toBeVisible();
+    await back.click();
+    await expect(workspace).toBeHidden();
+    await expect(page).toHaveURL(/[?&]view=library(?:&|$)/);
   });
 });
