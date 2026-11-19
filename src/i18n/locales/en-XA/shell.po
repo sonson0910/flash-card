@@ -460,6 +460,11 @@ msgid "Collection"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/examProgress/IeltsBandPicker.tsx:28
+msgid "exam-band-picker.legend"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/app/AppRuntime.tsx:256
 msgid "extension.import.course-mismatch-confirm"
 msgstr ""
@@ -560,6 +565,76 @@ msgstr ""
 #: src/features/courses/CourseGoalsPanel.tsx:29
 msgctxt "course.goal.no-detail"
 msgid "No level or date set"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:163
+msgid "latest-score-editor.clear"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:169
+msgid "latest-score-editor.cleared"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:162
+msgid "latest-score-editor.clearing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:123
+msgid "latest-score-editor.error.failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:118
+msgid "latest-score-editor.error.goal-missing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:122
+msgid "latest-score-editor.error.invalid"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:120
+msgid "latest-score-editor.error.rate-limited"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:140
+msgid "latest-score-editor.hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:136
+msgid "latest-score-editor.legend"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:129
+msgid "latest-score-editor.loading"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:157
+msgid "latest-score-editor.save"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:170
+msgid "latest-score-editor.saved"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:156
+msgid "latest-score-editor.saving"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/examProgress/LatestExamScoreEditor.tsx:144
+msgid "latest-score-editor.unreadable"
 msgstr ""
 
 #: src/features/onboarding/OnboardingJourney.tsx:243
