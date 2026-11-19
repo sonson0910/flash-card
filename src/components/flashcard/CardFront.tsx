@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { CheckCircle2, EyeOff, FolderOpen, FolderX, ImageOff, Mic, Sparkles, Volume2, X } from 'lucide-react';
+import { CheckCircle2, EyeOff, FolderOpen, FolderX, Mic, Sparkles, Volume2, X } from 'lucide-react';
 import type { Dispatch, MouseEvent, PointerEvent, RefObject, SetStateAction } from 'react';
 import { isCardDue } from '../../lib/srs';
 import type { CardData } from '../../types/card';
@@ -103,17 +103,13 @@ export function CardFront({
       className="flashcard-panel flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[var(--flashcard-radius,32px)]"
     >
       <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo tier={tier} />
-      <div data-card-art className="flashcard-art group/image relative shrink-0 overflow-hidden">
+      {!supportedImageUrl && <span data-card-glyph className="flashcard-art-glyph pointer-events-none absolute select-none" lang={language} aria-hidden="true">{Array.from(data.word.trim())[0] ?? ''}</span>}
+      <div data-card-art data-card-art-kind={supportedImageUrl ? 'image' : 'glyph'} className="flashcard-art group/image relative shrink-0 overflow-hidden">
         <div data-card-effect="blind-image" className={`flashcard-art-image h-full w-full transition-[filter] duration-500 ease-out ${isBlindMode ? 'scale-110 blur-2xl saturate-50' : ''}`} aria-hidden={isBlindMode}>
-          {supportedImageUrl ? <CardImage src={supportedImageUrl} alt={i18n._(msg({ id: 'flashcard.image.illustration', message: 'Illustration for {word}' }).id, { word: data.word })} priority={imagePriority} /> : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-[var(--sf-text-muted)]" role="img" aria-label={i18n._(msg({ id: 'flashcard.image.none', message: 'No image for {word}' }).id, { word: data.word })}>
-              <span className="liquid-control flex size-16 items-center justify-center rounded-full"><ImageOff size={28} strokeWidth={1.5} /></span>
-              <span className="text-sm font-semibold"><Trans {...msg({ context: 'flashcard.image.unavailable', message: 'Image cue unavailable' })} /></span>
-            </div>
-          )}
+          {supportedImageUrl && <CardImage src={supportedImageUrl} alt={i18n._(msg({ id: 'flashcard.image.illustration', message: 'Illustration for {word}' }).id, { word: data.word })} priority={imagePriority} />}
         </div>
-        <div className="flashcard-art-shade pointer-events-none absolute inset-0" aria-hidden="true" />
-        {isBlindMode && (
+        {supportedImageUrl && <div className="flashcard-art-shade pointer-events-none absolute inset-0" aria-hidden="true" />}
+        {isBlindMode && supportedImageUrl && (
           <div className="absolute inset-0 z-20 flex items-center justify-center px-6 text-center">
             <span className="inline-flex items-center gap-2 rounded-full bg-[var(--sf-surface)] px-3.5 py-2 text-sm font-semibold text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)]">
               <EyeOff size={16} aria-hidden="true" />
@@ -121,7 +117,7 @@ export function CardFront({
             </span>
           </div>
         )}
-        {look === 'aurora' && data.category && (
+        {(look === 'aurora' || (look === 'paper' && !supportedImageUrl)) && data.category && (
           <span className="flashcard-category-chip absolute left-[18px] top-[18px] z-20 inline-flex max-w-[calc(100%-9rem)] items-center gap-[7px]">
             <span className="size-1.5 shrink-0 rounded-full bg-[var(--flashcard-accent)]" aria-hidden="true" />
             <span lang={language} className="truncate">{data.category}</span>
@@ -134,7 +130,7 @@ export function CardFront({
           </span>
         )}
       </div>
-      {look === 'paper' && data.category && (
+      {look === 'paper' && supportedImageUrl && data.category && (
         <div className="flashcard-fig-caption">
           <span aria-hidden="true">{`${_(msg({ id: 'flashcard.figure-caption', message: 'fig.' }))} — `}</span>
           <span lang={language} className="min-w-0 break-words [overflow-wrap:anywhere]">{data.category}</span>
@@ -204,7 +200,7 @@ export function CardFront({
                 title={_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}
               >
                 {isPlayingAudio ? listenWaves : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>}
-                <span><Trans {...msg({ context: 'flashcard.listen', message: 'Listen' })} /></span>
+                <span className="flashcard-action-listen-label"><Trans {...msg({ context: 'flashcard.listen', message: 'Listen' })} /></span>
               </button>
             )}
             <button
@@ -230,7 +226,7 @@ export function CardFront({
               title={_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}
             >
               <Mic size={15} aria-hidden="true" />
-              <span><Trans {...msg({ context: 'flashcard.say-it', message: 'Say it' })} /></span>
+              <span className="flashcard-action-label"><Trans {...msg({ context: 'flashcard.say-it', message: 'Say it' })} /></span>
             </button>
             <button
               type="button"
@@ -241,8 +237,8 @@ export function CardFront({
               className="flashcard-action touch-manipulation flex min-h-11 items-center gap-[7px]"
               title={_(msg({ id: 'flashcard.quiz.title', message: 'Quick self-test quiz before revealing definition' }))}
             >
-              {look !== 'paper' && <Sparkles size={15} className="text-[var(--sf-second)]" aria-hidden="true" />}
-              <span><Trans {...msg({ context: 'flashcard.quiz-me', message: 'Quiz me' })} /></span>
+              <Sparkles size={15} className="flashcard-action-quiz-icon text-[var(--sf-second)]" aria-hidden="true" />
+              <span className="flashcard-action-label"><Trans {...msg({ context: 'flashcard.quiz-me', message: 'Quiz me' })} /></span>
             </button>
             <details className="group/tools relative ml-auto">
               <summary className="flashcard-action flashcard-action-more flex size-11 cursor-pointer list-none items-center justify-center [&::-webkit-details-marker]:hidden" aria-label={_(msg({ id: 'flashcard.more-tools', message: 'More card tools' }))}>

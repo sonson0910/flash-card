@@ -197,6 +197,14 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   --flashcard-surface: linear-gradient(180deg, color-mix(in srgb, var(--sf-surface) 55%, white), var(--sf-surface) 55%, color-mix(in srgb, var(--sf-surface) 90%, var(--sf-second)));
 }
 
+/* Narrow screens drop the glass blur, but each look keeps its own card
+   surface (the paper back stays ink) instead of the plain surface token. */
+@media not (forced-colors: active) {
+  .flashcard-shell[data-card-tier] .flashcard-panel:is(.flashcard-face, .flashcard-back)[data-card-look]:not(.zen-glass-slab) {
+    background: var(--flashcard-surface) padding-box, var(--flashcard-tier-rim) border-box;
+  }
+}
+
 /* Corner controls: star, picture hint, edit and delete. */
 .flashcard-chrome-button {
   border: 1px solid color-mix(in srgb, var(--sf-text) 16%, transparent);
@@ -321,6 +329,48 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   font-size: 12.5px;
   font-style: italic;
   color: var(--sf-text-muted);
+}
+
+/* Cards without a photo: a short header for the chip or ribbon, and the
+   first glyph of the headword as a faint watermark behind the text. */
+.flashcard-face[data-card-look] .flashcard-art[data-card-art-kind="glyph"] {
+  height: 72px;
+  margin: 0;
+  border-radius: 0;
+  clip-path: none;
+  overflow: visible;
+}
+
+.flashcard-face[data-card-look] .flashcard-art[data-card-art-kind="glyph"] .flashcard-art-image {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-art[data-card-art-kind="glyph"] .flashcard-category-chip {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: transparent;
+}
+
+.flashcard-face[data-card-look] .flashcard-art[data-card-art-kind="glyph"] ~ .flashcard-body {
+  margin-top: 0;
+}
+
+.flashcard-art-glyph {
+  z-index: 1;
+  top: 44px;
+  right: -0.08em;
+  color: color-mix(in srgb, var(--sf-text) 6%, transparent);
+  font-family: var(--sf-font-display);
+  font-size: 240px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.flashcard-face[data-card-look="crystal"] .flashcard-art-glyph {
+  font-style: italic;
+  font-weight: 900;
+  color: color-mix(in srgb, var(--sf-brand) 9%, transparent);
 }
 
 /* Crystal grade ribbon: the grade in white metal over the tier rim. */
@@ -649,6 +699,11 @@ html[data-motion="reduced"] .flashcard-hover-wings {
 /* Action row */
 .flashcard-actions {
   padding: 16px 0 18px;
+  container-type: inline-size;
+}
+
+.flashcard-face[data-card-look="paper"] .flashcard-action-quiz-icon {
+  display: none;
 }
 
 .flashcard-action {
@@ -869,6 +924,11 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
    The paper card turns over to an ink back, so its subtree re-points the
    text tokens at the ink palette (derived from the shell's own tokens).
    ------------------------------------------------------------------------ */
+
+/* Crystal faces are chamfered, never rounded: the clip-path draws the corners. */
+.flashcard-shell[data-card-look="crystal"] {
+  --flashcard-radius: 0px;
+}
 
 .flashcard-shell[data-card-look="paper"] {
   --flashcard-radius: 22px;
@@ -1516,6 +1576,11 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   color: color-mix(in srgb, var(--rating-color) 70%, var(--sf-text));
 }
 
+/* The small shortcut text on the tinted Again key needs full ink for AA contrast. */
+.review-grades[data-card-look="paper"] .review-grade[data-rating="again"] .review-grade-key {
+  opacity: 1;
+}
+
 .review-grades[data-card-look="paper"] .review-grade[data-rating="good"] {
   border-color: var(--sf-text);
   background: var(--sf-text);
@@ -1804,5 +1869,78 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 
   .review-grades[data-card-look="aurora"] .review-grades-row {
     padding: 4px;
+  }
+}
+
+/* Narrow card backs keep both tool labels whole. */
+@container (max-width: 320px) {
+  .flashcard-back-tools {
+    gap: 6px;
+  }
+
+  .flashcard-back[data-card-look] .flashcard-back-tool {
+    gap: 6px;
+    padding-inline: 8px;
+    font-size: 13px;
+    letter-spacing: 0;
+  }
+}
+
+/* Narrow docks keep every tool on one row: the labelled tools become icon
+   buttons and keep their text as the accessible name. */
+@container (max-width: 340px) {
+  .flashcard-face[data-card-look] .flashcard-action:has(> .flashcard-action-label) {
+    justify-content: center;
+    width: 44px;
+    padding: 0;
+  }
+
+  .flashcard-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .flashcard-face[data-card-look="paper"] .flashcard-action-quiz-icon {
+    display: block;
+  }
+
+  .flashcard-face[data-card-look] .flashcard-action-quiz-icon {
+    color: var(--sf-brand-text);
+  }
+}
+
+@container (max-width: 300px) {
+  .flashcard-face[data-card-look] .flashcard-action.flashcard-action-listen {
+    justify-content: center;
+    width: 44px;
+    padding: 0;
+  }
+
+  .flashcard-action-listen-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Small phones give the art less height so the dock stays above the footer. */
+@media (max-width: 379px) {
+  .flashcard-face[data-card-look="paper"] .flashcard-art {
+    height: 31%;
+  }
+
+  .flashcard-face[data-card-look="aurora"] .flashcard-art {
+    height: 42%;
+  }
+
+  .flashcard-face[data-card-look="crystal"] .flashcard-art {
+    height: 40%;
   }
 }
