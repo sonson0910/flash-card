@@ -1,8 +1,9 @@
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
-import { Timestamp } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { describe, expect, it, vi } from 'vitest';
 import { InputValidationError } from '../src/inputValidation.js';
 import { commitVerifiedGamification, equipOwnedFrame, prepareVerifiedGamification, reviewXpAwardId } from '../src/verifiedGamification.js';
+import { CREATE_CARD_XP, MATCH_WIN_XP, REVIEW_CARD_XP } from '../src/xp-rules.js';
 
 const snapshot = (exists: boolean, data: DocumentData = {}): DocumentSnapshot => ({ exists, data: () => data } as DocumentSnapshot);
 
@@ -262,5 +263,109 @@ describe('verified gamification', () => {
     await expect(equipOwnedFrame(test.database, 'owner', 'crimson-wing')).resolves.toEqual({ equippedFrameId: 'crimson-wing' });
     expect(test.reads).toEqual(['users/owner/profile/rewards']);
     expect(test.writes).toEqual([{ path: 'users/owner/profile/rewards', data: { equippedFrameId: 'crimson-wing' } }]);
+  });
+
+  describe('daily goal counters', () => {
+    const isDelete = (value: unknown) => value instanceof FieldValue && value.isEqual(FieldValue.delete());
+    const withoutDeletes = (value: unknown): unknown => typeof value === 'object' && value !== null && !(value instanceof FieldValue)
+      ? Object.fromEntries(Object.entries(value).filter(([, child]) => !isDelete(child)).map(([key, child]) => [key, withoutDeletes(child)]))
+      : value;
+    const counters = (studiedCards: number, matchWins: number) => ({ studiedCards, matchWins });
+    const stored = (dailyGoalsV1: unknown) => ({ 'users/owner/profile/stats': {
+      verifiedXp: 40, verifiedStreak: 1, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC', dailyGoalsV1,
+    } });
+
+    it('grants the XP amounts from the shared rules', async () => {
+      const review = await prepareVerifiedGamification(harness().database, harness().transaction, 'owner', action());
+      expect(review.outcome.xpAwarded).toBe(REVIEW_CARD_XP);
+      const create = await prepareVerifiedGamification(harness().database, harness().transaction, 'owner', action({ kind: 'create' }));
+      expect(create.outcome.xp).toBe(CREATE_CARD_XP);
+    });
+
+    it('starts coverage on the first verified action without another read or write', async () => {
+      const test = harness();
+      const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action());
+      expect(prepared.statsPatch.dailyGoalsV1).toEqual({ coverageStartedOn: '2026-03-08', days: { '2026-03-08': counters(1, 0) } });
+      commitVerifiedGamification(test.transaction, prepared);
+      expect(test.reads).toEqual(['users/owner/profile/stats', awardPath('word-focus', '2026-03-08')]);
+      expect(test.writes.map(write => write.path)).toEqual(['users/owner/profile/stats', 'users/owner/profile/xp_history', awardPath('word-focus', '2026-03-08')]);
+    });
+
+    it('counts a studied card only when the review earns XP', async () => {
+      const test = harness({
+        ...stored({ coverageStartedOn: '2026-03-01', days: { '2026-03-08': counters(3, 1) } }),
+        [awardPath('word-focus', '2026-03-08')]: {
+          schemaVersion: 1, ownerId: 'owner', cardId: 'word-focus', studyDay: '2026-03-08', xpAwarded: 2, expiresAt: new Date('2026-03-15T00:00:00.000Z'),
+        },
+      });
+      const repeat = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({ timeZone: 'UTC' }));
+      expect(repeat.hasXpAward).toBe(false);
+      expect(repeat.statsPatch.dailyGoalsV1).toEqual({ coverageStartedOn: '2026-03-01', days: { '2026-03-08': counters(3, 1) } });
+      const other = harness(stored({ coverageStartedOn: '2026-03-01', days: { '2026-03-08': counters(3, 1) } }));
+      const fresh = await prepareVerifiedGamification(other.database, other.transaction, 'owner', action({ timeZone: 'UTC', cardId: 'another-card' }));
+      expect(fresh.statsPatch.dailyGoalsV1).toMatchObject({ days: { '2026-03-08': counters(4, 1) } });
+    });
+
+    it('counts a completed Word Match but not quiz, spelling or card creation', async () => {
+      const results = await Promise.all((['match', 'quiz', 'spelling', 'create'] as const).map(async kind => {
+        const test = harness(stored({ coverageStartedOn: '2026-03-07', days: { '2026-03-07': counters(2, 0) } }));
+        const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({
+          kind, timeZone: 'UTC', resultXp: kind === 'match' ? MATCH_WIN_XP : 5,
+        }));
+        expect(test.reads).toEqual(['users/owner/profile/stats']);
+        return (prepared.statsPatch.dailyGoalsV1 as { days: Record<string, unknown> }).days['2026-03-08'];
+      }));
+      expect(results).toEqual([counters(0, 1), counters(0, 0), counters(0, 0), counters(0, 0)]);
+    });
+
+    it('keeps the newest eight study days and deletes older stored days under the merge write', async () => {
+      const days = Object.fromEntries(Array.from({ length: 8 }, (_, index) => [
+        new Date(Date.UTC(2026, 1, 28 + index)).toISOString().slice(0, 10), counters(index, 0),
+      ]));
+      const test = harness(stored({ coverageStartedOn: '2026-02-20', days }));
+      const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({ timeZone: 'UTC' }));
+      const patch = prepared.statsPatch.dailyGoalsV1 as { coverageStartedOn: string; days: Record<string, unknown> };
+      expect(patch.coverageStartedOn).toBe('2026-02-20');
+      expect(isDelete(patch.days['2026-02-28'])).toBe(true);
+      expect(Object.keys(patch.days).filter(day => !isDelete(patch.days[day])).sort()).toEqual([
+        '2026-03-01', '2026-03-02', '2026-03-03', '2026-03-04', '2026-03-05', '2026-03-06', '2026-03-07', '2026-03-08',
+      ]);
+      expect(patch.days['2026-03-07']).toEqual(counters(7, 0));
+      expect(patch.days['2026-03-08']).toEqual(counters(1, 0));
+    });
+
+    it('keeps a newer stored day when a retried transaction records an older day', async () => {
+      const test = harness(stored({ coverageStartedOn: '2026-03-08', days: { '2026-03-08': counters(1, 0) } }));
+      const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({
+        timeZone: 'UTC', receivedAt: new Date('2026-03-07T23:59:59.000Z'),
+      }));
+      expect(prepared.statsPatch.dailyGoalsV1).toEqual({
+        coverageStartedOn: '2026-03-08', days: { '2026-03-07': counters(1, 0), '2026-03-08': counters(1, 0) },
+      });
+    });
+
+    it.each([
+      ['a string', 'corrupt'],
+      ['an unknown key', { coverageStartedOn: '2026-03-01', days: {}, extra: true }],
+      ['a bad coverage day', { coverageStartedOn: '2026-02-30', days: {} }],
+      ['a negative counter', { coverageStartedOn: '2026-03-01', days: { '2026-03-07': counters(-1, 0) } }],
+      ['a fractional counter', { coverageStartedOn: '2026-03-01', days: { '2026-03-07': counters(1.5, 0) } }],
+      ['a bad day key', { coverageStartedOn: '2026-03-01', days: { yesterday: counters(1, 0) } }],
+      ['a counter with an extra field', { coverageStartedOn: '2026-03-01', days: { '2026-03-08': { ...counters(1, 0), bonus: 3 } } }],
+    ])('resets a stored map with %s instead of failing the action', async (_label, value) => {
+      const test = harness(stored(value));
+      const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({ timeZone: 'UTC' }));
+      const patch = prepared.statsPatch.dailyGoalsV1 as Record<string, unknown>;
+      expect(withoutDeletes(patch)).toEqual({ coverageStartedOn: '2026-03-08', days: { '2026-03-08': counters(1, 0) } });
+      // Every stored key the reset value lacks is deleted, so the merge write cannot keep it.
+      const storedKeys = (source: unknown, prefix = ''): string[] => typeof source === 'object' && source !== null
+        ? Object.entries(source).flatMap(([key, child]) => [`${prefix}${key}`, ...storedKeys(child, `${prefix}${key}.`)])
+        : [];
+      const kept = new Set(storedKeys(withoutDeletes(patch)));
+      const parentKept = (path: string) => !path.includes('.') || kept.has(path.slice(0, path.lastIndexOf('.')));
+      for (const path of storedKeys(value).filter(candidate => !kept.has(candidate) && parentKept(candidate))) {
+        expect(isDelete(path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown>)[key], patch))).toBe(true);
+      }
+    });
   });
 });

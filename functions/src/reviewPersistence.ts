@@ -2,6 +2,7 @@ import type { DocumentData, Firestore, Transaction } from 'firebase-admin/firest
 import { FieldValue } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { InputValidationError } from './inputValidation.js';
+import { REVIEW_CARD_XP } from './xp-rules.js';
 import { canonicalCard, serializeCardResponse, type CardRecord } from './cardPersistence.js';
 import { scheduleReviewTransition } from './reviewScheduler.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
@@ -277,11 +278,11 @@ const receiptResult = (value: unknown): ReviewPersistenceResult | null => {
   if (receipt.fingerprint === undefined || !receipt.result || typeof receipt.result !== 'object') return null;
   const result = receipt.result as Record<string, unknown>;
   if (result.applied !== true || typeof result.duplicate !== 'boolean' || !result.card || typeof result.card !== 'object') return null;
-  if (result.xpAwarded !== undefined && result.xpAwarded !== 0 && result.xpAwarded !== 2) return null;
+  if (result.xpAwarded !== undefined && result.xpAwarded !== 0 && result.xpAwarded !== REVIEW_CARD_XP) return null;
   return {
     applied: true,
     duplicate: true,
-    xpAwarded: result.xpAwarded === 2 ? 2 : 0,
+    xpAwarded: result.xpAwarded === REVIEW_CARD_XP ? REVIEW_CARD_XP : 0,
     card: result.card as CardRecord,
     ...(result.gamification === undefined ? {} : { gamification: result.gamification as VerifiedGamificationOutcome }),
     ...(result.ceremonyEvents === undefined ? {} : { ceremonyEvents: result.ceremonyEvents as ReviewCeremonyEvent[] }),

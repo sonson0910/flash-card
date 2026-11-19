@@ -1,4 +1,5 @@
 import type { Firestore } from 'firebase-admin/firestore';
+import { REVIEW_CARD_XP } from './xp-rules.js';
 
 export interface PilotConfig {
   freeMonthlyAiCards: number;
@@ -33,7 +34,7 @@ export const PILOT_CONFIG_DEFAULTS: Readonly<PilotConfig> = Object.freeze({
   displayPriceVnd: null,
   proDurationDays: 30,
   pilotTimezone: 'Asia/Ho_Chi_Minh',
-  reviewBaseXp: 2,
+  reviewBaseXp: REVIEW_CARD_XP,
   serverReviewXp: true,
   analyticsEnabled: true,
 });
