@@ -715,7 +715,7 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:99
 #: src/features/intake/CreateCardDialog.tsx:60
-#: src/features/intake/CreateCardDialog.tsx:1093
+#: src/features/intake/CreateCardDialog.tsx:1097
 #: src/features/library/AiDialogueModal.tsx:156
 #: src/features/library/LibraryDialogOverlays.tsx:116
 #: src/features/library/LibraryTools.tsx:320
@@ -725,9 +725,9 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:95
-#: src/features/intake/CreateCardDialog.tsx:1060
-#: src/features/intake/CreateCardDialog.tsx:1091
-#: src/features/intake/CreateCardDialog.tsx:1099
+#: src/features/intake/CreateCardDialog.tsx:1064
+#: src/features/intake/CreateCardDialog.tsx:1095
+#: src/features/intake/CreateCardDialog.tsx:1103
 msgid "library.create-card.add-manually"
 msgstr ""
 
@@ -770,13 +770,13 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:58
-#: src/features/intake/CreateCardDialog.tsx:887
+#: src/features/intake/CreateCardDialog.tsx:891
 msgid "library.create-card.description.ai"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:59
-#: src/features/intake/CreateCardDialog.tsx:887
+#: src/features/intake/CreateCardDialog.tsx:891
 msgid "library.create-card.description.manual"
 msgstr ""
 
@@ -792,7 +792,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:88
-#: src/features/intake/CreateCardDialog.tsx:1030
+#: src/features/intake/CreateCardDialog.tsx:1034
 msgid "library.create-card.empty-preview"
 msgstr ""
 
@@ -914,7 +914,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:102
-#: src/features/intake/CreateCardDialog.tsx:1102
+#: src/features/intake/CreateCardDialog.tsx:1106
 msgid "library.create-card.generate-preview"
 msgstr ""
 
@@ -925,19 +925,19 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:55
-#: src/features/intake/CreateCardDialog.tsx:884
+#: src/features/intake/CreateCardDialog.tsx:888
 msgid "library.create-card.kicker.ai"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:56
-#: src/features/intake/CreateCardDialog.tsx:884
+#: src/features/intake/CreateCardDialog.tsx:888
 msgid "library.create-card.kicker.manual"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:79
-#: src/features/intake/CreateCardDialog.tsx:1016
+#: src/features/intake/CreateCardDialog.tsx:1020
 msgid "library.create-card.manual-details"
 msgstr ""
 
@@ -954,7 +954,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:49
-#: src/features/intake/CreateCardDialog.tsx:965
+#: src/features/intake/CreateCardDialog.tsx:969
 msgid "library.create-card.part-of-speech"
 msgstr ""
 
@@ -1025,13 +1025,13 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:93
-#: src/features/intake/CreateCardDialog.tsx:1043
+#: src/features/intake/CreateCardDialog.tsx:1047
 msgid "library.create-card.ready-after-saving"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:97
-#: src/features/intake/CreateCardDialog.tsx:1100
+#: src/features/intake/CreateCardDialog.tsx:1104
 msgid "library.create-card.regenerate"
 msgstr ""
 
@@ -1042,13 +1042,13 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:84
-#: src/features/intake/CreateCardDialog.tsx:1000
+#: src/features/intake/CreateCardDialog.tsx:1004
 msgid "library.create-card.regenerate-hint"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:83
-#: src/features/intake/CreateCardDialog.tsx:1000
+#: src/features/intake/CreateCardDialog.tsx:1004
 msgid "library.create-card.regenerate-selected"
 msgstr ""
 
@@ -1059,7 +1059,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:96
-#: src/features/intake/CreateCardDialog.tsx:1098
+#: src/features/intake/CreateCardDialog.tsx:1102
 msgid "library.create-card.request-count"
 msgstr ""
 
@@ -1070,9 +1070,9 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:101
-#: src/features/intake/CreateCardDialog.tsx:1089
-#: src/features/intake/CreateCardDialog.tsx:1102
-#: src/features/intake/CreateCardDialog.tsx:1102
+#: src/features/intake/CreateCardDialog.tsx:1093
+#: src/features/intake/CreateCardDialog.tsx:1106
+#: src/features/intake/CreateCardDialog.tsx:1106
 msgid "library.create-card.save"
 msgstr ""
 
@@ -1098,7 +1098,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:117
-#: src/features/intake/CreateCardDialog.tsx:1088
+#: src/features/intake/CreateCardDialog.tsx:1092
 msgid "library.create-card.stream.cancel"
 msgstr ""
 
@@ -1138,7 +1138,7 @@ msgid "library.create-card.stream.note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:1066
+#: src/features/intake/CreateCardDialog.tsx:1070
 msgid "library.create-card.stream.ready"
 msgstr ""
 
@@ -1214,13 +1214,13 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:118
-#: src/features/intake/CreateCardDialog.tsx:1095
+#: src/features/intake/CreateCardDialog.tsx:1099
 msgid "library.create-card.stream.try-again"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:57
-#: src/features/intake/CreateCardDialog.tsx:885
+#: src/features/intake/CreateCardDialog.tsx:889
 msgid "library.create-card.title"
 msgstr ""
 
@@ -1242,7 +1242,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:81
-#: src/features/intake/CreateCardDialog.tsx:1017
+#: src/features/intake/CreateCardDialog.tsx:1021
 msgid "library.create-card.use-ai-draft"
 msgstr ""
 
@@ -1284,7 +1284,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:80
-#: src/features/intake/CreateCardDialog.tsx:1016
+#: src/features/intake/CreateCardDialog.tsx:1020
 msgid "library.create-card.your-card"
 msgstr ""
 
