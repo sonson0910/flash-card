@@ -163,6 +163,11 @@ msgctxt "library.deck.cards-kept"
 msgid "{count, plural, one {# card kept} other {# cards kept}}"
 msgstr "{count, plural, one {# card kept} other {# cards kept}}"
 
+#: src/features/library/LibraryOverview.tsx:16
+msgctxt "library.overview.deck-count"
+msgid "// {count, plural, one {# deck} other {# decks}}"
+msgstr "// {count, plural, one {# deck} other {# decks}}"
+
 #: src/features/library/LibraryTools.tsx:945
 msgctxt "library.deck.cancel"
 msgid "Cancel"
@@ -406,11 +411,6 @@ msgstr "Decks ({count, number})"
 msgctxt "library.insights.kicker"
 msgid "Stats · last 30 days"
 msgstr "Stats · last 30 days"
-
-#: src/features/library/LibraryOverview.tsx:16
-msgctxt "library.overview.across-decks"
-msgid "across {count} decks"
-msgstr "across {count} decks"
 
 #: src/features/cardEdit/EditCardDialog.tsx:572
 #: src/features/library/LibraryCardGrid.tsx:414
@@ -1956,6 +1956,11 @@ msgctxt "library.deck.dialog-kicker"
 msgid "Deck studio"
 msgstr "Deck studio"
 
+#: src/features/cardEdit/EditCardDialog.tsx:517
+msgctxt "library.edit-card.contract-note"
+msgid "Part of speech, deck, bookmark, tags and difficulty cannot be changed here yet."
+msgstr "Part of speech, deck, bookmark, tags and difficulty cannot be changed here yet."
+
 #: src/features/library/LibraryCardGrid.tsx:332
 msgctxt "library.grid.share"
 msgid "Share"
@@ -2011,11 +2016,6 @@ msgstr "Due"
 msgctxt "library.grid.generating"
 msgid "Creating new flashcard with AI…"
 msgstr "Creating new flashcard with AI…"
-
-#: src/features/library/LibraryOverview.tsx:16
-msgctxt "library.overview.deck-count"
-msgid "// {count} decks"
-msgstr "// {count} decks"
 
 #: src/features/library/LibraryTools.tsx:193
 msgctxt "library.import.failure-empty"
@@ -2141,11 +2141,6 @@ msgstr "No category data yet."
 msgctxt "library.delete.confirm"
 msgid "Delete card"
 msgstr "Delete card"
-
-#: src/features/cardEdit/EditCardDialog.tsx:517
-msgctxt "library.edit-card.contract-note"
-msgid "A published sense's part of speech, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available."
-msgstr "A published sense's part of speech, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available."
 
 #: src/features/library/LibraryDialogOverlays.tsx:132
 msgctxt "library.deck.creation-name-label"
@@ -2431,3 +2426,8 @@ msgstr "Card details"
 msgctxt "library.import.kicker"
 msgid "Import"
 msgstr "Import"
+
+#: src/features/library/LibraryOverview.tsx:16
+msgctxt "library.overview.across-decks"
+msgid "across {count, plural, one {# deck} other {# decks}}"
+msgstr "across {count, plural, one {# deck} other {# decks}}"

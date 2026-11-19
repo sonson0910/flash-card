@@ -5,7 +5,7 @@ const areas = {
     'src/components/AppErrorBoundary.tsx', 'src/components/AppOverlays.tsx',
     'src/features/library/libraryViewModel.ts',
     'src/components/RecoverableActionFeedback.tsx', 'src/components/ui/UndoToast.tsx',
-    'src/features/courses', 'src/features/onboarding',
+    'src/features/courses', 'src/features/onboarding', 'src/features/offlineApp/OfflineReadiness.tsx',
   ],
   components: [
     'src/components/*.tsx', 'src/components/flashcard', 'src/components/motion', 'src/components/study', 'src/components/ui',

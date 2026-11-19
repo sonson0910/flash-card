@@ -2,10 +2,19 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import {
   installOfflineAppShell,
-  OfflineReadiness,
+  OfflineReadiness as OfflineReadinessBanner,
+  type OfflineReadinessProps,
 } from './OfflineReadiness';
+
+i18n.load('en', {});
+i18n.activate('en');
+const OfflineReadiness = (props: OfflineReadinessProps) => (
+  <I18nProvider i18n={i18n}><OfflineReadinessBanner {...props} /></I18nProvider>
+);
 
 const activatedWorker = { state: 'activated' } as ServiceWorker;
 
@@ -143,6 +152,19 @@ describe('OfflineReadiness', () => {
     expect(html).toContain('app files, up to 4 MiB');
     expect(html).toContain('aria-live="polite"');
     expect(html).toContain('aria-busy="false"');
+  });
+
+  it('keeps the preparation action disabled and explains why while the browser is offline', () => {
+    vi.stubGlobal('navigator', { onLine: false });
+    try {
+      const html = renderToStaticMarkup(<OfflineReadiness production serviceWorker={{} as ServiceWorkerContainer} />);
+
+      expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Prepare offline<\/button>/);
+      expect(html).toContain('You are offline. Reconnect to prepare the app files.');
+      expect(html).not.toContain('sr-only');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('does not offer registration from a development build', () => {

@@ -163,6 +163,11 @@ msgctxt "library.deck.cards-kept"
 msgid "{count, plural, one {# card kept} other {# cards kept}}"
 msgstr ""
 
+#: src/features/library/LibraryOverview.tsx:16
+msgctxt "library.overview.deck-count"
+msgid "// {count, plural, one {# deck} other {# decks}}"
+msgstr ""
+
 #: src/features/library/LibraryTools.tsx:945
 msgctxt "library.deck.cancel"
 msgid "Cancel"
@@ -405,11 +410,6 @@ msgstr ""
 #: src/features/library/LibraryDialogOverlays.tsx:442
 msgctxt "library.insights.kicker"
 msgid "Stats · last 30 days"
-msgstr ""
-
-#: src/features/library/LibraryOverview.tsx:16
-msgctxt "library.overview.across-decks"
-msgid "across {count} decks"
 msgstr ""
 
 #: src/features/cardEdit/EditCardDialog.tsx:572
@@ -1956,6 +1956,11 @@ msgctxt "library.deck.dialog-kicker"
 msgid "Deck studio"
 msgstr ""
 
+#: src/features/cardEdit/EditCardDialog.tsx:517
+msgctxt "library.edit-card.contract-note"
+msgid "Part of speech, deck, bookmark, tags and difficulty cannot be changed here yet."
+msgstr ""
+
 #: src/features/library/LibraryCardGrid.tsx:332
 msgctxt "library.grid.share"
 msgid "Share"
@@ -2010,11 +2015,6 @@ msgstr ""
 #: src/features/library/LibraryCardGrid.tsx:347
 msgctxt "library.grid.generating"
 msgid "Creating new flashcard with AI…"
-msgstr ""
-
-#: src/features/library/LibraryOverview.tsx:16
-msgctxt "library.overview.deck-count"
-msgid "// {count} decks"
 msgstr ""
 
 #: src/features/library/LibraryTools.tsx:193
@@ -2140,11 +2140,6 @@ msgstr ""
 #: src/features/library/LibraryCardGrid.tsx:414
 msgctxt "library.delete.confirm"
 msgid "Delete card"
-msgstr ""
-
-#: src/features/cardEdit/EditCardDialog.tsx:517
-msgctxt "library.edit-card.contract-note"
-msgid "A published sense's part of speech, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available."
 msgstr ""
 
 #: src/features/library/LibraryDialogOverlays.tsx:132
@@ -2430,4 +2425,9 @@ msgstr ""
 #: src/features/importExport/SpreadsheetImportDialog.tsx:91
 msgctxt "library.import.kicker"
 msgid "Import"
+msgstr ""
+
+#: src/features/library/LibraryOverview.tsx:16
+msgctxt "library.overview.across-decks"
+msgid "across {count, plural, one {# deck} other {# decks}}"
 msgstr ""

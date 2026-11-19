@@ -1025,6 +1025,71 @@ msgid "shell.navigation.primary"
 msgstr "Primary navigation"
 
 #. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:305
+msgid "shell.offline.action.prepare"
+msgstr "Prepare offline"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:300
+msgid "shell.offline.action.preparing"
+msgstr "Preparing offline…"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:302
+msgid "shell.offline.action.ready"
+msgstr "Available offline"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:304
+msgid "shell.offline.action.update"
+msgstr "Update available"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:325
+msgid "shell.offline.heading"
+msgstr "Offline access"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:312
+msgid "shell.offline.needs-connection"
+msgstr "You are offline. Reconnect to prepare the app files."
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:327
+msgid "shell.offline.size"
+msgstr "app files, up to 4 MiB"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:23
+msgid "shell.offline.status.error"
+msgstr "Offline preparation failed. Check your connection or storage, then try again."
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:25
+msgid "shell.offline.status.idle"
+msgstr "Prepare app files for offline use when you are connected."
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:20
+msgid "shell.offline.status.preparing"
+msgstr "Preparing app files for offline use…"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:21
+msgid "shell.offline.status.ready"
+msgstr "Available offline."
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:24
+msgid "shell.offline.status.unsupported"
+msgstr "Offline preparation is available in a production build on a supported browser."
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:22
+msgid "shell.offline.status.update"
+msgstr "Update available. Reopen SonFlash after your study session."
+
+#. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:369
 msgid "shell.practice-menu.close"
 msgstr "Close practice menu"

@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import type { MessageDescriptor } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
+import { useLingui } from '@lingui/react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 const SERVICE_WORKER_SCRIPT = '/sw.js';
 const SERVICE_WORKER_SCOPE = '/';
@@ -12,16 +15,28 @@ export interface OfflineReadinessProps {
   readonly registration?: ServiceWorkerRegistration | null;
 }
 
-const statusMessage = (status: OfflineReadinessStatus): string => {
+const statusMessage = (status: OfflineReadinessStatus): MessageDescriptor => {
   switch (status) {
-    case 'preparing': return 'Preparing app files for offline use…';
-    case 'ready': return 'Available offline.';
-    case 'update': return 'Update available. Reopen SonFlash after your study session.';
-    case 'error': return 'Offline preparation failed. Check your connection or storage, then try again.';
-    case 'unsupported': return 'Offline preparation is available in a production build on a supported browser.';
-    default: return 'Prepare app files for offline use when you are connected.';
+    case 'preparing': return msg({ id: 'shell.offline.status.preparing', message: 'Preparing app files for offline use…' });
+    case 'ready': return msg({ id: 'shell.offline.status.ready', message: 'Available offline.' });
+    case 'update': return msg({ id: 'shell.offline.status.update', message: 'Update available. Reopen SonFlash after your study session.' });
+    case 'error': return msg({ id: 'shell.offline.status.error', message: 'Offline preparation failed. Check your connection or storage, then try again.' });
+    case 'unsupported': return msg({ id: 'shell.offline.status.unsupported', message: 'Offline preparation is available in a production build on a supported browser.' });
+    default: return msg({ id: 'shell.offline.status.idle', message: 'Prepare app files for offline use when you are connected.' });
   }
 };
+
+// The app files can only be fetched with a connection, so the banner follows the browser's network state.
+const subscribeToConnection = (notify: () => void): (() => void) => {
+  const target = typeof window === 'undefined' ? null : window;
+  target?.addEventListener?.('online', notify);
+  target?.addEventListener?.('offline', notify);
+  return () => {
+    target?.removeEventListener?.('online', notify);
+    target?.removeEventListener?.('offline', notify);
+  };
+};
+const readConnection = (): boolean => typeof navigator === 'undefined' || navigator.onLine !== false;
 
 const statusForRegistration = (registration: ServiceWorkerRegistration): OfflineReadinessStatus => (
   registration.waiting
@@ -125,7 +140,8 @@ export function OfflineReadiness({
         ? statusForRegistration(suppliedRegistration)
         : 'idle'
   ));
-  const [message, setMessage] = useState(() => statusMessage(status));
+  const { _ } = useLingui();
+  const online = useSyncExternalStore(subscribeToConnection, readConnection, readConnection);
   const preparingRef = useRef(false);
   const mountedRef = useRef(true);
   const preparationRegistrationRef = useRef<ServiceWorkerRegistration | null>(null);
@@ -149,7 +165,6 @@ export function OfflineReadiness({
     const serviceWorker = suppliedServiceWorker ?? globalThis.navigator?.serviceWorker;
     if (!serviceWorker) {
       setStatus('unsupported');
-      setMessage(statusMessage('unsupported'));
       return undefined;
     }
 
@@ -168,14 +183,12 @@ export function OfflineReadiness({
           preparationTimedOutRef.current = false;
           preparationRegistrationRef.current = null;
           setStatus('error');
-          setMessage(statusMessage('error'));
           return;
         }
         if (registration.waiting) {
           preparationTimedOutRef.current = false;
           preparationRegistrationRef.current = null;
           setStatus('update');
-          setMessage(statusMessage('update'));
           return;
         }
         if (candidateState === 'activated'
@@ -183,25 +196,21 @@ export function OfflineReadiness({
           preparationTimedOutRef.current = false;
           preparationRegistrationRef.current = null;
           setStatus('ready');
-          setMessage(statusMessage('ready'));
           return;
         }
         if (candidateState !== null
           || registration.active?.state === 'installing'
           || registration.active?.state === 'activating') {
           setStatus('preparing');
-          setMessage(statusMessage('preparing'));
           return;
         }
         preparationTimedOutRef.current = false;
         preparationRegistrationRef.current = null;
         setStatus('error');
-        setMessage(statusMessage('error'));
         return;
       }
       const nextStatus = statusForRegistration(registration);
       setStatus(nextStatus);
-      setMessage(statusMessage(nextStatus));
     };
     const handleInstallingStateChange = () => {
       syncStatus();
@@ -239,7 +248,6 @@ export function OfflineReadiness({
     void ready.then(attach).catch(() => {
       if (!mounted) return;
       setStatus('error');
-      setMessage(statusMessage('error'));
     });
     serviceWorker.addEventListener('controllerchange', syncStatus);
 
@@ -254,18 +262,16 @@ export function OfflineReadiness({
   }, [production, suppliedRegistration, suppliedServiceWorker]);
 
   const handlePrepare = async () => {
-    if (!mountedRef.current || preparingRef.current || status === 'ready' || status === 'update') return;
+    if (!mountedRef.current || preparingRef.current || status === 'ready' || status === 'update' || !readConnection()) return;
     const serviceWorker = suppliedServiceWorker ?? globalThis.navigator?.serviceWorker;
     if (!production || !serviceWorker) {
       setStatus('unsupported');
-      setMessage(statusMessage('unsupported'));
       return;
     }
     preparingRef.current = true;
     preparationRegistrationRef.current = null;
     preparationTimedOutRef.current = false;
     setStatus('preparing');
-    setMessage(statusMessage('preparing'));
     try {
       const registration = await installOfflineAppShell(serviceWorker, READY_TIMEOUT_MS, nextRegistration => {
         preparationRegistrationRef.current = nextRegistration;
@@ -276,7 +282,6 @@ export function OfflineReadiness({
       preparationTimedOutRef.current = false;
       const nextStatus = registration.waiting ? 'update' : 'ready';
       setStatus(nextStatus);
-      setMessage(statusMessage(nextStatus));
     } catch {
       if (!mountedRef.current) return;
       if (preparationRegistrationRef.current !== null) {
@@ -285,21 +290,27 @@ export function OfflineReadiness({
         return;
       }
       setStatus('error');
-      setMessage(statusMessage('error'));
     } finally {
       preparingRef.current = false;
     }
   };
 
-  const actionLabel = status === 'ready'
-    ? 'Available offline'
-    : status === 'update'
-      ? 'Update available'
-      : 'Prepare offline';
-  const actionDisabled = status === 'preparing'
+  const needsConnection = !online && (status === 'idle' || status === 'error');
+  const actionLabel = status === 'preparing'
+    ? _(msg({ id: 'shell.offline.action.preparing', message: 'Preparing offline…' }))
+    : status === 'ready'
+      ? _(msg({ id: 'shell.offline.action.ready', message: 'Available offline' }))
+      : status === 'update'
+        ? _(msg({ id: 'shell.offline.action.update', message: 'Update available' }))
+        : _(msg({ id: 'shell.offline.action.prepare', message: 'Prepare offline' }));
+  const actionDisabled = needsConnection
+    || status === 'preparing'
     || status === 'ready'
     || status === 'update'
     || status === 'unsupported';
+  const message = needsConnection
+    ? _(msg({ id: 'shell.offline.needs-connection', message: 'You are offline. Reconnect to prepare the app files.' }))
+    : _(statusMessage(status));
 
   return (
     // One compact row: the banner stays available on every workspace view without
@@ -311,9 +322,9 @@ export function OfflineReadiness({
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 id="offline-readiness-heading" className="text-xs font-black uppercase tracking-[0.08em]">Offline access</h2>
+          <h2 id="offline-readiness-heading" className="text-xs font-black uppercase tracking-[0.08em]">{_(msg({ id: 'shell.offline.heading', message: 'Offline access' }))}</h2>
           {status === 'idle' || status === 'error' ? (
-            <p className="text-xs text-[var(--sf-text-muted)]">app files, up to 4 MiB</p>
+            <p className="text-xs text-[var(--sf-text-muted)]">{_(msg({ id: 'shell.offline.size', message: 'app files, up to 4 MiB' }))}</p>
           ) : null}
         </div>
         {status !== 'unsupported' ? (
@@ -323,12 +334,12 @@ export function OfflineReadiness({
             onClick={() => { void handlePrepare(); }}
             className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-[var(--sf-brand)] px-4 py-2 text-sm font-bold text-[var(--sf-on-brand)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-65"
           >
-            {status === 'preparing' ? 'Preparing offline…' : actionLabel}
+            {actionLabel}
           </button>
         ) : null}
       </div>
       {/* The idle hint repeats the heading and button, so it is announced but not shown. */}
-      <p role="status" aria-live="polite" aria-atomic="true" aria-busy={status === 'preparing'} className={status === 'idle' ? 'sr-only' : 'mt-1 text-xs text-[var(--sf-text-muted)]'}>
+      <p role="status" aria-live="polite" aria-atomic="true" aria-busy={status === 'preparing'} className={status === 'idle' && !needsConnection ? 'sr-only' : 'mt-1 text-xs text-[var(--sf-text-muted)]'}>
         {message}
       </p>
     </section>

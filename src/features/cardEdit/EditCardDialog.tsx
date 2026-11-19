@@ -514,7 +514,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                 </div>
 
                 <p data-edit-contract-note className={noteClass}>
-                  <Trans {...msg({ context: 'library.edit-card.contract-note', message: 'A published sense\'s part of speech, deck, bookmark, tags and difficulty stay unchanged in this sheet until their data contracts are available.' })} />
+                  <Trans {...msg({ context: 'library.edit-card.contract-note', message: 'Part of speech, deck, bookmark, tags and difficulty cannot be changed here yet.' })} />
                 </p>
                 {openedCard.source && (openedCard.source.url || openedCard.source.title) && (
                   <p data-edit-source-note className={noteClass}>

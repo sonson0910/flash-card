@@ -80,7 +80,11 @@ import { subscribeToActiveSessionNewStagePromotions } from './webWordsSessionPri
 const LessonScreen = lazy(() => import('./LessonScreen').then(module => ({ default: module.LessonScreen })));
 const PlacementScreen = lazy(() => import('./PlacementScreen').then(module => ({ default: module.PlacementScreen })));
 const SessionBridge = lazy(() => import('./SessionBridge').then(module => ({ default: module.SessionBridge })));
-const WordMatchView = lazy(() => import('../practice/WordMatchView').then(module => ({ default: module.WordMatchView })));
+// The match board's layout lives in the practice stylesheet, which the Today flow does not load on its own.
+const WordMatchView = lazy(() => Promise.all([
+  import('../practice/WordMatchView'),
+  import('../practice/practice-board.css'),
+]).then(([module]) => ({ default: module.WordMatchView })));
 const SessionRecapModal = lazy(() => Promise.all([
   import('../practice/SessionRecapModal'), loadCatalog(getActiveUiLocale(), 'practice'),
 ]).then(([module]) => ({ default: module.SessionRecapModal })));
@@ -1127,7 +1131,7 @@ export default function DailyLearningWorkspace({
     if (activePool.status === 'loading') model = { headingRef, status: 'loading', message: _(msg({ id: 'today.placement.preparing', message: 'Preparing placement evidence…' })) };
     else if (activePool.status === 'error') model = { headingRef, status: 'error', message: activePool.error };
     else if (check.status === 'insufficient') model = {
-      headingRef, status: 'insufficient', message: _(msg({ id: 'today.placement.insufficient', message: 'At least 6 unique words with CEFR evidence and answer choices are required.' })),
+      headingRef, status: 'insufficient', message: _(msg({ id: 'today.placement.insufficient', message: 'At least 6 unique words with a known level and answer choices are required.' })),
       eligibleCount: check.eligibleCount, requiredCount: check.requiredCount,
     };
     else if (placementResult?.status === 'complete') model = {

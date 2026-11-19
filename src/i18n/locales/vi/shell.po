@@ -1025,6 +1025,71 @@ msgid "shell.navigation.primary"
 msgstr "Điều hướng chính"
 
 #. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:305
+msgid "shell.offline.action.prepare"
+msgstr "Chuẩn bị offline"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:300
+msgid "shell.offline.action.preparing"
+msgstr "Đang chuẩn bị offline…"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:302
+msgid "shell.offline.action.ready"
+msgstr "Đã dùng được offline"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:304
+msgid "shell.offline.action.update"
+msgstr "Có bản cập nhật"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:325
+msgid "shell.offline.heading"
+msgstr "Truy cập offline"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:312
+msgid "shell.offline.needs-connection"
+msgstr "Bạn đang offline. Hãy kết nối lại để chuẩn bị tệp ứng dụng."
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:327
+msgid "shell.offline.size"
+msgstr "tệp ứng dụng, tối đa 4 MiB"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:23
+msgid "shell.offline.status.error"
+msgstr "Chuẩn bị offline thất bại. Hãy kiểm tra kết nối hoặc dung lượng lưu trữ rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:25
+msgid "shell.offline.status.idle"
+msgstr "Hãy chuẩn bị tệp ứng dụng để dùng offline khi bạn đang có kết nối."
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:20
+msgid "shell.offline.status.preparing"
+msgstr "Đang chuẩn bị tệp ứng dụng để dùng offline…"
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:21
+msgid "shell.offline.status.ready"
+msgstr "Đã dùng được offline."
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:24
+msgid "shell.offline.status.unsupported"
+msgstr "Chuẩn bị offline chỉ dùng được ở bản production trên trình duyệt được hỗ trợ."
+
+#. js-lingui-explicit-id
+#: src/features/offlineApp/OfflineReadiness.tsx:22
+msgid "shell.offline.status.update"
+msgstr "Có bản cập nhật. Hãy mở lại SonFlash sau buổi học."
+
+#. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:369
 msgid "shell.practice-menu.close"
 msgstr "Đóng menu luyện tập"
