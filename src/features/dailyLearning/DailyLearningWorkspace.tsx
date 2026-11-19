@@ -7,9 +7,7 @@ import type { LearningStateOutcome } from '../learning/learningStateController';
 import { getLibraryCardTier } from '../library/libraryViewModel';
 import type { SessionRecapPromotion } from '../practice/SessionRecapModal';
 import type { LanguageProfile } from '../language/languageProfile';
-import type { Firestore } from 'firebase/firestore';
 import { triggerHaptic } from '../../lib/haptics';
-import { db } from '../../lib/firebase';
 import { readyCourseSessionForOwner, useCourseSession } from '../courses/CourseGate';
 import { useVerifiedGamificationState, type VerifiedGamificationState } from '../gamification/verifiedGamificationClient';
 import { firebasePracticeSessionService, practiceTimeZone, type PracticeGamificationOutcome, type PracticeSessionChallenge } from '../practice/practiceSessionService';
@@ -18,6 +16,7 @@ import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { buildDailyLessonSteps, buildDailyPlan, logicalIdentity, type DailyPlan, type DailyPlanItem } from './dailyPlan';
 import { createDailyPracticePoolRuntime } from './dailyPracticePoolRuntime';
 import { createDailySessionController } from './dailySessionController';
+import { configuredTodayDatabase, type TodayDatabase } from './todayDatabase';
 import { readDailyLearningUrlState, type DailyLessonMode } from './dailyLearningUrl';
 import { normalizeCardWord } from '../../lib/cardIdentity';
 import { currentLessonStep } from './lessonReducer';
@@ -233,7 +232,7 @@ export interface DailyLearningWorkspaceProps {
   readonly studyXpHistory: readonly { readonly date: string; readonly XP: number }[];
   readonly rewardTimeZone?: string;
   /** Firestore for the reads Today and the recap make themselves; the configured client when absent. */
-  readonly database?: Firestore | null;
+  readonly database?: TodayDatabase;
   /** The verified library epoch; the recap's IELTS goal panel stays hidden without it. */
   readonly verifiedLibraryEpoch?: number | null;
   /** The app's verified gamification state; Today subscribes to the same documents itself when it is absent. */
@@ -437,7 +436,7 @@ export default function DailyLearningWorkspace({
   onListenScopeChange,
 }: DailyLearningWorkspaceProps) {
   const { _, i18n } = useLingui();
-  const firestore = database === undefined ? db : database;
+  const firestore = database === undefined ? configuredTodayDatabase() : database;
   // The Firestore SDK shares one listener per document, so this adds no reads when the app also listens.
   const ownGamification = useVerifiedGamificationState({ ownerId: gamification ? null : ownerId, database: gamification ? null : firestore });
   const verifiedGamification = gamification ?? ownGamification;
