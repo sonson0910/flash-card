@@ -292,6 +292,60 @@ describe('EditCardDialog', () => {
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
+  it('offers Unassigned and the profile decks, and keeps a deck missing from the list selectable with a note', () => {
+    const view = render({ card: { ...card, customDeck: 'Old deck' }, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), customDecks: ['IELTS', 'Work'] });
+    const select = findByProp(view.tree, 'data-edit-deck-select')!;
+    expect(select.props.value).toBe('Old deck');
+    const options = findAllByType(select, 'option');
+    expect(options.map(option => option.props?.value)).toEqual(['', 'IELTS', 'Work', 'Old deck']);
+    expect(options[0]!.props?.children).toBe('Unassigned');
+    expect(options[3]!.props?.children).toBe('{name} (not in your deck list)');
+  });
+
+  it('offers only Unassigned and the current deck when the host passes no deck list', () => {
+    const view = render({ card: { ...card, customDeck: 'IELTS' }, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+    const options = findAllByType(findByProp(view.tree, 'data-edit-deck-select')!, 'option');
+    expect(options.map(option => option.props?.value)).toEqual(['', 'IELTS']);
+    expect(options[1]!.props?.children).toBe('IELTS');
+  });
+
+  it('saves the deck and the star with the other fields in one patch, in both editor modes', async () => {
+    for (const context of [undefined, { kind: 'review' as const, current: 2, total: 9 }]) {
+      hooks.states = [];
+      const onSave = vi.fn(async (): Promise<LearningStateOutcome> =>
+        ({ status: 'published', result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } }));
+      const props = { card, open: true, onOpenChange: vi.fn(), onSave, customDecks: ['IELTS', 'Work'], context };
+      let view = render(props);
+      (findByProp(view.tree, 'data-edit-deck-select')!.props.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'Work' } });
+      view = render(props);
+      const star = findByProp(view.tree, 'data-edit-starred')!;
+      expect(star.props['aria-pressed']).toBe(false);
+      (star.props.onClick as () => void)();
+      (view.textareas[translationFieldIndex]!.props!.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'dẫn đầu' } });
+      view = render(props);
+      expect(findByProp(view.tree, 'data-edit-starred')!.props['aria-pressed']).toBe(true);
+
+      await view.submit({ preventDefault: vi.fn() });
+      expect(onSave).toHaveBeenCalledTimes(1);
+      expect(onSave).toHaveBeenCalledWith('card-1', { translation: 'dẫn đầu', customDeck: 'Work', bookmarked: true });
+    }
+  });
+
+  it('refuses to save a deck that was deleted while the editor was open', async () => {
+    const onSave = vi.fn();
+    const onOpenChange = vi.fn();
+    let view = render({ card, open: true, onOpenChange, onSave, customDecks: ['IELTS', 'Work'] });
+    (findByProp(view.tree, 'data-edit-deck-select')!.props.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'Work' } });
+    view = render({ card, open: true, onOpenChange, onSave, customDecks: ['IELTS'] });
+    expect(findAllByType(findByProp(view.tree, 'data-edit-deck-select')!, 'option').map(option => option.props?.value)).toEqual(['', 'IELTS', 'Work']);
+
+    await view.submit({ preventDefault: vi.fn() });
+    view = render({ card, open: true, onOpenChange, onSave, customDecks: ['IELTS'] });
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    expect(view.errorText).toBe('This deck no longer exists. Choose another deck.');
+  });
+
   it('treats an unsaved headword as dirty when Escape requests a close', () => {
     const onOpenChange = vi.fn();
     let view = render({ card, open: true, onOpenChange, onSave: vi.fn() });

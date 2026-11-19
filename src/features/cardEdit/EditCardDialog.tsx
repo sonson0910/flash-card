@@ -2,7 +2,7 @@ import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { AlertTriangle, Check, ImageOff, Loader2, Search, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, ImageOff, Loader2, Search, Star, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
@@ -22,6 +22,7 @@ import {
   createEditCardDraft,
   editCardPatch,
   EDIT_CARD_FIELDS,
+  EditCardDraftError,
   isEditCardDraftDirty,
   isSuccessfulEditCardSave,
   MAX_CATEGORY_LENGTH,
@@ -41,6 +42,11 @@ export interface EditCardDialogProps {
   context?: EditCardDialogContext;
   /** Adds "Upload" beside the photo search when the host has a file service for the learner. */
   imageUpload?: CardImageUploader;
+  /**
+   * The learner's live deck list, in profile order. Without it the Deck
+   * control offers only Unassigned and the card's current deck.
+   */
+  customDecks?: readonly string[];
 }
 
 /** Uploads a photo the learner picked and resolves with the URL to store on the card. */
@@ -56,7 +62,7 @@ export interface EditCardDialogContext {
   total: number;
 }
 
-type EditCardError = 'invalid-content' | 'save-failed';
+type EditCardError = 'invalid-content' | 'save-failed' | 'deck-missing';
 
 const fieldLabels = {
   translation: msg({ id: 'library.edit-card.translation', message: 'Translation' }),
@@ -93,7 +99,7 @@ function StressedHeadword({ word, phonetic, language }: { word: string; phonetic
   return <>{parts.before}<span className="edit-sheet-stress">{parts.stressed}</span>{parts.after}</>;
 }
 
-export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, context, imageUpload }: EditCardDialogProps) {
+export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, context, imageUpload, customDecks }: EditCardDialogProps) {
   const { _ } = useLingui();
   // The snapshot is intentionally stable while the sheet is open. A remote
   // update to a field the learner never touched therefore stays out of the
@@ -162,9 +168,12 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
   const wordDirty = wordDraft.trim() !== openedCard.word;
   const dirty = wordDirty || isEditCardDraftDirty(openedCard, draft);
   const previewCard = previewEditCard(openedCard, draft);
+  const patchOptions = customDecks ? { customDecks } : {};
   const errorMessage = error && _(error === 'save-failed'
     ? msg({ id: 'library.edit-card.save-failed', message: 'Your changes could not be saved. This card may have changed elsewhere. Try again.' })
-    : msg({ id: 'library.edit-card.invalid-content', message: 'Check the card content and try again.' }));
+    : error === 'deck-missing'
+      ? msg({ id: 'library.edit-card.deck-missing', message: 'This deck no longer exists. Choose another deck.' })
+      : msg({ id: 'library.edit-card.invalid-content', message: 'Check the card content and try again.' }));
   const wordErrorMessage = wordError && _(wordError === 'invalid'
     ? msg({ id: 'library.edit-card.word-too-long', message: 'Word is too long.' })
     : wordError === 'duplicate'
@@ -296,9 +305,9 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
     if (writing) return;
     let patch: Partial<CardData>;
     try {
-      patch = editCardPatch(openedCard, draft);
-    } catch {
-      setError('invalid-content');
+      patch = editCardPatch(openedCard, draft, patchOptions);
+    } catch (draftError) {
+      setError(draftError instanceof EditCardDraftError ? draftError.reason : 'invalid-content');
       return;
     }
     if (Object.keys(patch).length === 0 && !wordDirty) {
@@ -313,7 +322,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
         const renamed = await saveWord(true);
         if (!renamed) return;
         cardToSave = renamed;
-        patch = editCardPatch(cardToSave, draft);
+        patch = editCardPatch(cardToSave, draft, patchOptions);
       }
       if (Object.keys(patch).length === 0) {
         closeSheet(true);
@@ -356,10 +365,55 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
     typeof reviewCount === 'number' && reviewCount > 0 ? _({ ...msg({ id: 'library.edit-card.reviewed-count', message: '{count, plural, one {Reviewed # time} other {Reviewed # times}}' }), values: { count: reviewCount } }) : null,
   ].filter((fact): fact is string => Boolean(fact));
 
-  const updateDraft = (key: keyof EditCardDraft, value: string) => {
+  const updateDraft = <K extends keyof EditCardDraft>(key: K, value: EditCardDraft[K]) => {
     setDraft(previous => ({ ...previous, [key]: value }));
     setError(null);
   };
+
+  // Profile decks in profile order. A deck the card (or the draft) names that
+  // is no longer in the live list stays selectable under a note, so saving an
+  // unrelated field never moves the card out of it.
+  const openedDeck = openedCard.customDeck || '';
+  const deckOptions = [...(customDecks ?? [])];
+  const missingDecks = [openedDeck, draft.deck].filter((name, index, names) =>
+    Boolean(name) && !deckOptions.includes(name) && names.indexOf(name) === index);
+  const deckField = (
+    <label className="edit-sheet-field edit-sheet-field--deck">
+      <span className="edit-sheet-label"><Trans {...msg({ id: 'library.edit-card.deck', message: 'Deck' })} /></span>
+      <span className="edit-sheet-select">
+        <select
+          data-edit-deck-select
+          value={draft.deck}
+          onChange={event => updateDraft('deck', event.target.value)}
+          className="edit-sheet-input edit-sheet-select-input"
+        >
+          <option value="">{_(msg({ id: 'library.edit-card.deck-unassigned', message: 'Unassigned' }))}</option>
+          {deckOptions.map(name => <option key={name} value={name}>{name}</option>)}
+          {missingDecks.map(name => (
+            <option key={`missing:${name}`} value={name}>
+              {customDecks
+                ? _({ ...msg({ id: 'library.edit-card.deck-not-listed', message: '{name} (not in your deck list)' }), values: { name } })
+                : name}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={16} aria-hidden="true" className="edit-sheet-select-chevron" />
+      </span>
+    </label>
+  );
+
+  const starredToggle = (
+    <button
+      type="button"
+      data-edit-starred
+      aria-pressed={draft.starred}
+      onClick={() => updateDraft('starred', !draft.starred)}
+      className="edit-sheet-star"
+    >
+      <Star size={14} fill={draft.starred ? 'currentColor' : 'none'} aria-hidden="true" />
+      <Trans {...msg({ id: 'library.edit-card.starred', message: 'Starred' })} />
+    </button>
+  );
 
   const textField = (key: Exclude<EditableCardField, 'phonetic'>, rows = 1) => (
     <label key={key} className={`edit-sheet-field edit-sheet-field--${key}`}>
@@ -661,9 +715,13 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                     {textField('translation', 3)}
                     {textField('exampleSentence')}
                     {imageField}
+                    {deckField}
                     <div className="edit-sheet-pair">
                       {categoryField}
                       {partOfSpeechField}
+                    </div>
+                    <div className="edit-sheet-flags">
+                      {starredToggle}
                     </div>
                     <details className="edit-sheet-more">
                       <summary><Trans {...msg({ context: 'library.edit-card.more-fields', message: 'Definition, translations and memory hook' })} /></summary>
@@ -690,7 +748,11 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
                     {textField('exampleTranslation')}
                     {textField('mnemonic', 2)}
                     {imageField}
+                    {deckField}
                     {categoryField}
+                    <div className="edit-sheet-flags">
+                      {starredToggle}
+                    </div>
                   </div>
                 )}
                 {sourceNote}

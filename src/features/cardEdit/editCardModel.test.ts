@@ -6,6 +6,7 @@ import {
   canEditPartOfSpeech,
   createEditCardDraft,
   editCardPatch,
+  EditCardDraftError,
   isEditCardDraftDirty,
   isSuccessfulEditCardSave,
   previewEditCard,
@@ -174,6 +175,82 @@ describe('isEditCardDraftDirty and previewEditCard for the extended fields', () 
     expect(preview.partOfSpeech).toBe('noun');
     expect(preview.category).toBe('Business');
     expect(preview.imageUrl).toBe('https://images.pexels.com/new.jpg');
+  });
+});
+
+describe('deck and starred in the card draft', () => {
+  const decks = ['IELTS', 'Work'];
+
+  it('starts from the card deck and star, with Unassigned as an empty deck', () => {
+    expect(createEditCardDraft({ ...card, customDeck: 'IELTS', bookmarked: true })).toMatchObject({ deck: 'IELTS', starred: true });
+    expect(createEditCardDraft({ ...card, customDeck: null })).toMatchObject({ deck: '', starred: false });
+    expect(createEditCardDraft(card)).toMatchObject({ deck: '', starred: false });
+  });
+
+  it('patches the deck only when it changed and maps Unassigned to null', () => {
+    const openedCard = { ...card, customDeck: 'IELTS' };
+    const draft = createEditCardDraft(openedCard);
+    expect(editCardPatch(openedCard, draft, { customDecks: decks })).toEqual({});
+
+    draft.deck = 'Work';
+    expect(editCardPatch(openedCard, draft, { customDecks: decks })).toEqual({ customDeck: 'Work' });
+
+    draft.deck = '';
+    expect(editCardPatch(openedCard, draft, { customDecks: decks })).toEqual({ customDeck: null });
+  });
+
+  it('refuses a picked deck that left the live deck list before saving', () => {
+    const draft = createEditCardDraft(card);
+    draft.deck = 'Work';
+    let thrown: unknown;
+    try {
+      editCardPatch(card, draft, { customDecks: ['IELTS'] });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(EditCardDraftError);
+    expect((thrown as EditCardDraftError).reason).toBe('deck-missing');
+  });
+
+  it('keeps a deck deleted elsewhere when only another field changes', () => {
+    const openedCard = { ...card, customDeck: 'Old deck' };
+    const draft = createEditCardDraft(openedCard);
+    draft.translation = 'dẫn đầu';
+    expect(editCardPatch(openedCard, draft, { customDecks: decks })).toEqual({ translation: 'dẫn đầu' });
+  });
+
+  it('patches the star only when it flipped and never touches scheduling', () => {
+    const openedCard = {
+      ...card,
+      bookmarked: false,
+      difficulty: 'hard' as const,
+      fsrs: {
+        due: '2026-09-24', stability: 2, difficulty: 4, elapsedDays: 1,
+        scheduledDays: 2, learningSteps: 0, reps: 3, lapses: 0, state: 2,
+      },
+    };
+    const draft = createEditCardDraft(openedCard);
+    draft.starred = true;
+    draft.deck = 'IELTS';
+    const patch = editCardPatch(openedCard, draft, { customDecks: decks });
+    expect(patch).toEqual({ bookmarked: true, customDeck: 'IELTS' });
+    for (const field of ['fsrs', 'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'reviewHistory']) {
+      expect(patch).not.toHaveProperty(field);
+    }
+  });
+
+  it('marks deck and star changes dirty and previews them', () => {
+    const openedCard = { ...card, customDeck: 'IELTS', bookmarked: false };
+    const draft = createEditCardDraft(openedCard);
+    expect(isEditCardDraftDirty(openedCard, draft)).toBe(false);
+    draft.starred = true;
+    expect(isEditCardDraftDirty(openedCard, draft)).toBe(true);
+    draft.starred = false;
+    draft.deck = '';
+    expect(isEditCardDraftDirty(openedCard, draft)).toBe(true);
+
+    draft.starred = true;
+    expect(previewEditCard(openedCard, draft)).toMatchObject({ customDeck: null, bookmarked: true });
   });
 });
 

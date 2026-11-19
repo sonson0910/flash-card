@@ -1069,3 +1069,94 @@
   font-size: .75rem;
   font-weight: 600;
 }
+
+/* Deck: a native select with the theme's input frame and a chevron. */
+.edit-sheet-select {
+  position: relative;
+  display: block;
+}
+
+.edit-sheet-select-input {
+  appearance: none;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+.edit-sheet-select-chevron {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  color: var(--sf-text-muted);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+/* The learner's own flags on the card: difficulty label and Starred. */
+.edit-sheet-flags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+}
+
+.edit-sheet-grid > .edit-sheet-flags {
+  grid-column: 1 / -1;
+}
+
+.edit-sheet-star {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  border: 1px solid var(--es-input-border);
+  border-radius: 10px;
+  padding: 0 14px;
+  background: var(--es-input-bg);
+  color: var(--sf-text-muted);
+  font: inherit;
+  font-size: .8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+}
+
+.edit-sheet-star:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--sf-text) 35%, transparent);
+}
+
+.edit-sheet-star[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--sf-reward) 45%, transparent);
+  background: color-mix(in srgb, var(--sf-reward) 14%, var(--es-input-bg));
+  color: color-mix(in srgb, var(--sf-reward) 62%, var(--sf-text));
+}
+
+:root.dark .edit-sheet-star[aria-pressed="true"] {
+  color: var(--sf-reward);
+}
+
+.edit-sheet-star:focus-visible {
+  outline: 2px solid var(--es-focus);
+  outline-offset: 2px;
+}
+
+:root[data-theme-family="crystal"] .edit-sheet-star {
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* The chamfer clips anything drawn outside the box, so the ring sits inside. */
+:root[data-theme-family="crystal"] .edit-sheet-star:focus-visible {
+  outline-offset: -4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edit-sheet-star {
+    transition: none;
+  }
+}

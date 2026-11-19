@@ -1,5 +1,6 @@
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
+import { normalizeAssignedDeckName } from '../library/customDecks';
 
 export type EditableCardField =
   | 'translation'
@@ -22,7 +23,30 @@ export type EditCardDraft = Record<EditableCardField, string> & {
   category: string;
   imageUrl: string;
   imageSearchQuery: string;
+  /** Deck name; '' means Unassigned. */
+  deck: string;
+  starred: boolean;
 };
+
+export type EditCardDraftErrorReason = 'deck-missing';
+
+/** A draft that cannot be saved for a reason the editor explains to the learner. */
+export class EditCardDraftError extends Error {
+  constructor(readonly reason: EditCardDraftErrorReason) {
+    super(`The card draft cannot be saved: ${reason}.`);
+    this.name = 'EditCardDraftError';
+  }
+}
+
+export interface EditCardPatchOptions {
+  /**
+   * The learner's live deck list. A deck picked in the draft must still be in
+   * it when the draft is saved; leaving the card's own deck untouched never
+   * checks the list, so a deck deleted on another device does not block an
+   * unrelated edit.
+   */
+  customDecks?: readonly string[];
+}
 
 export const EDIT_CARD_FIELDS: ReadonlyArray<{ key: EditableCardField; label: string; maxLength: number }> = [
   { key: 'translation', label: 'Nghĩa tiếng Việt', maxLength: 256 },
@@ -58,9 +82,18 @@ export const createEditCardDraft = (card: CardData): EditCardDraft => ({
   category: card.category ?? '',
   imageUrl: card.imageUrl ?? '',
   imageSearchQuery: card.imageSearchQuery ?? '',
+  deck: normalizeAssignedDeckName(card.customDeck ?? null) ?? '',
+  starred: card.bookmarked === true,
 }) as EditCardDraft;
 
-export function editCardPatch(card: CardData, draft: EditCardDraft): Partial<CardData> {
+const cardDeck = (card: CardData) => normalizeAssignedDeckName(card.customDeck ?? null);
+const draftDeck = (draft: EditCardDraft) => normalizeAssignedDeckName(draft.deck);
+
+export function editCardPatch(
+  card: CardData,
+  draft: EditCardDraft,
+  { customDecks }: EditCardPatchOptions = {},
+): Partial<CardData> {
   const patch: Partial<CardData> = {};
   for (const { key, maxLength } of EDIT_CARD_FIELDS) {
     const value = draft[key].trim();
@@ -90,6 +123,12 @@ export function editCardPatch(card: CardData, draft: EditCardDraft): Partial<Car
     // never exposed, so no separate bound check is needed here.
     patch.imageSearchQuery = imageUrl ? draft.imageSearchQuery.trim() : '';
   }
+  const deck = draftDeck(draft);
+  if (deck !== cardDeck(card)) {
+    if (deck !== null && customDecks && !customDecks.includes(deck)) throw new EditCardDraftError('deck-missing');
+    patch.customDeck = deck;
+  }
+  if (draft.starred !== (card.bookmarked === true)) patch.bookmarked = draft.starred;
   return patch;
 }
 
@@ -104,7 +143,9 @@ export function isEditCardDraftDirty(card: CardData, draft: EditCardDraft): bool
   return EDIT_CARD_FIELDS.some(({ key }) => draft[key].trim() !== (card[key] ?? ''))
     || (canEditPartOfSpeech(card) && draft.partOfSpeech.trim() !== (card.partOfSpeech ?? ''))
     || draft.category.trim() !== (card.category ?? '')
-    || draft.imageUrl.trim() !== (card.imageUrl ?? '');
+    || draft.imageUrl.trim() !== (card.imageUrl ?? '')
+    || draftDeck(draft) !== cardDeck(card)
+    || draft.starred !== (card.bookmarked === true);
 }
 
 /**
@@ -118,6 +159,8 @@ export function previewEditCard(card: CardData, draft: EditCardDraft): CardData 
     ...(canEditPartOfSpeech(card) ? { partOfSpeech: draft.partOfSpeech } : {}),
     category: draft.category,
     imageUrl: draft.imageUrl || null,
+    customDeck: draftDeck(draft),
+    bookmarked: draft.starred,
   } as CardData;
 }
 
