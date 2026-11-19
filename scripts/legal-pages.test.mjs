@@ -57,6 +57,10 @@ describe('legal pages', () => {
     expect(vietnamese).toContain('<h2>Hồ sơ tài khoản và yêu cầu tuổi</h2>');
     expect(vietnamese).toContain('Máy chủ chỉ dùng năm sinh để kiểm tra yêu cầu từ 18 tuổi');
     expect(vietnamese).toContain('năm sinh không được lưu');
+    expect(vietnamese).toContain('ở lần đăng nhập kế tiếp nếu tài khoản có từ trước khi có bước này');
+    expect(vietnamese).toContain('Ngôn ngữ ứng dụng được áp dụng trên thiết bị nơi bạn hoàn tất bước này; tiếng mẹ đẻ là lựa chọn mặc định cho khóa học đầu tiên.');
+    expect(vietnamese).toContain('Thông tin đăng nhập Google và mọi dữ liệu đã tạo trước bước này vẫn được giữ cho đến khi bạn xóa tài khoản.');
+    expect(vietnamese).toContain('liên kết Dữ liệu tài khoản trên màn hình đó cho phép tải tệp JSON dữ liệu tài khoản hoặc xóa tài khoản');
     expect(english).toContain('<h1 id="privacy-en">Privacy</h1>');
     expect(english).toContain('<h2>Data processed</h2>');
     expect(english).toContain('<h2>Providers and processing locations</h2>');
@@ -67,6 +71,11 @@ describe('legal pages', () => {
     expect(english).toContain('<h2>Account profile and age requirement</h2>');
     expect(english).toContain('The server uses the birth year only to check the 18-or-older requirement');
     expect(english).toContain('it is not stored; the system keeps only the time account creation was paused');
+    expect(english).toContain('or at your next sign-in if your account existed before this step');
+    expect(english).toContain('The app language is applied on the device where you complete the step; the native language is the default for your first course.');
+    expect(english).toContain('Your Google sign-in details and anything created before the step remain until you delete the account.');
+    expect(english).toContain('the Account data link on that screen lets you download the JSON account-data export or delete the account');
+    expect(english).not.toContain('defaults for the interface and for new courses');
     expect(vietnamese).toContain('href="/terms.html">Điều khoản sử dụng</a>');
     expect(english).toContain('href="/terms.html">Terms of Use</a>');
     expect(vietnamese).toContain('href="/browser-extension-privacy.html">Quyền riêng tư của extension</a>');
