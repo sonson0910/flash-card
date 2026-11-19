@@ -8,12 +8,12 @@ import type { WebWordsPageState, WebWordsPageActions } from './useWebWordsPage';
 const mocks = vi.hoisted(() => ({ useWebWordsPage: vi.fn() }));
 vi.mock('./useWebWordsPage', () => ({ useWebWordsPage: mocks.useWebWordsPage }));
 
-import { closeWebWordsWorkspaceOnEscape, WebWordsPage } from './WebWordsPage';
+import { closeWebWordsWorkspaceOnEscape, splitContextAtWord, WebWordsPage } from './WebWordsPage';
 
 i18n.load('en', {});
 i18n.activate('en');
 
-const render = () => renderToStaticMarkup(<I18nProvider i18n={i18n}><WebWordsPage ownerId="owner-1" targetLanguage="en" translationLanguage="vi" onClose={vi.fn()} /></I18nProvider>);
+const render = (placement?: 'workspace' | 'screen') => renderToStaticMarkup(<I18nProvider i18n={i18n}><WebWordsPage ownerId="owner-1" targetLanguage="en" translationLanguage="vi" onClose={vi.fn()} placement={placement} /></I18nProvider>);
 
 const noopActions: WebWordsPageActions = {
   setSiteFilter: vi.fn(), setDayFilter: vi.fn(), setTierFilter: vi.fn(),
@@ -22,7 +22,7 @@ const noopActions: WebWordsPageActions = {
 
 const baseState: WebWordsPageState = {
   status: 'loading', groups: [], filters: { site: null, day: null, tier: null },
-  availableSites: [], availableDays: [], hasNext: false, isLoadingMore: false,
+  availableSites: [], availableDays: [], statusScopeCount: 0, hasNext: false, isLoadingMore: false,
   selectedCardIds: new Set(), addToTodayStatus: 'idle',
   addToTodayHasNormallyScheduledCards: false,
 };
@@ -120,9 +120,10 @@ describe('WebWordsPage', () => {
     });
 
     const html = render();
-    expect(html).toContain('The &lt;mark&gt;ephemeral&lt;/mark&gt; bloom lasted one morning.');
+    // The saved markup stays text; only the page's own highlight around the word becomes an element.
+    expect(html).toContain('The &lt;mark&gt;<mark class="ww-row__hit">ephemeral</mark>&lt;/mark&gt; bloom lasted one morning.');
     expect(html).not.toContain('<mark>ephemeral</mark>');
-    expect(html).toContain('ephemeral');
+    expect(html.match(/<mark\b/g)).toHaveLength(1);
     expect(html).not.toContain('Sentence unavailable');
   });
 
@@ -138,16 +139,44 @@ describe('WebWordsPage', () => {
     expect(html).toContain('Add to today');
   });
 
-  it('uses a full-screen route surface and discloses the loaded filtered count for Add all', () => {
+  it('covers the screen without a workspace, fills the workspace inside the shell, and discloses the loaded filtered count for Add all', () => {
     setState({
       status: 'ready',
       groups: [{ key: 'card:card-1', site: null, title: null, url: null, day: 'Today', cards: [webCard()] }],
+      statusScopeCount: 1,
     });
 
     const html = render();
-    expect(html).toContain('fixed inset-0');
+    expect(html).toContain('data-placement="screen"');
     expect(html).toContain('Add all 1 to today');
     expect(html).not.toContain('role="dialog"');
+    expect(render('workspace')).toContain('data-placement="workspace"');
+  });
+
+  it('filters by status with labelled tabs and keeps the site and day filters', () => {
+    setState({
+      status: 'ready',
+      groups: [{ key: 'card:card-1', site: 'example.com', title: 'A piece', url: null, day: 'Today', cards: [webCard()] }],
+      availableSites: ['example.com'], availableDays: ['Today'], statusScopeCount: 7,
+      filters: { site: null, day: null, tier: 'learning' },
+    });
+
+    const html = render();
+    expect(html).toContain('role="radiogroup" aria-label="Status"');
+    expect(html).toContain('All 7');
+    expect(html).toContain('data-checked="true"><input type="radio" class="sr-only" name="web-words-status" checked=""/><span class="ww-tab__face">Learning');
+    expect(html).toContain('>Site<');
+    expect(html).toContain('>Day<');
+    expect(html).toContain('Close web words');
+  });
+
+  it('marks the saved word inside its sentence, widening to the whole token, and never by guess', () => {
+    expect(splitContextAtWord('Engineers warned the embankments were temporary.', 'embankment'))
+      .toEqual(['Engineers warned the ', 'embankments', ' were temporary.']);
+    expect(splitContextAtWord('Unprecedented temperatures changed the currents.', 'unprecedented'))
+      .toEqual(['', 'Unprecedented', ' temperatures changed the currents.']);
+    expect(splitContextAtWord('The resilient community rebuilt the bridge.', 'scrutiny')).toBeNull();
+    expect(splitContextAtWord('오늘 결심을 했다.', '결심')).toEqual(['오늘 ', '결심', '을 했다.']);
   });
 
   it('does not promise future admission for deferred new-word outcomes', () => {

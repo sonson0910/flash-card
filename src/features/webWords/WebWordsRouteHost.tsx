@@ -1,6 +1,8 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
+import { LEARNING_WORKSPACE_ID } from '../../components/shell/SkipToContentLink';
+import { readAppViewMode } from '../navigation/useAppNavigation';
 import { useWebWordsRoute } from './webWordsRoute';
 
 // The page can open from any view, so it brings its own catalog instead of relying on Today's.
@@ -21,11 +23,32 @@ export interface WebWordsRouteHostProps {
 
 export function WebWordsRouteHost({ ownerId, targetLanguage, translationLanguage }: WebWordsRouteHostProps) {
   const route = useWebWordsRoute();
-  if (!route.isOpen) return null;
+  const { isOpen, dismiss } = route;
+  const view = readAppViewMode(window.location.href);
+  const openedOnViewRef = useRef<string | null>(null);
+
+  // The shell header stays usable while the page is open; moving to another view closes the page in place.
+  useEffect(() => {
+    if (!isOpen) {
+      openedOnViewRef.current = null;
+      return;
+    }
+    if (openedOnViewRef.current === null) openedOnViewRef.current = view;
+    else if (openedOnViewRef.current !== view) dismiss();
+  });
+
+  if (!isOpen) return null;
+  const workspace = document.getElementById(LEARNING_WORKSPACE_ID);
   return createPortal(
     <Suspense fallback={null}>
-      <WebWordsPage ownerId={ownerId} targetLanguage={targetLanguage} translationLanguage={translationLanguage} onClose={route.close} />
+      <WebWordsPage
+        ownerId={ownerId}
+        targetLanguage={targetLanguage}
+        translationLanguage={translationLanguage}
+        onClose={route.close}
+        placement={workspace ? 'workspace' : 'screen'}
+      />
     </Suspense>,
-    document.body,
+    workspace ?? document.body,
   );
 }

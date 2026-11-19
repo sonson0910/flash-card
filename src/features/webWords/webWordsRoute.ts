@@ -36,6 +36,19 @@ export function closeWebWordsRoute(): void {
   pushWebWordsParam(false);
 }
 
+/**
+ * Drops the param without a history entry, for when the learner has already
+ * navigated to another view: Back then returns to that view's previous page
+ * instead of reopening WebWords over it.
+ */
+export function dismissWebWordsRoute(): void {
+  if (typeof window === 'undefined') return;
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(WEB_WORDS_PARAM)) return;
+  url.searchParams.delete(WEB_WORDS_PARAM);
+  window.history.replaceState(window.history.state, '', `${url.pathname}?${url.searchParams.toString()}${url.hash}`);
+}
+
 export function isWebWordsRouteActive(): boolean {
   return readIsActive();
 }
@@ -44,6 +57,8 @@ export interface WebWordsRoute {
   readonly isOpen: boolean;
   readonly open: () => void;
   readonly close: () => void;
+  /** Closes the page in place, without adding a history entry. */
+  readonly dismiss: () => void;
 }
 
 /** Tracks the `?webWords=1` query param across browser navigation (back/forward, pushState from elsewhere). */
@@ -66,5 +81,10 @@ export function useWebWordsRoute(): WebWordsRoute {
     setIsOpen(false);
   }, []);
 
-  return { isOpen, open, close };
+  const dismiss = useCallback(() => {
+    dismissWebWordsRoute();
+    setIsOpen(false);
+  }, []);
+
+  return { isOpen, open, close, dismiss };
 }

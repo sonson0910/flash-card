@@ -26,6 +26,8 @@ export interface WebWordsPageState {
   readonly filters: WebWordsFilters;
   readonly availableSites: readonly string[];
   readonly availableDays: readonly string[];
+  /** Loaded web words that match the site and day filters, whatever their status: the "All" tab's count. */
+  readonly statusScopeCount: number;
   readonly hasNext: boolean;
   readonly isLoadingMore: boolean;
   readonly selectedCardIds: ReadonlySet<string>;
@@ -125,6 +127,12 @@ export function useWebWordsPage({ ownerId, targetLanguage, translationLanguage }
 
   const retry = useCallback(() => setReloadToken(token => token + 1), []);
 
+  const statusScopeItems = useMemo(() => items.filter(card => (
+    Boolean(card.source)
+    && (!filters.site || webWordsSiteFromUrl(card.source?.url) === filters.site)
+    && (!filters.day || webWordsDayFromCard(card) === filters.day)
+  )), [items, filters.site, filters.day]);
+
   const filteredItems = useMemo(() => items.filter(card => (
     (!filters.site || webWordsSiteFromUrl(card.source?.url) === filters.site)
     && (!filters.day || webWordsDayFromCard(card) === filters.day)
@@ -196,7 +204,7 @@ export function useWebWordsPage({ ownerId, targetLanguage, translationLanguage }
   }, [addCardsToToday, filteredItems]);
 
   return {
-    state: { status, groups, filters, availableSites, availableDays, hasNext, isLoadingMore, selectedCardIds, addToTodayStatus, addToTodayHasNormallyScheduledCards },
+    state: { status, groups, filters, availableSites, availableDays, statusScopeCount: statusScopeItems.length, hasNext, isLoadingMore, selectedCardIds, addToTodayStatus, addToTodayHasNormallyScheduledCards },
     actions: {
       setSiteFilter: site => setFilters(previous => ({ ...previous, site })),
       setDayFilter: day => setFilters(previous => ({ ...previous, day })),

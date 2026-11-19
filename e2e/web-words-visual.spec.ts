@@ -38,7 +38,7 @@ const webWordsStateFixturePlugin = (): Plugin => ({
       export function useWebWordsPage() {
         const status = new URLSearchParams(location.search).get('state') || 'loading';
         return { state: {
-          status, groups: [], filters: { site: null, day: null, tier: null }, availableSites: [], availableDays: [],
+          status, groups: [], filters: { site: null, day: null, tier: null }, availableSites: [], availableDays: [], statusScopeCount: 0,
           hasNext: false, isLoadingMore: false, selectedCardIds: new Set(), addToTodayStatus: 'idle',
         }, actions };
       }
@@ -148,7 +148,8 @@ for (const theme of themes) for (const viewport of viewports) {
 
     const workspace = page.getByRole('region', { name: 'Web words' });
     await expect(workspace).toBeVisible();
-    await expect(workspace.getByText('Words captured while reading the web.')).toBeVisible();
+    await expect(workspace.getByText('Saved with the SonFlash extension — each one keeps the sentence you found it in.')).toBeVisible();
+    await expect(workspace.getByRole('heading', { level: 1, name: 'Words you met on the web' })).toBeVisible();
     await expect(workspace.getByLabel('Site')).toBeVisible();
     await expect(workspace.getByLabel('Day')).toBeVisible();
     await expect(workspace.getByLabel('Status')).toBeVisible();
