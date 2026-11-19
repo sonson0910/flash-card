@@ -19,5 +19,18 @@
   color: var(--sf-on-brand);
 }
 
-:root { --font-display: Fraunces, Georgia, serif; --sf-font-display: Fraunces, Georgia, serif; --sf-button-radius: 999px; --sf-card-radius: 20px; --sf-chamfer: none; }
-:root[data-theme-family=crystal] { --font-display: Kanit, Nunito, sans-serif; --sf-font-display: Kanit, Nunito, sans-serif; --sf-button-radius: 0; --sf-card-radius: 0; --sf-chamfer: var(--nk-chamfer); }
+/* Theme fonts: display (headings), body (running text) and mono (labels, numbers). */
+:root {
+  --font-display: Fraunces, Georgia, serif;
+  --sf-font-display: Fraunces, Georgia, serif;
+  --sf-font-body: "Geist Variable", "Geist", "SF Pro Display", "Segoe UI", sans-serif;
+  --sf-font-mono: "Geist Mono", ui-monospace, monospace;
+  --sf-button-radius: 999px; --sf-card-radius: 20px; --sf-chamfer: none;
+}
+:root[data-theme-family=crystal] {
+  --font-display: Kanit, Nunito, sans-serif;
+  --sf-font-display: Kanit, Nunito, sans-serif;
+  --sf-font-body: Nunito, "Segoe UI", system-ui, sans-serif;
+  --sf-font-mono: "Geist Mono", ui-monospace, monospace;
+  --sf-button-radius: 0; --sf-card-radius: 0; --sf-chamfer: var(--nk-chamfer);
+}

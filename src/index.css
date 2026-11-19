@@ -39,11 +39,14 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Body and mono faces follow the theme's font tokens (src/styles/app-bootstrap.css): Geist for
+   classic, Nunito for Crystal. They stay emitted as variables because feature styles read them. */
 @theme {
-  --font-sans: "Geist Variable", "Geist", "SF Pro Display", "Segoe UI", sans-serif;
+  --font-sans: var(--sf-font-body);
+  --font-mono: var(--sf-font-mono);
 }
 
-/* `font-serif` is the theme's display face: Fraunces for classic, Kanit for Crystal. */
+/* `font-serif` and `font-display` are the theme's display face: Fraunces for classic, Kanit for Crystal. */
 @theme inline {
   --font-serif: var(--sf-font-display);
   --font-display: var(--sf-font-display);

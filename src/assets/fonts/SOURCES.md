@@ -5,6 +5,7 @@ These immutable files are self-hosted copies of official, redistributable font b
 | Family | Assets | Source | License |
 | --- | --- | --- | --- |
 | Fraunces | `fraunces/` | [Google Fonts Fraunces v38](https://fonts.gstatic.com/s/fraunces/v38/) | SIL Open Font License 1.1 |
+| Fraunces Italic | `fraunces/fraunces-italic-*` | [Fontsource Fraunces Variable v5.3.0](https://www.npmjs.com/package/@fontsource-variable/fraunces) `files/fraunces-*-opsz-italic.woff2`, built from Google Fonts Fraunces v38 (the upright files are byte-identical to that package's `opsz-normal` files) | SIL Open Font License 1.1 |
 | Kanit | `crystal/kanit-*` | [Google Fonts Kanit v17](https://fonts.gstatic.com/s/kanit/v17/) | SIL Open Font License 1.1 |
 | Nunito | `crystal/nunito-*` | [Google Fonts Nunito v32](https://fonts.gstatic.com/s/nunito/v32/) | SIL Open Font License 1.1 |
 | Geist Mono | `geist-mono/` | [Fontsource Geist Mono v5.2.8](https://www.npmjs.com/package/@fontsource-variable/geist-mono) | SIL Open Font License 1.1 |

@@ -17,6 +17,10 @@
   --sf-heat-0: rgb(29 26 22 / 0.06); --sf-heat-1: rgb(180 70 26 / 0.22); --sf-heat-2: rgb(180 70 26 / 0.45); --sf-heat-3: rgb(180 70 26 / 0.7); --sf-heat-4: #97400d;
   --sf-confetti-0: #b4461a; --sf-confetti-1: #337344; --sf-confetti-2: #b8862b; --sf-confetti-3: #1d1a16; --sf-confetti-4: #e8a075;
   --sf-rating-again: #c53637; --sf-rating-hard: #d3721e; --sf-rating-good: #337344; --sf-rating-easy: #8a5a0c;
+  --sf-text-tertiary: #71675a; --sf-second-text: #2c6a3d; --sf-card-front: #fffcf5;
+  --sf-metal: linear-gradient(180deg, #1d1a16, #1d1a16);
+  --sf-tier-bud: rgb(29 26 22 / 0.18); --sf-tier-bloom: #b4461a; --sf-tier-star: #b8862b;
+  --sf-book-terracotta: #9c3d17; --sf-book-ink: #23201b; --sf-book-ochre: #a4731f; --sf-book-moss: #2f5a3a; --sf-book-violet: #4a3d5e; --sf-book-teal: #1f5157; --sf-book-foil: #f4e2b0;
   --nk-chamfer: none; --nk-chamfer-sm: none; --nk-snap: cubic-bezier(0.16, 1, 0.3, 1); --nk-stars: none; --nk-wing-opacity: 0;
 }
 
@@ -40,5 +44,9 @@
   --sf-heat-0: rgb(255 255 255 / 0.05); --sf-heat-1: rgb(40 211 244 / 0.22); --sf-heat-2: rgb(40 211 244 / 0.45); --sf-heat-3: rgb(40 211 244 / 0.7); --sf-heat-4: #7ee6fa;
   --sf-confetti-0: #28d3f4; --sf-confetti-1: #7ee6fa; --sf-confetti-2: #966cd7; --sf-confetti-3: #f5ae39; --sf-confetti-4: #ffffff;
   --sf-rating-again: #ed5350; --sf-rating-hard: #f59145; --sf-rating-good: #75d079; --sf-rating-easy: #f7c46e;
+  --sf-text-tertiary: #7d8e98; --sf-second-text: #c9b3f0; --sf-card-front: linear-gradient(180deg, #0f2430, #0a1a22);
+  --sf-metal: linear-gradient(180deg, #f1f6f9, #f1f6f9);
+  --sf-tier-bud: rgb(255 255 255 / 0.14); --sf-tier-bloom: #28d3f4; --sf-tier-star: #f5ae39;
+  --sf-book-terracotta: rgb(237 83 80 / 0.4); --sf-book-ink: rgb(40 211 244 / 0.35); --sf-book-ochre: rgb(245 174 57 / 0.4); --sf-book-moss: rgb(117 208 121 / 0.3); --sf-book-violet: rgb(150 108 215 / 0.5); --sf-book-teal: rgb(40 211 244 / 0.45); --sf-book-foil: #f1f6f9;
   --nk-chamfer: none; --nk-chamfer-sm: none; --nk-snap: cubic-bezier(0.16, 1, 0.3, 1); --nk-stars: none; --nk-wing-opacity: 0;
 }
