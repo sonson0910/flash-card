@@ -9,7 +9,7 @@ import type { CardData } from '../../types/card';
 import { JapanesePitchContour } from '../../components/flashcard/ReadingToggle';
 import { useCourseSession } from '../courses/CourseGate';
 import { loadLanguagePack } from './registry';
-import { decomposeHangulSyllables } from './hangulRomanization';
+import { decomposeHangulSyllables, romanizeHangul } from './hangulRomanization';
 import {
   createLanguagePracticeDrill,
   composeHangulBlocks,
@@ -169,6 +169,9 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
     ? findHangulFinalCorrection(hangulAnswer, card.word) : null;
   const targetGraphemes = pack?.tokenization.segmentGraphemes(card.word) ?? [];
   const answerGraphemes = pack?.tokenization.segmentGraphemes(hangulAnswer) ?? [];
+  // The block the learner meant, spelled out jamo by jamo for the correction panel.
+  const expectedBlock = hangulCorrection
+    ? decomposeHangulSyllables(card.word).find((block, index) => block.block !== answerGraphemes[index]) : undefined;
   const progress = typeof currentIndex === 'number' && typeof total === 'number' && total > 0
     ? { current: Math.min(currentIndex + 1, total), total } : null;
   const packLabel = model.packId === 'ko' ? <Trans {...msg({ context: 'languagePractice.ko.pack', message: 'Korean pack · 한국어' })} />
@@ -269,19 +272,23 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
                 {Array.from({ length: Math.max(targetGraphemes.length, 1) }, (_, index) => {
                   const answer = answerGraphemes[index];
                   const parts = answer ? decomposeHangulSyllables(answer)[0]?.parts : undefined;
+                  const mismatch = Boolean(hangulCorrection && answer !== targetGraphemes[index]);
+                  const label = mismatch ? `→ ${targetGraphemes[index]}` : answer ? romanizeHangul(answer) : null;
                   return <div key={index}>
-                    <span className={answer ? 'language-practice-drill__hangul-filled' : undefined} data-hangul-mismatch={hangulCorrection && answer !== targetGraphemes[index] ? 'true' : undefined} style={hangulCorrection && answer !== targetGraphemes[index] ? { color: 'var(--sf-danger)', borderColor: 'var(--sf-danger)' } : undefined}>{answer ?? '□'}</span>
-                    {parts && <small>{parts.map(part => part.jamo).join(' + ')}</small>}
+                    <i className="language-practice-drill__hangul-label" data-hangul-fix={mismatch ? 'true' : undefined} aria-hidden="true">{label ?? ' '}</i>
+                    <span className={answer ? 'language-practice-drill__hangul-filled' : undefined} data-hangul-mismatch={mismatch ? 'true' : undefined}>{answer ?? '□'}</span>
+                    {parts && <small className="language-practice-drill__hangul-parts">{parts.map((part, partIndex) => <span key={partIndex}>{partIndex > 0 && <span className="language-practice-drill__hangul-plus"> + </span>}<b data-hangul-wrong={mismatch && partIndex === 2 && part.jamo === hangulCorrection?.typed ? 'true' : undefined}>{part.jamo}</b></span>)}</small>}
                   </div>;
                 })}
               </div>
+              <p className="language-practice-drill__hangul-caption"><Trans {...msg({ context: 'languagePractice.ko.block-formula', message: 'Each block = 초성 initial + 중성 vowel + 종성 final' })} /></p>
               {hangulAnswer && <p className="language-practice-drill__hangul-diagnostic"><span>{hangulJamo.split('').join(' + ')}</span> → <b>{hangulAnswer}</b></p>}
-              {hangulCorrection && <p role="status" className="language-practice-drill__hangul-diagnostic"><Trans {...msg({ context: 'languagePractice.ko.final-correction', message: 'Final consonant: {typed} makes a different word. Delete it and choose {expected}.' })} values={hangulCorrection} /></p>}
+              {hangulCorrection && <div role="status" className="language-practice-drill__hangul-diagnostic language-practice-drill__hangul-fix">{expectedBlock && <b lang="ko" aria-hidden="true">{expectedBlock.parts.map(part => part.jamo).join(' + ')} → {expectedBlock.block}</b>}<p><Trans {...msg({ context: 'languagePractice.ko.final-correction', message: 'Final consonant: {typed} makes a different word. Delete it and choose {expected}.' })} values={hangulCorrection} /></p></div>}
               <div className="language-practice-drill__hangul-keys">
                 <button type="button" aria-label="Shift" aria-pressed={hangulShift} onClick={() => setHangulShift(value => !value)} className="language-practice-drill__hangul-key">⇧<small>Shift</small></button>
                 {HANGUL_KEYS.map(key => {
                   const displayedKey = resolveOnScreenHangulKey(key, hangulShift);
-                  return <button key={key} type="button" onClick={() => { setHangulJamo(value => value + displayedKey); setHangulShift(false); }} className="language-practice-drill__hangul-key" style={displayedKey === hangulCorrection?.expected ? { color: 'var(--sf-success)', borderColor: 'var(--sf-success)' } : displayedKey === hangulCorrection?.typed ? { color: 'var(--sf-danger)', borderColor: 'var(--sf-danger)' } : undefined}>{displayedKey}<small>{hangulShift ? `⇧${HANGUL_KEY_LABEL[key]}` : HANGUL_KEY_LABEL[key]}</small></button>;
+                  return <button key={key} type="button" onClick={() => { setHangulJamo(value => value + displayedKey); setHangulShift(false); }} className="language-practice-drill__hangul-key" data-hangul-key={displayedKey === hangulCorrection?.expected ? 'expected' : displayedKey === hangulCorrection?.typed ? 'typed' : undefined}>{displayedKey}<small>{hangulShift ? `⇧${HANGUL_KEY_LABEL[key]}` : HANGUL_KEY_LABEL[key]}</small></button>;
                 })}
                 <button type="button" onClick={() => setHangulJamo(value => Array.from(value).slice(0, -1).join(''))} className="language-practice-drill__hangul-key"><Trans {...msg({ context: 'languagePractice.ko.backspace', message: 'Delete' })} /></button>
               </div>
@@ -300,8 +307,9 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
           </div>}
           {checked && <p role="status" aria-live="polite" aria-atomic="true" className={`language-practice-drill__feedback ${result.correct ? 'language-practice-drill__feedback--correct' : 'language-practice-drill__feedback--incorrect'}`}>{result.correct ? <CheckCircle2 aria-hidden="true" /> : <XCircle aria-hidden="true" />}{result.correct ? <Trans {...msg({ context: 'languagePractice.feedback.correct', message: 'Correct.' })} /> : <Trans {...msg({ context: 'languagePractice.feedback.incorrect', message: 'Try this card again in the next round.' })} />}</p>}
           <div className="language-practice-drill__actions">
+            {progress && <p className="language-practice-drill__footnote" aria-hidden="true"><Trans {...msg({ context: 'languagePractice.footer.progress', message: 'Word {current} of {total}' })} values={progress} />{card.category && <> · {card.category}</>}</p>}
             {!cloze && !checked && reading?.readingText && <button type="button" onClick={() => setShowHint(true)} disabled={showHint} className="language-practice-drill__hint"><Trans {...msg({ context: 'languagePractice.action.hint', message: 'Hint' })} /></button>}
-            {!checked ? <button type="submit" onPointerDown={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }} disabled={!ready || (hasToneExercise && !tonesComplete)} className="language-practice-drill__primary-action"><Trans {...msg({ context: 'languagePractice.action.check', message: 'Check' })} /></button> : <button type="button" onClick={() => onNext(result)} className="language-practice-drill__primary-action"><Trans {...msg({ context: 'languagePractice.action.next', message: 'Next' })} /><ChevronRight size={18} aria-hidden="true" /></button>}
+            {!checked ? <button type="submit" onPointerDown={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }} disabled={!ready || (hasToneExercise && !tonesComplete)} className="language-practice-drill__primary-action"><Trans {...msg({ context: 'languagePractice.action.check', message: 'Check' })} /><kbd aria-hidden="true"><Trans {...msg({ context: 'languagePractice.key.enter', message: 'Enter' })} /></kbd></button> : <button type="button" onClick={() => onNext(result)} className="language-practice-drill__primary-action"><Trans {...msg({ context: 'languagePractice.action.next', message: 'Next' })} /><ChevronRight size={18} aria-hidden="true" /></button>}
           </div>
         </form>
       </div>
