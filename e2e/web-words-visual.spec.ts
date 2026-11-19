@@ -155,9 +155,13 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(workspace.getByLabel('Status')).toBeVisible();
     await expect(workspace.getByText('The flood that rewrote a city’s plans overnight')).toBeVisible();
     await expect(workspace.getByText('Oceans are heating faster than models predicted')).toBeVisible();
-    await expect(workspace.getByText('resilient', { exact: true })).toBeVisible();
+    // Each word shows once as the row's term and once marked inside its saved sentence.
+    await expect(workspace.getByText('resilient', { exact: true })).toHaveCount(2);
+    await expect(workspace.getByText('resilient', { exact: true }).first()).toBeVisible();
     await expect(workspace.getByText('unprecedented', { exact: true })).toBeVisible();
     await expect(workspace.getByText('The resilient community rebuilt the bridge after the flood.')).toBeVisible();
+    await expect(workspace.locator('mark', { hasText: 'resilient' })).toBeVisible();
+    await expect(workspace.locator('mark', { hasText: 'Unprecedented' })).toBeVisible();
     await expect(workspace.getByRole('checkbox')).toHaveCount(4);
     await workspace.getByRole('checkbox', { name: 'Select resilient' }).check();
     await expect(workspace.getByRole('button', { name: 'Add to today' })).toBeVisible();
