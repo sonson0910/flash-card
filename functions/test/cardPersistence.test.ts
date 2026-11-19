@@ -21,6 +21,7 @@ import {
   renameCardHeadwordForOwner,
 } from '../src/cardPersistence.js';
 import { createHash } from 'node:crypto';
+import { OWN_STORAGE_BUCKETS, ownStorageImageOwner } from '../src/ownFileImageUrl.js';
 import { libraryFacetRestoreOperationId } from '../src/libraryFacetPersistence.js';
 import {
   toCardAllocationHttpsError,
@@ -895,6 +896,43 @@ describe('card persistence', () => {
         imageUrl: `https://images.pexels.com/${'é'.repeat(1_000)}`,
       },
     })).toThrow(/imageUrl/i);
+  });
+
+  describe('photos from the learner files', () => {
+    const ownPhoto = (ownerId: string, bucket = 'encoded-hangout-433912-h2.firebasestorage.app') =>
+      `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/users%2F${ownerId}%2Ffiles%2FAbCdEfGhIjKlMnOpQrSt?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d`;
+
+    it('lists the same buckets as the app config targets', () => {
+      const config = JSON.parse(readFileSync(new URL('../../firebase-applet-config.json', import.meta.url), 'utf8')) as {
+        targets: Record<string, { storageBucket: string }>;
+      };
+      expect([...OWN_STORAGE_BUCKETS].sort()).toEqual(Object.values(config.targets).map(target => target.storageBucket).sort());
+    });
+
+    it('accepts an owner photo on create and keeps it on a stored card', () => {
+      expect(parseCreateCardRequest({ expectedOwnerId: 'owner', card: { ...card, imageUrl: ownPhoto('owner') } }).card.imageUrl)
+        .toBe(ownPhoto('owner'));
+      expect(canonicalCard({ ...card, imageUrl: ownPhoto('owner', 'sonflash-staging-20260906.firebasestorage.app') }).imageUrl)
+        .toBe(ownPhoto('owner', 'sonflash-staging-20260906.firebasestorage.app'));
+      expect(ownStorageImageOwner(ownPhoto('owner'))).toBe('owner');
+    });
+
+    it('rejects another learner photo, another bucket or folder, and the storage host at large', () => {
+      expect(() => parseCreateCardRequest({ expectedOwnerId: 'owner', card: { ...card, imageUrl: ownPhoto('someone-else') } }))
+        .toThrow(/imageUrl/i);
+      expect(() => canonicalCard({ ...card, imageUrl: ownPhoto('someone-else') }, { imageOwnerId: 'owner' })).toThrow(/imageUrl/i);
+      for (const imageUrl of [
+        ownPhoto('owner', 'other-project.appspot.com'),
+        ownPhoto('owner').replace('%2Ffiles%2F', '%2Fprivate%2F'),
+        ownPhoto('owner').replace('?alt=media&token=', '?token='),
+        `${ownPhoto('owner')}#x`,
+        ownPhoto('owner').replace('firebasestorage.googleapis.com', 'storage.googleapis.com'),
+        'https://firebasestorage.googleapis.com/v0/b/encoded-hangout-433912-h2.firebasestorage.app/o/anything',
+      ]) {
+        expect(ownStorageImageOwner(imageUrl), imageUrl).toBeNull();
+        expect(() => canonicalCard({ ...card, imageUrl }), imageUrl).toThrow(/imageUrl/i);
+      }
+    });
   });
 
   it('keeps direct client allocation denied after callable wiring', () => {

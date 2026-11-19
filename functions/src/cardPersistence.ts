@@ -12,6 +12,7 @@ import {
   parseCardSourceMetadata,
 } from './inputValidation.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
+import { ownStorageImageOwner } from './ownFileImageUrl.js';
 import { upsertCatalogProgressForCard } from './catalogProgressPersistence.js';
 import {
   applyLibraryFacetMutationInTransaction,
@@ -174,6 +175,23 @@ const trustedUrl = (
   } catch {
     throw new InputValidationError(`Card field "${field}" is invalid.`);
   }
+};
+
+/**
+ * A stock photo, or a photo from the learner's own files. When the caller
+ * knows the card's owner, an own-file URL must name that owner; a stored card
+ * read back without one keeps its photo, because only the owner could have
+ * written it there.
+ */
+const trustedImageUrl = (value: unknown, imageOwnerId: string | undefined): string | null => {
+  if (value === undefined || value === null || value === '') return null;
+  const text = boundedText(value, 'imageUrl', 2_048);
+  const owner = ownStorageImageOwner(text);
+  if (owner === null) return trustedUrl(value, 'imageUrl', IMAGE_HOSTS);
+  if (imageOwnerId !== undefined && owner !== imageOwnerId) {
+    throw new InputValidationError('Card field "imageUrl" is invalid.');
+  }
+  return text;
 };
 
 const boundedStringList = (value: unknown, field: string): string[] => {
@@ -396,9 +414,11 @@ const reservationId = (identity: string, targetLanguage?: string): string => cre
     : identity)
   .digest('hex');
 
-export const canonicalCard = (value: unknown, { allowMasteredAt = false, deriveJapanesePitch = true }: {
+export const canonicalCard = (value: unknown, { allowMasteredAt = false, deriveJapanesePitch = true, imageOwnerId }: {
   allowMasteredAt?: boolean;
   deriveJapanesePitch?: boolean;
+  /** The card owner's uid; an uploaded photo must then be one of their own files. */
+  imageOwnerId?: string;
 } = {}): CardRecord => {
   const source = asRecord(value, 'Card must be an object.');
   if (Object.keys(source).some(key => !CARD_FIELDS.has(key))) {
@@ -494,7 +514,7 @@ export const canonicalCard = (value: unknown, { allowMasteredAt = false, deriveJ
     category: boundedText(source.category, 'category', 128) || 'Other',
     emoji: boundedText(source.emoji, 'emoji', 64) || '📝',
     audioUrl: trustedUrl(source.audioUrl, 'audioUrl', AUDIO_HOSTS),
-    imageUrl: trustedUrl(source.imageUrl, 'imageUrl', IMAGE_HOSTS),
+    imageUrl: trustedImageUrl(source.imageUrl, imageOwnerId),
     imageSearchQuery: boundedText(source.imageSearchQuery, 'imageSearchQuery', 120),
     createdAt,
     ...(masteredAt ? { masteredAt } : {}),
@@ -576,7 +596,7 @@ export const parseCreateCardRequest = (value: unknown): CardAllocationRequest =>
   )) throw new InputValidationError('Card restore operation metadata is required.');
   return {
     expectedOwnerId,
-    card: canonicalCard(source.card),
+    card: canonicalCard(source.card, { imageOwnerId: expectedOwnerId }),
     ...(libraryEpoch === undefined ? {} : { libraryEpoch }),
     ...(baseRevision === undefined ? {} : { baseRevision }),
     ...(opId === undefined ? {} : { opId }),
@@ -828,7 +848,7 @@ export async function createCardForOwner(
     throw new Error('Card allocation maximum is invalid.');
   }
   const cardSource = asRecord(card, 'Card must be an object.');
-  const normalizedCard = canonicalCard(cardSource);
+  const normalizedCard = canonicalCard(cardSource, { imageOwnerId: ownerId });
   const restoreCreatedAt = restore && operationCreatedAt
     ? optionalDate(operationCreatedAt, 'operationCreatedAt')
     : undefined;
@@ -1047,7 +1067,7 @@ export async function createCardV2ForOwner(
     throw new InputValidationError('Card create operation metadata is required.');
   }
   const source = asRecord(card, 'Card must be an object.');
-  const normalized = canonicalCard(source);
+  const normalized = canonicalCard(source, { imageOwnerId: ownerId });
   if (source.createdAt === undefined) delete normalized.createdAt;
   const fingerprint = createFingerprint({
     card: normalized,
@@ -1101,7 +1121,7 @@ export async function createStarterCardsForOwner(
     throw new InputValidationError('Starter card batch is too large.');
   }
 
-  const normalizedCards = cards.map(card => canonicalCard(card));
+  const normalizedCards = cards.map(card => canonicalCard(card, { imageOwnerId: ownerId }));
   for (const card of normalizedCards) {
     // The catalog only ever produces plain word identity; a lexeme-identified
     // card would mean this path is being reused for something it was not
