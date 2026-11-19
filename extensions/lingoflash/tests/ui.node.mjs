@@ -297,6 +297,24 @@ test('themes the bubble from the saved family and scheme, resolving system to th
   assert.equal(systemFrame?.dataset?.scheme, 'light');
 });
 
+test('draws the Crystal Star wings and footer Lumi from inlined art, never from an extension file', () => {
+  const crystal = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ', themeFamily: 'crystal', colorScheme: 'dark' });
+  const wings = crystal.nodes.find(node => node.className === 'wings');
+  const lumi = crystal.nodes.find(node => node.className === 'lumi');
+  const lumiImage = lumi?.children.find(node => node.tagName === 'IMG');
+  assert.equal(crystal.result?.ok, true);
+  assert.equal(wings?.attributes['aria-hidden'], 'true');
+  assert.ok(wings?.children[0]?.tagName === 'SVG' && wings.children[0].children.some(node => node.tagName === 'POLYGON'));
+  assert.equal(lumi?.attributes['aria-hidden'], 'true');
+  assert.match(lumiImage?.src ?? '', /^data:image\/webp;base64,/);
+  assert.equal(lumiImage?.alt, '');
+  assert.equal(typeof lumiImage?.onerror, 'function');
+  assert.doesNotMatch(uiSource, /chrome-extension:|runtime\.getURL|assets\/lumi/);
+
+  const classic = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ', themeFamily: 'classic', colorScheme: 'dark' });
+  assert.equal(classic.nodes.some(node => node.className === 'wings' || node.className === 'lumi'), false);
+});
+
 test('gives a duplicate (existing) card a distinct amber badge tone, never the created tone', () => {
   const { result, nodes } = renderBubbleForToneAssertions({ status: 'existing', text: 'resilient', translation: 'bền bỉ' });
   const badge = nodes.find(node => node.className === 'ok');

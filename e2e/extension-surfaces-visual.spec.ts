@@ -144,6 +144,26 @@ test('extension in-page renderer captures result and quota states', async ({ pag
   }
 });
 
+for (const scheme of ['light', 'dark'] as const) {
+  test(`extension in-page renderer draws the Crystal Star wings and Lumi in ${scheme}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1200, height: 760 });
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
+    await page.setContent('<main><h1>The flood that rewrote a city’s plans overnight</h1><p>Neighbourhood groups demanded an immediate response from the council.</p></main>');
+    await page.addScriptTag({ path: join(extensionRoot, 'background-ui.js') });
+    await page.evaluate(payload => (window as any).LingoFlashExtensionUi.renderInlineBubble(payload), {
+      status: 'created', text: 'immediate', translation: 'ngay lập tức', phonetic: '/ɪˈmiːdiət/', explanation: 'Xảy ra hoặc được thực hiện ngay, không chậm trễ.',
+      exampleSentence: 'Neighbourhood groups demanded an immediate response.', exampleTranslation: 'Các nhóm dân cư yêu cầu phản hồi ngay lập tức.',
+      modeLabel: 'TẠO + LƯU • 1 AI REQUEST', version: '1.6.4', themeFamily: 'crystal', colorScheme: scheme, anchor: { left: 196, bottom: 364 }, bubbleDurationMs: 0,
+    });
+    const host = page.locator('#lingoflash-inline-translation-host');
+    await expect(host).toBeVisible();
+    await expect(host.locator('.wings svg polygon').first()).toBeAttached();
+    await expect(host.locator('.lumi img')).toHaveJSProperty('complete', true);
+    await expect(host.locator('.lumi img')).not.toHaveJSProperty('naturalWidth', 0);
+    await attach(page, testInfo, `extension-in-page-crystal-${scheme}`);
+  });
+}
+
 test('extension in-page renderer captures a Korean selection with Vietnamese quick translation', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.setContent('<main lang="ko"><h1>경제 뉴스</h1><p>한국은행은 기준금리를 동결하기로 <mark id="selected-word">결정</mark>했다.</p></main>');

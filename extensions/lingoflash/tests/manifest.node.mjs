@@ -26,3 +26,7 @@ test('keeps Chrome manifest description within the published limit', () => {
     `manifest description is ${manifest.description?.length ?? 0} characters; Chrome allows at most 132`,
   );
 });
+
+test('exposes no extension files to web pages; the in-page bubble inlines its own art', () => {
+  assert.equal(manifest.web_accessible_resources, undefined);
+});
