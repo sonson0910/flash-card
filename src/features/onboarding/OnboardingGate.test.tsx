@@ -10,6 +10,9 @@ import { onboardingCourseInput, OnboardingJourney, useOnboardingReminderSaveLock
 import { writeOnboardingDraft } from './onboardingDraft';
 import { writeOnboardingResumeStep } from './onboardingModel';
 
+// Step headings wrap their accent words in an inline element, so compare the rendered text.
+const visibleText = (html: string) => html.replace(/<[^>]+>/g, '');
+
 i18n.load('en', {});
 i18n.activate('en');
 
@@ -113,7 +116,7 @@ describe('OnboardingGate', () => {
 
     expect(html).toContain('role="dialog"');
     expect(html).toContain('aria-modal="true"');
-    expect(html).toContain('Choose your language');
+    expect(visibleText(html)).toContain('Choose your language');
     expect(html).toContain('Tiếng Việt');
     expect(html).toContain('English');
     expect(html).toContain('Continue');
@@ -138,7 +141,7 @@ describe('OnboardingGate', () => {
       </I18nProvider>);
 
       expect(html).toContain('aria-valuenow="6"');
-      expect(html).toContain('Daily reminders');
+      expect(visibleText(html)).toContain('Daily reminders');
       expect(html).toContain('Choose when SonFlash can remind you to review.');
       expect(html).toContain('aria-label="Study reminders"');
       expect(html).toContain('Loading reminders…');
@@ -158,7 +161,7 @@ describe('OnboardingGate', () => {
         <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId="owner-old-resume" /></CourseContext.Provider>
       </I18nProvider>);
       expect(html).toContain('aria-valuenow="2"');
-      expect(html).toContain('What are you learning?');
+      expect(visibleText(html)).toContain('What are you learning?');
       expect(html).not.toContain('Start learning');
     } finally {
       vi.unstubAllGlobals();

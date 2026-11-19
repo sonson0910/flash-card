@@ -1,14 +1,18 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { BookOpen, BriefcaseBusiness, Check, GraduationCap, MapPin, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, BriefcaseBusiness, Check, GraduationCap, MapPin, Sparkles } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
+import { Lumi } from '../../components/lumi/Lumi';
 import { useSetUiLocale, useUiLocale } from '../../i18n/I18nProvider';
 import { useCourseSession } from '../courses/CourseGate';
 import { COURSE_TARGET_LANGUAGES, type CourseNativeLanguage, type CourseTargetLanguage, type CreateCourseInput } from '../courses/courseModel';
 import { goalKindsFor } from '../courses/courseGoalCatalog';
-import { TARGET_LANGUAGE_FLAG, TARGET_LANGUAGE_LABEL } from '../courses/courseLanguageLabels';
+import { NATIVE_LANGUAGE_LABEL, TARGET_LANGUAGE_LABEL } from '../courses/courseLanguageLabels';
 import { DAILY_PACE_OPTIONS, writeDailyPace, type DailyPace } from '../settings/dailyPacePreference';
 import { ReminderSettingsSection } from '../reminders/ReminderSettingsSection';
+import { readLumiEnabled } from '../settings/lumi-preference';
+import { useTheme } from '../theme/ThemeProvider';
 import type { StarterCardOutcome } from './createStarterCards';
 import { createOwnerStarterCards } from './createOwnerStarterCards';
 import { clearOnboardingDraft, readOnboardingDraft, writeOnboardingDraft } from './onboardingDraft';
@@ -19,25 +23,27 @@ import {
   writeOnboardingResumeStep, type OnboardingStepId,
 } from './onboardingModel';
 
-const primaryButtonClass = 'min-h-11 rounded-xl bg-[var(--sf-brand)] px-4 text-sm font-bold text-[var(--sf-on-brand)] disabled:opacity-60';
-const secondaryButtonClass = 'min-h-11 rounded-xl border border-[var(--sf-border)] px-4 text-sm font-bold text-[var(--sf-text)]';
+const primaryButtonClass = 'onb-primary';
+const secondaryButtonClass = 'onb-secondary';
 const responsivePrimaryButtonClass = `${primaryButtonClass} w-full sm:w-auto`;
 const responsiveSecondaryButtonClass = `${secondaryButtonClass} w-full sm:w-auto`;
-const optionButtonClass = (active: boolean, compact = false) => `relative flex ${compact ? 'min-h-16 sm:min-h-20' : 'min-h-20'} w-full flex-col items-start justify-center rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${active ? 'border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text)] hover:bg-[var(--sf-surface-muted)]'}`;
-const footerClass = 'onboarding-journey__footer';
-const goalFooterClass = `${footerClass} onboarding-journey__footer--sticky`;
-const paceFooterClass = footerClass;
-const stepTitleClass = 'font-serif-hero text-4xl font-bold tracking-tight sm:text-5xl';
-const stepSubtitleClass = 'mt-4 max-w-2xl text-base leading-7 text-[var(--sf-text-muted)]';
-const goalFieldClass = 'mt-1 block min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 text-sm text-[var(--sf-text)]';
-const goalIconClass = 'flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--sf-surface-muted)] text-[var(--sf-brand-text)]';
-const selectedGoalMarkerClass = 'absolute right-3 top-3 flex size-6 items-center justify-center rounded-full bg-[var(--sf-brand)] text-[var(--sf-on-brand)]';
-const goalCardTextClass = 'min-w-0 sm:mt-auto';
-const goalCardTitleClass = 'block font-serif-hero text-lg font-bold leading-tight';
-const goalCardDescriptionClass = 'mt-1 block text-xs font-medium leading-5 opacity-75';
-const selectionCheckClass = 'absolute right-3 top-3';
-const goalLabelClass = 'text-sm font-bold text-[var(--sf-text)]';
-const ahaNeutralMessageClass = 'mt-8 text-base text-[var(--sf-text-muted)]';
+const optionButtonClass = 'onb-option crystal-chamfer min-h-20';
+const stepTitleClass = 'onb-title';
+const stepSubtitleClass = 'onb-subtitle';
+const goalFieldClass = 'onb-field';
+const goalIconClass = 'onb-goal-icon';
+const goalCardTextClass = 'onb-goal-text';
+const goalCardTitleClass = 'onb-goal-title';
+const goalCardDescriptionClass = 'onb-goal-description';
+const goalLabelClass = 'onb-field-label';
+const ahaNeutralMessageClass = 'onb-message';
+const accent = { 0: <em className="onb-accent" /> };
+
+/** Each language written in its own script; the course labels carry the translated name. */
+const NATIVE_ENDONYM: Readonly<Record<CourseNativeLanguage, string>> = { vi: 'Tiếng Việt', en: 'English' };
+const TARGET_ENDONYM: Readonly<Record<CourseTargetLanguage, string>> = { en: 'English', ko: '한국어', ja: '日本語', zh: '中文' };
+const TARGET_GLYPH: Readonly<Record<CourseTargetLanguage, string>> = { en: 'A', ko: '한', ja: 'あ', zh: '中' };
+const ONBOARDING_STEP_ORDER: readonly OnboardingStepId[] = ['language', 'target', 'goal', 'pace', 'aha', 'reminder'];
 
 const goalIcon = (kind: string) => {
   if (kind === 'study-abroad') return BookOpen;
@@ -48,7 +54,53 @@ const goalIcon = (kind: string) => {
 };
 
 const NoSpecificGoalIcon = Sparkles;
-const goalCardClass = 'onboarding-journey__goal-card';
+const goalCardClass = 'onboarding-journey__goal-card crystal-chamfer';
+
+function SelectionMark({ on }: { readonly on: boolean }) {
+  return <span className="onb-mark" data-on={on} aria-hidden="true">{on && <Check size={14} strokeWidth={3} />}</span>;
+}
+
+function PrimaryLabel({ children }: { readonly children: ReactNode }) {
+  return <><span>{children}</span><ArrowRight aria-hidden="true" size={16} className="onb-primary-icon" /></>;
+}
+
+function StepEyebrow({ step, index }: { readonly step: OnboardingStepId; readonly index: number }) {
+  const { _ } = useLingui();
+  const labels: Record<OnboardingStepId, string> = {
+    language: _(msg({ context: 'onboarding.eyebrow.language', message: 'Your language' })),
+    target: _(msg({ context: 'onboarding.eyebrow.target', message: 'What to learn' })),
+    goal: _(msg({ context: 'onboarding.eyebrow.goal', message: 'Your goal' })),
+    pace: _(msg({ context: 'onboarding.eyebrow.pace', message: 'Daily pace' })),
+    aha: _(msg({ context: 'onboarding.eyebrow.aha', message: 'First cards' })),
+    reminder: _(msg({ context: 'onboarding.eyebrow.reminder', message: 'Reminders' })),
+  };
+  return <p className="onb-eyebrow">
+    <span><Trans {...msg({ context: 'onboarding.eyebrow.step', message: 'Step {step} of {total}' })} values={{ step: index, total: ONBOARDING_STEP_ORDER.length }} /></span>
+    <span className="onb-eyebrow-sep" aria-hidden="true" />
+    <span>{labels[step]}</span>
+  </p>;
+}
+
+function LumiGuide({ step }: { readonly step: OnboardingStepId }) {
+  const { _ } = useLingui();
+  const lines: Record<OnboardingStepId, readonly [string, string]> = {
+    language: [_(msg({ context: 'onboarding.lumi.language.title', message: 'Hi, I’m Lumi!' })), _(msg({ context: 'onboarding.lumi.language.body', message: 'Pick the language you read best. Every meaning and explanation will be written in it.' }))],
+    target: [_(msg({ context: 'onboarding.lumi.target.title', message: 'What shall we learn?' })), _(msg({ context: 'onboarding.lumi.target.body', message: 'Pick one language for now. You can add more from the course switcher.' }))],
+    goal: [_(msg({ context: 'onboarding.lumi.goal.title', message: 'Got a goal in mind?' })), _(msg({ context: 'onboarding.lumi.goal.body', message: 'Choose a path and your cards will follow it.' }))],
+    pace: [_(msg({ context: 'onboarding.lumi.pace.title', message: 'How fast shall we go?' })), _(msg({ context: 'onboarding.lumi.pace.body', message: 'Start small. You can change this later.' }))],
+    aha: [_(msg({ context: 'onboarding.lumi.aha.title', message: 'Ready for your first cards?' })), _(msg({ context: 'onboarding.lumi.aha.body', message: 'Five common words, so you can start right away.' }))],
+    reminder: [_(msg({ context: 'onboarding.lumi.reminder.title', message: 'Want a nudge?' })), _(msg({ context: 'onboarding.lumi.reminder.body', message: 'Pick a time and SonFlash will remind you to review.' }))],
+  };
+  const [title, body] = lines[step];
+  return <aside className="onb-lumi" aria-label={_(msg({ context: 'onboarding.lumi.label', message: 'Lumi' }))}>
+    <div className="onb-lumi-bubble">
+      <p className="onb-lumi-kicker"><Trans {...msg({ context: 'onboarding.lumi.kicker', message: 'Lumi · online' })} /></p>
+      <p className="onb-lumi-title">{title}</p>
+      <p className="onb-lumi-body">{body}</p>
+    </div>
+    <Lumi pose={step === 'aha' ? 'proud' : 'happy'} size={290} className="crystal-ornament onb-lumi-figure" />
+  </aside>;
+}
 
 export interface OnboardingJourneyProps {
   readonly ownerId: string;
@@ -97,6 +149,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const uiLocale = useUiLocale();
   const setUiLocale = useSetUiLocale();
   const { actions, model } = useCourseSession();
+  const { family } = useTheme();
   const [saved] = useState(() => ({ step: readOnboardingResumeStep(ownerId), draft: readOnboardingDraft(ownerId) }));
   const [step, setStep] = useState<OnboardingStepId>(() =>
     saved.draft?.targetLanguage || saved.step === 'language' || saved.step === 'target' ? saved.step : 'target');
@@ -135,7 +188,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const targetOptions = COURSE_TARGET_LANGUAGES.filter(language => language !== nativeLanguage);
   const goalOptions = targetLanguage ? goalKindsFor(targetLanguage) : [];
   const selectedGoal = goalOptions.find(option => option.kind === goalKind);
-  const stepIndex = ['language', 'target', 'goal', 'pace', 'aha', 'reminder'].indexOf(step) + 1;
+  const stepIndex = ONBOARDING_STEP_ORDER.indexOf(step) + 1;
 
   const goNext = () => { const next = nextOnboardingStep(step); if (next) setStep(next); };
   const goBack = () => {
@@ -168,34 +221,47 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     clearOnboardingInProgress(ownerId);
   };
 
-  return <div className="claude-onboarding-journey fixed inset-0 z-[70] overflow-y-auto bg-[var(--sf-surface)] text-[var(--sf-text)]">
-    <div className="mx-auto flex min-h-full w-full max-w-[1440px] flex-col px-5 sm:px-8 lg:px-12" role="dialog" aria-modal="true" aria-label={_(msg({ id: 'onboarding.title', message: 'Set up your course' }))}>
-      <header className="flex min-h-16 shrink-0 items-center gap-4 border-b border-[var(--sf-border)]">
-        <span className="font-serif-hero text-xl font-bold tracking-tight">Son<span className="italic text-[var(--sf-brand-text)]">Flash</span></span>
-        <div className="mx-auto flex items-center gap-3" role="progressbar" aria-valuemin={1} aria-valuemax={6} aria-valuenow={stepIndex} aria-valuetext={`${stepIndex} / 6`}>
-          <div className="flex gap-1.5" aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <span key={index} className={`h-1.5 w-5 rounded-full ${index < stepIndex ? 'bg-[var(--sf-brand)]' : 'bg-[var(--sf-border)]'}`} />)}</div>
-        </div>
-        <button type="button" disabled={reminderSaveLocked} className="min-h-11 whitespace-nowrap rounded-xl px-4 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] disabled:opacity-60" onClick={() => setDismissedForSession(true)}><Trans {...msg({ context: 'onboarding.aha.skip', message: 'Skip for now' })} /></button>
-      </header>
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center py-10">
-      {step === 'language' && <>
-        <div className="max-w-3xl"><h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.language.title', message: 'Choose your language' })} /></h2>
-        <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.language.subtitle', message: 'This sets the app\'s interface and the language your explanations will be written in.' })} /></p></div>
-        <div className="mt-8 grid max-w-4xl gap-3 sm:grid-cols-2">
-          {(['vi', 'en'] as const).map(locale => <button key={locale} type="button" aria-pressed={nativeLanguage === locale} className={optionButtonClass(nativeLanguage === locale)}
-            onClick={() => { setNativeLanguage(locale); void setUiLocale(locale); }}>
-            <span lang={locale} className="font-serif-hero text-lg font-bold">{locale === 'vi' ? 'Tiếng Việt' : 'English'}</span>
-            <span aria-hidden="true" className="mt-1 text-xs font-bold uppercase tracking-[0.14em] opacity-70">{locale}</span>
-            {nativeLanguage === locale && <Check aria-hidden="true" size={18} className={selectionCheckClass} />}
-          </button>)}
-        </div>
-        <div className="mt-10 flex justify-end"><button type="button" className={responsivePrimaryButtonClass} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button></div>
-      </>}
+  const crystal = family === 'crystal';
+  const showLumi = crystal && readLumiEnabled();
+  const backButton = <button type="button" disabled={step === 'reminder' && reminderSaveLocked} className={responsiveSecondaryButtonClass} onClick={goBack}><Trans {...msg({ context: 'onboarding.back', message: 'Back' })} /></button>;
+  const continueButton = (disabled = false) => <button type="button" className={responsivePrimaryButtonClass} disabled={disabled} onClick={goNext}><PrimaryLabel><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></PrimaryLabel></button>;
+  const goalSummary = selectedGoal
+    ? [_(selectedGoal.label), goalLevel.trim(), goalTargetDate].filter(Boolean).join(' · ')
+    : _(msg({ context: 'onboarding.goal.none', message: 'No specific goal yet' }));
 
-      {step === 'target' && <>
-        <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.target.title', message: 'What are you learning?' })} /></h2>
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          {targetOptions.map(language => <button key={language} type="button" aria-pressed={targetLanguage === language} className={optionButtonClass(targetLanguage === language)} onClick={() => {
+  let content: ReactNode = null;
+  let footer: ReactNode = null;
+  let layout: 'start' | 'center' = 'start';
+
+  if (step === 'language') {
+    content = <>
+      <StepEyebrow step={step} index={stepIndex} />
+      <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.language.heading', message: 'Choose your <0>language</0>' })} components={accent} /></h2>
+      <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.language.subtitle', message: 'This sets the app\'s interface and the language your explanations will be written in.' })} /></p>
+      <div className="onb-language-grid">
+        {(['vi', 'en'] as const).map(locale => <button key={locale} type="button" aria-pressed={nativeLanguage === locale} className={optionButtonClass}
+          onClick={() => { setNativeLanguage(locale); void setUiLocale(locale); }}>
+          <span lang={locale} className="onb-option-name">{NATIVE_ENDONYM[locale]}</span>
+          {_(NATIVE_LANGUAGE_LABEL[locale]) !== NATIVE_ENDONYM[locale] && <span className="onb-option-sub">{_(NATIVE_LANGUAGE_LABEL[locale])}</span>}
+          <SelectionMark on={nativeLanguage === locale} />
+        </button>)}
+      </div>
+    </>;
+    footer = <>
+      <p className="onb-footer-note"><Trans {...msg({ context: 'onboarding.language.switch-note', message: 'The app switches to {language} right away.' })} values={{ language: NATIVE_ENDONYM[nativeLanguage] }} /></p>
+      {continueButton()}
+    </>;
+  }
+
+  if (step === 'target') {
+    content = <>
+      <StepEyebrow step={step} index={stepIndex} />
+      <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.target.heading', message: 'What are you <0>learning?</0>' })} components={accent} /></h2>
+      <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.target.subtitle', message: 'Each language is its own course, with its own cards and goals. You can add another later.' })} /></p>
+      <div className="onb-target-grid">
+        {targetOptions.map(language => {
+          const exam = goalKindsFor(language)[0];
+          return <button key={language} type="button" aria-pressed={targetLanguage === language} className={`${optionButtonClass} onb-target-card`} onClick={() => {
             if (language !== targetLanguage) {
               setGoalKind(null);
               setGoalLevel('');
@@ -204,110 +270,145 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
             setTargetLanguage(language);
             if (language !== 'zh') setZhScript(null);
           }}>
-            <span className="text-lg font-bold">{TARGET_LANGUAGE_FLAG[language]} {_(TARGET_LANGUAGE_LABEL[language])}</span>
-            {targetLanguage === language && <Check aria-hidden="true" size={18} className={selectionCheckClass} />}
-          </button>)}
-        </div>
-        <div className={footerClass}>
-          <button type="button" className={responsiveSecondaryButtonClass} onClick={goBack}><Trans {...msg({ context: 'onboarding.back', message: 'Back' })} /></button>
-          <button type="button" className={responsivePrimaryButtonClass} disabled={!targetLanguage} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button>
-        </div>
-      </>}
+            <span className="onb-glyph" aria-hidden="true" lang={language}>{TARGET_GLYPH[language]}</span>
+            <span lang={language} className="onb-option-name">{TARGET_ENDONYM[language]}</span>
+            <span className="onb-option-sub">{_(TARGET_LANGUAGE_LABEL[language])}</span>
+            {exam && <span className="onb-option-tag">{_(exam.label)}</span>}
+            <SelectionMark on={targetLanguage === language} />
+          </button>;
+        })}
+      </div>
+    </>;
+    footer = <>{backButton}{continueButton(!targetLanguage)}</>;
+  }
 
-      {step === 'goal' && <>
-        <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.goal.title', message: 'Have an exam or goal in mind?' })} /></h2>
-        <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.goal.subtitle', message: 'Optional. You can add or change this later in the course switcher.' })} /></p>
-        <div className="onboarding-journey__goal-grid" data-goal-count={goalOptions.length + 1}>
-          <button type="button" aria-pressed={goalKind === null} className={goalCardClass} onClick={() => setGoalKind(null)}>
-            <span className={goalIconClass}><NoSpecificGoalIcon aria-hidden="true" size={22} /></span>
-            <span className={goalCardTextClass}><span className={goalCardTitleClass}><Trans {...msg({ context: 'onboarding.goal.none', message: 'No specific goal yet' })} /></span><span className={goalCardDescriptionClass}><Trans {...msg({ context: 'onboarding.goal.subtitle', message: 'Optional. You can add or change this later in the course switcher.' })} /></span></span>
-            {goalKind === null && <span className={selectedGoalMarkerClass}><Check aria-hidden="true" size={14} /></span>}
-          </button>
-          {goalOptions.map(option => {
-            const GoalIcon = goalIcon(option.kind);
-            return <button key={option.kind} type="button" aria-pressed={goalKind === option.kind} className={goalCardClass} onClick={() => setGoalKind(option.kind)}>
-              <span className={goalIconClass}><GoalIcon aria-hidden="true" size={22} /></span>
-              <span className={goalCardTextClass}><span className={goalCardTitleClass}>{_(option.label)}</span><span className={goalCardDescriptionClass}>{_(option.levelHint)}</span></span>
-              {goalKind === option.kind && <span className={selectedGoalMarkerClass}><Check aria-hidden="true" size={14} /></span>}
-            </button>;
-          })}
-        </div>
-        {selectedGoal && <div className="mt-4 grid max-w-2xl gap-3 sm:grid-cols-2">
-          <label className={goalLabelClass}><Trans {...msg({ context: 'course.goal.add.level-label', message: 'Level or target (optional)' })} />
-            <input className={goalFieldClass} value={goalLevel} onChange={event => setGoalLevel(event.target.value)} placeholder={_(selectedGoal.levelHint)} maxLength={32} />
-          </label>
-          <label className={goalLabelClass}><Trans {...msg({ context: 'course.goal.add.date-label', message: 'Exam or target date (optional)' })} />
-            <input type="date" className={goalFieldClass} value={goalTargetDate} onChange={event => setGoalTargetDate(event.target.value)} />
-          </label>
-        </div>}
-        {targetLanguage === 'zh' && <label className="mt-4 block max-w-2xl text-sm font-bold text-[var(--sf-text)]"><Trans {...msg({ context: 'settings.course.script', message: 'Chinese script' })} />
-          <select className={goalFieldClass} value={zhScript ?? 'hans'} onChange={event => setZhScript(event.target.value as 'hans' | 'hant')}>
-            <option value="hans"><Trans {...msg({ context: 'settings.course.script.simplified', message: 'Simplified' })} /></option>
-            <option value="hant"><Trans {...msg({ context: 'settings.course.script.traditional', message: 'Traditional' })} /></option>
-          </select>
-        </label>}
-        <div className={goalFooterClass}>
-          <button type="button" className={responsiveSecondaryButtonClass} onClick={goBack}><Trans {...msg({ context: 'onboarding.back', message: 'Back' })} /></button>
-          <button type="button" className={responsivePrimaryButtonClass} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button>
-        </div>
-      </>}
+  if (step === 'goal') {
+    layout = 'center';
+    content = <>
+      <StepEyebrow step={step} index={stepIndex} />
+      <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.goal.heading', message: 'Have an exam or <0>goal in mind?</0>' })} components={accent} /></h2>
+      <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.goal.subtitle', message: 'Optional. You can add or change this later in the course switcher.' })} /></p>
+      <div className="onboarding-journey__goal-grid" data-goal-count={goalOptions.length + 1}>
+        <button type="button" aria-pressed={goalKind === null} className={goalCardClass} onClick={() => setGoalKind(null)}>
+          <span className={goalIconClass}><NoSpecificGoalIcon aria-hidden="true" size={24} /></span>
+          <span className={goalCardTextClass}><span className={goalCardTitleClass}><Trans {...msg({ context: 'onboarding.goal.none', message: 'No specific goal yet' })} /></span><span className={goalCardDescriptionClass}><Trans {...msg({ context: 'onboarding.goal.none.description', message: 'Learn at your own pace and set a goal whenever you like.' })} /></span></span>
+          <SelectionMark on={goalKind === null} />
+        </button>
+        {goalOptions.map(option => {
+          const GoalIcon = goalIcon(option.kind);
+          return <button key={option.kind} type="button" aria-pressed={goalKind === option.kind} className={goalCardClass} onClick={() => setGoalKind(option.kind)}>
+            <span className={goalIconClass}><GoalIcon aria-hidden="true" size={24} /></span>
+            <span className={goalCardTextClass}><span className={goalCardTitleClass}>{_(option.label)}</span><span className={goalCardDescriptionClass}>{_(option.levelHint)}</span></span>
+            <SelectionMark on={goalKind === option.kind} />
+          </button>;
+        })}
+      </div>
+      {selectedGoal && <div className="onb-goal-fields">
+        <label className={goalLabelClass}><Trans {...msg({ context: 'course.goal.add.level-label', message: 'Level or target (optional)' })} />
+          <input className={goalFieldClass} value={goalLevel} onChange={event => setGoalLevel(event.target.value)} placeholder={_(selectedGoal.levelHint)} maxLength={32} />
+        </label>
+        <label className={goalLabelClass}><Trans {...msg({ context: 'course.goal.add.date-label', message: 'Exam or target date (optional)' })} />
+          <input type="date" className={goalFieldClass} value={goalTargetDate} onChange={event => setGoalTargetDate(event.target.value)} />
+        </label>
+      </div>}
+      {targetLanguage === 'zh' && <div className="onb-goal-fields"><label className={goalLabelClass}><Trans {...msg({ context: 'settings.course.script', message: 'Chinese script' })} />
+        <select className={goalFieldClass} value={zhScript ?? 'hans'} onChange={event => setZhScript(event.target.value as 'hans' | 'hant')}>
+          <option value="hans"><Trans {...msg({ context: 'settings.course.script.simplified', message: 'Simplified' })} /></option>
+          <option value="hant"><Trans {...msg({ context: 'settings.course.script.traditional', message: 'Traditional' })} /></option>
+        </select>
+      </label></div>}
+    </>;
+    footer = <>
+      {backButton}
+      <p className="onb-footer-note"><Trans {...msg({ context: 'onboarding.goal.selected', message: 'Selected: <0>{goal}</0>' })} values={{ goal: goalSummary }} components={{ 0: <strong /> }} /></p>
+      {continueButton()}
+    </>;
+  }
 
-      {step === 'pace' && <>
-        <div className="flex flex-1 flex-col">
-          <div className="mx-auto my-auto w-full max-w-5xl text-center">
-            <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.pace.title', message: 'How many cards a day?' })} /></h2>
-            <div className="onboarding-pace-grid mt-8 grid gap-4 sm:grid-cols-4">
-              {DAILY_PACE_OPTIONS.map(option => <button key={option} type="button" aria-pressed={pace === option} className={optionButtonClass(pace === option)} style={{ minHeight: 'clamp(5rem, 12vw, 11rem)' }} onClick={() => setPace(option)}>
-                <span className="font-serif-hero text-2xl font-bold">{option}</span>
-                <span className="mt-1 text-xs font-medium opacity-75"><Trans {...msg({ context: 'onboarding.pace.option', message: '{count} cards / day' })} values={{ count: option }} /></span>
-                {pace === option && <Check aria-hidden="true" size={18} className={selectionCheckClass} />}
-              </button>)}
-            </div>
-          </div>
-          <div className={paceFooterClass} style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
-            <button type="button" className={responsiveSecondaryButtonClass} onClick={goBack}><Trans {...msg({ context: 'onboarding.back', message: 'Back' })} /></button>
-            <button type="button" className={responsivePrimaryButtonClass} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button>
-          </div>
+  if (step === 'pace') {
+    layout = 'center';
+    content = <>
+      <StepEyebrow step={step} index={stepIndex} />
+      <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.pace.heading', message: 'How many cards <0>a day?</0>' })} components={accent} /></h2>
+      <div className="onboarding-pace-grid onb-pace-grid grid sm:grid-cols-4">
+        {DAILY_PACE_OPTIONS.map(option => <button key={option} type="button" aria-pressed={pace === option} className={`${optionButtonClass} onb-pace-card`} onClick={() => setPace(option)}>
+          <span className="onb-pace-number">{option}</span>
+          <span className="onb-option-sub"><Trans {...msg({ context: 'onboarding.pace.option', message: '{count} cards / day' })} values={{ count: option }} /></span>
+          <SelectionMark on={pace === option} />
+        </button>)}
+      </div>
+    </>;
+    footer = <>{backButton}{continueButton()}</>;
+  }
+
+  if (step === 'aha') {
+    content = <>
+      <StepEyebrow step={step} index={stepIndex} />
+      <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.aha.heading', message: 'Let\'s add your <0>first cards</0>' })} components={accent} /></h2>
+      {ahaOutcome === null && <>
+        <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.aha.subtitle', message: 'Five common words to get you started.' })} /></p>
+        <div className="onb-actions"><button type="button" className={responsivePrimaryButtonClass} onClick={() => void startAha()}><PrimaryLabel><Trans {...msg({ context: 'onboarding.aha.create', message: 'Add 5 starter cards' })} /></PrimaryLabel></button>
+        <button type="button" className={responsiveSecondaryButtonClass} onClick={goNext}><Trans {...msg({ context: 'onboarding.aha.skip', message: 'Skip for now' })} /></button></div>
+      </>}
+      {ahaOutcome === 'pending' && <p className={ahaNeutralMessageClass} role="status"><Trans {...msg({ context: 'onboarding.aha.pending', message: 'Adding your cards…' })} /></p>}
+      {ahaOutcome === 'error' && <>
+        <p className="onb-message" data-tone="danger"><Trans {...msg({ context: 'onboarding.aha.error', message: 'Something went wrong adding cards. You can add them later from the library.' })} /></p>
+        <div className="onb-actions">{continueButton()}</div>
+      </>}
+      {ahaOutcome !== null && ahaOutcome !== 'pending' && ahaOutcome !== 'error' && <>
+        {ahaOutcome.created.length > 0
+          ? <p className="onb-message" data-tone="success"><Trans {...msg({ context: 'onboarding.aha.success', message: 'Added {count} cards to your library.' })} values={{ count: ahaOutcome.created.length }} /></p>
+          : <p className={ahaNeutralMessageClass}><Trans {...msg({ context: 'onboarding.aha.none-added', message: 'No cards were added.' })} /></p>}
+        {ahaOutcome.created.length > 0 && <ul className="onboarding-created-starter-cards onb-starter-cards">
+          {ahaOutcome.created.map(card => <li key={card.id} className="onb-starter-card">
+            <span lang={card.language || undefined} className="onb-starter-word">{card.word}</span>
+            {card.phonetic && <span className="onb-starter-phonetic">{card.phonetic}</span>}
+            <span className="onb-starter-translation">{card.translation}</span>
+          </li>)}
+        </ul>}
+        {ahaOutcome.skippedForQuota > 0 && <p className="onb-quota-note"><Trans {...msg({ context: 'onboarding.aha.quota-note', message: 'Your monthly Free card allowance is almost used up, so {count} card(s) were not added.' })} values={{ count: ahaOutcome.skippedForQuota }} /></p>}
+        <div className="onb-actions">{continueButton()}</div>
+      </>}
+    </>;
+  }
+
+  if (step === 'reminder') {
+    content = <>
+      <StepEyebrow step={step} index={stepIndex} />
+      <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.reminder.heading', message: 'Daily <0>reminders</0>' })} components={accent} /></h2>
+      <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.reminder.description', message: 'Choose when SonFlash can remind you to review.' })} /></p>
+      <div className="onb-reminder-panel"><ReminderSettingsSection initialOwnerId={ownerId} embedded onSaveStateChange={onReminderSaveStateChange} onSkip={skipFailedSave} /></div>
+      {error && <p className="onb-message" data-tone="danger" role="alert">{error}</p>}
+    </>;
+    footer = <>
+      {backButton}
+      <button type="button" className={responsivePrimaryButtonClass} disabled={model.pending || reminderSaveLocked} onClick={() => void finish()}><PrimaryLabel><Trans {...msg({ context: 'onboarding.finish', message: 'Start learning' })} /></PrimaryLabel></button>
+    </>;
+  }
+
+  return <div className="claude-onboarding-journey fixed inset-0 z-[70] overflow-y-auto" data-onboarding-step={step}>
+    {crystal && <>
+      <span className="onb-shard onb-shard--left crystal-wing crystal-ornament" aria-hidden="true" />
+      <span className="onb-shard onb-shard--right crystal-wing crystal-ornament" aria-hidden="true" />
+    </>}
+    <div className="onb-frame" role="dialog" aria-modal="true" aria-label={_(msg({ id: 'onboarding.title', message: 'Set up your course' }))}>
+      <header className="onb-header">
+        <span className="onb-brand">
+          <span className="onb-logo" aria-hidden="true">{crystal ? <span className="onb-logo-star" /> : 'S'}</span>
+          <span className="onb-wordmark">Son<em>Flash</em></span>
+        </span>
+        <span className="onb-tag" aria-hidden="true"><span><Trans {...msg({ context: 'onboarding.header.tag', message: 'Hello · let’s begin' })} /></span></span>
+        <div className="onb-progress" role="progressbar" aria-valuemin={1} aria-valuemax={6} aria-valuenow={stepIndex} aria-valuetext={`${stepIndex} / 6`}>
+          <span className="onb-dots" aria-hidden="true">{ONBOARDING_STEP_ORDER.map((id, index) => <span key={id} data-state={index + 1 < stepIndex ? 'done' : index + 1 === stepIndex ? 'current' : 'upcoming'} />)}</span>
+          <span className="onb-count" aria-hidden="true"><b>{stepIndex}</b><span> / 6</span></span>
         </div>
-      </>}
-
-      {step === 'aha' && <>
-        <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.aha.title', message: 'Let\'s add your first cards' })} /></h2>
-        {ahaOutcome === null && <>
-          <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.aha.subtitle', message: 'Five common words to get you started.' })} /></p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row"><button type="button" className={responsivePrimaryButtonClass} onClick={() => void startAha()}><Trans {...msg({ context: 'onboarding.aha.create', message: 'Add 5 starter cards' })} /></button>
-          <button type="button" className={responsiveSecondaryButtonClass} onClick={goNext}><Trans {...msg({ context: 'onboarding.aha.skip', message: 'Skip for now' })} /></button></div>
-        </>}
-        {ahaOutcome === 'pending' && <p className={ahaNeutralMessageClass}><Trans {...msg({ context: 'onboarding.aha.pending', message: 'Adding your cards…' })} /></p>}
-        {ahaOutcome === 'error' && <>
-          <p className="mt-8 text-base font-semibold text-[var(--sf-danger)]"><Trans {...msg({ context: 'onboarding.aha.error', message: 'Something went wrong adding cards. You can add them later from the library.' })} /></p>
-          <button type="button" className={`${primaryButtonClass} mt-6`} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button>
-        </>}
-        {ahaOutcome !== null && ahaOutcome !== 'pending' && ahaOutcome !== 'error' && <>
-          {ahaOutcome.created.length > 0
-            ? <p className="mt-8 text-base font-semibold text-[var(--sf-success)]"><Trans {...msg({ context: 'onboarding.aha.success', message: 'Added {count} cards to your library.' })} values={{ count: ahaOutcome.created.length }} /></p>
-            : <p className={ahaNeutralMessageClass}><Trans {...msg({ context: 'onboarding.aha.none-added', message: 'No cards were added.' })} /></p>}
-          {ahaOutcome.created.length > 0 && <ul className="onboarding-created-starter-cards mt-4 grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {ahaOutcome.created.map(card => <li key={card.id} className="rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-left">
-              <span lang={card.language || undefined} className="block font-serif-hero text-lg font-bold text-[var(--sf-text)]">{card.word}</span>
-              {card.phonetic && <span className="mt-1 block text-xs text-[var(--sf-text-muted)]">{card.phonetic}</span>}
-              <span className="mt-2 block text-sm text-[var(--sf-brand-text)]">{card.translation}</span>
-            </li>)}
-          </ul>}
-          {ahaOutcome.skippedForQuota > 0 && <p className="mt-3 max-w-2xl text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'onboarding.aha.quota-note', message: 'Your monthly Free card allowance is almost used up, so {count} card(s) were not added.' })} values={{ count: ahaOutcome.skippedForQuota }} /></p>}
-          <button type="button" className={`${primaryButtonClass} mt-6`} onClick={goNext}><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></button>
-        </>}
-      </>}
-
-      {step === 'reminder' && <>
-        <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.reminder.title', message: 'Daily reminders' })} /></h2>
-        <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.reminder.description', message: 'Choose when SonFlash can remind you to review.' })} /></p>
-        <div className="mt-6 max-w-3xl"><ReminderSettingsSection initialOwnerId={ownerId} embedded onSaveStateChange={onReminderSaveStateChange} onSkip={skipFailedSave} /></div>
-        {error && <p className="mt-6 text-sm font-semibold text-[var(--sf-danger)]">{error}</p>}
-        <div className={footerClass}><button type="button" disabled={reminderSaveLocked} className={`${secondaryButtonClass} w-full sm:w-auto disabled:opacity-60`} onClick={goBack}><Trans {...msg({ context: 'onboarding.back', message: 'Back' })} /></button>
-        <button type="button" className={responsivePrimaryButtonClass} disabled={model.pending || reminderSaveLocked} onClick={() => void finish()}><Trans {...msg({ context: 'onboarding.finish', message: 'Start learning' })} /></button></div>
-      </>}
-      </main>
+        <button type="button" disabled={reminderSaveLocked} className="onb-skip" onClick={() => setDismissedForSession(true)}><Trans {...msg({ context: 'onboarding.aha.skip', message: 'Skip for now' })} /></button>
+      </header>
+      <div className="onb-body" data-lumi={showLumi}>
+        {showLumi && <LumiGuide step={step} />}
+        <main className="onb-main" data-layout={layout}><div className="onb-content">{content}</div></main>
+        {footer && <div className={`onboarding-journey__footer onb-footer${step === 'goal' ? ' onboarding-journey__footer--sticky' : ''}`} style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>{footer}</div>}
+      </div>
     </div>
   </div>;
 }
