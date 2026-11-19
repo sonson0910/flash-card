@@ -1,25 +1,25 @@
 @layer components {
   .flashcard-panel {
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.75);
+    border: 1px solid color-mix(in srgb, var(--sf-surface) 75%, transparent);
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.8) 0%,
-      rgba(255, 255, 255, 0.6) 100%
+      color-mix(in srgb, var(--sf-surface) 80%, transparent) 0%,
+      color-mix(in srgb, var(--sf-surface) 60%, transparent) 100%
     );
     box-shadow:
-      0 20px 50px -15px rgba(15, 23, 42, 0.1),
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+      0 20px 50px -15px color-mix(in srgb, var(--sf-shadow) 35%, transparent),
+      inset 0 1px 1px 0 color-mix(in srgb, var(--sf-surface) 90%, transparent);
     -webkit-backdrop-filter: blur(28px) saturate(160%);
     backdrop-filter: blur(28px) saturate(160%);
   }
   .dark .flashcard-panel {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: #081318;
+    border: 1px solid var(--sf-border);
+    background: var(--sf-card-front);
     box-shadow:
       0 25px 60px -15px rgba(0, 0, 0, 0.85),
-      0 0 35px -8px rgba(6, 182, 212, 0.08),
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+      0 0 35px -8px color-mix(in srgb, var(--sf-brand) 8%, transparent),
+      inset 0 1px 1px 0 var(--sf-edge-highlight);
   }
   .dark .flashcard-panel::after {
     position: absolute;
@@ -39,11 +39,11 @@
   }
   .flashcard-face:hover,
   .flashcard-back:hover {
-    border-color: rgba(6, 182, 212, 0.45);
+    border-color: color-mix(in srgb, var(--sf-brand) 45%, transparent);
     box-shadow:
-      0 0 30px -5px rgba(6, 182, 212, 0.22),
+      0 0 30px -5px color-mix(in srgb, var(--sf-brand) 22%, transparent),
       0 30px 80px -20px rgba(0, 0, 0, 0.85),
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.45);
+      inset 0 1.5px 1px 0 var(--sf-edge-highlight);
   }
   .zen-editorial-serif {
     font-family: "Playfair Display", Georgia, "Times New Roman", serif;
@@ -78,124 +78,38 @@
     -webkit-backdrop-filter: blur(32px) saturate(180%);
     backdrop-filter: blur(32px) saturate(180%);
   }
+  /* Zen is a fixed dark focus surface in every theme, not a theme token. */
   .dark .zen-glass-slab {
+    background: #081318;
     -webkit-backdrop-filter: blur(36px) saturate(190%);
     backdrop-filter: blur(36px) saturate(190%);
   }
   .flashcard-details-dialog {
-    background-color: rgb(255 255 255 / 0.95);
+    background-color: color-mix(in srgb, var(--sf-surface) 95%, transparent);
   }
-  .dark .flashcard-details-dialog {
-    background-color: rgb(7 16 20 / 0.95);
-  }
-  .flashcard-disclosure {
-    overflow: clip;
-    border: 1px solid rgb(203 213 225 / 0.82);
-    border-radius: 16px;
-    background: rgb(255 255 255 / 0.58);
-    transition:
-      border-color 200ms ease,
-      background-color 200ms ease;
-  }
-  .flashcard-disclosure:hover,
-  .flashcard-disclosure[open] {
-    border-color: rgb(148 163 184 / 0.82);
-    background: rgb(255 255 255 / 0.82);
-  }
-  .dark .flashcard-disclosure {
-    border-color: rgb(255 255 255 / 0.12);
-    background: rgb(255 255 255 / 0.035);
-  }
-  .dark .flashcard-disclosure:hover,
-  .dark .flashcard-disclosure[open] {
-    border-color: rgb(255 255 255 / 0.2);
-    background: rgb(255 255 255 / 0.065);
-  }
-  .flashcard-image-fade {
-    background: linear-gradient(
-      to top,
-      rgba(255, 255, 255, 0.98) 0%,
-      rgba(255, 255, 255, 0.6) 40%,
-      transparent 100%
-    );
-  }
-  .dark .flashcard-image-fade {
-    background: linear-gradient(
-      to top,
-      #081318 0%,
-      rgba(8, 19, 24, 0.7) 40%,
-      transparent 100%
-    );
-  }
-  .flashcard-meaning-card {
-    border: 1px solid rgb(226 232 240 / 0.9);
-    background: rgb(255 255 255 / 0.95);
-    box-shadow:
-      0 10px 30px -15px rgb(15 23 42 / 0.06),
-      inset 0 1px 0 rgb(255 255 255 / 0.9);
-  }
-  .dark .flashcard-meaning-card {
-    border-color: rgb(255 255 255 / 0.18);
-    background: rgb(255 255 255 / 0.09);
-    box-shadow:
-      0 24px 50px -30px rgb(2 20 30 / 0.8),
-      inset 0 1px 0 rgb(255 255 255 / 0.2);
-  }
-  .flashcard-word-gradient,
-  .flashcard-translation-gradient {
+  .flashcard-word-gradient {
     color: transparent;
     background-clip: text;
     -webkit-background-clip: text;
-  }
-  .flashcard-word-gradient {
-    font-family: "Fraunces", Georgia, serif;
+    font-family: var(--sf-font-display);
     font-weight: 650;
     background-image: linear-gradient(
       to bottom right,
-      #0f172a,
-      #1e293b,
-      #334155
+      var(--sf-text),
+      var(--sf-text) 50%,
+      color-mix(in srgb, var(--sf-text) 70%, var(--sf-text-muted))
     );
-  }
-  .dark .flashcard-word-gradient {
-    background-image: linear-gradient(to bottom right, #fff, #f1f5f9, #cbd5e1);
   }
   :root[data-theme-family="crystal"] .flashcard-word-gradient {
-    font-family: "Kanit", "Nunito", sans-serif;
     font-style: italic;
     font-weight: 900;
-    background-image: linear-gradient(105deg, #c40f35, #0d1a33 42%, #0d1a33);
+    background-image: linear-gradient(105deg, var(--sf-brand-text), var(--sf-text) 42%, var(--sf-text));
   }
   :root[data-theme-family="crystal"].dark .flashcard-word-gradient {
-    background-image: linear-gradient(105deg, #ff2a4d, #f3f5fa 48%, #f3f5fa);
-  }
-  .flashcard-translation-gradient {
-    background-image: linear-gradient(
-      to bottom right,
-      #0f172a,
-      #1e293b,
-      #164e63
-    );
-  }
-  .dark .flashcard-translation-gradient {
-    background-image: linear-gradient(to bottom right, #fff, #f1f5f9, #cffafe);
+    background-image: linear-gradient(105deg, var(--sf-brand), var(--sf-text) 48%, var(--sf-text));
   }
   .flashcard-translation-reveal {
     animation: flashcard-translation-reveal 220ms var(--ease-out-expo) 80ms both;
-  }
-  .flashcard-content-dock {
-    border: 1px solid rgb(226 232 240 / 0.8);
-    background: rgb(248 250 252 / 0.95);
-    box-shadow:
-      0 10px 30px -15px rgb(15 23 42 / 0.08),
-      inset 0 1px 0 rgb(255 255 255 / 0.9);
-  }
-  .dark .flashcard-content-dock {
-    border-color: rgb(255 255 255 / 0.12);
-    background: rgb(7 16 20 / 0.8);
-    box-shadow:
-      0 20px 50px -20px rgb(0 0 0 / 0.8),
-      inset 0 1px 0 rgb(255 255 255 / 0.15);
   }
   .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab) {
     border: 3px solid transparent;
@@ -257,7 +171,7 @@
     pointer-events: none;
     content: "";
     opacity: 0;
-    box-shadow: 0 20px 48px -38px rgb(15 23 42 / 0);
+    box-shadow: 0 20px 48px -38px transparent;
     transition:
       opacity var(--motion-standard) var(--ease-out-expo),
       box-shadow var(--motion-standard) var(--ease-out-expo),
@@ -335,24 +249,34 @@
     transform: scale(1.05) rotate(6deg);
   }
 }
+/* Constrained devices drop the glass blur. Plain glass panels fall back to the surface token;
+   card looks ([data-card-look]) keep their own opaque surface and tier rim. */
 @media (max-width: 1180px), (hover: none), (pointer: coarse) {
-  .flashcard-panel,
+  .flashcard-panel:not([data-card-look]),
   .zen-glass-slab,
-  .dark .flashcard-panel,
+  .dark .flashcard-panel:not([data-card-look]),
   .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: var(--sf-surface);
+  }
+  .flashcard-panel[data-card-look] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   .zen-glass-slab,
   .dark .zen-glass-slab {
     background: #081418;
   }
 }
-html[data-save-data="true"] :is(.flashcard-panel, .zen-glass-slab) {
+html[data-save-data="true"] :is(.flashcard-panel:not([data-card-look]), .zen-glass-slab) {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   background: var(--sf-surface);
+}
+html[data-save-data="true"] .flashcard-panel[data-card-look] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 html[data-save-data="true"] .zen-glass-slab {
   background: #081418;
@@ -360,7 +284,7 @@ html[data-save-data="true"] .zen-glass-slab {
 @supports not (
   (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))
 ) {
-  .flashcard-panel,
+  .flashcard-panel:not([data-card-look]),
   .zen-glass-slab {
     background: var(--sf-surface);
   }
@@ -369,13 +293,17 @@ html[data-save-data="true"] .zen-glass-slab {
   }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .flashcard-panel,
+  .flashcard-panel:not([data-card-look]),
   .zen-glass-slab,
-  .dark .flashcard-panel,
+  .dark .flashcard-panel:not([data-card-look]),
   .dark .zen-glass-slab {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: var(--sf-surface);
+  }
+  .flashcard-panel[data-card-look] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   .zen-glass-slab,
   .dark .zen-glass-slab {
@@ -424,19 +352,25 @@ html[data-save-data="true"] .flashcard-holo {
   clip-path: var(--nk-chamfer-sm);
   border-color: transparent;
   background: var(--sf-second);
-  color: #04060c;
-  font-family: "Kanit", "Nunito", sans-serif;
+  color: var(--sf-on-brand);
+  font-family: var(--sf-font-display);
   font-style: italic;
 }
+/* Brand text nested in the label sits on the holo fill: darken it for AA. */
 :root[data-theme-family="crystal"]:not(.dark) .flashcard-shell [data-card-tier-label] {
-  --sf-brand-text: #9d0d2b;
+  --sf-brand-text: color-mix(in srgb, var(--sf-brand-hover) 88%, black);
 }
 :root[data-theme-family="crystal"] .flashcard-shell [data-reveal-meaning] {
   clip-path: var(--nk-chamfer-sm);
   border: 0;
-  background: linear-gradient(105deg, #ff8fa4, var(--sf-brand) 35%, #ff5470);
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--sf-brand) 50%, white),
+    var(--sf-brand) 35%,
+    color-mix(in srgb, var(--sf-brand) 80%, white)
+  );
   color: var(--sf-on-brand);
-  font-family: "Kanit", "Nunito", sans-serif;
+  font-family: var(--sf-font-display);
   font-style: italic;
   font-size: 0.875rem;
 }
