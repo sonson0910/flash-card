@@ -267,7 +267,11 @@ describe('schema v3 dependency boundary', () => {
 
     expect(validatorSource).toMatch(/from ['"]\.\.\/\.\.\/lib\/mediaUrlPolicy['"]/);
     expect(validatorSource).not.toMatch(/from ['"]\.\.\/\.\.\/lib\/(?:images|audio|firebase)['"]/);
-    expect(policySource).not.toMatch(/firebase|react/i);
+    // The policy may name the project's own storage host and read the checked-in target config;
+    // what it must not do is pull a vendor SDK into every module that validates a URL.
+    const imported = [...policySource.matchAll(/from ['"]([^'"]+)['"]/g)].map(match => match[1]);
+    expect(imported.filter(specifier => !specifier.startsWith('.'))).toEqual([]);
+    expect(imported.filter(specifier => !specifier.endsWith('.json'))).toEqual([]);
   });
 });
 
