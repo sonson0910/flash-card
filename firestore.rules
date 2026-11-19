@@ -29,7 +29,20 @@ service cloud.firestore {
     function isTrustedImageUrl(url) {
       return url is string
         && url.size() <= 2048
-        && url.matches('^https://(images\\.pexels\\.com|images\\.unsplash\\.com|upload\\.wikimedia\\.org)/.*$');
+        && (
+          url.matches('^https://(images\\.pexels\\.com|images\\.unsplash\\.com|upload\\.wikimedia\\.org)/.*$')
+          || isOwnFileImageUrl(url)
+        );
+    }
+
+    // A photo the signed-in learner uploaded: the Cloud Storage download URL of
+    // an object under users/{uid}/files/ in a project bucket (production or
+    // staging), for their own uid. Any other object or bucket on the storage
+    // host is refused. The client media policy and the card functions accept
+    // exactly this shape too.
+    function isOwnFileImageUrl(url) {
+      return url.matches('^https://firebasestorage\\.googleapis\\.com/v0/b/(encoded-hangout-433912-h2\\.firebasestorage\\.app|sonflash-staging-20260906\\.firebasestorage\\.app)/o/users%2F[A-Za-z0-9_-]{1,128}%2Ffiles%2F[A-Za-z0-9_-]{20,64}[?]alt=media&token=[A-Za-z0-9-]{16,64}$')
+        && url.split('%2F')[1] == request.auth.uid;
     }
 
     function isValidBoundedStringList(values) {
