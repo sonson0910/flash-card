@@ -70,7 +70,7 @@ msgctxt "onboarding.pace.option"
 msgid "{count} cards / day"
 msgstr "{count} thẻ / ngày"
 
-#: src/app/AppViewStage.tsx:121
+#: src/app/AppViewStage.tsx:124
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
@@ -233,7 +233,7 @@ msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr "Để sau"
 
-#: src/app/AppViewStage.tsx:129
+#: src/app/AppViewStage.tsx:132
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr "Đang mở cài đặt giao diện…"
@@ -551,7 +551,7 @@ msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr "Liên kết này mở bản xem trước. Người nhận sẽ tự chọn có thêm bản sao riêng hay không."
 
-#: src/app/AppViewStage.tsx:130
+#: src/app/AppViewStage.tsx:133
 msgctxt "shell.loading.web-words"
 msgid "Preparing your web words…"
 msgstr "Đang chuẩn bị các từ trên web của bạn…"
@@ -1141,7 +1141,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr "Tạo khóa học"
 
-#: src/app/AppViewStage.tsx:113
+#: src/app/AppViewStage.tsx:116
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr "Đang chuẩn bị các lộ trình học…"
@@ -1836,7 +1836,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr "Hủy"
 
-#: src/app/AppViewStage.tsx:128
+#: src/app/AppViewStage.tsx:131
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr "Đang chuẩn bị tiến độ học…"

@@ -610,7 +610,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await signIn(page, '/?view=progress&locale=en');
     await page.getByRole('button', { name: 'View achievements' }).click();
     await expect(page.getByRole('heading', { name: 'Your word garden' })).toBeVisible();
-    await expect(page.getByText(/^Achievements · \d \/ 6 unlocked$/)).toBeVisible();
+    await expect(page.getByText(/^Achievements · \d of 6 earned$/)).toBeVisible();
     await expectAccessibleAndContained(page, 'Achievements');
     await expect.poll(() => page.locator('.claude-workspace').evaluate(element => element.scrollTop)).toBe(0);
     await expect(page).toHaveScreenshot(`achievements-${theme.family}-${theme.mode}-${viewport.name}.png`, {

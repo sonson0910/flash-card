@@ -70,7 +70,7 @@ msgctxt "onboarding.pace.option"
 msgid "{count} cards / day"
 msgstr "{count} cards / day"
 
-#: src/app/AppViewStage.tsx:121
+#: src/app/AppViewStage.tsx:124
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr "Preparing today’s learning plan…"
@@ -233,7 +233,7 @@ msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr "Skip for now"
 
-#: src/app/AppViewStage.tsx:129
+#: src/app/AppViewStage.tsx:132
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr "Preparing appearance settings…"
@@ -551,7 +551,7 @@ msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr "This link opens a preview. The recipient decides whether to add a separate copy."
 
-#: src/app/AppViewStage.tsx:130
+#: src/app/AppViewStage.tsx:133
 msgctxt "shell.loading.web-words"
 msgid "Preparing your web words…"
 msgstr "Preparing your web words…"
@@ -1141,7 +1141,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr "Create course"
 
-#: src/app/AppViewStage.tsx:113
+#: src/app/AppViewStage.tsx:116
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr "Preparing learning paths…"
@@ -1836,7 +1836,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/app/AppViewStage.tsx:128
+#: src/app/AppViewStage.tsx:131
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr "Preparing learning progress…"

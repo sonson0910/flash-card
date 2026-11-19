@@ -64,7 +64,7 @@ msgid "26 weeks"
 msgstr "26 tuần"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:85
+#: src/components/stats/AchievementsMatrix.tsx:87
 msgid "stats.achievements"
 msgstr "Thành tích"
 
@@ -99,72 +99,72 @@ msgid "stats.activity-unavailable"
 msgstr "Chưa có dữ liệu hoạt động trước khi bắt đầu ghi nhận"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:86
+#: src/components/stats/AchievementsMatrix.tsx:88
 msgid "stats.all-badges-earned"
 msgstr "Bạn đã mở khóa mọi huy hiệu"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:85
+#: src/components/stats/AchievementsMatrix.tsx:87
 msgid "stats.back-to-progress"
 msgstr "Quay lại tiến độ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:78
+#: src/components/stats/AchievementsMatrix.tsx:80
 msgid "stats.badge-state.in-progress"
 msgstr "Đang thực hiện"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:78
+#: src/components/stats/AchievementsMatrix.tsx:80
 msgid "stats.badge-state.locked"
 msgstr "Chưa bắt đầu"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:76
+#: src/components/stats/AchievementsMatrix.tsx:78
 msgid "stats.badges"
 msgstr "Huy hiệu"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:82
+#: src/components/stats/AchievementsMatrix.tsx:84
 msgid "stats.bloom-day"
 msgstr "Ngày học rực rỡ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:82
+#: src/components/stats/AchievementsMatrix.tsx:84
 msgid "stats.bloom-day-description"
 msgstr "Nhận 100 XP trong một ngày luyện tập."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:80
+#: src/components/stats/AchievementsMatrix.tsx:82
 msgid "stats.blooming-recall"
 msgstr "Gợi nhớ đang nở rộ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:80
+#: src/components/stats/AchievementsMatrix.tsx:82
 msgid "stats.blooming-recall-description"
 msgstr "Giúp mười từ ổn định trong trí nhớ."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:84
+#: src/components/stats/AchievementsMatrix.tsx:86
 msgid "stats.bud-night-study"
 msgstr "Buổi học đêm nhẹ nhàng"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:84
+#: src/components/stats/AchievementsMatrix.tsx:86
 msgid "stats.bud-night-study-description"
 msgstr "Quay lại học trong năm ngày hoạt động."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:79
+#: src/components/stats/AchievementsMatrix.tsx:81
 msgid "stats.bud-routine"
 msgstr "Thói quen chớm nở"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:79
+#: src/components/stats/AchievementsMatrix.tsx:81
 msgid "stats.bud-routine-description"
 msgstr "Duy trì thói quen học trong ba ngày hoạt động."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:77
+#: src/components/stats/AchievementsMatrix.tsx:79
 msgid "stats.cards-by-bloom"
 msgstr "Thẻ theo độ nở"
 
@@ -209,29 +209,34 @@ msgid "stats.date"
 msgstr "Ngày"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:73
+#: src/components/stats/AchievementsMatrix.tsx:75
 msgid "stats.days"
 msgstr "ngày"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:76
+#: src/components/stats/AchievementsMatrix.tsx:78
 msgid "stats.earned"
 msgstr "Đã đạt"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:75
+#: src/components/stats/AchievementsMatrix.tsx:98
+msgid "stats.earned-count"
+msgstr "Đã đạt {earned}/{total}"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:77
 #: src/components/stats/StatsCharts.tsx:53
 msgid "stats.grade-learning"
 msgstr "Nở"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:75
+#: src/components/stats/AchievementsMatrix.tsx:77
 #: src/components/stats/StatsCharts.tsx:53
 msgid "stats.grade-mastered"
 msgstr "Sao"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:75
+#: src/components/stats/AchievementsMatrix.tsx:77
 #: src/components/stats/StatsCharts.tsx:53
 msgid "stats.grade-new"
 msgstr "Nụ"
@@ -252,18 +257,18 @@ msgid "stats.inspect-day"
 msgstr "Xem ngày"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:74
+#: src/components/stats/AchievementsMatrix.tsx:76
 #: src/components/stats/StatsCharts.tsx:55
 msgid "stats.learning"
 msgstr "Đang học"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:78
+#: src/components/stats/AchievementsMatrix.tsx:80
 msgid "stats.legend.label"
 msgstr "Chú giải trạng thái huy hiệu"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:76
+#: src/components/stats/AchievementsMatrix.tsx:78
 msgid "stats.legend.star-tier"
 msgstr "Hạng Star"
 
@@ -273,27 +278,47 @@ msgid "stats.less"
 msgstr "Ít"
 
 #. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:99
+msgid "stats.level"
+msgstr "Cấp"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:102
+msgid "stats.level-line"
+msgstr "Cấp {level} · {xp} / {next} XP"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:100
+msgid "stats.level-meter"
+msgstr "<0>{xp}</0> / {next} XP để lên Cấp {level}"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:101
+msgid "stats.level-sessions"
+msgstr "≈ {count, plural, other {# buổi học}}"
+
+#. js-lingui-explicit-id
 #: src/components/stats/StatsCharts.tsx:54
 msgid "stats.library-breakdown"
 msgstr "Phân loại thư viện"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:97
+#: src/components/stats/AchievementsMatrix.tsx:104
 msgid "stats.lumi-done"
 msgstr "Mọi huy hiệu đều đã nở rộ. Tuyệt vời lắm!"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:77
+#: src/components/stats/AchievementsMatrix.tsx:79
 msgid "stats.lumi-link"
 msgstr "Lumi · Link"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:96
+#: src/components/stats/AchievementsMatrix.tsx:103
 msgid "stats.lumi-next"
 msgstr "Còn {remaining} nữa là đạt <0>{badge}</0>."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:74
+#: src/components/stats/AchievementsMatrix.tsx:76
 #: src/components/stats/StatsCharts.tsx:55
 msgid "stats.mastered"
 msgstr "Đã thuộc"
@@ -324,7 +349,7 @@ msgid "stats.more"
 msgstr "Nhiều"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:90
+#: src/components/stats/AchievementsMatrix.tsx:92
 msgid "stats.next-badge-meter"
 msgstr "<0>{current}</0> / {target} {unit} tới {badge}"
 
@@ -339,7 +364,7 @@ msgid "stats.no-xp-history"
 msgstr "Chưa có lịch sử XP"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:74
+#: src/components/stats/AchievementsMatrix.tsx:76
 #: src/components/stats/StatsCharts.tsx:55
 msgid "stats.not-reviewed"
 msgstr "Chưa ôn"
@@ -355,7 +380,7 @@ msgid "stats.partial-categories"
 msgstr "Chỉ có dữ liệu trang hiện tại; chưa quét toàn bộ thư viện."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:73
+#: src/components/stats/AchievementsMatrix.tsx:75
 msgid "stats.progress"
 msgstr "Tiến độ"
 
@@ -390,17 +415,17 @@ msgid "stats.recall-rate-hint"
 msgstr "Tỉ lệ lượt ôn trong khoảng này không bị chấm Học lại."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:92
+#: src/components/stats/AchievementsMatrix.tsx:94
 msgid "stats.remaining-days"
 msgstr "{count, plural, other {# ngày}}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:93
+#: src/components/stats/AchievementsMatrix.tsx:95
 msgid "stats.remaining-words"
 msgstr "{count, plural, other {# từ}}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:94
+#: src/components/stats/AchievementsMatrix.tsx:96
 msgid "stats.remaining-xp"
 msgstr "{count} XP"
 
@@ -410,7 +435,7 @@ msgid "stats.review-activity-unavailable"
 msgstr "Chưa có dữ liệu ôn tập cho đến khi bắt đầu ghi nhận."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:74
+#: src/components/stats/AchievementsMatrix.tsx:76
 msgid "stats.reviewed"
 msgstr "Đã ôn"
 
@@ -441,22 +466,22 @@ msgid "stats.show-top-categories"
 msgstr "Hiện 5 danh mục hàng đầu"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:83
+#: src/components/stats/AchievementsMatrix.tsx:85
 msgid "stats.star-collection"
 msgstr "Bộ sưu tập đang lớn dần"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:83
+#: src/components/stats/AchievementsMatrix.tsx:85
 msgid "stats.star-collection-description"
 msgstr "Tích lũy 500 XP từ các buổi học của bạn."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:81
+#: src/components/stats/AchievementsMatrix.tsx:83
 msgid "stats.star-keeper"
 msgstr "Người giữ sao"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:81
+#: src/components/stats/AchievementsMatrix.tsx:83
 msgid "stats.star-keeper-description"
 msgstr "Giúp năm mươi từ tỏa sáng khi đã thành thạo."
 
@@ -467,27 +492,27 @@ msgid "stats.study-activity"
 msgstr "Hoạt động học"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:85
+#: src/components/stats/AchievementsMatrix.tsx:87
 msgid "stats.study-milestones"
 msgstr "Cột mốc học tập"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:76
+#: src/components/stats/AchievementsMatrix.tsx:78
 msgid "stats.study-xp"
 msgstr "XP học tập"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:72
+#: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.tier-bloom"
 msgstr "Bloom"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:72
+#: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.tier-bud"
 msgstr "Bud"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:72
+#: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.tier-star"
 msgstr "Star"
 
@@ -502,7 +527,7 @@ msgid "stats.total-xp"
 msgstr "tổng XP"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:73
+#: src/components/stats/AchievementsMatrix.tsx:75
 msgid "stats.unlocked"
 msgstr "đã mở khóa"
 
@@ -512,12 +537,12 @@ msgid "stats.value"
 msgstr "Giá trị"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:89
+#: src/components/stats/AchievementsMatrix.tsx:91
 msgid "stats.word-garden-title"
 msgstr "Khu vườn <0>từ vựng</0> của bạn"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:73
+#: src/components/stats/AchievementsMatrix.tsx:75
 msgid "stats.words"
 msgstr "từ"
 

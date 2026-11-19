@@ -7,6 +7,7 @@ import type { CloudLibraryStats } from '../features/librarySession/cloudLibraryP
 import type { LanguageProfile } from '../features/language/languageProfile';
 import type { AppViewMode, WebWordsReturnView } from '../features/navigation/useAppNavigation';
 import type { SettingsSectionId } from '../features/settings/settings-sections';
+import { AchievementsLearnerProvider, type AchievementsLearnerLevel } from '../components/stats/AchievementsMatrixLearner';
 import { createDailyLearningLocation, readDailyLearningUrlState, type DailyLessonMode } from '../features/dailyLearning/dailyLearningUrl';
 import type { IntakeSharingSessionActions } from '../features/intake/useIntakeSharingSession';
 import type { PracticeGamificationOutcome } from '../features/practice/practiceSessionService';
@@ -76,6 +77,8 @@ interface AppViewStageProps {
   readonly rewardTimeZone?: string;
   /** Signed-in learner facts for the Today header. */
   readonly learner?: TodayLearnerFacts;
+  /** The verified level and XP the achievements ring shows; absent until the course scope is ready. */
+  readonly learnerLevel?: AchievementsLearnerLevel;
   readonly loadPracticePool: (maximum?: number, includeFuture?: boolean) => Promise<CardData[]>;
   readonly reviewCard: (cardId: string, rating: ReviewRatingValue, operationId?: string, source?: CardData) => Promise<LearningStateOutcome>;
   readonly catalogCards: readonly CardData[];
@@ -106,7 +109,7 @@ interface AppViewStageProps {
 const fallback = (message: ReactNode) => <WorkspaceLoadingPanel>{message}</WorkspaceLoadingPanel>;
 
 export function AppViewStage({
-  viewMode, ownerId, database, verifiedLibraryEpoch, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, cloudStats, cloudStatsTargetLanguage, streak, isStatsLoading, statsError, rewardTimeZone, learner, loadPracticePool, reviewCard,
+  viewMode, ownerId, database, verifiedLibraryEpoch, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, cloudStats, cloudStatsTargetLanguage, streak, isStatsLoading, statsError, rewardTimeZone, learner, learnerLevel, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openPaths, continueReview, continueCatalogUnit, openMorePractice, openWeeklyRecap, onVerifiedPracticeOutcome, weeklyRecapRequestOwnerId, weeklyRecapRequestSettled, onWeeklyRecapRequestConsumed, onPracticePhrase, onListenScopeChange, settingsSection, openSettings, webWordsReturnView, returnFromWebWords, libraryContent, practiceContent,
 }: AppViewStageProps) {
@@ -125,7 +128,7 @@ export function AppViewStage({
       adoptCatalogCards={adoptCatalogCards} onPracticePhrase={onPracticePhrase} onListenScopeChange={onListenScopeChange}
     /></div></Suspense>;
   }
-  if (viewMode === 'progress') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.progress', message: 'Preparing learning progress…' })} />)}><div className="async-content-enter" data-async-content="progress"><ProgressWorkspace key={ownerId ?? 'signed-out'} ownerId={ownerId} targetLanguage={languageProfile.source.code} darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} weeklyRecapRequestOwnerId={weeklyRecapRequestOwnerId} weeklyRecapRequestSettled={weeklyRecapRequestSettled} onWeeklyRecapRequestConsumed={onWeeklyRecapRequestConsumed} /></div></Suspense>;
+  if (viewMode === 'progress') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.progress', message: 'Preparing learning progress…' })} />)}><div className="async-content-enter" data-async-content="progress"><AchievementsLearnerProvider learner={learnerLevel ?? null}><ProgressWorkspace key={ownerId ?? 'signed-out'} ownerId={ownerId} targetLanguage={languageProfile.source.code} darkMode={isDarkMode} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} stats={stats} isStatsLoading={isStatsLoading} statsError={statsError} continueReview={continueReview} openVocabulary={openVocabulary} weeklyRecapRequestOwnerId={weeklyRecapRequestOwnerId} weeklyRecapRequestSettled={weeklyRecapRequestSettled} onWeeklyRecapRequestConsumed={onWeeklyRecapRequestConsumed} /></AchievementsLearnerProvider></div></Suspense>;
   if (viewMode === 'settings') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.settings', message: 'Preparing appearance settings…' })} />)}><div className="async-content-enter" data-async-content="settings"><SettingsScreen headingRef={headingRef} focusIntent={focusIntent} section={settingsSection} onSelectSection={openSettings} /></div></Suspense>;
   if (viewMode === 'web-words') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.web-words', message: 'Preparing your web words…' })} />)}><div className="async-content-enter" data-async-content="web-words"><WebWordsPage ownerId={ownerId} targetLanguage={languageProfile.source.code} translationLanguage={languageProfile.target.code} returnView={webWordsReturnView} onClose={returnFromWebWords} headingRef={headingRef} focusIntent={focusIntent} /></div></Suspense>;
   if (viewMode === 'library') return libraryContent;

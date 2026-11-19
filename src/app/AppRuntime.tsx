@@ -595,6 +595,7 @@ export default function AppRuntime({
               {...viewStageStatsProps(stats, cloud, overview)}
               rewardTimeZone={stats.rewardTimeZone}
               learner={todayLearner}
+              {...(courseScopeReady && user ? { learnerLevel: { level: overview.level, xp: overview.xp } } : {})}
               viewMode={viewMode}
               ownerId={currentOwnerId}
               database={isFirebaseConfigured ? db : null}
