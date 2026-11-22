@@ -182,6 +182,8 @@ export const desktopNavigationActions = <T, S>(setViewMode: (view: T) => void, o
   onOpenCatalog: () => setViewMode('catalog' as T),
   onOpenProgress: () => setViewMode('progress' as T),
   onOpenSettings: openSettings,
+  /** The course switcher's "Start lesson" goes to the day's session for the active course. */
+  onStudyActiveCourse: () => setViewMode('today' as T),
 });
 
 export const viewStageNavigationActions = <T>(setViewMode: (view: T) => void) => ({

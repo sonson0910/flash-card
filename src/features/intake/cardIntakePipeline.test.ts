@@ -619,6 +619,25 @@ describe('Card Intake Pipeline contract', () => {
     expect(aiOptions).not.toHaveProperty('pageTitle');
   });
 
+  it('carries alternative translations onto the generated card only when the model returned some', async () => {
+    const wordInfo = {
+      translation: 'dẫn đầu', explanation: '', explanationTranslation: '', phonetic: '/liːd/',
+      emoji: '🎭', category: 'General', partOfSpeech: 'verb', cefrLevel: 'B1',
+      exampleSentence: '', exampleTranslation: '', collocations: [], synonyms: [], antonyms: [],
+      register: '', commonMistake: '', imageSearchQuery: 'lead actor',
+    };
+    generationRuntime.generateWordInfo
+      .mockResolvedValueOnce({ ...wordInfo, translationAlternatives: ['chỉ huy', 'dẫn dắt'] })
+      .mockResolvedValueOnce({ ...wordInfo, translationAlternatives: [] });
+    const pipeline = createCardIntakePipeline({ getContext: createContext });
+
+    const withAlternatives = await pipeline.generateCard({ term: 'lead', language: ENGLISH_TO_VIETNAMESE_PROFILE });
+    const without = await pipeline.generateCard({ term: 'lead', language: ENGLISH_TO_VIETNAMESE_PROFILE });
+
+    expect(withAlternatives.card).toMatchObject({ translationAlternatives: ['chỉ huy', 'dẫn dắt'] });
+    expect(without.card).not.toHaveProperty('translationAlternatives');
+  });
+
   it('omits source metadata entirely for a plain in-app generation request', async () => {
     generationRuntime.generateWordInfo.mockResolvedValueOnce({
       translation: 'dẫn đầu', explanation: '', explanationTranslation: '', phonetic: '/liːd/',
@@ -666,8 +685,10 @@ describe('Card Intake Pipeline contract', () => {
 
     context = { ...ownerA, ownerId: 'owner-b', libraryEpoch: 4 };
     pipeline.replaceOwner('owner-b');
-    await pipeline.cancelGeneration?.(operationId);
+    await expect(pipeline.cancelGeneration?.(operationId)).resolves.toBe(true);
+    await expect(pipeline.cancelGeneration?.('00000000-0000-4000-8000-000000000000')).resolves.toBeNull();
 
+    expect(generationRuntime.cancelWordInfoGeneration).toHaveBeenCalledOnce();
     expect(generationRuntime.cancelWordInfoGeneration).toHaveBeenCalledWith(operationId, 'owner-a');
     wordInfo.resolve({
       translation: 'dẫn đầu', explanation: '', explanationTranslation: '', phonetic: '/liːd/',

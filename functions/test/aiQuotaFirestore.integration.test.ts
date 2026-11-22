@@ -4,7 +4,7 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   cancelWordOperation, freePeriod, markWordOperationDelivered, refundNonCardAction, reserveNonCardAction,
-  reserveWordOperation, settleWordOperation, sweepExpiredWordOperations,
+  reserveWordOperation, settleWordOperation, sweepExpiredWordOperations, WORD_OPERATION_MAX_ATTEMPTS,
 } from '../src/aiQuota.js';
 import { PILOT_CONFIG_DEFAULTS } from '../src/pilotConfig.js';
 
@@ -71,8 +71,9 @@ describeWithEmulator('Firestore account AI quota', () => {
     const operationId = randomUUID();
     const reservation = await reserveWordOperation(database, uid, operationId, 'same', now, config);
     expect(reservation.kind).toBe('reserved');
-    expect(await cancelWordOperation(database, uid, operationId, now)).toBe(true);
-    expect(await cancelWordOperation(database, uid, operationId, now)).toBe(false);
+    expect(await cancelWordOperation(database, uid, operationId, now)).toEqual({ cancelled: true, counted: false });
+    expect(await cancelWordOperation(database, uid, operationId, now)).toEqual({ cancelled: false, counted: false });
+    expect(await cancelWordOperation(database, uid, randomUUID(), now)).toEqual({ cancelled: false, counted: false });
     const owner = database.collection('users').doc(uid);
     expect((await owner.collection('ai_operations').doc(operationId).get()).data()?.status).toBe('failed');
     expect((await owner.collection('ai_usage').doc(freePeriod(now, config).periodKey).get()).data()?.used).toBe(0);
@@ -87,18 +88,12 @@ describeWithEmulator('Firestore account AI quota', () => {
     if (reservation.kind !== 'reserved') throw new Error('expected a reservation');
     expect(await markWordOperationDelivered(database, uid, operationId, 'another-attempt', now)).toBe(false);
     expect(await markWordOperationDelivered(database, uid, operationId, reservation.attemptId, now)).toBe(true);
-    expect(await cancelWordOperation(database, uid, operationId, now)).toBe(false);
+    expect(await cancelWordOperation(database, uid, operationId, now)).toEqual({ cancelled: false, counted: true });
     expect((await owner.collection('ai_operations').doc(operationId).get()).data()?.status).toBe('reserved');
     expect(await settleWordOperation(database, uid, operationId, reservation.attemptId, null, now)).toBe(true);
     expect((await owner.collection('ai_operations').doc(operationId).get()).data()?.status).toBe('failed');
     expect(await usedCards()).toBe(1);
-
-    // A fresh attempt on the same ID is a new charge with no inherited delivery, so its failure refunds.
-    const retried = await reserveWordOperation(database, uid, operationId, 'same', now, config);
-    if (retried.kind !== 'reserved') throw new Error('expected a reservation');
-    expect(await usedCards()).toBe(2);
-    expect(await settleWordOperation(database, uid, operationId, retried.attemptId, null, now)).toBe(true);
-    expect(await usedCards()).toBe(1);
+    expect(await cancelWordOperation(database, uid, operationId, now)).toEqual({ cancelled: false, counted: true });
 
     const abandoned = randomUUID();
     const stale = await reserveWordOperation(database, uid, abandoned, 'other', now, config);
@@ -109,12 +104,141 @@ describeWithEmulator('Firestore account AI quota', () => {
     expect(await usedCards()).toBe(2);
   }, 15_000);
 
+  it('lets a retry of the same request after a delivered failure inherit the charged unit, at most three attempts', async () => {
+    const uid = `inherit-${randomUUID()}`;
+    const owner = database.collection('users').doc(uid);
+    const usedCards = async () => (await owner.collection('ai_usage').doc(freePeriod(now, config).periodKey).get()).data()?.used;
+    const operation = async (id: string) => (await owner.collection('ai_operations').doc(id).get()).data();
+    const operationId = randomUUID();
+    const first = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    if (first.kind !== 'reserved') throw new Error('expected a reservation');
+    expect(WORD_OPERATION_MAX_ATTEMPTS).toBe(3);
+    expect((await operation(operationId))?.attempts).toBe(1);
+    expect(await markWordOperationDelivered(database, uid, operationId, first.attemptId, now)).toBe(true);
+    expect(await settleWordOperation(database, uid, operationId, first.attemptId, null, now)).toBe(true);
+    expect(await usedCards()).toBe(1);
+
+    // The second attempt runs on the unit the delivered failure kept; failing again refunds nothing.
+    const second = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    if (second.kind !== 'reserved') throw new Error('expected a reservation');
+    expect(second.periodKey).toBe(first.periodKey);
+    expect(second.attemptId).not.toBe(first.attemptId);
+    expect(await usedCards()).toBe(1);
+    expect(await operation(operationId)).toMatchObject({ status: 'reserved', attempts: 2 });
+    expect((await operation(operationId))?.deliveredAt).toBeTruthy();
+    expect(await cancelWordOperation(database, uid, operationId, now)).toEqual({ cancelled: false, counted: true });
+    expect(await settleWordOperation(database, uid, operationId, second.attemptId, null, now)).toBe(true);
+    expect(await usedCards()).toBe(1);
+
+    // The third attempt is the last on this unit; it completes and its replay stays free.
+    const third = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    if (third.kind !== 'reserved') throw new Error('expected a reservation');
+    expect(await usedCards()).toBe(1);
+    expect(await settleWordOperation(database, uid, operationId, third.attemptId, { translation: 'kiên cường' }, now)).toBe(true);
+    expect(await reserveWordOperation(database, uid, operationId, 'same', now, config))
+      .toEqual({ kind: 'completed', result: { translation: 'kiên cường' } });
+    expect(await usedCards()).toBe(1);
+    expect(await cancelWordOperation(database, uid, operationId, now)).toEqual({ cancelled: false, counted: true });
+  }, 20_000);
+
+  it('refuses a fourth attempt on one unit, so retrying never avoids the charge for a new request', async () => {
+    const uid = `exhausted-${randomUUID()}`;
+    const owner = database.collection('users').doc(uid);
+    const usedCards = async () => (await owner.collection('ai_usage').doc(freePeriod(now, config).periodKey).get()).data()?.used;
+    const operationId = randomUUID();
+    for (let attempt = 1; attempt <= WORD_OPERATION_MAX_ATTEMPTS; attempt += 1) {
+      const reservation = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+      if (reservation.kind !== 'reserved') throw new Error('expected a reservation');
+      expect(await markWordOperationDelivered(database, uid, operationId, reservation.attemptId, now)).toBe(true);
+      expect(await settleWordOperation(database, uid, operationId, reservation.attemptId, null, now)).toBe(true);
+    }
+    expect(await usedCards()).toBe(1);
+    await expect(reserveWordOperation(database, uid, operationId, 'same', now, config)).rejects.toMatchObject({
+      reason: 'operation-attempts-exhausted', details: { attempts: 3, maxAttempts: 3 },
+    });
+    expect((await owner.collection('ai_operations').doc(operationId).get()).data()).toMatchObject({ status: 'failed', attempts: 3 });
+    expect(await usedCards()).toBe(1);
+    // The learner's next generation is a new operation, charged like any other.
+    const next = await reserveWordOperation(database, uid, randomUUID(), 'same', now, config);
+    expect(next.kind).toBe('reserved');
+    expect(await usedCards()).toBe(2);
+  }, 20_000);
+
+  it('charges a new unit when a delivered failure is retried for a different request', async () => {
+    const uid = `inherit-other-${randomUUID()}`;
+    const owner = database.collection('users').doc(uid);
+    const usedCards = async () => (await owner.collection('ai_usage').doc(freePeriod(now, config).periodKey).get()).data()?.used;
+    const operationId = randomUUID();
+    const first = await reserveWordOperation(database, uid, operationId, 'hash-a', now, config);
+    if (first.kind !== 'reserved') throw new Error('expected a reservation');
+    expect(await markWordOperationDelivered(database, uid, operationId, first.attemptId, now)).toBe(true);
+    expect(await settleWordOperation(database, uid, operationId, first.attemptId, null, now)).toBe(true);
+    const other = await reserveWordOperation(database, uid, operationId, 'hash-b', now, config);
+    if (other.kind !== 'reserved') throw new Error('expected a reservation');
+    expect(await usedCards()).toBe(2);
+    expect((await owner.collection('ai_operations').doc(operationId).get()).data())
+      .toMatchObject({ status: 'reserved', attempts: 1, deliveredAt: null });
+    // Nothing of the new request was delivered, so its failure refunds its own unit only.
+    expect(await settleWordOperation(database, uid, operationId, other.attemptId, null, now)).toBe(true);
+    expect(await usedCards()).toBe(1);
+  }, 15_000);
+
+  it('charges again for a retry after a failure that delivered nothing, which had been refunded', async () => {
+    const uid = `refunded-retry-${randomUUID()}`;
+    const owner = database.collection('users').doc(uid);
+    const usedCards = async () => (await owner.collection('ai_usage').doc(freePeriod(now, config).periodKey).get()).data()?.used;
+    const operationId = randomUUID();
+    const first = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    if (first.kind !== 'reserved') throw new Error('expected a reservation');
+    expect(await settleWordOperation(database, uid, operationId, first.attemptId, null, now)).toBe(true);
+    expect(await usedCards()).toBe(0);
+    const retried = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    expect(retried.kind).toBe('reserved');
+    expect(await usedCards()).toBe(1);
+  }, 15_000);
+
+  it('counts a takeover of stale work as an attempt and keeps an inherited unit through the sweeper', async () => {
+    const uid = `takeover-attempts-${randomUUID()}`;
+    const owner = database.collection('users').doc(uid);
+    const usedCards = async () => (await owner.collection('ai_usage').doc(freePeriod(now, config).periodKey).get()).data()?.used;
+    const operationId = randomUUID();
+    const first = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    if (first.kind !== 'reserved') throw new Error('expected a reservation');
+    expect(await markWordOperationDelivered(database, uid, operationId, first.attemptId, now)).toBe(true);
+    expect(await settleWordOperation(database, uid, operationId, first.attemptId, null, now)).toBe(true);
+    const resumed = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    if (resumed.kind !== 'reserved') throw new Error('expected a reservation');
+    const takenOver = await reserveWordOperation(database, uid, operationId, 'same', new Date(now.getTime() + 91_000), config);
+    if (takenOver.kind !== 'reserved') throw new Error('expected a reservation');
+    expect((await owner.collection('ai_operations').doc(operationId).get()).data()).toMatchObject({ attempts: 3 });
+    await expect(reserveWordOperation(database, uid, operationId, 'same', new Date(now.getTime() + 182_000), config))
+      .rejects.toMatchObject({ reason: 'operation-attempts-exhausted' });
+    expect(await sweepExpiredWordOperations(database, new Date(now.getTime() + 20 * 60_000))).toBeGreaterThanOrEqual(1);
+    expect((await owner.collection('ai_operations').doc(operationId).get()).data()?.status).toBe('failed');
+    expect(await usedCards()).toBe(1);
+  }, 20_000);
+
+  it('treats an operation recorded before attempts were counted as one attempt', async () => {
+    const uid = `legacy-attempts-${randomUUID()}`;
+    const owner = database.collection('users').doc(uid);
+    const operationId = randomUUID();
+    await owner.collection('ai_operations').doc(operationId).set({
+      status: 'failed', attemptId: 'legacy', periodKey: freePeriod(now, config).periodKey, requestHash: 'same',
+      reservedAt: now, deliveredAt: now, result: null,
+    });
+    await owner.collection('ai_usage').doc(freePeriod(now, config).periodKey).set({ used: 1 });
+    const resumed = await reserveWordOperation(database, uid, operationId, 'same', now, config);
+    expect(resumed.kind).toBe('reserved');
+    expect((await owner.collection('ai_operations').doc(operationId).get()).data()?.attempts).toBe(2);
+    expect((await owner.collection('ai_usage').doc(freePeriod(now, config).periodKey).get()).data()?.used).toBe(1);
+  }, 15_000);
+
   it('refuses to mark delivery after a cancel has refunded the reservation', async () => {
     const uid = `cancel-first-${randomUUID()}`;
     const operationId = randomUUID();
     const reservation = await reserveWordOperation(database, uid, operationId, 'same', now, config);
     if (reservation.kind !== 'reserved') throw new Error('expected a reservation');
-    expect(await cancelWordOperation(database, uid, operationId, now)).toBe(true);
+    expect(await cancelWordOperation(database, uid, operationId, now)).toEqual({ cancelled: true, counted: false });
     expect(await markWordOperationDelivered(database, uid, operationId, reservation.attemptId, now)).toBe(false);
     const usage = await database.collection('users').doc(uid).collection('ai_usage').doc(freePeriod(now, config).periodKey).get();
     expect(usage.data()?.used).toBe(0);

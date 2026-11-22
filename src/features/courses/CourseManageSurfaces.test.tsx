@@ -1,16 +1,26 @@
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRadixDialogPassthroughMock } from '../../testing/radix-dialog-passthrough';
 import { CourseSwitcherControl } from '../../components/shell/CourseSwitcherControl';
 import { AddCourseDialog } from './AddCourseDialog';
 import { CourseContext, type CourseGateValue } from './CourseGate';
 import { goalSummaryText } from './CourseVisuals';
+import { useCourseCardCounts } from './useCourseCardCounts';
+import { CoursesSurface } from './CoursesSurface';
 import { ManageCoursesDialog } from './ManageCoursesDialog';
 import type { Course } from './courseModel';
+import type { CourseCardCounts } from './useCourseCardCounts';
 
 vi.mock('@radix-ui/react-dialog', () => createRadixDialogPassthroughMock());
+// The surface reads card counts in an effect, which static rendering never runs; the counts
+// stand in for what the hook would have read.
+const cardCounts = vi.hoisted(() => ({ current: {} as CourseCardCounts }));
+vi.mock('./useCourseCardCounts', async importOriginal => ({
+  ...(await importOriginal<typeof import('./useCourseCardCounts')>()),
+  useCourseCardCounts: vi.fn(() => cardCounts.current),
+}));
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -65,6 +75,11 @@ describe('course switcher trigger', () => {
 });
 
 describe('courses surface', () => {
+  beforeEach(() => {
+    cardCounts.current = {};
+    vi.mocked(useCourseCardCounts).mockClear();
+  });
+
   it('shows each course with its real goal, level and due count, and nothing invented', () => {
     const html = render(manage(), session([korean, english, archivedJapanese], korean));
 
@@ -105,6 +120,41 @@ describe('courses surface', () => {
     const html = render(manage(), session([korean, english, archivedJapanese, chinese], korean));
 
     expect(html).not.toContain('New language');
+  });
+
+  it('shows the new words and the reviewed share of each open course from its card counts', () => {
+    cardCounts.current = { ko: { total: 120, reviewed: 48 }, en: { total: 0, reviewed: 0 }, ja: { total: 30, reviewed: 30 } };
+    const html = render(manage(), session([korean, english, archivedJapanese], korean));
+
+    expect(vi.mocked(useCourseCardCounts)).toHaveBeenCalledWith('owner-1', ['ko', 'en'], true, undefined);
+    expect(html.match(/>New words</g)).toHaveLength(2);
+    expect(html).toContain('>72<');
+    expect(html).toContain('48 / 120 reviewed');
+    expect(html).toContain('--course-progress:40%');
+    // An empty course shows its zero new words but no bar, and an archived course shows no counts.
+    expect(html.match(/class="course-card__bar"/g)).toHaveLength(1);
+    expect(html).not.toContain('30 / 30 reviewed');
+    expect(html).toContain('<span class="course-card__goal-name">TOPIK II</span>');
+    expect(html).not.toMatch(/streak|tier|XP|min\b/i);
+  });
+
+  it('leaves the card numbers out when the counts could not be read', () => {
+    const html = render(manage(), session([korean], korean));
+
+    expect(html).not.toContain('New words');
+    expect(html).not.toContain('reviewed');
+    expect(html).not.toContain('course-card__bar');
+  });
+
+  it('mounts on a page with its own heading and a close button only when a way back is given', () => {
+    const props = { dueCounts: { ko: 24 }, switched: null, onSwitch: vi.fn(), onAddLanguage: vi.fn() };
+    const page = render(<CoursesSurface {...props} />, session([korean], korean));
+    const closable = render(<CoursesSurface {...props} onClose={vi.fn()} />, session([korean], korean));
+
+    expect(page).toMatch(/^<div class="course-manage__frame">/);
+    expect(page).toContain('<h1 class="course-manage__title">Your <em>languages</em></h1>');
+    expect(page).not.toContain('Close courses');
+    expect(closable).toContain('<button type="button" class="course-manage__close crystal-chamfer-sm" aria-label="Close courses">');
   });
 
   it('opens the goals of a course without a due count it could not read', () => {

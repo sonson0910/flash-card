@@ -71,6 +71,17 @@ const EXTENSION_RESULT_TYPE = 'LINGOFLASH_EXTENSION_RESULT';
 const boundedText = (value: unknown, maximum: number): string =>
   (typeof value === 'string' ? value : '').trim().slice(0, maximum);
 
+/**
+ * Languages whose AI card writes a learner reading (hiragana, pinyin) in the phonetic field instead
+ * of IPA; only their phonetic is passed on as a reading.
+ */
+const READING_LANGUAGES = new Set(['ja', 'zh']);
+
+const cardReading = (card: { language?: unknown; phonetic?: unknown } | undefined): string => {
+  const language = typeof card?.language === 'string' ? card.language.trim().toLowerCase().split('-')[0] : '';
+  return READING_LANGUAGES.has(language) ? boundedText(card?.phonetic, 256) : '';
+};
+
 const publishSilentResult = (
   intent: BrowserExtensionImportIntent,
   payload: {
@@ -84,6 +95,8 @@ const publishSilentResult = (
       exampleSentence?: unknown;
       exampleTranslation?: unknown;
       origin?: unknown;
+      partOfSpeech?: unknown;
+      language?: unknown;
     };
   },
 ): void => {
@@ -103,6 +116,9 @@ const publishSilentResult = (
       explanation: boundedText(card?.explanation, 1024),
       exampleSentence: boundedText(card?.exampleSentence, 1024),
       exampleTranslation: boundedText(card?.exampleTranslation, 1024),
+      // Optional additions the extension may show; an extension that predates them ignores them.
+      partOfSpeech: boundedText(card?.partOfSpeech, 40),
+      reading: cardReading(card),
       aiGenerated: card?.origin === 'ai',
       message: boundedText(payload.message, 512),
     },

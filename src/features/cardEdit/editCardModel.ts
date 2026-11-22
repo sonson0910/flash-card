@@ -1,5 +1,13 @@
 import type { LearningStateOutcome } from '../learning/learningStateController';
-import type { CardData } from '../../types/card';
+import type { CardData, LearnerDifficulty } from '../../types/card';
+import {
+  isLearnerDifficulty,
+  MAX_CARD_TAGS,
+  normalizeCardTag,
+  normalizeCardTags,
+  sameCardTag,
+} from '../../lib/cardNormalization';
+import { normalizeAssignedDeckName } from '../library/customDecks';
 
 export type EditableCardField =
   | 'translation'
@@ -22,7 +30,34 @@ export type EditCardDraft = Record<EditableCardField, string> & {
   category: string;
   imageUrl: string;
   imageSearchQuery: string;
+  /** Deck name; '' means Unassigned. */
+  deck: string;
+  starred: boolean;
+  /** Stored-form tags, in the learner's order. */
+  tags: string[];
+  /** '' means no label. */
+  learnerDifficulty: LearnerDifficulty | '';
 };
+
+export type EditCardDraftErrorReason = 'deck-missing';
+
+/** A draft that cannot be saved for a reason the editor explains to the learner. */
+export class EditCardDraftError extends Error {
+  constructor(readonly reason: EditCardDraftErrorReason) {
+    super(`The card draft cannot be saved: ${reason}.`);
+    this.name = 'EditCardDraftError';
+  }
+}
+
+export interface EditCardPatchOptions {
+  /**
+   * The learner's live deck list. A deck picked in the draft must still be in
+   * it when the draft is saved; leaving the card's own deck untouched never
+   * checks the list, so a deck deleted on another device does not block an
+   * unrelated edit.
+   */
+  customDecks?: readonly string[];
+}
 
 export const EDIT_CARD_FIELDS: ReadonlyArray<{ key: EditableCardField; label: string; maxLength: number }> = [
   { key: 'translation', label: 'Nghĩa tiếng Việt', maxLength: 256 },
@@ -58,9 +93,27 @@ export const createEditCardDraft = (card: CardData): EditCardDraft => ({
   category: card.category ?? '',
   imageUrl: card.imageUrl ?? '',
   imageSearchQuery: card.imageSearchQuery ?? '',
+  deck: normalizeAssignedDeckName(card.customDeck ?? null) ?? '',
+  starred: card.bookmarked === true,
+  tags: normalizeCardTags(card.tags),
+  learnerDifficulty: cardLearnerDifficulty(card) ?? '',
 }) as EditCardDraft;
 
-export function editCardPatch(card: CardData, draft: EditCardDraft): Partial<CardData> {
+const cardDeck = (card: CardData) => normalizeAssignedDeckName(card.customDeck ?? null);
+const draftDeck = (draft: EditCardDraft) => normalizeAssignedDeckName(draft.deck);
+function cardLearnerDifficulty(card: CardData): LearnerDifficulty | null {
+  return isLearnerDifficulty(card.learnerDifficulty) ? card.learnerDifficulty : null;
+}
+const sameTagList = (left: readonly string[], right: readonly string[]) =>
+  left.length === right.length && left.every((tag, index) => tag === right[index]);
+const tagsChanged = (card: CardData, draft: EditCardDraft) =>
+  !sameTagList(normalizeCardTags(draft.tags), normalizeCardTags(card.tags));
+
+export function editCardPatch(
+  card: CardData,
+  draft: EditCardDraft,
+  { customDecks }: EditCardPatchOptions = {},
+): Partial<CardData> {
   const patch: Partial<CardData> = {};
   for (const { key, maxLength } of EDIT_CARD_FIELDS) {
     const value = draft[key].trim();
@@ -90,6 +143,15 @@ export function editCardPatch(card: CardData, draft: EditCardDraft): Partial<Car
     // never exposed, so no separate bound check is needed here.
     patch.imageSearchQuery = imageUrl ? draft.imageSearchQuery.trim() : '';
   }
+  const deck = draftDeck(draft);
+  if (deck !== cardDeck(card)) {
+    if (deck !== null && customDecks && !customDecks.includes(deck)) throw new EditCardDraftError('deck-missing');
+    patch.customDeck = deck;
+  }
+  if (draft.starred !== (card.bookmarked === true)) patch.bookmarked = draft.starred;
+  if (tagsChanged(card, draft)) patch.tags = normalizeCardTags(draft.tags);
+  const learnerDifficulty = draft.learnerDifficulty || null;
+  if (learnerDifficulty !== cardLearnerDifficulty(card)) patch.learnerDifficulty = learnerDifficulty;
   return patch;
 }
 
@@ -104,7 +166,11 @@ export function isEditCardDraftDirty(card: CardData, draft: EditCardDraft): bool
   return EDIT_CARD_FIELDS.some(({ key }) => draft[key].trim() !== (card[key] ?? ''))
     || (canEditPartOfSpeech(card) && draft.partOfSpeech.trim() !== (card.partOfSpeech ?? ''))
     || draft.category.trim() !== (card.category ?? '')
-    || draft.imageUrl.trim() !== (card.imageUrl ?? '');
+    || draft.imageUrl.trim() !== (card.imageUrl ?? '')
+    || draftDeck(draft) !== cardDeck(card)
+    || draft.starred !== (card.bookmarked === true)
+    || tagsChanged(card, draft)
+    || (draft.learnerDifficulty || null) !== cardLearnerDifficulty(card);
 }
 
 /**
@@ -118,8 +184,67 @@ export function previewEditCard(card: CardData, draft: EditCardDraft): CardData 
     ...(canEditPartOfSpeech(card) ? { partOfSpeech: draft.partOfSpeech } : {}),
     category: draft.category,
     imageUrl: draft.imageUrl || null,
+    customDeck: draftDeck(draft),
+    bookmarked: draft.starred,
+    tags: normalizeCardTags(draft.tags),
+    learnerDifficulty: draft.learnerDifficulty || null,
   } as CardData;
 }
+
+export type AddTagRejection = 'duplicate' | 'limit' | 'too-long';
+
+/**
+ * Adds what the learner typed or pasted to the tag list. A comma separates
+ * tags, so "news, B2" adds two. Returns the new list, the first reason a
+ * piece was not added, and the pieces that were too long (joined with ", ")
+ * so the input can keep them for editing. Empty pieces are skipped.
+ */
+export function addTags(
+  tags: readonly string[],
+  raw: string,
+): { tags: string[]; rejected: AddTagRejection | null; leftover: string } {
+  const next = [...tags];
+  const tooLong: string[] = [];
+  let rejected: AddTagRejection | null = null;
+  for (const piece of raw.split(',')) {
+    const text = piece.replace(/\s+/gu, ' ').trim();
+    if (!text) continue;
+    let reason: AddTagRejection | null = null;
+    // The piece holds no comma and is not blank, so a rejection here is length.
+    const tag = normalizeCardTag(text);
+    if (!tag) {
+      reason = 'too-long';
+      tooLong.push(text);
+    } else if (next.some(existing => sameCardTag(existing, tag))) reason = 'duplicate';
+    else if (next.length >= MAX_CARD_TAGS) reason = 'limit';
+    else next.push(tag);
+    rejected ??= reason;
+  }
+  return { tags: next, rejected, leftover: tooLong.join(', ') };
+}
+
+/**
+ * Tags offered under "From this card": the card's category and CEFR level
+ * when they are not tags yet. They are the learner's own data, never labelled
+ * as AI suggestions; "Other" is the empty-category fallback, not a choice.
+ */
+export function tagSuggestions(card: Pick<CardData, 'category' | 'cefrLevel'>, tags: readonly string[]): string[] {
+  const suggestions: string[] = [];
+  for (const value of [card.category === 'Other' ? '' : card.category, card.cefrLevel]) {
+    const tag = normalizeCardTag(value);
+    if (tag && ![...tags, ...suggestions].some(existing => sameCardTag(existing, tag))) suggestions.push(tag);
+  }
+  return tags.length >= MAX_CARD_TAGS ? [] : suggestions;
+}
+
+/** Meanings the AI offered at creation that differ from the draft meaning. */
+export function meaningSuggestions(card: Pick<CardData, 'translationAlternatives'>, draftTranslation: string): string[] {
+  const current = draftTranslation.trim().toLocaleLowerCase();
+  return (card.translationAlternatives ?? []).filter(meaning => meaning.trim().toLocaleLowerCase() !== current);
+}
+
+/** A meaning chip shows the text up to its first ";". */
+export const meaningChipLabel = (meaning: string): string => meaning.split(';')[0]?.trim() || meaning;
 
 /**
  * The category→count mirror at `users/{uid}/profile/library_facets` is kept

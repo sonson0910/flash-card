@@ -8,6 +8,8 @@ import {
   INVALID_CARD_LANGUAGE_MARKER,
   isValidCardLanguageFields,
   normalizeCardData,
+  normalizeCardTag,
+  normalizeCardTags,
 } from './cardNormalization';
 
 describe('normalizeCardData', () => {
@@ -255,6 +257,14 @@ describe('normalizeCardData', () => {
     expect(card.reviewHistory).toEqual([]);
   });
 
+  it('keeps a photo the learner uploaded to their own files and drops any other storage object', () => {
+    const own = 'https://firebasestorage.googleapis.com/v0/b/encoded-hangout-433912-h2.firebasestorage.app/o/users%2Fuser-1%2Ffiles%2FAbCdEfGhIjKlMnOpQrSt?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d';
+    const base = { word: 'safe', translation: 'an toàn', explanation: '', phonetic: '', emoji: '', category: 'General', audioUrl: null };
+    expect(normalizeCardData({ ...base, imageUrl: own }, 'own-photo').imageUrl).toBe(own);
+    expect(normalizeCardData({ ...base, imageUrl: own.replace('encoded-hangout-433912-h2.firebasestorage.app', 'other-project.appspot.com') }, 'other-bucket').imageUrl).toBeNull();
+    expect(normalizeCardData({ ...base, imageUrl: own.replace('%2Ffiles%2F', '%2Fprivate%2F') }, 'other-folder').imageUrl).toBeNull();
+  });
+
   it('bounds every persisted field and removes malformed scheduling data', () => {
     const card = normalizeCardData({
       id: 'x'.repeat(300),
@@ -281,6 +291,44 @@ describe('normalizeCardData', () => {
     expect(card.easeFactor).toBe(2.5);
     expect(card.nextReviewDate).toBeUndefined();
     expect(card.fsrs).toBeUndefined();
+  });
+
+  it('keeps learner tags and the difficulty label in the stored form the server accepts', () => {
+    const card = normalizeCardData({
+      word: 'lead',
+      tags: ['  phrasal   verb ', 'News', 'news', '', 'a,b', 7, 'x'.repeat(33), '📚'.repeat(32)],
+      learnerDifficulty: 'medium',
+    } as unknown as Partial<CardData>, 'lead');
+
+    expect(card.tags).toEqual(['phrasal verb', 'News', '📚'.repeat(32)]);
+    expect(card.learnerDifficulty).toBe('medium');
+    expect(normalizeCardData({ word: 'lead', tags: [], learnerDifficulty: null }, 'lead')).toMatchObject({ tags: [], learnerDifficulty: null });
+    const plain = normalizeCardData({ word: 'lead', learnerDifficulty: 'good' as never }, 'lead');
+    expect(plain).not.toHaveProperty('tags');
+    expect(plain).not.toHaveProperty('learnerDifficulty');
+  });
+
+  it('caps tags at eight and rejects a tag the server would refuse', () => {
+    expect(normalizeCardTags(Array.from({ length: 10 }, (_, index) => `tag ${index}`))).toHaveLength(8);
+    expect(normalizeCardTags('news')).toEqual([]);
+    expect(normalizeCardTag(' line\nbreak ')).toBe('line break');
+    expect(normalizeCardTag('\u00a0spaced\u3000')).toBe('spaced');
+    expect(normalizeCardTag('a,b')).toBeNull();
+    expect(normalizeCardTag('x'.repeat(33))).toBeNull();
+    expect(normalizeCardTag('   ')).toBeNull();
+  });
+
+  it('keeps AI meaning alternatives only on AI cards', () => {
+    const ai = normalizeCardData({
+      word: 'lead',
+      origin: 'ai',
+      translationAlternatives: [' lãnh đạo ', 'Lãnh đạo', '', 'dẫn dắt', 'chỉ huy', 'đứng đầu'],
+    }, 'lead');
+    expect(ai.translationAlternatives).toEqual(['lãnh đạo', 'dẫn dắt', 'chỉ huy']);
+    expect(normalizeCardData({ word: 'lead', origin: 'manual', translationAlternatives: ['lãnh đạo'] }, 'lead'))
+      .not.toHaveProperty('translationAlternatives');
+    expect(normalizeCardData({ word: 'lead', origin: 'ai', translationAlternatives: [] }, 'lead'))
+      .not.toHaveProperty('translationAlternatives');
   });
 
   it('sanitizes an unsafe fallback document id', () => {

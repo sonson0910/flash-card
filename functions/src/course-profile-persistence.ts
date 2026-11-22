@@ -430,6 +430,22 @@ const readStoredProfile = (snapshot: { exists: boolean; data(): DocumentData | u
   }
 };
 
+/**
+ * An account with no stored profile reads as the implicit English course every account had
+ * before courses existed. Nobody chose that course, so the first create for its language takes
+ * its place instead of failing on it: the learner's own language pair, goals and preferences
+ * become the stored course, in the same single read and single write.
+ */
+const unchosenCourseReplaced = (
+  stored: boolean,
+  profile: CourseProfile,
+  request: CourseProfileMutationRequest,
+): CourseProfile => {
+  if (stored || request.operation !== 'createCourse') return profile;
+  const courses = profile.courses.filter(course => course.targetLanguage !== request.input.targetLanguage);
+  return courses.length === profile.courses.length ? profile : { courses, activeCourseId: null };
+};
+
 export const applyCourseProfileMutation = async (
   database: Firestore,
   authenticatedOwnerId: string,
@@ -445,9 +461,35 @@ export const applyCourseProfileMutation = async (
   const reference = profileReference(database, ownerId);
   return database.runTransaction(async (transaction: Transaction) => {
     const snapshot = await transaction.get(reference);
-    const current = readStoredProfile(snapshot);
+    const current = unchosenCourseReplaced(snapshot.exists, readStoredProfile(snapshot), request);
     const next = applyMutation(current, request, factory, clock);
     transaction.set(reference, next as unknown as DocumentData);
     return next;
   });
+};
+
+/** The ids a create produced, so a client can address the new goals without another read. */
+export interface CreatedCourseIds {
+  readonly courseId: string;
+  /** One entry per requested goal, in request order; goal kinds are unique within a course. */
+  readonly goals: readonly { readonly kind: string; readonly id: string }[];
+}
+
+/**
+ * Reads the created course and goal ids back from the profile a createCourse mutation returned.
+ * Target languages are unique per profile and goal kinds unique per course, so the lookup is
+ * exact, and a replayed operation answers with the ids of the course it created the first time.
+ */
+export const createdCourseIds = (
+  profile: CourseProfile,
+  request: CourseProfileMutationRequest,
+): CreatedCourseIds | null => {
+  if (request.operation !== 'createCourse') return null;
+  const course = profile.courses.find(candidate => candidate.targetLanguage === request.input.targetLanguage);
+  if (!course) return null;
+  const goals = request.input.goals.flatMap(input => {
+    const goal = course.goals.find(candidate => candidate.kind === input.kind);
+    return goal ? [{ kind: goal.kind, id: goal.id }] : [];
+  });
+  return { courseId: course.id, goals };
 };

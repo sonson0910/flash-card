@@ -2,7 +2,8 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { CheckCircle2, EyeOff, FolderOpen, FolderX, Mic, Sparkles, Volume2, X } from 'lucide-react';
-import type { Dispatch, MouseEvent, PointerEvent, RefObject, SetStateAction } from 'react';
+import type { Dispatch, MouseEvent, PointerEvent, ReactNode, RefObject, SetStateAction } from 'react';
+import { speechLocaleFor } from '../../lib/speechLocale';
 import { isCardDue } from '../../lib/srs';
 import type { CardData } from '../../types/card';
 import { ActiveRecallQuiz } from './ActiveRecallQuiz';
@@ -10,7 +11,9 @@ import { CardEffectsLayer } from './CardEffectsLayer';
 import { CardHeadword } from './CardHeadword';
 import { CardImage } from './CardImage';
 import { SpeechMatchFeedback, type SpeechMatchFeedbackValue } from './SpeechMatchFeedback';
+import { cardRevealLabel, isLanguagePackCard } from './cardLanguage';
 import { useCardLook } from './cardLook';
+import { cardEndonym, LanguageCardExample, LanguageCardHeadword, LanguageCardPhrases, LanguageReadingSwitch, useLanguageCardReading } from './LanguageCardFace';
 
 export type CardTier = 'new' | 'learning' | 'mastered';
 
@@ -25,6 +28,9 @@ interface CardFrontProps {
   supportedImageUrl: string | null;
   imagePriority: boolean;
   isBlindMode: boolean;
+  /** Latin reading aids on a language-pack card (romanization, romaji, pinyin). */
+  showReading: boolean;
+  toggleShowReading: () => void;
   audioSpeed: 1 | 0.75;
   toggleAudioSpeed: (event: MouseEvent | PointerEvent) => void;
   playAudio: (event: MouseEvent | PointerEvent) => void;
@@ -49,13 +55,14 @@ interface CardFrontProps {
 
 export function CardFront({
   isZenMode, tier, data, faceRef, spotlightRef, spotlightBackground, isHovered, supportedImageUrl, imagePriority,
-  isBlindMode, audioSpeed, toggleAudioSpeed, playAudio, playExplanationAudio, isPlayingAudio,
+  isBlindMode, showReading, toggleShowReading, audioSpeed, toggleAudioSpeed, playAudio, playExplanationAudio, isPlayingAudio,
   isRecording, recordingTarget, startPronunciationCheck, pronunciationScore, pronunciationError,
   showQuickQuiz, setShowQuickQuiz, customDecks, onAssignDeck, showDeckSelector, setShowDeckSelector,
   deckButtonRef, frontFlipRef, focusAfterFlipRef, showCardSide,
 }: CardFrontProps) {
   const { _, i18n } = useLingui();
   const look = useCardLook();
+  const reading = useLanguageCardReading(data);
   if (isZenMode) return <ZenCardFront
     tier={tier}
     data={data}
@@ -70,6 +77,8 @@ export function CardFront({
   />;
 
   const language = data.language || 'en';
+  const isPackCard = isLanguagePackCard(data);
+  const endonym = isPackCard ? cardEndonym(data) : null;
   const partOfSpeech = data.partOfSpeech?.trim();
   const isDue = Boolean(data.nextReviewDate) && isCardDue(data);
   const statusChips = (
@@ -93,12 +102,39 @@ export function CardFront({
     showCardSide('back');
   };
 
+  const toolsMenu = (className: string, extraItems: ReactNode) => (
+    <details className={`group/tools relative ${className}`}>
+      <summary className="flashcard-action flashcard-action-more flex size-11 cursor-pointer list-none items-center justify-center [&::-webkit-details-marker]:hidden" aria-label={_(msg({ id: 'flashcard.more-tools', message: 'More card tools' }))}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="19" cy="12" r="1.7" /></svg>
+      </summary>
+      <div className="absolute bottom-12 right-0 z-40 flex w-max max-w-[calc(100vw-3rem)] flex-wrap justify-end gap-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-2 shadow-[var(--sf-panel-shadow)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+        {extraItems}
+        <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playExplanationAudio} className="touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-[var(--sf-text-muted)] hover:bg-[color-mix(in_srgb,var(--sf-text)_7%,transparent)] hover:text-[var(--sf-text)]" title={_(msg({ id: 'flashcard.definition.listen', message: 'Listen to the definition' }))}><Volume2 size={13} aria-hidden="true" /><span><Trans {...msg({ context: 'flashcard.listen', message: 'Listen' })} /></span></button>
+        <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'explanation')} disabled={isRecording} className={`touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${isRecording && recordingTarget === 'explanation' ? 'bg-[var(--sf-danger)] text-[var(--sf-on-brand)] animate-pulse motion-reduce:animate-none' : 'text-[var(--sf-text-muted)] hover:bg-[color-mix(in_srgb,var(--sf-text)_7%,transparent)] hover:text-[var(--sf-text)]'}`} title={_(msg({ id: 'flashcard.definition.practice', message: 'Practise reading the definition' }))}><Mic size={13} aria-hidden="true" /><span><Trans {...msg({ context: 'flashcard.read-aloud', message: 'Read aloud' })} /></span></button>
+        {onAssignDeck && <Dialog.Root open={showDeckSelector} onOpenChange={setShowDeckSelector}>
+          <Dialog.Trigger asChild><button ref={deckButtonRef} onPointerDown={event => event.stopPropagation()} className="touch-manipulation flex min-h-11 min-w-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-1 text-xs font-bold text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)]"><FolderOpen size={13} aria-hidden="true" /><span className="max-w-32 truncate">{data.customDeck || <Trans {...msg({ context: 'flashcard.deck.choose', message: 'Choose deck' })} />}</span></button></Dialog.Trigger>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 z-[110] bg-[var(--sf-scrim)] backdrop-blur-sm" />
+            <Dialog.Content className="liquid-glass fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[28px] p-6 focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer" aria-describedby={`deck-description-${data.id}`}>
+              <div className="flex items-start justify-between gap-4"><div><Dialog.Title className="text-balance text-lg font-black text-[var(--sf-text)]"><Trans {...msg({ context: 'flashcard.deck.choose', message: 'Choose deck' })} /></Dialog.Title><Dialog.Description id={`deck-description-${data.id}`} className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'flashcard.deck.description', message: 'Organise “{word}” without leaving the card.' })} values={{ word: data.word }} /></Dialog.Description></div><Dialog.Close className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-xl text-[var(--sf-text)]" aria-label={_(msg({ id: 'flashcard.deck.close', message: 'Close deck selector' }))}><X size={18} /></Dialog.Close></div>
+              <div className="mt-5 max-h-[min(360px,55dvh)] space-y-2 overflow-y-auto pr-1 scrollbar-thin">
+                <button onClick={() => { onAssignDeck(data.id, null); setShowDeckSelector(false); }} className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-bold ${!data.customDeck ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'liquid-control text-[var(--sf-text)]'}`}><FolderX size={16} /><span><Trans {...msg({ context: 'flashcard.deck.unassigned', message: 'Unassigned' })} /></span>{!data.customDeck && <CheckCircle2 size={15} className="ml-auto" />}</button>
+                {customDecks.map(deck => <button key={deck} onClick={() => { onAssignDeck(data.id, deck); setShowDeckSelector(false); }} className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-bold ${data.customDeck === deck ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'liquid-control text-[var(--sf-text)]'}`}><FolderOpen size={16} /><span className="min-w-0 flex-1 truncate">{deck}</span>{data.customDeck === deck && <CheckCircle2 size={15} />}</button>)}
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>}
+      </div>
+    </details>
+  );
+
   return (
     <div
       ref={faceRef}
       data-card-face="front"
       data-card-mode="standard"
       data-card-look={look}
+      data-card-kind={isPackCard ? 'language' : undefined}
       style={{ transformOrigin: 'center center', borderRadius: 'var(--flashcard-radius, 32px)' }}
       className="flashcard-panel flashcard-face absolute flex h-full w-full flex-col overflow-hidden rounded-[var(--flashcard-radius,32px)]"
     >
@@ -123,11 +159,20 @@ export function CardFront({
             <span lang={language} className="min-w-0 [overflow-wrap:anywhere]">{data.category}</span>
           </span>
         )}
-        {look === 'crystal' && (
+        {look === 'crystal' && !isPackCard && (
           <span className="flashcard-tier-ribbon absolute left-[18px] top-4 z-20 inline-flex items-center gap-2">
             <span data-card-tier-label className="flashcard-tier-grade"><CardTierName tier={tier} /></span>
             <span className="flashcard-tier-name"><CardTierStatus tier={tier} /></span>
           </span>
+        )}
+        {look === 'crystal' && isPackCard && (
+          <div className="flashcard-lang-top absolute left-[18px] top-4 z-20 flex items-center gap-2">
+            <span className="flashcard-tier-ribbon inline-flex shrink-0 items-center gap-2">
+              <span data-card-tier-label className="flashcard-tier-grade"><CardTierName tier={tier} /></span>
+              <span className="flashcard-tier-name"><CardTierStatus tier={tier} /></span>
+            </span>
+            {data.category && <span lang={language} className="flashcard-level-chip min-w-0 truncate">{data.category}</span>}
+          </div>
         )}
       </div>
       {look === 'paper' && supportedImageUrl && data.category && (
@@ -139,13 +184,13 @@ export function CardFront({
 
       <div className="flashcard-body relative z-20 flex min-h-0 flex-1 flex-col">
         <div className="flashcard-body-scroll flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain scrollbar-thin">
-          {look === 'paper' && (
+          {look === 'paper' && !isPackCard && (
             <div data-card-seal className="flashcard-seal">
               <span className="flashcard-seal-glyph" aria-hidden="true">{tier === 'new' ? '·' : tier === 'learning' ? '½' : '✦'}</span>
               <span data-card-tier-label><CardTierStatus tier={tier} /></span>
             </div>
           )}
-          {look === 'aurora' && (
+          {(look === 'aurora' || (look === 'paper' && isPackCard)) && (
             <div data-card-metadata className="flashcard-meta">
               {partOfSpeech && <><span lang={language}>{partOfSpeech}</span><span className="flashcard-meta-dot" aria-hidden="true" /></>}
               <span className="flashcard-meta-tier"><span className="flashcard-meta-tier-dot" aria-hidden="true" /><span data-card-tier-label><CardTierStatus tier={tier} /></span></span>
@@ -155,29 +200,42 @@ export function CardFront({
           {look === 'crystal' && (
             <div data-card-metadata className="flashcard-meta">
               {partOfSpeech && <span lang={language}>{partOfSpeech}</span>}
-              {data.category && <span className="flashcard-meta-category"><span aria-hidden="true">{'// '}</span><span lang={language}>{data.category}</span></span>}
+              {isPackCard
+                ? endonym && <span className="flashcard-meta-category"><span aria-hidden="true">{'// '}</span><span lang={language}>{endonym}</span></span>
+                : data.category && <span className="flashcard-meta-category"><span aria-hidden="true">{'// '}</span><span lang={language}>{data.category}</span></span>}
               {statusChips}
             </div>
           )}
-          {look === 'paper' && (isDue || data.difficulty === 'hard') && <div data-card-metadata className="flashcard-meta">{statusChips}</div>}
+          {look === 'paper' && !isPackCard && (isDue || data.difficulty === 'hard') && <div data-card-metadata className="flashcard-meta">{statusChips}</div>}
 
-          <CardHeadword
-            card={data}
-            onPlayAudio={look === 'paper' ? undefined : playAudio}
-            isPlayingAudio={isPlayingAudio}
-            leading={look === 'paper' && partOfSpeech ? <span lang={language} className="flashcard-pos">{partOfSpeech}</span> : undefined}
-          />
+          {isPackCard
+            ? <LanguageCardHeadword card={data} reading={reading} showReading={showReading} isBlindMode={isBlindMode} onPlayAudio={playAudio} isPlayingAudio={isPlayingAudio} />
+            : <CardHeadword
+              card={data}
+              onPlayAudio={look === 'paper' ? undefined : playAudio}
+              isPlayingAudio={isPlayingAudio}
+              leading={look === 'paper' && partOfSpeech ? <span lang={language} className="flashcard-pos">{partOfSpeech}</span> : undefined}
+            />}
 
           {isRecording && <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[var(--sf-danger)]"><span className="size-2 rounded-full bg-[var(--sf-danger)] animate-pulse motion-reduce:animate-none" /><Trans {...msg({ context: 'flashcard.audio.listening', message: 'Listening' })} /></div>}
           {pronunciationScore && <SpeechMatchFeedback value={pronunciationScore} target={pronunciationScore.type === 'word' ? data.word : data.explanation} />}
           {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-[var(--sf-danger)]" role="alert">{pronunciationError}</p>}
 
-          {look === 'paper' && <div className="flashcard-rule" aria-hidden="true" />}
-          <div className="flashcard-definition relative text-left">
-            {look === 'paper' && <span className="flashcard-definition-number" aria-hidden="true">1</span>}
-            <p lang={language} aria-hidden={isBlindMode} className={`min-w-0 break-words [overflow-wrap:anywhere] transition-[filter,opacity] ${isBlindMode ? 'select-none blur-md opacity-35' : ''}`}>{data.explanation}</p>
-            {isBlindMode && <div className="pointer-events-none absolute inset-0 flex items-center justify-start"><span className="text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'flashcard.definition.hidden', message: 'Definition hidden' })} /></span></div>}
-          </div>
+          {isPackCard ? (
+            <>
+              <LanguageCardExample card={data} reading={reading} />
+              <LanguageCardPhrases card={data} />
+            </>
+          ) : (
+            <>
+              {look === 'paper' && <div className="flashcard-rule" aria-hidden="true" />}
+              <div className="flashcard-definition relative text-left">
+                {look === 'paper' && <span className="flashcard-definition-number" aria-hidden="true">1</span>}
+                <p lang={language} aria-hidden={isBlindMode} className={`min-w-0 break-words [overflow-wrap:anywhere] transition-[filter,opacity] ${isBlindMode ? 'select-none blur-md opacity-35' : ''}`}>{data.explanation}</p>
+                {isBlindMode && <div className="pointer-events-none absolute inset-0 flex items-center justify-start"><span className="text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'flashcard.definition.hidden', message: 'Definition hidden' })} /></span></div>}
+              </div>
+            </>
+          )}
 
           {showQuickQuiz && (
             <ActiveRecallQuiz
@@ -186,6 +244,31 @@ export function CardFront({
             />
           )}
 
+          {isPackCard ? (
+            <div data-card-actions className="flashcard-actions flashcard-lang-actions mt-auto flex flex-wrap items-center">
+              <button
+                type="button"
+                data-card-control
+                data-recording={isRecording && recordingTarget === 'word' ? 'true' : undefined}
+                onPointerDown={event => event.stopPropagation()}
+                onClick={event => startPronunciationCheck(event, 'word')}
+                disabled={isRecording}
+                className="flashcard-action flashcard-lang-say touch-manipulation flex min-h-11 shrink-0 items-center"
+                title={_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}
+              >
+                <Mic size={15} aria-hidden="true" />
+                <span className="flashcard-action-label"><Trans {...msg({ context: 'flashcard.say-it', message: 'Say it' })} /></span>
+                <span className="flashcard-lang-speech-locale font-mono" aria-hidden="true">{speechLocaleFor(data)}</span>
+              </button>
+              <LanguageReadingSwitch card={data} showReading={showReading} onToggle={toggleShowReading} />
+              {toolsMenu('shrink-0', (
+                <>
+                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={toggleAudioSpeed} aria-pressed={audioSpeed === 0.75} className="touch-manipulation flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 py-1 font-mono text-xs font-bold text-[var(--sf-text-muted)] hover:bg-[color-mix(in_srgb,var(--sf-text)_7%,transparent)] hover:text-[var(--sf-text)] aria-pressed:text-[var(--sf-brand-text)]" title={_(msg({ id: 'flashcard.audio.toggle-speed-detail', message: 'Toggle pronunciation speed (1.0x / 0.75x slow)' }))} aria-label={_(msg({ id: 'flashcard.audio.toggle-speed', message: 'Toggle speed' }))}>{`${audioSpeed}×`}</button>
+                  <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={() => setShowQuickQuiz(prev => !prev)} aria-pressed={showQuickQuiz} className="touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-[var(--sf-text-muted)] hover:bg-[color-mix(in_srgb,var(--sf-text)_7%,transparent)] hover:text-[var(--sf-text)] aria-pressed:text-[var(--sf-brand-text)]" title={_(msg({ id: 'flashcard.quiz.title', message: 'Quick self-test quiz before revealing definition' }))}><Sparkles size={13} aria-hidden="true" /><span><Trans {...msg({ context: 'flashcard.quiz-me', message: 'Quiz me' })} /></span></button>
+                </>
+              ))}
+            </div>
+          ) : (
           <div data-card-actions className="flashcard-actions mt-auto flex flex-wrap items-center gap-1.5">
             {look === 'paper' && (
               <button
@@ -240,29 +323,9 @@ export function CardFront({
               <Sparkles size={15} className="flashcard-action-quiz-icon text-[var(--sf-second)]" aria-hidden="true" />
               <span className="flashcard-action-label"><Trans {...msg({ context: 'flashcard.quiz-me', message: 'Quiz me' })} /></span>
             </button>
-            <details className="group/tools relative ml-auto">
-              <summary className="flashcard-action flashcard-action-more flex size-11 cursor-pointer list-none items-center justify-center [&::-webkit-details-marker]:hidden" aria-label={_(msg({ id: 'flashcard.more-tools', message: 'More card tools' }))}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="19" cy="12" r="1.7" /></svg>
-              </summary>
-              <div className="absolute bottom-12 right-0 z-40 flex w-max max-w-[calc(100vw-3rem)] flex-wrap justify-end gap-2 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-2 shadow-[var(--sf-panel-shadow)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
-                <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={playExplanationAudio} className="touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-[var(--sf-text-muted)] hover:bg-[color-mix(in_srgb,var(--sf-text)_7%,transparent)] hover:text-[var(--sf-text)]" title={_(msg({ id: 'flashcard.definition.listen', message: 'Listen to the definition' }))}><Volume2 size={13} aria-hidden="true" /><span><Trans {...msg({ context: 'flashcard.listen', message: 'Listen' })} /></span></button>
-                <button type="button" data-card-control onPointerDown={event => event.stopPropagation()} onClick={event => startPronunciationCheck(event, 'explanation')} disabled={isRecording} className={`touch-manipulation flex min-h-11 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${isRecording && recordingTarget === 'explanation' ? 'bg-[var(--sf-danger)] text-[var(--sf-on-brand)] animate-pulse motion-reduce:animate-none' : 'text-[var(--sf-text-muted)] hover:bg-[color-mix(in_srgb,var(--sf-text)_7%,transparent)] hover:text-[var(--sf-text)]'}`} title={_(msg({ id: 'flashcard.definition.practice', message: 'Practise reading the definition' }))}><Mic size={13} aria-hidden="true" /><span><Trans {...msg({ context: 'flashcard.read-aloud', message: 'Read aloud' })} /></span></button>
-                {onAssignDeck && <Dialog.Root open={showDeckSelector} onOpenChange={setShowDeckSelector}>
-                  <Dialog.Trigger asChild><button ref={deckButtonRef} onPointerDown={event => event.stopPropagation()} className="touch-manipulation flex min-h-11 min-w-0 cursor-pointer items-center gap-1.5 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-1 text-xs font-bold text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)]"><FolderOpen size={13} aria-hidden="true" /><span className="max-w-32 truncate">{data.customDeck || <Trans {...msg({ context: 'flashcard.deck.choose', message: 'Choose deck' })} />}</span></button></Dialog.Trigger>
-                  <Dialog.Portal>
-                    <Dialog.Overlay className="fixed inset-0 z-[110] bg-[var(--sf-scrim)] backdrop-blur-sm" />
-                    <Dialog.Content className="liquid-glass fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[28px] p-6 focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer" aria-describedby={`deck-description-${data.id}`}>
-                      <div className="flex items-start justify-between gap-4"><div><Dialog.Title className="text-balance text-lg font-black text-[var(--sf-text)]"><Trans {...msg({ context: 'flashcard.deck.choose', message: 'Choose deck' })} /></Dialog.Title><Dialog.Description id={`deck-description-${data.id}`} className="mt-1 text-pretty text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'flashcard.deck.description', message: 'Organise “{word}” without leaving the card.' })} values={{ word: data.word }} /></Dialog.Description></div><Dialog.Close className="liquid-control flex size-11 shrink-0 items-center justify-center rounded-xl text-[var(--sf-text)]" aria-label={_(msg({ id: 'flashcard.deck.close', message: 'Close deck selector' }))}><X size={18} /></Dialog.Close></div>
-                      <div className="mt-5 max-h-[min(360px,55dvh)] space-y-2 overflow-y-auto pr-1 scrollbar-thin">
-                        <button onClick={() => { onAssignDeck(data.id, null); setShowDeckSelector(false); }} className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-bold ${!data.customDeck ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'liquid-control text-[var(--sf-text)]'}`}><FolderX size={16} /><span><Trans {...msg({ context: 'flashcard.deck.unassigned', message: 'Unassigned' })} /></span>{!data.customDeck && <CheckCircle2 size={15} className="ml-auto" />}</button>
-                        {customDecks.map(deck => <button key={deck} onClick={() => { onAssignDeck(data.id, deck); setShowDeckSelector(false); }} className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-bold ${data.customDeck === deck ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'liquid-control text-[var(--sf-text)]'}`}><FolderOpen size={16} /><span className="min-w-0 flex-1 truncate">{deck}</span>{data.customDeck === deck && <CheckCircle2 size={15} />}</button>)}
-                      </div>
-                    </Dialog.Content>
-                  </Dialog.Portal>
-                </Dialog.Root>}
-              </div>
-            </details>
+            {toolsMenu('ml-auto', null)}
           </div>
+          )}
         </div>
 
         <div className="flashcard-reveal-dock shrink-0">
@@ -276,19 +339,21 @@ export function CardFront({
               revealMeaning();
             }}
             className="flashcard-reveal group/flip relative z-20 flex min-h-[58px] w-full cursor-pointer items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--sf-brand)]"
-            aria-label={i18n._(msg({ id: 'flashcard.reveal-meaning-label', message: 'Reveal the Vietnamese meaning of {word}' }).id, { word: data.word })}
+            aria-label={cardRevealLabel(i18n, data)}
           >
             {look === 'aurora' && <span data-reveal-hover-edge className="flashcard-reveal-laser pointer-events-none absolute" aria-hidden="true" />}
             {look === 'crystal' && <span className="flashcard-reveal-shine pointer-events-none absolute" aria-hidden="true" />}
             {look === 'crystal' && <svg className="relative" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l3 7.1 7.7.6-5.9 5 1.8 7.5L12 17.7l-6.6 4 1.8-7.5-5.9-5 7.7-.6z" fill="currentColor" /><path d="M12 1.5l3 7.1-3 9.1z" fill="var(--sf-reward)" /></svg>}
             <span className="relative">
-              {look === 'paper'
-                ? <Trans {...msg({ context: 'flashcard.turn-card', message: 'Turn the card' })} />
-                : look === 'crystal'
-                  ? <Trans {...msg({ context: 'flashcard.reveal', message: 'Reveal' })} />
-                  : <Trans {...msg({ context: 'flashcard.reveal-meaning', message: 'Reveal meaning' })} />}
+              {isPackCard
+                ? <Trans {...msg({ context: 'flashcard.reveal-meaning', message: 'Reveal meaning' })} />
+                : look === 'paper'
+                  ? <Trans {...msg({ context: 'flashcard.turn-card', message: 'Turn the card' })} />
+                  : look === 'crystal'
+                    ? <Trans {...msg({ context: 'flashcard.reveal', message: 'Reveal' })} />
+                    : <Trans {...msg({ context: 'flashcard.reveal-meaning', message: 'Reveal meaning' })} />}
             </span>
-            {look === 'paper' && <span data-reveal-hover-edge className="flashcard-reveal-rule" aria-hidden="true" />}
+            {look === 'paper' && !isPackCard && <span data-reveal-hover-edge className="flashcard-reveal-rule" aria-hidden="true" />}
             <kbd className="flashcard-kbd relative font-mono" aria-hidden="true"><Trans {...msg({ context: 'flashcard.shortcut.space', message: 'Space' })} /></kbd>
           </button>
         </div>

@@ -1,6 +1,8 @@
 import type { JapanesePitchAccent } from '../features/languagePacks/japanesePitch';
 
 export type LegacyDifficulty = 'easy' | 'good' | 'hard' | 'unrated';
+/** The learner's own label for a card. Scheduling never reads it. */
+export type LearnerDifficulty = 'easy' | 'medium' | 'hard';
 export type ReviewRatingValue = 'again' | 'hard' | 'good' | 'easy';
 
 /** BCP 47 language code retained as a string for forward-compatible packs. */
@@ -68,6 +70,11 @@ export interface CardData {
   normalizedWord?: string;
   normalizedLemma?: string;
   translation: string;
+  /**
+   * Other meanings the AI offered when it created the card (0-3). Written only
+   * at creation of an AI card; clients cannot change them afterwards.
+   */
+  translationAlternatives?: string[];
   /** Renderers and recall prompts rely on these fields always being strings. */
   explanation: string;
   explanationTranslation?: string;
@@ -85,6 +92,10 @@ export interface CardData {
   bookmarked?: boolean;
   difficulty?: LegacyDifficulty;
   customDeck?: string | null;
+  /** Up to 8 distinct learner tags, each 1-32 characters. */
+  tags?: string[];
+  /** Learner-chosen label; null or missing means none. Never feeds scheduling. */
+  learnerDifficulty?: LearnerDifficulty | null;
   nextReviewDate?: string;
   reviews?: number;
   interval?: number;

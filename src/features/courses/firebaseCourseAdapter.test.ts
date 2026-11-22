@@ -106,6 +106,25 @@ describe('Firebase course adapter', () => {
     await expect(pending).rejects.toMatchObject({ code: 'owner-changed' });
   });
 
+  it('returns the created course and goal ids, named by the server or read from the profile', async () => {
+    const goal = { id: 'goal-ielts', kind: 'ielts', level: '7.0', targetDate: null, status: 'active' as const, createdAt: '2026-11-19T00:00:00.000Z' };
+    const withGoal: CourseProfile = { ...profile, courses: [{ ...profile.courses[0]!, id: 'course-en', goals: [goal] }], activeCourseId: 'course-en' };
+    const created = { courseId: 'course-en', goals: [{ kind: 'ielts', id: 'goal-ielts' }] };
+    const call = vi.fn(async (_name: string, _payload: unknown): Promise<unknown> => ({ profile: withGoal, created }));
+    const adapter = createFirebaseCourseAdapter({
+      app: {} as never, database: {} as never, configured: true, getCurrentOwner: () => 'owner-a', call,
+    });
+    const input = { targetLanguage: 'en' as const, nativeLanguage: 'vi' as const, goals: [{ kind: 'ielts', level: '7' }] };
+
+    await expect(adapter.createCourse('owner-a', input)).resolves.toEqual({ profile: withGoal, created });
+    call.mockResolvedValueOnce({ profile: withGoal });
+    await expect(adapter.createCourse('owner-a', input)).resolves.toEqual({ profile: withGoal, created });
+    call.mockResolvedValueOnce({ profile: withGoal, created: { courseId: 'course-elsewhere', goals: [] } });
+    await expect(adapter.createCourse('owner-a', input)).resolves.toEqual({ profile: withGoal, created: null });
+    call.mockResolvedValueOnce({ profile: withGoal, created: { courseId: 'course-en', goals: [{ kind: 'ielts', id: 'goal-missing' }] } });
+    await expect(adapter.createCourse('owner-a', input)).resolves.toEqual({ profile: withGoal, created: { courseId: 'course-en', goals: [] } });
+  });
+
   it('uses callable writes and validates the returned exact profile shape', async () => {
     const call = vi.fn(async (_name: string, _payload: unknown) => profile);
     const adapter = createFirebaseCourseAdapter({
@@ -120,7 +139,7 @@ describe('Firebase course adapter', () => {
       targetLanguage: 'ko',
       nativeLanguage: 'vi',
       preferences: { showRomanization: true },
-    })).resolves.toEqual(profile);
+    })).resolves.toEqual({ profile, created: null });
     expect(call).toHaveBeenCalledWith('createCourse', {
       ownerId: 'owner-a',
       input: {

@@ -185,6 +185,30 @@ describe('useCardIntake binding owner', () => {
     await expect(pending).resolves.toEqual({ status: 'cancelled' });
   });
 
+  it('routes stop and try again to the current controller', async () => {
+    const port = createPort();
+    const generation = deferred<Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>>();
+    vi.mocked(port.generateCard).mockReturnValueOnce(generation.promise);
+    port.cancelGeneration = vi.fn(async () => true);
+    const owner = createCardIntakeBindingOwner({ ports: { cards: port } });
+    owner.actions.cardCreator.open();
+    owner.actions.cardCreator.updateDraft({ word: 'apple' });
+    const pending = owner.actions.cardCreator.generatePreview();
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledOnce());
+    const request = vi.mocked(port.generateCard).mock.calls[0][0];
+
+    await expect(owner.actions.cardCreator.stopGeneration?.()).resolves.toEqual({ status: 'cancelled' });
+    expect(port.cancelGeneration).toHaveBeenCalledWith(request.operationId);
+    expect(owner.getSnapshot().cardCreator).toMatchObject({
+      stage: 'input', generationOutcome: { kind: 'stopped', refunded: true },
+    });
+    generation.resolve({ card: card('apple'), mediaPromise: Promise.resolve({ audioUrl: null, imageUrl: null }) });
+    await expect(pending).resolves.toEqual({ status: 'cancelled' });
+
+    await expect(owner.actions.cardCreator.retryGeneration?.()).resolves.toMatchObject({ status: 'preview' });
+    expect(vi.mocked(port.generateCard).mock.calls[1][0].operationId).toBe(request.operationId);
+  });
+
   it('does not render an outgoing owner preview during the owner-switch effect gap', async () => {
     const ownerAPort = createPort();
     const ownerBPort = createPort();

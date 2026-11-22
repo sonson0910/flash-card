@@ -4,6 +4,7 @@ import {
   type CardData,
   type CardLanguageFields,
   type CardLanguagePair,
+  type LearnerDifficulty,
 } from '../types/card';
 import { normalizePartOfSpeech, normalizePrefixSearch } from './cardQuery';
 import { normalizeCardLanguage } from './cardIdentity';
@@ -85,6 +86,62 @@ const validCounter = (value: unknown): number | undefined =>
 
 const asTextList = (value: unknown) =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).slice(0, 4).map(item => item.trim().slice(0, 100)) : [];
+
+export const MAX_CARD_TAGS = 8;
+/** Counted in code points, as the server and Rules count it. */
+export const MAX_CARD_TAG_LENGTH = 32;
+export const LEARNER_DIFFICULTIES: readonly LearnerDifficulty[] = ['easy', 'medium', 'hard'];
+const MAX_TRANSLATION_ALTERNATIVES = 3;
+
+export const cardTagLength = (tag: string): number => Array.from(tag).length;
+
+/**
+ * One learner tag in its stored form: inner whitespace collapsed to single
+ * spaces and the ends trimmed. Returns null for a tag the server would
+ * refuse: empty, longer than 32 characters, or containing a comma (the
+ * spreadsheet and tag-input separator).
+ */
+export function normalizeCardTag(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const tag = value.replace(/\s+/gu, ' ').trim();
+  if (!tag || tag.includes(',') || cardTagLength(tag) > MAX_CARD_TAG_LENGTH) return null;
+  return tag;
+}
+
+/** Same tag regardless of letter case; a card keeps the first spelling. */
+export const sameCardTag = (left: string, right: string): boolean =>
+  left.toLocaleLowerCase() === right.toLocaleLowerCase();
+
+/**
+ * Stored-form tag list: invalid entries dropped, case-insensitive duplicates
+ * removed keeping the first, at most 8. Every result passes the server and
+ * Rules checks.
+ */
+export function normalizeCardTags(values: unknown): string[] {
+  if (!Array.isArray(values)) return [];
+  const tags: string[] = [];
+  for (const value of values) {
+    const tag = normalizeCardTag(value);
+    if (tag && !tags.some(existing => sameCardTag(existing, tag))) tags.push(tag);
+    if (tags.length === MAX_CARD_TAGS) break;
+  }
+  return tags;
+}
+
+export const isLearnerDifficulty = (value: unknown): value is LearnerDifficulty =>
+  typeof value === 'string' && (LEARNER_DIFFICULTIES as readonly string[]).includes(value);
+
+const normalizeTranslationAlternatives = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  const alternatives: string[] = [];
+  for (const item of value) {
+    const text = boundedText(item, 256);
+    if (text && !alternatives.some(existing => existing.toLocaleLowerCase() === text.toLocaleLowerCase())) {
+      alternatives.push(text);
+    }
+  }
+  return alternatives.slice(0, MAX_TRANSLATION_ALTERNATIVES);
+};
 
 const normalizeWordFamily = (value: unknown): CardData['wordFamily'] => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
@@ -215,6 +272,9 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
   const customDeck = typeof raw.customDeck === 'string' ? boundedText(raw.customDeck, 128) || null : null;
   const language = normalizeStoredLanguage(raw.language);
   const translationLanguage = normalizeStoredLanguage(raw.translationLanguage);
+  // The server accepts meaning alternatives only on AI cards, so a create
+  // that carried them on any other card would be refused as a whole.
+  const translationAlternatives = raw.origin === 'ai' ? normalizeTranslationAlternatives(raw.translationAlternatives) : [];
 
   return {
     id,
@@ -229,6 +289,7 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     word,
     normalizedWord: boundedText(raw.normalizedWord, 256) || normalizePrefixSearch(word),
     translation: boundedText(raw.translation, 256),
+    ...(translationAlternatives.length > 0 ? { translationAlternatives } : {}),
     explanation: boundedText(raw.explanation, 2048),
     explanationTranslation: boundedText(raw.explanationTranslation, 2048) || undefined,
     phonetic: boundedText(raw.phonetic, 256),
@@ -247,6 +308,9 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     bookmarked: raw.bookmarked === true,
     difficulty: typeof raw.difficulty === 'string' && validDifficulties.has(raw.difficulty) ? raw.difficulty : 'unrated',
     customDeck,
+    ...(Array.isArray(raw.tags) ? { tags: normalizeCardTags(raw.tags) } : {}),
+    ...(isLearnerDifficulty(raw.learnerDifficulty) ? { learnerDifficulty: raw.learnerDifficulty } : {}),
+    ...(raw.learnerDifficulty === null ? { learnerDifficulty: null } : {}),
     ...(nextReviewDate ? { nextReviewDate } : {}),
     ...(masteredAt ? { masteredAt } : {}),
     ...(japanesePitchAccent ? { japanesePitchAccent } : {}),

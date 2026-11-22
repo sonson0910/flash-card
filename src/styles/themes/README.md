@@ -20,6 +20,19 @@ The four source sets are `classic-dark`, `classic-light`, `crystal-dark`, and
 | `--sf-tier-bud`, `--sf-tier-bloom`, `--sf-tier-star` | New `lineStrong`, Learning `accent`, Mastered `gold` (ProgressScreen legend) | `tier.new.color`, `tier.learning.color`, `tier.mastered.color` |
 | `--sf-avatar-bg` | `avatarBg` | the ANAV account hexagon gradient |
 | `--sf-book-terracotta`, `-ink`, `-ochre`, `-moss`, `-violet`, `-teal`, `--sf-book-foil` | light: PathsScreen `lightCloth` and title foil; dark: `darkHue` tints and `textStrong` | AnimePaths `hue.*.tint` (crimson, cyan, gold, navy, pink, holo) and `textStrong` |
+| `--sf-text-strong`, `--sf-text-body`, `--sf-text-subtle` | `textStrong`, `body`, `text3` (`#746b5f` in light for AA) | `textStrong`, `body`, `text3` |
+| `--sf-holo-text` | `accentText` (light) / `#7ee6fa` (dark) | `holoText`, `#08708a` in light for AA |
+| `--sf-warm`, `--sf-warm-bg`, `--sf-warm-line` | `warm`, `warmBg`, `warmLine` (streak chip) | `gold`, the `warn` fill and gold line |
+| `--sf-warn`, `--sf-warn-bg`, `--sf-warn-line`, `--sf-info`, `--sf-info-bg`, `--sf-info-line` | `warn`, `warnBg`, `info`, `infoBg` | `warn`, `warnBg`, `info`, `infoBg` |
+| `--sf-success-text`, `--sf-success-soft`, `--sf-success-line`, `--sf-danger-soft`, `--sf-danger-line` | `ok`, `okBg`, the ok line, `dangerBg`, the danger line | `holoText`, `okBg`, `panelEdge2`, `dangerBg`, `panelEdge` |
+| `--sf-primary-bg`, `--sf-on-primary`, `--sf-primary-shadow` | `primaryBg`, `primaryText`, `primaryShadow` | `primaryBg`, white, `primaryGlow` |
+| `--sf-crimson-gradient` | the accent gradient | `crimsonGrad` |
+| `--sf-logo-bg`, `--sf-logo-text`, `--sf-logo-shadow`, `--sf-avatar-text` | `logoBg`, `logoText`, the dark logo glow, `avatarText` | `primaryBg`, white, none, white |
+| `--sf-star-face`, `--sf-star-shade` | accent and its deep shade | the brand star's rose face and blood shade |
+| `--sf-panel-edge`, `--sf-panel-edge-2` | `line` and a stronger line | `panelEdge`, `panelEdge2` |
+| `--sf-space` | `none` | `space` (the starfield gradients behind the canvas) |
+| `--sf-dialog-shadow` | `dlgShadow` | the dialog shadow of the Anime dialog boards |
+| `--sf-tab-bg`, `--sf-tab-shadow`, `--sf-tab-active`, `--sf-tab-active-text` | `tabBg`, `tabShadow`, the active pill fill and text | `tabBarBg`, the `panelEdge` top edge, `primaryBg`, white |
 | `--nk-chamfer`, `--nk-chamfer-sm`, `--nk-snap`, `--nk-stars`, `--nk-wing-opacity` | normalized defaults | `chamfer`, `chamferSm`, `snap`, `stars`, `wingOpacity` |
 
 `--sf-grain-*` has no Crystal source equivalent, so Crystal uses a neutral no-grain
@@ -43,3 +56,7 @@ boards.
 Crystal keeps its Canvas crimson fill for `--sf-brand`, but uses `#04060c` for
 `--sf-on-brand` and `--sf-on-brand-hover`: Canvas `primaryText` is white, which
 does not meet AA contrast for the app's 12px button text on that crimson.
+
+Translucent variants of a token are written as
+`color-mix(in srgb, var(--sf-<token>) <alpha>%, transparent)`, which renders the same
+colour as the `rgb(<r> <g> <b> / <alpha>)` literal it replaces.

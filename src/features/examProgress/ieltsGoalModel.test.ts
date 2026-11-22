@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildIeltsGoalModel, daysBetween, type IeltsGoalModelInput, type IeltsPathCounts } from './ieltsGoalModel';
+import { activeIeltsGoal, buildIeltsGoalModel, daysBetween, type IeltsGoalModelInput, type IeltsPathCounts } from './ieltsGoalModel';
 
 const counts = (overrides: Partial<IeltsPathCounts> = {}): IeltsPathCounts => ({
   total: 100, started: 40, mastered: 30, masteredLast7: 4, masteredLast28: 12, ...overrides,
@@ -66,5 +66,15 @@ describe('IELTS goal model', () => {
     expect(buildIeltsGoalModel(input({ counts: counts({ masteredLast7: null }) }))?.masteredThisWeek).toBeNull();
     expect(daysBetween('2026-12-31', '2027-01-02')).toBe(2);
     expect(daysBetween('2026-12-31', 'soon')).toBeNull();
+  });
+
+  it('picks the active IELTS goal, not the first active goal or a finished IELTS goal', () => {
+    const goal = (id: string, kind: string, status: 'active' | 'paused' | 'completed') => ({
+      id, kind, level: kind === 'ielts' ? '7.0' : null, targetDate: null, status, createdAt: '2026-01-01T00:00:00.000Z',
+    });
+    expect(activeIeltsGoal({ goals: [goal('goal-talk', 'conversation', 'active'), goal('goal-ielts', 'ielts', 'active')] })?.id).toBe('goal-ielts');
+    expect(activeIeltsGoal({ goals: [goal('goal-old', 'ielts', 'completed'), goal('goal-talk', 'conversation', 'active')] })).toBeNull();
+    expect(activeIeltsGoal({ goals: [goal('goal-ielts', 'ielts', 'paused')] })).toBeNull();
+    expect(activeIeltsGoal(null)).toBeNull();
   });
 });

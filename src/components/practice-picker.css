@@ -48,7 +48,7 @@ html[data-theme-family="classic"] .practice-picker-row[data-state="loading"] {
   border-color: var(--od-accent-line);
   background: var(--od-accent-soft);
 }
-html[data-theme-family="classic"].dark .practice-picker-row[data-state="loading"] { box-shadow: 0 0 30px -12px rgb(40 211 244 / .6); }
+html[data-theme-family="classic"].dark .practice-picker-row[data-state="loading"] { box-shadow: 0 0 30px -12px color-mix(in srgb, var(--sf-brand) 60%, transparent); }
 
 .practice-picker-row-strip { display: none; }
 
@@ -69,7 +69,7 @@ html[data-theme-family="classic"].dark .practice-picker-row[data-state="loading"
 .practice-picker-row-text { display: flex; min-width: 0; flex: 1 1 auto; flex-direction: column; gap: 3px; }
 .practice-picker-row-head { display: flex; align-items: baseline; gap: 8px; }
 .practice-picker-row-name { color: var(--sf-text); font-size: 15px; font-weight: 650; }
-.practice-picker-row-time { color: var(--od-subtle); font-family: "Geist Mono", ui-monospace, monospace; font-size: 11.5px; white-space: nowrap; }
+.practice-picker-row-time { color: var(--od-subtle); font-family: var(--sf-font-mono); font-size: 11.5px; white-space: nowrap; }
 .practice-picker-row-desc { color: var(--sf-text-muted); font-size: 13px; line-height: 1.4; text-wrap: pretty; }
 
 .practice-picker-row-status {
@@ -120,7 +120,7 @@ html[data-theme-family="classic"].dark .practice-picker-row[data-state="loading"
   border: 1px solid var(--sf-border);
   border-radius: 7px;
   color: var(--od-subtle);
-  font-family: "Geist Mono", ui-monospace, monospace;
+  font-family: var(--sf-font-mono);
   font-size: 12px;
 }
 
@@ -129,7 +129,7 @@ html[data-theme-family="classic"].dark .practice-picker-row[data-state="loading"
   padding: 1px 6px;
   border: 1px solid var(--sf-border);
   border-radius: 5px;
-  font-family: "Geist Mono", ui-monospace, monospace;
+  font-family: var(--sf-font-mono);
   font-size: inherit;
 }
 
@@ -165,7 +165,7 @@ html[data-theme-family="crystal"] .practice-picker-row-icon {
   height: 46px;
   border-radius: 0;
   background: var(--od-crimson);
-  color: #fff;
+  color: var(--sf-on-primary);
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
 }
 html[data-theme-family="crystal"] .practice-picker-row[data-state="loading"] .practice-picker-row-icon { background: var(--od-holo-fill); color: var(--od-holo-ink); }
@@ -202,7 +202,7 @@ html[data-theme-family="crystal"] .practice-picker-row-key {
   border-radius: 0;
   background: var(--od-crimson);
   box-shadow: var(--od-primary-glow);
-  color: #fff;
+  color: var(--sf-on-primary);
   font-family: var(--sf-font-display);
   font-size: 15px;
   font-style: italic;
@@ -215,7 +215,7 @@ html[data-theme-family="crystal"] .practice-picker-keys {
   padding: 2px 6px;
   box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
   color: var(--sf-text-muted);
-  font-family: "Geist Mono", ui-monospace, monospace;
+  font-family: var(--sf-font-mono);
 }
 html[data-theme-family="crystal"] .practice-picker-keys kbd { padding: 0; border: 0; }
 html[data-theme-family="crystal"] .practice-picker-note-press { display: none; }
@@ -285,7 +285,7 @@ html[data-theme-family="crystal"] .practice-picker-note-press { display: none; }
   html[data-theme-family="classic"] .practice-picker-row-icon svg { width: 22px; height: 22px; }
   html[data-theme-family="classic"] .practice-picker-glyph-wide { display: none; }
   html[data-theme-family="classic"] .practice-picker-glyph-sheet { display: block; }
-  html[data-theme-family="classic"].dark .practice-picker-row:first-child .practice-picker-row-icon { box-shadow: 0 0 20px -6px rgb(40 211 244 / .6); }
+  html[data-theme-family="classic"].dark .practice-picker-row:first-child .practice-picker-row-icon { box-shadow: 0 0 20px -6px color-mix(in srgb, var(--sf-brand) 60%, transparent); }
   html[data-theme-family="classic"] .practice-picker-row-text { gap: 2px; }
   html[data-theme-family="classic"] .practice-picker-row-name { font-size: 15.5px; }
   html[data-theme-family="classic"] .practice-picker-row-desc { font-size: 12.5px; line-height: 1.35; }
@@ -300,33 +300,30 @@ html[data-theme-family="crystal"] .practice-picker-note-press { display: none; }
   .practice-picker-row[data-state="loading"] .practice-picker-row-chevron { display: none; }
   .practice-picker-row-status { font-size: 12px; }
 
+  /* MobileSheet's per-mode icon tints. */
   html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="spelling"],
   html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="language-drill"] {
-    --pp-icon-bg: color-mix(in srgb, var(--sf-success) 10%, transparent);
-    --pp-icon-fg: color-mix(in srgb, var(--sf-success) 88%, black);
+    --pp-icon-bg: color-mix(in srgb, var(--sf-second) 10%, transparent);
+    --pp-icon-fg: var(--sf-second-text);
   }
   html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="match"] {
     --pp-icon-bg: color-mix(in srgb, var(--sf-reward) 14%, transparent);
-    --pp-icon-fg: color-mix(in srgb, var(--sf-reward) 72%, black);
+    --pp-icon-fg: var(--sf-warn);
   }
   html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="shadowing"] {
     --pp-icon-bg: color-mix(in srgb, var(--sf-text) 7%, transparent);
-    --pp-icon-fg: var(--sf-text);
+    --pp-icon-fg: var(--sf-text-strong);
   }
   html[data-theme-family="classic"].dark .practice-picker-row[data-practice-choice="spelling"],
   html[data-theme-family="classic"].dark .practice-picker-row[data-practice-choice="language-drill"] {
     --pp-icon-bg: color-mix(in srgb, var(--sf-second) 18%, transparent);
-    --pp-icon-fg: color-mix(in srgb, var(--sf-second) 55%, white);
   }
-  html[data-theme-family="classic"].dark .practice-picker-row[data-practice-choice="match"] {
-    --pp-icon-bg: color-mix(in srgb, var(--sf-reward) 14%, transparent);
-    --pp-icon-fg: var(--sf-reward);
-  }
+  html[data-theme-family="classic"].dark .practice-picker-row[data-practice-choice="match"] { --pp-icon-fg: var(--sf-reward); }
   html[data-theme-family="classic"].dark .practice-picker-row[data-practice-choice="shadowing"] {
     --pp-icon-bg: color-mix(in srgb, var(--sf-success) 14%, transparent);
-    --pp-icon-fg: color-mix(in srgb, var(--sf-success) 70%, white);
+    --pp-icon-fg: var(--sf-success-text);
   }
-  html[data-theme-family="classic"] .practice-picker-row[data-state="locked"] {
+  html[data-theme-family="classic"] .practice-picker-row[data-state="locked"][data-practice-choice] {
     --pp-icon-bg: color-mix(in srgb, var(--sf-text) 4%, transparent);
     --pp-icon-fg: var(--od-subtle);
   }

@@ -123,6 +123,26 @@ describe('IELTS goal progress hook', () => {
     }
   });
 
+  it('reads the IELTS goal when the course lists another active goal first', async () => {
+    const base = course('ielts');
+    const mixed: Course = {
+      ...base,
+      goals: [
+        { id: 'goal-talk', kind: 'conversation', level: null, targetDate: null, status: 'active', createdAt: '2026-01-15T00:00:00.000Z' },
+        ...base.goals,
+      ],
+    };
+    const { captured, root } = mount(options({ course: mixed }));
+    try {
+      await settle();
+      expect(captured.current).toMatchObject({
+        status: 'ready', goalId: 'goal-1', latestScore: '6.5', model: { targetBand: '7.0', latestScore: '6.5' },
+      });
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
   it.each([
     ['a goal that is not IELTS', options({ course: course('toeic') })],
     ['a course in another language', options({ course: course('ielts', 'ko') })],

@@ -196,6 +196,18 @@ describe('production AI protected-service capability', () => {
     expect(runtime.callable).toHaveBeenCalledWith({ operationId, expectedOwnerId: 'owner-1' });
   });
 
+  it.each([
+    [{ cancelled: true, counted: false }, true],
+    [{ cancelled: false, counted: false }, true],
+    [{ cancelled: false, counted: true }, false],
+    [{ cancelled: true }, true],
+    [{ cancelled: false }, null],
+    [null, null],
+  ] as const)('reads cancellation result %j as refunded %s', async (data, refunded) => {
+    runtime.callable.mockResolvedValue({ data });
+    await expect(cancelWordInfoGeneration('123e4567-e89b-42d3-a456-426614174000', 'owner-1')).resolves.toBe(refunded);
+  });
+
   it('does not cancel under a replacement account after its functions import resolves', async () => {
     const functions = deferred<unknown>();
     runtime.getFunctions.mockReturnValueOnce(functions.promise);
@@ -279,6 +291,100 @@ describe('production AI protected-service capability', () => {
       '123e4567-e89b-42d3-a456-426614174000',
     ]);
     expect(runtime.callable.mock.calls[0]?.[0].input).toBe('apple');
+  });
+
+  it('reports an automatic retry of a streamed word request under the same operation ID', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    const dropped = Object.assign(new Error('network dropped'), { code: 'functions/unavailable' });
+    const streamCall = vi.fn()
+      .mockImplementationOnce(async () => ({
+        stream: (async function* () {
+          yield { operationId, stage: 'field', field: 'phonetic', value: '/ˈæpəl/' };
+        })(),
+        data: Promise.reject(dropped),
+      }))
+      .mockImplementationOnce(async () => ({
+        stream: (async function* () {
+          yield { operationId, stage: 'drafting' };
+        })(),
+        data: Promise.resolve({ result: {
+          translation: 'táo', explanation: 'A fruit.', explanationTranslation: 'Một loại quả.',
+          phonetic: '/ˈæpəl/', emoji: '🍎', category: 'Food',
+        } }),
+      }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const progress: Array<{ stage: string }> = [];
+
+    await expect(generateWordInfo('apple', { operationId, onProgress: value => progress.push(value) }))
+      .resolves.toMatchObject({ translation: 'táo' });
+
+    expect(progress.map(item => item.stage)).toEqual(['field', 'retrying', 'drafting']);
+    expect(progress[1]).toEqual({ operationId, stage: 'retrying' });
+    expect(streamCall.mock.calls.map(([request]) => (request as { operationId: string }).operationId))
+      .toEqual([operationId, operationId]);
+  });
+
+  it('does not forward a client-only stage sent by the server', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    Object.assign(runtime.callable, { stream: vi.fn(async () => ({
+      stream: (async function* () {
+        yield { operationId, stage: 'retrying' };
+        yield { operationId, stage: 'finding-image' };
+        yield { operationId, stage: 'drafting' };
+      })(),
+      data: Promise.resolve({ result: {
+        translation: 'táo', explanation: 'A fruit.', explanationTranslation: 'Một loại quả.',
+        phonetic: '/ˈæpəl/', emoji: '🍎', category: 'Food',
+      } }),
+    })) });
+    const progress: Array<{ stage: string }> = [];
+    await generateWordInfo('apple', { operationId, onProgress: value => progress.push(value) });
+    expect(progress.map(item => item.stage)).toEqual(['drafting']);
+  });
+
+  it('calls the retry observer once per retry and never on the first attempt', async () => {
+    vi.useFakeTimers();
+    const onRetry = vi.fn();
+    const operation = vi.fn()
+      .mockRejectedValueOnce(new ProtectedFunctionError({ message: 'dropped', kind: 'network', code: 'unavailable', retryable: true }))
+      .mockResolvedValueOnce('ready');
+    const result = withNetworkRetry(operation, undefined, onRetry);
+    await vi.runAllTimersAsync();
+    await expect(result).resolves.toBe('ready');
+    expect(onRetry).toHaveBeenCalledOnce();
+    expect(operation).toHaveBeenCalledTimes(2);
+  });
+
+  it('maps an exhausted operation to a final error without retrying it', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    const exhausted = Object.assign(new Error('attempts used'), {
+      code: 'functions/failed-precondition',
+      details: { reason: 'operation-attempts-exhausted', attempts: 3, maxAttempts: 3 },
+    });
+    const streamCall = vi.fn(async () => ({
+      stream: (async function* () {
+        yield { operationId, stage: 'reserving' };
+        yield { operationId, stage: 'error', errorReason: 'operation-attempts-exhausted' };
+      })(),
+      data: Promise.reject(exhausted),
+    }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const progress: Array<{ stage: string }> = [];
+
+    await expect(generateWordInfo('apple', { operationId, onProgress: value => progress.push(value) }))
+      .rejects.toMatchObject({
+        name: 'ProtectedFunctionError', code: 'failed-precondition', retryable: false,
+        reason: 'operation-attempts-exhausted',
+      });
+    expect(streamCall).toHaveBeenCalledOnce();
+    expect(progress.map(item => item.stage)).toEqual(['reserving', 'error']);
+  });
+
+  it('keeps other failed-precondition errors on the configuration message', async () => {
+    runtime.callable.mockRejectedValue(Object.assign(new Error('mismatch'), {
+      code: 'functions/failed-precondition', details: { reason: 'operation-request-mismatch' },
+    }));
+    await expect(generateWordInfo('apple')).rejects.toMatchObject({ kind: 'configuration', retryable: false });
   });
 
   it('keeps legacy string requests bare and adds a POS hint only to structured input', async () => {
