@@ -23,7 +23,7 @@ msgctxt "webWords.lumi.tag"
 msgid "Lumi · Link"
 msgstr "Lumi · Link"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:36
+#: src/features/dailyLearning/ProgressScreen.tsx:37
 msgctxt "progress.lumi.link"
 msgid "Lumi · Link"
 msgstr "Lumi · Link"
@@ -58,7 +58,7 @@ msgctxt "webWords.filter.site.label"
 msgid "Site"
 msgstr "Site"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:46
+#: src/features/dailyLearning/ProgressScreen.tsx:47
 msgctxt "progress.metric.mastered"
 msgid "Mastered"
 msgstr "Mastered"
@@ -68,7 +68,7 @@ msgctxt "webWords.status.empty-batch"
 msgid "No web words for this course are in this batch. Load more to keep looking."
 msgstr "No web words for this course are in this batch. Load more to keep looking."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:75
+#: src/features/dailyLearning/ProgressScreen.tsx:78
 msgctxt "progress.offline.reconnect"
 msgid "You’re offline. Reconnect to review and save your progress."
 msgstr "You’re offline. Reconnect to review and save your progress."
@@ -83,7 +83,7 @@ msgctxt "webWords.feedback.not-added"
 msgid "These cards were not added to today's new-word stage. You can study them elsewhere or try again later."
 msgstr "These cards were not added to today's new-word stage. You can study them elsewhere or try again later."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:41
+#: src/features/dailyLearning/ProgressScreen.tsx:42
 msgctxt "progress.empty.title"
 msgid "Your learning story starts here"
 msgstr "Your learning story starts here"
@@ -109,7 +109,7 @@ msgctxt "today.match.retry-verification"
 msgid "Retry verification"
 msgstr "Retry verification"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:30
+#: src/features/dailyLearning/ProgressScreen.tsx:31
 msgctxt "progress.lumi.due"
 msgid "{count, plural, one {# word is} other {# words are}} due today. Let’s keep them blooming!"
 msgstr "{count, plural, one {# word is} other {# words are}} due today. Let’s keep them blooming!"
@@ -631,7 +631,7 @@ msgctxt "webWords.status.loading"
 msgid "Loading your web words…"
 msgstr "Loading your web words…"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:77
+#: src/features/dailyLearning/ProgressScreen.tsx:80
 msgctxt "progress.error.kicker"
 msgid "Progress unavailable"
 msgstr "Progress unavailable"
@@ -790,7 +790,7 @@ msgstr "Star"
 msgid "flashcard.tier.new"
 msgstr "Bud"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:77
+#: src/features/dailyLearning/ProgressScreen.tsx:80
 msgctxt "progress.error.title"
 msgid "Progress needs attention"
 msgstr "Progress needs attention"
@@ -800,12 +800,12 @@ msgctxt "webWords.filter.status.label"
 msgid "Status"
 msgstr "Status"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:41
+#: src/features/dailyLearning/ProgressScreen.tsx:42
 msgctxt "progress.clear.title"
 msgid "Your scheduled review is clear"
 msgstr "Your scheduled review is clear"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:21
+#: src/features/dailyLearning/ProgressScreen.tsx:22
 msgctxt "progress.title"
 msgid "Progress"
 msgstr "Progress"
@@ -815,17 +815,17 @@ msgctxt "progress.forecast.note"
 msgid "Cards due, next 14 days"
 msgstr "Cards due, next 14 days"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:46
+#: src/features/dailyLearning/ProgressScreen.tsx:47
 msgctxt "progress.metric.reviewed"
 msgid "Reviewed"
 msgstr "Reviewed"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:33
+#: src/features/dailyLearning/ProgressScreen.tsx:34
 msgctxt "progress.lumi.start"
 msgid "Every review helps your words bloom."
 msgstr "Every review helps your words bloom."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:69
+#: src/features/dailyLearning/ProgressScreen.tsx:72
 msgctxt "progress.kicker"
 msgid "Study diary"
 msgstr "Study diary"
@@ -835,7 +835,7 @@ msgctxt "today-screen.start-with-memory-meet-the-words-in-sound-then-use-them-in
 msgid "Start with memory, meet the words in sound, then use them in a real context."
 msgstr "Start with memory, meet the words in sound, then use them in a real context."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:45
+#: src/features/dailyLearning/ProgressScreen.tsx:46
 msgctxt "progress.add-vocabulary"
 msgid "Add vocabulary"
 msgstr "Add vocabulary"
@@ -861,7 +861,7 @@ msgctxt "today.activity.preparing"
 msgid "Preparing activity…"
 msgstr "Preparing activity…"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:54
+#: src/features/dailyLearning/ProgressScreen.tsx:56
 msgctxt "progress.subtitle.mastered"
 msgid "<0>{count}</0> mastered"
 msgstr "<0>{count}</0> mastered"
@@ -937,7 +937,7 @@ msgctxt "webWords.page.description"
 msgid "Saved with the SonFlash extension — each one keeps the sentence you found it in."
 msgstr "Saved with the SonFlash extension — each one keeps the sentence you found it in."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:41
+#: src/features/dailyLearning/ProgressScreen.tsx:42
 msgctxt "progress.due.title"
 msgid "Keep today’s memory work moving"
 msgstr "Keep today’s memory work moving"
@@ -952,7 +952,7 @@ msgctxt "webWords.back.today"
 msgid "Today"
 msgstr "Today"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:41
+#: src/features/dailyLearning/ProgressScreen.tsx:42
 msgctxt "progress.loading.title"
 msgid "Your saved progress"
 msgstr "Your saved progress"
@@ -968,7 +968,7 @@ msgid "progress.evidence.forecast-and-mastery"
 msgstr "Forecast and recently mastered cards"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:65
+#: src/features/dailyLearning/ProgressScreen.tsx:68
 msgid "progress.insights.label"
 msgstr "Detailed learning insights"
 
@@ -1002,17 +1002,17 @@ msgctxt "progress.mastered.crystal-title"
 msgid "New stars"
 msgstr "New stars"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgctxt "progress.empty.description"
 msgid "Complete a review to begin your progress history."
 msgstr "Complete a review to begin your progress history."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:32
+#: src/features/dailyLearning/ProgressScreen.tsx:33
 msgctxt "progress.lumi.clear"
 msgid "Nothing due right now. Your words are blooming!"
 msgstr "Nothing due right now. Your words are blooming!"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:53
+#: src/features/dailyLearning/ProgressScreen.tsx:55
 msgctxt "progress.subtitle.reviewed"
 msgid "{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards reviewed}}"
 msgstr "{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards reviewed}}"
@@ -2428,12 +2428,12 @@ msgctxt "webWords.back.settings"
 msgid "Settings"
 msgstr "Settings"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:46
+#: src/features/dailyLearning/ProgressScreen.tsx:47
 msgctxt "progress.evidence"
 msgid "Supporting evidence"
 msgstr "Supporting evidence"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:46
+#: src/features/dailyLearning/ProgressScreen.tsx:47
 msgctxt "progress.metric.due"
 msgid "Due today"
 msgstr "Due today"
@@ -2443,12 +2443,12 @@ msgctxt "today-screen.recommended-next"
 msgid "Recommended next"
 msgstr "Recommended next"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:44
+#: src/features/dailyLearning/ProgressScreen.tsx:45
 msgctxt "progress.review-due"
 msgid "Review {count, plural, one {# due word} other {# due words}}"
 msgstr "Review {count, plural, one {# due word} other {# due words}}"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:45
+#: src/features/dailyLearning/ProgressScreen.tsx:46
 msgctxt "progress.start-review"
 msgid "Start your first review"
 msgstr "Start your first review"

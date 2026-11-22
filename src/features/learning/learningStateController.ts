@@ -79,6 +79,8 @@ export interface LearningStateMutationResult {
   reviewFinality?: 'committed' | 'conflict';
   reviewConflictTerminal?: boolean;
   xpAwarded?: number;
+  /** Study time the server credited for this review; absent when it reported none. */
+  studyTimeMs?: number;
   reviewRating?: ReviewRating;
   reviewedAt?: string;
   deleteReceipt?: {

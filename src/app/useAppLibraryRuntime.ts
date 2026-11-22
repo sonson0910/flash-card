@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CLOUD_PAGE_SIZE, queryStateKey, type CardQueryState } from '../lib/cardQuery';
+import { cardQueryDifficulty } from '../features/catalog/libraryCatalogQuery';
 import type { CardData } from '../types/card';
 import { dateLabelToQueryDate } from '../features/library/libraryPresentation';
 import { cloudFacetsCacheKey, writeLocalValue } from '../features/library/libraryStorage';
@@ -99,7 +100,7 @@ export function useAppLibraryRuntime({
   const cloudQueryState = useMemo<CardQueryState>(() => ({
     category: catalog.category === 'All' ? null : catalog.category,
     customDeck: catalog.deck,
-    difficulty: catalog.difficulty === 'All' ? null : catalog.difficulty as CardQueryState['difficulty'],
+    difficulty: cardQueryDifficulty(catalog.difficulty),
     partOfSpeech: catalog.partOfSpeech === 'All' ? null : catalog.partOfSpeech,
     bookmarkedOnly: catalog.starred,
     createdDate: dateLabelToQueryDate(catalog.date),

@@ -56,7 +56,7 @@ const resultFor = (
   mutation: LearningStateMutation,
   publication: LearningStatePublication = mutation.publication,
   reviewFinality?: LearningStateMutationResult['reviewFinality'],
-  extras: Pick<LearningStateMutationResult, 'deleteReceipt' | 'restoreFinality' | 'restoreConflictReason' | 'reviewConflictTerminal' | 'xpAwarded' | 'reviewRating' | 'reviewedAt'> = {},
+  extras: Pick<LearningStateMutationResult, 'deleteReceipt' | 'restoreFinality' | 'restoreConflictReason' | 'reviewConflictTerminal' | 'xpAwarded' | 'studyTimeMs' | 'reviewRating' | 'reviewedAt'> = {},
 ): LearningStateMutationResult => ({
   ownerKey: mutation.ownerKey,
   operationId: mutation.operationId,
@@ -190,6 +190,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         let publication: LearningStatePublication = mutation.publication;
         let reviewFinality: LearningStateMutationResult['reviewFinality'];
         let xpAwarded: number | undefined;
+        let studyTimeMs: number | undefined;
         let reviewRating: ReviewRating | undefined;
         let reviewedAt: string | undefined;
         let requestedReviewRating: ReviewRating | undefined;
@@ -294,6 +295,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               reviewFinality = 'committed';
               if (reviewResult) {
                 xpAwarded = reviewResult.xpAwarded;
+                studyTimeMs = reviewResult.gamification?.studyTimeMs;
                 // A duplicate receipt may return the card after later reviews.
                 // The command rating is the receipt's immutable operation intent.
                 reviewRating = requestedReviewRating;
@@ -380,6 +382,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         return resultFor(mutation, publication, reviewFinality, {
           ...(reviewConflictTerminal ? { reviewConflictTerminal: true } : {}),
           ...(xpAwarded === undefined ? {} : { xpAwarded }),
+          ...(studyTimeMs === undefined ? {} : { studyTimeMs }),
           ...(reviewRating === undefined ? {} : { reviewRating }),
           ...(reviewFinality === 'committed' && reviewedAt ? { reviewedAt } : {}),
         });

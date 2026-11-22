@@ -7,6 +7,7 @@ import { Lumi } from '../../components/lumi/Lumi';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import { ReviewRangeToggle } from '../../components/stats/ReviewRangeToggle';
+import { ProgressLearningSince, ProgressStudiedTime } from '../../components/stats/ProgressStudyFacts';
 import './daily-learning-canvas.css';
 import '../../components/stats/stats-board.css';
 import './progress-screen.css';
@@ -47,11 +48,13 @@ function Summary({ model, actions }: Omit<ProgressScreenProps, 'children'>) {
   </section>;
 }
 
-function Subtitle({ model }: Pick<ProgressScreenProps, 'model'>) {
+function Subtitle({ model, isCrystal }: Pick<ProgressScreenProps, 'model'> & { readonly isCrystal: boolean }) {
   if (model.status !== 'ready' || model.reviewed === null) return null;
   return <p className="progress-board-subtitle">
+    {!isCrystal && <ProgressLearningSince variant="subtitle" />}
     <span className="progress-board-stat"><Trans {...msg({ context: 'progress.subtitle.reviewed', message: '{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards reviewed}}' })} values={{ count: model.reviewed }} components={{ 0: <strong /> }} /></span>
     {model.mastered !== null && <><span className="progress-board-dot"> · </span><span className="progress-board-stat"><Trans {...msg({ context: 'progress.subtitle.mastered', message: '<0>{count}</0> mastered' })} values={{ count: model.mastered }} components={{ 0: <strong /> }} /></span></>}
+    <ProgressStudiedTime />
   </p>;
 }
 
@@ -66,10 +69,10 @@ export function ProgressScreen({ model, actions, children }: ProgressScreenProps
   return <section aria-labelledby="daily-progress-heading" aria-busy={model.status === 'loading' || undefined} className="progress-board mx-auto max-w-6xl space-y-5 sm:space-y-6">
     <header className="progress-board-header">
       <div className="progress-board-titles">
-        {isCrystal && <p className="progress-board-kicker"><Trans {...msg({ context: 'progress.kicker', message: 'Study diary' })} /></p>}
+        {isCrystal && <p className="progress-board-kicker"><Trans {...msg({ context: 'progress.kicker', message: 'Study diary' })} /><ProgressLearningSince variant="kicker" /></p>}
         <ProgressHeading model={model} />
       </div>
-      <Subtitle model={model} />
+      <Subtitle model={model} isCrystal={isCrystal} />
       {showLumi && <LumiLink model={model} />}
       {model.status !== 'error' && model.reviewRangeDays && actions.changeReviewRange && <ReviewRangeToggle value={model.reviewRangeDays} onChange={actions.changeReviewRange} className="progress-board-range" />}
       {model.isOffline && <p className="progress-board-offline" role="status" aria-live="polite"><Trans {...msg({ context: 'progress.offline.reconnect', message: 'You’re offline. Reconnect to review and save your progress.' })} /></p>}

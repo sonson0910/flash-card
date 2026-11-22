@@ -17,7 +17,7 @@ import type { LearningStateOutcome } from '../learning/learningStateController';
 export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'language-drill' | 'story' | 'match' | 'shadowing';
 export type PracticeViewMode = 'library' | PracticeMode;
 export type StudyRatingSettlement =
-  | { readonly status: 'committed'; readonly xpAwarded: 0 | 2; readonly rating?: ReviewRating }
+  | { readonly status: 'committed'; readonly xpAwarded: 0 | 2; readonly rating?: ReviewRating; readonly studyTimeMs?: number }
   | 'retryable-error'
   | 'ignored';
 
@@ -65,6 +65,8 @@ export interface PracticeSessionController {
     showRecap: boolean;
     summary: StudyReviewSummary;
     xpEarned: number;
+    /** Study time the server credited to this session's saved reviews. */
+    studyTimeMs: number;
   };
   quiz: ReturnType<typeof usePracticeGames>;
   commands: {
@@ -110,6 +112,7 @@ type StudyReviewIntent = {
 
 type StudyReviewReceipt = StudyReviewIntent & {
   xpAwarded: 0 | 2;
+  studyTimeMs?: number;
   confirmedAt: number;
 };
 
@@ -379,6 +382,7 @@ export function usePracticeSession({
   const [weakCards, setWeakCards] = useState<CardData[]>([]);
   const [showRecap, setShowRecap] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
+  const [studyTimeMs, setStudyTimeMs] = useState(0);
 
   const openPracticeView = useCallback((view: Exclude<PracticeViewMode, 'library'>) => {
     onSessionStarted?.();
@@ -418,6 +422,7 @@ export function usePracticeSession({
     studyReviewRecordsRef.current.clear();
     setGoodCount(0);
     setXpEarned(0);
+    setStudyTimeMs(0);
     setAgainCount(0);
     setWeakCards([]);
     setShowRecap(false);
@@ -482,6 +487,7 @@ export function usePracticeSession({
         setReviewFailure(null);
         setGoodCount(0);
         setXpEarned(0);
+        setStudyTimeMs(0);
         setAgainCount(0);
         setWeakCards([]);
         setShowRecap(false);
@@ -516,7 +522,7 @@ export function usePracticeSession({
         setStudySessionKey(previous => previous + 1);
         setStudyCards(result.value);
         setIntroducedStudyCardIds(new Set(result.value.filter(hasReviewEvidence).map(card => card.id)));
-        setGoodCount(0); setAgainCount(0); setWeakCards([]); setShowRecap(false); setXpEarned(0);
+        setGoodCount(0); setAgainCount(0); setWeakCards([]); setShowRecap(false); setXpEarned(0); setStudyTimeMs(0);
         setRevealed(false);
         setReviewedCardId(null);
         setSavingReviewCardId(null);
@@ -588,9 +594,10 @@ export function usePracticeSession({
     if (activationId === null) return 'ignored' as const;
     const intentKey = studyReviewKey(activeCard.id);
     const record = studyReviewRecordsRef.current.get(intentKey);
-    const recordCommittedReview = ({ rating: persistedRating, xpAwarded }: StudyReviewReceipt) => {
+    const recordCommittedReview = ({ rating: persistedRating, xpAwarded, studyTimeMs: creditedMs }: StudyReviewReceipt) => {
         setReviewedCardId(activeCard.id);
         setXpEarned(previous => previous + xpAwarded);
+        if (creditedMs) setStudyTimeMs(previous => previous + creditedMs);
         if (persistedRating === 'good' || persistedRating === 'easy') setGoodCount(previous => previous + 1);
         else {
           setAgainCount(previous => previous + 1);
@@ -623,6 +630,7 @@ export function usePracticeSession({
           status: 'committed',
           xpAwarded: confirmed.xpAwarded,
           ...(confirmed.rating === rating ? {} : { rating: confirmed.rating }),
+          ...(confirmed.studyTimeMs === undefined ? {} : { studyTimeMs: confirmed.studyTimeMs }),
         } as const;
       }
     }
@@ -678,6 +686,7 @@ export function usePracticeSession({
           operationId: intent.operationId,
           rating: persistedRating,
           xpAwarded,
+          ...(typeof outcome.result.studyTimeMs === 'number' ? { studyTimeMs: outcome.result.studyTimeMs } : {}),
           libraryEpoch: typeof fields?.libraryEpoch === 'number' ? fields.libraryEpoch : intent.libraryEpoch,
           preReviewCount: intent.preReviewCount,
           preReviewAt: intent.preReviewAt,
@@ -707,6 +716,7 @@ export function usePracticeSession({
           status: 'committed',
           xpAwarded,
           ...(persistedRating === rating ? {} : { rating: persistedRating }),
+          ...(committedReceipt.studyTimeMs === undefined ? {} : { studyTimeMs: committedReceipt.studyTimeMs }),
         } as const;
       }
       return 'ignored' as const;
@@ -833,6 +843,7 @@ export function usePracticeSession({
           showRecap,
           summary: lifecycle.reviewSummary(scopedStudyCards.map(card => card.id)),
           xpEarned,
+          studyTimeMs,
         }
       : {
           sessionKey: studySessionKey,
@@ -852,6 +863,7 @@ export function usePracticeSession({
           showRecap: false,
           summary: { saved: 0, skipped: 0, failed: 0, pending: 0, remaining: 0 },
           xpEarned: 0,
+          studyTimeMs: 0,
         },
     quiz: scopedQuiz,
     commands: {

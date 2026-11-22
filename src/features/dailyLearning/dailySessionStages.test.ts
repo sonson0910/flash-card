@@ -244,6 +244,16 @@ describe('applyRatingToStats', () => {
     expect(longestCorrectRun([])).toBe(0);
   });
 
+  it('adds the study time the server credited, and never invents one for an older pointer', () => {
+    let stats = applyRatingToStats(emptyDailySessionStats, 'a', 'good', 2, 'review', 4200);
+    stats = applyRatingToStats(stats, 'b', 'again', 0, 'review');
+    stats = applyRatingToStats(stats, 'c', 'good', 2, 'review', 1800);
+    expect(stats.studyTimeMs).toBe(6000);
+
+    const legacy = { goodCount: 4, againCount: 1, weakCardIds: [], reviewXp: 5, matchXp: 0 };
+    expect(applyRatingToStats(legacy, 'a', 'good', 1, 'review', 4200).studyTimeMs).toBeUndefined();
+  });
+
   it('never invents answers for a pointer saved before answers were tracked', () => {
     const legacy = { goodCount: 4, againCount: 1, weakCardIds: [], reviewXp: 5, matchXp: 0 };
     const stats = applyRatingToStats(legacy, 'a', 'good', 1, 'review');

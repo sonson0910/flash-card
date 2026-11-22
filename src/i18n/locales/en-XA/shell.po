@@ -160,7 +160,7 @@ msgctxt "onboarding.trial.state.known"
 msgid "Got it"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:138
+#: src/app/AppViewStage.tsx:140
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr ""
@@ -456,7 +456,7 @@ msgctxt "onboarding.primer.block.title"
 msgid "Build one syllable block"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:146
+#: src/app/AppViewStage.tsx:148
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr ""
@@ -775,7 +775,7 @@ msgid "exam-band-picker.legend"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:271
+#: src/app/AppRuntime.tsx:274
 msgid "extension.import.course-mismatch-confirm"
 msgstr ""
 
@@ -834,7 +834,7 @@ msgctxt "onboarding.trial.again"
 msgid "Forgot"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:147
+#: src/app/AppViewStage.tsx:149
 msgctxt "shell.loading.web-words"
 msgid "Preparing your web words…"
 msgstr ""
@@ -921,7 +921,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr ""
 
-#: src/app/AppRuntime.tsx:618
+#: src/app/AppRuntime.tsx:640
 #: src/components/shell/CourseSwitcherControl.tsx:123
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -1264,7 +1264,7 @@ msgctxt "onboarding.phone.body"
 msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:148
+#: src/app/AppViewStage.tsx:150
 msgctxt "shell.loading.files"
 msgid "Preparing your files…"
 msgstr ""
@@ -1617,7 +1617,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:130
+#: src/app/AppViewStage.tsx:132
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr ""
@@ -1893,7 +1893,7 @@ msgid "shell.language.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:607
+#: src/app/AppRuntime.tsx:629
 msgid "shell.learning-workspace"
 msgstr ""
 
@@ -2191,7 +2191,7 @@ msgid "shell.sync.paused-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:472
+#: src/app/AppRuntime.tsx:475
 msgid "shell.sync.retry-failed"
 msgstr ""
 
@@ -2278,7 +2278,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr ""
 
-#: src/app/AppRuntime.tsx:619
+#: src/app/AppRuntime.tsx:641
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2409,7 +2409,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:145
+#: src/app/AppViewStage.tsx:147
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr ""
@@ -2455,7 +2455,7 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr ""
 
-#: src/app/AppRuntime.tsx:621
+#: src/app/AppRuntime.tsx:643
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr ""
@@ -2566,7 +2566,7 @@ msgid "Manage shared link"
 msgstr ""
 
 #: src/app/AppDeferredViews.tsx:23
-#: src/app/AppRuntime.tsx:87
+#: src/app/AppRuntime.tsx:90
 msgctxt "shell.opening-dialog"
 msgid "Opening dialog"
 msgstr ""

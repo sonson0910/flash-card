@@ -1023,7 +1023,7 @@ export default function DailyLearningWorkspace({
       if (!isCurrentMatch(latest, undefined, matchStartOpId, matchCompletionId)) return null;
       if (latest.ownerId) onVerifiedPracticeOutcome(result.outcome, matchCompletionId, latest.ownerId);
       updateCurrentMatch(state => ({
-        ...state, stats: { ...state.stats, matchXp: state.stats.matchXp + result.awardedXp }, phase: { kind: 'recap' }, matchCompletionPending: false, matchStatus: 'ready',
+        ...state, stats: { ...state.stats, matchXp: state.stats.matchXp + result.awardedXp, ...(state.stats.studyTimeMs === undefined ? {} : { studyTimeMs: state.stats.studyTimeMs + (result.outcome.studyTimeMs ?? 0) }) }, phase: { kind: 'recap' }, matchCompletionPending: false, matchStatus: 'ready',
       }), 'completing', matchStartOpId, matchCompletionId);
       return { awardedXp: result.awardedXp };
     } catch {
@@ -1271,7 +1271,7 @@ export default function DailyLearningWorkspace({
         : undefined;
       setMultiStage(current => {
         if (!isCurrentSession(current)) return current;
-        const rated = applyRatingToStats(current.stats, cardId, rating, result.xpAwarded, current.phase.kind === 'lesson' ? current.phase.stage : undefined);
+        const rated = applyRatingToStats(current.stats, cardId, rating, result.xpAwarded, current.phase.kind === 'lesson' ? current.phase.stage : undefined, result.studyTimeMs ?? 0);
         const stats = before && reviewed ? applyTierChangeToStats(rated, cardId, getLibraryCardTier(before), getLibraryCardTier(reviewed)) : rated;
         return { ...current, stats };
       });
@@ -1492,6 +1492,7 @@ export default function DailyLearningWorkspace({
           goodCount={activeMultiStage.stats.goodCount}
           againCount={activeMultiStage.stats.againCount}
           xpEarned={sessionXpEarned}
+          {...(activeMultiStage.stats.studyTimeMs === undefined ? {} : { studyTimeMs: activeMultiStage.stats.studyTimeMs })}
           weakCards={weakCards}
           targetLanguage={targetLanguage}
           promotions={sessionPromotions}

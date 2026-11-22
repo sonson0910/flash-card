@@ -7,7 +7,7 @@ import type { LibraryStatsViewModel } from '../library/libraryViewModel';
 import { useTheme } from '../theme/ThemeProvider';
 import { ProgressScreen } from './ProgressScreen';
 import { AchievementsMatrix } from '../../components/stats/AchievementsMatrix';
-import { hasReviewRange, type ReviewRangeDays } from '../../components/stats/ReviewRangeToggle';
+import { hasReviewRange, type ReviewRange } from '../../components/stats/ReviewRangeToggle';
 
 const StatsCharts = lazy(() => import('../../components/stats/StatsCharts'));
 const WeeklyRecapDialog = lazy(() => import('../weeklyRecap/WeeklyRecapDialog'));
@@ -55,7 +55,7 @@ export default function ProgressWorkspace({ ownerId, targetLanguage, darkMode, i
   const { i18n: activeI18n } = useLingui();
   const locale = activeI18n.locale || 'en';
   const { family } = useTheme();
-  const [reviewRangeDays, setReviewRangeDays] = useState<ReviewRangeDays>(182);
+  const [reviewRangeDays, setReviewRangeDays] = useState<ReviewRange>(182);
   const showsInsights = hasActivity || (stats.total > 0 && Boolean(stats.dueForecast || stats.recentlyMastered));
   const showsCharts = showsInsights && (hasActivity || Boolean(stats.reviewActivity));
   // The header's range switch drives the activity heatmap, so it appears only with that panel.

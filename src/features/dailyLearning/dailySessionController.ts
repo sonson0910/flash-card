@@ -10,7 +10,7 @@ import {
 } from './lessonReducer';
 
 export type DailySessionPersistenceResult =
-  | { readonly status: 'advanced' | 'completed'; readonly xpAwarded: number; readonly publication?: LearningStatePublication }
+  | { readonly status: 'advanced' | 'completed'; readonly xpAwarded: number; readonly studyTimeMs?: number; readonly publication?: LearningStatePublication }
   | { readonly status: 'stale-session' | 'not-ready' }
   | { readonly status: 'failed'; readonly error: string };
 
@@ -89,6 +89,7 @@ export function createDailySessionController({
         return {
           status: next.phase === 'completed' ? 'completed' : 'advanced',
           xpAwarded: outcome.result.xpAwarded,
+          ...(typeof outcome.result.studyTimeMs === 'number' ? { studyTimeMs: outcome.result.studyTimeMs } : {}),
           ...(outcome.result.publication ? { publication: outcome.result.publication } : {}),
         };
       } catch (error) {

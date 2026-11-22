@@ -23,7 +23,7 @@ msgctxt "webWords.lumi.tag"
 msgid "Lumi · Link"
 msgstr "Lumi · Link"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:36
+#: src/features/dailyLearning/ProgressScreen.tsx:37
 msgctxt "progress.lumi.link"
 msgid "Lumi · Link"
 msgstr "Lumi · Link"
@@ -58,7 +58,7 @@ msgctxt "webWords.filter.site.label"
 msgid "Site"
 msgstr "Trang web"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:46
+#: src/features/dailyLearning/ProgressScreen.tsx:47
 msgctxt "progress.metric.mastered"
 msgid "Mastered"
 msgstr "Đã thành thạo"
@@ -68,7 +68,7 @@ msgctxt "webWords.status.empty-batch"
 msgid "No web words for this course are in this batch. Load more to keep looking."
 msgstr "Không có từ web nào cho khóa học này trong lô này. Hãy tải thêm để tiếp tục tìm."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:75
+#: src/features/dailyLearning/ProgressScreen.tsx:78
 msgctxt "progress.offline.reconnect"
 msgid "You’re offline. Reconnect to review and save your progress."
 msgstr "Bạn đang ngoại tuyến. Hãy kết nối lại để ôn tập và lưu tiến độ."
@@ -83,7 +83,7 @@ msgctxt "webWords.feedback.not-added"
 msgid "These cards were not added to today's new-word stage. You can study them elsewhere or try again later."
 msgstr "Những thẻ này chưa được thêm vào chặng từ mới hôm nay. Bạn có thể học chúng ở nơi khác hoặc thử lại sau."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:41
+#: src/features/dailyLearning/ProgressScreen.tsx:42
 msgctxt "progress.empty.title"
 msgid "Your learning story starts here"
 msgstr "Câu chuyện học tập của bạn bắt đầu từ đây"
@@ -109,7 +109,7 @@ msgctxt "today.match.retry-verification"
 msgid "Retry verification"
 msgstr "Thử xác minh lại"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:30
+#: src/features/dailyLearning/ProgressScreen.tsx:31
 msgctxt "progress.lumi.due"
 msgid "{count, plural, one {# word is} other {# words are}} due today. Let’s keep them blooming!"
 msgstr "{count, plural, one {# từ} other {# từ}} đến hạn hôm nay. Cùng giữ cho chúng nở hoa nhé!"
@@ -631,7 +631,7 @@ msgctxt "webWords.status.loading"
 msgid "Loading your web words…"
 msgstr "Đang tải từ trên web của bạn…"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:77
+#: src/features/dailyLearning/ProgressScreen.tsx:80
 msgctxt "progress.error.kicker"
 msgid "Progress unavailable"
 msgstr "Không thể xem tiến độ"
@@ -790,7 +790,7 @@ msgstr "Sao"
 msgid "flashcard.tier.new"
 msgstr "Nụ"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:77
+#: src/features/dailyLearning/ProgressScreen.tsx:80
 msgctxt "progress.error.title"
 msgid "Progress needs attention"
 msgstr "Tiến độ cần được xử lý"
@@ -800,12 +800,12 @@ msgctxt "webWords.filter.status.label"
 msgid "Status"
 msgstr "Trạng thái"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:41
+#: src/features/dailyLearning/ProgressScreen.tsx:42
 msgctxt "progress.clear.title"
 msgid "Your scheduled review is clear"
 msgstr "Lịch ôn của bạn đã thông thoáng"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:21
+#: src/features/dailyLearning/ProgressScreen.tsx:22
 msgctxt "progress.title"
 msgid "Progress"
 msgstr "Tiến độ"
@@ -815,17 +815,17 @@ msgctxt "progress.forecast.note"
 msgid "Cards due, next 14 days"
 msgstr "Thẻ đến hạn trong 14 ngày tới"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:46
+#: src/features/dailyLearning/ProgressScreen.tsx:47
 msgctxt "progress.metric.reviewed"
 msgid "Reviewed"
 msgstr "Đã ôn"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:33
+#: src/features/dailyLearning/ProgressScreen.tsx:34
 msgctxt "progress.lumi.start"
 msgid "Every review helps your words bloom."
 msgstr "Mỗi lượt ôn đều giúp từ vựng của bạn nở hoa."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:69
+#: src/features/dailyLearning/ProgressScreen.tsx:72
 msgctxt "progress.kicker"
 msgid "Study diary"
 msgstr "Nhật ký học tập"
@@ -835,7 +835,7 @@ msgctxt "today-screen.start-with-memory-meet-the-words-in-sound-then-use-them-in
 msgid "Start with memory, meet the words in sound, then use them in a real context."
 msgstr "Bắt đầu bằng ghi nhớ, nghe từ được phát âm, rồi sử dụng trong ngữ cảnh thực tế."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:45
+#: src/features/dailyLearning/ProgressScreen.tsx:46
 msgctxt "progress.add-vocabulary"
 msgid "Add vocabulary"
 msgstr "Thêm từ vựng"
@@ -861,7 +861,7 @@ msgctxt "today.activity.preparing"
 msgid "Preparing activity…"
 msgstr "Đang chuẩn bị hoạt động…"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:54
+#: src/features/dailyLearning/ProgressScreen.tsx:56
 msgctxt "progress.subtitle.mastered"
 msgid "<0>{count}</0> mastered"
 msgstr "<0>{count}</0> từ đã thuộc"
@@ -937,7 +937,7 @@ msgctxt "webWords.page.description"
 msgid "Saved with the SonFlash extension — each one keeps the sentence you found it in."
 msgstr "Lưu bằng tiện ích SonFlash — mỗi từ giữ lại câu bạn đã gặp nó."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:41
+#: src/features/dailyLearning/ProgressScreen.tsx:42
 msgctxt "progress.due.title"
 msgid "Keep today’s memory work moving"
 msgstr "Duy trì việc ghi nhớ hôm nay"
@@ -952,7 +952,7 @@ msgctxt "webWords.back.today"
 msgid "Today"
 msgstr "Hôm nay"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:41
+#: src/features/dailyLearning/ProgressScreen.tsx:42
 msgctxt "progress.loading.title"
 msgid "Your saved progress"
 msgstr "Tiến độ đã lưu của bạn"
@@ -968,7 +968,7 @@ msgid "progress.evidence.forecast-and-mastery"
 msgstr "Dự báo và thẻ mới thành thạo"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:65
+#: src/features/dailyLearning/ProgressScreen.tsx:68
 msgid "progress.insights.label"
 msgstr "Thông tin chi tiết về việc học"
 
@@ -1002,17 +1002,17 @@ msgctxt "progress.mastered.crystal-title"
 msgid "New stars"
 msgstr "Sao mới"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:43
+#: src/features/dailyLearning/ProgressScreen.tsx:44
 msgctxt "progress.empty.description"
 msgid "Complete a review to begin your progress history."
 msgstr "Hoàn thành một lượt ôn để bắt đầu lịch sử tiến độ của bạn."
 
-#: src/features/dailyLearning/ProgressScreen.tsx:32
+#: src/features/dailyLearning/ProgressScreen.tsx:33
 msgctxt "progress.lumi.clear"
 msgid "Nothing due right now. Your words are blooming!"
 msgstr "Hiện chưa có gì đến hạn. Từ vựng của bạn đang nở hoa!"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:53
+#: src/features/dailyLearning/ProgressScreen.tsx:55
 msgctxt "progress.subtitle.reviewed"
 msgid "{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards reviewed}}"
 msgstr "{count, plural, one {<0>#</0> thẻ đã ôn} other {<0>#</0> thẻ đã ôn}}"
@@ -2428,12 +2428,12 @@ msgctxt "webWords.back.settings"
 msgid "Settings"
 msgstr "Cài đặt"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:46
+#: src/features/dailyLearning/ProgressScreen.tsx:47
 msgctxt "progress.evidence"
 msgid "Supporting evidence"
 msgstr "Dữ liệu hỗ trợ"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:46
+#: src/features/dailyLearning/ProgressScreen.tsx:47
 msgctxt "progress.metric.due"
 msgid "Due today"
 msgstr "Đến hạn hôm nay"
@@ -2443,12 +2443,12 @@ msgctxt "today-screen.recommended-next"
 msgid "Recommended next"
 msgstr "Gợi ý tiếp theo"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:44
+#: src/features/dailyLearning/ProgressScreen.tsx:45
 msgctxt "progress.review-due"
 msgid "Review {count, plural, one {# due word} other {# due words}}"
 msgstr "Ôn {count, plural, one {# từ đến hạn} other {# từ đến hạn}}"
 
-#: src/features/dailyLearning/ProgressScreen.tsx:45
+#: src/features/dailyLearning/ProgressScreen.tsx:46
 msgctxt "progress.start-review"
 msgid "Start your first review"
 msgstr "Bắt đầu lượt ôn đầu tiên"

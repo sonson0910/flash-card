@@ -65,6 +65,7 @@ export function PracticeScreen({
           showRecap={study.showRecap}
           summary={study.summary}
           xpEarned={study.xpEarned}
+          studyTimeMs={study.studyTimeMs}
           onDismissRecap={commands.dismissStudyRecap}
           onBeginStudyRecall={commands.beginStudyRecall}
           onLearnFirst={commands.requestStudyIntroduction}

@@ -261,6 +261,7 @@ const expectEmptyPracticeState = (session: ReturnType<typeof usePracticeSession>
     reviewError: null,
     isPaused: false,
     goodCount: 0, againCount: 0, weakCards: [], showRecap: false, xpEarned: 0,
+ studyTimeMs: 0,
     summary: { saved: 0, skipped: 0, failed: 0, pending: 0, remaining: 0 },
   });
   expect(session.quiz).toMatchObject({

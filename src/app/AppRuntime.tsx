@@ -32,6 +32,9 @@ import { createFirebaseFilePort } from '../features/files/firebaseFileAdapter';
 import { OnboardingGate } from '../features/onboarding/OnboardingGate';
 import { AccountProfileProvider } from '../features/profileCompletion/AccountProfileContext';
 import { CardEditorServicesProvider } from '../features/cardEdit/cardEditorServices';
+import { VerifiedStatsProvider, type VerifiedStatsSource } from '../components/stats/VerifiedStatsContext';
+import { findCardById } from '../lib/cardRepository';
+import { MASTERED_CARD_DIFFICULTY } from '../features/catalog/libraryCatalogQuery';
 import { createFileCardPhotos } from '../features/files/fileCardPhotos';
 import { createDeferredCardImageUploader } from './cardImageUpload';
 import { ProfileCompletionGate } from '../features/profileCompletion/ProfileCompletionGate';
@@ -510,6 +513,24 @@ export default function AppRuntime({
     user?.uid ?? null,
   );
 
+  // Progress, the weekly recap and the session recap read study time, streak and word counts from
+  // the verified state the app already listens to. The word of the week is one card read, made only
+  // when the learner turns it on.
+  const verifiedStatsSource = useMemo<VerifiedStatsSource | null>(() => (courseScopeReady && currentOwnerId ? {
+    state: verifiedGamification,
+    language: targetLanguage,
+    ...(isFirebaseConfigured && db ? {
+      loadCard: async (cardId: string) => {
+        const card = await findCardById(db!, currentOwnerId, cardId);
+        return card ? { id: card.id, word: card.word } : null;
+      },
+    } : {}),
+  } : null), [courseScopeReady, currentOwnerId, verifiedGamification, targetLanguage]);
+  const openMasteredVocabulary = useCallback(() => {
+    // The stored Easy rating is the mastered tier Progress counts; Vocabulary shows it as "Mastered".
+    library.actions.catalog.chooseDifficulty(MASTERED_CARD_DIFFICULTY);
+    setViewMode('library');
+  }, [library.actions.catalog, setViewMode]);
   if (!visible) return null;
   if (identity.status !== 'loading' && !user && viewMode !== 'landing') return null;
   const shellViewMode = viewMode === 'language-drill' ? 'spelling' : viewMode;
@@ -551,6 +572,7 @@ export default function AppRuntime({
     ) : (
     <AccountProfileProvider profile={accountProfile.profile}>
     <CardEditorServicesProvider value={cardEditorServices}>
+    <VerifiedStatsProvider source={verifiedStatsSource}>
     <div ref={appShellRef} data-view={viewMode} className={`app-canvas claude-app-shell min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <SkipToContentLink />
       <OnboardingGate ownerId={currentOwnerId} suppress={!courseScopeReady || viewMode === 'landing' || shellSyncStatus.isCheckingCloud}
@@ -620,6 +642,7 @@ export default function AppRuntime({
                 </div>
               : <WorkspaceLoadingPanel><Trans {...msg({ context: 'course.loading', message: 'Preparing your courses…' })} /></WorkspaceLoadingPanel>) : <AppViewStage
               {...viewStageNavigationActions(setViewMode)}
+              openMasteredVocabulary={openMasteredVocabulary}
               {...viewStageLearningProps(library, learning, setNotice)}
               {...viewStageStatsProps(stats, cloud, overview)}
               rewardTimeZone={stats.rewardTimeZone}
@@ -735,6 +758,7 @@ export default function AppRuntime({
         viewStageRef={viewStageRef}
       />
     </div>
+    </VerifiedStatsProvider>
     </CardEditorServicesProvider>
     </AccountProfileProvider>
     )}

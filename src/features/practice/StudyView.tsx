@@ -37,6 +37,8 @@ interface StudyViewProps {
   showRecap?: boolean;
   summary?: StudyReviewSummary;
   xpEarned?: number;
+  /** Study time the server credited to this session's saved reviews. */
+  studyTimeMs?: number;
   onRetryWeak?: () => void;
   onDismissRecap?: () => void;
   onLearnFirst?: () => void;
@@ -116,6 +118,7 @@ export function StudyView({
   showRecap: externalShowRecap,
   summary,
   xpEarned: externalXpEarned,
+  studyTimeMs: externalStudyTimeMs,
   onRetryWeak,
   onDismissRecap,
   onLearnFirst,
@@ -220,6 +223,7 @@ export function StudyView({
   const [sessionGoodCount, setSessionGoodCount] = useState(0);
   const [sessionAgainCount, setSessionAgainCount] = useState(0);
   const [sessionXpEarned, setSessionXpEarned] = useState(0);
+  const [sessionStudyTimeMs, setSessionStudyTimeMs] = useState(0);
   const answeredCount = summary?.saved ?? (externalGoodCount ?? sessionGoodCount) + (externalAgainCount ?? sessionAgainCount);
   const progressRatio = answeredCount / Math.max(cards.length, 1);
   const [weakCards, setWeakCards] = useState<CardData[]>([]);
@@ -309,6 +313,7 @@ export function StudyView({
 
       const isPositive = effectiveRating === 'good' || effectiveRating === 'easy';
       setSessionXpEarned(previous => previous + settlement.xpAwarded);
+      if (settlement.studyTimeMs) setSessionStudyTimeMs(previous => previous + (settlement.studyTimeMs ?? 0));
       if (isPositive) {
         setSessionGoodCount(prev => prev + 1);
       } else {
@@ -505,6 +510,7 @@ export function StudyView({
         goodCount={externalGoodCount ?? sessionGoodCount}
         againCount={externalAgainCount ?? sessionAgainCount}
         xpEarned={externalXpEarned ?? sessionXpEarned}
+        studyTimeMs={externalStudyTimeMs ?? sessionStudyTimeMs}
         weakCards={externalWeakCards ?? weakCards}
         targetLanguage={cards[0]?.language ?? 'en'}
       />

@@ -167,13 +167,15 @@ export interface DailySessionStats {
   /** Missing on a pointer saved by an older client; unknown awards are never invented. */
   readonly reviewXp?: number;
   readonly matchXp: number;
+  /** Study time the server credited to this session's saved work. Missing on a pointer saved by an older client. */
+  readonly studyTimeMs?: number;
   /** Committed answers in order. Missing on a pointer saved by an older client, so no combo is shown. */
   readonly answers?: readonly DailySessionAnswer[];
   /** Cards whose committed review raised their tier. Missing on a pointer saved by an older client. */
   readonly promotions?: readonly DailySessionPromotion[];
 }
 
-export const emptyDailySessionStats: DailySessionStats = { goodCount: 0, againCount: 0, weakCardIds: [], reviewXp: 0, matchXp: 0, answers: [], promotions: [] };
+export const emptyDailySessionStats: DailySessionStats = { goodCount: 0, againCount: 0, weakCardIds: [], reviewXp: 0, matchXp: 0, studyTimeMs: 0, answers: [], promotions: [] };
 
 export function applyRatingToStats(
   stats: DailySessionStats,
@@ -181,6 +183,7 @@ export function applyRatingToStats(
   rating: ReviewRatingValue,
   xpAwarded: number,
   stage?: DailySessionAnswer['stage'],
+  creditedStudyTimeMs = 0,
 ): DailySessionStats {
   const isPositive = rating === 'good' || rating === 'easy';
   const weakCardIds = isPositive
@@ -195,6 +198,7 @@ export function applyRatingToStats(
     weakCardIds,
     reviewXp: (stats.reviewXp ?? 0) + xpAwarded,
     matchXp: stats.matchXp,
+    ...(stats.studyTimeMs === undefined ? {} : { studyTimeMs: stats.studyTimeMs + creditedStudyTimeMs }),
     ...(answers ? { answers } : {}),
     ...(stats.promotions ? { promotions: stats.promotions } : {}),
   };
@@ -303,6 +307,7 @@ const isDailySessionStats = (value: unknown): value is DailySessionStats => {
   return typeof candidate.goodCount === 'number' && typeof candidate.againCount === 'number'
     && (candidate.reviewXp === undefined || Number.isSafeInteger(candidate.reviewXp) && Number(candidate.reviewXp) >= 0)
     && typeof candidate.matchXp === 'number' && isStringArray(candidate.weakCardIds)
+    && (candidate.studyTimeMs === undefined || Number.isSafeInteger(candidate.studyTimeMs) && Number(candidate.studyTimeMs) >= 0)
     && (candidate.answers === undefined || isSessionAnswerList(candidate.answers))
     && (candidate.promotions === undefined || isPromotionList(candidate.promotions));
 };
