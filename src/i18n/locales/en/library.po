@@ -2094,7 +2094,7 @@ msgid "library.import.partial-guidance"
 msgstr "Retry the failed or skipped words later."
 
 #. js-lingui-explicit-id
-#: src/features/importExport/spreadsheetWorkbook.ts:715
+#: src/features/importExport/spreadsheetWorkbook.ts:714
 msgid "library.import.xls-unsupported"
 msgstr "Legacy .xls files aren't supported. Re-save the file as .xlsx or .csv, then try again."
 
