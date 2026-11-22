@@ -238,7 +238,7 @@ describe('library screen contract', () => {
     expect(intakeActions.cardCreator.generatePreview).toHaveBeenCalledOnce();
     expect(commands.openCardCreator.mock.invocationCallOrder[0]).toBeLessThan(intakeActions.cardCreator.generatePreview.mock.invocationCallOrder[0]);
     expect(intakeActions.generate).not.toHaveBeenCalled();
-    expect(intakeActions.importFile).toHaveBeenCalledWith(file);
+    expect(intakeActions.importFile).toHaveBeenCalledWith(file, { deckNames: ['IELTS'] });
     expect(intakeActions.shareCategory).toHaveBeenCalledWith({
       category: 'IELTS', customDeck: ALL_PRACTICE_DECK_SCOPE,
     });

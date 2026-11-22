@@ -20,6 +20,7 @@ import type { CardCreatorActions, CardCreatorModel } from './card-creator-model'
 import {
   spreadsheetRequestFromFile,
 } from './spreadsheetFileRequest';
+import type { SpreadsheetImportSettings } from '../importExport/spreadsheetWorkbook';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 
 const SHARE_CATEGORY_LOAD_TIMEOUT_MS = 20_000;
@@ -106,7 +107,7 @@ export interface IntakeSharingSessionActions {
   changeDraft(value: string): void;
   clearDraft(): void;
   generate(options?: Parameters<CardIntakeActions['generate']>[0]): ReturnType<CardIntakeActions['generate']>;
-  importFile(file: File | null): Promise<
+  importFile(file: File | null, settings?: SpreadsheetImportSettings): Promise<
     | { status: 'missing' }
     | Awaited<ReturnType<CardIntakeActions['importSpreadsheet']>>
   >;
@@ -232,10 +233,10 @@ dependencies: IntakeSharingSessionDependencies,
     if (notice) feedbackRef.current?.notify(notice);
   }, [notice]);
 
-  const importFile = useCallback(async (file: File | null) => {
+  const importFile = useCallback(async (file: File | null, settings?: SpreadsheetImportSettings) => {
     if (!file) return { status: 'missing' } as const;
     setFacadeFailure(null);
-    return cardIntake.actions.importSpreadsheet(spreadsheetRequestFromFile(file));
+    return cardIntake.actions.importSpreadsheet(spreadsheetRequestFromFile(file, settings));
   }, [cardIntake.actions]);
 
   const shareCategory = useCallback(async (selection: ShareCategorySelection): Promise<ShareCategoryResult> => {

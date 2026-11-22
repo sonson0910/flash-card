@@ -38,7 +38,7 @@ import {
   type EditableCardField,
   type EditCardDraft,
 } from './editCardModel';
-import { useCardEditorServices } from './cardEditorServices';
+import { useCardEditorServices, type CardImageUploader } from './cardEditorServices';
 
 export interface EditCardDialogProps {
   card: CardData;
@@ -56,10 +56,7 @@ export interface EditCardDialogProps {
   customDecks?: readonly string[];
 }
 
-/** Uploads a photo the learner picked and resolves with the URL to store on the card. */
-export interface CardImageUploader {
-  upload(file: File, onProgress: (fraction: number | null) => void): { readonly done: Promise<string>; cancel(): void };
-}
+export type { CardImageUploader };
 
 type ImageUploadFailure = 'quota' | 'type' | 'failed';
 

@@ -17,6 +17,8 @@ export interface SpreadsheetWorkbook {
   hasStructuredHeader?: boolean;
   structuredSourceRows?: SpreadsheetStructuredSourceRow[];
   flatSourceCells?: SpreadsheetFlatSourceCell[];
+  /** The learner's deck names a Deck cell may use; without them every Deck cell imports as Unassigned. */
+  deckNames?: readonly string[];
 }
 
 export interface SpreadsheetStructuredSourceRow {
@@ -872,7 +874,7 @@ const parseWorkbook = async (bytes: Uint8Array, format: SpreadsheetFormat): Prom
   return matrixToWorkbook(matrix, range.s.r, range.s.c);
 };
 
-export const loadSpreadsheetWorkbook = async (file: File): Promise<SpreadsheetWorkbook> => {
+const readSpreadsheetWorkbook = async (file: File): Promise<SpreadsheetWorkbook> => {
   const format = formatForFile(file);
   if (!Number.isSafeInteger(file.size) || file.size < 0 || file.size > MAX_SPREADSHEET_FILE_BYTES) {
     throw new SpreadsheetReadError(`Spreadsheet exceeds the ${MAX_SPREADSHEET_FILE_BYTES} byte file size limit.`);
@@ -894,4 +896,15 @@ export const loadSpreadsheetWorkbook = async (file: File): Promise<SpreadsheetWo
   utf8Bytes.set([0xef, 0xbb, 0xbf]);
   utf8Bytes.set(bytes, 3);
   return parseWorkbook(utf8Bytes, format);
+};
+
+/** What the library knows about the learner when it hands a file to the import. */
+export interface SpreadsheetImportSettings {
+  /** The deck names a Deck cell may use; any other name imports as Unassigned. */
+  readonly deckNames?: readonly string[];
+}
+
+export const loadSpreadsheetWorkbook = async (file: File, settings: SpreadsheetImportSettings = {}): Promise<SpreadsheetWorkbook> => {
+  const workbook = await readSpreadsheetWorkbook(file);
+  return settings.deckNames ? { ...workbook, deckNames: [...settings.deckNames] } : workbook;
 };

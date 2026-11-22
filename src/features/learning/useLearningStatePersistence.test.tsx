@@ -58,7 +58,7 @@ vi.mock('../../lib/firebase', () => ({
 }));
 
 import { CardMutationPreconditionError } from '../../lib/cardRepository';
-import { useLearningStatePersistence } from './useLearningStatePersistence';
+import { starredCountDelta, useLearningStatePersistence } from './useLearningStatePersistence';
 
 const card: CardData = {
   id: 'word-focus',
@@ -204,6 +204,59 @@ describe('useLearningStatePersistence patch reconciliation', () => {
 
     await expect(harness.persistence.persist(reviewMutation)).rejects.toThrow();
     expect(harness.reportError).toHaveBeenCalled();
+  });
+
+  it('moves the Starred count when the card editor saves a changed star, with no extra cloud call', async () => {
+    mocks.applyCardPatchIfCurrent.mockResolvedValue({ applied: true, revision: 4 });
+    const harness = createHarness();
+    const editorSave: LearningStateMutation = {
+      ownerKey: 'user-a',
+      operationId: 'edit-1',
+      operation: 'patch',
+      intent: 'patch',
+      cardId: card.id,
+      fields: { translation: 'sự tập trung', bookmarked: true },
+      fieldMask: ['translation', 'bookmarked'],
+      baseRevision: 3,
+      libraryEpoch: 2,
+      publication: { kind: 'patch', cardId: card.id, fields: { translation: 'sự tập trung', bookmarked: true } },
+    };
+
+    await harness.persistence.persist(editorSave);
+
+    expect(mocks.applyCardPatchIfCurrent).toHaveBeenCalledTimes(1);
+    expect(mocks.findCardById).not.toHaveBeenCalled();
+    expect(harness.updateCloudStats).toHaveBeenCalledTimes(1);
+    const update = harness.updateCloudStats.mock.calls[0]![0];
+    expect(update({ bookmarked: 4 } as LearningPersistenceStats).bookmarked).toBe(5);
+  });
+
+  it('leaves the Starred count alone when an editor save does not change the star', async () => {
+    mocks.applyCardPatchIfCurrent.mockResolvedValue({ applied: true, revision: 4 });
+    const harness = createHarness();
+
+    await harness.persistence.persist({
+      ownerKey: 'user-a',
+      operationId: 'edit-2',
+      operation: 'patch',
+      intent: 'patch',
+      cardId: card.id,
+      fields: { translation: 'sự tập trung' },
+      fieldMask: ['translation'],
+      baseRevision: 3,
+      libraryEpoch: 2,
+      publication: { kind: 'patch', cardId: card.id, fields: { translation: 'sự tập trung' } },
+    });
+
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+  });
+
+  it('counts a star change once whichever control saved it', () => {
+    expect(starredCountDelta({ bookmarked: false }, { bookmarked: true })).toBe(1);
+    expect(starredCountDelta({ bookmarked: true }, { bookmarked: false })).toBe(-1);
+    expect(starredCountDelta({}, { bookmarked: true })).toBe(1);
+    expect(starredCountDelta({ bookmarked: true }, { bookmarked: true })).toBe(0);
+    expect(starredCountDelta({ bookmarked: false }, {})).toBe(0);
   });
 
   it('routes an immediate review through the protected callable without local XP', async () => {

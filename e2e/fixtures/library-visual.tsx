@@ -52,6 +52,11 @@ const editedCard: CardData = {
   bookmarked: true,
 };
 
+// Two words of the scanned passage the learner already owns, for the extractor views.
+const extractorOwnedCards: CardData[] = ['immediate', 'resilient'].map((word, index) => ({
+  ...cards[2]!, id: `library-visual-owned-${index}`, word, normalizedWord: word,
+}));
+
 const noOp = () => undefined;
 const asyncNoOp = async () => undefined;
 const published = { status: 'published' as const, result: { ownerKey: 'fixture', operationId: 'fixture', publication: { kind: 'patch' as const, cardId: cards[0]!.id, fields: {} } } };
@@ -66,7 +71,9 @@ function LibraryFixture() {
   const [category, setCategory] = useState('All');
   const [deckCoverPreset, setDeckCoverPreset] = useState<'aurora' | 'violet' | 'amber' | 'slate' | 'moss'>('violet');
   const [editOpen, setEditOpen] = useState(true);
+  const [importedFile, setImportedFile] = useState('');
   const dialog = new URLSearchParams(location.search).get('dialog');
+  const libraryCards = dialog === 'extract' ? [...cards, ...extractorOwnedCards] : cards;
 
   useEffect(() => { void Promise.all([loadCatalog(locale, 'library'), loadCatalog(locale, 'shell'), loadCatalog(locale, 'progress')]).then(() => setReady(true)); }, [locale]);
   if (!ready) return null;
@@ -89,7 +96,7 @@ function LibraryFixture() {
       fileInputRef, wordInput, isLoading: false, isGenerating: false, isImporting: false,
       generationAccess: { available: true }, importProgress: null, importResult: null, libraryCount: cards.length,
       searchQuery: search, showStarredOnly: false, activeDifficulty: 'All', activePartOfSpeech: 'All', activeDate: 'All',
-      availableDates: ['All', 'Sep 24, 2026'], customDecks: ['IELTS', 'Work'], newDeckInput: '', activeCustomDeck: { kind: 'all' }, cards,
+      availableDates: ['All', 'Sep 24, 2026'], customDecks: ['IELTS', 'Work'], newDeckInput: '', activeCustomDeck: { kind: 'all' }, cards: libraryCards,
       cloudFacetsComplete: true, sortedCategories: ['All', 'IELTS', 'Work'], categoryCounts: { All: cards.length, IELTS: 2, Work: 2 }, activeCategory: category,
     },
   };
@@ -97,7 +104,7 @@ function LibraryFixture() {
     startStudy: asyncNoOp, openCardCreator: () => document.getElementById('new-word')?.focus(),
     grid: { changeSearch: setSearch, migrateLegacyCards: asyncNoOp, shareCategory: asyncNoOp, deleteCard: asyncNoOp, toggleBookmark: asyncNoOp, assignDeck: asyncNoOp, bulkPatchCards: asyncNoOp, updateCard: async () => published, changePage: noOp, clearFilters: () => { setSearch(''); setCategory('All'); } },
     tools: {
-      openPaths: noOp, importCards: noOp, importFile: noOp, generateCard: event => {
+      openPaths: noOp, importCards: noOp, importFile: file => { void file.text().then(setImportedFile); }, generateCard: event => {
         event.preventDefault();
         setGenerationCount(count => count + 1);
         return Promise.resolve();
@@ -161,7 +168,11 @@ function LibraryFixture() {
         summary: { total: 24, created: 5, reused: 1, failed: 1, skipped: 2, pending: 15 },
         issues: [{ sourceRow: 7, sourceColumn: 3, word: 'serendipity', kind: 'duplicate', message: 'This word appears earlier in the file.' }],
       } : null}
-      result={dialog === 'import-error' ? {
+      result={dialog === 'import-deck' ? {
+        status: 'completed',
+        summary: { total: 114, created: 96, reused: 18, failed: 0, skipped: 0, pending: 0, deckUnassigned: 3 },
+        message: 'Import complete.',
+      } : dialog === 'import-error' ? {
         status: 'failed',
         reason: 'items',
         summary: { total: 3, created: 0, reused: 0, failed: 2, skipped: 1 },
@@ -192,6 +203,7 @@ function LibraryFixture() {
     {dialog === 'deck-delete' && <DeckDeletionDialog deckName="IELTS" assignedCardCount={2} open onOpenChange={noOp} onConfirm={noOp} isDeleting={false} error={false} />}
     <AppOverlays {...overlayProps} />
     <output data-library-generate-count hidden>{generationCount}</output>
+    <output data-library-imported-file hidden>{importedFile}</output>
   </main>;
 }
 

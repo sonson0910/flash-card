@@ -305,6 +305,39 @@ describe('generateVocabulary callable', () => {
     expect(request.contents).toContain('English translation');
   });
 
+  it('asks for the surface form of each extracted word and keeps only surfaces found in the passage', async () => {
+    const passage = 'When the river crested at dawn, residents felt vindicated.';
+    const item = { translation: 't', partOfSpeech: 'verb', cefrLevel: 'C1', example: 'e' };
+    runMeteredGemini.mockImplementation(async ({ parse }: { parse: (response: unknown) => unknown }) => parse({
+      text: JSON.stringify([
+        { ...item, word: 'crest', surface: 'crested' },
+        { ...item, word: 'vindicate', surface: '  vindicated ' },
+        { ...item, word: 'resident', surface: 'Residents' },
+        { ...item, word: 'dawn', surface: 'sunrise' },
+        { ...item, word: 'river', surface: 42 },
+        { ...item, word: 'feel' },
+      ]),
+    }));
+    const { generateVocabulary } = await import('../src/index.js');
+
+    const response = await generateVocabulary.run({ auth: { uid: 'owner-1' }, data: {
+      action: 'extract', input: { text: passage, targetLanguage: 'en', translationLanguage: 'vi' },
+    } } as never);
+
+    expect(response).toEqual({ result: [
+      { ...item, word: 'crest', surface: 'crested' },
+      { ...item, word: 'vindicate', surface: 'vindicated' },
+      { ...item, word: 'resident' },
+      { ...item, word: 'dawn' },
+      { ...item, word: 'river' },
+      { ...item, word: 'feel' },
+    ] });
+    const request = JSON.parse(runMeteredGemini.mock.calls[0][0].contents);
+    expect(request.config.responseSchema.items.required).toContain('surface');
+    expect(request.config.responseSchema.items.properties.surface).toMatchObject({ type: 'STRING' });
+    expect(request.contents).toContain('exact word or phrase as it appears in the source text');
+  });
+
   it('sends a completion event when a streaming client replays a finished operation', async () => {
     reserveWordOperation.mockResolvedValue({ kind: 'completed', result: { translation: 'cached' } });
     const sendChunk = vi.fn(async () => true);

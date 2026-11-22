@@ -354,6 +354,8 @@ export function createCardIntakePipeline({
     awaitSettlements = false,
     onSettlement?: (index: number, outcome: SpreadsheetSaveOutcome) => void,
     onSettlementsReady?: (settlement: Promise<SpreadsheetSaveOutcome[]>) => void,
+    /** A spreadsheet row organises new cards only: a word that already exists keeps its deck. */
+    keepExistingDeck = false,
   ): Promise<Array<{ card: CardData; created: boolean }>> => {
     const current = getContext();
     const session = sessionGuard.capture();
@@ -409,7 +411,8 @@ export function createCardIntakePipeline({
       active.updateCloudStats(stats => ({
         ...stats,
         total: stats.total + created.length,
-        unrated: stats.unrated + created.length,
+        unrated: stats.unrated + created.filter(card => (card.difficulty ?? 'unrated') === 'unrated').length,
+        bookmarked: stats.bookmarked + created.filter(card => card.bookmarked).length,
       }));
       active.updateCloudTotal(total => Math.max(total, active.getCards().length));
       const deltas = created.reduce<Record<string, number>>((counts, card) => {
@@ -439,7 +442,7 @@ export function createCardIntakePipeline({
           // duplicate with the authoritative card the cloud returned.
           if (!latest.getCards().some(existing => existing.id === result.card.id)) {
             compensateOptimisticDuplicateCard(candidate, latest, facetOperationId);
-            const cardToTouch = candidate.customDeck && candidate.customDeck !== result.card.customDeck
+            const cardToTouch = !keepExistingDeck && candidate.customDeck && candidate.customDeck !== result.card.customDeck
               ? await assignExistingDeck(result.card, candidate.customDeck)
               : result.card;
             await touchExisting(cardToTouch, new Date().toISOString());
@@ -630,6 +633,8 @@ export function createCardIntakePipeline({
             outcomes[index] = outcome;
             onSettlement?.(index, outcome);
           },
+          undefined,
+          true,
         );
       }
       assertCurrent(session);

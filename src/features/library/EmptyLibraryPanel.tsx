@@ -9,7 +9,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import type { SpreadsheetImportProgress, SpreadsheetImportResult } from '../importExport/spreadsheetImportService';
 import type { AiGenerationAccess } from './aiGenerationAccess';
-import type { ExtractedWordItem } from './WordExtractorModal';
+import type { ExtractedWordItem, ExtractedWordsImportTarget } from './WordExtractorModal';
 import { createExtractedWordsCsv } from './extractedWordsImport';
 import './empty-library-panel.css';
 
@@ -30,6 +30,8 @@ interface EmptyLibraryPanelProps {
   importProgress: SpreadsheetImportProgress | null;
   importResult: SpreadsheetImportResult | null;
   cards: readonly Pick<CardData, 'word' | 'normalizedWord'>[];
+  /** The learner's deck names, offered as the target deck for scanned words. */
+  customDecks?: readonly string[];
   languageProfile?: LanguageProfile;
   ownerId?: string | null;
 }
@@ -49,6 +51,7 @@ export function EmptyLibraryPanel({
   importProgress,
   importResult,
   cards,
+  customDecks = [],
   languageProfile = ENGLISH_TO_VIETNAMESE_PROFILE,
   ownerId,
 }: EmptyLibraryPanelProps) {
@@ -78,9 +81,9 @@ export function EmptyLibraryPanel({
     void onGenerate(event);
   };
 
-  const importExtractedItems = (items: ExtractedWordItem[]) => {
+  const importExtractedItems = (items: ExtractedWordItem[], { deck }: ExtractedWordsImportTarget) => {
     if (items.length > 0) {
-      importFile(new File([createExtractedWordsCsv(items, languageProfile)], 'extracted_words.csv', { type: 'text/csv' }));
+      importFile(new File([createExtractedWordsCsv(items, languageProfile, { deck })], 'extracted_words.csv', { type: 'text/csv' }));
     }
   };
 
@@ -167,6 +170,7 @@ export function EmptyLibraryPanel({
             onOpenChange={setScanOpen}
             onImportItems={importExtractedItems}
             cards={cards}
+            decks={customDecks}
             restoreFocusRef={extractorRestoreRef}
             languageProfile={languageProfile}
             ownerId={ownerId}

@@ -89,9 +89,10 @@ test('a signed-in learner completes the core course, library, review, recap, and
   await page.getByRole('button', { name: /view weekly recap/i }).click();
   const recap = page.getByRole('dialog', { name: 'Your weekly recap' });
   await expect(recap).toBeVisible();
-  await expect(recap.locator('.weekly-recap-card__range').first()).toHaveText('Sep 18 – Sep 24');
-  await expect(recap.getByText('220', { exact: true })).toBeVisible();
-  await expect(recap.getByText('2026-09-18 · 148 XP')).toBeVisible();
+  // The card is the Monday week of the page's clock (Thursday 24 September 2026), day first.
+  await expect(recap.locator('.weekly-recap-card__range').first()).toHaveText(/^21 – 27 Sept?$/);
+  await expect(recap.getByText('1 d', { exact: true })).toBeVisible();
+  await expect(recap.getByRole('button', { name: 'Download PNG' })).toBeVisible();
   await recap.getByRole('button', { name: 'Close' }).click();
 
   await page.getByRole('button', { name: 'Vocabulary', exact: true }).first().click();

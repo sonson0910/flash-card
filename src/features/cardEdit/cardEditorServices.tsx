@@ -1,5 +1,9 @@
 import { createContext, useContext } from 'react';
-import type { CardImageUploader } from './EditCardDialog';
+
+/** Uploads a photo the learner picked and resolves with the URL to store on the card. */
+export interface CardImageUploader {
+  upload(file: File, onProgress: (fraction: number | null) => void): { readonly done: Promise<string>; cancel(): void };
+}
 
 /**
  * What the card editor needs from the signed-in app wherever it opens (a review card, the

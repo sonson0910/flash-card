@@ -1,17 +1,23 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { i18n, type MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
-import { Check, Loader2, Sparkles, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { Check, ChevronDown, Loader2, Sparkles, X } from 'lucide-react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { normalizeCardWord } from '../../lib/cardIdentity';
 import { extractVocabulary } from '../../lib/gemini';
 import { getProtectedFunctionUserMessage, ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import type { CardData } from '../../types/card';
 import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
+import { findExtractedRanges, type ExtractedWordRange } from './extractedWordRanges';
 import './library-dialog-overlays.css';
+
+/** The extractor analyses the same slice of the passage that the extract request sends. */
+const MAX_EXTRACTED_PASSAGE_LENGTH = 2_000;
 
 export interface ExtractedWordItem {
   word: string;
+  /** The word as written in the passage, when the server confirmed it. */
+  surface?: string;
   translation: string;
   partOfSpeech: string;
   cefrLevel: string;
@@ -66,12 +72,19 @@ export function useExtractorRequestGuard() {
   }, []);
 }
 
+export interface ExtractedWordsImportTarget {
+  /** The deck new cards join; null means Unassigned. Words already in the library stay where they are. */
+  deck: string | null;
+}
+
 interface WordExtractorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImportWords?: (words: string[]) => void;
-  onImportItems?: (items: ExtractedWordItem[]) => void;
+  onImportItems?: (items: ExtractedWordItem[], target: ExtractedWordsImportTarget) => void;
   cards?: readonly Pick<CardData, 'word' | 'normalizedWord'>[];
+  /** The learner's deck names, offered as the target deck. */
+  decks?: readonly string[];
   restoreFocusRef?: RefObject<HTMLElement | null>;
   languageProfile?: LanguageProfile;
   ownerId?: string | null;
@@ -93,22 +106,69 @@ export function extractionFailureMessage(error: unknown): string {
     ?? translate(msg({ id: 'library.extract.error.default', message: 'Could not extract vocabulary from this text. Please try again.' }));
 }
 
+/**
+ * Marks for the passage: the analysed slice is the trimmed text, so ranges
+ * found in it shift by the leading whitespace of what the textarea shows.
+ */
+export const extractedPassageRanges = (
+  passage: string,
+  items: readonly Pick<ExtractedWordItem, 'word' | 'surface'>[],
+  language: string,
+): ExtractedWordRange[] => {
+  const leading = passage.length - passage.trimStart().length;
+  return findExtractedRanges(passage.trim().slice(0, MAX_EXTRACTED_PASSAGE_LENGTH), items, language)
+    .map(range => ({ ...range, start: range.start + leading, end: range.end + leading }));
+};
+
+/** The marks drawn under the passage; owned words get a muted mark. */
+export function PassageHighlights({ text, ranges, isOwned, scrollTop }: {
+  text: string;
+  ranges: readonly ExtractedWordRange[];
+  isOwned: (index: number) => boolean;
+  scrollTop: number;
+}) {
+  const layerRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    if (layerRef.current) layerRef.current.scrollTop = scrollTop;
+  }, [scrollTop]);
+  const segments: ReactNode[] = [];
+  let cursor = 0;
+  for (const range of ranges) {
+    if (range.start > cursor) segments.push(text.slice(cursor, range.start));
+    segments.push(
+      <mark key={range.start} className={`word-extractor-mark${isOwned(range.index) ? ' is-owned' : ''}`}>
+        {text.slice(range.start, range.end)}
+      </mark>,
+    );
+    cursor = range.end;
+  }
+  // A trailing character keeps the layer as tall as the textarea when the text ends with a line break.
+  segments.push(`${text.slice(cursor)}\u200b`);
+  return <div ref={layerRef} className="word-extractor-highlights" aria-hidden="true" data-testid="extractor-highlights">{segments}</div>;
+}
+
 export function WordExtractorContent({
   onClose,
   onImportWords,
   onImportItems,
   cards = [],
+  decks = [],
   languageProfile = ENGLISH_TO_VIETNAMESE_PROFILE,
   ownerId,
 }: {
   onClose: () => void;
   onImportWords?: (words: string[]) => void;
-  onImportItems?: (items: ExtractedWordItem[]) => void;
+  onImportItems?: (items: ExtractedWordItem[], target: ExtractedWordsImportTarget) => void;
   cards?: readonly Pick<CardData, 'word' | 'normalizedWord'>[];
+  decks?: readonly string[];
   languageProfile?: LanguageProfile;
   ownerId?: string | null;
 }) {
   const [inputText, setInputText] = useState('');
+  const [highlights, setHighlights] = useState<{ text: string; ranges: ExtractedWordRange[] } | null>(null);
+  const [passageScrollTop, setPassageScrollTop] = useState(0);
+  const [deck, setDeck] = useState('');
+  const targetDeck = deck && decks.includes(deck) ? deck : '';
   const [isLoading, setIsLoading] = useState(false);
   const [extractedWords, setExtractedWords] = useState<ExtractedWordItem[]>([]);
   const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set());
@@ -128,6 +188,7 @@ export function WordExtractorContent({
     setIsLoading(false);
     setExtractedWords([]);
     setSelectedWords(new Set());
+    setHighlights(null);
     setError(null);
   }, [scopeKey]);
 
@@ -135,12 +196,14 @@ export function WordExtractorContent({
     if (!inputText.trim()) return;
 
     const request = beginRequest();
+    const scannedText = inputText;
 
     setIsLoading(true);
     setItemsScope(scopeKey);
     setError(null);
     setExtractedWords([]);
     setSelectedWords(new Set());
+    setHighlights(null);
 
     try {
       const parsed = await extractVocabulary(inputText, {
@@ -156,8 +219,10 @@ export function WordExtractorContent({
         const key = normalizeCardWord(word);
         if (!key || !translation || seen.has(key)) return [];
         seen.add(key);
+        const surface = typeof item.surface === 'string' ? item.surface.trim() : '';
         return [{
           word,
+          ...(surface ? { surface } : {}),
           translation,
           partOfSpeech: typeof item.partOfSpeech === 'string' ? item.partOfSpeech.trim() : '',
           cefrLevel: typeof item.cefrLevel === 'string' ? item.cefrLevel.trim() : '',
@@ -168,6 +233,7 @@ export function WordExtractorContent({
       setItemsScope(scopeKey);
       setExtractedWords(validWords);
       setSelectedWords(new Set(getSelectableExtractedWords(validWords, cards).map(item => item.word)));
+      setHighlights({ text: scannedText, ranges: extractedPassageRanges(scannedText, validWords, languageProfile.source.code) });
     } catch (error) {
       if (request.isCurrent()) setError(error);
     } finally {
@@ -186,16 +252,21 @@ export function WordExtractorContent({
   const handleAddAllSelected = () => {
     const items = importableSelectedExtractedWords(scopedExtractedWords, scopedSelectedWords, cards);
     if (items.length > 0) {
-      if (onImportItems) onImportItems(items);
+      if (onImportItems) onImportItems(items, { deck: targetDeck || null });
       else onImportWords?.(items.map(item => item.word));
       onClose();
       setInputText('');
       setExtractedWords([]);
+      setHighlights(null);
     }
   };
 
   const passageWordCount = inputText.trim() ? inputText.trim().split(/\s+/u).length : 0;
   const hasResults = scopedExtractedWords.length > 0;
+  // Marks belong to the text that was scanned; any edit clears them.
+  const visibleHighlights = hasResults && highlights?.text === inputText && highlights.ranges.length > 0 ? highlights : null;
+  const passageEdited = hasResults && highlights?.text !== inputText;
+  const unassignedLabel = translate(msg({ id: 'library.extract.deck-unassigned', message: 'Unassigned' }));
   const ownedCount = scopedExtractedWords.filter(item => existingWordKeys.has(normalizeCardWord(item.word))).length;
   const extractButton = (variant: 'primary' | 'link') => (
     <button
@@ -236,7 +307,7 @@ export function WordExtractorContent({
       </header>
 
       <div className="library-dialog-body word-extractor-body">
-        <div className="word-extractor-passage">
+        <div className={`word-extractor-passage${visibleHighlights ? ' has-marks' : ''}`}>
           <label htmlFor="extractor-input" className="sr-only">
             {translate(msg({ id: 'library.extract.input-label', message: 'Text to scan' }))}
           </label>
@@ -244,11 +315,26 @@ export function WordExtractorContent({
             id="extractor-input"
             lang={languageProfile.source.code}
             value={inputText}
-            onChange={e => setInputText(e.target.value)}
+            onChange={e => {
+              setInputText(e.target.value);
+              setHighlights(null);
+            }}
+            onScroll={e => setPassageScrollTop(e.currentTarget.scrollTop)}
             placeholder={translate(msg({ id: 'library.extract.input-placeholder', message: 'Paste a paragraph, email, reading passage or book page here…' }))}
             rows={5}
             className="word-extractor-input"
           />
+          {visibleHighlights ? (
+            <PassageHighlights
+              text={visibleHighlights.text}
+              ranges={visibleHighlights.ranges}
+              isOwned={index => {
+                const item = scopedExtractedWords[index];
+                return Boolean(item && existingWordKeys.has(normalizeCardWord(item.word)));
+              }}
+              scrollTop={passageScrollTop}
+            />
+          ) : null}
           {passageWordCount > 0 && (
             <span className="word-extractor-count" aria-hidden="true">
               {translate(msg({ id: 'library.extract.word-count', message: '{count, plural, one {# word} other {# words}}' }), { count: passageWordCount })}
@@ -318,7 +404,23 @@ export function WordExtractorContent({
       </div>
 
       <footer className="library-dialog-footer word-extractor-footer">
-        {hasResults ? extractButton('link') : <span />}
+        {hasResults ? (
+          <label className="word-extractor-deck">
+            <span className="word-extractor-deck-value" aria-hidden="true">
+              {translate(msg({ id: 'library.extract.deck-value', message: 'Deck: {deck}' }), { deck: targetDeck || unassignedLabel })}
+            </span>
+            <ChevronDown size={13} aria-hidden="true" />
+            <select
+              value={targetDeck}
+              onChange={event => setDeck(event.target.value)}
+              aria-label={translate(msg({ id: 'library.extract.deck-label', message: 'Deck' }))}
+            >
+              <option value="">{unassignedLabel}</option>
+              {decks.map(name => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </label>
+        ) : <span />}
+        {passageEdited ? extractButton('link') : null}
         <button type="button" onClick={onClose} className="library-dialog-button library-dialog-button--secondary">
           {translate(msg({ id: 'common.cancel', message: 'Cancel' }))}
         </button>
@@ -337,7 +439,7 @@ export function WordExtractorContent({
   );
 }
 
-export function WordExtractorModal({ open, onOpenChange, onImportWords, onImportItems, cards = [], restoreFocusRef, languageProfile, ownerId }: WordExtractorModalProps) {
+export function WordExtractorModal({ open, onOpenChange, onImportWords, onImportItems, cards = [], decks = [], restoreFocusRef, languageProfile, ownerId }: WordExtractorModalProps) {
   if (!open) return null;
   const activeLanguageProfile = languageProfile ?? ENGLISH_TO_VIETNAMESE_PROFILE;
 
@@ -359,6 +461,7 @@ export function WordExtractorModal({ open, onOpenChange, onImportWords, onImport
             onImportWords={onImportWords}
             onImportItems={onImportItems}
             cards={cards}
+            decks={decks}
             languageProfile={activeLanguageProfile}
             ownerId={ownerId}
           />

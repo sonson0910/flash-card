@@ -2,8 +2,8 @@ import { isSupportedAudioUrl } from '../../lib/audio';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { isSupportedImageUrl } from '../../lib/images';
 import { cardLogicalKey, normalizeCardLanguage, normalizeCardWord } from '../../lib/cardIdentity';
-import { isSupportedCardTranslationLanguage } from '../../lib/cardNormalization';
-import type { CardData } from '../../types/card';
+import { isSupportedCardTranslationLanguage, normalizeCardTags } from '../../lib/cardNormalization';
+import type { CardData, LearnerDifficulty } from '../../types/card';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 import type { SpreadsheetFlatSourceCell, SpreadsheetStructuredSourceRow } from './spreadsheetWorkbook';
 
@@ -24,6 +24,11 @@ export interface StructuredCardRow {
   translationLanguage?: string;
   senseKey?: string;
   normalizedLemma?: string;
+  /** The Deck cell as written; the import keeps it only when it names one of the learner's decks. */
+  deck?: string;
+  tags?: string[];
+  bookmarked?: boolean;
+  learnerDifficulty?: LearnerDifficulty;
 }
 
 export type StructuredCardRowClassification =
@@ -43,6 +48,33 @@ const getColumn = (row: unknown, ...keys: string[]) => {
   const wanted = new Set(keys.map(key => key.toLocaleLowerCase()));
   const match = Object.keys(source).find(key => wanted.has(key.trim().toLocaleLowerCase()));
   return match ? sanitize(source[match], 4096) : '';
+};
+
+const STARRED_CELL_VALUES = new Set(['yes', 'y', 'true', '1', 'có']);
+
+const LEARNER_DIFFICULTY_CELL_VALUES: ReadonlyMap<string, LearnerDifficulty> = new Map([
+  ['easy', 'easy'], ['medium', 'medium'], ['hard', 'hard'],
+  ['dễ', 'easy'], ['trung bình', 'medium'], ['khó', 'hard'],
+]);
+
+const LEARNER_DIFFICULTY_LABELS: Readonly<Record<LearnerDifficulty, string>> = {
+  easy: 'Easy', medium: 'Medium', hard: 'Hard',
+};
+
+/** The Tags column joins tags with "; "; a tag itself never contains a comma. */
+const TAG_CELL_SEPARATOR = /[;,]/u;
+
+const learnerColumns = (row: unknown): Pick<StructuredCardRow, 'deck' | 'tags' | 'bookmarked' | 'learnerDifficulty'> => {
+  const deck = sanitize(getColumn(row, 'deck', 'bộ thẻ'), 128);
+  const tags = normalizeCardTags(getColumn(row, 'tags', 'tag', 'nhãn').split(TAG_CELL_SEPARATOR));
+  const starred = STARRED_CELL_VALUES.has(getColumn(row, 'starred', 'star', 'đánh dấu sao').toLocaleLowerCase());
+  const learnerDifficulty = LEARNER_DIFFICULTY_CELL_VALUES.get(getColumn(row, 'difficulty', 'độ khó').toLocaleLowerCase());
+  return {
+    ...(deck ? { deck } : {}),
+    ...(tags.length ? { tags } : {}),
+    ...(starred ? { bookmarked: true } : {}),
+    ...(learnerDifficulty ? { learnerDifficulty } : {}),
+  };
 };
 
 export const structuredCardLogicalKey = (row: Pick<StructuredCardRow,
@@ -111,6 +143,7 @@ export const classifyStructuredCardRows = (
         } : {}),
         ...(!lexemeId && language ? { language } : {}),
         ...(translationLanguage ? { translationLanguage } : {}),
+        ...learnerColumns(row),
       },
     };
   });
@@ -170,5 +203,10 @@ export const cardsToSpreadsheetRows = (cards: CardData[]) => cards.map(card => (
   'Part of Speech': normalizePartOfSpeech(card.partOfSpeech),
   Category: card.category,
   Emoji: card.emoji,
+  Deck: card.customDeck || '',
+  Tags: normalizeCardTags(card.tags).join('; '),
+  Starred: card.bookmarked ? 'Yes' : '',
+  Difficulty: card.learnerDifficulty ? LEARNER_DIFFICULTY_LABELS[card.learnerDifficulty] : '',
+  'CEFR Level': card.cefrLevel || '',
   'Date Added': card.createdAt ? new Date(card.createdAt).toLocaleDateString() : 'N/A',
 }));

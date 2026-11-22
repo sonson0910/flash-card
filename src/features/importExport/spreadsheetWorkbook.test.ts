@@ -291,6 +291,18 @@ describe('spreadsheet workbook loader', () => {
     });
   });
 
+  it('hands the deck names given with a file to the import', async () => {
+    const deckNames = ['IELTS', 'Travel'];
+    const file = csvFile('Word,Translation,Deck\napple,táo,IELTS\n', 'cards.csv', 'text/csv');
+
+    await expect(loadSpreadsheetWorkbook(file, { deckNames })).resolves.toMatchObject({
+      deckNames: ['IELTS', 'Travel'],
+      structuredRows: [{ Word: 'apple', Translation: 'táo', Deck: 'IELTS' }],
+    });
+    await expect(loadSpreadsheetWorkbook(csvFile('Word,Translation\napple,táo\n', 'plain.csv', 'text/csv')))
+      .resolves.not.toHaveProperty('deckNames');
+  });
+
   it('preserves source coordinates through leading and internal blank CSV rows', async () => {
     const workbook = await loadSpreadsheetWorkbook(csvFile('\n\nWord,Translation\napple,táo\n\npear,\n'));
     expect(workbook).toMatchObject({ hasStructuredHeader: true });
@@ -387,7 +399,8 @@ describe('spreadsheet workbook loader', () => {
     }]);
     const headers = [
       'Lexeme ID', 'Language', 'Translation Language', 'Sense Key', 'Normalized Lemma', 'Word', 'Translation',
-      'Explanation', 'Phonetic', 'Part of Speech', 'Category', 'Emoji', 'Date Added',
+      'Explanation', 'Phonetic', 'Part of Speech', 'Category', 'Emoji',
+      'Deck', 'Tags', 'Starred', 'Difficulty', 'CEFR Level', 'Date Added',
     ];
     expect(Object.keys(rows[0])).toEqual(headers);
 

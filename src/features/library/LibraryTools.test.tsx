@@ -139,7 +139,7 @@ describe('extractor structured import', () => {
 
     const workbook = await loadSpreadsheetWorkbook(new File([csv], 'extracted_words.csv', { type: 'text/csv' }));
     expect(workbook.hasStructuredHeader).toBe(true);
-    expect(workbook.flatRows[0]).toEqual(['Word', 'Translation', 'Part of Speech', 'Example Sentence', 'CEFR Level', 'Language', 'Translation Language']);
+    expect(workbook.flatRows[0]).toEqual(['Word', 'Translation', 'Part of Speech', 'Example Sentence', 'CEFR Level', 'Language', 'Translation Language', 'Deck']);
     expect(classifyStructuredCardRows(workbook.structuredSourceRows ?? [])).toEqual([
       expect.objectContaining({
         kind: 'accepted',
@@ -179,6 +179,40 @@ describe('extractor structured import', () => {
     expect(persistStructured).toHaveBeenCalledWith(expect.objectContaining({
       creates: [expect.objectContaining({ exampleSentence: 'She said, "well done".', cefrLevel: 'B2', language: 'ko', translationLanguage: 'vi' })],
     }), expect.any(Function));
+  });
+  it('puts scanned words into the chosen deck, or Unassigned when that deck is gone', async () => {
+    const languageProfile = languageProfileForPair('en', 'vi');
+    const items = [
+      { word: 'levee', translation: 'đê', partOfSpeech: 'noun', example: '', cefrLevel: 'C1' },
+      { word: 'crest', translation: 'đỉnh', partOfSpeech: 'verb', example: '', cefrLevel: 'B2' },
+    ];
+    const importInto = async (deck: string | null, deckNames: string[]) => {
+      const persistStructured = vi.fn(async (plan: { creates: unknown[] }) => ({ createdCount: plan.creates.length }));
+      const importer = createSpreadsheetImportService({
+        cards: {
+          findExisting: async () => new Map(), persistStructured, touchExisting: async () => undefined,
+          generate: vi.fn(), completeFlat: async () => undefined,
+        },
+        feedback: {
+          start: vi.fn(), clearError: vi.fn(), progress: vi.fn(), error: vi.fn(), finish: vi.fn(), resetSource: vi.fn(),
+        },
+      });
+      const file = new File([createExtractedWordsCsv(items, languageProfile, { deck })], 'extracted_words.csv', { type: 'text/csv' });
+      const result = await importer.import({ sizeBytes: file.size, loadWorkbook: () => loadSpreadsheetWorkbook(file, { deckNames }) });
+      return { result, creates: persistStructured.mock.calls[0]?.[0].creates as Array<{ word: string; customDeck: string | null }> };
+    };
+
+    const chosen = await importInto('IELTS Reading', ['IELTS Reading']);
+    expect(chosen.creates.map(card => [card.word, card.customDeck])).toEqual([['levee', 'IELTS Reading'], ['crest', 'IELTS Reading']]);
+    expect(chosen.result.summary).not.toHaveProperty('deckUnassigned');
+
+    const unassigned = await importInto(null, ['IELTS Reading']);
+    expect(unassigned.creates.map(card => card.customDeck)).toEqual([null, null]);
+    expect(unassigned.result.summary).not.toHaveProperty('deckUnassigned');
+
+    const deleted = await importInto('IELTS Reading', []);
+    expect(deleted.creates.map(card => card.customDeck)).toEqual([null, null]);
+    expect(deleted.result.summary).toMatchObject({ created: 2, deckUnassigned: 2 });
   });
 });
 

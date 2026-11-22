@@ -236,8 +236,11 @@ export function buildLibraryScreenContract({
     },
     tools: {
       openPaths: commands.openPaths,
-      importCards: event => { void intake.actions.importFile(event.target.files?.[0] ?? null); },
-      importFile: file => { void intake.actions.importFile(file); },
+      importCards: event => {
+        const file = event.target.files?.[0] ?? null;
+        void intake.actions.importFile(file, { deckNames: library.customDecks });
+      },
+      importFile: file => { void intake.actions.importFile(file, { deckNames: library.customDecks }); },
       generateCard: async (event, options?: CardGenerationOptions) => {
         event.preventDefault();
         commands.openCardCreator();

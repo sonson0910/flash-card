@@ -45,6 +45,8 @@ export interface SpreadsheetImportSummary {
   failed: number;
   skipped: number;
   pending?: number;
+  /** New cards whose Deck cell named a deck the learner does not have; they were saved as Unassigned. */
+  deckUnassigned?: number;
 }
 
 export interface SpreadsheetImportIssue {
@@ -204,6 +206,7 @@ export function createSpreadsheetImportService({
     let processed = 0;
     let nextCandidateId = 0;
     const unsettled = new Map<number, Pick<SpreadsheetImportIssue, 'sourceRow' | 'sourceColumn' | 'word'>>();
+    const unassignedDeckCandidates = new Set<number>();
     const addIssue = (issue: SpreadsheetImportIssue) => {
       if (issues.length < 5_000) issues = [...issues, issue];
       else omittedIssues += 1;
@@ -232,8 +235,10 @@ export function createSpreadsheetImportService({
       if (!candidate) return;
       unsettled.delete(id);
       if (outcome !== 'pending') summary.pending = (summary.pending ?? 0) - 1;
-      if (outcome === 'created') summary.created += 1;
-      else if (outcome === 'reused') summary.reused += 1;
+      if (outcome === 'created') {
+        summary.created += 1;
+        if (unassignedDeckCandidates.has(id)) summary.deckUnassigned = (summary.deckUnassigned ?? 0) + 1;
+      } else if (outcome === 'reused') summary.reused += 1;
       else if (outcome === 'failed') {
         summary.failed += 1;
         addIssue({ ...candidate, kind: failureKind, message: failureKind === 'generation' ? 'The card could not be generated.' : 'The card could not be saved.' });
@@ -305,11 +310,12 @@ export function createSpreadsheetImportService({
             const row = item.row;
             const logicalKey = structuredCardLogicalKey(row);
             const existing = Array.from(existingCards.values()).find(card => cardLogicalKey(card) === logicalKey) ?? null;
-            const mutation = planStructuredImportMutation(row, existing, now());
+            const mutation = planStructuredImportMutation(row, existing, now(), { deckNames: workbook.deckNames });
             const id = track({ sourceRow: item.sourceRow, word: row.word });
             if (mutation.kind === 'create') {
               plan.creates.push(mutation.card);
               candidates.push(id);
+              if (mutation.deckUnassigned) unassignedDeckCandidates.add(id);
             } else {
               plan.patches.push({ card: mutation.card, fields: mutation.fields });
               patches.push(id);
