@@ -50,7 +50,7 @@ const text = {
   gradeMastered: msg({ id: 'stats.grade-mastered', message: 'Star' }), gradeLearning: msg({ id: 'stats.grade-learning', message: 'Bloom' }), gradeNew: msg({ id: 'stats.grade-new', message: 'Bud' }),
   studyXp: msg({ id: 'stats.study-xp', message: 'Study XP' }), badges: msg({ id: 'stats.badges', message: 'Badges' }), earned: msg({ id: 'stats.earned', message: 'Earned' }), starTier: msg({ id: 'stats.legend.star-tier', message: 'Star tier' }),
   cardsByBloom: msg({ id: 'stats.cards-by-bloom', message: 'Cards by bloom' }), lumiLink: msg({ id: 'stats.lumi-link', message: 'Lumi · Link' }),
-  inProgress: msg({ id: 'stats.badge-state.in-progress', message: 'In progress' }), locked: msg({ id: 'stats.badge-state.locked', message: 'Not started yet' }), legendLabel: msg({ id: 'stats.legend.label', message: 'Badge status legend' }),
+  inProgress: msg({ id: 'stats.badge-state.in-progress', message: 'In progress' }), locked: msg({ id: 'stats.badge-state.locked', message: 'Not started yet' }), lockedChip: msg({ id: 'stats.badge-state.locked-chip', message: 'Locked' }), legendLabel: msg({ id: 'stats.legend.label', message: 'Badge status legend' }),
   budRoutine: msg({ id: 'stats.bud-routine', message: 'Bud routine' }), budRoutineDescription: msg({ id: 'stats.bud-routine-description', message: 'Give your study habit three active days.' }),
   bloomingRecall: msg({ id: 'stats.blooming-recall', message: 'Blooming recall' }), bloomingRecallDescription: msg({ id: 'stats.blooming-recall-description', message: 'Help ten words settle into memory.' }),
   starKeeper: msg({ id: 'stats.star-keeper', message: 'Star keeper' }), starKeeperDescription: msg({ id: 'stats.star-keeper-description', message: 'Help fifty words shine as mastered.' }),
@@ -138,10 +138,12 @@ const ratio = (shown: ShownBadge, separator: string) => `${formatNumber(shown.ba
 /** Ring circumference for the 66px radius of the summary ring. */
 const RING_CIRCUMFERENCE = 2 * Math.PI * 66;
 
-function Medal({ shown, index }: { readonly shown: ShownBadge; readonly index: number }) {
+function Medal({ shown, index, isCrystal }: { readonly shown: ShownBadge; readonly index: number; readonly isCrystal: boolean }) {
   const { Glyph, badge } = shown;
   const tilt = badge.state === 'earned' ? (index % 3 - 1) * 4 : 0;
-  return <span className="ach-medal" aria-hidden="true" style={{ '--ach-tilt': `${tilt}deg` } as CSSProperties}><Glyph /></span>;
+  // A Crystal badge nobody has started shows a quiet lock instead of its emblem.
+  const glyph = isCrystal && badge.state === 'locked' ? <Lock className="ach-glyph-lock" strokeWidth={2} /> : <Glyph />;
+  return <span className="ach-medal" aria-hidden="true" style={{ '--ach-tilt': `${tilt}deg` } as CSSProperties}>{glyph}</span>;
 }
 
 /** "Earned 02 Jun", "Earned by 27 Nov" with its full meaning for screen readers, or "Earned" before days were recorded. */
@@ -179,18 +181,17 @@ function BadgeFoot({ shown, isCrystal, now }: { readonly shown: ShownBadge; read
 function BadgeCard({ shown, index, isCrystal, isNewlyUnlocked, now }: { readonly shown: ShownBadge; readonly index: number; readonly isCrystal: boolean; readonly isNewlyUnlocked: boolean; readonly now: Date }) {
   const { _ } = useLingui();
   const { badge } = shown;
+  const name = <div className="ach-badge-name"><h3 className="ach-badge-title">{shown.name}</h3><span className="ach-badge-tier">{shown.tierLabel}</span></div>;
+  // Crystal puts the medal and a small lock chip on one row and the full name below them.
   return <article data-badge-id={badge.id} data-newly-unlocked={isNewlyUnlocked || undefined} data-badge-state={badge.state} data-badge-tier={badge.tier} className={`ach-badge ${isNewlyUnlocked ? 'achievement-newly-unlocked' : ''}`}>
     <div className="ach-badge-head">
-      <Medal shown={shown} index={index} />
-      <div className="ach-badge-name"><h3 className="ach-badge-title">{shown.name}</h3><span className="ach-badge-tier">{shown.tierLabel}</span></div>
+      <Medal shown={shown} index={index} isCrystal={isCrystal} />
+      {isCrystal ? badge.state === 'locked' && <span className="ach-badge-lock" aria-hidden="true">{_(text.lockedChip)}</span> : name}
     </div>
+    {isCrystal && name}
     <p className="ach-badge-desc">{shown.condition}</p>
     <div className="ach-badge-foot"><BadgeFoot shown={shown} isCrystal={isCrystal} now={now} /></div>
     {!isCrystal && badge.state === 'earned' && badge.tier === 'star' && <span className="ach-badge-sheen" aria-hidden="true" />}
-    {isCrystal && badge.state === 'locked' && <span className="ach-badge-veil" aria-hidden="true">
-      <svg viewBox="0 0 200 120" preserveAspectRatio="none" focusable="false"><polyline className="ach-veil-line" points="0,64 30,52 52,72 84,44 106,66 132,40 158,62 200,48" /><polyline className="ach-veil-spark" points="84,44 90,18 110,4" /></svg>
-      <span className="ach-badge-veil-chip">{_(text.locked)}</span>
-    </span>}
   </article>;
 }
 
@@ -342,11 +343,13 @@ export function AchievementsMatrix({ stats, onBackToProgress, now: nowProp }: Ac
         <div className="ach-feature-rim">
           <article data-featured-achievement data-badge-id={featured.badge.id} data-tier={featured.badge.tier} className="ach-feature">
             <span className="ach-feature-tier">{featured.tierLabel}</span>
-            <CrystalStar className="ach-feature-star motion-reduce:animate-none" />
-            <h2 className="ach-feature-title">{featured.name}</h2>
-            <p className="ach-feature-desc">{featured.condition}</p>
+            <div className="ach-feature-hero">
+              <CrystalStar className="ach-feature-star motion-reduce:animate-none" />
+              <h2 className="ach-feature-title">{featured.name}</h2>
+              <p className="ach-feature-desc">{featured.condition}</p>
+            </div>
             <div className="ach-feature-progress">
-              <div className="ach-feature-row"><span>{_(text.progress)}</span><span className="tabular-nums">{ratio(featured, ' / ')}{featured.unitLabel && ` ${featured.unitLabel}`}</span></div>
+              <div className="ach-feature-row"><span>{_(text.progress)}</span><span className="ach-feature-ratio tabular-nums"><span className="ach-feature-value">{formatNumber(featured.badge.value)}</span> / {formatNumber(featured.badge.target)}{featured.unitLabel && ` ${featured.unitLabel}`}</span></div>
               <span className="ach-feature-track" aria-hidden="true"><span style={{ width: `${featured.badge.percent}%` }} /></span>
             </div>
           </article>
@@ -379,8 +382,8 @@ export function AchievementsMatrix({ stats, onBackToProgress, now: nowProp }: Ac
             {bloomList(false)}
           </div>}
           {readLumiEnabled() && <div className="ach-lumi-card crystal-chamfer">
-            <Lumi pose="proud" className="ach-lumi-figure motion-reduce:animate-none" />
             <p className="ach-lumi-copy"><span className="ach-lumi-name">{_(text.lumiLink)}</span><span className="ach-lumi-message">{lumiMessage}</span></p>
+            <Lumi pose="proud" className="ach-lumi-figure motion-reduce:animate-none" />
           </div>}
         </aside>
         <div role="tabpanel" id="ach-panel-badges" aria-labelledby="ach-tab-badges" hidden={selectedTab !== 'badges'} className="ach-main-body">{badgesBody}</div>

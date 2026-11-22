@@ -197,6 +197,8 @@
   --ach-beam: color-mix(in srgb, var(--sf-flare) 8%, transparent);
   --ach-hex: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   --ach-chip-cut: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  /* Small tier marks: a tighter cut on a flat fill, so white text never meets the white bands of a rim. */
+  --ach-mark-cut: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
   overflow-x: clip;
 }
 :root[data-theme-family='crystal']:not(.dark) .achievements-board--crystal {
@@ -293,44 +295,61 @@
 
 .ach-bloom-card { padding: 18px 22px; }
 .ach-side-title { margin: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--sf-second-text); }
-.ach-bloom-list { margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.ach-bloom-list { margin: 14px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; }
 .ach-bloom-list > li { display: flex; align-items: center; gap: 12px; }
 .ach-grade {
-  width: 54px;
+  width: 66px;
   height: 30px;
   flex-shrink: 0;
-  clip-path: var(--ach-chip-cut);
+  clip-path: var(--ach-mark-cut);
+  background: var(--ach-mark-fill);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--sf-font-display);
   font-style: italic;
   font-weight: 900;
-  font-size: 17px;
+  font-size: 16px;
   color: var(--sf-flare);
-  text-shadow: 0 2px 0 var(--sf-star-shade);
+  text-shadow: 0 2px 0 var(--ach-mark-shadow);
 }
 .ach-bloom-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; color: var(--st-title); }
 .ach-bloom-row > :first-child { font-weight: 800; }
 .ach-bloom-row > :last-child { font-weight: 900; }
 .ach-bloom-track { display: block; margin-top: 5px; height: 6px; transform: skewX(-24deg); background: var(--st-track); overflow: hidden; }
 .ach-bloom-track > span { display: block; height: 100%; }
-.ach-bloom-list > li[data-kind='new'] :is(.ach-grade, .ach-bloom-track > span) { background: var(--sf-rim-new); }
-.ach-bloom-list > li[data-kind='learning'] :is(.ach-grade, .ach-bloom-track > span) { background: var(--sf-rim-learning); }
-.ach-bloom-list > li[data-kind='mastered'] :is(.ach-grade, .ach-bloom-track > span) { background: var(--sf-gold-rim); }
+.ach-bloom-list > li[data-kind='new'] { --ach-mark-fill: var(--sf-tier-bud-fill); --ach-mark-shadow: var(--sf-tier-bud-fill-shadow); }
+.ach-bloom-list > li[data-kind='learning'] { --ach-mark-fill: var(--sf-tier-bloom-fill); --ach-mark-shadow: var(--sf-tier-bloom-fill-shadow); }
+.ach-bloom-list > li[data-kind='mastered'] { --ach-mark-fill: var(--sf-tier-star-fill); --ach-mark-shadow: var(--sf-tier-star-fill-shadow); }
+.ach-bloom-list > li[data-kind='new'] .ach-bloom-track > span { background: var(--sf-rim-new); }
+.ach-bloom-list > li[data-kind='learning'] .ach-bloom-track > span { background: var(--sf-rim-learning); }
+.ach-bloom-list > li[data-kind='mastered'] .ach-bloom-track > span { background: var(--sf-gold-rim); }
 
-.ach-lumi-card { flex-grow: 1; padding: 18px 22px; display: flex; align-items: flex-end; gap: 12px; }
-.ach-lumi-figure { width: 124px; height: 124px; flex-shrink: 0; object-fit: contain; }
-.ach-lumi-copy { margin: 0; padding-bottom: 8px; min-width: 0; }
+/* Lumi's card: the line on top, Lumi standing in the rest of the column over a soft glow */
+.ach-lumi-card { flex-grow: 1; min-height: 0; padding: 20px 24px 0; display: flex; flex-direction: column; }
+.ach-lumi-card::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -60px;
+  width: 300px;
+  height: 300px;
+  margin-left: -150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--sf-second) 22%, transparent), transparent 65%);
+  pointer-events: none;
+}
+.ach-lumi-figure { position: relative; flex: 1 1 0; width: 100%; height: 0; min-height: 124px; margin-top: 10px; object-fit: contain; object-position: 50% 100%; }
+.ach-lumi-copy { position: relative; margin: 0; padding-left: 14px; min-width: 0; box-shadow: inset 3px 0 0 var(--sf-second); }
 .ach-lumi-name { display: block; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--sf-second-text); }
-.ach-lumi-message { display: block; margin-top: 4px; font-weight: 800; font-size: 14.5px; line-height: 1.4; color: var(--st-title); }
+.ach-lumi-message { display: block; margin-top: 4px; font-weight: 800; font-size: 17px; line-height: 1.4; color: var(--st-title); }
 .ach-lumi-badge { color: var(--sf-brand-text); }
 
 /* Crystal featured badge */
-.ach-feature-wrap { position: relative; min-height: 470px; }
+.ach-feature-wrap { position: relative; min-height: 560px; }
 .ach-feature-wings {
   position: absolute;
-  left: -150px;
+  left: -120px;
   top: 20px;
   width: 640px;
   height: 430px;
@@ -349,34 +368,48 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 22px 22px 20px;
+  padding: 22px 24px 26px;
   text-align: center;
 }
 .ach-feature-tier {
+  --ach-mark-fill: var(--sf-tier-star-fill);
+  --ach-mark-shadow: var(--sf-tier-star-fill-shadow);
   align-self: flex-start;
   height: 32px;
-  padding: 0 14px;
-  clip-path: var(--ach-chip-cut);
-  background: var(--sf-gold-rim);
+  padding: 0 16px;
+  clip-path: var(--ach-mark-cut);
+  background: var(--ach-mark-fill);
   display: flex;
   align-items: center;
   font-family: var(--sf-font-display);
   font-style: italic;
   font-weight: 900;
   font-size: 19px;
-  text-transform: uppercase;
   color: var(--sf-flare);
-  text-shadow: 0 2px 0 var(--sf-star-shade);
+  text-shadow: 0 2px 0 var(--ach-mark-shadow);
 }
-.ach-feature[data-tier='bud'] .ach-feature-tier { background: var(--sf-rim-new); }
-.ach-feature[data-tier='bloom'] .ach-feature-tier { background: var(--sf-rim-learning); }
-.ach-feature-star { margin-top: 10px; width: 150px; height: 150px; flex-shrink: 0; filter: drop-shadow(0 0 22px color-mix(in srgb, var(--sf-brand) 90%, transparent)); }
-.ach-feature-title { margin: 12px 0 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 30px; line-height: 1.05; text-transform: uppercase; color: var(--st-title); }
-.ach-feature-desc { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--st-text2); }
-.ach-feature-progress { margin-top: auto; width: 100%; }
-.ach-feature-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 800; color: var(--st-text2); }
-.ach-feature-row > :last-child { color: var(--sf-brand-text); }
-.ach-feature-track { display: block; margin-top: 6px; height: 10px; transform: skewX(-24deg); background: var(--st-track); overflow: hidden; }
+.ach-feature[data-tier='bud'] .ach-feature-tier { --ach-mark-fill: var(--sf-tier-bud-fill); --ach-mark-shadow: var(--sf-tier-bud-fill-shadow); }
+.ach-feature[data-tier='bloom'] .ach-feature-tier { --ach-mark-fill: var(--sf-tier-bloom-fill); --ach-mark-shadow: var(--sf-tier-bloom-fill-shadow); }
+.ach-feature-hero { flex-grow: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ach-feature-star { width: 210px; height: 210px; flex-shrink: 0; filter: drop-shadow(0 0 26px color-mix(in srgb, var(--sf-brand) 90%, transparent)); }
+.ach-feature-title { margin: 18px 0 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 36px; line-height: 1.05; text-transform: uppercase; color: var(--st-title); }
+.ach-feature-desc { margin: 8px 0 0; font-size: 15px; line-height: 1.5; color: var(--st-text2); }
+.ach-feature-progress { width: 100%; }
+.ach-feature-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-family: var(--sf-font-display); font-style: italic; color: var(--st-text2); }
+.ach-feature-row > :first-child { font-weight: 800; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
+.ach-feature-ratio { font-weight: 900; font-size: 22px; white-space: nowrap; }
+/* The count is a display number in the board's metal, with the hard crimson drop under it. */
+.ach-feature-value {
+  padding-right: 2px;
+  font-size: 52px;
+  line-height: 1;
+  background: var(--sf-metal);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 0 var(--sf-star-shade));
+}
+.ach-feature-track { display: block; margin-top: 10px; height: 12px; transform: skewX(-24deg); background: var(--st-track); overflow: hidden; }
 .ach-feature-track > span { display: block; height: 100%; background: var(--st-primary); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 80%, transparent); }
 
 /* Crystal badge cards: a tier rim layer under a chamfered panel layer, with the glow on the card */
@@ -415,11 +448,10 @@
 }
 .achievements-board--crystal .ach-medal svg { width: 24px; height: 24px; filter: drop-shadow(0 1px 0 var(--sf-star-shade)); }
 .achievements-board--crystal .ach-badge-name { min-width: 0; }
+/* Badge and title names are shown in full; a long one wraps instead of ending in an ellipsis. */
 .achievements-board--crystal .ach-badge-title {
   margin: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   font-family: var(--sf-font-display);
   font-style: italic;
   font-weight: 800;
@@ -434,37 +466,42 @@
 .achievements-board--crystal .ach-track { display: block; flex-grow: 1; height: 6px; transform: skewX(-24deg); background: var(--st-track); overflow: hidden; }
 .achievements-board--crystal .ach-fill { display: block; height: 100%; background: var(--ach-rim); }
 .ach-badge-ratio { font-size: 12px; font-weight: 900; color: var(--sf-text-muted); }
-.ach-badge-veil {
-  position: absolute;
-  inset: 2px;
-  z-index: 1;
-  clip-path: var(--nk-chamfer-sm);
-  background: var(--sf-veil);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+
+/* Crystal badge grid: the medal and the lock chip share the top row, the name sits under them. */
+.achievements-board--crystal .ach-grid .ach-badge { padding: 14px 14px 14px 16px; }
+.achievements-board--crystal .ach-grid .ach-badge-head { align-items: flex-start; justify-content: space-between; gap: 8px; }
+.achievements-board--crystal .ach-grid .ach-medal { width: 48px; height: 52px; }
+.achievements-board--crystal .ach-grid .ach-badge-name { margin-top: 12px; }
+.achievements-board--crystal .ach-grid .ach-badge-title { font-size: 17px; line-height: 1.12; }
+.achievements-board--crystal .ach-grid .ach-badge-tier { margin-top: 3px; letter-spacing: .04em; }
+.achievements-board--crystal .ach-grid .ach-badge-desc { margin-top: 6px; }
+.achievements-board--crystal .ach-grid .ach-badge-foot { padding-top: 8px; }
+/* A badge nobody has started is a quiet card: neutral rim and medal, a lock glyph, muted copy. */
+.achievements-board--crystal .ach-grid .ach-badge[data-badge-state='locked'] {
+  --ach-rim: linear-gradient(150deg, var(--sf-edge-highlight), var(--sf-border) 60%, var(--sf-edge-highlight));
+  --ach-tier-text: var(--st-text3);
 }
-.ach-badge-veil > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.ach-veil-line { fill: none; stroke: var(--sf-second); stroke-width: 2; filter: drop-shadow(0 0 6px var(--sf-second)); }
-.ach-veil-spark { fill: none; stroke: var(--sf-star-face); stroke-width: 1.4; }
-.ach-badge-veil-chip {
-  position: relative;
-  height: 28px;
-  padding: 0 14px;
-  clip-path: var(--ach-chip-cut);
-  background: linear-gradient(180deg, var(--sf-star-face), var(--sf-brand-hover));
+.achievements-board--crystal .ach-grid [data-badge-state='locked'] .ach-medal { background: color-mix(in srgb, var(--sf-text-strong) 8%, transparent); color: var(--st-text3); }
+.achievements-board--crystal .ach-grid [data-badge-state='locked'] .ach-badge-title { color: var(--st-text2); }
+.achievements-board--crystal .ach-grid [data-badge-state='locked'] :is(.ach-badge-desc, .ach-badge-ratio) { color: var(--st-text3); }
+.achievements-board--crystal .ach-medal svg.ach-glyph-lock { width: 26px; height: 26px; fill: none; filter: none; }
+.ach-badge-lock {
+  height: 22px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  clip-path: var(--ach-mark-cut);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--st-line-strong);
   display: flex;
   align-items: center;
   font-family: var(--sf-font-display);
   font-style: italic;
-  font-weight: 900;
-  font-size: 13px;
-  letter-spacing: .1em;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: .12em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: var(--sf-flare);
+  color: var(--st-text3);
 }
 
 /* Crystal medal icons from the board's filled set */
@@ -590,7 +627,7 @@
 }
 @media (max-width: 767px) {
   .ach-main-body { grid-template-columns: minmax(0, 1fr); }
-  .ach-feature-wrap { min-height: 440px; }
+  .ach-feature-wrap { min-height: 500px; }
   .ach-feature-wings { display: none; }
   .ach-feature-rim { left: 0; right: 0; top: 0; bottom: 0; }
   .achievements-board--crystal .ach-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -610,10 +647,13 @@
   .achievements-board--crystal .ach-title { font-size: 36px; }
   .achievements-board--crystal .ach-back { margin-left: 0; }
   .ach-side { grid-template-columns: minmax(0, 1fr); }
-  .ach-lumi-figure { width: 96px; height: 96px; }
+  .ach-lumi-figure { min-height: 96px; }
   .achievements-board--crystal .ach-grid { grid-template-columns: minmax(0, 1fr); }
   .achievements-board--crystal .ach-badge { min-height: 132px; }
-  .ach-feature-wrap { min-height: 380px; }
+  .ach-feature-wrap { min-height: 440px; }
+  .ach-feature-star { width: 160px; height: 160px; }
+  .ach-feature-title { font-size: 30px; }
+  .ach-feature-value { font-size: 44px; }
   .ach-tab-face { padding: 0 14px; }
   .ach-unlocked-count { flex-basis: 100%; margin-left: 0; padding-bottom: 0; }
   .ach-titles-grid { grid-template-columns: minmax(0, 1fr); }
