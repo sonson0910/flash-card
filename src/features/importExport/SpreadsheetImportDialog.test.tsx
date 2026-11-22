@@ -57,6 +57,8 @@ describe('SpreadsheetImportDialog', () => {
     expect(progress).toContain('Importing 2 of 5');
     expect(progress).toContain('banana');
     expect(progress).toContain('Results so far');
+    expect(progress).toContain('Result preview');
+    expect(progress).not.toContain('spreadsheet-import-partial-chip');
     expect(progress).toContain('Row 5');
     expect(progress).toContain('Pending');
 
@@ -79,6 +81,25 @@ describe('SpreadsheetImportDialog', () => {
     expect(terminal).toContain('3 more issues in the error report');
     expect(terminal).not.toContain(partialResult.message);
     expect(terminal).not.toContain('spreadsheet-import-deck-note');
+  });
+
+  it('marks an import as partial while it runs only once a saved row and a skipped or failed row are both counted', () => {
+    const renderProgress = (summary: { created: number; reused: number; failed: number; skipped: number }) => renderMarkup(
+      <SpreadsheetImportDialog
+        open
+        onOpenChange={vi.fn()}
+        fileName="lesson.xlsx"
+        isImporting
+        progress={{ current: 3, total: 8, word: 'banana', phase: 'saving', summary: { total: 8, pending: 4, ...summary } }}
+        result={null}
+      />,
+    );
+
+    const partial = renderProgress({ created: 2, reused: 0, failed: 1, skipped: 1 });
+    expect(partial).toContain('spreadsheet-import-partial-chip');
+    expect(partial).toContain('Some rows will not be imported.');
+    expect(renderProgress({ created: 0, reused: 0, failed: 2, skipped: 2 })).not.toContain('spreadsheet-import-partial-chip');
+    expect(renderProgress({ created: 3, reused: 1, failed: 0, skipped: 0 })).not.toContain('spreadsheet-import-partial-chip');
   });
 
   it('says how many new cards went to Unassigned because their deck is unknown', () => {

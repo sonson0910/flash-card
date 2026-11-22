@@ -178,9 +178,20 @@ function ImportSummaryPanel({ summary, issues, omittedIssues, inProgress = false
     { id: 'pending', value: summary.pending ?? 0, label: <Trans {...msg({ context: 'library.import.pending', message: 'Pending' })} />, hint: <Trans {...msg({ context: 'library.import.pending-hint', message: 'save not confirmed' })} /> },
   ];
 
+  // Counts only grow while a file imports, so once a row has been skipped or failed and another has
+  // been saved, the import can only end as partly complete.
+  const endsPartial = inProgress && summary.skipped + summary.failed > 0 && summary.created + summary.reused > 0;
+
   return (
     <div className="spreadsheet-import-result">
-      {inProgress ? <div className="spreadsheet-import-summary-heading"><strong><Trans {...msg({ context: 'library.import.results-so-far', message: 'Results so far' })} /></strong></div> : null}
+      {inProgress ? <div className="spreadsheet-import-summary-heading">
+        {endsPartial ? <span className="spreadsheet-import-partial-chip">
+          <Trans {...msg({ context: 'library.import.partial-chip', message: 'Partial' })} />
+          <span className="sr-only"> <Trans {...msg({ context: 'library.import.partial-chip-detail', message: 'Some rows will not be imported.' })} /></span>
+        </span> : null}
+        <strong><Trans {...msg({ context: 'library.import.results-so-far', message: 'Results so far' })} /></strong>
+        <span className="spreadsheet-import-summary-caption"><Trans {...msg({ context: 'library.import.result-preview', message: 'Result preview' })} /></span>
+      </div> : null}
       <div className="spreadsheet-import-summary">
         <dl>
           {rows.map(row => <div key={row.id} className={`spreadsheet-import-row is-${row.id}${row.id === 'failed' && row.value > 0 ? ' has-issues' : ''}`}><dt>{row.label}<small>{row.hint}</small></dt><dd>{row.value.toLocaleString()}</dd></div>)}
