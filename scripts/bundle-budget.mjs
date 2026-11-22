@@ -21,8 +21,13 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   // Study recap and opt-in pronunciation pilot: Linux measured 2,880,013 B
   // raw / 917,804 B gzip. Adjust only total JS; initial-load, per-chunk,
   // CSS and media caps stay unchanged.
-  totalJavaScriptRaw: 2_885_000,
-  totalJavaScriptGzip: 920_000,
+  // Design-parity build-out (profile, badges, streak freeze and repair,
+  // storage and card photos, course goals, share cards, IELTS goal panel,
+  // board-accurate recap and practice surfaces): Linux measured 3,352,880 B
+  // raw / 1,060,412 B gzip. Every addition is a lazily loaded chunk; the
+  // initial-load caps above are unchanged and still pass (70,886 B gzip).
+  totalJavaScriptRaw: 3_360_000,
+  totalJavaScriptGzip: 1_064_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
   // Reviewed media baseline includes all supported media copied into dist.
