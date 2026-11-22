@@ -1051,6 +1051,39 @@ describe('release workflow contracts', () => {
           '--target', 'project/database',
           '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' }));
       }
+      // An override that turns a single-field index on is active only once that index is READY.
+      const enabledPath = path.join(directory, 'enabled-indexes.json');
+      fs.writeFileSync(enabledPath, JSON.stringify({
+        fieldOverrides: [{
+          collectionGroup: 'cards', fieldPath: 'imageUrl',
+          indexes: [{ order: 'ASCENDING', queryScope: 'COLLECTION' }],
+        }],
+      }));
+      const verifyEnabled = activeIndexes => {
+        fs.writeFileSync(path.join(directory, 'active.json'), JSON.stringify([{
+          name: 'projects/project/databases/database/collectionGroups/cards/fields/imageUrl',
+          indexConfig: { indexes: activeIndexes },
+        }]));
+        execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+          '--indexes', enabledPath, '--active', path.join(directory, 'active.json'),
+          '--database-metadata', path.join(directory, 'database.json'),
+          '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
+          '--target', 'project/database',
+          '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
+      };
+      const readyIndex = { queryScope: 'COLLECTION', fields: [{ fieldPath: 'imageUrl', order: 'ASCENDING' }], state: 'READY' };
+      verifyEnabled([readyIndex]);
+      for (const activeIndexes of [
+        [],
+        [{ ...readyIndex, state: 'CREATING' }],
+        [{ ...readyIndex, queryScope: 'COLLECTION_GROUP' }],
+        [{ ...readyIndex, fields: [{ fieldPath: 'imageUrl', order: 'DESCENDING' }] }],
+        [{ ...readyIndex, fields: [{ fieldPath: 'imageUrl', arrayConfig: 'CONTAINS' }] }],
+        [{ ...readyIndex, fields: [{ fieldPath: 'audioUrl', order: 'ASCENDING' }] }],
+        [readyIndex, { ...readyIndex, fields: [{ fieldPath: 'imageUrl', order: 'DESCENDING' }] }],
+      ]) {
+        assert.throws(() => verifyEnabled(activeIndexes));
+      }
       fs.writeFileSync(path.join(directory, 'active.json'), '[]');
       fs.writeFileSync(path.join(directory, 'database.json'), JSON.stringify({ databaseEdition: 'ENTERPRISE' }));
       execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',

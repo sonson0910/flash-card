@@ -66,8 +66,20 @@ for (const override of candidate.fieldOverrides) {
   const reverting = indexConfig?.reverting;
   const flagsValid = (usesAncestorConfig === undefined || usesAncestorConfig === false)
     && (reverting === undefined || reverting === false);
+  // The readback lists a single-field index as { queryScope, fields: [{ fieldPath, order }], state },
+  // while the candidate file writes it as { order, queryScope }.
+  const upper = value => typeof value === 'string' ? value.toUpperCase() : value;
+  const activeSingleFieldIndex = expected => indexes.some(index => index && typeof index === 'object'
+    && index.state === 'READY'
+    && upper(index.queryScope) === upper(expected.queryScope)
+    && Array.isArray(index.fields) && index.fields.length === 1
+    && index.fields[0]?.fieldPath === override.fieldPath
+    && upper(index.fields[0].order) === upper(expected.order)
+    && upper(index.fields[0].arrayConfig) === upper(expected.arrayConfig));
   const indexesMatch = Array.isArray(indexes)
-    ? JSON.stringify(indexes) === JSON.stringify(override.indexes)
+    ? indexes.length === override.indexes.length && override.indexes.every(expected => (
+      expected && typeof expected === 'object' && typeof expected.queryScope === 'string'
+        && activeSingleFieldIndex(expected)))
     : indexes === undefined && override.indexes.length === 0
       && typeof targetAncestorField === 'string' && indexConfig?.ancestorField === targetAncestorField;
   if (!flagsValid || !indexesMatch) {
