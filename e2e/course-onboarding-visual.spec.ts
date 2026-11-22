@@ -323,7 +323,7 @@ for (const theme of themes) for (const viewport of viewports) {
     for (const answer of ['Got it', 'Got it', 'Forgot', 'Got it', 'Forgot']) {
       await grades.getByRole('button', { name: answer }).click();
     }
-    await expect(onboarding.getByRole('heading', { name: 'You knew 3 of 5.' })).toBeVisible();
+    await expect(onboarding.getByRole('heading', { name: 'You remembered 3 of 5.' })).toBeVisible();
     const trialDoneScreenshot = await expectScreen(page, testInfo, `course-onboarding-trial-done-${theme.family}-${theme.mode}-${viewport.name}`);
 
     await onboarding.getByRole('button', { name: 'Set my reminder' }).click();
