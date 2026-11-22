@@ -219,8 +219,11 @@ input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid 
 .lumi-bubble span:first-child { color: var(--options-crystal-holo); font-family: var(--sf-font-display); font-size: 11px; font-style: italic; font-weight: 800; letter-spacing: .12em; }
 .lumi-bubble span + span { margin-top: 2px; }
 .lumi-mascot { width: 118px; height: 118px; background: url("assets/lumi-hint.webp") 50% 100% / contain no-repeat; filter: drop-shadow(0 0 16px rgb(94 242 255 / .35)); -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%); }
-:root[data-theme-family="crystal"] .settings-grid { padding: 16px 36px 0; gap: 18px; }
+:root[data-theme-family="crystal"] .settings-grid { padding: 16px 36px 0; gap: 18px; align-content: stretch; }
 :root[data-theme-family="crystal"] .settings-column { gap: 18px; }
+/* The panels share the column height and their rows share each panel, so the grid reaches the footer. */
+:root[data-theme-family="crystal"] .settings-column > fieldset { flex-grow: 1; display: flex; flex-direction: column; }
+:root[data-theme-family="crystal"] fieldset > :is(.check-row, .field-row) { flex-grow: 1; }
 :root[data-theme-family="crystal"] fieldset { padding: 16px 20px 14px; border: 0; border-radius: 0; background: var(--options-crystal-panel); box-shadow: inset 0 0 0 1px var(--options-crystal-edge); clip-path: var(--sf-chamfer); -webkit-backdrop-filter: none; backdrop-filter: none; }
 :root[data-theme-family="crystal"] legend { display: flex; align-items: center; gap: 8px; font-size: 17px; font-style: italic; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 :root[data-theme-family="crystal"] legend::before { width: 9px; height: 9px; flex: none; background: #ff2a4d; box-shadow: 0 0 8px #ff2a4d; content: ""; transform: rotate(45deg); }
