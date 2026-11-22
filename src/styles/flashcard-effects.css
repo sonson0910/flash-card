@@ -359,16 +359,16 @@ html[data-save-data="true"] .flashcard-holo {
 }
 /* Brand text nested in the label sits on the holo fill: darken it for AA. */
 :root[data-theme-family="crystal"]:not(.dark) .flashcard-shell [data-card-tier-label] {
-  --sf-brand-text: color-mix(in srgb, var(--sf-brand-hover) 88%, black);
+  --sf-brand-text: color-mix(in srgb, var(--sf-brand-hover) 88%, var(--sf-umbra));
 }
 :root[data-theme-family="crystal"] .flashcard-shell [data-reveal-meaning] {
   clip-path: var(--nk-chamfer-sm);
   border: 0;
   background: linear-gradient(
     105deg,
-    color-mix(in srgb, var(--sf-brand) 50%, white),
+    color-mix(in srgb, var(--sf-brand) 50%, var(--sf-flare)),
     var(--sf-brand) 35%,
-    color-mix(in srgb, var(--sf-brand) 80%, white)
+    color-mix(in srgb, var(--sf-brand) 80%, var(--sf-flare))
   );
   color: var(--sf-on-brand);
   font-family: var(--sf-font-display);
