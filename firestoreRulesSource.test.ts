@@ -144,11 +144,18 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toContain('/profile/library_state');
     expect(rules).toMatch(/data\.libraryEpoch == currentLibraryEpoch\(userId\)/);
     expect(cardMatch).toMatch(/allow create: if false/);
-    // canUpdateCurrentCard is reached through canPatchOwnedCard, which binds
-    // one currentLibraryEpoch(userId) lookup and threads it through instead
-    // of every callee recomputing it.
+    // canUpdateCurrentCard is reached through canPatchOwnedCard, which reads
+    // profile/library_state once and threads its epoch through instead of
+    // every callee recomputing it. The binding is currentLibraryEpoch(userId)
+    // written out: the stored epoch when the document exists, otherwise 0.
+    const flatten = (text: string) => text.replace(/\s+/g, ' ').trim();
     expect(cardMatch).toMatch(/canPatchOwnedCard\(userId, cardId, request\.resource\.data\)/);
-    expect(patchOwnedCard).toMatch(/let epoch = currentLibraryEpoch\(userId\);/);
+    expect(flatten(patchOwnedCard)).toContain(
+      "let libraryState = hasLibraryEpochState(userId) "
+      + "? get(/databases/$(database)/documents/users/$(userId)/profile/library_state).data "
+      + ": {'libraryEpoch': 0}; let epoch = libraryState.libraryEpoch;",
+    );
+    expect(patchOwnedCard).toMatch(/return libraryState\.get\('libraryMigrationFenceActive', false\) != true\s*&& data\.id == cardId/);
     expect(patchOwnedCard).toMatch(/canUpdateCurrentCard\(data, epoch\)/);
     expect(rules).toMatch(/profileDocId != 'library_state'/);
     expect(rules).toMatch(/profileDocId != 'plan'/);
@@ -282,9 +289,9 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toMatch(
       /!data\.keys\(\)\.hasAny\(\['libraryEpoch'\]\)[\s\S]*data\.libraryEpoch == currentLibraryEpoch\(userId\)/,
     );
-    // canUpdateCurrentCard receives one shared currentLibraryEpoch(userId)
-    // lookup as `epoch` from canPatchOwnedCard instead of recomputing it.
-    expect(rules).toContain('let epoch = currentLibraryEpoch(userId);');
+    // canUpdateCurrentCard receives the one shared library_state epoch as
+    // `epoch` from canPatchOwnedCard instead of recomputing it.
+    expect(rules).toContain('let epoch = libraryState.libraryEpoch;');
     expect(rules).toMatch(/resource\.data\.keys\(\)\.hasAny\(\['libraryEpoch'\]\)[\s\S]*epoch == 0/);
     expect(rules).toMatch(/nextRevision == previous\.revision \+ 1/);
     expect(rules).toMatch(/nextRevision == 1/);
@@ -408,8 +415,10 @@ describe('Firestore rules source invariants', () => {
     expect(identityUpdate).toMatch(
       /hasCardIdentity\(resource\.data\)[\s\S]*resource\.data\.normalizedWord == data\.normalizedWord\s*&& resource\.data\.word == data\.word\s*&& \(/,
     );
+    // A stored card without an identity (the else branch) keeps its word and
+    // may only claim the identity that word gives, with a matching reservation.
     expect(identityUpdate).toMatch(
-      /!hasCardIdentity\(resource\.data\)[\s\S]*resource\.data\.word is string[\s\S]*data\.word == resource\.data\.word[\s\S]*data\.normalizedWord == resource\.data\.word\.lower\(\)/,
+      /return hasCardIdentity\(resource\.data\)\s*\?[\s\S]*\n\s*: \(\s*resource\.data\.word is string\s*&& data\.word == resource\.data\.word\s*&& \(\s*\(\s*data\.get\('normalizedWord', null\) == resource\.data\.word\.lower\(\)\s*&& hasMatchingCardReservation\(userId, cardId, data\)\s*\)\s*\|\| !hasCardIdentity\(data\)\s*\)\s*\);/,
     );
     expect(cardMatch).toMatch(/canPatchOwnedCard\(userId, cardId, request\.resource\.data\)/);
     expect(patchOwnedCard).toMatch(
