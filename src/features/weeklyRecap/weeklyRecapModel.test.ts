@@ -1,15 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { computeWeeklyRecap, WEEKLY_RECAP_WINDOW_DAYS } from './weeklyRecapModel';
+import { stateFromFixture, studyTimeFixture, wordWeeksFixture } from '../gamification/testing/verifiedStatsFixtures';
+import { computeWeeklyRecap, computeWeeklyRecapStats, WEEKLY_RECAP_WINDOW_DAYS } from './weeklyRecapModel';
 
 const NOW = new Date('2026-09-27T09:00:00.000Z');
 
 describe('computeWeeklyRecap', () => {
-  it('windows exactly the last 7 local calendar days, ending today', () => {
+  it('covers the Monday week that contains today', () => {
     const recap = computeWeeklyRecap([], NOW);
 
     expect(recap.days).toHaveLength(WEEKLY_RECAP_WINDOW_DAYS);
     expect(recap.rangeEnd).toBe('2026-09-27');
     expect(recap.rangeStart).toBe('2026-09-21');
+  });
+
+  it('starts on Monday mid-week and draws the days still to come empty', () => {
+    const recap = computeWeeklyRecap([{ date: '2026-09-23', XP: 30 }, { date: '2026-09-20', XP: 99 }], new Date('2026-09-23T09:00:00.000Z'), undefined, 'Asia/Ho_Chi_Minh');
+
+    expect(recap.rangeStart).toBe('2026-09-21');
+    expect(recap.rangeEnd).toBe('2026-09-27');
+    expect(recap.days.map(day => day.future === true)).toEqual([false, false, false, true, true, true, true]);
+    expect(recap.totalXp).toBe(30); // last Sunday belongs to last week.
   });
 
   it('sums same-day XP and marks the week inactive when every day is zero', () => {
@@ -57,7 +67,8 @@ describe('computeWeeklyRecap', () => {
     expect(recap.hasActivity).toBe(false);
   });
 
-  it('sums authoritative reviews for the full seven-day window in the persisted reward time zone', () => {
+  it('sums authoritative reviews for the Monday week in the persisted reward time zone', () => {
+    // 00:30 UTC on Sunday the 27th is still Saturday the 26th in Los Angeles.
     const recap = computeWeeklyRecap([], new Date('2026-09-27T00:30:00.000Z'), {
       coverageStartedOn: '2026-09-20',
       days: {
@@ -67,9 +78,10 @@ describe('computeWeeklyRecap', () => {
       },
     }, 'America/Los_Angeles');
 
-    expect(recap.rangeStart).toBe('2026-09-20');
-    expect(recap.rangeEnd).toBe('2026-09-26');
-    expect(recap.reviewedCount).toBe(9);
+    expect(recap.rangeStart).toBe('2026-09-21');
+    expect(recap.rangeEnd).toBe('2026-09-27');
+    expect(recap.days.at(-1)?.future).toBe(true);
+    expect(recap.reviewedCount).toBe(7);
     expect(recap.hasActivity).toBe(true);
   });
 
@@ -81,5 +93,28 @@ describe('computeWeeklyRecap', () => {
 
     expect(computeWeeklyRecap([], NOW, activity, 'Asia/Ho_Chi_Minh').reviewedCount).toBeNull();
     expect(computeWeeklyRecap([], NOW, { ...activity, coverageStartedOn: '2026-09-01' }, 'Invalid/Zone').reviewedCount).toBeNull();
+  });
+});
+
+describe('computeWeeklyRecapStats', () => {
+  it('reads the week from the verified stats: words, best week, streak and recall with Hard counted', () => {
+    const stats = computeWeeklyRecapStats(stateFromFixture(wordWeeksFixture), 'en', wordWeeksFixture.now);
+
+    expect(stats.weekStart).toBe('2026-11-16');
+    expect(stats.words).toEqual({ started: 146, mastered: 10, since: null });
+    expect(stats.bestWeek).toEqual({ since: '2026-11-02' });
+    expect(stats.aheadOfLastWeek).toBe(38);
+    expect(stats.streakDays).toBe(12);
+    expect(stats.recall).toEqual({ percent: 91, since: null });
+    expect(stats.studied).toBeNull();
+    expect(stats.wordOfWeek).toEqual({ cardId: 'word-immediate', reviews: 4 });
+  });
+
+  it('reads the account-wide study time of the week, partial when counting began inside it', () => {
+    const stats = computeWeeklyRecapStats(stateFromFixture(studyTimeFixture), 'en', studyTimeFixture.now);
+
+    expect(stats.studied).toEqual({ activeMs: 855_000, since: null });
+    expect(stats.words).toBeNull();
+    expect(stats.recall).toBeNull();
   });
 });

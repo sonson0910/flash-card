@@ -336,28 +336,28 @@ test('weekly recap opens with real totals computed from verified XP history', as
   const dialog = page.getByRole('dialog', { name: /your weekly recap/i });
   await expect(dialog).toBeVisible();
 
-  // The fixed clock is 2026-09-24T12:00:00Z, so the 7-day window is Sep 18–Sep 24.
-  // Of the seeded xpHistory, only Sep 18 (148) and Sep 23 (72) fall
-  // inside it; every other entry (Aug/Sep 2/7/12) must be excluded from the totals.
-  // These figures come from plain number formatting, not from Lingui message
-  // catalogs, so they are meaningful even before the new weeklyRecap.* ids below
-  // go through the controller's i18n:extract/compile/translate pass.
-  await expect(dialog.locator('.weekly-recap-card__range').first()).toHaveText('Sep 18 – Sep 24');
-  await expect(dialog.getByText('XP this week')).toBeVisible();
-  await expect(dialog.getByText('220', { exact: true })).toBeVisible();
-  await expect(dialog.getByText('2 / 7')).toBeVisible();
-  await expect(dialog.getByText('2026-09-18 · 148 XP')).toBeVisible(); // Best day metric: Sep 18 alone.
+  // The fixed clock is Thursday 2026-09-24T12:00:00Z, so the recap covers the Monday week
+  // Sep 21–27 and draws Friday to Sunday as days still to come. Of the seeded xpHistory only
+  // Sep 23 (72 XP) falls inside it; Sep 18 belongs to last week and every other entry is older.
+  // Without verified word counts for the course the hero stays on XP.
+  await expect(dialog.locator('.weekly-recap-card__range').first()).toHaveText(/^21\s?–\s?27 Sept?$/);
+  const hero = dialog.locator('.weekly-recap-card__hero-metric');
+  await expect(hero.locator('strong')).toHaveText('72');
+  await expect(hero.locator('span')).toHaveText('XP this week');
+  await expect(dialog.locator('.weekly-recap-card__heatmap-cell')).toHaveCount(7);
+  await expect(dialog.locator('.weekly-recap-card__heatmap-cell[data-future="true"]')).toHaveCount(3);
+  await expect(dialog.getByRole('img', { name: 'Wednesday: 72 XP' })).toBeVisible();
 
   const captionField = dialog.getByRole('textbox', { name: /caption/i });
-  await expect(captionField).not.toHaveValue('');
+  await expect(captionField).toHaveValue('72 XP this week.');
 
-  // Toggling a field off removes its metric card. Targeted by the stable
-  // data-selection-key attribute rather than the (not-yet-extracted) toggle
-  // label text, so this assertion does not depend on the translation pass.
-  await dialog.locator('input[data-selection-key="bestDay"]').uncheck();
-  await expect(dialog.getByText('2026-09-18 · 148 XP')).toHaveCount(0);
-  await dialog.locator('input[data-selection-key="bestDay"]').check();
-  await expect(dialog.getByText('2026-09-18 · 148 XP')).toBeVisible();
+  // Toggling a field off removes it from the card, and the suggested caption follows.
+  await dialog.locator('input[data-selection-key="heatmap"]').uncheck();
+  await expect(dialog.locator('.weekly-recap-card__heatmap')).toHaveCount(0);
+  await dialog.locator('input[data-selection-key="heatmap"]').check();
+  await expect(dialog.locator('.weekly-recap-card__heatmap')).toHaveCount(1);
+  // The word of the week needs verified word counts, so it is not offered here.
+  await expect(dialog.locator('input[data-selection-key="wordOfWeek"]')).toHaveCount(0);
 
   // Editing the caption is a real user action; the character budget updates live
   // (also plain number formatting, independent of the translation pass).
@@ -382,7 +382,7 @@ test('weekly recap downloads a real PNG from Progress', async ({ page, signIn },
     page.waitForEvent('download'),
     dialog.getByRole('button', { name: 'Download PNG' }).click(),
   ]);
-  expect(download.suggestedFilename()).toBe('sonflash-weekly-recap-2026-09-18-to-2026-09-24.png');
+  expect(download.suggestedFilename()).toBe('sonflash-weekly-recap-2026-09-21-to-2026-09-27.png');
   expect(await download.failure()).toBeNull();
   const exportedPng = testInfo.outputPath('weekly-recap-export.png');
   await download.saveAs(exportedPng);
@@ -495,14 +495,14 @@ test('weekly recap Share sends the PNG and falls back to download', async ({ pag
   await page.getByRole('button', { name: /view weekly recap/i }).click();
   const dialog = page.getByRole('dialog', { name: /your weekly recap/i });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByText('220', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('72', { exact: true })).toBeVisible();
   await dialog.getByRole('textbox', { name: /caption/i }).fill('A great study week!');
   const shareButton = dialog.getByRole('button', { name: 'Share', exact: true });
   await expect(shareButton).toBeEnabled();
   await shareButton.click();
   await expect(dialog.getByRole('status').filter({ hasText: 'Shared.' })).toBeVisible();
   expect(await page.evaluate(() => (window as Window & { __weeklyShare?: unknown }).__weeklyShare)).toEqual({
-    name: 'sonflash-weekly-recap-2026-09-18-to-2026-09-24.png',
+    name: 'sonflash-weekly-recap-2026-09-21-to-2026-09-27.png',
     type: 'image/png',
     text: 'A great study week!',
     signature: [137, 80, 78, 71, 13, 10, 26, 10],
@@ -518,7 +518,7 @@ test('weekly recap Share sends the PNG and falls back to download', async ({ pag
     page.waitForEvent('download'),
     shareButton.click(),
   ]);
-  expect(download.suggestedFilename()).toBe('sonflash-weekly-recap-2026-09-18-to-2026-09-24.png');
+  expect(download.suggestedFilename()).toBe('sonflash-weekly-recap-2026-09-21-to-2026-09-27.png');
   expect(await download.failure()).toBeNull();
   await expect(dialog.getByRole('status').filter({ hasText: 'Downloaded.' })).toBeVisible();
 });
@@ -536,7 +536,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await page.getByRole('button', { name: /view weekly recap/i }).click();
     const dialog = page.getByRole('dialog', { name: /your weekly recap/i });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText('220', { exact: true })).toBeVisible();
+    await expect(dialog.getByText('72', { exact: true })).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Share' })).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Download PNG' })).toBeVisible();
     expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);

@@ -2,13 +2,16 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { ArrowRight, Check, Moon, Sun, X } from 'lucide-react';
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { CountUp } from '../../components/motion/CountUp';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
+import { minutesAndSeconds, reviewEstimateMinutes } from '../../components/stats/studyFacts';
+import { useVerifiedStats } from '../../components/stats/VerifiedStatsContext';
 import { formatNumber } from '../../lib/format';
 import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
+import { buildStudyTimeView } from '../gamification/studyTimeView';
 import { useFocusModePreference } from '../settings/focus-mode-preference';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import { useTheme } from '../theme/ThemeProvider';
@@ -51,6 +54,12 @@ interface SessionRecapModalProps {
   loadTomorrowDue?: (targetLanguage?: string) => Promise<number>;
   /** The learner's exam goal panel. It may render nothing (no IELTS goal), and the layout closes up. */
   goalPanel?: ReactNode;
+  /**
+   * The study time the server credited to this session's saved reviews, summed once per operation.
+   * Leave it out while a save is pending or when the server did not report it: the recap then
+   * shows no duration rather than a partial one.
+   */
+  studyTimeMs?: number;
 }
 
 type TomorrowDueResult = { status: 'loading' | 'ready' | 'error'; count?: number };
@@ -90,10 +99,20 @@ function useTomorrowDue(targetLanguage: string | undefined, load: (targetLanguag
   return result;
 }
 
-function TomorrowDueText({ result }: { result: TomorrowDueResult }) {
+function TomorrowDueText({ result, msPerReview }: { result: TomorrowDueResult; msPerReview: number | null }) {
   if (result.status === 'loading') return <Trans {...msg({ context: 'recap.tomorrow-loading', message: 'Checking cards due…' })} />;
   if (result.status === 'error') return <Trans {...msg({ context: 'recap.tomorrow-error', message: 'Count unavailable' })} />;
-  return <Trans {...msg({ context: 'recap.tomorrow-count', message: '{count, plural, one {# card due} other {# cards due}}' })} values={{ count: result.count ?? 0 }} />;
+  const count = result.count ?? 0;
+  const minutes = reviewEstimateMinutes(count, msPerReview);
+  if (minutes !== null) return <Trans {...msg({ context: 'recap.tomorrow-estimate', message: '{count, plural, one {# card} other {# cards}} · about {minutes} min' })} values={{ count, minutes }} />;
+  return <Trans {...msg({ context: 'recap.tomorrow-count', message: '{count, plural, one {# card due} other {# cards due}}' })} values={{ count }} />;
+}
+
+/** The recent average review time, from the verified stats the app already holds; no read. */
+function useReviewPace(): number | null {
+  const verified = useVerifiedStats();
+  const state = verified?.state ?? null;
+  return useMemo(() => (state ? buildStudyTimeView(state, new Date())?.msPerReview ?? null : null), [state]);
 }
 
 function TierLabel({ tier, crystal }: { tier: SessionRecapTier; crystal: boolean }) {
@@ -212,7 +231,7 @@ function CrystalBurst() {
 
 export function SessionRecapModal({
   open, onClose, onViewWeeklyRecap, onRetryWeak, totalCards, goodCount, againCount, xpEarned, weakCards, targetLanguage, summary,
-  promotions = [], streakDays, bestRun, returnsToToday = false, loadTomorrowDue = loadTomorrowDueCount, goalPanel,
+  promotions = [], streakDays, bestRun, returnsToToday = false, loadTomorrowDue = loadTomorrowDueCount, goalPanel, studyTimeMs,
 }: SessionRecapModalProps) {
   const { _ } = useLingui();
   const { family, mode, setMode } = useTheme();
@@ -223,6 +242,11 @@ export function SessionRecapModal({
   const isCrystal = family === 'crystal';
   const showLumi = isCrystal && readLumiEnabled();
   const tomorrow = useTomorrowDue(targetLanguage, loadTomorrowDue);
+  const msPerReview = useReviewPace();
+  // A duration is shown only for a finished session whose every review is saved and credited.
+  const duration = complete && !summary?.pending && typeof studyTimeMs === 'number' && studyTimeMs >= 1000
+    ? minutesAndSeconds(studyTimeMs)
+    : null;
   const shownPromotions = promotions.slice(0, MAX_PROMOTED_CARDS);
   const showStreak = typeof streakDays === 'number' && streakDays > 0;
   const showBestRun = !focusModeEnabled && typeof bestRun === 'number' && bestRun >= 2;
@@ -243,6 +267,10 @@ export function SessionRecapModal({
   const title = complete
     ? <Trans {...msg({ context: 'recap.title', message: 'Session complete' })} />
     : <Trans {...msg({ context: 'recap.summary-title', message: 'Session summary' })} />;
+  const classicTitle = duration === null ? title
+    : duration.minutes > 0
+      ? <Trans {...msg({ context: 'recap.title-duration', message: 'Session complete · {minutes} min {seconds} s' })} values={{ minutes: duration.minutes, seconds: duration.seconds }} />
+      : <Trans {...msg({ context: 'recap.title-seconds', message: 'Session complete · {seconds} s' })} values={{ seconds: duration.seconds }} />;
   const closeLabel = returnsToToday
     ? <Trans {...msg({ context: 'recap.back-today', message: 'Back to Today' })} />
     : <Trans {...msg({ context: 'recap.continue', message: 'Continue learning' })} />;
@@ -325,9 +353,15 @@ export function SessionRecapModal({
                 <StatTile tone="gold" label={<Trans {...msg({ context: 'recap.xp-earned', message: 'XP earned' })} />} value={<><span aria-hidden="true">+</span><CountUp to={xpEarned} /></>}>
                   <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.xp-session', message: 'This session' })} /></p>
                 </StatTile>
-                <StatTile tone="holo" label={<Trans {...msg({ context: 'recap.words', message: 'Words' })} />} value={<CountUp to={saved} />}>
-                  <p className="practice-recap-stat-sub">{toRevisit}</p>
-                </StatTile>
+                {duration ? (
+                  <StatTile tone="holo" label={<Trans {...msg({ context: 'recap.study-time', message: 'Study time' })} />} value={<span data-recap-duration>{`${String(duration.minutes).padStart(2, '0')}:${String(duration.seconds).padStart(2, '0')}`}</span>}>
+                    <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.study-time-session', message: 'This session' })} /></p>
+                  </StatTile>
+                ) : (
+                  <StatTile tone="holo" label={<Trans {...msg({ context: 'recap.words', message: 'Words' })} />} value={<CountUp to={saved} />}>
+                    <p className="practice-recap-stat-sub">{toRevisit}</p>
+                  </StatTile>
+                )}
               </dl>
               {progressLine}
 
@@ -360,11 +394,11 @@ export function SessionRecapModal({
                   )}
                   {onViewWeeklyRecap && (
                     <button type="button" className="practice-recap-chip" onClick={onViewWeeklyRecap}>
-                      <span><strong><Trans {...msg({ context: 'recap.weekly', message: 'View weekly recap' })} /></strong><small><Trans {...msg({ context: 'recap.weekly-detail', message: 'Your last 7 days' })} /></small></span>
+                      <span><strong><Trans {...msg({ context: 'recap.weekly', message: 'View weekly recap' })} /></strong><small><Trans {...msg({ context: 'recap.weekly-detail-week', message: 'Your week so far' })} /></small></span>
                     </button>
                   )}
                   <div className="practice-recap-chip practice-recap-chip--status" aria-live="polite">
-                    <span><strong><Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} /></strong><small><TomorrowDueText result={tomorrow} /></small></span>
+                    <span><strong><Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} /></strong><small><TomorrowDueText result={tomorrow} msPerReview={msPerReview} /></small></span>
                   </div>
                 </div>
                 <button type="button" className="practice-recap-primary" onClick={onClose}><span>{closeLabel}</span></button>
@@ -372,7 +406,7 @@ export function SessionRecapModal({
             </div>
           ) : (
             <div className="practice-recap-main">
-              <Dialog.Title className="practice-recap-pill"><Check size={14} strokeWidth={2.4} aria-hidden="true" />{title}</Dialog.Title>
+              <Dialog.Title className="practice-recap-pill"><Check size={14} strokeWidth={2.4} aria-hidden="true" />{classicTitle}</Dialog.Title>
               <p className="practice-recap-headline">
                 <Trans {...msg({ context: 'recap.headline', message: '{count, plural, one {<0>#</0> word, <1>locked in.</1>} other {<0>#</0> words, <1>locked in.</1>}}' })} values={{ count: saved }} components={{ 0: <CountUp to={saved} />, 1: <em /> }} />
               </p>
@@ -401,7 +435,7 @@ export function SessionRecapModal({
                   </StatTile>
                 )}
                 <StatTile label={<Trans {...msg({ context: 'recap.next-review', message: 'Next review' })} />} value={<Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} />}>
-                  <p className="practice-recap-stat-sub" aria-live="polite"><TomorrowDueText result={tomorrow} /></p>
+                  <p className="practice-recap-stat-sub" aria-live="polite"><TomorrowDueText result={tomorrow} msPerReview={msPerReview} /></p>
                 </StatTile>
               </dl>
               {progressLine}

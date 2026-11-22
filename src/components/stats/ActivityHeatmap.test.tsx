@@ -57,7 +57,7 @@ describe('ActivityHeatmap', () => {
     expect(html).toContain('<button type="button" disabled="" aria-label="Sep 19, 2026: Activity unavailable before coverage began"');
     expect(html).toContain('<button type="button" disabled="" aria-label="Sep 29, 2026: Outside selected range"');
     expect(html).toContain('class="flex size-6 shrink-0 items-center justify-center focus-visible:outline-2');
-    expect(html).toContain('<span class="stats-heat-cell" data-level="2" style="background-color:var(--st-heat-2, var(--sf-heat-2))"></span>');
+    expect(html).toContain('<span class="stats-heat-cell" data-level="2" style="background-color:var(--sf-heat-2)"></span>');
   });
 
   it('defaults review activity to 30 days and keeps XP totals account-wide', () => {

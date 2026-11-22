@@ -923,3 +923,243 @@ msgstr ""
 msgctxt "weeklyRecap.action.download"
 msgid "Download PNG"
 msgstr ""
+
+#: src/components/stats/ProgressStudyFacts.tsx:55
+msgctxt "progress.studied-since"
+msgid "<0>{duration}</0> studied since {date}"
+msgstr ""
+
+#: src/components/stats/ProgressStudyFacts.tsx:39
+msgctxt "progress.learning-since"
+msgid "Learning since {date}"
+msgstr ""
+
+#: src/components/stats/ProgressStudyFacts.tsx:56
+msgctxt "progress.studied"
+msgid "<0>{duration}</0> studied"
+msgstr ""
+
+#: src/components/stats/ReviewRangeToggle.tsx:80
+msgctxt "stats.review-range-all-time"
+msgid "All time"
+msgstr ""
+
+#: src/components/stats/ProgressStudyFacts.tsx:36
+msgctxt "progress.learning-since.kicker"
+msgid "since {date}"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.activity-note-all-time"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.best-streak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.best-streak-days"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.best-streak-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:20
+msgid "stats.duration.hours-minutes"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:21
+msgid "stats.duration.minutes"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:62
+msgid "stats.study-pace.hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:60
+msgid "stats.study-pace.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:61
+msgid "stats.study-pace.value"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:40
+msgid "weeklyRecap.caption.suggested-streak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:39
+msgid "weeklyRecap.caption.suggested-words"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:54
+msgid "weeklyRecap.card.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:66
+msgid "weeklyRecap.chip.hours-minutes"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:67
+msgid "weeklyRecap.chip.minutes"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:62
+msgid "weeklyRecap.chip.recall"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:63
+msgid "weeklyRecap.chip.recall-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:61
+msgid "weeklyRecap.chip.streak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:60
+msgid "weeklyRecap.chip.streak-value"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:64
+msgid "weeklyRecap.chip.studied"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:65
+msgid "weeklyRecap.chip.studied-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:68
+msgid "weeklyRecap.chip.under-minute"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:146
+msgid "weeklyRecap.controls.ahead"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:128
+msgid "weeklyRecap.controls.best-week"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:129
+msgid "weeklyRecap.controls.best-week-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:150
+msgid "weeklyRecap.counted-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:74
+msgid "weeklyRecap.garden.bloom"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:73
+msgid "weeklyRecap.garden.bud"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:71
+msgid "weeklyRecap.garden.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:72
+msgid "weeklyRecap.garden.label-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:75
+msgid "weeklyRecap.garden.star"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:76
+msgid "weeklyRecap.heatmap.day"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:77
+msgid "weeklyRecap.heatmap.future"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:66
+msgid "weeklyRecap.heatmap.week-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:58
+msgid "weeklyRecap.hero.no-words"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:56
+msgid "weeklyRecap.hero.words"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:57
+msgid "weeklyRecap.hero.words-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:52
+msgid "weeklyRecap.toggle.heat"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:50
+msgid "weeklyRecap.toggle.recall"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:49
+msgid "weeklyRecap.toggle.streak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:51
+msgid "weeklyRecap.toggle.word-of-week"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:48
+msgid "weeklyRecap.toggle.words"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:70
+msgid "weeklyRecap.word-of-week.detail"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:69
+msgid "weeklyRecap.word-of-week.label"
+msgstr ""

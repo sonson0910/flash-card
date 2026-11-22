@@ -3,10 +3,16 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { X } from 'lucide-react';
-import { computeAchievementBadgeStats } from '../../components/stats/AchievementsMatrix';
+import { useVerifiedStats } from '../../components/stats/VerifiedStatsContext';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
+import {
+  availableWeeklyRecapSelectionKeys,
+  buildWeeklyRecapCardContent,
+  weeklyRecapRangeLabel,
+  type WeeklyRecapWordOfWeek,
+} from './weeklyRecapCard';
 import type { WeeklyRecapExportCopy } from './weeklyRecapExport';
-import { computeWeeklyRecap } from './weeklyRecapModel';
+import { computeWeeklyRecap, computeWeeklyRecapStats } from './weeklyRecapModel';
 import {
   buildSuggestedWeeklyRecapCaption,
   captionAfterWeeklyRecapSelectionChange,
@@ -20,6 +26,12 @@ import { downloadWeeklyRecapPng, shareWeeklyRecapPng, type WeeklyRecapShareOutco
 import { WeeklyRecapScreen, weeklyRecapCopy } from './WeeklyRecapScreen';
 import './weekly-recap-dialog.css';
 
+/** The word of the week's card: read once, and only after the learner chooses to show it. */
+type WordOfWeekCard =
+  | { readonly cardId: string; readonly status: 'loading' }
+  | { readonly cardId: string; readonly status: 'found'; readonly word: string }
+  | { readonly cardId: string; readonly status: 'missing' };
+
 export interface WeeklyRecapDialogProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
@@ -28,22 +40,23 @@ export interface WeeklyRecapDialogProps {
   /** Injectable for deterministic tests; defaults to the real clock. */
   readonly now?: () => Date;
 }
-const localDateFromKey = (dateKey: string): Date => new Date(`${dateKey}T12:00:00`);
 const defaultNow = (): Date => new Date();
 
 export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSavedStats = false, now = defaultNow }: WeeklyRecapDialogProps) {
   const { _, i18n: activeI18n } = useLingui();
+  const verified = useVerifiedStats();
   const data = useMemo(
-    () => computeWeeklyRecap(stats.xpChartData, now(), stats.reviewActivity, stats.rewardTimeZone),
-    [stats.xpChartData, stats.reviewActivity, stats.rewardTimeZone, now],
+    () => computeWeeklyRecap(stats.xpChartData, now(), stats.reviewActivity, verified?.state?.rewardTimeZone ?? stats.rewardTimeZone),
+    [stats.xpChartData, stats.reviewActivity, stats.rewardTimeZone, verified?.state?.rewardTimeZone, now],
   );
-  const milestones = useMemo(() => {
-    const badgeStats = computeAchievementBadgeStats(stats);
-    return { unlocked: badgeStats.filter(badge => badge.unlocked).length, total: badgeStats.length };
-  }, [stats]);
+  const recapStats = useMemo(
+    () => (verified?.state ? computeWeeklyRecapStats(verified.state, verified.language, now()) : null),
+    [verified?.state, verified?.language, now],
+  );
 
   const [selection, setSelection] = useState(defaultWeeklyRecapSelection);
-  const [caption, setCaption] = useState(() => buildSuggestedWeeklyRecapCaption(data, selection));
+  const [caption, setCaption] = useState(() => buildSuggestedWeeklyRecapCaption(data, recapStats, selection));
+  const [wordCard, setWordCard] = useState<WordOfWeekCard | null>(null);
   const captionCustomized = useRef(false);
   const [isBusy, setIsBusy] = useState(false);
   const [exportResult, setExportResult] = useState<WeeklyRecapShareOutcome | 'error' | null>(null);
@@ -65,9 +78,9 @@ export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSa
     if (resetRecap) {
       setSelection(defaultWeeklyRecapSelection);
       captionCustomized.current = false;
-      setCaption(buildSuggestedWeeklyRecapCaption(data, defaultWeeklyRecapSelection()));
+      setCaption(buildSuggestedWeeklyRecapCaption(data, recapStats, defaultWeeklyRecapSelection()));
     } else if (!captionCustomized.current) {
-      setCaption(buildSuggestedWeeklyRecapCaption(data, selection));
+      setCaption(buildSuggestedWeeklyRecapCaption(data, recapStats, selection));
     }
     if (resetRecap) {
       exportGeneration.current += 1;
@@ -75,31 +88,44 @@ export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSa
       setExportResult(null);
     }
     // A new opening or week resets the recap; same-week refreshes only update an untouched suggestion.
-  }, [open, data.rangeStart, data.rangeEnd, data.totalXp, data.activeDays, data.reviewedCount]);
+  }, [open, data.rangeStart, data.rangeEnd, data.totalXp, data.activeDays, data.reviewedCount, recapStats]);
+
+  // The card is read only once the learner turns the word on: one document read, never on open.
+  const pick = recapStats?.wordOfWeek ?? null;
+  const loadCard = verified?.loadCard;
+  const requestedCardId = useRef<string | null>(null);
+  const pickCardId = pick?.cardId ?? null;
+  useEffect(() => {
+    if (!open || !selection.wordOfWeek || !pickCardId || !loadCard || requestedCardId.current === pickCardId) return;
+    requestedCardId.current = pickCardId;
+    const settle = (next: WordOfWeekCard) => setWordCard(current => (current?.cardId === pickCardId ? next : current));
+    setWordCard({ cardId: pickCardId, status: 'loading' });
+    loadCard(pickCardId).then(
+      card => settle(card ? { cardId: pickCardId, status: 'found', word: card.word } : { cardId: pickCardId, status: 'missing' }),
+      () => settle({ cardId: pickCardId, status: 'missing' }),
+    );
+  }, [open, selection.wordOfWeek, pickCardId, loadCard]);
+  const wordMissing = wordCard?.cardId === pick?.cardId && wordCard?.status === 'missing';
+  const wordOfWeek: WeeklyRecapWordOfWeek | null = pick && wordCard?.cardId === pick.cardId && wordCard.status === 'found'
+    ? { word: wordCard.word, reviews: pick.reviews }
+    : null;
+  const shownSelection = wordMissing ? { ...selection, wordOfWeek: false } : selection;
 
   const locale = activeI18n.locale || 'en';
-  const dateFormatter = new Intl.DateTimeFormat(locale === 'pseudo' ? 'en' : locale, { month: 'short', day: 'numeric' });
-  const dateRangeLabel = `${dateFormatter.format(localDateFromKey(data.rangeStart))} – ${dateFormatter.format(localDateFromKey(data.rangeEnd))}`;
+  const content = buildWeeklyRecapCardContent({ data, stats: recapStats, selection: shownSelection, wordOfWeek, locale });
+  const selectionKeys = availableWeeklyRecapSelectionKeys(data, recapStats, Boolean(loadCard) && !wordMissing);
+  const dateRangeLabel = weeklyRecapRangeLabel(data.rangeStart, data.rangeEnd, locale);
   const filename = `sonflash-weekly-recap-${data.rangeStart}-to-${data.rangeEnd}.png`;
   const exportCopy: WeeklyRecapExportCopy = {
     weeklyRecap: _(weeklyRecapCopy.weeklyRecap),
-    xpThisWeek: _(weeklyRecapCopy.xpThisWeek),
-    reviewsThisWeek: _(weeklyRecapCopy.reviewsThisWeek),
-    noStudyActivity: _(weeklyRecapCopy.noStudyActivity),
-    activeDays: _(weeklyRecapCopy.activeDays),
-    bestDay: _(weeklyRecapCopy.bestDay),
-    dailyXp: _(weeklyRecapCopy.dailyXp),
-    milestones: (unlocked, total) => activeI18n._(weeklyRecapCopy.milestones.id, { unlocked, total }),
     privacy: _(weeklyRecapCopy.privacy),
   };
 
   const renderBlob = async (): Promise<Blob> => {
     const { renderWeeklyRecapPng } = await import('./weeklyRecapExport');
     return renderWeeklyRecapPng({
-      data,
-      selection,
+      content,
       caption: clampWeeklyRecapCaption(caption),
-      milestones,
       dateRangeLabel,
       locale,
       copy: exportCopy,
@@ -128,7 +154,7 @@ export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSa
     toggleSelection: (key: WeeklyRecapSelectionKey) => {
       const nextSelection = toggleWeeklyRecapSelection(selection, key);
       setSelection(nextSelection);
-      setCaption(captionAfterWeeklyRecapSelectionChange(data, nextSelection, caption, captionCustomized.current));
+      setCaption(captionAfterWeeklyRecapSelectionChange(data, recapStats, nextSelection, caption, captionCustomized.current));
     },
     setCaption: (value: string) => {
       setCaption(clampWeeklyRecapCaption(value));
@@ -149,11 +175,17 @@ export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSa
         <div className="weekly-recap-dialog__body">
           {showingSavedStats && <p role="status" className="mb-3 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'weeklyRecap.saved-warning', message: 'Showing saved recap. Recent reviews may not be included.' })} /></p>}
           <WeeklyRecapScreen
-            data={data}
+            content={content}
+            intro={{
+              bestWeek: recapStats?.bestWeek ?? null,
+              aheadOfLastWeek: recapStats?.aheadOfLastWeek ?? null,
+              countedSince: recapStats?.words?.since ?? null,
+            }}
             dateRangeLabel={dateRangeLabel}
-            selection={selection}
+            selection={shownSelection}
+            selectionKeys={selectionKeys}
+            heroIsXp={!recapStats?.words}
             caption={caption}
-            milestones={milestones}
             isBusy={isBusy}
             lastOutcome={exportResult === 'error' ? null : exportResult}
             exportError={exportResult === 'error'}

@@ -7,7 +7,8 @@ import type { ReviewActivity } from '../../features/gamification/verifiedGamific
 interface ActivityHeatmapProps {
   entries: Array<{ date: string; XP: number }>;
   reviewActivity?: ReviewActivity;
-  rangeDays?: 30 | 182;
+  /** Study days drawn for review activity, today included: 30, 182, or every day since counting began. */
+  rangeDays?: number;
   todayKey?: string;
   selectedDate?: string;
   onDaySelect?: (date: string) => void;
@@ -15,7 +16,7 @@ interface ActivityHeatmapProps {
 interface DayCell { dateStr: string; xp: number; available: boolean; outsideRange: boolean; level: 0 | 1 | 2 | 3 | 4; }
 
 const WEEKS_TO_SHOW = 20;
-const heatColor = (level: DayCell['level']) => `var(--st-heat-${level}, var(--sf-heat-${level}))`;
+const heatColor = (level: DayCell['level']) => `var(--sf-heat-${level})`;
 
 /** Shared intensity thresholds so every heatmap (this grid, the weekly recap card) paints the same day the same color. */
 export const heatmapLevelForXp = (xp: number): DayCell['level'] => (xp === 0 ? 0 : xp < 30 ? 1 : xp < 70 ? 2 : xp < 150 ? 3 : 4);

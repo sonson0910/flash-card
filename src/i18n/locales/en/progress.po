@@ -923,3 +923,243 @@ msgstr "Total XP"
 msgctxt "weeklyRecap.action.download"
 msgid "Download PNG"
 msgstr "Download PNG"
+
+#: src/components/stats/ProgressStudyFacts.tsx:55
+msgctxt "progress.studied-since"
+msgid "<0>{duration}</0> studied since {date}"
+msgstr "<0>{duration}</0> studied since {date}"
+
+#: src/components/stats/ProgressStudyFacts.tsx:39
+msgctxt "progress.learning-since"
+msgid "Learning since {date}"
+msgstr "Learning since {date}"
+
+#: src/components/stats/ProgressStudyFacts.tsx:56
+msgctxt "progress.studied"
+msgid "<0>{duration}</0> studied"
+msgstr "<0>{duration}</0> studied"
+
+#: src/components/stats/ReviewRangeToggle.tsx:80
+msgctxt "stats.review-range-all-time"
+msgid "All time"
+msgstr "All time"
+
+#: src/components/stats/ProgressStudyFacts.tsx:36
+msgctxt "progress.learning-since.kicker"
+msgid "since {date}"
+msgstr "since {date}"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.activity-note-all-time"
+msgstr "Reviews per day since {date}"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.best-streak"
+msgstr "Best streak"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.best-streak-days"
+msgstr "{count, plural, one {# day} other {# days}}"
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.best-streak-hint"
+msgstr "Longest run of days with a review the server accepted."
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:20
+msgid "stats.duration.hours-minutes"
+msgstr "{hours} h {minutes} m"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:21
+msgid "stats.duration.minutes"
+msgstr "{minutes} m"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:62
+msgid "stats.study-pace.hint"
+msgstr "Average on days you studied, last 4 weeks"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:60
+msgid "stats.study-pace.label"
+msgstr "Study pace"
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:61
+msgid "stats.study-pace.value"
+msgstr "{minutes} min a day"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:40
+msgid "weeklyRecap.caption.suggested-streak"
+msgstr "{days, plural, one {# day} other {# days}} in a row."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:39
+msgid "weeklyRecap.caption.suggested-words"
+msgstr "{words, plural, one {# new word} other {# new words}} this week on SonFlash."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:54
+msgid "weeklyRecap.card.kicker"
+msgstr "My week"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:66
+msgid "weeklyRecap.chip.hours-minutes"
+msgstr "{hours} h {minutes}"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:67
+msgid "weeklyRecap.chip.minutes"
+msgstr "{minutes} min"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:62
+msgid "weeklyRecap.chip.recall"
+msgstr "recall"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:63
+msgid "weeklyRecap.chip.recall-since"
+msgstr "recall since {weekday}"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:61
+msgid "weeklyRecap.chip.streak"
+msgstr "streak"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:60
+msgid "weeklyRecap.chip.streak-value"
+msgstr "{days} d"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:64
+msgid "weeklyRecap.chip.studied"
+msgstr "studied"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:65
+msgid "weeklyRecap.chip.studied-since"
+msgstr "studied since {weekday}"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:68
+msgid "weeklyRecap.chip.under-minute"
+msgstr "< 1 min"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:146
+msgid "weeklyRecap.controls.ahead"
+msgstr "<0>+{words, plural, one {# word} other {# words}}</0> compared with last week."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:128
+msgid "weeklyRecap.controls.best-week"
+msgstr "Your best week <0>so far.</0>"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:129
+msgid "weeklyRecap.controls.best-week-since"
+msgstr "Your best week <0>since {date}.</0>"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:150
+msgid "weeklyRecap.counted-since"
+msgstr "Weekly word counts started on {date}."
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:74
+msgid "weeklyRecap.garden.bloom"
+msgstr "Bloom"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:73
+msgid "weeklyRecap.garden.bud"
+msgstr "Bud"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:71
+msgid "weeklyRecap.garden.label"
+msgstr "Bloom garden"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:72
+msgid "weeklyRecap.garden.label-since"
+msgstr "Bloom garden since {weekday}"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:75
+msgid "weeklyRecap.garden.star"
+msgstr "Star"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:76
+msgid "weeklyRecap.heatmap.day"
+msgstr "{weekday}: {xp, number} XP"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:77
+msgid "weeklyRecap.heatmap.future"
+msgstr "{weekday}: still to come"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:66
+msgid "weeklyRecap.heatmap.week-label"
+msgstr "Daily XP, Monday to Sunday"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:58
+msgid "weeklyRecap.hero.no-words"
+msgstr "No new words yet this week"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:56
+msgid "weeklyRecap.hero.words"
+msgstr "words <0>this week</0>"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:57
+msgid "weeklyRecap.hero.words-since"
+msgstr "words <0>since {weekday}</0>"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:52
+msgid "weeklyRecap.toggle.heat"
+msgstr "Heatmap"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:50
+msgid "weeklyRecap.toggle.recall"
+msgstr "Recall"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:49
+msgid "weeklyRecap.toggle.streak"
+msgstr "Streak"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:51
+msgid "weeklyRecap.toggle.word-of-week"
+msgstr "Word of the week"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:48
+msgid "weeklyRecap.toggle.words"
+msgstr "Words learned"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:70
+msgid "weeklyRecap.word-of-week.detail"
+msgstr "Reviewed {reviews, plural, one {# time} other {# times}} this week"
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:69
+msgid "weeklyRecap.word-of-week.label"
+msgstr "Word of the week"

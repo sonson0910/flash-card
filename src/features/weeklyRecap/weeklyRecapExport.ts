@@ -1,6 +1,4 @@
-import { heatmapLevelForXp } from '../../components/stats/ActivityHeatmap';
-import type { WeeklyRecapData } from './weeklyRecapModel';
-import type { WeeklyRecapSelection } from './weeklyRecapSelection';
+import type { WeeklyRecapCardContent } from './weeklyRecapCard';
 
 /**
  * Canvas-only PNG renderer (no image/html-to-canvas dependency). This module
@@ -32,22 +30,14 @@ export interface WeeklyRecapExportTheme {
 
 export interface WeeklyRecapExportCopy {
   readonly weeklyRecap: string;
-  readonly xpThisWeek: string;
-  readonly reviewsThisWeek: string;
-  readonly noStudyActivity: string;
-  readonly activeDays: string;
-  readonly bestDay: string;
-  readonly dailyXp: string;
-  readonly milestones: (unlocked: number, total: number) => string;
   readonly privacy: string;
 }
 
 export interface WeeklyRecapExportInput {
-  readonly data: WeeklyRecapData;
-  readonly selection: WeeklyRecapSelection;
+  /** The same content the card on screen shows, so the image never adds a field. */
+  readonly content: WeeklyRecapCardContent;
   /** Already clamped by the caller; drawn verbatim. */
   readonly caption: string;
-  readonly milestones: { readonly unlocked: number; readonly total: number };
   readonly dateRangeLabel: string;
   readonly locale: string;
   readonly copy: WeeklyRecapExportCopy;
@@ -148,10 +138,11 @@ export function weeklyRecapExportFonts(theme: WeeklyRecapExportTheme) {
     range: `${displayWeight(500)} 48px ${display}`,
     hero: `${displayWeight(300)} 136px ${display}`,
     heroLabel: `${displayWeight(400)} 34px ${display}`,
-    metric: `${displayWeight(400)} 34px ${display}`,
+    metric: `${displayWeight(400)} 44px ${display}`,
     label: `600 22px ${body}`,
     weekday: `700 20px ${body}`,
-    milestones: `700 32px ${body}`,
+    word: `${displayWeight(400)} 48px ${display}`,
+    garden: `${displayWeight(400)} 40px ${display}`,
     caption: `600 34px ${body}`,
     empty: `600 34px ${body}`,
     privacy: `500 22px ${body}`,
@@ -183,84 +174,106 @@ function fillBackdrop(context: CanvasRenderingContext2D, theme: WeeklyRecapExpor
 
 /** Pure drawing pass; kept separate from canvas creation so tests can inject a mock 2D context. */
 export function drawWeeklyRecapCard(context: CanvasRenderingContext2D, input: WeeklyRecapExportInput): void {
-  const { data, selection, caption, milestones, dateRangeLabel, locale, copy, theme } = input;
+  const { content, caption, dateRangeLabel, locale, copy, theme } = input;
   const width = WEEKLY_RECAP_EXPORT_WIDTH;
   const height = WEEKLY_RECAP_EXPORT_HEIGHT;
   const marginX = 72;
   const contentWidth = width - marginX * 2;
+  const crystal = theme.family === 'crystal';
   const cardText = theme.cardText ?? theme.text;
   const cardMuted = theme.cardMuted ?? theme.textMuted;
   const cardChip = theme.cardChip ?? 'rgb(255 255 255 / .06)';
   const cardAccent = theme.cardAccent ?? theme.brand;
   const exportLocale = locale === 'pseudo' ? 'en' : locale || 'en';
   const uppercase = (value: string) => value.toLocaleUpperCase(exportLocale);
+  const shout = (value: string) => (crystal ? uppercase(value) : value);
   const fonts = weeklyRecapExportFonts(theme);
   const setTextStyle = (fill: string, font: string) => Object.assign(context, { fillStyle: fill, font });
   const drawText = (text: string, y: number, fill: string, font: string, x = marginX) => {
     setTextStyle(fill, font);
     context.fillText(text, x, y);
   };
+  const textWidth = (text: string) => (typeof context.measureText === 'function' ? context.measureText(text).width : text.length * 18);
 
   context.clearRect(0, 0, width, height);
   fillBackdrop(context, theme);
 
-  drawText(`SONFLASH · ${uppercase(copy.weeklyRecap)}`, 96, cardMuted, fonts.kicker);
-  drawText(dateRangeLabel, 160, cardText, fonts.range);
+  drawText(`SONFLASH · ${uppercase(content.kicker)}`, 96, cardMuted, fonts.kicker);
+  drawText(shout(dateRangeLabel), 160, cardText, fonts.range);
 
-  // Keep the large XP baseline below the date range's rendered box. A 136px
+  // Keep the large hero baseline below the date range's rendered box. A 136px
   // font reaches well above its baseline, so a small baseline delta still
   // overlaps the 48px date line.
   let cursorY = 320;
-  if (selection.totalXp && data.totalXp > 0) {
-    drawText(`${data.totalXp}`, cursorY, cardText, fonts.hero);
-    drawText(theme.family === 'crystal' ? uppercase(copy.xpThisWeek) : copy.xpThisWeek, cursorY + 58, cardAccent, fonts.heroLabel);
-    cursorY += 176;
-  } else if (!data.hasActivity) {
+  if (content.empty !== null) {
     setTextStyle(cardMuted, fonts.empty);
-    const lineCount = wrapText(context, copy.noStudyActivity, marginX, cursorY, contentWidth, 44);
+    const lineCount = wrapText(context, content.empty, marginX, cursorY, contentWidth, 44);
     cursorY += Math.max(74, lineCount * 44 + 30);
+  } else if (content.hero) {
+    const { label } = content.hero;
+    if (content.hero.value !== null) {
+      drawText(content.hero.value, cursorY, cardText, fonts.hero);
+      cursorY += 58;
+    }
+    // The label's emphasised run takes the accent, as on screen.
+    let x = marginX;
+    for (const [run, fill] of [[label.before, cardText], [label.em, cardAccent], [label.after, cardText]] as const) {
+      if (!run) continue;
+      drawText(shout(run), cursorY, fill, fonts.heroLabel, x);
+      x += textWidth(shout(run));
+    }
+    cursorY += 118;
   }
 
-  const metricItems: Array<{ value: string; label: string }> = [];
-  if (selection.activeDays && data.totalXp > 0) {
-    metricItems.push({ value: `${data.activeDays} / ${data.days.length} ${copy.activeDays}`, label: '' });
-  }
-  if (selection.reviewed && typeof data.reviewedCount === 'number') {
-    metricItems.push({ value: `${data.reviewedCount}`, label: copy.reviewsThisWeek });
-  }
-  if (selection.bestDay && data.bestDay && data.totalXp > 0) {
-    metricItems.push({ value: `${data.bestDay.xp} XP`, label: `${copy.bestDay} · ${data.bestDay.dateKey}` });
-  }
-  if (metricItems.length > 0) {
+  if (content.chips.length > 0) {
     const gap = 16;
-    const tileWidth = (contentWidth - gap * (metricItems.length - 1)) / metricItems.length;
-    metricItems.forEach((metric, index) => {
+    const columns = 3;
+    const tileWidth = (contentWidth - gap * (columns - 1)) / columns;
+    content.chips.forEach((chip, index) => {
       const x = marginX + index * (tileWidth + gap);
-      fillPanel(context, x, cursorY, tileWidth, 92, 14, cardChip);
-      drawText(metric.value, cursorY + 39, cardText, fonts.metric, x + 18);
-      if (metric.label) {
-        drawText(metric.label, cursorY + 70, cardMuted, fonts.label, x + 18);
-      }
+      fillPanel(context, x, cursorY, tileWidth, 104, 14, cardChip);
+      drawText(chip.value, cursorY + 50, cardText, fonts.metric, x + 20);
+      drawText(shout(chip.label), cursorY + 84, cardMuted, fonts.label, x + 20);
     });
-    cursorY += 124;
+    cursorY += 136;
   }
 
-  if (selection.heatmap && data.totalXp > 0) {
-    const cell = 64;
+  if (content.wordOfWeek) {
+    fillPanel(context, marginX, cursorY, contentWidth, 96, 14, cardChip);
+    drawText(uppercase(content.wordOfWeek.label), cursorY + 42, cardMuted, fonts.label, marginX + 24);
+    drawText(content.wordOfWeek.detail, cursorY + 74, cardMuted, fonts.label, marginX + 24);
+    setTextStyle(cardText, fonts.word);
+    const wordWidth = textWidth(content.wordOfWeek.word);
+    context.fillText(content.wordOfWeek.word, marginX + contentWidth - 24 - wordWidth, cursorY + 64);
+    cursorY += 128;
+  }
+
+  if (content.heatmap) {
     const gap = 16;
-    drawText(uppercase(copy.dailyXp), cursorY, cardMuted, fonts.label);
-    cursorY += 34;
-    data.days.forEach((day, index) => {
-      context.fillStyle = theme.heatLevels[heatmapLevelForXp(day.xp)];
-      fillHeatCell(context, marginX + index * (cell + gap), cursorY, cell, theme.family === 'crystal');
-      const weekday = new Date(`${day.dateKey}T12:00:00`).toLocaleDateString(exportLocale, { weekday: 'narrow' });
-      drawText(weekday, cursorY + cell + 30, cardMuted, fonts.weekday, marginX + index * (cell + gap) + 24);
+    const cell = Math.min(112, (contentWidth - gap * 6) / 7);
+    content.heatmap.forEach((day, index) => {
+      const x = marginX + index * (cell + gap);
+      // Days still to come are drawn empty: the chip tint, never a heat step.
+      context.fillStyle = day.future ? cardChip : theme.heatLevels[day.level];
+      fillHeatCell(context, x, cursorY, cell, crystal);
+      drawText(day.initial, cursorY + cell + 30, cardMuted, fonts.weekday, x + cell / 2 - 7);
     });
     cursorY += cell + 64;
   }
-  if (selection.milestones) {
-    drawText(copy.milestones(milestones.unlocked, milestones.total), cursorY, cardText, fonts.milestones);
-    cursorY += 64;
+
+  if (crystal && content.garden) {
+    drawText(uppercase(content.garden.label), cursorY, cardMuted, fonts.label);
+    cursorY += 20;
+    const gap = 16;
+    const tileWidth = (contentWidth - gap) / 2;
+    content.garden.cells.forEach((cell, index) => {
+      const x = marginX + index * (tileWidth + gap);
+      fillPanel(context, x, cursorY, tileWidth, 84, 8, cardChip);
+      drawText(uppercase(`${cell.from} → ${cell.to}`), cursorY + 52, cardText, fonts.label, x + 20);
+      setTextStyle(cardText, fonts.garden);
+      context.fillText(cell.count, x + tileWidth - 20 - textWidth(cell.count), cursorY + 56);
+    });
+    cursorY += 116;
   }
 
   if (caption.trim()) {

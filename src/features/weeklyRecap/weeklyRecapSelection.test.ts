@@ -1,6 +1,6 @@
 import { i18n } from '@lingui/core';
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { WeeklyRecapData } from './weeklyRecapModel';
+import type { WeeklyRecapData, WeeklyRecapStats } from './weeklyRecapModel';
 import {
   buildSuggestedWeeklyRecapCaption,
   captionAfterWeeklyRecapSelectionChange,
@@ -26,16 +26,26 @@ const recap = (overrides: Partial<WeeklyRecapData> = {}): WeeklyRecapData => ({
   ...overrides,
 });
 
+const words = (started: number, streakDays: number | null = 12): WeeklyRecapStats => ({
+  weekStart: '2026-11-16',
+  words: { started, mastered: 0, since: null },
+  bestWeek: null,
+  aheadOfLastWeek: null,
+  streakDays,
+  recall: null,
+  studied: null,
+  wordOfWeek: null,
+});
+
 describe('weekly recap selection toggles', () => {
-  it('defaults every field to shown', () => {
-    const selection = defaultWeeklyRecapSelection();
-    expect(Object.values(selection).every(Boolean)).toBe(true);
+  it('shows every field except the word of the week, which never starts on the image', () => {
+    expect(defaultWeeklyRecapSelection()).toEqual({ words: true, streak: true, recall: true, wordOfWeek: false, heatmap: true });
   });
 
   it('flips exactly the toggled key', () => {
-    const selection = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'reviewed');
-    expect(selection.reviewed).toBe(false);
-    expect(selection.totalXp).toBe(true);
+    const selection = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'recall');
+    expect(selection.recall).toBe(false);
+    expect(selection.words).toBe(true);
   });
 });
 
@@ -49,31 +59,21 @@ describe('weekly recap caption', () => {
     expect(buildSuggestedWeeklyRecapCaption(recap())).toBe('A quiet week — back to it tomorrow.');
   });
 
-  it('suggests a caption built only from the real totals on screen', () => {
-    const caption = buildSuggestedWeeklyRecapCaption(recap({ totalXp: 90, activeDays: 3, hasActivity: true }));
-    expect(caption).toBe('90 XP and 3 active days this week.');
+  it('suggests the words and the open streak, with no invite link', () => {
+    expect(buildSuggestedWeeklyRecapCaption(recap({ totalXp: 90, hasActivity: true }), words(146))).toBe('146 new words this week on SonFlash. 12 days in a row.');
+    expect(buildSuggestedWeeklyRecapCaption(recap({ totalXp: 90, hasActivity: true }), words(1, null))).toBe('1 new word this week on SonFlash.');
   });
 
-  it('uses singular day wording for exactly one active day', () => {
-    const caption = buildSuggestedWeeklyRecapCaption(recap({ totalXp: 20, activeDays: 1, hasActivity: true }));
-    expect(caption).toBe('20 XP and 1 active day this week.');
+  it('keeps the XP caption until words are counted', () => {
+    expect(buildSuggestedWeeklyRecapCaption(recap({ totalXp: 90, activeDays: 3, hasActivity: true }))).toBe('90 XP this week.');
   });
 
-  it('uses the real review count when XP activity is unavailable', () => {
-    const caption = buildSuggestedWeeklyRecapCaption(recap({ reviewedCount: 9, hasActivity: true }));
-    expect(caption).toBe('9 reviews this week.');
-  });
-
-  it('removes unchecked metrics from automatic captions and preserves edited captions', () => {
-    const reviewOnly = recap({ reviewedCount: 9, hasActivity: true });
-    const withoutReviews = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'reviewed');
-    expect(captionAfterWeeklyRecapSelectionChange(reviewOnly, withoutReviews, '9 reviews this week.', false)).toBe('');
-    expect(captionAfterWeeklyRecapSelectionChange(reviewOnly, withoutReviews, 'My own caption', true)).toBe('My own caption');
-
-    const xpWeek = recap({ totalXp: 90, activeDays: 3, hasActivity: true });
-    const withoutXp = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'totalXp');
-    expect(buildSuggestedWeeklyRecapCaption(xpWeek, withoutXp)).toBe('3 active days this week.');
-    const withoutXpOrDays = toggleWeeklyRecapSelection(withoutXp, 'activeDays');
-    expect(buildSuggestedWeeklyRecapCaption(xpWeek, withoutXpOrDays)).toBe('');
+  it('removes unchecked fields from automatic captions and preserves edited captions', () => {
+    const week = recap({ totalXp: 90, hasActivity: true });
+    const withoutStreak = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'streak');
+    expect(captionAfterWeeklyRecapSelectionChange(week, words(146), withoutStreak, '', false)).toBe('146 new words this week on SonFlash.');
+    const withoutWords = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'words');
+    expect(captionAfterWeeklyRecapSelectionChange(week, words(146), withoutWords, '', false)).toBe('12 days in a row.');
+    expect(captionAfterWeeklyRecapSelectionChange(week, words(146), withoutWords, 'My own caption', true)).toBe('My own caption');
   });
 });

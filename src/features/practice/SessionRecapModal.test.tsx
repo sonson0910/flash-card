@@ -105,6 +105,27 @@ describe('SessionRecapModal', () => {
     expect(html).toContain('Continue learning');
   });
 
+  it('writes the real session duration into the classic pill once every review is saved', () => {
+    theme.family = 'classic';
+    expect(render({ studyTimeMs: 245_400 })).toContain('Session complete · 4 min 5 s');
+    expect(render({ studyTimeMs: 42_000 })).toContain('Session complete · 42 s');
+    // Under a second, still saving, or not every card saved: no duration rather than a partial one.
+    for (const props of [{ studyTimeMs: 600 }, { studyTimeMs: 245_400, summary: { saved: 12, pending: 1 } }, { studyTimeMs: 245_400, summary: { saved: 9 } }]) {
+      expect(render(props as never)).not.toMatch(/Session complete · /);
+    }
+  });
+
+  it('shows the Crystal study time tile in place of the words tile only with a real duration', () => {
+    theme.family = 'crystal';
+    const timed = render({ studyTimeMs: 245_400 });
+    expect(timed).toContain('Study time');
+    expect(timed).toContain('<span data-recap-duration="true">04:05</span>');
+    expect(timed).not.toContain('>Words<');
+    const untimed = render();
+    expect(untimed).not.toContain('Study time');
+    expect(untimed).not.toContain('data-recap-duration');
+  });
+
   it('counts up the saved cards, accuracy and XP in the order each board reads them', () => {
     const expected = { classic: ['12', '83%', '175'], crystal: ['83%', '175', '12'] } as const;
     for (const family of ['classic', 'crystal'] as const) {

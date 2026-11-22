@@ -168,6 +168,21 @@ describe('library view model', () => {
     ]);
   });
 
+  it('filters the local mastered tier by the stored Easy rating, the rule the cloud count uses', () => {
+    const model = buildLibraryViewModel(input({
+      cards: [
+        makeCard('rated-easy', { difficulty: 'easy', reviews: 3 }),
+        makeCard('long-interval-good', { difficulty: 'good', reviews: 5, interval: 30 }),
+        makeCard('new-card'),
+      ],
+      query: { ...input().query, difficulty: 'mastered' },
+      pageSize: 10,
+    }));
+
+    expect(model.filteredCards.map(card => card.id)).toEqual(['rated-easy']);
+    expect(model.difficultySummary.easy).toBe(1);
+  });
+
   it('does not count a new unrated card as a scheduled review that is due', () => {
     const newCard = makeCard('new-card', { difficulty: 'unrated', nextReviewDate: undefined });
 

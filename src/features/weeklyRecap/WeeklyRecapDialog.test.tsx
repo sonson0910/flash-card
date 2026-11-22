@@ -6,6 +6,8 @@ import { I18nProvider } from '@lingui/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRadixDialogPassthroughMock } from '../../testing/radix-dialog-passthrough';
+import { VerifiedStatsProvider, type VerifiedStatsSource } from '../../components/stats/VerifiedStatsContext';
+import { stateFromFixture, wordWeeksFixture } from '../gamification/testing/verifiedStatsFixtures';
 import type { LibraryStatsViewModel } from '../library/libraryViewModel';
 import type { WeeklyRecapScreenProps } from './WeeklyRecapScreen';
 import WeeklyRecapDialog from './WeeklyRecapDialog';
@@ -133,46 +135,72 @@ describe('WeeklyRecapDialog', () => {
       })}
     />);
 
-    expect(html).toContain('Sep 21');
-    expect(html).toContain('Sep 27');
-    expect(html).toContain('100'); // 40 + 60 XP inside the window.
+    expect(html).toMatch(/21\s?–\s?27 Sept?</); // the Monday week, day first as on the board.
+    expect(html).toContain('100'); // 40 + 60 XP inside the week.
     expect(html).toContain('weekly-recap-screen');
     expect(html).toContain('weekly-recap-card');
     expect(html).toContain('weekly-recap-controls');
   });
 
-  it('uses the already hydrated review activity only after it covers the entire local week', () => {
-    const html = render(<WeeklyRecapDialog
-      open onOpenChange={vi.fn()} now={fixedNow}
-      stats={stats({
-        reviewActivity: {
-          coverageStartedOn: '2026-09-21',
-          days: {
-            '2026-09-21': { reviewed: 4, again: 0, hard: 1, good: 2, easy: 1 },
-            '2026-09-27': { reviewed: 3, again: 1, hard: 0, good: 2, easy: 0 },
-          },
-        },
-        rewardTimeZone: 'Asia/Ho_Chi_Minh',
-      })}
-    />);
+  it('draws the verified week: words, streak, recall, studied time and the best-week headline', () => {
+    const source: VerifiedStatsSource = { state: stateFromFixture(wordWeeksFixture), language: 'en' };
+    const html = render(<VerifiedStatsProvider source={source}><WeeklyRecapDialog
+      open onOpenChange={vi.fn()} now={() => wordWeeksFixture.now}
+      stats={stats({ xpChartData: [{ date: '2026-11-16', XP: 120 }], rewardTimeZone: 'Asia/Ho_Chi_Minh' })}
+    /></VerifiedStatsProvider>);
 
-    expect(html).toContain('Reviews this week');
-    expect(html).toContain('7');
-
-    const partial = render(<WeeklyRecapDialog
-      open onOpenChange={vi.fn()} now={fixedNow}
-      stats={stats({ reviewActivity: { coverageStartedOn: '2026-09-22', days: {} }, rewardTimeZone: 'Asia/Ho_Chi_Minh' })}
-    />);
-    expect(partial).toContain('Reviews this week are unavailable until activity covers all seven days.');
+    expect(html).toMatch(/16\s?–\s?22 Nov</);
+    expect(html).toContain('<strong>146</strong>');
+    expect(html).toContain('words <em>this week</em>');
+    expect(html).toContain('12 d');
+    expect(html).toContain('91%'); // 130 graded, 12 Again: Hard counts as recalled.
+    expect(html).toContain('Your best week <em>since 2 Nov.</em>');
+    expect(html).toContain('<strong>+38 words</strong> compared with last week.');
+    // Without a card loader the word of the week cannot be shown, so its toggle is left out.
+    expect(html).not.toContain('data-selection-key="wordOfWeek"');
+    expect(html).not.toContain('Weekly word counts started on');
   });
 
-  it('surfaces how many of the real (all-time) milestone badges are unlocked', () => {
-    const html = render(<WeeklyRecapDialog
-      open onOpenChange={vi.fn()} now={fixedNow}
-      stats={stats({ reviewed: 60, learned: 50 })} // clears mastery_10 and mastery_50 thresholds.
-    />);
+  it('reads the word of the week only after the learner turns it on, and hides it when the card is gone', async () => {
+    screenCapture.enabled = true;
+    const root = createRoot(installMinimalReactDom());
+    const loadCard = vi.fn(async (cardId: string) => (cardId === 'word-immediate' ? { id: cardId, word: 'immediate' } : null));
+    const renderDialog = async (load: VerifiedStatsSource['loadCard']) => act(async () => {
+      root.render(<I18nProvider i18n={i18n}><VerifiedStatsProvider source={{ state: stateFromFixture(wordWeeksFixture), language: 'en', loadCard: load }}>
+        <WeeklyRecapDialog open onOpenChange={vi.fn()} now={() => wordWeeksFixture.now} stats={stats({ rewardTimeZone: 'Asia/Ho_Chi_Minh' })} />
+      </VerifiedStatsProvider></I18nProvider>);
+      await Promise.resolve();
+    });
+    try {
+      await renderDialog(loadCard);
+      expect(screenCapture.props?.selection.wordOfWeek).toBe(false);
+      expect(screenCapture.props?.selectionKeys).toContain('wordOfWeek');
+      expect(loadCard).not.toHaveBeenCalled();
 
-    expect(html).toContain('2 of 6 milestones unlocked');
+      await act(async () => { screenCapture.props!.actions.toggleSelection('wordOfWeek'); });
+      await act(async () => { await Promise.resolve(); });
+      expect(loadCard).toHaveBeenCalledTimes(1);
+      expect(loadCard).toHaveBeenCalledWith('word-immediate');
+      expect(screenCapture.props?.content.wordOfWeek).toEqual({ label: 'Word of the week', word: 'immediate', detail: 'Reviewed 4 times this week' });
+
+      const missing = vi.fn(async () => null);
+      await act(async () => { root.unmount(); });
+      const next = createRoot(installMinimalReactDom());
+      await act(async () => {
+        next.render(<I18nProvider i18n={i18n}><VerifiedStatsProvider source={{ state: stateFromFixture(wordWeeksFixture), language: 'en', loadCard: missing }}>
+          <WeeklyRecapDialog open onOpenChange={vi.fn()} now={() => wordWeeksFixture.now} stats={stats({ rewardTimeZone: 'Asia/Ho_Chi_Minh' })} />
+        </VerifiedStatsProvider></I18nProvider>);
+        await Promise.resolve();
+      });
+      await act(async () => { screenCapture.props!.actions.toggleSelection('wordOfWeek'); });
+      await act(async () => { await Promise.resolve(); });
+      expect(missing).toHaveBeenCalledTimes(1);
+      expect(screenCapture.props?.selectionKeys).not.toContain('wordOfWeek');
+      expect(screenCapture.props?.content.wordOfWeek).toBeNull();
+      await act(async () => { next.unmount(); });
+    } finally {
+      await act(async () => { root.unmount(); });
+    }
   });
 
   it('warns when a direct recap route can only show saved stats', () => {
@@ -192,7 +220,7 @@ describe('WeeklyRecapDialog', () => {
     });
     try {
       await renderDialog(true, 40);
-      expect(screenCapture.props?.caption).toBe('40 XP and 1 active day this week.');
+      expect(screenCapture.props?.caption).toBe('40 XP this week.');
 
       await act(async () => { screenCapture.props!.actions.setCaption('My own caption'); });
       await renderDialog(true, 60);
@@ -200,14 +228,14 @@ describe('WeeklyRecapDialog', () => {
 
       await renderDialog(false, 60);
       await renderDialog(true, 80);
-      expect(screenCapture.props?.caption).toBe('80 XP and 1 active day this week.');
+      expect(screenCapture.props?.caption).toBe('80 XP this week.');
 
       await renderDialog(true, 100);
-      expect(screenCapture.props?.caption).toBe('100 XP and 1 active day this week.');
+      expect(screenCapture.props?.caption).toBe('100 XP this week.');
 
       await act(async () => { screenCapture.props!.actions.setCaption('Another custom caption'); });
       await renderDialog(true, 120, nextWeekNow, '2026-10-03');
-      expect(screenCapture.props?.caption).toBe('120 XP and 1 active day this week.');
+      expect(screenCapture.props?.caption).toBe('120 XP this week.');
     } finally {
       await act(async () => { root.unmount(); });
     }
@@ -228,7 +256,7 @@ describe('WeeklyRecapDialog', () => {
       await renderDialog(true, fixedNow, '2026-09-26');
       await act(async () => {
         screenCapture.props!.actions.setCaption('Old course caption');
-        screenCapture.props!.actions.toggleSelection('totalXp');
+        screenCapture.props!.actions.toggleSelection('words');
         screenCapture.props!.actions.download();
         await vi.waitFor(() => expect(exportCapture.render).toHaveBeenCalledTimes(1));
       });

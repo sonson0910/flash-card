@@ -28,7 +28,7 @@ const CARD_PALETTES = {
   classicLight: {
     cardBackground: '#1c2a21', cardBackgroundEnd: '#1c2a21', cardText: '#fbf6ec', cardMuted: '#aab3a6',
     cardChip: 'rgb(251 246 236 / .06)', cardAccent: '#e8a075',
-    heatLevels: ['#4a4a3a', '#8a6a4a', '#b8805a', '#e8a075', '#f3c7a4'] as const,
+    heatLevels: ['rgb(251 246 236 / .08)', 'rgb(232 160 117 / .3)', 'rgb(232 160 117 / .55)', '#e8a075', '#f3c7a4'] as const,
   },
   classicDark: {
     cardBackground: '#1e2b46', cardBackgroundEnd: '#0d4656', cardText: '#f1f6f9', cardMuted: '#a9b7c0',
@@ -60,8 +60,14 @@ export function resolveWeeklyRecapExportTheme(
     const value = computed?.getPropertyValue(variable)?.trim();
     return value ? value : fallback;
   };
+  // Only the light page's ink card keeps its own heat steps; every other card draws the page heat scale.
+  const pageHeat = family === 'crystal' || dark;
+  const heatLevels = pageHeat
+    ? card.heatLevels.map((fallback, level) => read(`--sf-heat-${level}`, fallback)) as unknown as WeeklyRecapExportTheme['heatLevels']
+    : card.heatLevels;
   return {
     ...card,
+    heatLevels,
     family,
     displayFont: read('--sf-font-display', FALLBACK_THEME.displayFont!),
     // Crystal sets Nunito on the app shell only, so it is named here rather than read from the root.

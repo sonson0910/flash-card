@@ -1,23 +1,25 @@
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
-import type { WeeklyRecapData } from './weeklyRecapModel';
+import { weeklyRecapHasActivity, type WeeklyRecapData, type WeeklyRecapStats } from './weeklyRecapModel';
 
 /**
- * What can be toggled on or off the shareable recap card. There is no word
- * or sentence field here on purpose: the bounded XP-history source this
- * feature reads from never carries word-level or private content, so there
- * is nothing that needs an opt-in privacy toggle beyond what is listed.
+ * What can be toggled on or off the shareable recap card. The word of the week is the only
+ * card content, so it is the only field that starts hidden: the screen promises that private
+ * words are never added to the image automatically.
  */
-export type WeeklyRecapSelectionKey = 'totalXp' | 'reviewed' | 'activeDays' | 'bestDay' | 'heatmap' | 'milestones';
+export type WeeklyRecapSelectionKey = 'words' | 'streak' | 'recall' | 'wordOfWeek' | 'heatmap';
 
 export type WeeklyRecapSelection = Readonly<Record<WeeklyRecapSelectionKey, boolean>>;
 
 export const WEEKLY_RECAP_SELECTION_KEYS: readonly WeeklyRecapSelectionKey[] = [
-  'totalXp', 'reviewed', 'activeDays', 'bestDay', 'heatmap', 'milestones',
+  'words', 'streak', 'recall', 'wordOfWeek', 'heatmap',
 ];
 
+/** Whether the word of the week starts on the share image. */
+export const WORD_OF_WEEK_SHOWN_BY_DEFAULT = false;
+
 export const defaultWeeklyRecapSelection = (): WeeklyRecapSelection => ({
-  totalXp: true, reviewed: true, activeDays: true, bestDay: true, heatmap: true, milestones: true,
+  words: true, streak: true, recall: true, wordOfWeek: WORD_OF_WEEK_SHOWN_BY_DEFAULT, heatmap: true,
 });
 
 export function toggleWeeklyRecapSelection(
@@ -34,42 +36,38 @@ export function clampWeeklyRecapCaption(value: string): string {
 }
 
 const captionCopy = {
-  active: msg({
-    id: 'weeklyRecap.caption.suggested-active',
-    message: '{xp, number} XP and {days, plural, one {# active day} other {# active days}} this week.',
-  }),
+  words: msg({ id: 'weeklyRecap.caption.suggested-words', message: '{words, plural, one {# new word} other {# new words}} this week on SonFlash.' }),
+  streak: msg({ id: 'weeklyRecap.caption.suggested-streak', message: '{days, plural, one {# day} other {# days}} in a row.' }),
   xp: msg({ id: 'weeklyRecap.caption.suggested-xp', message: '{xp, number} XP this week.' }),
-  days: msg({ id: 'weeklyRecap.caption.suggested-days', message: '{days, plural, one {# active day} other {# active days}} this week.' }),
-  reviewed: msg({ id: 'weeklyRecap.caption.suggested-reviewed', message: '{reviews, plural, one {# review} other {# reviews}} this week.' }),
   quiet: msg({ id: 'weeklyRecap.caption.suggested-quiet', message: 'A quiet week — back to it tomorrow.' }),
 };
 
-/** A safe, editable starting caption built only from real numbers already on screen. */
+const say = (descriptor: { id?: string; message?: string }, values: Record<string, unknown>) =>
+  i18n._(descriptor.id ?? '', values, { message: descriptor.message });
+
+/** A safe, editable starting caption built only from real numbers already on the card. */
 export function buildSuggestedWeeklyRecapCaption(
   data: WeeklyRecapData,
+  stats: WeeklyRecapStats | null = null,
   selection: WeeklyRecapSelection = defaultWeeklyRecapSelection(),
 ): string {
-  if (!data.hasActivity) return i18n._(captionCopy.quiet);
-  if (data.totalXp > 0 && selection.totalXp && selection.activeDays) {
-    return i18n._(captionCopy.active.id, { xp: data.totalXp, days: data.activeDays }, { message: captionCopy.active.message });
+  if (!weeklyRecapHasActivity(data, stats)) return say(captionCopy.quiet, {});
+  const streak = selection.streak && stats?.streakDays ? say(captionCopy.streak, { days: stats.streakDays }) : '';
+  let lead = '';
+  if (stats?.words) {
+    if (selection.words && stats.words.started > 0) lead = say(captionCopy.words, { words: stats.words.started });
+  } else if (selection.words && data.totalXp > 0) {
+    lead = say(captionCopy.xp, { xp: data.totalXp });
   }
-  if (data.totalXp > 0 && selection.totalXp) {
-    return i18n._(captionCopy.xp.id, { xp: data.totalXp }, { message: captionCopy.xp.message });
-  }
-  if (selection.reviewed && typeof data.reviewedCount === 'number' && data.reviewedCount > 0) {
-    return i18n._(captionCopy.reviewed.id, { reviews: data.reviewedCount }, { message: captionCopy.reviewed.message });
-  }
-  if (data.totalXp > 0 && selection.activeDays) {
-    return i18n._(captionCopy.days.id, { days: data.activeDays }, { message: captionCopy.days.message });
-  }
-  return '';
+  return [lead, streak].filter(Boolean).join(' ');
 }
 
 export function captionAfterWeeklyRecapSelectionChange(
   data: WeeklyRecapData,
+  stats: WeeklyRecapStats | null,
   selection: WeeklyRecapSelection,
   caption: string,
   captionCustomized: boolean,
 ): string {
-  return captionCustomized ? caption : buildSuggestedWeeklyRecapCaption(data, selection);
+  return captionCustomized ? caption : buildSuggestedWeeklyRecapCaption(data, stats, selection);
 }
