@@ -17,6 +17,20 @@ interface SessionBridgeProps {
   readonly actions: SessionBridgeActions;
 }
 
+/** Crystal names a run of remembered cards after its length, as the AnimeBridge board does. */
+const comboTiers = [
+  msg({ id: 'session.bridge.combo-tier.sweet', message: 'Sweet' }),
+  msg({ id: 'session.bridge.combo-tier.lovely', message: 'Lovely' }),
+  msg({ id: 'session.bridge.combo-tier.sparkly', message: 'Sparkly' }),
+  msg({ id: 'session.bridge.combo-tier.dreamy', message: 'Dreamy' }),
+  msg({ id: 'session.bridge.combo-tier.dreamy-plus', message: 'Dreamy+' }),
+] as const;
+
+/** The tier for a run of at least two; runs past five keep the top tier with a plus. */
+function crystalComboTier(count: number) {
+  return comboTiers[Math.min(Math.max(count, 2), 6) - 2];
+}
+
 /** The board sets the first word of the stage name in the accent ink and breaks the rest onto a second line. */
 function StageTitle({ label }: { readonly label: string }) {
   const space = label.indexOf(' ');
@@ -75,6 +89,10 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
 
   return (
     <section aria-labelledby="session-bridge-heading" className="session-bridge" data-family={family} data-session-shell="bridge" onKeyDown={flipFromKeyboard}>
+      {crystal && <>
+        <span className="session-bridge-wing session-bridge-wing--start crystal-wing-art" aria-hidden="true" />
+        <span className="session-bridge-wing session-bridge-wing--end crystal-wing-art" aria-hidden="true" />
+      </>}
       <header className="session-bridge-header">
         <button type="button" onClick={actions.exit} className="session-bridge-exit" aria-label={_(msg({ id: 'session.bridge.exit', message: 'Exit session' }))}>
           <X size={16} aria-hidden="true" />
@@ -108,8 +126,14 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
           {showCombo ? (
             <div className="session-bridge-combo" data-session-combo={model.comboCount}>
               <span className="session-bridge-combo-banner" aria-hidden="true" />
+              {crystal && <span className="session-bridge-combo-star crystal-star-art" aria-hidden="true" />}
               <strong>×{model.comboCount}</strong>
-              <span className="session-bridge-combo-label"><Trans {...msg({ context: 'session.bridge.combo', message: 'correct answers in a row' })} /></span>
+              <span className="session-bridge-combo-text">
+                {crystal && <span className="session-bridge-combo-tier" aria-hidden="true">{_(crystalComboTier(model.comboCount))}</span>}
+                <span className="session-bridge-combo-label">{crystal
+                  ? <Trans {...msg({ context: 'session.bridge.combo-crystal', message: 'correct in a row' })} />
+                  : <Trans {...msg({ context: 'session.bridge.combo', message: 'correct answers in a row' })} />}</span>
+              </span>
             </div>
           ) : model.stats.map(stat => (
             <div key={stat.label} className="session-bridge-stat">
@@ -129,7 +153,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
           {showXp && <p className="session-bridge-xp"><Trans {...msg({ id: 'session.bridge.xp', message: '+{xp} XP this session' })} values={{ xp: model.xpEarned }} /></p>}
           {showLumi && (
             <div className="session-bridge-companion">
-              <Lumi pose="happy" size={170} className="session-bridge-lumi" />
+              <Lumi pose="happy" className="session-bridge-lumi" />
               <div className="session-bridge-speech">
                 <span className="session-bridge-speech-name"><Trans {...msg({ id: 'session.bridge.lumi.name', message: 'Lumi' })} /></span>
                 <strong><Trans {...msg({ id: 'session.bridge.lumi.title', message: 'Nice rhythm!' })} /></strong>

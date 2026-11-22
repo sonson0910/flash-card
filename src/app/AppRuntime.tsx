@@ -732,6 +732,7 @@ export default function AppRuntime({
               setShowClearConfirm,
             )}
             cards={library.model.cards}
+            practiceLanguage={targetLanguage}
             ownerId={currentOwnerId}
             isOffline={!isBrowserOnline}
             listenPracticeHandoff={activeListenPracticeHandoff}

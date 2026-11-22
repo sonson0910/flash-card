@@ -210,7 +210,9 @@
 /* The marks layer lies over the textarea with the same box and type, so each
    mark sits on its word; its own text is not painted, the textarea's shows. */
 .word-extractor-highlights { position: absolute; inset: 0; z-index: 1; overflow: hidden; box-sizing: border-box; border: 1px solid transparent; padding: 16px 16px 30px; color: var(--sf-text); -webkit-text-fill-color: transparent; font: inherit; font-size: 14.5px; line-height: 1.7; letter-spacing: normal; word-spacing: normal; text-align: start; text-indent: 0; text-transform: none; white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; pointer-events: none; scrollbar-gutter: stable; }
-.word-extractor-mark { border-radius: 3px; background: color-mix(in srgb, var(--sf-brand) 16%, transparent); color: inherit; box-shadow: inset 0 -1.5px 0 var(--sf-brand); }
+/* The tint reaches a little past each word; the matching negative margin hands the
+   padding back, so every mark keeps its word's advance and the layer stays on the text. */
+.word-extractor-mark { --we-mark-pad: 2px; margin: 0 calc(var(--we-mark-pad) * -1); border-radius: 3px; background: color-mix(in srgb, var(--sf-brand) 16%, transparent); padding: 0 var(--we-mark-pad); color: inherit; box-shadow: inset 0 -1.5px 0 var(--sf-brand); }
 .word-extractor-mark.is-owned { background: transparent; box-shadow: inset 0 -1.5px 0 color-mix(in srgb, var(--sf-text) 30%, transparent); }
 :root.dark .word-extractor-mark:not(.is-owned) { background: color-mix(in srgb, var(--sf-brand) 20%, transparent); }
 .word-extractor-results { display: flex; flex-direction: column; gap: 12px; }
@@ -371,7 +373,10 @@
 :root[data-theme-family="crystal"] .word-extractor-results-head strong { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 :root[data-theme-family="crystal"] .word-extractor-toggle.library-dialog-link { color: var(--sf-second); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
 :root[data-theme-family="crystal"] .word-extractor-tag { color: var(--sf-second); }
-:root[data-theme-family="crystal"] .word-extractor-mark:not(.is-owned) { background: color-mix(in srgb, var(--sf-brand) 26%, transparent); box-shadow: inset 0 -2px 0 var(--sf-brand); }
+:root[data-theme-family="crystal"] .word-extractor-mark { --we-mark-pad: 3px; border-radius: 0; padding-block: 1px; }
+/* A heavier face would change the glyph widths and slide the layer off the textarea's
+   text, so Crystal paints the found word in the same face and thickens it with a stroke. */
+:root[data-theme-family="crystal"] .word-extractor-mark:not(.is-owned) { background: color-mix(in srgb, var(--sf-brand) 26%, transparent); box-shadow: inset 0 -2px 0 var(--sf-brand); -webkit-text-fill-color: var(--sf-text); -webkit-text-stroke: .6px var(--sf-text); }
 :root[data-theme-family="crystal"] .word-extractor-deck { color: var(--sf-text-muted); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .03em; }
 :root[data-theme-family="crystal"] .word-extractor-deck::before { border-radius: 0; background: var(--sf-surface-control); clip-path: var(--nk-chamfer-sm); }
 :root[data-theme-family="crystal"] .word-extractor-deck:focus-within { outline: 2px solid var(--sf-brand); outline-offset: 0; }

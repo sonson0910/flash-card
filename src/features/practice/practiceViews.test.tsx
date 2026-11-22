@@ -399,6 +399,17 @@ describe("practice view accessibility contracts", () => {
     );
   });
 
+  it("advances an answered quiz with Continue and keeps the card wing decorative, behind the card", () => {
+    const html = renderToStaticMarkup(
+      <QuizView questions={[quizQuestion, quizQuestion]} currentIndex={0} selectedAnswer="xin chào" answeredCorrectly score={1}
+        showResults={false} onSelect={vi.fn()} onNext={vi.fn()} onRestart={vi.fn()} onClose={vi.fn()} />,
+    );
+
+    expect(html).toMatch(/<button[^>]*>[^<]*Continue/);
+    expect(html).not.toMatch(/<button[^>]*>[^<]*Next</);
+    expect(html).toMatch(/<span class="practice-quiz__wing crystal-wing-art" aria-hidden="true"><\/span><section data-quiz-question-panel/);
+  });
+
   it("shows a disabled saving action while quiz and spelling results are being confirmed", () => {
     const actions = { onNext: vi.fn(), onRestart: vi.fn(), onClose: vi.fn() };
     const quizHtml = renderToStaticMarkup(
@@ -573,7 +584,7 @@ describe("practice view accessibility contracts", () => {
     expect(typingHtml).toContain(">Reveal</button>");
     expect(typingHtml).toContain(">Skip</button>");
     expect(typingHtml).toContain('aria-pressed="true"');
-    expect(typingHtml).toContain("0.75× slow");
+    expect(typingHtml).toContain("0.6× slow");
 
     expect(wrongHtml.match(/data-state="correct"/g)?.length).toBeGreaterThanOrEqual(4);
     expect(wrongHtml).toMatch(/data-state="missing"[^>]*>l</);

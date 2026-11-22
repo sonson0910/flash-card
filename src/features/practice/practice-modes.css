@@ -572,9 +572,46 @@
   @media (min-width: 1024px) {
     .practice-quiz[data-lumi] { grid-template-columns: minmax(0, 200px) minmax(0, 330px) minmax(0, 1fr); gap: 32px; width: min(100%, 1120px); }
   }
+  /* AnimeQuiz draws Lumi at 250px in a 250px column; the card and answers keep their width. */
+  @media (min-width: 1360px) {
+    .practice-quiz[data-lumi] { grid-template-columns: minmax(0, 250px) minmax(0, 330px) minmax(0, 1fr); width: min(100%, 1170px); }
+    .practice-quiz__lumi .practice-lumi__art { width: 250px; }
+  }
   @media (max-width: 1023px) {
     .practice-lumi { display: none; }
   }
+
+  /* AnimeQuiz: no wing at rest; one rises from the card's left edge while the pointer rests on the
+     card, over Lumi and under the card. Decorative and never hit-tested. Narrower screens keep the
+     faint stage pair from the Crystal ornament sheet. */
+  .practice-quiz__wing { display: none; }
+  @media (min-width: 1024px) {
+    html[data-theme-family=crystal] .practice-quiz { position: relative; }
+    html[data-theme-family=crystal] .practice-quiz > .practice-prompt { z-index: 1; }
+    html[data-theme-family=crystal] .practice-quiz__wing {
+      position: absolute;
+      top: 90px;
+      left: -190px;
+      display: block;
+      grid-row: 1;
+      grid-column: 1;
+      width: 400px;
+      height: 280px;
+      filter: drop-shadow(0 0 22px color-mix(in srgb, var(--sf-brand) 70%, transparent));
+      opacity: 0;
+      transform: scale(.5) rotate(-16deg);
+      transform-origin: 90% 75%;
+      transition: transform 460ms var(--ease-out-expo), opacity 300ms ease;
+    }
+    html[data-theme-family=crystal] .practice-quiz[data-lumi] > .practice-quiz__wing { grid-column: 2; }
+  }
+  @media (min-width: 1024px) and (hover: hover) {
+    html[data-theme-family=crystal] .practice-quiz:has(> .practice-prompt:hover) > .practice-quiz__wing { opacity: .9; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .practice-quiz__wing { transition: none; }
+  }
+  html[data-motion='reduced'] .practice-quiz__wing { transition: none; }
   @media (max-width: 900px) {
     .practice-quiz { grid-template-columns: minmax(0, 1fr); gap: 20px; }
     .practice-prompt { min-height: 0; }
@@ -820,7 +857,7 @@
   @media (min-width: 1180px) {
     .practice-spelling[data-side] { grid-template-columns: minmax(0, 270px) minmax(0, 1fr) minmax(0, 250px); gap: 32px; align-items: start; }
     .practice-spelling[data-side] .practice-spelling__lumi { grid-row: 1; grid-column: 1; justify-self: stretch; margin-top: 40px; }
-    .practice-spelling[data-side] .practice-spelling__lumi .practice-lumi__art { width: 230px; }
+    .practice-spelling[data-side] .practice-spelling__lumi .practice-lumi__art { width: 260px; }
     .practice-spelling[data-side] .practice-spelling__main { grid-row: 1; grid-column: 2; }
     .practice-spelling[data-side] .practice-spelling__side { display: flex; flex-direction: column; gap: 14px; grid-row: 1; grid-column: 3; width: 100%; margin-top: 90px; }
     .practice-spelling[data-side] .practice-spelling__form > .practice-spelling__legend { display: none; }

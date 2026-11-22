@@ -66,6 +66,8 @@ interface AppOverlaysProps {
   startShadowing?: () => Promise<void>;
   practiceCards: readonly CardData[];
   visibleLibraryCount: number;
+  /** The active course's target language; practice draws its cards from that language. */
+  practiceLanguage?: string;
   cards?: readonly CardData[];
   ownerId?: string | null;
   isOffline?: boolean;
@@ -149,13 +151,21 @@ export const canStartTextPractice = (
 
 export const isWordMatchAvailable = (cards: readonly CardData[]) => eligibleWordMatchCards(cards).length >= 4;
 
+const displayLanguageName = (code: string, locale: string) => {
+  try {
+    return new Intl.DisplayNames([locale === 'pseudo' || locale === 'en-XA' ? 'en' : locale || 'en'], { type: 'language' }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+};
+
 export function AppOverlays({
   shareDialogOpen, shareLink, shareWarning, shareError, onDismissShareError, shareExpiresAt, outgoingSharePreview, incomingSharePreview,
   dismissShareDialog, showShareDialog, acceptSharedDeck, cancelSharedDeck,
   canRevokeShare, revokeShare, isSharing,
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
   cards = [], ownerId = null, isOffline = false, listenPracticeHandoff, onDismissListenPractice = () => undefined,
-  startSpelling, startLanguageDrill, startMatch, startShadowing, practiceCards, visibleLibraryCount, generateStory, isStatsOpen, setIsStatsOpen,
+  startSpelling, startLanguageDrill, startMatch, startShadowing, practiceCards, visibleLibraryCount, practiceLanguage, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, insightsPhase, insightsError, onRetryInsights, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
   clearStatus, clearError, resetClearFeedback, deckCount,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef, onExportLibrary, onOpenProgress,
@@ -177,6 +187,7 @@ export function AppOverlays({
   };
   const [isTextPracticeOpen, setIsTextPracticeOpen] = useState(false);
   const textPracticeAvailable = canStartTextPractice(cards, ownerId, isOffline);
+  const practiceLanguageName = practiceLanguage ? displayLanguageName(practiceLanguage, i18n.locale) : null;
   const listedPracticeModes = getPracticeModes().filter(mode => resolvePracticeModeAction(mode, practiceActions));
   const textPracticeShortcut = listedPracticeModes.length + 1;
   const practiceHasLockedMode = !textPracticeAvailable
@@ -373,6 +384,7 @@ export function AppOverlays({
                     <p className="practice-picker-count"><Trans {...msg({ context: 'shell.practice-menu.library-count', message: 'From your library · {count, plural, one {# card} other {# cards}}' })} values={{ count: visibleLibraryCount }} /></p>
                     <Dialog.Description className="overlay-dialog-sub"><Trans {...msg({ context: 'shell.practice-menu.description', message: 'Choose a different way to practice with words from your library.' })} /></Dialog.Description>
                   </div>
+                  {practiceLanguageName && <p className="practice-picker-scope crystal-chamfer-sm"><span className="sr-only"><Trans {...msg({ context: 'shell.practice-menu.scope', message: 'Course language:' })} /> </span>{practiceLanguageName}</p>}
                   <Dialog.Close className="overlay-dialog-close" aria-label={_(msg({ id: 'shell.practice-menu.close', message: 'Close practice menu' }))}><span aria-hidden="true" className="overlay-dialog-close-surface"><X /></span></Dialog.Close>
                 </div>
 
@@ -687,7 +699,7 @@ export function PracticeModeChoices({
     const action = resolvePracticeModeAction(mode, actions)!;
     const available = mode.isAvailable(practiceCards, { visibleLibraryCount });
     const unavailable = !available ? mode.unavailableLabel?.(practiceCards, { visibleLibraryCount }) : undefined;
-    return <PracticeChoice key={mode.id} modeId={mode.id} icon={mode.icon} title={_(mode.label)} duration={_(mode.duration)} description={_(mode.description)} unavailableLabel={unavailable ? i18n._(unavailable.message.id, unavailable.values) : undefined} locked={!available} disabled={practiceAction !== null} busy={practiceAction === mode.id} shortcut={index + 1} onClick={() => void onRun(mode.id, action)} />;
+    return <PracticeChoice key={mode.id} modeId={mode.id} icon={mode.icon} title={_(mode.label)} duration={_(mode.duration)} description={_(mode.description)} shortDescription={mode.shortDescription ? _(mode.shortDescription) : undefined} unavailableLabel={unavailable ? i18n._(unavailable.message.id, unavailable.values) : undefined} locked={!available} disabled={practiceAction !== null} busy={practiceAction === mode.id} shortcut={index + 1} onClick={() => void onRun(mode.id, action)} />;
   });
 }
 
@@ -716,12 +728,13 @@ function PracticeKeyRange({ last }: { last: number }) {
 
 type PracticeChoiceIcon = React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>;
 
-function PracticeChoice({ modeId, icon, title, duration, description, unavailableLabel, locked = false, disabled = false, busy = false, shortcut, onClick }: {
+function PracticeChoice({ modeId, icon, title, duration, description, shortDescription, unavailableLabel, locked = false, disabled = false, busy = false, shortcut, onClick }: {
   modeId: string;
   icon: PracticeChoiceIcon;
   title: string;
   duration: string;
   description: string;
+  shortDescription?: string;
   unavailableLabel?: string;
   locked?: boolean;
   disabled?: boolean;
@@ -747,6 +760,7 @@ function PracticeChoice({ modeId, icon, title, duration, description, unavailabl
       <span className="practice-picker-row-text">
         <span className="practice-picker-row-head"><span className="practice-picker-row-name">{title}</span>{' '}<span className="practice-picker-row-time">{duration}</span></span>
         <span className="practice-picker-row-desc">{description}</span>
+        <span className="practice-picker-row-desc-short">{locked && unavailableLabel ? unavailableLabel : shortDescription ?? description}</span>
       </span>
       {busy
         ? <span role="status" className="practice-picker-row-status"><span aria-hidden="true" className="practice-picker-spinner" /><Trans {...msg({ context: 'shell.practice-menu.preparing', message: 'Preparing…' })} /></span>

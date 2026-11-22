@@ -16,6 +16,8 @@
 .spreadsheet-import-result { display: flex; flex-direction: column; gap: 12px; }
 .spreadsheet-import-summary-heading { display: flex; align-items: center; gap: 10px; color: var(--sf-text); font-size: 14.5px; }
 .spreadsheet-import-summary-heading strong { font-weight: 650; }
+.spreadsheet-import-partial-chip { display: inline-flex; height: 24px; flex: none; align-items: center; padding: 0 9px; border: 1px solid var(--sf-warn-line); border-radius: 999px; background: var(--sf-warn-bg); color: var(--sf-warn); font-size: 11.5px; font-weight: 650; }
+.spreadsheet-import-summary-caption { margin-left: auto; color: var(--sf-text-muted); font-size: 12.5px; white-space: nowrap; }
 .spreadsheet-import-result-heading { display: flex; align-items: center; gap: 8px; color: var(--sf-danger); font-size: 15px; }
 .spreadsheet-import-result-heading strong { font-weight: 650; }
 .spreadsheet-import-result-heading.is-completed { color: var(--sf-success); }
@@ -57,6 +59,7 @@
 :root[data-theme-family="crystal"] .spreadsheet-import-mapping { clip-path: var(--nk-chamfer-sm); }
 :root[data-theme-family="crystal"] .spreadsheet-import-progress progress,
 :root[data-theme-family="crystal"] .spreadsheet-import-progress progress::-webkit-progress-value { border-radius: 0; }
+:root[data-theme-family="crystal"] .spreadsheet-import-partial-chip { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 :root[data-theme-family="crystal"] .spreadsheet-import-current b,
 :root[data-theme-family="crystal"] .spreadsheet-import-row dd { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
 @keyframes spreadsheet-import-sheen { from { background-position: 200% 0; } to { background-position: -200% 0; } }

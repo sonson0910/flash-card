@@ -135,7 +135,7 @@ test(practiceAnswerTest, async ({ page, signIn }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary quiz' })).toBeVisible({ timeout: 15_000 });
   await page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first().click();
   await expect(page.getByRole('status').filter({ hasText: /Correct answer\.|Incorrect\. The correct answer is/ })).toBeVisible();
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await expect(page.getByText(/^Question 2 \/ \d+$/)).toBeVisible();
   await page.getByRole('button', { name: 'Exit' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeVisible();

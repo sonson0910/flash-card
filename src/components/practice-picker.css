@@ -6,6 +6,8 @@ html[data-theme-family="crystal"] .practice-picker { max-width: 36.25rem; }
 
 .practice-picker-grab,
 .practice-picker-count,
+.practice-picker-scope,
+.practice-picker-row-desc-short,
 .practice-picker-glyph-sheet,
 .practice-picker-title-short,
 .practice-picker-row-chevron,
@@ -257,7 +259,32 @@ html[data-theme-family="crystal"] .practice-picker-note-press { display: none; }
   .practice-picker-title-short { display: inline; }
   .practice-picker .overlay-dialog-title { margin: 0; font-size: 30px; line-height: 1; }
   .practice-picker-count { display: block; margin: 5px 0 0; color: var(--sf-text-muted); font-size: 13px; }
-  .practice-picker .overlay-dialog-close { margin: 0 -4px -6px 0; }
+  /* The sheet keeps its close control in the handle row, so the course chip can sit where
+     MobileSheet draws its deck chip. The chip is static: practice draws from the whole course. */
+  .practice-picker .overlay-dialog-close { position: absolute; top: 4px; right: 8px; z-index: 1; margin: 0; }
+  .practice-picker .overlay-dialog-header { gap: 12px; padding-top: 30px; }
+  .practice-picker-scope {
+    display: inline-flex;
+    height: 32px;
+    max-width: 45%;
+    flex-shrink: 0;
+    align-items: center;
+    margin: 0 0 1px;
+    padding: 0 12px;
+    overflow: hidden;
+    border: 1px solid var(--sf-border);
+    border-radius: 999px;
+    background-color: var(--sf-surface-control);
+    color: var(--sf-text);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control));
+  }
+  html[data-theme-family="crystal"] .practice-picker-scope { border-radius: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .practice-picker-row-desc { display: none; }
+  .practice-picker-row-desc-short { display: block; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.35; }
   .practice-picker-list { padding: 0; overflow-y: auto; }
   html[data-theme-family="crystal"] .practice-picker-list { padding: 0; }
 
@@ -289,7 +316,7 @@ html[data-theme-family="crystal"] .practice-picker-note-press { display: none; }
   html[data-theme-family="classic"] .practice-picker-row-text { gap: 2px; }
   html[data-theme-family="classic"] .practice-picker-row-name { font-size: 15.5px; }
   html[data-theme-family="classic"] .practice-picker-row-desc { font-size: 12.5px; line-height: 1.35; }
-  html[data-theme-family="classic"] .practice-picker-row[data-state="locked"] .practice-picker-row-desc { color: var(--od-subtle); }
+  html[data-theme-family="classic"] .practice-picker-row[data-state="locked"] :is(.practice-picker-row-desc, .practice-picker-row-desc-short) { color: var(--od-subtle); }
   .practice-picker-row-time,
   .practice-picker-row-key,
   .practice-picker-row-lock { display: none; }

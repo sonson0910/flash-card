@@ -28,7 +28,7 @@ msgctxt "library.clear.decks"
 msgid "decks"
 msgstr "deck"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:233
+#: src/features/importExport/SpreadsheetImportDialog.tsx:244
 msgctxt "library.import.failed-save"
 msgid "The cards could not be saved. Check your connection and try again."
 msgstr "Không thể lưu các thẻ. Kiểm tra kết nối và thử lại."
@@ -79,7 +79,7 @@ msgctxt "library.edit-card.save"
 msgid "Save changes"
 msgstr "Lưu thay đổi"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:212
+#: src/features/importExport/SpreadsheetImportDialog.tsx:223
 msgctxt "library.import.more-issues"
 msgid "{count, plural, one {# more issue in the error report} other {# more issues in the error report}}"
 msgstr "Và {count, number} vấn đề khác"
@@ -158,7 +158,7 @@ msgctxt "library.edit-card.back-to-card"
 msgid "back to card"
 msgstr "quay lại thẻ"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:192
+#: src/features/importExport/SpreadsheetImportDialog.tsx:203
 msgctxt "library.import.deck-unassigned"
 msgid "{count, plural, one {# new card named a deck you do not have, so it was saved to Unassigned.} other {# new cards named decks you do not have, so they were saved to Unassigned.}}"
 msgstr "{count, plural, other {# thẻ mới ghi bộ thẻ bạn chưa có nên đã được lưu vào Chưa phân bộ.}}"
@@ -209,7 +209,7 @@ msgctxt "library.tools.dialogue"
 msgid "AI Dialogue"
 msgstr "Hội thoại AI"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:209
+#: src/features/importExport/SpreadsheetImportDialog.tsx:220
 msgctxt "library.import.issue-failed"
 msgid "Could not save"
 msgstr "Không lưu được"
@@ -234,7 +234,7 @@ msgctxt "library.clear.success"
 msgid "Your library was cleared."
 msgstr "Thư viện của bạn đã được xóa."
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:231
+#: src/features/importExport/SpreadsheetImportDialog.tsx:242
 msgctxt "library.import.failed-empty"
 msgid "No supported card rows were found in this spreadsheet."
 msgstr "Không tìm thấy dòng thẻ hợp lệ nào trong bảng tính này."
@@ -249,7 +249,7 @@ msgctxt "library.import.failed"
 msgid "Import failed"
 msgstr "Nhập thất bại"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:235
+#: src/features/importExport/SpreadsheetImportDialog.tsx:246
 msgctxt "library.import.failed-items"
 msgid "No cards were imported. Check the failed rows and your connection, then try again."
 msgstr "Không có thẻ nào được nhập. Kiểm tra các dòng lỗi và kết nối của bạn, rồi thử lại."
@@ -264,7 +264,7 @@ msgctxt "library.bulk.select-page"
 msgid "Select page"
 msgstr "Chọn cả trang"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:209
+#: src/features/importExport/SpreadsheetImportDialog.tsx:220
 msgctxt "library.import.issue-pending"
 msgid "Save not confirmed"
 msgstr "Chưa xác nhận lưu"
@@ -291,7 +291,7 @@ msgctxt "library.deck.unassigned"
 msgid "Unassigned"
 msgstr "Chưa thuộc bộ thẻ"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:183
+#: src/features/importExport/SpreadsheetImportDialog.tsx:192
 msgctxt "library.import.results-so-far"
 msgid "Results so far"
 msgstr "Kết quả đến lúc này"
@@ -341,7 +341,7 @@ msgctxt "library.edit-card.saving"
 msgid "Saving changes…"
 msgstr "Đang lưu thay đổi…"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:221
+#: src/features/importExport/SpreadsheetImportDialog.tsx:232
 msgctxt "library.import.partial-description"
 msgid "Some rows were saved. Review the summary and retry the rows that need attention."
 msgstr "Một số dòng đã được lưu. Xem lại phần tóm tắt và thử lại các dòng cần xem lại."
@@ -494,6 +494,11 @@ msgctxt "library.edit-card.cancel"
 msgid "Cancel"
 msgstr "Hủy"
 
+#: src/features/importExport/SpreadsheetImportDialog.tsx:189
+msgctxt "library.import.partial-chip"
+msgid "Partial"
+msgstr "Một phần"
+
 #: src/features/library/LibraryDialogOverlays.tsx:387
 msgctxt "library.clear.try-again"
 msgid "Try again"
@@ -539,7 +544,7 @@ msgctxt "library.edit-card.description"
 msgid "Changes update this card while its review history stays intact."
 msgstr "Các thay đổi sẽ cập nhật thẻ này mà vẫn giữ nguyên lịch sử ôn tập."
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:202
+#: src/features/importExport/SpreadsheetImportDialog.tsx:213
 msgctxt "library.import.issues-title"
 msgid "Rows needing attention"
 msgstr "Các dòng cần xem lại"
@@ -2290,7 +2295,7 @@ msgctxt "library.import.complete"
 msgid "Import complete"
 msgstr "Đã nhập xong"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:225
+#: src/features/importExport/SpreadsheetImportDialog.tsx:236
 msgctxt "library.import.failed-size"
 msgid "This file is too large to import. Choose a smaller spreadsheet and try again."
 msgstr "Tệp này quá lớn để nhập. Chọn bảng tính nhỏ hơn và thử lại."
@@ -2310,7 +2315,7 @@ msgctxt "library.deck.dialog-description"
 msgid "Group words by exam, trip, book — anything you like."
 msgstr "Nhóm từ theo kỳ thi, chuyến đi, cuốn sách — bất cứ gì bạn thích."
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:209
+#: src/features/importExport/SpreadsheetImportDialog.tsx:220
 msgctxt "library.import.issue-invalid"
 msgid "Invalid row"
 msgstr "Dòng không hợp lệ"
@@ -2386,7 +2391,7 @@ msgctxt "library-tools.deck-space"
 msgid "Deck space"
 msgstr "Bộ thẻ"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:229
+#: src/features/importExport/SpreadsheetImportDialog.tsx:240
 msgctxt "library.import.failed-parse"
 msgid "The spreadsheet rows could not be read. Check the Word and Translation columns."
 msgstr "Không thể đọc các dòng trong bảng tính. Kiểm tra cột Word và Translation."
@@ -2427,6 +2432,11 @@ msgctxt "library.card.open-details"
 msgid "Open card"
 msgstr "Mở thẻ"
 
+#: src/features/importExport/SpreadsheetImportDialog.tsx:193
+msgctxt "library.import.result-preview"
+msgid "Result preview"
+msgstr "Xem trước kết quả"
+
 #: src/features/library/LibraryDialogOverlays.tsx:474
 msgctxt "common.retry"
 msgid "Retry"
@@ -2458,7 +2468,7 @@ msgctxt "library.bulk.error"
 msgid "Some cards could not be updated. Try again."
 msgstr "Một số thẻ không thể cập nhật. Hãy thử lại."
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:244
+#: src/features/importExport/SpreadsheetImportDialog.tsx:255
 msgctxt "library.import.mapping-required"
 msgid "Required"
 msgstr "Bắt buộc"
@@ -2603,7 +2613,7 @@ msgctxt "library.overview.kicker"
 msgid "Vocabulary"
 msgstr "Từ vựng"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:227
+#: src/features/importExport/SpreadsheetImportDialog.tsx:238
 msgctxt "library.import.failed-read"
 msgid "The spreadsheet could not be opened. Check the file and try again."
 msgstr "Không thể mở bảng tính. Kiểm tra tệp và thử lại."
@@ -2624,12 +2634,12 @@ msgctxt "library.filters.starred"
 msgid "Starred"
 msgstr "Đã đánh dấu sao"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:209
+#: src/features/importExport/SpreadsheetImportDialog.tsx:220
 msgctxt "library.import.issue-duplicate"
 msgid "Duplicate"
 msgstr "Trùng lặp"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:218
+#: src/features/importExport/SpreadsheetImportDialog.tsx:229
 msgctxt "library.import.completed-description"
 msgid "The imported cards are ready in your library."
 msgstr "Các thẻ đã nhập sẵn sàng trong thư viện của bạn."
@@ -2640,12 +2650,12 @@ msgctxt "library.import.current-word"
 msgid "Current word: {word}"
 msgstr "Từ hiện tại: {word}"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:209
+#: src/features/importExport/SpreadsheetImportDialog.tsx:220
 msgctxt "library.import.issue-generation"
 msgid "Not generated"
 msgstr "Không tạo được thẻ"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:206
+#: src/features/importExport/SpreadsheetImportDialog.tsx:217
 msgctxt "library.import.issue-column"
 msgid "Column {column, number}"
 msgstr "Cột {column, number}"
@@ -2670,7 +2680,7 @@ msgctxt "library.import.summary"
 msgid "{created, plural, one {# created} other {# created}} · {reused, plural, one {# already present} other {# already present}} · {failed, plural, one {# failed} other {# failed}} · {skipped, plural, one {# skipped} other {# skipped}}"
 msgstr "{created, plural, one {# đã tạo} other {# đã tạo}} · {reused, plural, one {# đã có sẵn} other {# đã có sẵn}} · {failed, plural, one {# thất bại} other {# thất bại}} · {skipped, plural, one {# đã bỏ qua} other {# đã bỏ qua}}"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:205
+#: src/features/importExport/SpreadsheetImportDialog.tsx:216
 msgctxt "library.import.issue-row"
 msgid "Row {row, number}"
 msgstr "Dòng {row, number}"
@@ -2773,7 +2783,7 @@ msgctxt "library.deck.dialog-title"
 msgid "New deck"
 msgstr "Deck mới"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:242
+#: src/features/importExport/SpreadsheetImportDialog.tsx:253
 msgctxt "library.import.mapping-title"
 msgid "Column mapping"
 msgstr "Ánh xạ cột"
@@ -2787,6 +2797,11 @@ msgstr "Đang tải trang {page}"
 msgctxt "library.grid.collection-caption"
 msgid "Your words, ready when you are."
 msgstr "Từ vựng của bạn, sẵn sàng bất cứ khi nào bạn cần."
+
+#: src/features/importExport/SpreadsheetImportDialog.tsx:190
+msgctxt "library.import.partial-chip-detail"
+msgid "Some rows will not be imported."
+msgstr "Một số dòng sẽ không được nhập."
 
 #: src/features/library/LibraryTools.tsx:935
 msgctxt "library.filters.date-created"

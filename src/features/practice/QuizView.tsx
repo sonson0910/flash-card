@@ -329,6 +329,7 @@ export function QuizView({
                 {coach.body}
               </LumiCoach>
             )}
+            <span className="practice-quiz__wing crystal-wing-art" aria-hidden="true" />
             <section data-quiz-question-panel className="practice-prompt crystal-chamfer" aria-label={_(msg({ id: "practice.quiz.prompt-card", message: "Prompt card" }))}>
               <div className="practice-prompt__top">
                 <p className="practice-prompt__direction">
@@ -504,7 +505,7 @@ export function QuizView({
                         {...msg({ context: 'practice.actions.view-results', message: 'View results' })}
                       />
                     ) : (
-                      <Trans {...msg({ context: 'practice.actions.next', message: 'Next' })} />
+                      <Trans {...msg({ context: 'practice.quiz.continue', message: 'Continue' })} />
                     )}
                     {!savingResult && <EnterKeyHint />}
                   </button>
