@@ -38,7 +38,7 @@ msgctxt "shell.practice-menu.keys"
 msgid "<0>Press</0> <1/> to pick"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:207
+#: src/features/courses/CoursesSurface.tsx:211
 msgctxt "course.manage.kicker"
 msgid "My languages · {count} active · meanings in {language}"
 msgstr ""
@@ -130,12 +130,12 @@ msgctxt "onboarding.goal.none"
 msgid "No specific goal yet"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:136
+#: src/features/courses/CoursesSurface.tsx:138
 msgctxt "course.manage.new-language"
 msgid "New language"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:198
+#: src/features/courses/CoursesSurface.tsx:202
 msgctxt "course.manage.close"
 msgid "Close courses"
 msgstr ""
@@ -197,7 +197,7 @@ msgid "Preparing…"
 msgstr ""
 
 #: src/components/shell/CourseSwitcherControl.tsx:76
-#: src/features/courses/CoursesSurface.tsx:244
+#: src/features/courses/CoursesSurface.tsx:248
 #: src/features/courses/CourseVisuals.tsx:56
 msgctxt "course.due-count"
 msgid "{count} due"
@@ -213,12 +213,12 @@ msgctxt "onboarding.level.core"
 msgid "Core"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:243
+#: src/features/courses/CoursesSurface.tsx:247
 msgctxt "course.manage.study"
 msgid "Start {language} lesson"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:84
+#: src/features/courses/CoursesSurface.tsx:86
 msgctxt "course.manage.active-tag"
 msgid "Active"
 msgstr ""
@@ -330,7 +330,7 @@ msgctxt "onboarding.exam.level-heading"
 msgid "What level, and <0>by when?</0>"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:214
+#: src/features/courses/CoursesSurface.tsx:218
 msgctxt "course.manage.switched"
 msgid "Switched to {language}"
 msgstr ""
@@ -360,7 +360,7 @@ msgctxt "shell.theme.classic-light"
 msgid "Ink & Paper"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:97
+#: src/features/courses/CoursesSurface.tsx:99
 msgctxt "course.manage.stat.new"
 msgid "New words"
 msgstr ""
@@ -381,7 +381,7 @@ msgctxt "onboarding.trial.state.again"
 msgid "Again"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:106
+#: src/features/courses/CoursesSurface.tsx:108
 msgctxt "course.manage.progress"
 msgid "{reviewed} / {total} reviewed"
 msgstr ""
@@ -477,20 +477,20 @@ msgid "Five common words to get you started."
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/courses/CoursesSurface.tsx:118
-#: src/features/courses/CoursesSurface.tsx:118
+#: src/features/courses/CoursesSurface.tsx:120
+#: src/features/courses/CoursesSurface.tsx:120
 msgid "course.action.archive"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/courses/CoursesSurface.tsx:114
-#: src/features/courses/CoursesSurface.tsx:114
+#: src/features/courses/CoursesSurface.tsx:116
+#: src/features/courses/CoursesSurface.tsx:116
 msgid "course.action.manage-goals"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/courses/CoursesSurface.tsx:122
-#: src/features/courses/CoursesSurface.tsx:122
+#: src/features/courses/CoursesSurface.tsx:124
+#: src/features/courses/CoursesSurface.tsx:124
 msgid "course.action.reopen"
 msgstr ""
 
@@ -703,7 +703,7 @@ msgctxt "onboarding.pace.tag.intense"
 msgid "Intense"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:83
+#: src/features/courses/CoursesSurface.tsx:85
 msgctxt "course.manage.card-index"
 msgid "Course {number}"
 msgstr ""
@@ -779,7 +779,7 @@ msgstr ""
 msgid "extension.import.course-mismatch-confirm"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:248
+#: src/features/courses/CoursesSurface.tsx:252
 msgctxt "course.manage.reading-aid"
 msgid "Reading aid"
 msgstr ""
@@ -819,7 +819,7 @@ msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:208
+#: src/features/courses/CoursesSurface.tsx:212
 msgctxt "course.manage.kicker.no-active"
 msgid "My languages · {count} active"
 msgstr ""
@@ -876,12 +876,12 @@ msgctxt "onboarding.trial.state.pending"
 msgid "Not yet"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:63
+#: src/features/courses/CoursesSurface.tsx:65
 msgctxt "course.manage.reading-aid.romanization-off"
 msgid "Romanization off"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:194
+#: src/features/courses/CoursesSurface.tsx:198
 msgctxt "course.manage.title.crystal"
 msgid "Pick your <0>star</0>"
 msgstr ""
@@ -1159,12 +1159,12 @@ msgctxt "onboarding.eyebrow.script"
 msgid "Alphabet"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:58
+#: src/features/courses/CoursesSurface.tsx:60
 msgctxt "course.manage.reading-aid.simplified"
 msgid "Simplified characters"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:144
+#: src/features/courses/CoursesSurface.tsx:146
 msgctxt "course.manage.add-language"
 msgid "Add {language}"
 msgstr ""
@@ -1254,7 +1254,7 @@ msgctxt "onboarding.back"
 msgid "Back"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:236
+#: src/features/courses/CoursesSurface.tsx:240
 msgctxt "course.manage.lumi.due"
 msgid "{count, plural, one {# card is due right now.} other {# cards are due right now.}}"
 msgstr ""
@@ -1567,7 +1567,7 @@ msgid "Build one syllable block"
 msgstr ""
 
 #: src/components/shell/CourseSwitcherControl.tsx:198
-#: src/features/courses/CoursesSurface.tsx:249
+#: src/features/courses/CoursesSurface.tsx:253
 msgctxt "course.manage.meanings-in"
 msgid "Meanings in"
 msgstr ""
@@ -1623,7 +1623,7 @@ msgid "Preparing learning paths…"
 msgstr ""
 
 #: src/components/shell/CourseSwitcherControl.tsx:53
-#: src/features/courses/CoursesSurface.tsx:110
+#: src/features/courses/CoursesSurface.tsx:112
 msgctxt "course.status.active"
 msgid "Active course"
 msgstr ""
@@ -1643,7 +1643,7 @@ msgctxt "onboarding.exam.heading"
 msgid "Which test, and <0>what score?</0>"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:247
+#: src/features/courses/CoursesSurface.tsx:251
 msgctxt "course.manage.extension-saves-to"
 msgid "Extension saves to"
 msgstr ""
@@ -2272,7 +2272,7 @@ msgctxt "course.switcher.app-language"
 msgid "App language"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:232
+#: src/features/courses/CoursesSurface.tsx:236
 #: src/features/onboarding/OnboardingJourney.tsx:130
 msgctxt "onboarding.lumi.label"
 msgid "Lumi"
@@ -2379,17 +2379,17 @@ msgctxt "shell.share.loading"
 msgid "Preparing the shared deck…"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:103
+#: src/features/courses/CoursesSurface.tsx:105
 msgctxt "course.manage.goal-date"
 msgid "Exam date {date}"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:93
+#: src/features/courses/CoursesSurface.tsx:95
 msgctxt "course.manage.stat.due"
 msgid "Due"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:62
+#: src/features/courses/CoursesSurface.tsx:64
 msgctxt "course.manage.reading-aid.romanization-on"
 msgid "Romanization on"
 msgstr ""
@@ -2424,7 +2424,7 @@ msgctxt "shell.share.copy-detail"
 msgid "New library deck"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:85
+#: src/features/courses/CoursesSurface.tsx:87
 msgctxt "course.status.archived"
 msgid "Archived"
 msgstr ""
@@ -2444,7 +2444,7 @@ msgctxt "app-overlays.text-practice.signed-out"
 msgid "Sign in to practise with your vocabulary."
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:234
+#: src/features/courses/CoursesSurface.tsx:238
 msgctxt "course.manage.lumi.kicker"
 msgid "Lumi · link"
 msgstr ""
@@ -2536,7 +2536,7 @@ msgctxt "onboarding.pace.tag.light"
 msgid "Light"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:195
+#: src/features/courses/CoursesSurface.tsx:199
 msgctxt "course.manage.title"
 msgid "Your <0>languages</0>"
 msgstr ""
@@ -2551,7 +2551,7 @@ msgctxt "course.switcher.switch-back"
 msgid "Back to {language}"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:57
+#: src/features/courses/CoursesSurface.tsx:59
 msgctxt "course.manage.reading-aid.traditional"
 msgid "Traditional characters"
 msgstr ""
@@ -2577,7 +2577,7 @@ msgctxt "shell.opening-dialog"
 msgid "Opening dialog"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:235
+#: src/features/courses/CoursesSurface.tsx:239
 msgctxt "course.manage.lumi.title"
 msgid "Ready for {language}?"
 msgstr ""
@@ -2594,7 +2594,7 @@ msgstr ""
 
 #: src/components/shell/CourseSwitcherControl.tsx:181
 #: src/features/courses/AddCourseDialog.tsx:117
-#: src/features/courses/CoursesSurface.tsx:221
+#: src/features/courses/CoursesSurface.tsx:225
 msgctxt "course.error.generic"
 msgid "That course action did not go through. Please try again."
 msgstr ""

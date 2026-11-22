@@ -11,8 +11,10 @@ import { useCourseDueCounts, type CourseDueCountReader } from './useCourseDueCou
 export interface CoursesPageProps {
   /** Starts today's study for the active course. */
   readonly onStudy: () => void;
-  /** A course whose goals the page opens on, as a goals link names it. */
-  readonly initialGoalsCourseId?: string | null;
+  /** The course whose goals the page shows, as its address names it; `null` is the course list. */
+  readonly goalsCourseId?: string | null;
+  /** Moves the address to one course's goals, or back to the course list on `null`. */
+  readonly onGoalsCourseChange?: (courseId: string | null) => void;
   /** The view heading the app focuses after a navigation; the page title takes it. */
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
   /** Grows on each navigation that moves focus to the view heading. */
@@ -28,7 +30,7 @@ export interface CoursesPageProps {
  * aggregate card counts per open course in the surface. Switching, goals, archive and reopen go
  * through the shared course session; adding a language opens the switcher's add dialog.
  */
-export function CoursesPage({ onStudy, initialGoalsCourseId = null, headingRef, focusIntent = 0, readDueCount, readCardCount }: CoursesPageProps) {
+export function CoursesPage({ onStudy, goalsCourseId = null, onGoalsCourseChange, headingRef, focusIntent = 0, readDueCount, readCardCount }: CoursesPageProps) {
   const uiLocale = useUiLocale();
   const profileNativeLanguage = useAccountProfileNativeLanguage();
   const { model, actions } = useCourseSession();
@@ -51,7 +53,7 @@ export function CoursesPage({ onStudy, initialGoalsCourseId = null, headingRef, 
     if ((await actions.switchCourse(course.id)).ok) setSwitched({ from: from?.targetLanguage ?? null, to: course.targetLanguage });
   };
   return <div className="course-manage-page" data-courses-page="">
-    <CoursesSurface dueCounts={dueCounts} switched={switched} initialGoalsCourseId={initialGoalsCourseId}
+    <CoursesSurface dueCounts={dueCounts} switched={switched} goalsCourseId={goalsCourseId} onGoalsCourseChange={onGoalsCourseChange}
       onSwitch={course => void switchTo(course)}
       onAddLanguage={language => setAdding({ language: language ?? null })}
       onStudy={onStudy}

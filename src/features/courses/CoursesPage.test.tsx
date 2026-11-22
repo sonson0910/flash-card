@@ -87,10 +87,10 @@ describe('courses page', () => {
 
   it('reads the due count of each open course and hands the surface its page title and study action', () => {
     const onStudy = vi.fn();
-    const surface = find(render({ onStudy, initialGoalsCourseId: 'course-en' }), CoursesSurface);
+    const surface = find(render({ onStudy, goalsCourseId: 'course-en' }), CoursesSurface);
 
     expect(dueCounts).toHaveBeenLastCalledWith('owner-1', ['en', 'ko'], true, undefined);
-    expect(surface.props).toMatchObject({ dueCounts: { en: 14 }, switched: null, onStudy, initialGoalsCourseId: 'course-en' });
+    expect(surface.props).toMatchObject({ dueCounts: { en: 14 }, switched: null, onStudy, goalsCourseId: 'course-en' });
     const title = (surface.props?.renderTitle as (title: string) => Tree)('Your languages');
     expect(title.type).toBe('h1');
     expect(title.props).toMatchObject({ tabIndex: -1, className: 'course-manage__title', children: 'Your languages' });

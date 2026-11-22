@@ -47,8 +47,10 @@ export interface CoursesSurfaceProps {
   readonly renderClose?: (slot: CoursesSurfaceCloseSlot) => ReactNode;
   /** Reads the card counts of one course; defaults to two Firestore aggregate counts. */
   readonly readCardCount?: CourseCardCountReader;
-  /** A course whose goals the surface opens on; an unknown id opens the course list. */
-  readonly initialGoalsCourseId?: string | null;
+  /** The course whose goals are open; an unknown id shows the course list. Without `onGoalsCourseChange` it is only the opening value. */
+  readonly goalsCourseId?: string | null;
+  /** Makes the caller the owner of which goals are open, so a page can keep it in its address; `null` is the course list. */
+  readonly onGoalsCourseChange?: (courseId: string | null) => void;
 }
 
 function readingAidLabel(course: Course, _: ReturnType<typeof useLingui>['_']): string | null {
@@ -170,12 +172,14 @@ function NewLanguageCard({ available, pending, onAddLanguage }: {
  *   close button, or leaves the button out when the page has its own way back.
  */
 export function CoursesSurface({
-  dueCounts, switched, onSwitch, onAddLanguage, onStudy, onClose, renderTitle, renderClose, readCardCount, initialGoalsCourseId = null,
+  dueCounts, switched, onSwitch, onAddLanguage, onStudy, onClose, renderTitle, renderClose, readCardCount, goalsCourseId: givenGoalsCourseId = null, onGoalsCourseChange,
 }: CoursesSurfaceProps) {
   const { _ } = useLingui();
   const { model } = useCourseSession();
   const { family } = useTheme();
-  const [goalsCourseId, setGoalsCourseId] = useState<string | null>(initialGoalsCourseId);
+  const [ownGoalsCourseId, setOwnGoalsCourseId] = useState<string | null>(givenGoalsCourseId);
+  const goalsCourseId = onGoalsCourseChange ? givenGoalsCourseId : ownGoalsCourseId;
+  const setGoalsCourseId = onGoalsCourseChange ?? setOwnGoalsCourseId;
   const profile = model.profile;
   const crystal = family === 'crystal';
   const activeCourse = model.activeCourse;

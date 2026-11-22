@@ -39,6 +39,8 @@ test('course switcher exposes goals, switches active courses, and keeps course s
   await expect(page.getByRole('navigation', { name: 'Primary navigation' }).locator('[aria-current="page"]')).toHaveText('Today');
   await expect(courses.getByRole('button', { name: 'Close courses' })).toHaveCount(0);
   await courses.locator('.course-card[data-course-language="en"]').getByRole('button', { name: 'Manage goals' }).click();
+  // The address names the open goals, so a reload returns to them; it is the same history entry.
+  await expect(page).toHaveURL(/[?&]goals=course-en(&|$)/);
   const goalRow = courses.locator('.claude-course-goals-panel li');
   await expect(goalRow.getByText('IELTS', { exact: true })).toBeVisible();
   await expect(goalRow.getByText('7.0 · 2026-12-01', { exact: true })).toBeVisible();
@@ -58,6 +60,7 @@ test('course switcher exposes goals, switches active courses, and keeps course s
     .toEqual(expect.objectContaining({ level: '7.5', targetDate: '2027-01-15' }));
   await courses.getByRole('button', { name: 'Back to courses' }).click();
   await expect(courses.locator('.course-card[data-course-language="en"]')).toBeVisible();
+  await expect(page).not.toHaveURL(/[?&]goals=/);
 
   // Back returns to the view the page was opened from, and forward reopens the page with its heading focused.
   await page.goBack();
@@ -139,6 +142,7 @@ test('the courses page opens from a deep link and on the goals a goals link name
   await expect(goalRow.getByRole('group', { name: 'Your latest IELTS score' })).toBeVisible();
   await courses.getByRole('button', { name: 'Back to courses' }).click();
   await expect(courses.locator('.course-card[data-course-language="en"]')).toBeVisible();
+  await expect(page).not.toHaveURL(/[?&]goals=/);
 });
 
 test('switching courses isolates Library cards and spelling practice by language pair', async ({ page, db, testUser, seedCards, signIn, blockExternalNetwork }) => {

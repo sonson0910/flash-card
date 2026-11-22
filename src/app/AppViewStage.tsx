@@ -123,10 +123,10 @@ interface AppViewStageProps {
   readonly openFiles: () => void;
   /** Opens Today, where the courses page's start button leads. */
   readonly openToday: () => void;
-  /** The course whose goals the courses page opens on, from the URL. */
+  /** The course whose goals the courses page shows, from the URL. */
   readonly goalsCourseId: string | null;
-  /** Opens the courses page on one course's goals. */
-  readonly openCourseGoals: (courseId: string) => void;
+  /** Opens the courses page on one course's goals or, for `null`, its course list; `inPlace` keeps the same history entry. */
+  readonly openCourseGoals: (courseId: string | null, inPlace?: boolean) => void;
   readonly libraryContent: ReactNode;
   readonly practiceContent: ReactNode;
 }
@@ -157,7 +157,7 @@ export function AppViewStage({
   if (viewMode === 'settings') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.settings', message: 'Preparing appearance settings…' })} />)}><div className="async-content-enter" data-async-content="settings"><SettingsScreen headingRef={headingRef} focusIntent={focusIntent} section={settingsSection} onSelectSection={openSettings} filePort={filePort} onOpenFiles={openFiles} /></div></Suspense>;
   if (viewMode === 'web-words') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.web-words', message: 'Preparing your web words…' })} />)}><div className="async-content-enter" data-async-content="web-words"><WebWordsPage ownerId={ownerId} targetLanguage={languageProfile.source.code} translationLanguage={languageProfile.target.code} returnView={webWordsReturnView} onClose={returnFromWebWords} headingRef={headingRef} focusIntent={focusIntent} /></div></Suspense>;
   if (viewMode === 'files') return filePort && <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.files', message: 'Preparing your files…' })} />)}><div className="async-content-enter" data-async-content="files"><FilesWorkspace key={ownerId ?? 'signed-out'} port={filePort} courses={fileCourses} defaultCourseId={activeCourseId} cardPhotos={fileCardPhotos} headingRef={headingRef} focusIntent={focusIntent} /></div></Suspense>;
-  if (viewMode === 'courses') return ownerId && <Suspense fallback={fallback(<Trans {...msg({ context: 'course.loading', message: 'Preparing your courses…' })} />)}><div className="async-content-enter" data-async-content="courses"><CoursesPage key={`${ownerId}\u0000${goalsCourseId ?? ''}`} onStudy={openToday} initialGoalsCourseId={goalsCourseId} headingRef={headingRef} focusIntent={focusIntent} /></div></Suspense>;
+  if (viewMode === 'courses') return ownerId && <Suspense fallback={fallback(<Trans {...msg({ context: 'course.loading', message: 'Preparing your courses…' })} />)}><div className="async-content-enter" data-async-content="courses"><CoursesPage key={ownerId} onStudy={openToday} goalsCourseId={goalsCourseId} onGoalsCourseChange={courseId => openCourseGoals(courseId, true)} headingRef={headingRef} focusIntent={focusIntent} /></div></Suspense>;
   if (viewMode === 'library') return libraryContent;
   return practiceContent;
 }

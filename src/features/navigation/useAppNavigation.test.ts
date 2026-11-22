@@ -173,6 +173,7 @@ describe('useAppNavigation', () => {
     const viewBrowser = {
       getCurrentUrl: () => `https://sonflash.invalid${history[index]}`,
       pushState: vi.fn((location: string) => { history.splice(index + 1, Infinity, location); index += 1; }),
+      replaceState: vi.fn((location: string) => { history[index] = location; }),
       listenPopState: (listener: () => void) => { popState = listener; return () => { popState = null; }; },
     };
     const moveInHistory = (step: number) => { index += step; popState?.(); };
@@ -219,6 +220,7 @@ describe('useAppNavigation', () => {
     const viewBrowser = {
       getCurrentUrl: () => `https://sonflash.invalid${history[index]}`,
       pushState: vi.fn((location: string) => { history.splice(index + 1, Infinity, location); index += 1; }),
+      replaceState: vi.fn((location: string) => { history[index] = location; }),
       listenPopState: (listener: () => void) => { popState = listener; return () => { popState = null; }; },
     };
     const moveInHistory = (step: number) => { index += step; popState?.(); };
@@ -257,6 +259,20 @@ describe('useAppNavigation', () => {
     expect(forward.viewMode).toBe('courses');
     expect(forward.goalsCourseId).toBe('course-en');
     expect(viewBrowser.pushState).toHaveBeenCalledTimes(2);
+
+    // The page's own goals panel rewrites the entry it is on: closing drops the course from the
+    // address, opening names it, and neither adds a step or moves focus to the heading.
+    forward.openCourseGoals(null, true);
+    expect(viewBrowser.replaceState).toHaveBeenLastCalledWith('/?view=courses');
+    const list = render({ viewBrowser });
+    expect(list.goalsCourseId).toBeNull();
+    list.openCourseGoals('course-ko', true);
+    expect(viewBrowser.replaceState).toHaveBeenLastCalledWith('/?view=courses&goals=course-ko');
+    const reopened = render({ viewBrowser });
+    expect(reopened.goalsCourseId).toBe('course-ko');
+    expect(reopened.viewFocusIntent).toBe(forward.viewFocusIntent);
+    expect(viewBrowser.pushState).toHaveBeenCalledTimes(2);
+    expect(history).toEqual(['/?view=courses', '/?view=today', '/?view=courses&goals=course-ko']);
   });
 
   it('defaults to dark mode and safely reads an explicit stored preference', () => {

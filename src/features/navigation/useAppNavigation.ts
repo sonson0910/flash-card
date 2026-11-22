@@ -108,12 +108,15 @@ export const createAppViewLocation = (
 export interface AppViewBrowser {
   getCurrentUrl(): string;
   pushState(location: string): void;
+  /** Rewrites the current history entry, so Back skips what it showed. */
+  replaceState(location: string): void;
   listenPopState(listener: () => void): () => void;
 }
 
 const windowViewBrowser: AppViewBrowser = {
   getCurrentUrl: () => globalThis.location?.href ?? '/',
   pushState: location => globalThis.history?.pushState(globalThis.history.state, '', location),
+  replaceState: location => globalThis.history?.replaceState(globalThis.history.state, '', location),
   listenPopState: listener => {
     globalThis.addEventListener?.('popstate', listener);
     return () => globalThis.removeEventListener?.('popstate', listener);
@@ -248,7 +251,7 @@ export function useAppNavigation({
     });
   }, [bodyElement, getActiveElement, practiceOpenerRef, prefersReducedMotion, scheduler, viewMode]);
 
-  const navigate = useCallback((next: AppViewMode, target: AppViewTarget) => {
+  const navigate = useCallback((next: AppViewMode, target: AppViewTarget, inPlace = false) => {
     pendingViewFocusIntentRef.current = next !== currentViewModeRef.current;
     if (pendingViewFocusIntentRef.current) setViewFocusIntent(intent => intent + 1);
     const current = viewBrowser.getCurrentUrl();
@@ -259,7 +262,7 @@ export function useAppNavigation({
     setViewModeState(next);
     const currentPath = new URL(current, 'https://sonflash.invalid');
     if (location !== `${currentPath.pathname}${currentPath.search}${currentPath.hash}`) {
-      viewBrowser.pushState(location);
+      viewBrowser[inPlace ? 'replaceState' : 'pushState'](location);
     }
   }, [viewBrowser]);
 
@@ -272,9 +275,13 @@ export function useAppNavigation({
     navigate('settings', { settingsSection: section });
   }, [navigate]);
 
-  /** Opens the courses page on one course's goals, where its band and latest score are edited. */
-  const openCourseGoals = useCallback((courseId: string) => {
-    navigate('courses', { goalsCourseId: courseId });
+  /**
+   * Opens the courses page on one course's goals, where its band and latest score are edited, or on
+   * its course list for `null`. The page's own goals panel opens and closes `inPlace`: the address
+   * follows the panel without a new history entry, so Back still leaves the page.
+   */
+  const openCourseGoals = useCallback((courseId: string | null, inPlace?: boolean) => {
+    navigate('courses', courseId ? { goalsCourseId: courseId } : {}, inPlace);
   }, [navigate]);
 
   return {
