@@ -177,17 +177,16 @@
   --cs-emblem-bg: radial-gradient(circle at 40% 30%, color-mix(in srgb, var(--sf-second) 20%, var(--sf-surface)), var(--sf-surface) 70%);
   --cs-eyebrow: var(--sf-holo-text); --cs-em-glow: color-mix(in srgb, var(--sf-second) 50%, transparent);
   --cs-em: linear-gradient(180deg, color-mix(in srgb, var(--sf-second) 15%, var(--sf-text-strong)) 0%, var(--sf-second) 60%, color-mix(in srgb, var(--sf-second) 70%, var(--sf-surface)) 100%);
-  --cs-hot: linear-gradient(180deg, var(--sf-reward) 0%, var(--sf-star-face) 60%, var(--sf-brand) 100%);
+  --cs-hot: var(--sf-metal-em);
   --cs-gold-text: var(--sf-reward);
-  width: min(600px, calc(100% - 24px)); min-height: min(720px, calc(100dvh - 32px)); max-height: calc(100dvh - 32px);
-  padding: 26px 34px; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible;
+  width: min(600px, calc(100% - 24px)); max-height: calc(100dvh - 32px);
+  padding: 26px 34px 30px; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible;
   color: var(--sf-text); font-family: var(--sf-font-body);
   filter: drop-shadow(0 0 22px var(--cs-rim-glow)) drop-shadow(0 30px 40px color-mix(in srgb, var(--sf-shadow) 45%, transparent));
 }
 :root[data-theme-family="crystal"]:not(.dark) .streak-dialog {
   --cs-emblem-bg: radial-gradient(circle at 40% 30%, var(--sf-surface), color-mix(in srgb, var(--sf-second) 16%, var(--sf-surface)) 80%);
   --cs-em: linear-gradient(180deg, color-mix(in srgb, var(--sf-holo-text) 70%, var(--sf-second)) 0%, var(--sf-holo-text) 60%, color-mix(in srgb, var(--sf-holo-text) 70%, var(--sf-text-strong)) 100%);
-  --cs-hot: linear-gradient(180deg, var(--sf-brand) 0%, var(--sf-brand-text) 60%, var(--sf-star-shade) 100%);
   --cs-gold-text: color-mix(in srgb, var(--sf-reward) 45%, var(--sf-text-strong));
 }
 .streak-dialog[data-family="crystal"][data-streak-state="repair"] {
@@ -284,7 +283,8 @@
 [data-family="crystal"] .streak-dialog-stats dd { margin-top: 4px; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1; }
 [data-family="crystal"] .streak-dialog-stats > div:nth-child(2) dd { color: var(--sf-brand-text); }
 [data-family="crystal"] .streak-dialog-stats > div:nth-child(3) dd { color: var(--sf-holo-text); }
-[data-family="crystal"] .streak-dialog-footer { gap: 12px; padding: 24px 0 0; border-top: 0; }
+/* The dialog is as tall as its content: the actions follow the last block at a fixed gap, never pushed down. */
+[data-family="crystal"] .streak-dialog-footer { gap: 12px; margin-top: 30px; padding: 0; border-top: 0; }
 [data-family="crystal"] .streak-dialog-footer p { flex-grow: 1; font-weight: 700; }
 [data-family="crystal"] :is(.streak-dialog-primary, .streak-dialog-secondary) { height: 50px; border: 0; border-radius: 0; transform: skewX(-12deg); }
 [data-family="crystal"] :is(.streak-dialog-primary, .streak-dialog-secondary) > span { display: block; transform: skewX(12deg); font-family: var(--sf-font-display); font-style: italic; text-transform: uppercase; }
@@ -318,7 +318,7 @@
   [data-family="crystal"] .streak-dialog-day-mark { width: 40px; height: 45px; }
   [data-family="crystal"] .streak-dialog-freezes { height: auto; min-height: 76px; padding: 12px 14px; }
   [data-family="crystal"] .streak-dialog-stats[data-count="3"] dd { font-size: 23px; }
-  [data-family="crystal"] .streak-dialog-footer { padding: 20px 0 0; }
+  [data-family="crystal"] .streak-dialog-footer { margin-top: 22px; padding: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
