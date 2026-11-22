@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { i18n } from '@lingui/core';
 import type { CardData } from '../../types/card';
 import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
+import { spreadsheetImportSettingsFor } from '../importExport/spreadsheetImportSettings';
 import { EMPTY_LIBRARY_STATS } from '../librarySession/cloudLibraryPageController';
 import { createInitialCardCreatorModel } from '../intake/card-creator-model';
 import {
@@ -239,6 +240,7 @@ describe('library screen contract', () => {
     expect(commands.openCardCreator.mock.invocationCallOrder[0]).toBeLessThan(intakeActions.cardCreator.generatePreview.mock.invocationCallOrder[0]);
     expect(intakeActions.generate).not.toHaveBeenCalled();
     expect(intakeActions.importFile).toHaveBeenCalledWith(file);
+    expect(spreadsheetImportSettingsFor(file)).toEqual({ deckNames: ['IELTS'] });
     expect(intakeActions.shareCategory).toHaveBeenCalledWith({
       category: 'IELTS', customDeck: ALL_PRACTICE_DECK_SCOPE,
     });

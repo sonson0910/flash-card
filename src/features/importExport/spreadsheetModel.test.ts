@@ -117,7 +117,8 @@ describe('spreadsheet import/export model', () => {
       }]);
       expect(Object.keys(exported[0])).toEqual([
         'Lexeme ID', 'Language', 'Translation Language', 'Sense Key', 'Normalized Lemma', 'Word', 'Translation',
-        'Explanation', 'Phonetic', 'Part of Speech', 'Category', 'Emoji', 'Date Added',
+        'Explanation', 'Phonetic', 'Part of Speech', 'Category', 'Emoji',
+        'Deck', 'Tags', 'Starred', 'Difficulty', 'CEFR Level', 'Date Added',
       ]);
       expect(parseStructuredCardRows(exported)).toEqual([
         expect.objectContaining({
@@ -128,5 +129,60 @@ describe('spreadsheet import/export model', () => {
     } finally {
       setActiveUiLocale(previousLocale);
     }
+  });
+
+  it('exports deck, tags, star, difficulty and CEFR level and never the translation alternatives', () => {
+    const [organised, plain] = cardsToSpreadsheetRows([{
+      id: '1', word: 'levee', translation: 'đê', explanation: '', phonetic: '', emoji: '🌊',
+      category: 'Nature', partOfSpeech: 'noun', audioUrl: null, imageUrl: null,
+      customDeck: 'IELTS Reading', tags: ['flood', 'Unit 4', 'flood'], bookmarked: true,
+      learnerDifficulty: 'hard', cefrLevel: 'C1', translationAlternatives: ['bờ đê', 'con đê'],
+    }, {
+      id: '2', word: 'river', translation: 'sông', explanation: '', phonetic: '', emoji: '🏞️',
+      category: 'Nature', partOfSpeech: 'noun', audioUrl: null, imageUrl: null,
+    }]);
+
+    expect(organised).toMatchObject({
+      Deck: 'IELTS Reading', Tags: 'flood; Unit 4', Starred: 'Yes', Difficulty: 'Hard', 'CEFR Level': 'C1',
+    });
+    expect(plain).toMatchObject({ Deck: '', Tags: '', Starred: '', Difficulty: '', 'CEFR Level': '' });
+    expect(JSON.stringify(organised)).not.toMatch(/bờ đê|con đê|alternative/i);
+    expect(parseStructuredCardRows([organised, plain])).toEqual([
+      expect.objectContaining({
+        word: 'levee', deck: 'IELTS Reading', tags: ['flood', 'Unit 4'], bookmarked: true,
+        learnerDifficulty: 'hard', cefrLevel: 'C1',
+      }),
+      expect.not.objectContaining({ deck: expect.anything() }),
+    ]);
+    const [plainRow] = parseStructuredCardRows([plain]);
+    expect(plainRow).not.toHaveProperty('tags');
+    expect(plainRow).not.toHaveProperty('bookmarked');
+    expect(plainRow).not.toHaveProperty('learnerDifficulty');
+  });
+
+  it('reads the organising columns leniently and ignores values it does not know', () => {
+    const rows = parseStructuredCardRows([
+      { Word: 'one', Translation: 'một', 'Bộ thẻ': '  Daily  ', 'Nhãn': 'a, b;  c  ;;', 'Đánh dấu sao': 'Có', 'Độ khó': 'Trung bình' },
+      { Word: 'two', Translation: 'hai', Deck: '', Tags: 'x'.repeat(33), Starred: 'no', Difficulty: 'constructor' },
+      { Word: 'three', Translation: 'ba', Starred: 'TRUE', Difficulty: 'EASY', Tags: 'a;b;c;d;e;f;g;h;i' },
+      { Word: 'four', Translation: 'bốn', Difficulty: 'toString', Starred: 'hasOwnProperty' },
+    ]);
+
+    expect(rows[0]).toMatchObject({ deck: 'Daily', tags: ['a', 'b', 'c'], bookmarked: true, learnerDifficulty: 'medium' });
+    for (const row of [rows[1], rows[3]]) {
+      expect(row).not.toHaveProperty('deck');
+      expect(row).not.toHaveProperty('tags');
+      expect(row).not.toHaveProperty('bookmarked');
+      expect(row).not.toHaveProperty('learnerDifficulty');
+    }
+    expect(rows[2]).toMatchObject({ bookmarked: true, learnerDifficulty: 'easy', tags: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] });
+  });
+
+  it('ignores a translation alternatives column on import', () => {
+    const [row] = parseStructuredCardRows([
+      { Word: 'bank', Translation: 'ngân hàng', 'Translation Alternatives': 'bờ sông', translationAlternatives: 'bờ' },
+    ]);
+    expect(row).not.toHaveProperty('translationAlternatives');
+    expect(JSON.stringify(row)).not.toContain('bờ');
   });
 });

@@ -78,5 +78,27 @@ describe('SpreadsheetImportDialog', () => {
     expect(terminal).toContain('Pending');
     expect(terminal).toContain('3 more issues in the error report');
     expect(terminal).not.toContain(partialResult.message);
+    expect(terminal).not.toContain('spreadsheet-import-deck-note');
+  });
+
+  it('says how many new cards went to Unassigned because their deck is unknown', () => {
+    const render = (deckUnassigned: number) => renderMarkup(
+      <SpreadsheetImportDialog
+        open
+        onOpenChange={vi.fn()}
+        fileName="lesson.csv"
+        isImporting={false}
+        progress={null}
+        result={{
+          status: 'completed',
+          summary: { total: 4, created: 4, reused: 0, failed: 0, skipped: 0, pending: 0, deckUnassigned },
+          message: 'done',
+        }}
+      />,
+    );
+
+    expect(render(1)).toContain('1 new card named a deck you do not have, so it was saved to Unassigned.');
+    expect(render(3)).toContain('3 new cards named decks you do not have, so they were saved to Unassigned.');
+    expect(render(0)).not.toContain('spreadsheet-import-deck-note');
   });
 });

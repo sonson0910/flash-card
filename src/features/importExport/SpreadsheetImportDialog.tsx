@@ -187,6 +187,11 @@ function ImportSummaryPanel({ summary, issues, omittedIssues, inProgress = false
         </dl>
         {issues.length > 0 ? <ImportIssues issues={issues} omittedIssues={omittedIssues} /> : null}
       </div>
+      {summary.deckUnassigned ? (
+        <p className="spreadsheet-import-deck-note">
+          <Trans {...msg({ context: 'library.import.deck-unassigned', message: '{count, plural, one {# new card named a deck you do not have, so it was saved to Unassigned.} other {# new cards named decks you do not have, so they were saved to Unassigned.}}' })} values={{ count: summary.deckUnassigned }} />
+        </p>
+      ) : null}
     </div>
   );
 }
