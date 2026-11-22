@@ -38,6 +38,23 @@ describe('AI learning-tool response parsers', () => {
     })))).toThrow('Invalid AI extracted words');
   });
 
+  it('keeps the surface form of an extracted word when the server sends one', () => {
+    const item = { translation: 'đạt đỉnh', partOfSpeech: 'verb', cefrLevel: 'C1', example: 'The river crested.' };
+    expect(parseExtractedWords([
+      { ...item, word: 'crest', surface: ' crested ' },
+      { ...item, word: 'barrier' },
+      { ...item, word: 'flood', surface: '   ' },
+      { ...item, word: 'levee', surface: 7 },
+      { ...item, word: 'phrase', surface: 'x'.repeat(121) },
+    ])).toEqual([
+      { ...item, word: 'crest', surface: 'crested' },
+      { ...item, word: 'barrier' },
+      { ...item, word: 'flood' },
+      { ...item, word: 'levee' },
+      { ...item, word: 'phrase' },
+    ]);
+  });
+
   it('requires a complete four-to-six-turn dialogue', () => {
     expect(parseDialogue({
       title: 'At a café',
