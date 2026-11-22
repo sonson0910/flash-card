@@ -276,7 +276,7 @@ msgstr "Chưa có từ nào được chọn."
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/LessonScreen.tsx:315
-#: src/features/dailyLearning/PlacementScreen.tsx:127
+#: src/features/dailyLearning/PlacementScreen.tsx:128
 msgid "daily.lesson.play-audio"
 msgstr "Phát âm thanh"
 
@@ -407,12 +407,12 @@ msgid "daily.lesson.your-sentence"
 msgstr "Câu của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:156
+#: src/features/dailyLearning/PlacementScreen.tsx:157
 msgid "daily.placement.back-to-today"
 msgstr "Quay lại Hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:130
+#: src/features/dailyLearning/PlacementScreen.tsx:131
 msgid "daily.placement.choose-answer"
 msgstr "Chọn một câu trả lời"
 
@@ -432,67 +432,67 @@ msgid "daily.placement.confidence.medium"
 msgstr "Khá chắc"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:202
+#: src/features/dailyLearning/PlacementScreen.tsx:203
 msgid "daily.placement.correct-count"
 msgstr "Đúng {correct} trên {answered} câu"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:161
+#: src/features/dailyLearning/PlacementScreen.tsx:162
 msgid "daily.placement.diagnostic"
 msgstr "Đánh giá"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:164
+#: src/features/dailyLearning/PlacementScreen.tsx:165
 msgid "daily.placement.eligible-count"
 msgstr "{count, plural, one {# từ đủ điều kiện} other {# từ đủ điều kiện}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:190
+#: src/features/dailyLearning/PlacementScreen.tsx:191
 msgid "daily.placement.error-title"
 msgstr "Kiểm tra xếp trình độ cần được xử lý"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:75
+#: src/features/dailyLearning/PlacementScreen.tsx:76
 msgid "daily.placement.exit"
 msgstr "Thoát kiểm tra xếp trình độ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:110
+#: src/features/dailyLearning/PlacementScreen.tsx:111
 msgid "daily.placement.headline.accent"
 msgstr "trình độ khởi đầu của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:110
+#: src/features/dailyLearning/PlacementScreen.tsx:111
 msgid "daily.placement.headline.lead"
 msgstr "Tìm"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:179
+#: src/features/dailyLearning/PlacementScreen.tsx:180
 msgid "daily.placement.insufficient-count"
 msgstr "{eligible} trên {required} từ đủ điều kiện"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:180
+#: src/features/dailyLearning/PlacementScreen.tsx:181
 msgid "daily.placement.insufficient-note"
 msgstr "Chưa suy ra được lộ trình học nào."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:177
+#: src/features/dailyLearning/PlacementScreen.tsx:178
 msgid "daily.placement.insufficient-title"
 msgstr "Chưa đủ chứng cứ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:164
+#: src/features/dailyLearning/PlacementScreen.tsx:165
 msgid "daily.placement.intro-note"
 msgstr "có sẵn. Kiểm tra này nhằm đánh giá và không thay đổi lịch sử học."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:58
+#: src/features/dailyLearning/PlacementScreen.tsx:59
 msgid "daily.placement.ladder.likely"
 msgstr "Có khả năng"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:65
+#: src/features/dailyLearning/PlacementScreen.tsx:66
 msgid "daily.placement.ladder.no-confidence"
 msgstr "Chưa đủ câu trả lời"
 
@@ -512,7 +512,7 @@ msgid "daily.placement.ladder.preview-note"
 msgstr "Ba bậc. Bài kiểm tra sẽ gợi ý một bậc."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:58
+#: src/features/dailyLearning/PlacementScreen.tsx:59
 msgid "daily.placement.ladder.recommended"
 msgstr "Đề xuất"
 
@@ -527,14 +527,14 @@ msgid "daily.placement.ladder.title"
 msgstr "Ước lượng hiện tại"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:116
-#: src/features/dailyLearning/PlacementScreen.tsx:169
+#: src/features/dailyLearning/PlacementScreen.tsx:117
+#: src/features/dailyLearning/PlacementScreen.tsx:170
 msgid "daily.placement.lumi-copy"
 msgstr "Ở đây không có điểm số. Hãy chọn điều bạn thấy quen thuộc nhất."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:101
-#: src/features/dailyLearning/PlacementScreen.tsx:103
+#: src/features/dailyLearning/PlacementScreen.tsx:102
+#: src/features/dailyLearning/PlacementScreen.tsx:104
 msgid "daily.placement.lumi-label"
 msgstr "Ghi chú của Lumi"
 
@@ -544,55 +544,55 @@ msgid "daily.placement.meaning-question"
 msgstr "Nghĩa là gì?"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:139
+#: src/features/dailyLearning/PlacementScreen.tsx:140
 msgid "daily.placement.next-question"
 msgstr "Câu tiếp theo"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:182
-#: src/features/dailyLearning/PlacementScreen.tsx:205
+#: src/features/dailyLearning/PlacementScreen.tsx:183
+#: src/features/dailyLearning/PlacementScreen.tsx:206
 msgid "daily.placement.open-paths"
 msgstr "Mở Lộ trình"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:92
+#: src/features/dailyLearning/PlacementScreen.tsx:93
 msgid "daily.placement.progress-label"
 msgstr "Tiến độ kiểm tra đầu vào"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:122
+#: src/features/dailyLearning/PlacementScreen.tsx:123
 msgid "daily.placement.question-note"
 msgstr "Không chấm điểm, không áp lực. Câu trả lời chỉ giúp chọn điểm bắt đầu cho bạn."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:94
-#: src/features/dailyLearning/PlacementScreen.tsx:120
+#: src/features/dailyLearning/PlacementScreen.tsx:95
+#: src/features/dailyLearning/PlacementScreen.tsx:121
 msgid "daily.placement.question-progress"
 msgstr "Câu {current} trên {total}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:200
+#: src/features/dailyLearning/PlacementScreen.tsx:201
 msgid "daily.placement.result-kicker"
 msgstr "Lộ trình đề xuất"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:204
+#: src/features/dailyLearning/PlacementScreen.tsx:205
 msgid "daily.placement.result-note"
 msgstr "Đây là hướng dẫn đánh giá, không phải điểm thi chính thức. Nó không thay đổi lịch sử ôn tập, mức thành thạo, XP hoặc quyền truy cập lộ trình của bạn."
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1153
-#: src/features/dailyLearning/PlacementScreen.tsx:192
+#: src/features/dailyLearning/PlacementScreen.tsx:193
 msgid "daily.placement.retry"
 msgstr "Thử lại"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:81
+#: src/features/dailyLearning/PlacementScreen.tsx:82
 msgid "daily.placement.skip"
 msgstr "Bỏ qua xếp lớp"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:165
+#: src/features/dailyLearning/PlacementScreen.tsx:166
 msgid "daily.placement.start"
 msgstr "Bắt đầu kiểm tra xếp trình độ"
 
@@ -612,17 +612,17 @@ msgid "daily.placement.tier.foundation.note"
 msgstr "Từ thường ngày và đoạn văn ngắn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:78
+#: src/features/dailyLearning/PlacementScreen.tsx:79
 msgid "daily.placement.title"
 msgstr "Kiểm tra xếp trình độ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:77
+#: src/features/dailyLearning/PlacementScreen.tsx:78
 msgid "daily.placement.title-kicker"
 msgstr "Kiểm tra trình độ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:140
+#: src/features/dailyLearning/PlacementScreen.tsx:141
 msgid "daily.placement.unsure"
 msgstr "Mình không chắc"
 
@@ -1843,7 +1843,7 @@ msgstr "Đang chuẩn bị chứng cứ xếp trình độ…"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1203
-#: src/features/dailyLearning/PlacementScreen.tsx:209
+#: src/features/dailyLearning/PlacementScreen.tsx:210
 msgid "today.placement.result"
 msgstr "Câu trả lời của bạn cho thấy nên bắt đầu từ đây."
 

@@ -44,7 +44,7 @@ export function StarterCardTrial({ cards, eyebrow }: StarterCardTrialProps) {
       {eyebrow}
       <h2 className="onb-title onb-title--compact">
         {done
-          ? <Trans {...msg({ context: 'onboarding.trial.result', message: 'You knew <0>{known} of {total}.</0>' })} values={{ known, total: cards.length }} components={accent} />
+          ? <Trans {...msg({ context: 'onboarding.trial.result', message: 'You remembered <0>{known} of {total}.</0>' })} values={{ known, total: cards.length }} components={accent} />
           : <Trans {...msg({ context: 'onboarding.trial.heading', message: 'Flip each card, then <0>grade yourself.</0>' })} components={accent} />}
       </h2>
       <p className="onb-subtitle">

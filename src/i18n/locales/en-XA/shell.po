@@ -866,6 +866,11 @@ msgctxt "onboarding.primer.reader"
 msgid "I can already read Hangul"
 msgstr ""
 
+#: src/features/onboarding/StarterCardTrial.tsx:47
+msgctxt "onboarding.trial.result"
+msgid "You remembered <0>{known} of {total}.</0>"
+msgstr ""
+
 #: src/features/onboarding/ReminderPhonePreview.tsx:32
 msgctxt "onboarding.phone.now"
 msgid "now"
@@ -1544,11 +1549,6 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/features/profileCompletion/ProfileCompletionGate.tsx:42
 msgid "profile-completion.title.crystal"
-msgstr ""
-
-#: src/features/onboarding/StarterCardTrial.tsx:47
-msgctxt "onboarding.trial.result"
-msgid "You knew <0>{known} of {total}.</0>"
 msgstr ""
 
 #: src/features/courses/AddCourseDialog.tsx:102

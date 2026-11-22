@@ -199,6 +199,11 @@ msgctxt "recap.tomorrow-estimate"
 msgid "{count, plural, one {# card} other {# cards}} · about {minutes} min"
 msgstr ""
 
+#: src/features/practice/SpellingView.tsx:316
+msgctxt "practice.spelling.meaning-hint"
+msgid "Meaning:"
+msgstr ""
+
 #: src/features/practice/ShadowingView.tsx:423
 msgctxt "shadowing-view.the-browser-checks-whether-the-intended-words-were-recognised-it-"
 msgid "The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent."
@@ -683,11 +688,6 @@ msgstr ""
 #: src/features/practice/SessionRecapModal.tsx:572
 msgctxt "recap.xp-unit"
 msgid "XP"
-msgstr ""
-
-#: src/features/practice/SpellingView.tsx:316
-msgctxt "practice.spelling.meaning-hint"
-msgid "Meaning hint:"
 msgstr ""
 
 #: src/features/practice/SessionRecapModal.tsx:446

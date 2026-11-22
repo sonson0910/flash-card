@@ -313,7 +313,7 @@ export function SpellingView({
                 </button>
               </div>
               <div className="practice-spelling__hint">
-                <span className="practice-spelling__hint-label"><Trans {...msg({ context: 'practice.spelling.meaning-hint', message: 'Meaning hint:' })} /></span>{" "}
+                <span className="practice-spelling__hint-label"><Trans {...msg({ context: 'practice.spelling.meaning-hint', message: 'Meaning:' })} /></span>{" "}
                 <h3
                   id="spelling-question-heading"
                   ref={questionHeadingRef}

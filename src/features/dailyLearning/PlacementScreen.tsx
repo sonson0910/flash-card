@@ -54,6 +54,7 @@ function PlacementLadder({ estimate, mode }: { readonly estimate?: PlacementEsti
         const state = !estimate ? 'idle' : rung.tier === estimate.tier ? 'likely' : tierRank[rung.tier] < tierRank[estimate.tier] ? 'below' : 'above';
         return <li key={rung.tier} className="placement-rung" data-rung-state={state}>
           <span className="placement-rung-code" aria-hidden="true">{rung.rung}</span>
+          <span className="placement-rung-meter" aria-hidden="true">{[1, 2, 3].map(bar => <i key={bar} data-on={bar <= rung.rung ? 'true' : 'false'} />)}</span>
           <span className="placement-rung-copy"><span className="placement-rung-name">{_(rung.label)}</span><span className="placement-rung-note">{_(rung.note)}</span></span>
           {state === 'likely' && <span className="placement-rung-flag">{mode === 'result' ? _(msg({ id: 'daily.placement.ladder.recommended', message: 'Recommended' })) : _(msg({ id: 'daily.placement.ladder.likely', message: 'Likely' }))}</span>}
           {state === 'below' && <Check size={14} strokeWidth={2.5} className="placement-rung-check" aria-hidden="true" />}

@@ -548,24 +548,38 @@
     font-weight: 900;
   }
   html[data-theme-family=crystal] .practice-option__tag { font-family: var(--sf-font-display); font-size: 11px; font-style: italic; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+  /* Answer rows and match tiles sit on an opaque base: each state tint is mixed into the panel colour, so
+     the page never shows through behind the text. The wrong state's light base is a pale rose. */
+  html[data-theme-family=crystal] .practice-stage {
+    --pr-row-ok-tint: 20%;
+    --pr-row-sel-tint: 16%;
+    --pr-row-bad-tint: 24%;
+    --pr-row-bad-base: var(--sf-surface);
+    --pr-row-bad-ink: var(--sf-brand-text);
+  }
+  html[data-theme-family=crystal]:not(.dark) .practice-stage {
+    --pr-row-ok-tint: 35%;
+    --pr-row-sel-tint: 28%;
+    --pr-row-bad-tint: 16%;
+    --pr-row-bad-base: color-mix(in srgb, var(--sf-blush) 50%, #fff);
+    --pr-row-bad-ink: var(--sf-brand-hover);
+  }
+  html[data-theme-family=crystal] .practice-option { --sf-chamfer-fill: var(--pr-surface-img); }
   html[data-theme-family=crystal] .practice-option[data-state='wrong'] {
-    color: var(--sf-text);
-    --sf-chamfer-fill: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) 88%, transparent), color-mix(in srgb, var(--sf-brand) 22%, transparent));
+    color: var(--pr-row-bad-ink);
+    --sf-chamfer-fill: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) var(--pr-row-bad-tint), var(--pr-row-bad-base)), var(--pr-row-bad-base) 70%);
     --sf-chamfer-edge: var(--sf-brand);
   }
-  html[data-theme-family=crystal]:not(.dark) .practice-option[data-state='wrong'] { --sf-chamfer-fill: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) 55%, var(--sf-surface)), color-mix(in srgb, var(--sf-brand) 10%, var(--sf-surface))); }
   html[data-theme-family=crystal] .practice-option[data-state='wrong'] .practice-option__key { background: var(--sf-brand-hover); color: var(--sf-text); }
   html[data-theme-family=crystal]:not(.dark) .practice-option[data-state='wrong'] .practice-option__key { color: var(--sf-surface); }
-  html[data-theme-family=crystal] .practice-option[data-state='wrong'] .practice-option__tag { color: var(--sf-text); }
-  html[data-theme-family=crystal]:not(.dark) .practice-option[data-state='wrong'] .practice-option__tag { color: var(--sf-brand-text); }
+  html[data-theme-family=crystal] .practice-option[data-state='wrong'] .practice-option__tag { color: var(--pr-row-bad-ink); }
   html[data-theme-family=crystal] .practice-option[data-state='correct'] {
     border-color: var(--sf-second);
-    --sf-chamfer-fill: linear-gradient(90deg, color-mix(in srgb, var(--sf-second) 62%, transparent), color-mix(in srgb, var(--sf-second) 12%, transparent));
+    --sf-chamfer-fill: linear-gradient(90deg, color-mix(in srgb, var(--sf-second) var(--pr-row-ok-tint), var(--sf-surface)), var(--sf-surface) 70%);
     --sf-chamfer-edge: var(--sf-second);
   }
-  html[data-theme-family=crystal]:not(.dark) .practice-option[data-state='correct'] { --sf-chamfer-fill: linear-gradient(90deg, color-mix(in srgb, var(--sf-second) 55%, var(--sf-surface)), color-mix(in srgb, var(--sf-second) 10%, var(--sf-surface))); }
   html[data-theme-family=crystal] .practice-option[data-state='correct'] .practice-option__key { background: var(--sf-second); color: var(--sf-on-brand); }
-  html[data-theme-family=crystal] .practice-option[data-state='correct'] .practice-option__tag { color: var(--sf-text); }
+  html[data-theme-family=crystal] .practice-option[data-state='correct'] .practice-option__tag { color: var(--sf-holo-text); }
   html[data-theme-family=crystal] .practice-explain { border-left: 3px solid var(--sf-brand); }
   html[data-theme-family=crystal] .practice-explain__icon { border-radius: 0; background: var(--sf-success); color: var(--sf-on-brand); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
 
@@ -848,6 +862,18 @@
   .practice-side-panel__label { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
   .practice-side-panel + .practice-side-panel .practice-side-panel__label { color: var(--pr-cyan-text); }
   .practice-side-panel__value { color: var(--sf-text); font-family: var(--sf-font-display); font-size: 56px; font-style: italic; font-weight: 900; line-height: 1; text-shadow: 0 3px 0 color-mix(in srgb, var(--sf-brand-hover) 70%, transparent); }
+  /* Score, count and accuracy numbers are cut from the theme metal so they read on both Prism Day and Midnight.
+     A drop-shadow filter keeps the crimson offset, because a text-shadow would paint over the clipped fill. */
+  html[data-theme-family=crystal] .practice-side-panel__value,
+  html[data-theme-family=crystal] .practice-match__pairs-count,
+  html[data-theme-family=crystal] .practice-shadowing__score-value {
+    background: var(--sf-metal);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 3px 0 var(--sf-star-shade));
+  }
   .practice-side-panel__bar { display: block; height: 9px; overflow: hidden; background: var(--pr-track); transform: skewX(-24deg); }
   .practice-side-panel__bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--sf-second), var(--sf-brand)); }
   .practice-side-panel__note { color: var(--sf-text-muted); font-size: 13px; }
@@ -1602,7 +1628,7 @@
   html[data-theme-family=crystal] .practice-shadowing__wave-bar { border-radius: 0; }
   html[data-theme-family=crystal] .practice-shadowing__wave[data-kind='take'] .practice-shadowing__wave-bar { box-shadow: 0 0 8px color-mix(in srgb, var(--pr-take-bar) 55%, transparent); }
   html[data-theme-family=crystal] .practice-shadowing__score-line { font-family: var(--sf-font-display); font-size: 16px; font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-  html[data-theme-family=crystal] .practice-shadowing__score-value { color: var(--sf-brand-text); font-size: 60px; font-weight: 900; letter-spacing: -.02em; text-shadow: var(--pr-em-glow); }
+  html[data-theme-family=crystal] .practice-shadowing__score-value { font-size: 60px; font-weight: 900; letter-spacing: -.02em; filter: drop-shadow(0 3px 0 var(--sf-star-shade)) drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 55%, transparent)); }
   html[data-theme-family=crystal] .practice-shadowing__meter { border-radius: 0; transform: skewX(-24deg); }
   html[data-theme-family=crystal] .practice-shadowing__meter > span { background: linear-gradient(90deg, var(--sf-second), var(--sf-brand)); }
   html[data-theme-family=crystal] .practice-shadowing__legend li::before { border-radius: 0; transform: skewX(-24deg); }
@@ -1622,7 +1648,7 @@
       bottom: 0;
       left: 16px;
       display: flex;
-      width: min(210px, calc(50% - 474px));
+      width: min(206px, calc(50% - 474px));
       pointer-events: none;
     }
     .practice-shadowing__lumi .practice-lumi__bubble { pointer-events: auto; }
@@ -1765,25 +1791,27 @@
   html[data-theme-family=crystal] .practice-match { grid-template-columns: minmax(0, 1fr) 230px minmax(0, 1fr); gap: 28px; }
   html[data-theme-family=crystal] .practice-match__column { gap: 10px; }
   html[data-theme-family=crystal] .practice-match__tile { min-height: 62px; padding: 8px 20px; box-shadow: none; }
+  html[data-theme-family=crystal] button.practice-match__tile { --sf-chamfer-fill: var(--pr-surface-img); }
   html[data-theme-family=crystal] .practice-match__tile[data-kind='word'] .practice-match__text { font-size: 24px; font-style: italic; font-weight: 900; letter-spacing: -.01em; }
   html[data-theme-family=crystal] .practice-match__tag { font-family: var(--sf-font-display); font-size: 12px; font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
   html[data-theme-family=crystal] .practice-match__tile[data-state='selected'] {
-    --pr-sel: linear-gradient(90deg, var(--sf-second), color-mix(in srgb, var(--sf-second) 30%, transparent));
+    --pr-sel: linear-gradient(90deg, color-mix(in srgb, var(--sf-second) var(--pr-row-sel-tint), var(--sf-surface)), var(--sf-surface) 75%);
+    border-color: var(--sf-second);
     background: var(--pr-sel);
-    color: var(--sf-on-brand);
+    color: var(--sf-text);
     --tw-ring-color: transparent;
     --tw-shadow: 0 0 24px -6px var(--sf-second);
     --sf-chamfer-fill: var(--pr-sel);
     --sf-chamfer-edge: var(--sf-second);
   }
-  html[data-theme-family=crystal] .practice-match__tile[data-state='selected'] .practice-match__tag { color: var(--sf-on-brand); }
+  html[data-theme-family=crystal] .practice-match__tile[data-state='selected'] .practice-match__tag { color: var(--sf-holo-text); }
   html[data-theme-family=crystal] .practice-match__tile[data-state='wrong'] {
-    --pr-bad: linear-gradient(90deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 35%, transparent));
+    --pr-bad: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) var(--pr-row-bad-tint), var(--pr-row-bad-base)), var(--pr-row-bad-base) 75%);
     background: var(--pr-bad);
-    color: var(--pr-primary-text);
+    color: var(--pr-row-bad-ink);
     --sf-chamfer-fill: var(--pr-bad);
   }
-  html[data-theme-family=crystal] .practice-match__tile[data-state='wrong'] .practice-match__tag { color: var(--pr-primary-text); }
+  html[data-theme-family=crystal] .practice-match__tile[data-state='wrong'] .practice-match__tag { color: var(--pr-row-bad-ink); }
   html[data-theme-family=crystal] .practice-match__timer { width: 170px; height: 190px; }
   html[data-theme-family=crystal] .practice-match__timer::before {
     position: absolute;
@@ -1796,7 +1824,7 @@
   html[data-theme-family=crystal] .practice-match__clock { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 46px; font-style: italic; font-weight: 900; letter-spacing: 0; text-shadow: var(--pr-em-glow); }
   html[data-theme-family=crystal] .practice-match__clock-label,
   html[data-theme-family=crystal] .practice-match__pairs-label { font-family: var(--sf-font-display); font-size: 11px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-  html[data-theme-family=crystal] .practice-match__pairs-count { font-size: 56px; font-style: italic; font-weight: 900; }
+  html[data-theme-family=crystal] .practice-match__pairs-count { font-size: 56px; font-style: italic; font-weight: 900; filter: drop-shadow(0 3px 0 var(--sf-star-shade)) drop-shadow(0 0 16px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
   html[data-theme-family=crystal] .practice-match__combo { border-radius: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
   html[data-theme-family=crystal] .practice-match__result-icon { border-radius: 0; }
 

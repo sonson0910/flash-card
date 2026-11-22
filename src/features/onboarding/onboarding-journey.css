@@ -709,6 +709,8 @@ html:not([data-theme-family='crystal']).dark .onb-countdown {
 .onb-trial-word[data-state='again'] .onb-trial-word-state { color: var(--sf-danger); }
 
 /* Crystal -------------------------------------------------------------------------------- */
+/* The light pillar falls through the gutter between the third and fourth goal card, clear of the heading and
+   the card copy; on Midnight it is dimmer still so it never greys light text. */
 html[data-theme-family='crystal'] .claude-onboarding-journey {
   --onb-primary-bg: linear-gradient(100deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 40%, color-mix(in srgb, var(--sf-brand) 75%, black));
   --onb-primary-text: white;
@@ -719,7 +721,7 @@ html[data-theme-family='crystal'] .claude-onboarding-journey {
   background:
     radial-gradient(ellipse 760px 560px at 88% 12%, color-mix(in srgb, var(--sf-brand) 26%, transparent), transparent 70%),
     radial-gradient(ellipse 640px 520px at 6% 96%, color-mix(in srgb, var(--sf-brand) 20%, transparent), transparent 70%),
-    linear-gradient(100deg, transparent 50%, color-mix(in srgb, var(--sf-text) 7%, transparent) 54.5%, transparent 59%),
+    linear-gradient(100deg, transparent 62.5%, color-mix(in srgb, var(--sf-text) 5%, transparent) 67%, transparent 71.5%),
     var(--sf-canvas, var(--sf-surface));
 }
 
@@ -730,7 +732,7 @@ html[data-theme-family='crystal']:not(.dark) .claude-onboarding-journey {
   background:
     radial-gradient(ellipse 720px 520px at 86% 10%, color-mix(in srgb, var(--sf-brand) 18%, transparent), transparent 70%),
     radial-gradient(ellipse 680px 520px at 30% 100%, color-mix(in srgb, var(--sf-second) 26%, transparent), transparent 70%),
-    linear-gradient(100deg, transparent 50%, rgb(255 255 255 / .55) 54.5%, transparent 59%),
+    linear-gradient(100deg, transparent 62.5%, rgb(255 255 255 / .55) 67%, transparent 71.5%),
     var(--sf-canvas, var(--sf-surface));
 }
 
@@ -1029,6 +1031,13 @@ html[data-theme-family='crystal'] .onboarding-journey__footer {
 html[data-theme-family='crystal'] .onb-body[data-lumi='true'] .onboarding-journey__footer { padding-left: 0; }
 html[data-theme-family='crystal'] .onboarding-journey__footer > .onb-primary { margin-left: 0; }
 html[data-theme-family='crystal'] .onb-footer-note { order: 3; margin: 0; font-size: 14px; }
+
+/* On a wide screen the goal step sits in the middle of the page, with Continue 40px under the cards
+   (the main's bottom padding plus the footer's top padding) instead of pinned to the bottom edge. */
+@media (min-width: 1100px) {
+  html[data-theme-family='crystal'] [data-onboarding-step='goal'] .onb-body { grid-template-areas: '.' 'main' 'foot' '.'; grid-template-rows: 1fr auto auto 1fr; padding-bottom: 40px; }
+  html[data-theme-family='crystal'] [data-onboarding-step='goal'] .onb-body[data-lumi='true'] { grid-template-areas: 'lumi .' 'lumi main' 'lumi foot' 'lumi .'; }
+}
 
 html[data-theme-family='crystal'] :is(.onb-field, .onb-starter-card) {
   border: 0;
