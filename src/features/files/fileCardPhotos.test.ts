@@ -1,39 +1,62 @@
 import { describe, expect, it, vi } from 'vitest';
-import { OWN_STORAGE_BUCKETS } from '../../lib/mediaUrlPolicy';
-import { createFileCardPhotos } from './fileCardPhotos';
+import { createFileCardPhotos, type FileCardPhotoCard, type FileCardPhotoStore, type LoadedCardPhotos } from './fileCardPhotos';
 
-const bucket = [...OWN_STORAGE_BUCKETS][0]!;
 const fileA = 'a'.repeat(24);
-const fileB = 'b'.repeat(24);
-const photoUrl = (fileId: string) => (
-  `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/users%2Flearner-1%2Ffiles%2F${fileId}?alt=media&token=0123456789abcdef-0123`
-);
-
-const cards = [
-  { id: 'card-1', imageUrl: photoUrl(fileA) },
-  { id: 'card-2', imageUrl: 'https://images.unsplash.com/photo-1' },
-  { id: 'card-3', imageUrl: photoUrl(fileA) },
-  { id: 'card-4', imageUrl: photoUrl(fileB) },
-  { id: 'card-5' },
+const found: readonly FileCardPhotoCard[] = [
+  { id: 'card-open-1', revision: 3 },
+  { id: 'card-other-course', revision: 7 },
+  { id: 'card-open-2', revision: 1 },
 ];
 
+const storeWith = (cards: readonly FileCardPhotoCard[], saved = true) => ({
+  find: vi.fn(async (_fileId: string) => cards),
+  clear: vi.fn(async (_fileId: string, _cards: readonly FileCardPhotoCard[]) => saved),
+}) satisfies FileCardPhotoStore;
+
+const openLibrary = (saved: (cardId: string) => boolean = () => true) => ({
+  has: (cardId: string) => cardId.startsWith('card-open'),
+  removePhoto: vi.fn(async (cardId: string) => saved(cardId)),
+}) satisfies LoadedCardPhotos;
+
 describe('cards that show a stored photo', () => {
-  it('counts only the cards whose photo is that file', () => {
-    const photos = createFileCardPhotos(cards, vi.fn());
-    expect(photos.count(fileA)).toBe(2);
-    expect(photos.count(fileB)).toBe(1);
-    expect(photos.count('c'.repeat(24))).toBe(0);
+  it('counts the cards one lookup finds in every course', async () => {
+    const store = storeWith(found);
+    const match = await createFileCardPhotos(store, openLibrary()).find(fileA);
+    expect(match.count).toBe(3);
+    expect(store.find).toHaveBeenCalledExactlyOnceWith(fileA);
   });
 
-  it('removes the photo from each of those cards and from no other', async () => {
-    const removePhoto = vi.fn(async (_cardId: string) => true);
-    await createFileCardPhotos(cards, removePhoto).clear(fileA);
-    expect(removePhoto.mock.calls.map(([cardId]) => cardId)).toEqual(['card-1', 'card-3']);
+  it('clears exactly the cards found: the open library saves its own, the store the rest', async () => {
+    const store = storeWith(found);
+    const library = openLibrary();
+    const match = await createFileCardPhotos(store, library).find(fileA);
+    await match.clear();
+    expect(library.removePhoto.mock.calls.map(([cardId]) => cardId)).toEqual(['card-open-1', 'card-open-2']);
+    expect(store.clear).toHaveBeenCalledExactlyOnceWith(fileA, [{ id: 'card-other-course', revision: 7 }]);
+    // Clearing reuses the lookup instead of reading the cards again.
+    expect(store.find).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects when a card could not be saved, so the file is kept', async () => {
-    const removePhoto = vi.fn(async (cardId: string) => cardId !== 'card-1');
-    await expect(createFileCardPhotos(cards, removePhoto).clear(fileA)).rejects.toThrow();
-    expect(removePhoto).toHaveBeenCalledTimes(1);
+  it('reads and saves nothing more when no card shows the photo', async () => {
+    const store = storeWith([]);
+    const library = openLibrary();
+    const match = await createFileCardPhotos(store, library).find(fileA);
+    expect(match.count).toBe(0);
+    await match.clear();
+    expect(library.removePhoto).not.toHaveBeenCalled();
+    expect(store.clear).not.toHaveBeenCalled();
+  });
+
+  it('rejects when a card in the open library could not be saved, so the file is kept', async () => {
+    const store = storeWith(found);
+    const library = openLibrary(cardId => cardId !== 'card-open-1');
+    await expect((await createFileCardPhotos(store, library).find(fileA)).clear()).rejects.toThrow();
+    expect(library.removePhoto).toHaveBeenCalledTimes(1);
+    expect(store.clear).not.toHaveBeenCalled();
+  });
+
+  it('rejects when a card in another course could not be saved', async () => {
+    const store = storeWith(found, false);
+    await expect((await createFileCardPhotos(store, openLibrary()).find(fileA)).clear()).rejects.toThrow();
   });
 });

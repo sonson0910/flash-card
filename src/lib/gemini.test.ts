@@ -342,6 +342,69 @@ describe('production AI protected-service capability', () => {
     expect(progress.map(item => item.stage)).toEqual(['drafting']);
   });
 
+  it('keeps the fields a failed stream already sent and fails with the code of its final packet', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    const streamCall = vi.fn(async () => ({
+      stream: (async function* () {
+        yield { operationId, stage: 'field', field: 'translation', value: 'táo' };
+        yield { operationId, stage: 'field', field: 'explanation', value: 'A fruit.' };
+        yield { operationId, stage: 'error', errorReason: 'internal' };
+      })(),
+      data: Promise.resolve({ failure: { code: 'internal', message: 'AI returned incomplete card data.' } }),
+    }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const progress: Array<{ stage: string; field?: string }> = [];
+
+    await expect(generateWordInfo('apple', { operationId, onProgress: value => progress.push(value) }))
+      .rejects.toMatchObject({ name: 'ProtectedFunctionError', code: 'internal', retryable: false });
+    expect(progress).toEqual([
+      { operationId, stage: 'field', field: 'translation', value: 'táo' },
+      { operationId, stage: 'field', field: 'explanation', value: 'A fruit.' },
+      { operationId, stage: 'error', errorReason: 'internal' },
+    ]);
+    expect(streamCall).toHaveBeenCalledOnce();
+  });
+
+  it('retries a retryable final failure packet under the same operation ID', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    const streamCall = vi.fn()
+      .mockImplementationOnce(async () => ({
+        stream: (async function* () {
+          yield { operationId, stage: 'field', field: 'phonetic', value: '/ˈæpəl/' };
+        })(),
+        data: Promise.resolve({ failure: { code: 'deadline-exceeded', message: 'AI request timed out. Try again later.' } }),
+      }))
+      .mockImplementationOnce(async () => ({
+        stream: (async function* () {})(),
+        data: Promise.resolve({ result: {
+          translation: 'táo', explanation: 'A fruit.', explanationTranslation: 'Một loại quả.',
+          phonetic: '/ˈæpəl/', emoji: '🍎', category: 'Food',
+        } }),
+      }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const progress: Array<{ stage: string }> = [];
+
+    await expect(generateWordInfo('apple', { operationId, onProgress: value => progress.push(value) }))
+      .resolves.toMatchObject({ translation: 'táo' });
+    expect(progress.map(item => item.stage)).toEqual(['field', 'retrying']);
+    expect(streamCall.mock.calls.map(([request]) => (request as { operationId: string }).operationId))
+      .toEqual([operationId, operationId]);
+  });
+
+  it('maps an exhausted operation named by a final failure packet to the same final error', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    Object.assign(runtime.callable, { stream: vi.fn(async () => ({
+      stream: (async function* () {
+        yield { operationId, stage: 'field', field: 'phonetic', value: '/ˈæpəl/' };
+      })(),
+      data: Promise.resolve({ failure: {
+        code: 'failed-precondition', message: 'attempts used', details: { reason: 'operation-attempts-exhausted' },
+      } }),
+    })) });
+    await expect(generateWordInfo('apple', { operationId, onProgress: () => undefined }))
+      .rejects.toMatchObject({ code: 'failed-precondition', retryable: false, reason: 'operation-attempts-exhausted' });
+  });
+
   it('calls the retry observer once per retry and never on the first attempt', async () => {
     vi.useFakeTimers();
     const onRetry = vi.fn();

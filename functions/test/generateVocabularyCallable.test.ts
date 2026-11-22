@@ -432,18 +432,73 @@ describe('generateVocabulary callable', () => {
     const order: string[] = [];
     markWordOperationDelivered.mockImplementation(async () => { order.push('mark'); return true; });
     const sendChunk = vi.fn(async (chunk: { stage: string }) => { order.push(chunk.stage); return true; });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { generateVocabulary } = await import('../src/index.js');
     const operationId = randomUUID();
+    // The unexpected provider error ends the stream with the callable wrapper's public shape.
     await expect((generateVocabulary.run as unknown as (request: unknown, response: unknown) => Promise<unknown>)({
       auth: { uid: 'owner-1' }, acceptsStreaming: true,
       data: { action: 'word', input: 'apple', operationId },
-    }, { sendChunk, signal: new AbortController().signal })).rejects.toThrow('provider stream broke');
-    expect(order.slice(0, 5)).toEqual(['reserving', 'drafting', 'mark', 'field', 'field']);
+    }, { sendChunk, signal: new AbortController().signal })).resolves.toEqual({ failure: { code: 'internal', message: 'INTERNAL' } });
+    expect(order).toEqual(['reserving', 'drafting', 'mark', 'field', 'field', 'error']);
     expect(markWordOperationDelivered).toHaveBeenCalledTimes(1);
     expect(markWordOperationDelivered).toHaveBeenCalledWith(expect.anything(), 'owner-1', operationId, 'attempt-1', expect.any(Date));
     expect(settleWordOperation).toHaveBeenCalledWith(
       expect.anything(), 'owner-1', operationId, 'attempt-1', null, expect.any(Date),
     );
+    expect(consoleError).toHaveBeenCalledWith('Unhandled error', expect.objectContaining({ message: 'provider stream broke' }));
+    consoleError.mockRestore();
+  });
+
+  it('ends a stream that already delivered fields with a failure packet instead of an error line', async () => {
+    reserveWordOperation.mockResolvedValue({ kind: 'reserved', attemptId: 'attempt-1', periodKey: 'free-2026-09' });
+    settleWordOperation.mockResolvedValue(true);
+    markWordOperationDelivered.mockResolvedValue(true);
+    // The model stops after two fields, so the card fails validation once the stream ends.
+    generateContentStream.mockResolvedValue({
+      [Symbol.asyncIterator]: async function* () { yield { text: '{"translation":"quả táo","explanation":"a fruit"}' }; },
+    });
+    runStreamingProvider();
+    const sendChunk = vi.fn(async (_chunk: unknown) => true);
+    const { generateVocabulary } = await import('../src/index.js');
+    const operationId = randomUUID();
+    await expect((generateVocabulary.run as unknown as (request: unknown, response: unknown) => Promise<unknown>)({
+      auth: { uid: 'owner-1' }, acceptsStreaming: true,
+      data: { action: 'word', input: 'apple', operationId },
+    }, { sendChunk, signal: new AbortController().signal })).resolves.toEqual({
+      failure: { code: 'internal', message: 'AI returned incomplete card data.' },
+    });
+    expect(sendChunk.mock.calls.map(([chunk]) => chunk)).toEqual([
+      { operationId, stage: 'reserving' },
+      { operationId, stage: 'drafting' },
+      { operationId, stage: 'field', field: 'translation', value: 'quả táo' },
+      { operationId, stage: 'field', field: 'explanation', value: 'a fruit' },
+      { operationId, stage: 'error', errorReason: 'internal' },
+    ]);
+    expect(settleWordOperation).toHaveBeenCalledWith(
+      expect.anything(), 'owner-1', operationId, 'attempt-1', null, expect.any(Date),
+    );
+  });
+
+  it('still throws a failure after delivery once the streaming client has left', async () => {
+    reserveWordOperation.mockResolvedValue({ kind: 'reserved', attemptId: 'attempt-1', periodKey: 'free-2026-09' });
+    settleWordOperation.mockResolvedValue(true);
+    markWordOperationDelivered.mockResolvedValue(true);
+    generateContentStream.mockResolvedValue({
+      [Symbol.asyncIterator]: async function* () { yield { text: '{"translation":"quả táo","explanation":"a fruit"}' }; },
+    });
+    runStreamingProvider();
+    const { generateVocabulary } = await import('../src/index.js');
+    const left = new AbortController();
+    const sendChunk = vi.fn(async (chunk: { stage: string }) => {
+      if (chunk.stage === 'field') left.abort();
+      return true;
+    });
+    await expect((generateVocabulary.run as unknown as (request: unknown, response: unknown) => Promise<unknown>)({
+      auth: { uid: 'owner-1' }, acceptsStreaming: true,
+      data: { action: 'word', input: 'apple', operationId: randomUUID() },
+    }, { sendChunk, signal: left.signal })).rejects.toMatchObject({ code: 'internal' });
+    expect(sendChunk).toHaveBeenCalledWith(expect.objectContaining({ stage: 'field' }));
   });
 
   it('sends no card field once the reservation was cancelled before delivery', async () => {

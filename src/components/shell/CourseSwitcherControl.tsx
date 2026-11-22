@@ -4,7 +4,7 @@ import { ArrowRight, Check, ChevronDown, MessageSquare, Plus, X } from 'lucide-r
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { useUiLocale } from '../../i18n/I18nProvider';
-import { AddCourseDialog } from '../../features/courses/AddCourseDialog';
+import { AddCourseDialog, defaultCourseNativeLanguage } from '../../features/courses/AddCourseDialog';
 import { useCourseSession } from '../../features/courses/CourseGate';
 import { COURSE_TARGET_LANGUAGES, type Course, type CourseNativeLanguage, type CreateCourseInput, type CourseTargetLanguage } from '../../features/courses/courseModel';
 import { NATIVE_ENDONYM, TARGET_ENDONYM } from '../../features/courses/courseLanguageLabels';
@@ -28,6 +28,8 @@ export interface CourseSwitcherControlProps {
   readonly onOpenLanguageSettings?: () => void;
   /** Starts today's study for the active course; the courses surface shows its start button only when given. */
   readonly onStudyActiveCourse?: () => void;
+  /** Opens the courses page; without it "Manage courses" opens the courses surface as a dialog. */
+  readonly onOpenCourses?: () => void;
 }
 
 function CourseRow({ course, isActive, due, pending, onSwitch }: {
@@ -87,7 +89,7 @@ function SwitchedToast({ record, dueCounts, canGoBack, pending, onBack, onDismis
  * holds the profile from its single activation read; the only extra reads are one aggregate due
  * count per course while a course surface is open.
  */
-export function CourseSwitcherControl({ onOpenLanguageSettings, onStudyActiveCourse }: CourseSwitcherControlProps = {}) {
+export function CourseSwitcherControl({ onOpenLanguageSettings, onStudyActiveCourse, onOpenCourses }: CourseSwitcherControlProps = {}) {
   const { _ } = useLingui();
   const uiLocale = useUiLocale();
   const profileNativeLanguage = useAccountProfileNativeLanguage();
@@ -130,7 +132,7 @@ export function CourseSwitcherControl({ onOpenLanguageSettings, onStudyActiveCou
   const activeCourse = model.activeCourse;
   const takenTargets = new Set(profile.courses.map(course => course.targetLanguage));
   const canAddCourse = COURSE_TARGET_LANGUAGES.some(code => !takenTargets.has(code));
-  const defaultNativeLanguage: CourseNativeLanguage = profileNativeLanguage ?? activeCourse?.nativeLanguage ?? (uiLocale === 'en' ? 'en' : 'vi');
+  const defaultNativeLanguage = defaultCourseNativeLanguage(profileNativeLanguage, activeCourse, uiLocale);
   const appLanguage: CourseNativeLanguage = uiLocale === 'vi' ? 'vi' : 'en';
 
   const focusTrigger = () => triggerRef.current?.focus();
@@ -185,7 +187,7 @@ export function CourseSwitcherControl({ onOpenLanguageSettings, onStudyActiveCou
         <div className="course-panel__actions">
           {canAddCourse && <button type="button" onClick={() => openAdd('popover')} className="course-panel__add crystal-chamfer-sm">
             <Plus size={16} aria-hidden="true" /><Trans {...msg({ context: 'course.switcher.add', message: 'Add a language' })} /></button>}
-          <button type="button" onClick={() => setView('manage')} className="course-panel__manage crystal-chamfer-sm">
+          <button type="button" onClick={() => { if (!onOpenCourses) { setView('manage'); return; } setView('closed'); onOpenCourses(); }} className="course-panel__manage crystal-chamfer-sm">
             <Trans {...msg({ context: 'course.switcher.manage', message: 'Manage courses' })} /></button>
         </div>
         <p className="course-panel__extension"><MessageSquare size={14} aria-hidden="true" />

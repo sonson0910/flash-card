@@ -60,11 +60,14 @@ const text = {
   studyMilestones: msg({ id: 'stats.study-milestones', message: 'Study milestones' }), achievements: msg({ id: 'stats.achievements', message: 'Achievements' }), backToProgress: msg({ id: 'stats.back-to-progress', message: 'Back to Progress' }),
   allEarned: msg({ id: 'stats.all-badges-earned', message: 'Every badge is unlocked' }),
   collection: msg({ id: 'achievements.collection', message: 'Collection' }), titles: msg({ id: 'achievements.titles', message: 'Titles' }),
+  cards: msg({ id: 'achievements.cards', message: 'Cards' }),
   totalXp: msg({ id: 'achievements.tile.total-xp', message: 'Total XP' }), bestStreak: msg({ id: 'achievements.tile.best-streak', message: 'Best streak' }), studyPace: msg({ id: 'achievements.tile.study-pace', message: 'Study pace' }),
   shownOnCard: msg({ id: 'achievements.title.shown', message: 'Shown on your card' }),
 };
 
 const wordGardenTitle = msg({ id: 'stats.word-garden-title', message: 'Your word <0>garden</0>' });
+const cardsTotalCopy = msg({ id: 'achievements.cards.total', message: '{count, plural, one {# card in total} other {# cards in total}}' });
+const cardsShareCopy = msg({ id: 'achievements.cards.share', message: '{percent}% of your cards' });
 const titleHeading = msg({ id: 'achievements.heading.title', message: '{title}, <0>still climbing.</0>' });
 const nextBadgeMeter = msg({ id: 'stats.next-badge-meter', message: '<0>{current}</0> / {target} {unit} toward {badge}' });
 const meterUnits: Record<'days' | 'words', MessageDescriptor> = {
@@ -191,13 +194,12 @@ function BadgeCard({ shown, index, isCrystal, isNewlyUnlocked, now }: { readonly
   </article>;
 }
 
-type CollectionTab = 'badges' | 'titles';
-const collectionTabs: readonly CollectionTab[] = ['badges', 'titles'];
+type CollectionTab = 'badges' | 'cards' | 'titles';
 
-/** The Crystal collection's tabs; arrow keys, Home and End move between them. */
-function CollectionTabs({ selected, onSelect }: { readonly selected: CollectionTab; readonly onSelect: (tab: CollectionTab) => void }) {
+/** The Crystal collection's tabs, in the board's order; arrow keys, Home and End move between them. */
+function CollectionTabs({ tabs: collectionTabs, selected, onSelect }: { readonly tabs: readonly CollectionTab[]; readonly selected: CollectionTab; readonly onSelect: (tab: CollectionTab) => void }) {
   const { _ } = useLingui();
-  const labels: Record<CollectionTab, string> = { badges: _(text.badges), titles: _(text.titles) };
+  const labels: Record<CollectionTab, string> = { badges: _(text.badges), cards: _(text.cards), titles: _(text.titles) };
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const index = collectionTabs.indexOf(selected);
     const next = event.key === 'ArrowRight' ? (index + 1) % collectionTabs.length
@@ -312,12 +314,24 @@ export function AchievementsMatrix({ stats, onBackToProgress, now: nowProp }: Ac
     // The profile card draws the verified state; with only the level, the emblem card keeps the badge count.
     const signedIn = Boolean(level && learner?.gamification);
     const heading = <h1 id="achievements-heading" className="ach-title text-balance">{signedIn ? _(text.collection) : <Trans {...wordGardenTitle} components={{ 0: <em className="ach-title-accent" /> }} />}</h1>;
-    const showTabs = model.titles.length > 0;
+    // Titles exist only for a learner with a verified level; badges and cards always have a tab.
+    const tabs: readonly CollectionTab[] = model.titles.length > 0 ? ['badges', 'cards', 'titles'] : ['badges', 'cards'];
+    const selectedTab = tabs.includes(tab) ? tab : 'badges';
     const bloomRows = [
       { kind: 'new', grade: _(text.gradeNew), label: _(text.notReviewed), count: stats.difficultyChart.find(entry => entry.name === 'Not reviewed')?.value ?? 0 },
       { kind: 'learning', grade: _(text.gradeLearning), label: _(text.learning), count: stats.difficultyChart.find(entry => entry.name === 'Learning')?.value ?? 0 },
       { kind: 'mastered', grade: _(text.gradeMastered), label: _(text.mastered), count: stats.difficultyChart.find(entry => entry.name === 'Mastered')?.value ?? 0 },
     ];
+    const bloomShare = (count: number) => stats.total > 0 ? Math.round(count / stats.total * 100) : 0;
+    // The same tier counts the side card draws, with each tier's share; no read of its own.
+    const bloomList = (withShare: boolean) => <ul className="ach-bloom-list">{bloomRows.map(row => <li key={row.kind} data-kind={row.kind}>
+      <span className="ach-grade" aria-hidden="true">{row.grade}</span>
+      <div className="min-w-0 flex-1">
+        <div className="ach-bloom-row"><span>{row.label}</span><span className="tabular-nums">{formatNumber(row.count)}</span></div>
+        <span className="ach-bloom-track" aria-hidden="true"><span style={{ width: `${bloomShare(row.count)}%` }} /></span>
+        {withShare && <span className="ach-bloom-share tabular-nums">{_({ ...cardsShareCopy, values: { percent: formatNumber(bloomShare(row.count)) } })}</span>}
+      </div>
+    </li>)}</ul>;
     const remaining = Math.max(0, featured.badge.target - featured.badge.value);
     const lumiMessage = allEarned
       ? _(lumiDoneCopy)
@@ -345,7 +359,7 @@ export function AchievementsMatrix({ stats, onBackToProgress, now: nowProp }: Ac
       <div className="ach-crystal" data-achievements-board>
         <div className="ach-main-head">
           {heading}
-          {showTabs && <CollectionTabs selected={tab} onSelect={setTab} />}
+          <CollectionTabs tabs={tabs} selected={selectedTab} onSelect={setTab} />
           {signedIn && <p className="ach-unlocked-count tabular-nums">{_({ ...unlockedCount, values: totals })}</p>}
           {backButton}
         </div>
@@ -360,26 +374,26 @@ export function AchievementsMatrix({ stats, onBackToProgress, now: nowProp }: Ac
               {level && <p className="ach-emblem-level tabular-nums" data-learner-level={level.level}>{_({ ...emblemLevelLine, values: { level: formatNumber(level.level), xp: formatNumber(level.xpIntoLevel), next: formatNumber(level.levelSpan) } })}</p>}
               <span className="ach-emblem-bar" aria-hidden="true"><span style={{ width: `${level ? Math.round(level.progress * 100) : Math.round(model.earnedCount / model.badges.length * 100)}%` }} /></span>
             </div>}
-          <div className="ach-bloom-card crystal-chamfer" data-achievement-summary>
+          {selectedTab !== 'cards' && <div className="ach-bloom-card crystal-chamfer" data-achievement-summary>
             <p className="ach-side-title">{_(text.cardsByBloom)}</p>
-            <ul className="ach-bloom-list">{bloomRows.map(row => <li key={row.kind} data-kind={row.kind}>
-              <span className="ach-grade" aria-hidden="true">{row.grade}</span>
-              <div className="min-w-0 flex-1"><div className="ach-bloom-row"><span>{row.label}</span><span className="tabular-nums">{formatNumber(row.count)}</span></div><span className="ach-bloom-track" aria-hidden="true"><span style={{ width: `${stats.total > 0 ? Math.round(row.count / stats.total * 100) : 0}%` }} /></span></div>
-            </li>)}</ul>
-          </div>
+            {bloomList(false)}
+          </div>}
           {readLumiEnabled() && <div className="ach-lumi-card crystal-chamfer">
             <Lumi pose="proud" className="ach-lumi-figure motion-reduce:animate-none" />
             <p className="ach-lumi-copy"><span className="ach-lumi-name">{_(text.lumiLink)}</span><span className="ach-lumi-message">{lumiMessage}</span></p>
           </div>}
         </aside>
-        {showTabs
-          ? <>
-            <div role="tabpanel" id="ach-panel-badges" aria-labelledby="ach-tab-badges" hidden={tab !== 'badges'} className="ach-main-body">{badgesBody}</div>
-            <div role="tabpanel" id="ach-panel-titles" aria-labelledby="ach-tab-titles" hidden={tab !== 'titles'} className="ach-main-body ach-main-body--titles">
-              <TitlesList titles={model.titles} level={level?.level ?? 1} now={now} />
-            </div>
-          </>
-          : <div className="ach-main-body">{badgesBody}</div>}
+        <div role="tabpanel" id="ach-panel-badges" aria-labelledby="ach-tab-badges" hidden={selectedTab !== 'badges'} className="ach-main-body">{badgesBody}</div>
+        <div role="tabpanel" id="ach-panel-cards" aria-labelledby="ach-tab-cards" hidden={selectedTab !== 'cards'} className="ach-main-body ach-main-body--cards">
+          <section className="ach-bloom-card ach-bloom-card--wide crystal-chamfer" aria-labelledby="ach-cards-heading" data-achievement-cards>
+            <h2 id="ach-cards-heading" className="ach-side-title">{_(text.cardsByBloom)}</h2>
+            <p className="ach-cards-total tabular-nums">{_({ ...cardsTotalCopy, values: { count: stats.total } })}</p>
+            {bloomList(true)}
+          </section>
+        </div>
+        {model.titles.length > 0 && <div role="tabpanel" id="ach-panel-titles" aria-labelledby="ach-tab-titles" hidden={selectedTab !== 'titles'} className="ach-main-body ach-main-body--titles">
+          <TitlesList titles={model.titles} level={level?.level ?? 1} now={now} />
+        </div>}
       </div>
     </section>;
   }

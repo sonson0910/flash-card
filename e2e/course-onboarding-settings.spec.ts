@@ -31,8 +31,13 @@ test('course switcher exposes goals, switches active courses, and keeps course s
   await expect(englishRow).toContainText('IELTS 7.0');
   await dialog.getByRole('button', { name: 'Manage courses' }).click();
   await expect(dialog).toHaveCount(0);
-  const courses = page.getByRole('dialog', { name: 'Your languages' });
-  await expect(courses).toBeVisible();
+  // Manage courses opens the courses page, a view of its own with a URL, under Today.
+  await expect(page).toHaveURL(/[?&]view=courses(&|$)/);
+  const courses = page.locator('[data-courses-page]');
+  const coursesHeading = page.getByRole('heading', { level: 1, name: 'Your languages' });
+  await expect(coursesHeading).toBeFocused();
+  await expect(page.getByRole('navigation', { name: 'Primary navigation' }).locator('[aria-current="page"]')).toHaveText('Today');
+  await expect(courses.getByRole('button', { name: 'Close courses' })).toHaveCount(0);
   await courses.locator('.course-card[data-course-language="en"]').getByRole('button', { name: 'Manage goals' }).click();
   const goalRow = courses.locator('.claude-course-goals-panel li');
   await expect(goalRow.getByText('IELTS', { exact: true })).toBeVisible();
@@ -52,9 +57,17 @@ test('course switcher exposes goals, switches active courses, and keeps course s
     ?.goals?.find((goal: { id: string }) => goal.id === 'goal-ielts'))
     .toEqual(expect.objectContaining({ level: '7.5', targetDate: '2027-01-15' }));
   await courses.getByRole('button', { name: 'Back to courses' }).click();
-  await courses.getByRole('button', { name: 'Close courses' }).click();
+  await expect(courses.locator('.course-card[data-course-language="en"]')).toBeVisible();
+
+  // Back returns to the view the page was opened from, and forward reopens the page with its heading focused.
+  await page.goBack();
+  await expect(page).toHaveURL(/[?&]view=library(&|$)/);
   await expect(courses).toHaveCount(0);
-  await expect(trigger).toBeFocused();
+  await page.goForward();
+  await expect(page).toHaveURL(/[?&]view=courses(&|$)/);
+  await expect(coursesHeading).toBeFocused();
+  await page.goBack();
+  await expect(page).toHaveURL(/[?&]view=library(&|$)/);
 
   await trigger.click();
   await dialog.getByRole('button', { name: /Korean.*Vietnamese/ }).click();
@@ -97,6 +110,35 @@ test('course switcher exposes goals, switches active courses, and keeps course s
   await expect(settings.getByText('Show romanization')).toBeVisible();
   await expect(settings.getByText(/Korean 2-set \(두벌식\)/)).toBeVisible();
   await expect(settings.getByRole('switch')).toHaveCount(1);
+});
+
+test('the courses page opens from a deep link and on the goals a goals link names', async ({ page, db, testUser, signIn, blockExternalNetwork }) => {
+  test.setTimeout(60_000);
+  await db.collection('users').doc(testUser.uid).collection('profile').doc('courses').set({
+    activeCourseId: 'course-en',
+    courses: [{
+      id: 'course-en', targetLanguage: 'en', nativeLanguage: 'vi', status: 'active',
+      goals: [{ id: 'goal-ielts', kind: 'ielts', level: '7.0', targetDate: '2026-12-01', status: 'active', createdAt: '2026-01-01T00:00:00.000Z' }],
+      preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+      createdAt: '2026-01-01T00:00:00.000Z',
+    }],
+  });
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=courses&locale=en');
+
+  const courses = page.locator('[data-courses-page]');
+  await expect(page.getByRole('heading', { level: 1, name: 'Your languages' })).toBeVisible({ timeout: 15_000 });
+  await expect(courses.locator('.course-card[data-course-language="en"]')).toContainText('IELTS');
+  await courses.getByRole('button', { name: /Start .*English.* lesson/ }).click();
+  await expect(page).toHaveURL(/[?&]view=today(&|$)/);
+  await expect(courses).toHaveCount(0);
+
+  await page.goto('/?view=courses&goals=course-en&locale=en');
+  const goalRow = courses.locator('.claude-course-goals-panel li');
+  await expect(goalRow.getByText('IELTS', { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(goalRow.getByRole('group', { name: 'Your latest IELTS score' })).toBeVisible();
+  await courses.getByRole('button', { name: 'Back to courses' }).click();
+  await expect(courses.locator('.course-card[data-course-language="en"]')).toBeVisible();
 });
 
 test('switching courses isolates Library cards and spelling practice by language pair', async ({ page, db, testUser, seedCards, signIn, blockExternalNetwork }) => {

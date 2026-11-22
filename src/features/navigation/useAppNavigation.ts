@@ -18,13 +18,16 @@ export { APP_VIEW_HEADINGS } from './app-view-headings';
  * `shellNavigationView` (`src/components/shell/shellTypes.ts`), and exclude it
  * from `shouldShowViewHeading` when the view renders its own `<h1>`.
  */
-export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'web-words' | 'files' | 'study' | 'quiz' | 'story' | 'spelling' | 'language-drill' | 'match' | 'shadowing';
-const ROUTED_VIEW = /^(landing|today|catalog|library|progress|settings|web-words|files)$/;
+export type AppViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'web-words' | 'files' | 'courses' | 'study' | 'quiz' | 'story' | 'spelling' | 'language-drill' | 'match' | 'shadowing';
+const ROUTED_VIEW = /^(landing|today|catalog|library|progress|settings|web-words|files|courses)$/;
 /** Older links opened web words as `?webWords=1` on top of another view; they still open it. */
 const LEGACY_WEB_WORDS_PARAM = 'webWords';
 /** The view a sub-view returns to (`?view=web-words&from=today`). */
 const RETURN_VIEW_PARAM = 'from';
 const SETTINGS_SECTION_PARAM = 'section';
+/** The course whose goals the courses page opens on (`?view=courses&goals=<course id>`). */
+const COURSE_GOALS_PARAM = 'goals';
+const COURSE_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 const isLocaleLandingPath = (pathname: string): boolean => {
   const lower = pathname.replace(/\/$/, '').toLowerCase();
   return !lower || ENABLED_UI_LOCALES.some(locale => locale !== 'en' && lower === `/${locale.toLowerCase()}`);
@@ -60,11 +63,20 @@ export const readSettingsSectionParam = (location: string): SettingsSectionId =>
   readSettingsSection(new URL(location, 'https://sonflash.invalid').searchParams.get(SETTINGS_SECTION_PARAM))
 );
 
+/** The course id a courses link opens the goals of; null without one or for a malformed id. */
+export const readCourseGoalsParam = (location: string): string | null => {
+  const url = new URL(location, 'https://sonflash.invalid');
+  const courseId = url.searchParams.get('view') === 'courses' ? url.searchParams.get(COURSE_GOALS_PARAM) : null;
+  return courseId && COURSE_ID_PATTERN.test(courseId) ? courseId : null;
+};
+
 export interface AppViewTarget {
   /** For `web-words`: the view its back link returns to. */
   readonly returnView?: AppViewMode;
   /** For `settings`: the section to open. */
   readonly settingsSection?: SettingsSectionId;
+  /** For `courses`: the course whose goals to open. */
+  readonly goalsCourseId?: string;
 }
 
 export const createAppViewLocation = (
@@ -78,6 +90,7 @@ export const createAppViewLocation = (
   url.searchParams.delete(LEGACY_WEB_WORDS_PARAM);
   url.searchParams.delete(RETURN_VIEW_PARAM);
   url.searchParams.delete(SETTINGS_SECTION_PARAM);
+  url.searchParams.delete(COURSE_GOALS_PARAM);
   if (viewMode === 'landing') url.searchParams.delete('view');
   else url.searchParams.set('view', ROUTED_VIEW.test(viewMode) ? viewMode : 'today');
   if (viewMode === 'web-words' && target.returnView && target.returnView !== 'library' && isWebWordsReturnView(target.returnView)) {
@@ -85,6 +98,9 @@ export const createAppViewLocation = (
   }
   if (viewMode === 'settings' && target.settingsSection && target.settingsSection !== DEFAULT_SETTINGS_SECTION) {
     url.searchParams.set(SETTINGS_SECTION_PARAM, target.settingsSection);
+  }
+  if (viewMode === 'courses' && target.goalsCourseId && COURSE_ID_PATTERN.test(target.goalsCourseId)) {
+    url.searchParams.set(COURSE_GOALS_PARAM, target.goalsCourseId);
   }
   return `${url.pathname}${url.search}${url.hash}`;
 };
@@ -194,6 +210,7 @@ export function useAppNavigation({
   const [viewFocusIntent, setViewFocusIntent] = useState(0);
   const [settingsSection, setSettingsSectionState] = useState<SettingsSectionId>(() => readSettingsSectionParam(viewBrowser.getCurrentUrl()));
   const [webWordsReturnView, setWebWordsReturnView] = useState<WebWordsReturnView>(() => readWebWordsReturnView(viewBrowser.getCurrentUrl()));
+  const [goalsCourseId, setGoalsCourseId] = useState<string | null>(() => readCourseGoalsParam(viewBrowser.getCurrentUrl()));
   const viewHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const previousViewModeRef = useRef(viewMode);
   const currentViewModeRef = useRef(viewMode);
@@ -212,6 +229,7 @@ export function useAppNavigation({
     if (pendingViewFocusIntentRef.current || sectionChanged) setViewFocusIntent(intent => intent + 1);
     setSettingsSectionState(nextSection);
     setWebWordsReturnView(readWebWordsReturnView(location));
+    setGoalsCourseId(readCourseGoalsParam(location));
     setViewModeState(next);
   }), [viewBrowser]);
 
@@ -237,6 +255,7 @@ export function useAppNavigation({
     const location = createAppViewLocation(current, next, target);
     setSettingsSectionState(readSettingsSectionParam(location));
     setWebWordsReturnView(readWebWordsReturnView(location));
+    setGoalsCourseId(readCourseGoalsParam(location));
     setViewModeState(next);
     const currentPath = new URL(current, 'https://sonflash.invalid');
     if (location !== `${currentPath.pathname}${currentPath.search}${currentPath.hash}`) {
@@ -253,11 +272,18 @@ export function useAppNavigation({
     navigate('settings', { settingsSection: section });
   }, [navigate]);
 
+  /** Opens the courses page on one course's goals, where its band and latest score are edited. */
+  const openCourseGoals = useCallback((courseId: string) => {
+    navigate('courses', { goalsCourseId: courseId });
+  }, [navigate]);
+
   return {
     viewMode,
     setViewMode,
     openSettings,
+    openCourseGoals,
     settingsSection,
+    goalsCourseId,
     webWordsReturnView,
     viewHeadingRef,
     viewFocusIntent,

@@ -1,13 +1,14 @@
-export type ShellViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'web-words' | 'files' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
+export type ShellViewMode = 'landing' | 'today' | 'library' | 'catalog' | 'progress' | 'settings' | 'web-words' | 'files' | 'courses' | 'study' | 'quiz' | 'story' | 'spelling' | 'match' | 'shadowing';
 
 /**
  * The shell tab a view highlights. Sub-views light up their parent tab:
  * web words and My files live under Vocabulary (Collection in Crystal), as the
- * upload boards draw them. A new view that belongs under an existing tab maps
- * to it here; a view with no tab maps to itself and lights none.
+ * upload boards draw them, and the courses page lights Today, as its board draws it.
+ * A new view that belongs under an existing tab maps to it here; a view with no
+ * tab maps to itself and lights none.
  */
 export const shellNavigationView = (viewMode: ShellViewMode): ShellViewMode => (
-  viewMode === 'web-words' || viewMode === 'files' ? 'library' : viewMode
+  viewMode === 'web-words' || viewMode === 'files' ? 'library' : viewMode === 'courses' ? 'today' : viewMode
 );
 
 export type SyncIdentityViewModel =

@@ -125,11 +125,11 @@ describe('recorded achievements', () => {
     const gamification = stateFromFixture(fixture);
     return { level: 3, xp: gamification.xp, gamification, identity };
   };
-  const render = (learner: AchievementsLearnerLevel | null, family: 'classic' | 'crystal' = 'classic') => {
+  const render = (learner: AchievementsLearnerLevel | null, family: 'classic' | 'crystal' = 'classic', libraryStats: LibraryStatsViewModel = stats()) => {
     vi.stubGlobal('localStorage', { getItem: (key: string) => key === 'sonflash_theme_family' ? family : null, setItem: () => {}, removeItem: () => {} });
     return renderToStaticMarkup(createElement(I18nProvider, { i18n }, createElement(ThemeProvider, null, createElement(
       AchievementsLearnerProvider, { learner },
-      createElement(AchievementsMatrix, { stats: stats(), onBackToProgress: () => {}, now: achievementsFixture.now }),
+      createElement(AchievementsMatrix, { stats: libraryStats, onBackToProgress: () => {}, now: achievementsFixture.now }),
     ))));
   };
   const badgeHtml = (html: string, id: string) => html.match(new RegExp(`<article data-badge-id="${id}"[\\s\\S]*?</article>`))?.[0] ?? '';
@@ -188,9 +188,36 @@ describe('recorded achievements', () => {
   it('keeps the Crystal emblem card while only the level is known', () => {
     const html = render({ level: 3, xp: 640 }, 'crystal');
     expect(html).not.toContain('data-achievement-profile');
-    expect(html).not.toContain('role="tablist"');
+    // Without titles the collection keeps its Badges and Cards tabs.
+    expect(html).toContain('role="tablist"');
+    expect(html).toContain('id="ach-tab-cards"');
+    expect(html).not.toContain('id="ach-tab-titles"');
+    expect(html).not.toContain('id="ach-panel-titles"');
     expect(html).toContain('Your word <em class="ach-title-accent">garden</em>');
     expect(html).toContain('data-learner-level="3"');
     expect(html).toContain('Lv 3 · 240 / 500 XP');
+  });
+
+  it('puts the cards by bloom panel in the Crystal CARDS tab from the tier counts already loaded', () => {
+    const tiers = { ...stats(), total: 40, difficultyChart: [{ name: 'Not reviewed', value: 10 }, { name: 'Learning', value: 18 }, { name: 'Mastered', value: 12 }] };
+    const html = render(learnerFrom(), 'crystal', tiers);
+    expect(html).toMatch(/id="ach-tab-badges"[\s\S]*id="ach-tab-cards"[\s\S]*id="ach-tab-titles"/);
+    expect(html).toMatch(/id="ach-tab-cards" aria-controls="ach-panel-cards" aria-selected="false" tabindex="-1"[^>]*><span class="ach-tab-face"><span class="ach-tab-label">Cards<\/span>/);
+    const panel = html.match(/<div role="tabpanel" id="ach-panel-cards"[\s\S]*?<\/section><\/div>/)?.[0] ?? '';
+    expect(panel).toContain('aria-labelledby="ach-tab-cards" hidden=""');
+    expect(panel).toContain('<h2 id="ach-cards-heading" class="ach-side-title">Cards by bloom</h2>');
+    expect(panel).toContain('40 cards in total');
+    expect(panel).toMatch(/<li data-kind="new">[\s\S]*?Not reviewed<\/span><span class="tabular-nums">10<\/span>[\s\S]*?width:25%[\s\S]*?25% of your cards/);
+    expect(panel).toMatch(/<li data-kind="learning">[\s\S]*?Learning<\/span><span class="tabular-nums">18<\/span>[\s\S]*?width:45%[\s\S]*?45% of your cards/);
+    expect(panel).toMatch(/<li data-kind="mastered">[\s\S]*?Mastered<\/span><span class="tabular-nums">12<\/span>[\s\S]*?width:30%[\s\S]*?30% of your cards/);
+    // While Badges is open the side card keeps the same counts, as the board draws it.
+    expect(html.match(/Cards by bloom/g)).toHaveLength(2);
+    expect(html).toContain('data-achievement-summary');
+  });
+
+  it('leaves the classic board without the Crystal tabs', () => {
+    const html = render(learnerFrom(), 'classic');
+    expect(html).not.toContain('role="tablist"');
+    expect(html).not.toContain('ach-panel-cards');
   });
 });

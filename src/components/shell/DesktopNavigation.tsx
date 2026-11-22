@@ -35,6 +35,8 @@ export interface DesktopNavigationProps {
   onOpenProgress: () => void;
   /** Starts today's study for the active course from the courses surface; its start button shows only when given. */
   onStudyActiveCourse?: () => void;
+  /** Opens the courses page from the course switcher's "Manage courses". */
+  onOpenCourses?: () => void;
   /** Opens settings on a section; the theme, language and account menus link to their own section. */
   onOpenSettings?: (section: SettingsSectionId) => void;
   onSignIn: () => void | Promise<void>;
@@ -56,7 +58,7 @@ function StreakFlame() {
   return <svg className="claude-streak-flame" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z" /></svg>;
 }
 
-export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, isRetryingSync, canSyncNow, sessionLost, libraryCountLabel, streak, level, xp, equippedFrameId, ownedTitleIds, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onStudyActiveCourse, onOpenSettings, onSignIn, onSignOut, onRetrySync, onExportLibrary, onClearLibrary, onOpenInsights }: DesktopNavigationProps) {
+export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncStatus, isExporting, isLibraryMutationPending, isRetryingSync, canSyncNow, sessionLost, libraryCountLabel, streak, level, xp, equippedFrameId, ownedTitleIds, onOpenLanding, onOpenToday, onOpenLibrary, onOpenCatalog, onOpenProgress, onStudyActiveCourse, onOpenCourses, onOpenSettings, onSignIn, onSignOut, onRetrySync, onExportLibrary, onClearLibrary, onOpenInsights }: DesktopNavigationProps) {
   const { _ } = useLingui();
   const { family } = useTheme();
   const status = localizeShellSyncStatus(getShellSyncStatus(syncStatus), _);
@@ -92,7 +94,7 @@ export function DesktopNavigation({ navigationRef, viewMode, syncIdentity, syncS
         <span className="claude-brand-classic" aria-hidden="true"><Trans {...msg({ context: 'shell.brand.mark', message: 'S' })} /></span><CrystalStar />
         <span className="claude-brand-name"><span>{family === 'crystal' ? 'SON' : 'Son'}</span><em>{family === 'crystal' ? 'FLASH' : 'Flash'}</em></span>
       </button>
-      <CourseSwitcherSlot signedIn={syncIdentity.status === 'authenticated'} onOpenLanguageSettings={openLanguageSettings} onStudyActiveCourse={onStudyActiveCourse} />
+      <CourseSwitcherSlot signedIn={syncIdentity.status === 'authenticated'} onOpenLanguageSettings={openLanguageSettings} onStudyActiveCourse={onStudyActiveCourse} onOpenCourses={onOpenCourses} />
       <div className="claude-nav-items hidden min-w-0 items-center lg:flex">{navigation.map(item => <button key={item.view} type="button" onClick={item.action} data-shell-active={activeView === item.view ? 'true' : undefined} aria-current={activeView === item.view ? 'page' : undefined} className="claude-nav-item"><span>{family === 'crystal' ? item.crystal : item.classic}</span></button>)}</div>
       <div data-gsap-header-actions className="claude-shell-actions ml-auto flex items-center">
         <ThemeMenu onOpenSettings={openAppearanceSettings} />

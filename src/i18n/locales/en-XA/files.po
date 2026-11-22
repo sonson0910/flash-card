@@ -14,32 +14,32 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:355
+#: src/features/files/FilesWorkspace.tsx:370
 msgid "files.check.another"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:338
+#: src/features/files/FilesWorkspace.tsx:353
 msgid "files.check.attention"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:354
+#: src/features/files/FilesWorkspace.tsx:369
 msgid "files.check.back"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:367
+#: src/features/files/FilesWorkspace.tsx:382
 msgid "files.check.continue"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:349
+#: src/features/files/FilesWorkspace.tsx:364
 msgid "files.check.footnote"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:336
+#: src/features/files/FilesWorkspace.tsx:351
 msgid "files.check.passed"
 msgstr ""
 
@@ -84,7 +84,7 @@ msgid "files.check.plan-row"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:337
+#: src/features/files/FilesWorkspace.tsx:352
 msgid "files.check.service"
 msgstr ""
 
@@ -104,7 +104,7 @@ msgid "files.check.size-chip"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:311
+#: src/features/files/FilesWorkspace.tsx:326
 msgid "files.check.size-empty"
 msgstr ""
 
@@ -134,7 +134,7 @@ msgid "files.check.size-row"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:317
+#: src/features/files/FilesWorkspace.tsx:332
 msgid "files.check.title"
 msgstr ""
 
@@ -179,37 +179,47 @@ msgid "files.check.type-row"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:337
+#: src/features/files/FilesWorkspace.tsx:352
 msgid "files.check.waiting"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:792
+#: src/features/files/FilesWorkspace.tsx:784
 msgid "files.delete.card-photos"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:818
+#: src/features/files/FilesWorkspace.tsx:781
+msgid "files.delete.card-photos-checking"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:782
+msgid "files.delete.card-photos-unknown"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:858
 msgid "files.delete.confirm"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:787
+#: src/features/files/FilesWorkspace.tsx:834
 msgid "files.delete.detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:797
+#: src/features/files/FilesWorkspace.tsx:837
 msgid "files.delete.failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:800
+#: src/features/files/FilesWorkspace.tsx:840
 msgid "files.delete.keep"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:785
+#: src/features/files/FilesWorkspace.tsx:832
 msgid "files.delete.title"
 msgstr ""
 
@@ -225,7 +235,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:111
-#: src/features/files/FilesWorkspace.tsx:603
+#: src/features/files/FilesWorkspace.tsx:618
 msgid "files.error.not-found"
 msgstr ""
 
@@ -280,22 +290,22 @@ msgid "files.kind.pdf"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:173
+#: src/features/files/FilesWorkspace.tsx:188
 msgid "files.page.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:174
+#: src/features/files/FilesWorkspace.tsx:189
 msgid "files.page.kicker-flow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:180
+#: src/features/files/FilesWorkspace.tsx:195
 msgid "files.page.lead"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:177
+#: src/features/files/FilesWorkspace.tsx:192
 msgid "files.page.title"
 msgstr ""
 
@@ -360,42 +370,42 @@ msgid "files.phase.validating"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:463
+#: src/features/files/FilesWorkspace.tsx:478
 msgid "files.quota.detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:468
+#: src/features/files/FilesWorkspace.tsx:483
 msgid "files.quota.detail-unknown"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:487
+#: src/features/files/FilesWorkspace.tsx:502
 msgid "files.quota.heading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:479
+#: src/features/files/FilesWorkspace.tsx:494
 msgid "files.quota.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:499
+#: src/features/files/FilesWorkspace.tsx:514
 msgid "files.quota.manage"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:477
+#: src/features/files/FilesWorkspace.tsx:492
 msgid "files.quota.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:474
+#: src/features/files/FilesWorkspace.tsx:489
 msgid "files.quota.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:495
+#: src/features/files/FilesWorkspace.tsx:510
 msgid "files.rejected.another"
 msgstr ""
 
@@ -410,12 +420,12 @@ msgid "files.rejected.expired"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:488
+#: src/features/files/FilesWorkspace.tsx:503
 msgid "files.rejected.heading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:479
+#: src/features/files/FilesWorkspace.tsx:494
 msgid "files.rejected.label"
 msgstr ""
 
@@ -430,7 +440,7 @@ msgid "files.rejected.rate-limited"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:500
+#: src/features/files/FilesWorkspace.tsx:515
 msgid "files.rejected.review"
 msgstr ""
 
@@ -445,12 +455,12 @@ msgid "files.rejected.size"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:478
+#: src/features/files/FilesWorkspace.tsx:493
 msgid "files.rejected.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:475
+#: src/features/files/FilesWorkspace.tsx:490
 msgid "files.rejected.title"
 msgstr ""
 
@@ -460,184 +470,184 @@ msgid "files.rejected.type"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:654
+#: src/features/files/FilesWorkspace.tsx:669
 msgid "files.result.another"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:650
+#: src/features/files/FilesWorkspace.tsx:665
 msgid "files.result.attach"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:588
+#: src/features/files/FilesWorkspace.tsx:603
 msgid "files.result.attach-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:640
+#: src/features/files/FilesWorkspace.tsx:655
 msgid "files.result.attach-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:634
+#: src/features/files/FilesWorkspace.tsx:649
 msgid "files.result.attach-to"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:584
+#: src/features/files/FilesWorkspace.tsx:599
 msgid "files.result.attached"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:567
+#: src/features/files/FilesWorkspace.tsx:582
 msgid "files.result.complete"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:585
+#: src/features/files/FilesWorkspace.tsx:600
 msgid "files.result.detached"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:636
+#: src/features/files/FilesWorkspace.tsx:651
 msgid "files.result.no-course"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:646
+#: src/features/files/FilesWorkspace.tsx:661
 msgid "files.result.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:604
+#: src/features/files/FilesWorkspace.tsx:619
 msgid "files.result.open-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:559
+#: src/features/files/FilesWorkspace.tsx:574
 msgid "files.result.partial"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:561
+#: src/features/files/FilesWorkspace.tsx:576
 msgid "files.result.partial-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:562
+#: src/features/files/FilesWorkspace.tsx:577
 msgid "files.result.partial-status"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:560
+#: src/features/files/FilesWorkspace.tsx:575
 msgid "files.result.partial-subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:568
+#: src/features/files/FilesWorkspace.tsx:583
 msgid "files.result.partial-value"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:566
-#: src/features/files/FilesWorkspace.tsx:570
+#: src/features/files/FilesWorkspace.tsx:581
+#: src/features/files/FilesWorkspace.tsx:585
 msgid "files.result.pending"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:547
+#: src/features/files/FilesWorkspace.tsx:562
 msgid "files.result.processing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:549
+#: src/features/files/FilesWorkspace.tsx:564
 msgid "files.result.processing-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:550
+#: src/features/files/FilesWorkspace.tsx:565
 msgid "files.result.processing-status"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:548
+#: src/features/files/FilesWorkspace.tsx:563
 msgid "files.result.processing-subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:553
+#: src/features/files/FilesWorkspace.tsx:568
 msgid "files.result.ready"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:555
+#: src/features/files/FilesWorkspace.tsx:570
 msgid "files.result.ready-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:556
+#: src/features/files/FilesWorkspace.tsx:571
 msgid "files.result.ready-status"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:554
+#: src/features/files/FilesWorkspace.tsx:569
 msgid "files.result.ready-subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:570
+#: src/features/files/FilesWorkspace.tsx:585
 msgid "files.result.record"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:572
+#: src/features/files/FilesWorkspace.tsx:587
 msgid "files.result.size"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:570
+#: src/features/files/FilesWorkspace.tsx:585
 msgid "files.result.stored"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:571
+#: src/features/files/FilesWorkspace.tsx:586
 msgid "files.result.verification"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:281
+#: src/features/files/FilesWorkspace.tsx:296
 msgid "files.select.browse"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:276
+#: src/features/files/FilesWorkspace.tsx:291
 msgid "files.select.drop-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:275
+#: src/features/files/FilesWorkspace.tsx:290
 msgid "files.select.drop-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:278
-#: src/features/files/FilesWorkspace.tsx:331
+#: src/features/files/FilesWorkspace.tsx:293
+#: src/features/files/FilesWorkspace.tsx:346
 msgid "files.select.image-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:162
+#: src/features/files/FilesWorkspace.tsx:177
 msgid "files.select.input"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:265
+#: src/features/files/FilesWorkspace.tsx:280
 msgid "files.select.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:264
+#: src/features/files/FilesWorkspace.tsx:279
 msgid "files.select.title"
 msgstr ""
 
@@ -682,77 +692,77 @@ msgid "files.settings.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:719
+#: src/features/files/FilesWorkspace.tsx:734
 msgid "files.shelf.all-courses"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:690
+#: src/features/files/FilesWorkspace.tsx:705
 msgid "files.shelf.count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:736
+#: src/features/files/FilesWorkspace.tsx:751
 msgid "files.shelf.delete"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:710
+#: src/features/files/FilesWorkspace.tsx:725
 msgid "files.shelf.empty-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:709
+#: src/features/files/FilesWorkspace.tsx:724
 msgid "files.shelf.empty-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:699
+#: src/features/files/FilesWorkspace.tsx:714
 msgid "files.shelf.error-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:698
+#: src/features/files/FilesWorkspace.tsx:713
 msgid "files.shelf.error-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:718
+#: src/features/files/FilesWorkspace.tsx:733
 msgid "files.shelf.files"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:685
+#: src/features/files/FilesWorkspace.tsx:700
 msgid "files.shelf.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:705
+#: src/features/files/FilesWorkspace.tsx:720
 msgid "files.shelf.loading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:748
+#: src/features/files/FilesWorkspace.tsx:763
 msgid "files.shelf.manage"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:679
+#: src/features/files/FilesWorkspace.tsx:694
 msgid "files.shelf.no-course"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:701
+#: src/features/files/FilesWorkspace.tsx:716
 msgid "files.shelf.retry"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:686
+#: src/features/files/FilesWorkspace.tsx:701
 msgid "files.shelf.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:712
+#: src/features/files/FilesWorkspace.tsx:727
 msgid "files.shelf.upload"
 msgstr ""
 
@@ -777,123 +787,123 @@ msgid "files.status.uploading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:446
+#: src/features/files/FilesWorkspace.tsx:461
 msgid "files.transfer.cancel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:387
+#: src/features/files/FilesWorkspace.tsx:402
 msgid "files.transfer.canceled"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:391
+#: src/features/files/FilesWorkspace.tsx:406
 msgid "files.transfer.canceled-helper"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:388
+#: src/features/files/FilesWorkspace.tsx:403
 msgid "files.transfer.canceled-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:390
+#: src/features/files/FilesWorkspace.tsx:405
 msgid "files.transfer.canceled-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:389
+#: src/features/files/FilesWorkspace.tsx:404
 msgid "files.transfer.canceled-status"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:401
+#: src/features/files/FilesWorkspace.tsx:416
 msgid "files.transfer.incomplete"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:402
+#: src/features/files/FilesWorkspace.tsx:417
 msgid "files.transfer.incomplete-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:404
+#: src/features/files/FilesWorkspace.tsx:419
 msgid "files.transfer.incomplete-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:403
+#: src/features/files/FilesWorkspace.tsx:418
 msgid "files.transfer.incomplete-status"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:398
-#: src/features/files/FilesWorkspace.tsx:405
+#: src/features/files/FilesWorkspace.tsx:413
+#: src/features/files/FilesWorkspace.tsx:420
 msgid "files.transfer.kept-helper"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:429
+#: src/features/files/FilesWorkspace.tsx:444
 msgid "files.transfer.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:526
+#: src/features/files/FilesWorkspace.tsx:541
 msgid "files.transfer.resized"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:394
+#: src/features/files/FilesWorkspace.tsx:409
 msgid "files.transfer.retry"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:450
+#: src/features/files/FilesWorkspace.tsx:465
 msgid "files.transfer.retry-action"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:395
+#: src/features/files/FilesWorkspace.tsx:410
 msgid "files.transfer.retry-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:397
+#: src/features/files/FilesWorkspace.tsx:412
 msgid "files.transfer.retry-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:396
+#: src/features/files/FilesWorkspace.tsx:411
 msgid "files.transfer.retry-status"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:409
+#: src/features/files/FilesWorkspace.tsx:424
 msgid "files.transfer.sizes"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:380
+#: src/features/files/FilesWorkspace.tsx:395
 msgid "files.transfer.uploading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:384
+#: src/features/files/FilesWorkspace.tsx:399
 msgid "files.transfer.uploading-helper"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:381
+#: src/features/files/FilesWorkspace.tsx:396
 msgid "files.transfer.uploading-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:383
+#: src/features/files/FilesWorkspace.tsx:398
 msgid "files.transfer.uploading-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:382
+#: src/features/files/FilesWorkspace.tsx:397
 msgid "files.transfer.uploading-status"
 msgstr ""
 

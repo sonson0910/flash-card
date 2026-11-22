@@ -23,7 +23,7 @@ msgctxt "settings.reminders.page-title"
 msgid "A nudge, <0>not a nag.</0>"
 msgstr "A nudge, <0>not a nag.</0>"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:210
+#: src/features/reminders/ReminderSettingsSection.tsx:216
 msgctxt "settings.reminders.badge.read-only"
 msgid "Read only"
 msgstr "Read only"
@@ -48,7 +48,7 @@ msgctxt "settings.course.pace.description"
 msgid "New words introduced each day"
 msgstr "New words introduced each day"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:157
+#: src/features/reminders/ReminderSettingsSection.tsx:163
 msgctxt "settings.reminders.daily"
 msgid "Daily reminder"
 msgstr "Daily reminder"
@@ -58,7 +58,7 @@ msgctxt "settings.theme.midnight.description"
 msgid "A deep, calm night palette."
 msgstr "A deep, calm night palette."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:219
+#: src/features/reminders/ReminderSettingsSection.tsx:225
 msgctxt "settings.reminders.skip"
 msgid "Skip for now"
 msgstr "Skip for now"
@@ -73,22 +73,22 @@ msgctxt "settings.menu.reminders"
 msgid "Reminders"
 msgstr "Reminders"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:253
+#: src/features/reminders/ReminderSettingsSection.tsx:259
 msgctxt "settings.reminders.preview.body"
 msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
 msgstr "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:181
+#: src/features/reminders/ReminderSettingsSection.tsx:187
 msgctxt "settings.reminders.only-if-not-studied.description"
 msgid "Remind me only if I haven’t studied yet today"
 msgstr "Remind me only if I haven’t studied yet today"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:211
+#: src/features/reminders/ReminderSettingsSection.tsx:217
 msgctxt "settings.reminders.badge.title"
 msgid "Extension badge"
 msgstr "Extension badge"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:181
+#: src/features/reminders/ReminderSettingsSection.tsx:187
 msgctxt "settings.reminders.smart"
 msgid "Smart reminder"
 msgstr "Smart reminder"
@@ -118,12 +118,12 @@ msgctxt "settings.reminders.description"
 msgid "We remind you once a day, only when cards are waiting."
 msgstr "We remind you once a day, only when cards are waiting."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:212
+#: src/features/reminders/ReminderSettingsSection.tsx:218
 msgctxt "settings.reminders.badge.description"
 msgid "Due count on the SonFlash icon"
 msgstr "Due count on the SonFlash icon"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:271
+#: src/features/reminders/ReminderSettingsSection.tsx:277
 msgctxt "settings.reminders.lumi.text"
 msgid "I only call you once a day, when cards are due."
 msgstr "I only call you once a day, when cards are due."
@@ -138,17 +138,17 @@ msgctxt "settings.theme.label"
 msgid "Theme"
 msgstr "Theme"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:250
+#: src/features/reminders/ReminderSettingsSection.tsx:256
 msgctxt "settings.reminders.preview.body-unknown"
 msgid "Your due cards are ready for review."
 msgstr "Your due cards are ready for review."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:229
+#: src/features/reminders/ReminderSettingsSection.tsx:235
 msgctxt "settings.reminders.unavailable"
 msgid "Reminders are unavailable right now. Try again later."
 msgstr "Reminders are unavailable right now. Try again later."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:171
+#: src/features/reminders/ReminderSettingsSection.tsx:177
 msgctxt "settings.reminders.days"
 msgid "Review days"
 msgstr "Review days"
@@ -183,7 +183,7 @@ msgctxt "settings.course.ui-language.scope"
 msgid "Menus, buttons, emails and notifications"
 msgstr "Menus, buttons, emails and notifications"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:245
+#: src/features/reminders/ReminderSettingsSection.tsx:251
 msgctxt "settings.reminders.preview.title"
 msgid "Live preview"
 msgstr "Live preview"
@@ -208,17 +208,17 @@ msgctxt "settings.focus-mode.description"
 msgid "Hide combo banners while studying."
 msgstr "Hide combo banners while studying."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:256
+#: src/features/reminders/ReminderSettingsSection.tsx:262
 msgctxt "settings.reminders.preview.mail-subject"
 msgid "Your SonFlash weekly recap"
 msgstr "Your SonFlash weekly recap"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:220
+#: src/features/reminders/ReminderSettingsSection.tsx:226
 msgctxt "settings.reminders.saved"
 msgid "Reminder settings saved."
 msgstr "Reminder settings saved."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:260
+#: src/features/reminders/ReminderSettingsSection.tsx:266
 msgctxt "settings.reminders.preview.mail-unknown"
 msgid "cards ready for review"
 msgstr "cards ready for review"
@@ -233,7 +233,7 @@ msgctxt "settings.files.description"
 msgid "Your uploads and the storage they use."
 msgstr "Your uploads and the storage they use."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:162
+#: src/features/reminders/ReminderSettingsSection.tsx:168
 msgctxt "settings.reminders.timezone"
 msgid "Time zone"
 msgstr "Time zone"
@@ -248,7 +248,7 @@ msgctxt "settings.data.eyebrow"
 msgid "Your account data"
 msgstr "Your account data"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:166
+#: src/features/reminders/ReminderSettingsSection.tsx:172
 msgctxt "settings.reminders.timezone.use-device"
 msgid "Use this device’s time zone"
 msgstr "Use this device’s time zone"
@@ -258,22 +258,22 @@ msgctxt "settings.voice.unavailable"
 msgid "Saved voice unavailable · Automatic"
 msgstr "Saved voice unavailable · Automatic"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:187
+#: src/features/reminders/ReminderSettingsSection.tsx:193
 msgctxt "settings.reminders.quiet.description"
 msgid "Nothing is sent at night, even if cards are due"
 msgstr "Nothing is sent at night, even if cards are due"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:267
+#: src/features/reminders/ReminderSettingsSection.tsx:273
 msgctxt "settings.reminders.preview.badge"
 msgid "Extension badge shows cards due, right in your toolbar."
 msgstr "Extension badge shows cards due, right in your toolbar."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:258
+#: src/features/reminders/ReminderSettingsSection.tsx:264
 msgctxt "settings.reminders.preview.mail-eyebrow"
 msgid "Weekly recap"
 msgstr "Weekly recap"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:205
+#: src/features/reminders/ReminderSettingsSection.tsx:211
 msgctxt "settings.reminders.email.title"
 msgid "Weekly digest"
 msgstr "Weekly digest"
@@ -283,17 +283,17 @@ msgctxt "settings.lumi.label"
 msgid "Lumi"
 msgstr "Lumi"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:207
+#: src/features/reminders/ReminderSettingsSection.tsx:213
 msgctxt "settings.reminders.email-unavailable"
 msgid "Weekly email delivery is not available yet. You can turn off an existing recap, but new recaps cannot be enabled."
 msgstr "Weekly email delivery is not available yet. You can turn off an existing recap, but new recaps cannot be enabled."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:271
+#: src/features/reminders/ReminderSettingsSection.tsx:277
 msgctxt "settings.reminders.lumi.tag"
 msgid "Lumi · Link"
 msgstr "Lumi · Link"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:193
+#: src/features/reminders/ReminderSettingsSection.tsx:199
 msgctxt "settings.reminders.channels"
 msgid "Channels"
 msgstr "Channels"
@@ -313,7 +313,7 @@ msgctxt "settings.haptics.label"
 msgid "Haptics"
 msgstr "Haptics"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:227
+#: src/features/reminders/ReminderSettingsSection.tsx:233
 msgctxt "settings.reminders.loading"
 msgid "Loading reminders…"
 msgstr "Loading reminders…"
@@ -338,7 +338,7 @@ msgctxt "settings.course.pace.error"
 msgid "Daily pace could not be saved. Please try again."
 msgstr "Daily pace could not be saved. Please try again."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:197
+#: src/features/reminders/ReminderSettingsSection.tsx:203
 msgctxt "settings.reminders.push"
 msgid "Browser push"
 msgstr "Browser push"
@@ -368,7 +368,7 @@ msgctxt "settings.lumi.description"
 msgid "Show your Crystal Star study companion."
 msgstr "Show your Crystal Star study companion."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:256
+#: src/features/reminders/ReminderSettingsSection.tsx:262
 msgctxt "settings.reminders.preview.mail-day"
 msgid "Sun"
 msgstr "Sun"
@@ -378,7 +378,7 @@ msgctxt "settings.course.script"
 msgid "Chinese script"
 msgstr "Chinese script"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:198
+#: src/features/reminders/ReminderSettingsSection.tsx:204
 msgctxt "settings.reminders.push.description"
 msgid "One notification with the due count"
 msgstr "One notification with the due count"
@@ -398,7 +398,7 @@ msgctxt "settings.appearance.title"
 msgid "Appearance"
 msgstr "Appearance"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:225
+#: src/features/reminders/ReminderSettingsSection.tsx:231
 msgctxt "settings.reminders.sign-in"
 msgid "Sign in to set reminders."
 msgstr "Sign in to set reminders."
@@ -408,7 +408,7 @@ msgctxt "settings.kicker"
 msgid "Settings"
 msgstr "Settings"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:252
+#: src/features/reminders/ReminderSettingsSection.tsx:258
 msgctxt "settings.reminders.preview.body-none"
 msgid "Nothing is due right now, so no reminder is sent."
 msgstr "Nothing is due right now, so no reminder is sent."
@@ -428,7 +428,7 @@ msgctxt "settings.reduced-motion.label"
 msgid "Reduced motion"
 msgstr "Reduced motion"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:218
+#: src/features/reminders/ReminderSettingsSection.tsx:224
 msgctxt "settings.reminders.save"
 msgid "Save reminders"
 msgstr "Save reminders"
@@ -453,17 +453,17 @@ msgctxt "settings.menu.files"
 msgid "Storage & files"
 msgstr "Storage & files"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:229
+#: src/features/reminders/ReminderSettingsSection.tsx:235
 msgctxt "common.retry"
 msgid "Retry"
 msgstr "Retry"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:206
+#: src/features/reminders/ReminderSettingsSection.tsx:212
 msgctxt "settings.reminders.email.description"
 msgid "Sunday email with your recap"
 msgstr "Sunday email with your recap"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:263
+#: src/features/reminders/ReminderSettingsSection.tsx:269
 msgctxt "settings.reminders.preview.mail-link"
 msgid "Continue on SonFlash →"
 msgstr "Continue on SonFlash →"
@@ -473,7 +473,7 @@ msgctxt "settings.course.add.title"
 msgid "Start another language"
 msgstr "Start another language"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:186
+#: src/features/reminders/ReminderSettingsSection.tsx:192
 msgctxt "settings.reminders.quiet"
 msgid "Quiet hours"
 msgstr "Quiet hours"
@@ -483,12 +483,12 @@ msgctxt "settings.course.pace"
 msgid "Daily pace"
 msgstr "Daily pace"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:178
+#: src/features/reminders/ReminderSettingsSection.tsx:184
 msgctxt "settings.reminders.days.count"
 msgid "{count, plural, one {# day a week} other {# days a week}}"
 msgstr "{count, plural, one {# day a week} other {# days a week}}"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:167
+#: src/features/reminders/ReminderSettingsSection.tsx:173
 msgctxt "settings.reminders.timezone.note"
 msgid "Reminders follow this clock."
 msgstr "Reminders follow this clock."
@@ -535,32 +535,32 @@ msgid "settings.menu.label"
 msgstr "Settings sections"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:244
+#: src/features/reminders/ReminderSettingsSection.tsx:250
 msgid "settings.reminders.preview.label"
 msgstr "Live preview"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:186
+#: src/features/reminders/ReminderSettingsSection.tsx:192
 msgid "settings.reminders.quiet-end.label"
 msgstr "Until"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:186
+#: src/features/reminders/ReminderSettingsSection.tsx:192
 msgid "settings.reminders.quiet-start.label"
 msgstr "From"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:189
+#: src/features/reminders/ReminderSettingsSection.tsx:195
 msgid "settings.reminders.quiet.label"
 msgstr "Quiet hours"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:158
+#: src/features/reminders/ReminderSettingsSection.tsx:164
 msgid "settings.reminders.time.label"
 msgstr "Send at"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:151
+#: src/features/reminders/ReminderSettingsSection.tsx:157
 msgid "settings.reminders.title"
 msgstr "Study reminders"
 
@@ -629,7 +629,7 @@ msgctxt "settings.course.list.title"
 msgid "Your courses · {count}"
 msgstr "Your courses · {count}"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:200
+#: src/features/reminders/ReminderSettingsSection.tsx:206
 msgctxt "settings.reminders.push-denied"
 msgid "Browser notifications are blocked. Allow them in your browser settings to turn on push."
 msgstr "Browser notifications are blocked. Allow them in your browser settings to turn on push."
@@ -644,7 +644,7 @@ msgctxt "settings.follow-system.description"
 msgid "Match your device’s light or dark setting."
 msgstr "Match your device’s light or dark setting."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:201
+#: src/features/reminders/ReminderSettingsSection.tsx:207
 msgctxt "settings.reminders.push-unavailable"
 msgid "Push needs a supported browser and configured web push key."
 msgstr "Push needs a supported browser and configured web push key."
@@ -659,7 +659,7 @@ msgctxt "settings.data.row.title"
 msgid "Export or delete"
 msgstr "Export or delete"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:261
+#: src/features/reminders/ReminderSettingsSection.tsx:267
 msgctxt "settings.reminders.preview.mail-count"
 msgid "{count, plural, one {card ready for review} other {cards ready for review}}"
 msgstr "{count, plural, one {card ready for review} other {cards ready for review}}"

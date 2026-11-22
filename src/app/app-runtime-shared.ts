@@ -184,7 +184,7 @@ export const fileCourseOptions = (courses: readonly Course[], translate: I18n['_
 
 /** Views that render their own `<h1>` (and take the heading focus) skip the shell's screen-reader heading. */
 export const shouldShowViewHeading = (viewMode: string): boolean =>
-  !['catalog', 'today', 'progress', 'settings', 'web-words', 'files'].includes(viewMode);
+  !['catalog', 'today', 'progress', 'settings', 'web-words', 'files', 'courses'].includes(viewMode);
 
 export const desktopNavigationActions = <T, S>(setViewMode: (view: T) => void, openSettings: (section: S) => void) => ({
   onOpenLanding: () => setViewMode('landing' as T),
@@ -195,12 +195,15 @@ export const desktopNavigationActions = <T, S>(setViewMode: (view: T) => void, o
   onOpenSettings: openSettings,
   /** The course switcher's "Start lesson" goes to the day's session for the active course. */
   onStudyActiveCourse: () => setViewMode('today' as T),
+  /** The course switcher's "Manage courses" opens the courses page. */
+  onOpenCourses: () => setViewMode('courses' as T),
 });
 
 export const viewStageNavigationActions = <T>(setViewMode: (view: T) => void) => ({
   openVocabulary: () => setViewMode('library' as T),
   openPaths: () => setViewMode('catalog' as T),
   openFiles: () => setViewMode('files' as T),
+  openToday: () => setViewMode('today' as T),
 });
 
 export const practiceOverlayActions = <T extends {

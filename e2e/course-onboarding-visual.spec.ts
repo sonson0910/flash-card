@@ -192,8 +192,10 @@ for (const theme of themes) for (const viewport of viewports) {
     // Cards arrive after the switcher read its due counts; the courses surface counts them when it opens.
     await seedKoreanCards(db, testUser.uid);
     await courses.getByRole('button', { name: 'Manage courses' }).click();
-    const manage = page.getByRole('dialog', { name: theme.family === 'crystal' ? 'Pick your star' : 'Your languages' });
-    await expect(manage).toBeVisible();
+    // Manage courses opens the courses page, with its own URL and focused heading.
+    await expect(page).toHaveURL(/[?&]view=courses(&|$)/);
+    const manage = page.locator('[data-courses-page]');
+    await expect(page.getByRole('heading', { level: 1, name: theme.family === 'crystal' ? 'Pick your star' : 'Your languages' })).toBeFocused();
     await expect(manage).toContainText('My languages · 2 active · meanings in Tiếng Việt');
     const koreanCard = manage.locator('.course-card[data-course-language="ko"]');
     await expect(koreanCard.locator('.course-card__select')).toHaveAttribute('aria-current', 'true');
@@ -206,7 +208,8 @@ for (const theme of themes) for (const viewport of viewports) {
     const englishCard = manage.locator('.course-card[data-course-language="en"]');
     await expect(englishCard.locator('[data-stat="new"] .course-card__stat-value')).toHaveText('0');
     await expect(englishCard.locator('.course-card__bar')).toHaveCount(0);
-    for (const [scope, name] of [[manage, 'Close courses'], [koreanCard, 'Manage goals'], [koreanCard, 'Archive course']] as const) {
+    await expect(manage.getByRole('button', { name: 'Close courses' })).toHaveCount(0);
+    for (const [scope, name] of [[koreanCard, 'Manage goals'], [koreanCard, 'Archive course']] as const) {
       const box = await expectBox(scope.getByRole('button', { name, exact: true }), `${name} control`);
       expect(box.width, `${name} width meets the 44px touch target`).toBeGreaterThanOrEqual(44);
       expect(box.height, `${name} height meets the 44px touch target`).toBeGreaterThanOrEqual(44);
@@ -223,8 +226,8 @@ for (const theme of themes) for (const viewport of viewports) {
       expect(box.height, 'goal action height meets the 44px touch target').toBeGreaterThanOrEqual(44);
     }
     await expectScreen(page, testInfo, `course-goals-${theme.family}-${theme.mode}-${viewport.name}`);
-    await manage.getByRole('button', { name: 'Close courses' }).click();
-    await expect(manage).toHaveCount(0);
+    await manage.getByRole('button', { name: 'Back to courses' }).click();
+    await expect(koreanCard).toBeVisible();
 
     await page.goto('/?view=settings&locale=en');
     const settingsSections = page.getByRole('navigation', { name: 'Settings sections' });

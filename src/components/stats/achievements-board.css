@@ -506,7 +506,16 @@
 .ach-unlocked-count { margin: 0 0 0 auto; padding-bottom: 12px; font-weight: 800; font-size: 14px; color: var(--sf-text-muted); }
 .achievements-board--crystal .ach-unlocked-count + .ach-back { margin-left: 0; }
 .ach-main-body--titles { display: block; }
+.ach-main-body--cards { display: block; }
 .ach-main-body[hidden] { display: none; }
+/* The CARDS tab: the side card's tier counts at full width, with the total and each tier's share */
+.ach-bloom-card--wide { padding: 24px 28px; }
+.ach-bloom-card--wide .ach-side-title { font-size: 15px; }
+.ach-cards-total { margin: 10px 0 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 30px; line-height: 1.1; color: var(--st-title); }
+.ach-bloom-card--wide .ach-bloom-list { margin-top: 18px; gap: 16px; }
+.ach-bloom-card--wide .ach-bloom-row { font-size: 15px; }
+.ach-bloom-card--wide .ach-bloom-track { height: 10px; }
+.ach-bloom-share { display: block; margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--st-text2); }
 
 /* Crystal profile card: the account avatar in the hexagon, the name, the title shown and the level */
 .ach-profile-avatar { position: relative; width: 88px; height: 96px; flex-shrink: 0; filter: drop-shadow(0 0 16px rgb(255 42 77 / .6)); }

@@ -144,87 +144,102 @@ msgid "achievements.badge.xp-500.condition"
 msgstr "Collect {target} XP."
 
 #. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:63
+msgid "achievements.cards"
+msgstr "Cards"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:70
+msgid "achievements.cards.share"
+msgstr "{percent}% of your cards"
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:69
+msgid "achievements.cards.total"
+msgstr "{count, plural, one {# card in total} other {# cards in total}}"
+
+#. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:62
 msgid "achievements.collection"
 msgstr "Collection"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:92
+#: src/components/stats/AchievementsMatrix.tsx:95
 msgid "achievements.earned-by"
 msgstr "Earned by {date}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:93
+#: src/components/stats/AchievementsMatrix.tsx:96
 msgid "achievements.earned-by.long"
 msgstr "Earned on or before {date}. The exact day was not recorded."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:91
+#: src/components/stats/AchievementsMatrix.tsx:94
 msgid "achievements.earned-on"
 msgstr "Earned {date}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:68
+#: src/components/stats/AchievementsMatrix.tsx:71
 msgid "achievements.heading.title"
 msgstr "{title}, <0>still climbing.</0>"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:88
+#: src/components/stats/AchievementsMatrix.tsx:91
 msgid "achievements.profile.level"
 msgstr "Lv {level} <0>· {xp} / {next} XP</0>"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:80
+#: src/components/stats/AchievementsMatrix.tsx:83
 msgid "achievements.remaining-answers"
 msgstr "{count, plural, one {# correct answer} other {# correct answers}}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:78
+#: src/components/stats/AchievementsMatrix.tsx:81
 msgid "achievements.remaining-cards"
 msgstr "{count, plural, one {# card} other {# cards}}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:79
+#: src/components/stats/AchievementsMatrix.tsx:82
 msgid "achievements.remaining-reviews"
 msgstr "{count, plural, one {# review} other {# reviews}}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:63
+#: src/components/stats/AchievementsMatrix.tsx:64
 msgid "achievements.tile.best-streak"
 msgstr "Best streak"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:94
+#: src/components/stats/AchievementsMatrix.tsx:97
 msgid "achievements.tile.best-streak.value"
 msgstr "{count} d"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:63
+#: src/components/stats/AchievementsMatrix.tsx:64
 msgid "achievements.tile.study-pace"
 msgstr "Study pace"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:95
+#: src/components/stats/AchievementsMatrix.tsx:98
 msgid "achievements.tile.study-pace.value"
 msgstr "{minutes}<0> min a day</0>"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:63
+#: src/components/stats/AchievementsMatrix.tsx:64
 msgid "achievements.tile.total-xp"
 msgstr "Total XP"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:97
+#: src/components/stats/AchievementsMatrix.tsx:100
 msgid "achievements.title.level-progress"
 msgstr "Lv {current} / {target}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:96
+#: src/components/stats/AchievementsMatrix.tsx:99
 msgid "achievements.title.reach-level"
 msgstr "Reach level {level}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:64
+#: src/components/stats/AchievementsMatrix.tsx:65
 msgid "achievements.title.shown"
 msgstr "Shown on your card"
 
@@ -244,7 +259,7 @@ msgid "achievements.titles"
 msgstr "Titles"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:83
+#: src/components/stats/AchievementsMatrix.tsx:86
 msgid "achievements.unlocked-count"
 msgstr "{earned} / {total} unlocked"
 
@@ -469,7 +484,7 @@ msgid "stats.date"
 msgstr "Date"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:71
+#: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.days"
 msgstr "days"
 
@@ -489,7 +504,7 @@ msgid "stats.earned"
 msgstr "Earned"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:82
+#: src/components/stats/AchievementsMatrix.tsx:85
 msgid "stats.earned-count"
 msgstr "{earned} of {total} earned"
 
@@ -549,22 +564,22 @@ msgid "stats.less"
 msgstr "Less"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:84
+#: src/components/stats/AchievementsMatrix.tsx:87
 msgid "stats.level"
 msgstr "Level"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:87
+#: src/components/stats/AchievementsMatrix.tsx:90
 msgid "stats.level-line"
 msgstr "Lv {level} · {xp} / {next} XP"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:85
+#: src/components/stats/AchievementsMatrix.tsx:88
 msgid "stats.level-meter"
 msgstr "<0>{xp}</0> / {next} XP to Level {level}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:86
+#: src/components/stats/AchievementsMatrix.tsx:89
 msgid "stats.level-sessions"
 msgstr "≈ {count, plural, one {# session} other {# sessions}}"
 
@@ -574,7 +589,7 @@ msgid "stats.library-breakdown"
 msgstr "Library breakdown"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:90
+#: src/components/stats/AchievementsMatrix.tsx:93
 msgid "stats.lumi-done"
 msgstr "Every badge is in bloom. Wonderful work!"
 
@@ -584,7 +599,7 @@ msgid "stats.lumi-link"
 msgstr "Lumi · Link"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:89
+#: src/components/stats/AchievementsMatrix.tsx:92
 msgid "stats.lumi-next"
 msgstr "{remaining} to go for <0>{badge}</0>."
 
@@ -620,7 +635,7 @@ msgid "stats.more"
 msgstr "More"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:69
+#: src/components/stats/AchievementsMatrix.tsx:72
 msgid "stats.next-badge-meter"
 msgstr "<0>{current}</0> / {target} {unit} toward {badge}"
 
@@ -686,17 +701,17 @@ msgid "stats.recall-rate-hint"
 msgstr "Share of reviews in this range not marked Again."
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:75
+#: src/components/stats/AchievementsMatrix.tsx:78
 msgid "stats.remaining-days"
 msgstr "{count, plural, one {# day} other {# days}}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:76
+#: src/components/stats/AchievementsMatrix.tsx:79
 msgid "stats.remaining-words"
 msgstr "{count, plural, one {# word} other {# words}}"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:77
+#: src/components/stats/AchievementsMatrix.tsx:80
 msgid "stats.remaining-xp"
 msgstr "{count} XP"
 
@@ -823,12 +838,12 @@ msgid "stats.value"
 msgstr "Value"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:67
+#: src/components/stats/AchievementsMatrix.tsx:68
 msgid "stats.word-garden-title"
 msgstr "Your word <0>garden</0>"
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:72
+#: src/components/stats/AchievementsMatrix.tsx:75
 msgid "stats.words"
 msgstr "words"
 

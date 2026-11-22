@@ -653,6 +653,21 @@ const parseStoryModelResponse = (text: string | undefined, words: readonly strin
   }
 };
 
+/**
+ * Ends a word stream that already delivered fields to the learner. The callable client drops the
+ * stream messages it has not handed out yet when it reads an error line, so fields sent just before
+ * the failure would be lost; a result line carrying the failure keeps them. Clients that do not
+ * stream never receive this packet: their failures are still thrown.
+ */
+const wordStreamFailure = (error: unknown) => {
+  if (error instanceof HttpsError) {
+    return { failure: { code: error.code, message: error.message, ...(error.details === undefined ? {} : { details: error.details }) } };
+  }
+  // The same log and public shape the callable wrapper gives an unexpected error.
+  console.error('Unhandled error', error);
+  return { failure: { code: 'internal' as const, message: 'INTERNAL' } };
+};
+
 const MAX_EXTRACT_SURFACE_LENGTH = 120;
 
 // The client highlights `surface` in the passage it sent, so the server keeps it
@@ -824,6 +839,9 @@ exact meaning selected above and disambiguating polysemous words. Do not request
         });
       }
       await sendWordError(error);
+      if (deliveryRecorded && request.acceptsStreaming && response && !response.signal?.aborted) {
+        return wordStreamFailure(error);
+      }
       throw error;
     }
   }

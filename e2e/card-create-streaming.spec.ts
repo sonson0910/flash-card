@@ -46,9 +46,15 @@ const progress = (operationId: string, fields: readonly StreamField[]) => [
 /** A stream that delivered some fields and then stays open without a result, as a slow model does. */
 const openStream = (operationId: string, fields: readonly StreamField[]) => sse(progress(operationId, fields));
 
+/**
+ * A stream that failed after some fields reached the learner. The server ends it with a result line
+ * carrying the failure, not an error line: the callable client drops queued messages when it reads
+ * an error line, and page.route delivers the whole body in one read, so the fields would be lost.
+ */
 const failedStream = (operationId: string, fields: readonly StreamField[]) => sse([
   ...progress(operationId, fields),
-  { error: { status: 'INTERNAL', message: 'The AI answer ended before the card was complete.' } },
+  { message: { operationId, stage: 'error', errorReason: 'internal' } },
+  { result: { failure: { code: 'internal', message: 'AI returned incomplete card data.' } } },
 ]);
 
 const completeStream = (operationId: string) => sse([
@@ -116,13 +122,7 @@ async function openCreator(page: Page, word = 'resilient') {
   return creator;
 }
 
-// The Firebase SDK errors its message stream as soon as it parses the error
-// line, and erroring a ReadableStream discards the messages still queued.
-// page.route delivers the whole body in one read, so the fields sent before
-// the failure never reach the dialog. A buffering proxy does the same in
-// production. This stays fixme until the client reads the stream lines
-// itself instead of through callable.stream.
-test.fixme('a first AI card streams field by field, stops part-way, and Try again repeats the same request', async ({ page, db, testUser, seedCards, seedCourseProfile, signIn, blockExternalNetwork }) => {
+test('a first AI card streams field by field, stops part-way, and Try again repeats the same request', async ({ page, db, testUser, seedCards, seedCourseProfile, signIn, blockExternalNetwork }) => {
   test.setTimeout(90_000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await seedCourseProfile({ targetLanguage: 'en', nativeLanguage: 'vi' });
@@ -139,7 +139,7 @@ test.fixme('a first AI card streams field by field, stops part-way, and Try agai
 
   // The stream broke after the meaning: the card stays, marked unchecked, and cannot be saved.
   await expect(creator.getByText('Generation stopped before the card was finished. The details shown were not checked.')).toBeVisible({ timeout: 20_000 });
-  await expect(creator.getByText('Not checked')).toBeVisible();
+  await expect(creator.getByText('Not checked', { exact: true })).toBeVisible();
   await expect(creator.getByRole('textbox', { name: 'Meaning' })).toHaveValue(wordInfo.translation);
   await expect(creator.getByRole('textbox', { name: 'Example sentence' })).toHaveValue('');
   const steps = creator.getByRole('list', { name: 'Progress' });

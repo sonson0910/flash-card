@@ -65,6 +65,26 @@ const attemptsExhaustedError = (error: unknown): ProtectedFunctionError | null =
   });
 };
 
+/**
+ * The last packet of a word stream that failed after some fields had already been sent. The server
+ * ends with it instead of an error line because the callable client drops stream messages it has
+ * not handed out yet when it reads an error line, which would lose fields that just arrived.
+ */
+type WordStreamFailure = { failure: { code?: unknown; message?: unknown; details?: unknown } };
+
+const callableResult = <T,>(payload: { result: T } | WordStreamFailure): T => {
+  if (!payload || typeof payload !== 'object' || !('failure' in payload)) return (payload as { result: T }).result;
+  const failure = payload.failure && typeof payload.failure === 'object' ? payload.failure : {};
+  const code = typeof failure.code === 'string' && failure.code ? failure.code : 'internal';
+  const message = typeof failure.message === 'string' && failure.message ? failure.message : 'INTERNAL';
+  // Shaped like the callable client's own error, so classification and automatic retries treat it the same way.
+  throw Object.assign(new Error(message), {
+    name: 'FirebaseError',
+    code: `functions/${code}`,
+    ...(failure.details === undefined ? {} : { details: failure.details }),
+  });
+};
+
 const callProductionAI = async <T,>(
   action: keyof typeof protectedOperationLabel, input: unknown, expectedOwnerId: string | null = auth?.currentUser?.uid ?? null,
   operationId?: string,
@@ -93,7 +113,7 @@ const callProductionAI = async <T,>(
     }
     const callable = httpsCallable<{
       action: string; input: unknown; expectedOwnerId: string; operationId?: string;
-    }, { result: T }>(functions, 'generateVocabulary');
+    }, { result: T } | WordStreamFailure>(functions, 'generateVocabulary');
     const request = { action, input, expectedOwnerId, ...(operationId ? { operationId } : {}) };
     try {
       if (onProgress && operationId) {
@@ -106,9 +126,9 @@ const callProductionAI = async <T,>(
             onProgress(chunk as WordGenerationProgress);
           }
         }
-        return (await data).result;
+        return callableResult(await data);
       }
-      return (await callable(request)).data.result;
+      return callableResult((await callable(request)).data);
     } catch (error) {
       throw attemptsExhaustedError(error) ?? error;
     }

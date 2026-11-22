@@ -4,7 +4,7 @@ import { I18nProvider } from '@lingui/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { FileLibraryState } from './fileLibrary';
 import type { FileListing, FileSummary } from './fileModel';
-import { FilesWorkspaceView } from './FilesWorkspace';
+import { CardPhotoCountNote, canShowOnCards, FilesWorkspaceView, type CardPhotoCount } from './FilesWorkspace';
 import { FileError } from './filePort';
 import { createMemoryFilePort } from './memoryFileAdapter';
 import { createUploadSession, type UploadState } from './uploadSession';
@@ -122,5 +122,29 @@ describe('FilesWorkspaceView', () => {
     const html = render({ phase: 'select', kind: null }, { status: 'error', listing: null, error: new FileError('network') });
     expect(html).toContain('My files could not load');
     expect(html).toContain('Retry list');
+  });
+});
+
+describe('the delete confirmation card photo line', () => {
+  const note = (state: CardPhotoCount) => renderToStaticMarkup(<I18nProvider i18n={i18n}><CardPhotoCountNote state={state} /></I18nProvider>);
+
+  it('looks the cards up only for a photo', () => {
+    expect(canShowOnCards(stored({ kind: 'image', contentType: 'image/webp' }))).toBe(true);
+    expect(canShowOnCards(stored({}))).toBe(false);
+    expect(canShowOnCards(stored({ kind: 'epub' }))).toBe(false);
+  });
+
+  it('says the cards are being checked, then the count, in a live region', () => {
+    expect(note({ status: 'checking' })).toBe('<span data-card-photo-count="checking" aria-live="polite"> Checking which cards show this photo…</span>');
+    expect(note({ status: 'counted', count: 1 })).toContain('> 1 card shows this photo; it will be removed from that card.</span>');
+    expect(note({ status: 'counted', count: 3 })).toContain('> 3 cards show this photo; it will be removed from those cards.</span>');
+  });
+
+  it('says nothing when no card shows the photo', () => {
+    expect(note({ status: 'counted', count: 0 })).toBe('<span data-card-photo-count="counted" aria-live="polite"></span>');
+  });
+
+  it('says so when the cards could not be counted, and that deleting checks them first', () => {
+    expect(note({ status: 'unknown' })).toContain('The cards that show this photo could not be counted. Deleting checks them again and removes the photo from them first.');
   });
 });

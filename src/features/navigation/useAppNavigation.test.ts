@@ -41,6 +41,7 @@ import {
   createAppViewLocation,
   focusHeadingWithMotionPreference,
   readAppViewMode,
+  readCourseGoalsParam,
   readSettingsSectionParam,
   readWebWordsReturnView,
   resolveInitialDarkMode,
@@ -77,6 +78,7 @@ describe('useAppNavigation', () => {
       settings: 'Settings and appearance',
       'web-words': 'Words saved from the web',
       files: 'My files',
+      courses: 'Your courses',
       study: 'Study session',
       quiz: 'Vocabulary quiz',
       spelling: 'Spelling practice',
@@ -85,7 +87,7 @@ describe('useAppNavigation', () => {
       match: 'Word match',
       shadowing: 'Shadowing practice',
     });
-    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(15);
+    expect(new Set(Object.values(APP_VIEW_HEADINGS).map(heading => heading.id)).size).toBe(16);
 
     const navigation = render();
     expect(navigation.viewMode).toBe('landing');
@@ -195,6 +197,66 @@ describe('useAppNavigation', () => {
     moveInHistory(1);
     expect(render({ viewBrowser }).viewMode).toBe('files');
     expect(viewBrowser.pushState).toHaveBeenCalledTimes(1);
+  });
+
+  it('routes the courses page with an optional course goals link and drops it for other views', () => {
+    expect(readAppViewMode('/?view=courses')).toBe('courses');
+    expect(readAppViewMode('/vi/?view=courses&locale=vi')).toBe('courses');
+    expect(createAppViewLocation('/?view=today&lesson=session&locale=en', 'courses')).toBe('/?view=courses&locale=en');
+    expect(createAppViewLocation('/?view=today', 'courses', { goalsCourseId: 'course-en' })).toBe('/?view=courses&goals=course-en');
+    expect(createAppViewLocation('/?view=courses&goals=course-en', 'today')).toBe('/?view=today');
+    expect(createAppViewLocation('/?view=today', 'courses', { goalsCourseId: '../x' })).toBe('/?view=courses');
+    expect(readCourseGoalsParam('/?view=courses&goals=course-en')).toBe('course-en');
+    expect(readCourseGoalsParam('/?view=courses&goals=a%2Fb')).toBeNull();
+    expect(readCourseGoalsParam('/?view=today&goals=course-en')).toBeNull();
+    expect(readCourseGoalsParam('/?view=courses')).toBeNull();
+  });
+
+  it('opens the courses page, deep links a course\'s goals and walks back and forward through the browser', () => {
+    const history = ['/?view=courses'];
+    let index = 0;
+    let popState: (() => void) | null = null;
+    const viewBrowser = {
+      getCurrentUrl: () => `https://sonflash.invalid${history[index]}`,
+      pushState: vi.fn((location: string) => { history.splice(index + 1, Infinity, location); index += 1; }),
+      listenPopState: (listener: () => void) => { popState = listener; return () => { popState = null; }; },
+    };
+    const moveInHistory = (step: number) => { index += step; popState?.(); };
+
+    const deepLink = render({ viewBrowser });
+    expect(deepLink.viewMode).toBe('courses');
+    expect(deepLink.goalsCourseId).toBeNull();
+    hookRuntime.effects[0]();
+
+    deepLink.setViewMode('today');
+    expect(viewBrowser.pushState).toHaveBeenLastCalledWith('/?view=today');
+    const today = render({ viewBrowser });
+    expect(today.viewMode).toBe('today');
+    expect(today.viewFocusIntent).toBe(1);
+
+    today.openCourseGoals('course-en');
+    expect(viewBrowser.pushState).toHaveBeenLastCalledWith('/?view=courses&goals=course-en');
+    const goals = render({ viewBrowser });
+    expect(goals.viewMode).toBe('courses');
+    expect(goals.goalsCourseId).toBe('course-en');
+    expect(goals.viewFocusIntent).toBe(2);
+
+    moveInHistory(-1);
+    const back = render({ viewBrowser });
+    expect(back.viewMode).toBe('today');
+    expect(back.goalsCourseId).toBeNull();
+    expect(back.viewFocusIntent).toBe(3);
+
+    moveInHistory(-1);
+    const first = render({ viewBrowser });
+    expect(first.viewMode).toBe('courses');
+    expect(first.goalsCourseId).toBeNull();
+
+    moveInHistory(2);
+    const forward = render({ viewBrowser });
+    expect(forward.viewMode).toBe('courses');
+    expect(forward.goalsCourseId).toBe('course-en');
+    expect(viewBrowser.pushState).toHaveBeenCalledTimes(2);
   });
 
   it('defaults to dark mode and safely reads an explicit stored preference', () => {
