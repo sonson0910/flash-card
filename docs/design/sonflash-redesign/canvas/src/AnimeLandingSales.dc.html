@@ -6,9 +6,9 @@
   </sc-if>
 
   <section style="position: relative; z-index: 3; padding: 30px 72px 0; display: flex; align-items: center; gap: 40px;">
-    <div style="flex-grow: 1; max-width: 610px;">
+    <div style="flex-grow: 1; max-width: 680px;">
       <span style="display: inline-flex; height: 30px; padding: 0 14px; transform: skewX(-14deg); background: {{t.primaryBg}}; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.14em; color: #ffffff;">TRY IT — NO SIGN-UP</span></span>
-      <h2 style="margin: 14px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 50px; line-height: 1.02; color: {{t.textStrong}};">FLIP THIS CARD.<br><span style="background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 14px rgb(255 42 77 / 0.55));">THAT’S THE WHOLE TRICK.</span></h2>
+      <h2 style="margin: 16px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 54px; line-height: 1.04; color: {{t.textStrong}};">FLIP THIS CARD.<br><span style="white-space: nowrap; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 14px rgb(255 42 77 / 0.55));">THAT’S THE WHOLE TRICK.</span></h2>
       <p style="margin: 14px 0 0; max-width: 540px; font-size: 15.5px; line-height: 1.55; color: {{t.body}};">Click the card or press <span style="padding: 1px 8px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-family: {{t.fMono}}; font-size: 13px; color: {{t.textStrong}};">Space</span>. SonFlash decides when you’ll see it again, so every review lands just before you’d forget.</p>
       <div style="margin-top: 22px; display: flex; gap: 12px;">
         <sc-for list="{{proof}}" as="p" hint-placeholder-count="3">
@@ -35,7 +35,7 @@
             <div style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{t.tier.learning.rim}};"></div>
             <div style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; overflow: hidden; background: {{t.cardFront}}; display: flex; flex-direction: column; text-align: left;">
               <div style="position: relative; height: 150px; overflow: hidden; clip-path: polygon(0 0, 100% 0, 100% 82%, 0 100%);"><img src="../assets/blob/dc9678b28352d8aeb0fea95d3a58a38d.jpg" alt="Illustration for immediate" style="width: 100%; height: 100%; object-fit: cover; display: block;"></div>
-              <span style="position: absolute; left: 12px; top: 12px; height: 24px; padding: 0 9px; clip-path: {{t.chamferSm}}; background: {{t.tier.learning.rim}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #ffffff; text-shadow: 0 1px 0 #7a0820;">S</span>
+              <span style="position: absolute; left: 12px; top: 12px; height: 24px; padding: 0 9px; clip-path: {{t.chamferSm}}; background: {{t.tier.learning.rim}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.04em; color: #ffffff; text-shadow: 0 1px 0 #7a0820;">BLOOM</span>
               <div style="padding: 8px 18px 0;">
                 <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 11.5px; letter-spacing: 0.12em; color: {{t.crimsonText}};">ADJ // TIME</div>
                 <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 34px; line-height: 1.05; color: {{t.textStrong}};">Im<span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent;">me</span>diate</div>
@@ -58,12 +58,12 @@
   </section>
 
   <section style="position: relative; z-index: 3; margin-top: 22px; padding: 0 72px; display: grid; grid-template-columns: 1fr 470px; gap: 28px;">
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start;">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: stretch;">
       <sc-for list="{{quotes}}" as="q" hint-placeholder-count="3">
-        <figure class="{{q.cls}}" style="margin: 0; padding: 18px 20px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{q.edge}};">
-          <div style="display: flex; gap: 3px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="{{t.gold}}"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{t.gold}}"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{t.gold}}"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{t.gold}}"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{t.gold}}"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg></div>
-          <blockquote style="margin: 12px 0 0; font-size: 14.5px; line-height: 1.55; font-weight: 700; color: {{t.textStrong}};">{{q.text}}</blockquote>
-          <figcaption style="margin-top: 14px; display: flex; align-items: center; gap: 10px;">
+        <figure class="{{q.cls}}" style="margin: 0; padding: 22px 22px 20px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{q.edge}}; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="display: flex; gap: 3px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="{{starFill}}" stroke="{{starEdge}}" stroke-width="1.4" stroke-linejoin="round"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{starFill}}" stroke="{{starEdge}}" stroke-width="1.4" stroke-linejoin="round"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{starFill}}" stroke="{{starEdge}}" stroke-width="1.4" stroke-linejoin="round"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{starFill}}" stroke="{{starEdge}}" stroke-width="1.4" stroke-linejoin="round"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="{{starFill}}" stroke="{{starEdge}}" stroke-width="1.4" stroke-linejoin="round"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z"></path></svg></div>
+          <blockquote style="margin: 16px 0 0; font-size: 21px; line-height: 1.42; font-weight: 700; color: {{t.textStrong}};">{{q.text}}</blockquote>
+          <figcaption style="padding-top: 16px; display: flex; align-items: center; gap: 10px;">
             <span style="width: 34px; height: 38px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{q.bg}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 12.5px; color: #ffffff;">{{q.init}}</span>
             <span style="display: flex; flex-direction: column;"><span style="font-weight: 900; font-size: 13.5px; color: {{t.textStrong}};">{{q.name}}</span><span style="font-size: 12px; color: {{t.text2}};">{{q.role}}</span></span>
           </figcaption>
@@ -76,8 +76,8 @@
       <div style="position: relative; padding: 16px 22px 18px;">
         <div style="height: 30px; display: grid; grid-template-columns: 1fr 90px 100px; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.1em;">
           <span style="color: {{t.text2}};">FREE VS PRO</span>
-          <span style="text-align: center; color: {{t.holoText}};">A · FREE</span>
-          <span style="text-align: center; color: {{t.crimsonText}};">STAR · PRO</span>
+          <span style="text-align: center; color: {{t.holoText}};">FREE</span>
+          <span style="text-align: center; color: {{t.crimsonText}};">PRO</span>
         </div>
         <sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
           <div style="height: 32px; display: grid; grid-template-columns: 1fr 90px 100px; align-items: center; border-top: 1px solid {{t.line}}; font-size: 13.5px;">
@@ -93,7 +93,7 @@
   </section>
 
   <section style="position: relative; z-index: 3; margin-top: 22px; padding: 0 72px; display: grid; grid-template-columns: 170px repeat(3, minmax(0, 1fr)); gap: 24px;">
-    <h3 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1; color: {{t.textStrong}};">DAILY<br><span style="color: {{t.crimsonText}};">GOALS</span></h3>
+    <h3 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1; color: {{t.textStrong}};">QUICK<br><span style="color: {{t.crimsonText}};">ANSWERS</span></h3>
     <sc-for list="{{faq}}" as="f" hint-placeholder-count="3">
       <div style="padding-left: 14px; border-left: 3px solid {{f.line}};">
         <div style="font-weight: 900; font-size: 15px; color: {{t.textStrong}};">{{f.q}}</div>
@@ -132,6 +132,8 @@ class Component extends DCLogic {
     const edges = [t.panelEdge, t.panelEdge2, 'rgb(255 209 102 / 0.55)'];
     return {
       t, bg: { wings: false },
+      // Pale gold stars vanish on the Prism Day panel; light fills them with amber.
+      starFill: dark ? t.gold : t.easy, starEdge: dark ? 'none' : '#c98300',
       flipped: s.flipped ? 'true' : 'false', ry: s.flipped ? 180 : 0, flash: s.flash,
       wingCls: s.hover || s.flipped ? 'nk-unfold' : '', wingOpacity: s.hover || s.flipped ? 0.95 : t.wingOpacity * 0.5,
       hint: s.flipped ? 'Click to flip back' : 'Click to flip',
@@ -147,7 +149,7 @@ class Component extends DCLogic {
       quotes: Q.map(([text, name, role, init], i) => ({ text, name, role, init, bg: av[i], edge: edges[i], cls: ['nk-rise', 'nk-rise-2', 'nk-rise-3'][i] })),
       rows: [
         { label: 'Reviews & smart scheduling', free: '∞', pro: '∞' },
-        { label: 'AI word cards', free: '5 / day', pro: 'Unlimited' },
+        { label: 'AI word cards', free: '20 / day', pro: 'Unlimited' },
         { label: 'AI tutor & stories', free: '—', pro: '✓' },
         { label: 'Shadowing score', free: '—', pro: '✓' },
         { label: 'Streak freezes', free: 'Earned', pro: '+2 / mo' },

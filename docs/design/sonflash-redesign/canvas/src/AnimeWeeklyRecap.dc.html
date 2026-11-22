@@ -59,9 +59,9 @@
             <div style="margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
               <sc-for list="{{haul}}" as="g" hint-placeholder-count="3">
                 <div style="position: relative; height: 62px; clip-path: {{t.chamferSm}}; background: {{g.rim}}; padding: 2px; box-sizing: border-box;">
-                  <div style="height: 100%; clip-path: {{t.chamferSm}}; background: {{cc.tileSolid}}; display: flex; align-items: center; justify-content: space-between; padding: 0 12px;">
-                    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{g.color}};">{{g.grade}}</span>
-                    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{cc.ink}};">{{g.n}}</span>
+                  <div style="height: 100%; clip-path: {{t.chamferSm}}; background: {{cc.tileSolid}}; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 10px 0 12px;">
+                    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; color: {{g.color}};">{{g.grade}}</span>
+                    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 23px; color: {{cc.ink}};">{{g.n}}</span>
                   </div>
                 </div>
               </sc-for>
@@ -69,7 +69,7 @@
           </div>
 
           <div style="position: relative; margin-top: auto; padding-top: 14px; border-top: 1px solid {{cc.tileEdge}}; display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: {{cc.sub}};">
-            <span>Learn with <sc-if value="{{show.name}}" hint-placeholder-val="{{false}}"><strong style="color: {{cc.ink}};">Khánh</strong> </sc-if>on <strong style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; color: {{cc.ink}};">SON<span style="color: {{cc.accent}};">FLASH</span></strong></span>
+            <span>Learn <sc-if value="{{show.name}}" hint-placeholder-val="{{false}}">with <strong style="color: {{cc.ink}};">Khánh</strong> </sc-if>on <strong style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; color: {{cc.ink}};">SON<span style="color: {{cc.accent}};">FLASH</span></strong></span>
             <span style="font-family: {{t.fMono}}; font-size: 11.5px; color: {{cc.link}};">sonflash.app/i/khanh</span>
           </div>
         </div>
@@ -97,8 +97,8 @@
       </div>
 
       <h2 class="nk-rise-3" style="margin: 24px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.14em; color: {{t.holoText}};">CAPTION</h2>
-      <div class="nk-rise-3" style="margin-top: 10px; max-width: 620px; padding: 14px 18px 12px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; font-size: 15px; line-height: 1.5; color: {{t.textStrong}};">146 new words this week on SonFlash 🔥 12 days in a row. Học cùng mình không? sonflash.app/i/khanh
-        <div style="margin-top: 8px; display: flex; justify-content: space-between; font-size: 12.5px; color: {{t.text3}};"><span style="font-weight: 800; color: {{t.crimsonText}};">Edit caption</span><span style="font-family: {{t.fMono}};">96 / 220</span></div>
+      <div class="nk-rise-3" style="margin-top: 10px; max-width: 620px; padding: 14px 18px 12px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; font-size: 15px; line-height: 1.5; color: {{t.textStrong}};">146 new words this week on SonFlash 🔥 12 days in a row. Learn with me? sonflash.app/i/khanh
+        <div style="margin-top: 8px; display: flex; justify-content: space-between; font-size: 12.5px; color: {{t.text3}};"><span style="font-weight: 800; color: {{t.crimsonText}};">Edit caption</span><span style="font-family: {{t.fMono}};">91 / 220</span></div>
       </div>
 
       <div class="nk-rise-3" style="margin-top: 24px; display: flex; gap: 12px;">

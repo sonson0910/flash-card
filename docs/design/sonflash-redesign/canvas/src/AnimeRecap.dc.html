@@ -24,7 +24,7 @@
         <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-top: 18px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 66px; letter-spacing: -0.02em; background: linear-gradient(180deg, #ffffff 0%, #fff3c4 45%, #ffd166 55%, #ffffff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 #7a0820);">STAR</div>
       </div>
       <span aria-hidden="true" class="nk-flare" style="position: absolute; left: 50%; top: 20px; width: 360px; height: 200px; margin-left: -180px;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 3px; margin-top: -1.5px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span></span>
-      <h1 class="nk-pop-2" style="position: absolute; left: 0; right: 0; bottom: 0; margin: 0; text-align: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 92px; line-height: 1; letter-spacing: 0.02em; background: linear-gradient(180deg, #ffffff 0%, #ffe3ea 46%, #ff8fa3 54%, #ffffff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 5px 0 #7a0820) drop-shadow(0 0 26px rgb(255 42 77 / 0.85));">ALL DONE!</h1>
+      <h1 class="nk-pop-2" style="position: absolute; left: 0; right: 0; bottom: 0; margin: 0; text-align: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 92px; line-height: 1; letter-spacing: 0.02em; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 5px 0 #7a0820) drop-shadow(0 0 26px rgb(255 42 77 / 0.85));">ALL DONE!</h1>
     </div>
 
     <div style="margin-top: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; width: 100%;">
@@ -39,11 +39,11 @@
     </div>
 
     <div style="margin-top: 16px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; width: 100%;">
-      <div class="nk-rise-2" style="clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 16px 22px 18px;">
+      <div class="nk-rise-2" style="clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 16px 22px 18px; display: flex; flex-direction: column;">
         <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.crimsonText}};">CARDS GLOWED UP <span style="color: {{t.text3}};">// 3</span></div>
-        <div style="margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+        <div style="margin-top: 12px; flex-grow: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
           <sc-for list="{{ups}}" as="u" hint-placeholder-count="3">
-            <div style="position: relative; height: 92px; filter: {{u.glow}};">
+            <div style="position: relative; min-height: 92px; filter: {{u.glow}};">
               <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; overflow: hidden;"><div class="{{u.spin}}" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{u.rim}};"></div></div>
               <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{t.cardFront}}; padding: 10px 12px; box-sizing: border-box; display: flex; flex-direction: column;">
                 <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 20px; color: {{t.textStrong}};">{{u.word}}</div>
@@ -55,13 +55,12 @@
         </div>
       </div>
       <div class="nk-rise-3" style="clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 16px 22px 18px;">
-        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.holoText}};">IELTS BAND PROJECTION</div>
-        <div style="margin-top: 8px; display: flex; align-items: baseline; gap: 12px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 40px; color: {{t.text3}};">6.5</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{t.holoText}}" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 48px; color: {{t.textStrong}}; filter: drop-shadow(0 0 14px rgb(94 242 255 / 0.6));">7.0</span></div>
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.holoText}};">IELTS BAND GOAL</div>
+        <div style="margin-top: 8px; display: flex; align-items: baseline; gap: 12px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 40px; color: {{t.text3}};">{{ielts.latest}}</span><span style="margin-left: -6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; color: {{t.text3}};">LATEST</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{t.holoText}}" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 48px; color: {{t.textStrong}}; filter: drop-shadow(0 0 14px rgb(94 242 255 / 0.6));">{{ielts.target}}</span><span style="margin-left: -6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; color: {{t.holoText}};">TARGET</span></div>
         <div style="position: relative; margin-top: 8px; height: 12px; transform: skewX(-24deg); background: {{t.track}};">
-          <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 72%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(94 242 255 / 0.6);"></div>
-          <div style="position: absolute; left: 78%; top: -4px; bottom: -4px; width: 2px; background: {{t.textStrong}};"></div>
+          <div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{ielts.coverage}}%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(94 242 255 / 0.6);"></div>
         </div>
-        <div style="margin-top: 10px; font-size: 13px; line-height: 1.45; color: {{t.text2}};">~78% of a typical Reading passage is now in your deck. Target 7.0 in about 5 weeks at this pace.</div>
+        <div style="margin-top: 10px; font-size: 13px; line-height: 1.45; color: {{t.text2}};">~{{ielts.coverage}}% of a typical Reading passage is now in your deck.</div>
       </div>
     </div>
 
@@ -94,10 +93,12 @@ class Component extends DCLogic {
         { label: 'STUDY TIME', value: '11:40', sub: 'Under the 12 min plan', color: t.textStrong, edge: t.panelEdge2, bar: '#ffd166', cls: 'nk-slide-4' },
       ],
       ups: [
-        { word: 'Spelling', vi: 'Cách đánh vần', from: 'A', to: 'S', toColor: t.violetText, rim: t.tier.learning.rim, spin: '', glow: 'drop-shadow(0 0 14px rgb(155 107 255 / 0.55))' },
-        { word: 'Immediate', vi: 'Ngay lập tức', from: 'A', to: 'S', toColor: t.violetText, rim: t.tier.learning.rim, spin: '', glow: 'drop-shadow(0 0 14px rgb(155 107 255 / 0.55))' },
-        { word: 'Instant', vi: 'Khoảnh khắc', from: 'Bloom', to: 'Star', toColor: t.crimsonText, rim: t.tier.mastered.rim, spin: 'nk-rim-spin', glow: 'drop-shadow(0 0 18px rgb(255 42 77 / 0.8))' },
+        { word: 'Spelling', vi: 'Cách đánh vần', from: t.tier.new.grade, to: t.tier.learning.grade, toColor: t.violetText, rim: t.tier.learning.rim, spin: '', glow: 'drop-shadow(0 0 14px rgb(155 107 255 / 0.55))' },
+        { word: 'Immediate', vi: 'Ngay lập tức', from: t.tier.new.grade, to: t.tier.learning.grade, toColor: t.violetText, rim: t.tier.learning.rim, spin: '', glow: 'drop-shadow(0 0 14px rgb(155 107 255 / 0.55))' },
+        { word: 'Instant', vi: 'Khoảnh khắc', from: t.tier.learning.grade, to: t.tier.mastered.grade, toColor: t.crimsonText, rim: t.tier.mastered.rim, spin: 'nk-rim-spin', glow: 'drop-shadow(0 0 18px rgb(255 42 77 / 0.8))' },
       ],
+      // The goal shows the latest band and the target band only, never a forecast.
+      ielts: { latest: '6.5', target: '7.0', coverage: 78 },
       nexts: [
         { title: 'REVIEW MISSES', sub: '1 card · 1 min' },
         { title: 'BONUS STEP', sub: 'Story · 4 min' },

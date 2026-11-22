@@ -1,5 +1,5 @@
 <!--#AHEAD Crystal Star web words-->
-<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<div style="--nk-flare1: none; width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
 <!--#ABG-->
 <!--#ANAV-->
 
@@ -17,7 +17,7 @@
         <div style="position: relative; margin-bottom: 10px; width: 232px; box-sizing: border-box; padding: 8px 14px 9px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
           <span aria-hidden="true" style="position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
-          <div style="margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">Mình giữ cả câu gốc, để bạn nhớ ngữ cảnh.</div>
+          <div style="margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">I keep the whole sentence so you remember the context.</div>
         </div>
       </div>
     </div>
@@ -51,7 +51,7 @@
               </div>
               <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px;">
                 <p style="margin: 0; font-size: 14px; line-height: 1.5; color: {{t.body}};">“{{w.pre}}<mark style="padding: 0 4px; background: {{hl}}; color: {{t.textStrong}}; font-weight: 900; box-shadow: inset 0 -2px 0 {{hlLine}};">{{w.word}}</mark>{{w.post}}”</p>
-                <span style="height: 24px; padding: 0 10px 0 4px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}}; display: flex; align-items: center; gap: 7px;"><span style="height: 16px; padding: 0 5px; clip-path: {{t.chamferSm}}; background: {{w.rim}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 10px; color: #ffffff; display: flex; align-items: center;">{{w.grade}}</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.08em; color: {{w.sFg}};">{{w.status}}</span></span>
+                <span style="height: 24px; padding: 0 10px 0 4px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}}; display: flex; align-items: center; gap: 7px;"><span style="height: 16px; padding: 0 7px; clip-path: {{markClip}}; background: {{w.flat}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 10.5px; color: #ffffff; text-shadow: 0 1px 0 {{w.shadow}}; display: flex; align-items: center;">{{w.grade}}</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.08em; color: {{w.sFg}};">{{w.status}}</span></span>
               </div>
             </div>
           </sc-for>
@@ -71,14 +71,16 @@ class Component extends DCLogic {
 //#ATOKENS
     const dark = (this.props.theme ?? 'dark') === 'dark';
     const t = nkTokens(dark);
+    // Small tier marks need a flat fill: the spinning rims have white bands that swallow white text.
+    const flat = Object.fromEntries(['new', 'learning', 'mastered'].map((k) => [k, { bg: t.tier[k].flat, shadow: t.tier[k].flatShadow }]));
     const S = {
-      tomorrow: ['NEXT LESSON', 'Bud', t.tier.new.rim, t.holoText],
-      learning: ['LEARNING', 'S', t.tier.learning.rim, t.pinkText],
-      known: ['KNOWN', 'STAR', t.tier.mastered.rim, t.goldText],
+      tomorrow: ['NEXT LESSON', 'Bud', 'new', t.holoText],
+      learning: ['LEARNING', 'Bloom', 'learning', t.pinkText],
+      known: ['KNOWN', 'Star', 'mastered', t.goldText],
     };
     const word = ([a, b, c, vi, pre, w, post, s]) => {
-      const [status, grade, rim, sFg] = S[s];
-      return { a, b, c, vi, pre, word: w, post, status, grade, rim, sFg };
+      const [status, grade, tier, sFg] = S[s];
+      return { a, b, c, vi, pre, word: w, post, status, grade, sFg, rim: t.tier[tier].rim, flat: flat[tier].bg, shadow: flat[tier].shadow };
     };
     const G = [
       ['BBC', 'linear-gradient(180deg, #e0283a, #8a0010)', 'The flood that rewrote a city’s plans overnight', 'YESTERDAY', [
@@ -98,6 +100,7 @@ class Component extends DCLogic {
       t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
       nav: nkNav(t, 2), streak: 12,
       bg: { wings: false },
+      markClip: 'polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)',
       hl: dark ? 'rgb(94 242 255 / 0.18)' : 'rgb(94 242 255 / 0.35)',
       hlLine: dark ? '#5ef2ff' : '#0a8fb0',
       tabs: ['ALL 8', 'THIS WEEK', 'NOT IN A DECK', 'KNOWN'].map((label, i) => {

@@ -1,5 +1,5 @@
 <!--#AHEAD Crystal Star vocabulary-->
-<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<div style="--nk-flare1: none; width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
 <!--#ABG-->
 <!--#ANAV-->
 
@@ -11,27 +11,31 @@
         <p style="margin: 8px 0 0; font-size: 14px; color: {{t.text2}};"><span style="font-family: {{t.fMono}}; font-weight: 600; color: {{t.textStrong}};">1,228</span> words across 4 decks · <span style="font-weight: 900; color: {{t.crimsonText}};">12 due today</span></p>
       </div>
 
-      <div class="nk-rise-2" style="display: flex; align-items: flex-end; gap: 6px; margin-left: 18px;">
-        <div class="nk-float" style="width: 86px; height: 86px; flex-shrink: 0;">
+      <div class="nk-rise-2" style="margin-left: auto; display: flex; align-items: flex-end; gap: 8px;">
+        <div class="nk-float" style="width: 92px; height: 104px; flex-shrink: 0;">
 <!--#MASCOT hint-->
         </div>
-        <div style="position: relative; margin-bottom: 8px; width: 238px; box-sizing: border-box; padding: 9px 14px 10px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
-          <span aria-hidden="true" style="position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
-          <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
-          <div style="margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">2 thẻ Hoa sắp héo. Tưới (ôn) trước nhé!</div>
+        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px;">
+        <div style="position: relative; box-sizing: border-box; padding: 8px 18px 8px 16px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: baseline; gap: 10px; white-space: nowrap;">
+          <span aria-hidden="true" style="position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
+          <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</span>
+          <span style="font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">2 Bloom cards are wilting. Water them with a quick review!</span>
         </div>
-      </div>
+        <div style="display: flex; align-items: center; gap: 20px;">
 
-      <label class="nk-rise-2" style="margin-left: auto; position: relative; width: 320px; height: 48px; box-sizing: border-box; padding: 0 12px 0 16px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; gap: 10px; color: {{t.text2}};">
+      <label style="position: relative; width: 320px; height: 48px; box-sizing: border-box; padding: 0 12px 0 16px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; gap: 10px; color: {{t.text2}};">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
         <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Search words</span>
         <input placeholder="Search words or meanings" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.text}}; font-family: inherit; font-size: 14px; font-weight: 600;">
         <span style="height: 24px; padding: 0 8px; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}}; font-family: {{t.fMono}}; font-size: 11px; display: flex; align-items: center;">/</span>
       </label>
-      <button class="nk-lift nk-rise-2" style="position: relative; height: 48px; padding: 0 26px; border: 0; transform: skewX(-14deg); background: {{t.primaryBg}}; color: #ffffff; cursor: pointer; overflow: hidden; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.6));">
+      <button class="nk-lift" style="position: relative; height: 48px; padding: 0 26px; border: 0; transform: skewX(-14deg); background: {{t.primaryBg}}; color: #ffffff; cursor: pointer; overflow: hidden; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.6));">
         <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 40px; background: rgb(255 255 255 / 0.35);"></span>
         <span style="position: relative; display: flex; align-items: center; gap: 8px; transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; letter-spacing: 0.06em;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>CREATE CARD</span>
       </button>
+        </div>
+        </div>
+      </div>
     </div>
 
     <div class="nk-rise-2" style="margin-top: 18px; display: flex; align-items: center; gap: 18px; padding-bottom: 14px; border-bottom: 1px solid {{t.line}};">
@@ -42,7 +46,7 @@
       </div>
       <div style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
         <sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
-          <button aria-pressed="{{f.on}}" onClick="{{f.pick}}" style="height: 32px; padding: 0 12px; border: 0; clip-path: {{t.chamferSm}}; background: {{f.bg}}; box-shadow: {{f.edge}}; color: {{f.color}}; font-family: {{t.fBody}}; font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 7px; cursor: pointer;"><span style="height: 16px; min-width: 16px; padding: 0 4px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{f.chipBg}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 10px; color: #ffffff; display: flex; align-items: center; justify-content: center;">{{f.mark}}</span>{{f.label}}</button>
+          <button aria-pressed="{{f.on}}" onClick="{{f.pick}}" style="height: 32px; padding: 0 12px; border: 0; clip-path: {{t.chamferSm}}; background: {{f.bg}}; box-shadow: {{f.edge}}; color: {{f.color}}; font-family: {{t.fBody}}; font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 7px; cursor: pointer;"><span style="height: 18px; min-width: 18px; padding: 0 6px; box-sizing: border-box; clip-path: {{markClip}}; background: {{f.chipBg}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 11px; color: #ffffff; text-shadow: 0 1px 0 {{f.shadow}}; display: flex; align-items: center; justify-content: center;">{{f.mark}}</span>{{f.label}}</button>
         </sc-for>
         <span aria-hidden="true" style="width: 1px; height: 22px; margin: 0 6px; background: {{t.line}};"></span>
         <div role="group" aria-label="View" style="display: flex; gap: 3px;">
@@ -68,10 +72,12 @@
                 <div aria-hidden="true" style="position: absolute; right: 8px; bottom: -30px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 140px; line-height: 1; color: {{c.glyph}};">{{c.initial}}</div>
                 <div style="position: absolute; left: 14px; bottom: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: {{c.labelColor}};">{{c.category}}</div>
               </sc-if>
-              <span style="position: absolute; top: 10px; left: 10px; height: 22px; padding: 0 9px; clip-path: {{t.chamferSm}}; background: {{c.rimFlat}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #ffffff; text-shadow: 0 1px 0 #7a0820;">{{c.grade}}</span>
-              <sc-if value="{{c.due}}" hint-placeholder-val="{{false}}">
-                <span style="position: absolute; top: 10px; left: 50px; height: 22px; padding: 0 9px; transform: skewX(-14deg); background: {{t.primaryBg}}; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.1em; color: #ffffff;">DUE</span></span>
-              </sc-if>
+              <div style="position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 6px;">
+                <span style="height: 22px; padding: 0 11px; clip-path: {{markClip}}; background: {{c.rimFlat}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #ffffff; text-shadow: 0 1px 0 {{c.markShadow}};">{{c.grade}}</span>
+                <sc-if value="{{c.due}}" hint-placeholder-val="{{false}}">
+                  <span style="height: 22px; padding: 0 9px; transform: skewX(-14deg); background: {{t.primaryBg}}; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.1em; color: #ffffff;">DUE</span></span>
+                </sc-if>
+              </div>
               <sc-if value="{{c.starred}}" hint-placeholder-val="{{false}}">
                 <span aria-label="Starred" style="position: absolute; top: 8px; right: 10px; width: 26px; height: 26px; filter: drop-shadow(0 0 8px rgb(255 209 102 / 0.8));"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 1.5l3 7.1 7.7.6-5.9 5 1.8 7.5L12 17.7l-6.6 4 1.8-7.5-5.9-5 7.7-.6z" fill="#ffd166" stroke="#7a0820" stroke-width="0.8"></path></svg></span>
               </sc-if>
@@ -130,12 +136,14 @@ class Component extends DCLogic {
       { word: 'Warden', pre: '', stress: 'War', rest: 'den', ipa: '/ˈwɔːrdn/', pos: 'Noun', meaning: 'Người quản lý', tier: 'new', next: 'new', category: 'People', cover: 'gold' },
       { word: 'Ambition', pre: 'Am', stress: 'bi', rest: 'tion', ipa: '/æmˈbɪʃn/', pos: 'Noun', meaning: 'Hoài bão', tier: 'mastered', next: '48d', category: 'Ambition', cover: 'cyan' },
     ];
+    // Small tier marks need a flat fill: the spinning rims have white bands that swallow white text.
+    const flat = Object.fromEntries(['new', 'learning', 'mastered'].map((k) => [k, { bg: t.tier[k].flat, shadow: t.tier[k].flatShadow }]));
     const filterDefs = [
-      { label: 'All', key: null, mark: '∗', chip: 'linear-gradient(180deg, #8a93a8, #4a536a)' },
-      { label: 'Due', key: 'due', mark: '!', chip: t.primaryBg },
-      { label: 'New', key: 'new', mark: 'Bud', chip: t.tier.new.rim },
-      { label: 'Learning', key: 'learning', mark: 'Bloom', chip: t.tier.learning.rim },
-      { label: 'Mastered', key: 'mastered', mark: 'Star', chip: t.tier.mastered.rim },
+      { label: 'All', key: null, mark: '∗', chip: 'linear-gradient(180deg, #8a93a8, #4a536a)', shadow: '#1a1f2c' },
+      { label: 'Due', key: 'due', mark: '!', chip: t.primaryBg, shadow: '#7a0820' },
+      { label: 'New', key: 'new', mark: 'Bud', chip: flat.new.bg, shadow: flat.new.shadow },
+      { label: 'Learning', key: 'learning', mark: 'Bloom', chip: flat.learning.bg, shadow: flat.learning.shadow },
+      { label: 'Mastered', key: 'mastered', mark: 'Star', chip: flat.mastered.bg, shadow: flat.mastered.shadow },
     ];
     const fk = filterDefs[s.filter].key;
     const visible = raw.filter(c => !fk || (fk === 'due' ? c.due : c.tier === fk));
@@ -144,6 +152,7 @@ class Component extends DCLogic {
       t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
       nav: nkNav(t, 2), streak: 12,
       bg: { wings: false },
+      markClip: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)',
       decks: deckDefs.map(([name, count], i) => {
         const on = s.deck === i;
         return { name, count, selected: on ? 'true' : 'false', pick: () => this.setState({ deck: i }),
@@ -151,7 +160,7 @@ class Component extends DCLogic {
       }),
       filters: filterDefs.map((f, i) => {
         const on = s.filter === i;
-        return { label: f.label, mark: f.mark, chipBg: f.chip, on: on ? 'true' : 'false', pick: () => this.setState({ filter: i, hover: -1 }),
+        return { label: f.label, mark: f.mark, chipBg: f.chip, shadow: f.shadow, on: on ? 'true' : 'false', pick: () => this.setState({ filter: i, hover: -1 }),
           bg: on ? (dark ? 'rgb(255 255 255 / 0.14)' : '#ffffff') : 'transparent', color: on ? t.textStrong : t.text2,
           edge: on ? 'inset 0 0 0 1px ' + t.panelEdge : 'inset 0 0 0 1px ' + t.line };
       }),
@@ -163,7 +172,7 @@ class Component extends DCLogic {
         return {
           ...c,
           grade: gradeOf[c.tier], tierLabel: tv.label, gradeText: gradeText[c.tier],
-          rim: tv.rim, rimFlat: mastered ? 'linear-gradient(180deg, #ffd166, #ff2a4d 60%, #7a0820)' : tv.rim, rimCls: mastered ? 'nk-rim-spin' : '',
+          rim: tv.rim, rimFlat: flat[c.tier].bg, markShadow: flat[c.tier].shadow, rimCls: mastered ? 'nk-rim-spin' : '',
           hasImage: !!c.image, noImage: !c.image, initial: c.word[0], category: c.category ?? '',
           cover: c.image ? t.panelSolid : cv.cover, glyph: cv.glyph, labelColor: cv.label,
           due: !!c.due, starred: !!c.starred,

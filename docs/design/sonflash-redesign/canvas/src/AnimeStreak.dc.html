@@ -13,11 +13,11 @@
     </div>
   </sc-if>
 
-  <div role="dialog" aria-modal="true" aria-labelledby="st-title" class="nk-rise" style="position: relative; z-index: 3; width: 600px; height: 720px; filter: drop-shadow(0 0 22px {{rimGlow}}) drop-shadow(0 30px 40px rgb(0 0 0 / 0.4));">
+  <div role="dialog" aria-modal="true" aria-labelledby="st-title" class="nk-rise" style="position: relative; z-index: 3; width: 600px; filter: drop-shadow(0 0 22px {{rimGlow}}) drop-shadow(0 30px 40px rgb(0 0 0 / 0.4));">
     <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;"><div class="{{rimCls}}" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{rim}};"></div></div>
     <div aria-hidden="true" style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; background: {{t.cardFront}};"></div>
 
-    <div style="position: relative; height: 100%; box-sizing: border-box; padding: 26px 34px 26px; display: flex; flex-direction: column;">
+    <div style="position: relative; box-sizing: border-box; padding: 26px 34px 30px; display: flex; flex-direction: column;">
       <button aria-label="Close" class="nk-lift" style="position: absolute; z-index: 3; right: 18px; top: 18px; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
 
       <div style="position: relative; height: 156px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
@@ -111,7 +111,7 @@
         </div>
       </sc-if>
 
-      <footer style="margin-top: auto; display: flex; align-items: center; gap: 12px;">
+      <footer style="margin-top: 30px; display: flex; align-items: center; gap: 12px;">
         <span style="flex-grow: 1; font-size: 12.5px; font-weight: 700; color: {{t.text3}};">{{copy.foot}}</span>
         <button class="nk-lift" style="height: 50px; padding: 0 20px; border: 0; transform: skewX(-12deg); background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.secondaryText}}; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14.5px; white-space: nowrap;">{{copy.secondary}}</span></button>
         <button class="nk-lift" style="height: 50px; padding: 0 24px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15.5px; letter-spacing: 0.04em; white-space: nowrap;">{{copy.primary}}</span></button>
@@ -128,7 +128,7 @@ class Component extends DCLogic {
     const t = nkTokens(dark);
     const state = this.props.state ?? 'freeze';
     const freeze = state === 'freeze', repair = state === 'repair', milestone = state === 'milestone';
-    const hot = dark ? 'linear-gradient(180deg, #ffd166 0%, #ff5470 60%, #ff2a4d 100%)' : 'linear-gradient(180deg, #ff2a4d 0%, #c40f35 60%, #8a0a26 100%)';
+    const hot = t.metalEm;
     const ice = dark ? 'linear-gradient(180deg, #e9feff 0%, #5ef2ff 60%, #1aa7c9 100%)' : 'linear-gradient(180deg, #1aa7c9 0%, #0a7d99 60%, #06566b 100%)';
     const emblem = freeze
       ? { rim: t.tier.new.rim, bg: dark ? 'radial-gradient(circle at 40% 30%, #16384a, #081420 70%)' : 'radial-gradient(circle at 40% 30%, #ffffff, #cdeaff 80%)', fg: t.holoText, opacity: 1, glow: 'drop-shadow(0 0 24px rgb(94 242 255 / 0.7))' }

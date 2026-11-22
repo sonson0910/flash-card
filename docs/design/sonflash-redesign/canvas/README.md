@@ -16,8 +16,7 @@ This directory is the design reference; application UI lives under `src/` at the
 Phase 14 adds four editable auth/upload sources (`AuthStates`, `AnimeAuthStates`,
 `UploadStates`, and `AnimeUploadStates`) and 106 generated comparison boards in
 `src/boards-phase14-workflows.py`. The current builder indexes 116 source
-components and 329 artboards. Their 114 new reference PNGs are still pending render
-and visual review; inventory paths alone are not approval of the design.
+components and 329 artboards. Their 114 reference PNGs bring `reference/` to 445 files.
 
 Run from the repository root:
 
@@ -31,6 +30,25 @@ node docs/design/sonflash-redesign/canvas/render-reference.mjs --check
 ```
 
 The reference renderer uses Playwright Chromium, each board's fixed viewport, and reduced motion. It serves local Canvas files through Playwright request interception without opening a localhost port. Use `--board=AnimeToday` to render or check one board; use `--force` to replace existing PNGs after a source change. The reference files are review artifacts, not web bundle assets. Google Fonts in the source canvas still require network access for exact typography; the application font implementation belongs to the theme work.
+
+The renderer needs the Playwright browser build pinned by the repository. On a machine whose host cache holds a different build, run it inside the e2e runner image, which carries the pinned build (mount the repository and a Node 22 install, then call the same commands):
+
+```sh
+docker run --rm --init --ipc=host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v "$PWD:$PWD" -w "$PWD" -v "$NODE22_DIR:/opt/node22:ro" sonflash-e2e-runner:1.64.1-noble \
+  bash -c 'export PATH=/opt/node22/bin:$PATH; node docs/design/sonflash-redesign/canvas/render-reference.mjs --force'
+```
+
+## Crystal Star shared tokens and partials
+
+Every Crystal Star board inlines `src/anime-tokens.js` and the partials in `src/partials.html`, so a change there changes all of them: re-render every reference with `--force` afterwards. The rules below keep both themes readable.
+
+- Display text on the page or on a panel uses `t.metal` (white metal on Starry Night, navy-to-crimson ink on Prism Day). Gold reward numbers use `t.metalGold`, emphasis words inside a headline use `t.metalEm`. `t.metalHot` is white metal for text that sits fully on an opaque crimson fill in both themes. Do not hardcode the white gradient: it disappears on the pale Prism Day page.
+- Tier chips smaller than about 30 px use `t.tier.<tier>.flat` with a `t.tier.<tier>.flatShadow` text shadow. `t.tier.<tier>.rim` is for large frames only.
+- `t.easy` is gold in both themes; its label colour is `t.easyInk`. The Prism Day `t.scrim` is a blue-to-rose dusk veil, not a grey film.
+- The `ABG` partial draws three background flares. A board hides one that would sit under its copy by setting `--nk-flare1`, `--nk-flare2` or `--nk-flare3` to `none` on its root element.
+- The `MASCOT` partial puts Lumi's glow on a wrapper around the masked sprite. A `drop-shadow` on the masked image itself is cut by the mask and shows as a box on dark panels.
+- Mastery is written with the tier names Bud, Bloom and Star (labels New, Learning, Mastered), never letter grades. The learner's own level is Foundation, Core or Advanced; a CEFR tag on a word or card is card data and stays.
 
 ## Crystal Star copy audit
 

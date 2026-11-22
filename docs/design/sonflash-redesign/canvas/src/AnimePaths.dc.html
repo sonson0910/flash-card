@@ -28,7 +28,7 @@
 
             <div style="margin-top: 18px; max-width: 520px; display: flex; flex-wrap: wrap; gap: 8px;">
               <sc-for list="{{unitWords}}" as="w" hint-placeholder-count="8">
-                <span style="height: 32px; padding: 0 12px 0 6px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{w.edge}}; display: flex; align-items: center; gap: 8px;"><span style="height: 20px; min-width: 20px; padding: 0 4px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{w.markBg}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 11px; color: #ffffff;">{{w.mark}}</span><span style="font-weight: 800; font-size: 14px; color: {{w.color}};">{{w.word}}</span></span>
+                <span style="height: 32px; padding: 0 12px 0 6px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{w.edge}}; display: flex; align-items: center; gap: 8px;"><span style="height: 20px; min-width: 20px; padding: 0 7px; box-sizing: border-box; clip-path: {{markClip}}; background: {{w.markBg}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 11px; color: {{w.markColor}}; text-shadow: {{w.markShadow}};">{{w.mark}}</span><span style="font-weight: 800; font-size: 14px; color: {{w.color}};">{{w.word}}</span></span>
               </sc-for>
             </div>
           </div>
@@ -51,7 +51,7 @@
             <div style="position: relative; width: 206px; box-sizing: border-box; padding: 9px 14px 10px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
               <span aria-hidden="true" style="position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
               <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
-              <div style="margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">4 từ nữa là qua ải Unit 4!</div>
+              <div style="margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">4 words left in Unit 4!</div>
             </div>
             <div class="nk-float" style="width: 200px; height: 212px;">
 <!--#MASCOT happy-->
@@ -97,6 +97,8 @@ class Component extends DCLogic {
     const t = nkTokens(dark);
     const words = [['immediate', 'Bloom'], ['instant', 'Star'], ['permanent', 'Bloom'], ['temporary', 'Bloom'], ['frequent', ''], ['gradual', ''], ['sudden', ''], ['eventual', '']];
     const tierOf = { Bud: 'new', Bloom: 'learning', Star: 'mastered' };
+    // Small tier marks need a flat fill: the spinning rims have white bands that swallow white text.
+    const flat = Object.fromEntries(['new', 'learning', 'mastered'].map((k) => [k, { bg: t.tier[k].flat, shadow: t.tier[k].flatShadow }]));
     const hue = {
       crimson: { spine: 'linear-gradient(180deg, #ff5470, #b30f33)', glow: 'rgb(255 42 77 / 0.35)', glyph: dark ? 'rgb(255 84 112 / 0.14)' : 'rgb(196 15 53 / 0.1)', tint: dark ? 'rgb(255 42 77 / 0.22)' : 'rgb(255 84 112 / 0.16)' },
       cyan: { spine: 'linear-gradient(180deg, #9ff9ff, #1aa7c9)', glow: 'rgb(94 242 255 / 0.3)', glyph: dark ? 'rgb(94 242 255 / 0.12)' : 'rgb(10 125 153 / 0.1)', tint: dark ? 'rgb(94 242 255 / 0.18)' : 'rgb(94 242 255 / 0.25)' },
@@ -117,11 +119,13 @@ class Component extends DCLogic {
       t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
       nav: nkNav(t, 1), streak: 12,
       bg: { wings: false },
+      markClip: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)',
       heroBg: dark
         ? 'radial-gradient(ellipse 60% 55% at 85% 15%, rgb(179 15 51 / 0.45), transparent 70%), radial-gradient(ellipse 70% 60% at 10% 100%, rgb(16 60 120 / 0.55), transparent 70%), linear-gradient(160deg, #121828, #070910)'
         : 'radial-gradient(ellipse 60% 55% at 85% 15%, rgb(255 190 215 / 0.8), transparent 70%), radial-gradient(ellipse 70% 60% at 10% 100%, rgb(94 242 255 / 0.35), transparent 70%), linear-gradient(160deg, #f2faff, #cfe9ff)',
       unitWords: words.map(([word, g]) => ({
-        word, mark: g || '·', markBg: g ? t.tier[tierOf[g]].rim : t.track,
+        word, mark: g || '·', markBg: g ? flat[tierOf[g]].bg : t.track,
+        markColor: g ? '#ffffff' : t.text3, markShadow: g ? '0 1px 0 ' + flat[tierOf[g]].shadow : 'none',
         edge: g ? t.panelEdge : t.line, color: g ? t.textStrong : t.text2,
       })),
       units: Array.from({ length: 12 }, (_, i) => ({

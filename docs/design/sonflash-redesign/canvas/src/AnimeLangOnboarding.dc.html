@@ -69,7 +69,7 @@
           <span style="position: relative;">LET'S GO</span>
           <svg style="position: relative;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"></path></svg>
         </button>
-        <span style="font-size: 14px; color: {{t.text2}};">Chiến dịch: <strong lang="ko" style="font-family: {{koFont}}; color: {{t.textStrong}};">한국어</strong> ← Tiếng Việt · nghĩa và giải thích bằng tiếng Việt</span>
+        <span style="font-size: 14px; color: {{t.text2}};">Lộ trình: <strong lang="ko" style="font-family: {{koFont}}; color: {{t.textStrong}};">한국어</strong> ← Tiếng Việt · nghĩa và giải thích bằng tiếng Việt</span>
       </div>
     </main>
   </sc-if>
@@ -86,9 +86,8 @@
             <button class="nk-lift" aria-pressed="{{k.on}}" style="position: relative; height: 82px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; font-family: inherit;">
               <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{k.rim}};"></div>
               <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{k.bg}}; padding: 0 18px; display: flex; align-items: center; gap: 16px;">
-                <span style="width: 86px; flex-shrink: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; color: {{k.gradeColor}}; text-shadow: {{k.gradeShadow}};">{{k.grade}}</span>
+                <span lang="{{k.lang}}" style="width: 146px; flex-shrink: 0; font-family: {{k.gradeFont}}; font-style: {{k.gradeStyle}}; font-weight: 900; font-size: 24px; color: {{k.gradeColor}}; text-shadow: {{k.gradeShadow}};">{{k.grade}}</span>
                 <span style="flex-grow: 1;"><span style="display: block; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 19px; color: {{k.fg}};">{{k.name}}</span><span style="display: block; margin-top: 1px; font-size: 13px; color: {{k.sub}};">{{k.desc}}</span></span>
-                <span style="font-family: {{t.fMono}}; font-size: 12px; color: {{k.sub}};">{{k.cefr}}</span>
               </div>
             </button>
           </sc-for>
@@ -165,16 +164,19 @@ class Component extends DCLogic {
         tagBg: t.chip, tagFg: t.holoText, checkBg: t.chip, checkFg: t.text3,
       };
     });
-    realms.push({ glyph: '?', endo: 'Italiano…', vi: 'SẮP MỞ KHOÁ', greet: 'Ciao · Olá', exam: 'VOTE', meta: 'Bình chọn ngôn ngữ mới', code: 'it', op: 0.6,
+    // The locked card stays opaque (muted by colour, not opacity) so background flares never show through its title.
+    realms.push({ glyph: '?', endo: 'Italiano', vi: 'SẮP MỞ KHOÁ', greet: 'Ciao!', exam: 'VOTE', meta: 'Bình chọn ngôn ngữ mới', code: 'it', op: 1,
       selected: 'false', cls: 'nk-lift nk-rise-3', checkIcon: lock, glyphFont: t.fDisplay, glyphStyle: 'italic', nameFont: t.fDisplay, nameStyle: 'italic', greetFont: t.fBody,
-      rim: idleRim, glow: '0 0 0 transparent', bg: t.cardFront, emblemBg: t.chip, emblemFg: t.text3, fg: t.text2, sub: t.text3, tagBg: t.chip, tagFg: t.text3, checkBg: t.chip, checkFg: t.text3 });
+      rim: 'linear-gradient(150deg, ' + t.lineStrong + ', ' + t.line + ')', glow: '0 0 0 transparent', bg: t.cardFront, emblemBg: t.chip, emblemFg: t.text3, fg: t.text2, sub: t.text3, tagBg: t.chip, tagFg: t.text3, checkBg: t.chip, checkFg: t.text3 });
+    // Placement uses the three levels Foundation / Core / Advanced, plus a start-from-the-alphabet option for a new script.
     const K = [
-      ['Seed', 'HẠT MẦM', 'Chưa đọc được Hangul', 'pre-A1', true],
-      ['Bud', 'CHỒI NON', 'Đọc được Hangul, vài trăm từ', 'A1–A2'],
-      ['Bloom', 'NỞ HOA', 'Tương đương TOPIK 3–4', 'B1–B2'],
-      ['Star', 'NGÔI SAO', 'Tương đương TOPIK 5–6', 'C1'],
+      ['가나다', 'BẮT ĐẦU TỪ CHỮ CÁI', 'Chưa đọc được Hangul', true],
+      ['Foundation', 'NỀN TẢNG', 'Đọc được Hangul, vài trăm từ'],
+      ['Core', 'TRUNG CẤP', 'Tương đương TOPIK 3–4'],
+      ['Advanced', 'NÂNG CAO', 'Tương đương TOPIK 5–6'],
     ];
-    const tiers = [t.tier.new, t.tier.learning, t.tier.learning, t.tier.mastered];
+    const tiers = [t.tier.new, t.tier.new, t.tier.learning, t.tier.mastered];
+    const gradeType = (i) => i === 0 ? { lang: 'ko', gradeFont: cjk.ko, gradeStyle: 'normal' } : { lang: 'en', gradeFont: t.fDisplay, gradeStyle: 'italic' };
     return {
       t, bg: { wings: true }, koFont: cjk.ko,
       isLearn, isLevel: !isLearn, stepNo,
@@ -188,11 +190,11 @@ class Component extends DCLogic {
       mascotLine: isLearn ? 'Mình học gì tiếp đây, bạn ơi?' : 'Chưa đọc được Hangul?',
       mascotSub: isLearn ? 'Chọn một ngôn ngữ nhé. Mình sẽ giải nghĩa mọi thẻ bằng tiếng Việt cho bạn.' : 'Không sao! Mình dạy bạn 24 chữ cái trong 20 phút trước khi bắt đầu.',
       realms,
-      levelCards: K.map(([grade, name, desc, cefr, on], i) => on ? {
-        grade, name, desc, cefr, on: 'true', rim: t.tier.mastered.rim, bg: 'linear-gradient(90deg, #ff5470 0%, #e0173f 50%, #7a0820 100%)',
+      levelCards: K.map(([grade, name, desc, on], i) => on ? {
+        grade, name, desc, ...gradeType(i), on: 'true', rim: t.tier.mastered.rim, bg: 'linear-gradient(90deg, #ff5470 0%, #e0173f 50%, #7a0820 100%)',
         fg: '#ffffff', sub: 'rgb(255 255 255 / 0.85)', gradeColor: '#ffffff', gradeShadow: '0 3px 0 #7a0820',
       } : {
-        grade, name, desc, cefr, on: 'false', rim: tiers[i].rim, bg: t.cardFront,
+        grade, name, desc, ...gradeType(i), on: 'false', rim: tiers[i].rim, bg: t.cardFront,
         fg: t.textStrong, sub: t.text2, gradeColor: dark ? tiers[i].color : t.crimsonText, gradeShadow: 'none',
       }),
       exams: ['TOPIK I', 'TOPIK II', 'EPS-TOPIK', 'CHƯA THI'].map((name, i) => i === 0

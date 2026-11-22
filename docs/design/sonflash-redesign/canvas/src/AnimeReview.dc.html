@@ -1,6 +1,13 @@
 <!--#AHEAD Crystal Star review-->
 <div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
 <!--#ABG-->
+  <!-- Both crystal wings sit in the bottom corners so the combo banner keeps a clean top-right corner. -->
+  <div aria-hidden="true" style="position: absolute; left: -150px; bottom: -120px; width: 640px; height: 430px; pointer-events: none; opacity: {{t.wingOpacity}}; transform: rotate(-12deg); filter: drop-shadow(0 0 30px rgb(255 42 77 / 0.55));">
+<!--#WINGS-->
+  </div>
+  <div aria-hidden="true" style="position: absolute; right: -150px; bottom: -120px; width: 640px; height: 430px; pointer-events: none; opacity: {{t.wingOpacity}}; transform: scaleX(-1) rotate(-12deg); filter: drop-shadow(0 0 30px rgb(255 42 77 / 0.55));">
+<!--#WINGS-->
+  </div>
   <sc-if value="{{flash}}" hint-placeholder-val="{{false}}">
     <div aria-hidden="true" class="nk-pillar" style="position: absolute; z-index: 40; left: 50%; top: 0; bottom: 0; width: 520px; margin-left: -260px; pointer-events: none; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.85) 30%, #ffffff 50%, rgb(255 255 255 / 0.85) 70%, transparent); mix-blend-mode: screen;"></div>
   </sc-if>
@@ -35,7 +42,7 @@
 
   <aside style="position: absolute; z-index: 4; right: 60px; top: 120px; width: 300px; display: flex; flex-direction: column; gap: 16px;">
     <div style="position: relative; height: 150px;">
-      <div class="{{bannerCls}}" style="position: absolute; left: 6px; right: 0; top: 16px; height: 96px; transform: skewX(-16deg); background: linear-gradient(90deg, rgb(179 15 51 / 0.95), rgb(255 42 77 / 0.85) 60%, rgb(255 42 77 / 0)); box-shadow: 0 0 40px -6px rgb(255 42 77 / 0.7);"></div>
+      <div class="{{bannerCls}}" style="position: absolute; left: 6px; right: -40px; top: 16px; height: 96px; transform: skewX(-16deg); background: linear-gradient(90deg, rgb(179 15 51 / 0.95), rgb(255 42 77 / 0.9) 60%, rgb(255 42 77 / 0.88) 88%, rgb(255 42 77 / 0)); box-shadow: 0 0 40px -6px rgb(255 42 77 / 0.7);"></div>
       <div style="position: absolute; left: 0; top: 0; width: 70px; height: 70px; filter: drop-shadow(0 0 12px rgb(255 42 77 / 0.9));">
 <!--#STAR5-->
       </div>
@@ -258,7 +265,7 @@ class Component extends DCLogic {
       { label: 'AGAIN', key: '1', next: '1m', bg: t.again, color: '#ffffff', w: 132, reset: true, xp: 2 },
       { label: 'HARD', key: '2', next: '6m', bg: t.hard, color: '#ffffff', w: 132, xp: 6 },
       { label: 'GOOD', key: '3', next: '1d', bg: dark ? 'linear-gradient(180deg, #9ff9ff, #5ef2ff 50%, #1aa7c9)' : 'linear-gradient(180deg, #2bc4e0, #0a8fb0)', color: dark ? '#031820' : '#ffffff', w: 164, xp: 10, big: true },
-      { label: 'EASY', key: '4', next: '3d', bg: t.easy, color: '#ffffff', w: 132, xp: 12 },
+      { label: 'EASY', key: '4', next: '3d', bg: t.easy, color: t.easyInk, w: 132, xp: 12 },
     ];
     const advance = (g) => {
       this.setState({ index: s.index + 1, flipped: false, flipping: false, dealing: true, revealed: false, starred: false, blind: false, hover: false, rx: 0, ryTilt: 0, combo: g.reset ? 0 : s.combo + 1, xpPop: true, xpGain: g.xp });
@@ -268,7 +275,7 @@ class Component extends DCLogic {
     const pos = 5 + (s.index % 8);
     return {
       t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
-      bg: { wings: true },
+      bg: { wings: false },
       front: card.front, back: card.back,
       rim: tv.rim, tierSoft: tv.soft, tierDrop: '0 0 22px ' + tv.soft, tierLabel: tv.label, tierGrade: tv.grade,
       rimCls: mastered ? 'nk-rim-spin' : '', mastered,

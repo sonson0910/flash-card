@@ -104,7 +104,7 @@
 <!--#STAR5-->
         </div>
         <span class="nk-stamp" style="position: absolute; left: 50%; top: 76px; margin-left: -40px; width: 80px; text-align: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1; color: #ffffff; text-shadow: 0 3px 0 #7a0820, 0 0 16px rgb(255 209 102 / 0.8);">STAR</span>
-        <span style="position: absolute; left: 16px; bottom: 14px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.text2}};"><span style="color: {{t.pinkText}};">S</span> → <span style="color: {{t.crimsonText}};">STAR</span></span>
+        <span style="position: absolute; left: 16px; bottom: 14px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.text2}};"><span style="color: {{t.pinkText}};">Bloom</span> → <span style="color: {{t.crimsonText}};">Star</span></span>
       </div>
       <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">07</span>TIER UP · STAMP</div><div style="{{capSpec}}">stamp scale 2.6→.92→1, rotate −32° · 620 ms, delay 400 · rim spin 6 s</div></figcaption>
     </figure>
@@ -161,7 +161,7 @@ class Component extends DCLogic {
         { label: 'AGAIN', bg: t.again, fg: '#ffffff', cls: 'nk-rise', glow: 'none' },
         { label: 'HARD', bg: t.hard, fg: '#ffffff', cls: 'nk-rise-2', glow: 'none' },
         { label: 'GOOD', bg: dark ? 'linear-gradient(180deg, #9ff9ff, #5ef2ff 50%, #1aa7c9)' : 'linear-gradient(180deg, #2bc4e0, #0a8fb0)', fg: dark ? '#031820' : '#ffffff', cls: 'nk-rise-3', glow: '0 0 18px -4px rgb(94 242 255 / 0.85)' },
-        { label: 'EASY', bg: t.easy, fg: dark ? '#4a2a00' : '#ffffff', cls: 'nk-rise-3', glow: 'none' },
+        { label: 'EASY', bg: t.easy, fg: t.easyInk, cls: 'nk-rise-3', glow: 'none' },
       ],
       durations: [
         { name: 'press', ms: '120 ms' }, { name: 'fade', ms: '240 ms' }, { name: 'snap', ms: '520 ms' }, { name: 'flip', ms: '600 ms' }, { name: 'ceremony', ms: '800 ms' },

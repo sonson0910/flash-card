@@ -71,7 +71,7 @@
             </span>
           </button>
           <sc-if value="{{o.flare}}" hint-placeholder-val="{{false}}">
-            <span aria-hidden="true" class="nk-flare" style="position: absolute; right: 30px; top: -30px; width: 80px; height: 80px; pointer-events: none;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span></span>
+            <span aria-hidden="true" class="nk-flare" style="position: absolute; right: 150px; top: -40px; width: 80px; height: 80px; pointer-events: none;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span></span>
           </sc-if>
         </div>
       </sc-for>
@@ -114,13 +114,15 @@ class Component extends DCLogic {
     const right = s.picked === CORRECT;
     const later = (ms, fn) => window.setTimeout(fn, ms);
     const words = ['ambitious', 'ambition', 'ammunition', 'admission'];
+    // Answer fills sit on the 2px rim gradient, so each tint gets an opaque base; without it the rim colour shows through.
+    const wrongInk = dark ? t.crimsonText : '#a30c2d';
     const idle = { edge: 'linear-gradient(150deg, ' + t.lineStrong + ', ' + t.line + ')', bg: t.panelSolid, color: t.textStrong, keyBg: t.chip, keyColor: t.text2, tag: '', tagColor: t.text3, glow: 'none', opacity: 1, cls: '', flare: false };
     const options = words.map((word, i) => {
       let o = { ...idle };
       if (answered && i === CORRECT) {
-        o = { ...o, edge: 'linear-gradient(150deg, #e9feff, #5ef2ff 45%, #1aa7c9)', bg: dark ? 'linear-gradient(90deg, rgb(94 242 255 / 0.2), rgb(8 10 18 / 0.96) 70%)' : 'linear-gradient(90deg, rgb(94 242 255 / 0.35), #eef9ff 70%)', keyBg: 'linear-gradient(180deg, #9ff9ff, #1aa7c9)', keyColor: '#031820', tag: '✓ CORRECT', tagColor: t.holoText, glow: 'drop-shadow(0 0 18px rgb(94 242 255 / 0.6))', flare: true, cls: right ? 'nk-pop' : '' };
+        o = { ...o, edge: 'linear-gradient(150deg, #e9feff, #5ef2ff 45%, #1aa7c9)', bg: dark ? 'linear-gradient(90deg, rgb(94 242 255 / 0.2), rgb(8 10 18 / 0.96) 70%), ' + t.panelSolid : 'linear-gradient(90deg, rgb(94 242 255 / 0.35), #eef9ff 70%), #eef9ff', keyBg: 'linear-gradient(180deg, #9ff9ff, #1aa7c9)', keyColor: '#031820', tag: '✓ CORRECT', tagColor: t.holoText, glow: 'drop-shadow(0 0 18px rgb(94 242 255 / 0.6))', flare: true, cls: right ? 'nk-pop' : '' };
       } else if (answered && i === s.picked) {
-        o = { ...o, edge: 'linear-gradient(150deg, #ff8fa3, #ff2a4d 50%, #7a0820)', bg: dark ? 'linear-gradient(90deg, rgb(255 42 77 / 0.24), rgb(8 10 18 / 0.96) 70%)' : 'linear-gradient(90deg, rgb(255 84 112 / 0.25), #fff1f4 70%)', color: t.crimsonText, keyBg: t.primaryBg, keyColor: '#ffffff', tag: 'YOUR ANSWER', tagColor: t.crimsonText, cls: 'sf-shake', glow: 'drop-shadow(0 0 14px rgb(255 42 77 / 0.45))' };
+        o = { ...o, edge: 'linear-gradient(150deg, #ff8fa3, #ff2a4d 50%, #7a0820)', bg: dark ? 'linear-gradient(90deg, rgb(255 42 77 / 0.24), rgb(8 10 18 / 0.96) 70%), ' + t.panelSolid : 'linear-gradient(90deg, rgb(255 84 112 / 0.16), #fff1f4 70%), #fff1f4', color: wrongInk, keyBg: t.primaryBg, keyColor: '#ffffff', tag: 'YOUR ANSWER', tagColor: wrongInk, cls: 'sf-shake', glow: 'drop-shadow(0 0 14px rgb(255 42 77 / 0.45))' };
       } else if (answered) {
         o = { ...o, opacity: 0.45 };
       }
@@ -135,8 +137,8 @@ class Component extends DCLogic {
       combo, comboName: nkCombo(combo), comboCls: right ? 'nk-banner' : '',
       score,
       lumiSrc: t.lumi[!answered ? 'idle' : right ? 'happy' : 'oops'],
-      lumiLine: !answered ? 'Danh từ hay tính từ?' : right ? 'Chuẩn luôn! Combo tăng rồi!' : 'Suýt nữa thôi!',
-      lumiSub: !answered ? 'Nhìn chỗ trống: sau “Her” cần một danh từ.' : right ? 'Ambition là danh từ, đúng chỗ trống.' : 'Ambitious là tính từ. Chỗ trống cần danh từ: ambition.',
+      lumiLine: !answered ? 'Noun or adjective?' : right ? 'Spot on! Combo up!' : 'So close!',
+      lumiSub: !answered ? 'Look at the blank: after “Her” comes a noun.' : right ? 'Ambition is a noun, so it fits the blank.' : 'Ambitious is an adjective. The blank needs a noun: ambition.',
       segments: Array.from({ length: 10 }, (_, i) => ({
         bg: i === 3 ? '#ff2a4d' : i < 7 ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === 7 ? (answered ? (right ? '#5ef2ff' : '#ff2a4d') : t.lineStrong) : t.track,
         glow: i < 7 && i !== 3 ? '0 0 8px rgb(94 242 255 / 0.5)' : i === 3 ? '0 0 10px rgb(255 42 77 / 0.8)' : 'none',

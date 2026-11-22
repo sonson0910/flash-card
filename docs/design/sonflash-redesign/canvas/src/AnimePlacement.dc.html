@@ -72,13 +72,17 @@
         <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.14em; color: {{t.crimsonText}};">YOUR LEVEL SO FAR</div>
         <div style="margin-top: 2px; font-size: 13px; color: {{t.text2}};">Sharpens with every answer</div>
         <ol style="list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
-          <sc-for list="{{ladder}}" as="l" hint-placeholder-count="4">
+          <sc-for list="{{ladder}}" as="l" hint-placeholder-count="3">
             <li style="position: relative; filter: {{l.glow}};">
               <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{l.rim}};"></div>
-              <div style="position: relative; margin: {{l.inset}}px; clip-path: {{t.chamferSm}}; background: {{l.bg}}; height: {{l.h}}px; padding: 0 14px; display: flex; align-items: center; gap: 14px;">
-                <span style="width: 46px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; color: {{l.codeColor}};">{{l.code}}</span>
+              <div style="position: relative; margin: {{l.inset}}px; clip-path: {{t.chamferSm}}; background: {{l.bg}}; height: {{l.h}}px; padding: 0 16px; display: flex; align-items: center; gap: 16px;">
+                <span aria-hidden="true" style="width: 38px; height: 26px; flex-shrink: 0; display: flex; align-items: flex-end; gap: 4px;">
+                  <span style="width: 8px; height: 10px; transform: skewX(-16deg); background: {{l.b1}};"></span>
+                  <span style="width: 8px; height: 18px; transform: skewX(-16deg); background: {{l.b2}};"></span>
+                  <span style="width: 8px; height: 26px; transform: skewX(-16deg); background: {{l.b3}};"></span>
+                </span>
                 <span style="display: flex; flex-direction: column; min-width: 0;">
-                  <span style="font-weight: 900; font-size: 15px; color: {{l.nameColor}};">{{l.name}}</span>
+                  <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 19px; line-height: 1.15; color: {{l.nameColor}};">{{l.name}}</span>
                   <span style="font-size: 12.5px; color: {{t.text3}};">{{l.note}}</span>
                 </span>
                 <span style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; letter-spacing: 0.08em; color: {{l.tagColor}};">{{l.tag}}</span>
@@ -88,7 +92,7 @@
         </ol>
         <div style="margin-top: 14px; display: flex; align-items: center; gap: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; color: {{t.text2}};">
           <span style="flex-grow: 1; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><span style="display: block; width: {{confidence}}%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.7); transition: width 600ms {{t.snap}};"></span></span>
-          {{confidence}}% CONFIDENT
+          <span>{{confidence}}% CONFIDENT</span>
         </div>
       </div>
 
@@ -139,21 +143,23 @@ class Component extends DCLogic {
         showMark: on, mark: good ? 'CORRECT' : 'NOT QUITE', markColor: good ? t.holoText : t.crimsonText,
       };
     });
-    const levels = [['A2', 'Elementary', 'Daily routines, short texts'], ['B1', 'Intermediate', 'Work, travel, opinions'], ['B2', 'Upper-intermediate', 'IELTS 6.0 – 6.5 range'], ['C1', 'Advanced', 'Nuance, academic writing']];
+    const levels = [['Foundation', 'Daily routines, short texts'], ['Core', 'Work, travel, opinions'], ['Advanced', 'Nuance, academic writing']];
     const current = right ? 1 : 0;
+    // A three-step meter stands for the level: one bar for Foundation, three for Advanced.
+    const meter = (i, ink) => { const [b1, b2, b3] = [0, 1, 2].map(k => k <= i ? ink : t.track); return { b1, b2, b3 }; };
     return {
       t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
       bg: { wings: true },
       options,
       confidence: right ? 52 : 34,
-      ladder: levels.map(([code, name, note], i) => {
-        if (i === current) return { code, name, note, tag: 'LIKELY', rim: t.tier.learning.rim, inset: 2, h: 60, bg: t.cardFront, glow: 'drop-shadow(0 0 16px ' + t.tier.learning.soft + ')', codeColor: t.crimsonText, nameColor: t.textStrong, tagColor: t.crimsonText };
+      ladder: levels.map(([name, note], i) => {
+        if (i === current) return { name, note, ...meter(i, t.crimsonText), tag: 'LIKELY', rim: t.tier.learning.rim, inset: 2, h: 66, bg: t.cardFront, glow: 'drop-shadow(0 0 16px ' + t.tier.learning.soft + ')', nameColor: t.textStrong, tagColor: t.crimsonText };
         const past = i < current;
-        return { code, name, note, tag: past ? 'CLEARED' : '', rim: past ? t.panelEdge2 : t.line, inset: 1, h: 52, bg: t.panelSolid, glow: 'none', codeColor: past ? t.holoText : t.text3, nameColor: past ? t.text2 : t.text3, tagColor: t.holoText };
+        return { name, note, ...meter(i, past ? t.holoText : t.text3), tag: past ? 'CLEARED' : '', rim: past ? t.panelEdge2 : t.line, inset: 1, h: 58, bg: t.panelSolid, glow: 'none', nameColor: past ? t.text2 : t.text3, tagColor: t.holoText };
       }),
       lumiSrc: t.lumi[right ? 'happy' : 'hint'],
-      lumiLine: right ? 'Chuẩn! Trình độ B1 sáng dần lên.' : 'Không sao, cứ chọn theo cảm giác.',
-      lumiSub: right ? 'Mình sẽ bỏ qua những từ bạn đã biết.' : 'Không tính điểm, không áp lực đâu.',
+      lumiLine: right ? 'Nice! Core is lighting up.' : 'No worries, go with your gut.',
+      lumiSub: right ? 'I’ll skip the words you already know.' : 'No score, no pressure.',
       playing: s.playing, notPlaying: !s.playing,
       listen: () => { this.setState({ playing: true }); later(1600, () => this.setState({ playing: false })); },
       segments: Array.from({ length: 8 }, (_, i) => ({

@@ -44,7 +44,7 @@
           <div aria-hidden="true" class="nk-beam" style="position: absolute; right: 12%; top: -40%; width: 90px; height: 180%; transform: rotate(22deg); background: linear-gradient(90deg, transparent, {{t.beam}}, transparent); filter: blur(3px);"></div>
           <div style="position: relative; display: flex; align-items: center; gap: 12px;">
             <span style="height: 30px; padding: 0 20px 0 14px; clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); background: {{t.primaryBg}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: #ffffff;">ACTIVE RECALL · CLOZE</span>
-            <span style="height: 26px; padding: 0 10px; clip-path: {{t.chamferSm}}; background: {{t.tier.learning.rim}}; display: flex; align-items: center; gap: 6px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; color: #ffffff; text-shadow: 0 2px 0 #7a0820;">S</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; color: #1a0610;">Learning</span></span>
+            <span style="height: 26px; padding: 0 10px; clip-path: {{t.chamferSm}}; background: {{t.tier.learning.rim}}; display: flex; align-items: center; gap: 6px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; color: #ffffff; text-shadow: 0 2px 0 #7a0820;">{{t.tier.learning.grade}}</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; color: #1a0610;">{{t.tier.learning.label}}</span></span>
             <span style="font-size: 14px; color: {{t.text3}};">Type the missing word</span>
             <sc-if value="{{isCorrect}}" hint-placeholder-val="{{false}}">
               <span class="nk-banner" style="margin-left: auto; height: 34px; padding: 0 18px; transform: skewX(-16deg); background: linear-gradient(90deg, #ffd166, #ff8a3d); box-shadow: 0 0 22px rgb(255 209 102 / 0.7); display: flex; align-items: center;"><span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; letter-spacing: 0.06em; color: #4a1a00;">PERFECT · +10 XP</span></span>
@@ -59,14 +59,14 @@
             </span>
             response to the flood.
           </p>
-          <p style="position: relative; margin: 14px 0 0; font-size: 17px; color: {{t.text2}};">Gợi ý: <span style="color: {{t.body}};">Hội đồng hứa sẽ có phản hồi <b style="color: {{t.textStrong}}; font-weight: 900;">ngay lập tức</b> với trận lũ.</span></p>
+          <p style="position: relative; margin: 14px 0 0; font-size: 17px; color: {{t.text2}};">Meaning: <span style="color: {{t.body}};">Hội đồng hứa sẽ có phản hồi <b style="color: {{t.textStrong}}; font-weight: 900;">ngay lập tức</b> với trận lũ.</span></p>
 
           <sc-if value="{{isWrong}}" hint-placeholder-val="{{false}}">
             <div class="nk-pop" style="position: relative; margin-top: 22px; padding: 14px 18px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; display: flex; align-items: center; gap: 16px;">
               <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.crimsonText}};">ANSWER</span>
               <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; color: {{t.textStrong}};">im<span style="color: {{t.crimsonText}};">me</span>diate</span>
               <span style="font-family: {{t.fMono}}; font-size: 14px; color: {{t.text2}};">/ɪˈmiːdiət/ · adjective</span>
-              <span style="margin-left: auto; font-size: 13.5px; color: {{t.text2}};">Thẻ này sẽ quay lại sau 1 phút.</span>
+              <span style="margin-left: auto; font-size: 13.5px; color: {{t.text2}};">This card comes back in 1 minute.</span>
             </div>
           </sc-if>
 
@@ -166,8 +166,8 @@ class Component extends DCLogic {
       checkColor: correct ? '#4a2a00' : '#ffffff',
       hintLabel: s.typed.length >= ANSWER.length ? 'Hint · all letters shown' : 'Hint · reveal 2 letters',
       lumiSrc: t.lumi[correct ? 'happy' : wrong ? 'oops' : 'hint'],
-      lumiLine: correct ? 'Chuẩn luôn! Thẻ nở thành Ngôi sao.' : wrong ? 'Suýt nữa thôi!' : 'Nhớ trọng âm ở “me” nhé.',
-      lumiSub: correct ? 'Combo giữ nguyên, +10 XP.' : wrong ? 'Là “immediate”, hai chữ m và chữ e ở giữa.' : 'Gõ nốt phần còn lại, hoặc bấm gợi ý.',
+      lumiLine: correct ? 'Spot on! This card is now a Star.' : wrong ? 'So close!' : 'The stress falls on “me”.',
+      lumiSub: correct ? 'Combo kept, +10 XP.' : wrong ? 'It’s “immediate”: double m, and an e in the middle.' : 'Type the rest, or tap Hint.',
       playing: s.playing, notPlaying: !s.playing,
       listen: () => { this.setState({ playing: true }); later(1800, () => this.setState({ playing: false })); },
       check, hint,

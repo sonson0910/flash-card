@@ -49,7 +49,7 @@
         </div>
       </div>
       <div style="text-align: center;">
-        <div class="{{pairsCls}}" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 72px; line-height: 0.95; background: linear-gradient(180deg, #ffffff 0%, #ffe3ea 46%, #ff8fa3 54%, #ffffff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 16px rgb(255 42 77 / 0.6));">{{pairs}}</div>
+        <div class="{{pairsCls}}" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 72px; line-height: 0.95; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 16px rgb(255 42 77 / 0.6));">{{pairs}}</div>
         <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.16em; color: {{t.text2}};">PAIRS MATCHED</div>
       </div>
       <div class="{{bannerCls}}" style="position: relative; width: 250px; height: 58px;">
@@ -104,12 +104,14 @@ class Component extends DCLogic {
     const leftWords = ['permanent', 'immediate', 'recharge', 'warden', 'exact', 'ambition'];
     const rightWords = ['người quản lý, cai ngục', 'nạp lại năng lượng', 'vĩnh viễn', 'tham vọng', 'ngay lập tức', 'chính xác'];
     const meaningOf = [2, 4, 1, 0, 5, 3];
+    // Row fills sit on the 2px rim gradient, so each tint gets an opaque base; without it the rim colour shows through.
+    const wrongInk = dark ? t.crimsonText : '#a30c2d';
     const S = {
       idle: { edge: 'linear-gradient(150deg, ' + t.lineStrong + ', ' + t.line + ')', bg: t.panelSolid, color: t.textStrong, tag: '', tagColor: t.text3, glow: 'none', opacity: 1, cls: '', flare: false, selected: 'false' },
       done: { edge: 'linear-gradient(150deg, ' + t.line + ', ' + t.line + ')', bg: t.chip, color: t.text3, tag: '✓', tagColor: t.holoText, glow: 'none', opacity: 0.45, cls: '', flare: false, selected: 'false' },
-      fresh: { edge: 'linear-gradient(150deg, #e9feff, #5ef2ff 45%, #1aa7c9)', bg: dark ? 'linear-gradient(90deg, rgb(94 242 255 / 0.22), rgb(8 10 18 / 0.96) 75%)' : 'linear-gradient(90deg, rgb(94 242 255 / 0.35), #eef9ff 75%)', color: t.textStrong, tag: 'MATCH!', tagColor: t.holoText, glow: 'drop-shadow(0 0 18px rgb(94 242 255 / 0.6))', opacity: 1, cls: 'nk-pop', flare: true, selected: 'false' },
-      sel: { edge: 'linear-gradient(150deg, #e9feff, #5ef2ff 40%, #ff5470)', bg: dark ? 'linear-gradient(90deg, rgb(94 242 255 / 0.16), rgb(8 10 18 / 0.96) 75%)' : 'linear-gradient(90deg, rgb(94 242 255 / 0.28), #eef9ff 75%)', color: t.textStrong, tag: 'SELECTED', tagColor: t.holoText, glow: 'drop-shadow(0 0 16px rgb(94 242 255 / 0.55))', opacity: 1, cls: '', flare: false, selected: 'true' },
-      bad: { edge: 'linear-gradient(150deg, #ff8fa3, #ff2a4d 50%, #7a0820)', bg: dark ? 'linear-gradient(90deg, rgb(255 42 77 / 0.24), rgb(8 10 18 / 0.96) 75%)' : 'linear-gradient(90deg, rgb(255 84 112 / 0.25), #fff1f4 75%)', color: t.crimsonText, tag: '−2s', tagColor: t.crimsonText, glow: 'drop-shadow(0 0 14px rgb(255 42 77 / 0.5))', opacity: 1, cls: 'sf-shake', flare: false, selected: 'false' },
+      fresh: { edge: 'linear-gradient(150deg, #e9feff, #5ef2ff 45%, #1aa7c9)', bg: dark ? 'linear-gradient(90deg, rgb(94 242 255 / 0.22), rgb(8 10 18 / 0.96) 75%), ' + t.panelSolid : 'linear-gradient(90deg, rgb(94 242 255 / 0.35), #eef9ff 75%), #eef9ff', color: t.textStrong, tag: 'MATCH!', tagColor: t.holoText, glow: 'drop-shadow(0 0 18px rgb(94 242 255 / 0.6))', opacity: 1, cls: 'nk-pop', flare: true, selected: 'false' },
+      sel: { edge: 'linear-gradient(150deg, #e9feff, #5ef2ff 40%, #ff5470)', bg: dark ? 'linear-gradient(90deg, rgb(94 242 255 / 0.16), rgb(8 10 18 / 0.96) 75%), ' + t.panelSolid : 'linear-gradient(90deg, rgb(94 242 255 / 0.28), #eef9ff 75%), #eef9ff', color: t.textStrong, tag: 'SELECTED', tagColor: t.holoText, glow: 'drop-shadow(0 0 16px rgb(94 242 255 / 0.55))', opacity: 1, cls: '', flare: false, selected: 'true' },
+      bad: { edge: 'linear-gradient(150deg, #ff8fa3, #ff2a4d 50%, #7a0820)', bg: dark ? 'linear-gradient(90deg, rgb(255 42 77 / 0.24), rgb(8 10 18 / 0.96) 75%), ' + t.panelSolid : 'linear-gradient(90deg, rgb(255 84 112 / 0.16), #fff1f4 75%), #fff1f4', color: wrongInk, tag: '−2s', tagColor: wrongInk, glow: 'drop-shadow(0 0 14px rgb(255 42 77 / 0.5))', opacity: 1, cls: 'sf-shake', flare: false, selected: 'false' },
     };
     const leftState = (i) => s.fresh && s.fresh.l === i ? 'fresh' : s.doneL.includes(i) ? 'done' : s.bad && s.bad.l === i ? 'bad' : s.selL === i ? 'sel' : 'idle';
     const rightState = (j) => s.fresh && s.fresh.r === j ? 'fresh' : s.doneR.includes(j) ? 'done' : s.bad && s.bad.r === j ? 'bad' : 'idle';
@@ -133,7 +135,7 @@ class Component extends DCLogic {
       timeLeft: s.time, timeText: String(s.time).padStart(2, '0'), timeCls: s.bad ? 'sf-shake' : '',
       ringOffset: Math.round(490 - 490 * s.time / 60),
       lumiSrc: t.lumi[lumi],
-      lumiLine: s.fresh ? 'Đúng cặp rồi!' : s.bad ? 'Sai cặp, mất 2 giây!' : 'Còn ' + s.time + ' giây, nhanh lên!',
+      lumiLine: s.fresh ? 'That’s a pair!' : s.bad ? 'Wrong pair, 2 seconds gone!' : s.time + ' seconds left, hurry!',
     };
   }
 }

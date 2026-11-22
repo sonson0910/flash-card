@@ -14,10 +14,10 @@
         <div class="nk-float" style="width: 84px; height: 84px; flex-shrink: 0;">
 <!--#MASCOT proud-->
         </div>
-        <div style="position: relative; margin-bottom: 10px; width: 210px; box-sizing: border-box; padding: 8px 14px 9px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+        <div style="position: relative; margin-bottom: 10px; width: 250px; box-sizing: border-box; padding: 8px 14px 9px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
           <span aria-hidden="true" style="position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
-          <div style="margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">Recall 92%. Nở hoa rồi đó!</div>
+          <div style="margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">Recall 92%. You're in full bloom!</div>
         </div>
       </div>
       <div role="group" aria-label="Range" style="margin-bottom: 10px; display: flex; gap: 4px;">
@@ -65,7 +65,7 @@
           </div>
           <ul style="margin: 0; padding: 0; list-style: none; flex-grow: 1; display: flex; flex-direction: column; gap: 12px;">
             <sc-for list="{{mastery}}" as="m" hint-placeholder-count="3">
-              <li style="display: flex; align-items: center; gap: 10px;"><span style="width: 42px; height: 24px; flex-shrink: 0; clip-path: {{t.chamferSm}}; background: {{m.rim}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #ffffff; text-shadow: 0 1px 0 #7a0820;">{{m.grade}}</span><span style="font-weight: 800; font-size: 14px; color: {{t.text2}};">{{m.label}}</span><span style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.textStrong}};">{{m.value}}</span></li>
+              <li style="display: flex; align-items: center; gap: 10px;"><span style="width: 56px; height: 24px; flex-shrink: 0; clip-path: {{markClip}}; background: {{m.flat}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #ffffff; text-shadow: 0 1px 0 {{m.shadow}};">{{m.grade}}</span><span style="font-weight: 800; font-size: 14px; color: {{t.text2}};">{{m.label}}</span><span style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{t.textStrong}};">{{m.value}}</span></li>
             </sc-for>
           </ul>
         </div>
@@ -100,10 +100,10 @@
           <sc-for list="{{shelf}}" as="w" hint-placeholder-count="4">
             <div class="nk-lift" style="position: relative; filter: drop-shadow(0 0 12px rgb(255 42 77 / 0.45));">
               <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; overflow: hidden;"><div class="nk-rim-spin" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{sssRim}};"></div></div>
-              <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{t.cardFront}}; padding: 10px 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;">
+              <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{t.cardFront}}; padding: 10px 14px 10px 16px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;">
                 <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 21px; line-height: 1.05; color: {{t.textStrong}};">{{w.word}}</span>
                 <span style="margin-top: 3px; font-size: 13px; font-weight: 700; color: {{t.text2}};">{{w.meaning}}</span>
-                <span aria-hidden="true" style="position: absolute; right: 8px; top: 8px; height: 18px; padding: 0 6px; clip-path: {{t.chamferSm}}; background: {{sssRim}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 10px; color: #ffffff; display: flex; align-items: center;">STAR</span>
+                <span style="position: absolute; right: 10px; top: 10px; height: 20px; padding: 0 9px; clip-path: {{markClip}}; background: {{starFlat}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 11.5px; color: #ffffff; text-shadow: 0 1px 0 #7a0820; display: flex; align-items: center;">Star</span>
               </div>
             </div>
           </sc-for>
@@ -126,6 +126,8 @@ class Component extends DCLogic {
     const heatScale = dark
       ? ['rgb(255 255 255 / 0.07)', 'rgb(94 242 255 / 0.28)', 'rgb(94 242 255 / 0.6)', '#ff5470', '#ff2a4d']
       : ['rgb(13 40 80 / 0.08)', 'rgb(10 143 176 / 0.3)', 'rgb(10 143 176 / 0.65)', '#ff5470', '#d1123a'];
+    // Small tier marks need a flat fill: the spinning rims have white bands that swallow white text.
+    const flat = Object.fromEntries(['new', 'learning', 'mastered'].map((k) => [k, { bg: t.tier[k].flat, shadow: t.tier[k].flatShadow }]));
     const seed = (i) => { const x = Math.sin(i * 78.233) * 43758.5453; return x - Math.floor(x); };
     const circ = 2 * Math.PI * 58;
     const mastered = circ * 312 / 1228;
@@ -149,6 +151,8 @@ class Component extends DCLogic {
       bg: { wings: false },
       ringId: 'nk-ring-' + (dark ? 'd' : 'l'),
       sssRim: t.tier.mastered.rim,
+      starFlat: flat.mastered.bg,
+      markClip: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)',
       ranges: ['30 DAYS', '26 WEEKS', 'ALL TIME'].map((label, i) => {
         const on = this.state.range === i;
         return { label, on: on ? 'true' : 'false', pick: () => this.setState({ range: i }),
@@ -158,9 +162,9 @@ class Component extends DCLogic {
       heat,
       ring: { mastered: mastered.toFixed(1), learning: learning.toFixed(1), learningOffset: (-mastered).toFixed(1) },
       mastery: [
-        { grade: 'Star', label: 'Mastered', value: '312', rim: t.tier.mastered.rim },
-        { grade: 'Bloom', label: 'Learning', value: '304', rim: t.tier.learning.rim },
-        { grade: 'Bud', label: 'New', value: '612', rim: t.tier.new.rim },
+        { grade: 'Star', label: 'Mastered', value: '312', flat: flat.mastered.bg, shadow: flat.mastered.shadow },
+        { grade: 'Bloom', label: 'Learning', value: '304', flat: flat.learning.bg, shadow: flat.learning.shadow },
+        { grade: 'Bud', label: 'New', value: '612', flat: flat.new.bg, shadow: flat.new.shadow },
       ],
       forecast: f.map((n, i) => ({
         n, d: days[i], h: Math.round(n / 17 * 150),

@@ -32,9 +32,9 @@
   <aside style="position: absolute; z-index: 4; right: 56px; top: 190px; width: 250px; display: flex; flex-direction: column; gap: 14px;">
     <div class="nk-rise-2" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 16px 20px 18px;">
       <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.crimsonText}};">ACCURACY</div>
-      <div style="margin-top: 2px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 56px; line-height: 1; background: linear-gradient(180deg, #ffffff 0%, #ffe3ea 46%, #ff8fa3 54%, #ffffff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820);">92<span style="font-size: 28px;">%</span></div>
+      <div style="margin-top: 2px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 56px; line-height: 1; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820);">92<span style="font-size: 28px;">%</span></div>
       <div style="margin-top: 10px; height: 9px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div class="nk-bar" style="width: 92%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d);"></div></div>
-      <div style="margin-top: 8px; font-size: 13px; color: {{t.text2}};">11 of 12 letters right on first try</div>
+      <div style="margin-top: 8px; font-size: 13px; color: {{t.text2}};">Letters right on first try this session</div>
     </div>
     <div class="nk-rise-3" style="clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 14px 20px 16px; display: flex; flex-direction: column; gap: 9px;">
       <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.holoText}};">LETTER KEY</div>
@@ -65,7 +65,7 @@
         <button onClick="{{sp.pick}}" style="height: 36px; padding: 0 16px; border: 0; transform: skewX(-14deg); background: {{sp.bg}}; box-shadow: {{sp.edge}}; cursor: pointer; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.06em; color: {{sp.color}};">{{sp.label}}</span></button>
       </sc-for>
     </div>
-    <p style="margin: 22px 0 0; font-size: 15px; color: {{t.text2}};">Gợi ý nghĩa: <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 24px; color: {{t.textStrong}};">cần thiết, không thể thiếu</span> <span style="color: {{t.text3}};">· adjective · 9 letters</span></p>
+    <p style="margin: 22px 0 0; font-size: 15px; color: {{t.text2}};">Meaning: <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 24px; color: {{t.textStrong}};">cần thiết, không thể thiếu</span> <span style="color: {{t.text3}};">· adjective · 9 letters</span></p>
 
     <div class="{{tilesCls}}" style="margin-top: 28px; display: flex; gap: 8px;" aria-label="{{answerLabel}}">
       <sc-for list="{{letters}}" as="l" hint-placeholder-count="9">
@@ -125,8 +125,8 @@ class Component extends DCLogic {
       checkLabel: s.solved ? 'NEXT WORD' : 'CHECK',
       wingOpacity: s.solved ? 0.85 : 0.18,
       lumiSrc: t.lumi[s.solved ? 'happy' : 'hint'],
-      lumiLine: s.solved ? 'Đánh vần chuẩn rồi!' : 'Thiếu một chữ s nè!',
-      lumiSub: s.solved ? 'Nhớ mẹo: một áo sơ mi (1 c), hai tay áo (2 s).' : 'Mẹo nhớ: necessary có 1 c và 2 s, như một áo sơ mi có hai tay áo.',
+      lumiLine: s.solved ? 'Spelled it perfectly!' : 'You dropped one s!',
+      lumiSub: s.solved ? 'Remember: one shirt (1 c), two sleeves (2 s).' : 'Trick: necessary has 1 c and 2 s, like a shirt with two sleeves.',
       legend: [{ c: '#5ef2ff', label: 'Correct' }, { c: '#ff2a4d', label: 'Wrong letter' }, { c: t.hard, label: 'Missing letter' }],
       bars: [14, 26, 38, 30, 42, 24, 16].map((h, i) => ({ h, d: i * 110, cls: s.playing ? 'sf-wave' : '' })),
       speeds: [

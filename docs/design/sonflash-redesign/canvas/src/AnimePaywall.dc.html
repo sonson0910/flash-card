@@ -3,11 +3,11 @@
 <!--#ABG-->
   <div aria-hidden="true" style="position: absolute; inset: 0; background: {{t.scrim}};"></div>
 
-  <div role="dialog" aria-modal="true" aria-labelledby="pw-title" class="nk-rise" style="position: relative; z-index: 3; width: 600px; height: 730px; filter: drop-shadow(0 0 26px rgb(255 42 77 / 0.45)) drop-shadow(0 30px 40px rgb(0 0 0 / 0.4));">
+  <div role="dialog" aria-modal="true" aria-labelledby="pw-title" class="nk-rise" style="position: relative; z-index: 3; width: 600px; filter: drop-shadow(0 0 26px rgb(255 42 77 / 0.45)) drop-shadow(0 30px 40px rgb(0 0 0 / 0.4));">
     <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; overflow: hidden;"><div class="nk-rim-spin" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{t.tier.mastered.rim}};"></div></div>
     <div aria-hidden="true" style="position: absolute; inset: 3px; clip-path: {{t.chamfer}}; background: {{t.cardFront}};"></div>
 
-    <div style="position: relative; height: 100%; display: flex; flex-direction: column;">
+    <div style="position: relative; display: flex; flex-direction: column;">
       <div style="position: relative; height: 204px; flex-shrink: 0; margin: 3px 3px 0; clip-path: polygon(18px 0, 100% 0, 100% 100%, 0 100%, 0 18px); overflow: hidden; background: {{heroBg}}; border-bottom: 1px solid {{t.lineStrong}}; display: flex; align-items: center;">
         <div aria-hidden="true" class="nk-starfield" style="position: absolute; inset: 0; background: {{t.stars}}; opacity: 0.8;"></div>
         <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 30%; top: -30%; width: 60px; height: 160%; transform: rotate(18deg); background: linear-gradient(90deg, transparent, {{t.beam}}, transparent);"></div>
@@ -27,10 +27,10 @@
 
           <sc-if value="{{isAi}}" hint-placeholder-val="{{false}}">
             <div style="width: 350px;">
-              <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.text2}};">AI CARDS TODAY</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; color: {{t.textStrong}};">5<span style="font-size: 16px; color: {{t.text3}};"> / 5</span></span></div>
-              <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
-                <sc-for list="{{quota}}" as="q" hint-placeholder-count="5">
-                  <span class="nk-pop" style="height: 46px; transform: skewX(-14deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; display: flex; align-items: center; justify-content: center; color: #ffffff;"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="transform: skewX(14deg);"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"></path></svg></span>
+              <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.text2}};">AI CARDS TODAY</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; color: {{t.textStrong}};">20<span style="font-size: 16px; color: {{t.text3}};"> / 20</span></span></div>
+              <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px;">
+                <sc-for list="{{quota}}" as="q" hint-placeholder-count="20">
+                  <span class="nk-pop" style="height: 20px; transform: skewX(-14deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; display: flex; align-items: center; justify-content: center; color: #ffffff;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="transform: skewX(14deg);"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"></path></svg></span>
                 </sc-for>
               </div>
               <div style="margin-top: 12px; display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: {{t.text2}};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Free cards reset at 00:00 — about 9 hours from now</div>
@@ -65,7 +65,7 @@
                 <circle cx="352" cy="26" r="8" fill="{{t.gold}}"></circle>
               </svg>
               <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) skewX(-12deg); height: 44px; padding: 0 18px; background: {{t.panelSolid}}; box-shadow: inset 0 0 0 1.5px {{t.gold}}, 0 0 24px -4px rgb(255 209 102 / 0.6); display: flex; align-items: center; white-space: nowrap;">
-                <span style="transform: skewX(12deg); display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; color: {{t.goldText}};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg>BAND 6.5 → <span style="filter: blur(4px);">7.0</span> BY DEC</span>
+                <span style="transform: skewX(12deg); display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; color: {{t.goldText}};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg>BAND GOAL · 6.5 → 7.0</span>
               </div>
             </div>
           </sc-if>
@@ -77,12 +77,12 @@
         <button aria-label="Close" class="nk-lift" style="position: absolute; z-index: 3; right: 14px; top: 14px; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
       </div>
 
-      <div style="flex-grow: 1; min-height: 0; padding: 20px 34px 0;">
+      <div style="padding: 22px 34px 0;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="height: 26px; padding: 0 12px; transform: skewX(-14deg); background: linear-gradient(180deg, #fff0b8, #ffd166); display: inline-flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 12.5px; letter-spacing: 0.1em; color: #4a2a00;">STAR · SONFLASH PRO</span></span>
+          <span style="height: 26px; padding: 0 12px; transform: skewX(-14deg); background: linear-gradient(180deg, #fff0b8, #ffd166); display: inline-flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 12.5px; letter-spacing: 0.1em; color: #4a2a00;">SONFLASH PRO</span></span>
           <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</span>
         </div>
-        <h2 id="pw-title" style="margin: 12px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 29px; line-height: 1.12; color: {{t.textStrong}};">{{copy.title}} <span style="background: {{emGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 12px rgb(255 42 77 / 0.45));">{{copy.em}}</span></h2>
+        <h2 id="pw-title" style="margin: 12px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 29px; line-height: 1.12; color: {{t.textStrong}};">{{copy.title}} <span style="white-space: nowrap; background: {{emGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 12px rgb(255 42 77 / 0.45));">{{copy.em}}</span></h2>
         <p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.55; color: {{t.body}};">{{copy.sub}}</p>
         <ul style="margin: 14px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px;">
           <sc-for list="{{perks}}" as="k" hint-placeholder-count="3">
@@ -91,7 +91,7 @@
         </ul>
       </div>
 
-      <footer style="flex-shrink: 0; padding: 16px 34px 24px;">
+      <footer style="flex-shrink: 0; padding: 24px 34px 26px;">
         <button style="width: 100%; height: 52px; box-sizing: border-box; padding: 0 16px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.gold}}; color: {{t.text}}; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer;">
           <span style="width: 16px; height: 16px; transform: rotate(45deg); background: {{t.gold}}; box-shadow: 0 0 10px {{t.gold}};"></span>
           <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; color: {{t.textStrong}};">PRO · ANNUAL</span>
@@ -117,9 +117,9 @@ class Component extends DCLogic {
     const moment = this.props.moment ?? 'recap';
     const COPY = {
       recap: { title: 'You just learned 20 words.', em: 'Turn them into a story.', sub: 'Pro writes a short story with today’s words, so they show up in context before tomorrow’s review.', cta: 'READ MY STORY WITH PRO', perks: ['A new AI story after every session', 'Unlimited AI flashcards from any page', 'AI tutor explains any card in Vietnamese'], pose: 'happy' },
-      ai: { title: 'You’ve used today’s 5 free AI cards.', em: 'Keep capturing.', sub: 'You can still save words by hand and review everything. Pro removes the daily AI limit.', cta: 'UNLOCK UNLIMITED AI CARDS', perks: ['Unlimited AI cards from the extension and app', 'Examples, IPA and audio filled in for you', 'Scan a whole article into cards'], pose: 'hint' },
+      ai: { title: 'You’ve used today’s 20 free AI cards.', em: 'Keep capturing.', sub: 'You can still save words by hand and review everything. Pro removes the daily AI limit.', cta: 'UNLOCK UNLIMITED AI CARDS', perks: ['Unlimited AI cards from the extension and app', 'Examples, IPA and audio filled in for you', 'Scan a whole article into cards'], pose: 'hint' },
       streak: { title: 'Your 23-day streak is at risk.', em: 'Freeze it.', sub: 'You haven’t reviewed today. Pro includes 2 streak freezes a month, so one busy day doesn’t reset your progress.', cta: 'PROTECT MY STREAK', perks: ['2 streak freezes every month', 'Repair a broken streak within 48 hours', 'Everything else in Pro'], pose: 'oops' },
-      band: { title: 'See your', em: 'projected IELTS band.', sub: 'We estimate your band from the words you know and how well you keep them — and show which words move it most.', cta: 'SHOW MY PROJECTED BAND', perks: ['Band projection updated after every session', 'The 50 words that would raise it most', 'A 90-day plan to your exam date'], pose: 'proud' },
+      band: { title: 'Work toward your', em: 'IELTS band goal.', sub: 'Keep your latest band and your target side by side, and learn the words that matter most on the way there.', cta: 'TRACK MY BAND GOAL', perks: ['Your band goal in view: latest 6.5 → target 7.0', 'The 50 words that matter most for your goal', 'A 90-day plan to your exam date'], pose: 'proud' },
     };
     const copy = COPY[moment] || COPY.recap;
     const done = 'M5 12.5l4.5 4.5L19 7.5';
@@ -136,9 +136,9 @@ class Component extends DCLogic {
       t, bg: { wings: true },
       heroBg: dark ? 'radial-gradient(ellipse 70% 90% at 30% 0%, rgb(255 42 77 / 0.22), transparent 70%), radial-gradient(ellipse 60% 80% at 100% 100%, rgb(16 60 120 / 0.55), transparent 70%), #070a14' : 'radial-gradient(ellipse 70% 90% at 30% 0%, rgb(255 84 112 / 0.18), transparent 70%), ' + t.prism,
       lumiSrc: t.lumi[copy.pose],
-      emGrad: dark ? 'linear-gradient(180deg, #ffd166 0%, #ff5470 60%, #ff2a4d 100%)' : 'linear-gradient(180deg, #ff2a4d 0%, #c40f35 60%, #8a0a26 100%)',
+      emGrad: t.metalEm,
       isRecap: moment === 'recap', isAi: moment === 'ai', isStreak: moment === 'streak', isBand: moment === 'band',
-      copy, perks: copy.perks, quota: [1, 2, 3, 4, 5], week,
+      copy, perks: copy.perks, quota: Array.from({ length: 20 }, (_, i) => i), week,
     };
   }
 }

@@ -27,7 +27,7 @@
         <header style="display: flex; align-items: flex-start; gap: 14px;">
           <div style="flex-grow: 1;">
             <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.text2}};">CHECKOUT <span style="color: {{t.crimsonText}};">//</span> STEP 1 OF 2</div>
-            <h2 id="ck-title" style="margin: 6px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 38px; line-height: 1; color: {{t.textStrong}};">UPGRADE TO <span style="background: {{t.tier.mastered.rim}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgb(255 42 77 / 0.5));">PRO</span></h2>
+            <h2 id="ck-title" style="margin: 6px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 38px; line-height: 1; color: {{t.textStrong}};">UPGRADE TO <span style="background: {{proGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgb(255 42 77 / 0.5));">PRO</span></h2>
           </div>
           <div class="nk-float" style="width: 96px; height: 92px; margin-top: -12px; flex-shrink: 0;">
 <!--#MASCOT idle-->
@@ -36,7 +36,7 @@
         </header>
 
         <div style="margin-top: 16px; height: 74px; box-sizing: border-box; padding: 0 18px; clip-path: {{t.chamfer}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.panelEdge}}; display: flex; align-items: center; gap: 14px;">
-          <span aria-hidden="true" style="width: 46px; height: 50px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.tier.mastered.rim}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; color: #ffffff; text-shadow: 0 1px 0 #7a0820;">PRO</span>
+          <span aria-hidden="true" style="position: relative; width: 46px; height: 50px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.tier.mastered.rim}};"><span style="position: absolute; inset: 3px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; color: #ffffff; text-shadow: 0 1px 0 #7a0820;">PRO</span></span>
           <div style="flex-grow: 1;">
             <div style="font-weight: 900; font-size: 15.5px; color: {{t.textStrong}};">SonFlash Pro · annual</div>
             <div style="margin-top: 2px; font-size: 13px; color: {{t.text2}};">Renews 23 Sep 2027 · cancel anytime</div>
@@ -82,9 +82,9 @@
     </sc-if>
 
     <sc-if value="{{isSuccess}}" hint-placeholder-val="{{false}}">
-      <div style="position: relative; height: 100%; box-sizing: border-box; padding: 26px 34px 26px; display: flex; flex-direction: column; align-items: center; text-align: center;">
+      <div style="position: relative; height: 100%; box-sizing: border-box; padding: 26px 34px 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
         <button aria-label="Close" class="nk-lift" style="position: absolute; right: 18px; top: 18px; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
-        <div class="nk-banner" style="height: 30px; padding: 0 22px; transform: skewX(-16deg); background: {{t.primaryBg}}; display: flex; align-items: center; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.7));"><span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.2em; color: #ffffff;">GLOW UP · STAR</span></div>
+        <div class="nk-banner" style="height: 30px; padding: 0 22px; transform: skewX(-16deg); background: {{t.primaryBg}}; display: flex; align-items: center; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.7));"><span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: 0.2em; color: #ffffff;">GLOW UP · PRO</span></div>
         <div style="margin-top: 8px; display: flex; align-items: flex-end; justify-content: center; gap: 4px;">
           <div class="nk-float" style="width: 170px; height: 180px;">
 <!--#MASCOT happy-->
@@ -105,7 +105,7 @@
             </li>
           </sc-for>
         </ul>
-        <footer style="margin-top: auto; width: 100%; display: flex; gap: 12px;">
+        <footer style="margin-top: 30px; width: 100%; display: flex; gap: 12px;">
           <button class="nk-lift" style="height: 52px; padding: 0 22px; border: 0; transform: skewX(-12deg); background: {{t.secondaryBg}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.secondaryText}}; cursor: pointer;"><span style="display: block; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px;">VIEW RECEIPT</span></button>
           <button class="nk-lift" style="flex-grow: 1; height: 52px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; cursor: pointer;"><span style="display: flex; align-items: center; justify-content: center; gap: 10px; transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; letter-spacing: 0.05em;">CONTINUE MY SESSION<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span></button>
         </footer>
@@ -132,6 +132,8 @@ class Component extends DCLogic {
     return {
       t, bg: { wings: !success },
       isPay: !success, isSuccess: success,
+      // The conic tier rim is mostly pale gold and white, which vanishes on the Prism Day panel; light uses a crimson ink.
+      proGrad: dark ? t.tier.mastered.rim : t.metalEm,
       rim: success ? t.tier.mastered.rim : t.tier.learning.rim, rimCls: success ? 'nk-rim-spin' : '',
       rimGlow: success ? 'rgb(255 42 77 / 0.6)' : t.tier.learning.soft,
       methods: M.map(([name, mark, hint, color], i) => ({

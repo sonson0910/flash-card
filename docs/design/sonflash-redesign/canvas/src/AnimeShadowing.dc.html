@@ -17,14 +17,14 @@
     <span style="height: 44px; padding: 0 16px 0 12px; clip-path: {{t.chamferSm}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 6px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="#ffd166"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>12</span>
   </header>
 
-  <aside style="position: absolute; z-index: 4; left: 36px; bottom: 34px; width: 230px;">
+  <aside style="position: absolute; z-index: 4; left: 28px; bottom: 34px; width: 206px;">
     <div class="nk-rise-3" style="position: relative; box-sizing: border-box; padding: 12px 16px 14px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
       <span aria-hidden="true" style="position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; background: linear-gradient(180deg, #ff2a4d, #5ef2ff);"></span>
       <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
       <div style="margin-top: 3px; font-weight: 900; font-size: 15.5px; line-height: 1.3; color: {{t.textStrong}};">{{lumiLine}}</div>
-      <div style="margin-top: 3px; font-size: 12.5px; line-height: 1.5; color: {{t.text2}};">Nhấn âm tiết thứ hai: re-<b style="color: {{t.textStrong}};">CHARGE</b>. “quiet” có hai nhịp: <b style="color: {{t.textStrong}};">qui·et</b>.</div>
+      <div style="margin-top: 3px; font-size: 12.5px; line-height: 1.5; color: {{t.text2}};">Stress the second beat: <span style="white-space: nowrap;">re-<b style="color: {{t.textStrong}};">CHARGE</b>.</span> “quiet” has two beats: <b style="color: {{t.textStrong}};">qui·et</b>.</div>
     </div>
-    <div class="nk-float" style="width: 230px; height: 240px; margin-top: 10px;">
+    <div class="nk-float" style="width: 206px; height: 240px; margin-top: 10px;">
 <!--#MASCOT $-->
     </div>
   </aside>
@@ -65,7 +65,7 @@
 
     <div style="margin-top: 28px; width: 900px; display: flex; align-items: center; gap: 28px;">
       <div style="flex: 1; text-align: left;">
-        <div style="display: flex; align-items: baseline; gap: 10px;"><span class="{{scoreCls}}" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 60px; line-height: 1; background: linear-gradient(180deg, #ffffff 0%, #ffe3ea 46%, #ff8fa3 54%, #ffffff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 14px rgb(255 42 77 / 0.55));">{{score}}%</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.1em; color: {{t.text2}};">SYNC · {{scoreTake}}</span><span style="margin-left: 4px; height: 26px; padding: 0 10px; clip-path: {{t.chamferSm}}; background: {{sRim}}; color: #1a0610; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; display: flex; align-items: center;">S</span></div>
+        <div style="display: flex; align-items: baseline; gap: 10px;"><span class="{{scoreCls}}" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 60px; line-height: 1; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 14px rgb(255 42 77 / 0.55));">{{score}}%</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 0.1em; color: {{t.text2}};">SYNC · {{scoreTake}}</span><span style="margin-left: 4px; height: 26px; padding: 0 10px; clip-path: {{t.chamferSm}}; background: {{sRim}}; color: #1a0610; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; letter-spacing: 0.06em; display: flex; align-items: center;">{{sGrade}}</span></div>
         <div style="margin-top: 10px; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div class="nk-bar" style="width: {{score}}%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.6);"></div></div>
         <div style="margin-top: 10px; display: flex; gap: 16px; font-size: 13px; font-weight: 700; color: {{t.text2}};">
           <sc-for list="{{legend}}" as="l" hint-placeholder-count="3">
@@ -124,11 +124,11 @@ class Component extends DCLogic {
       recDot: s.recording ? '#ff2a4d' : holo,
       takeLabel: s.recording ? 'TAKE ' + (s.take + 1) + ' · RECORDING' : 'TAKE ' + s.take + ' · SAVED',
       ringOpacity: s.recording ? 1 : 0.35,
-      sRim: t.tier.learning.rim,
+      sRim: t.tier.learning.rim, sGrade: t.tier.learning.grade.toUpperCase(),
       score: pct, scoreTake: 'TAKE ' + s.take, scoreCls: done ? 'nk-pop' : '',
       legend: [{ c: '#5ef2ff', label: 'Clear' }, { c: t.hard, label: 'Close' }, { c: '#ff2a4d', label: 'Missed' }],
       lumiSrc: t.lumi[s.recording ? 'idle' : pct >= 90 ? 'proud' : 'happy'],
-      lumiLine: s.recording ? 'Nói theo mình nhé!' : pct >= 90 ? 'Đồng bộ 91%! Nở hoa rồi!' : 'Khá lắm, thử lại nhé!',
+      lumiLine: s.recording ? 'Say it after me!' : pct >= 90 ? pct + '% in sync! In full bloom!' : 'Nice! Once more?',
       segments: Array.from({ length: 8 }, (_, i) => ({
         bg: i < 2 ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === 2 ? '#ff2a4d' : t.track,
         glow: i < 2 ? '0 0 8px rgb(94 242 255 / 0.5)' : i === 2 ? '0 0 14px rgb(255 42 77 / 0.9)' : 'none',

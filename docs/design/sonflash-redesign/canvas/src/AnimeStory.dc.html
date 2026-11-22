@@ -28,7 +28,7 @@
   <main style="position: relative; z-index: 3; flex-grow: 1; min-height: 0; display: grid; grid-template-columns: 1fr 380px; gap: 56px; padding: 6px 60px 24px 110px;">
     <article style="position: relative; display: flex; flex-direction: column; min-width: 0;">
       <div class="nk-rise" style="display: flex; align-items: center; gap: 12px;">
-        <span style="height: 28px; padding: 0 12px; transform: skewX(-14deg); background: linear-gradient(90deg, #5ef2ff, #1aa7c9); display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.08em; color: #031820;">B1 · INTERMEDIATE</span></span>
+        <span style="height: 28px; padding: 0 12px; transform: skewX(-14deg); background: linear-gradient(90deg, #5ef2ff, #1aa7c9); display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.08em; color: #031820;">CORE LEVEL</span></span>
         <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; letter-spacing: 0.08em; color: {{t.text2}};">6 OF YOUR WORDS <span style="color: {{t.crimsonText}};">//</span> 3 MIN READ</span>
       </div>
       <h1 class="nk-rise" style="margin: 14px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 64px; line-height: 1; letter-spacing: -0.005em;">
@@ -50,7 +50,7 @@
           <span aria-hidden="true" style="position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · NARRATOR</div>
           <div style="margin-top: 3px; font-weight: 900; font-size: 17px; color: {{t.textStrong}};">{{lumiLine}}</div>
-          <div style="margin-top: 3px; font-size: 13.5px; line-height: 1.45; color: {{t.text2}};">Chạm vào từ được tô sáng để xem nghĩa. Đọc hết truyện, mình ôn cả 6 từ một lượt.</div>
+          <div style="margin-top: 3px; font-size: 13.5px; line-height: 1.45; color: {{t.text2}};">Tap a highlighted word to see its meaning. Finish the story and we’ll review all 6 words together.</div>
         </div>
       </div>
     </article>
@@ -81,7 +81,7 @@
         <div style="margin-top: 6px; display: flex; flex-direction: column;">
           <sc-for list="{{words}}" as="x" hint-placeholder-count="6">
             <button onClick="{{x.pick}}" aria-pressed="{{x.on}}" style="height: 40px; border: 0; border-top: 1px solid {{t.line}}; background: {{x.bg}}; padding: 0 6px; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; color: inherit; font-family: inherit;">
-              <span style="min-width: 38px; height: 22px; padding: 0 6px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{x.rim}}; color: #1a0610; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 12.5px; display: flex; align-items: center; justify-content: center;">{{x.grade}}</span>
+              <span style="min-width: 54px; height: 22px; padding: 0 6px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{x.rim}}; color: #1a0610; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 12.5px; display: flex; align-items: center; justify-content: center;">{{x.grade}}</span>
               <span style="font-weight: 900; font-size: 16px; color: {{t.textStrong}};">{{x.word}}</span>
               <span style="margin-left: auto; font-size: 13px; color: {{t.text2}};">{{x.vi}}</span>
             </button>
@@ -134,7 +134,7 @@ class Component extends DCLogic {
       w,
       g: { word: cur[0], pre: cur[1], stress: cur[2], rest: cur[3], ipa: cur[4], pos: cur[5], vi: cur[6], due: cur[8], grade: tv.grade, label: tv.label, rim: tv.rim, soft: tv.soft, color: tv.color },
       lumiSrc: t.lumi[s.playing ? 'happy' : 'hint'],
-      lumiLine: s.playing ? 'Mình đang đọc, nghe theo nhé!' : '“' + cur[0] + '” nghĩa là ' + cur[6] + '.',
+      lumiLine: s.playing ? 'I’m reading, follow along!' : '“' + cur[0] + '” means ' + cur[6] + '.',
       words: data.map(([word, , , , , , vi, tier]) => ({
         word, vi, grade: t.tier[tier].grade, rim: t.tier[tier].rim, pick: pick(word), on: s.active === word ? 'true' : 'false',
         bg: s.active === word ? t.tier[tier].soft.replace(/0\.\d+\)$/, '0.18)') : 'transparent',

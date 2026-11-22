@@ -28,7 +28,7 @@
     </div>
   </div>
 
-  <div style="position: relative; z-index: 3; flex-grow: 1; padding: 16px 36px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-content: start;">
+  <div style="position: relative; z-index: 3; flex-grow: 1; padding: 16px 36px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-content: stretch;">
     <div style="display: flex; flex-direction: column; gap: 18px;">
       <section class="nk-rise" style="{{card}}">
         <h2 style="{{h2}}"><span style="{{h2dot}}"></span>HIỂN THỊ &amp; ÂM THANH</h2>
@@ -51,7 +51,7 @@
           <span style="flex-grow: 1; height: 40px; box-sizing: border-box; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.panelEdge2}}; display: flex; align-items: center; font-family: {{t.fMono}}; font-size: 12.5px; color: {{t.textStrong}}; overflow: hidden; white-space: nowrap;">https://www.theguardian.com</span>
           <button class="nk-press" style="height: 40px; padding: 0 16px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13.5px; letter-spacing: 0.04em;"><span style="display: inline-block; transform: skewX(12deg);">CẤP QUYỀN</span></button>
         </div>
-        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="margin-top: 10px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 6px;">
           <sc-for list="{{sites}}" as="s" hint-placeholder-count="3">
             <div style="height: 40px; padding: 0 6px 0 8px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}}; display: flex; align-items: center; gap: 10px;">
               <span style="width: 24px; height: 24px; background: {{s.color}}; color: #ffffff; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center;">{{s.letter}}</span>
@@ -85,7 +85,7 @@
 
       <section class="nk-rise-2" style="{{card}}">
         <h2 style="{{h2}}"><span style="{{h2dot}}"></span>TÀI KHOẢN</h2>
-        <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+        <div style="margin-top: 12px; flex-grow: 1; display: flex; align-items: center; gap: 12px;">
           <span style="width: 44px; height: 44px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, #ff5470, #7a0820); color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center;">KB</span>
           <div style="flex-grow: 1;">
             <div style="font-weight: 900; font-size: 14.5px; color: {{t.textStrong}};">Đã đăng nhập</div>
@@ -122,11 +122,11 @@ class Component extends DCLogic {
       titleShadow: dark ? '#7a0820' : 'rgb(255 255 255 / 0.8)',
       footBg: dark ? 'linear-gradient(180deg, rgb(10 13 24 / 0.9), rgb(4 6 12 / 0.96))' : 'linear-gradient(180deg, rgb(236 248 255 / 0.92), rgb(214 237 255 / 0.96))',
       okBg: dark ? 'rgb(94 242 255 / 0.12)' : 'rgb(26 167 201 / 0.12)',
-      card: 'box-sizing: border-box; padding: 16px 20px 14px; clip-path: ' + t.chamfer + '; background: ' + t.panel + '; box-shadow: inset 0 0 0 1px ' + t.panelEdge2 + ';',
+      card: 'box-sizing: border-box; flex-grow: 1; display: flex; flex-direction: column; padding: 16px 20px 14px; clip-path: ' + t.chamfer + '; background: ' + t.panel + '; box-shadow: inset 0 0 0 1px ' + t.panelEdge2 + ';',
       h2: 'margin: 0; display: flex; align-items: center; gap: 8px; font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 900; font-size: 17px; letter-spacing: 0.06em; color: ' + t.textStrong + ';',
       h2dot: 'width: 9px; height: 9px; transform: rotate(45deg); background: ' + t.crimson + '; box-shadow: 0 0 8px ' + t.crimson + ';',
-      row: 'min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: inset 0 -1px 0 ' + t.line + ';',
-      rowLast: 'min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 16px;',
+      row: 'flex-grow: 1; min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: inset 0 -1px 0 ' + t.line + ';',
+      rowLast: 'flex-grow: 1; min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 16px;',
       rowTitle: 'font-size: 14px; font-weight: 800; color: ' + t.textStrong + ';',
       rowHint: 'margin-top: 2px; font-size: 12px; color: ' + t.text3 + ';',
       swOn: 'position: relative; flex-shrink: 0; width: 46px; height: 24px; transform: skewX(-14deg); background: linear-gradient(90deg, #5ef2ff, #1aa7c9); box-shadow: 0 0 14px -3px rgb(94 242 255 / 0.8);',

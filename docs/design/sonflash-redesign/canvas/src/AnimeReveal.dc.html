@@ -33,9 +33,9 @@
             <div style="font-size: 14px; font-weight: 700; color: {{t.text2}};">Khoảnh khắc</div>
           </div>
           <div style="margin-top: auto; padding: 0 16px 16px; display: flex; align-items: center; gap: 10px;">
-            <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.text3}}; text-decoration: line-through;">S</span>
+            <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; letter-spacing: 0.02em; color: {{t.text3}}; text-decoration: line-through;">{{tierFrom}}</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{t.text2}}" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
-            <span style="height: 34px; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{t.tier.mastered.rim}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: #ffffff; text-shadow: 0 2px 0 #7a0820;">STAR</span>
+            <span style="height: 34px; padding: 2px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{t.tier.mastered.rim}}; display: flex;"><span style="padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.primaryBg}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 21px; color: #ffffff; text-shadow: 0 2px 0 #7a0820;">{{tierTo}}</span></span>
           </div>
         </div>
         <span aria-hidden="true" class="nk-flare" style="position: absolute; right: -50px; top: -50px; width: 130px; height: 130px;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 16px 6px rgb(255 84 112 / 0.8);"></span></span>
@@ -64,7 +64,7 @@
       </div>
     </sc-if>
 
-    <h2 id="rv-title" class="nk-pop-2" style="margin: 22px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 50px; line-height: 1; letter-spacing: 0.02em; background: linear-gradient(180deg, #ffffff 0%, #ffe3ea 46%, #ff8fa3 54%, #ffffff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 20px rgb(255 42 77 / 0.8));">{{title}}</h2>
+    <h2 id="rv-title" class="nk-pop-2" style="margin: 22px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 50px; line-height: 1; letter-spacing: 0.02em; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 20px rgb(255 42 77 / 0.8));">{{title}}</h2>
     <p class="nk-rise-3" style="margin: 12px 0 0; max-width: 440px; font-size: 15.5px; line-height: 1.55; font-weight: 700; color: {{bodyColor}}; text-shadow: {{bodyShadow}};">{{body}}</p>
 
     <div class="nk-rise-3" style="margin-top: 14px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
@@ -101,6 +101,7 @@ class Component extends DCLogic {
       bodyColor: dark ? '#ffffff' : t.textStrong, bodyShadow: dark ? '0 1px 8px rgb(0 0 0 / 0.5)' : '0 0 12px rgb(255 255 255 / 0.9)',
       secBg: dark ? 'rgb(255 255 255 / 0.12)' : '#ffffff', secLine: dark ? 'rgb(255 255 255 / 0.4)' : t.lineStrong, secColor: dark ? '#ffffff' : t.textStrong,
       isTier: state === 'tierup', isStreak: state === 'streak', isLevel: state === 'levelup',
+      tierFrom: t.tier.learning.grade.toUpperCase(), tierTo: t.tier.mastered.grade.toUpperCase(),
       ...copy,
     };
   }

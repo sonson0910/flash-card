@@ -22,7 +22,7 @@
             <div style="position: relative; height: 230px; flex-shrink: 0; overflow: hidden; clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%);">
               <img src="{{image}}" alt="Illustration for immediate" style="width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.06);">
               <div aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(180deg, rgb(7 6 15 / 0.35), transparent 40%, rgb(179 15 51 / 0.35));"></div>
-              <span style="position: absolute; left: 16px; top: 16px; height: 32px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.tier.learning.rim}}; display: flex; align-items: center; gap: 7px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: #ffffff; text-shadow: 0 2px 0 #7a0820;">S</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; color: #1a0610;">Learning</span></span>
+              <span style="position: absolute; left: 16px; top: 16px; height: 32px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.tier.learning.rim}}; display: flex; align-items: center; gap: 7px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #4a0614;">Bloom</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; color: #1a0610;">Learning</span></span>
             </div>
             <div style="position: relative; flex-grow: 1; padding: 0 26px 22px; margin-top: -6px; display: flex; flex-direction: column;">
               <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 13px; letter-spacing: 0.12em; color: {{t.crimsonText}};">ADJECTIVE <span style="color: {{t.text3}};">// EDITING</span></div>
@@ -160,7 +160,7 @@ class Component extends DCLogic {
       grades: [
         { label: 'AGAIN', key: '1', bg: t.again, color: '#ffffff' }, { label: 'HARD', key: '2', bg: t.hard, color: '#ffffff' },
         { label: 'GOOD', key: '3', bg: dark ? 'linear-gradient(180deg, #9ff9ff, #5ef2ff 50%, #1aa7c9)' : 'linear-gradient(180deg, #2bc4e0, #0a8fb0)', color: dark ? '#031820' : '#ffffff' },
-        { label: 'EASY', key: '4', bg: t.easy, color: dark ? '#4a2a00' : '#ffffff' },
+        { label: 'EASY', key: '4', bg: t.easy, color: t.easyInk },
       ],
     };
   }
