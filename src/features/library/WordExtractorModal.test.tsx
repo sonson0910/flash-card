@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as Dialog from '@radix-ui/react-dialog';
 import { i18n } from '@lingui/core';
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
-import { extractionFailureMessage, extractorItemsForScope, extractorScopeKey, extractorSelectionForScope, getSelectableExtractedWords, selectedExtractedWords, useExtractorRequestGuard, WordExtractorContent, WordExtractorModal } from './WordExtractorModal';
+import { extractedPassageRanges, extractionFailureMessage, extractorItemsForScope, extractorScopeKey, extractorSelectionForScope, getSelectableExtractedWords, PassageHighlights, selectedExtractedWords, useExtractorRequestGuard, WordExtractorContent, WordExtractorModal } from './WordExtractorModal';
 import { languageProfileForPair } from '../courses/courseLanguageProfile';
 
 const installMinimalReactDom = () => {
@@ -139,6 +139,32 @@ describe('WordExtractorModal', () => {
     } finally {
       await act(async () => { root.unmount(); });
     }
+  });
+
+  it('marks words in the text as shown, measured on the same slice the extract request reads', () => {
+    const passage = '\n  Floods crested.  ';
+    const ranges = extractedPassageRanges(passage, [{ word: 'crest', surface: 'crested' }, { word: 'flood', surface: 'Floods' }], 'en');
+    expect(ranges.map(range => passage.slice(range.start, range.end))).toEqual(['Floods', 'crested']);
+
+    const long = `${'a '.repeat(1_000)}tail`;
+    expect(extractedPassageRanges(long, [{ word: 'tail' }], 'en')).toEqual([]);
+  });
+
+  it('draws a muted mark for a word already in the library and keeps the layer out of the accessibility tree', () => {
+    const text = 'Floods crested at dawn.';
+    const html = renderToStaticMarkup(
+      <PassageHighlights
+        text={text}
+        ranges={[{ index: 1, start: 0, end: 6 }, { index: 0, start: 7, end: 14 }]}
+        isOwned={index => index === 1}
+        scrollTop={0}
+      />,
+    );
+
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).toContain('<mark class="word-extractor-mark is-owned">Floods</mark>');
+    expect(html).toContain('<mark class="word-extractor-mark">crested</mark>');
+    expect(html).toContain(' at dawn.');
   });
 
   it('keeps actionable AI quota guidance', () => {

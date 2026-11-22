@@ -28,7 +28,7 @@ msgctxt "library.clear.decks"
 msgid "decks"
 msgstr "decks"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:228
+#: src/features/importExport/SpreadsheetImportDialog.tsx:233
 msgctxt "library.import.failed-save"
 msgid "The cards could not be saved. Check your connection and try again."
 msgstr "The cards could not be saved. Check your connection and try again."
@@ -38,18 +38,18 @@ msgctxt "library.overview.lumi-signature"
 msgid "LUMI · LINK"
 msgstr "LUMI · LINK"
 
-#: src/features/library/EmptyLibraryPanel.tsx:222
+#: src/features/library/EmptyLibraryPanel.tsx:226
 #: src/features/library/LibraryTools.tsx:666
 msgctxt "library.create.word-label"
 msgid "English word"
 msgstr "English word"
 
-#: src/features/library/EmptyLibraryPanel.tsx:251
+#: src/features/library/EmptyLibraryPanel.tsx:255
 msgctxt "library.empty.generate-help"
 msgid "Add a word or phrase to generate a card."
 msgstr "Add a word or phrase to generate a card."
 
-#: src/features/library/LibraryTools.tsx:819
+#: src/features/library/LibraryTools.tsx:820
 msgctxt "library.filters.search-label"
 msgid "Search English words"
 msgstr "Search English words"
@@ -79,12 +79,12 @@ msgctxt "library.edit-card.save"
 msgid "Save changes"
 msgstr "Save changes"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:207
+#: src/features/importExport/SpreadsheetImportDialog.tsx:212
 msgctxt "library.import.more-issues"
 msgid "{count, plural, one {# more issue in the error report} other {# more issues in the error report}}"
 msgstr "{count, plural, one {# more issue in the error report} other {# more issues in the error report}}"
 
-#: src/features/library/EmptyLibraryPanel.tsx:246
+#: src/features/library/EmptyLibraryPanel.tsx:250
 msgctxt "library.empty.generate"
 msgid "Generate card"
 msgstr "Generate card"
@@ -109,7 +109,7 @@ msgctxt "library.grid.search-label"
 msgid "Search words"
 msgstr "Search words"
 
-#: src/features/library/LibraryScreen.tsx:310
+#: src/features/library/LibraryScreen.tsx:311
 msgctxt "library.loading.tools"
 msgid "Loading library tools"
 msgstr "Loading library tools"
@@ -119,7 +119,7 @@ msgctxt "library.import.failure-save"
 msgid "Check your connection, then try again."
 msgstr "Check your connection, then try again."
 
-#: src/features/library/EmptyLibraryPanel.tsx:254
+#: src/features/library/EmptyLibraryPanel.tsx:258
 #: src/features/library/LibraryTools.tsx:697
 msgctxt "library.create.building"
 msgid "Building your card"
@@ -147,7 +147,7 @@ msgid "Could not load learning insights. Try again."
 msgstr "Could not load learning insights. Try again."
 
 #: src/features/importExport/SpreadsheetImportDialog.tsx:110
-#: src/features/library/EmptyLibraryPanel.tsx:89
+#: src/features/library/EmptyLibraryPanel.tsx:92
 #: src/features/library/LibraryTools.tsx:158
 msgctxt "library.import.progress"
 msgid "Importing {current, number} of {total, number}"
@@ -157,6 +157,11 @@ msgstr "Importing {current, number} of {total, number}"
 msgctxt "library.edit-card.back-to-card"
 msgid "back to card"
 msgstr "back to card"
+
+#: src/features/importExport/SpreadsheetImportDialog.tsx:192
+msgctxt "library.import.deck-unassigned"
+msgid "{count, plural, one {# new card named a deck you do not have, so it was saved to Unassigned.} other {# new cards named decks you do not have, so they were saved to Unassigned.}}"
+msgstr "{count, plural, one {# new card named a deck you do not have, so it was saved to Unassigned.} other {# new cards named decks you do not have, so they were saved to Unassigned.}}"
 
 #: src/features/library/LibraryCardGrid.tsx:352
 msgctxt "library.grid.no-match-title"
@@ -168,7 +173,7 @@ msgctxt "library.overview.deck-count"
 msgid "// {count, plural, one {# deck} other {# decks}}"
 msgstr "// {count, plural, one {# deck} other {# decks}}"
 
-#: src/features/library/LibraryTools.tsx:991
+#: src/features/library/LibraryTools.tsx:992
 msgctxt "library.deck.cancel"
 msgid "Cancel"
 msgstr "Cancel"
@@ -178,8 +183,8 @@ msgctxt "library.insights.total"
 msgid "Total cards"
 msgstr "Total cards"
 
-#: src/features/library/EmptyLibraryPanel.tsx:106
-#: src/features/library/EmptyLibraryPanel.tsx:139
+#: src/features/library/EmptyLibraryPanel.tsx:109
+#: src/features/library/EmptyLibraryPanel.tsx:142
 msgctxt "library.empty.title-prefix"
 msgid "Start with your"
 msgstr "Start with your"
@@ -189,7 +194,7 @@ msgctxt "library.deck.create-again"
 msgid "Try again"
 msgstr "Try again"
 
-#: src/features/library/LibraryScreen.tsx:387
+#: src/features/library/LibraryScreen.tsx:388
 msgctxt "library.filters.all"
 msgid "All"
 msgstr "All"
@@ -204,7 +209,7 @@ msgctxt "library.tools.dialogue"
 msgid "AI Dialogue"
 msgstr "AI Dialogue"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:204
+#: src/features/importExport/SpreadsheetImportDialog.tsx:209
 msgctxt "library.import.issue-failed"
 msgid "Could not save"
 msgstr "Could not save"
@@ -229,12 +234,12 @@ msgctxt "library.clear.success"
 msgid "Your library was cleared."
 msgstr "Your library was cleared."
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:226
+#: src/features/importExport/SpreadsheetImportDialog.tsx:231
 msgctxt "library.import.failed-empty"
 msgid "No supported card rows were found in this spreadsheet."
 msgstr "No supported card rows were found in this spreadsheet."
 
-#: src/features/library/LibraryTools.tsx:913
+#: src/features/library/LibraryTools.tsx:914
 msgctxt "library.filters.memory-status"
 msgid "Memory status"
 msgstr "Memory status"
@@ -244,7 +249,7 @@ msgctxt "library.import.failed"
 msgid "Import failed"
 msgstr "Import failed"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:230
+#: src/features/importExport/SpreadsheetImportDialog.tsx:235
 msgctxt "library.import.failed-items"
 msgid "No cards were imported. Check the failed rows and your connection, then try again."
 msgstr "No cards were imported. Check the failed rows and your connection, then try again."
@@ -259,7 +264,7 @@ msgctxt "library.bulk.select-page"
 msgid "Select page"
 msgstr "Select page"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:204
+#: src/features/importExport/SpreadsheetImportDialog.tsx:209
 msgctxt "library.import.issue-pending"
 msgid "Save not confirmed"
 msgstr "Save not confirmed"
@@ -270,7 +275,7 @@ msgid "Preparing the selected file"
 msgstr "Preparing the selected file"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:323
+#: src/features/library/WordExtractorModal.tsx:425
 msgid "common.cancel"
 msgstr "Cancel"
 
@@ -316,7 +321,7 @@ msgctxt "library.import.background"
 msgid "You can close this — the import keeps running in the background."
 msgstr "You can close this — the import keeps running in the background."
 
-#: src/features/library/EmptyLibraryPanel.tsx:105
+#: src/features/library/EmptyLibraryPanel.tsx:108
 msgctxt "library.empty.lumi-link"
 msgid "LUMI · LINK"
 msgstr "LUMI · LINK"
@@ -336,7 +341,7 @@ msgctxt "library.edit-card.saving"
 msgid "Saving changes…"
 msgstr "Saving changes…"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:216
+#: src/features/importExport/SpreadsheetImportDialog.tsx:221
 msgctxt "library.import.partial-description"
 msgid "Some rows were saved. Review the summary and retry the rows that need attention."
 msgstr "Some rows were saved. Review the summary and retry the rows that need attention."
@@ -362,7 +367,7 @@ msgctxt "library.delete.title"
 msgid "Delete card?"
 msgstr "Delete card?"
 
-#: src/features/library/LibraryTools.tsx:800
+#: src/features/library/LibraryTools.tsx:801
 msgctxt "library.filters.title"
 msgid "Filters"
 msgstr "Filters"
@@ -417,7 +422,7 @@ msgctxt "library.insights.xp-total"
 msgid "{count, number} XP"
 msgstr "{count, number} XP"
 
-#: src/features/library/LibraryTools.tsx:978
+#: src/features/library/LibraryTools.tsx:979
 msgctxt "library.decks.title"
 msgid "Decks ({count, number})"
 msgstr "Decks ({count, number})"
@@ -534,13 +539,13 @@ msgctxt "library.edit-card.description"
 msgid "Changes update this card while its review history stays intact."
 msgstr "Changes update this card while its review history stays intact."
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:197
+#: src/features/importExport/SpreadsheetImportDialog.tsx:202
 msgctxt "library.import.issues-title"
 msgid "Rows needing attention"
 msgstr "Rows needing attention"
 
 #: src/features/library/LibraryCardGrid.tsx:407
-#: src/features/library/LibraryScreen.tsx:268
+#: src/features/library/LibraryScreen.tsx:269
 msgctxt "library.loading.cards"
 msgid "Loading library cards"
 msgstr "Loading library cards"
@@ -580,7 +585,7 @@ msgctxt "library.insights.title"
 msgid "Learning insights"
 msgstr "Learning insights"
 
-#: src/features/library/LibraryScreen.tsx:308
+#: src/features/library/LibraryScreen.tsx:309
 msgctxt "library.tools.more"
 msgid "More library tools"
 msgstr "More library tools"
@@ -590,7 +595,7 @@ msgctxt "library.edit-card.retry-delete"
 msgid "Retry delete"
 msgstr "Retry delete"
 
-#: src/features/library/LibraryTools.tsx:991
+#: src/features/library/LibraryTools.tsx:992
 msgctxt "library.deck.new"
 msgid "New deck"
 msgstr "New deck"
@@ -653,19 +658,19 @@ msgstr "Due now"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:312
-#: src/features/library/LibraryScreen.tsx:390
+#: src/features/library/LibraryScreen.tsx:391
 msgid "library.card.grade.learning"
 msgstr "Bloom"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:313
-#: src/features/library/LibraryScreen.tsx:391
+#: src/features/library/LibraryScreen.tsx:392
 msgid "library.card.grade.mastered"
 msgstr "Star"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:310
-#: src/features/library/LibraryScreen.tsx:389
+#: src/features/library/LibraryScreen.tsx:390
 msgid "library.card.grade.new"
 msgstr "Bud"
 
@@ -692,7 +697,7 @@ msgstr "Mastered"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:305
-#: src/features/library/LibraryScreen.tsx:389
+#: src/features/library/LibraryScreen.tsx:390
 msgid "library.card.tier.new"
 msgstr "New"
 
@@ -703,7 +708,7 @@ msgid "library.card.unseen"
 msgstr "Unseen"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1068
+#: src/features/library/LibraryTools.tsx:1069
 msgid "library.categories.all"
 msgstr "All"
 
@@ -719,7 +724,7 @@ msgstr "Close clear library dialog"
 #: src/features/library/AiDialogueModal.tsx:156
 #: src/features/library/LibraryDialogOverlays.tsx:116
 #: src/features/library/LibraryTools.tsx:320
-#: src/features/library/WordExtractorModal.tsx:232
+#: src/features/library/WordExtractorModal.tsx:303
 msgid "library.close"
 msgstr "Close"
 
@@ -1299,7 +1304,7 @@ msgid "library.create.check-library"
 msgstr "Check library"
 
 #. js-lingui-explicit-id
-#: src/features/library/EmptyLibraryPanel.tsx:243
+#: src/features/library/EmptyLibraryPanel.tsx:247
 #: src/features/library/LibraryTools.tsx:727
 msgid "library.create.creating"
 msgstr "Creating card…"
@@ -1310,7 +1315,7 @@ msgid "library.create.generate"
 msgstr "Generate smart card"
 
 #. js-lingui-explicit-id
-#: src/features/library/EmptyLibraryPanel.tsx:245
+#: src/features/library/EmptyLibraryPanel.tsx:249
 #: src/features/library/LibraryTools.tsx:729
 msgid "library.create.importing"
 msgstr "Import in progress…"
@@ -1402,12 +1407,12 @@ msgstr "Violet"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryDialogOverlays.tsx:148
-#: src/features/library/LibraryTools.tsx:1121
+#: src/features/library/LibraryTools.tsx:1122
 msgid "library.deck.create-error"
 msgstr "Could not create this deck. Check your connection and try again."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1040
+#: src/features/library/LibraryTools.tsx:1041
 msgid "library.deck.delete-action"
 msgstr "Delete {deck} deck"
 
@@ -1417,7 +1422,7 @@ msgid "library.deck.delete-error"
 msgstr "Could not finish deleting this deck. Refreshing the latest cloud state; try again."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1039
+#: src/features/library/LibraryTools.tsx:1040
 msgid "library.deck.delete-this"
 msgstr "Delete this deck"
 
@@ -1447,18 +1452,18 @@ msgid "library.deck.suggestions"
 msgstr "Deck name suggestions"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:383
-#: src/features/library/LibraryTools.tsx:996
+#: src/features/library/LibraryScreen.tsx:384
+#: src/features/library/LibraryTools.tsx:997
 msgid "library.decks.all"
 msgstr "All decks"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:382
+#: src/features/library/LibraryScreen.tsx:383
 msgid "library.decks.nav-label"
 msgstr "Decks"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1001
+#: src/features/library/LibraryTools.tsx:1002
 msgid "library.decks.unassigned"
 msgstr "Unassigned"
 
@@ -1854,184 +1859,199 @@ msgid "library.edit-card.word-too-long"
 msgstr "Word is too long."
 
 #. js-lingui-explicit-id
-#: src/features/library/EmptyLibraryPanel.tsx:233
+#: src/features/library/EmptyLibraryPanel.tsx:237
 msgid "library.empty.word-placeholder"
 msgstr "Type a word or phrase…"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:271
+#: src/features/library/WordExtractorModal.tsx:357
 msgid "library.extract.already-owned"
 msgstr "{count, plural, one {# already in your library} other {# already in your library}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:225
+#: src/features/library/WordExtractorModal.tsx:416
+msgid "library.extract.deck-label"
+msgstr "Deck"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:269
+msgid "library.extract.deck-unassigned"
+msgstr "Unassigned"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:410
+msgid "library.extract.deck-value"
+msgstr "Deck: {deck}"
+
+#. js-lingui-explicit-id
+#: src/features/library/WordExtractorModal.tsx:296
 msgid "library.extract.description"
 msgstr "Paste a passage and SonFlash pulls out words worth learning."
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:284
+#: src/features/library/WordExtractorModal.tsx:370
 msgid "library.extract.deselect-all"
 msgstr "Clear selection"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:86
+#: src/features/library/WordExtractorModal.tsx:99
 msgid "library.extract.error.account-daily-spend"
 msgstr "You have reached your AI spending limit for today. Try again after 00:00 Vietnam time."
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:87
+#: src/features/library/WordExtractorModal.tsx:100
 msgid "library.extract.error.ai-card-quota"
 msgstr "You have used your AI card allowance for this period. See Pro or wait for the next period; adding words manually still works."
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:88
+#: src/features/library/WordExtractorModal.tsx:101
 msgid "library.extract.error.ai-daily-allowance"
 msgstr "You have used today’s extra AI allowance. Try again after 00:00 Vietnam time."
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:93
+#: src/features/library/WordExtractorModal.tsx:106
 msgid "library.extract.error.default"
 msgstr "Could not extract vocabulary from this text. Please try again."
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:89
+#: src/features/library/WordExtractorModal.tsx:102
 msgid "library.extract.error.operation-in-flight"
 msgstr "AI is still analyzing this text. Try again in a few seconds."
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:90
+#: src/features/library/WordExtractorModal.tsx:103
 msgid "library.extract.error.quota"
 msgstr "AI usage limit reached. Try again when your allowance resets."
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:85
+#: src/features/library/WordExtractorModal.tsx:98
 msgid "library.extract.error.service-daily-cap"
 msgstr "AI is paused because today’s shared limit is exhausted. Try again after 00:00 Vietnam time."
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:219
+#: src/features/library/WordExtractorModal.tsx:290
 msgid "library.extract.eyebrow"
 msgstr "Word extractor"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:269
+#: src/features/library/WordExtractorModal.tsx:355
 msgid "library.extract.found"
 msgstr "Found {count, plural, one {# word} other {# words}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:294
+#: src/features/library/WordExtractorModal.tsx:380
 msgid "library.extract.in-library"
 msgstr "In library"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:241
+#: src/features/library/WordExtractorModal.tsx:312
 msgid "library.extract.input-label"
 msgstr "Text to scan"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:248
+#: src/features/library/WordExtractorModal.tsx:323
 msgid "library.extract.input-placeholder"
 msgstr "Paste a paragraph, email, reading passage or book page here…"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:209
+#: src/features/library/WordExtractorModal.tsx:280
 msgid "library.extract.loading"
 msgstr "AI is analyzing the text…"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:332
+#: src/features/library/WordExtractorModal.tsx:434
 msgid "library.extract.save-selected"
 msgstr "Save {count, plural, one {# card} other {# cards}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:285
+#: src/features/library/WordExtractorModal.tsx:371
 msgid "library.extract.select-all"
 msgstr "Select all"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:210
+#: src/features/library/WordExtractorModal.tsx:281
 msgid "library.extract.submit"
 msgstr "Extract vocabulary"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:222
+#: src/features/library/WordExtractorModal.tsx:293
 msgid "library.extract.title"
 msgstr "Scan text"
 
 #. js-lingui-explicit-id
-#: src/features/library/WordExtractorModal.tsx:254
+#: src/features/library/WordExtractorModal.tsx:340
 msgid "library.extract.word-count"
 msgstr "{count, plural, one {# word} other {# words}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:921
+#: src/features/library/LibraryTools.tsx:922
 msgid "library.filters.all-statuses"
 msgstr "All statuses"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:900
+#: src/features/library/LibraryTools.tsx:901
 msgid "library.filters.all-word-types"
 msgstr "All word types"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:950
+#: src/features/library/LibraryTools.tsx:951
 msgid "library.filters.clear-date"
 msgstr "Clear date filter"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:940
+#: src/features/library/LibraryTools.tsx:941
 msgid "library.filters.cloud-date-label"
 msgstr "Filter cloud cards by date created"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:957
+#: src/features/library/LibraryTools.tsx:958
 msgid "library.filters.date-label"
 msgstr "Filter cards by date created"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:922
+#: src/features/library/LibraryTools.tsx:923
 msgid "library.filters.due"
 msgstr "Due for review"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:390
-#: src/features/library/LibraryTools.tsx:924
+#: src/features/library/LibraryScreen.tsx:391
+#: src/features/library/LibraryTools.tsx:925
 msgid "library.filters.learning"
 msgstr "Learning"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:391
-#: src/features/library/LibraryTools.tsx:923
+#: src/features/library/LibraryScreen.tsx:392
+#: src/features/library/LibraryTools.tsx:924
 msgid "library.filters.mastered"
 msgstr "Mastered"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:916
+#: src/features/library/LibraryTools.tsx:917
 msgid "library.filters.memory-status-label"
 msgstr "Filter by memory status"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:925
+#: src/features/library/LibraryTools.tsx:926
 msgid "library.filters.needs-practice"
 msgstr "Needs practice"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:926
+#: src/features/library/LibraryTools.tsx:927
 msgid "library.filters.not-reviewed"
 msgstr "Not reviewed"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:895
+#: src/features/library/LibraryTools.tsx:896
 msgid "library.filters.part-of-speech-label"
 msgstr "Filter by part of speech"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:831
+#: src/features/library/LibraryTools.tsx:832
 msgid "library.filters.search-placeholder"
 msgstr "Search English words…"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:858
+#: src/features/library/LibraryTools.tsx:859
 msgid "library.filters.starred-label"
 msgstr "Show starred cards only"
 
@@ -2057,7 +2077,7 @@ msgid "library.import.action"
 msgstr "Import cards from Excel or CSV"
 
 #. js-lingui-explicit-id
-#: src/features/library/EmptyLibraryPanel.tsx:271
+#: src/features/library/EmptyLibraryPanel.tsx:275
 #: src/features/library/LibraryTools.tsx:639
 msgid "library.import.choose-file"
 msgstr "Choose an Excel or CSV file"
@@ -2074,7 +2094,7 @@ msgid "library.import.partial-guidance"
 msgstr "Retry the failed or skipped words later."
 
 #. js-lingui-explicit-id
-#: src/features/importExport/spreadsheetWorkbook.ts:712
+#: src/features/importExport/spreadsheetWorkbook.ts:715
 msgid "library.import.xls-unsupported"
 msgstr "Legacy .xls files aren't supported. Re-save the file as .xlsx or .csv, then try again."
 
@@ -2245,17 +2265,17 @@ msgid "library.upgrade.upgrading"
 msgstr "Upgrading…"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:395
+#: src/features/library/LibraryScreen.tsx:396
 msgid "library.view.grid"
 msgstr "Grid view"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:394
+#: src/features/library/LibraryScreen.tsx:395
 msgid "library.view.label"
 msgstr "View"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:396
+#: src/features/library/LibraryScreen.tsx:397
 msgid "library.view.list"
 msgstr "List view"
 
@@ -2270,7 +2290,7 @@ msgctxt "library.import.complete"
 msgid "Import complete"
 msgstr "Import complete"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:220
+#: src/features/importExport/SpreadsheetImportDialog.tsx:225
 msgctxt "library.import.failed-size"
 msgid "This file is too large to import. Choose a smaller spreadsheet and try again."
 msgstr "This file is too large to import. Choose a smaller spreadsheet and try again."
@@ -2290,7 +2310,7 @@ msgctxt "library.deck.dialog-description"
 msgid "Group words by exam, trip, book — anything you like."
 msgstr "Group words by exam, trip, book — anything you like."
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:204
+#: src/features/importExport/SpreadsheetImportDialog.tsx:209
 msgctxt "library.import.issue-invalid"
 msgid "Invalid row"
 msgstr "Invalid row"
@@ -2321,7 +2341,7 @@ msgctxt "library.grid.title"
 msgid "Your library"
 msgstr "Your library"
 
-#: src/features/library/LibraryTools.tsx:810
+#: src/features/library/LibraryTools.tsx:811
 msgctxt "library.filters.reset"
 msgid "Reset all"
 msgstr "Reset all"
@@ -2341,7 +2361,7 @@ msgctxt "library.grid.share"
 msgid "Share"
 msgstr "Share"
 
-#: src/features/library/EmptyLibraryPanel.tsx:96
+#: src/features/library/EmptyLibraryPanel.tsx:99
 msgctxt "library.empty.first-run-kicker"
 msgid "Empty library · first run"
 msgstr "Empty library · first run"
@@ -2366,7 +2386,7 @@ msgctxt "library-tools.deck-space"
 msgid "Deck space"
 msgstr "Deck space"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:224
+#: src/features/importExport/SpreadsheetImportDialog.tsx:229
 msgctxt "library.import.failed-parse"
 msgid "The spreadsheet rows could not be read. Check the Word and Translation columns."
 msgstr "The spreadsheet rows could not be read. Check the Word and Translation columns."
@@ -2387,7 +2407,7 @@ msgid "Clearing your library…"
 msgstr "Clearing your library…"
 
 #: src/features/library/LibraryCardGrid.tsx:374
-#: src/features/library/LibraryScreen.tsx:388
+#: src/features/library/LibraryScreen.tsx:389
 msgctxt "library.filters.due-short"
 msgid "Due"
 msgstr "Due"
@@ -2412,13 +2432,13 @@ msgctxt "common.retry"
 msgid "Retry"
 msgstr "Retry"
 
-#: src/features/library/LibraryTools.tsx:892
+#: src/features/library/LibraryTools.tsx:893
 msgctxt "library.filters.part-of-speech"
 msgid "Part of speech"
 msgstr "Part of speech"
 
-#: src/features/library/EmptyLibraryPanel.tsx:106
-#: src/features/library/EmptyLibraryPanel.tsx:139
+#: src/features/library/EmptyLibraryPanel.tsx:109
+#: src/features/library/EmptyLibraryPanel.tsx:142
 msgctxt "library.empty.title-emphasis"
 msgid "first word."
 msgstr "first word."
@@ -2428,7 +2448,7 @@ msgctxt "library-tools.unassigned"
 msgid "Unassigned"
 msgstr "Unassigned"
 
-#: src/features/library/EmptyLibraryPanel.tsx:264
+#: src/features/library/EmptyLibraryPanel.tsx:268
 msgctxt "library.empty.paths"
 msgid "Browse paths"
 msgstr "Browse paths"
@@ -2438,7 +2458,7 @@ msgctxt "library.bulk.error"
 msgid "Some cards could not be updated. Try again."
 msgstr "Some cards could not be updated. Try again."
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:239
+#: src/features/importExport/SpreadsheetImportDialog.tsx:244
 msgctxt "library.import.mapping-required"
 msgid "Required"
 msgstr "Required"
@@ -2474,7 +2494,7 @@ msgctxt "library.import.dialog-title"
 msgid "Import from spreadsheet"
 msgstr "Import from spreadsheet"
 
-#: src/features/library/LibraryTools.tsx:875
+#: src/features/library/LibraryTools.tsx:876
 msgctxt "library.filters.more"
 msgid "More"
 msgstr "More"
@@ -2557,7 +2577,7 @@ msgctxt "library.edit-card.history-note"
 msgid "Your review history is kept. Changes appear on this card right away."
 msgstr "Your review history is kept. Changes appear on this card right away."
 
-#: src/features/library/EmptyLibraryPanel.tsx:258
+#: src/features/library/EmptyLibraryPanel.tsx:262
 msgctxt "library.empty.scan"
 msgid "Scan a text"
 msgstr "Scan a text"
@@ -2567,12 +2587,12 @@ msgctxt "library.deck.deleting"
 msgid "Deleting…"
 msgstr "Deleting…"
 
-#: src/features/library/LibraryTools.tsx:1053
+#: src/features/library/LibraryTools.tsx:1054
 msgctxt "library.categories.title"
 msgid "Categories"
 msgstr "Categories"
 
-#: src/features/library/EmptyLibraryPanel.tsx:261
+#: src/features/library/EmptyLibraryPanel.tsx:265
 msgctxt "library.empty.import"
 msgid "Import CSV / Excel"
 msgstr "Import CSV / Excel"
@@ -2583,7 +2603,7 @@ msgctxt "library.overview.kicker"
 msgid "Vocabulary"
 msgstr "Vocabulary"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:222
+#: src/features/importExport/SpreadsheetImportDialog.tsx:227
 msgctxt "library.import.failed-read"
 msgid "The spreadsheet could not be opened. Check the file and try again."
 msgstr "The spreadsheet could not be opened. Check the file and try again."
@@ -2598,34 +2618,34 @@ msgctxt "library.edit-card.discard-title"
 msgid "Discard unsaved changes?"
 msgstr "Discard unsaved changes?"
 
-#: src/features/library/LibraryScreen.tsx:392
-#: src/features/library/LibraryTools.tsx:861
+#: src/features/library/LibraryScreen.tsx:393
+#: src/features/library/LibraryTools.tsx:862
 msgctxt "library.filters.starred"
 msgid "Starred"
 msgstr "Starred"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:204
+#: src/features/importExport/SpreadsheetImportDialog.tsx:209
 msgctxt "library.import.issue-duplicate"
 msgid "Duplicate"
 msgstr "Duplicate"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:213
+#: src/features/importExport/SpreadsheetImportDialog.tsx:218
 msgctxt "library.import.completed-description"
 msgid "The imported cards are ready in your library."
 msgstr "The imported cards are ready in your library."
 
-#: src/features/library/EmptyLibraryPanel.tsx:89
+#: src/features/library/EmptyLibraryPanel.tsx:92
 #: src/features/library/LibraryTools.tsx:159
 msgctxt "library.import.current-word"
 msgid "Current word: {word}"
 msgstr "Current word: {word}"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:204
+#: src/features/importExport/SpreadsheetImportDialog.tsx:209
 msgctxt "library.import.issue-generation"
 msgid "Not generated"
 msgstr "Not generated"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:201
+#: src/features/importExport/SpreadsheetImportDialog.tsx:206
 msgctxt "library.import.issue-column"
 msgid "Column {column, number}"
 msgstr "Column {column, number}"
@@ -2650,7 +2670,7 @@ msgctxt "library.import.summary"
 msgid "{created, plural, one {# created} other {# created}} · {reused, plural, one {# already present} other {# already present}} · {failed, plural, one {# failed} other {# failed}} · {skipped, plural, one {# skipped} other {# skipped}}"
 msgstr "{created, plural, one {# created} other {# created}} · {reused, plural, one {# already present} other {# already present}} · {failed, plural, one {# failed} other {# failed}} · {skipped, plural, one {# skipped} other {# skipped}}"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:200
+#: src/features/importExport/SpreadsheetImportDialog.tsx:205
 msgctxt "library.import.issue-row"
 msgid "Row {row, number}"
 msgstr "Row {row, number}"
@@ -2727,7 +2747,7 @@ msgctxt "library.edit-card.remove-image-short"
 msgid "Remove"
 msgstr "Remove"
 
-#: src/features/library/EmptyLibraryPanel.tsx:254
+#: src/features/library/EmptyLibraryPanel.tsx:258
 #: src/features/library/LibraryTools.tsx:696
 msgctxt "library.create.analysing"
 msgid "AI is analysing"
@@ -2753,7 +2773,7 @@ msgctxt "library.deck.dialog-title"
 msgid "New deck"
 msgstr "New deck"
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:237
+#: src/features/importExport/SpreadsheetImportDialog.tsx:242
 msgctxt "library.import.mapping-title"
 msgid "Column mapping"
 msgstr "Column mapping"
@@ -2768,7 +2788,7 @@ msgctxt "library.grid.collection-caption"
 msgid "Your words, ready when you are."
 msgstr "Your words, ready when you are."
 
-#: src/features/library/LibraryTools.tsx:934
+#: src/features/library/LibraryTools.tsx:935
 msgctxt "library.filters.date-created"
 msgid "Date created"
 msgstr "Date created"

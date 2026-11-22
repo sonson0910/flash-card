@@ -42,6 +42,7 @@
 .spreadsheet-import-issues li strong,.spreadsheet-import-issue-column { color: var(--sf-danger); font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; font-weight: 500; }
 .spreadsheet-import-issue-word { color: var(--sf-text); }
 .spreadsheet-import-issues p { margin: 8px 0 0; color: var(--sf-text-muted); font-size: 12px; }
+.spreadsheet-import-deck-note { margin: 0; border-left: 2px solid var(--sf-reward); padding-left: 10px; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.45; }
 .spreadsheet-import-result-guidance { margin: 0; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.45; }
 .spreadsheet-import-mapping { border: 1px solid var(--sf-border); border-radius: var(--ld-tile-radius, 14px); background: var(--ld-chip, var(--sf-surface-raised)); padding: 14px 16px; }
 .spreadsheet-import-mapping h3 { margin: 0; color: var(--ld-text-3, var(--sf-text-muted)); font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }

@@ -778,9 +778,10 @@ export function LibraryTools({
           onOpenChange={setShowExtractorModal}
           cards={cards}
           restoreFocusRef={extractorRestoreRef}
-          onImportItems={items => {
+          decks={customDecks}
+          onImportItems={(items, { deck }) => {
             if (items.length > 0) {
-              const csvContent = createExtractedWordsCsv(items, languageProfile);
+              const csvContent = createExtractedWordsCsv(items, languageProfile, { deck });
               const file = new File([csvContent], 'extracted_words.csv', { type: 'text/csv' });
               handleImportFile(file);
             }

@@ -1,6 +1,7 @@
 import type { FirebaseApp } from 'firebase/app';
 import type { CardData } from '../../types/card';
 import { getSonFlashFunctions, protectedFunctionsCapability } from '../../lib/firebase';
+import { ownStorageImageOwner } from '../../lib/mediaUrlPolicy';
 import { runProtectedFunction } from '../../lib/protectedFunctionsCapability';
 
 const REGION = 'asia-southeast1';
@@ -67,7 +68,9 @@ const publicCardProjection = (card: CardData) => ({
   imageSearchQuery: card.imageSearchQuery || '',
   emoji: card.emoji || '',
   audioUrl: card.audioUrl || null,
-  imageUrl: card.imageUrl || null,
+  // A photo the learner uploaded is a bearer link to their private files; the
+  // public copy carries no image, as the share callable also enforces.
+  imageUrl: ownStorageImageOwner(card.imageUrl) === null ? card.imageUrl || null : null,
   ...(card.mnemonic?.trim() ? { mnemonic: card.mnemonic.trim().slice(0, 2_048) } : {}),
   ...(card.wordFamily ? { wordFamily: card.wordFamily } : {}),
 });

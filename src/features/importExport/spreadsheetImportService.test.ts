@@ -310,6 +310,52 @@ describe('spreadsheet import service', () => {
     expect(result).toMatchObject({ status: 'partial', summary: { created: 1, reused: 1, failed: 1 } });
   });
 
+  it('saves new cards that name an unknown deck as Unassigned and counts only the created ones', async () => {
+    const { feedback, cards } = createFakePorts();
+    cards.findExisting = async () => new Map([['apple', existingCard('apple')]]);
+    const persist = vi.fn(async (...[, settle]: Parameters<CardIntakePort['persistStructured']>) => {
+      settle?.(0, 'created');
+      settle?.(1, 'created');
+      settle?.(2, 'reused');
+      settle?.(3, 'created');
+      settle?.(4, 'reused');
+      return { createdCount: 3 };
+    });
+    cards.persistStructured = persist;
+    const importer = createSpreadsheetImportService({ cards, feedback });
+
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      deckNames: ['IELTS'],
+      structuredRows: [
+        { Word: 'levee', Translation: 'đê', Deck: 'IELTS', Tags: 'flood; Unit 4', Starred: 'Yes', Difficulty: 'Hard' },
+        { Word: 'crest', Translation: 'đỉnh', Deck: 'Travel' },
+        { Word: 'dyke', Translation: 'đê', Deck: 'Travel' },
+        { Word: 'silt', Translation: 'phù sa', Deck: 'Unassigned' },
+        { Word: 'apple', Translation: 'táo', Deck: 'Travel' },
+      ],
+      flatRows: [],
+    }) });
+
+    const plan = persist.mock.calls[0][0];
+    expect(plan.creates.map(card => [card.word, card.customDeck])).toEqual([
+      ['levee', 'IELTS'], ['crest', null], ['dyke', null], ['silt', null],
+    ]);
+    expect(plan.creates[0]).toMatchObject({ tags: ['flood', 'Unit 4'], bookmarked: true, learnerDifficulty: 'hard' });
+    expect(plan.patches.map(patch => patch.card)).toEqual([expect.not.objectContaining({ customDeck: expect.anything() })]);
+    expect(result.summary).toMatchObject({ created: 3, reused: 2, deckUnassigned: 1 });
+  });
+
+  it('leaves the deck count out of the summary when every deck is known', async () => {
+    const { feedback, cards } = createFakePorts();
+    const importer = createSpreadsheetImportService({ cards, feedback });
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      structuredRows: [{ Word: 'levee', Translation: 'đê' }, { Word: 'crest', Translation: 'đỉnh', Deck: '' }],
+      flatRows: [],
+    }) });
+
+    expect(result.summary).not.toHaveProperty('deckUnassigned');
+  });
+
   it('reports an all-item failure as failed rather than completed', async () => {
     const { events, feedback, cards } = createFakePorts();
     cards.generate = async word => {

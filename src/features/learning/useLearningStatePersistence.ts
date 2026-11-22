@@ -104,6 +104,19 @@ const isValidReviewEntry = (value: unknown): value is NonNullable<CardData['revi
 const reviewFieldsFromCard = (card: Extract<ReviewApplyResult, { applied: true }>['card']) =>
   Object.fromEntries(REVIEW_FIELDS.map(field => [field, card[field]]));
 
+/**
+ * How a saved patch moves the Starred count: +1 or -1 when it changes the
+ * card's star, whichever control sent it (the star button or the editor).
+ */
+export const starredCountDelta = (
+  source: Pick<CardData, 'bookmarked'> | undefined,
+  fields: Partial<Pick<CardData, 'bookmarked'>>,
+): number => {
+  if (!Object.prototype.hasOwnProperty.call(fields, 'bookmarked') || typeof fields.bookmarked !== 'boolean') return 0;
+  if (fields.bookmarked === Boolean(source?.bookmarked)) return 0;
+  return fields.bookmarked ? 1 : -1;
+};
+
 const cardReviewCount = (card: CardData): number => Math.max(
   card.reviews ?? 0,
   card.reviewHistory?.length ?? 0,
@@ -351,10 +364,11 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           throw cause;
         }
 
-        if (mutation.intent === 'bookmark') {
+        const starredDelta = starredCountDelta(source, mutation.fields);
+        if (starredDelta !== 0) {
           current.updateCloudStats(stats => ({
             ...stats,
-            bookmarked: Math.max(0, stats.bookmarked + (mutation.fields.bookmarked ? 1 : -1)),
+            bookmarked: Math.max(0, stats.bookmarked + starredDelta),
           }));
         }
         if (mutation.intent === 'review' && (reviewFinality === 'committed' || reviewConflictTerminal)) {

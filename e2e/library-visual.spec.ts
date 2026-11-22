@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { createServer, type ViteDevServer } from 'vite';
+import { createServer, type Plugin, type ViteDevServer } from 'vite';
 
 // Base port for this spec's own Vite fixture server, offset per-worker below.
 // See practice-visual.spec.ts for why: `fullyParallel: false` still lets
@@ -26,6 +26,34 @@ async function gotoFixture(page: Page, query = 'locale=en') {
 const viewports = [{ name: 'desktop', width: 1440, height: 900 }, { name: '390px', width: 390, height: 844 }] as const;
 
 let fixtureServer: ViteDevServer | undefined;
+
+// The word extractor's AI call answers from this list instead of the network.
+const extractorPassage = 'When the river crested at dawn, residents who spent years lobbying for new barriers felt vindicated. '
+  + 'The council’s response was immediate, yet engineers called the embankments a provisional fix and asked for a resilient, comprehensive plan.';
+const extractorItems = [
+  ['crested', 'đạt đỉnh (lũ)', 'verb', 'C1'], ['lobbying', 'vận động hành lang', 'noun', 'C1'],
+  ['barriers', 'rào chắn', 'noun', 'B1'], ['vindicated', 'được minh oan', 'adjective', 'C2'],
+  ['immediate', 'ngay lập tức', 'adjective', 'B1'], ['embankments', 'đê, bờ kè', 'noun', 'C1'],
+  ['provisional', 'tạm thời', 'adjective', 'C1'], ['resilient', 'kiên cường', 'adjective', 'B2'],
+  ['comprehensive', 'toàn diện', 'adjective', 'B2'],
+].map(([word, translation, partOfSpeech, cefrLevel]) => ({
+  word, surface: word, translation, partOfSpeech, cefrLevel, example: `The passage uses ${word}.`,
+}));
+const extractorFixtureId = '\0library-visual-extract';
+const extractorFixturePlugin = (): Plugin => ({
+  name: 'library-visual-extractor-fixture',
+  enforce: 'pre',
+  resolveId(source, importer) {
+    return source === '../../lib/gemini' && importer?.endsWith('/src/features/library/WordExtractorModal.tsx')
+      ? extractorFixtureId
+      : null;
+  },
+  load(id) {
+    return id === extractorFixtureId
+      ? `export async function extractVocabulary() { return ${JSON.stringify(extractorItems)}; }`
+      : null;
+  },
+});
 
 async function expectAccessibleAndContained(page: Page, label: string) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -70,7 +98,7 @@ async function expectDialogInViewport(page: Page, testInfo: TestInfo, name: stri
 test.beforeAll(async ({}, testInfo) => {
   fixturePort = FIXTURE_PORT_BASE + testInfo.parallelIndex;
   fixtureOrigin = `http://127.0.0.1:${fixturePort}`;
-  fixtureServer = await createServer({ configFile: 'vite.config.ts', cacheDir: `node_modules/.vite-e2e/library-visual-${testInfo.parallelIndex}`, appType: 'mpa', server: { host: '127.0.0.1', port: fixturePort, strictPort: true }, optimizeDeps: { entries: ['e2e/fixtures/library-visual.html'] } });
+  fixtureServer = await createServer({ configFile: 'vite.config.ts', cacheDir: `node_modules/.vite-e2e/library-visual-${testInfo.parallelIndex}`, appType: 'mpa', server: { host: '127.0.0.1', port: fixturePort, strictPort: true }, optimizeDeps: { entries: ['e2e/fixtures/library-visual.html'] }, plugins: [extractorFixturePlugin()] });
   await fixtureServer.listen();
 });
 test.afterAll(async () => { await fixtureServer?.close(); });
@@ -191,6 +219,7 @@ const deckDialogViews = [
 ] as const;
 const importDialogViews = [
   ['import-ready', 'Import from spreadsheet'], ['import-progress', 'Import from spreadsheet'], ['import-error', 'Import from spreadsheet'],
+  ['import-deck', 'Import from spreadsheet'],
 ] as const;
 const dialogGroups = [
   ['other', otherDialogViews], ['deck', deckDialogViews], ['import', importDialogViews],
@@ -265,6 +294,9 @@ for (const theme of themes) for (const viewport of viewports) for (const [group,
         await expect(page.getByText('Row 7')).toBeVisible();
         await expect(page.getByText('Column 3')).toBeVisible();
       }
+      if (dialog === 'import-deck') {
+        await expect(page.getByText('3 new cards named decks you do not have, so they were saved to Unassigned.')).toBeVisible();
+      }
       if (dialog === 'import-error') {
         await expect(page.getByText('Row 4')).toBeVisible();
         await expect(page.getByText('Column 2')).toBeVisible();
@@ -274,6 +306,72 @@ for (const theme of themes) for (const viewport of viewports) for (const [group,
     }
   });
 }
+
+async function scanExtractorPassage(page: Page) {
+  await gotoFixture(page, 'locale=en&dialog=extract');
+  await page.locator('[data-library-region="tools"] summary').click();
+  await page.getByRole('button', { name: 'Scan Text' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Scan text' });
+  await dialog.getByRole('textbox', { name: 'Text to scan' }).fill(extractorPassage);
+  await dialog.getByRole('button', { name: 'Extract vocabulary' }).click();
+  await expect(dialog.getByText('Found 9 words')).toBeVisible();
+  return dialog;
+}
+
+for (const theme of themes) for (const viewport of viewports) {
+  test(`${theme.family} ${theme.mode} Library word extractor marks the scanned words and saves them to a deck at ${viewport.name}`, async ({ page }, testInfo) => {
+    page.on('pageerror', error => { throw error; });
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+    await page.route(new RegExp(`^https?://(?!127\\.0\\.0\\.1:${fixturePort})`), route => route.abort());
+    await page.addInitScript(({ family, mode }) => {
+      localStorage.setItem('sonflash_theme_family', family);
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', 'true');
+    }, theme);
+    const name = `library-extract-results-${theme.family}-${theme.mode}-${viewport.name}`;
+    const dialog = await scanExtractorPassage(page);
+
+    const marks = dialog.locator('[data-testid="extractor-highlights"] mark');
+    await expect(marks).toHaveText(extractorItems.map(item => item.word));
+    await expect(dialog.locator('[data-testid="extractor-highlights"] mark.is-owned')).toHaveText(['immediate', 'resilient']);
+    const deck = dialog.getByRole('combobox', { name: 'Deck' });
+    await expect(deck).toHaveValue('');
+    await expect(dialog.getByText('Deck: Unassigned')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Save 7 cards' })).toBeEnabled();
+    await expectAccessibleAndContained(page, name);
+    await expectReducedMotion(page, name);
+    await expectDialogInViewport(page, testInfo, name);
+    await expectDialogScreen(page, testInfo, name);
+
+    await deck.selectOption('IELTS');
+    await expect(dialog.getByText('Deck: IELTS')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Save 7 cards' }).click();
+    const imported = page.locator('[data-library-imported-file]');
+    await expect(imported).toContainText('"Deck"');
+    const rows = (await imported.textContent() ?? '').split('\n');
+    expect(rows.slice(1).map(row => [row.split(',')[0], row.split(',').at(-1)])).toEqual(
+      ['crested', 'lobbying', 'barriers', 'vindicated', 'embankments', 'provisional', 'comprehensive'].map(word => [`"${word}"`, '"IELTS"']),
+    );
+  });
+}
+
+test('Library word extractor drops its marks when the passage is edited', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const dialog = await scanExtractorPassage(page);
+  const layer = dialog.locator('[data-testid="extractor-highlights"]');
+  await expect(layer.locator('mark')).toHaveCount(9);
+
+  const passage = dialog.getByRole('textbox', { name: 'Text to scan' });
+  await passage.press('End');
+  await passage.pressSequentially(' More.');
+  await expect(layer).toHaveCount(0);
+  await expect(dialog.getByText('Found 9 words')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Extract vocabulary' }).click();
+  await expect(layer.locator('mark')).toHaveCount(9);
+  await expect(dialog.getByRole('button', { name: 'Extract vocabulary' })).toHaveCount(0);
+});
 
 test('Library edit image removal makes the unsaved draft state explicit', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
