@@ -22,7 +22,7 @@ import { useExtensionDueCountBridge } from '../features/extensionBridge/useExten
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { APP_VIEW_HEADINGS } from '../features/navigation/app-view-headings';
-import { evidencedStudyStreak } from '../features/dailyLearning/dailyLearningPresentation';
+import { buildStreakView } from '../features/gamification/streakView';
 import { CourseProvider, readyCourseSessionForOwner, useCourseSession, type CourseGateValue } from '../features/courses/CourseGate';
 import { activeCourseNativeLanguage, activeCourseTargetLanguage, languageProfileForCourse } from '../features/courses/courseLanguageProfile';
 import type { CourseTargetLanguage } from '../features/courses/courseModel';
@@ -522,6 +522,8 @@ export default function AppRuntime({
     error: cloud.error,
   }) : 'ready';
   const overview = libraryScreen.model.overview;
+  // The same run the Today chip shows: it still counts while today's review is open, and is 0 once it ended.
+  const headerStreak = buildStreakView(verifiedGamification, new Date()).length;
   const shellIdentity = syncIdentityForShell(identity, user, appDependencies.configuration.cloudConfigured);
   const activeGoal = activeCourse?.goals.find(goal => goal.status === 'active') ?? null;
   const activeGoalLabel = activeGoal && activeCourse ? goalKindLabel(activeCourse.targetLanguage, activeGoal.kind) : null;
@@ -560,7 +562,7 @@ export default function AppRuntime({
           courseScopeReady,
           libraryCountLabel,
           overview,
-          evidencedStudyStreak(overview.streak, stats.xpChartData, undefined, stats.rewardTimeZone),
+          headerStreak,
           equippedFrameId,
           ownedTitleIds,
         )}

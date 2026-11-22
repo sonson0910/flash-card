@@ -72,10 +72,21 @@ export const ceremonyPayload = (
       currentValue: 'mastered',
     };
   }
-  if (event === 'streak') return {
-    currentValue: ceremony.gamification ? String(ceremony.gamification.streak) : undefined,
-    rewardLabels: streakCeremonyRewardLabels(translate),
-  };
+  if (event === 'streak') {
+    const outcome = ceremony.gamification;
+    return {
+      currentValue: outcome ? String(outcome.streak) : undefined,
+      rewardLabels: streakCeremonyRewardLabels(translate),
+      // The reveal draws its reward chips from what the server says this review changed.
+      ...(outcome ? {
+        streak: {
+          length: outcome.streak,
+          freezesEarned: outcome.streakChange?.freezesEarned ?? 0,
+          ...(outcome.streakChange?.milestoneXp ? { milestoneXp: outcome.streakChange.milestoneXp } : {}),
+        },
+      } : {}),
+    };
+  }
   return {
     previousValue: ceremony.gamification?.level === 13 ? '12' : undefined,
     currentValue: ceremony.gamification ? String(ceremony.gamification.level) : undefined,

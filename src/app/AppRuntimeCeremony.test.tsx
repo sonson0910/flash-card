@@ -9,6 +9,7 @@ import {
   type QueuedCeremony,
 } from './AppRuntime';
 import { i18n } from '@lingui/core';
+import { ceremonyPayload } from './app-runtime-shared';
 
 const ceremony = (
   event: QueuedCeremony['event'],
@@ -22,6 +23,17 @@ describe('AppRuntime ceremony behavior', () => {
     i18n.activate('en');
 
     expect(streakCeremonyRewardLabels(i18n._.bind(i18n))).toEqual(['Web Wanderer']);
+  });
+
+  it('sends the streak reveal what the review changed, and nothing the server did not report', () => {
+    const translate = i18n._.bind(i18n);
+    const base = { ownerId: 'owner-a', operationId: 'operation-a', events: ['streak'] as const };
+
+    expect(ceremonyPayload({ ...base, gamification: { xp: 900, level: 4, streak: 30, streakChange: { freezesUsed: 0, freezesEarned: 1, milestone: 30, milestoneXp: 100 } } }, 'streak', translate).streak)
+      .toEqual({ length: 30, freezesEarned: 1, milestoneXp: 100 });
+    expect(ceremonyPayload({ ...base, gamification: { xp: 40, level: 1, streak: 7 } }, 'streak', translate).streak)
+      .toEqual({ length: 7, freezesEarned: 0 });
+    expect(ceremonyPayload(base, 'streak', translate).streak).toBeUndefined();
   });
 
   it('orders a shared outcome with streak before levelup and dedupes by owner, operation, and event', () => {
