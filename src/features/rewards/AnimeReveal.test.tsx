@@ -60,5 +60,15 @@ describe('AnimeReveal', () => {
     expect(render('streak', true, { streak: { length: 60, freezesEarned: 2 } })).toContain('60 days of study in a row. You earned 2 streak freezes, so 2 missed days will not break the chain.');
   });
 
+  it('offers to share the tier and streak reveals as an image, while level up keeps later and use frame', () => {
+    const tier = render('tierup');
+    expect(tier).toMatch(/data-reveal-share="true"[^>]*>Share card<\/button><button type="button" class="anime-reveal__primary"/);
+    expect(tier).toContain('<p class="anime-reveal__share-status" role="status"></p>');
+    expect(render('streak')).toMatch(/data-reveal-share="true"[^>]*>Share<\/button>/);
+    const level = render('levelup');
+    expect(level).not.toContain('data-reveal-share');
+    expect(level).not.toContain('anime-reveal__share-status');
+  });
+
   it('does not mount while closed', () => expect(render('tierup', false)).toBe(''));
 });

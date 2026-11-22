@@ -286,6 +286,38 @@ describe("practice view accessibility contracts", () => {
     expect(studyHtml).not.toContain('Rate memory strength');
   });
 
+  it("runs the review in its own shell: close, the saved count, and the hint only while the answer is hidden", () => {
+    const study = (props: { revealed: boolean; needsIntroduction?: boolean }) => renderToStaticMarkup(
+      <StudyView
+        cards={[quizQuestion.card]}
+        index={0}
+        recallMode="target-to-native"
+        reviewedCardId={null}
+        customDecks={[]}
+        onClose={vi.fn()}
+        onRecallMode={vi.fn()}
+        onReveal={vi.fn()}
+        onBeginStudyRecall={vi.fn()}
+        onBookmark={vi.fn()}
+        onAssignDeck={vi.fn()}
+        onUpdateCard={vi.fn()}
+        onRate={vi.fn()}
+        onIndex={vi.fn()}
+        {...props}
+      />,
+    );
+
+    const prompt = study({ revealed: false });
+    expect(prompt).toContain("data-study-session");
+    expect(prompt).toMatch(/class="study-shell-close[^"]*"[^>]*aria-label="Close study mode"/);
+    expect(prompt).toMatch(/data-study-count="true"[^>]*><span aria-hidden="true"><span class="study-shell-count__current">0<\/span> \/ 1<\/span>/);
+    expect(prompt).toContain("data-study-hint");
+    expect(prompt).toContain("Say it out loud first, then reveal");
+    expect(prompt.indexOf("data-study-hint")).toBeLessThan(prompt.indexOf("data-study-rating"));
+    expect(study({ revealed: true })).not.toContain("data-study-hint");
+    expect(study({ revealed: false, needsIntroduction: true })).not.toContain("data-study-hint");
+  });
+
   it("keeps focus visible and avoids transition-all across practice screens", () => {
     const sources = [
       "QuizView.tsx",

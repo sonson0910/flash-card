@@ -9,7 +9,7 @@ import { playRewardSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
 import { useFocusModePreference } from '../settings/focus-mode-preference';
 import { PracticeTopBar } from './practice-board-parts';
-import { createWordMatchRound } from './practiceModel';
+import { createWordMatchRound, WORD_MATCH_DURATION_SECONDS } from './practiceModel';
 import './practice-board.css';
 
 interface WordMatchViewProps {
@@ -32,7 +32,7 @@ interface MatchTile {
   text: string;
 }
 
-const GAME_DURATION_SECONDS = 60;
+const GAME_DURATION_SECONDS = WORD_MATCH_DURATION_SECONDS;
 const PAIRS_PER_ROUND = 6;
 /** Radius of the countdown ring inside its 220-unit box. */
 const TIMER_RADIUS = 100;

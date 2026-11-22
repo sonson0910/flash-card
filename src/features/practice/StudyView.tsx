@@ -1,20 +1,24 @@
-import { ChevronLeft, ChevronRight, Focus, Keyboard, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Focus, Keyboard, ListChecks, Moon, Sun, X } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Flashcard } from '../../components/Flashcard';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { Lumi, type LumiPose } from '../../components/lumi/Lumi';
+import { useVerifiedStats } from '../../components/stats/VerifiedStatsContext';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
 import { triggerHaptic } from '../../lib/haptics';
 import { triggerConfetti } from '../../lib/confetti';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
 import { playFlipSound, playRewardSound } from '../../lib/interactionSounds';
+import { buildStreakView } from '../gamification/streakView';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import { readFocusModeEnabled, useFocusModePreference } from '../settings/focus-mode-preference';
+import { useTheme } from '../theme/ThemeProvider';
 import { SessionRecapModal } from './SessionRecapModal';
+import './study-shell.css';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { CardData } from '../../types/card';
@@ -371,30 +375,41 @@ export function StudyView({
 
 
   return (
-    <div ref={studySurfaceRef} tabIndex={-1} data-study-session data-study-state={revealed ? 'revealed' : 'prompt'} data-study-paused={paused ? 'true' : 'false'} onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="practice-board practice-board--study mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-      <div data-study-header className="mb-3 flex w-full items-center gap-3">
-        <button type="button" onClick={onClose} disabled={paused} className="crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
-          <X size={24} aria-hidden="true" />
-        </button>
-        <p data-study-title className="hidden min-w-max text-xs font-black uppercase tracking-[0.12em] text-[var(--sf-text-muted)] sm:block"><Trans {...msg({ id: 'study.progress', message: 'Study progress' })} /></p>
-        <div data-study-progress role="progressbar" aria-label={_(msg({ id: 'study.progress', message: 'Study progress' }))} aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={answeredCount} className="min-w-0 flex flex-1 items-center gap-1">
-          <div data-study-progress-segments className="flex min-w-0 flex-1 gap-1" aria-hidden="true">
+    <div ref={studySurfaceRef} tabIndex={-1} data-study-session data-study-state={revealed ? 'revealed' : 'prompt'} data-study-paused={paused ? 'true' : 'false'} onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="practice-board practice-board--study study-shell mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <div data-study-header className="study-shell-header mb-3 flex w-full items-center gap-3">
+        <div className="study-shell-start">
+          <button type="button" onClick={onClose} disabled={paused} className="study-shell-close crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
+            <X size={18} strokeWidth={1.9} aria-hidden="true" />
+          </button>
+          <p data-study-title className="study-shell-title"><Trans {...msg({ context: 'study.title', message: 'Review' })} /></p>
+        </div>
+        <div data-study-progress role="progressbar" aria-label={_(msg({ id: 'study.progress', message: 'Study progress' }))} aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={answeredCount} className="study-shell-progress">
+          <div data-study-progress-segments aria-hidden="true">
             {Array.from({ length: 12 }, (_, segment) => (
               <span key={segment} data-study-progress-segment={(segment + 1) / 12 <= progressRatio ? 'complete' : 'pending'} />
             ))}
           </div>
-          <span className="shrink-0 font-mono text-xs font-bold tabular-nums text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'study.card-count', message: '{current} / {total} saved' })} values={{ current: answeredCount, total: cards.length }} /></span>
+          <span data-study-count className="study-shell-count">
+            <span aria-hidden="true"><span className="study-shell-count__current">{answeredCount}</span> / {cards.length}</span>
+            <span className="sr-only"><Trans {...msg({ context: 'study.card-count', message: '{current} / {total} saved' })} values={{ current: answeredCount, total: cards.length }} /></span>
+          </span>
         </div>
-        <span data-study-timer aria-label={_(msg({ id: 'study.elapsed-time', message: 'Elapsed study time: {time}' }).id, { time: elapsedTime })} className="min-w-12 font-mono text-xs font-bold tabular-nums text-[var(--sf-text-muted)]">
-          {elapsedTime}
-        </span>
-        <button type="button" data-study-focus-mode aria-label={_(msg({ id: 'study.focus-mode', message: 'Focus mode' }))} aria-pressed={focusModeEnabled} onClick={() => setFocusModeEnabled(!focusModeEnabled)} className={`grid min-h-11 min-w-11 place-items-center rounded-xl border bg-[var(--sf-surface-control)] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusModeEnabled ? 'border-[var(--sf-brand)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text-muted)]'}`}>
-          <Focus size={18} aria-hidden="true" />
-        </button>
-        <button type="button" onClick={() => setSummaryOpen(true)} className="min-h-11 rounded-xl px-3 text-sm font-bold focus-visible:outline-2"><Trans {...msg({ context: 'study-view.summary', message: 'Summary' })} /></button>
+        <div className="study-shell-end">
+          <span data-study-timer aria-label={_(msg({ id: 'study.elapsed-time', message: 'Elapsed study time: {time}' }).id, { time: elapsedTime })} className="study-shell-timer">
+            {elapsedTime}
+          </span>
+          <button type="button" data-study-focus-mode aria-label={_(msg({ id: 'study.focus-mode', message: 'Focus mode' }))} aria-pressed={focusModeEnabled} onClick={() => setFocusModeEnabled(!focusModeEnabled)} className={`study-shell-tool grid min-h-11 min-w-11 place-items-center rounded-xl border bg-[var(--sf-surface-control)] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusModeEnabled ? 'border-[var(--sf-brand)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text-muted)]'}`}>
+            <Focus size={18} aria-hidden="true" />
+          </button>
+          <button type="button" data-study-summary onClick={() => setSummaryOpen(true)} className="study-shell-summary min-h-11 min-w-11 rounded-xl px-3 text-sm font-bold focus-visible:outline-2">
+            <ListChecks size={18} aria-hidden="true" className="study-shell-summary__icon" />
+            <span className="study-shell-summary__label"><Trans {...msg({ context: 'study-view.summary', message: 'Summary' })} /></span>
+          </button>
+          <StudyShellPreferences />
+        </div>
       </div>
 
-      <div className="mb-2 flex min-h-7 w-full justify-end" aria-live="polite">
+      <div className="study-shell-combo mb-2 flex min-h-7 w-full justify-end" aria-live="polite">
         {!focusModeEnabled && answeredCount >= 2 && <span data-study-combo={answeredCount} className="rounded-xl border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1 font-display text-xs font-black uppercase tracking-wider text-[var(--sf-brand-text)]"><Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} /></span>}
       </div>
 
@@ -479,6 +494,10 @@ export function StudyView({
         )}
       </div>
 
+      {!needsIntroduction && !revealed && <p data-study-hint className="study-shell-hint">
+        <Trans {...msg({ context: 'study.hint', message: 'Say it out loud first, then reveal <0>Space</0>' })} components={{ 0: <kbd className="study-shell-kbd crystal-chamfer-sm" /> }} />
+      </p>}
+
       {!needsIntroduction && <div ref={ratingRef} inert={paused || undefined} data-study-rating className="w-full max-w-xl scroll-mt-4">
         <ReviewControls
           revealed={revealed}
@@ -526,6 +545,26 @@ export function StudyView({
       </div>
     </div>
   );
+}
+
+/**
+ * The app bar steps aside while the learner reviews, so the shell carries its light and dark switch
+ * and the same streak the app bar shows: the verified run the app already holds, with no read of its own.
+ */
+function StudyShellPreferences() {
+  const { _ } = useLingui();
+  const { mode: themeMode, setMode: setThemeMode } = useTheme();
+  const verifiedState = useVerifiedStats()?.state ?? null;
+  const streak = useMemo(() => (verifiedState ? buildStreakView(verifiedState, new Date()).length : 0), [verifiedState]);
+  return <>
+    <button type="button" data-study-theme onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')} aria-pressed={themeMode === 'dark'} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))} className="study-shell-theme claude-theme-quick-toggle flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none">
+      {themeMode === 'dark' ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+    </button>
+    {streak > 0 && <span data-study-streak role="img" className="study-shell-streak claude-streak" aria-label={_(msg({ id: 'shell.streak', message: '{count} day streak' }).id, { count: streak })}>
+      <svg className="claude-streak-flame" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z" /></svg>
+      <span aria-hidden="true">{streak}<span className="study-shell-streak__unit"> <Trans {...msg({ context: 'study.streak-unit', message: '{count, plural, one {day} other {days}}' })} values={{ count: streak }} /></span></span>
+    </span>}
+  </>;
 }
 
 function Shortcut({ keys, label }: { keys: string; label: string }) {

@@ -5,6 +5,8 @@ import '../../src/styles/app-bootstrap.css';
 import { I18nProvider, useUiLocale } from '../../src/i18n/I18nProvider';
 import { loadCatalog } from '../../src/i18n/loadCatalog';
 import { SessionRecapModal } from '../../src/features/practice/SessionRecapModal';
+import type { SessionRecapReminder, SessionRecapReminderPort } from '../../src/features/practice/session-recap-reminder';
+import type { ReminderSettings } from '../../src/features/reminders/reminderService';
 import { IeltsGoalPanelView } from '../../src/features/examProgress/IeltsGoalPanel';
 import { buildIeltsGoalModel, type IeltsGoalModelInput } from '../../src/features/examProgress/ieltsGoalModel';
 import { IELTS_GOAL_KIND } from '../../functions/src/course-profile-contract';
@@ -51,6 +53,28 @@ const ieltsGoals: Record<string, IeltsGoalModelInput> = {
 const goalInput = ieltsGoals[new URLSearchParams(window.location.search).get('goal') ?? 'none'];
 const goalModel = goalInput ? buildIeltsGoalModel(goalInput) : null;
 
+// `?variant=next` shows the "What next?" row. The reminder stands in for the learner's saved
+// settings (on at 08:00 unless `?reminder=off`), and every action is recorded on the page so a test
+// can see which one a click reached.
+const params = new URLSearchParams(window.location.search);
+const variantNext = params.get('variant') === 'next';
+const recordAction = (action: string) => {
+  const actions = (document.body.dataset.recapActions ?? '').split(' ').filter(Boolean);
+  document.body.dataset.recapActions = [...actions, action].join(' ');
+};
+const reminderSettings = (push: boolean): ReminderSettings => ({
+  days: [1, 2, 3, 4, 5, 6, 0], sendAtLocal: '08:00', timezone: 'Asia/Saigon', locale: 'en', quietHours: null,
+  onlyIfNotStudiedToday: true, channels: { push, emailDigest: false },
+});
+const reminderSnapshot = (push: boolean): SessionRecapReminder => ({ enabled: push, sendAtLocal: '08:00', canEnable: true, settings: reminderSettings(push) });
+const fixtureReminder: SessionRecapReminderPort = {
+  load: () => Promise.resolve(reminderSnapshot(params.get('reminder') !== 'off')),
+  setEnabled: (_current, enabled) => {
+    recordAction(enabled ? 'reminder-on' : 'reminder-off');
+    return Promise.resolve(reminderSnapshot(enabled));
+  },
+};
+
 function RecapFixture() {
   const locale = useUiLocale();
   const [ready, setReady] = useState(false);
@@ -63,8 +87,8 @@ function RecapFixture() {
   return <SessionRecapModal
     open
     onClose={() => undefined}
-    onRetryWeak={() => undefined}
-    onViewWeeklyRecap={() => undefined}
+    onRetryWeak={() => recordAction('retry')}
+    onViewWeeklyRecap={() => recordAction('weekly')}
     totalCards={12}
     goodCount={10}
     againCount={2}
@@ -76,6 +100,7 @@ function RecapFixture() {
     returnsToToday
     loadTomorrowDue={loadTomorrowDue}
     goalPanel={goalModel ? <IeltsGoalPanelView model={goalModel} onOpenPath={() => undefined} /> : null}
+    {...(variantNext ? { variant: 'next' as const, wordMatchCount: 6, onPlayWordMatch: () => recordAction('match'), reminder: fixtureReminder } : {})}
   />;
 }
 

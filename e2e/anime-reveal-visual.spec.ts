@@ -1,4 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
+import { writeFile } from 'node:fs/promises';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { createServer, type ViteDevServer } from 'vite';
 
@@ -26,7 +27,8 @@ async function expectAccessibleAndContained(page: Page, label: string, event: (t
     .analyze();
   const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
-  await expect(reveal.locator('button:visible')).toHaveCount(event === 'levelup' ? 3 : 2);
+  // Close, then Later and Use frame on a level up, or Share and the main action on the others.
+  await expect(reveal.locator('button:visible'), `${label} ${event} actions`).toHaveCount(3);
 }
 
 async function attachScreen(page: Page, testInfo: TestInfo, name: string) {
@@ -109,5 +111,55 @@ for (const locale of ['vi', 'pseudo'] as const) for (const event of events) {
     await expect(page).toHaveScreenshot(`anime-reveal-${event}-${locale}-crystal-dark-mobile.png`, {
       fullPage: true, animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
     });
+  });
+}
+
+interface SharedRevealImage { readonly title?: string; readonly text?: string; readonly name: string; readonly type: string; readonly base64: string }
+
+for (const theme of themes) for (const viewport of viewports) for (const event of ['tierup', 'streak'] as const) {
+  test(`${theme.family} ${theme.mode} ${event} reveal shares its card as an image made on the device at ${viewport.name}`, async ({ page }, testInfo) => {
+    page.on('pageerror', error => { throw error; });
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+    await page.route(new RegExp(`^https?://(?!127\\.0\\.0\\.1:${fixturePort})`), route => route.abort());
+    await page.addInitScript(({ family, mode }) => {
+      localStorage.setItem('sonflash_theme_family', family);
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', 'true');
+      // The device share sheet, recorded instead of opened.
+      Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: async (data: { files: File[]; title?: string; text?: string }) => {
+          const file = data.files[0];
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          let binary = '';
+          for (const byte of bytes) binary += String.fromCharCode(byte);
+          (window as unknown as { sharedRevealImage: unknown }).sharedRevealImage = { title: data.title, text: data.text, name: file.name, type: file.type, base64: btoa(binary) };
+        },
+      });
+    }, theme);
+    const name = `anime-reveal-${event}-shared-${theme.family}-${theme.mode}-${viewport.name}`;
+    await page.goto(`${fixtureOrigin}${fixturePath}?event=${event}&locale=en`);
+    await expect(page.locator('.anime-reveal')).toBeVisible({ timeout: 15_000 });
+    const offDevice: string[] = [];
+    page.on('request', request => { if (!request.url().startsWith(fixtureOrigin)) offDevice.push(request.url()); });
+
+    await page.getByRole('button', { name: event === 'tierup' ? 'Share card' : 'Share', exact: true }).click();
+    await expect(page.locator('.anime-reveal__share-status')).toHaveText('Shared.');
+    const shared = await page.evaluate(() => (window as unknown as { sharedRevealImage?: SharedRevealImage }).sharedRevealImage);
+    expect(shared).toMatchObject({
+      title: event === 'tierup' ? 'SonFlash · Tier up' : 'SonFlash · Streak milestone',
+      text: event === 'tierup' ? 'Mastered' : '30-day streak',
+      name: event === 'tierup' ? 'sonflash-tier-up.png' : 'sonflash-streak.png',
+      type: 'image/png',
+    });
+    expect(offDevice).toEqual([]);
+    await expectAccessibleAndContained(page, name, event);
+    await attachScreen(page, testInfo, name);
+    const image = testInfo.outputPath(`${name}-image.png`);
+    await writeFile(image, Buffer.from(shared!.base64, 'base64'));
+    await testInfo.attach(`${name}-image`, { path: image, contentType: 'image/png' });
   });
 }
