@@ -17,8 +17,8 @@ export function useProgressStudyFacts(): ProgressStudyFacts | null {
 export function studiedDurationText(_: ReturnType<typeof useLingui>['_'], ms: number): string {
   const { hours, minutes } = hoursAndMinutes(ms);
   return hours > 0
-    ? _(msg({ id: 'stats.duration.hours-minutes', message: '{hours} h {minutes} m' }), { hours: formatNumber(hours), minutes: formatNumber(minutes) })
-    : _(msg({ id: 'stats.duration.minutes', message: '{minutes} m' }), { minutes: formatNumber(minutes) });
+    ? _({ ...msg({ id: 'stats.duration.hours-minutes', message: '{hours} h {minutes} m' }), values: { hours: formatNumber(hours), minutes: formatNumber(minutes) } })
+    : _({ ...msg({ id: 'stats.duration.minutes', message: '{minutes} m' }), values: { minutes: formatNumber(minutes) } });
 }
 
 /**
@@ -73,6 +73,6 @@ export function StudyPaceFact({ className }: { readonly className?: string }) {
   if (!facts || facts.dailyMinutes === undefined) return null;
   return <div className={className} data-study-pace="" title={_(studyPaceText.hint)}>
     <dt>{_(studyPaceText.label)}</dt>
-    <dd>{facts.dailyMinutes === null ? '—' : _(studyPaceText.value, { minutes: formatNumber(facts.dailyMinutes) })}</dd>
+    <dd>{facts.dailyMinutes === null ? '—' : _({ ...studyPaceText.value, values: { minutes: formatNumber(facts.dailyMinutes) } })}</dd>
   </div>;
 }
