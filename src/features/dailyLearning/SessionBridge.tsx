@@ -47,7 +47,7 @@ function ExampleQuote({ sentence, word, language }: { readonly sentence: string;
   const found = word.trim() ? new RegExp(word.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'iu').exec(sentence) : null;
   return (
     <span className="session-bridge-card-quote" lang={language}>
-      {found ? <>{sentence.slice(0, found.index)}<b>{found[0]}</b>{sentence.slice(found.index + found[0].length)}</> : sentence}
+      <q>{found ? <>{sentence.slice(0, found.index)}<b>{found[0]}</b>{sentence.slice(found.index + found[0].length)}</> : sentence}</q>
     </span>
   );
 }

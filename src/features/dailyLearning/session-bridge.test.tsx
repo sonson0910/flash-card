@@ -129,7 +129,7 @@ describe('SessionBridge', () => {
         <I18nProvider i18n={i18n}><ThemeProvider><SessionBridge model={tiered} actions={actions} /></ThemeProvider></I18nProvider>,
       );
       expect(html).toContain('<span class="session-bridge-card-tier" data-tier="new"><b>Bud</b><span>New</span></span>');
-      expect(html).toMatch(/<span class="session-bridge-card-quote" lang="en">A careful <b>analysis<\/b> of the data\.<\/span>/);
+      expect(html).toMatch(/<span class="session-bridge-card-quote" lang="en"><q>A careful <b>analysis<\/b> of the data\.<\/q><\/span>/);
     } finally {
       vi.unstubAllGlobals();
     }
