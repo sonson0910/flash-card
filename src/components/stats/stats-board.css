@@ -1,8 +1,8 @@
 /* Progress and achievements boards: panels, activity heatmap, mastery ring and range switch.
    Values come from the shared --sf-* theme tokens. The --st-* names below are aliases that
    progress-screen.css and achievements-board.css also read, so they stay; where a token exists in
-   all four themes the alias points at it and no theme overrides it. The few literals left have no
-   token yet (the classic shelf, the Crystal mastered rim, the Crystal pink and light gold text).
+   all four themes the alias points at it and no theme overrides it. Colours are tokens only: the
+   palette lives in the theme stylesheets, and translucent variants mix a token with transparent.
    Backgrounds of chamfered elements are scoped to the classic themes: an unlayered background
    would replace the crystal-chamfer edge gradients, so Crystal passes its fill through
    --sf-chamfer-fill instead. */
@@ -38,9 +38,9 @@
   --st-heat-glow: none;
   --st-today-glow: none;
   --st-tomorrow: color-mix(in srgb, var(--sf-brand) 45%, transparent);
-  --st-shelf-border: 1px solid #d9b76a;
+  --st-shelf-border: 1px solid var(--sf-gold-line);
   --st-shelf-bg: var(--sf-surface);
-  --st-shelf-shadow: 0 1px 2px rgb(60 40 20 / .08), inset 0 0 0 3px #fbf3df;
+  --st-shelf-shadow: 0 1px 2px color-mix(in srgb, var(--sf-shadow-tint) 8%, transparent), inset 0 0 0 3px var(--sf-gold-paper);
   --st-success: var(--sf-success);
 }
 
@@ -56,8 +56,8 @@
   --st-heat-glow: 0 0 8px color-mix(in srgb, var(--sf-brand) 40%, transparent);
   --st-today-glow: 0 0 18px color-mix(in srgb, var(--sf-brand) 55%, transparent);
   --st-shelf-border: 1px solid transparent;
-  --st-shelf-bg: linear-gradient(180deg, #102631, #0b1c25) padding-box, var(--sf-gold-rim) border-box;
-  --st-shelf-shadow: 0 0 30px -14px rgb(245 174 57 / .5);
+  --st-shelf-bg: var(--sf-shelf-bg) padding-box, var(--sf-gold-rim) border-box;
+  --st-shelf-shadow: 0 0 30px -14px color-mix(in srgb, var(--sf-reward) 50%, transparent);
 }
 
 :root[data-theme-family='crystal'] :is(.progress-board, .achievements-board, .stats-canvas) {
@@ -70,26 +70,24 @@
   --st-primary-glow: var(--sf-primary-shadow);
   --st-crimson-text: var(--sf-brand-text);
   --st-holo-text: var(--sf-second-text);
-  --st-gold-text: var(--sf-reward);
-  --st-pink-text: #ff9ec0;
+  --st-gold-text: var(--sf-warn);
+  --st-pink-text: var(--sf-pink-text);
   --st-mastered: var(--sf-tier-star);
   --st-learning: var(--sf-tier-bloom);
   --st-new: var(--sf-tier-bud);
-  --st-rim-mastered: conic-gradient(from 200deg, #fff3c4, var(--sf-reward), var(--sf-brand), var(--sf-star-shade), var(--sf-star-face), #ffffff, var(--sf-reward), #fff3c4);
+  --st-rim-mastered: var(--sf-gold-rim);
   --st-rim-learning: var(--sf-rim-learning);
   --st-rim-new: var(--sf-rim-new);
   --st-ring-stop-a: var(--sf-reward);
   --st-ring-stop-b: var(--sf-brand);
   --st-ring-stop-c: var(--sf-star-shade);
   --st-heat-unavailable: color-mix(in srgb, var(--sf-heat-0) 60%, transparent);
-  --st-tomorrow: linear-gradient(180deg, #ffc2da, var(--sf-tier-bloom));
+  --st-tomorrow: linear-gradient(180deg, var(--sf-pink-light), var(--sf-tier-bloom));
   --st-bar: linear-gradient(180deg, color-mix(in srgb, var(--sf-second) 50%, transparent), color-mix(in srgb, var(--sf-second) 12%, transparent));
 }
 
 :root[data-theme-family='crystal']:not(.dark) :is(.progress-board, .achievements-board, .stats-canvas) {
   --st-track: color-mix(in srgb, var(--sf-text-strong) 12%, transparent);
-  --st-gold-text: #8a5a00;
-  --st-pink-text: #b3265a;
   --st-bar: linear-gradient(180deg, color-mix(in srgb, var(--sf-second-text) 55%, transparent), color-mix(in srgb, var(--sf-second-text) 15%, transparent));
 }
 

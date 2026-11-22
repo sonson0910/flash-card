@@ -1959,18 +1959,18 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
    Language-pack card (Korean, Japanese, Chinese): the front teaches through
    the reading aids, the example and the common phrases; the back keeps the
    standard layout with the pack's reading beside the word.
-   The pinyin tone hues come from the language-card boards; where a theme
-   token carries the same hue the token is used, the rest are card-local.
+   The tone hues and the reading switch come from the language-card boards
+   through the --sf-tone-* and --sf-switch-* theme tokens.
    ------------------------------------------------------------------------ */
 /* The theme has no CJK font token: the self-hosted Noto Sans subset for the script loads with the
    card, and the Noto Serif faces of the boards apply where the device has them. */
 :is(.flashcard-face, .flashcard-back)[data-card-kind="language"] {
   --lang-serif: "Noto Serif CJK KR", "Noto Serif KR", "Noto Sans KR", serif;
   --lang-sans: "Noto Sans KR", "Noto Sans CJK KR", sans-serif;
-  --lang-tone-1: var(--sf-brand-text);
-  --lang-tone-2: var(--sf-success);
-  --lang-tone-3: var(--sf-rating-easy);
-  --lang-tone-4: var(--sf-danger);
+  --lang-tone-1: var(--sf-tone-1);
+  --lang-tone-2: var(--sf-tone-2);
+  --lang-tone-3: var(--sf-tone-3);
+  --lang-tone-4: var(--sf-tone-4);
   --lang-tone-5: var(--sf-text-muted);
   --lang-pitch: var(--sf-brand);
   --lang-ruby: var(--flashcard-accent);
@@ -1979,7 +1979,9 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   --lang-chip-bg: color-mix(in srgb, var(--sf-text) 4%, transparent);
   --lang-chip-line: color-mix(in srgb, var(--sf-text) 10%, transparent);
   --lang-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
-  --lang-switch-on: var(--sf-brand);
+  --lang-switch-on: var(--sf-switch-on);
+  --lang-switch-on-text: var(--sf-switch-on-text);
+  --lang-switch-knob: var(--sf-switch-knob);
 }
 
 .flashcard-shell[data-card-kind="language"] :lang(ja) {
@@ -1998,9 +2000,6 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 }
 
 .flashcard-face[data-card-kind="language"][data-card-look="paper"] {
-  --lang-tone-1: #1f5fb8;
-  --lang-tone-3: var(--sf-rating-easy);
-  --lang-tone-4: var(--sf-rating-again);
   --lang-ruby: var(--sf-brand);
   --lang-mark: var(--sf-brand);
   --lang-mark-bg: color-mix(in srgb, var(--sf-brand) 12%, transparent);
@@ -2010,30 +2009,17 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 }
 
 .flashcard-face[data-card-kind="language"][data-card-look="crystal"] {
-  --lang-tone-1: var(--sf-success);
-  --lang-tone-2: #9dff9a;
-  --lang-tone-3: var(--sf-reward);
   --lang-pitch: var(--sf-success);
-  --lang-ruby: var(--sf-success);
-  --lang-holo-text: var(--sf-success);
+  --lang-ruby: var(--sf-tone-1);
+  --lang-holo-text: var(--sf-tone-1);
   --lang-mark-bg: color-mix(in srgb, var(--sf-brand) 24%, transparent);
   --lang-chip-bg: color-mix(in srgb, var(--sf-text) 8%, transparent);
   --lang-chip-line: color-mix(in srgb, var(--sf-text) 16%, transparent);
-  /* The switch lights in the board's holo cyan; its dark label keeps AA contrast on both ends. */
-  --lang-switch-on: linear-gradient(180deg, #7ff6ff, #1aa7c9);
-  --lang-switch-on-text: #031820;
 }
 
-/* The board's light cyan and green tones, deepened just enough for AA on the glass chips. */
 :root[data-theme-family="crystal"]:not(.dark) .flashcard-face[data-card-kind="language"][data-card-look="crystal"] {
-  --lang-tone-1: #086a82;
-  --lang-tone-2: #19672f;
-  --lang-tone-3: #8a5a00;
   --lang-pitch: var(--sf-brand-text);
-  --lang-ruby: #086a82;
-  --lang-holo-text: #086a82;
   --lang-mark-bg: color-mix(in srgb, var(--sf-brand) 16%, transparent);
-  --lang-switch-on: linear-gradient(180deg, #7ff6ff, #2bc4e0);
 }
 
 /* The watermark is the first glyph of the word in the target script. */
@@ -2150,7 +2136,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-accent {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 55%, white), var(--sf-brand) 55%, var(--sf-brand-hover));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 55%, var(--sf-flare)), var(--sf-brand) 55%, var(--sf-brand-hover));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -2213,8 +2199,8 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-headword .flashcard-play-button {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 72%, white), var(--sf-brand) 45%, var(--sf-brand-hover));
-  color: #fff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 72%, var(--sf-flare)), var(--sf-brand) 45%, var(--sf-brand-hover));
+  color: var(--sf-flare);
 }
 
 [data-reading-aid] {
@@ -2548,12 +2534,11 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 .flashcard-lang-actions .flashcard-lang-switch[aria-pressed="true"] {
   border-color: var(--lang-accent-line);
   background: color-mix(in srgb, var(--sf-brand) 10%, transparent);
-  color: var(--sf-brand-text);
+  color: var(--lang-switch-on-text);
 }
 
 .flashcard-face[data-card-look="paper"] .flashcard-lang-actions .flashcard-lang-switch[aria-pressed="true"] {
   background: color-mix(in srgb, var(--sf-brand) 6%, transparent);
-  color: var(--sf-brand);
 }
 
 .flashcard-lang-switch-track {
@@ -2572,7 +2557,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: var(--sf-surface);
+  background: var(--lang-switch-knob);
   transition: left 200ms ease;
 }
 

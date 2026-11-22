@@ -79,6 +79,7 @@ const catalogFixtureModule = `
 import { createRoot } from 'react-dom/client';
 import { useEffect, useState } from 'react';
 import '/src/index.css';
+import '/src/styles/app-bootstrap.css';
 import { I18nProvider, useUiLocale } from '/src/i18n/I18nProvider';
 import { loadCatalog } from '/src/i18n/loadCatalog';
 import { ThemeProvider } from '/src/features/theme/ThemeProvider';

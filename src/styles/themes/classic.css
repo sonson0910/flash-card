@@ -33,6 +33,17 @@
   --sf-panel-edge: rgb(29 26 22 / 0.1); --sf-panel-edge-2: rgb(29 26 22 / 0.18); --sf-space: none;
   --sf-dialog-shadow: inset 0 1px 0 #ffffff, 0 2px 6px rgb(60 40 20 / 0.08), 0 50px 90px -40px rgb(60 40 20 / 0.6);
   --sf-tab-bg: rgb(255 252 245 / 0.94); --sf-tab-shadow: 0 12px 30px -16px rgb(60 40 20 / 0.45); --sf-tab-active: rgb(180 70 26 / 0.12); --sf-tab-active-text: #1d1a16;
+  --sf-flare: #ffffff; --sf-umbra: #000000; --sf-shadow-tint: #3c2814;
+  --sf-tone-1: #1f5fb8; --sf-tone-2: #2c6a3d; --sf-tone-3: #8a5a0c; --sf-tone-4: #c53637;
+  --sf-switch-on: #b4461a; --sf-switch-on-text: #b4461a; --sf-switch-knob: #fffcf5; --sf-pink-text: #97400d;
+  --sf-gold-line: #d9b76a; --sf-gold-paper: #fbf3df; --sf-gold-ink: #7a5410; --sf-gold-shadow: #78500a;
+  --sf-medal-face: radial-gradient(circle, #fbf8f2 58%, rgb(51 115 68 / 0.12) 60%, #fbf8f2 64%); --sf-medal-star-face: radial-gradient(circle, #fbf3df 56%, #f1dfae 57%, #fbf3df 60%);
+  --sf-ring-core: #fffcf5; --sf-shelf-bg: #fffcf5; --sf-foil-sheen: linear-gradient(115deg, transparent 30%, rgb(255 226 150 / 0.22) 45%, rgb(150 240 255 / 0.16) 52%, rgb(255 170 230 / 0.12) 58%, transparent 72%);
+  --sf-hero-sky: #2f5a3a; --sf-hero-glow: rgb(255 255 255 / 0.1); --sf-hero-text: #efe8da; --sf-hero-title: #f4e2b0; --sf-hero-body: #dfe6d6; --sf-hero-muted: #b9c7b3; --sf-hero-cta-text: #1f3524;
+  --sf-hero-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15), inset 0 1px 0 rgb(255 255 255 / 0.15), 0 2px 4px rgb(60 40 20 / 0.2), 0 40px 60px -30px rgb(40 50 30 / 0.55); --sf-book-face: var(--sf-card-front);
+  --sf-holo-light: var(--sf-second); --sf-holo-pale: var(--sf-second); --sf-holo-deep: var(--sf-second); --sf-holo-ink: var(--sf-holo-text);
+  --sf-gold-light: var(--sf-reward); --sf-gold-deep: var(--sf-reward); --sf-blush: var(--sf-brand); --sf-rose-light: var(--sf-brand); --sf-pink-light: var(--sf-tier-bloom);
+  --sf-mark-crimson: var(--sf-crimson-gradient); --sf-mark-navy: var(--sf-primary-bg); --sf-veil: var(--sf-scrim);
   --nk-chamfer: none; --nk-chamfer-sm: none; --nk-snap: cubic-bezier(0.16, 1, 0.3, 1); --nk-stars: none; --nk-wing-opacity: 0;
 }
 
@@ -72,5 +83,16 @@
   --sf-panel-edge: rgb(255 255 255 / 0.08); --sf-panel-edge-2: rgb(255 255 255 / 0.14); --sf-space: none;
   --sf-dialog-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.95), 0 0 70px -34px rgb(40 211 244 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.06);
   --sf-tab-bg: rgb(12 30 40 / 0.72); --sf-tab-shadow: 0 20px 40px -20px rgb(0 0 0 / 0.9); --sf-tab-active: rgb(40 211 244 / 0.16); --sf-tab-active-text: #f1f6f9;
+  --sf-flare: #ffffff; --sf-umbra: #000000; --sf-shadow-tint: #000000;
+  --sf-tone-1: #7ee6fa; --sf-tone-2: #8fe39a; --sf-tone-3: #f5c26b; --sf-tone-4: #ff8a86;
+  --sf-switch-on: #28d3f4; --sf-switch-on-text: #28d3f4; --sf-switch-knob: #04141c; --sf-pink-text: #7ee6fa;
+  --sf-gold-line: var(--sf-reward); --sf-gold-paper: var(--sf-surface); --sf-gold-ink: #ffe6a8; --sf-gold-shadow: var(--sf-shadow-tint);
+  --sf-medal-face: radial-gradient(circle at 35% 30%, #16303c, #0c1d26 70%); --sf-medal-star-face: radial-gradient(circle at 35% 30%, #1d3440, #0c1d26 70%);
+  --sf-ring-core: radial-gradient(circle at 40% 30%, #16303c, #0a1a22 70%); --sf-shelf-bg: linear-gradient(180deg, #102631, #0b1c25); --sf-foil-sheen: linear-gradient(115deg, transparent 30%, rgb(255 226 150 / 0.22) 45%, rgb(150 240 255 / 0.16) 52%, rgb(255 170 230 / 0.12) 58%, transparent 72%);
+  --sf-hero-sky: linear-gradient(160deg, #0f2733, #081820); --sf-hero-glow: rgb(150 108 215 / 0.55); --sf-hero-text: var(--sf-text); --sf-hero-title: #f5fbfd; --sf-hero-body: #c3ced5; --sf-hero-muted: var(--sf-text-muted); --sf-hero-cta-text: var(--sf-on-brand);
+  --sf-hero-shadow: 0 40px 90px -40px rgb(0 0 0 / 0.9), 0 0 60px -20px rgb(40 211 244 / 0.4); --sf-book-face: var(--sf-card-front);
+  --sf-holo-light: var(--sf-second); --sf-holo-pale: var(--sf-second); --sf-holo-deep: var(--sf-second); --sf-holo-ink: var(--sf-holo-text);
+  --sf-gold-light: var(--sf-reward); --sf-gold-deep: var(--sf-reward); --sf-blush: var(--sf-brand); --sf-rose-light: var(--sf-brand); --sf-pink-light: var(--sf-tier-bloom);
+  --sf-mark-crimson: var(--sf-crimson-gradient); --sf-mark-navy: var(--sf-primary-bg); --sf-veil: var(--sf-scrim);
   --nk-chamfer: none; --nk-chamfer-sm: none; --nk-snap: cubic-bezier(0.16, 1, 0.3, 1); --nk-stars: none; --nk-wing-opacity: 0;
 }

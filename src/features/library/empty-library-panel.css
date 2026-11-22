@@ -73,7 +73,7 @@
   background: var(--sf-card-bg);
   box-shadow: inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / .07), 0 10px 20px -12px rgb(60 40 20 / .35);
   color: var(--sf-text);
-  font-family: Fraunces, Georgia, serif;
+  font-family: var(--sf-font-display);
   font-size: 1.875rem;
   font-style: italic;
 }
@@ -93,7 +93,7 @@ html:not(.dark) .empty-library__mini-card {
 .empty-library__title {
   margin: .625rem 0 0;
   color: var(--sf-text);
-  font-family: Fraunces, Georgia, serif;
+  font-family: var(--sf-font-display);
   font-size: 1.625rem;
   font-weight: 440;
   letter-spacing: -.02em;
@@ -141,7 +141,7 @@ html:not(.dark) .empty-library--classic .empty-library__caption { color: #8a8072
   background: transparent;
   color: var(--sf-text);
   font: inherit;
-  font-family: Fraunces, Georgia, serif;
+  font-family: var(--sf-font-display);
   font-size: 1rem;
 }
 
@@ -242,7 +242,7 @@ html.dark .empty-library--classic .empty-library__links button:last-of-type {
 }
 
 .empty-library--crystal .empty-library__caption {
-  font-family: Kanit, Nunito, sans-serif;
+  font-family: var(--sf-font-display);
   font-style: italic;
   font-weight: 800;
   letter-spacing: .16em;
@@ -300,7 +300,7 @@ html.dark .empty-library--classic .empty-library__links button:last-of-type {
 .empty-library__link-label {
   margin: 0;
   color: #5ef2ff;
-  font-family: Kanit, Nunito, sans-serif;
+  font-family: var(--sf-font-display);
   font-size: .71875rem;
   font-style: italic;
   font-weight: 800;
@@ -310,7 +310,7 @@ html.dark .empty-library--classic .empty-library__links button:last-of-type {
 .empty-library--crystal .empty-library__title {
   margin-top: .125rem;
   color: var(--sf-on-primary);
-  font-family: Kanit, Nunito, sans-serif;
+  font-family: var(--sf-font-display);
   font-size: 1.625rem;
   font-style: italic;
   font-weight: 900;
@@ -341,7 +341,7 @@ html.dark .empty-library--classic .empty-library__links button:last-of-type {
 }
 
 .empty-library--crystal .empty-library__word-input {
-  font-family: Nunito, sans-serif;
+  font-family: var(--sf-font-body);
   font-size: .875rem;
 }
 
@@ -354,7 +354,7 @@ html.dark .empty-library--classic .empty-library__links button:last-of-type {
   background: linear-gradient(180deg, #ff5470, var(--sf-brand) 45%, var(--sf-brand-hover));
   color: var(--sf-on-primary);
   filter: drop-shadow(0 0 12px color-mix(in srgb, var(--sf-brand) 55%, transparent));
-  font-family: Kanit, Nunito, sans-serif;
+  font-family: var(--sf-font-display);
   font-size: .875rem;
   font-style: italic;
   font-weight: 900;
@@ -374,7 +374,7 @@ html.dark .empty-library--classic .empty-library__links button:last-of-type {
   background: rgb(255 255 255 / .06);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / .22);
   color: #f3f5fa;
-  font-family: Kanit, Nunito, sans-serif;
+  font-family: var(--sf-font-display);
   font-size: .8125rem;
   font-style: italic;
   font-weight: 800;

@@ -1,80 +1,73 @@
 /* Paths: a hero for the path in progress beside a shelf of path "books", then the unit picker,
-   the level roadmap and the reviewed vocabulary explorer. Colours come from the theme tokens; the
-   hero and book colours below are the design canvas values for each theme, kept as local variables. */
+   the level roadmap and the reviewed vocabulary explorer. Colours and fonts are the --sf-* theme
+   tokens, renamed to local --pa-* variables so each theme only swaps values. */
 .catalog-canvas {
-  --pa-display: var(--sf-font-display, Fraunces, Georgia, serif);
+  --pa-display: var(--sf-font-display);
   --pa-weight: 380;
-  --pa-mono: 'Geist Mono', ui-monospace, monospace;
+  --pa-mono: var(--sf-font-mono);
   --pa-title: var(--sf-text);
   --pa-radius: 18px;
   --pa-btn-radius: 999px;
-  --pa-hero-bg: radial-gradient(ellipse 80% 70% at 80% 0%, rgb(255 255 255 / .1), transparent 60%), #2f5a3a;
+  --pa-hero-bg: radial-gradient(ellipse 80% 70% at 80% 0%, var(--sf-hero-glow), transparent 60%), var(--sf-hero-sky);
   --pa-hero-border: 0;
-  --pa-hero-shadow: inset 0 0 0 1px rgb(0 0 0 / .15), inset 0 1px 0 rgb(255 255 255 / .15), 0 2px 4px rgb(60 40 20 / .2), 0 40px 60px -30px rgb(40 50 30 / .55);
-  --pa-hero-text: #efe8da;
-  --pa-hero-title: #f4e2b0;
-  --pa-hero-title-shadow: 0 1px 0 rgb(0 0 0 / .25);
-  --pa-hero-body: #dfe6d6;
-  --pa-hero-muted: #b9c7b3;
-  --pa-hero-dot: #f4e2b0;
+  --pa-hero-shadow: var(--sf-hero-shadow);
+  --pa-hero-text: var(--sf-hero-text);
+  --pa-hero-title: var(--sf-hero-title);
+  --pa-hero-title-shadow: 0 1px 0 color-mix(in srgb, var(--sf-umbra) 25%, transparent);
+  --pa-hero-body: var(--sf-hero-body);
+  --pa-hero-muted: var(--sf-hero-muted);
+  --pa-hero-dot: var(--sf-book-foil);
   --pa-hero-dot-glow: none;
   --pa-grain: .35;
-  --pa-cta-bg: #f4e2b0;
-  --pa-cta-text: #1f3524;
-  --pa-cta-shadow: 0 12px 24px -12px rgb(0 0 0 / .5);
-  --pa-ghost-line: rgb(244 226 176 / .4);
-  --pa-unit-done: #f4e2b0;
-  --pa-unit-now: rgb(244 226 176 / .5);
-  --pa-unit-todo: rgb(255 255 255 / .14);
+  --pa-cta-bg: var(--sf-book-foil);
+  --pa-cta-text: var(--sf-hero-cta-text);
+  --pa-cta-shadow: 0 12px 24px -12px color-mix(in srgb, var(--sf-umbra) 50%, transparent);
+  --pa-ghost-line: color-mix(in srgb, var(--sf-book-foil) 40%, transparent);
+  --pa-unit-done: var(--sf-book-foil);
+  --pa-unit-now: color-mix(in srgb, var(--sf-book-foil) 50%, transparent);
+  --pa-unit-todo: color-mix(in srgb, var(--sf-flare) 14%, transparent);
   --pa-unit-glow: none;
-  --pa-chip-bg: rgb(255 255 255 / .07);
-  --pa-chip-line: rgb(244 226 176 / .25);
-  --pa-chip-text: #efe8da;
-  --pa-chip-dot: rgb(255 255 255 / .25);
+  --pa-chip-bg: color-mix(in srgb, var(--sf-flare) 7%, transparent);
+  --pa-chip-line: color-mix(in srgb, var(--sf-book-foil) 25%, transparent);
+  --pa-chip-text: var(--sf-hero-text);
+  --pa-chip-dot: color-mix(in srgb, var(--sf-flare) 25%, transparent);
   --pa-book-radius: 6px 16px 16px 6px;
   --pa-book-border: 0;
-  --pa-book-shadow: inset 0 0 0 1px rgb(0 0 0 / .15), inset 0 1px 0 rgb(255 255 255 / .15), 0 2px 3px rgb(60 40 20 / .2), 0 24px 34px -22px rgb(60 40 20 / .6);
-  --pa-book-spine: linear-gradient(90deg, rgb(0 0 0 / .25), rgb(255 255 255 / .08), rgb(0 0 0 / .15));
-  --pa-book-title: #f4e2b0;
-  --pa-book-muted: rgb(239 232 218 / .75);
-  --pa-book-track: rgb(255 255 255 / .18);
-  --pa-book-fill: #f4e2b0;
+  --pa-book-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-umbra) 15%, transparent), inset 0 1px 0 color-mix(in srgb, var(--sf-flare) 15%, transparent), 0 2px 3px color-mix(in srgb, var(--sf-shadow-tint) 20%, transparent), 0 24px 34px -22px color-mix(in srgb, var(--sf-shadow-tint) 60%, transparent);
+  --pa-book-spine: linear-gradient(90deg, color-mix(in srgb, var(--sf-umbra) 25%, transparent), color-mix(in srgb, var(--sf-flare) 8%, transparent), color-mix(in srgb, var(--sf-umbra) 15%, transparent));
+  --pa-book-title: var(--sf-book-foil);
+  --pa-book-muted: color-mix(in srgb, var(--sf-hero-text) 75%, transparent);
+  --pa-book-track: color-mix(in srgb, var(--sf-flare) 18%, transparent);
+  --pa-book-fill: var(--sf-book-foil);
   max-width: 83.5rem;
   color: var(--sf-text);
 }
 :root.dark:not([data-theme-family='crystal']) .catalog-canvas {
   --pa-weight: 440;
-  --pa-title: #f1f6f9;
+  --pa-title: var(--sf-text-strong);
   --pa-radius: 22px;
   --pa-btn-radius: 16px;
-  --pa-hero-bg: radial-gradient(ellipse 70% 60% at 85% 10%, color-mix(in srgb, var(--sf-second) 55%, transparent), transparent 70%) padding-box, radial-gradient(ellipse 80% 60% at 10% 100%, color-mix(in srgb, var(--sf-brand) 35%, transparent), transparent 70%) padding-box, linear-gradient(160deg, #0f2733, #081820) padding-box, var(--sf-rim-learning) border-box;
+  --pa-hero-bg: radial-gradient(ellipse 70% 60% at 85% 10%, var(--sf-hero-glow), transparent 70%) padding-box, radial-gradient(ellipse 80% 60% at 10% 100%, color-mix(in srgb, var(--sf-brand) 35%, transparent), transparent 70%) padding-box, var(--sf-hero-sky) padding-box, var(--sf-rim-learning) border-box;
   --pa-hero-border: 1.5px solid transparent;
-  --pa-hero-shadow: 0 40px 90px -40px rgb(0 0 0 / .9), 0 0 60px -20px color-mix(in srgb, var(--sf-brand) 40%, transparent);
-  --pa-hero-text: var(--sf-text);
-  --pa-hero-title: #f5fbfd;
   --pa-hero-title-shadow: 0 0 40px color-mix(in srgb, var(--sf-brand-text) 35%, transparent);
-  --pa-hero-body: #c3ced5;
-  --pa-hero-muted: var(--sf-text-muted);
   --pa-hero-dot: var(--sf-brand);
   --pa-hero-dot-glow: 0 0 10px var(--sf-brand);
   --pa-grain: .12;
   --pa-cta-bg: var(--sf-brand);
-  --pa-cta-text: var(--sf-on-brand);
   --pa-cta-shadow: var(--sf-primary-shadow);
-  --pa-ghost-line: rgb(255 255 255 / .18);
+  --pa-ghost-line: color-mix(in srgb, var(--sf-flare) 18%, transparent);
   --pa-unit-done: var(--sf-brand);
   --pa-unit-now: color-mix(in srgb, var(--sf-brand) 45%, transparent);
-  --pa-unit-todo: rgb(255 255 255 / .12);
+  --pa-unit-todo: color-mix(in srgb, var(--sf-flare) 12%, transparent);
   --pa-unit-glow: 0 0 8px color-mix(in srgb, var(--sf-brand) 50%, transparent);
-  --pa-chip-bg: rgb(255 255 255 / .06);
-  --pa-chip-line: rgb(255 255 255 / .12);
+  --pa-chip-bg: color-mix(in srgb, var(--sf-flare) 6%, transparent);
+  --pa-chip-line: color-mix(in srgb, var(--sf-flare) 12%, transparent);
   --pa-chip-text: var(--sf-text);
   --pa-book-radius: 18px;
   --pa-book-border: 1px solid var(--sf-border);
-  --pa-book-shadow: 0 24px 50px -28px rgb(0 0 0 / .9);
-  --pa-book-title: #f1f6f9;
+  --pa-book-shadow: 0 24px 50px -28px color-mix(in srgb, var(--sf-umbra) 90%, transparent);
   --pa-book-muted: var(--sf-text-muted);
-  --pa-book-track: rgb(255 255 255 / .1);
+  --pa-book-track: color-mix(in srgb, var(--sf-flare) 10%, transparent);
   --pa-book-fill: var(--sf-brand);
 }
 
@@ -156,7 +149,7 @@
 .paths-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 .paths-hero .paths-cta { min-height: 54px; padding: 0 24px; border-radius: var(--pa-btn-radius); background: var(--pa-cta-bg); box-shadow: var(--pa-cta-shadow); color: var(--pa-cta-text); font-size: 15px; font-weight: 650; }
 .paths-ghost { display: inline-flex; min-height: 54px; align-items: center; justify-content: center; border: 1px solid var(--pa-ghost-line); border-radius: var(--pa-btn-radius); background: transparent; padding: 0 20px; color: var(--pa-hero-title); font-size: 15px; font-weight: 600; cursor: pointer; }
-.paths-ghost:hover { background: rgb(255 255 255 / .06); }
+.paths-ghost:hover { background: color-mix(in srgb, var(--sf-flare) 6%, transparent); }
 .paths-hero-done { margin: 0; color: var(--pa-hero-title); font-size: 14px; font-weight: 700; }
 .paths-hero-art, .paths-lumi { display: none; }
 
@@ -168,9 +161,9 @@
 .paths-browse:hover { text-decoration: underline; text-underline-offset: 3px; }
 .paths-books { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 18px 0 0; padding: 0; list-style: none; }
 
-.paths-book { --pa-cloth: #9c3d17; --pa-hue: rgb(237 83 80 / .4); position: relative; display: flex; min-width: 0; min-height: 272px; flex-direction: column; overflow: hidden; border: var(--pa-book-border); border-radius: var(--pa-book-radius); background: radial-gradient(ellipse 80% 60% at 90% 0%, rgb(255 255 255 / .12), transparent 60%), var(--pa-cloth); box-shadow: var(--pa-book-shadow); padding: 20px 18px 16px 26px; color: var(--pa-book-muted); text-align: left; }
-.paths-book[data-hue='ink'] { --pa-cloth: #23201b; --pa-hue: rgb(40 211 244 / .35); }
-.paths-book[data-hue='ochre'] { --pa-cloth: #a4731f; --pa-hue: rgb(245 174 57 / .4); }
+.paths-book { --pa-cloth: var(--sf-book-terracotta); position: relative; display: flex; min-width: 0; min-height: 272px; flex-direction: column; overflow: hidden; border: var(--pa-book-border); border-radius: var(--pa-book-radius); background: radial-gradient(ellipse 80% 60% at 90% 0%, color-mix(in srgb, var(--sf-flare) 12%, transparent), transparent 60%), var(--pa-cloth); box-shadow: var(--pa-book-shadow); padding: 20px 18px 16px 26px; color: var(--pa-book-muted); text-align: left; }
+.paths-book[data-hue='ink'] { --pa-cloth: var(--sf-book-ink); }
+.paths-book[data-hue='ochre'] { --pa-cloth: var(--sf-book-ochre); }
 button.paths-book { cursor: pointer; }
 .paths-book:focus-visible { outline: 3px solid var(--sf-brand-text); outline-offset: 3px; }
 .paths-book[aria-pressed='true'] { box-shadow: var(--pa-book-shadow), inset 0 0 0 2px var(--pa-book-fill); }
@@ -184,8 +177,8 @@ button.paths-book { cursor: pointer; }
 .paths-book-track { height: 4px; flex: 1; overflow: hidden; border-radius: 4px; background: var(--pa-book-track); }
 .paths-book-track > span { display: block; height: 100%; background: var(--pa-book-fill); }
 .paths-book-count { flex: none; font-size: 11.5px; }
-:root.dark:not([data-theme-family='crystal']) .paths-book { background: radial-gradient(ellipse 90% 70% at 100% 0%, var(--pa-hue), transparent 70%), linear-gradient(180deg, #0f2430, #0a1a22); }
-:root.dark:not([data-theme-family='crystal']) .paths-book-spine { background: var(--pa-hue); }
+:root.dark:not([data-theme-family='crystal']) .paths-book { background: radial-gradient(ellipse 90% 70% at 100% 0%, var(--pa-cloth), transparent 70%), var(--sf-book-face); }
+:root.dark:not([data-theme-family='crystal']) .paths-book-spine { background: var(--pa-cloth); }
 
 /* Unit picker, roadmap and explorer */
 .paths-section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 16px; }
@@ -221,8 +214,7 @@ button.paths-card[aria-pressed='true'] { border-color: var(--sf-brand); box-shad
 
 /* Crystal Star */
 :root[data-theme-family='crystal'] .catalog-canvas {
-  --pa-display: Kanit, Nunito, system-ui, sans-serif;
-  --pa-title: #ffffff;
+  --pa-title: var(--sf-text-strong);
   --pa-metal: var(--sf-metal);
   --pa-primary: var(--sf-primary-bg);
   --pa-primary-glow: var(--sf-primary-shadow);
@@ -238,15 +230,14 @@ button.paths-card[aria-pressed='true'] { border-color: var(--sf-brand); box-shad
   --pa-panel: var(--sf-surface-glass);
   --pa-panel-edge: var(--sf-panel-edge-2);
   --pa-secondary: var(--sf-surface-raised);
-  --pa-hero-fill: radial-gradient(ellipse 60% 55% at 85% 15%, color-mix(in srgb, var(--sf-brand-hover) 45%, transparent), transparent 70%), radial-gradient(ellipse 70% 60% at 10% 100%, rgb(16 60 120 / .55), transparent 70%), linear-gradient(160deg, #121828, #070910);
-  --pa-book-fill-bg: linear-gradient(180deg, #121624, #080a12);
-  --pa-book-rim-top: rgb(255 255 255 / .35);
+  --pa-hero-fill: radial-gradient(ellipse 60% 55% at 85% 15%, color-mix(in srgb, var(--sf-brand-hover) 45%, transparent), transparent 70%), radial-gradient(ellipse 70% 60% at 10% 100%, var(--sf-hero-glow), transparent 70%), var(--sf-hero-sky);
+  --pa-book-fill-bg: var(--sf-book-face);
+  --pa-book-rim-top: color-mix(in srgb, var(--sf-flare) 35%, transparent);
   --pa-wing-opacity: .55;
   --pa-radius: 0;
   --pa-btn-radius: 0;
 }
 :root[data-theme-family='crystal']:not(.dark) .catalog-canvas {
-  --pa-title: #081329;
   --pa-metal: var(--sf-metal);
   --pa-primary: var(--sf-primary-bg);
   --pa-primary-glow: var(--sf-primary-shadow);
@@ -262,17 +253,17 @@ button.paths-card[aria-pressed='true'] { border-color: var(--sf-brand); box-shad
   --pa-panel: var(--sf-surface-glass);
   --pa-panel-edge: var(--sf-panel-edge-2);
   --pa-secondary: var(--sf-surface);
-  --pa-hero-fill: radial-gradient(ellipse 60% 55% at 85% 15%, rgb(255 190 215 / .8), transparent 70%), radial-gradient(ellipse 70% 60% at 10% 100%, color-mix(in srgb, var(--sf-second) 35%, transparent), transparent 70%), linear-gradient(160deg, #f2faff, #cfe9ff);
-  --pa-book-fill-bg: linear-gradient(180deg, #f2faff, #dcefff);
-  --pa-book-rim-top: rgb(255 255 255 / .95);
+  --pa-hero-fill: radial-gradient(ellipse 60% 55% at 85% 15%, var(--sf-hero-glow), transparent 70%), radial-gradient(ellipse 70% 60% at 10% 100%, color-mix(in srgb, var(--sf-second) 35%, transparent), transparent 70%), var(--sf-hero-sky);
+  --pa-book-fill-bg: var(--sf-book-face);
+  --pa-book-rim-top: color-mix(in srgb, var(--sf-flare) 95%, transparent);
   --pa-wing-opacity: .42;
 }
 :root[data-theme-family='crystal'] .paths-header-copy { display: block; }
 :root[data-theme-family='crystal'] .paths-header-kicker { margin: 0; color: var(--pa-crimson-text); font-family: var(--pa-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
 :root[data-theme-family='crystal'] .paths-header-kicker-slash { color: var(--pa-text3); }
 :root[data-theme-family='crystal'] .paths-header-titles { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 22px; }
-:root[data-theme-family='crystal'] .paths-title { margin-top: 4px; background: var(--pa-metal); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 60%, transparent)); font-style: italic; font-weight: 900; letter-spacing: .01em; text-transform: uppercase; }
-:root[data-theme-family='crystal']:not(.dark) .paths-title { filter: drop-shadow(0 2px 0 rgb(255 255 255 / .8)) drop-shadow(0 0 14px rgb(255 84 112 / .26)); }
+:root[data-theme-family='crystal'] .paths-title { margin-top: 4px; background: var(--pa-metal); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 var(--sf-star-shade)) drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 60%, transparent)); font-style: italic; font-weight: 900; letter-spacing: .01em; text-transform: uppercase; }
+:root[data-theme-family='crystal']:not(.dark) .paths-title { filter: drop-shadow(0 2px 0 color-mix(in srgb, var(--sf-flare) 80%, transparent)) drop-shadow(0 0 14px color-mix(in srgb, var(--sf-star-face) 26%, transparent)); }
 :root[data-theme-family='crystal'] .paths-subtitle { margin: 0 0 6px; color: var(--pa-text2); font-size: 14.5px; }
 :root[data-theme-family='crystal'] .paths-mode-switch { border: 0; clip-path: var(--nk-chamfer-sm); background: var(--pa-panel); box-shadow: inset 0 0 0 1px var(--pa-line-strong); }
 :root[data-theme-family='crystal'] .paths-mode-button { font-family: var(--pa-display); font-style: italic; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
@@ -285,7 +276,7 @@ button.paths-card[aria-pressed='true'] { border-color: var(--sf-brand); box-shad
 :root[data-theme-family='crystal'] .paths-section-meta { color: var(--pa-holo-text); font-family: var(--pa-display); font-style: italic; font-weight: 800; letter-spacing: .14em; }
 :root[data-theme-family='crystal'] .paths-cta, :root[data-theme-family='crystal'] .catalog-danger-action { clip-path: var(--nk-chamfer-sm); background: var(--pa-primary); color: var(--sf-on-primary); font-family: var(--pa-display); font-style: italic; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 :root[data-theme-family='crystal'] .catalog-danger-action { border: 0; }
-:root[data-theme-family='crystal'] .paths-cta:focus-visible, :root[data-theme-family='crystal'] .catalog-danger-action:focus-visible { outline: 3px solid #ffffff; outline-offset: -5px; }
+:root[data-theme-family='crystal'] .paths-cta:focus-visible, :root[data-theme-family='crystal'] .catalog-danger-action:focus-visible { outline: 3px solid var(--sf-flare); outline-offset: -5px; }
 :root[data-theme-family='crystal'] .paths-quiet-button { border: 0; clip-path: var(--nk-chamfer-sm); background: var(--pa-secondary); box-shadow: inset 0 0 0 1px var(--pa-line-strong); }
 :root[data-theme-family='crystal'] .paths-quiet-button:focus-visible { outline-offset: -4px; }
 
@@ -293,18 +284,18 @@ button.paths-card[aria-pressed='true'] { border-color: var(--sf-brand); box-shad
 :root[data-theme-family='crystal'] .catalog-feature-grid { grid-template-columns: minmax(0, 800px) minmax(0, 1fr); gap: 26px; }
 :root[data-theme-family='crystal'] .paths-hero { border: 0; border-radius: 0; background: none; box-shadow: none; filter: drop-shadow(0 0 30px color-mix(in srgb, var(--sf-brand) 45%, transparent)); padding: 28px 34px 30px; color: var(--sf-text); }
 :root[data-theme-family='crystal']:not(.dark) .paths-hero { filter: drop-shadow(0 0 24px color-mix(in srgb, var(--sf-brand) 30%, transparent)); }
-:root[data-theme-family='crystal'] .paths-hero::before { opacity: 1; mix-blend-mode: normal; clip-path: var(--nk-chamfer); background: linear-gradient(150deg, #ffe3ea, var(--sf-brand) 30%, #7a0820 60%, var(--sf-second)); }
+:root[data-theme-family='crystal'] .paths-hero::before { opacity: 1; mix-blend-mode: normal; clip-path: var(--nk-chamfer); background: linear-gradient(150deg, var(--sf-blush), var(--sf-brand) 30%, var(--sf-star-shade) 60%, var(--sf-second)); }
 :root[data-theme-family='crystal'] .paths-hero::after { position: absolute; inset: 2px; z-index: 0; pointer-events: none; content: ''; clip-path: var(--nk-chamfer); background: var(--pa-hero-fill); }
 :root[data-theme-family='crystal'] .paths-hero-art { position: absolute; inset: 2px; z-index: 1; display: block; overflow: hidden; clip-path: var(--nk-chamfer); pointer-events: none; }
 :root[data-theme-family='crystal'] .paths-hero-art svg { position: absolute; top: -60px; right: -150px; width: 640px; height: 430px; overflow: visible; opacity: var(--pa-wing-opacity); filter: drop-shadow(0 0 22px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
 :root[data-theme-family='crystal'] .paths-hero-main, :root[data-theme-family='crystal'] .paths-hero-foot { z-index: 2; }
 :root[data-theme-family='crystal'] .paths-hero-kicker { display: inline-flex; height: 28px; gap: 8px; padding: 0 14px; transform: skewX(-14deg); background: var(--pa-primary); box-shadow: var(--pa-primary-glow); color: var(--sf-on-primary); font-family: var(--pa-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .12em; }
 :root[data-theme-family='crystal'] .paths-hero-kicker > * { transform: skewX(14deg); }
-:root[data-theme-family='crystal'] .paths-hero-dot { border-radius: 0; background: #ffffff; box-shadow: none; transform: skewX(14deg) rotate(45deg); }
+:root[data-theme-family='crystal'] .paths-hero-dot { border-radius: 0; background: var(--sf-flare); box-shadow: none; transform: skewX(14deg) rotate(45deg); }
 :root[data-theme-family='crystal'] .paths-hero-title { margin-top: 14px; color: var(--pa-title); font-size: 76px; font-style: italic; font-weight: 900; line-height: .95; letter-spacing: .01em; text-shadow: none; text-transform: uppercase; }
-:root[data-theme-family='crystal'] .paths-hero-title-main, :root[data-theme-family='crystal'] .catalog-personal-paths .paths-hero-title { background: var(--pa-metal); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820); }
-:root[data-theme-family='crystal'] .paths-hero-title-accent { background: linear-gradient(180deg, #ff8fa3, var(--sf-brand) 55%, var(--sf-brand-hover)); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 20px color-mix(in srgb, var(--sf-brand) 80%, transparent)); text-transform: uppercase; }
-:root[data-theme-family='crystal']:not(.dark) .paths-hero-title-main, :root[data-theme-family='crystal']:not(.dark) .catalog-personal-paths .paths-hero-title { filter: drop-shadow(0 2px 0 rgb(255 255 255 / .8)); }
+:root[data-theme-family='crystal'] .paths-hero-title-main, :root[data-theme-family='crystal'] .catalog-personal-paths .paths-hero-title { background: var(--pa-metal); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 var(--sf-star-shade)); }
+:root[data-theme-family='crystal'] .paths-hero-title-accent { background: linear-gradient(180deg, var(--sf-rose-light), var(--sf-brand) 55%, var(--sf-brand-hover)); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 20px color-mix(in srgb, var(--sf-brand) 80%, transparent)); text-transform: uppercase; }
+:root[data-theme-family='crystal']:not(.dark) .paths-hero-title-main, :root[data-theme-family='crystal']:not(.dark) .catalog-personal-paths .paths-hero-title { filter: drop-shadow(0 2px 0 color-mix(in srgb, var(--sf-flare) 80%, transparent)); }
 :root[data-theme-family='crystal']:not(.dark) .paths-hero-title-accent { filter: drop-shadow(0 0 12px color-mix(in srgb, var(--sf-brand) 35%, transparent)); }
 :root[data-theme-family='crystal'] .paths-hero-copy { max-width: 470px; margin-top: 12px; color: var(--pa-body); font-size: 15.5px; }
 :root[data-theme-family='crystal'] .paths-hero-unit { color: var(--pa-crimson-text); font-weight: 900; }
@@ -316,10 +307,10 @@ button.paths-card[aria-pressed='true'] { border-color: var(--sf-brand); box-shad
 :root[data-theme-family='crystal'] .paths-route-label span { color: var(--pa-text3); }
 :root[data-theme-family='crystal'] .catalog-feature-segments { align-items: flex-end; gap: 5px; }
 :root[data-theme-family='crystal'] .catalog-feature-segments li { height: 10px; border-radius: 0; background: var(--pa-track); transform: skewX(-20deg); }
-:root[data-theme-family='crystal'] .catalog-feature-segments li.complete { height: 12px; background: linear-gradient(90deg, var(--sf-second), #9fe9ff); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 55%, transparent); }
+:root[data-theme-family='crystal'] .catalog-feature-segments li.complete { height: 12px; background: linear-gradient(90deg, var(--sf-second), var(--sf-holo-pale)); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 55%, transparent); }
 :root[data-theme-family='crystal'] .catalog-feature-segments li.current { height: 18px; background: var(--sf-brand); box-shadow: 0 0 16px color-mix(in srgb, var(--sf-brand) 90%, transparent); }
 :root[data-theme-family='crystal'] .paths-hero-meter { height: 12px; border-radius: 0; background: var(--pa-track); transform: skewX(-20deg); }
-:root[data-theme-family='crystal'] .paths-hero-meter > span { border-radius: 0; background: linear-gradient(90deg, var(--sf-second), #9fe9ff); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 55%, transparent); }
+:root[data-theme-family='crystal'] .paths-hero-meter > span { border-radius: 0; background: linear-gradient(90deg, var(--sf-second), var(--sf-holo-pale)); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 55%, transparent); }
 :root[data-theme-family='crystal'] .catalog-feature-count { margin-top: 10px; color: var(--pa-text2); font-size: 13.5px; }
 :root[data-theme-family='crystal'] .paths-count-strong { color: var(--pa-title); font-family: var(--pa-display); font-size: 18px; font-style: italic; font-weight: 900; }
 :root[data-theme-family='crystal'] .paths-hero-actions { gap: 12px; margin-top: 16px; }
@@ -334,23 +325,23 @@ button.paths-card[aria-pressed='true'] { border-color: var(--sf-brand); box-shad
 :root[data-theme-family='crystal'] .paths-lumi-bubble::before { position: absolute; top: 10px; bottom: 10px; left: 0; width: 3px; content: ''; background: linear-gradient(180deg, var(--sf-second), var(--sf-brand)); }
 :root[data-theme-family='crystal'] .paths-lumi-label { color: var(--pa-holo-text); font-family: var(--pa-display); font-size: 11px; font-style: italic; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 :root[data-theme-family='crystal'] .paths-lumi-message { margin-top: 2px; color: var(--pa-title); font-size: 13px; font-weight: 800; line-height: 1.35; }
-:root[data-theme-family='crystal'] .paths-lumi-figure { display: block; width: 200px !important; height: 212px !important; object-position: 50% 100%; -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%); filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-second) 35%, transparent)); pointer-events: none; }
+:root[data-theme-family='crystal'] .paths-lumi-figure { display: block; width: 200px !important; height: 212px !important; object-position: 50% 100%; -webkit-mask-image: linear-gradient(180deg, var(--sf-umbra) 80%, transparent 99%); mask-image: linear-gradient(180deg, var(--sf-umbra) 80%, transparent 99%); filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-second) 35%, transparent)); pointer-events: none; }
 
 /* Crystal shelf: rimmed chamfer books with a hue spine, skewed kind tag and a giant initial. */
 :root[data-theme-family='crystal'] .paths-shelf-title { color: var(--pa-title); font-size: 26px; font-style: italic; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
 :root[data-theme-family='crystal'] .paths-shelf-count { color: var(--pa-text3); font-family: var(--pa-display); font-style: italic; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 :root[data-theme-family='crystal'] .paths-browse { color: var(--pa-crimson-text); font-family: var(--pa-display); font-size: 14px; font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 :root[data-theme-family='crystal'] .paths-books { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
-:root[data-theme-family='crystal'] .paths-book { --pa-spine: linear-gradient(180deg, #ff5470, var(--sf-brand-hover)); --pa-glow: color-mix(in srgb, var(--sf-brand) 35%, transparent); --pa-glyph: rgb(255 84 112 / .14); --pa-tint: color-mix(in srgb, var(--sf-brand) 22%, transparent); min-height: 190px; border: 0; border-radius: 0; background: none; box-shadow: none; filter: drop-shadow(0 0 12px var(--pa-glow)); padding: 16px 18px 16px 24px; color: var(--pa-text2); }
-:root[data-theme-family='crystal'] .paths-book[data-hue='ink'] { --pa-spine: linear-gradient(180deg, #9ff9ff, #1aa7c9); --pa-glow: color-mix(in srgb, var(--sf-second) 30%, transparent); --pa-glyph: color-mix(in srgb, var(--sf-second) 12%, transparent); --pa-tint: color-mix(in srgb, var(--sf-second) 18%, transparent); }
-:root[data-theme-family='crystal'] .paths-book[data-hue='ochre'] { --pa-spine: linear-gradient(180deg, #ffe08a, #d9a21a); --pa-glow: color-mix(in srgb, var(--sf-reward) 30%, transparent); --pa-glyph: color-mix(in srgb, var(--sf-reward) 12%, transparent); --pa-tint: color-mix(in srgb, var(--sf-reward) 18%, transparent); }
-:root[data-theme-family='crystal']:not(.dark) .paths-book { --pa-glyph: color-mix(in srgb, var(--sf-brand-text) 10%, transparent); --pa-tint: rgb(255 84 112 / .16); }
-:root[data-theme-family='crystal']:not(.dark) .paths-book[data-hue='ink'] { --pa-glyph: rgb(10 125 153 / .1); --pa-tint: color-mix(in srgb, var(--sf-second) 25%, transparent); }
-:root[data-theme-family='crystal']:not(.dark) .paths-book[data-hue='ochre'] { --pa-glyph: rgb(138 90 0 / .1); --pa-tint: color-mix(in srgb, var(--sf-reward) 25%, transparent); }
+:root[data-theme-family='crystal'] .paths-book { --pa-spine: linear-gradient(180deg, var(--sf-star-face), var(--sf-brand-hover)); --pa-glow: color-mix(in srgb, var(--sf-brand) 35%, transparent); --pa-glyph: color-mix(in srgb, var(--sf-star-face) 14%, transparent); --pa-tint: color-mix(in srgb, var(--sf-brand) 22%, transparent); min-height: 190px; border: 0; border-radius: 0; background: none; box-shadow: none; filter: drop-shadow(0 0 12px var(--pa-glow)); padding: 16px 18px 16px 24px; color: var(--pa-text2); }
+:root[data-theme-family='crystal'] .paths-book[data-hue='ink'] { --pa-spine: linear-gradient(180deg, var(--sf-holo-light), var(--sf-holo-deep)); --pa-glow: color-mix(in srgb, var(--sf-second) 30%, transparent); --pa-glyph: color-mix(in srgb, var(--sf-second) 12%, transparent); --pa-tint: color-mix(in srgb, var(--sf-second) 18%, transparent); }
+:root[data-theme-family='crystal'] .paths-book[data-hue='ochre'] { --pa-spine: linear-gradient(180deg, var(--sf-gold-light), var(--sf-gold-deep)); --pa-glow: color-mix(in srgb, var(--sf-reward) 30%, transparent); --pa-glyph: color-mix(in srgb, var(--sf-reward) 12%, transparent); --pa-tint: color-mix(in srgb, var(--sf-reward) 18%, transparent); }
+:root[data-theme-family='crystal']:not(.dark) .paths-book { --pa-glyph: color-mix(in srgb, var(--sf-brand-text) 10%, transparent); --pa-tint: color-mix(in srgb, var(--sf-star-face) 16%, transparent); }
+:root[data-theme-family='crystal']:not(.dark) .paths-book[data-hue='ink'] { --pa-glyph: color-mix(in srgb, var(--sf-holo-ink) 10%, transparent); --pa-tint: color-mix(in srgb, var(--sf-second) 25%, transparent); }
+:root[data-theme-family='crystal']:not(.dark) .paths-book[data-hue='ochre'] { --pa-glyph: color-mix(in srgb, var(--sf-warn) 10%, transparent); --pa-tint: color-mix(in srgb, var(--sf-reward) 25%, transparent); }
 :root[data-theme-family='crystal'] .paths-book::before, :root[data-theme-family='crystal'] .paths-book::after { position: absolute; z-index: 0; pointer-events: none; content: ''; clip-path: var(--nk-chamfer-sm); }
 :root[data-theme-family='crystal'] .paths-book::before { inset: 0; background: linear-gradient(150deg, var(--pa-book-rim-top), var(--pa-tint) 45%, var(--pa-line-strong)); }
 :root[data-theme-family='crystal'] .paths-book::after { inset: 2px; background: radial-gradient(ellipse 90% 80% at 100% 0%, var(--pa-tint), transparent 70%), var(--pa-book-fill-bg); }
-:root[data-theme-family='crystal'] .paths-book[aria-pressed='true']::before { background: linear-gradient(150deg, #ffe3ea, var(--sf-brand) 40%, var(--sf-second)); }
+:root[data-theme-family='crystal'] .paths-book[aria-pressed='true']::before { background: linear-gradient(150deg, var(--sf-blush), var(--sf-brand) 40%, var(--sf-second)); }
 :root[data-theme-family='crystal'] .paths-book:focus-visible { outline: 3px solid var(--pa-holo-text); outline-offset: 2px; }
 :root[data-theme-family='crystal'] .paths-book > * { position: relative; z-index: 1; }
 :root[data-theme-family='crystal'] .paths-book-spine { position: absolute; top: 12px; bottom: 2px; left: 2px; width: 7px; background: var(--pa-spine); }
@@ -366,7 +357,7 @@ button.paths-card[aria-pressed='true'] { border-color: var(--sf-brand); box-shad
 
 /* Crystal cards below the fold use the shared chamfer utility; the fill goes through --sf-chamfer-fill. */
 :root[data-theme-family='crystal'] .paths-card { --sf-chamfer-fill: var(--pa-panel); --sf-chamfer-edge: var(--pa-line-strong); border-color: var(--pa-line-strong); }
-:root[data-theme-family='crystal'] button.paths-card[aria-pressed='true'] { --sf-chamfer-edge: #ff2a4d; border-color: var(--sf-brand); box-shadow: var(--sf-panel-shadow), inset 3px 0 0 var(--sf-brand); }
+:root[data-theme-family='crystal'] button.paths-card[aria-pressed='true'] { --sf-chamfer-edge: var(--sf-brand); border-color: var(--sf-brand); box-shadow: var(--sf-panel-shadow), inset 3px 0 0 var(--sf-brand); }
 :root[data-theme-family='crystal'] button.paths-card:focus-visible, :root[data-theme-family='crystal'] .paths-unit-preview:focus-visible { outline: 3px solid var(--pa-holo-text); outline-offset: -4px; }
 :root[data-theme-family='crystal'] .paths-word-chip { --sf-chamfer-fill: linear-gradient(var(--pa-chip), var(--pa-chip)); border-color: var(--pa-line); font-family: inherit; font-size: 14px; font-weight: 800; }
 :root[data-theme-family='crystal'] .paths-word-dot { border-radius: 0; transform: rotate(45deg); background: var(--sf-brand); }
