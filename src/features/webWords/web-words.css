@@ -190,12 +190,13 @@ html[data-lumi="off"] .ww-lumi { display: none; }
 :root[data-theme-family="crystal"] .ww-row__select { margin-top: 0; }
 :root[data-theme-family="crystal"] .ww-chip { gap: 7px; padding: 0 10px 0 4px; border: 0; border-radius: 0; background-color: transparent; box-shadow: inset 0 0 0 1px var(--ww-line); color: var(--ww-new); --sf-chamfer-edge: var(--ww-line); --sf-chamfer-fill: linear-gradient(var(--ww-chip-bg), var(--ww-chip-bg)); }
 :root[data-theme-family="crystal"] .ww-chip__dot { display: none; }
-:root[data-theme-family="crystal"] .ww-chip__grade { display: flex; height: 16px; align-items: center; padding: 0 5px; clip-path: var(--nk-chamfer-sm); background: var(--ww-rim-new); color: var(--sf-on-primary); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 10px; }
+/* The tier mark sits on the flat tier fill, so its white text never meets the white bands of a rim. */
+:root[data-theme-family="crystal"] .ww-chip__grade { --ww-mark-fill: var(--sf-tier-bud-fill); --ww-mark-shadow: var(--sf-tier-bud-fill-shadow); display: flex; height: 16px; align-items: center; padding: 0 7px; clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px); background: var(--ww-mark-fill); color: var(--sf-on-primary); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 10.5px; text-shadow: 0 1px 0 var(--ww-mark-shadow); }
 :root[data-theme-family="crystal"] .ww-chip__label { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; }
 :root[data-theme-family="crystal"] .ww-chip[data-tier="learning"] { color: var(--ww-learning); }
-:root[data-theme-family="crystal"] .ww-chip[data-tier="learning"] .ww-chip__grade { background: var(--ww-rim-learning); }
+:root[data-theme-family="crystal"] .ww-chip[data-tier="learning"] .ww-chip__grade { --ww-mark-fill: var(--sf-tier-bloom-fill); --ww-mark-shadow: var(--sf-tier-bloom-fill-shadow); }
 :root[data-theme-family="crystal"] .ww-chip[data-tier="mastered"] { color: var(--ww-known); }
-:root[data-theme-family="crystal"] .ww-chip[data-tier="mastered"] .ww-chip__grade { background: var(--ww-rim-known); }
+:root[data-theme-family="crystal"] .ww-chip[data-tier="mastered"] .ww-chip__grade { --ww-mark-fill: var(--sf-tier-star-fill); --ww-mark-shadow: var(--sf-tier-star-fill-shadow); }
 
 /* Loading, empty, error and signed-out states, and paging. */
 .ww-state { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 26px; padding: 40px 24px; border: 1px solid var(--ww-line); border-radius: var(--ww-radius); background-color: var(--ww-surface); box-shadow: var(--ww-surface-shadow); text-align: center; }
