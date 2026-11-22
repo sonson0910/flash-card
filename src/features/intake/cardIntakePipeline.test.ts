@@ -379,6 +379,38 @@ describe('Card Intake Pipeline contract', () => {
     });
   });
 
+  it('leaves the deck of a word that already exists alone when a spreadsheet row names another deck', async () => {
+    const context = createContext();
+    const candidate = { ...card('structured-existing-deck'), customDeck: 'Imported' };
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+    repositoryRuntime.createCardV2IfAbsent.mockResolvedValueOnce({
+      card: { ...candidate, customDeck: 'Travel' } as { id: string },
+      created: false,
+      gamification: null,
+    });
+
+    await expect(pipeline.persistStructured({ creates: [candidate], patches: [] })).resolves.toEqual({
+      createdCount: 0,
+      outcomes: ['reused'],
+    });
+    expect(context.patchCard).not.toHaveBeenCalledWith(candidate.id, { customDeck: 'Imported' }, expect.anything());
+  });
+
+  it('counts starred and already rated spreadsheet cards in the library totals straight away', async () => {
+    const context = createContext();
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+    const creates = [
+      { ...card('structured-starred'), bookmarked: true, difficulty: 'easy' as const },
+      { ...card('structured-plain'), difficulty: 'unrated' as const },
+      card('structured-untouched'),
+    ];
+
+    await pipeline.persistStructured({ creates, patches: [] });
+
+    const update = vi.mocked(context.updateCloudStats).mock.calls[0]![0];
+    expect(update(context.cloudStats)).toMatchObject({ total: 3, unrated: 2, bookmarked: 1 });
+  });
+
   it('keeps a timed-out structured save pending even if its callable succeeds later', async () => {
     vi.useFakeTimers();
     const context = createContext();

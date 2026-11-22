@@ -29,7 +29,6 @@ import {
   resolveAiGenerationAccess,
   type AiGenerationRuntime,
 } from './aiGenerationAccess';
-import { attachSpreadsheetImportSettings } from '../importExport/spreadsheetImportSettings';
 
 export interface LibraryScreenWorkspaceInput {
   catalog: { model: LibraryCatalogModel; actions: LibraryCatalogActions };
@@ -239,9 +238,9 @@ export function buildLibraryScreenContract({
       openPaths: commands.openPaths,
       importCards: event => {
         const file = event.target.files?.[0] ?? null;
-        void intake.actions.importFile(file && attachSpreadsheetImportSettings(file, { deckNames: library.customDecks }));
+        void intake.actions.importFile(file, { deckNames: library.customDecks });
       },
-      importFile: file => { void intake.actions.importFile(attachSpreadsheetImportSettings(file, { deckNames: library.customDecks })); },
+      importFile: file => { void intake.actions.importFile(file, { deckNames: library.customDecks }); },
       generateCard: async (event, options?: CardGenerationOptions) => {
         event.preventDefault();
         commands.openCardCreator();

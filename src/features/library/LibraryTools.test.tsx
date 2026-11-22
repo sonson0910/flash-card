@@ -19,7 +19,6 @@ import {
   restoreDeckDeletionFocus,
 } from './LibraryTools';
 import { createExtractedWordsCsv } from './extractedWordsImport';
-import { attachSpreadsheetImportSettings } from '../importExport/spreadsheetImportSettings';
 import { createImeSubmitGuard } from '../../lib/imeSubmitGuard';
 import { classifyStructuredCardRows } from '../importExport/spreadsheetModel';
 import { createSpreadsheetImportService } from '../importExport/spreadsheetImportService';
@@ -198,11 +197,8 @@ describe('extractor structured import', () => {
           start: vi.fn(), clearError: vi.fn(), progress: vi.fn(), error: vi.fn(), finish: vi.fn(), resetSource: vi.fn(),
         },
       });
-      const file = attachSpreadsheetImportSettings(
-        new File([createExtractedWordsCsv(items, languageProfile, { deck })], 'extracted_words.csv', { type: 'text/csv' }),
-        { deckNames },
-      );
-      const result = await importer.import({ sizeBytes: file.size, loadWorkbook: () => loadSpreadsheetWorkbook(file) });
+      const file = new File([createExtractedWordsCsv(items, languageProfile, { deck })], 'extracted_words.csv', { type: 'text/csv' });
+      const result = await importer.import({ sizeBytes: file.size, loadWorkbook: () => loadSpreadsheetWorkbook(file, { deckNames }) });
       return { result, creates: persistStructured.mock.calls[0]?.[0].creates as Array<{ word: string; customDeck: string | null }> };
     };
 

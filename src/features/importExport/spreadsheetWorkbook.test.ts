@@ -22,7 +22,6 @@ import {
   SpreadsheetUnsupportedFormatError,
 } from './spreadsheetWorkbook';
 import { cardsToSpreadsheetRows } from './spreadsheetModel';
-import { attachSpreadsheetImportSettings } from './spreadsheetImportSettings';
 
 const textEncoder = new TextEncoder();
 
@@ -292,12 +291,11 @@ describe('spreadsheet workbook loader', () => {
     });
   });
 
-  it('hands the deck names attached to a file to the import, copied at attach time', async () => {
+  it('hands the deck names given with a file to the import', async () => {
     const deckNames = ['IELTS', 'Travel'];
-    const file = attachSpreadsheetImportSettings(csvFile('Word,Translation,Deck\napple,táo,IELTS\n', 'cards.csv', 'text/csv'), { deckNames });
-    deckNames.push('Later');
+    const file = csvFile('Word,Translation,Deck\napple,táo,IELTS\n', 'cards.csv', 'text/csv');
 
-    await expect(loadSpreadsheetWorkbook(file)).resolves.toMatchObject({
+    await expect(loadSpreadsheetWorkbook(file, { deckNames })).resolves.toMatchObject({
       deckNames: ['IELTS', 'Travel'],
       structuredRows: [{ Word: 'apple', Translation: 'táo', Deck: 'IELTS' }],
     });

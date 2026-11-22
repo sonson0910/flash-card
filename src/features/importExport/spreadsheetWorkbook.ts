@@ -1,6 +1,5 @@
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
-import { spreadsheetImportSettingsFor } from './spreadsheetImportSettings';
 
 export const MAX_SPREADSHEET_FILE_BYTES = 10 * 1024 * 1024;
 export const MAX_SPREADSHEET_UNCOMPRESSED_BYTES = 50 * 1024 * 1024;
@@ -899,8 +898,13 @@ const readSpreadsheetWorkbook = async (file: File): Promise<SpreadsheetWorkbook>
   return parseWorkbook(utf8Bytes, format);
 };
 
-export const loadSpreadsheetWorkbook = async (file: File): Promise<SpreadsheetWorkbook> => {
+/** What the library knows about the learner when it hands a file to the import. */
+export interface SpreadsheetImportSettings {
+  /** The deck names a Deck cell may use; any other name imports as Unassigned. */
+  readonly deckNames?: readonly string[];
+}
+
+export const loadSpreadsheetWorkbook = async (file: File, settings: SpreadsheetImportSettings = {}): Promise<SpreadsheetWorkbook> => {
   const workbook = await readSpreadsheetWorkbook(file);
-  const settings = spreadsheetImportSettingsFor(file);
-  return settings ? { ...workbook, deckNames: settings.deckNames } : workbook;
+  return settings.deckNames ? { ...workbook, deckNames: [...settings.deckNames] } : workbook;
 };
