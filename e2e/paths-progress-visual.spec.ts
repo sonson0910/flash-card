@@ -341,8 +341,9 @@ test('weekly recap opens with real totals computed from verified XP history', as
   // Sep 23 (72 XP) falls inside it; Sep 18 belongs to last week and every other entry is older.
   // Without verified word counts for the course the hero stays on XP.
   await expect(dialog.locator('.weekly-recap-card__range').first()).toHaveText(/^21\s?–\s?27 Sept?$/);
-  await expect(dialog.getByText('XP this week')).toBeVisible();
-  await expect(dialog.getByText('72', { exact: true })).toBeVisible();
+  const hero = dialog.locator('.weekly-recap-card__hero-metric');
+  await expect(hero.locator('strong')).toHaveText('72');
+  await expect(hero.locator('span')).toHaveText('XP this week');
   await expect(dialog.locator('.weekly-recap-card__heatmap-cell')).toHaveCount(7);
   await expect(dialog.locator('.weekly-recap-card__heatmap-cell[data-future="true"]')).toHaveCount(3);
   await expect(dialog.getByRole('img', { name: 'Wednesday: 72 XP' })).toBeVisible();
