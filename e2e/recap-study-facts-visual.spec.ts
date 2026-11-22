@@ -128,9 +128,11 @@ for (const theme of themes) {
       await expect(dialog.locator('.weekly-recap-card')).not.toContainText(/\b0\b/);
       await expect(dialog.locator('input[data-selection-key]')).toHaveCount(0);
       // The empty sentence stays clear of the Crystal companion.
-      const companion = await dialog.locator('.weekly-recap-card__companion').boundingBox();
-      const empty = await dialog.locator('.weekly-recap-card__empty').boundingBox();
-      if (companion && empty) expect(empty.x + empty.width).toBeLessThanOrEqual(companion.x + 1);
+      if (await dialog.locator('.weekly-recap-card__companion').count() > 0) {
+        const companion = await dialog.locator('.weekly-recap-card__companion').boundingBox();
+        const empty = await dialog.locator('.weekly-recap-card__empty').boundingBox();
+        expect(companion && empty && empty.x + empty.width <= companion.x + 1, `${label} empty week runs under the companion`).toBe(true);
+      }
       await expectAccessibleAndContained(page, '[role="dialog"]', `${label} empty week`);
       await attach(dialog, testInfo, `weekly-recap-empty-${theme.family}-${theme.mode}-${viewport.name}`);
     });
