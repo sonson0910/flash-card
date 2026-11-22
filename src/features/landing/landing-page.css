@@ -121,7 +121,8 @@ html.dark .landing-card-back { --back-text: var(--sf-text); --back-title: var(--
 .landing-classic-features { width: calc(100% - 64px); max-width: 1312px; margin: 22px 16px 0 48px; padding-top: 30px; border-top: 1px solid var(--sf-border); box-sizing: border-box; }
 .landing-classic-features ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin: 0; padding: 0; list-style: none; }
 .landing-classic-features li { display: flex; gap: 16px; }
-.landing-classic-features li > span { display: flex; flex: none; width: 44px; height: 44px; align-items: center; justify-content: center; box-sizing: border-box; border: 1px solid var(--sf-border); border-radius: 14px; background: var(--sf-surface-raised); color: var(--sf-brand-text); font: italic 400 20px/1 var(--sf-font-display); }
+/* The board's 44px badge has its 1px border outside the box, so it takes 46px and the text column wraps at its width. */
+.landing-classic-features li > span { display: flex; flex: none; width: 46px; height: 46px; align-items: center; justify-content: center; box-sizing: border-box; border: 1px solid var(--sf-border); border-radius: 14px; background: var(--sf-surface-raised); color: var(--sf-brand-text); font: italic 400 20px/1 var(--sf-font-display); }
 .landing-classic-features h3 { margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 22px; font-weight: var(--landing-display-weight); line-height: 1.25; }
 .landing-classic-features p { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 14.5px; line-height: 1.55; }
 

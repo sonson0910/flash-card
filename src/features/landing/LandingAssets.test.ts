@@ -96,6 +96,10 @@ describe('landing asset delivery contract', () => {
     expect(landingSource.indexOf('id="how-it-works"')).toBeLessThan(landingSource.indexOf('id="pricing"'));
   });
 
+  it('sizes the feature badges with their border so the feature text wraps at the board width', () => {
+    expect(landingPageCssSource).toMatch(/\.landing-classic-features li > span \{[^}]*width: 46px; height: 46px;[^}]*box-sizing: border-box;/);
+  });
+
   it('does not publish a Pro price before sales open', () => {
     expect(landingSource).not.toContain('79,000 ₫');
     expect(landingSource).not.toContain('US$7.99');
