@@ -244,8 +244,8 @@
 .practice-recap-panel--revisit .practice-recap-panel-heading { color: var(--rk-holo); }
 .practice-recap-panel-heading span { color: var(--rk-text3); }
 /* "Cards glowed up" fills the row the goal panel sets: the card grid grows and the cards stretch with it. */
-.practice-recap-panel--up { display: flex; flex-direction: column; }
-[data-family="crystal"] .practice-recap-cards { display: grid; flex-grow: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0 0; }
+[data-family="crystal"] .practice-recap-panel--up { display: flex; flex-direction: column; }
+[data-family="crystal"] .practice-recap-cards { display: grid; flex-grow: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 12px; margin: 12px 0 0; }
 [data-family="crystal"] .practice-recap-card { --rk-rim: linear-gradient(150deg, #ffe3f1, #ff8fb6 35%, #ff5470 65%, var(--sf-second)); --rk-to: var(--rk-violet); display: block; filter: drop-shadow(0 0 14px rgb(155 107 255 / .55)); }
 [data-family="crystal"] .practice-recap-card[data-tier="mastered"] { --rk-rim: conic-gradient(from 200deg, #fff3c4, var(--sf-reward), var(--sf-brand), var(--sf-star-shade), #ff5470, #fff, var(--sf-reward), #fff3c4); --rk-to: var(--rk-crimson); filter: drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 80%, transparent)); }
 .practice-recap-board[data-family="crystal"] .practice-recap-card-face {
