@@ -114,6 +114,26 @@ export const parseAchievementRecords = (value: unknown): Pick<AchievementsStateV
   titles: achievementRecords(isPlainRecord(value) ? value.titles : undefined),
 });
 
+/** What an unusable stored record still holds that is valid on its own, for its rebuild. */
+export interface AchievementSalvage extends Pick<AchievementsStateV1, 'badges' | 'titles'> {
+  /** Each counter whose own value is valid; the last XP day and its XP only as a pair. */
+  readonly counters: Partial<AchievementCounters>;
+}
+
+export const parseAchievementSalvage = (value: unknown): AchievementSalvage => {
+  const stored = isPlainRecord(value) && isPlainRecord(value.counters) ? value.counters : {};
+  const counters: Record<string, number | string> = {};
+  for (const key of COUNTER_KEYS) {
+    const count = stored[key];
+    if (key !== 'lastXpDayXp' && isCount(count)) counters[key] = count;
+  }
+  if (isStudyDay(stored.lastXpDay) && isCount(stored.lastXpDayXp)) {
+    counters.lastXpDay = stored.lastXpDay;
+    counters.lastXpDayXp = stored.lastXpDayXp;
+  }
+  return { ...parseAchievementRecords(value), counters: counters as Partial<AchievementCounters> };
+};
+
 const parseCounters = (value: unknown): AchievementCounters | undefined => {
   if (!isPlainRecord(value) || !COUNTER_KEYS.every(key => isCount(value[key]))
     || !(value.lastXpDay === null || isStudyDay(value.lastXpDay))) return undefined;

@@ -1,7 +1,7 @@
 import type { DocumentData, DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
-import { parseAchievementRecords, parseAchievements } from './achievement-rules.js';
+import { parseAchievementSalvage, parseAchievements } from './achievement-rules.js';
 import { backfilledAchievements, evaluateAchievements, isLateHour, loadAchievementBaseline } from './achievements.js';
 import { InputValidationError } from './inputValidation.js';
 import { firstActionStudyTime, nextStudyTime, parseStudyTime } from './study-time-rules.js';
@@ -406,7 +406,8 @@ export async function prepareVerifiedGamification(
     if (Object.hasOwn(legacyRewards, 'streakFreezes')) rewardsPatch.streakFreezes = FieldValue.delete();
   }
   // Achievements are recorded from the first evaluation on. That one evaluation reads a baseline;
-  // an unusable stored record is rebuilt the same way, keeping every valid badge and title record.
+  // an unusable stored record is rebuilt the same way, keeping every valid badge and title record
+  // and every counter whose own value is valid (see backfilledAchievements).
   let achievementsBase = parseAchievements(stats[ACHIEVEMENTS_FIELD]);
   let achievementsRebuilt = false;
   let webWandererHeld = false;
@@ -418,7 +419,7 @@ export async function prepareVerifiedGamification(
       webWandererHeld = (isRecord(heldRewards.receipts) && heldRewards.receipts[STREAK_REWARD_RECEIPT] === true)
         || (Array.isArray(heldRewards.unlockedBadgeIds) && heldRewards.unlockedBadgeIds.includes(WEB_WANDERER_BADGE));
       const storedVersion = isRecord(stats[ACHIEVEMENTS_FIELD]) ? counter(stats[ACHIEVEMENTS_FIELD].catalogVersion) : 0;
-      achievementsBase = backfilledAchievements(studyDay, baseline, parseAchievementRecords(stats[ACHIEVEMENTS_FIELD]), storedVersion);
+      achievementsBase = backfilledAchievements(studyDay, baseline, parseAchievementSalvage(stats[ACHIEVEMENTS_FIELD]), storedVersion);
       achievementsRebuilt = true;
     }
   }

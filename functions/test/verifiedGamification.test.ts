@@ -781,6 +781,37 @@ describe('achievements record', () => {
     }
   });
 
+  it('keeps the valid counters of an unusable record, so late reviews and spelling answers carry on', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const result = await run({
+        [statsPath]: settled({
+          achievementsV1: {
+            catalogVersion: 1, recordingStartedOn: 'soon',
+            counters: {
+              activeDays: 9, lastXpDay: '2026-03-07', lastXpDayXp: 30, bestDayXp: 'many',
+              reviewedCards: 1, masteredWords: -1, lateReviews: 7, spellingCorrect: 12,
+            },
+            badges: { 'mastered-50': { on: '2026-02-01', exact: true } },
+          },
+        }),
+      }, undefined, { [reviewedQuery]: 2 });
+      // Nothing is read beyond the rebuild's existing baseline.
+      expect(result.reads).toEqual([statsPath, award, historyPath, rewardsPath]);
+      expect(result.queries).toEqual([reviewedQuery, masteredQuery]);
+      expect(result.achievementsV1).toMatchObject({
+        recordingStartedOn: '2026-03-08',
+        counters: {
+          activeDays: 10, lastXpDay: '2026-03-08', lastXpDayXp: 2, bestDayXp: 30,
+          reviewedCards: 2, masteredWords: 50, lateReviews: 7, spellingCorrect: 12,
+        },
+        badges: { 'mastered-50': { on: '2026-02-01', exact: true } },
+      });
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it('skips the record without failing the action when the card counts are unavailable', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     try {
