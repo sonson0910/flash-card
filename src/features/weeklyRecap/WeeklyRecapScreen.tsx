@@ -75,7 +75,6 @@ function WeeklyRecapCard({ content, dateRangeLabel, caption }: { readonly conten
   const isCrystal = useTheme().family === 'crystal';
   const showLumi = isCrystal && readLumiEnabled();
   return <section className={`weekly-recap-card${isCrystal ? ' weekly-recap-card--crystal' : ''}${showLumi ? ' weekly-recap-card--with-companion' : ''}`} aria-label={_(weeklyRecapCopy.title)}>
-    {isCrystal && <span className="weekly-recap-card__stack" aria-hidden="true" />}
     {showLumi && <Lumi pose="proud" size={104} className="weekly-recap-card__companion" />}
     <header className="weekly-recap-card__header">
       {isCrystal
@@ -135,8 +134,15 @@ export function WeeklyRecapScreen({
   const { _, i18n: activeI18n } = useLingui();
   const isCrystal = useTheme().family === 'crystal';
   const locale = activeI18n.locale || 'en';
+  const card = <WeeklyRecapCard content={content} dateRangeLabel={dateRangeLabel} caption={caption.trim()} />;
   return <div className="weekly-recap-screen" data-family={isCrystal ? 'crystal' : 'classic'}>
-    <WeeklyRecapCard content={content} dateRangeLabel={dateRangeLabel} caption={caption.trim()} />
+    {isCrystal
+      ? <div className="weekly-recap-stage">
+        <span className="weekly-recap-stage__wings crystal-wing-art" aria-hidden="true" />
+        <span className="weekly-recap-stage__back crystal-chamfer" aria-hidden="true" />
+        {card}
+      </div>
+      : card}
 
     <section className="weekly-recap-controls">
       <header className="weekly-recap-controls__intro">

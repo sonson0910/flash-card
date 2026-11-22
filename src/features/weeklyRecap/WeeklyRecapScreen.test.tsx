@@ -7,6 +7,7 @@ import { buildWeeklyRecapCardContent } from './weeklyRecapCard';
 import type { WeeklyRecapData, WeeklyRecapStats } from './weeklyRecapModel';
 import { defaultWeeklyRecapSelection } from './weeklyRecapSelection';
 import { WeeklyRecapScreen, type WeeklyRecapScreenProps } from './WeeklyRecapScreen';
+import { ThemeProvider } from '../theme/ThemeProvider';
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -68,6 +69,22 @@ describe('WeeklyRecapScreen', () => {
     expect(card.match(/weekly-recap-card__heatmap-day/g)).toHaveLength(7);
     expect(card.match(/data-future="true"/g)).toHaveLength(3);
     expect(card).not.toContain('weekly-recap-card__bloom');
+  });
+
+  it('sets the Crystal card on a stage of decorative wing shards and a tilted panel, and keeps the Classic card bare', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => ({ sonflash_theme_family: 'crystal', sonflash_lumi_enabled: 'false' })[key] ?? null,
+      setItem: () => undefined,
+    });
+    try {
+      const crystal = render(<ThemeProvider><WeeklyRecapScreen {...props()} /></ThemeProvider>);
+      expect(crystal).toMatch(/<div class="weekly-recap-stage"><span class="weekly-recap-stage__wings crystal-wing-art" aria-hidden="true"><\/span><span class="weekly-recap-stage__back crystal-chamfer" aria-hidden="true"><\/span><section class="weekly-recap-card weekly-recap-card--crystal"/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    const classic = render(<WeeklyRecapScreen {...props()} />);
+    expect(classic).not.toContain('weekly-recap-stage');
+    expect(classic).toMatch(/^<div class="weekly-recap-screen" data-family="classic"><section class="weekly-recap-card"/);
   });
 
   it('shows an honest empty state instead of zero metrics', () => {

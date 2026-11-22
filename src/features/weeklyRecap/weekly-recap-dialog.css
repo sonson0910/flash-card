@@ -679,8 +679,54 @@
     linear-gradient(0deg, color-mix(in srgb, var(--sf-reward) 55%, transparent), transparent 3px);
 }
 
-[data-family="crystal"] .weekly-recap-card__stack {
-  display: none;
+/* AnimeWeeklyRecap: the board's wing shards and a tilted panel behind the card. The card clips its
+   own contents, so both sit beside it in a stage; the dialog body clips them sideways. */
+:root[data-theme-family="crystal"] .weekly-recap-dialog__body {
+  overflow-x: clip;
+}
+
+.weekly-recap-stage {
+  --weekly-recap-wing-opacity: .55;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-width: 0;
+}
+
+:root[data-theme-family="crystal"]:not(.dark) .weekly-recap-stage {
+  --weekly-recap-wing-opacity: .42;
+}
+
+.weekly-recap-stage__wings,
+.weekly-recap-stage__back {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.weekly-recap-stage__wings {
+  top: 45px;
+  left: -140px;
+  width: 700px;
+  height: 470px;
+  opacity: var(--weekly-recap-wing-opacity);
+  filter: drop-shadow(0 0 30px color-mix(in srgb, var(--sf-brand) 70%, transparent));
+}
+
+/* The chamfer utility paints the fill and redraws the cut edges; the border draws the straight ones. */
+.weekly-recap-stage__back {
+  --weekly-recap-back-fill: rgb(226 244 255 / .9);
+  --weekly-recap-back-line: rgb(13 40 80 / .24);
+  --sf-chamfer-fill: linear-gradient(var(--weekly-recap-back-fill), var(--weekly-recap-back-fill));
+  --sf-chamfer-edge: var(--weekly-recap-back-line);
+  inset: -6px -18px 4px 30px;
+  border: 1px solid var(--weekly-recap-back-line);
+  transform: rotate(-6deg);
+}
+
+:root[data-theme-family="crystal"].dark .weekly-recap-stage__back {
+  --weekly-recap-back-fill: rgb(255 255 255 / .06);
+  --weekly-recap-back-line: rgb(255 255 255 / .22);
 }
 
 [data-family="crystal"] .weekly-recap-card__kicker,
@@ -988,7 +1034,9 @@
 
 @media (max-width: 760px) {
   /* The card fills the phone width, so the card behind it would push the dialog sideways. */
-  .weekly-recap-card::after {
+  .weekly-recap-card::after,
+  .weekly-recap-stage__wings,
+  .weekly-recap-stage__back {
     display: none;
   }
 
