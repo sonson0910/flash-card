@@ -80,6 +80,11 @@ html[data-theme-family=crystal] .course-card[data-course-language='ja'] { --cour
 html[data-theme-family=crystal] .course-card[data-course-language='en'] { --course-card-edge: color-mix(in srgb, var(--sf-second) 70%, transparent); }
 html[data-theme-family=crystal] .course-card[data-course-language='zh'] { --course-card-edge: color-mix(in srgb, var(--sf-reward) 70%, transparent); }
 html[data-theme-family=crystal] .course-card[data-active='true'] { --course-card-edge: var(--sf-brand); min-height: 384px; }
+/* An archived course keeps the opaque card colour and is muted by its edge and ink, not by opacity, so the
+   background flares never show through its name. */
+html[data-theme-family=crystal] .course-card[data-status='archived'] { --course-card-edge: var(--sf-border); opacity: 1; }
+html[data-theme-family=crystal] .course-card[data-status='archived'] .course-card__glyph.course-tile { filter: grayscale(.7); }
+html[data-theme-family=crystal] .course-card[data-status='archived'] .course-card__name { color: var(--sf-text-muted); }
 
 .course-card__select {
   display: flex;

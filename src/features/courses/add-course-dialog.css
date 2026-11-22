@@ -121,14 +121,20 @@ html[data-theme-family=crystal] .course-add__label--caps { color: var(--sf-brand
 .dark .course-target-card[data-state='selected'] .course-target-card__tag { background: var(--sf-brand); color: var(--sf-on-brand); }
 .course-target-card[data-state='added'] { cursor: not-allowed; opacity: .5; }
 
-html[data-theme-family=crystal] .course-target-card { --sf-chamfer-fill: var(--sf-surface-raised); border-radius: 0; background-color: transparent; }
+/* The chamfer paints its fill as a background image, so a Crystal fill must be a gradient: a bare colour invalidates
+   the whole background image and leaves the card see-through. Every card sits on the opaque panel colour. */
+html[data-theme-family=crystal] .course-target-card { --sf-chamfer-fill: linear-gradient(var(--sf-surface), var(--sf-surface)); border-radius: 0; background-color: transparent; }
 html[data-theme-family=crystal] .course-target-card[data-state='selected'] {
   --sf-chamfer-edge: var(--sf-brand);
-  --sf-chamfer-fill: color-mix(in srgb, var(--sf-brand) 12%, transparent);
+  --sf-chamfer-fill: linear-gradient(color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)), color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)));
   border-color: var(--sf-brand);
   box-shadow: none;
 }
 html[data-theme-family=crystal] .course-target-card:has(.course-target-card__input:focus-visible) { outline-offset: -4px; }
+/* A language that already has a course stays opaque and is muted by colour, not opacity. */
+html[data-theme-family=crystal] .course-target-card[data-state='added'] { opacity: 1; }
+html[data-theme-family=crystal] .course-target-card[data-state='added'] .course-target-card__name { color: var(--sf-text-muted); }
+html[data-theme-family=crystal] .course-target-card[data-state='added'] .course-target-card__glyph { color: var(--sf-text-subtle); }
 html[data-theme-family=crystal] .course-target-card__glyph { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
 html[data-theme-family=crystal] .course-target-card[data-state='selected'] .course-target-card__glyph { color: var(--sf-brand-text); }
 html[data-theme-family=crystal] .course-target-card__name { font-style: italic; font-weight: 800; }
