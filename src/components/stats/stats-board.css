@@ -1,22 +1,25 @@
 /* Progress and achievements boards: panels, activity heatmap, mastery ring and range switch.
-   Values come from the design canvas tokens. Classic light is the default, classic dark and the two
-   Crystal themes override the local --st-* variables. Backgrounds of chamfered elements are scoped to
-   the classic themes: an unlayered background would replace the crystal-chamfer edge gradients, so
-   Crystal passes its fill through --sf-chamfer-fill instead. */
+   Values come from the shared --sf-* theme tokens. The --st-* names below are aliases that
+   progress-screen.css and achievements-board.css also read, so they stay; where a token exists in
+   all four themes the alias points at it and no theme overrides it. The few literals left have no
+   token yet (the classic shelf, the Crystal mastered rim, the Crystal pink and light gold text).
+   Backgrounds of chamfered elements are scoped to the classic themes: an unlayered background
+   would replace the crystal-chamfer edge gradients, so Crystal passes its fill through
+   --sf-chamfer-fill instead. */
 
 :is(.progress-board, .achievements-board, .stats-canvas) {
   --st-display: var(--sf-font-display);
   --st-body-font: inherit;
   --st-mono: var(--sf-font-mono);
   --st-weight: 380;
-  --st-title: var(--sf-text);
-  --st-body: #3d372f;
+  --st-title: var(--sf-text-strong);
+  --st-body: var(--sf-text-body);
   --st-text2: var(--sf-text-muted);
   --st-text3: var(--sf-text-tertiary);
   --st-line: var(--sf-border);
   --st-line-strong: var(--sf-edge-highlight);
-  --st-chip: #fbf8f2;
-  --st-track: rgb(29 26 22 / .08);
+  --st-chip: var(--sf-surface-raised);
+  --st-track: color-mix(in srgb, var(--sf-text-strong) 8%, transparent);
   --st-radius: 18px;
   --st-btn-radius: 999px;
   --st-panel-bg: var(--sf-surface-glass);
@@ -26,8 +29,8 @@
   --st-accent-text: var(--sf-brand-text);
   --st-em-style: italic;
   --st-em-color: var(--sf-brand);
-  --st-nav-active-bg: #1d1a16;
-  --st-nav-active-text: #fbf6ec;
+  --st-nav-active-bg: var(--sf-primary-bg);
+  --st-nav-active-text: var(--sf-on-primary);
   --st-mastered: var(--sf-reward);
   --st-learning: var(--sf-brand);
   --st-new: transparent;
@@ -36,23 +39,20 @@
   --st-today-glow: none;
   --st-tomorrow: color-mix(in srgb, var(--sf-brand) 45%, transparent);
   --st-shelf-border: 1px solid #d9b76a;
-  --st-shelf-bg: #fffcf5;
+  --st-shelf-bg: var(--sf-surface);
   --st-shelf-shadow: 0 1px 2px rgb(60 40 20 / .08), inset 0 0 0 3px #fbf3df;
   --st-success: var(--sf-success);
 }
 
 :root.dark:not([data-theme-family='crystal']) :is(.progress-board, .achievements-board, .stats-canvas) {
   --st-weight: 440;
-  --st-title: #f1f6f9;
-  --st-body: #b5c2ca;
-  --st-chip: rgb(255 255 255 / .04);
-  --st-track: rgb(255 255 255 / .08);
   --st-radius: 22px;
   --st-btn-radius: 16px;
   --st-blur: blur(18px);
   --st-em-style: normal;
-  --st-nav-active-bg: rgb(255 255 255 / .08);
-  --st-nav-active-text: #ffffff;
+  /* The dark board's selected range is a quiet lift, not the cyan primary fill. */
+  --st-nav-active-bg: color-mix(in srgb, var(--sf-text-strong) 8%, transparent);
+  --st-nav-active-text: var(--sf-text-strong);
   --st-heat-glow: 0 0 8px color-mix(in srgb, var(--sf-brand) 40%, transparent);
   --st-today-glow: 0 0 18px color-mix(in srgb, var(--sf-brand) 55%, transparent);
   --st-shelf-border: 1px solid transparent;
@@ -62,48 +62,35 @@
 
 :root[data-theme-family='crystal'] :is(.progress-board, .achievements-board, .stats-canvas) {
   --st-weight: 900;
-  --st-title: #ffffff;
-  --st-body: #d6dbe6;
-  --st-line-strong: rgb(255 255 255 / .22);
-  --st-chip: rgb(255 255 255 / .06);
-  --st-track: rgb(255 255 255 / .1);
+  --st-track: color-mix(in srgb, var(--sf-text-strong) 10%, transparent);
   --st-radius: 0;
-  --st-panel-solid: #0e111c;
+  --st-panel-solid: var(--sf-surface);
   --st-panel-shadow: none;
-  --st-primary: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%);
-  --st-primary-glow: 0 0 30px -4px rgb(255 42 77 / .85);
+  --st-primary: var(--sf-primary-bg);
+  --st-primary-glow: var(--sf-primary-shadow);
   --st-crimson-text: var(--sf-brand-text);
   --st-holo-text: var(--sf-second-text);
   --st-gold-text: var(--sf-reward);
   --st-pink-text: #ff9ec0;
-  --st-accent: var(--sf-brand);
-  --st-accent-text: var(--sf-brand-text);
   --st-mastered: var(--sf-tier-star);
   --st-learning: var(--sf-tier-bloom);
   --st-new: var(--sf-tier-bud);
-  --st-rim-mastered: conic-gradient(from 200deg, #fff3c4, #ffd166, #ff2a4d, #7a0820, #ff5470, #ffffff, #ffd166, #fff3c4);
-  --st-rim-learning: linear-gradient(150deg, #ffe3f1, #ff8fb6 35%, #ff5470 65%, #5ef2ff);
-  --st-rim-new: linear-gradient(150deg, #e9feff, #5ef2ff 40%, #1aa7c9 75%, #e9feff);
-  --st-ring-stop-a: #ffd166;
-  --st-ring-stop-b: #ff2a4d;
-  --st-ring-stop-c: #7a0820;
+  --st-rim-mastered: conic-gradient(from 200deg, #fff3c4, var(--sf-reward), var(--sf-brand), var(--sf-star-shade), var(--sf-star-face), #ffffff, var(--sf-reward), #fff3c4);
+  --st-rim-learning: var(--sf-rim-learning);
+  --st-rim-new: var(--sf-rim-new);
+  --st-ring-stop-a: var(--sf-reward);
+  --st-ring-stop-b: var(--sf-brand);
+  --st-ring-stop-c: var(--sf-star-shade);
   --st-heat-unavailable: color-mix(in srgb, var(--sf-heat-0) 60%, transparent);
-  --st-tomorrow: linear-gradient(180deg, #ffc2da, #ff8fb6);
-  --st-bar: linear-gradient(180deg, rgb(94 242 255 / .5), rgb(94 242 255 / .12));
+  --st-tomorrow: linear-gradient(180deg, #ffc2da, var(--sf-tier-bloom));
+  --st-bar: linear-gradient(180deg, color-mix(in srgb, var(--sf-second) 50%, transparent), color-mix(in srgb, var(--sf-second) 12%, transparent));
 }
 
 :root[data-theme-family='crystal']:not(.dark) :is(.progress-board, .achievements-board, .stats-canvas) {
-  --st-title: #081329;
-  --st-body: #243553;
-  --st-line-strong: rgb(13 40 80 / .24);
-  --st-chip: rgb(226 244 255 / .9);
-  --st-track: rgb(13 40 80 / .12);
-  --st-panel-solid: #e6f5ff;
-  --st-primary: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%);
-  --st-primary-glow: 0 12px 28px -8px rgb(224 23 63 / .6);
+  --st-track: color-mix(in srgb, var(--sf-text-strong) 12%, transparent);
   --st-gold-text: #8a5a00;
   --st-pink-text: #b3265a;
-  --st-bar: linear-gradient(180deg, rgb(10 143 176 / .55), rgb(10 143 176 / .15));
+  --st-bar: linear-gradient(180deg, color-mix(in srgb, var(--sf-second-text) 55%, transparent), color-mix(in srgb, var(--sf-second-text) 15%, transparent));
 }
 
 /* Panels */
@@ -242,8 +229,8 @@
   width: 8px;
   height: 8px;
   transform: rotate(45deg);
-  background: #5ef2ff;
-  box-shadow: 0 0 8px #5ef2ff;
+  background: var(--sf-second);
+  box-shadow: 0 0 8px var(--sf-second);
 }
 :root[data-theme-family='crystal'] .stats-range { gap: 4px; padding: 0; border: 0; border-radius: 0; background: transparent; }
 :root[data-theme-family='crystal'] .stats-range-button {
@@ -263,7 +250,7 @@
   letter-spacing: .06em;
   text-transform: uppercase;
 }
-:root[data-theme-family='crystal'] .stats-range-button[aria-pressed='true'] { background: var(--st-primary); box-shadow: var(--st-primary-glow); color: #ffffff; }
+:root[data-theme-family='crystal'] .stats-range-button[aria-pressed='true'] { background: var(--sf-primary-bg); box-shadow: var(--sf-primary-shadow); color: var(--sf-on-primary); }
 
 :root[data-theme-family='crystal'] .stats-heatmap { --heat-row: 26px; --heat-gap: 4px; margin-top: 14px; }
 :root[data-theme-family='crystal'] .stats-heat-grid { width: 100%; }
@@ -299,7 +286,7 @@
 
 :root[data-theme-family='crystal'] .stats-mastery-chart { margin-top: 10px; }
 :root[data-theme-family='crystal'] .stats-mastery-body { gap: 20px; }
-:root[data-theme-family='crystal'] .stats-ring { filter: drop-shadow(0 0 16px rgb(255 42 77 / .5)); }
+:root[data-theme-family='crystal'] .stats-ring { filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-brand) 50%, transparent)); }
 :root[data-theme-family='crystal'] .stats-ring-value { font-style: italic; font-size: 40px; }
 :root[data-theme-family='crystal'] .stats-ring-unit { color: var(--sf-brand-text); }
 :root[data-theme-family='crystal'] .stats-ring-label {
@@ -323,8 +310,8 @@
   font-style: italic;
   font-weight: 900;
   font-size: 13px;
-  color: #ffffff;
-  text-shadow: 0 1px 0 #7a0820;
+  color: var(--sf-on-primary);
+  text-shadow: 0 1px 0 var(--sf-star-shade);
 }
 :root[data-theme-family='crystal'] .stats-mastery-legend li[data-kind='mastered'] .stats-grade-chip { background: var(--st-rim-mastered); }
 :root[data-theme-family='crystal'] .stats-mastery-legend li[data-kind='learning'] .stats-grade-chip { background: var(--st-rim-learning); }

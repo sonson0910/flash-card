@@ -26,19 +26,19 @@
 :root[data-theme-family="classic"].dark .weekly-recap-dialog {
   background:
     radial-gradient(42rem 30rem at 4% -6%, rgb(124 92 214 / .34), transparent 70%),
-    radial-gradient(40rem 28rem at 70% 112%, rgb(40 211 244 / .2), transparent 70%),
+    radial-gradient(40rem 28rem at 70% 112%, color-mix(in srgb, var(--sf-brand) 20%, transparent), transparent 70%),
     #06161f;
 }
 
 :root[data-theme-family="crystal"] .weekly-recap-dialog {
-  font-family: Nunito, system-ui, sans-serif;
+  font-family: var(--sf-font-body);
 }
 
 :root[data-theme-family="crystal"].dark .weekly-recap-dialog {
   background:
     var(--nk-stars),
-    radial-gradient(36rem 28rem at 6% 30%, rgb(255 42 77 / .2), transparent 70%),
-    radial-gradient(30rem 24rem at 96% 96%, rgb(94 242 255 / .08), transparent 70%),
+    radial-gradient(36rem 28rem at 6% 30%, color-mix(in srgb, var(--sf-brand) 20%, transparent), transparent 70%),
+    radial-gradient(30rem 24rem at 96% 96%, color-mix(in srgb, var(--sf-second) 8%, transparent), transparent 70%),
     #06070d;
 }
 
@@ -358,27 +358,27 @@
 :root[data-theme-family="classic"].dark .weekly-recap-card {
   --weekly-recap-card-bg: #1e2b46;
   --weekly-recap-card-bg-end: #0d4656;
-  --weekly-recap-card-text: #f1f6f9;
+  --weekly-recap-card-text: var(--sf-text-strong);
   --weekly-recap-card-muted: #a9b7c0;
   --weekly-recap-card-line: rgb(255 255 255 / .12);
   --weekly-recap-card-chip: rgb(255 255 255 / .05);
-  --weekly-recap-card-accent: #28d3f4;
+  --weekly-recap-card-accent: var(--sf-brand);
   --weekly-recap-heat-0: var(--sf-heat-0);
   --weekly-recap-heat-1: var(--sf-heat-1);
   --weekly-recap-heat-2: var(--sf-heat-2);
   --weekly-recap-heat-3: var(--sf-heat-3);
   --weekly-recap-heat-4: var(--sf-heat-4);
   border-color: rgb(126 230 250 / .55);
-  box-shadow: 0 40px 80px -40px rgb(40 211 244 / .5), 0 1px 0 rgb(255 255 255 / .1) inset;
+  box-shadow: 0 40px 80px -40px color-mix(in srgb, var(--sf-brand) 50%, transparent), 0 1px 0 rgb(255 255 255 / .1) inset;
 }
 
 :root[data-theme-family="classic"].dark .weekly-recap-card::after {
-  background: rgb(40 211 244 / .07);
+  background: color-mix(in srgb, var(--sf-brand) 7%, transparent);
 }
 
 :root[data-theme-family="classic"].dark .weekly-recap-card__brand-mark {
-  background: linear-gradient(140deg, #7ee6fa, #28d3f4);
-  color: #04141c;
+  background: linear-gradient(140deg, var(--sf-holo-text), var(--sf-brand));
+  color: var(--sf-on-primary);
 }
 
 :root[data-theme-family="classic"].dark .weekly-recap-card__hero-metric em {
@@ -547,7 +547,7 @@
   right: 1rem;
   bottom: .6rem;
   color: var(--sf-text-muted);
-  font-family: "Geist Mono", ui-monospace, monospace;
+  font-family: var(--sf-font-mono);
   font-size: .72rem;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
@@ -650,19 +650,19 @@
   --weekly-recap-heat-2: var(--sf-heat-2);
   --weekly-recap-heat-3: var(--sf-heat-3);
   --weekly-recap-heat-4: var(--sf-heat-4);
-  border: 2px solid #ff2a4d;
+  border: 2px solid var(--sf-brand);
   border-radius: 0;
   /* Same edge redraw as the crystal-chamfer utility, so the rim follows the cut corners. */
   background-image:
-    linear-gradient(135deg, transparent 12.2px, #ff2a4d 12.2px 14.9px, transparent 14.9px),
-    linear-gradient(315deg, transparent 12.2px, #ff2a4d 12.2px 14.9px, transparent 14.9px),
+    linear-gradient(135deg, transparent 12.2px, var(--sf-brand) 12.2px 14.9px, transparent 14.9px),
+    linear-gradient(315deg, transparent 12.2px, var(--sf-brand) 12.2px 14.9px, transparent 14.9px),
     linear-gradient(170deg, var(--weekly-recap-card-bg), var(--weekly-recap-card-bg-end));
   background-position: left top, right bottom, center;
   background-size: 36px 36px, 36px 36px, 100% 100%;
   background-repeat: no-repeat;
   background-origin: border-box, border-box, padding-box;
   clip-path: var(--nk-chamfer);
-  box-shadow: inset 0 0 28px rgb(255 42 77 / .16);
+  box-shadow: inset 0 0 28px color-mix(in srgb, var(--sf-brand) 16%, transparent);
 }
 
 [data-family="crystal"] .weekly-recap-card::after {
@@ -675,8 +675,8 @@
   pointer-events: none;
   content: '';
   background:
-    radial-gradient(circle at 92% 8%, rgb(94 242 255 / .26), transparent 30%),
-    linear-gradient(0deg, rgb(255 209 102 / .55), transparent 3px);
+    radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--sf-second) 26%, transparent), transparent 30%),
+    linear-gradient(0deg, color-mix(in srgb, var(--sf-reward) 55%, transparent), transparent 3px);
 }
 
 [data-family="crystal"] .weekly-recap-card__stack {
@@ -841,7 +841,7 @@
   --weekly-recap-heat-2: var(--sf-heat-2);
   --weekly-recap-heat-3: var(--sf-heat-3);
   --weekly-recap-heat-4: var(--sf-heat-4);
-  box-shadow: inset 0 0 36px rgb(255 42 77 / .28);
+  box-shadow: inset 0 0 36px color-mix(in srgb, var(--sf-brand) 28%, transparent);
 }
 
 :root[data-theme-family="crystal"].dark .weekly-recap-card__hero-metric strong {
@@ -889,11 +889,11 @@
 }
 
 :root[data-theme-family="crystal"].dark .weekly-recap-controls__intro h1 em {
-  background: linear-gradient(180deg, #ff7a90, #ff2a4d);
+  background: linear-gradient(180deg, #ff7a90, var(--sf-brand));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 14px rgb(255 42 77 / .45));
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 45%, transparent));
 }
 
 [data-family="crystal"] .weekly-recap-controls__selection label,
@@ -923,7 +923,7 @@
 
 :root[data-theme-family="crystal"].dark .weekly-recap-controls__selection label.is-selected {
   border-color: rgb(255 84 112 / .45);
-  background: rgb(255 42 77 / .1);
+  background: color-mix(in srgb, var(--sf-brand) 10%, transparent);
 }
 
 [data-family="crystal"] .weekly-recap-controls__caption textarea {
@@ -958,11 +958,11 @@
 :root[data-theme-family="crystal"].dark .weekly-recap-controls__actions .brand-action {
   background: linear-gradient(180deg, #ff5470, #e0173f 52%, #a30c2d);
   color: #ffffff;
-  filter: drop-shadow(0 0 14px rgb(255 42 77 / .5));
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 50%, transparent));
 }
 
 [data-family="crystal"] .weekly-recap-controls__actions .brand-action:hover:not(:disabled) {
-  background: linear-gradient(180deg, #ff6b85, #ff2a4d 52%, #b30f33);
+  background: linear-gradient(180deg, #ff6b85, var(--sf-brand) 52%, #b30f33);
   color: #ffffff;
 }
 
