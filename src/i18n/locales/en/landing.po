@@ -210,11 +210,6 @@ msgctxt "landing.atmosphere.quiet-dawn"
 msgid "Quiet Dawn"
 msgstr "Quiet Dawn"
 
-#: src/features/landing/LandingPage.tsx:314
-msgctxt "landing.ribbon.learn-at-your-pace"
-msgid "Learn at your pace"
-msgstr "Learn at your pace"
-
 #: src/features/landing/LandingPage.tsx:1102
 msgctxt "landing.pricing.free-vs-pro.free"
 msgid "Free"
@@ -694,6 +689,11 @@ msgstr "日本語 · Japanese"
 msgctxt "landing.classic-hero.fine-print"
 msgid "Free to start · Web and Chrome · No credit card"
 msgstr "Free to start · Web and Chrome · No credit card"
+
+#: src/features/landing/LandingPage.tsx:314
+msgctxt "landing.ribbon.ielts-band-goal"
+msgid "IELTS band goal"
+msgstr "IELTS band goal"
 
 #: src/features/landing/LandingPage.tsx:206
 msgctxt "landing.pricing.row.reviews"

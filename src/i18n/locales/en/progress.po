@@ -379,6 +379,11 @@ msgid "stats.badge-state.locked"
 msgstr "Not started yet"
 
 #. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:53
+msgid "stats.badge-state.locked-chip"
+msgstr "Locked"
+
+#. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:51
 msgid "stats.badges"
 msgstr "Badges"

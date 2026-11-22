@@ -301,7 +301,8 @@ button.paths-card[aria-pressed='true'] { border-color: var(--sf-brand); box-shad
 :root[data-theme-family='crystal'] .paths-hero-unit { color: var(--pa-crimson-text); font-weight: 900; }
 :root[data-theme-family='crystal'] .catalog-feature-words { max-width: 520px; margin-top: 18px; }
 :root[data-theme-family='crystal'] .catalog-feature-words li { height: 32px; gap: 8px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--pa-chip); box-shadow: inset 0 0 0 1px var(--pa-line); padding: 0 12px 0 6px; color: var(--pa-text2); font-family: inherit; font-size: 14px; font-weight: 800; }
-:root[data-theme-family='crystal'] .paths-chip-mark { display: flex; width: auto; height: 20px; min-width: 20px; align-items: center; justify-content: center; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--pa-track); color: var(--sf-text); font-family: var(--pa-display); font-size: 11px; font-style: italic; font-weight: 900; }
+/* The preview words carry no tier, so each mark is the board's quiet dot on the track: a small 5px cut, muted ink. */
+:root[data-theme-family='crystal'] .paths-chip-mark { display: flex; width: auto; height: 20px; min-width: 20px; box-sizing: border-box; padding: 0 7px; align-items: center; justify-content: center; border-radius: 0; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); background: var(--pa-track); color: var(--pa-text3); font-family: var(--pa-display); font-size: 11px; font-style: italic; font-weight: 900; }
 :root[data-theme-family='crystal'] .paths-chip-mark::before { content: '·'; content: '·' / ''; }
 :root[data-theme-family='crystal'] .paths-route-label { color: var(--pa-holo-text); font-family: var(--pa-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 :root[data-theme-family='crystal'] .paths-route-label span { color: var(--pa-text3); }

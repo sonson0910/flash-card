@@ -296,24 +296,27 @@
   letter-spacing: .14em;
   text-transform: uppercase;
 }
+/* Small tier marks sit on the flat tier fills: white text never meets the white bands of a rim. */
 :root[data-theme-family='crystal'] .stats-grade-chip {
-  width: 42px;
+  --st-mark-fill: var(--sf-tier-star-fill);
+  --st-mark-shadow: var(--sf-tier-star-fill-shadow);
+  width: 56px;
   height: 24px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  background: var(--st-mark-fill);
   font-family: var(--sf-font-display);
   font-style: italic;
   font-weight: 900;
   font-size: 13px;
   color: var(--sf-on-primary);
-  text-shadow: 0 1px 0 var(--sf-star-shade);
+  text-shadow: 0 1px 0 var(--st-mark-shadow);
 }
-:root[data-theme-family='crystal'] .stats-mastery-legend li[data-kind='mastered'] .stats-grade-chip { background: var(--st-rim-mastered); }
-:root[data-theme-family='crystal'] .stats-mastery-legend li[data-kind='learning'] .stats-grade-chip { background: var(--st-rim-learning); }
-:root[data-theme-family='crystal'] .stats-mastery-legend li[data-kind='new'] .stats-grade-chip { background: var(--st-rim-new); }
+:root[data-theme-family='crystal'] .stats-mastery-legend li[data-kind='learning'] .stats-grade-chip { --st-mark-fill: var(--sf-tier-bloom-fill); --st-mark-shadow: var(--sf-tier-bloom-fill-shadow); }
+:root[data-theme-family='crystal'] .stats-mastery-legend li[data-kind='new'] .stats-grade-chip { --st-mark-fill: var(--sf-tier-bud-fill); --st-mark-shadow: var(--sf-tier-bud-fill-shadow); }
 :root[data-theme-family='crystal'] .stats-legend-label { font-weight: 800; color: var(--st-title); }
 :root[data-theme-family='crystal'] .stats-legend-value { font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 16px; }
 :root[data-theme-family='crystal'] .stats-mastery-foot { border-top: 0; padding-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

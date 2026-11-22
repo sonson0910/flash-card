@@ -181,7 +181,12 @@ describe('recorded achievements', () => {
     expect(html).toContain('Reach level 5');
     expect(html).toContain('Lv 3 / 5');
     expect(html).toContain('class="ach-glyph-filled"');
-    expect(badgeHtml(html, 'spelling-50')).toContain('ach-badge-veil');
+    // A badge nobody has started keeps its name and condition readable, with a lock chip instead of a veil.
+    const unstarted = badgeHtml(html, 'spelling-50');
+    expect(unstarted).toContain('<span class="ach-badge-lock" aria-hidden="true">Locked</span>');
+    expect(unstarted).toContain('ach-glyph-lock');
+    expect(unstarted).toContain('<span class="sr-only">Not started yet</span>');
+    expect(badgeHtml(html, 'reviewed-10')).not.toContain('ach-badge-lock');
     expect(html).not.toContain('data-shown-title');
   });
 

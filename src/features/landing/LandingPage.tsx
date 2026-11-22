@@ -311,7 +311,7 @@ const crystalRibbonItems = [
   { id: 'pronunciation', label: <Trans {...msg({ context: 'landing.ribbon.pronunciation', message: 'Pronunciation practice' })} /> },
   { id: 'chrome-extension', label: <Trans {...msg({ context: 'landing.ribbon.chrome-extension', message: 'Chrome extension' })} /> },
   { id: 'tiers', label: <Trans {...msg({ context: 'landing.ribbon.tiers', message: 'Bud → Bloom → Star' })} /> },
-  { id: 'learn-at-your-pace', label: <Trans {...msg({ context: 'landing.ribbon.learn-at-your-pace', message: 'Learn at your pace' })} /> },
+  { id: 'ielts-band-goal', label: <Trans {...msg({ context: 'landing.ribbon.ielts-band-goal', message: 'IELTS band goal' })} /> },
 ];
 
 function CrystalLandingHero({ onEnterApp, onSignIn, user, showLumi }: Pick<LandingPageProps, 'onEnterApp' | 'onSignIn' | 'user'> & { readonly showLumi: boolean }) {

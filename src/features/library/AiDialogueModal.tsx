@@ -291,7 +291,7 @@ export function AiDialogueModal({ cards, open, onOpenChange, ownerId }: AiDialog
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-50 dialog-veil backdrop-blur-sm" />
         <Dialog.Content className="fixed inset-x-4 top-1/2 z-50 mx-auto w-auto max-w-2xl -translate-y-1/2 focus:outline-none sm:inset-x-6">
           <AiDialogueContent
             cards={cards}
