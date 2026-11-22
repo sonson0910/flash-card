@@ -3,6 +3,9 @@
 .crystal-starfield { background-image: var(--nk-stars); animation: crystal-starfield-drift 36s linear infinite; }
 .crystal-wing { opacity: var(--nk-wing-opacity, .5); animation: crystal-wing-shimmer 2.8s ease-in-out infinite; }
 .crystal-flare { background: radial-gradient(circle, var(--nk-flare, #fff), transparent 62%); animation: crystal-flare-pulse 1.8s ease-in-out infinite; }
+/* The boards' WINGS and STAR5 art, for components that place a shard themselves. Never animated. */
+.crystal-wing-art { background: url('./crystal-wing.svg') center / contain no-repeat; pointer-events: none; }
+.crystal-star-art { background: url('./crystal-star.svg') center / contain no-repeat; pointer-events: none; }
 
 @keyframes crystal-starfield-drift { to { background-position: 240px 180px; } }
 @keyframes crystal-wing-shimmer { 50% { filter: brightness(1.22) saturate(1.12); } }

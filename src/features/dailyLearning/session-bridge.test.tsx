@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SessionBridge } from './SessionBridge';
 import type { SessionBridgeModel } from './dailyLearningPresentation';
 import { writeFocusModeEnabled } from '../settings/focus-mode-preference';
+import { ThemeProvider } from '../theme/ThemeProvider';
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -88,5 +89,32 @@ describe('SessionBridge', () => {
     expect(empty).not.toContain('Skip</');
     const available = render({ ...model, nextStage: 'match', canSkipNextStage: true });
     expect(available).toContain('Skip</');
+  });
+  it('names the Crystal combo by the length of the correct run and keeps the shards decorative', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => ({ sonflash_theme_family: 'crystal', sonflash_lumi_enabled: 'false' })[key] ?? null,
+      setItem: () => undefined,
+    });
+    try {
+      const crystal = (comboCount: number) => renderToStaticMarkup(
+        <I18nProvider i18n={i18n}><ThemeProvider><SessionBridge model={{ ...model, comboCount }} actions={actions} /></ThemeProvider></I18nProvider>,
+      );
+      const tier = (html: string) => html.match(/session-bridge-combo-tier" aria-hidden="true">([^<]+)</)?.[1];
+      expect(tier(crystal(2))).toBe('Sweet');
+      expect(tier(crystal(3))).toBe('Lovely');
+      expect(tier(crystal(4))).toBe('Sparkly');
+      expect(tier(crystal(5))).toBe('Dreamy');
+      expect(tier(crystal(9))).toBe('Dreamy+');
+      const html = crystal(5);
+      expect(html).toContain('correct in a row');
+      expect(html.match(/session-bridge-wing session-bridge-wing--(start|end) crystal-wing-art" aria-hidden="true"/g)).toHaveLength(2);
+      expect(html).toContain('session-bridge-combo-star crystal-star-art" aria-hidden="true"');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    const classic = render({ ...model, comboCount: 5 });
+    expect(classic).not.toContain('session-bridge-combo-tier');
+    expect(classic).not.toContain('crystal-wing-art');
+    expect(classic).toContain('correct answers in a row');
   });
 });
