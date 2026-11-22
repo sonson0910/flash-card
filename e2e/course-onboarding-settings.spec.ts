@@ -306,7 +306,7 @@ test('a new signed-in learner advances from language selection to a target choic
   for (const answer of ['Forgot', 'Got it', 'Got it', 'Forgot']) {
     await grades.getByRole('button', { name: answer }).click();
   }
-  await expect(dialog.getByRole('heading', { name: 'You remembered 3 of 5.' })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: '3 of 5 remembered.' })).toBeVisible();
   await expect(grades).toHaveCount(0);
   await expect(words.filter({ hasText: 'Again' })).toHaveCount(2);
   await expect.poll(async () => (await db.collection('users').doc(testUser.uid).collection('cards').where('language', '==', 'zh').get()).size).toBe(5);
