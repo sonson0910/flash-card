@@ -726,6 +726,11 @@ html[data-save-data="true"] .zen-glass-slab {
 
 /* --sf-surface-glass is a colour in the classic themes and a gradient in Crystal, so it needs the
    background shorthand: bg-[var(--sf-surface-glass)] emits background-color, which drops a gradient. */
+/* Full-screen veil behind a dialog or sheet. A theme may make it a gradient, so it is a background, not a colour. */
+@utility dialog-veil {
+  background: var(--sf-dialog-veil);
+}
+
 @utility surface-glass {
   background: var(--sf-surface-glass);
   --sf-chamfer-fill: var(--sf-surface-glass);

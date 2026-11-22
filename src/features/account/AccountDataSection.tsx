@@ -61,7 +61,7 @@ export function AccountDataSection({ open, onOpenChange, onExportLibrary }: {
     onOpenChange(nextOpen);
   }}>
     <Dialog.Portal>
-      <Dialog.Overlay className="crystal-starfield fixed inset-0 z-[100] bg-[var(--sf-scrim)] backdrop-blur-sm" />
+      <Dialog.Overlay className="crystal-starfield fixed inset-0 z-[100] dialog-veil backdrop-blur-sm" />
       <Dialog.Content className="crystal-chamfer fixed left-1/2 top-1/2 z-[101] max-h-[90dvh] w-[min(92vw,32rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl outline-none">
         <header className="flex items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
           <div>

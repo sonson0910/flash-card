@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: var(--sf-scrim);
+  background: var(--sf-dialog-veil);
   backdrop-filter: blur(7px);
 }
 

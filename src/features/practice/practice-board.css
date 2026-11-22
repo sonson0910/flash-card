@@ -42,7 +42,7 @@
 /* Session recap: a full-screen page built to the classic RecapScreen board and the Crystal AnimeRecap
    board. Values come from canvas/src/tokens.js and anime-tokens.js. Small text uses the nearest tone
    that keeps AA on the page where the board's own tone falls just short. */
-.practice-recap-overlay { position: fixed; inset: 0; z-index: 50; background: var(--sf-scrim, rgb(0 0 0 / .6)); }
+.practice-recap-overlay { position: fixed; inset: 0; z-index: 50; background: var(--sf-dialog-veil); }
 .practice-recap-frame { position: fixed; inset: 0; z-index: 50; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; outline: 0; }
 .practice-recap-board {
   --rc-strong: #1d1a16; --rc-body: #3d372f; --rc-text2: #6b6255; --rc-text3: #756b5e;

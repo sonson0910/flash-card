@@ -850,7 +850,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
   return (
     <Dialog.Root open={model.open} onOpenChange={open => { if (!open) onClose(); }}>
       <Dialog.Portal>
-        <Dialog.Overlay className="create-card-dialog__overlay crystal-starfield" />
+        <Dialog.Overlay className="create-card-dialog__overlay crystal-starfield dialog-veil" />
         <Dialog.Content
           className={`create-card-dialog crystal-chamfer${streamLayout ? ' create-card-dialog--stream' : ''}`}
           aria-describedby="create-card-dialog-description"

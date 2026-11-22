@@ -1,6 +1,9 @@
 /* Loaded only for Crystal Star. Components opt in with these decorative classes. */
 .crystal-ornament { pointer-events: none; }
 .crystal-starfield { background-image: var(--nk-stars); animation: crystal-starfield-drift 36s linear infinite; }
+/* A dialog veil can be a gradient, which must not drift with the stars: the stars sit on their own layer above it. */
+.dialog-veil.crystal-starfield { background: var(--sf-dialog-veil); animation: none; isolation: isolate; }
+.dialog-veil.crystal-starfield::before { content: ''; position: absolute; inset: 0; z-index: -1; background-image: var(--nk-stars); animation: crystal-starfield-drift 36s linear infinite; pointer-events: none; }
 .crystal-wing { opacity: var(--nk-wing-opacity, .5); animation: crystal-wing-shimmer 2.8s ease-in-out infinite; }
 .crystal-flare { background: radial-gradient(circle, var(--nk-flare, #fff), transparent 62%); animation: crystal-flare-pulse 1.8s ease-in-out infinite; }
 /* The boards' WINGS and STAR5 art, for components that place a shard themselves. Never animated. */
@@ -12,11 +15,12 @@
 @keyframes crystal-flare-pulse { 50% { opacity: .48; transform: scale(1.14); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .crystal-ornament, .crystal-starfield, .crystal-wing, .crystal-flare { animation: none !important; }
+  .crystal-ornament, .crystal-starfield, .dialog-veil.crystal-starfield::before, .crystal-wing, .crystal-flare { animation: none !important; }
 }
 
 html[data-motion="reduced"] .crystal-ornament,
 html[data-motion="reduced"] .crystal-starfield,
+html[data-motion="reduced"] .dialog-veil.crystal-starfield::before,
 html[data-motion="reduced"] .crystal-wing,
 html[data-motion="reduced"] .crystal-flare { animation: none !important; }
 

@@ -98,7 +98,7 @@ interface AppOverlaysProps {
   onDismissListenPractice?: () => void;
 }
 
-const overlayClass = 'crystal-starfield fixed inset-0 z-50 bg-[var(--sf-scrim)]';
+const overlayClass = 'crystal-starfield fixed inset-0 z-50 dialog-veil';
 const modalClass = 'crystal-chamfer fixed inset-0 z-50 m-auto h-fit w-[calc(100%-2rem)] rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]';
 
 const categoryTitle = (category: string, allLibraryLabel: string): string =>

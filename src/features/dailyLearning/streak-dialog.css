@@ -9,7 +9,7 @@
 .today-streak-freeze { color: var(--sd-ice); }
 :root[data-theme-family="crystal"] .today-streak-freeze { color: var(--sf-holo-text); }
 
-.streak-dialog-overlay { position: fixed; inset: 0; z-index: 50; background: var(--sf-scrim); }
+.streak-dialog-overlay { position: fixed; inset: 0; z-index: 50; background: var(--sf-dialog-veil); }
 
 .streak-dialog {
   --sd-ice-flame: var(--sd-ice);

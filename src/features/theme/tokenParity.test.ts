@@ -44,14 +44,20 @@ const mappings: Record<string, Record<string, string>> = {
   'crystal-light': {
     '--sf-canvas': 'pageBg', '--sf-surface': 'panelSolid', '--sf-surface-raised': 'chip', '--sf-surface-muted': 'chip', '--sf-text': 'text', '--sf-text-muted': 'text2', '--sf-border': 'line',
     '--sf-brand': 'crimson', '--sf-brand-hover': 'crimsonDeep', '--sf-brand-text': 'crimsonText', '--sf-reward': 'gold', '--sf-success': 'good', '--sf-danger': 'crimsonText',
-    '--sf-surface-glass': 'panel', '--sf-surface-control': 'chip', '--sf-edge-highlight': 'lineStrong', '--sf-panel-shadow': 'panelShadow', '--sf-second': 'holo', '--sf-rim-new': 'tier.new.rim', '--sf-rim-learning': 'tier.learning.rim', '--sf-gold-rim': 'tier.mastered.rim', '--sf-card-bg': 'cardBack', '--sf-dialog-bg': 'panel', '--sf-scrim': 'scrim',
+    '--sf-surface-glass': 'panel', '--sf-surface-control': 'chip', '--sf-edge-highlight': 'lineStrong', '--sf-panel-shadow': 'panelShadow', '--sf-second': 'holo', '--sf-rim-new': 'tier.new.rim', '--sf-rim-learning': 'tier.learning.rim', '--sf-gold-rim': 'tier.mastered.rim', '--sf-card-bg': 'cardBack', '--sf-dialog-bg': 'panel',
     '--sf-rating-again': 'again', '--sf-rating-hard': 'hard', '--sf-rating-good': 'good', '--sf-rating-easy': 'easy', '--nk-chamfer': 'chamfer', '--nk-chamfer-sm': 'chamferSm', '--nk-snap': 'snap', '--nk-stars': 'stars', '--nk-wing-opacity': 'wingOpacity',
+    '--sf-dialog-veil': 'scrim', '--sf-rating-easy-ink': 'easyInk', '--sf-metal': 'metal', '--sf-metal-gold': 'metalGold', '--sf-metal-em': 'metalEm', '--sf-metal-hot': 'metalHot',
+    '--sf-tier-bud-fill': 'tier.new.flat', '--sf-tier-bud-fill-shadow': 'tier.new.flatShadow', '--sf-tier-bloom-fill': 'tier.learning.flat', '--sf-tier-bloom-fill-shadow': 'tier.learning.flatShadow',
+    '--sf-tier-star-fill': 'tier.mastered.flat', '--sf-tier-star-fill-shadow': 'tier.mastered.flatShadow',
   },
   'crystal-dark': {
     '--sf-canvas': 'pageBg', '--sf-surface': 'panelSolid', '--sf-surface-raised': 'chip', '--sf-surface-muted': 'chip', '--sf-text': 'text', '--sf-text-muted': 'text2', '--sf-border': 'line',
     '--sf-brand': 'crimson', '--sf-brand-hover': 'crimsonDeep', '--sf-brand-text': 'crimsonText', '--sf-reward': 'gold', '--sf-success': 'good', '--sf-danger': 'crimsonText',
     '--sf-surface-glass': 'panel', '--sf-surface-control': 'chip', '--sf-edge-highlight': 'lineStrong', '--sf-panel-shadow': 'panelShadow', '--sf-second': 'holo', '--sf-rim-new': 'tier.new.rim', '--sf-rim-learning': 'tier.learning.rim', '--sf-gold-rim': 'tier.mastered.rim', '--sf-card-bg': 'cardFront', '--sf-dialog-bg': 'panel', '--sf-scrim': 'scrim',
     '--sf-rating-again': 'again', '--sf-rating-hard': 'hard', '--sf-rating-good': 'good', '--sf-rating-easy': 'easy', '--nk-chamfer': 'chamfer', '--nk-chamfer-sm': 'chamferSm', '--nk-snap': 'snap', '--nk-stars': 'stars', '--nk-wing-opacity': 'wingOpacity',
+    '--sf-dialog-veil': 'scrim', '--sf-rating-easy-ink': 'easyInk', '--sf-metal': 'metal', '--sf-metal-gold': 'metalGold', '--sf-metal-em': 'metalEm', '--sf-metal-hot': 'metalHot',
+    '--sf-tier-bud-fill': 'tier.new.flat', '--sf-tier-bud-fill-shadow': 'tier.new.flatShadow', '--sf-tier-bloom-fill': 'tier.learning.flat', '--sf-tier-bloom-fill-shadow': 'tier.learning.flatShadow',
+    '--sf-tier-star-fill': 'tier.mastered.flat', '--sf-tier-star-fill-shadow': 'tier.mastered.flatShadow',
   },
 };
 

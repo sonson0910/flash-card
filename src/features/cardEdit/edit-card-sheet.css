@@ -41,7 +41,7 @@
   position: fixed;
   inset: 0;
   z-index: 98;
-  background: var(--sf-scrim, color-mix(in srgb, var(--sf-text) 45%, transparent));
+  background: var(--sf-dialog-veil);
   backdrop-filter: blur(4px);
 }
 

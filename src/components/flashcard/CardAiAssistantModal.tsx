@@ -152,7 +152,7 @@ export function CardAiAssistantModal({
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="crystal-starfield fixed inset-0 z-[110] bg-[var(--sf-scrim)]" />
+        <Dialog.Overlay className="crystal-starfield fixed inset-0 z-[110] dialog-veil" />
         <Dialog.Content
           className="overlay-dialog-frame card-tutor"
           aria-describedby={`ai-assistant-description-${card.id}`}

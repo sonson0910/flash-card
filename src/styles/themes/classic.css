@@ -44,6 +44,7 @@
   --sf-holo-light: var(--sf-second); --sf-holo-pale: var(--sf-second); --sf-holo-deep: var(--sf-second); --sf-holo-ink: var(--sf-holo-text);
   --sf-gold-light: var(--sf-reward); --sf-gold-deep: var(--sf-reward); --sf-blush: var(--sf-brand); --sf-rose-light: var(--sf-brand); --sf-pink-light: var(--sf-tier-bloom);
   --sf-mark-crimson: var(--sf-crimson-gradient); --sf-mark-navy: var(--sf-primary-bg); --sf-veil: var(--sf-scrim);
+  --sf-rating-easy-ink: var(--sf-on-brand); --sf-metal-gold: var(--sf-metal); --sf-metal-em: var(--sf-metal); --sf-metal-hot: var(--sf-metal); --sf-tier-bud-fill: var(--sf-tier-bud); --sf-tier-bud-fill-shadow: transparent; --sf-tier-bloom-fill: var(--sf-tier-bloom); --sf-tier-bloom-fill-shadow: transparent; --sf-tier-star-fill: var(--sf-tier-star); --sf-tier-star-fill-shadow: transparent; --sf-dialog-veil: var(--sf-scrim);
   --nk-chamfer: none; --nk-chamfer-sm: none; --nk-snap: cubic-bezier(0.16, 1, 0.3, 1); --nk-stars: none; --nk-wing-opacity: 0;
 }
 
@@ -94,5 +95,6 @@
   --sf-holo-light: var(--sf-second); --sf-holo-pale: var(--sf-second); --sf-holo-deep: var(--sf-second); --sf-holo-ink: var(--sf-holo-text);
   --sf-gold-light: var(--sf-reward); --sf-gold-deep: var(--sf-reward); --sf-blush: var(--sf-brand); --sf-rose-light: var(--sf-brand); --sf-pink-light: var(--sf-tier-bloom);
   --sf-mark-crimson: var(--sf-crimson-gradient); --sf-mark-navy: var(--sf-primary-bg); --sf-veil: var(--sf-scrim);
+  --sf-rating-easy-ink: var(--sf-on-brand); --sf-metal-gold: var(--sf-metal); --sf-metal-em: var(--sf-metal); --sf-metal-hot: var(--sf-metal); --sf-tier-bud-fill: var(--sf-tier-bud); --sf-tier-bud-fill-shadow: transparent; --sf-tier-bloom-fill: var(--sf-tier-bloom); --sf-tier-bloom-fill-shadow: transparent; --sf-tier-star-fill: var(--sf-tier-star); --sf-tier-star-fill-shadow: transparent; --sf-dialog-veil: var(--sf-scrim);
   --nk-chamfer: none; --nk-chamfer-sm: none; --nk-snap: cubic-bezier(0.16, 1, 0.3, 1); --nk-stars: none; --nk-wing-opacity: 0;
 }
