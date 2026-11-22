@@ -23,3 +23,8 @@ html[data-theme-family=crystal] .anime-reveal__rewards li[data-tone]{clip-path:v
 @media(min-width:481px){html[data-theme-family=crystal] .anime-reveal__lumi{width:10rem!important;height:10rem!important}}
 /* On a phone Lumi keeps the bottom-left corner and the actions start beside it instead of under it. */
 @media(max-width:480px){html:not([data-lumi='off']) .anime-reveal__actions[data-beside-lumi]{box-sizing:border-box;padding-left:5.75rem}.anime-reveal__lumi{height:5.5rem!important}.anime-reveal__tier-card b{font-size:.9rem;white-space:nowrap}}
+/* Sharing the reveal as an image: the share button sits before the main action, and its result reads under the rewards. */
+.anime-reveal__secondary[data-reveal-share]{display:inline-flex;align-items:center;justify-content:center;gap:.45rem}
+.anime-reveal__secondary[data-reveal-share][aria-busy=true]{cursor:progress}
+.anime-reveal__share-status{z-index:1;margin:.5rem 0 0;font-weight:800}
+.anime-reveal__share-status:empty{margin:0}
