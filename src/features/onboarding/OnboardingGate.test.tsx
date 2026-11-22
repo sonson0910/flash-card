@@ -6,7 +6,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { CourseContext, type CourseGateValue } from '../courses/CourseGate';
 import { OnboardingGate } from './OnboardingGate';
-import { onboardingCourseInput, OnboardingJourney, useOnboardingReminderSaveLock } from './OnboardingJourney';
+import { onboardingCourseInput, onboardingLatestScoreRequest, OnboardingJourney, useOnboardingReminderSaveLock } from './OnboardingJourney';
+import { ReminderPhonePreview } from './ReminderPhonePreview';
 import { writeOnboardingDraft } from './onboardingDraft';
 import { writeOnboardingResumeStep } from './onboardingModel';
 
@@ -145,9 +146,13 @@ describe('OnboardingGate', () => {
         <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId="owner-resume" /></CourseContext.Provider>
       </I18nProvider>);
 
-      expect(html).toContain('aria-valuenow="7"');
-      expect(html).toContain('aria-valuemax="7"');
+      // Korean with a goal walks every step: the exam, the starting level and the Hangul primer.
+      expect(html).toContain('aria-valuenow="9"');
+      expect(html).toContain('aria-valuemax="9"');
       expect(visibleText(html)).toContain('When should we nudge you?');
+      // No starter cards were added in this resumed session, so the preview shows no card count.
+      expect(html).toContain('aria-label="Reminder preview"');
+      expect(html).not.toContain('ready for review');
       expect(html).toContain('Choose when SonFlash can remind you to review.');
       expect(html).toContain('aria-label="Study reminders"');
       expect(html).toContain('Loading reminders…');
@@ -192,12 +197,14 @@ describe('OnboardingGate', () => {
 
       expect(html).toContain('onboarding-pace-grid');
       expect(html).toContain('sm:grid-cols-4');
-      for (const [count, tag] of [[5, 'Light'], [10, 'Recommended'], [15, 'Serious'], [20, 'Intense']] as const) {
-        expect(html).toContain(`<span class="onb-pace-number">${count}</span><span class="onb-option-sub">cards / day</span><span class="onb-pace-tag">${tag}</span>`);
+      // Minutes are an estimate from the card pace, with the Today plan's time per new card.
+      for (const [count, minutes, tag] of [[5, 4, 'Light'], [10, 7, 'Recommended'], [15, 10, 'Serious'], [20, 14, 'Intense']] as const) {
+        expect(html).toContain(`<span class="onb-pace-number">${count}</span><span class="onb-option-sub">cards / day</span><span class="onb-pace-minutes">≈ ${minutes} min a day</span><span class="onb-pace-tag">${tag}</span>`);
       }
       // Without a goal date the plan restates the chosen pace over one week, and the exam step is not counted.
       expect(visibleText(html)).toContain('70new words a week in your plan at 10 a day.');
-      expect(html).toContain('aria-valuemax="6"');
+      expect(visibleText(html)).toContain('About 7 min a day for new words, plus the reviews that come due.');
+      expect(html).toContain('aria-valuemax="8"');
       expect(html).toContain('Try 5 cards');
     } finally {
       vi.unstubAllGlobals();
@@ -279,7 +286,7 @@ describe('OnboardingGate', () => {
 
       expect(html).toContain('<span class="onb-projection-number">600</span>');
       expect(visibleText(html)).toMatch(/new words in your plan by .+: 15 a day for 40 days\./);
-      expect(html).toContain('aria-valuemax="7"');
+      expect(html).toContain('aria-valuemax="9"');
     } finally {
       vi.unstubAllGlobals();
     }
@@ -302,7 +309,7 @@ describe('OnboardingGate', () => {
       </I18nProvider>);
 
       expect(html).toContain('data-onboarding-step="goal"');
-      expect(html).toContain('aria-valuemax="6"');
+      expect(html).toContain('aria-valuemax="7"');
     } finally {
       vi.unstubAllGlobals();
     }
@@ -320,5 +327,104 @@ describe('OnboardingGate', () => {
     expect(onboardingCourseInput({
       targetLanguage: 'zh', nativeLanguage: 'vi', goalKind: null, goalLevel: '', goalTargetDate: '', zhScript: null,
     })).toEqual({ targetLanguage: 'zh', nativeLanguage: 'vi', activateOnCreate: true, goals: [], preferences: { zhScript: 'hans' } });
+  });
+
+  it('keeps a reading choice only for a language with a script primer', () => {
+    expect(onboardingCourseInput({
+      targetLanguage: 'ko', nativeLanguage: 'vi', goalKind: null, goalLevel: '', goalTargetDate: '', zhScript: null, romanization: true,
+    })).toEqual({ targetLanguage: 'ko', nativeLanguage: 'vi', activateOnCreate: true, goals: [], preferences: { showRomanization: true } });
+    expect(onboardingCourseInput({
+      targetLanguage: 'ko', nativeLanguage: 'vi', goalKind: null, goalLevel: '', goalTargetDate: '', zhScript: null, romanization: null,
+    })).toEqual({ targetLanguage: 'ko', nativeLanguage: 'vi', activateOnCreate: true, goals: [] });
+    expect(onboardingCourseInput({
+      targetLanguage: 'ja', nativeLanguage: 'vi', goalKind: null, goalLevel: '', goalTargetDate: '', zhScript: null, romanization: true,
+    })).toEqual({ targetLanguage: 'ja', nativeLanguage: 'vi', activateOnCreate: true, goals: [] });
+  });
+
+  it('saves the latest score only against the IELTS goal the create reported', () => {
+    const created = { courseId: 'course-en', goals: [{ kind: 'ielts', id: 'goal-ielts' }] };
+    expect(onboardingLatestScoreRequest('owner-1', created, 'ielts', '6.5'))
+      .toEqual({ ownerId: 'owner-1', courseId: 'course-en', goalId: 'goal-ielts', latestScore: '6.5' });
+    expect(onboardingLatestScoreRequest('owner-1', created, 'ielts', null)).toBeNull();
+    expect(onboardingLatestScoreRequest('owner-1', created, 'toeic', '6.5')).toBeNull();
+    expect(onboardingLatestScoreRequest('owner-1', null, 'ielts', '6.5')).toBeNull();
+    expect(onboardingLatestScoreRequest('owner-1', { courseId: 'course-en', goals: [] }, 'ielts', '6.5')).toBeNull();
+  });
+
+  const renderResumed = (ownerId: string, step: Parameters<typeof writeOnboardingResumeStep>[1], draft: Parameters<typeof writeOnboardingDraft>[1]) => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+    });
+    try {
+      writeOnboardingResumeStep(ownerId, step);
+      writeOnboardingDraft(ownerId, draft);
+      return renderToStaticMarkup(<I18nProvider i18n={i18n}>
+        <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId={ownerId} /></CourseContext.Provider>
+      </I18nProvider>);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  };
+
+  it('asks for the latest IELTS score next to the target band and keeps the draft choice', () => {
+    const html = renderResumed('owner-latest', 'exam', {
+      nativeLanguage: 'vi', targetLanguage: 'en', goalKind: 'ielts', goalLevel: '7.0',
+      goalTargetDate: '', zhScript: null, pace: 10, latestScore: '6.5',
+    });
+    const text = visibleText(html);
+
+    expect(text).toContain('Target band');
+    expect(text).toContain('Your latest IELTS score');
+    expect(text).toContain('Optional. It is saved with your course when you finish.');
+    expect(html).toMatch(/checked="" value="7\.0"/);
+    expect(html).toMatch(/checked="" value="6\.5"/);
+    expect(text).toContain('Clear score');
+    expect(text).not.toContain('Save score');
+  });
+
+  it('offers Foundation, Core and Advanced as the starting level, never CEFR codes', () => {
+    const html = renderResumed('owner-level', 'level', {
+      nativeLanguage: 'vi', targetLanguage: 'ja', goalKind: null, goalLevel: '',
+      goalTargetDate: '', zhScript: null, pace: 10, startingTier: 'core',
+    });
+    const text = visibleText(html);
+
+    expect(text).toContain('Where are you starting from?');
+    expect(html).toMatch(/aria-pressed="false"[^>]*>.*?Foundation/);
+    expect(html).toMatch(/aria-pressed="true"[^>]*>.*?Core/);
+    expect(text).toContain('Advanced');
+    expect(text).not.toMatch(/\b[ABC][12]\b/);
+    expect(html).toContain('aria-valuenow="4"');
+  });
+
+  it('teaches Hangul blocks and letters before a Korean course and records the reading choice', () => {
+    const html = renderResumed('owner-primer', 'script', {
+      nativeLanguage: 'vi', targetLanguage: 'ko', goalKind: null, goalLevel: '',
+      goalTargetDate: '', zhScript: null, pace: 10, romanization: false,
+    });
+    const text = visibleText(html);
+
+    expect(text).toContain('Read Hangul before your first words');
+    expect(html.match(/class="onb-primer-jamo crystal-chamfer-sm"/g)).toHaveLength(14 + 10 + 3);
+    expect(text).toContain('한국');
+    expect(html).toMatch(/aria-pressed="true"[^>]*>.*?I can already read Hangul/);
+    expect(html).toMatch(/aria-pressed="false"[^>]*>.*?still learning to read/);
+    // The letters run past a phone screen, so Continue stays pinned while they scroll.
+    expect(html).toContain('onboarding-journey__footer onb-footer onboarding-journey__footer--sticky');
+  });
+
+  it('previews the reminder with the message the sender uses for the cards the learner has', () => {
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+      <ReminderPhonePreview cardCount={5} countdown={{ days: 30, goal: 'IELTS' }} today={new Date(2026, 10, 19)} />
+    </I18nProvider>);
+    const text = visibleText(html);
+
+    expect(text).toContain('SonFlash');
+    expect(text).toContain('5 cards are ready for review.');
+    expect(text).toContain('IELTS in 30 days');
+    expect(text).toContain('Thursday, November 19');
+    expect(html).not.toContain('onb-phone-time');
   });
 });

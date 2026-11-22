@@ -6,7 +6,7 @@
    Crystal body gradients) follow the board literals and are scoped to these classes. */
 
 html[data-theme-family="classic"] .overlay-dialog-frame {
-  --od-subtle: #746b5f;
+  --od-subtle: var(--sf-text-subtle);
   --od-accent-soft: color-mix(in srgb, var(--sf-brand) 8%, transparent);
   --od-accent-line: color-mix(in srgb, var(--sf-brand-text) 25%, transparent);
   --od-row-bg: var(--sf-surface-raised);
@@ -15,11 +15,11 @@ html[data-theme-family="classic"] .overlay-dialog-frame {
   --od-btn-radius: 999px;
   --od-primary-bg: var(--sf-text);
   --od-display-weight: 380;
-  --od-shadow: inset 0 1px 0 #fff, 0 2px 6px rgb(60 40 20 / .08), 0 50px 90px -40px rgb(60 40 20 / .6);
+  --od-shadow: var(--sf-dialog-shadow);
   --od-secondary-shadow: 0 1px 2px rgb(60 40 20 / .08);
 }
 html[data-theme-family="classic"].dark .overlay-dialog-frame {
-  --od-subtle: #8e9ca4;
+  --od-subtle: var(--sf-text-subtle);
   --od-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent);
   --od-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
   --od-row-bg: color-mix(in srgb, var(--sf-text) 2.5%, transparent);
@@ -28,39 +28,39 @@ html[data-theme-family="classic"].dark .overlay-dialog-frame {
   --od-btn-radius: 16px;
   --od-primary-bg: var(--sf-brand);
   --od-display-weight: 440;
-  --od-shadow: 0 40px 90px -30px rgb(0 0 0 / .95), 0 0 70px -34px rgb(40 211 244 / .5), inset 0 1px 0 rgb(255 255 255 / .06);
+  --od-shadow: var(--sf-dialog-shadow);
   --od-secondary-shadow: none;
 }
 html[data-theme-family="crystal"] .overlay-dialog-frame {
-  --od-subtle: #627392;
-  --od-holo-text: #0a7d99;
-  --od-holo: #5ef2ff;
-  --od-crimson: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%);
-  --od-primary-glow: 0 12px 28px -8px rgb(224 23 63 / .6);
+  --od-subtle: var(--sf-text-subtle);
+  --od-holo-text: var(--sf-holo-text);
+  --od-holo: var(--sf-second);
+  --od-crimson: var(--sf-primary-bg);
+  --od-primary-glow: var(--sf-primary-shadow);
   --od-secondary-bg: var(--sf-surface);
   --od-frame: linear-gradient(155deg, #ff5470, rgb(224 23 63 / .3) 28%, rgb(26 167 201 / .35) 72%, #1aa7c9);
   --od-body: linear-gradient(170deg, #f5fbff 0%, #dbeeff 100%);
   --od-foot: rgb(190 222 250 / .45);
   --od-inner: rgb(255 255 255 / .7);
-  --od-holo-fill: linear-gradient(180deg, #2bc4e0, #0a8fb0);
-  --od-holo-ink: #fff;
+  --od-holo-fill: linear-gradient(180deg, #2bc4e0, var(--sf-success));
+  --od-holo-ink: var(--sf-on-primary);
   --od-loading-bg: rgb(255 255 255 / .85);
   --od-glow: drop-shadow(0 26px 40px rgb(20 70 130 / .35));
 }
 html[data-theme-family="crystal"].dark .overlay-dialog-frame {
-  --od-subtle: #7a8397;
-  --od-holo-text: var(--sf-success);
-  --od-crimson: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%);
-  --od-primary-glow: 0 0 30px -4px rgb(255 42 77 / .85);
+  --od-subtle: var(--sf-text-subtle);
+  --od-holo-text: var(--sf-holo-text);
+  --od-crimson: var(--sf-primary-bg);
+  --od-primary-glow: var(--sf-primary-shadow);
   --od-secondary-bg: var(--sf-surface-control);
-  --od-frame: linear-gradient(155deg, #ff5470, rgb(255 42 77 / .25) 28%, rgb(94 242 255 / .2) 72%, #5ef2ff);
+  --od-frame: linear-gradient(155deg, #ff5470, color-mix(in srgb, var(--sf-brand) 25%, transparent) 28%, color-mix(in srgb, var(--sf-second) 20%, transparent) 72%, var(--sf-second));
   --od-body: linear-gradient(170deg, #141a2b 0%, #0a0d17 100%);
   --od-foot: rgb(0 0 0 / .25);
   --od-inner: rgb(255 255 255 / .04);
   --od-holo-fill: linear-gradient(180deg, #9ff9ff, #1aa7c9);
   --od-holo-ink: #031820;
   --od-loading-bg: color-mix(in srgb, var(--od-holo) 10%, transparent);
-  --od-glow: drop-shadow(0 0 36px rgb(255 42 77 / .3)) drop-shadow(0 30px 40px rgb(0 0 0 / .7));
+  --od-glow: drop-shadow(0 0 36px color-mix(in srgb, var(--sf-brand) 30%, transparent)) drop-shadow(0 30px 40px rgb(0 0 0 / .7));
 }
 
 .overlay-dialog-frame {
@@ -113,8 +113,8 @@ html[data-theme-family="crystal"] .overlay-dialog-ornament {
   height: 3px;
   pointer-events: none;
 }
-html[data-theme-family="crystal"] .overlay-dialog-ornament-top { top: 0; left: 26px; width: 120px; background: var(--od-crimson); box-shadow: 0 0 12px rgb(255 42 77 / .8); }
-html[data-theme-family="crystal"] .overlay-dialog-ornament-bottom { right: 30px; bottom: 0; width: 70px; background: var(--od-holo); box-shadow: 0 0 10px rgb(94 242 255 / .8); }
+html[data-theme-family="crystal"] .overlay-dialog-ornament-top { top: 0; left: 26px; width: 120px; background: var(--od-crimson); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 80%, transparent); }
+html[data-theme-family="crystal"] .overlay-dialog-ornament-bottom { right: 30px; bottom: 0; width: 70px; background: var(--od-holo); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 80%, transparent); }
 
 .overlay-dialog-header {
   position: relative;

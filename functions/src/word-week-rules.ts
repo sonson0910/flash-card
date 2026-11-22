@@ -3,7 +3,7 @@
 // verified review transaction writes it; the map is display-only, so a malformed stored value
 // starts over instead of failing a review. No word text is stored, only card ids.
 // Shared by the Functions and the web client: import nothing that only one of them can load.
-import { isCount, isPlainRecord, isStudyDay, weekStartOf } from './study-day-rules.js';
+import { addCount, isCount, isPlainRecord, isStudyDay, shiftStudyDay, weekStartOf } from './study-day-rules.js';
 
 /** Course languages tracked at most; a review in a further language is not counted. */
 export const WORD_WEEKS_MAX_LANGUAGES = 16;
@@ -102,4 +102,91 @@ export const parseWordWeeks = (value: unknown): WordWeeksV1 | undefined => {
     bestWeekByLanguage,
     wordOfWeekByLanguage,
   };
+};
+
+/** One verified review as the weekly word record sees it. */
+export interface WordWeekReview {
+  readonly studyDay: string;
+  readonly language: string;
+  readonly cardId: string;
+  /** The card had no review evidence before, so this review starts it. */
+  readonly started: boolean;
+  /** This review made the card mastered. */
+  readonly mastered: boolean;
+  /** Reviews of the card in the week of `studyDay`, this one included. */
+  readonly reviewsThisWeek: number;
+}
+
+type MutableDays = Record<string, Record<string, WordWeekDay>>;
+
+/**
+ * Applies one review. Complete weeks that count toward the best week (those that began on or after
+ * the coverage day, or every week when coverage began with the account's first action) are folded
+ * into it before days older than the previous week's Monday are dropped. The word of the week is
+ * replaced only by a strictly higher count, so the card that reached the top count first keeps it.
+ * Undefined when the review is in a language beyond the cap: it is not counted.
+ */
+export const nextWordWeeks = (input: {
+  readonly stored: WordWeeksV1 | undefined;
+  readonly fromFirstAction: boolean;
+  readonly review: WordWeekReview;
+}): WordWeeksV1 | undefined => {
+  const { stored, review } = input;
+  const languages = new Set([
+    ...Object.keys(stored?.daysByLanguage ?? {}),
+    ...Object.keys(stored?.bestWeekByLanguage ?? {}),
+    ...Object.keys(stored?.wordOfWeekByLanguage ?? {}),
+  ]);
+  if (!languages.has(review.language) && languages.size >= WORD_WEEKS_MAX_LANGUAGES) return undefined;
+  const coverageStartedOn = stored?.coverageStartedOn ?? review.studyDay;
+  const fromFirstAction = stored?.fromFirstAction ?? input.fromFirstAction;
+  const daysByLanguage: MutableDays = Object.fromEntries(Object.entries(stored?.daysByLanguage ?? {})
+    .map(([language, days]) => [language, { ...days }]));
+  const picksByLanguage: Record<string, Record<string, WordOfWeek>> = Object.fromEntries(
+    Object.entries(stored?.wordOfWeekByLanguage ?? {}).map(([language, picks]) => [language, { ...picks }]),
+  );
+  const bestWeekByLanguage: Record<string, BestWordWeek> = { ...(stored?.bestWeekByLanguage ?? {}) };
+
+  if (review.started || review.mastered) {
+    const days = daysByLanguage[review.language] ?? {};
+    const day = days[review.studyDay] ?? { started: 0, mastered: 0 };
+    days[review.studyDay] = {
+      started: addCount(day.started, review.started ? 1 : 0),
+      mastered: addCount(day.mastered, review.mastered ? 1 : 0),
+    };
+    daysByLanguage[review.language] = days;
+  }
+  const reviewWeek = weekStartOf(review.studyDay);
+  const current = picksByLanguage[review.language]?.[reviewWeek];
+  if (isCount(review.reviewsThisWeek) && review.reviewsThisWeek > (current?.reviews ?? 0)) {
+    picksByLanguage[review.language] = {
+      ...(picksByLanguage[review.language] ?? {}),
+      [reviewWeek]: { cardId: review.cardId, reviews: review.reviewsThisWeek },
+    };
+  }
+
+  const newestDay = Object.values(daysByLanguage).flatMap(days => Object.keys(days))
+    .reduce((latest, day) => (day > latest ? day : latest), review.studyDay);
+  const currentWeek = weekStartOf(newestDay);
+  const keepFrom = shiftStudyDay(currentWeek, -7);
+  const counts = (week: string) => fromFirstAction || coverageStartedOn <= week;
+  for (const [language, days] of Object.entries(daysByLanguage)) {
+    const startedByWeek = new Map<string, number>();
+    for (const [day, entry] of Object.entries(days)) {
+      const week = weekStartOf(day);
+      if (week < currentWeek && counts(week)) startedByWeek.set(week, addCount(startedByWeek.get(week) ?? 0, entry.started));
+    }
+    for (const [week, started] of [...startedByWeek].sort(([left], [right]) => left.localeCompare(right))) {
+      if (started > (bestWeekByLanguage[language]?.started ?? 0)) bestWeekByLanguage[language] = { weekStart: week, started };
+    }
+    const kept = Object.fromEntries(Object.entries(days).filter(([day]) => day >= keepFrom));
+    if (Object.keys(kept).length > 0) daysByLanguage[language] = kept;
+    else delete daysByLanguage[language];
+  }
+  for (const [language, picks] of Object.entries(picksByLanguage)) {
+    const kept = Object.fromEntries(Object.entries(picks).filter(([week]) => week >= keepFrom));
+    if (Object.keys(kept).length > 0) picksByLanguage[language] = kept;
+    else delete picksByLanguage[language];
+  }
+  return { coverageStartedOn, fromFirstAction, daysByLanguage, bestWeekByLanguage, wordOfWeekByLanguage: picksByLanguage };
 };

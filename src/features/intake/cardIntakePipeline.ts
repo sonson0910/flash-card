@@ -31,6 +31,7 @@ import {
   catalogCardBatchError,
   type ConfirmedCatalogCardsResult,
   type CardIntakeControllerPort,
+  type IntakeCard,
 } from './cardIntakeController';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 
@@ -302,8 +303,7 @@ export function createCardIntakePipeline({
       ...(capturedContext ? { context: capturedContext } : {}),
       capturedAt: request.capturedAt || new Date().toISOString(),
     } : undefined;
-    return {
-      card: {
+    const card: IntakeCard = {
         id: createWordCardId(normalizedWord),
         ...(source ? { source } : {}),
         origin: 'ai',
@@ -336,9 +336,11 @@ export function createCardIntakePipeline({
         correctStreak: 0,
         ...(wordInfo.mnemonic ? { mnemonic: wordInfo.mnemonic } : {}),
         ...(wordInfo.wordFamily ? { wordFamily: wordInfo.wordFamily } : {}),
-      },
-      mediaPromise,
+        ...(wordInfo.translationAlternatives?.length
+          ? { translationAlternatives: wordInfo.translationAlternatives }
+          : {}),
     };
+    return { card, mediaPromise };
     } finally {
       if (generationOwners.get(operationId) === ownerId) generationOwners.delete(operationId);
     }
@@ -603,9 +605,9 @@ export function createCardIntakePipeline({
     generateCard,
     cancelGeneration: async operationId => {
       const ownerId = generationOwners.get(operationId);
-      if (!ownerId) return;
+      if (!ownerId) return null;
       const { cancelWordInfoGeneration } = await import('../../lib/gemini');
-      await cancelWordInfoGeneration(operationId, ownerId);
+      return cancelWordInfoGeneration(operationId, ownerId);
     },
     persistCards,
     createConfirmedCatalogCards,

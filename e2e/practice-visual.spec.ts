@@ -68,7 +68,13 @@ async function expectScrollingControlsReachable(page: Page, testInfo: TestInfo, 
     for (const control of await controls.all()) {
       await control.evaluate(element => element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' }));
       await expect(control).toBeInViewport({ ratio: 1 });
-      await control.hover({ trial: true });
+      // A story word that the open meaning popover covers is reachable again once the popover closes.
+      const underPopover = await control.evaluate(element => {
+        const box = element.getBoundingClientRect();
+        const painted = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+        return !element.closest('[data-story-pop]') && Boolean(painted?.closest('[data-story-pop]'));
+      });
+      if (!underPopover) await control.hover({ trial: true });
     }
     await testInfo.attach(`${name}-controls-in-viewport`, { body: await page.screenshot({ animations: 'disabled', caret: 'hide' }), contentType: 'image/png' });
   } finally {

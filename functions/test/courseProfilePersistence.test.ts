@@ -4,6 +4,7 @@ import {
   applyCourseProfileMutation,
   CourseProfileOwnerMismatchError,
   CourseProfileStoredDataError,
+  createdCourseIds,
   parseCourseProfileMutationRequest,
 } from '../src/course-profile-persistence.js';
 import {
@@ -182,6 +183,70 @@ describe('course profile persistence', () => {
         ownerId: 'owner',
         input: { targetLanguage: 'ko', nativeLanguage: 'vi', operationId: 'course-create-ko-2' },
       }), { createId: deterministicIds(), now })).rejects.toMatchObject({ reason: 'course-exists' });
+  });
+
+  it('reports the created course and goal ids from the returned profile, also on a replay', async () => {
+    const request = parseCourseProfileMutationRequest('createCourse', {
+      ownerId: 'owner',
+      input: {
+        targetLanguage: 'ko', nativeLanguage: 'vi', operationId: 'course-create-ko-1',
+        goals: [{ kind: 'topik-2', level: '3' }, { kind: 'conversation' }],
+      },
+    });
+    const first = harness();
+    const created = await applyCourseProfileMutation(first.database, 'owner', request, { createId: deterministicIds(), now });
+    const expected = {
+      courseId: 'course-create-ko-1',
+      goals: [{ kind: 'topik-2', id: 'goal-1' }, { kind: 'conversation', id: 'goal-2' }],
+    };
+    expect(createdCourseIds(created, request)).toEqual(expected);
+    expect(first.transaction.get).toHaveBeenCalledTimes(1);
+    expect(first.writes).toHaveLength(1);
+
+    const replay = harness(created);
+    const replayed = await applyCourseProfileMutation(replay.database, 'owner', request, {
+      createId: () => 'never-used', now,
+    });
+    expect(createdCourseIds(replayed, request)).toEqual(expected);
+    expect(createdCourseIds(created, parseCourseProfileMutationRequest('setActiveCourse', {
+      ownerId: 'owner', courseId: 'course-create-ko-1',
+    }))).toBeNull();
+  });
+
+  it('lets the first create for English on an account with no stored profile take the implicit course slot', async () => {
+    const request = parseCourseProfileMutationRequest('createCourse', {
+      ownerId: 'owner',
+      input: {
+        targetLanguage: 'en', nativeLanguage: 'vi', activateOnCreate: true, operationId: 'course-onboarding-en',
+        goals: [{ kind: 'ielts', level: '7.0' }],
+      },
+    });
+    const fresh = harness();
+    const created = await applyCourseProfileMutation(fresh.database, 'owner', request, { createId: deterministicIds(), now });
+    expect(created).toMatchObject({
+      activeCourseId: 'course-onboarding-en',
+      courses: [{ id: 'course-onboarding-en', targetLanguage: 'en', goals: [{ id: 'goal-1', kind: 'ielts', level: '7.0' }] }],
+    });
+    expect(created.courses).toHaveLength(1);
+    expect(fresh.transaction.get).toHaveBeenCalledTimes(1);
+    expect(fresh.writes).toHaveLength(1);
+
+    // A replay finds the stored course; a different English create still finds it taken.
+    const replay = harness(created);
+    await expect(applyCourseProfileMutation(replay.database, 'owner', request, { createId: () => 'never-used', now }))
+      .resolves.toEqual(created);
+    await expect(applyCourseProfileMutation(replay.database, 'owner', parseCourseProfileMutationRequest('createCourse', {
+      ownerId: 'owner', input: { targetLanguage: 'en', nativeLanguage: 'vi' },
+    }), { createId: deterministicIds(), now })).rejects.toMatchObject({ reason: 'course-exists', details: { courseId: 'course-onboarding-en' } });
+
+    // A stored implicit course is a real course and is never replaced; another language keeps it beside the new one.
+    const stored = harness(createLegacyCourseProfile());
+    await expect(applyCourseProfileMutation(stored.database, 'owner', request, { createId: deterministicIds(), now }))
+      .rejects.toMatchObject({ reason: 'course-exists', details: { courseId: 'legacy-en-vi' } });
+    const korean = await applyCourseProfileMutation(harness().database, 'owner', parseCourseProfileMutationRequest('createCourse', {
+      ownerId: 'owner', input: { targetLanguage: 'ko', nativeLanguage: 'vi' },
+    }), { createId: deterministicIds(), now });
+    expect(korean.courses.map(course => course.id)).toEqual(['legacy-en-vi', 'course-1']);
   });
 
   it('activates the requested course even after a competing create forces a transaction retry', async () => {

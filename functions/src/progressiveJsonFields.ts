@@ -32,7 +32,7 @@ const stringFields = new Set([
   'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation', 'register',
   'commonMistake', 'mnemonic', 'imageSearchQuery',
 ]);
-const listFields = new Set(['collocations', 'synonyms', 'antonyms']);
+const listFields = new Set(['collocations', 'synonyms', 'antonyms', 'translationAlternatives']);
 
 export async function collectStructuredWordStream(
   chunks: AsyncIterable<{ text?: string; usageMetadata?: unknown }>,

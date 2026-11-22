@@ -22,6 +22,17 @@
   --sf-tier-bud: rgb(29 26 22 / 0.18); --sf-tier-bloom: #b4461a; --sf-tier-star: #b8862b;
   --sf-book-terracotta: #9c3d17; --sf-book-ink: #23201b; --sf-book-ochre: #a4731f; --sf-book-moss: #2f5a3a; --sf-book-violet: #4a3d5e; --sf-book-teal: #1f5157; --sf-book-foil: #f4e2b0;
   --sf-avatar-bg: #e8dfcf;
+  --sf-text-strong: #1d1a16; --sf-text-body: #3d372f; --sf-text-subtle: #746b5f; --sf-holo-text: #97400d;
+  --sf-warm: #97400d; --sf-warm-bg: #fbf8f2; --sf-warm-line: rgb(151 64 13 / 0.22);
+  --sf-warn: #8a5a0c; --sf-warn-bg: rgb(184 134 43 / 0.1); --sf-warn-line: rgb(184 134 43 / 0.3);
+  --sf-info: #1d1a16; --sf-info-bg: rgb(29 26 22 / 0.05); --sf-info-line: rgb(29 26 22 / 0.14);
+  --sf-success-text: #2c6a3d; --sf-success-soft: rgb(51 115 68 / 0.09); --sf-success-line: rgb(51 115 68 / 0.25);
+  --sf-danger-soft: rgb(197 54 55 / 0.07); --sf-danger-line: rgb(197 54 55 / 0.25);
+  --sf-primary-bg: #1d1a16; --sf-on-primary: #fbf6ec; --sf-primary-shadow: 0 14px 28px -14px rgb(29 26 22 / 0.9); --sf-crimson-gradient: linear-gradient(180deg, #b4461a, #97400d);
+  --sf-logo-bg: #1d1a16; --sf-logo-text: #fbf6ec; --sf-logo-shadow: none; --sf-avatar-text: #1d1a16; --sf-star-face: #b4461a; --sf-star-shade: #97400d;
+  --sf-panel-edge: rgb(29 26 22 / 0.1); --sf-panel-edge-2: rgb(29 26 22 / 0.18); --sf-space: none;
+  --sf-dialog-shadow: inset 0 1px 0 #ffffff, 0 2px 6px rgb(60 40 20 / 0.08), 0 50px 90px -40px rgb(60 40 20 / 0.6);
+  --sf-tab-bg: rgb(255 252 245 / 0.94); --sf-tab-shadow: 0 12px 30px -16px rgb(60 40 20 / 0.45); --sf-tab-active: rgb(180 70 26 / 0.12); --sf-tab-active-text: #1d1a16;
   --nk-chamfer: none; --nk-chamfer-sm: none; --nk-snap: cubic-bezier(0.16, 1, 0.3, 1); --nk-stars: none; --nk-wing-opacity: 0;
 }
 
@@ -50,5 +61,16 @@
   --sf-tier-bud: rgb(255 255 255 / 0.14); --sf-tier-bloom: #28d3f4; --sf-tier-star: #f5ae39;
   --sf-book-terracotta: rgb(237 83 80 / 0.4); --sf-book-ink: rgb(40 211 244 / 0.35); --sf-book-ochre: rgb(245 174 57 / 0.4); --sf-book-moss: rgb(117 208 121 / 0.3); --sf-book-violet: rgb(150 108 215 / 0.5); --sf-book-teal: rgb(40 211 244 / 0.45); --sf-book-foil: #f1f6f9;
   --sf-avatar-bg: linear-gradient(145deg, #1d3a48, #142730);
+  --sf-text-strong: #f1f6f9; --sf-text-body: #b5c2ca; --sf-text-subtle: #8e9ca4; --sf-holo-text: #7ee6fa;
+  --sf-warm: #f5ae39; --sf-warm-bg: rgb(245 174 57 / 0.08); --sf-warm-line: rgb(245 174 57 / 0.28);
+  --sf-warn: #f7c46e; --sf-warn-bg: rgb(245 174 57 / 0.1); --sf-warn-line: rgb(245 174 57 / 0.32);
+  --sf-info: #7ee6fa; --sf-info-bg: rgb(40 211 244 / 0.1); --sf-info-line: rgb(40 211 244 / 0.3);
+  --sf-success-text: #9be09e; --sf-success-soft: rgb(117 208 121 / 0.12); --sf-success-line: rgb(117 208 121 / 0.32);
+  --sf-danger-soft: rgb(237 83 80 / 0.12); --sf-danger-line: rgb(237 83 80 / 0.35);
+  --sf-primary-bg: #28d3f4; --sf-on-primary: #04141c; --sf-primary-shadow: 0 16px 40px -14px rgb(40 211 244 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.5); --sf-crimson-gradient: linear-gradient(180deg, #7ee6fa, #28d3f4);
+  --sf-logo-bg: linear-gradient(145deg, #7ee6fa, #28d3f4 45%, #966cd7); --sf-logo-text: #04141c; --sf-logo-shadow: 0 0 20px -4px rgb(40 211 244 / 0.7); --sf-avatar-text: #e5ecf1; --sf-star-face: #28d3f4; --sf-star-shade: #966cd7;
+  --sf-panel-edge: rgb(255 255 255 / 0.08); --sf-panel-edge-2: rgb(255 255 255 / 0.14); --sf-space: none;
+  --sf-dialog-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.95), 0 0 70px -34px rgb(40 211 244 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.06);
+  --sf-tab-bg: rgb(12 30 40 / 0.72); --sf-tab-shadow: 0 20px 40px -20px rgb(0 0 0 / 0.9); --sf-tab-active: rgb(40 211 244 / 0.16); --sf-tab-active-text: #f1f6f9;
   --nk-chamfer: none; --nk-chamfer-sm: none; --nk-snap: cubic-bezier(0.16, 1, 0.3, 1); --nk-stars: none; --nk-wing-opacity: 0;
 }

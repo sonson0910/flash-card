@@ -2,19 +2,23 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { i18n, type MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Trans } from '@lingui/react';
-import { AlertCircle, Check, Loader2, RefreshCw, Sparkles, Volume2, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { AlertCircle, Check, ImageIcon, Info, Loader2, Pencil, RefreshCw, Sparkles, Volume2, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type FocusEvent, type FormEvent, type KeyboardEvent } from 'react';
+import { Lumi } from '../../components/lumi/Lumi';
 import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
 import { speechLocaleFor } from '../../lib/speechLocale';
 import { useCourseSession } from '../courses/CourseGate';
 import type { CardData } from '../../types/card';
-import type {
-  CardCreatorActions,
-  CardCreatorDraft,
-  CardCreatorModel,
-  CardGenerationField,
-  ManualCardDraft,
+import {
+  deriveStreamSteps,
+  type CardCreatorActions,
+  type CardCreatorDraft,
+  type CardCreatorModel,
+  type CardGenerationField,
+  type CardStreamStepId,
+  type CardStreamStepState,
+  type ManualCardDraft,
 } from './card-creator-model';
 import './create-card-dialog.css';
 import { splitStressedWord } from '../library/libraryCardFace';
@@ -96,6 +100,33 @@ const CREATE_CARD_MESSAGES = {
   saving: msg({ id: 'library.create-card.saving', message: 'Saving…' }),
   saveCard: msg({ id: 'library.create-card.save', message: 'Save card' }),
   generatePreview: msg({ id: 'library.create-card.generate-preview', message: 'Generate preview' }),
+  stream: {
+    kicker: msg({ id: 'library.create-card.stream.kicker', message: 'AI is writing your card' }),
+    deck: msg({ id: 'library.create-card.stream.deck', message: 'Deck · {deck}' }),
+    steps: msg({ id: 'library.create-card.stream.steps', message: 'Progress' }),
+    headword: msg({ id: 'library.create-card.stream.step.headword', message: 'Headword & stress' }),
+    image: msg({ id: 'library.create-card.stream.step.image', message: 'Image' }),
+    done: msg({ id: 'library.create-card.stream.state.done', message: 'done' }),
+    active: msg({ id: 'library.create-card.stream.state.active', message: 'in progress' }),
+    waiting: msg({ id: 'library.create-card.stream.state.waiting', message: 'waiting' }),
+    stopped: msg({ id: 'library.create-card.stream.state.stopped', message: 'stopped' }),
+    findingImage: msg({ id: 'library.create-card.stream.finding-image', message: 'Finding an image…' }),
+    noImage: msg({ id: 'library.create-card.stream.no-image', message: 'No image yet' }),
+    note: msg({ id: 'library.create-card.stream.note', message: 'You can edit any field as soon as it appears — the AI keeps writing the rest.' }),
+    readyText: msg({ id: 'library.create-card.stream.ready-text', message: '{ready} of {total} ready' }),
+    cancel: msg({ id: 'library.create-card.stream.cancel', message: 'Cancel' }),
+    tryAgain: msg({ id: 'library.create-card.stream.try-again', message: 'Try again' }),
+    notChecked: msg({ id: 'library.create-card.stream.not-checked', message: 'Not checked' }),
+    reconnecting: msg({ id: 'library.create-card.stream.reconnecting', message: 'Reconnecting…' }),
+    slow: msg({ id: 'library.create-card.stream.slow', message: 'Still writing — this is taking longer than usual.' }),
+    announceStep: msg({ id: 'library.create-card.stream.announce-step', message: '{step} ready, {ready} of {total}' }),
+    announceDone: msg({ id: 'library.create-card.stream.announce-done', message: 'Card ready. Review it, then save.' }),
+    stoppedRefunded: msg({ id: 'library.create-card.stream.stopped-refunded', message: 'Stopped. This request was not counted.' }),
+    stoppedPartial: msg({ id: 'library.create-card.stream.stopped-partial', message: 'Stopped. Part of the card had already arrived, so this request still counts.' }),
+    stoppedCounted: msg({ id: 'library.create-card.stream.stopped-counted', message: 'Stopped. This request still counts.' }),
+    stoppedUnknown: msg({ id: 'library.create-card.stream.stopped-unknown', message: 'Generation stopped.' }),
+    failedPartial: msg({ id: 'library.create-card.stream.failed-partial', message: 'Generation stopped before the card was finished. The details shown were not checked.' }),
+  },
   errors: {
     quota: msg({ id: 'library.create-card.error.quota', message: 'Your AI card allowance is used up. Add this card manually or try again when it resets.' }),
     unavailable: msg({ id: 'library.create-card.error.unavailable', message: 'The AI service is unavailable. Your word is still here; try again.' }),
@@ -114,6 +145,8 @@ const CREATE_CARD_MESSAGES = {
     manualFields: msg({ id: 'library.create-card.error.manual-fields', message: 'Enter a word and meaning before saving the manual card.' }),
     manualDeck: msg({ id: 'library.create-card.error.manual-deck', message: 'Choose an available deck before saving the card.' }),
     regenerateSelection: msg({ id: 'library.create-card.error.regenerate-selection', message: 'Choose at least one detail to regenerate.' }),
+    offline: msg({ id: 'library.create-card.error.offline', message: 'You’re offline. Reconnect to generate a card, or add it manually.' }),
+    attemptsExhausted: msg({ id: 'library.create-card.error.attempts-exhausted', message: 'This AI request has used all of its retries. Trying again starts a new request.' }),
   },
 } as const;
 
@@ -141,6 +174,54 @@ const REGENERABLE_FIELDS: ReadonlyArray<{ value: CardGenerationField; label: Mes
 ];
 
 const ALL_REGENERABLE_FIELDS = REGENERABLE_FIELDS.map(field => field.value);
+
+const STREAM_STEP_LABELS: Record<CardStreamStepId, MessageDescriptor> = {
+  headword: CREATE_CARD_MESSAGES.stream.headword,
+  pronunciation: CREATE_CARD_MESSAGES.pronunciation,
+  meaning: CREATE_CARD_MESSAGES.meaning,
+  example: CREATE_CARD_MESSAGES.exampleSentence,
+  image: CREATE_CARD_MESSAGES.stream.image,
+};
+
+const STREAM_STEP_STATES: Record<CardStreamStepState, MessageDescriptor> = {
+  done: CREATE_CARD_MESSAGES.stream.done,
+  active: CREATE_CARD_MESSAGES.stream.active,
+  waiting: CREATE_CARD_MESSAGES.stream.waiting,
+  stopped: CREATE_CARD_MESSAGES.stream.stopped,
+};
+
+/** The text fields a first generation writes; each shows a placeholder until it arrives. */
+const STREAMED_CARD_FIELDS: readonly (keyof CardData)[] = [
+  'phonetic', 'partOfSpeech', 'cefrLevel', 'translation', 'explanation', 'exampleSentence', 'exampleTranslation',
+];
+
+/** The card fields each regeneration group rewrites; only these show placeholders while it runs. */
+const REGENERATION_CARD_FIELDS: Record<CardGenerationField, readonly (keyof CardData)[]> = {
+  meaning: ['translation', 'explanation'],
+  pronunciation: ['phonetic'],
+  examples: ['exampleSentence', 'exampleTranslation'],
+  wordFamily: ['wordFamily'],
+  cefr: ['cefrLevel'],
+};
+
+/** A dialog-local hint after this long without a new field; it makes no claim about the remaining time. */
+const SLOW_GENERATION_MS = 15_000;
+
+const NO_PENDING_FIELDS: ReadonlySet<keyof CardData> = new Set();
+
+/** The card shown before the first streamed field: only the word is known. */
+const pendingStreamCard = (word: string): CardData => ({
+  id: 'pending-ai-card',
+  origin: 'ai',
+  word,
+  translation: '',
+  explanation: '',
+  phonetic: '',
+  emoji: '',
+  category: '',
+  audioUrl: null,
+  imageUrl: null,
+});
 
 const MANUAL_DEFAULTS: Omit<ManualCardDraft, 'word' | 'deck' | 'partOfSpeech'> = {
   translation: '',
@@ -210,6 +291,8 @@ const nestedErrorField = (error: unknown, field: string, seen = new Set<object>(
 export const cardCreatorErrorMessage = (error: unknown): string => {
   const details = errorDetails(error).toLowerCase();
   const code = nestedErrorField(error, 'code').toLowerCase();
+  if (code === 'offline') return translate(CREATE_CARD_MESSAGES.errors.offline);
+  if (details.includes('operation-attempts-exhausted')) return translate(CREATE_CARD_MESSAGES.errors.attemptsExhausted);
   if (details.includes('quota') || details.includes('allowance')) return translate(CREATE_CARD_MESSAGES.errors.quota);
   if (code.includes('requested_deck_unavailable') || details.includes('requested_deck_unavailable')) {
     const deck = nestedErrorField(error, 'deck');
@@ -242,6 +325,19 @@ export const cardCreatorErrorMessage = (error: unknown): string => {
 const isQuotaError = (error: unknown): boolean => {
   const details = errorDetails(error).toLowerCase();
   return details.includes('quota') || details.includes('allowance');
+};
+
+const isOfflineError = (error: unknown): boolean => nestedErrorField(error, 'code') === 'offline';
+
+/** The copy for a stopped or unfinished generation; it claims a refund only when the server confirmed one. */
+const generationOutcomeMessage = (outcome: CardCreatorModel['generationOutcome']): MessageDescriptor | null => {
+  if (!outcome) return null;
+  if (outcome.kind === 'failed') return outcome.partial ? CREATE_CARD_MESSAGES.stream.failedPartial : null;
+  if (outcome.refunded === true) return CREATE_CARD_MESSAGES.stream.stoppedRefunded;
+  if (outcome.refunded === false) {
+    return outcome.partial ? CREATE_CARD_MESSAGES.stream.stoppedPartial : CREATE_CARD_MESSAGES.stream.stoppedCounted;
+  }
+  return CREATE_CARD_MESSAGES.stream.stoppedUnknown;
 };
 
 const manualDraftFrom = (model: CardCreatorModel): ManualCardDraft => ({
@@ -277,37 +373,63 @@ function SpinnerLabel({ descriptor }: { descriptor: MessageDescriptor }) {
   return <span className="create-card-dialog__spinner-label"><Loader2 size={16} aria-hidden="true" />{translate(descriptor)}</span>;
 }
 
+function Skeleton({ size }: { size: 'meta' | 'short' | 'meaning' | 'line' | 'line-short' | 'line-wide' }) {
+  return <span className={`create-card-dialog__skeleton create-card-dialog__skeleton--${size}`} aria-hidden="true" />;
+}
+
 function CardPreview({
   card,
   disabled,
   onUpdate,
   onPlay,
+  variant = 'draft',
+  pendingFields = NO_PENDING_FIELDS,
+  busy = false,
+  unchecked = false,
+  imageStatus = 'finding',
 }: {
   card: CardData;
   disabled: boolean;
   onUpdate: (patch: Partial<CardData>) => void;
   onPlay: () => void;
+  /** `stream` is the layout of a first generation: the image slot sits beside the text and the draft badge hides. */
+  variant?: 'draft' | 'stream';
+  /** Fields still being written: they show placeholders that are hidden from assistive technology. */
+  pendingFields?: ReadonlySet<keyof CardData>;
+  busy?: boolean;
+  /** Fields kept after a stop or failure were not checked by the final validation. */
+  unchecked?: boolean;
+  imageStatus?: 'finding' | 'missing';
 }) {
   const initial = Array.from(card.word.trim())[0]?.toLocaleLowerCase() || '·';
   const family = cardFamily(card);
   const isManual = card.origin === 'manual';
-  const stressed = card.word ? splitStressedWord(card.word, card.phonetic, card.language || 'en') : null;
+  const isStream = variant === 'stream';
+  const pending = (field: keyof CardData) => pendingFields.has(field);
+  const stressed = card.word && !pending('phonetic')
+    ? splitStressedWord(card.word, card.phonetic, card.language || 'en')
+    : null;
+  const notChecked = <span className="create-card-dialog__not-checked">{translate(CREATE_CARD_MESSAGES.stream.notChecked)}</span>;
   return (
-    <section className="create-card-dialog__preview" aria-labelledby="create-card-preview-title">
-      <div className="create-card-dialog__cover" aria-hidden="true">
+    <section
+      className={`create-card-dialog__preview${isStream ? ' create-card-dialog__preview--stream' : ''}`}
+      aria-labelledby="create-card-preview-title"
+      aria-busy={busy || undefined}
+    >
+      {!isStream && <div className="create-card-dialog__cover" aria-hidden="true">
         {card.imageUrl ? <img src={card.imageUrl} alt="" /> : <span>{initial}</span>}
-      </div>
+      </div>}
       <div className="create-card-dialog__preview-content">
-        <div className="create-card-dialog__preview-heading">
+        {isStream ? unchecked && <div className="create-card-dialog__preview-heading">{notChecked}</div> : <div className="create-card-dialog__preview-heading">
           <span className="create-card-dialog__ai-badge"><Sparkles size={13} aria-hidden="true" />{isManual ? <Trans {...msg({ id: 'library.create-card.preview.manual-draft', message: 'Manual draft' })} /> : <Trans {...msg({ id: 'library.create-card.preview.ai-draft', message: 'AI draft' })} />}</span>
-          <span className="create-card-dialog__edit-note">{isManual ? <Trans {...msg({ id: 'library.create-card.preview.edit-manual', message: 'Edit your card details below' })} /> : <Trans {...msg({ id: 'library.create-card.preview.edit-generated', message: 'Edit the generated details below' })} />}</span>
-        </div>
+          {unchecked ? notChecked : <span className="create-card-dialog__edit-note">{isManual ? <Trans {...msg({ id: 'library.create-card.preview.edit-manual', message: 'Edit your card details below' })} /> : <Trans {...msg({ id: 'library.create-card.preview.edit-generated', message: 'Edit the generated details below' })} />}</span>}
+        </div>}
         <div className="create-card-dialog__headword-row">
           <h3 id="create-card-preview-title" lang={card.language || 'en'}>{stressed ? <>{stressed.before}<span className="create-card-dialog__stress">{stressed.stressed}</span>{stressed.after}</> : card.word || '—'}</h3>
-          {card.word && <button type="button" className="create-card-dialog__audio" onClick={onPlay} aria-label={translate(CREATE_CARD_MESSAGES.playPronunciation, { word: card.word })}><Volume2 size={15} aria-hidden="true" /></button>}
+          {card.word && !isStream && <button type="button" className="create-card-dialog__audio" onClick={onPlay} aria-label={translate(CREATE_CARD_MESSAGES.playPronunciation, { word: card.word })}><Volume2 size={15} aria-hidden="true" /></button>}
         </div>
         <div className="create-card-dialog__meta">
-          <label>
+          {pending('phonetic') ? <Skeleton size="meta" /> : <label>
             <span className="sr-only"><Trans {...msg({ id: 'library.create-card.pronunciation', message: 'Pronunciation' })} /></span>
             <input
               aria-label={translate(CREATE_CARD_MESSAGES.pronunciation)}
@@ -317,9 +439,9 @@ function CardPreview({
               onChange={event => onUpdate({ phonetic: event.target.value })}
               placeholder={translate(CREATE_CARD_MESSAGES.pronunciationPlaceholder)}
             />
-          </label>
-          {card.partOfSpeech && <span>{card.partOfSpeech}</span>}
-          <label>
+          </label>}
+          {card.partOfSpeech && !pending('partOfSpeech') && <span>{card.partOfSpeech}</span>}
+          {pending('cefrLevel') ? <Skeleton size="short" /> : <label>
             <span className="sr-only"><Trans {...msg({ id: 'library.create-card.cefr', message: 'CEFR level' })} /></span>
             <input
               className="create-card-dialog__cefr-input"
@@ -329,9 +451,9 @@ function CardPreview({
               onChange={event => onUpdate({ cefrLevel: event.target.value })}
               placeholder={translate(CREATE_CARD_MESSAGES.cefrPlaceholder)}
             />
-          </label>
+          </label>}
         </div>
-        <label className="create-card-dialog__preview-meaning">
+        {pending('translation') ? <Skeleton size="meaning" /> : <label className="create-card-dialog__preview-meaning">
           <span className="sr-only"><Trans {...msg({ id: 'library.create-card.meaning', message: 'Meaning' })} /></span>
           <input
             aria-label={translate(CREATE_CARD_MESSAGES.meaning)}
@@ -342,8 +464,8 @@ function CardPreview({
             onChange={event => onUpdate({ translation: event.target.value })}
             placeholder={translate(CREATE_CARD_MESSAGES.meaning)}
           />
-        </label>
-        <label className="create-card-dialog__preview-explanation">
+        </label>}
+        {pending('explanation') ? <div className="create-card-dialog__skeleton-lines"><Skeleton size="line-wide" /><Skeleton size="line" /></div> : <label className="create-card-dialog__preview-explanation">
           <span className="sr-only"><Trans {...msg({ id: 'library.create-card.definition', message: 'Definition' })} /></span>
           <textarea
             aria-label={translate(CREATE_CARD_MESSAGES.definition)}
@@ -355,9 +477,10 @@ function CardPreview({
             onChange={event => onUpdate({ explanation: event.target.value })}
             placeholder={translate(CREATE_CARD_MESSAGES.definition)}
           />
-        </label>
+        </label>}
+        {isStream && <p className="create-card-dialog__example-label" aria-hidden="true">{translate(CREATE_CARD_MESSAGES.example)}</p>}
         <div className="create-card-dialog__examples">
-          <label>
+          {pending('exampleSentence') ? <Skeleton size="line-wide" /> : <label>
             <span><Trans {...msg({ id: 'library.create-card.example', message: 'Example' })} /></span>
             <textarea
               aria-label={translate(CREATE_CARD_MESSAGES.exampleSentence)}
@@ -369,8 +492,8 @@ function CardPreview({
               onChange={event => onUpdate({ exampleSentence: event.target.value })}
               placeholder={translate(CREATE_CARD_MESSAGES.exampleSentence)}
             />
-          </label>
-          <label>
+          </label>}
+          {pending('exampleTranslation') ? <div className="create-card-dialog__skeleton-lines"><Skeleton size="line" /><Skeleton size="line-short" /></div> : <label>
             <span><Trans {...msg({ id: 'library.create-card.translation', message: 'Translation' })} /></span>
             <textarea
               aria-label={translate(CREATE_CARD_MESSAGES.exampleTranslation)}
@@ -382,9 +505,10 @@ function CardPreview({
               onChange={event => onUpdate({ exampleTranslation: event.target.value })}
               placeholder={translate(CREATE_CARD_MESSAGES.exampleTranslation)}
             />
-          </label>
+          </label>}
         </div>
-        {family && <fieldset className="create-card-dialog__family">
+        {!isStream && pending('wordFamily') && <div className="create-card-dialog__skeleton-lines"><Skeleton size="line" /></div>}
+        {!isStream && !pending('wordFamily') && family && <fieldset className="create-card-dialog__family">
           <legend><Trans {...msg({ id: 'library.create-card.word-family', message: 'Word family' })} /></legend>
           <div className="create-card-dialog__family-fields">
             {(['noun', 'verb', 'adj', 'adv'] as const).filter(key => card.wordFamily?.[key]).map(key => <label key={key}>
@@ -401,6 +525,12 @@ function CardPreview({
           </div>
         </fieldset>}
       </div>
+      {isStream && <div className="create-card-dialog__stream-image">
+        <div className={`create-card-dialog__stream-image-slot${imageStatus === 'finding' ? ' is-loading' : ''}`} aria-hidden="true">
+          {card.imageUrl ? <img src={card.imageUrl} alt="" /> : <ImageIcon size={24} strokeWidth={1.6} />}
+        </div>
+        <p>{translate(imageStatus === 'finding' ? CREATE_CARD_MESSAGES.stream.findingImage : CREATE_CARD_MESSAGES.stream.noImage)}</p>
+      </div>}
     </section>
   );
 }
@@ -435,13 +565,42 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
     ? CREATE_CARD_MESSAGES.reserving
     : model.generationStage === 'drafting'
       ? CREATE_CARD_MESSAGES.drafting
-      : CREATE_CARD_MESSAGES.preparing;
+      : model.generationStage === 'retrying'
+        ? CREATE_CARD_MESSAGES.stream.reconnecting
+        : model.generationStage === 'finding-image'
+          ? CREATE_CARD_MESSAGES.stream.findingImage
+          : CREATE_CARD_MESSAGES.preparing;
   const hasPreview = model.preview !== null && model.stage !== 'input';
   const saveBlocked = hasPreview && !manualMode && model.stage !== 'preview';
-  const error = localError ?? (model.error ? cardCreatorErrorMessage(model.error) : null);
+  // A first generation shows the streaming layout while it runs and after it stopped part-way; a
+  // regeneration keeps the draft layout with placeholders on the fields it rewrites.
+  const firstGeneration = !manualMode && model.mode === 'ai' && model.regenerating.length === 0;
+  const streaming = firstGeneration && model.stage === 'generating';
+  const unfinished = !manualMode && model.stage === 'error' && model.generationOutcome?.partial === true;
+  const streamLayout = streaming || (firstGeneration && unfinished);
+  const streamSteps = deriveStreamSteps(model);
+  const outcomeMessage = generationOutcomeMessage(model.generationOutcome);
+  const stoppedOnly = model.error?.code === 'stopped';
+  const error = localError ?? (model.error && !stoppedOnly ? cardCreatorErrorMessage(model.error) : null);
   const quotaError = isQuotaError(model.error)
     || isQuotaError(localError)
     || localError === translate(CREATE_CARD_MESSAGES.errors.quota);
+  const offlineError = !localError && isOfflineError(model.error);
+  const pendingFields = useMemo<ReadonlySet<keyof CardData>>(() => {
+    if (model.stage !== 'generating' || manualMode) return NO_PENDING_FIELDS;
+    const arrived = new Set(model.streamedFields);
+    const candidates = model.regenerating.length > 0
+      ? model.regenerating.flatMap(field => REGENERATION_CARD_FIELDS[field])
+      : STREAMED_CARD_FIELDS;
+    return new Set(candidates.filter(field => !arrived.has(field)));
+  }, [manualMode, model.regenerating, model.stage, model.streamedFields]);
+  const cancelRef = useRef<HTMLButtonElement | null>(null);
+  const tryAgainRef = useRef<HTMLButtonElement | null>(null);
+  const primaryRef = useRef<HTMLButtonElement | null>(null);
+  const streamFocusRef = useRef({ streaming: false, onCancel: false });
+  const announceRef = useRef({ streaming: false, ready: 0 });
+  const [announcement, setAnnouncement] = useState('');
+  const [slow, setSlow] = useState(false);
 
   useEffect(() => () => audioPlaybackRef.current?.cancel(), []);
 
@@ -465,6 +624,57 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
     if (!model.preview) return;
     setSelectedFields(new Set(ALL_REGENERABLE_FIELDS));
   }, [model.preview?.id]);
+
+  // Focus follows the streaming layout: to Cancel when it starts, to Save card when it completes from
+  // Cancel, to Try again when it stops part-way, and back to the word when it returns to the input.
+  useEffect(() => {
+    const previous = streamFocusRef.current;
+    if (streaming && !previous.streaming) cancelRef.current?.focus();
+    if (!streaming && previous.streaming) {
+      if (model.stage === 'preview') {
+        if (previous.onCancel) primaryRef.current?.focus();
+      } else if (model.stage === 'error') {
+        (tryAgainRef.current ?? primaryRef.current)?.focus();
+      } else if (model.stage === 'input') {
+        wordInputRef.current?.focus();
+      }
+    }
+    streamFocusRef.current = { streaming, onCancel: streaming && previous.onCancel };
+  }, [model.stage, streaming]);
+
+  // Announce whole steps only; streamed field text is never read out.
+  const readyCount = streamSteps.ready;
+  const lastDoneStep = [...streamSteps.steps].reverse().find(step => step.state === 'done')?.id ?? null;
+  useEffect(() => {
+    const previous = announceRef.current;
+    if (streaming && readyCount > previous.ready && lastDoneStep) {
+      setAnnouncement(translate(CREATE_CARD_MESSAGES.stream.announceStep, {
+        step: translate(STREAM_STEP_LABELS[lastDoneStep]), ready: readyCount, total: streamSteps.total,
+      }));
+    }
+    if (!streaming && previous.streaming && model.stage === 'preview') {
+      setAnnouncement(translate(CREATE_CARD_MESSAGES.stream.announceDone));
+    }
+    announceRef.current = { streaming, ready: streaming ? readyCount : 0 };
+  }, [lastDoneStep, model.stage, readyCount, streamSteps.total, streaming]);
+
+  useEffect(() => {
+    if (!model.open) setAnnouncement('');
+  }, [model.open]);
+
+  const reconnecting = streaming && model.generationStage === 'retrying';
+  useEffect(() => {
+    if (reconnecting) setAnnouncement(translate(CREATE_CARD_MESSAGES.stream.reconnecting));
+    else if (streaming && slow) setAnnouncement(translate(CREATE_CARD_MESSAGES.stream.slow));
+  }, [reconnecting, slow, streaming]);
+
+  const streamActivity = `${model.streamedFields.length}:${model.generationStage ?? ''}`;
+  useEffect(() => {
+    setSlow(false);
+    if (model.stage !== 'generating') return;
+    const timer = window.setTimeout(() => setSlow(true), SLOW_GENERATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [model.stage, streamActivity]);
 
   const updateDraft = (patch: Partial<CardCreatorDraft>) => {
     actions.updateDraft(patch);
@@ -533,8 +743,24 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
       saveManual();
       return;
     }
-    if (!model.preview || isBusy) return;
+    if (!model.preview || isBusy || saveBlocked) return;
     void run(() => actions.save());
+  };
+
+  const stopGeneration = () => {
+    if (!actions.stopGeneration || model.stage !== 'generating') return;
+    void run(() => actions.stopGeneration!());
+  };
+
+  const retryGeneration = () => {
+    if (isBusy) return;
+    void run(() => (actions.retryGeneration ? actions.retryGeneration() : actions.generatePreview()));
+  };
+
+  const trackCancelFocus = (event: FocusEvent<HTMLButtonElement>) => {
+    // A button removed while focused may report a blur; only a real move away clears the mark.
+    if (event.type === 'focus') streamFocusRef.current.onCancel = true;
+    else if (event.currentTarget.isConnected && event.relatedTarget) streamFocusRef.current.onCancel = false;
   };
 
   const regenerate = () => {
@@ -598,12 +824,35 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
     setLocalError(null);
   };
 
+  /** Finishes an unfinished AI card by hand, starting from what had arrived; it saves as a manual card. */
+  const finishManually = () => {
+    setManualDraft(previewManualDraftFrom(model));
+    setManualMode(true);
+    setLocalError(null);
+  };
+
+  const playPreview = () => {
+    audioPlaybackRef.current?.cancel();
+    const preview = model.preview;
+    if (!preview) return;
+    const locale = preview.language === 'vi' ? 'vi-VN' : speechLocaleFor(preview);
+    const voice = voiceForActiveCourseCard(preview, courseModel.activeCourse);
+    audioPlaybackRef.current = playWordAudio(preview.word, preview.audioUrl, locale, voice);
+  };
+
+  const deckChip = translate(CREATE_CARD_MESSAGES.stream.deck, {
+    deck: (model.draft.deck && (selectedDeck?.label ?? model.draft.deck)) || translate(CREATE_CARD_MESSAGES.unassigned),
+  });
+  const readyText = translate(CREATE_CARD_MESSAGES.stream.readyText, { ready: streamSteps.ready, total: streamSteps.total });
+  // Finishing an AI card by hand edits the manual fields; a saved manual draft keeps its own preview.
+  const showPreview = Boolean(model.preview) && !(manualMode && model.mode === 'ai');
+
   return (
     <Dialog.Root open={model.open} onOpenChange={open => { if (!open) onClose(); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="create-card-dialog__overlay crystal-starfield" />
         <Dialog.Content
-          className="create-card-dialog crystal-chamfer"
+          className={`create-card-dialog crystal-chamfer${streamLayout ? ' create-card-dialog--stream' : ''}`}
           aria-describedby="create-card-dialog-description"
           onOpenAutoFocus={event => {
             event.preventDefault();
@@ -632,10 +881,13 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
           <span className="create-card-dialog__ornament create-card-dialog__ornament--top" aria-hidden="true" />
           <span className="create-card-dialog__ornament create-card-dialog__ornament--bottom" aria-hidden="true" />
           <header className="create-card-dialog__header">
+            {streamLayout && <span className="create-card-dialog__portrait" aria-hidden="true"><Lumi pose={streaming ? 'thinking' : 'idle'} size={74} /></span>}
             <div className="create-card-dialog__heading">
-              <p className="create-card-dialog__kicker"><span aria-hidden="true">◆</span>{manualMode ? <Trans {...msg({ id: 'library.create-card.kicker.manual', message: 'MANUAL CARD' })} /> : <Trans {...msg({ id: 'library.create-card.kicker.ai', message: 'NEW CARD' })} />}</p>
+              {streaming
+                ? <p className="create-card-dialog__kicker create-card-dialog__kicker--stream"><Sparkles className="create-card-dialog__kicker-sparkle" size={13} aria-hidden="true" /><span className="create-card-dialog__kicker-spin" aria-hidden="true" />{translate(CREATE_CARD_MESSAGES.stream.kicker)}</p>
+                : <p className="create-card-dialog__kicker"><span aria-hidden="true">◆</span>{manualMode ? <Trans {...msg({ id: 'library.create-card.kicker.manual', message: 'MANUAL CARD' })} /> : <Trans {...msg({ id: 'library.create-card.kicker.ai', message: 'NEW CARD' })} />}</p>}
               <Dialog.Title className="create-card-dialog__title"><Trans {...msg({ id: 'library.create-card.title', message: 'Add a word' })} /></Dialog.Title>
-              <Dialog.Description id="create-card-dialog-description" className="create-card-dialog__description">
+              <Dialog.Description id="create-card-dialog-description" className={`create-card-dialog__description${streamLayout ? ' sr-only' : ''}`}>
                 {manualMode ? <Trans {...msg({ id: 'library.create-card.description.manual', message: 'Add the details you already know, then save the card.' })} /> : <Trans {...msg({ id: 'library.create-card.description.ai', message: 'SonFlash drafts the card — you decide what stays.' })} />}
               </Dialog.Description>
             </div>
@@ -647,7 +899,43 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
           </header>
 
           <form className="create-card-dialog__form" onSubmit={onSubmit}>
+            {!manualMode && <p className="sr-only" role="status" aria-live="polite">{announcement}</p>}
             <div className="create-card-dialog__body">
+              {streamLayout ? <div className="create-card-dialog__stream">
+                <div className="create-card-dialog__stream-word">
+                  <span lang={model.preview?.language || 'en'}>{model.draft.word || model.preview?.word}</span>
+                  <span className="create-card-dialog__stream-deck">{deckChip}</span>
+                </div>
+                <div className="create-card-dialog__stream-grid">
+                  <ol className="create-card-dialog__steps" aria-label={translate(CREATE_CARD_MESSAGES.stream.steps)}>
+                    {streamSteps.steps.map(step => <li key={step.id} className={`create-card-dialog__step is-${step.state}`} aria-current={step.state === 'active' ? 'step' : undefined}>
+                      <span className="create-card-dialog__step-icon" aria-hidden="true">{step.state === 'done' && <Check size={11} strokeWidth={3} />}</span>
+                      <span>{translate(STREAM_STEP_LABELS[step.id])}</span>{' '}
+                      <span className="sr-only">{translate(STREAM_STEP_STATES[step.state])}</span>
+                    </li>)}
+                  </ol>
+                  <CardPreview
+                    variant="stream"
+                    card={model.preview ?? pendingStreamCard(model.draft.word)}
+                    disabled={model.stage === 'saving'}
+                    pendingFields={pendingFields}
+                    busy={streaming}
+                    unchecked={unfinished}
+                    imageStatus={streaming ? 'finding' : 'missing'}
+                    onUpdate={patch => actions.updatePreview(patch)}
+                    onPlay={playPreview}
+                  />
+                </div>
+                {streaming && (model.generationStage === 'retrying' || slow) && <p className="create-card-dialog__stream-status">
+                  {model.generationStage !== 'retrying' && <Loader2 size={14} aria-hidden="true" />}
+                  {translate(model.generationStage === 'retrying' ? CREATE_CARD_MESSAGES.stream.reconnecting : CREATE_CARD_MESSAGES.stream.slow)}
+                </p>}
+                <p className="create-card-dialog__stream-note">
+                  <Info className="create-card-dialog__note-info" size={16} aria-hidden="true" />
+                  <Pencil className="create-card-dialog__note-pencil" size={15} aria-hidden="true" />
+                  <span>{translate(CREATE_CARD_MESSAGES.stream.note)}</span>
+                </p>
+              </div> : <>
               <div className="create-card-dialog__input-grid">
                 <label>
                   <FieldLabel descriptor={CREATE_CARD_MESSAGES.word} />
@@ -697,20 +985,16 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                 </div>
               </fieldset>
 
-              {model.preview ? (
+              {showPreview && model.preview ? (
                 <>
                   <CardPreview
                     card={model.preview}
                     disabled={model.stage === 'saving'}
+                    pendingFields={pendingFields}
+                    busy={model.stage === 'generating'}
+                    unchecked={unfinished}
                     onUpdate={patch => actions.updatePreview(patch)}
-                    onPlay={() => {
-                      audioPlaybackRef.current?.cancel();
-                      const preview = model.preview;
-                      if (!preview) return;
-                      const locale = preview.language === 'vi' ? 'vi-VN' : speechLocaleFor(preview);
-                      const voice = voiceForActiveCourseCard(preview, courseModel.activeCourse);
-                      audioPlaybackRef.current = playWordAudio(preview.word, preview.audioUrl, locale, voice);
-                    }}
+                    onPlay={playPreview}
                   />
                   {model.stage === 'generating' && <div className="create-card-dialog__empty-preview" role="status">
                     <Sparkles size={18} aria-hidden="true" />
@@ -762,25 +1046,66 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                 </label>
                 {!manualMode && hasPreview && <p><Trans {...msg({ id: 'library.create-card.ready-after-saving', message: 'Ready after saving' })} /></p>}
               </div>
+              </>}
 
               {model.duplicate && <div className="create-card-dialog__notice create-card-dialog__notice--duplicate" role="alert">
                 <AlertCircle size={17} aria-hidden="true" />
                 <span>{translate(CREATE_CARD_MESSAGES.duplicate, { word: model.duplicate.word })}</span>
               </div>}
-              {error && <div className={`create-card-dialog__notice ${quotaError ? 'create-card-dialog__notice--quota' : 'create-card-dialog__notice--error'}`} role="alert">
+              {outcomeMessage && !manualMode && <div
+                className={`create-card-dialog__notice ${model.generationOutcome?.kind === 'failed' ? 'create-card-dialog__notice--error' : 'create-card-dialog__notice--stopped'}`}
+                role={model.generationOutcome?.kind === 'failed' ? 'alert' : 'status'}
+              >
                 <AlertCircle size={17} aria-hidden="true" />
-                <span>{error}{quotaError && !manualMode && <button type="button" onClick={enterManualMode}><Trans {...msg({ id: 'library.create-card.add-manually', message: 'Add manually' })} /></button>}</span>
+                <span>{translate(outcomeMessage)}{streamLayout && error && model.generationOutcome?.kind === 'failed' && <> {error}</>}</span>
+              </div>}
+              {error && !(streamLayout && model.generationOutcome) && <div className={`create-card-dialog__notice ${quotaError || offlineError ? 'create-card-dialog__notice--quota' : 'create-card-dialog__notice--error'}`} role="alert">
+                <AlertCircle size={17} aria-hidden="true" />
+                <span>{error}{(quotaError || offlineError) && !manualMode && <button type="button" onClick={enterManualMode}><Trans {...msg({ id: 'library.create-card.add-manually', message: 'Add manually' })} /></button>}</span>
               </div>}
             </div>
 
-            <footer className="create-card-dialog__footer">
+            {streamLayout ? <footer className="create-card-dialog__footer create-card-dialog__footer--stream">
+              <div className="create-card-dialog__progress">
+                <span className="create-card-dialog__progress-label"><Trans {...msg({ id: 'library.create-card.stream.ready', message: '<0>{ready} of {total}</0> ready' })} values={{ ready: streamSteps.ready, total: streamSteps.total }} components={{ 0: <strong /> }} /></span>
+                <div
+                  className="create-card-dialog__progress-track"
+                  role="progressbar"
+                  aria-label={translate(CREATE_CARD_MESSAGES.stream.steps)}
+                  aria-valuemin={0}
+                  aria-valuemax={streamSteps.total}
+                  aria-valuenow={streamSteps.ready}
+                  aria-valuetext={readyText}
+                >
+                  <span className="create-card-dialog__progress-fill" style={{ width: `${(streamSteps.ready / streamSteps.total) * 100}%` }} />
+                  {streamSteps.steps.map((step, index) => <span key={step.id} className={`create-card-dialog__progress-segment${index < streamSteps.ready ? ' is-on' : ''}`} />)}
+                </div>
+              </div>
+              {streaming ? <>
+                <button
+                  ref={cancelRef}
+                  type="button"
+                  className="create-card-dialog__secondary"
+                  onClick={actions.stopGeneration ? stopGeneration : onClose}
+                  onFocus={trackCancelFocus}
+                  onBlur={trackCancelFocus}
+                ><Trans {...msg({ id: 'library.create-card.stream.cancel', message: 'Cancel' })} /></button>
+                <button type="button" className="create-card-dialog__primary" disabled><Trans {...msg({ id: 'library.create-card.save', message: 'Save card' })} /></button>
+              </> : <>
+                <button type="button" className="create-card-dialog__manual-link" onClick={finishManually}><Trans {...msg({ id: 'library.create-card.add-manually', message: 'Add manually' })} /></button>
+                <Dialog.Close asChild>
+                  <button type="button" className="create-card-dialog__secondary"><Trans {...msg({ id: 'library.close', message: 'Close' })} /></button>
+                </Dialog.Close>
+                <button ref={tryAgainRef} type="button" className="create-card-dialog__primary" onClick={retryGeneration}><RefreshCw size={15} aria-hidden="true" /><Trans {...msg({ id: 'library.create-card.stream.try-again', message: 'Try again' })} /></button>
+              </>}
+            </footer> : <footer className="create-card-dialog__footer">
               <span className="create-card-dialog__request-count"><Sparkles size={14} aria-hidden="true" /><Trans {...msg({ id: 'library.create-card.request-count', message: '{count, plural, one {# AI request completed} other {# AI requests completed}}' })} values={{ count: model.completedAiRequests }} /></span>
               {!manualMode && !hasPreview && <button type="button" className="create-card-dialog__manual-link" onClick={enterManualMode}><Trans {...msg({ id: 'library.create-card.add-manually', message: 'Add manually' })} /></button>}
               {!manualMode && hasPreview && <button type="button" className="create-card-dialog__secondary" onClick={regenerate} disabled={isBusy || selectedFields.size === 0}><RefreshCw size={15} aria-hidden="true" />{model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.regenerating} /> : <Trans {...msg({ id: 'library.create-card.regenerate', message: 'Regenerate' })} />}</button>}
-              <button type="submit" className="create-card-dialog__primary" disabled={isBusy || saveBlocked || Boolean(model.duplicate) || (!manualMode && !model.draft.word.trim()) || !deckIsAllowed}>
+              <button ref={primaryRef} type="submit" className="create-card-dialog__primary" disabled={isBusy || saveBlocked || Boolean(model.duplicate) || (!manualMode && !model.draft.word.trim()) || !deckIsAllowed}>
                 {model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.generating} /> : model.stage === 'saving' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.saving} /> : manualMode ? <Trans {...msg({ id: 'library.create-card.save', message: 'Save card' })} /> : hasPreview ? <Trans {...msg({ id: 'library.create-card.save', message: 'Save card' })} /> : <Trans {...msg({ id: 'library.create-card.generate-preview', message: 'Generate preview' })} />}
               </button>
-            </footer>
+            </footer>}
           </form>
         </Dialog.Content>
       </Dialog.Portal>

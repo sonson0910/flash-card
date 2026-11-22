@@ -9,6 +9,7 @@ import { ACCOUNT_RATE_SCOPES, beginAccountDeletion, exportAccountData,
 import { budgetDocumentId } from '../src/rateLimiter.js';
 import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '../src/account-profile-contract.js';
 import { resumeDeletionWithAudit } from '../src/pilotOperator.js';
+import { commitVerifiedGamification, prepareVerifiedGamification, type VerifiedGamificationAction } from '../src/verifiedGamification.js';
 import { assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
@@ -188,6 +189,38 @@ describeWithEmulator('account export and deletion', () => {
       expect((await database.collection('_functionRateLimitBudgets')
         .doc(budgetDocumentId(uid, 'account-profile')).get()).exists).toBe(false);
     }
+  }, 30_000);
+
+  it('exports the verified stats records the server keeps, then deletes them with the account', async () => {
+    const uid = `stats-${randomUUID()}`;
+    const stats = database.doc(`users/${uid}/profile/stats`);
+    await database.doc(`users/${uid}/cards/word-focus`).set({ reviews: 3, difficulty: 'easy' });
+    const verified = (action: VerifiedGamificationAction) => database.runTransaction(async transaction => (
+      commitVerifiedGamification(transaction, await prepareVerifiedGamification(database, transaction, uid, action))
+    ));
+    await verified({
+      kind: 'review', receivedAt: new Date('2026-11-19T13:00:00.000Z'), timeZone: 'Asia/Saigon', targetLanguage: 'en',
+      rating: 'easy', cardId: 'word-focus',
+      reviewedCard: { firstReview: false, firstEasy: false, started: true, mastered: true, reviewTimesMs: [Date.parse('2026-11-19T13:00:00.000Z')] },
+    });
+    await verified({
+      kind: 'match', receivedAt: new Date('2026-11-19T13:01:00.000Z'), timeZone: 'Asia/Saigon', resultXp: 20,
+      practiceStartedAt: new Date('2026-11-19T13:00:30.000Z'), practiceCards: 4,
+    });
+    const stored = (await stats.get()).data() ?? {};
+    const records = ['streakV1', 'achievementsV1', 'studyTimeV1', 'wordWeeksV1'] as const;
+    for (const field of records) expect(stored[field]).toBeTypeOf('object');
+    expect(stored.studyTimeV1).toMatchObject({ totalMs: 30_000 });
+    expect(stored.achievementsV1).toMatchObject({ counters: { reviewedCards: 1, masteredWords: 1 } });
+
+    const exported = await exportAccountData(database, uid, key) as { profile: Array<Record<string, unknown>> };
+    const exportedStats = exported.profile.find(row => row.id === 'stats');
+    for (const field of records) expect(exportedStats?.[field]).toEqual(stored[field]);
+
+    const { auth } = fakeAuth();
+    expect(await beginAccountDeletion(database, auth, uid, key, now)).toBe('waiting');
+    expect((await stats.get()).exists).toBe(false);
+    expect((await database.collection('users').doc(uid).listCollections()).length).toBe(0);
   }, 30_000);
 
   it('refuses learner endpoints until the profile is complete, and always for a restricted account', async () => {

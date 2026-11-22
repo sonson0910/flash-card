@@ -103,10 +103,15 @@ export interface LatestExamScoreEditorViewProps {
   readonly onSelect: (band: string) => void;
   readonly onSave: () => void;
   readonly onClear: () => void;
+  /**
+   * A score for a goal that does not exist yet, such as during onboarding: the picker and a clear
+   * button only, and the caller saves the chosen band once the goal has an id.
+   */
+  readonly draft?: boolean;
 }
 
 /** The picker, save and clear buttons, and the pending, saved and error messages. */
-export function LatestExamScoreEditorView({ editor, onSelect, onSave, onClear }: LatestExamScoreEditorViewProps) {
+export function LatestExamScoreEditorView({ editor, onSelect, onSave, onClear, draft = false }: LatestExamScoreEditorViewProps) {
   const { _ } = useLingui();
   const hintId = useId();
   const { stored, selected, saving } = editor;
@@ -121,6 +126,28 @@ export function LatestExamScoreEditorView({ editor, onSelect, onSave, onClear }:
         : saving.code === 'invalid'
           ? _(msg({ id: 'latest-score-editor.error.invalid', message: 'Choose a band from 4.0 to 9.0.' }))
           : _(msg({ id: 'latest-score-editor.error.failed', message: 'Your score could not be saved. Check your connection and try again.' }));
+
+  if (draft) {
+    return (
+      <div className="latest-score-editor" data-draft="true">
+        <IeltsBandPicker
+          value={selected}
+          onChange={onSelect}
+          legend={_(msg({ id: 'latest-score-editor.legend', message: 'Your latest IELTS score' }))}
+        />
+        <p id={hintId} className="latest-score-editor__hint">
+          {_(msg({ id: 'latest-score-editor.draft-hint', message: 'Optional. It is saved with your course when you finish.' }))}
+        </p>
+        {selected !== null && (
+          <div className="latest-score-editor__actions">
+            <button type="button" className="latest-score-editor__clear" aria-describedby={hintId} onClick={onClear}>
+              {_(msg({ id: 'latest-score-editor.clear', message: 'Clear score' }))}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="latest-score-editor" aria-busy={stored.status === 'loading' || pending}>
@@ -173,6 +200,21 @@ export function LatestExamScoreEditorView({ editor, onSelect, onSave, onClear }:
         </>
       )}
     </div>
+  );
+}
+
+const DRAFT_EDITOR_IDLE: LatestScoreSaving = { status: 'idle' };
+
+/** The latest-score picker for a goal that is about to be created; the caller keeps the band. */
+export function LatestExamScoreDraft({ value, onChange }: { readonly value: string | null; readonly onChange: (band: string | null) => void }) {
+  return (
+    <LatestExamScoreEditorView
+      draft
+      editor={{ stored: { status: 'ready', score: null }, selected: value, saving: DRAFT_EDITOR_IDLE }}
+      onSelect={onChange}
+      onSave={() => undefined}
+      onClear={() => onChange(null)}
+    />
   );
 }
 

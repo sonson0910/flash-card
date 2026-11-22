@@ -34,8 +34,14 @@ for (const mode of ['Multiple-choice quiz', 'Spelling practice']) {
     await heading.focus();
     await expect(heading).toBeFocused();
     // macOS WebKit uses Option-Tab for all controls with default keyboard settings.
-    await page.keyboard.press(browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab');
-    await expect(page.getByRole('button', { name: "I don't know this — learn first", exact: true })).toBeFocused();
+    const tabKey = browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab';
+    // The link sits below the answer controls, as on the board, and must stay reachable by keyboard.
+    const learnFirst = page.getByRole('button', { name: "I don't know this — learn first", exact: true });
+    for (let presses = 0; presses < 8; presses += 1) {
+      await page.keyboard.press(tabKey);
+      if (await learnFirst.evaluate(element => element === document.activeElement)) break;
+    }
+    await expect(learnFirst).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: 'I’ve reviewed it — start recall' })).toBeVisible();
     expect((await db.collection('users').doc(testUser.uid).collection('cards').get()).docs.every(card => card.data().reviews === 3)).toBe(true);

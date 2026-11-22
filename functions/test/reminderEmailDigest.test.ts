@@ -14,7 +14,7 @@ const harness = (dueCount = 7, candidateCount = 1) => {
     nextWeeklyDigestAt: Timestamp.fromDate(now), nextWeeklyDigestLocalDay: '2026-10-04',
   }], ['users/owner/profile/stats', {
     lastVerifiedReviewAt: Timestamp.fromDate(new Date('2026-10-03T08:00:00Z')),
-    verifiedStreak: 4,
+    verifiedStreak: 4, lastVerifiedStudyDay: '2026-10-03', rewardTimeZone: 'UTC',
   }]]);
   const writes: string[] = [];
   const ref = (path: string): DocumentReference => ({ path }) as DocumentReference;
@@ -79,6 +79,29 @@ describe('weekly email digest', () => {
     expect(test.docs.get(receiptPath)).toMatchObject({ channel: 'emailDigest' });
     await expect(enqueueWeeklyDigest(test.database, test.stateRef, email, 'demo-lingoflash', now)).resolves.toBe(false);
     expect(test.writes.filter(path => path === mailPath)).toHaveLength(1);
+  });
+
+  it.each([
+    // The run ended: last studied on 1 October, then two missed days and no freeze held.
+    ['an ended run', { verifiedStreak: 9, lastVerifiedStudyDay: '2026-10-01' }, undefined, 0],
+    ['a run its stored freezes cover', {
+      verifiedStreak: 9, lastVerifiedStudyDay: '2026-10-01',
+      streakV1: {
+        coverageStartedOn: '2026-09-01', freezes: 2, refilledWeek: '2026-09-28', best: 9, bestCountedFrom: '2026-09-23',
+        days: { '2026-10-01': 'studied' }, milestones: {}, repair: null, lastRepairedOn: null,
+      },
+    }, undefined, 9],
+    ['a run a legacy freeze covers', { verifiedStreak: 9, lastVerifiedStudyDay: '2026-10-02' }, { streakFreezes: 1 }, 9],
+    ['a run no legacy freeze covers', { verifiedStreak: 9, lastVerifiedStudyDay: '2026-10-02' }, { streakFreezes: 0 }, 0],
+  ])('reports the streak the next review would find for %s', async (_label, fields, rewards, days) => {
+    const test = harness();
+    test.docs.set('users/owner/profile/stats', {
+      lastVerifiedReviewAt: Timestamp.fromDate(new Date(`${fields.lastVerifiedStudyDay}T08:00:00Z`)), rewardTimeZone: 'UTC', ...fields,
+    });
+    if (rewards) test.docs.set('users/owner/profile/rewards', rewards);
+    await expect(enqueueWeeklyDigest(test.database, test.stateRef, async () => 'learner@example.com', 'demo-lingoflash', now))
+      .resolves.toBe(true);
+    expect(test.docs.get(mailPath)?.message?.text).toContain(`Current study streak: ${days} days`);
   });
 
   it('puts the staging origin in queued email links', async () => {

@@ -6,12 +6,19 @@ import { dayKey } from './aiCostLedger.js';
 type Plan = { tier: 'free' | 'pro'; periodKey: string; startsAt: Date; endsAt: Date; limit: number };
 export type AiOperationRecord = {
   status?: string; attemptId?: string; periodKey?: string; reservedAt?: unknown; result?: unknown; requestHash?: string;
-  deliveredAt?: unknown;
+  deliveredAt?: unknown; attempts?: unknown;
 };
+
+/**
+ * Generations one learner request may run on a single charged card unit: the first attempt plus
+ * retries of the same request after a failure that had already delivered fields, or after a stale
+ * reservation was taken over. A request that has used them all needs a new operation, which is a new charge.
+ */
+export const WORD_OPERATION_MAX_ATTEMPTS = 3;
 
 export class AiQuotaError extends Error {
   constructor(readonly reason: 'ai-card-quota' | 'ai-daily-allowance' | 'operation-in-flight'
-    | 'operation-request-mismatch', readonly details: Record<string, unknown>) {
+    | 'operation-request-mismatch' | 'operation-attempts-exhausted', readonly details: Record<string, unknown>) {
     super(reason);
     this.name = 'AiQuotaError';
   }
@@ -55,6 +62,10 @@ export function resolvePlan(value: unknown, now: Date, config: PilotConfig): Pla
 
 export type WordReservation = { kind: 'completed'; result: unknown } | { kind: 'reserved'; attemptId: string; periodKey: string };
 
+/** Operations written before attempts were counted had made exactly one attempt on their unit. */
+const recordedAttempts = (value: unknown): number =>
+  Number.isSafeInteger(value) && Number(value) >= 1 ? Number(value) : 1;
+
 export async function reserveWordOperation(database: Firestore, uid: string, operationId: string,
   requestHash: string, now: Date, config: PilotConfig): Promise<WordReservation> {
   const owner = database.collection('users').doc(uid);
@@ -78,27 +89,45 @@ export async function reserveWordOperation(database: Firestore, uid: string, ope
     if (operation?.status === 'reserved' && reservedAt && now.getTime() - reservedAt.getTime() < 90_000) {
       throw new AiQuotaError('operation-in-flight', { reason: 'operation-in-flight', retryAfterMs: 5_000 });
     }
-    const plan = resolvePlan(planSnapshot.data(), now, config);
+    // Two cases run on the unit the operation already holds instead of charging a new one: taking over
+    // a stale reservation, and retrying the same request after a failure that had delivered fields
+    // (that failure kept the unit charged). Both keep the delivery mark and count one more attempt.
     const takeover = operation?.status === 'reserved' && typeof operation.periodKey === 'string';
-    const periodKey = takeover ? operation.periodKey! : plan.periodKey;
+    const resume = operation?.status === 'failed' && Boolean(operation.deliveredAt)
+      && operation.requestHash === requestHash && typeof operation.periodKey === 'string';
+    const attemptId = randomUUID();
+    const expiresAt = new Date(now.getTime() + 7 * 86_400_000);
+    if (takeover || resume) {
+      const attempts = recordedAttempts(operation?.attempts);
+      if (attempts >= WORD_OPERATION_MAX_ATTEMPTS) {
+        throw new AiQuotaError('operation-attempts-exhausted', {
+          reason: 'operation-attempts-exhausted', attempts, maxAttempts: WORD_OPERATION_MAX_ATTEMPTS,
+        });
+      }
+      const periodKey = operation!.periodKey!;
+      transaction.set(operationRef, {
+        status: 'reserved', attemptId, periodKey, requestHash, reservedAt: now,
+        completedAt: null, result: null, expiresAt, attempts: attempts + 1,
+      }, { merge: true });
+      return { kind: 'reserved', attemptId, periodKey };
+    }
+    const plan = resolvePlan(planSnapshot.data(), now, config);
+    const periodKey = plan.periodKey;
     const usageRef = owner.collection('ai_usage').doc(periodKey);
     const usageSnapshot = await transaction.get(usageRef);
     const used = asAiQuotaCount(usageSnapshot.data()?.used);
-    if (!takeover && config.quotaEnforced && used >= plan.limit) {
+    if (config.quotaEnforced && used >= plan.limit) {
       throw new AiQuotaError('ai-card-quota', {
         reason: 'ai-card-quota', used, limit: plan.limit, periodEndsAt: plan.endsAt.toISOString(), tier: plan.tier,
       });
     }
-    const attemptId = randomUUID();
-    if (!takeover) transaction.set(usageRef, {
+    transaction.set(usageRef, {
       periodKey, tier: plan.tier, used: used + 1, limit: plan.limit,
       periodStartsAt: plan.startsAt, periodEndsAt: plan.endsAt, updatedAt: now,
     }, { merge: true });
-    // A takeover inherits the charged unit, so it keeps any earlier delivery mark with it.
     transaction.set(operationRef, {
       status: 'reserved', attemptId, periodKey, requestHash, reservedAt: now,
-      completedAt: null, result: null, expiresAt: new Date(now.getTime() + 7 * 86_400_000),
-      ...(takeover ? {} : { deliveredAt: null }),
+      completedAt: null, result: null, expiresAt, deliveredAt: null, attempts: 1,
     }, { merge: true });
     return { kind: 'reserved', attemptId, periodKey };
   });
@@ -141,12 +170,35 @@ export async function markWordOperationDelivered(database: Firestore, uid: strin
   });
 }
 
-/** Cancels a generation that has not delivered content yet; delivered work completes and stays charged. */
-export async function cancelWordOperation(database: Firestore, uid: string, operationId: string, now: Date): Promise<boolean> {
-  const operation = (await database.collection('users').doc(uid).collection('ai_operations').doc(operationId).get())
-    .data() as AiOperationRecord | undefined;
-  if (operation?.status !== 'reserved' || typeof operation.attemptId !== 'string' || operation.deliveredAt) return false;
-  return settleWordOperation(database, uid, operationId, operation.attemptId, null, now);
+export type WordCancellation = {
+  /** This call stopped a reservation and refunded its unit. */
+  cancelled: boolean;
+  /** The operation holds a charged unit after this call: it completed, or delivered fields before it ended. */
+  counted: boolean;
+};
+
+/**
+ * Cancels a generation that has not delivered content yet; delivered work completes and stays charged.
+ * It also reports whether the request still counts, because the server's own abort path may have
+ * refunded the reservation before this call arrives.
+ */
+export async function cancelWordOperation(database: Firestore, uid: string, operationId: string,
+  now: Date): Promise<WordCancellation> {
+  const owner = database.collection('users').doc(uid);
+  const operationRef = owner.collection('ai_operations').doc(operationId);
+  return database.runTransaction(async transaction => {
+    const operation = (await transaction.get(operationRef)).data() as AiOperationRecord | undefined;
+    if (operation?.status === 'reserved' && typeof operation.attemptId === 'string'
+      && typeof operation.periodKey === 'string' && !operation.deliveredAt) {
+      const usageRef = owner.collection('ai_usage').doc(operation.periodKey);
+      const usage = await transaction.get(usageRef);
+      transaction.set(usageRef, { used: Math.max(0, asAiQuotaCount(usage.data()?.used) - 1), updatedAt: now }, { merge: true });
+      transaction.set(operationRef, { status: 'failed', completedAt: now, result: null }, { merge: true });
+      return { cancelled: true, counted: false };
+    }
+    const counted = operation?.status === 'completed' || operation?.status === 'reserved' || Boolean(operation?.deliveredAt);
+    return { cancelled: false, counted };
+  });
 }
 
 export async function reserveNonCardAction(database: Firestore, uid: string, now: Date, config: PilotConfig): Promise<string> {

@@ -129,6 +129,29 @@ describe('course profile callables', () => {
     }
   });
 
+  it('adds the created course and goal ids to a create response without another profile access', async () => {
+    const legacy = createLegacyCourseProfile();
+    const withKorean = {
+      ...legacy,
+      courses: [...legacy.courses, {
+        ...legacy.courses[0]!,
+        id: 'course-ko', targetLanguage: 'ko' as const,
+        goals: [{ id: 'goal-ko', kind: 'topik-2', level: '3', targetDate: null, status: 'active' as const, createdAt: '2026-09-25T00:00:00.000Z' }],
+      }],
+    };
+    applyCourseProfileMutation.mockResolvedValueOnce(withKorean);
+    const response = await handlers.createCourse.run({
+      auth: { uid: 'owner-1' },
+      data: { ownerId: 'owner-1', input: { targetLanguage: 'ko', nativeLanguage: 'vi', goals: [{ kind: 'topik-2', level: '3' }] } },
+    });
+
+    expect(response).toEqual({
+      profile: withKorean,
+      created: { courseId: 'course-ko', goals: [{ kind: 'topik-2', id: 'goal-ko' }] },
+    });
+    expect(applyCourseProfileMutation).toHaveBeenCalledTimes(1);
+  });
+
   it('denies unauthenticated requests before budget or profile writes', async () => {
     await expect(handlers.createCourse.run({
       auth: undefined,

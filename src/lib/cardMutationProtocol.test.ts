@@ -6,6 +6,7 @@ import {
   evaluateMutationPrecondition,
   normalizeCardOperationId,
   prepareCardForCreate,
+  selectMutableCardPatch,
 } from './cardMutationProtocol';
 import { createLexemeId } from '../features/multilingual/lexemeIdentity';
 
@@ -91,6 +92,20 @@ describe('card mutation protocol', () => {
     const result = applyCardPatch(original, { origin: 'manual' }, ['origin']);
     expect(result.origin).toBe('ai');
     expect(result.revision).toBe(8);
+  });
+
+  it('lets the learner patch tags and the difficulty label but never the AI meaning alternatives', () => {
+    const original = { ...card, origin: 'ai' as const, translationAlternatives: ['lãnh đạo'], schemaVersion: 2 as const, revision: 7, libraryEpoch: 4 };
+    const result = applyCardPatch(
+      original,
+      { tags: ['news'], learnerDifficulty: 'hard', translationAlternatives: ['dẫn dắt'] },
+      ['tags', 'learnerDifficulty', 'translationAlternatives'],
+    );
+
+    expect(result.tags).toEqual(['news']);
+    expect(result.learnerDifficulty).toBe('hard');
+    expect(result.translationAlternatives).toEqual(['lãnh đạo']);
+    expect(selectMutableCardPatch({ learnerDifficulty: null }, ['learnerDifficulty'])).toEqual({ learnerDifficulty: null });
   });
 
   it('persists mnemonic enrichment through the declared mutation mask', () => {

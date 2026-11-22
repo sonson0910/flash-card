@@ -41,6 +41,17 @@ const cards: CardData[] = [
   exampleTranslation: `Ví dụ ${index + 1}`,
 }));
 
+// The card the editor opens on carries the learner's own tags and label, and the
+// meanings the AI offered when it created the card.
+const editedCard: CardData = {
+  ...cards[0]!,
+  origin: 'ai',
+  translationAlternatives: ['điều chỉnh', 'phỏng theo; chuyển thể'],
+  tags: ['news', 'B2'],
+  learnerDifficulty: 'medium',
+  bookmarked: true,
+};
+
 const noOp = () => undefined;
 const asyncNoOp = async () => undefined;
 const published = { status: 'published' as const, result: { ownerKey: 'fixture', operationId: 'fixture', publication: { kind: 'patch' as const, cardId: cards[0]!.id, fields: {} } } };
@@ -164,8 +175,9 @@ function LibraryFixture() {
     />}
     {(dialog === 'edit' || dialog?.startsWith('edit-')) && <EditCardDialog
       card={dialog === 'edit' || dialog === 'edit-review'
-        ? cards[0]!
-        : { ...cards[0]!, imageUrl: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=300', imageSearchQuery: 'adapt' }}
+        ? editedCard
+        : { ...editedCard, imageUrl: 'https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=300', imageSearchQuery: 'adapt' }}
+      customDecks={['IELTS', 'Work']}
       open={editOpen}
       onOpenChange={setEditOpen}
       onSave={dialog === 'edit-working'

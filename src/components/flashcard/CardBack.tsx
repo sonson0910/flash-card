@@ -10,7 +10,10 @@ import { RecoverableActionFeedback } from '../RecoverableActionFeedback';
 import { CardEffectsLayer } from './CardEffectsLayer';
 import { CardTierBadge, type CardTier } from './CardFront';
 import { CardHeadword } from './CardHeadword';
+import { cardExplanationSectionLabel, cardInMeaningLanguage, cardMeaningLanguageName, cardMeaningSectionLabel, cardReturnLabel, cardTargetLanguageKey, isLanguagePackCard } from './cardLanguage';
 import { useCardLook } from './cardLook';
+import { buildExampleSegments } from './languageCardReading';
+import { cardTextLang, useLanguageCardReading } from './LanguageCardFace';
 import { CardMnemonicSection } from './CardMnemonicSection';
 import { RichVietnameseExplanation } from './RichVietnameseExplanation';
 
@@ -53,6 +56,7 @@ export function CardBack({
   setShowAiModal, aiTutorButtonRef, backFlipRef, focusAfterFlipRef, showCardSide,
 }: CardBackProps) {
   const { _, i18n } = useLingui();
+  const reading = useLanguageCardReading(data);
   if (isZenMode) return <ZenCardBack
     tier={tier}
     data={data}
@@ -72,6 +76,8 @@ export function CardBack({
   const look = useCardLook();
   const sourceLanguage = data.language || 'en';
   const meaningLanguage = data.translationLanguage || 'vi';
+  const isPackCard = isLanguagePackCard(data);
+  const backReading = isPackCard ? reading?.backReading ?? data.phonetic : null;
   const isDue = Boolean(data.nextReviewDate) && isCardDue(data);
   const hasLearningDetails = Boolean(data.partOfSpeech || data.cefrLevel || data.exampleSentence || data.collocations?.length || data.synonyms?.length || data.antonyms?.length || data.commonMistake);
   return (
@@ -80,6 +86,7 @@ export function CardBack({
       data-card-face="back"
       data-card-mode="standard"
       data-card-look={look}
+      data-card-kind={isPackCard ? 'language' : undefined}
       style={{ transformOrigin: 'center center', borderRadius: 'var(--flashcard-radius, 32px)' }}
       className="flashcard-panel flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[var(--flashcard-radius,32px)]"
     >
@@ -87,7 +94,7 @@ export function CardBack({
       <div className="flashcard-back-header relative z-20 flex shrink-0 flex-wrap items-center">
         <span className="flashcard-back-language">
           {look === 'aurora' && <span className="flashcard-back-language-dot" aria-hidden="true" />}
-          <Trans {...msg({ context: 'flashcard.language.vietnamese', message: 'Vietnamese' })} />
+          {isPackCard ? cardInMeaningLanguage(i18n, data) : cardMeaningLanguageName(i18n, data)}
         </span>
         {isDue && (
           <span data-card-status="due" className="flashcard-back-due">
@@ -98,15 +105,19 @@ export function CardBack({
 
       <div data-card-content="revealed" className="flashcard-back-scroll relative z-20 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain scrollbar-thin">
         <section data-card-section="meaning" aria-labelledby={`flashcard-meaning-${data.id}`} className="flashcard-back-meaning flex w-full flex-col">
-          <p id={`flashcard-meaning-${data.id}`} className="sr-only"><Trans {...msg({ context: 'flashcard.meaning.vietnamese', message: 'Vietnamese meaning' })} /></p>
+          <p id={`flashcard-meaning-${data.id}`} className="sr-only">{cardMeaningSectionLabel(i18n, data)}</p>
           <h2 data-translation-reveal lang={meaningLanguage} className="flashcard-back-translation flashcard-translation-reveal break-words text-balance first-letter:uppercase [overflow-wrap:anywhere]">
             {data.translation}
           </h2>
           {look === 'paper' && <span className="flashcard-back-ink-rule" aria-hidden="true" />}
           <div className="flashcard-back-source flex flex-wrap items-center">
             <span lang={sourceLanguage} className="flashcard-back-word">{data.word}</span>
-            {data.partOfSpeech && <span lang={sourceLanguage} className="flashcard-back-pos">{data.partOfSpeech}</span>}
-            {data.phonetic && <span lang={sourceLanguage} className="flashcard-back-ipa font-mono">{data.phonetic}</span>}
+            {isPackCard
+              ? backReading && <span data-card-back-reading className="flashcard-back-reading">{backReading}</span>
+              : <>
+                {data.partOfSpeech && <span lang={sourceLanguage} className="flashcard-back-pos">{data.partOfSpeech}</span>}
+                {data.phonetic && <span lang={sourceLanguage} className="flashcard-back-ipa font-mono">{data.phonetic}</span>}
+              </>}
             <button
               type="button"
               data-card-control
@@ -132,17 +143,25 @@ export function CardBack({
 
         {(data.exampleSentence || data.exampleTranslation) && (
           <figure data-card-section="example" className="flashcard-back-example">
-            {data.exampleSentence && (
+            {data.exampleSentence && (isPackCard ? (
+              <blockquote lang={cardTextLang(data)} className="flashcard-back-example-text flashcard-lang-example-text">
+                {buildExampleSegments(data.exampleSentence, data, cardTargetLanguageKey(data) as 'ko' | 'ja' | 'zh', reading).map((segment, index) => !segment.highlight
+                  ? <span key={index}>{segment.text}</span>
+                  : segment.ruby
+                    ? <ruby key={index} data-example-word className="flashcard-back-example-word">{segment.text}<rt className="flashcard-lang-example-rt">{segment.ruby}</rt></ruby>
+                    : <span key={index} data-example-word className="flashcard-back-example-word">{segment.text}</span>)}
+              </blockquote>
+            ) : (
               <blockquote lang={sourceLanguage} className="flashcard-back-example-text">
                 <span aria-hidden="true">“</span><span>{highlightWord(data.exampleSentence, data.word)}</span><span aria-hidden="true">”</span>
               </blockquote>
-            )}
+            ))}
             {data.exampleTranslation && <figcaption lang={meaningLanguage} className="flashcard-back-example-translation">{data.exampleTranslation}</figcaption>}
           </figure>
         )}
 
         <section data-card-section="explanation" aria-labelledby={`flashcard-explanation-${data.id}`} className="flashcard-back-explanation flex w-full flex-col items-start text-left">
-          <p id={`flashcard-explanation-${data.id}`} className="sr-only"><Trans {...msg({ context: 'flashcard.explanation.vietnamese', message: 'Explanation in Vietnamese' })} /></p>
+          <p id={`flashcard-explanation-${data.id}`} className="sr-only">{cardExplanationSectionLabel(i18n, data)}</p>
           {data.explanationTranslation ? (
             <RichVietnameseExplanation value={data.explanationTranslation} lang={meaningLanguage} />
           ) : (
@@ -234,13 +253,17 @@ export function CardBack({
           showCardSide('front');
         }}
         className="flashcard-back-return group/back relative z-20 flex w-full shrink-0 cursor-pointer items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--sf-brand)]"
-        aria-label={i18n._(msg({ id: 'flashcard.return-to-english-label', message: 'Return to the English side of {word}' }).id, { word: data.word })}
+        aria-label={cardReturnLabel(i18n, data)}
       >
         {look === 'aurora' && <span data-return-hover-edge className="flashcard-reveal-laser pointer-events-none absolute" aria-hidden="true" />}
-        {look === 'crystal'
+        {look === 'crystal' || isPackCard
           ? <RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
           : look === 'aurora' && <ChevronRight size={16} className="rotate-180" aria-hidden="true" />}
-        <span><Trans {...msg({ context: 'flashcard.back-to-english', message: 'Back to English' })} /></span>
+        <span>
+          {cardTargetLanguageKey(data) === 'en'
+            ? <Trans {...msg({ context: 'flashcard.back-to-english', message: 'Back to English' })} />
+            : <Trans {...msg({ context: 'flashcard.back-to-front', message: 'Back to front' })} />}
+        </span>
       </button>
     </div>
   );
@@ -275,7 +298,8 @@ function ZenCardBack({
   focusAfterFlipRef,
   showCardSide,
 }: Pick<CardBackProps, 'tier' | 'data' | 'faceRef' | 'spotlightRef' | 'spotlightBackground' | 'isHovered' | 'playAudio' | 'isPlayingAudio' | 'onUpdateCard' | 'setShowReportDialog' | 'setShowEditDialog' | 'backFlipRef' | 'focusAfterFlipRef' | 'showCardSide'>) {
-  const { _ } = useLingui();
+  const { _, i18n } = useLingui();
+  const isEnglishCard = cardTargetLanguageKey(data) === 'en';
   return (
 <div
             ref={faceRef}
@@ -294,7 +318,7 @@ function ZenCardBack({
             <div className="flex w-full items-center justify-between z-20">
               <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-300">
                 <span className="size-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
-                <span><Trans {...msg({ context: 'flashcard.language.vietnamese', message: 'Vietnamese' })} /></span>
+                <span>{cardMeaningLanguageName(i18n, data)}</span>
               </div>
               <CardTierBadge tier={tier} />
             </div>
@@ -357,6 +381,7 @@ function ZenCardBack({
                 type="button"
                 data-card-control
                 data-return-to-english="true"
+                aria-label={isEnglishCard ? undefined : cardReturnLabel(i18n, data)}
                 onPointerDown={e => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -365,7 +390,11 @@ function ZenCardBack({
                 }}
                 className="relative group inline-flex min-h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 px-9 py-2.5 text-sm font-medium tracking-wide text-white/95 shadow-[0_12px_35px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-300 hover:bg-white/20 hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <span><Trans {...msg({ context: 'flashcard.return-to-english', message: 'Return to English' })} /></span>
+                <span>
+                  {isEnglishCard
+                    ? <Trans {...msg({ context: 'flashcard.return-to-english', message: 'Return to English' })} />
+                    : <Trans {...msg({ context: 'flashcard.back-to-front', message: 'Back to front' })} />}
+                </span>
                 <span
                   className="absolute -bottom-px left-[22%] right-[22%] h-[2.5px] rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee,0_0_24px_#06b6d4] transition-all duration-300 group-hover:left-[16%] group-hover:right-[16%]"
                   aria-hidden="true"

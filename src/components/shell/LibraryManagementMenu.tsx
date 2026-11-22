@@ -16,7 +16,7 @@ import {
   UserRound,
   WifiOff,
 } from 'lucide-react';
-import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { Trans, useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { useZenGlassMode } from '../../lib/useZenGlassMode';
@@ -44,6 +44,8 @@ interface LibraryManagementMenuProps {
   /** Server-hydrated frame; this shell only renders the already-owned selection. */
   readonly equippedFrameId?: string | null;
   readonly ownedTitleIds?: readonly string[];
+  /** Theme and language controls the header hides at narrower widths; the stylesheet shows this group only then. */
+  readonly preferences?: ReactNode;
 }
 
 const menuItemClass = 'account-menu-item flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-xs font-bold text-[var(--sf-text)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none cursor-pointer';
@@ -119,6 +121,7 @@ export function LibraryManagementMenu({
   libraryCountLabel,
   equippedFrameId = null,
   ownedTitleIds,
+  preferences,
 }: LibraryManagementMenuProps) {
   const { _ } = useLingui();
   const [isZenMode, setZenMode] = useZenGlassMode();
@@ -135,7 +138,9 @@ export function LibraryManagementMenu({
       if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setIsOpen(false);
     };
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      // Escape first closes a theme or language popover opened inside this menu.
+      if (rootRef.current?.querySelector('.account-menu-preferences [aria-expanded="true"]')) return;
       event.preventDefault();
       setIsOpen(false);
       triggerRef.current?.focus();
@@ -264,6 +269,8 @@ export function LibraryManagementMenu({
               </span>
               <span className="account-menu-count"><BookOpen size={13} aria-hidden="true" />{libraryCountLabel}</span>
             </div>
+
+            {preferences && <div className="account-menu-preferences" role="group" aria-label={_(msg({ id: 'shell.library-menu.preferences', message: 'Theme and language' }))}>{preferences}</div>}
 
             <Suspense fallback={null}><PlanUsageMeter source="menu" onOpenUpgrade={() => { setIsOpen(false); setUpgradeOpen(true); }} /></Suspense>
 

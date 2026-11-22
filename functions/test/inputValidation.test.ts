@@ -424,6 +424,22 @@ describe('shared deck validation', () => {
     })).toThrow(/lexeme identity/i);
   });
 
+  it('shares a card without the photo its owner uploaded, and still refuses other image hosts', () => {
+    const ownPhoto = 'https://firebasestorage.googleapis.com/v0/b/encoded-hangout-433912-h2.firebasestorage.app/o/users%2Fowner%2Ffiles%2FAbCdEfGhIjKlMnOpQrSt?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d';
+    const shared = parseCreateSharedDeckRequest({
+      category: 'Shared',
+      cards: [
+        { word: 'adapt', translation: 'thích nghi', imageUrl: ownPhoto },
+        { word: 'sky', translation: 'bầu trời', imageUrl: 'https://images.pexels.com/photos/1/sky.jpg' },
+      ],
+    });
+    expect(shared.cards.map(card => card.imageUrl)).toEqual([null, 'https://images.pexels.com/photos/1/sky.jpg']);
+    expect(() => parseCreateSharedDeckRequest({
+      category: 'Shared',
+      cards: [{ word: 'adapt', translation: 'thích nghi', imageUrl: ownPhoto.replace('%2Ffiles%2F', '%2Fprivate%2F') }],
+    })).toThrow(/untrusted image/i);
+  });
+
   it('accepts an optional complete normalized deck language pair', () => {
     expect(parseCreateSharedDeckRequest({
       category: 'Shared', targetLanguage: 'EN', nativeLanguage: 'VI',
