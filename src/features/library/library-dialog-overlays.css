@@ -202,11 +202,17 @@
 :root.dark .word-extractor { --we-field-bg: color-mix(in srgb, var(--sf-text) 3%, transparent); --we-row-radius: 12px; }
 .word-extractor-body { min-height: 0; flex: 1 1 auto; overflow-y: auto; }
 .word-extractor-passage { position: relative; }
-.word-extractor-input { display: block; width: 100%; min-height: 8rem; box-sizing: border-box; resize: vertical; border: 1px solid var(--sf-border); border-radius: 12px; background: var(--we-field-bg); padding: 16px 16px 30px; color: var(--sf-text); font: inherit; font-size: 14.5px; line-height: 1.7; }
+.word-extractor-input { display: block; width: 100%; min-height: 8rem; box-sizing: border-box; resize: vertical; border: 1px solid var(--sf-border); border-radius: 12px; background: var(--we-field-bg); padding: 16px 16px 30px; color: var(--sf-text); font: inherit; font-size: 14.5px; line-height: 1.7; scrollbar-gutter: stable; }
 :root.dark .word-extractor-input { border-radius: 14px; }
 .word-extractor-input::placeholder { color: var(--ld-text-3); }
 .word-extractor-input:focus-visible { border-color: var(--sf-brand); outline: 2px solid color-mix(in srgb, var(--sf-brand) 35%, transparent); outline-offset: 1px; }
-.word-extractor-count { position: absolute; right: 14px; bottom: 10px; color: var(--ld-text-3); font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; pointer-events: none; }
+.word-extractor-count { position: absolute; z-index: 2; right: 14px; bottom: 10px; color: var(--ld-text-3); font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; pointer-events: none; }
+/* The marks layer lies over the textarea with the same box and type, so each
+   mark sits on its word; its own text is not painted, the textarea's shows. */
+.word-extractor-highlights { position: absolute; inset: 0; z-index: 1; overflow: hidden; box-sizing: border-box; border: 1px solid transparent; padding: 16px 16px 30px; color: var(--sf-text); -webkit-text-fill-color: transparent; font: inherit; font-size: 14.5px; line-height: 1.7; letter-spacing: normal; word-spacing: normal; text-align: start; text-indent: 0; text-transform: none; white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; pointer-events: none; scrollbar-gutter: stable; }
+.word-extractor-mark { border-radius: 3px; background: color-mix(in srgb, var(--sf-brand) 16%, transparent); color: inherit; box-shadow: inset 0 -1.5px 0 var(--sf-brand); }
+.word-extractor-mark.is-owned { background: transparent; box-shadow: inset 0 -1.5px 0 color-mix(in srgb, var(--sf-text) 30%, transparent); }
+:root.dark .word-extractor-mark:not(.is-owned) { background: color-mix(in srgb, var(--sf-brand) 20%, transparent); }
 .word-extractor-results { display: flex; flex-direction: column; gap: 12px; }
 .word-extractor-results-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .word-extractor-results-head p { display: flex; min-width: 0; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; }
@@ -231,11 +237,21 @@
 .word-extractor-row.is-owned .word-extractor-tag { color: var(--sf-text-muted); }
 .word-extractor-rerun.library-dialog-link { gap: 6px; }
 .word-extractor-rerun:disabled { cursor: wait; opacity: .55; }
+/* A native select fills the pill, so it keeps its keyboard and screen reader behaviour. */
+.word-extractor-deck { position: relative; display: inline-flex; min-width: 0; min-height: 44px; flex: 0 1 auto; align-items: center; gap: 6px; margin-right: auto; padding: 0 12px; color: var(--sf-text); font-size: 13px; font-weight: 600; cursor: pointer; }
+.word-extractor-deck::before { position: absolute; inset: 4px 0; border: 1px solid var(--sf-border); border-radius: 10px; background: var(--ld-chip); content: ''; transition: border-color .16s ease; }
+.word-extractor-deck:hover::before { border-color: color-mix(in srgb, var(--sf-text) 30%, transparent); }
+.word-extractor-deck:focus-within::before { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+.word-extractor-deck:has(+ .word-extractor-rerun) { margin-right: 0; }
+.word-extractor-deck-value,.word-extractor-deck > svg { position: relative; flex: none; }
+.word-extractor-deck-value { max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.word-extractor-deck select { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; border: 0; opacity: 0; font: inherit; cursor: pointer; }
 .word-extractor-footer .library-dialog-button--primary .animate-spin,
 .word-extractor-rerun .animate-spin { flex: none; }
 @media (max-width: 620px) {
   .word-extractor-grid { grid-template-columns: 1fr; }
   .word-extractor-footer { flex-wrap: wrap; }
+  .word-extractor-deck { flex: 1 0 100%; margin-right: 0; }
   .word-extractor-footer > .library-dialog-button { flex: 1 1 0; }
 }
 
@@ -341,7 +357,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .library-dialog-frame { scroll-behavior: auto; }
-  .library-deck-cover,.library-dialog-button,.library-dialog-icon-button::before { transition: none; }
+  .library-deck-cover,.library-dialog-button,.library-dialog-icon-button::before,.word-extractor-deck::before { transition: none; }
   :root[data-theme-family="crystal"] .library-deck-cover-picker input:checked + .library-deck-cover { transform: none; }
 }
 
@@ -355,5 +371,10 @@
 :root[data-theme-family="crystal"] .word-extractor-results-head strong { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 :root[data-theme-family="crystal"] .word-extractor-toggle.library-dialog-link { color: var(--sf-second); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
 :root[data-theme-family="crystal"] .word-extractor-tag { color: var(--sf-second); }
+:root[data-theme-family="crystal"] .word-extractor-mark:not(.is-owned) { background: color-mix(in srgb, var(--sf-brand) 26%, transparent); box-shadow: inset 0 -2px 0 var(--sf-brand); }
+:root[data-theme-family="crystal"] .word-extractor-deck { color: var(--sf-text-muted); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .03em; }
+:root[data-theme-family="crystal"] .word-extractor-deck::before { border-radius: 0; background: var(--sf-surface-control); clip-path: var(--nk-chamfer-sm); }
+:root[data-theme-family="crystal"] .word-extractor-deck:focus-within { outline: 2px solid var(--sf-brand); outline-offset: 0; }
+:root[data-theme-family="crystal"] .word-extractor-deck:focus-within::before { outline: 0; }
 :root[data-theme-family="crystal"]:not(.dark) .word-extractor-tag,
 :root[data-theme-family="crystal"]:not(.dark) .word-extractor-toggle.library-dialog-link { color: var(--sf-brand-text); }

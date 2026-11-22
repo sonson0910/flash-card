@@ -242,6 +242,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
           onGenerate={actions.tools.generateCard}
           onImport={actions.tools.importCards}
           importFile={actions.tools.importFile}
+          customDecks={model.tools.customDecks}
           onOpenPaths={actions.tools.openPaths}
           isLoading={model.tools.isLoading}
           isGenerating={model.tools.isGenerating}
