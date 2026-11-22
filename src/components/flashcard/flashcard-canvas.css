@@ -1668,6 +1668,18 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   color: var(--sf-on-brand);
 }
 
+/* EASY is plain gold in both Crystal themes, with its label in the easy ink on that fill. */
+:root[data-theme-family="crystal"]:not(.dark) .review-grades[data-card-look="crystal"] .review-grade[data-rating="easy"],
+:root[data-theme-family="crystal"].dark .review-grades[data-card-look="crystal"] .review-grade[data-rating="easy"] {
+  background: var(--rating-color);
+  color: var(--sf-rating-easy-ink);
+}
+
+/* Gold is too pale for a focus ring on the Prism Day page, so the ring takes the ink. */
+:root[data-theme-family="crystal"]:not(.dark) .review-grades[data-card-look="crystal"] .review-grade[data-rating="easy"]:focus-visible {
+  outline-color: var(--sf-rating-easy-ink);
+}
+
 /* ------------------------------------------------------------------------
    Active recall prompt: the review card before the answer is revealed.
    ------------------------------------------------------------------------ */
