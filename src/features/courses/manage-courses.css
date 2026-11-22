@@ -12,6 +12,10 @@ html[data-theme-family=crystal] .course-manage-overlay {
 
 .course-manage { position: fixed; inset: 0; z-index: 101; overflow-y: auto; overscroll-behavior: contain; color: var(--sf-text); }
 .course-manage__frame { display: flex; min-height: 100%; max-width: 1440px; flex-direction: column; gap: 22px; margin: 0 auto; padding: 28px 48px 32px; }
+/* The page mount sits in the app workspace, which already pads the page. */
+.course-manage-page { color: var(--sf-text); }
+.course-manage-page .course-manage__frame { min-height: 0; padding: 8px 0 0; }
+.course-manage-page .course-manage__title:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 4px; }
 
 /* Header */
 .course-manage__header { display: grid; align-items: start; gap: 16px; grid-template-columns: minmax(0, 1fr) auto auto; }

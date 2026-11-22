@@ -45,6 +45,8 @@ export interface ReminderSettingsSectionProps {
   readonly heading?: ReactNode;
   /** Extra settings shown under the reminder form, such as sounds and haptics. */
   readonly footer?: ReactNode;
+  /** The send time (`HH:MM`) once the stored settings load and after each change, for a preview beside the form. */
+  readonly onSendTimeChange?: (time: string) => void;
 }
 
 function TimeSelect({ value, label, onChange, step, large = false }: { readonly value: string; readonly label: string; readonly onChange: (value: string) => void; readonly step: number; readonly large?: boolean }) {
@@ -57,7 +59,7 @@ function TimeSelect({ value, label, onChange, step, large = false }: { readonly 
   </span>;
 }
 
-export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSaveStateChange, onSkip, heading, footer }: ReminderSettingsSectionProps) {
+export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSaveStateChange, onSkip, heading, footer, onSendTimeChange }: ReminderSettingsSectionProps) {
   const { _ } = useLingui();
   const uiLocale = useUiLocale();
   const [ownerId, setOwnerId] = useState<string | null>(() => initialOwnerId ?? currentOwnerId());
@@ -109,6 +111,10 @@ export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSa
   useEffect(() => {
     onSaveStateChange?.({ saving, failed: saveFailed });
   }, [onSaveStateChange, saveFailed, saving]);
+
+  useEffect(() => {
+    if (status === 'ready') onSendTimeChange?.(settings.sendAtLocal);
+  }, [onSendTimeChange, settings.sendAtLocal, status]);
 
   const update = (patch: Partial<ReminderSettings>) => {
     setSettings(previous => ({ ...previous, ...patch }));

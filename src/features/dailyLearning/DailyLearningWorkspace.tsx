@@ -245,6 +245,8 @@ export interface DailyLearningWorkspaceProps {
   readonly openLesson: (mode: DailyLessonMode | null) => void;
   readonly openVocabulary: () => void;
   readonly openPaths: () => void;
+  /** Opens the courses page on one course's goals, where the IELTS band and latest score are set. */
+  readonly openCourseGoals?: (courseId: string) => void;
   readonly continueReview: () => void | Promise<void>;
   readonly openMorePractice: (opener: HTMLButtonElement) => void;
   readonly openWeeklyRecap: () => void;
@@ -428,6 +430,7 @@ export default function DailyLearningWorkspace({
   openLesson,
   openVocabulary,
   openPaths,
+  openCourseGoals,
   continueReview,
   openMorePractice,
   openWeeklyRecap,
@@ -1508,6 +1511,10 @@ export default function DailyLearningWorkspace({
             rewardTimeZone={verifiedGamification.rewardTimeZone ?? rewardTimeZone}
             verifiedHistoryStartedOn={verifiedGamification.reviewActivityByLanguage.en?.coverageStartedOn ?? null}
             onOpenPath={() => { finishMultiStageSession(false); openPaths(); }}
+            {...(activeCourse && openCourseGoals ? {
+              onSetTargetBand: () => { finishMultiStageSession(false); openCourseGoals(activeCourse.id); },
+              onEditLatestScore: () => { finishMultiStageSession(false); openCourseGoals(activeCourse.id); },
+            } : {})}
           /></Suspense>}
         />
       </Suspense>

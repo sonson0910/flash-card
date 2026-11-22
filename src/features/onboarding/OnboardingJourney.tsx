@@ -262,6 +262,8 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const [startingTier, setStartingTier] = useState<StartingTier | null>(saved.draft?.startingTier ?? null);
   const [romanization, setRomanization] = useState<boolean | null>(saved.draft?.romanization ?? null);
   const [ahaOutcome, setAhaOutcome] = useState<StarterCardOutcome | 'pending' | 'error' | null>(null);
+  // The send time the reminder form holds, drawn on the phone preview; unknown until the form loads.
+  const [reminderTime, setReminderTime] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dismissedForSession, setDismissedForSession] = useState(false);
   const { locked: reminderSaveLocked, onSaveStateChange: onReminderSaveStateChange, skipFailedSave } = useOnboardingReminderSaveLock();
@@ -605,10 +607,10 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
         {eyebrow}
         <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.reminder.title', message: 'When should we <0>nudge you?</0>' })} components={accent} /></h2>
         <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.reminder.description', message: 'Choose when SonFlash can remind you to review.' })} /></p>
-        <div className="onb-reminder-panel"><ReminderSettingsSection initialOwnerId={ownerId} embedded onSaveStateChange={onReminderSaveStateChange} onSkip={skipFailedSave} /></div>
+        <div className="onb-reminder-panel"><ReminderSettingsSection initialOwnerId={ownerId} embedded onSaveStateChange={onReminderSaveStateChange} onSkip={skipFailedSave} onSendTimeChange={setReminderTime} /></div>
         {error && <p className="onb-message" data-tone="danger" role="alert">{error}</p>}
       </div>
-      <ReminderPhonePreview cardCount={starterCards} countdown={daysLeft !== null && daysLeft > 0 ? { days: daysLeft, goal: goalName } : null} />
+      <ReminderPhonePreview cardCount={starterCards} time={reminderTime} countdown={daysLeft !== null && daysLeft > 0 ? { days: daysLeft, goal: goalName } : null} />
     </div>;
     footer = <>
       {backButton}

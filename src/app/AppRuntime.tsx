@@ -212,7 +212,9 @@ export default function AppRuntime({
     viewMode,
     setViewMode,
     openSettings,
+    openCourseGoals,
     settingsSection,
+    goalsCourseId,
     webWordsReturnView,
     viewHeadingRef,
     viewFocusIntent,
@@ -659,6 +661,8 @@ export default function AppRuntime({
               focusIntent={viewFocusIntent}
               settingsSection={settingsSection}
               openSettings={openSettings}
+              goalsCourseId={goalsCourseId}
+              openCourseGoals={openCourseGoals}
               webWordsReturnView={webWordsReturnView}
               returnFromWebWords={() => setViewMode(webWordsReturnView)}
               filePort={filePort}

@@ -5,6 +5,7 @@ import { createRef, type ComponentProps } from 'react';
 import { renderToPipeableStream } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { Course } from '../features/courses/courseModel';
+import { CourseContext, type CourseGateValue } from '../features/courses/CourseGate';
 import { createMemoryFilePort } from '../features/files/memoryFileAdapter';
 import { ThemeProvider } from '../features/theme/ThemeProvider';
 import { fileCourseOptions } from './app-runtime-shared';
@@ -33,8 +34,9 @@ const stageProps = (overrides: Partial<StageProps>): StageProps => ({
 } as StageProps);
 
 /** Renders after the lazy view and its catalog have loaded. */
-const renderStage = (props: StageProps) => new Promise<string>((resolve, reject) => {
-  const { pipe } = renderToPipeableStream(<I18nProvider i18n={i18n}><ThemeProvider><AppViewStage {...props} /></ThemeProvider></I18nProvider>, {
+const renderStage = (props: StageProps, courseSession?: CourseGateValue) => new Promise<string>((resolve, reject) => {
+  const stage = <AppViewStage {...props} />;
+  const { pipe } = renderToPipeableStream(<I18nProvider i18n={i18n}><ThemeProvider>{courseSession ? <CourseContext.Provider value={courseSession}>{stage}</CourseContext.Provider> : stage}</ThemeProvider></I18nProvider>, {
     onAllReady() {
       const stream = new PassThrough();
       const chunks: Buffer[] = [];
@@ -79,5 +81,36 @@ describe('AppViewStage My files', () => {
       { id: 'course-ko', label: 'Korean' },
       { id: 'course-en', label: 'English' },
     ]);
+  });
+});
+
+describe('AppViewStage courses page', () => {
+  const english = { ...course('course-en', 'en', 'active'), goals: [{ id: 'goal-ielts', kind: 'ielts', level: '7.0', targetDate: null, status: 'active' as const, createdAt: '2026-11-19T00:00:00.000Z' }] };
+  const courseSession = (): CourseGateValue => ({
+    model: {
+      ownerId: 'owner-a', status: 'ready', source: 'cloud', pending: false, errorCode: null,
+      profile: { activeCourseId: english.id, courses: [english, course('course-ko', 'ko', 'active')] }, activeCourse: english,
+    },
+    actions: {} as CourseGateValue['actions'],
+  } as CourseGateValue);
+
+  it('renders the courses page with its own focusable page title and the way to today', async () => {
+    const html = await renderStage(stageProps({ viewMode: 'courses', openToday: vi.fn(), goalsCourseId: null }), courseSession());
+    expect(html).toContain('data-async-content="courses"');
+    expect(html).toContain('data-courses-page=""');
+    expect(html.match(/<h1/g)).toHaveLength(1);
+    expect(html).toContain('<h1 tabindex="-1" class="course-manage__title">Your <em>languages</em></h1>');
+    expect(html).toContain('Start <span lang="en">English</span> lesson');
+    expect(html).not.toContain('Close courses');
+  });
+
+  it('opens on the goals of the course a goals link names', async () => {
+    const html = await renderStage(stageProps({ viewMode: 'courses', openToday: vi.fn(), goalsCourseId: 'course-en' }), courseSession());
+    expect(html).toContain('Back to courses');
+    expect(html).toContain('IELTS');
+  });
+
+  it('renders nothing for the courses view while signed out', async () => {
+    expect(await renderStage(stageProps({ viewMode: 'courses', ownerId: null, openToday: vi.fn(), goalsCourseId: null }), courseSession())).toBe('');
   });
 });

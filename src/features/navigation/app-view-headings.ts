@@ -9,6 +9,7 @@ export const APP_VIEW_HEADINGS = {
   settings: msg({ id: 'shell.heading.settings', message: 'Settings and appearance' }),
   'web-words': msg({ id: 'shell.heading.web-words', message: 'Words saved from the web' }),
   files: msg({ id: 'shell.heading.files', message: 'My files' }),
+  courses: msg({ id: 'shell.heading.courses', message: 'Your courses' }),
   study: msg({ id: 'shell.heading.study', message: 'Study session' }),
   quiz: msg({ id: 'shell.heading.quiz', message: 'Vocabulary quiz' }),
   spelling: msg({ id: 'shell.heading.spelling', message: 'Spelling practice' }),

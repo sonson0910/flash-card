@@ -23,7 +23,7 @@ msgctxt "settings.reminders.page-title"
 msgid "A nudge, <0>not a nag.</0>"
 msgstr "Nhắc khẽ, <0>không làm phiền.</0>"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:210
+#: src/features/reminders/ReminderSettingsSection.tsx:216
 msgctxt "settings.reminders.badge.read-only"
 msgid "Read only"
 msgstr "Chỉ xem"
@@ -48,7 +48,7 @@ msgctxt "settings.course.pace.description"
 msgid "New words introduced each day"
 msgstr "Số từ mới giới thiệu mỗi ngày"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:157
+#: src/features/reminders/ReminderSettingsSection.tsx:163
 msgctxt "settings.reminders.daily"
 msgid "Daily reminder"
 msgstr "Nhắc hằng ngày"
@@ -58,7 +58,7 @@ msgctxt "settings.theme.midnight.description"
 msgid "A deep, calm night palette."
 msgstr "Bảng màu đêm sâu lắng, êm dịu."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:219
+#: src/features/reminders/ReminderSettingsSection.tsx:225
 msgctxt "settings.reminders.skip"
 msgid "Skip for now"
 msgstr "Bỏ qua lúc này"
@@ -73,22 +73,22 @@ msgctxt "settings.menu.reminders"
 msgid "Reminders"
 msgstr "Nhắc nhở"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:253
+#: src/features/reminders/ReminderSettingsSection.tsx:259
 msgctxt "settings.reminders.preview.body"
 msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
 msgstr "{count, plural, other {# thẻ đến hạn ôn tập.}}"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:181
+#: src/features/reminders/ReminderSettingsSection.tsx:187
 msgctxt "settings.reminders.only-if-not-studied.description"
 msgid "Remind me only if I haven’t studied yet today"
 msgstr "Chỉ nhắc nếu hôm nay mình chưa học"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:211
+#: src/features/reminders/ReminderSettingsSection.tsx:217
 msgctxt "settings.reminders.badge.title"
 msgid "Extension badge"
 msgstr "Huy hiệu tiện ích"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:181
+#: src/features/reminders/ReminderSettingsSection.tsx:187
 msgctxt "settings.reminders.smart"
 msgid "Smart reminder"
 msgstr "Nhắc thông minh"
@@ -118,12 +118,12 @@ msgctxt "settings.reminders.description"
 msgid "We remind you once a day, only when cards are waiting."
 msgstr "Mỗi ngày nhắc một lần, chỉ khi có thẻ đang chờ."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:212
+#: src/features/reminders/ReminderSettingsSection.tsx:218
 msgctxt "settings.reminders.badge.description"
 msgid "Due count on the SonFlash icon"
 msgstr "Số thẻ đến hạn trên biểu tượng SonFlash"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:271
+#: src/features/reminders/ReminderSettingsSection.tsx:277
 msgctxt "settings.reminders.lumi.text"
 msgid "I only call you once a day, when cards are due."
 msgstr "Mình chỉ gọi bạn một lần mỗi ngày, khi có thẻ đến hạn."
@@ -138,17 +138,17 @@ msgctxt "settings.theme.label"
 msgid "Theme"
 msgstr "Chủ đề"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:250
+#: src/features/reminders/ReminderSettingsSection.tsx:256
 msgctxt "settings.reminders.preview.body-unknown"
 msgid "Your due cards are ready for review."
 msgstr "Các thẻ đến hạn đang chờ bạn ôn tập."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:229
+#: src/features/reminders/ReminderSettingsSection.tsx:235
 msgctxt "settings.reminders.unavailable"
 msgid "Reminders are unavailable right now. Try again later."
 msgstr "Lời nhắc hiện chưa khả dụng. Hãy thử lại sau."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:171
+#: src/features/reminders/ReminderSettingsSection.tsx:177
 msgctxt "settings.reminders.days"
 msgid "Review days"
 msgstr "Ngày ôn tập"
@@ -183,7 +183,7 @@ msgctxt "settings.course.ui-language.scope"
 msgid "Menus, buttons, emails and notifications"
 msgstr "Menu, nút bấm, email và thông báo"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:245
+#: src/features/reminders/ReminderSettingsSection.tsx:251
 msgctxt "settings.reminders.preview.title"
 msgid "Live preview"
 msgstr "Xem trước"
@@ -208,17 +208,17 @@ msgctxt "settings.focus-mode.description"
 msgid "Hide combo banners while studying."
 msgstr "Ẩn biểu ngữ chuỗi khi học."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:256
+#: src/features/reminders/ReminderSettingsSection.tsx:262
 msgctxt "settings.reminders.preview.mail-subject"
 msgid "Your SonFlash weekly recap"
 msgstr "Tổng kết tuần học SonFlash"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:220
+#: src/features/reminders/ReminderSettingsSection.tsx:226
 msgctxt "settings.reminders.saved"
 msgid "Reminder settings saved."
 msgstr "Đã lưu cài đặt lời nhắc."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:260
+#: src/features/reminders/ReminderSettingsSection.tsx:266
 msgctxt "settings.reminders.preview.mail-unknown"
 msgid "cards ready for review"
 msgstr "thẻ đến hạn ôn tập"
@@ -233,7 +233,7 @@ msgctxt "settings.files.description"
 msgid "Your uploads and the storage they use."
 msgstr "Tệp bạn tải lên và dung lượng chúng dùng."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:162
+#: src/features/reminders/ReminderSettingsSection.tsx:168
 msgctxt "settings.reminders.timezone"
 msgid "Time zone"
 msgstr "Múi giờ"
@@ -248,7 +248,7 @@ msgctxt "settings.data.eyebrow"
 msgid "Your account data"
 msgstr "Dữ liệu tài khoản"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:166
+#: src/features/reminders/ReminderSettingsSection.tsx:172
 msgctxt "settings.reminders.timezone.use-device"
 msgid "Use this device’s time zone"
 msgstr "Dùng múi giờ của thiết bị này"
@@ -258,22 +258,22 @@ msgctxt "settings.voice.unavailable"
 msgid "Saved voice unavailable · Automatic"
 msgstr "Giọng đã lưu không khả dụng · Tự động"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:187
+#: src/features/reminders/ReminderSettingsSection.tsx:193
 msgctxt "settings.reminders.quiet.description"
 msgid "Nothing is sent at night, even if cards are due"
 msgstr "Không gửi gì vào ban đêm, kể cả khi có thẻ đến hạn"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:267
+#: src/features/reminders/ReminderSettingsSection.tsx:273
 msgctxt "settings.reminders.preview.badge"
 msgid "Extension badge shows cards due, right in your toolbar."
 msgstr "Huy hiệu tiện ích hiện số thẻ đến hạn ngay trên thanh công cụ."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:258
+#: src/features/reminders/ReminderSettingsSection.tsx:264
 msgctxt "settings.reminders.preview.mail-eyebrow"
 msgid "Weekly recap"
 msgstr "Tổng kết tuần"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:205
+#: src/features/reminders/ReminderSettingsSection.tsx:211
 msgctxt "settings.reminders.email.title"
 msgid "Weekly digest"
 msgstr "Bản tin hằng tuần"
@@ -283,17 +283,17 @@ msgctxt "settings.lumi.label"
 msgid "Lumi"
 msgstr "Lumi"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:207
+#: src/features/reminders/ReminderSettingsSection.tsx:213
 msgctxt "settings.reminders.email-unavailable"
 msgid "Weekly email delivery is not available yet. You can turn off an existing recap, but new recaps cannot be enabled."
 msgstr "Chưa thể gửi email tổng kết hằng tuần. Bạn có thể tắt bản tổng kết hiện có, nhưng chưa thể bật bản mới."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:271
+#: src/features/reminders/ReminderSettingsSection.tsx:277
 msgctxt "settings.reminders.lumi.tag"
 msgid "Lumi · Link"
 msgstr "Lumi · Link"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:193
+#: src/features/reminders/ReminderSettingsSection.tsx:199
 msgctxt "settings.reminders.channels"
 msgid "Channels"
 msgstr "Kênh nhắc"
@@ -313,7 +313,7 @@ msgctxt "settings.haptics.label"
 msgid "Haptics"
 msgstr "Rung phản hồi"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:227
+#: src/features/reminders/ReminderSettingsSection.tsx:233
 msgctxt "settings.reminders.loading"
 msgid "Loading reminders…"
 msgstr "Đang tải lời nhắc…"
@@ -338,7 +338,7 @@ msgctxt "settings.course.pace.error"
 msgid "Daily pace could not be saved. Please try again."
 msgstr "Không thể lưu nhịp học hằng ngày. Hãy thử lại."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:197
+#: src/features/reminders/ReminderSettingsSection.tsx:203
 msgctxt "settings.reminders.push"
 msgid "Browser push"
 msgstr "Thông báo đẩy trên trình duyệt"
@@ -368,7 +368,7 @@ msgctxt "settings.lumi.description"
 msgid "Show your Crystal Star study companion."
 msgstr "Hiển thị bạn đồng hành Lumi trong Crystal Star."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:256
+#: src/features/reminders/ReminderSettingsSection.tsx:262
 msgctxt "settings.reminders.preview.mail-day"
 msgid "Sun"
 msgstr "CN"
@@ -378,7 +378,7 @@ msgctxt "settings.course.script"
 msgid "Chinese script"
 msgstr "Chữ Hán"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:198
+#: src/features/reminders/ReminderSettingsSection.tsx:204
 msgctxt "settings.reminders.push.description"
 msgid "One notification with the due count"
 msgstr "Một thông báo kèm số thẻ đến hạn"
@@ -398,7 +398,7 @@ msgctxt "settings.appearance.title"
 msgid "Appearance"
 msgstr "Giao diện"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:225
+#: src/features/reminders/ReminderSettingsSection.tsx:231
 msgctxt "settings.reminders.sign-in"
 msgid "Sign in to set reminders."
 msgstr "Đăng nhập để đặt lời nhắc."
@@ -408,7 +408,7 @@ msgctxt "settings.kicker"
 msgid "Settings"
 msgstr "Cài đặt"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:252
+#: src/features/reminders/ReminderSettingsSection.tsx:258
 msgctxt "settings.reminders.preview.body-none"
 msgid "Nothing is due right now, so no reminder is sent."
 msgstr "Hiện chưa có thẻ đến hạn nên sẽ không gửi lời nhắc."
@@ -428,7 +428,7 @@ msgctxt "settings.reduced-motion.label"
 msgid "Reduced motion"
 msgstr "Giảm chuyển động"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:218
+#: src/features/reminders/ReminderSettingsSection.tsx:224
 msgctxt "settings.reminders.save"
 msgid "Save reminders"
 msgstr "Lưu lời nhắc"
@@ -453,17 +453,17 @@ msgctxt "settings.menu.files"
 msgid "Storage & files"
 msgstr "Lưu trữ & tệp"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:229
+#: src/features/reminders/ReminderSettingsSection.tsx:235
 msgctxt "common.retry"
 msgid "Retry"
 msgstr "Thử lại"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:206
+#: src/features/reminders/ReminderSettingsSection.tsx:212
 msgctxt "settings.reminders.email.description"
 msgid "Sunday email with your recap"
 msgstr "Email tổng kết vào Chủ nhật"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:263
+#: src/features/reminders/ReminderSettingsSection.tsx:269
 msgctxt "settings.reminders.preview.mail-link"
 msgid "Continue on SonFlash →"
 msgstr "Tiếp tục trên SonFlash →"
@@ -473,7 +473,7 @@ msgctxt "settings.course.add.title"
 msgid "Start another language"
 msgstr "Học thêm ngôn ngữ khác"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:186
+#: src/features/reminders/ReminderSettingsSection.tsx:192
 msgctxt "settings.reminders.quiet"
 msgid "Quiet hours"
 msgstr "Giờ yên lặng"
@@ -483,12 +483,12 @@ msgctxt "settings.course.pace"
 msgid "Daily pace"
 msgstr "Nhịp học mỗi ngày"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:178
+#: src/features/reminders/ReminderSettingsSection.tsx:184
 msgctxt "settings.reminders.days.count"
 msgid "{count, plural, one {# day a week} other {# days a week}}"
 msgstr "{count, plural, other {# ngày mỗi tuần}}"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:167
+#: src/features/reminders/ReminderSettingsSection.tsx:173
 msgctxt "settings.reminders.timezone.note"
 msgid "Reminders follow this clock."
 msgstr "Lời nhắc chạy theo giờ này."
@@ -535,32 +535,32 @@ msgid "settings.menu.label"
 msgstr "Các mục cài đặt"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:244
+#: src/features/reminders/ReminderSettingsSection.tsx:250
 msgid "settings.reminders.preview.label"
 msgstr "Xem trước"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:186
+#: src/features/reminders/ReminderSettingsSection.tsx:192
 msgid "settings.reminders.quiet-end.label"
 msgstr "Đến"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:186
+#: src/features/reminders/ReminderSettingsSection.tsx:192
 msgid "settings.reminders.quiet-start.label"
 msgstr "Từ"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:189
+#: src/features/reminders/ReminderSettingsSection.tsx:195
 msgid "settings.reminders.quiet.label"
 msgstr "Giờ yên lặng"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:158
+#: src/features/reminders/ReminderSettingsSection.tsx:164
 msgid "settings.reminders.time.label"
 msgstr "Gửi lúc"
 
 #. js-lingui-explicit-id
-#: src/features/reminders/ReminderSettingsSection.tsx:151
+#: src/features/reminders/ReminderSettingsSection.tsx:157
 msgid "settings.reminders.title"
 msgstr "Lời nhắc học"
 
@@ -629,7 +629,7 @@ msgctxt "settings.course.list.title"
 msgid "Your courses · {count}"
 msgstr "Khóa học của bạn · {count}"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:200
+#: src/features/reminders/ReminderSettingsSection.tsx:206
 msgctxt "settings.reminders.push-denied"
 msgid "Browser notifications are blocked. Allow them in your browser settings to turn on push."
 msgstr "Thông báo trình duyệt đang bị chặn. Hãy cho phép trong cài đặt trình duyệt để bật thông báo đẩy."
@@ -644,7 +644,7 @@ msgctxt "settings.follow-system.description"
 msgid "Match your device’s light or dark setting."
 msgstr "Theo chế độ sáng hoặc tối của thiết bị."
 
-#: src/features/reminders/ReminderSettingsSection.tsx:201
+#: src/features/reminders/ReminderSettingsSection.tsx:207
 msgctxt "settings.reminders.push-unavailable"
 msgid "Push needs a supported browser and configured web push key."
 msgstr "Thông báo đẩy cần trình duyệt được hỗ trợ và khóa web push đã cấu hình."
@@ -659,7 +659,7 @@ msgctxt "settings.data.row.title"
 msgid "Export or delete"
 msgstr "Xuất hoặc xóa"
 
-#: src/features/reminders/ReminderSettingsSection.tsx:261
+#: src/features/reminders/ReminderSettingsSection.tsx:267
 msgctxt "settings.reminders.preview.mail-count"
 msgid "{count, plural, one {card ready for review} other {cards ready for review}}"
 msgstr "{count, plural, other {thẻ đến hạn ôn tập}}"

@@ -18,6 +18,11 @@ import './add-course-dialog.css';
  */
 const EXAM_GOAL_KINDS = new Set(['ielts', 'toeic', 'topik', 'jlpt', 'hsk']);
 
+/** The meanings language a new course starts with: the profile's, else the active course's, else the app's. */
+export const defaultCourseNativeLanguage = (
+  profileNativeLanguage: CourseNativeLanguage | null, activeCourse: Course | null, uiLocale: string,
+): CourseNativeLanguage => profileNativeLanguage ?? activeCourse?.nativeLanguage ?? (uiLocale === 'en' ? 'en' : 'vi');
+
 export interface AddCourseDialogProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;

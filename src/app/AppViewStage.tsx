@@ -62,6 +62,9 @@ const WebWordsPage = lazy(() => Promise.all([
 const FilesWorkspace = lazy(() => Promise.all([
   import('../features/files/FilesWorkspace'), loadCatalog(getActiveUiLocale(), 'files'),
 ]).then(([module]) => ({ default: module.FilesWorkspace })));
+const CoursesPage = lazy(() => Promise.all([
+  import('../features/courses/CoursesPage'), loadCatalog(getActiveUiLocale(), 'shell'),
+]).then(([module]) => ({ default: module.CoursesPage })));
 
 interface AppViewStageProps {
   readonly viewMode: AppViewMode;
@@ -118,6 +121,12 @@ interface AppViewStageProps {
   readonly fileCardPhotos: FileCardPhotos;
   readonly activeCourseId: string | null;
   readonly openFiles: () => void;
+  /** Opens Today, where the courses page's start button leads. */
+  readonly openToday: () => void;
+  /** The course whose goals the courses page opens on, from the URL. */
+  readonly goalsCourseId: string | null;
+  /** Opens the courses page on one course's goals. */
+  readonly openCourseGoals: (courseId: string) => void;
   readonly libraryContent: ReactNode;
   readonly practiceContent: ReactNode;
 }
@@ -127,7 +136,7 @@ const fallback = (message: ReactNode) => <WorkspaceLoadingPanel>{message}</Works
 export function AppViewStage({
   viewMode, ownerId, database, verifiedLibraryEpoch, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, cloudStats, cloudStatsTargetLanguage, streak, isStatsLoading, statsError, rewardTimeZone, learner, learnerLevel, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
-  openVocabulary, openMasteredVocabulary, openPaths, continueReview, continueCatalogUnit, openMorePractice, openWeeklyRecap, onVerifiedPracticeOutcome, weeklyRecapRequestOwnerId, weeklyRecapRequestSettled, onWeeklyRecapRequestConsumed, onPracticePhrase, onListenScopeChange, settingsSection, openSettings, webWordsReturnView, returnFromWebWords, filePort, fileCourses, fileCardPhotos, activeCourseId, openFiles, libraryContent, practiceContent,
+  openVocabulary, openMasteredVocabulary, openPaths, continueReview, continueCatalogUnit, openMorePractice, openWeeklyRecap, onVerifiedPracticeOutcome, weeklyRecapRequestOwnerId, weeklyRecapRequestSettled, onWeeklyRecapRequestConsumed, onPracticePhrase, onListenScopeChange, settingsSection, openSettings, webWordsReturnView, returnFromWebWords, filePort, fileCourses, fileCardPhotos, activeCourseId, openFiles, openToday, goalsCourseId, openCourseGoals, libraryContent, practiceContent,
 }: AppViewStageProps) {
   if (viewMode === 'catalog') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.paths', message: 'Preparing learning paths…' })} />)}><div className="async-content-enter" data-async-content="catalog"><CatalogWorkspace ownerId={ownerId} targetLanguage={languageProfile.source.code} database={database} verifiedLibraryEpoch={verifiedLibraryEpoch} headingRef={headingRef} focusIntent={focusIntent} cards={catalogCards} adoptCards={adoptCatalogCards} notify={notifyCatalog} libraryStats={stats} cloudStats={cloudStats} cloudStatsTargetLanguage={cloudStatsTargetLanguage} openVocabulary={openVocabulary} continueReview={continueReview} continueCatalogUnit={continueCatalogUnit} /></div></Suspense>;
   if (viewMode === 'today') {
@@ -140,7 +149,7 @@ export function AppViewStage({
     return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.today', message: 'Preparing today’s learning plan…' })} />)}><div className="async-content-enter" data-async-content="today"><DailyLearningWorkspace
       ownerId={ownerId} database={database} verifiedLibraryEpoch={verifiedLibraryEpoch} languageProfile={languageProfile} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson} streak={streak} studyXpHistory={stats.xpChartData} rewardTimeZone={rewardTimeZone} {...(learner ? { learner } : {})}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
-      openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} continueReview={continueReview} openMorePractice={openMorePractice} openWeeklyRecap={openWeeklyRecap} onVerifiedPracticeOutcome={onVerifiedPracticeOutcome}
+      openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} openCourseGoals={openCourseGoals} continueReview={continueReview} openMorePractice={openMorePractice} openWeeklyRecap={openWeeklyRecap} onVerifiedPracticeOutcome={onVerifiedPracticeOutcome}
       adoptCatalogCards={adoptCatalogCards} onPracticePhrase={onPracticePhrase} onListenScopeChange={onListenScopeChange}
     /></div></Suspense>;
   }
@@ -148,6 +157,7 @@ export function AppViewStage({
   if (viewMode === 'settings') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.settings', message: 'Preparing appearance settings…' })} />)}><div className="async-content-enter" data-async-content="settings"><SettingsScreen headingRef={headingRef} focusIntent={focusIntent} section={settingsSection} onSelectSection={openSettings} filePort={filePort} onOpenFiles={openFiles} /></div></Suspense>;
   if (viewMode === 'web-words') return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.web-words', message: 'Preparing your web words…' })} />)}><div className="async-content-enter" data-async-content="web-words"><WebWordsPage ownerId={ownerId} targetLanguage={languageProfile.source.code} translationLanguage={languageProfile.target.code} returnView={webWordsReturnView} onClose={returnFromWebWords} headingRef={headingRef} focusIntent={focusIntent} /></div></Suspense>;
   if (viewMode === 'files') return filePort && <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.files', message: 'Preparing your files…' })} />)}><div className="async-content-enter" data-async-content="files"><FilesWorkspace key={ownerId ?? 'signed-out'} port={filePort} courses={fileCourses} defaultCourseId={activeCourseId} cardPhotos={fileCardPhotos} headingRef={headingRef} focusIntent={focusIntent} /></div></Suspense>;
+  if (viewMode === 'courses') return ownerId && <Suspense fallback={fallback(<Trans {...msg({ context: 'course.loading', message: 'Preparing your courses…' })} />)}><div className="async-content-enter" data-async-content="courses"><CoursesPage key={`${ownerId}\u0000${goalsCourseId ?? ''}`} onStudy={openToday} initialGoalsCourseId={goalsCourseId} headingRef={headingRef} focusIntent={focusIntent} /></div></Suspense>;
   if (viewMode === 'library') return libraryContent;
   return practiceContent;
 }

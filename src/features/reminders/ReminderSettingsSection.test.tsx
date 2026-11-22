@@ -205,6 +205,23 @@ describe('reminder settings mounted lifecycle', () => {
     } finally { unmount(mounted); }
   });
 
+  it('reports the stored send time once it loads and each time the learner picks another', async () => {
+    const onSendTimeChange = vi.fn();
+    reminders.load.mockResolvedValue({ ...loadedSettings, sendAtLocal: '19:30' });
+    const mounted = mount({ initialOwnerId: 'owner-a', embedded: true, onSendTimeChange });
+    try {
+      expect(onSendTimeChange).not.toHaveBeenCalled();
+      await act(async () => {});
+      expect(onSendTimeChange).toHaveBeenLastCalledWith('19:30');
+      const time = inputWithValue(mounted.container, '19:30');
+      expect(time?.tagName).toBe('SELECT');
+      const props = reactProps(time!) as unknown as { onChange: (event: { target: { value: string } }) => void };
+      await act(async () => props.onChange({ target: { value: '07:15' } }));
+      expect(onSendTimeChange).toHaveBeenLastCalledWith('07:15');
+      expect(onSendTimeChange).toHaveBeenCalledTimes(2);
+    } finally { unmount(mounted); }
+  });
+
   it('clears a failed save when Skip for now is clicked and notifies its owner', async () => {
     const onSkip = vi.fn();
     reminders.load.mockResolvedValue(loadedSettings);
