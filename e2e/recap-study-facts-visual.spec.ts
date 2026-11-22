@@ -135,7 +135,9 @@ for (const theme of themes) {
         await openFixture(page, theme, viewport, `view=session&locale=${locale}`);
         const recap = page.locator('[data-session-recap]');
         await expect(recap).toBeVisible({ timeout: 15_000 });
-        await expect(recap.locator('[data-recap-duration]')).toHaveText('04:05');
+        // Classic writes the duration into the title; Crystal gives it a Study time tile.
+        if (theme.family === 'crystal') await expect(recap.locator('[data-recap-duration]')).toHaveText('04:05');
+        else await expect(recap.getByRole('heading', { name: locale === 'vi' ? 'Hoàn thành phiên học · 4 phút 5 giây' : 'Session complete · 4 min 5 s' })).toBeVisible();
         // 61 timed reviews over 1,290 s in the last four weeks: 24 cards take about 8 minutes.
         await expect(recap.getByText(locale === 'vi' ? '24 thẻ · khoảng 8 phút' : '24 cards · about 8 min', { exact: true })).toBeVisible();
         await expectAccessibleAndContained(page, '[data-session-recap]', `${label} ${locale} session recap`);
@@ -147,11 +149,12 @@ for (const theme of themes) {
       await openFixture(page, theme, viewport, 'view=stats&locale=en');
       const board = page.locator('[data-study-facts-board]');
       await expect(board).toBeVisible({ timeout: 15_000 });
-      await expect(board.locator('[data-fact="learning-since"]')).toHaveText('Learning since 2 June 2026');
-      await expect(board.locator('[data-fact="learning-since-kicker"]')).toHaveText('since 2 Jun 2026');
-      await expect(board.locator('[data-fact="studied"]')).toHaveText('25 m studied since 12 Nov');
+      await expect(board.locator('[data-progress-learning-since="subtitle"]')).toHaveText('Learning since 2 June 2026');
+      await expect(board.locator('[data-progress-learning-since="kicker"]')).toHaveText('since 2 Jun 2026');
+      await expect(board.locator('[data-progress-studied]')).toHaveText('25 m studied since 12 Nov');
       await expect(board.locator('[data-fact="pace"]')).toHaveText('Study pace5 min a day');
-      await expect(board.locator('[data-fact="best-streak"] dd')).toHaveText('11 days');
+      // The stored best is 11, but the current 12-day run is longer.
+      await expect(board.locator('[data-fact="best-streak"] dd')).toHaveText('12 days');
 
       const activity = board.getByRole('region', { name: 'Activity', exact: true });
       const allTime = activity.getByRole('button', { name: 'All time' });
