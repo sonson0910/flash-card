@@ -61,6 +61,20 @@ export const parseStudyTime = (value: unknown): StudyTimeV1 | undefined => {
   };
 };
 
+/**
+ * The record an account starts when its first verified action credits no time, a card create.
+ * Coverage begins with the account, so the reviews and practice after it keep lifetime totals.
+ * The chain starts empty: a create is not part of it, so the first review after it is credited
+ * nothing, as an account's very first review is.
+ */
+export const firstActionStudyTime = (studyDay: string): StudyTimeV1 => ({
+  coverageStartedOn: studyDay,
+  fromFirstAction: true,
+  lastActionAtMs: 0,
+  totalMs: 0,
+  days: {},
+});
+
 /** One verified action as the study time record sees it. */
 export interface StudyTimeAction {
   /** Server time the action was received, in epoch milliseconds. */

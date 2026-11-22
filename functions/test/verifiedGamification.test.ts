@@ -847,6 +847,25 @@ describe('study time record', () => {
     expect(create.studyTimeV1).toBeUndefined();
   });
 
+  it('starts lifetime coverage when a new account first creates a card, crediting the create nothing', async () => {
+    const create = await run(undefined, action({ kind: 'create', timeZone: 'UTC' }));
+    expect(create.reads).toEqual([statsPath]);
+    expect(create.prepared.outcome).not.toHaveProperty('studyTimeMs');
+    expect(create.studyTimeV1).toEqual({ coverageStartedOn: '2026-03-08', fromFirstAction: true, lastActionAtMs: 0, totalMs: 0, days: {} });
+    // The create raised verified XP, so only the stored record still knows coverage began with the account.
+    const review = await run(
+      settled({ verifiedXp: CREATE_CARD_XP, lastVerifiedStudyDay: null, studyTimeV1: create.studyTimeV1 }),
+      action({ timeZone: 'UTC', receivedAt: at('2026-03-08T10:30:20.000Z') }),
+    );
+    expect(review.prepared.outcome.studyTimeMs).toBe(0);
+    expect(review.studyTimeV1).toEqual({
+      coverageStartedOn: '2026-03-08', fromFirstAction: true, lastActionAtMs: Date.parse('2026-03-08T10:30:20.000Z'), totalMs: 0, days: {},
+    });
+    const existing = await run(settled({ studyTimeV1: create.studyTimeV1 }), action({ kind: 'create', timeZone: 'UTC' }));
+    expect(existing.studyTimeV1).toBeUndefined();
+    expect((await run(settled(), action({ kind: 'create', timeZone: 'UTC' }))).studyTimeV1).toBeUndefined();
+  });
+
   it('starts an unusable stored record over and deletes its stale keys', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     try {
@@ -910,6 +929,33 @@ describe('weekly words record', () => {
     expect((await run(settled(), {
       kind: 'quiz', receivedAt: new Date('2026-03-08T10:30:00.000Z'), timeZone: 'UTC', resultXp: 10,
     })).wordWeeksV1).toBeUndefined();
+  });
+
+  it.each([
+    ['creates a card', action({ kind: 'create', timeZone: 'UTC', receivedAt: new Date('2026-03-04T10:00:00.000Z') })],
+    ['completes a practice', {
+      kind: 'match' as const, receivedAt: new Date('2026-03-04T10:00:00.000Z'), timeZone: 'UTC', resultXp: 20,
+      practiceStartedAt: new Date('2026-03-04T09:59:00.000Z'), practiceCards: 4,
+    }],
+  ])('keeps the first partial week of a new account whose first action %s', async (_label, first) => {
+    const test = harness();
+    const start = await prepareVerifiedGamification(test.database, test.transaction, 'owner', first);
+    expect(test.reads).toEqual([statsPath]);
+    const seeded = start.statsPatch.wordWeeksV1;
+    expect(seeded).toEqual({
+      coverageStartedOn: '2026-03-04', fromFirstAction: true, daysByLanguage: {}, bestWeekByLanguage: {}, wordOfWeekByLanguage: {},
+    });
+    // That first action raised verified XP; the stored record keeps coverage from the account's start.
+    const after = { verifiedXp: start.outcome.xp, lastVerifiedStudyDay: null };
+    const wednesday = await run(settled({ ...after, wordWeeksV1: seeded }), action({
+      timeZone: 'UTC', receivedAt: new Date('2026-03-04T10:05:00.000Z'), reviewedCard: card({ firstReview: true, started: true }),
+    }));
+    const monday = await run(settled({ wordWeeksV1: wednesday.wordWeeksV1 }), action({
+      timeZone: 'UTC', receivedAt: new Date('2026-03-09T10:00:00.000Z'), cardId: 'word-next', reviewedCard: card({ started: true }),
+    }));
+    expect(monday.wordWeeksV1).toMatchObject({
+      coverageStartedOn: '2026-03-04', fromFirstAction: true, bestWeekByLanguage: { en: { weekStart: '2026-03-02', started: 1 } },
+    });
   });
 
   it('starts an unusable stored record over and deletes its stale keys', async () => {
