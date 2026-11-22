@@ -90,7 +90,8 @@ test('a signed-in learner completes the core course, library, review, recap, and
   const recap = page.getByRole('dialog', { name: 'Your weekly recap' });
   await expect(recap).toBeVisible();
   // The card is the Monday week of the page's clock (Thursday 24 September 2026), day first.
-  await expect(recap.locator('.weekly-recap-card__range').first()).toHaveText(/^21 – 27 Sept?$/);
+  // Browsers space the range dash differently: Chromium writes "21 – 27", WebKit "21–27".
+  await expect(recap.locator('.weekly-recap-card__range').first()).toHaveText(/^21\s?–\s?27 Sept?$/);
   await expect(recap.getByText('1 d', { exact: true })).toBeVisible();
   await expect(recap.getByRole('button', { name: 'Download PNG' })).toBeVisible();
   await recap.getByRole('button', { name: 'Close' }).click();
