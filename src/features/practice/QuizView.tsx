@@ -504,7 +504,7 @@ export function QuizView({
                         {...msg({ context: 'practice.actions.view-results', message: 'View results' })}
                       />
                     ) : (
-                      <Trans {...msg({ context: 'practice.actions.next', message: 'Next' })} />
+                      <Trans {...msg({ context: 'practice.quiz.continue', message: 'Continue' })} />
                     )}
                     {!savingResult && <EnterKeyHint />}
                   </button>
