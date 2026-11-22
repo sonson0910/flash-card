@@ -579,11 +579,18 @@
   text-transform: uppercase;
 }
 
-.library-word-cover b {
+/* The tier mark and the due mark share one row, so a long tier name never runs under the due mark. */
+.library-word-marks {
   position: absolute;
   top: 10px;
   left: 10px;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.library-word-cover b {
   display: inline-flex;
   align-items: center;
   gap: .25rem;
@@ -1090,7 +1097,7 @@
 }
 
 :root[data-theme-family="crystal"] .library-canvas-title h2 {
-  background: linear-gradient(180deg, #0d1a33 0%, #0d1a33 45%, #b30f33 62%, #ff2a4d 100%);
+  background: var(--sf-metal);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1102,9 +1109,6 @@
 }
 
 :root[data-theme-family="crystal"].dark .library-canvas-title h2 {
-  background: linear-gradient(180deg, #fff 0%, #ffe3ea 45%, #ff8fa3 60%, #fff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
   filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .6));
 }
 
@@ -1112,45 +1116,103 @@
   display: flex;
   min-width: 0;
   align-items: end;
-  gap: .35rem;
+  gap: .5rem;
 }
 
+/* The glow sits on the sprite itself: it is not masked, so the shadow follows her outline. */
+:root[data-theme-family="crystal"] .library-lumi-hint img {
+  flex: none;
+  object-position: 50% 100%;
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-second) 35%, transparent));
+}
+
+/* One line: the signature and Lumi's line side by side on a small chamfered plate. */
 :root[data-theme-family="crystal"] .library-lumi-hint p {
   position: relative;
-  margin: 0 0 .35rem;
-  padding: .52rem .8rem .58rem;
-  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-  background: var(--sf-surface-control);
-  box-shadow: inset 0 0 0 1px var(--sf-border);
-  font-size: .72rem;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  padding: 8px 18px 8px 16px;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--sf-surface-glass);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
 }
 
 :root[data-theme-family="crystal"] .library-lumi-hint p::before {
   position: absolute;
-  top: .65rem;
-  bottom: .65rem;
+  top: 7px;
+  bottom: 7px;
   left: 0;
   width: 3px;
   content: "";
-  background: linear-gradient(180deg, #5ef2ff, #ff2a4d);
-}
-
-:root[data-theme-family="crystal"] .library-lumi-hint b,
-:root[data-theme-family="crystal"] .library-lumi-hint span {
-  display: block;
+  background: linear-gradient(180deg, var(--sf-second), var(--sf-brand));
 }
 
 :root[data-theme-family="crystal"] .library-lumi-hint b {
-  color: var(--sf-brand-text);
+  flex: none;
+  color: var(--sf-holo-text);
   font-family: var(--sf-font-display, Kanit, Nunito, system-ui, sans-serif);
+  font-size: 11px;
   font-style: italic;
+  font-weight: 800;
   letter-spacing: .12em;
 }
 
 :root[data-theme-family="crystal"] .library-lumi-hint span {
-  margin-top: .14rem;
-  color: var(--sf-text);
+  min-width: 0;
+  color: var(--sf-text-strong);
+  font-size: 13px;
   font-weight: 800;
+  line-height: 1.35;
+}
+
+/* Filter marks: small chips, so the tiers use their plain fills with a dark text shadow. */
+:root[data-theme-family="crystal"] .library-filter-mark {
+  --library-mark-fill: linear-gradient(180deg, color-mix(in srgb, var(--sf-text-tertiary) 82%, var(--sf-flare)), color-mix(in srgb, var(--sf-text-tertiary) 62%, var(--sf-umbra)));
+  --library-mark-shadow: color-mix(in srgb, var(--sf-text-tertiary) 25%, var(--sf-umbra));
+  height: 18px;
+  min-width: 18px;
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  background: var(--library-mark-fill);
+  color: var(--sf-on-primary);
+  font-family: var(--sf-font-display, Kanit, Nunito, system-ui, sans-serif);
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px 0 var(--library-mark-shadow);
+}
+
+:root[data-theme-family="crystal"] [data-library-filter="due"] .library-filter-mark {
+  --library-mark-fill: var(--sf-primary-bg);
+  --library-mark-shadow: var(--sf-tier-star-fill-shadow);
+}
+
+:root[data-theme-family="crystal"] [data-library-filter="new"] .library-filter-mark {
+  --library-mark-fill: var(--sf-tier-bud-fill);
+  --library-mark-shadow: var(--sf-tier-bud-fill-shadow);
+}
+
+:root[data-theme-family="crystal"] [data-library-filter="learning"] .library-filter-mark {
+  --library-mark-fill: var(--sf-tier-bloom-fill);
+  --library-mark-shadow: var(--sf-tier-bloom-fill-shadow);
+}
+
+:root[data-theme-family="crystal"] [data-library-filter="mastered"] .library-filter-mark {
+  --library-mark-fill: var(--sf-tier-star-fill);
+  --library-mark-shadow: var(--sf-tier-star-fill-shadow);
+}
+
+:root[data-theme-family="crystal"] .library-canvas-filters button[data-library-filter] {
+  gap: 7px;
 }
 
 :root[data-theme-family="crystal"] .library-canvas-search,
@@ -1283,18 +1345,62 @@
 }
 
 :root[data-theme-family="crystal"] .library-word-cover b {
+  height: 22px;
+  box-sizing: border-box;
   border-radius: 0;
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-  background: linear-gradient(180deg, #ff5470, #b30f33);
-  color: #fff;
+  color: var(--sf-on-primary);
   font-family: var(--sf-font-display, Kanit, Nunito, system-ui, sans-serif);
   font-style: italic;
 }
 
+/* Small tier marks use the plain tier fill: the rim gradients turn muddy under about 30 px. */
+:root[data-theme-family="crystal"] .library-word-grade {
+  --library-mark-fill: var(--sf-tier-bud-fill);
+  --library-mark-shadow: var(--sf-tier-bud-fill-shadow);
+  padding: 0 11px;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  background: var(--library-mark-fill);
+  color: var(--sf-on-primary);
+  font-size: 13px;
+  letter-spacing: 0;
+  text-shadow: 0 1px 0 var(--library-mark-shadow);
+}
+
+:root[data-theme-family="crystal"] .library-word-card--learning .library-word-grade {
+  --library-mark-fill: var(--sf-tier-bloom-fill);
+  --library-mark-shadow: var(--sf-tier-bloom-fill-shadow);
+}
+
+:root[data-theme-family="crystal"] .library-word-card--mastered .library-word-grade {
+  --library-mark-fill: var(--sf-tier-star-fill);
+  --library-mark-shadow: var(--sf-tier-star-fill-shadow);
+}
+
+/* The due mark is a skewed crimson tag; the skew sits on its backing so the label stays upright. */
 :root[data-theme-family="crystal"] .library-word-due {
-  left: 4rem;
+  position: relative;
+  isolation: isolate;
   border: 0;
-  background: linear-gradient(180deg, #ff5470, #b30f33) !important;
+  padding: 0 9px !important;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+:root[data-theme-family="crystal"] .library-word-due::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  transform: skewX(-14deg);
+  background: var(--sf-primary-bg);
+}
+
+:root.dark[data-theme-family="crystal"] .library-word-due {
+  background: transparent;
+  backdrop-filter: none;
 }
 
 :root[data-theme-family="crystal"] .library-word-star {
@@ -1405,6 +1511,8 @@
 @media (max-width: 900px) {
   .library-canvas-heading { grid-template-columns: minmax(0, 1fr) auto; }
   .library-lumi-hint { display: none; }
+  /* Narrow Crystal layouts keep the hint on its own row, with the signature above the line. */
+  :root[data-theme-family="crystal"] .library-lumi-hint p { flex-direction: column; align-items: flex-start; gap: 2px; }
   .library-canvas-search { grid-column: 1 / -1; grid-row: 2; }
   .library-canvas-rail { align-items: stretch; flex-direction: column; gap: .65rem; }
   /* Wrap instead of horizontally scrolling: an overflow-x:auto strip leaves
@@ -1422,7 +1530,8 @@
   .library-word-body h3 { font-size: 1.5rem; }
   .library-word-cover { height: 6rem; margin: 6px 6px 0; }
   .library-word-cover > span:not(.library-filter-mark) { font-size: 7rem; bottom: -1.5rem; }
-  :root[data-theme-family="crystal"] .library-word-due { top: 2.4rem; left: .65rem; }
+  /* Narrow cards keep the corner free for the 44 px actions, so the marks stack. */
+  .library-word-marks { flex-direction: column; align-items: flex-start; }
   .library-word-star { display: none; }
   .library-word-controls { top: .2rem; right: .2rem; display: grid; grid-template-columns: repeat(2, 2.75rem); opacity: 1; }
   .library-word-controls button,
@@ -1516,9 +1625,21 @@
   .library-word-card { transition: none; }
 }
 
-/* Crystal adds the Lumi hint beside the title, so its desktop heading needs a
-   fourth column; otherwise "Create card" wraps onto its own full-width row.
-   Narrow layouts keep the hint on its own row. */
+/* Crystal desktop heading: Lumi stands beside a column that holds her one-line
+   bubble above the search field and the create button. The hint wrapper
+   dissolves so the sprite and the bubble take their own grid cells. Narrow
+   layouts hide the hint. */
 @media (min-width: 901px) {
-  :root[data-theme-family="crystal"] .library-canvas-heading { grid-template-columns: auto minmax(0, 1fr) minmax(18rem, 19.5rem) auto; }
+  :root[data-theme-family="crystal"] .library-canvas-heading {
+    grid-template-columns: minmax(0, 1fr) auto minmax(14rem, 20rem) auto;
+    grid-template-areas: "title lumi bubble bubble" "title lumi search create";
+    column-gap: 8px;
+    row-gap: 10px;
+  }
+  :root[data-theme-family="crystal"] .library-canvas-title { grid-area: title; align-self: end; }
+  :root[data-theme-family="crystal"] .library-lumi-hint { display: contents; }
+  :root[data-theme-family="crystal"] .library-lumi-hint img { grid-area: lumi; align-self: end; margin-left: 10px; }
+  :root[data-theme-family="crystal"] .library-lumi-hint p { grid-area: bubble; justify-self: start; align-self: end; }
+  :root[data-theme-family="crystal"] .library-canvas-search { grid-area: search; }
+  :root[data-theme-family="crystal"] .library-canvas-create { grid-area: create; margin-left: 12px; }
 }

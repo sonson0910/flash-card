@@ -370,8 +370,10 @@ export function LibraryCardGrid({
           return <article key={card.id} className={`library-word-card library-word-card--${cardTier}`} data-library-card-row="true" data-library-card-id={card.id} tabIndex={0} onClick={openFromRow} onKeyDown={onRowKeyDown}>
             <div className={`library-word-cover library-word-cover--${getLibraryCoverTone(card.category)}`}>
               {card.imageUrl ? <img src={card.imageUrl} alt="" loading="lazy" /> : <><span aria-hidden="true">{card.word.charAt(0).toUpperCase() || '·'}</span><small>{card.category}</small></>}
-              <b className="library-word-grade">{gradeLabel(cardTier)}</b>
-              {due && <b className="library-word-due"><span aria-hidden="true" /><Trans {...msg({ context: 'library.filters.due-short', message: 'Due' })} /></b>}
+              <div className="library-word-marks">
+                <b className="library-word-grade">{gradeLabel(cardTier)}</b>
+                {due && <b className="library-word-due"><span aria-hidden="true" /><Trans {...msg({ context: 'library.filters.due-short', message: 'Due' })} /></b>}
+              </div>
               {card.bookmarked && (
                 <Star className="library-word-star" size={15} fill="currentColor" aria-label={catalog._(msg({ id: 'library.card.starred', message: 'Starred' }))}/>
               )}
