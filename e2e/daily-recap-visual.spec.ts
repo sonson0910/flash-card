@@ -163,3 +163,77 @@ for (const theme of themes) {
     });
   }
 }
+
+const nextLocales = [
+  { code: 'en', match: /Word Match/, share: /Share your week/, reminder: 'Daily reminder', remindAt: 'Remind me at 08:00' },
+  { code: 'vi', match: /Ghép từ/, share: /Chia sẻ tuần của bạn/, reminder: 'Nhắc hằng ngày', remindAt: 'Nhắc mình lúc 08:00' },
+] as const;
+
+for (const theme of themes) {
+  for (const viewport of viewports) {
+    test(`${theme.family} ${theme.mode} recap offers what comes next at ${viewport.name}`, async ({ page }, testInfo) => {
+      page.on('pageerror', error => { throw error; });
+      await page.setViewportSize(viewport);
+      await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+      await page.addInitScript(({ family, mode }) => {
+        localStorage.setItem('sonflash_theme_family', family);
+        localStorage.setItem('lingoflash_theme', mode);
+        localStorage.setItem('sonflash_theme_follow_system', 'false');
+        localStorage.setItem('sonflash_reduced_motion', 'true');
+      }, theme);
+
+      for (const locale of nextLocales) {
+        await page.goto(`${fixtureOrigin}${fixturePath}?locale=${locale.code}&variant=next`);
+        const recap = page.locator('[data-session-recap]');
+        await expect(recap).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
+        const wordMatch = recap.getByRole('button', { name: locale.match });
+        const share = recap.getByRole('button', { name: locale.share });
+        const reminder = recap.getByRole('switch', { name: locale.reminder });
+        await expect(wordMatch).toBeVisible();
+        await expect(share).toBeVisible();
+        await expect(reminder).toHaveAttribute('aria-checked', 'true');
+        await expect(recap.locator('[data-recap-next="reminder"]')).toContainText(locale.remindAt);
+        // The weekly share replaces the plain weekly link, and Next review moves into the reminder card.
+        if (theme.family === 'classic') await expect(recap.locator('.practice-recap-link')).toHaveCount(0);
+        await expectAccessibleAndContained(page, `${theme.family} ${theme.mode} ${viewport.name} ${locale.code} what next`);
+        await attachRecap(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-${locale.code}-next-recap`);
+        const row = recap.locator(theme.family === 'crystal' ? '.practice-recap-next' : '.practice-recap-whatnext');
+        await row.scrollIntoViewIfNeeded();
+        const rowShot = testInfo.outputPath(`${theme.family}-${theme.mode}-${viewport.name}-${locale.code}-next-row.png`);
+        await row.screenshot({ path: rowShot });
+        await testInfo.attach(`${theme.family}-${theme.mode}-${viewport.name}-${locale.code}-next-row`, { path: rowShot, contentType: 'image/png' });
+
+        if (locale.code === 'en') {
+          await wordMatch.click();
+          await reminder.click();
+          await expect(reminder).toHaveAttribute('aria-checked', 'false');
+          await share.click();
+          await expect(page.locator('body')).toHaveAttribute('data-recap-actions', 'match reminder-off weekly');
+        }
+      }
+    });
+  }
+}
+
+test('classic recap keeps what comes next under the IELTS goal column at desktop width', async ({ page }, testInfo) => {
+  page.on('pageerror', error => { throw error; });
+  await page.setViewportSize(viewports[0]);
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'classic');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_reduced_motion', 'true');
+  });
+  await page.goto(`${fixtureOrigin}${fixturePath}?locale=en&goal=ready&variant=next&reminder=off`);
+  const recap = page.locator('[data-session-recap]');
+  await expect(recap).toBeVisible({ timeout: 15_000 });
+  await expect(recap.getByRole('heading', { name: 'What next?' })).toBeVisible();
+  await expect(recap.getByRole('switch', { name: 'Daily reminder' })).toHaveAttribute('aria-checked', 'false');
+  const row = await recap.locator('.practice-recap-whatnext').boundingBox();
+  const goal = await recap.locator('[data-ielts-goal-panel]').boundingBox();
+  expect(row && goal && row.y >= goal.y + goal.height - 1, 'the row starts below the goal panel').toBe(true);
+  await expectAccessibleAndContained(page, 'classic light desktop IELTS what next');
+  await attachRecap(page, testInfo, 'classic-light-desktop-ielts-next-recap');
+});

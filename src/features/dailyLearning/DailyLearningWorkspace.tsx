@@ -1499,6 +1499,16 @@ export default function DailyLearningWorkspace({
           {...(todayStreak > 0 ? { streakDays: todayStreak } : {})}
           {...(activeMultiStage.stats.answers ? { bestRun: longestCorrectRun(activeMultiStage.stats.answers) } : {})}
           returnsToToday
+          variant="next"
+          {...(!isOffline && activeMultiStage.stagePlan.match.cards.length >= 4 && activeMultiStage.stagePlan.match.cards.length <= 6 ? {
+            wordMatchCount: activeMultiStage.stagePlan.match.cards.length,
+            // Another round with this session's words: a fresh server match session, as the stage itself runs.
+            onPlayWordMatch: () => {
+              const current = multiStageRef.current;
+              if (!isCurrentSession(current) || current.phase.kind !== 'recap') return;
+              setMultiStage({ ...current, matchStartOpId: null, matchCompletionId: null, matchCompletionPending: false, matchStatus: 'idle', phase: { kind: 'match' } });
+            },
+          } : {})}
           goalPanel={<Suspense fallback={null}><IeltsGoalPanel
             ownerId={ownerId}
             database={firestore}

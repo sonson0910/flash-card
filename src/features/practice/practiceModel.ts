@@ -53,6 +53,9 @@ export function eligibleWordMatchCards(cards: readonly CardData[]): CardData[] {
     .map(({ card, word, translation }) => ({ ...card, word, translation }));
 }
 
+/** How long one Word Match round runs; the game and the recap that offers it both read it. */
+export const WORD_MATCH_DURATION_SECONDS = 60;
+
 export function createWordMatchRound(
   cards: readonly CardData[],
   maximum = 6,

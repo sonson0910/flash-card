@@ -136,6 +136,50 @@ describe('SessionRecapModal', () => {
     }
   });
 
+  it('offers what comes next on the classic recap: Word Match with the session words, the reminder and the weekly share', () => {
+    theme.family = 'classic';
+    const reminder = { load: vi.fn(() => new Promise<null>(() => undefined)), setEnabled: vi.fn() };
+    const html = render({ variant: 'next', wordMatchCount: 6, onPlayWordMatch: () => undefined, reminder, streakDays: 13 });
+    expect(html).toContain('What next?');
+    expect(html).toMatch(/data-recap-next="match"[^>]*>.*Play Word Match · 60 s.*6 words from this session/);
+    expect(html).toContain('data-recap-next="reminder"');
+    expect(html).toMatch(/data-recap-next="share"[^>]*>.*Share your week.*13-day streak card/);
+    // The weekly share moves into the row; the plain link and the next-review tile give way to it.
+    expect(html).not.toContain('practice-recap-link');
+    expect(html).toContain('class="practice-recap-secondary"');
+    expect(html).not.toMatch(/AI Story|Pro\b|league|friends|percentile/i);
+  });
+
+  it('offers Word Match only when the session has words for a round', () => {
+    theme.family = 'classic';
+    const reminder = { load: vi.fn(() => new Promise<null>(() => undefined)), setEnabled: vi.fn() };
+    for (const props of [{ wordMatchCount: 6 }, { onPlayWordMatch: () => undefined, wordMatchCount: 0 }]) {
+      const html = render({ variant: 'next', reminder, ...props });
+      expect(html).not.toContain('data-recap-next="match"');
+      expect(html).toContain('class="practice-recap-primary"');
+    }
+  });
+
+  it('keeps the Crystal chips and adds the Word Match chip and the reminder to them', () => {
+    theme.family = 'crystal';
+    const reminder = { load: vi.fn(() => new Promise<null>(() => undefined)), setEnabled: vi.fn() };
+    const html = render({ variant: 'next', wordMatchCount: 5, onPlayWordMatch: () => undefined, reminder });
+    expect(html).toContain('What next');
+    expect(html).toMatch(/data-recap-next="match"[^>]*>.*Word Match.*60 s · 5 words/);
+    expect(html).toContain('data-recap-next="reminder"');
+    expect(html).toContain('Share your week');
+  });
+
+  it('leaves the recap without the variant as it was, with no reminder read', () => {
+    theme.family = 'classic';
+    const reminder = { load: vi.fn(() => new Promise<null>(() => undefined)), setEnabled: vi.fn() };
+    const html = render({ reminder, wordMatchCount: 6, onPlayWordMatch: () => undefined });
+    expect(html).not.toContain('data-recap-next');
+    expect(html).not.toContain('What next?');
+    expect(html).toContain('View weekly recap');
+    expect(reminder.load).not.toHaveBeenCalled();
+  });
+
   it('shows the proud Lumi pose only for Crystal Star when enabled', () => {
     expect(source).toContain("const isCrystal = family === 'crystal'");
     expect(source).toContain('readLumiEnabled()');

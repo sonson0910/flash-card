@@ -1,0 +1,65 @@
+/* The "What next?" row of the session recap (RecapNext and PairRecapNext): Word Match, tomorrow's
+   reminder with its switch, and the weekly share, as three cards under the results. Colours come
+   from the recap's own --rc-* tones, so Ink & Paper and Midnight Aurora each follow their board. */
+.practice-recap-whatnext { width: min(980px, 100%); margin-top: 30px; text-align: left; }
+.practice-recap-whatnext-heading { margin: 0 0 14px; color: var(--rc-strong); font-family: var(--sf-font-display); font-size: 26px; font-weight: var(--rc-weight); line-height: 1.15; letter-spacing: -.01em; }
+.practice-recap-whatnext-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; }
+.practice-recap-whatnext-grid:has(> [data-recap-next="match"]) { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr); }
+.practice-recap-whatnext-grid:has(> [data-recap-next="match"]):not(:has(> [data-recap-next="share"])) { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+
+.practice-recap-next-card {
+  display: flex; min-width: 0; min-height: 88px; box-sizing: border-box; align-items: center; gap: 14px; padding: 16px 18px;
+  border: 1px solid var(--rc-line); border-radius: var(--rc-radius); background: var(--rc-surface); box-shadow: var(--rc-surface-shadow);
+  -webkit-backdrop-filter: var(--rc-blur); backdrop-filter: var(--rc-blur); color: var(--rc-strong); font: inherit; text-align: left;
+}
+button.practice-recap-next-card { cursor: pointer; transition: transform .15s ease, filter .15s ease; }
+button.practice-recap-next-card:hover { filter: brightness(1.04); }
+button.practice-recap-next-card:active { transform: scale(.985); }
+.practice-recap-next-icon { display: grid; width: 40px; height: 40px; flex: none; place-items: center; border-radius: 12px; background: var(--rc-accent-soft); color: var(--rc-accent-text); }
+.practice-recap-next-text { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 4px; }
+.practice-recap-next-text strong { color: inherit; font-size: 15px; font-weight: 650; line-height: 1.3; }
+.practice-recap-next-text small { color: var(--rc-text2); font-size: 12.5px; line-height: 1.35; }
+.practice-recap-time { color: var(--rc-strong); font-family: var(--sf-font-mono); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Word Match leads the row as the filled card. */
+.practice-recap-next-card[data-recap-next="match"] { border-color: transparent; background: var(--rc-primary-bg); box-shadow: var(--rc-primary-shadow); color: var(--rc-primary-text); }
+.practice-recap-next-card[data-recap-next="match"] .practice-recap-next-icon { background: color-mix(in srgb, var(--rc-primary-text) 14%, transparent); color: inherit; }
+.practice-recap-next-card[data-recap-next="match"] small { color: color-mix(in srgb, var(--rc-primary-text) 82%, transparent); }
+.practice-recap-next-card[data-recap-next="share"] .practice-recap-next-icon { background: var(--rc-warm-bg); box-shadow: inset 0 0 0 1px var(--rc-warm-line); color: var(--rc-warm); }
+
+/* The reminder switch: a 44px target around a 46 x 26 track. */
+.practice-recap-switch { display: grid; min-width: 54px; min-height: 44px; flex: none; place-items: center; margin: 0 -4px 0 0; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
+.practice-recap-switch-track { position: relative; display: block; width: 46px; height: 26px; border-radius: 999px; background: var(--rc-track); box-shadow: inset 0 0 0 1px var(--rc-line); transition: background-color .18s ease; }
+.practice-recap-switch-thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--rc-surface, #fff); box-shadow: 0 1px 3px rgb(0 0 0 / .3); transition: translate .18s ease; }
+:root.dark .practice-recap-switch-thumb { background: var(--sf-text-strong); }
+.practice-recap-switch[aria-checked="true"] .practice-recap-switch-track { background: var(--rc-primary-bg); box-shadow: none; }
+.practice-recap-switch[aria-checked="true"] .practice-recap-switch-thumb { background: var(--rc-primary-text); translate: 20px 0; }
+.practice-recap-switch:disabled { cursor: not-allowed; }
+.practice-recap-switch[aria-busy="true"] { cursor: progress; }
+
+/* With the exam goal beside the headline, the row runs full width under both columns. */
+@media (min-width: 1024px) {
+  .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) > .practice-recap-whatnext { grid-column: 1 / -1; order: 1; justify-self: stretch; width: 100%; }
+}
+
+/* Crystal keeps its slanted chips; the switch sits upright inside the tomorrow chip. */
+[data-family="crystal"] .practice-recap-chip > .practice-recap-switch { margin: 0 -8px 0 14px; transform: skewX(14deg); }
+[data-family="crystal"] .practice-recap-switch-track { border-radius: 0; background: var(--rk-track); box-shadow: inset 0 0 0 1px var(--rk-line-strong); clip-path: var(--nk-chamfer-sm); }
+[data-family="crystal"] .practice-recap-switch-thumb { border-radius: 0; background: var(--rk-text2); box-shadow: none; clip-path: var(--nk-chamfer-sm); }
+[data-family="crystal"] .practice-recap-switch[aria-checked="true"] .practice-recap-switch-track { background: var(--sf-brand); box-shadow: none; }
+[data-family="crystal"] .practice-recap-switch[aria-checked="true"] .practice-recap-switch-thumb { background: #fff; }
+[data-family="crystal"] .practice-recap-time { color: var(--rk-strong); }
+
+@media (max-width: 760px) {
+  .practice-recap-whatnext { margin-top: 22px; }
+  .practice-recap-whatnext-heading { margin-bottom: 10px; font-size: 22px; }
+  .practice-recap-whatnext-grid,
+  .practice-recap-whatnext-grid:has(> [data-recap-next="match"]),
+  .practice-recap-whatnext-grid:has(> [data-recap-next="match"]):not(:has(> [data-recap-next="share"])) { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .practice-recap-next-card { min-height: 72px; padding: 12px 14px; }
+  [data-family="crystal"] .practice-recap-chip > .practice-recap-switch { margin-left: auto; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .practice-recap-switch-track, .practice-recap-switch-thumb, button.practice-recap-next-card { transition: none; }
+}
+:root[data-motion="reduced"] :is(.practice-recap-switch-track, .practice-recap-switch-thumb, button.practice-recap-next-card) { transition: none; }

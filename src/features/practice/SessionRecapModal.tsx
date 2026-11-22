@@ -1,13 +1,14 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { ArrowRight, Check, Moon, Sun, X } from 'lucide-react';
+import { ArrowRight, Bell, Check, Moon, Share, Sun, X, Zap } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { CountUp } from '../../components/motion/CountUp';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { minutesAndSeconds, reviewEstimateMinutes } from '../../components/stats/studyFacts';
 import { useVerifiedStats } from '../../components/stats/VerifiedStatsContext';
+import { useUiLocale } from '../../i18n/I18nProvider';
 import { formatNumber } from '../../lib/format';
 import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
@@ -16,9 +17,12 @@ import { useFocusModePreference } from '../settings/focus-mode-preference';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import { useTheme } from '../theme/ThemeProvider';
 import type { CardData } from '../../types/card';
+import { WORD_MATCH_DURATION_SECONDS } from './practiceModel';
+import { sessionRecapReminderPort, type SessionRecapReminder, type SessionRecapReminderPort } from './session-recap-reminder';
 import { loadTomorrowDueCount } from './session-recap-service';
 import './practice-board.css';
 import './session-recap-goal.css';
+import './session-recap-next.css';
 import type { StudyReviewSummary } from './practiceSessionLifecycle';
 
 export type SessionRecapTier = 'new' | 'learning' | 'mastered';
@@ -60,6 +64,17 @@ interface SessionRecapModalProps {
    * shows no duration rather than a partial one.
    */
   studyTimeMs?: number;
+  /**
+   * The recap with a "What next?" row: Word Match with this session's words, the daily reminder
+   * switch and the weekly share. Without it the recap keeps its plain actions.
+   */
+  variant?: 'next';
+  /** Plays Word Match again with this session's words; the suggestion shows only with it. */
+  onPlayWordMatch?: () => void;
+  /** How many of this session's words the Word Match round uses. */
+  wordMatchCount?: number;
+  /** The reminder the switch is bound to; defaults to the learner's saved reminder settings. */
+  reminder?: SessionRecapReminderPort;
 }
 
 type TomorrowDueResult = { status: 'loading' | 'ready' | 'error'; count?: number };
@@ -106,6 +121,72 @@ function TomorrowDueText({ result, msPerReview }: { result: TomorrowDueResult; m
   const minutes = reviewEstimateMinutes(count, msPerReview);
   if (minutes !== null) return <Trans {...msg({ context: 'recap.tomorrow-estimate', message: '{count, plural, one {# card} other {# cards}} · about {minutes} min' })} values={{ count, minutes }} />;
   return <Trans {...msg({ context: 'recap.tomorrow-count', message: '{count, plural, one {# card due} other {# cards due}}' })} values={{ count }} />;
+}
+
+type ReminderView =
+  | { readonly status: 'loading' | 'unavailable' }
+  | { readonly status: 'ready'; readonly value: SessionRecapReminder; readonly saving: boolean; readonly notice: 'blocked' | 'failed' | null };
+
+/** The saved daily reminder, read once while the recap is open, and the switch that saves it. */
+function useRecapReminder(port: SessionRecapReminderPort | null, locale: 'en' | 'vi'): [ReminderView, () => void] {
+  const request = useRef<Promise<SessionRecapReminder | null> | null>(null);
+  const mounted = useRef(true);
+  const [view, setView] = useState<ReminderView>(() => ({ status: port ? 'loading' : 'unavailable' }));
+
+  useEffect(() => {
+    mounted.current = true;
+    if (!port) return () => { mounted.current = false; };
+    request.current ??= port.load();
+    let active = true;
+    void request.current.then(
+      value => { if (active) setView(value ? { status: 'ready', value, saving: false, notice: null } : { status: 'unavailable' }); },
+      () => { if (active) setView({ status: 'unavailable' }); },
+    );
+    return () => { active = false; mounted.current = false; };
+  }, [port]);
+
+  const toggle = () => {
+    if (!port || view.status !== 'ready' || view.saving) return;
+    const requested = !view.value.enabled;
+    // Called straight from the click, so the browser's permission prompt keeps the click's activation.
+    const save = port.setEnabled(view.value, requested, locale);
+    setView({ ...view, saving: true, notice: null });
+    save.then(
+      value => { if (mounted.current) setView({ status: 'ready', value, saving: false, notice: requested && !value.enabled ? 'blocked' : null }); },
+      () => { if (mounted.current) setView(previous => (previous.status === 'ready' ? { ...previous, saving: false, notice: 'failed' } : previous)); },
+    );
+  };
+  return [view, toggle];
+}
+
+function ReminderSwitch({ view, onToggle, describedBy }: { view: ReminderView; onToggle: () => void; describedBy: string }) {
+  const { _ } = useLingui();
+  if (view.status !== 'ready') return null;
+  const { value, saving } = view;
+  return (
+    <button
+      type="button"
+      role="switch"
+      data-recap-reminder
+      className="practice-recap-switch"
+      aria-checked={value.enabled}
+      aria-busy={saving || undefined}
+      aria-label={_(msg({ id: 'recap.reminder-switch', message: 'Daily reminder' }))}
+      aria-describedby={describedBy}
+      disabled={saving || (!value.enabled && !value.canEnable)}
+      onClick={onToggle}
+    >
+      <span className="practice-recap-switch-track" aria-hidden="true"><span className="practice-recap-switch-thumb" /></span>
+    </button>
+  );
+}
+
+function ReminderNote({ view }: { view: ReminderView }) {
+  if (view.status !== 'ready') return null;
+  if (view.notice === 'failed') return <Trans {...msg({ context: 'recap.reminder-failed', message: 'Could not update the reminder. Try again.' })} />;
+  if (view.notice === 'blocked') return <Trans {...msg({ context: 'recap.reminder-blocked', message: 'Allow notifications to get the reminder.' })} />;
+  if (!view.value.enabled && !view.value.canEnable) return <Trans {...msg({ context: 'recap.reminder-unavailable', message: 'Reminders need notifications on this device.' })} />;
+  return <Trans {...msg({ context: 'recap.remind-at', message: 'Remind me at <0>{time}</0>' })} values={{ time: view.value.sendAtLocal }} components={{ 0: <span className="practice-recap-time" /> }} />;
 }
 
 /** The recent average review time, from the verified stats the app already holds; no read. */
@@ -232,8 +313,10 @@ function CrystalBurst() {
 export function SessionRecapModal({
   open, onClose, onViewWeeklyRecap, onRetryWeak, totalCards, goodCount, againCount, xpEarned, weakCards, targetLanguage, summary,
   promotions = [], streakDays, bestRun, returnsToToday = false, loadTomorrowDue = loadTomorrowDueCount, goalPanel, studyTimeMs,
+  variant, onPlayWordMatch, wordMatchCount = 0, reminder = sessionRecapReminderPort,
 }: SessionRecapModalProps) {
   const { _ } = useLingui();
+  const uiLocale = useUiLocale();
   const { family, mode, setMode } = useTheme();
   const { focusModeEnabled } = useFocusModePreference();
   const saved = summary?.saved ?? goodCount + againCount;
@@ -243,6 +326,9 @@ export function SessionRecapModal({
   const showLumi = isCrystal && readLumiEnabled();
   const tomorrow = useTomorrowDue(targetLanguage, loadTomorrowDue);
   const msPerReview = useReviewPace();
+  const isNext = variant === 'next';
+  const [reminderView, toggleReminder] = useRecapReminder(isNext ? reminder : null, uiLocale === 'vi' ? 'vi' : 'en');
+  const offerWordMatch = isNext && Boolean(onPlayWordMatch) && wordMatchCount > 0;
   // A duration is shown only for a finished session whose every review is saved and credited.
   const duration = complete && !summary?.pending && typeof studyTimeMs === 'number' && studyTimeMs >= 1000
     ? minutesAndSeconds(studyTimeMs)
@@ -293,6 +379,47 @@ export function SessionRecapModal({
   const remembered = <Trans {...msg({ context: 'recap.remembered-count', message: '{count} remembered' })} values={{ count: goodCount }} />;
   const toRevisit = <Trans {...msg({ context: 'recap.revisit-count', message: '{count} to revisit' })} values={{ count: againCount }} />;
   const retryLabel = <Trans {...msg({ context: 'recap.retry-missed', message: '{count, plural, one {Retry the missed word} other {Retry the # missed words}}' })} values={{ count: weakCards.length }} />;
+  const shareTitle = <Trans {...msg({ context: 'recap.share-week', message: 'Share your week' })} />;
+  const shareDetail = showStreak
+    ? <Trans {...msg({ context: 'recap.share-week-streak', message: '{count}-day streak card' })} values={{ count: streakDays }} />
+    : <Trans {...msg({ context: 'recap.weekly-detail-week', message: 'Your week so far' })} />;
+  const reminderReady = reminderView.status === 'ready';
+  // With the reminder on screen its line takes the detail, so the title carries tomorrow's count.
+  const tomorrowTitle = reminderReady && tomorrow.status === 'ready'
+    ? <Trans {...msg({ context: 'recap.tomorrow-cards', message: 'Tomorrow · {count, plural, one {# card} other {# cards}}' })} values={{ count: tomorrow.count ?? 0 }} />
+    : <Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} />;
+  const tomorrowDetail = reminderReady ? <ReminderNote view={reminderView} /> : <TomorrowDueText result={tomorrow} msPerReview={msPerReview} />;
+  const reminderSwitch = <ReminderSwitch view={reminderView} onToggle={toggleReminder} describedBy="practice-recap-reminder-note" />;
+  const whatNext = isNext && (
+    <section className="practice-recap-whatnext" aria-labelledby="practice-recap-whatnext-heading">
+      <h2 id="practice-recap-whatnext-heading" className="practice-recap-whatnext-heading"><Trans {...msg({ context: 'recap.what-next-question', message: 'What next?' })} /></h2>
+      <div className="practice-recap-whatnext-grid">
+        {offerWordMatch && (
+          <button type="button" data-recap-next="match" className="practice-recap-next-card" onClick={onPlayWordMatch}>
+            <span className="practice-recap-next-icon" aria-hidden="true"><Zap size={18} strokeWidth={2.2} /></span>
+            <span className="practice-recap-next-text">
+              <strong><Trans {...msg({ context: 'recap.word-match', message: 'Play Word Match · {seconds} s' })} values={{ seconds: WORD_MATCH_DURATION_SECONDS }} /></strong>
+              <small><Trans {...msg({ context: 'recap.word-match-detail', message: '{count, plural, one {# word from this session} other {# words from this session}}' })} values={{ count: wordMatchCount }} /></small>
+            </span>
+          </button>
+        )}
+        <div data-recap-next="reminder" className="practice-recap-next-card">
+          <span className="practice-recap-next-icon" aria-hidden="true"><Bell size={18} strokeWidth={2.2} /></span>
+          <span className="practice-recap-next-text" aria-live="polite">
+            <strong>{tomorrowTitle}</strong>
+            <small id="practice-recap-reminder-note">{tomorrowDetail}</small>
+          </span>
+          {reminderSwitch}
+        </div>
+        {onViewWeeklyRecap && (
+          <button type="button" data-recap-next="share" className="practice-recap-next-card" onClick={onViewWeeklyRecap}>
+            <span className="practice-recap-next-icon" aria-hidden="true"><Share size={18} strokeWidth={2.2} /></span>
+            <span className="practice-recap-next-text"><strong>{shareTitle}</strong><small>{shareDetail}</small></span>
+          </button>
+        )}
+      </div>
+    </section>
+  );
 
   return (
     <Dialog.Root open={open} onOpenChange={openState => !openState && onClose()}>
@@ -392,14 +519,30 @@ export function SessionRecapModal({
                       <span><strong><Trans {...msg({ context: 'recap.review-misses', message: 'Review misses' })} /></strong><small><Trans {...msg({ context: 'recap.card-count', message: '{count, plural, one {# card} other {# cards}}' })} values={{ count: weakCards.length }} /></small></span>
                     </button>
                   )}
-                  {onViewWeeklyRecap && (
+                  {offerWordMatch && (
+                    <button type="button" data-recap-next="match" className="practice-recap-chip" onClick={onPlayWordMatch}>
+                      <span><strong><Trans {...msg({ context: 'recap.word-match-chip', message: 'Word Match' })} /></strong><small><Trans {...msg({ context: 'recap.word-match-chip-detail', message: '{seconds} s · {count, plural, one {# word} other {# words}}' })} values={{ seconds: WORD_MATCH_DURATION_SECONDS, count: wordMatchCount }} /></small></span>
+                    </button>
+                  )}
+                  {onViewWeeklyRecap && (isNext ? (
+                    <button type="button" data-recap-next="share" className="practice-recap-chip" onClick={onViewWeeklyRecap}>
+                      <span><strong>{shareTitle}</strong><small>{shareDetail}</small></span>
+                    </button>
+                  ) : (
                     <button type="button" className="practice-recap-chip" onClick={onViewWeeklyRecap}>
                       <span><strong><Trans {...msg({ context: 'recap.weekly', message: 'View weekly recap' })} /></strong><small><Trans {...msg({ context: 'recap.weekly-detail-week', message: 'Your week so far' })} /></small></span>
                     </button>
+                  ))}
+                  {isNext ? (
+                    <div data-recap-next="reminder" className="practice-recap-chip practice-recap-chip--status">
+                      <span aria-live="polite"><strong>{tomorrowTitle}</strong><small id="practice-recap-reminder-note">{tomorrowDetail}</small></span>
+                      {reminderSwitch}
+                    </div>
+                  ) : (
+                    <div className="practice-recap-chip practice-recap-chip--status" aria-live="polite">
+                      <span><strong><Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} /></strong><small><TomorrowDueText result={tomorrow} msPerReview={msPerReview} /></small></span>
+                    </div>
                   )}
-                  <div className="practice-recap-chip practice-recap-chip--status" aria-live="polite">
-                    <span><strong><Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} /></strong><small><TomorrowDueText result={tomorrow} msPerReview={msPerReview} /></small></span>
-                  </div>
                 </div>
                 <button type="button" className="practice-recap-primary" onClick={onClose}><span>{closeLabel}</span></button>
               </div>
@@ -434,16 +577,20 @@ export function SessionRecapModal({
                     <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.streak-note', message: 'A day counts once you earn XP.' })} /></p>
                   </StatTile>
                 )}
-                <StatTile label={<Trans {...msg({ context: 'recap.next-review', message: 'Next review' })} />} value={<Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} />}>
-                  <p className="practice-recap-stat-sub" aria-live="polite"><TomorrowDueText result={tomorrow} msPerReview={msPerReview} /></p>
-                </StatTile>
+                {!isNext && (
+                  <StatTile label={<Trans {...msg({ context: 'recap.next-review', message: 'Next review' })} />} value={<Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} />}>
+                    <p className="practice-recap-stat-sub" aria-live="polite"><TomorrowDueText result={tomorrow} msPerReview={msPerReview} /></p>
+                  </StatTile>
+                )}
               </dl>
               {progressLine}
+              {whatNext}
 
               <div className="practice-recap-actions">
-                <button type="button" className="practice-recap-primary" onClick={onClose}>{closeLabel}</button>
+                {/* The Word Match card leads the row when it is offered, so closing steps back to a secondary button. */}
+                <button type="button" className={offerWordMatch ? 'practice-recap-secondary' : 'practice-recap-primary'} onClick={onClose}>{closeLabel}</button>
                 {canRetry && <button type="button" className="practice-recap-secondary" onClick={onRetryWeak} disabled={retryDisabled}>{retryLabel}</button>}
-                {onViewWeeklyRecap && <button type="button" className="practice-recap-link" onClick={onViewWeeklyRecap}><Trans {...msg({ context: 'recap.weekly', message: 'View weekly recap' })} /> <ArrowRight size={15} aria-hidden="true" /></button>}
+                {!isNext && onViewWeeklyRecap && <button type="button" className="practice-recap-link" onClick={onViewWeeklyRecap}><Trans {...msg({ context: 'recap.weekly', message: 'View weekly recap' })} /> <ArrowRight size={15} aria-hidden="true" /></button>}
               </div>
             </div>
           )}
