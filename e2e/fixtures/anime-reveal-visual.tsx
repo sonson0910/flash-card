@@ -9,8 +9,8 @@ import { ThemeProvider } from '../../src/features/theme/ThemeProvider';
 import { I18nProvider, useUiLocale } from '../../src/i18n/I18nProvider';
 import { loadCatalog } from '../../src/i18n/loadCatalog';
 
-// The sample card is from the Canvas board; reward labels follow the approved
-// server outcome that the production ceremony displays.
+// The sample card is from the Canvas board; reward labels and the streak facts follow the approved
+// server outcome that the production ceremony displays (the 30-day milestone adds a freeze and 100 XP).
 const canvasImage = new URL('../../docs/design/sonflash-redesign/canvas/assets/blob/4e8348b18995828a6faaee433ba17ccd.jpg', import.meta.url).href;
 const canvasPayloads: Record<AnimeRevealEventKind, AnimeRevealSourcePayload> = {
   tierup: {
@@ -18,7 +18,7 @@ const canvasPayloads: Record<AnimeRevealEventKind, AnimeRevealSourcePayload> = {
     previousValue: 'new', currentValue: 'mastered',
   },
   streak: {
-    currentValue: '30',
+    streak: { length: 30, freezesEarned: 1, freezesHeld: 2, milestoneXp: 100 },
   },
   levelup: {
     previousValue: '12', currentValue: '13',
@@ -36,7 +36,6 @@ function AnimeRevealFixture() {
   if (!ready) return null;
   const rewardLabels = event === 'streak' ? [
     _(msg({ id: 'rewards.reveal.streak.badge', message: 'Web Wanderer' })),
-    _(msg({ id: 'rewards.reveal.streak.freeze', message: 'Streak freeze · limit 1' })),
   ] : event === 'levelup' ? [
     _(msg({ id: 'rewards.reveal.level.frame', message: 'Crimson Wing frame' })),
     _(msg({ id: 'rewards.reveal.level.title', message: 'Word Collector title' })),

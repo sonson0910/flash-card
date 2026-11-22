@@ -11,6 +11,7 @@ import {
   sessionsToNextLevel,
   sourceSite,
   stageMinutes,
+  streakRunStats,
   studyRun,
   studyWeek,
 } from './todayScreenFacts';
@@ -139,5 +140,38 @@ describe('todayScreenFacts', () => {
     const week = studyWeek([{ date: legacy, XP: 5 }], '2026-11-22', { studiedToday: true, days: 1 });
     expect(week[0].date).toBe('2026-11-16');
     expect(week[6]).toEqual({ date: '2026-11-22', state: 'done', isToday: true, xp: 5 });
+  });
+
+  it('totals the streak run only where the server counters hold every day of it', () => {
+    const counters = (reviewed: number, again: number, good: number) => ({ reviewed, again, hard: 0, good, easy: 0 });
+    const activity = {
+      en: { coverageStartedOn: '2026-11-17', days: { '2026-11-16': counters(9, 0, 9), '2026-11-17': counters(10, 2, 8), '2026-11-19': counters(5, 0, 5) } },
+      ja: { coverageStartedOn: '2026-11-18', days: { '2026-11-18': counters(5, 1, 4) } },
+    };
+    const words = (coverageStartedOn: string) => ({
+      coverageStartedOn, fromFirstAction: false, bestWeekByLanguage: {}, wordOfWeekByLanguage: {},
+      daysByLanguage: { en: { '2026-11-16': { started: 9, mastered: 0 }, '2026-11-17': { started: 4, mastered: 1 } }, ja: { '2026-11-19': { started: 3, mastered: 0 } } },
+    });
+    const xp = { '2026-11-16': 30, '2026-11-17': 40, '2026-11-18': 10, '2026-11-19': 20 };
+    // 2026-11-19 is a Thursday; the word counts keep days from Monday 2026-11-09.
+    expect(streakRunStats(activity, words('2026-11-02'), xp, '2026-11-19', 3)).toEqual({ reviews: 20, newWords: 7, recallPercent: 85, xp: 70 });
+    expect(streakRunStats(activity, words('2026-11-18'), {}, '2026-11-19', 3)).toEqual({ reviews: 20, newWords: null, recallPercent: 85, xp: null });
+    expect(streakRunStats(activity, { ...words('2026-11-18'), fromFirstAction: true }, {}, '2026-11-19', 3)?.newWords).toBe(7);
+    expect(streakRunStats({ en: activity.ja }, words('2026-11-02'), { '2026-11-17': 0, '2026-11-18': 10 }, '2026-11-19', 3)).toEqual({ reviews: null, newWords: 7, recallPercent: null, xp: null });
+    expect(streakRunStats({ en: activity.ja }, undefined, {}, '2026-11-19', 3)).toBeNull();
+    expect(streakRunStats({}, undefined, {}, '2026-11-19', 3)).toBeNull();
+    expect(streakRunStats(activity, words('2026-11-02'), xp, '2026-11-19', 0)).toBeNull();
+    expect(streakRunStats({ en: { coverageStartedOn: '2026-11-19', days: {} } }, undefined, {}, '2026-11-19', 1)).toEqual({ reviews: 0, newWords: null, recallPercent: null, xp: null });
+  });
+
+  it('leaves out totals whose oldest days the server has already dropped', () => {
+    const longRun = { en: { coverageStartedOn: '2025-01-01', days: { '2026-11-19': { reviewed: 4, again: 0, hard: 0, good: 4, easy: 0 } } } };
+    const words = { coverageStartedOn: '2025-01-01', fromFirstAction: false, bestWeekByLanguage: {}, wordOfWeekByLanguage: {}, daysByLanguage: { en: { '2026-11-19': { started: 2, mastered: 0 } } } };
+    // A 30-day run starts before the word counts' two weeks; a 183-day run outlasts the review counters.
+    expect(streakRunStats(longRun, words, {}, '2026-11-19', 30)).toEqual({ reviews: 4, newWords: null, recallPercent: 100, xp: null });
+    expect(streakRunStats(longRun, words, {}, '2026-11-19', 11)?.newWords).toBe(2);
+    expect(streakRunStats(longRun, words, {}, '2026-11-19', 12)?.newWords).toBeNull();
+    expect(streakRunStats(longRun, words, {}, '2026-11-19', 182)?.reviews).toBe(4);
+    expect(streakRunStats(longRun, words, {}, '2026-11-19', 183)).toBeNull();
   });
 });

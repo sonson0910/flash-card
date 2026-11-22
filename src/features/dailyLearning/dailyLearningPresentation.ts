@@ -1,7 +1,8 @@
 import type { ReactNode, RefObject } from 'react';
 import type { HapticStyle } from '../../lib/haptics';
 import type { DailyGoalsSource } from '../dailyGoals/dailyGoalsModel';
-import type { StudyWeekDay } from './todayScreenFacts';
+import type { StreakView } from '../gamification/streakView';
+import type { StreakRunStats, StudyWeekDay } from './todayScreenFacts';
 
 export type LessonMode =
   | 'recognition'
@@ -123,6 +124,12 @@ export interface TodayScreenModel {
   readonly recentStudyXp?: readonly number[];
   /** Monday to Sunday of the current reward-time-zone week, for the streak details. */
   readonly studyWeek?: readonly StudyWeekDay[];
+  /** The server's streak record read for today; absent until the account has a verified study day. */
+  readonly streakView?: StreakView;
+  /** The moment `streakView` was built for. */
+  readonly streakNow?: Date;
+  /** Run totals the server counters cover, for the milestone details. */
+  readonly streakRunStats?: StreakRunStats | null;
   /** Words planned for today's session, in plan order (a bounded slice). */
   readonly sessionWords?: readonly TodaySessionWord[];
   /** Planned cards that were captured from the web. */

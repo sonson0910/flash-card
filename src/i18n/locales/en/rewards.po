@@ -13,107 +13,147 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/rewards/AnimeReveal.tsx:31
+#: src/features/rewards/AnimeReveal.tsx:43
 msgctxt "rewards.reveal.tier.new"
 msgid "New"
 msgstr "New"
 
-#: src/features/rewards/AnimeReveal.tsx:25
+#: src/features/rewards/AnimeReveal.tsx:37
 msgctxt "rewards.reveal.streak.kicker"
 msgid "Streak milestone"
 msgstr "Streak milestone"
 
-#: src/features/rewards/AnimeReveal.tsx:24
+#: src/features/rewards/AnimeReveal.tsx:36
 msgctxt "rewards.reveal.tierup.continue"
 msgid "Continue learning"
 msgstr "Continue learning"
 
-#: src/features/rewards/AnimeReveal.tsx:26
+#: src/features/rewards/AnimeReveal.tsx:38
 msgctxt "rewards.reveal.levelup.description"
 msgid "You unlocked the Crimson Wing frame and Word Collector title. You can hold up to three hint tokens."
 msgstr "You unlocked the Crimson Wing frame and Word Collector title. You can hold up to three hint tokens."
 
-#: src/features/rewards/AnimeReveal.tsx:24
+#: src/features/rewards/AnimeReveal.tsx:36
 msgctxt "rewards.reveal.tierup.description"
 msgid "This card is now mastered. Review it again when it is due."
 msgstr "This card is now mastered. Review it again when it is due."
 
-#: src/features/rewards/AnimeReveal.tsx:80
+#: src/features/rewards/AnimeReveal.tsx:117
 msgctxt "rewards.reveal.later"
 msgid "Later"
 msgstr "Later"
 
-#: src/features/rewards/AnimeReveal.tsx:25
+#: src/features/rewards/AnimeReveal.tsx:37
 msgctxt "rewards.reveal.streak.description"
 msgid "Your verified review streak earned the Web Wanderer badge."
 msgstr "Your verified review streak earned the Web Wanderer badge."
 
-#: src/features/rewards/AnimeReveal.tsx:24
+#: src/features/rewards/AnimeReveal.tsx:36
 msgctxt "rewards.reveal.tierup.kicker"
 msgid "Tier up"
 msgstr "Tier up"
 
-#: src/features/rewards/AnimeReveal.tsx:35
+#: src/features/rewards/AnimeReveal.tsx:47
 msgctxt "rewards.reveal.tier.mastered"
 msgid "Mastered"
 msgstr "Mastered"
 
-#: src/features/rewards/AnimeReveal.tsx:26
+#: src/features/rewards/AnimeReveal.tsx:38
 msgctxt "rewards.reveal.levelup.kicker"
 msgid "Level up"
 msgstr "Level up"
 
-#: src/features/rewards/AnimeReveal.tsx:55
+#: src/features/rewards/AnimeReveal.tsx:85
 msgctxt "rewards.reveal.levelup.title-reached"
 msgid "Level up: level {current}"
 msgstr "Level up: level {current}"
 
-#: src/features/rewards/AnimeReveal.tsx:25
+#: src/features/rewards/AnimeReveal.tsx:37
 msgctxt "rewards.reveal.streak.title"
 msgid "Streak reached"
 msgstr "Streak reached"
 
-#: src/features/rewards/AnimeReveal.tsx:25
-msgctxt "rewards.reveal.streak.continue"
-msgid "Continue learning"
-msgstr "Continue learning"
-
-#: src/features/rewards/AnimeReveal.tsx:24
+#: src/features/rewards/AnimeReveal.tsx:36
 msgctxt "rewards.reveal.tierup.title"
 msgid "Mastered"
 msgstr "Mastered"
 
-#: src/features/rewards/AnimeReveal.tsx:26
+#: src/features/rewards/AnimeReveal.tsx:38
 msgctxt "rewards.reveal.levelup.equip"
 msgid "Use frame"
 msgstr "Use frame"
 
+#: src/features/rewards/AnimeReveal.tsx:37
+msgctxt "rewards.reveal.streak.continue"
+msgid "Keep going"
+msgstr "Keep going"
+
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:75
+#: src/features/rewards/AnimeReveal.tsx:110
 msgid "rewards.reveal.close"
 msgstr "Close reward"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:78
+#: src/features/rewards/AnimeReveal.tsx:113
 msgid "rewards.reveal.rewards-label"
 msgstr "Unlocked rewards"
 
-#: src/features/rewards/AnimeReveal.tsx:54
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:72
+msgid "rewards.reveal.streak.chip.badge"
+msgstr "Badge · {badge}"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:70
+msgid "rewards.reveal.streak.chip.freeze"
+msgstr "{count, plural, one {+# streak freeze} other {+# streak freezes}}"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:71
+msgid "rewards.reveal.streak.chip.xp"
+msgstr "+{xp} XP"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:102
+msgid "rewards.reveal.streak.days"
+msgstr "{count}-day streak"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:63
+msgid "rewards.reveal.streak.freeze-earned"
+msgstr "{count, plural, one {You earned # streak freeze, so one missed day will not break the chain.} other {You earned # streak freezes, so # missed days will not break the chain.}}"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:64
+msgid "rewards.reveal.streak.freeze-held"
+msgstr "You now hold {count}."
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:61
+msgid "rewards.reveal.streak.month"
+msgstr "A full month of study."
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:62
+msgid "rewards.reveal.streak.run"
+msgstr "{count} days of study in a row."
+
+#: src/features/rewards/AnimeReveal.tsx:84
 msgctxt "rewards.reveal.levelup.title-move"
 msgid "Level up: level {previous} to {current}"
 msgstr "Level up: level {previous} to {current}"
 
-#: src/features/rewards/AnimeReveal.tsx:26
+#: src/features/rewards/AnimeReveal.tsx:38
 msgctxt "rewards.reveal.levelup.title"
 msgid "Level up"
 msgstr "Level up"
 
-#: src/features/rewards/AnimeReveal.tsx:33
+#: src/features/rewards/AnimeReveal.tsx:45
 msgctxt "rewards.reveal.tier.learning"
 msgid "Learning"
 msgstr "Learning"
 
-#: src/features/rewards/AnimeReveal.tsx:79
+#: src/features/rewards/AnimeReveal.tsx:116
 msgctxt "rewards.reveal.equip-error"
 msgid "Could not use this reward. Try again."
 msgstr "Could not use this reward. Try again."
