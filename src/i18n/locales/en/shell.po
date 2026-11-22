@@ -921,7 +921,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Text practice"
 
-#: src/app/AppRuntime.tsx:616
+#: src/app/AppRuntime.tsx:618
 #: src/components/shell/CourseSwitcherControl.tsx:123
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -1593,17 +1593,17 @@ msgid "Loading library"
 msgstr "Loading library"
 
 #. js-lingui-explicit-id
-#: src/app/app-runtime-shared.ts:83
+#: src/app/app-runtime-shared.ts:94
 msgid "rewards.reveal.level.frame"
 msgstr "Crimson Wing frame"
 
 #. js-lingui-explicit-id
-#: src/app/app-runtime-shared.ts:85
+#: src/app/app-runtime-shared.ts:96
 msgid "rewards.reveal.level.hint"
 msgstr "Hint tokens · limit 3"
 
 #. js-lingui-explicit-id
-#: src/app/app-runtime-shared.ts:84
+#: src/app/app-runtime-shared.ts:95
 msgid "rewards.reveal.level.title"
 msgstr "Word Collector title"
 
@@ -1893,7 +1893,7 @@ msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:605
+#: src/app/AppRuntime.tsx:607
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
@@ -2278,7 +2278,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr "Pick a time and SonFlash will remind you to review."
 
-#: src/app/AppRuntime.tsx:617
+#: src/app/AppRuntime.tsx:619
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2455,7 +2455,7 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Pick one language for now. You can add more from the course switcher."
 
-#: src/app/AppRuntime.tsx:619
+#: src/app/AppRuntime.tsx:621
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Preparing your courses…"
