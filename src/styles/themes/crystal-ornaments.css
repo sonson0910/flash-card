@@ -68,3 +68,29 @@ html[data-theme-family=crystal] .claude-app-shell:is([data-view=quiz], [data-vie
   html[data-theme-family=crystal] .claude-app-shell[data-view=match] [data-app-view-stage]::before { top: 209px; left: calc(50% - 215px); width: 250px; height: 190px; opacity: .5; }
   html[data-theme-family=crystal] .claude-app-shell[data-view=match] [data-app-view-stage]::after { top: 209px; right: calc(50% - 215px); width: 250px; height: 190px; opacity: .5; }
 }
+
+/* Review session, after the AnimeReview board: a wing in each bottom corner of the screen on wide
+   viewports, so the top-right corner stays clear for the session tools. The session scrolls inside
+   the workspace, so the wings are fixed to the viewport rather than to the end of the content.
+   Decorative only, behind the session content. */
+@media (min-width: 1024px) {
+  html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage] {
+    position: relative;
+    isolation: isolate;
+  }
+  html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage]::before,
+  html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage]::after {
+    position: fixed;
+    z-index: -1;
+    bottom: -110px;
+    width: 560px;
+    height: 380px;
+    background: url('./crystal-wing.svg') center / contain no-repeat;
+    content: '';
+    filter: drop-shadow(0 0 30px color-mix(in srgb, var(--sf-brand) 55%, transparent));
+    opacity: var(--nk-wing-opacity, .5);
+    pointer-events: none;
+  }
+  html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage]::before { left: -150px; transform: rotate(-12deg); }
+  html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage]::after { right: -150px; transform: scaleX(-1) rotate(-12deg); }
+}
