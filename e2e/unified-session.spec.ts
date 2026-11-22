@@ -328,8 +328,9 @@ for (const theme of themes) {
       // Recap: the session-finale modal, reached through the real flow
       // rather than the isolated fixture `daily-recap-visual.spec.ts` uses.
       await expect(page.locator('[data-session-recap]')).toBeVisible({ timeout: 15_000 });
-      await expect(page.getByText('Tomorrow', { exact: true })).toBeVisible();
-      await expect(page.getByText(/\d+ cards? due/)).toBeVisible();
+      // Tomorrow's count is its own read, and the tile changes form once the reminder setting has
+      // loaded: "Tomorrow" over "5 cards due" before, "Tomorrow · 5 cards" over the reminder after.
+      await expect(page.locator('[data-session-recap]').getByText(/^(?:Tomorrow · \d+ cards?|\d+ cards? due)$/)).toBeVisible({ timeout: 15_000 });
       await expectAccessibleAndContained(page, 'Recap');
       await attachScreen(page, testInfo, `${label}-recap`);
       await page.getByRole('button', { name: 'Back to Today' }).click();
