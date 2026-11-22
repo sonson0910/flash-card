@@ -6,14 +6,14 @@
 .achievements-board {
   --ach-ring-glow: none;
   --ach-core-bg: var(--sf-surface-glass);
-  --ach-core-border: 1px solid rgb(29 26 22 / .1);
-  --ach-core-shadow: inset 0 0 0 5px #fbf3df, 0 10px 20px -12px rgb(60 40 20 / .4);
+  --ach-core-border: 1px solid var(--sf-border);
+  --ach-core-shadow: inset 0 0 0 5px var(--sf-gold-paper), 0 10px 20px -12px color-mix(in srgb, var(--sf-shadow-tint) 40%, transparent);
   --ach-bar: var(--sf-brand);
   --ach-bar-glow: none;
   --ach-em-glow: none;
   --ach-earned-dot: var(--sf-success);
   --ach-earned-text: var(--sf-second-text);
-  --ach-star-text: #8a5a0c;
+  --ach-star-text: var(--sf-warn);
   --ach-sheen-blend: multiply;
   width: 100%;
   max-width: 1352px;
@@ -21,13 +21,13 @@
   color: var(--sf-text);
 }
 :root.dark:not([data-theme-family='crystal']) .achievements-board {
-  --ach-ring-glow: drop-shadow(0 0 8px rgb(40 211 244 / .7));
-  --ach-core-bg: radial-gradient(circle at 40% 30%, #16303c, #0a1a22 70%) padding-box, var(--sf-rim-learning) border-box;
+  --ach-ring-glow: drop-shadow(0 0 8px color-mix(in srgb, var(--sf-brand) 70%, transparent));
+  --ach-core-bg: var(--sf-ring-core) padding-box, var(--sf-rim-learning) border-box;
   --ach-core-border: 1.5px solid transparent;
-  --ach-core-shadow: 0 0 40px -10px rgb(40 211 244 / .5);
+  --ach-core-shadow: 0 0 40px -10px color-mix(in srgb, var(--sf-brand) 50%, transparent);
   --ach-bar: linear-gradient(90deg, var(--sf-brand), var(--sf-second));
-  --ach-bar-glow: 0 0 14px rgb(40 211 244 / .6);
-  --ach-em-glow: 0 0 36px rgb(40 211 244 / .5);
+  --ach-bar-glow: 0 0 14px color-mix(in srgb, var(--sf-brand) 60%, transparent);
+  --ach-em-glow: 0 0 36px color-mix(in srgb, var(--sf-brand) 50%, transparent);
   --ach-earned-dot: var(--sf-brand);
   --ach-earned-text: var(--sf-brand-text);
   --ach-star-text: var(--sf-reward);
@@ -140,37 +140,37 @@
   align-items: center;
   justify-content: center;
   transform: rotate(var(--ach-tilt, 0deg));
-  border: 1.5px dashed rgb(29 26 22 / .16);
+  border: 1.5px dashed color-mix(in srgb, var(--sf-text) 16%, transparent);
   color: var(--st-text3);
 }
 .achievements-board--classic [data-badge-state='earned'] .ach-medal {
   border: 2px solid var(--sf-success);
-  background: radial-gradient(circle, #fbf8f2 58%, rgb(51 115 68 / .12) 60%, #fbf8f2 64%);
-  box-shadow: 0 0 0 4px var(--sf-card-front), 0 0 0 5px rgb(51 115 68 / .3);
+  background: var(--sf-medal-face);
+  box-shadow: 0 0 0 4px var(--sf-card-front), 0 0 0 5px color-mix(in srgb, var(--sf-success) 30%, transparent);
   color: var(--sf-second-text);
 }
 .achievements-board--classic [data-badge-state='earned'][data-badge-tier='star'] .ach-medal {
   border: 3px solid transparent;
-  background: radial-gradient(circle, #fbf3df 56%, #f1dfae 57%, #fbf3df 60%) padding-box, var(--sf-gold-rim) border-box;
-  box-shadow: 0 0 0 4px var(--sf-card-front), 0 0 0 5px rgb(184 134 43 / .4), 0 6px 12px -6px rgb(120 80 10 / .5);
-  color: #7a5410;
+  background: var(--sf-medal-star-face) padding-box, var(--sf-gold-rim) border-box;
+  box-shadow: 0 0 0 4px var(--sf-card-front), 0 0 0 5px color-mix(in srgb, var(--sf-reward) 40%, transparent), 0 6px 12px -6px color-mix(in srgb, var(--sf-gold-shadow) 50%, transparent);
+  color: var(--sf-gold-ink);
 }
-.achievements-board--classic [data-badge-state='in-progress'] .ach-medal { border-color: rgb(29 26 22 / .3); background: #fbf8f2; color: var(--st-text2); }
+.achievements-board--classic [data-badge-state='in-progress'] .ach-medal { border-color: color-mix(in srgb, var(--sf-text) 30%, transparent); background: var(--sf-surface-raised); color: var(--st-text2); }
 .achievements-board--classic [data-badge-state='locked'] .ach-medal { opacity: .6; }
-:root.dark:not([data-theme-family='crystal']) .achievements-board--classic .ach-medal { border-color: rgb(255 255 255 / .12); }
+:root.dark:not([data-theme-family='crystal']) .achievements-board--classic .ach-medal { border-color: color-mix(in srgb, var(--sf-flare) 12%, transparent); }
 :root.dark:not([data-theme-family='crystal']) .achievements-board--classic [data-badge-state='earned'] .ach-medal {
   border: 1.5px solid transparent;
-  background: radial-gradient(circle at 35% 30%, #16303c, #0c1d26 70%) padding-box, var(--sf-rim-learning) border-box;
-  box-shadow: 0 0 26px -8px rgb(40 211 244 / .6);
+  background: var(--sf-medal-face) padding-box, var(--sf-rim-learning) border-box;
+  box-shadow: 0 0 26px -8px color-mix(in srgb, var(--sf-brand) 60%, transparent);
   color: var(--sf-brand-text);
 }
 :root.dark:not([data-theme-family='crystal']) .achievements-board--classic [data-badge-state='earned'][data-badge-tier='star'] .ach-medal {
   border: 2px solid transparent;
-  background: radial-gradient(circle at 35% 30%, #1d3440, #0c1d26 70%) padding-box, var(--sf-gold-rim) border-box;
-  box-shadow: 0 0 34px -6px rgb(245 174 57 / .65);
-  color: #ffe6a8;
+  background: var(--sf-medal-star-face) padding-box, var(--sf-gold-rim) border-box;
+  box-shadow: 0 0 34px -6px color-mix(in srgb, var(--sf-reward) 65%, transparent);
+  color: var(--sf-gold-ink);
 }
-:root.dark:not([data-theme-family='crystal']) .achievements-board--classic [data-badge-state='in-progress'] .ach-medal { border-color: rgb(126 230 250 / .35); background: rgb(255 255 255 / .03); }
+:root.dark:not([data-theme-family='crystal']) .achievements-board--classic [data-badge-state='in-progress'] .ach-medal { border-color: color-mix(in srgb, var(--sf-brand-text) 35%, transparent); background: color-mix(in srgb, var(--sf-flare) 3%, transparent); }
 .achievements-board--classic .ach-badge-title { margin: 12px 0 0; font-family: var(--sf-font-display); font-size: 18px; font-weight: 400; line-height: 1.1; color: var(--st-title); }
 .achievements-board--classic [data-badge-state='locked'] .ach-badge-title { color: var(--st-text2); }
 .achievements-board--classic .ach-badge-tier { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -187,20 +187,20 @@
   inset: 0;
   pointer-events: none;
   mix-blend-mode: var(--ach-sheen-blend);
-  background: linear-gradient(115deg, transparent 30%, rgb(255 226 150 / .22) 45%, rgb(150 240 255 / .16) 52%, rgb(255 170 230 / .12) 58%, transparent 72%);
+  background: var(--sf-foil-sheen);
   background-size: 260% 100%;
   background-position: 70% 0;
 }
 
 /* Crystal collection */
 .achievements-board--crystal {
-  --ach-beam: rgb(255 255 255 / .08);
+  --ach-beam: color-mix(in srgb, var(--sf-flare) 8%, transparent);
   --ach-hex: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   --ach-chip-cut: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
   overflow-x: clip;
 }
 :root[data-theme-family='crystal']:not(.dark) .achievements-board--crystal {
-  --ach-beam: rgb(255 255 255 / .5);
+  --ach-beam: color-mix(in srgb, var(--sf-flare) 50%, transparent);
 }
 .ach-crystal {
   display: grid;
@@ -227,7 +227,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 3px 0 var(--sf-star-shade)) drop-shadow(0 0 18px rgb(255 42 77 / .6));
+  filter: drop-shadow(0 3px 0 var(--sf-star-shade)) drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 60%, transparent));
 }
 .achievements-board--crystal .ach-title-accent { font-style: italic; color: transparent; }
 .achievements-board--crystal .ach-back {
@@ -269,7 +269,7 @@
   pointer-events: none;
 }
 .ach-emblem-row { position: relative; display: flex; align-items: center; gap: 16px; }
-.ach-emblem { position: relative; width: 88px; height: 96px; flex-shrink: 0; filter: drop-shadow(0 0 16px rgb(255 42 77 / .6)); }
+.ach-emblem { position: relative; width: 88px; height: 96px; flex-shrink: 0; filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
 .ach-emblem::before { content: ''; position: absolute; inset: 0; clip-path: var(--ach-hex); background: var(--sf-gold-rim); }
 .ach-emblem-face {
   position: absolute;
@@ -283,13 +283,13 @@
   font-style: italic;
   font-weight: 900;
   font-size: 30px;
-  color: #ffffff;
+  color: var(--sf-flare);
 }
 .ach-emblem-name { margin: 0; font-weight: 900; font-size: 24px; line-height: 1.15; color: var(--st-title); }
 .achievements-board--crystal .ach-kicker { margin-top: 8px; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0; text-transform: none; color: var(--sf-brand-text); }
 .ach-emblem-level { margin: 14px 0 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--st-text2); }
 .ach-emblem-bar { position: relative; display: block; margin-top: 16px; height: 10px; transform: skewX(-24deg); background: var(--st-track); overflow: hidden; }
-.ach-emblem-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / .7); }
+.ach-emblem-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--sf-second), var(--sf-star-face), var(--sf-brand)); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
 
 .ach-bloom-card { padding: 18px 22px; }
 .ach-side-title { margin: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--sf-second-text); }
@@ -307,7 +307,7 @@
   font-style: italic;
   font-weight: 900;
   font-size: 17px;
-  color: #ffffff;
+  color: var(--sf-flare);
   text-shadow: 0 2px 0 var(--sf-star-shade);
 }
 .ach-bloom-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; color: var(--st-title); }
@@ -336,9 +336,9 @@
   height: 430px;
   pointer-events: none;
   opacity: .9;
-  filter: drop-shadow(0 0 26px rgb(255 42 77 / .7));
+  filter: drop-shadow(0 0 26px color-mix(in srgb, var(--sf-brand) 70%, transparent));
 }
-.ach-feature-rim { position: absolute; left: 20px; right: 20px; top: 40px; bottom: 30px; filter: drop-shadow(0 0 30px rgb(255 42 77 / .75)); }
+.ach-feature-rim { position: absolute; left: 20px; right: 20px; top: 40px; bottom: 30px; filter: drop-shadow(0 0 30px color-mix(in srgb, var(--sf-brand) 75%, transparent)); }
 .ach-feature-rim::before { content: ''; position: absolute; inset: 0; clip-path: var(--nk-chamfer); background: var(--sf-gold-rim); }
 .ach-feature {
   position: absolute;
@@ -365,25 +365,25 @@
   font-weight: 900;
   font-size: 19px;
   text-transform: uppercase;
-  color: #ffffff;
+  color: var(--sf-flare);
   text-shadow: 0 2px 0 var(--sf-star-shade);
 }
 .ach-feature[data-tier='bud'] .ach-feature-tier { background: var(--sf-rim-new); }
 .ach-feature[data-tier='bloom'] .ach-feature-tier { background: var(--sf-rim-learning); }
-.ach-feature-star { margin-top: 10px; width: 150px; height: 150px; flex-shrink: 0; filter: drop-shadow(0 0 22px rgb(255 42 77 / .9)); }
+.ach-feature-star { margin-top: 10px; width: 150px; height: 150px; flex-shrink: 0; filter: drop-shadow(0 0 22px color-mix(in srgb, var(--sf-brand) 90%, transparent)); }
 .ach-feature-title { margin: 12px 0 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 30px; line-height: 1.05; text-transform: uppercase; color: var(--st-title); }
 .ach-feature-desc { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--st-text2); }
 .ach-feature-progress { margin-top: auto; width: 100%; }
 .ach-feature-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 800; color: var(--st-text2); }
 .ach-feature-row > :last-child { color: var(--sf-brand-text); }
 .ach-feature-track { display: block; margin-top: 6px; height: 10px; transform: skewX(-24deg); background: var(--st-track); overflow: hidden; }
-.ach-feature-track > span { display: block; height: 100%; background: var(--st-primary); box-shadow: 0 0 12px rgb(255 42 77 / .8); }
+.ach-feature-track > span { display: block; height: 100%; background: var(--st-primary); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 80%, transparent); }
 
 /* Crystal badge cards: a tier rim layer under a chamfered panel layer, with the glow on the card */
 .achievements-board--crystal .ach-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 14px; height: 100%; }
 .achievements-board--crystal .ach-badge {
   --ach-rim: var(--sf-rim-new);
-  --ach-glow: rgb(94 242 255 / .35);
+  --ach-glow: color-mix(in srgb, var(--sf-second) 35%, transparent);
   --ach-tier-text: var(--sf-second-text);
   position: relative;
   isolation: isolate;
@@ -394,8 +394,8 @@
   flex-direction: column;
   filter: drop-shadow(0 0 12px var(--ach-glow));
 }
-.achievements-board--crystal .ach-badge[data-badge-tier='bloom'] { --ach-rim: var(--sf-rim-learning); --ach-glow: rgb(255 143 182 / .45); --ach-tier-text: var(--st-pink-text); }
-.achievements-board--crystal .ach-badge[data-badge-tier='star'] { --ach-rim: var(--sf-gold-rim); --ach-glow: rgb(255 42 77 / .55); --ach-tier-text: var(--sf-brand-text); }
+.achievements-board--crystal .ach-badge[data-badge-tier='bloom'] { --ach-rim: var(--sf-rim-learning); --ach-glow: color-mix(in srgb, var(--sf-tier-bloom) 45%, transparent); --ach-tier-text: var(--st-pink-text); }
+.achievements-board--crystal .ach-badge[data-badge-tier='star'] { --ach-rim: var(--sf-gold-rim); --ach-glow: color-mix(in srgb, var(--sf-brand) 55%, transparent); --ach-tier-text: var(--sf-brand-text); }
 .achievements-board--crystal .ach-badge[data-badge-state='locked'] { --ach-glow: transparent; }
 .achievements-board--crystal .ach-badge::before,
 .achievements-board--crystal .ach-badge::after { content: ''; position: absolute; clip-path: var(--nk-chamfer-sm); z-index: -1; }
@@ -411,7 +411,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: var(--sf-flare);
 }
 .achievements-board--crystal .ach-medal svg { width: 24px; height: 24px; filter: drop-shadow(0 1px 0 var(--sf-star-shade)); }
 .achievements-board--crystal .ach-badge-name { min-width: 0; }
@@ -439,7 +439,7 @@
   inset: 2px;
   z-index: 1;
   clip-path: var(--nk-chamfer-sm);
-  background: rgb(10 6 24 / .78);
+  background: var(--sf-veil);
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
   display: flex;
@@ -447,14 +447,14 @@
   justify-content: center;
 }
 .ach-badge-veil > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.ach-veil-line { fill: none; stroke: #5ef2ff; stroke-width: 2; filter: drop-shadow(0 0 6px #5ef2ff); }
-.ach-veil-spark { fill: none; stroke: #ff5470; stroke-width: 1.4; }
+.ach-veil-line { fill: none; stroke: var(--sf-second); stroke-width: 2; filter: drop-shadow(0 0 6px var(--sf-second)); }
+.ach-veil-spark { fill: none; stroke: var(--sf-star-face); stroke-width: 1.4; }
 .ach-badge-veil-chip {
   position: relative;
   height: 28px;
   padding: 0 14px;
   clip-path: var(--ach-chip-cut);
-  background: linear-gradient(180deg, #ff5470, #b30f33);
+  background: linear-gradient(180deg, var(--sf-star-face), var(--sf-brand-hover));
   display: flex;
   align-items: center;
   font-family: var(--sf-font-display);
@@ -464,7 +464,7 @@
   letter-spacing: .1em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: #ffffff;
+  color: var(--sf-flare);
 }
 
 /* Crystal medal icons from the board's filled set */
@@ -501,7 +501,7 @@
   color: var(--sf-text-muted);
 }
 .ach-tab:hover .ach-tab-label { color: var(--sf-text-strong); }
-.ach-tab[aria-selected='true'] .ach-tab-face { background: var(--sf-primary-bg); box-shadow: 0 0 18px -4px rgb(255 42 77 / .7); }
+.ach-tab[aria-selected='true'] .ach-tab-face { background: var(--sf-primary-bg); box-shadow: 0 0 18px -4px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
 .ach-tab[aria-selected='true'] .ach-tab-label { color: var(--sf-on-primary); }
 .ach-unlocked-count { margin: 0 0 0 auto; padding-bottom: 12px; font-weight: 800; font-size: 14px; color: var(--sf-text-muted); }
 .achievements-board--crystal .ach-unlocked-count + .ach-back { margin-left: 0; }
@@ -518,7 +518,7 @@
 .ach-bloom-share { display: block; margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--st-text2); }
 
 /* Crystal profile card: the account avatar in the hexagon, the name, the title shown and the level */
-.ach-profile-avatar { position: relative; width: 88px; height: 96px; flex-shrink: 0; filter: drop-shadow(0 0 16px rgb(255 42 77 / .6)); }
+.ach-profile-avatar { position: relative; width: 88px; height: 96px; flex-shrink: 0; filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
 .ach-profile-avatar::before { content: ''; position: absolute; inset: 0; clip-path: var(--ach-hex); background: var(--sf-gold-rim); }
 .ach-profile-avatar-face {
   position: absolute;

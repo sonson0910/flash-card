@@ -34,6 +34,16 @@ The four source sets are `classic-dark`, `classic-light`, `crystal-dark`, and
 | `--sf-dialog-shadow` | `dlgShadow` | the dialog shadow of the Anime dialog boards |
 | `--sf-tab-bg`, `--sf-tab-shadow`, `--sf-tab-active`, `--sf-tab-active-text` | `tabBg`, `tabShadow`, the active pill fill and text | `tabBarBg`, the `panelEdge` top edge, `primaryBg`, white |
 | `--nk-chamfer`, `--nk-chamfer-sm`, `--nk-snap`, `--nk-stars`, `--nk-wing-opacity` | normalized defaults | `chamfer`, `chamferSm`, `snap`, `stars`, `wingOpacity` |
+| `--sf-flare`, `--sf-umbra`, `--sf-shadow-tint` | white, black, the warm `rgb(60 40 20)` of the panel shadows (black in dark) | `flare`, black, the `rgb(20 70 130)` panel shadow (black in dark) |
+| `--sf-tone-1` to `--sf-tone-4` | LangCard / LangReview `tone` (light tone 3 kept at `#8a5a0c`: the board's `#a8781f` misses AA) | the Anime language boards' tone hues; light tones 1 and 2 deepened to `#086a82` and `#19672f` for AA on the glass chips |
+| `--sf-switch-on`, `--sf-switch-on-text`, `--sf-switch-knob` | LangCard `romajiTrack` (accent), the accent label, `romajiKnobBg` | the holo cyan reading switch with its `#031820` label (light uses `#7ff6ff` to `#2bc4e0` so the dark label keeps AA); no knob is drawn (`--sf-surface`) |
+| `--sf-pink-text` | not drawn; follows `--sf-holo-text` | `pinkText` |
+| `--sf-gold-line`, `--sf-gold-paper`, `--sf-gold-ink`, `--sf-gold-shadow` | the Progress shelf and Achievements gold medal: rim line, paper, ink, warm shadow (`#ffe6a8` ink in dark) | not drawn: `--sf-reward`, `--sf-surface`, `--sf-warn`, `--sf-shadow-tint` |
+| `--sf-medal-face`, `--sf-medal-star-face`, `--sf-ring-core`, `--sf-shelf-bg`, `--sf-foil-sheen` | the Achievements earned and star medal faces, level ring core, the Progress shelf fill and the star badge sheen | not drawn: `--sf-surface`, and `none` for the sheen |
+| `--sf-hero-sky`, `--sf-hero-glow`, `--sf-hero-text`, `--sf-hero-title`, `--sf-hero-body`, `--sf-hero-muted`, `--sf-hero-cta-text`, `--sf-hero-shadow` | PathsScreen `hero` (light: the moss cloth hero; dark: the aurora hero) | AnimePaths hero fill (its base gradient and tinted glow); the hero text uses the text tokens and the panel shadow |
+| `--sf-book-face` | the dark Paths book face (`cardBg`) | AnimePaths book fill |
+| `--sf-holo-light`, `--sf-holo-pale`, `--sf-holo-deep`, `--sf-holo-ink`, `--sf-gold-light`, `--sf-gold-deep`, `--sf-blush`, `--sf-rose-light`, `--sf-pink-light` | not drawn: `--sf-second`, `--sf-holo-text`, `--sf-reward`, `--sf-brand`, `--sf-tier-bloom` | the holo, gold, crimson and pink stops of the Anime boards (AnimePaths `hue.*.spine`, `metal`, `holoText`, AnimeProgress tomorrow bar) |
+| `--sf-mark-crimson`, `--sf-mark-navy`, `--sf-veil` | not drawn: `--sf-crimson-gradient`, `--sf-primary-bg`, `--sf-scrim` | AnimeWebWords source marks and the locked-badge veil |
 
 `--sf-grain-*` has no Crystal source equivalent, so Crystal uses a neutral no-grain
 fallback. `public/theme-crystal.css` is loaded from a stylesheet link before paint
@@ -60,3 +70,6 @@ does not meet AA contrast for the app's 12px button text on that crimson.
 Translucent variants of a token are written as
 `color-mix(in srgb, var(--sf-<token>) <alpha>%, transparent)`, which renders the same
 colour as the `rgb(<r> <g> <b> / <alpha>)` literal it replaces.
+
+A token marked "not drawn" for a family has no board value there: it aliases the
+nearest token so every family and mode defines the same set.
