@@ -1796,6 +1796,7 @@
   html[data-theme-family=crystal] .practice-match__tag { font-family: var(--sf-font-display); font-size: 12px; font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
   html[data-theme-family=crystal] .practice-match__tile[data-state='selected'] {
     --pr-sel: linear-gradient(90deg, color-mix(in srgb, var(--sf-second) var(--pr-row-sel-tint), var(--sf-surface)), var(--sf-surface) 75%);
+    border-color: var(--sf-second);
     background: var(--pr-sel);
     color: var(--sf-text);
     --tw-ring-color: transparent;
