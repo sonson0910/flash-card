@@ -28,7 +28,17 @@ export type AuthoritativeGamification = VerifiedGamificationOutcome;
 export type ReviewOutcome = Partial<ReviewGamificationOutcome>;
 
 export type ReviewApplyResult =
-  | ({ applied: true; duplicate: boolean; xpAwarded: 0 | 2; card: CardData } & ReviewOutcome)
+  | ({
+      applied: true;
+      duplicate: boolean;
+      /**
+       * The server repeated the receipt of an operation it had already applied. Its study time,
+       * streak change and ceremonies describe that earlier commit, not something new.
+       */
+      replayed?: true;
+      xpAwarded: 0 | 2;
+      card: CardData;
+    } & ReviewOutcome)
   | {
       applied: false;
       reason: 'stale-library-epoch' | 'future-library-epoch' | 'missing' | 'identity-conflict'
@@ -243,6 +253,7 @@ export async function applyReviewViaCallable(
       return {
         applied: true,
         duplicate: envelope.duplicate,
+        ...(envelope.replayed === true ? { replayed: true as const } : {}),
         xpAwarded: parseXpAwarded(envelope.xpAwarded),
         card: parseCard(envelope.card),
         ...outcome,

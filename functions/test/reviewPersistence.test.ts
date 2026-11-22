@@ -11,7 +11,7 @@ import { scheduleReviewTransition } from '../src/reviewScheduler.js';
 import { resolveJapanesePitchAccent } from '../src/japanesePitch.js';
 import { canonicalCard } from '../src/cardPersistence.js';
 import { createHash } from 'node:crypto';
-import { servedReviewOutcome } from './support/review-outcome.js';
+import { servedReplayedReviewOutcome, servedReviewOutcome } from './support/review-outcome.js';
 import { steadyStats } from './support/steady-stats.js';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
@@ -292,6 +292,7 @@ describe('review persistence', () => {
     const request = reviewRequest();
     const first = await applyReviewForOwner(test.database, 'owner', request);
     expect(first).not.toHaveProperty('gamification');
+    expect(first).not.toHaveProperty('replayed');
     expect(first.xpAwarded).toBe(0);
     expect(test.reads.filter(path => path === 'users/owner/reminderState/current')).toHaveLength(1);
     expect(test.writes.some(write => write.path === 'users/owner/profile/stats')).toBe(false);
@@ -303,6 +304,7 @@ describe('review persistence', () => {
     await expect(applyReviewForOwner(test.database, 'owner', request)).resolves.toEqual({
       ...first,
       duplicate: true,
+      replayed: true,
     });
   });
 
@@ -416,9 +418,13 @@ describe('review persistence', () => {
       if (!receipt) throw new Error('receipt was not written');
       expect(receipt.data.result.xpAwarded).toBe(2);
       test.values.set(receipt.path, snapshot(true, receipt.data));
+      expect(result).not.toHaveProperty('replayed');
+      // The replay repeats the first commit's study time and streak change unchanged and marks
+      // itself, so a client can keep the totals without crediting or celebrating them twice.
       await expect(applyReviewForOwner(test.database, 'owner', request)).resolves.toEqual({
         ...result,
         duplicate: true,
+        replayed: true,
       });
       expect(test.writes.filter(write => write.path === 'users/owner/profile/stats')).toHaveLength(1);
       expect(test.writes.filter(write => write.path === 'users/owner/profile/xp_history')).toHaveLength(1);
@@ -521,11 +527,18 @@ describe('review persistence', () => {
         studyTimeV1: { ...stats.studyTimeV1, lastActionAtMs: previousAnswerAt, days: { '2026-11-22': { activeMs: 90_000, reviewMs: 90_000, timedReviews: 6 } } },
       }));
       const reviewedAt = '2026-11-22T17:00:10.000Z';
-      const served = await applyReviewForOwner(test.database, 'owner', reviewRequest({
+      const request = reviewRequest({
         reviewedAt, timeZone: 'Asia/Saigon', fields: scheduleReviewTransition(baseCard(), 'good', new Date(reviewedAt)),
-      }));
+      });
+      const served = await applyReviewForOwner(test.database, 'owner', request);
       // The callable sends the result as JSON.
       expect(JSON.parse(JSON.stringify(served))).toEqual(servedReviewOutcome);
+
+      const receipt = test.writes.find(write => write.path.includes('review_receipts'));
+      if (!receipt) throw new Error('receipt was not written');
+      test.values.set(receipt.path, snapshot(true, receipt.data));
+      const replayed = await applyReviewForOwner(test.database, 'owner', request);
+      expect(JSON.parse(JSON.stringify(replayed))).toEqual(servedReplayedReviewOutcome);
     } finally {
       vi.useRealTimers();
     }
@@ -542,7 +555,7 @@ describe('review persistence', () => {
     const stored = baseCard([{ rating: 'good', reviewedAt: '2026-08-24T00:00:00.000Z', scheduledDays: 1, elapsedDays: 0 }], ['device-a:review-1']);
     const test = harness(stored);
     await expect(applyReviewForOwner(test.database, 'owner', reviewRequest({ baseRevision: 0 }), { strict: false }))
-      .resolves.toMatchObject({ applied: true, duplicate: true, card: { revision: 3 } });
+      .resolves.toMatchObject({ applied: true, duplicate: true, replayed: true, card: { revision: 3 } });
     expect(test.writes).toEqual([]);
   });
 

@@ -4,6 +4,7 @@ import {
   applyReviewViaCallable,
   applyReviewWithConflictRecovery,
   stableReviewCommand,
+  type AuthoritativeGamification,
   type ReviewApplyResult,
   type ReviewCommand,
 } from '../../lib/cardReviewRepository';
@@ -149,6 +150,14 @@ const duplicateReceiptIsOlderThanSource = (
   return Number.isFinite(sourceTime) && Number.isFinite(receiptTime) && sourceTime > receiptTime;
 };
 
+// A replayed review receipt still carries the authoritative totals, which are safe to apply again,
+// but its credited study time and streak change were already delivered with the first response.
+const withoutReplayedChanges = ({
+  streakChange: _streakChange,
+  studyTimeMs: _studyTimeMs,
+  ...totals
+}: AuthoritativeGamification): AuthoritativeGamification => totals;
+
 const restoreConflictReasonFor = (reason: CardMutationPreconditionError['reason']): LearningRestoreConflictReason => {
   if (reason === 'deleted') return 'deleted-again';
   if (reason === 'identity-conflict') return 'unsafe-existing';
@@ -281,12 +290,20 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                   id: mutation.cardId,
                 }
               : applySuccessfulPatchMetadata(source!, mutation.fields, metadata, mutation.fieldMask);
+            // A replayed receipt repeats an operation the server applied earlier. Its card and totals
+            // still count, but its study time, streak change and ceremonies are neither added nor
+            // shown a second time.
+            const replayed = reviewResult?.replayed === true;
+            const outcomeGamification = reviewResult?.gamification && replayed
+              ? withoutReplayedChanges(reviewResult.gamification)
+              : reviewResult?.gamification;
+            const outcomeCeremonies = replayed ? undefined : reviewResult?.ceremonyEvents;
             if (mutation.operation === 'review' && reviewResult
-              && (reviewResult.gamification || reviewResult.ceremonyEvents)
+              && (outcomeGamification || outcomeCeremonies)
               && latestRef.current.ownerId === ownerId) {
               current.onReviewOutcome?.({
-                ...(reviewResult.gamification ? { gamification: reviewResult.gamification } : {}),
-                ...(reviewResult.ceremonyEvents ? { ceremonyEvents: reviewResult.ceremonyEvents } : {}),
+                ...(outcomeGamification ? { gamification: outcomeGamification } : {}),
+                ...(outcomeCeremonies ? { ceremonyEvents: outcomeCeremonies } : {}),
               }, mutation.operationId, source ?? reviewResult.card);
             }
             publication = {
@@ -308,7 +325,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               reviewFinality = 'committed';
               if (reviewResult) {
                 xpAwarded = reviewResult.xpAwarded;
-                studyTimeMs = reviewResult.gamification?.studyTimeMs;
+                studyTimeMs = outcomeGamification?.studyTimeMs;
                 // A duplicate receipt may return the card after later reviews.
                 // The command rating is the receipt's immutable operation intent.
                 reviewRating = requestedReviewRating;

@@ -335,6 +335,48 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(result).toMatchObject({ reviewFinality: 'committed', xpAwarded: 2 });
   });
 
+  it('applies a replayed receipt without crediting its study time or showing its streak change again', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
+    const totals = { xp: 642, level: 3, streak: 7, studyDay: '2026-08-24', events: ['streak' as const] };
+    const firstResponse: Extract<ReviewApplyResult, { applied: true }> = {
+      applied: true, duplicate: false, xpAwarded: 2, card: authoritative,
+      gamification: { ...totals, streakChange: { freezesUsed: 0, freezesEarned: 1, milestone: 7 }, studyTimeMs: 20_000 },
+      ceremonyEvents: ['streak'],
+    };
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+      apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
+    ) => apply(command));
+    const mutation: LearningStateMutation = {
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    };
+
+    mocks.applyReviewViaCallable.mockResolvedValueOnce(firstResponse);
+    const delivered = createHarness();
+    await expect(delivered.persistence.persist(mutation)).resolves.toMatchObject({
+      reviewFinality: 'committed', xpAwarded: 2, studyTimeMs: 20_000,
+    });
+    expect(delivered.onReviewOutcome).toHaveBeenCalledWith({
+      gamification: firstResponse.gamification, ceremonyEvents: ['streak'],
+    }, mutation.operationId, card);
+
+    mocks.applyReviewViaCallable.mockResolvedValueOnce({ ...firstResponse, duplicate: true, replayed: true });
+    const replayed = createHarness();
+    const result = await replayed.persistence.persist(mutation);
+    expect(result).toMatchObject({
+      reviewFinality: 'committed',
+      xpAwarded: 2,
+      publication: { kind: 'patch', cardId: card.id, fields: { revision: 4, libraryEpoch: 2 } },
+    });
+    expect(result).not.toHaveProperty('studyTimeMs');
+    // The totals are authoritative and safe to apply again; the change itself was already shown.
+    expect(replayed.onReviewOutcome).toHaveBeenCalledTimes(1);
+    expect(replayed.onReviewOutcome).toHaveBeenCalledWith({ gamification: totals }, mutation.operationId, card);
+  });
+
   it('reports the pinned command rating when a duplicate receipt returns a later card state', async () => {
     const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
     const fields = scheduleReview(card, 'good', reviewedAt);

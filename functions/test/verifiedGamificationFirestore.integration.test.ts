@@ -258,6 +258,9 @@ describeWithEmulator('verified study records when reviews commit at the same tim
     ))));
     expect(results.map(result => result.duplicate).sort()).toEqual([false, true]);
     const applied = results.find(result => !result.duplicate) as ReviewPersistenceResult;
+    const replay = results.find(result => result.duplicate) as ReviewPersistenceResult;
+    expect(applied).not.toHaveProperty('replayed');
+    expect(replay).toEqual({ ...applied, duplicate: true, replayed: true });
     const stats = await storedStats(ownerId);
     const today = applied.gamification!.studyDay;
     expect(stats).toMatchObject({
