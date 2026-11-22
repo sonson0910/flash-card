@@ -17,6 +17,7 @@ import {
 } from './AppOverlays';
 import { getPracticeModes, registerPracticeMode, resolvePracticeModeAction, wordMatchEligibleCardCount } from '../features/practice/practiceModeRegistry';
 import { setFormatLocale } from '../lib/format';
+import { messages as enPractice } from '../i18n/locales/en/practice.po';
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -210,6 +211,25 @@ describe('share overlays', () => {
     expect(wordMatchEligibleCardCount(ineligibleCards)).toBe(2);
     expect(renderMatch(ineligibleCards)).toContain('Needs 4 cards · you have 2');
     expect(renderMatch(eligibleCards)).not.toContain('Needs 4 cards');
+  });
+
+  it('gives each mode a short description for the phone sheet and puts a lock reason there instead', () => {
+    i18n.load('en', enPractice);
+    i18n.activate('en');
+    const actions = { quiz: async () => undefined, match: async () => undefined, story: async () => undefined };
+    const cards = [{ id: 'one', word: 'one', translation: 'một' }] as CardData[];
+    const html = renderToStaticMarkup(
+      <LinguiProvider i18n={i18n}><PracticeModeChoices practiceCards={cards} visibleLibraryCount={1} practiceAction={null} actions={actions} onRun={async () => undefined} /></LinguiProvider>,
+    );
+    const shortOf = (mode: string) => html.match(new RegExp(`data-practice-choice="${mode}"[\\s\\S]*?practice-picker-row-desc-short">([^<]+)<`))?.[1];
+
+    expect(shortOf('quiz')).toBe('4 choices · up to 10 questions');
+    expect(shortOf('match')).toBe('Needs 4 cards · you have 1');
+    expect(shortOf('story')).toBe('Needs 5 cards · you have 1');
+    expect(html).toContain('Pick the right meaning out of four.');
+    for (const mode of getPracticeModes().filter(mode => ['quiz', 'spelling', 'language-drill', 'match', 'shadowing', 'story'].includes(mode.id))) {
+      expect(mode.shortDescription).toBeDefined();
+    }
   });
 
   it('keeps the available modes in a stable, availability-aware registry', () => {

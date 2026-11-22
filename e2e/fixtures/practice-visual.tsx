@@ -112,7 +112,7 @@ function PracticeFixture() {
       dismissShareDialog={noop} showShareDialog={noop} acceptSharedDeck={asyncNoop} cancelSharedDeck={noop}
       canRevokeShare={false} revokeShare={asyncNoop} isSharing={false}
       isPracticeMenuOpen setIsPracticeMenuOpen={noop} startQuiz={asyncNoop} startSpelling={asyncNoop}
-      startMatch={asyncNoop} startShadowing={asyncNoop} practiceCards={cards} visibleLibraryCount={cards.length}
+      startMatch={asyncNoop} startShadowing={asyncNoop} practiceCards={cards} visibleLibraryCount={cards.length} practiceLanguage="en"
       generateStory={asyncNoop} isStatsOpen={false} setIsStatsOpen={noop} statsData={emptyStats} isDarkMode={false}
       showClearConfirm={false} setShowClearConfirm={noop} clearAll={asyncNoop} clearStatus="idle" clearError={null} resetClearFeedback={noop} isLoading={false}
       shareOpenerRef={{ current: null }} practiceOpenerRef={{ current: null }} statsOpenerRef={{ current: null }} clearOpenerRef={{ current: null }}
