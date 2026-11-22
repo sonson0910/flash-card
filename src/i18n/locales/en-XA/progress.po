@@ -144,87 +144,102 @@ msgid "achievements.badge.xp-500.condition"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:63
+msgid "achievements.cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:70
+msgid "achievements.cards.share"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:69
+msgid "achievements.cards.total"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:62
 msgid "achievements.collection"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:92
+#: src/components/stats/AchievementsMatrix.tsx:95
 msgid "achievements.earned-by"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:93
+#: src/components/stats/AchievementsMatrix.tsx:96
 msgid "achievements.earned-by.long"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:91
+#: src/components/stats/AchievementsMatrix.tsx:94
 msgid "achievements.earned-on"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:68
+#: src/components/stats/AchievementsMatrix.tsx:71
 msgid "achievements.heading.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:88
+#: src/components/stats/AchievementsMatrix.tsx:91
 msgid "achievements.profile.level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:80
+#: src/components/stats/AchievementsMatrix.tsx:83
 msgid "achievements.remaining-answers"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:78
+#: src/components/stats/AchievementsMatrix.tsx:81
 msgid "achievements.remaining-cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:79
+#: src/components/stats/AchievementsMatrix.tsx:82
 msgid "achievements.remaining-reviews"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:63
+#: src/components/stats/AchievementsMatrix.tsx:64
 msgid "achievements.tile.best-streak"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:94
+#: src/components/stats/AchievementsMatrix.tsx:97
 msgid "achievements.tile.best-streak.value"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:63
+#: src/components/stats/AchievementsMatrix.tsx:64
 msgid "achievements.tile.study-pace"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:95
+#: src/components/stats/AchievementsMatrix.tsx:98
 msgid "achievements.tile.study-pace.value"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:63
+#: src/components/stats/AchievementsMatrix.tsx:64
 msgid "achievements.tile.total-xp"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:97
+#: src/components/stats/AchievementsMatrix.tsx:100
 msgid "achievements.title.level-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:96
+#: src/components/stats/AchievementsMatrix.tsx:99
 msgid "achievements.title.reach-level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:64
+#: src/components/stats/AchievementsMatrix.tsx:65
 msgid "achievements.title.shown"
 msgstr ""
 
@@ -244,7 +259,7 @@ msgid "achievements.titles"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:83
+#: src/components/stats/AchievementsMatrix.tsx:86
 msgid "achievements.unlocked-count"
 msgstr ""
 
@@ -469,7 +484,7 @@ msgid "stats.date"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:71
+#: src/components/stats/AchievementsMatrix.tsx:74
 msgid "stats.days"
 msgstr ""
 
@@ -489,7 +504,7 @@ msgid "stats.earned"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:82
+#: src/components/stats/AchievementsMatrix.tsx:85
 msgid "stats.earned-count"
 msgstr ""
 
@@ -549,22 +564,22 @@ msgid "stats.less"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:84
+#: src/components/stats/AchievementsMatrix.tsx:87
 msgid "stats.level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:87
+#: src/components/stats/AchievementsMatrix.tsx:90
 msgid "stats.level-line"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:85
+#: src/components/stats/AchievementsMatrix.tsx:88
 msgid "stats.level-meter"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:86
+#: src/components/stats/AchievementsMatrix.tsx:89
 msgid "stats.level-sessions"
 msgstr ""
 
@@ -574,7 +589,7 @@ msgid "stats.library-breakdown"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:90
+#: src/components/stats/AchievementsMatrix.tsx:93
 msgid "stats.lumi-done"
 msgstr ""
 
@@ -584,7 +599,7 @@ msgid "stats.lumi-link"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:89
+#: src/components/stats/AchievementsMatrix.tsx:92
 msgid "stats.lumi-next"
 msgstr ""
 
@@ -620,7 +635,7 @@ msgid "stats.more"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:69
+#: src/components/stats/AchievementsMatrix.tsx:72
 msgid "stats.next-badge-meter"
 msgstr ""
 
@@ -686,17 +701,17 @@ msgid "stats.recall-rate-hint"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:75
+#: src/components/stats/AchievementsMatrix.tsx:78
 msgid "stats.remaining-days"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:76
+#: src/components/stats/AchievementsMatrix.tsx:79
 msgid "stats.remaining-words"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:77
+#: src/components/stats/AchievementsMatrix.tsx:80
 msgid "stats.remaining-xp"
 msgstr ""
 
@@ -823,12 +838,12 @@ msgid "stats.value"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:67
+#: src/components/stats/AchievementsMatrix.tsx:68
 msgid "stats.word-garden-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/AchievementsMatrix.tsx:72
+#: src/components/stats/AchievementsMatrix.tsx:75
 msgid "stats.words"
 msgstr ""
 
