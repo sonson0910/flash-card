@@ -17,7 +17,7 @@ import {
   ToggleLeft,
   X,
 } from "lucide-react";
-import { useReducedMotion } from "../../lib/motionPreference";
+import { useReducedMotion } from "../../lib/motionPreferenceHooks";
 import { useTheme } from "../theme/ThemeProvider";
 import { Lumi } from "../../components/lumi/Lumi";
 import { readLumiEnabled } from "../settings/lumi-preference";

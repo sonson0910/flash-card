@@ -6,7 +6,7 @@ import { Lumi } from '../../components/lumi/Lumi';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { triggerHaptic, useHapticsSettings } from '../../lib/haptics';
 import { playFlipSound, useSoundSettings } from '../../lib/interactionSounds';
-import { useUserReducedMotion } from '../../lib/motionPreference';
+import { useUserReducedMotion } from '../../lib/motionPreferenceHooks';
 import { useTheme } from '../theme/ThemeProvider';
 import { useFocusModePreference } from './focus-mode-preference';
 import { applyLumiEnabled, readLumiEnabled } from './lumi-preference';

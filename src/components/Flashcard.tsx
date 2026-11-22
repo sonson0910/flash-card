@@ -14,7 +14,7 @@ import { triggerHaptic } from '../lib/haptics';
 import { voiceForActiveCourseCard } from '../lib/courseVoicePreference';
 import { speechLocaleFor } from '../lib/speechLocale';
 import { getFlashcardFlipMotion } from '../lib/motion';
-import { useReducedMotion } from '../lib/motionPreference';
+import { useReducedMotion } from '../lib/motionPreferenceHooks';
 import {
   translateExplanationSafely,
 } from '../lib/recoverableActions';

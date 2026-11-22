@@ -1,4 +1,6 @@
-let activeLocale = 'en';
+import { getFormatLocale, setFormatLocale } from './formatLocale';
+
+export { getFormatLocale, setFormatLocale };
 
 const numberFormats = new Map<string, Intl.NumberFormat>();
 const dateTimeFormats = new Map<string, Intl.DateTimeFormat>();
@@ -15,7 +17,7 @@ const memoize = <T>(
   create: () => T,
   options: object,
 ): T => {
-  const key = cacheKey(activeLocale, options);
+  const key = cacheKey(getFormatLocale(), options);
   const cached = cache.get(key);
   if (cached) return cached;
   const formatter = create();
@@ -23,26 +25,20 @@ const memoize = <T>(
   return formatter;
 };
 
-export const getFormatLocale = (): string => activeLocale;
-
-export const setFormatLocale = (locale: string): void => {
-  activeLocale = locale;
-};
-
 export const getNumberFormat = (options: Intl.NumberFormatOptions = {}): Intl.NumberFormat =>
-  memoize(numberFormats, () => new Intl.NumberFormat(activeLocale, options), options);
+  memoize(numberFormats, () => new Intl.NumberFormat(getFormatLocale(), options), options);
 
 export const getDateTimeFormat = (options: Intl.DateTimeFormatOptions = {}): Intl.DateTimeFormat =>
-  memoize(dateTimeFormats, () => new Intl.DateTimeFormat(activeLocale, options), options);
+  memoize(dateTimeFormats, () => new Intl.DateTimeFormat(getFormatLocale(), options), options);
 
 export const getRelativeTimeFormat = (options: Intl.RelativeTimeFormatOptions = {}): Intl.RelativeTimeFormat =>
-  memoize(relativeTimeFormats, () => new Intl.RelativeTimeFormat(activeLocale, options), options);
+  memoize(relativeTimeFormats, () => new Intl.RelativeTimeFormat(getFormatLocale(), options), options);
 
 export const getListFormat = (options: Intl.ListFormatOptions = {}): Intl.ListFormat =>
-  memoize(listFormats, () => new Intl.ListFormat(activeLocale, options), options);
+  memoize(listFormats, () => new Intl.ListFormat(getFormatLocale(), options), options);
 
 export const getPluralRules = (options: Intl.PluralRulesOptions = {}): Intl.PluralRules =>
-  memoize(pluralRules, () => new Intl.PluralRules(activeLocale, options), options);
+  memoize(pluralRules, () => new Intl.PluralRules(getFormatLocale(), options), options);
 
 export const formatNumber = (value: number, options?: Intl.NumberFormatOptions): string =>
   getNumberFormat(options).format(value);

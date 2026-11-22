@@ -2,7 +2,7 @@ import gsap from 'gsap';
 import { useEffect, useRef } from 'react';
 import { useUiLocale } from '../../i18n/I18nProvider';
 import { formatNumber } from '../../lib/format';
-import { useReducedMotion } from '../../lib/motionPreference';
+import { useReducedMotion } from '../../lib/motionPreferenceHooks';
 
 interface CountUpProps {
   readonly to: number;

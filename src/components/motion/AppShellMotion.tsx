@@ -1,5 +1,5 @@
 import { useEffect, type RefObject } from 'react';
-import { useReducedMotion } from '../../lib/motionPreference';
+import { useReducedMotion } from '../../lib/motionPreferenceHooks';
 
 // The shared hook also follows `(prefers-reduced-motion: reduce)`.
 

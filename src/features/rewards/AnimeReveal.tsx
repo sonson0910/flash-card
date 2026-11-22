@@ -4,7 +4,7 @@ import { Trans, useLingui } from '@lingui/react';
 import { Loader2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
-import { useReducedMotion } from '../../lib/motionPreference';
+import { useReducedMotion } from '../../lib/motionPreferenceHooks';
 import './anime-reveal.css';
 
 export type AnimeRevealEventKind = 'tierup' | 'streak' | 'levelup';

@@ -1,7 +1,7 @@
 import { i18n } from '@lingui/core';
 import { I18nProvider as LinguiProvider } from '@lingui/react';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { setFormatLocale } from '../lib/format';
+import { setFormatLocale } from '../lib/formatLocale';
 import { activateCatalogLocale, loadCatalog, loadVisitedCatalogs, setActiveUiLocale } from './loadCatalog';
 import {
   documentDirection, documentLanguage, ENABLED_UI_LOCALES, UI_LOCALE_STORAGE_KEY,

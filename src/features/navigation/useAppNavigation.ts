@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import { getReducedMotionScrollBehavior, motionDurations } from '../../lib/motion';
+import { getReducedMotionScrollBehavior, motionDurations } from '../../lib/motionTimings';
 import { getEffectiveReducedMotion } from '../../lib/motionPreference';
 import { useTheme } from '../theme/ThemeProvider';
 import { ENABLED_UI_LOCALES } from '../../i18n/locales';

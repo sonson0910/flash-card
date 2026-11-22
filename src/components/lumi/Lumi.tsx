@@ -1,5 +1,5 @@
 import { type ComponentPropsWithoutRef, type CSSProperties } from 'react';
-import { useReducedMotion } from '../../lib/motionPreference';
+import { useReducedMotion } from '../../lib/motionPreferenceHooks';
 import lumiChibi from '../../assets/lumi/lumi-chibi.webp';
 import lumiHappy from '../../assets/lumi/lumi-happy.webp';
 import lumiHero from '../../assets/lumi/lumi-hero.webp';

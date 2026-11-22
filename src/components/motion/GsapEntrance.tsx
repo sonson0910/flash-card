@@ -9,7 +9,7 @@ import {
   type Ref,
 } from 'react';
 import { getGsapEntranceMotion, type GsapEntranceVariant } from '../../lib/motion';
-import { useReducedMotion } from '../../lib/motionPreference';
+import { useReducedMotion } from '../../lib/motionPreferenceHooks';
 
 gsap.registerPlugin(useGSAP);
 
