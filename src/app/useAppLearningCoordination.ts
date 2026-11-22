@@ -308,6 +308,8 @@ export function useAppLearningCoordination({
       libraryScreen,
       practiceSession: practiceWorkspace.model.session,
       equipFrame, equippedFrameId: rewards.equippedFrameId, ownedTitleIds: rewards.ownedTitleIds,
+      // The whole verified state, for screens that draw recorded badges, titles and study time.
+      verifiedGamification: practiceWorkspace.model.gamification,
       customDecks: deckWorkspace.model.decks,
       intakeSharing: intakeSharing.model,
       isLibraryBusy,

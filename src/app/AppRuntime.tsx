@@ -405,6 +405,7 @@ export default function AppRuntime({
     equipFrame,
     equippedFrameId,
     ownedTitleIds,
+    verifiedGamification,
   } = learning.model;
   const { intakeSharing: intakeActions, practice: practiceActions, deleteCard, updateCard } = learning.actions;
   // The card editor opens from review cards and the vocabulary grid; both get the photo uploader and the deck list here.
@@ -521,6 +522,7 @@ export default function AppRuntime({
     error: cloud.error,
   }) : 'ready';
   const overview = libraryScreen.model.overview;
+  const shellIdentity = syncIdentityForShell(identity, user, appDependencies.configuration.cloudConfigured);
   const activeGoal = activeCourse?.goals.find(goal => goal.status === 'active') ?? null;
   const activeGoalLabel = activeGoal && activeCourse ? goalKindLabel(activeCourse.targetLanguage, activeGoal.kind) : null;
   const learnerName = user?.displayName?.trim();
@@ -564,7 +566,7 @@ export default function AppRuntime({
         )}
         navigationRef={navigationRef}
         viewMode={shellViewMode}
-        syncIdentity={syncIdentityForShell(identity, user, appDependencies.configuration.cloudConfigured)}
+        syncIdentity={shellIdentity}
         syncStatus={shellSyncStatus}
         isDarkMode={isDarkMode}
         isExporting={isExporting}
@@ -620,7 +622,7 @@ export default function AppRuntime({
               {...viewStageStatsProps(stats, cloud, overview)}
               rewardTimeZone={stats.rewardTimeZone}
               learner={todayLearner}
-              {...(courseScopeReady && user ? { learnerLevel: { level: overview.level, xp: overview.xp } } : {})}
+              {...(courseScopeReady && user ? { learnerLevel: { level: overview.level, xp: overview.xp, gamification: verifiedGamification, identity: shellIdentity } } : {})}
               viewMode={viewMode}
               ownerId={currentOwnerId}
               database={isFirebaseConfigured ? db : null}

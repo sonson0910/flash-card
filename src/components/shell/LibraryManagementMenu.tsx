@@ -13,7 +13,6 @@ import {
   Shield,
   Sparkles,
   Trash2,
-  UserRound,
   WifiOff,
 } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
@@ -21,6 +20,7 @@ import { Trans, useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { useZenGlassMode } from '../../lib/useZenGlassMode';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
+import { AccountAvatar, getIdentityInitials } from '../account/AccountAvatar';
 import type { SyncIdentityViewModel } from './shellTypes';
 import type { ShellSyncStatus } from './shellSyncStatus';
 import './account-menu.css';
@@ -69,27 +69,8 @@ function getIdentityLabel(identity: SyncIdentityViewModel, accountLabel: string,
   return accountLabel;
 }
 
-function getIdentityInitials(identity: SyncIdentityViewModel): string | null {
-  if (identity.status !== 'authenticated') return null;
-  const name = identity.displayName?.trim();
-  if (name) return name.split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
-  return identity.email?.trim().slice(0, 1).toUpperCase() || null;
-}
-
 export const hasOwnedWordCollectorTitle = (ownedTitleIds: readonly string[] | undefined): boolean =>
   ownedTitleIds?.includes('word-collector') ?? false;
-
-function AccountAvatar({ identity, compact = false }: { identity: SyncIdentityViewModel; compact?: boolean }) {
-  if (identity.status === 'authenticated' && identity.photoUrl) {
-    return <img src={identity.photoUrl} alt="" referrerPolicy="no-referrer" className="account-menu-avatar-image" />;
-  }
-  if (identity.status === 'loading' || (identity.status === 'signed-out' && identity.isSigningIn)) {
-    return <Loader2 size={compact ? 18 : 19} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />;
-  }
-  const initials = getIdentityInitials(identity);
-  if (initials) return <span aria-hidden="true">{initials}</span>;
-  return <UserRound size={compact ? 18 : 19} aria-hidden="true" />;
-}
 
 function getStatusIcon(kind: string, busy: boolean) {
   if (busy) return Loader2;
@@ -235,13 +216,13 @@ export function LibraryManagementMenu({
         data-equipped-frame={equippedFrameId ?? undefined}
         className="account-menu-trigger claude-account-trigger flex size-11 shrink-0 items-center justify-center border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
       >
-        <AccountAvatar identity={syncIdentity} compact />
+        <AccountAvatar identity={syncIdentity} compact imageClassName="account-menu-avatar-image" />
       </button>
       {isOpen && (
         <div className="account-menu-panel absolute right-0 top-full z-50 mt-2 text-[var(--sf-text)]">
           <div className="account-menu-surface">
             <div className="account-menu-identity">
-              <span className="account-menu-avatar" data-equipped-frame={equippedFrameId ?? undefined}><AccountAvatar identity={syncIdentity} /></span>
+              <span className="account-menu-avatar" data-equipped-frame={equippedFrameId ?? undefined}><AccountAvatar identity={syncIdentity} imageClassName="account-menu-avatar-image" /></span>
               <div className="account-menu-identity-copy">
                 <div className="account-menu-name">{identityLabel}</div>
                 {syncIdentity.status === 'authenticated' && syncIdentity.email && syncIdentity.email !== identityLabel && (

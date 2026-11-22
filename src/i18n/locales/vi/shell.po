@@ -28,7 +28,7 @@ msgctxt "onboarding.phone.label"
 msgid "Reminder preview"
 msgstr "Xem trước lời nhắc"
 
-#: src/components/shell/LibraryManagementMenu.tsx:334
+#: src/components/shell/LibraryManagementMenu.tsx:315
 msgctxt "shell.menu.card-style-standard"
 msgid "Card style: Standard"
 msgstr "Kiểu thẻ: Tiêu chuẩn"
@@ -84,7 +84,7 @@ msgctxt "onboarding.pace.try"
 msgid "Try {count} cards"
 msgstr "Thử {count} thẻ"
 
-#: src/components/shell/LibraryManagementMenu.tsx:250
+#: src/components/shell/LibraryManagementMenu.tsx:231
 msgctxt "rewards.title.word-collector"
 msgid "Word Collector"
 msgstr "Người sưu tầm từ vựng"
@@ -165,7 +165,7 @@ msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
 
-#: src/components/shell/LibraryManagementMenu.tsx:322
+#: src/components/shell/LibraryManagementMenu.tsx:303
 msgctxt "shell.menu.extension-privacy"
 msgid "Extension privacy"
 msgstr "Quyền riêng tư của tiện ích"
@@ -255,7 +255,7 @@ msgctxt "onboarding.primer.consonants"
 msgid "Basic consonants"
 msgstr "Phụ âm cơ bản"
 
-#: src/components/shell/LibraryManagementMenu.tsx:380
+#: src/components/shell/LibraryManagementMenu.tsx:361
 msgctxt "shell.menu.clear-library"
 msgid "Clear the entire library"
 msgstr "Xóa toàn bộ thư viện"
@@ -275,7 +275,7 @@ msgctxt "course.goal.paused"
 msgid "(paused)"
 msgstr "(đang tạm dừng)"
 
-#: src/components/shell/LibraryManagementMenu.tsx:321
+#: src/components/shell/LibraryManagementMenu.tsx:302
 msgctxt "shell.menu.terms"
 msgid "Terms"
 msgstr "Điều khoản"
@@ -426,7 +426,7 @@ msgctxt "shell.share.adding"
 msgid "Adding…"
 msgstr "Đang thêm…"
 
-#: src/components/shell/LibraryManagementMenu.tsx:316
+#: src/components/shell/LibraryManagementMenu.tsx:297
 msgctxt "shell.account.sign-out"
 msgid "Sign out of cloud sync"
 msgstr "Đăng xuất khỏi đồng bộ đám mây"
@@ -804,7 +804,7 @@ msgctxt "onboarding.target.subtitle"
 msgid "Each language is its own course, with its own cards and goals. You can add another later."
 msgstr "Mỗi ngôn ngữ là một khóa học riêng, với thẻ và mục tiêu riêng. Bạn có thể thêm ngôn ngữ khác sau."
 
-#: src/components/shell/LibraryManagementMenu.tsx:334
+#: src/components/shell/LibraryManagementMenu.tsx:315
 msgctxt "shell.menu.card-style-zen"
 msgid "Card style: Zen Glass"
 msgstr "Kiểu thẻ: Kính Zen"
@@ -851,7 +851,7 @@ msgctxt "flashcard.ai-disclosure"
 msgid "AI-generated content may be incorrect. Please check the meaning."
 msgstr "Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa."
 
-#: src/components/shell/LibraryManagementMenu.tsx:294
+#: src/components/shell/LibraryManagementMenu.tsx:275
 msgctxt "shell.sync.now"
 msgid "Sync now"
 msgstr "Đồng bộ ngay"
@@ -921,7 +921,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Luyện hội thoại"
 
-#: src/app/AppRuntime.tsx:614
+#: src/app/AppRuntime.tsx:616
 #: src/components/shell/CourseSwitcherControl.tsx:123
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -962,7 +962,7 @@ msgctxt "onboarding.trial.known"
 msgid "Got it"
 msgstr "Đã nhớ"
 
-#: src/components/shell/LibraryManagementMenu.tsx:361
+#: src/components/shell/LibraryManagementMenu.tsx:342
 msgctxt "shell.menu.exporting"
 msgid "Exporting library…"
 msgstr "Đang xuất thư viện…"
@@ -1104,17 +1104,17 @@ msgctxt "onboarding.lumi.goal.title"
 msgid "Got a goal in mind?"
 msgstr "Bạn có mục tiêu chưa?"
 
-#: src/components/shell/LibraryManagementMenu.tsx:320
+#: src/components/shell/LibraryManagementMenu.tsx:301
 msgctxt "shell.menu.privacy"
 msgid "Privacy"
 msgstr "Quyền riêng tư"
 
-#: src/components/shell/LibraryManagementMenu.tsx:324
+#: src/components/shell/LibraryManagementMenu.tsx:305
 msgctxt "shell.menu.account-data"
 msgid "Account data"
 msgstr "Dữ liệu tài khoản"
 
-#: src/components/shell/LibraryManagementMenu.tsx:349
+#: src/components/shell/LibraryManagementMenu.tsx:330
 msgctxt "shell.menu.insights"
 msgid "Learning insights"
 msgstr "Thống kê học tập"
@@ -1723,7 +1723,7 @@ msgstr "Đã xảy ra lỗi."
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:169
-#: src/components/shell/LibraryManagementMenu.tsx:192
+#: src/components/shell/LibraryManagementMenu.tsx:173
 msgid "shell.feedback.account"
 msgstr "Tài khoản"
 
@@ -1731,8 +1731,8 @@ msgstr "Tài khoản"
 #: src/components/shell/AppFeedback.tsx:161
 #: src/components/shell/AppFeedback.tsx:176
 #: src/components/shell/DesktopNavigation.tsx:69
-#: src/components/shell/LibraryManagementMenu.tsx:193
-#: src/components/shell/LibraryManagementMenu.tsx:208
+#: src/components/shell/LibraryManagementMenu.tsx:174
+#: src/components/shell/LibraryManagementMenu.tsx:189
 msgid "shell.feedback.connecting"
 msgstr "Đang kết nối…"
 
@@ -1784,20 +1784,20 @@ msgstr "Thử đồng bộ lại thư viện"
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:156
 #: src/components/shell/DesktopNavigation.tsx:64
-#: src/components/shell/LibraryManagementMenu.tsx:203
+#: src/components/shell/LibraryManagementMenu.tsx:184
 msgid "shell.feedback.session-ended"
 msgstr "Phiên đã kết thúc"
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:157
-#: src/components/shell/LibraryManagementMenu.tsx:212
+#: src/components/shell/LibraryManagementMenu.tsx:193
 msgid "shell.feedback.session-ended-detail"
 msgstr "Đăng nhập lại để khôi phục đồng bộ đám mây."
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:160
 #: src/components/shell/AppFeedback.tsx:162
-#: src/components/shell/LibraryManagementMenu.tsx:309
+#: src/components/shell/LibraryManagementMenu.tsx:290
 msgid "shell.feedback.sign-in-again"
 msgstr "Đăng nhập lại"
 
@@ -1893,7 +1893,7 @@ msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:603
+#: src/app/AppRuntime.tsx:605
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -1929,23 +1929,23 @@ msgid "shell.library-count.cloud-paused"
 msgstr "Đồng bộ đám mây đã tạm dừng"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:281
+#: src/components/shell/LibraryManagementMenu.tsx:262
 msgid "shell.library-menu.label"
 msgstr "Quản lý thư viện"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:273
+#: src/components/shell/LibraryManagementMenu.tsx:254
 msgid "shell.library-menu.preferences"
 msgstr "Giao diện và ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:228
-#: src/components/shell/LibraryManagementMenu.tsx:232
+#: src/components/shell/LibraryManagementMenu.tsx:209
+#: src/components/shell/LibraryManagementMenu.tsx:213
 msgid "shell.library-menu.trigger"
 msgstr "Quản lý thư viện"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:331
+#: src/components/shell/LibraryManagementMenu.tsx:312
 msgid "shell.library-menu.zen-toggle-description"
 msgstr "Chuyển giữa chế độ Học tiêu chuẩn và chế độ Kính Zen tối giản"
 
@@ -2140,7 +2140,7 @@ msgstr "Chuỗi {count} ngày"
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:66
-#: src/components/shell/LibraryManagementMenu.tsx:205
+#: src/components/shell/LibraryManagementMenu.tsx:186
 #: src/components/shell/localized-sync-status.ts:20
 #: src/components/shell/localized-sync-status.ts:21
 msgid "shell.sync.checking"
@@ -2153,7 +2153,7 @@ msgstr "Đang xác minh phiên đám mây của bạn."
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:70
-#: src/components/shell/LibraryManagementMenu.tsx:209
+#: src/components/shell/LibraryManagementMenu.tsx:190
 msgid "shell.sync.device"
 msgstr "Trên thiết bị này"
 
@@ -2191,7 +2191,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Không thể cập nhật trực tiếp từ đám mây. Hãy thử lại khi kết nối ổn định hơn."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:471
+#: src/app/AppRuntime.tsx:472
 msgid "shell.sync.retry-failed"
 msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
 
@@ -2201,7 +2201,7 @@ msgid "shell.sync.saved-detail"
 msgstr "Mọi thay đổi đã được lưu."
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:310
+#: src/components/shell/LibraryManagementMenu.tsx:291
 msgid "shell.sync.sign-in"
 msgstr "Đăng nhập & đồng bộ"
 
@@ -2278,7 +2278,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr "Chọn một giờ và SonFlash sẽ nhắc bạn ôn tập."
 
-#: src/app/AppRuntime.tsx:615
+#: src/app/AppRuntime.tsx:617
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2359,7 +2359,7 @@ msgctxt "onboarding.goal.exam.description"
 msgid "Set a target score and count down to your test date."
 msgstr "Đặt điểm mục tiêu và đếm ngược đến ngày thi."
 
-#: src/components/shell/LibraryManagementMenu.tsx:361
+#: src/components/shell/LibraryManagementMenu.tsx:342
 msgctxt "shell.menu.export"
 msgid "Export library to Excel"
 msgstr "Xuất thư viện sang Excel"
@@ -2455,7 +2455,7 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Chọn một ngôn ngữ trước đã. Bạn có thể thêm ngôn ngữ khác trong trình chuyển khóa học."
 
-#: src/app/AppRuntime.tsx:617
+#: src/app/AppRuntime.tsx:619
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Đang chuẩn bị các khóa học của bạn…"
@@ -2609,7 +2609,7 @@ msgctxt "shell.share.importing"
 msgid "Adding {count} cards to your new deck…"
 msgstr "Đang thêm {count} thẻ vào bộ thẻ mới…"
 
-#: src/components/shell/LibraryManagementMenu.tsx:325
+#: src/components/shell/LibraryManagementMenu.tsx:306
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Cài đặt giao diện"

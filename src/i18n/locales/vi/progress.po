@@ -36,7 +36,7 @@ msgstr "Nhận XP vào {target} ngày khác nhau."
 #. js-lingui-explicit-id
 #: src/components/stats/achievementsBoard.ts:234
 msgid "achievements.badge.active-days-5"
-msgstr "Buổi học đêm nhẹ nhàng"
+msgstr "Đều đặn quay lại"
 
 #. js-lingui-explicit-id
 #: src/components/stats/achievementsBoard.ts:235
@@ -371,7 +371,7 @@ msgstr "Giúp mười từ ổn định trong trí nhớ."
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:59
 msgid "stats.bud-night-study"
-msgstr "Buổi học đêm nhẹ nhàng"
+msgstr "Đều đặn quay lại"
 
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:59

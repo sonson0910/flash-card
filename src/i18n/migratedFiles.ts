@@ -36,6 +36,8 @@ export const migratedFiles = [
   'src/components/flashcard/SyllableStressBadge.tsx',
   'src/components/stats/ActivityHeatmap.tsx',
   'src/components/stats/AchievementsMatrix.tsx',
+  'src/components/stats/achievementsBoard.ts',
+  'src/components/account/AccountAvatar.tsx',
   'src/components/stats/StatsCharts.tsx',
   'src/components/study/ReviewControls.tsx',
   'src/features/courses/AddCourseDialog.tsx',

@@ -231,7 +231,7 @@ export const recordedBadgeCopy: Readonly<Record<string, { readonly name: Message
     condition: msg({ id: 'achievements.badge.active-days-3.condition', message: 'Earn XP on {target} different days.' }),
   },
   'active-days-5': {
-    name: msg({ id: 'achievements.badge.active-days-5', message: 'Gentle night study' }),
+    name: msg({ id: 'achievements.badge.active-days-5', message: 'Steady return' }),
     condition: msg({ id: 'achievements.badge.active-days-5.condition', message: 'Earn XP on {target} different days.' }),
   },
   'reviewed-10': {

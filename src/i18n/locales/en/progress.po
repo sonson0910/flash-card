@@ -36,7 +36,7 @@ msgstr "Earn XP on {target} different days."
 #. js-lingui-explicit-id
 #: src/components/stats/achievementsBoard.ts:234
 msgid "achievements.badge.active-days-5"
-msgstr "Gentle night study"
+msgstr "Steady return"
 
 #. js-lingui-explicit-id
 #: src/components/stats/achievementsBoard.ts:235
@@ -371,7 +371,7 @@ msgstr "Help ten words settle into memory."
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:59
 msgid "stats.bud-night-study"
-msgstr "Gentle night study"
+msgstr "Steady return"
 
 #. js-lingui-explicit-id
 #: src/components/stats/AchievementsMatrix.tsx:59

@@ -610,8 +610,17 @@ for (const theme of themes) for (const viewport of viewports) {
     }, theme);
     await signIn(page, '/?view=progress&locale=en');
     await page.getByRole('button', { name: 'View achievements' }).click();
-    await expect(page.getByRole('heading', { name: 'Your word garden' })).toBeVisible();
-    await expect(page.getByText(/^Achievements · \d of 6 earned$/)).toBeVisible();
+    // This account has no server-recorded badges yet, so the board keeps the six worked out from
+    // the library statistics; signed in, Crystal titles the screen as a collection with its tabs.
+    if (theme.family === 'crystal') {
+      await expect(page.getByRole('heading', { level: 1, name: 'Collection' })).toBeVisible();
+      await expect(page.getByText(/^\d \/ 6 unlocked$/)).toBeVisible();
+      await expect(page.getByRole('tab', { name: 'Badges' })).toHaveAttribute('aria-selected', 'true');
+    } else {
+      await expect(page.getByRole('heading', { name: 'Your word garden' })).toBeVisible();
+      await expect(page.getByText(/^Achievements · \d of 6 earned$/)).toBeVisible();
+    }
+    await expect(page.locator('[data-achievement-grid] [data-badge-id]')).toHaveCount(6);
     await expectAccessibleAndContained(page, 'Achievements');
     await expect.poll(() => page.locator('.claude-workspace').evaluate(element => element.scrollTop)).toBe(0);
     await expect(page).toHaveScreenshot(`achievements-${theme.family}-${theme.mode}-${viewport.name}.png`, {

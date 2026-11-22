@@ -28,7 +28,7 @@ msgctxt "onboarding.phone.label"
 msgid "Reminder preview"
 msgstr "Reminder preview"
 
-#: src/components/shell/LibraryManagementMenu.tsx:334
+#: src/components/shell/LibraryManagementMenu.tsx:315
 msgctxt "shell.menu.card-style-standard"
 msgid "Card style: Standard"
 msgstr "Card style: Standard"
@@ -84,7 +84,7 @@ msgctxt "onboarding.pace.try"
 msgid "Try {count} cards"
 msgstr "Try {count} cards"
 
-#: src/components/shell/LibraryManagementMenu.tsx:250
+#: src/components/shell/LibraryManagementMenu.tsx:231
 msgctxt "rewards.title.word-collector"
 msgid "Word Collector"
 msgstr "Word Collector"
@@ -165,7 +165,7 @@ msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr "Preparing today’s learning plan…"
 
-#: src/components/shell/LibraryManagementMenu.tsx:322
+#: src/components/shell/LibraryManagementMenu.tsx:303
 msgctxt "shell.menu.extension-privacy"
 msgid "Extension privacy"
 msgstr "Extension privacy"
@@ -255,7 +255,7 @@ msgctxt "onboarding.primer.consonants"
 msgid "Basic consonants"
 msgstr "Basic consonants"
 
-#: src/components/shell/LibraryManagementMenu.tsx:380
+#: src/components/shell/LibraryManagementMenu.tsx:361
 msgctxt "shell.menu.clear-library"
 msgid "Clear the entire library"
 msgstr "Clear the entire library"
@@ -275,7 +275,7 @@ msgctxt "course.goal.paused"
 msgid "(paused)"
 msgstr "(paused)"
 
-#: src/components/shell/LibraryManagementMenu.tsx:321
+#: src/components/shell/LibraryManagementMenu.tsx:302
 msgctxt "shell.menu.terms"
 msgid "Terms"
 msgstr "Terms"
@@ -426,7 +426,7 @@ msgctxt "shell.share.adding"
 msgid "Adding…"
 msgstr "Adding…"
 
-#: src/components/shell/LibraryManagementMenu.tsx:316
+#: src/components/shell/LibraryManagementMenu.tsx:297
 msgctxt "shell.account.sign-out"
 msgid "Sign out of cloud sync"
 msgstr "Sign out of cloud sync"
@@ -804,7 +804,7 @@ msgctxt "onboarding.target.subtitle"
 msgid "Each language is its own course, with its own cards and goals. You can add another later."
 msgstr "Each language is its own course, with its own cards and goals. You can add another later."
 
-#: src/components/shell/LibraryManagementMenu.tsx:334
+#: src/components/shell/LibraryManagementMenu.tsx:315
 msgctxt "shell.menu.card-style-zen"
 msgid "Card style: Zen Glass"
 msgstr "Card style: Zen Glass"
@@ -851,7 +851,7 @@ msgctxt "flashcard.ai-disclosure"
 msgid "AI-generated content may be incorrect. Please check the meaning."
 msgstr "AI-generated content may be incorrect. Please check the meaning."
 
-#: src/components/shell/LibraryManagementMenu.tsx:294
+#: src/components/shell/LibraryManagementMenu.tsx:275
 msgctxt "shell.sync.now"
 msgid "Sync now"
 msgstr "Sync now"
@@ -921,7 +921,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Text practice"
 
-#: src/app/AppRuntime.tsx:614
+#: src/app/AppRuntime.tsx:616
 #: src/components/shell/CourseSwitcherControl.tsx:123
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -962,7 +962,7 @@ msgctxt "onboarding.trial.known"
 msgid "Got it"
 msgstr "Got it"
 
-#: src/components/shell/LibraryManagementMenu.tsx:361
+#: src/components/shell/LibraryManagementMenu.tsx:342
 msgctxt "shell.menu.exporting"
 msgid "Exporting library…"
 msgstr "Exporting library…"
@@ -1104,17 +1104,17 @@ msgctxt "onboarding.lumi.goal.title"
 msgid "Got a goal in mind?"
 msgstr "Got a goal in mind?"
 
-#: src/components/shell/LibraryManagementMenu.tsx:320
+#: src/components/shell/LibraryManagementMenu.tsx:301
 msgctxt "shell.menu.privacy"
 msgid "Privacy"
 msgstr "Privacy"
 
-#: src/components/shell/LibraryManagementMenu.tsx:324
+#: src/components/shell/LibraryManagementMenu.tsx:305
 msgctxt "shell.menu.account-data"
 msgid "Account data"
 msgstr "Account data"
 
-#: src/components/shell/LibraryManagementMenu.tsx:349
+#: src/components/shell/LibraryManagementMenu.tsx:330
 msgctxt "shell.menu.insights"
 msgid "Learning insights"
 msgstr "Learning insights"
@@ -1723,7 +1723,7 @@ msgstr "Something went sideways."
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:169
-#: src/components/shell/LibraryManagementMenu.tsx:192
+#: src/components/shell/LibraryManagementMenu.tsx:173
 msgid "shell.feedback.account"
 msgstr "Account"
 
@@ -1731,8 +1731,8 @@ msgstr "Account"
 #: src/components/shell/AppFeedback.tsx:161
 #: src/components/shell/AppFeedback.tsx:176
 #: src/components/shell/DesktopNavigation.tsx:69
-#: src/components/shell/LibraryManagementMenu.tsx:193
-#: src/components/shell/LibraryManagementMenu.tsx:208
+#: src/components/shell/LibraryManagementMenu.tsx:174
+#: src/components/shell/LibraryManagementMenu.tsx:189
 msgid "shell.feedback.connecting"
 msgstr "Connecting…"
 
@@ -1784,20 +1784,20 @@ msgstr "Retry syncing your library"
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:156
 #: src/components/shell/DesktopNavigation.tsx:64
-#: src/components/shell/LibraryManagementMenu.tsx:203
+#: src/components/shell/LibraryManagementMenu.tsx:184
 msgid "shell.feedback.session-ended"
 msgstr "Session ended"
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:157
-#: src/components/shell/LibraryManagementMenu.tsx:212
+#: src/components/shell/LibraryManagementMenu.tsx:193
 msgid "shell.feedback.session-ended-detail"
 msgstr "Sign in again to restore cloud sync."
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:160
 #: src/components/shell/AppFeedback.tsx:162
-#: src/components/shell/LibraryManagementMenu.tsx:309
+#: src/components/shell/LibraryManagementMenu.tsx:290
 msgid "shell.feedback.sign-in-again"
 msgstr "Sign in again"
 
@@ -1893,7 +1893,7 @@ msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:603
+#: src/app/AppRuntime.tsx:605
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
@@ -1929,23 +1929,23 @@ msgid "shell.library-count.cloud-paused"
 msgstr "Cloud paused"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:281
+#: src/components/shell/LibraryManagementMenu.tsx:262
 msgid "shell.library-menu.label"
 msgstr "Library management"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:273
+#: src/components/shell/LibraryManagementMenu.tsx:254
 msgid "shell.library-menu.preferences"
 msgstr "Theme and language"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:228
-#: src/components/shell/LibraryManagementMenu.tsx:232
+#: src/components/shell/LibraryManagementMenu.tsx:209
+#: src/components/shell/LibraryManagementMenu.tsx:213
 msgid "shell.library-menu.trigger"
 msgstr "Manage library"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:331
+#: src/components/shell/LibraryManagementMenu.tsx:312
 msgid "shell.library-menu.zen-toggle-description"
 msgstr "Toggle between Standard Learning mode and Zen Minimalist Glass mode"
 
@@ -2140,7 +2140,7 @@ msgstr "{count} day streak"
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:66
-#: src/components/shell/LibraryManagementMenu.tsx:205
+#: src/components/shell/LibraryManagementMenu.tsx:186
 #: src/components/shell/localized-sync-status.ts:20
 #: src/components/shell/localized-sync-status.ts:21
 msgid "shell.sync.checking"
@@ -2153,7 +2153,7 @@ msgstr "Verifying your cloud session."
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:70
-#: src/components/shell/LibraryManagementMenu.tsx:209
+#: src/components/shell/LibraryManagementMenu.tsx:190
 msgid "shell.sync.device"
 msgstr "On this device"
 
@@ -2191,7 +2191,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Live cloud updates are unavailable. Retry when your connection improves."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:471
+#: src/app/AppRuntime.tsx:472
 msgid "shell.sync.retry-failed"
 msgstr "Sync could not finish. Your changes remain on this device. Try again."
 
@@ -2201,7 +2201,7 @@ msgid "shell.sync.saved-detail"
 msgstr "All changes are saved."
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:310
+#: src/components/shell/LibraryManagementMenu.tsx:291
 msgid "shell.sync.sign-in"
 msgstr "Sign in & sync"
 
@@ -2278,7 +2278,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr "Pick a time and SonFlash will remind you to review."
 
-#: src/app/AppRuntime.tsx:615
+#: src/app/AppRuntime.tsx:617
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2359,7 +2359,7 @@ msgctxt "onboarding.goal.exam.description"
 msgid "Set a target score and count down to your test date."
 msgstr "Set a target score and count down to your test date."
 
-#: src/components/shell/LibraryManagementMenu.tsx:361
+#: src/components/shell/LibraryManagementMenu.tsx:342
 msgctxt "shell.menu.export"
 msgid "Export library to Excel"
 msgstr "Export library to Excel"
@@ -2455,7 +2455,7 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Pick one language for now. You can add more from the course switcher."
 
-#: src/app/AppRuntime.tsx:617
+#: src/app/AppRuntime.tsx:619
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Preparing your courses…"
@@ -2609,7 +2609,7 @@ msgctxt "shell.share.importing"
 msgid "Adding {count} cards to your new deck…"
 msgstr "Adding {count} cards to your new deck…"
 
-#: src/components/shell/LibraryManagementMenu.tsx:325
+#: src/components/shell/LibraryManagementMenu.tsx:306
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Appearance settings"
