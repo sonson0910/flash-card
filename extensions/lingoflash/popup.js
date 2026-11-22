@@ -781,16 +781,6 @@ const loadShortcuts = async () => {
   }
 };
 
-const makeRecentButton = (label, ariaLabel, handler) => {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'recent-action';
-  button.textContent = label;
-  button.setAttribute('aria-label', ariaLabel);
-  button.addEventListener('click', handler);
-  return button;
-};
-
 const SVG_ICON_PATHS = {
   volume: ['M11 5 6 9H3v6h3l5 4V5Z', 'm15.5 8.5 3 3-3 3', 'M15.5 5.5a7 7 0 0 1 0 11'],
   close: ['M6 6l12 12', 'M18 6 6 18'],
@@ -821,40 +811,36 @@ const addSvgIcon = (button, kind, size = 14) => {
   button.prepend(svg);
 };
 
+// A recent lookup already holds its translation, so its chip reopens the stored result without a
+// new translate or AI request. Listening and saving are the result card's own buttons; only a
+// translation that was not saved yet offers Save.
+const showRecentLookup = item => {
+  setStatus('');
+  renderResultCard({
+    word: item.text,
+    translation: item.translation,
+    sourceLanguage: item.sourceLanguage,
+    canSave: item.kind === 'translate',
+    status: item.kind === 'create' && (item.status === 'created' || item.status === 'existing') ? item.status : '',
+  });
+};
+
 const renderRecentLookups = items => {
   recentList.replaceChildren();
   const values = Array.isArray(items) ? items : [];
   recentLookups.hidden = values.length === 0;
   values.forEach(item => {
-    const row = document.createElement('div');
-    row.className = 'recent-row';
-    const copy = document.createElement('div');
-    copy.className = 'recent-copy';
-    const text = document.createElement('div');
-    text.className = 'recent-text';
-    text.textContent = item.text;
-    setLanguageAttribute(text, primaryLanguage(item.sourceLanguage));
-    const translation = document.createElement('div');
-    translation.className = 'recent-translation';
-    translation.textContent = item.translation;
-    copy.append(text, translation);
-    const actions = document.createElement('div');
-    actions.className = 'recent-actions';
-    const speakLabel = t('recentSpeakAriaLabel', [item.text], `Nghe phát âm ${item.text}`);
-    const speaker = makeRecentButton(t('recentSpeakLabel', undefined, 'Nghe'), speakLabel, () => speakText(item.text, speaker, item.sourceLanguage, speakLabel));
-    addSvgIcon(speaker, 'volume');
-    speaker.disabled = !speechSupported();
-    speaker.dataset.speechState = 'idle';
-    actions.append(speaker);
-    if (item.kind === 'translate') {
-      actions.append(makeRecentButton(t('recentSaveLabel', undefined, 'Lưu thẻ'), t('recentSaveAriaLabel', [item.text], `Lưu ${item.text} thành flashcard`), () => {
-        selectionInput.value = item.text;
-        updateInputState();
-        void runMode('ADD_SELECTION');
-      }));
-    }
-    row.append(copy, actions);
-    recentList.append(row);
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'recent-chip';
+    chip.setAttribute('aria-label', t('recentOpenAriaLabel', [item.text], `Xem lại ${item.text}`));
+    const label = document.createElement('span');
+    label.className = 'recent-chip-label';
+    label.textContent = item.text;
+    setLanguageAttribute(label, primaryLanguage(item.sourceLanguage));
+    chip.append(label);
+    chip.addEventListener('click', () => showRecentLookup(item));
+    recentList.append(chip);
   });
 };
 

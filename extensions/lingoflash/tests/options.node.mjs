@@ -23,6 +23,18 @@ test('options page exposes the bounded settings controls and shared persistence'
   assert.match(source, /selectionIconSitePatternFromUrl/);
 });
 
+test('options offers the source language as a two-way radio choice and shows the fixed target language', () => {
+  assert.doesNotMatch(html, /<select/);
+  assert.match(html, /id="quick-translate-source" role="radiogroup" aria-labelledby="quick-translate-source-label"/);
+  assert.deepEqual([...html.matchAll(/<input type="radio" name="quick-translate-source" value="([a-z]+)">/g)].map(match => match[1]), ['auto', 'en']);
+  assert.match(html, /class="locked-value" id="quick-translate-target"/);
+  // The stored source is what gets checked, the checked one is what gets saved, and the target is never sent.
+  assert.match(source, /input\.checked = input\.value === settings\.quickTranslateSource/);
+  assert.match(source, /quickTranslateSource: checkedSource/);
+  assert.doesNotMatch(source, /quickTranslateTarget/);
+  assert.match(css, /\.segment input:focus-visible \+ span/);
+});
+
 test('options follows the active course native language and only loads its settings after that resolves (07.5)', () => {
   assert.match(source, /applyCourseUiLocale/);
   assert.match(source, /const courseUiLocaleReady = applyCourseUiLocale\(\)/);

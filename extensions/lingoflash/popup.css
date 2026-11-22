@@ -160,9 +160,9 @@ textarea::placeholder { color: #94a3b8; }
   transform: translateY(-1px);
 }
 .speak-button:focus-visible { outline: 2px solid #67e8f9; outline-offset: 3px; border-radius: 999px; }
-.speak-button[data-speech-state="playing"], .recent-action[data-speech-state="playing"] { color: #facc15; border-color: #facc15; }
-.speak-button[data-speech-state="ended"], .recent-action[data-speech-state="ended"] { color: #86efac; border-color: #86efac; }
-.speak-button[data-speech-state="error"], .recent-action[data-speech-state="error"] { color: #fca5a5; border-color: #fca5a5; }
+.speak-button[data-speech-state="playing"] { color: #facc15; border-color: #facc15; }
+.speak-button[data-speech-state="ended"] { color: #86efac; border-color: #86efac; }
+.speak-button[data-speech-state="error"] { color: #fca5a5; border-color: #fca5a5; }
 .speak-button:disabled { cursor: not-allowed; opacity: .45; transform: none; }
 .speech-support-status { margin: 4px 0 0; color: #fbbf24; font-size: 11px; line-height: 1.35; }
 
@@ -461,38 +461,24 @@ textarea::placeholder { color: #94a3b8; }
 .recent-lookups { margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--sf-line, rgba(148, 163, 184, .14)); }
 .recent-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
 .recent-heading h2 { margin: 0; color: var(--sf-text, #cbd5e1); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
-.recent-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 6px;
-  border-radius: 8px;
-  border-bottom: 1px solid var(--sf-line, rgba(148, 163, 184, .08));
-  transition: background .15s ease;
-}
-.recent-row:hover { background: rgba(255, 255, 255, 0.04); }
-.recent-copy { min-width: 0; }
-.recent-text, .recent-translation { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.recent-text { color: var(--sf-text-strong, #f1f5f9); font-family: var(--sf-font-display, Fraunces, Georgia, serif); font-size: 13px; }
-.recent-translation { margin-top: 1px; color: var(--sf-text-2, #94a3b8); font-size: 11px; }
-.recent-actions { display: flex; flex: 0 0 auto; gap: 5px; }
-.recent-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border: 1px solid var(--sf-accent-line, rgba(34, 211, 238, .25));
+/* Recent lookups are chips of the looked-up text, as the boards draw them; a chip reopens its stored result. */
+.recent-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.recent-chip {
+  max-width: 100%;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--sf-line, rgba(148, 163, 184, .14));
   border-radius: 999px;
-  padding: 3px 8px;
-  color: var(--sf-accent-text, #a5f3fc);
-  background: var(--sf-accent-soft, rgba(8, 47, 73, .35));
+  background: var(--sf-chip-bg, rgba(255, 255, 255, .04));
+  color: var(--sf-text, #cbd5e1);
   cursor: pointer;
-  font-size: 10px;
-  font-weight: 700;
-  transition: all .15s ease;
+  font-family: var(--sf-font-display, Fraunces, Georgia, serif);
+  font-size: 14px;
+  transition: border-color .15s ease;
 }
-.recent-action svg { flex: none; }
-.recent-action:hover, .recent-action:focus-visible { border-color: var(--sf-accent, #67e8f9); transform: translateY(-1px); }
+.recent-chip-label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-chip:hover { border-color: var(--sf-accent, #67e8f9); }
+.recent-chip:focus-visible { outline: 2px solid var(--sf-accent, #67e8f9); outline-offset: 2px; }
 
 /* The "loop" reminder: saved web words flow into today's SonFlash session. */
 .web-words-loop {
@@ -561,7 +547,6 @@ footer .link-button:not(:first-child)::before { content: '•'; margin-right: 4p
 :root[data-theme-family="crystal"] .selection-icon-heading .link-button,
 :root[data-theme-family="crystal"] .primary,
 :root[data-theme-family="crystal"] .secondary,
-:root[data-theme-family="crystal"] .recent-action,
 :root[data-theme-family="crystal"] .web-words-loop,
 :root[data-theme-family="crystal"] .shortcuts,
 :root[data-theme-family="crystal"] kbd,
@@ -845,9 +830,9 @@ body:has(.popup-utilities[open]) .shell { overflow: visible; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  textarea, .primary, .secondary, .result-card, .result-btn, .speak-button, .recent-action,
+  textarea, .primary, .secondary, .result-card, .result-btn, .speak-button, .recent-chip,
   .status[data-tone="busy"]::before, .deck-status[data-tone="busy"]::before, .state-card, .state-btn { transition: none; animation: none; }
-  .primary:hover, .secondary:hover, .result-btn:hover, .recent-action:hover, .state-btn:hover { transform: none; }
+  .primary:hover, .secondary:hover, .result-btn:hover, .state-btn:hover { transform: none; }
 }
 
 /*
@@ -1078,9 +1063,6 @@ textarea:focus-visible { outline: none; border-color: var(--sf-accent); box-shad
 .recent-heading { margin-bottom: 6px; }
 .recent-heading h2 { color: var(--sf-text-2); font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; }
 .recent-heading .link-button { color: var(--sf-text-3); font-size: 12px; }
-.recent-row { padding: 6px 2px; border-bottom: 1px solid var(--sf-line); border-radius: 0; }
-.recent-text { font-size: 14px; }
-.recent-action { height: 30px; padding: 0 11px; border-color: var(--sf-line); background: var(--sf-chip-bg); color: var(--sf-text); font-size: 12px; }
 
 .popup-utilities { margin: 10px 0 0; }
 .result-card:not([hidden]) ~ .popup-utilities,
@@ -1258,7 +1240,11 @@ footer .link-button {
   font-weight: 800;
 }
 :root[data-theme-family="crystal"] .result-btn.primary-btn { flex-grow: 1; background: var(--popup-crystal-cta); color: #ffffff; font: italic 900 14px var(--sf-font-display); letter-spacing: .04em; text-transform: uppercase; }
-:root[data-theme-family="crystal"] .recent-action { border: 0; border-radius: 0; clip-path: var(--sf-chamfer-sm); box-shadow: inset 0 0 0 1px var(--sf-line-strong); }
+/* Crystal chips lean like the board's: the box is skewed and its label is skewed back upright. */
+:root[data-theme-family="crystal"] .recent-heading { margin-bottom: 7px; }
+:root[data-theme-family="crystal"] .recent-chip { padding: 0 10px; border: 0; border-radius: 0; transform: skewX(-12deg); box-shadow: inset 0 0 0 1px var(--sf-line-strong); color: var(--sf-text-strong); font: 700 12px var(--sf-font-body); }
+:root[data-theme-family="crystal"] .recent-chip-label { transform: skewX(12deg); }
+:root[data-theme-family="crystal"] .recent-chip:hover { box-shadow: inset 0 0 0 1px var(--sf-accent); }
 :root[data-theme-family="crystal"] .shortcut-row kbd { border-radius: 0; clip-path: var(--sf-chamfer-sm); border: 0; box-shadow: inset 0 0 0 1px var(--sf-line-strong); }
 :root[data-theme-family="crystal"] .popup-dock { border-top: 0; box-shadow: inset 0 1px 0 var(--sf-accent-line); }
 :root[data-theme-family="crystal"] footer .link-button { border: 0; background: var(--sf-chip-bg); box-shadow: inset 0 0 0 1px var(--sf-line-strong); font-weight: 900; }
@@ -1392,7 +1378,7 @@ footer .link-button {
 :root .shell [lang|="ko"] { font-family: var(--popup-font-ko); }
 :root .shell [lang|="ja"] { font-family: var(--popup-font-ja); }
 :root .shell [lang|="zh"] { font-family: var(--popup-font-zh); }
-:root .shell :is(.result-word, #selection, .recent-text):is([lang|="ko"], [lang|="ja"], [lang|="zh"]) { font-style: normal; letter-spacing: 0; }
+:root .shell :is(.result-word, #selection, .recent-chip):is([lang|="ko"], [lang|="ja"], [lang|="zh"]) { font-style: normal; letter-spacing: 0; }
 :root .shell .result-word:is([lang|="ko"], [lang|="ja"], [lang|="zh"]) { font-weight: 700; }
 
 .target-language-label[data-course="language"] {

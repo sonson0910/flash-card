@@ -36,8 +36,8 @@ const form = document.getElementById('settings-form');
 const autoSpeak = document.getElementById('auto-speak');
 const bubbleDuration = document.getElementById('bubble-duration');
 const recentLookupsEnabled = document.getElementById('recent-lookups-enabled');
-const quickTranslateSource = document.getElementById('quick-translate-source');
-const quickTranslateTarget = document.getElementById('quick-translate-target');
+// The target language is fixed to Vietnamese, so the page shows it and never sends it.
+const quickTranslateSourceInputs = document.querySelectorAll?.('input[name="quick-translate-source"]') ?? [];
 const colorSchemeInputs = document.querySelectorAll?.('input[name="color-scheme"]') ?? [];
 const themeFamilyInputs = document.querySelectorAll?.('input[name="theme-family"]') ?? [];
 const status = document.getElementById('settings-status');
@@ -68,8 +68,7 @@ const applySettings = settings => {
   autoSpeak.checked = settings.autoSpeak;
   bubbleDuration.value = String(settings.bubbleDurationMs);
   recentLookupsEnabled.checked = settings.recentLookupsEnabled;
-  quickTranslateSource.value = settings.quickTranslateSource;
-  quickTranslateTarget.value = settings.quickTranslateTarget;
+  for (const input of quickTranslateSourceInputs) input.checked = input.value === settings.quickTranslateSource;
   for (const input of colorSchemeInputs) input.checked = input.value === (settings.colorScheme || 'system');
   applyColorScheme(settings.colorScheme);
   for (const input of themeFamilyInputs) input.checked = input.value === (settings.themeFamily || 'classic');
@@ -206,6 +205,7 @@ form.addEventListener('submit', event => {
   form.setAttribute('aria-busy', 'true');
   setStatus(t('optionsSaving', undefined, 'Đang lưu…'));
   const checkedScheme = [...colorSchemeInputs].find(input => input.checked)?.value;
+  const checkedSource = [...quickTranslateSourceInputs].find(input => input.checked)?.value;
   const checkedThemeFamily = [...themeFamilyInputs].find(input => input.checked)?.value;
   void sendMessage({
     type: 'UPDATE_USER_SETTINGS',
@@ -213,8 +213,7 @@ form.addEventListener('submit', event => {
       autoSpeak: autoSpeak.checked,
       bubbleDurationMs: Number(bubbleDuration.value),
       recentLookupsEnabled: recentLookupsEnabled.checked,
-      quickTranslateSource: quickTranslateSource.value,
-      quickTranslateTarget: quickTranslateTarget.value,
+      ...(checkedSource ? { quickTranslateSource: checkedSource } : {}),
       ...(checkedScheme ? { colorScheme: checkedScheme } : {}),
       ...(checkedThemeFamily ? { themeFamily: checkedThemeFamily } : {}),
     },

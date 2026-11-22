@@ -67,14 +67,17 @@
               <input id="recent-lookups-enabled" type="checkbox">
               <span><strong data-i18n="optionsRecentEnabledTitle">Lưu tra cứu gần đây</strong><small data-i18n="optionsRecentEnabledHint">Tối đa 10 mục trong phiên duyệt hiện tại.</small></span>
             </label>
-            <label class="field-row" for="quick-translate-source">
-              <span><strong data-i18n="optionsSourceLanguageTitle">Ngôn ngữ nguồn</strong><small data-i18n="optionsSourceLanguageHint">Tự nhận diện hoặc cố định tiếng Anh</small></span>
-              <select id="quick-translate-source"><option value="auto" data-i18n="optionsSourceAuto">Tự động</option><option value="en">English</option></select>
-            </label>
-            <label class="field-row" for="quick-translate-target">
+            <div class="field-row">
+              <span><strong id="quick-translate-source-label" data-i18n="optionsSourceLanguageTitle">Ngôn ngữ nguồn</strong><small data-i18n="optionsSourceLanguageHint">Tự nhận diện hoặc cố định tiếng Anh</small></span>
+              <div class="segmented" id="quick-translate-source" role="radiogroup" aria-labelledby="quick-translate-source-label">
+                <label class="segment"><input type="radio" name="quick-translate-source" value="auto"><span data-i18n="optionsSourceAuto">Tự động</span></label>
+                <label class="segment"><input type="radio" name="quick-translate-source" value="en"><span lang="en">English</span></label>
+              </div>
+            </div>
+            <div class="field-row">
               <span><strong data-i18n="optionsTargetLanguageTitle">Ngôn ngữ đích</strong><small data-i18n="optionsTargetLanguageHint">Hiện chỉ hỗ trợ tiếng Việt</small></span>
-              <select id="quick-translate-target"><option value="vi">Tiếng Việt</option></select>
-            </label>
+              <span class="locked-value" id="quick-translate-target" lang="vi">Tiếng Việt<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg></span>
+            </div>
           </fieldset>
 
           <fieldset>

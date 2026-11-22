@@ -515,22 +515,43 @@ test('declares data-flow disclosure and reduced-motion support in the popup', ()
   assert.match(popupCssSource, /prefers-reduced-motion/);
 });
 
-test('renders recent lookups and can start a save from a translate row', async () => {
+test('renders recent lookups as chips that reopen the stored result without a new request', async () => {
   const popup = await createPopupContext({
     recentItems: [{
-      text: 'resilient', translation: 'bền bỉ', sourceLanguage: 'auto', targetLanguage: 'vi',
+      text: 'resilient', translation: 'bền bỉ', sourceLanguage: 'en', targetLanguage: 'vi',
       kind: 'translate', status: 'translated', timestamp: Date.now(),
+    }, {
+      text: 'meticulous', translation: 'tỉ mỉ', sourceLanguage: 'en', targetLanguage: 'vi',
+      kind: 'create', status: 'created', timestamp: Date.now(),
     }],
   });
 
   assert.equal(popup.elements.get('recent-lookups').hidden, false);
-  assert.equal(popup.elements.get('recent-list').children.length, 1);
-  const actions = popup.elements.get('recent-list').children[0].children[1];
-  actions.children[1].dispatch('click');
+  const chips = popup.elements.get('recent-list').children;
+  assert.equal(chips.length, 2);
+  assert.equal(chips[0].className, 'recent-chip');
+  assert.equal(chips[0].children[0].textContent, 'resilient');
+  assert.equal(chips[0].children.length, 1);
+
+  const requestsBefore = popup.runtimeMessages.length;
+  chips[0].dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(popup.runtimeMessages.length, requestsBefore);
+  assert.equal(popup.elements.get('result-card').hidden, false);
+  assert.equal(popup.elements.get('result-word').textContent, 'resilient');
+  assert.equal(popup.elements.get('result-translation').textContent, 'bền bỉ');
+  // A translation that was never saved offers Save, and Save starts the usual request.
+  assert.equal(popup.elements.get('result-save').hidden, false);
+  popup.elements.get('result-save').onclick();
   await new Promise(resolve => setImmediate(resolve));
   const saveMessage = popup.runtimeMessages.find(message => message.type === 'ADD_SELECTION');
-  assert.equal(saveMessage?.type, 'ADD_SELECTION');
   assert.equal(saveMessage?.text, 'resilient');
+
+  // A lookup that was saved shows as saved and does not offer Save again.
+  chips[1].dispatch('click');
+  assert.equal(popup.elements.get('result-word').textContent, 'meticulous');
+  assert.equal(popup.elements.get('result-card').dataset.status, 'created');
+  assert.equal(popup.elements.get('result-save').hidden, true);
 });
 
 test('renders custom decks with a shared-library default and sends the selected deck', async () => {
