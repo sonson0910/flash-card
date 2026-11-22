@@ -573,7 +573,7 @@ describe("practice view accessibility contracts", () => {
     expect(typingHtml).toContain(">Reveal</button>");
     expect(typingHtml).toContain(">Skip</button>");
     expect(typingHtml).toContain('aria-pressed="true"');
-    expect(typingHtml).toContain("0.75× slow");
+    expect(typingHtml).toContain("0.6× slow");
 
     expect(wrongHtml.match(/data-state="correct"/g)?.length).toBeGreaterThanOrEqual(4);
     expect(wrongHtml).toMatch(/data-state="missing"[^>]*>l</);

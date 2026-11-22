@@ -40,7 +40,7 @@ interface SpellingViewProps {
   onLearnFirst?: () => void;
 }
 
-type PlaybackSpeed = 1 | 0.75;
+type PlaybackSpeed = 1 | 0.6;
 
 /** Bar heights of the static waveform drawn on the listen button. */
 const LISTEN_BARS = [14, 26, 38, 30, 42, 24, 16] as const;
@@ -305,10 +305,10 @@ export function SpellingView({
                     <Trans {...msg({ context: 'practice.spelling.speed-normal', message: '1× normal' })} />
                   </span>
                 </button>
-                <button type="button" aria-pressed={speed === 0.75} onClick={() => chooseSpeed(0.75)} className="practice-speed__chip min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2">
+                <button type="button" aria-pressed={speed === 0.6} onClick={() => chooseSpeed(0.6)} className="practice-speed__chip min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2">
                   <span className="practice-speed__face crystal-chamfer-sm transition-colors motion-reduce:transition-none">
                     <Timer size={14} aria-hidden="true" />
-                    <Trans {...msg({ context: 'practice.spelling.speed-slow', message: '0.75× slow' })} />
+                    <Trans {...msg({ context: 'practice.spelling.speed-slow', message: '0.6× slow' })} />
                   </span>
                 </button>
               </div>

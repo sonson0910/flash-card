@@ -56,8 +56,12 @@ interface WordAudioOptions extends SpeechCallbacks {
   speechLocale?: string;
   voice?: SpeechSynthesisVoice;
   audio?: HTMLAudioElement | null;
-  speed?: 1 | 0.75;
+  speed?: WordAudioSpeed;
 }
+
+/** Recorded audio plays at the chosen rate; synthesized speech starts slightly slower and keeps the same ratio. */
+export type WordAudioSpeed = 1 | 0.75 | 0.6;
+const SPEECH_RATES: Record<WordAudioSpeed, number> = { 1: 0.9, 0.75: 0.65, 0.6: 0.54 };
 
 export type WordAudioPlayback = (() => void) & { cancel(): void };
 
@@ -97,7 +101,7 @@ export function playWordAudio(
       if (!speakNow(word, {
         onEnd: stop,
         onError: () => fail(speechFailureMessage),
-      }, options.speed === 0.75 ? 0.65 : 0.9, options.speechLocale, options.voice)) fail('Audio playback is not supported by this browser.');
+      }, SPEECH_RATES[options.speed ?? 1] ?? SPEECH_RATES[1], options.speechLocale, options.voice)) fail('Audio playback is not supported by this browser.');
     } catch { fail(speechFailureMessage); }
   };
   try {

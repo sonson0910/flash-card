@@ -164,6 +164,27 @@ describe('playWordAudio', () => {
     playback.cancel();
   });
 
+  it('plays recorded audio and synthesized speech at the slow speed', () => {
+    const recorded = { play: vi.fn(() => Promise.resolve()), pause: vi.fn(), currentTime: 0, playbackRate: 1 };
+    vi.stubGlobal('Audio', vi.fn(function () { return recorded; }));
+    const recordedPlayback = playWordAudio('slow', 'https://api.dictionaryapi.dev/media/pronunciations/en/slow.mp3', { speed: 0.6 });
+    expect(recorded.playbackRate).toBe(0.6);
+    recordedPlayback.cancel();
+
+    const utterances: Array<{ rate: number }> = [];
+    vi.stubGlobal('window', {
+      speechSynthesis: { speak: vi.fn(), cancel: vi.fn() },
+      setTimeout: globalThis.setTimeout.bind(globalThis),
+      clearTimeout: globalThis.clearTimeout.bind(globalThis),
+    });
+    vi.stubGlobal('SpeechSynthesisUtterance', class { lang = ''; rate = 1; constructor() { utterances.push(this); } });
+    const normal = playWordAudio('normal', null, { speed: 1 });
+    normal.cancel();
+    const slow = playWordAudio('slow', null, { speed: 0.6 });
+    slow.cancel();
+    expect(utterances.map(utterance => utterance.rate)).toEqual([0.9, 0.54]);
+  });
+
   it('returns an idempotent handle that only stops its own audio element', () => {
     const first = { play: vi.fn(() => Promise.resolve()), pause: vi.fn(), currentTime: 4 };
     const second = { play: vi.fn(() => Promise.resolve()), pause: vi.fn(), currentTime: 7 };
