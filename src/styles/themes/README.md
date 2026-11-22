@@ -72,4 +72,6 @@ Translucent variants of a token are written as
 colour as the `rgb(<r> <g> <b> / <alpha>)` literal it replaces.
 
 A token marked "not drawn" for a family has no board value there: it aliases the
-nearest token so every family and mode defines the same set.
+nearest token so every family and mode defines the same set. Component stylesheets
+take colours and font families only from these tokens; `src/styles/paletteGuard.test.ts`
+keeps palette literals and font names out of the stylesheets it lists.
