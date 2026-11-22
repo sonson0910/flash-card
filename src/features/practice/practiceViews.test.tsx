@@ -399,6 +399,17 @@ describe("practice view accessibility contracts", () => {
     );
   });
 
+  it("advances an answered quiz with Continue and keeps the card wing decorative, behind the card", () => {
+    const html = renderToStaticMarkup(
+      <QuizView questions={[quizQuestion, quizQuestion]} currentIndex={0} selectedAnswer="xin chào" answeredCorrectly score={1}
+        showResults={false} onSelect={vi.fn()} onNext={vi.fn()} onRestart={vi.fn()} onClose={vi.fn()} />,
+    );
+
+    expect(html).toMatch(/<button[^>]*>[^<]*Continue/);
+    expect(html).not.toMatch(/<button[^>]*>[^<]*Next</);
+    expect(html).toMatch(/<span class="practice-quiz__wing crystal-wing-art" aria-hidden="true"><\/span><section data-quiz-question-panel/);
+  });
+
   it("shows a disabled saving action while quiz and spelling results are being confirmed", () => {
     const actions = { onNext: vi.fn(), onRestart: vi.fn(), onClose: vi.fn() };
     const quizHtml = renderToStaticMarkup(

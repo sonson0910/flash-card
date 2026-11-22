@@ -161,7 +161,7 @@ export function LumiCoach({ pose, heading, children, label, className = '' }: Lu
         <p className="practice-lumi__heading">{heading}</p>
         {children && <div className="practice-lumi__body">{children}</div>}
       </div>
-      <Lumi pose={pose} size={180} className="practice-lumi__art crystal-ornament pointer-events-none" />
+      <Lumi pose={pose} className="practice-lumi__art crystal-ornament pointer-events-none" />
     </div>
   );
 }

@@ -24,7 +24,7 @@ html[data-motion="reduced"] .crystal-flare { animation: none !important; }
    AnimeSpelling and AnimeMatch boards. Purely decorative: painted behind the stage content, never
    hit-tested and never animated, so reduced motion needs no override. Scoped to the family because
    this sheet stays loaded after switching back to Classic. Wide screens place the wings where the
-   boards do (beside the quiz card, flanking the listen button and the match clock); narrower ones
+   boards do (flanking the listen button and the match clock); narrower ones
    keep a faint pair behind the top of the stage, as AnimeMobile does. */
 html[data-theme-family=crystal] .claude-app-shell:is([data-view=quiz], [data-view=spelling], [data-view=match], [data-view=shadowing], [data-view=story]) [data-app-view-stage] {
   position: relative;
@@ -54,8 +54,8 @@ html[data-theme-family=crystal] .claude-app-shell:is([data-view=quiz], [data-vie
     filter: drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 70%, transparent));
     opacity: var(--nk-wing-opacity, .5);
   }
-  /* AnimeQuiz: one wing rooted at the card's left edge. */
-  html[data-theme-family=crystal] .claude-app-shell[data-view=quiz] [data-app-view-stage]::before { top: 215px; left: calc(50% - 518px); width: 400px; height: 280px; filter: drop-shadow(0 0 22px color-mix(in srgb, var(--sf-brand) 70%, transparent)); }
+  /* AnimeQuiz: no wing at rest; the quiz card raises its own on hover. */
+  html[data-theme-family=crystal] .claude-app-shell[data-view=quiz] [data-app-view-stage]::before,
   html[data-theme-family=crystal] .claude-app-shell[data-view=quiz] [data-app-view-stage]::after { content: none; }
   /* AnimeSpelling: a mirrored pair flanking the listen button. */
   html[data-theme-family=crystal] .claude-app-shell[data-view=spelling] [data-app-view-stage]::before { top: 97px; left: calc(50% - 270px); width: 300px; height: 210px; }
