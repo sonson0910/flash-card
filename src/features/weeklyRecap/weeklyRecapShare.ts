@@ -37,6 +37,7 @@ export async function shareWeeklyRecapPng(
   filename: string,
   caption: string,
   deps: WeeklyRecapShareDeps = {},
+  title = 'SonFlash weekly recap',
 ): Promise<WeeklyRecapShareOutcome> {
   const nav = globalThis.navigator as unknown as ShareCapableNavigator | undefined;
   const share = deps.share ?? nav?.share?.bind(nav);
@@ -45,7 +46,7 @@ export async function shareWeeklyRecapPng(
 
   if (share && (!canShare || canShare({ files: [file] }))) {
     try {
-      await share({ files: [file], title: 'SonFlash weekly recap', text: caption });
+      await share({ files: [file], title, text: caption });
       return 'shared';
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return 'failed';

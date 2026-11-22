@@ -150,7 +150,7 @@ export function weeklyRecapExportFonts(theme: WeeklyRecapExportTheme) {
 }
 
 /** Waits briefly for the card fonts so the first export does not fall back to a default face. */
-async function loadExportFonts(theme: WeeklyRecapExportTheme): Promise<void> {
+export async function loadWeeklyRecapExportFonts(theme: WeeklyRecapExportTheme): Promise<void> {
   const fontSet = globalThis.document?.fonts;
   if (!fontSet || typeof fontSet.load !== 'function') return;
   const fonts = Object.values(weeklyRecapExportFonts(theme));
@@ -298,20 +298,15 @@ function pngBlobFromDataUrl(canvas: HTMLCanvasElement): Blob | null {
   return new Blob([bytes], { type: 'image/png' });
 }
 
-export async function renderWeeklyRecapPng(
-  input: WeeklyRecapExportInput,
-  createCanvas: () => HTMLCanvasElement = () => document.createElement('canvas'),
-): Promise<Blob> {
-  const canvas = createCanvas();
-  canvas.width = WEEKLY_RECAP_EXPORT_WIDTH;
-  canvas.height = WEEKLY_RECAP_EXPORT_HEIGHT;
-  const context = canvas.getContext('2d');
-  if (!context) throw new WeeklyRecapExportUnavailableError();
-  await loadExportFonts(input.theme);
-  drawWeeklyRecapCard(context, input);
+/**
+ * The canvas as a PNG. Some browsers hold `toBlob` back, so after a short wait the data URL, which
+ * is the same image, answers instead.
+ */
+export function canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise<Blob>((resolve, reject) => {
     let settled = false;
-    const retain: unknown[] = [canvas, context];
+    // Holds the canvas until the browser has answered.
+    const retain: unknown[] = [canvas];
     const fallbackTimer = typeof canvas.toDataURL === 'function'
       ? setTimeout(() => {
           if (settled) return;
@@ -336,4 +331,18 @@ export async function renderWeeklyRecapPng(
       else reject(new WeeklyRecapExportUnavailableError());
     }, 'image/png');
   });
+}
+
+export async function renderWeeklyRecapPng(
+  input: WeeklyRecapExportInput,
+  createCanvas: () => HTMLCanvasElement = () => document.createElement('canvas'),
+): Promise<Blob> {
+  const canvas = createCanvas();
+  canvas.width = WEEKLY_RECAP_EXPORT_WIDTH;
+  canvas.height = WEEKLY_RECAP_EXPORT_HEIGHT;
+  const context = canvas.getContext('2d');
+  if (!context) throw new WeeklyRecapExportUnavailableError();
+  await loadWeeklyRecapExportFonts(input.theme);
+  drawWeeklyRecapCard(context, input);
+  return canvasToPngBlob(canvas);
 }

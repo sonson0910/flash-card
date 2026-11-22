@@ -2,6 +2,8 @@ import {
   WEEKLY_RECAP_EXPORT_HEIGHT as CARD_HEIGHT,
   WEEKLY_RECAP_EXPORT_WIDTH as CARD_WIDTH,
   WeeklyRecapExportUnavailableError,
+  canvasToPngBlob,
+  loadWeeklyRecapExportFonts,
   weeklyRecapExportFonts,
   type WeeklyRecapExportTheme,
 } from '../weeklyRecap/weeklyRecapExport';
@@ -178,25 +180,6 @@ export function drawRevealShareCard(context: CanvasRenderingContext2D, card: Rev
   content(regionTop + Math.max(0, Math.round((regionBottom - regionTop - used) / 2)));
 }
 
-/** Waits briefly for the card fonts, as the weekly card does, so the image does not use a fallback face. */
-async function loadCardFonts(theme: WeeklyRecapExportTheme): Promise<void> {
-  const fontSet = globalThis.document?.fonts;
-  if (!fontSet || typeof fontSet.load !== 'function') return;
-  const loaded = Promise.all(Object.values(weeklyRecapExportFonts(theme)).map(font => fontSet.load(font).catch(() => [])));
-  await Promise.race([loaded, new Promise(resolve => setTimeout(resolve, 1500))]);
-}
-
-function pngFromDataUrl(canvas: HTMLCanvasElement): Blob | null {
-  if (typeof canvas.toDataURL !== 'function' || typeof atob !== 'function') return null;
-  const prefix = 'data:image/png;base64,';
-  const dataUrl = canvas.toDataURL('image/png');
-  if (!dataUrl.startsWith(prefix)) return null;
-  const binary = atob(dataUrl.slice(prefix.length));
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return new Blob([bytes], { type: 'image/png' });
-}
-
 export async function renderRevealSharePng(
   card: RevealShareCard,
   locale: string,
@@ -208,34 +191,9 @@ export async function renderRevealSharePng(
   canvas.height = CARD_HEIGHT;
   const context = canvas.getContext('2d');
   if (!context) throw new WeeklyRecapExportUnavailableError();
-  await loadCardFonts(theme);
+  await loadWeeklyRecapExportFonts(theme);
   drawRevealShareCard(context, card, theme, locale);
-  return new Promise<Blob>((resolve, reject) => {
-    let settled = false;
-    const settle = (blob: Blob | null) => {
-      if (settled) return;
-      settled = true;
-      if (blob) resolve(blob);
-      else reject(new WeeklyRecapExportUnavailableError());
-    };
-    // Some browsers hold toBlob back; the data URL is the same image.
-    const fallback = setTimeout(() => {
-      try {
-        const blob = pngFromDataUrl(canvas);
-        if (blob) settle(blob);
-      } catch {
-        // toBlob reports the failure.
-      }
-    }, 250);
-    canvas.toBlob(blob => {
-      clearTimeout(fallback);
-      settle(blob);
-    }, 'image/png');
-  });
-}
-
-interface ShareNavigator {
-  readonly share?: NonNullable<WeeklyRecapShareDeps['share']>;
+  return canvasToPngBlob(canvas);
 }
 
 /** Draws the reveal and delivers it through the weekly recap's share path, under the reveal's own title. */
@@ -250,12 +208,5 @@ export async function shareRevealCard(
   },
 ): Promise<WeeklyRecapShareOutcome> {
   const blob = await renderRevealSharePng(card, options.locale, options.theme, options.createCanvas);
-  const deps = options.deps ?? {};
-  const nav = globalThis.navigator as unknown as ShareNavigator | undefined;
-  const share = deps.share ?? nav?.share?.bind(nav);
-  const title = `SonFlash · ${card.kicker}`;
-  return shareWeeklyRecapPng(blob, options.filename, card.title, {
-    ...deps,
-    share: share ? data => share({ ...data, title }) : undefined,
-  });
+  return shareWeeklyRecapPng(blob, options.filename, card.title, options.deps, `SonFlash · ${card.kicker}`);
 }
