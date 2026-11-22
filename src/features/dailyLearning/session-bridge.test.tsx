@@ -117,4 +117,24 @@ describe('SessionBridge', () => {
     expect(classic).not.toContain('crystal-wing-art');
     expect(classic).toContain('correct answers in a row');
   });
+
+  it('writes the Crystal card tier as name and status and quotes the source sentence on the front', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => ({ sonflash_theme_family: 'crystal', sonflash_lumi_enabled: 'false' })[key] ?? null,
+      setItem: () => undefined,
+    });
+    const tiered = { ...model, previewCard: { ...model.previewCard!, tier: 'new' as const } };
+    try {
+      const html = renderToStaticMarkup(
+        <I18nProvider i18n={i18n}><ThemeProvider><SessionBridge model={tiered} actions={actions} /></ThemeProvider></I18nProvider>,
+      );
+      expect(html).toContain('<span class="session-bridge-card-tier" data-tier="new"><b>Bud</b><span>New</span></span>');
+      expect(html).toMatch(/<span class="session-bridge-card-quote" lang="en"><q>A careful <b>analysis<\/b> of the data\.<\/q><\/span>/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    const classic = render(tiered);
+    expect(classic).not.toContain('session-bridge-card-tier');
+    expect(classic).not.toContain('session-bridge-card-quote');
+  });
 });

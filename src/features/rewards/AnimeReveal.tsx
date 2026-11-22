@@ -6,6 +6,7 @@ import { Loader2, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { useReducedMotion } from '../../lib/motionPreferenceHooks';
+import { useTheme } from '../theme/ThemeProvider';
 import type { WeeklyRecapShareOutcome } from '../weeklyRecap/weeklyRecapShare';
 import type { RevealShareCard } from './revealShareImage';
 import './anime-reveal.css';
@@ -50,6 +51,13 @@ const tierCopy: Record<string, MessageDescriptor> = {
   learning: msg({ context: 'rewards.reveal.tier.learning', message: 'Learning' }),
   mastered: msg({ context: 'rewards.reveal.tier.mastered', message: 'Mastered' }),
 };
+/** Crystal Star names the tiers after its card rims. */
+const crystalTierCopy: Record<string, MessageDescriptor> = {
+  new: msg({ id: 'rewards.reveal.tier-name.new', message: 'Bud' }),
+  learning: msg({ id: 'rewards.reveal.tier-name.learning', message: 'Bloom' }),
+  mastered: msg({ id: 'rewards.reveal.tier-name.mastered', message: 'Star' }),
+};
+const tierNames = (crystal: boolean) => (crystal ? crystalTierCopy : tierCopy);
 const streakCopy = {
   days: msg({ id: 'rewards.reveal.streak.days', message: '{count}-day streak' }),
   month: msg({ id: 'rewards.reveal.streak.month', message: 'A full month of study.' }),
@@ -72,14 +80,15 @@ const shareOutcomeCopy: Record<WeeklyRecapShareOutcome, MessageDescriptor> = {
 };
 type ShareState = 'busy' | 'error' | WeeklyRecapShareOutcome | null;
 
-function TierLabel({ value }: { value?: string }) {
-  return value && tierCopy[value] ? <Trans {...tierCopy[value]} /> : <>{value}</>;
+function TierLabel({ value, crystal }: { value?: string; crystal: boolean }) {
+  const names = tierNames(crystal);
+  return value && names[value] ? <Trans {...names[value]} /> : <>{value}</>;
 }
-function TierArtifact({ payload }: { payload?: AnimeRevealSourcePayload }) {
+function TierArtifact({ payload, crystal }: { payload?: AnimeRevealSourcePayload; crystal: boolean }) {
   return <div className="anime-reveal__tier-art" aria-hidden="true"><div className="anime-reveal__tier-card">
     {payload?.imageUrl ? <img src={payload.imageUrl} alt="" /> : <div className="anime-reveal__tier-image" />}
     <div>{payload?.lexicalLabel ? <small>{payload.lexicalLabel}</small> : null}{payload?.headword ? <strong>{payload.headword}</strong> : null}{payload?.translation ? <span>{payload.translation}</span> : null}
-      {payload?.previousValue && payload.currentValue ? <b><span><TierLabel value={payload.previousValue} /></span> <i>→</i> <em><TierLabel value={payload.currentValue} /></em></b> : null}</div>
+      {payload?.previousValue && payload.currentValue ? <b><span><TierLabel value={payload.previousValue} crystal={crystal} /></span> <i>→</i> <em data-tier={payload.currentValue}><TierLabel value={payload.currentValue} crystal={crystal} /></em></b> : null}</div>
   </div><span className="anime-reveal__flare" /></div>;
 }
 function StreakArtifact({ value }: { value?: string }) {
@@ -120,9 +129,10 @@ function LevelTitle({ previousValue, currentValue }: { previousValue?: string; c
 }
 
 /** The values this reveal shows, as text for the shared image; the image adds nothing the screen does not show. */
-function revealShareCard(t: Translate, event: 'tierup' | 'streak', payload?: AnimeRevealSourcePayload): RevealShareCard {
+function revealShareCard(t: Translate, event: 'tierup' | 'streak', payload: AnimeRevealSourcePayload | undefined, crystal: boolean): RevealShareCard {
   const facts = event === 'streak' ? payload?.streak : undefined;
-  const tier = (value: string) => (tierCopy[value] ? t(tierCopy[value]) : value);
+  const names = tierNames(crystal);
+  const tier = (value: string) => (names[value] ? t(names[value]) : value);
   const tierup = event === 'tierup';
   return {
     kicker: t(copy[event].kicker),
@@ -140,6 +150,7 @@ function revealShareCard(t: Translate, event: 'tierup' | 'streak', payload?: Ani
 
 export function AnimeReveal({ open, event, payload, onContinue, onEquip, onLater, lumiEnabled = true, reducedMotion }: AnimeRevealProps) {
   const { _, i18n } = useLingui();
+  const crystal = useTheme().family === 'crystal';
   const motionReduced = reducedMotion ?? useReducedMotion();
   const [isEquipping, setIsEquipping] = useState(false);
   const [equipFailed, setEquipFailed] = useState(false);
@@ -158,7 +169,7 @@ export function AnimeReveal({ open, event, payload, onContinue, onEquip, onLater
     const run = ++shareRun.current;
     setShare('busy');
     try {
-      const card = revealShareCard((message, values) => _({ ...message, values }), shareEvent, payload);
+      const card = revealShareCard((message, values) => _({ ...message, values }), shareEvent, payload, crystal);
       const { shareRevealCard } = await import('./revealShareImage');
       const outcome = await shareRevealCard(card, { locale: i18n.locale, filename: `sonflash-${shareEvent === 'tierup' ? 'tier-up' : 'streak'}.png` });
       if (run === shareRun.current) setShare(outcome);
@@ -167,7 +178,7 @@ export function AnimeReveal({ open, event, payload, onContinue, onEquip, onLater
     }
   };
   const streakFacts = event === 'streak' ? payload?.streak : undefined;
-  const artifact = event === 'tierup' ? <TierArtifact payload={payload} /> : event === 'streak' ? <StreakArtifact value={payload?.currentValue ?? (streakFacts ? String(streakFacts.length) : undefined)} /> : <LevelArtifact currentValue={payload?.currentValue} />;
+  const artifact = event === 'tierup' ? <TierArtifact payload={payload} crystal={crystal} /> : event === 'streak' ? <StreakArtifact value={payload?.currentValue ?? (streakFacts ? String(streakFacts.length) : undefined)} /> : <LevelArtifact currentValue={payload?.currentValue} />;
   const title = payload?.title ?? (isLevel && payload?.currentValue
     ? <LevelTitle previousValue={payload.previousValue} currentValue={payload.currentValue} />
     : streakFacts ? <Trans {...streakCopy.days} values={{ count: streakFacts.length }} /> : <Trans {...copy[event].title} />);

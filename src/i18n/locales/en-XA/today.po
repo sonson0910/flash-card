@@ -2503,3 +2503,38 @@ msgstr ""
 msgctxt "webWords.chip.new"
 msgid "New"
 msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:41
+msgid "session.bridge.card.tier-status.learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:42
+msgid "session.bridge.card.tier-status.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:40
+msgid "session.bridge.card.tier-status.new"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:36
+msgid "session.bridge.card.tier.learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:37
+msgid "session.bridge.card.tier.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:35
+msgid "session.bridge.card.tier.new"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:531
+msgid "today.crystal.day-title"
+msgstr ""

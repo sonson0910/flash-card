@@ -2503,3 +2503,38 @@ msgstr "These cards already follow their normal review schedule."
 msgctxt "webWords.chip.new"
 msgid "New"
 msgstr "New"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:41
+msgid "session.bridge.card.tier-status.learning"
+msgstr "Learning"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:42
+msgid "session.bridge.card.tier-status.mastered"
+msgstr "Mastered"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:40
+msgid "session.bridge.card.tier-status.new"
+msgstr "New"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:36
+msgid "session.bridge.card.tier.learning"
+msgstr "Bloom"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:37
+msgid "session.bridge.card.tier.mastered"
+msgstr "Star"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:35
+msgid "session.bridge.card.tier.new"
+msgstr "Bud"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:531
+msgid "today.crystal.day-title"
+msgstr "Day <0>{day}</0>"

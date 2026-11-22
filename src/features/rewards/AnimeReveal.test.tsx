@@ -5,7 +5,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { createRadixDialogPassthroughMock } from '../../testing/radix-dialog-passthrough';
 import { AnimeReveal, type AnimeRevealSourcePayload } from './AnimeReveal';
 
+const theme = vi.hoisted(() => ({ family: 'classic' as 'classic' | 'crystal' }));
 vi.mock('@radix-ui/react-dialog', () => createRadixDialogPassthroughMock());
+vi.mock('../theme/ThemeProvider', () => ({ useTheme: () => ({ family: theme.family, mode: 'dark' }) }));
 i18n.load('en', {});
 i18n.activate('en');
 
@@ -68,6 +70,18 @@ describe('AnimeReveal', () => {
     const level = render('levelup');
     expect(level).not.toContain('data-reveal-share');
     expect(level).not.toContain('anime-reveal__share-status');
+  });
+
+  it('names the tier move by status in classic and by tier name in Crystal Star', () => {
+    const move = { previousValue: 'learning', currentValue: 'mastered' };
+    theme.family = 'classic';
+    expect(render('tierup', true, move)).toContain('<b><span>Learning</span> <i>→</i> <em data-tier="mastered">Mastered</em></b>');
+    theme.family = 'crystal';
+    try {
+      expect(render('tierup', true, move)).toContain('<b><span>Bloom</span> <i>→</i> <em data-tier="mastered">Star</em></b>');
+    } finally {
+      theme.family = 'classic';
+    }
   });
 
   it('does not mount while closed', () => expect(render('tierup', false)).toBe(''));

@@ -1115,6 +1115,7 @@ export default function DailyLearningWorkspace({
         ...(preview.partOfSpeech ? { partOfSpeech: preview.partOfSpeech } : {}),
         ...(previewSite ? { sourceSite: previewSite } : {}),
         ...(preview.exampleSentence ? { exampleSentence: preview.exampleSentence } : {}),
+        tier: getLibraryCardTier(preview),
       } } : {}),
       ...(skipReason ? { skipReason } : {}),
       canSkipNextStage: nextStage === 'match' && nextCount > 0,

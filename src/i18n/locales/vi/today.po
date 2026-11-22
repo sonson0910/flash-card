@@ -2503,3 +2503,38 @@ msgstr "Những thẻ này đã theo lịch ôn tập thông thường."
 msgctxt "webWords.chip.new"
 msgid "New"
 msgstr "Mới"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:41
+msgid "session.bridge.card.tier-status.learning"
+msgstr "Đang học"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:42
+msgid "session.bridge.card.tier-status.mastered"
+msgstr "Đã thuộc"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:40
+msgid "session.bridge.card.tier-status.new"
+msgstr "Mới"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:36
+msgid "session.bridge.card.tier.learning"
+msgstr "Nở"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:37
+msgid "session.bridge.card.tier.mastered"
+msgstr "Sao"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:35
+msgid "session.bridge.card.tier.new"
+msgstr "Nụ"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/TodayReadyHero.tsx:531
+msgid "today.crystal.day-title"
+msgstr "Ngày <0>{day}</0>"

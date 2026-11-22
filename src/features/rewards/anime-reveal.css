@@ -11,6 +11,16 @@ html[data-theme-family=crystal]:not(.dark) .anime-reveal__tier-card b{color:#3f5
 html[data-theme-family=crystal] .anime-reveal{font-family:var(--sf-font-body)}
 html[data-theme-family=crystal] .anime-reveal :is(.anime-reveal__kicker,.anime-reveal__title,.anime-reveal__rewards li,.anime-reveal__actions button,.anime-reveal__tier-card strong,.anime-reveal__tier-card b,.anime-reveal__streak-art strong,.anime-reveal__level-art div){font-family:var(--sf-font-display)}
 html[data-theme-family=crystal] .anime-reveal__title{text-transform:uppercase;letter-spacing:.01em}
+/* The title is cut from the theme metal: white on Starry Night, navy to crimson on Prism Day. */
+html[data-theme-family=crystal] .anime-reveal .anime-reveal__title{background:var(--sf-metal);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 4px 0 var(--sf-star-shade)) drop-shadow(0 0 20px color-mix(in srgb,var(--sf-brand) 80%,transparent))}
+/* Crystal tier move, by tier name: the tier left behind is struck through, the tier reached is a solid
+   plate inside its own rim, so white type never sits on the pale part of a rim. */
+html[data-theme-family=crystal] .anime-reveal__tier-card b{gap:.625rem;font-weight:900}
+html[data-theme-family=crystal] .anime-reveal__tier-card b span{font-size:1.125rem;letter-spacing:.02em;text-decoration:line-through}
+html[data-theme-family=crystal] .anime-reveal__tier-card b em{--rv-rim:var(--sf-gold-rim);--rv-plate:var(--sf-primary-bg);--rv-plate-shade:var(--sf-star-shade);height:2.125rem;box-sizing:border-box;padding:0 .75rem;border:2px solid transparent;clip-path:var(--nk-chamfer-sm);background:var(--rv-plate) padding-box,var(--rv-rim) border-box;color:#fff;font-size:1.3125rem;text-shadow:0 2px 0 var(--rv-plate-shade)}
+html[data-theme-family=crystal] .anime-reveal__tier-card b em[data-tier=learning]{--rv-rim:var(--sf-rim-learning);--rv-plate:var(--sf-tier-bloom-fill);--rv-plate-shade:var(--sf-tier-bloom-fill-shadow)}
+html[data-theme-family=crystal] .anime-reveal__tier-card b em[data-tier=new]{--rv-rim:var(--sf-rim-new);--rv-plate:var(--sf-tier-bud-fill);--rv-plate-shade:var(--sf-tier-bud-fill-shadow)}
+@media(max-width:480px){html[data-theme-family=crystal] .anime-reveal__tier-card b{gap:.4rem}html[data-theme-family=crystal] .anime-reveal__tier-card b span{font-size:.95rem}html[data-theme-family=crystal] .anime-reveal__tier-card b em{height:1.85rem;padding:0 .5rem;font-size:1.05rem}}
 /* Reward chips take the board's crimson, gold and holo plates in turn; streak chips name their plate. */
 html[data-theme-family=crystal] .anime-reveal__rewards li{padding:.42rem .9rem;background:var(--sf-primary-bg);color:var(--sf-on-primary)}
 html[data-theme-family=crystal] .anime-reveal__rewards li:nth-child(3n+2){background:linear-gradient(180deg,color-mix(in srgb,var(--sf-reward) 45%,white),var(--sf-reward));color:color-mix(in srgb,var(--sf-reward) 22%,black)}

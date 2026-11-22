@@ -76,7 +76,8 @@ for (const theme of themes) for (const viewport of viewports) for (const event o
     } else {
       await expect(page.locator('.anime-reveal')).not.toContainText(/\+25 XP|\+100 XP|daily plan now adds|you now hold 2/i);
     }
-    if (event === 'tierup') await expect(page.locator('.anime-reveal__tier-card')).toContainText('New → Mastered');
+    // Crystal Star names the tiers after its card rims.
+    if (event === 'tierup') await expect(page.locator('.anime-reveal__tier-card')).toContainText(theme.family === 'crystal' ? 'Bud → Star' : 'New → Mastered');
     if (event === 'levelup') {
       await expect(page.locator('.anime-reveal__level-art')).toHaveText('LV13');
       await expect(page.locator('.anime-reveal__title')).toContainText('LV 12 → 13');
