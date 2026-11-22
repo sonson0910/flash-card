@@ -247,11 +247,13 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
         ? <Trans {...msg({ id: 'today.streak.freezes.note', message: 'Freezes are used automatically.' })} />
         : <Trans {...msg({ id: 'today.streak.note', message: 'A day counts once you review a card.' })} />;
 
+  // The board shows three run totals; a total the counters cannot cover gives its place to the next.
   const runTiles = state === 'milestone' && runStats ? [
     ...(runStats.reviews !== null ? [{ key: 'reviews', label: <Trans {...msg({ id: 'today.streak.stat.reviews', message: 'Reviews' })} />, value: number(runStats.reviews) }] : []),
     ...(runStats.newWords !== null ? [{ key: 'new-words', label: <Trans {...msg({ id: 'today.streak.stat.new-words', message: 'New words' })} />, value: number(runStats.newWords) }] : []),
     ...(runStats.recallPercent !== null ? [{ key: 'recall', label: <Trans {...msg({ id: 'today.streak.stat.recall', message: 'Recall' })} />, value: i18n.number(runStats.recallPercent / 100, { style: 'percent' }) }] : []),
-  ] : null;
+    ...(runStats.xp !== null ? [{ key: 'xp', label: <Trans {...msg({ id: 'today.streak.stat.run-xp', message: 'XP' })} />, value: number(runStats.xp) }] : []),
+  ].slice(0, 3) : null;
   const weekTiles = [
     ...(days ? [{ key: 'days', label: <Trans {...msg({ id: 'today.streak.stat.days', message: 'Study days this week' })} />, value: number(studyDays) }] : []),
     ...(weekXp !== null ? [{ key: 'xp', label: <Trans {...msg({ id: 'today.streak.stat.xp', message: 'XP this week' })} />, value: number(weekXp) }] : []),

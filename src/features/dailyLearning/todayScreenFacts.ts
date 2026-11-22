@@ -3,7 +3,7 @@
  * learner already has (plan counts, XP, streak, goals); nothing is invented.
  */
 
-import { shiftStudyDay } from '../../../functions/src/study-day-rules';
+import { shiftStudyDay, weekStartOf } from '../../../functions/src/study-day-rules';
 import type { WordWeeksV1 } from '../../../functions/src/word-week-rules';
 import { MATCH_WIN_XP, REVIEW_CARD_XP } from '../../../functions/src/xp-rules';
 import type { ReviewActivity } from '../gamification/verifiedGamificationClient';
@@ -190,23 +190,32 @@ export const greetingName = (name: string | undefined): string | null => {
   return [...trimmed].length <= GREETING_NAME_MAX ? trimmed : null;
 };
 
-/** Reviews, new words and recall over the days of the current streak run. */
+/** Reviews, new words, recall and XP over the days of the current streak run. */
 export interface StreakRunStats {
-  /** Reviews over the run; null when the review counters started after the run did. */
+  /** Reviews over the run; null when the review counters do not hold the whole run. */
   readonly reviews: number | null;
-  /** Cards reviewed for the first time over the run; null when the word counts started after the run did. */
+  /** Cards reviewed for the first time over the run; null when the word counts do not hold the whole run. */
   readonly newWords: number | null;
   /** Share of graded reviews not rated Again, in percent; null when nothing graded was counted. */
   readonly recallPercent: number | null;
+  /** Verified XP over the run; null when the XP history starts after the run did. */
+  readonly xp: number | null;
 }
 
+/** The server keeps this many days of review counters per language. */
+const REVIEW_COUNTER_DAYS = 182;
+
 /**
- * Totals for the run that ends on `today`. A total is left out when the server's counters started
- * after the run did, because it would then miss the run's first days; null when none is known.
+ * Totals for the run that ends on `today`. A total is left out when the server's counters do not
+ * hold every day of the run: they started after it, or the oldest days were already dropped (review
+ * counters keep 182 days, word counts keep the previous and the current week). The first day of a
+ * run is a study day and a day's first review always earns XP, so the XP history holds the whole
+ * run exactly when it has XP on that day. Null when no total is known.
  */
 export const streakRunStats = (
   activityByLanguage: Readonly<Record<string, ReviewActivity>>,
   wordWeeks: WordWeeksV1 | undefined,
+  xpByDay: Readonly<Record<string, number>>,
   today: string,
   length: number,
 ): StreakRunStats | null => {
@@ -214,7 +223,7 @@ export const streakRunStats = (
   const first = shiftStudyDay(today, 1 - length);
   const runDays = Array.from({ length }, (_, offset) => shiftStudyDay(first, offset));
   const activities = Object.values(activityByLanguage);
-  const reviewsCovered = activities.length > 0 && activities.some(activity => activity.coverageStartedOn <= first);
+  const reviewsCovered = length <= REVIEW_COUNTER_DAYS && activities.some(activity => activity.coverageStartedOn <= first);
   let reviews = 0;
   let graded = 0;
   let again = 0;
@@ -229,16 +238,22 @@ export const streakRunStats = (
       }
     }
   }
-  const wordsCovered = wordWeeks !== undefined && wordWeeks.coverageStartedOn <= first;
+  const wordsCovered = wordWeeks !== undefined
+    && (wordWeeks.fromFirstAction || wordWeeks.coverageStartedOn <= first)
+    && first >= shiftStudyDay(weekStartOf(today), -7);
   const newWords = wordsCovered
     ? runDays.reduce((total, day) => total + Object.values(wordWeeks.daysByLanguage)
       .reduce((sum, days) => sum + (days[day]?.started ?? 0), 0), 0)
     : null;
-  if (!reviewsCovered && newWords === null) return null;
+  const xp = (xpByDay[first] ?? 0) > 0
+    ? runDays.reduce((total, day) => total + Math.max(0, xpByDay[day] ?? 0), 0)
+    : null;
+  if (!reviewsCovered && newWords === null && xp === null) return null;
   return {
     reviews: reviewsCovered ? reviews : null,
     newWords,
     recallPercent: reviewsCovered && graded > 0 ? Math.round(((graded - again) / graded) * 100) : null,
+    xp,
   };
 };
 

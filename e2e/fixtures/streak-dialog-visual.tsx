@@ -12,7 +12,8 @@ import { I18nProvider, useUiLocale } from '../../src/i18n/I18nProvider';
 import { loadCatalog } from '../../src/i18n/loadCatalog';
 
 // Each state is a stored stats document the verified-action transaction writes. The milestone
-// state adds review counters and word counts for its 30 days, so the run totals can be shown.
+// state adds review counters and verified XP for its 30 days, so the run totals can be shown; the
+// word counts only keep the last two weeks, so a 30-day run shows XP in place of new words.
 const runDays = (from: string, count: number) =>
   Array.from({ length: count }, (_, index) => new Date(Date.parse(`${from}T00:00:00Z`) + index * 86_400_000).toISOString().slice(0, 10));
 const milestoneDays = runDays('2026-10-21', 30);
@@ -32,12 +33,8 @@ const milestone: VerifiedStatsFixture = {
         })),
       },
     },
-    wordWeeksV1: {
-      coverageStartedOn: '2026-10-01', fromFirstAction: false,
-      daysByLanguage: { en: Object.fromEntries(milestoneDays.map((day, index) => [day, { started: 6 + (index * 5) % 9, mastered: index % 3 }])) },
-      bestWeekByLanguage: {}, wordOfWeekByLanguage: {},
-    },
   },
+  history: { verifiedByDayV1: Object.fromEntries(milestoneDays.map((day, index) => [day, 80 + (index * 11) % 40])) },
 };
 const fixtures = {
   active: streakFixtures.legacyOpen,
@@ -58,7 +55,7 @@ function StreakDialogFixture() {
   const fixture = fixtures[state];
   const gamification = stateFromFixture(fixture);
   const view = buildStreakView(gamification, fixture.now);
-  const runStats = streakRunStats(gamification.reviewActivityByLanguage, gamification.wordWeeks, view.today, view.length);
+  const runStats = streakRunStats(gamification.reviewActivityByLanguage, gamification.wordWeeks, gamification.xpHistory, view.today, view.length);
   return <main className="today-ready-page" data-streak-dialog-visual-view={state} style={{ minHeight: '100dvh', padding: 24, boxSizing: 'border-box' }}>
     <StreakChip view={view} runStats={runStats} now={fixture.now} streak={gamification.streak} className="today-chip today-chip--button" onStartSession={() => undefined} />
   </main>;

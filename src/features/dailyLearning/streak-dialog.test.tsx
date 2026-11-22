@@ -166,9 +166,12 @@ describe('StreakChip from the server streak record', () => {
 
   it('shows the run totals on a milestone when the review counters cover the run', () => {
     const fixture = streakFixtures.safeAtMilestone;
-    const html = render(<StreakChip view={viewOf(fixture)} runStats={{ reviews: 1_284, newWords: 312, recallPercent: 91 }} now={fixture.now} streak={0} className="chip" />);
-    expect(html).toContain('<div data-stat="reviews"><dt>Reviews</dt><dd>1,284</dd></div><div data-stat="new-words"><dt>New words</dt><dd>312</dd></div><div data-stat="recall"><dt>Recall</dt><dd>91%</dd></div>');
-    const partial = render(<StreakChip view={viewOf(fixture)} runStats={{ reviews: null, newWords: 40, recallPercent: null }} now={fixture.now} streak={0} className="chip" />);
+    const html = render(<StreakChip view={viewOf(fixture)} runStats={{ reviews: 1_284, newWords: 312, recallPercent: 91, xp: 3_310 }} now={fixture.now} streak={0} className="chip" />);
+    expect(html).toContain('<div data-stat="reviews"><dt>Reviews</dt><dd>1,284</dd></div><div data-stat="new-words"><dt>New words</dt><dd>312</dd></div><div data-stat="recall"><dt>Recall</dt><dd>91%</dd></div></dl>');
+    const longRun = render(<StreakChip view={viewOf(fixture)} runStats={{ reviews: 1_284, newWords: null, recallPercent: 91, xp: 3_310 }} now={fixture.now} streak={0} className="chip" />);
+    expect(longRun).toContain('<div data-stat="recall"><dt>Recall</dt><dd>91%</dd></div><div data-stat="xp"><dt>XP</dt><dd>3,310</dd></div></dl>');
+    expect(longRun).not.toContain('New words');
+    const partial = render(<StreakChip view={viewOf(fixture)} runStats={{ reviews: null, newWords: 40, recallPercent: null, xp: null }} now={fixture.now} streak={0} className="chip" />);
     expect(partial).toContain('data-count="1"');
     expect(partial).not.toMatch(/Reviews|Recall/);
     expect(html).not.toContain('Best streak');

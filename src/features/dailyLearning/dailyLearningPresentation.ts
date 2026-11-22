@@ -128,7 +128,7 @@ export interface TodayScreenModel {
   readonly streakView?: StreakView;
   /** The moment `streakView` was built for. */
   readonly streakNow?: Date;
-  /** Reviews, new words and recall over the current run, for the milestone details. */
+  /** Run totals the server counters cover, for the milestone details. */
   readonly streakRunStats?: StreakRunStats | null;
   /** Words planned for today's session, in plan order (a bounded slice). */
   readonly sessionWords?: readonly TodaySessionWord[];

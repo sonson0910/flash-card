@@ -1446,7 +1446,7 @@ export default function DailyLearningWorkspace({
     ...(todayStreakView ? {
       streakView: todayStreakView,
       streakNow,
-      ...(todayStreakView.status === 'safe' ? { streakRunStats: streakRunStats(verifiedGamification.reviewActivityByLanguage, verifiedGamification.wordWeeks, todayStreakView.today, todayStreakView.length) } : {}),
+      ...(todayStreakView.status === 'safe' ? { streakRunStats: streakRunStats(verifiedGamification.reviewActivityByLanguage, verifiedGamification.wordWeeks, verifiedGamification.xpHistory, todayStreakView.today, todayStreakView.length) } : {}),
     } : {}),
     recentStudyXp: studyXpHistory.slice(-14).map(entry => entry.XP),
     studyWeek: studyWeek(studyXpHistory, todayIso, todayRun),

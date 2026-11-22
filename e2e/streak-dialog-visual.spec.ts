@@ -18,7 +18,7 @@ const states = [
   { state: 'frozen', chip: '11 study days', dialog: 'frozen', title: 'Your streak is safe.', text: ['You missed yesterday, so a streak freeze stepped in.', 'No freezes left'] },
   { state: 'repair', chip: 'Repair your streak', dialog: 'repair', title: 'Your 23-day streak ended.', text: ['Review 20 cards', '0 / 20', 'Repair window:', 'Start a session'] },
   { state: 'repair-progress', chip: 'Repair your streak', dialog: 'repair', title: 'Your 23-day streak ended.', text: ['8 / 20', 'Keep repairing'] },
-  { state: 'milestone', chip: '2 streak freezes', dialog: 'milestone', title: '30 days in a row', text: ['Badge unlocked · Web Wanderer', 'Reviews', 'New words', 'Recall', '+100 XP added'] },
+  { state: 'milestone', chip: '2 streak freezes', dialog: 'milestone', title: '30 days in a row', text: ['Badge unlocked · Web Wanderer', 'Reviews', 'Recall', 'XP', '+100 XP added'] },
 ] as const;
 
 let fixturePort = FIXTURE_PORT_BASE;
