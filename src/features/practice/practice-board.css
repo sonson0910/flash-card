@@ -187,6 +187,8 @@
   --rk-panel: var(--sf-surface-glass); --rk-edge: var(--sf-panel-edge); --rk-edge2: var(--sf-panel-edge-2);
   --rk-card-front: var(--sf-card-front); --rk-beam: rgb(255 255 255 / .5);
   --rk-primary: var(--sf-primary-bg); --rk-primary-glow: drop-shadow(0 12px 20px rgb(224 23 63 / .45));
+  /* The white cheer metal disappears on Prism Day; the theme metal is a navy-to-crimson ink there. */
+  --rk-cheer: var(--sf-metal);
   --rc-accent: #a30c2d;
   background: var(--sf-space);
 }
