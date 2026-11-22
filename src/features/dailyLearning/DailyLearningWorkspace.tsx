@@ -9,6 +9,7 @@ import type { SessionRecapPromotion } from '../practice/SessionRecapModal';
 import type { LanguageProfile } from '../language/languageProfile';
 import { triggerHaptic } from '../../lib/haptics';
 import { readyCourseSessionForOwner, useCourseSession } from '../courses/CourseGate';
+import { buildStreakView } from '../gamification/streakView';
 import { useVerifiedGamificationState, type VerifiedGamificationState } from '../gamification/verifiedGamificationClient';
 import { firebasePracticeSessionService, practiceTimeZone, type PracticeGamificationOutcome, type PracticeSessionChallenge } from '../practice/practiceSessionService';
 import { cardsForLanguagePair } from '../practice/practiceModel';
@@ -82,7 +83,7 @@ import type {
   TodayScreenModel,
 } from './dailyLearningPresentation';
 import { evidencedStudyStreak, isoDayInTimeZone } from './dailyLearningPresentation';
-import { sourceSite, studyRun, studyWeek } from './todayScreenFacts';
+import { sourceSite, streakRunStats, studyRun, studyWeek } from './todayScreenFacts';
 import { subscribeToActiveSessionNewStagePromotions } from './webWordsSessionPriority';
 
 const LessonScreen = lazy(() => import('./LessonScreen').then(module => ({ default: module.LessonScreen })));
@@ -1406,6 +1407,11 @@ export default function DailyLearningWorkspace({
   const todayStreak = evidencedStudyStreak(streak, studyXpHistory, undefined, rewardTimeZone);
   const todayIso = isoDayInTimeZone(new Date(), rewardTimeZone);
   const todayRun = studyRun(studyXpHistory, todayIso, todayStreak);
+  // The server's streak record, read for this moment; before the account has a verified study day
+  // the XP-history streak above stays in charge.
+  const streakNow = new Date();
+  const verifiedStreakView = buildStreakView(verifiedGamification, streakNow);
+  const todayStreakView = verifiedStreakView.status !== 'none' || verifiedStreakView.repair ? verifiedStreakView : undefined;
 
   const todayModel: TodayScreenModel = {
     headingRef,
@@ -1437,6 +1443,11 @@ export default function DailyLearningWorkspace({
     placementAvailable: availablePlacement.status === 'ready',
     ...(learner ? { learner } : {}),
     studyRun: todayRun,
+    ...(todayStreakView ? {
+      streakView: todayStreakView,
+      streakNow,
+      ...(todayStreakView.status === 'safe' ? { streakRunStats: streakRunStats(verifiedGamification.reviewActivityByLanguage, verifiedGamification.wordWeeks, todayStreakView.today, todayStreakView.length) } : {}),
+    } : {}),
     recentStudyXp: studyXpHistory.slice(-14).map(entry => entry.XP),
     studyWeek: studyWeek(studyXpHistory, todayIso, todayRun),
     ...(plan ? {

@@ -239,6 +239,11 @@ function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'act
   );
 }
 
+const streakChipProps = (model: TodayScreenModel) => ({
+  streak: model.streak, run: model.studyRun, week: model.studyWeek,
+  ...(model.streakView ? { view: model.streakView, runStats: model.streakRunStats ?? null, now: model.streakNow } : {}),
+});
+
 const streakChipClass = 'liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[var(--sf-text)] transition-transform hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none';
 
 function LearningJourney({ model, actions }: TodayScreenProps) {
@@ -368,7 +373,7 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
           <PageHeading model={model} />
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <p className="text-sm font-bold text-[var(--sf-brand-text)]">{model.courseLabel ?? _(msg({ id: 'today.course.fallback', message: 'Your current course' }))}</p>
-            <StreakChip streak={model.streak} run={model.studyRun} week={model.studyWeek} className={streakChipClass} />
+            <StreakChip {...streakChipProps(model)} className={streakChipClass} />
           </div>
         </header>
         {model.isOffline && <p className="mt-4 rounded-xl border border-[color-mix(in_srgb,var(--sf-brand)_70%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] p-3 font-semibold" role="status" aria-live="polite">{_(msg({ id: 'today.offline', message: "You're offline. Reconnect to start today's session." }))}</p>}
@@ -404,7 +409,7 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
         translationLanguage={translationLanguage}
         isCrystal={family === 'crystal'}
         showLumi={showLumi}
-        streakChip={<StreakChip streak={model.streak} run={model.studyRun} week={model.studyWeek} className="today-chip today-chip--button" />}
+        streakChip={<StreakChip {...streakChipProps(model)} className="today-chip today-chip--button" onStartSession={actions.startSession} />}
       />
       <div className="daily-canvas daily-canvas-today today-below mx-auto max-w-6xl space-y-5 sm:space-y-6">
       <LearningJourney model={model} actions={actions} />

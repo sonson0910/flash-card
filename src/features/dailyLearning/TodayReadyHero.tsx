@@ -7,6 +7,7 @@ import { Lumi } from '../../components/lumi/Lumi';
 import { DailyGoalsPanel } from '../dailyGoals/DailyGoalsPanel';
 import { openWebWordsRoute } from '../webWords/webWordsRoute';
 import type { WebWordsPreview } from '../webWords/useWebWordsPreview';
+import type { StreakView } from '../gamification/streakView';
 import type { TodayScreenActions, TodayScreenModel, TodaySessionWord } from './dailyLearningPresentation';
 import {
   dayPeriod,
@@ -176,7 +177,12 @@ function StageRail({ model, facts, variant }: { readonly model: TodayScreenModel
   );
 }
 
-function streakLine(_: ReturnType<typeof useLingui>['_'], facts: ReadyFacts, streak: number | undefined): string {
+function streakLine(_: ReturnType<typeof useLingui>['_'], facts: ReadyFacts, streak: number | undefined, view?: StreakView): string {
+  if (view) {
+    if (view.status === 'safe') return _({ ...msg({ id: 'today.hero.streak.keep', message: '{count, plural, one {keeps your #-day streak} other {keeps your #-day streak}}' }), values: { count: view.length } });
+    if (view.status === 'open' || view.status === 'frozen') return _({ ...msg({ id: 'today.hero.streak.extend', message: 'makes it a {count}-day streak' }), values: { count: view.length + 1 } });
+    return _(msg({ id: 'today.hero.streak.start', message: 'starts your study streak' }));
+  }
   if (facts.run.studiedToday) {
     return _({ ...msg({ id: 'today.hero.streak.keep', message: '{count, plural, one {keeps your #-day streak} other {keeps your #-day streak}}' }), values: { count: Math.max(streak ?? 0, facts.run.days, 1) } });
   }
@@ -408,7 +414,7 @@ function ClassicDesktopHero({ model, actions, ownerId, targetLanguage, translati
             />
             <p className="today-session-reward">
               <span>{_({ ...msg({ id: 'today.hero.xp', message: 'Up to +{xp} XP when you finish' }), values: { xp: facts.xpCeiling } })}</span>
-              <strong>{streakLine(_, facts, model.streak)}</strong>
+              <strong>{streakLine(_, facts, model.streak, model.streakView)}</strong>
             </p>
           </div>
           {plan?.isShort && <p className="today-session-note">{_(msg({ id: 'today.plan.short-description', message: 'There are fewer than 10 eligible cards today. You can still complete this shorter plan.' }))}</p>}
@@ -503,6 +509,12 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
   const now = new Date();
   const weekday = new Intl.DateTimeFormat(i18n.locale, { weekday: 'long' }).format(now);
   const day = runDayNumber(facts.run);
+  const streakView = model.streakView;
+  const lumiStreakLine = streakView && streakView.length > 0 && streakView.nextMilestone
+    ? _({ ...msg({ id: 'today.crystal.lumi-streak.milestone', message: '{count, plural, one {#-day streak.} other {#-day streak.}} {left, plural, one {# more day to your {milestone}-day milestone.} other {# more days to your {milestone}-day milestone.}}' }), values: { count: streakView.length, left: streakView.nextMilestone.daysLeft, milestone: streakView.nextMilestone.length } })
+    : streakView && streakView.length === 0
+      ? _(msg({ id: 'today.crystal.lumi-streak.start', message: 'Finish today to start a new streak.' }))
+      : null;
   const number = new Intl.NumberFormat(i18n.locale);
   const name = greetingName(model.learner?.name);
   const planHasMatch = facts.stages.some(stage => stage.id === 'match' && !stage.skipped);
@@ -543,11 +555,11 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
                   ? _({ ...msg({ id: 'today.crystal.lumi-hi.named', message: '{count, plural, one {Hi {name}! # card is waiting.} other {Hi {name}! # cards are waiting.}}' }), values: { name, count: facts.readyCount } })
                   : _({ ...msg({ id: 'today.crystal.lumi-hi', message: '{count, plural, one {Hi! # card is waiting.} other {Hi! # cards are waiting.}}' }), values: { count: facts.readyCount } })}
               </p>
-              <p>{facts.run.studiedToday
+              <p>{lumiStreakLine ?? (facts.run.studiedToday
                 ? _({ ...msg({ id: 'today.crystal.lumi-streak.today', message: '{count, plural, one {Streak # day. Nice work today.} other {Streak # days. Nice work today.}}' }), values: { count: Math.max(model.streak ?? 0, facts.run.days, 1) } })
                 : facts.run.days > 0
                   ? _({ ...msg({ id: 'today.crystal.lumi-streak.extend', message: 'Finish today to make it {count} days in a row.' }), values: { count: day } })
-                  : _(msg({ id: 'today.crystal.lumi-streak.start', message: 'Finish today to start a new streak.' }))}</p>
+                  : _(msg({ id: 'today.crystal.lumi-streak.start', message: 'Finish today to start a new streak.' })))}</p>
             </div>
           </div>
         )}
