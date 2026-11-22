@@ -328,6 +328,7 @@ export function useAppLearningCoordination({
       },
       clearAll,
       deleteCard,
+      updateCard: learningCommands.updateCard,
       resetClearFeedback,
     },
   };

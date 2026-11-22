@@ -31,6 +31,9 @@ import { createSharedDeckCoursePort, resolveShareCourseAction } from '../feature
 import { createFirebaseFilePort } from '../features/files/firebaseFileAdapter';
 import { OnboardingGate } from '../features/onboarding/OnboardingGate';
 import { AccountProfileProvider } from '../features/profileCompletion/AccountProfileContext';
+import { CardEditorServicesProvider } from '../features/cardEdit/cardEditorServices';
+import { createFileCardPhotos } from '../features/files/fileCardPhotos';
+import { createDeferredCardImageUploader } from './cardImageUpload';
 import { ProfileCompletionGate } from '../features/profileCompletion/ProfileCompletionGate';
 import { useAccountProfileGate } from '../features/profileCompletion/useAccountProfileGate';
 import { useOnboardingLibraryState } from '../features/onboarding/useOnboardingLibraryState';
@@ -403,7 +406,17 @@ export default function AppRuntime({
     equippedFrameId,
     ownedTitleIds,
   } = learning.model;
-  const { intakeSharing: intakeActions, practice: practiceActions, deleteCard } = learning.actions;
+  const { intakeSharing: intakeActions, practice: practiceActions, deleteCard, updateCard } = learning.actions;
+  // The card editor opens from review cards and the vocabulary grid; both get the photo uploader and the deck list here.
+  const cardEditorServices = useMemo(() => ({
+    imageUpload: filePort ? createDeferredCardImageUploader(filePort) : undefined,
+    customDecks,
+  }), [filePort, customDecks]);
+  const libraryCards = library.model.cards;
+  const fileCardPhotos = useMemo(() => createFileCardPhotos(libraryCards, async cardId => {
+    const outcome = await updateCard(cardId, { imageUrl: null, imageSearchQuery: '' });
+    return outcome.status === 'published' || outcome.status === 'noop';
+  }), [libraryCards, updateCard]);
   const { share } = intakeSharing;
   const isShareModalOpen = share.isShareDialogOpen || share.isLoading;
   const libraryReady = !!(
@@ -533,6 +546,7 @@ export default function AppRuntime({
       />
     ) : (
     <AccountProfileProvider profile={accountProfile.profile}>
+    <CardEditorServicesProvider value={cardEditorServices}>
     <div ref={appShellRef} data-view={viewMode} className={`app-canvas claude-app-shell min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <SkipToContentLink />
       <OnboardingGate ownerId={currentOwnerId} suppress={!courseScopeReady || viewMode === 'landing' || shellSyncStatus.isCheckingCloud}
@@ -622,6 +636,7 @@ export default function AppRuntime({
               returnFromWebWords={() => setViewMode(webWordsReturnView)}
               filePort={filePort}
               fileCourses={fileCourses}
+              fileCardPhotos={fileCardPhotos}
               activeCourseId={activeCourse?.id ?? null}
               openMorePractice={openPractice}
               onPracticePhrase={handlePracticePhrase}
@@ -716,6 +731,7 @@ export default function AppRuntime({
         viewStageRef={viewStageRef}
       />
     </div>
+    </CardEditorServicesProvider>
     </AccountProfileProvider>
     )}
     </CourseProvider>

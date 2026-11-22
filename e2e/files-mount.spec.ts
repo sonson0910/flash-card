@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from './fixtures/firebase-emulator';
 
 // My files in the signed-in app, against the Auth, Firestore, Functions and Storage emulators.
@@ -82,4 +83,47 @@ test('uploads a photo to the Storage emulator and keeps it on the shelf', async 
 
   await page.reload();
   await expect(page.getByRole('complementary', { name: 'My files' }).getByText(record.name as string)).toBeVisible();
+});
+
+test('deleting a photo that a card shows says so and takes the photo off the card', async ({ page, db, testUser, seedCards, seedCourseProfile, signIn, blockExternalNetwork }) => {
+  test.setTimeout(120_000);
+  await seedCourseProfile({ targetLanguage: 'ko' });
+  await blockExternalNetwork(page, [STORAGE_EMULATOR_PORT]);
+  await signIn(page, '/?view=files&locale=en');
+  await page.getByLabel('Choose a PDF, EPUB, or image').setInputFiles({ name: 'lead-pipe.png', mimeType: 'image/png', buffer: png });
+  await expect(page.getByRole('heading', { name: 'Ready to attach' })).toBeVisible({ timeout: 45_000 });
+  const stored = await db.collection('users').doc(testUser.uid).collection('files').get();
+  const fileId = stored.docs[0]!.id;
+
+  // A card photo is the download URL Cloud Storage gives for the learner's file; the emulator
+  // serves another host, so the card is seeded with the stored form of that URL.
+  const config = JSON.parse(readFileSync('firebase-applet-config.json', 'utf8')) as { targets: Record<string, { storageBucket?: string }> };
+  const bucket = Object.values(config.targets).map(target => target.storageBucket).find(Boolean)!;
+  const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/users%2F${testUser.uid}%2Ffiles%2F${fileId}?alt=media&token=0123456789abcdef-0123`;
+  const card = {
+    id: 'word-lead', word: '납', normalizedWord: '납', translation: 'chì',
+    explanation: 'A metal.', explanationTranslation: 'Một kim loại.', phonetic: 'nap',
+    emoji: '📚', category: 'Reading', audioUrl: null, imageUrl,
+    origin: 'ai', createdAt: '2026-09-24T00:00:00.000Z', bookmarked: false,
+    difficulty: 'unrated', customDeck: null, reviews: 0,
+    // The library holds the active course's cards, so the card belongs to the Korean course.
+    language: 'ko', translationLanguage: 'vi',
+    schemaVersion: 2, revision: 1,
+  };
+  await seedCards([card, { ...card, id: 'word-pipe', word: '관', normalizedWord: '관', imageUrl: null }]);
+  await page.reload();
+
+  const shelf = page.getByRole('complementary', { name: 'My files' });
+  const name = stored.docs[0]!.data().name as string;
+  await shelf.getByRole('button', { name: `Delete ${name}` }).click();
+  const dialog = page.getByRole('alertdialog', { name: 'Delete this file?' });
+  await expect(dialog).toContainText('1 card shows this photo; it will be removed from that card.');
+  await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(shelf.getByText('No files yet')).toBeVisible();
+
+  const cards = db.collection('users').doc(testUser.uid).collection('cards');
+  await expect.poll(async () => (await cards.doc('word-lead').get()).data()?.imageUrl ?? null).toBeFalsy();
+  expect((await cards.doc('word-lead').get()).exists).toBe(true);
+  expect((await db.collection('users').doc(testUser.uid).collection('files').get()).docs).toHaveLength(0);
 });

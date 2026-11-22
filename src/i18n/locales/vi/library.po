@@ -74,7 +74,7 @@ msgctxt "library.insights.xp"
 msgid "XP · recent activity"
 msgstr "XP · hoạt động gần đây"
 
-#: src/features/cardEdit/EditCardDialog.tsx:998
+#: src/features/cardEdit/EditCardDialog.tsx:1002
 msgctxt "library.edit-card.save"
 msgid "Save changes"
 msgstr "Lưu thay đổi"
@@ -153,7 +153,7 @@ msgctxt "library.import.progress"
 msgid "Importing {current, number} of {total, number}"
 msgstr "Đang nhập {current, number} trên {total, number}"
 
-#: src/features/cardEdit/EditCardDialog.tsx:992
+#: src/features/cardEdit/EditCardDialog.tsx:996
 msgctxt "library.edit-card.back-to-card"
 msgid "back to card"
 msgstr "quay lại thẻ"
@@ -214,12 +214,12 @@ msgctxt "library.grid.no-match-description"
 msgid "Clear the active filters to return to your complete vocabulary library."
 msgstr "Xóa các bộ lọc đang dùng để quay lại toàn bộ thư viện từ vựng."
 
-#: src/features/cardEdit/EditCardDialog.tsx:946
+#: src/features/cardEdit/EditCardDialog.tsx:950
 msgctxt "library.edit-card.more-fields"
 msgid "Definition, translations and memory hook"
 msgstr "Định nghĩa, bản dịch và mẹo ghi nhớ"
 
-#: src/features/cardEdit/EditCardDialog.tsx:864
+#: src/features/cardEdit/EditCardDialog.tsx:868
 msgctxt "library.edit-card.editing-badge"
 msgid "· editing"
 msgstr "· đang sửa"
@@ -301,7 +301,7 @@ msgctxt "library.grid.clear-filters"
 msgid "Clear filters"
 msgstr "Xóa bộ lọc"
 
-#: src/features/cardEdit/EditCardDialog.tsx:761
+#: src/features/cardEdit/EditCardDialog.tsx:765
 msgctxt "library.edit-card.find-another-photo"
 msgid "Find another photo"
 msgstr "Tìm ảnh khác"
@@ -331,7 +331,7 @@ msgctxt "library.import.failed-hint"
 msgid "needs attention"
 msgstr "cần xem lại"
 
-#: src/features/cardEdit/EditCardDialog.tsx:998
+#: src/features/cardEdit/EditCardDialog.tsx:1002
 msgctxt "library.edit-card.saving"
 msgid "Saving changes…"
 msgstr "Đang lưu thay đổi…"
@@ -356,7 +356,7 @@ msgctxt "library.insights.no-xp"
 msgid "Complete a review to start your activity chart."
 msgstr "Hoàn thành một lượt ôn tập để bắt đầu biểu đồ hoạt động."
 
-#: src/features/cardEdit/EditCardDialog.tsx:1015
+#: src/features/cardEdit/EditCardDialog.tsx:1019
 #: src/features/library/LibraryCardGrid.tsx:416
 msgctxt "library.delete.title"
 msgid "Delete card?"
@@ -377,7 +377,7 @@ msgctxt "library.grid.page-loaded"
 msgid "Page {page} loaded with {count, plural, one {# card} other {# cards}}."
 msgstr "Đã tải trang {page} với {count, plural, one {# thẻ} other {# thẻ}}."
 
-#: src/features/cardEdit/EditCardDialog.tsx:992
+#: src/features/cardEdit/EditCardDialog.tsx:996
 msgctxt "library.edit-card.esc-key"
 msgid "Esc"
 msgstr "Esc"
@@ -388,7 +388,7 @@ msgid "flashcard.edit"
 msgstr "Sửa thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:80
+#: src/features/cardEdit/EditCardDialog.tsx:81
 msgid "flashcard.memory-hook"
 msgstr "Mẹo ghi nhớ"
 
@@ -407,7 +407,7 @@ msgctxt "library.insights.category"
 msgid "By category"
 msgstr "Theo danh mục"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1032
+#: src/features/cardEdit/EditCardDialog.tsx:1036
 msgctxt "library.edit-card.deleting"
 msgid "Deleting card…"
 msgstr "Đang xóa thẻ…"
@@ -427,7 +427,7 @@ msgctxt "library.insights.kicker"
 msgid "Stats · last 30 days"
 msgstr "Thống kê · 30 ngày qua"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1028
+#: src/features/cardEdit/EditCardDialog.tsx:1032
 #: src/features/library/LibraryCardGrid.tsx:416
 #: src/features/library/LibraryDialogOverlays.tsx:211
 msgctxt "common.cancel"
@@ -454,7 +454,7 @@ msgctxt "library.grid.import-progress"
 msgid "Creating {current} of {total}"
 msgstr "Đang tạo {current}/{total}"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1032
+#: src/features/cardEdit/EditCardDialog.tsx:1036
 msgctxt "library.edit-card.discard-confirm"
 msgid "Discard changes"
 msgstr "Bỏ thay đổi"
@@ -464,7 +464,7 @@ msgctxt "library.import.skipped"
 msgid "Skipped"
 msgstr "Đã bỏ qua"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1028
+#: src/features/cardEdit/EditCardDialog.tsx:1032
 msgctxt "library.edit-card.keep-editing"
 msgid "Keep editing"
 msgstr "Tiếp tục sửa"
@@ -484,7 +484,7 @@ msgctxt "library.import.download-errors"
 msgid "Download error report"
 msgstr "Tải báo cáo lỗi"
 
-#: src/features/cardEdit/EditCardDialog.tsx:994
+#: src/features/cardEdit/EditCardDialog.tsx:998
 msgctxt "library.edit-card.cancel"
 msgid "Cancel"
 msgstr "Hủy"
@@ -494,7 +494,7 @@ msgctxt "library.clear.try-again"
 msgid "Try again"
 msgstr "Thử lại"
 
-#: src/features/cardEdit/EditCardDialog.tsx:888
+#: src/features/cardEdit/EditCardDialog.tsx:892
 msgctxt "library.edit-card.kicker"
 msgid "Card editor"
 msgstr "Trình sửa thẻ"
@@ -509,7 +509,7 @@ msgctxt "library.import.failure-size"
 msgid "Choose a smaller spreadsheet, then try again."
 msgstr "Chọn bảng tính nhỏ hơn, rồi thử lại."
 
-#: src/features/cardEdit/EditCardDialog.tsx:1023
+#: src/features/cardEdit/EditCardDialog.tsx:1027
 msgctxt "library.edit-card.delete-failed"
 msgid "This card could not be deleted. Try again."
 msgstr "Không thể xóa thẻ này. Hãy thử lại."
@@ -529,7 +529,7 @@ msgctxt "library.deck.delete"
 msgid "Delete deck"
 msgstr "Xóa bộ thẻ"
 
-#: src/features/cardEdit/EditCardDialog.tsx:894
+#: src/features/cardEdit/EditCardDialog.tsx:898
 msgctxt "library.edit-card.description"
 msgid "Changes update this card while its review history stays intact."
 msgstr "Các thay đổi sẽ cập nhật thẻ này mà vẫn giữ nguyên lịch sử ôn tập."
@@ -585,7 +585,7 @@ msgctxt "library.tools.more"
 msgid "More library tools"
 msgstr "Thêm công cụ thư viện"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1032
+#: src/features/cardEdit/EditCardDialog.tsx:1036
 msgctxt "library.edit-card.retry-delete"
 msgid "Retry delete"
 msgstr "Thử xóa lại"
@@ -641,7 +641,7 @@ msgid "library.card.bookmark"
 msgstr "Đánh dấu thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:838
+#: src/features/cardEdit/EditCardDialog.tsx:842
 #: src/features/library/LibraryCardGrid.tsx:390
 msgid "library.card.delete"
 msgstr "Xóa thẻ"
@@ -1543,313 +1543,313 @@ msgid "library.dialogue.title"
 msgstr "Luyện tập theo ngữ cảnh"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:590
+#: src/features/cardEdit/EditCardDialog.tsx:594
 msgid "library.edit-card.add-suggested-tag"
 msgstr "Thêm nhãn {tag}"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:548
+#: src/features/cardEdit/EditCardDialog.tsx:552
 msgid "library.edit-card.add-tag"
 msgstr "Thêm nhãn"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:553
+#: src/features/cardEdit/EditCardDialog.tsx:557
 msgid "library.edit-card.add-tag-placeholder"
 msgstr "Thêm một nhãn"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:389
+#: src/features/cardEdit/EditCardDialog.tsx:393
 msgid "library.edit-card.added-on"
 msgstr "Thêm ngày {date}"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:467
+#: src/features/cardEdit/EditCardDialog.tsx:471
 msgid "library.edit-card.ai-suggested"
 msgstr "AI gợi ý"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:927
+#: src/features/cardEdit/EditCardDialog.tsx:931
 msgid "library.edit-card.card-fields"
 msgstr "Trường thông tin thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:899
+#: src/features/cardEdit/EditCardDialog.tsx:903
 msgid "library.edit-card.close"
 msgstr "Đóng trình sửa"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:407
+#: src/features/cardEdit/EditCardDialog.tsx:411
 msgid "library.edit-card.deck"
 msgstr "Bộ thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:200
+#: src/features/cardEdit/EditCardDialog.tsx:204
 msgid "library.edit-card.deck-missing"
 msgstr "Bộ thẻ này không còn nữa. Hãy chọn bộ thẻ khác."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:420
+#: src/features/cardEdit/EditCardDialog.tsx:424
 msgid "library.edit-card.deck-not-listed"
 msgstr "{name} (không có trong danh sách bộ thẻ)"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:415
+#: src/features/cardEdit/EditCardDialog.tsx:419
 msgid "library.edit-card.deck-unassigned"
 msgstr "Chưa phân bộ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:614
+#: src/features/cardEdit/EditCardDialog.tsx:618
 msgid "library.edit-card.difficulty"
 msgstr "Độ khó"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:640
+#: src/features/cardEdit/EditCardDialog.tsx:644
 msgid "library.edit-card.difficulty-clear"
 msgstr "Bỏ chọn"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:636
+#: src/features/cardEdit/EditCardDialog.tsx:640
 msgid "library.edit-card.difficulty-clear-label"
 msgstr "Bỏ chọn độ khó"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:84
+#: src/features/cardEdit/EditCardDialog.tsx:85
 msgid "library.edit-card.difficulty-easy"
 msgstr "Dễ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:86
+#: src/features/cardEdit/EditCardDialog.tsx:87
 msgid "library.edit-card.difficulty-hard"
 msgstr "Khó"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:645
+#: src/features/cardEdit/EditCardDialog.tsx:649
 msgid "library.edit-card.difficulty-helper"
 msgstr "Nhãn riêng của bạn. Nó không thay đổi thời điểm ôn thẻ này."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:85
+#: src/features/cardEdit/EditCardDialog.tsx:86
 msgid "library.edit-card.difficulty-medium"
 msgstr "Vừa"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:910
+#: src/features/cardEdit/EditCardDialog.tsx:914
 msgid "library.edit-card.draft-preview"
 msgstr "Xem trước bản nháp"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:77
+#: src/features/cardEdit/EditCardDialog.tsx:78
 msgid "library.edit-card.example"
 msgstr "Ví dụ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:78
+#: src/features/cardEdit/EditCardDialog.tsx:79
 msgid "library.edit-card.example-translation"
 msgstr "Bản dịch ví dụ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:75
+#: src/features/cardEdit/EditCardDialog.tsx:76
 msgid "library.edit-card.explanation"
 msgstr "Định nghĩa"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:76
+#: src/features/cardEdit/EditCardDialog.tsx:77
 msgid "library.edit-card.explanation-translation"
 msgstr "Bản dịch định nghĩa"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:209
+#: src/features/cardEdit/EditCardDialog.tsx:213
 msgid "library.edit-card.image-search-failed"
 msgstr "Không tìm thấy ảnh mới. Thử lại sau giây lát."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:201
+#: src/features/cardEdit/EditCardDialog.tsx:205
 msgid "library.edit-card.invalid-content"
 msgstr "Kiểm tra nội dung thẻ và thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:91
+#: src/features/cardEdit/EditCardDialog.tsx:92
 msgid "library.edit-card.last-review-easy"
 msgstr "Lần ôn gần nhất: Dễ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:92
+#: src/features/cardEdit/EditCardDialog.tsx:93
 msgid "library.edit-card.last-review-good"
 msgstr "Lần ôn gần nhất: Tốt"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:93
+#: src/features/cardEdit/EditCardDialog.tsx:94
 msgid "library.edit-card.last-review-hard"
 msgstr "Lần ôn gần nhất: Khó"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:711
 #: src/features/cardEdit/EditCardDialog.tsx:715
+#: src/features/cardEdit/EditCardDialog.tsx:719
 msgid "library.edit-card.part-of-speech"
 msgstr "Từ loại"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:654
-#: src/features/cardEdit/EditCardDialog.tsx:961
+#: src/features/cardEdit/EditCardDialog.tsx:658
+#: src/features/cardEdit/EditCardDialog.tsx:965
 msgid "library.edit-card.phonetic"
 msgstr "IPA"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:864
-#: src/features/cardEdit/EditCardDialog.tsx:918
+#: src/features/cardEdit/EditCardDialog.tsx:868
+#: src/features/cardEdit/EditCardDialog.tsx:922
 msgid "library.edit-card.preview-fallback"
 msgstr "Xem trước thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:800
-#: src/features/cardEdit/EditCardDialog.tsx:813
+#: src/features/cardEdit/EditCardDialog.tsx:804
+#: src/features/cardEdit/EditCardDialog.tsx:817
 msgid "library.edit-card.remove-image"
 msgstr "Xoá ảnh"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:535
+#: src/features/cardEdit/EditCardDialog.tsx:539
 msgid "library.edit-card.remove-tag"
 msgstr "Xoá nhãn {tag}"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:894
+#: src/features/cardEdit/EditCardDialog.tsx:898
 msgid "library.edit-card.review-description"
 msgstr "Phiên ôn tập này vẫn tạm dừng khi bạn chỉnh sửa. Lịch sử ôn tập vẫn được giữ nguyên."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:888
+#: src/features/cardEdit/EditCardDialog.tsx:892
 msgid "library.edit-card.review-kicker"
 msgstr "Thẻ {current} trên {total}"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:390
+#: src/features/cardEdit/EditCardDialog.tsx:394
 msgid "library.edit-card.reviewed-count"
 msgstr "{count, plural, other {Đã ôn # lần}}"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:198
+#: src/features/cardEdit/EditCardDialog.tsx:202
 msgid "library.edit-card.save-failed"
 msgstr "Không thể lưu thay đổi. Thẻ này có thể đã được sửa ở nơi khác. Hãy thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:998
+#: src/features/cardEdit/EditCardDialog.tsx:1002
 msgid "library.edit-card.save-resume"
 msgstr "Lưu và tiếp tục"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:696
+#: src/features/cardEdit/EditCardDialog.tsx:700
 msgid "library.edit-card.save-word"
 msgstr "Lưu từ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:439
+#: src/features/cardEdit/EditCardDialog.tsx:443
 msgid "library.edit-card.starred"
 msgstr "Đánh dấu sao"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:517
+#: src/features/cardEdit/EditCardDialog.tsx:521
 msgid "library.edit-card.tag-duplicate"
 msgstr "Đã có nhãn này"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:521
-#: src/features/cardEdit/EditCardDialog.tsx:578
+#: src/features/cardEdit/EditCardDialog.tsx:525
+#: src/features/cardEdit/EditCardDialog.tsx:582
 msgid "library.edit-card.tag-limit"
 msgstr "Tối đa {max} nhãn"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:519
+#: src/features/cardEdit/EditCardDialog.tsx:523
 msgid "library.edit-card.tag-too-long"
 msgstr "Mỗi nhãn dài tối đa {max} ký tự"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:525
+#: src/features/cardEdit/EditCardDialog.tsx:529
 msgid "library.edit-card.tags"
 msgstr "Nhãn"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:584
+#: src/features/cardEdit/EditCardDialog.tsx:588
 msgid "library.edit-card.tags-from-card"
 msgstr "Từ thẻ này:"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:74
+#: src/features/cardEdit/EditCardDialog.tsx:75
 msgid "library.edit-card.translation"
 msgstr "Bản dịch"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:787
+#: src/features/cardEdit/EditCardDialog.tsx:791
 msgid "library.edit-card.upload-image"
 msgstr "Tải ảnh lên từ thiết bị này"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:779
+#: src/features/cardEdit/EditCardDialog.tsx:783
 msgid "library.edit-card.upload-image-cancel"
 msgstr "Hủy tải lên"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:824
+#: src/features/cardEdit/EditCardDialog.tsx:828
 msgid "library.edit-card.upload-image-checking"
 msgstr "Đang kiểm tra ảnh…"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:831
+#: src/features/cardEdit/EditCardDialog.tsx:835
 msgid "library.edit-card.upload-image-failed"
 msgstr "Không tải ảnh lên được. Hãy thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:771
+#: src/features/cardEdit/EditCardDialog.tsx:775
 msgid "library.edit-card.upload-image-input"
 msgstr "Tải ảnh lên"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:825
+#: src/features/cardEdit/EditCardDialog.tsx:829
 msgid "library.edit-card.upload-image-progress"
 msgstr "Đang tải ảnh lên… {percent}%"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:829
+#: src/features/cardEdit/EditCardDialog.tsx:833
 msgid "library.edit-card.upload-image-quota"
 msgstr "Bộ nhớ của bạn đã đầy. Hãy xóa những tệp không còn cần, rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:790
+#: src/features/cardEdit/EditCardDialog.tsx:794
 msgid "library.edit-card.upload-image-short"
 msgstr "Tải lên"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:830
+#: src/features/cardEdit/EditCardDialog.tsx:834
 msgid "library.edit-card.upload-image-type"
 msgstr "Hãy chọn ảnh PNG, JPEG hoặc WebP trong giới hạn dung lượng của gói."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:491
+#: src/features/cardEdit/EditCardDialog.tsx:495
 msgid "library.edit-card.use-meaning"
 msgstr "Dùng nghĩa: {meaning}"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:666
-#: src/features/cardEdit/EditCardDialog.tsx:671
+#: src/features/cardEdit/EditCardDialog.tsx:670
+#: src/features/cardEdit/EditCardDialog.tsx:675
 msgid "library.edit-card.word"
 msgstr "Từ"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:207
+#: src/features/cardEdit/EditCardDialog.tsx:211
 msgid "library.edit-card.word-conflict"
 msgstr "Thẻ này vừa được thay đổi ở nơi khác. Tải lại rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:205
+#: src/features/cardEdit/EditCardDialog.tsx:209
 msgid "library.edit-card.word-duplicate"
 msgstr "Đã có thẻ khác dùng từ này."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:208
+#: src/features/cardEdit/EditCardDialog.tsx:212
 msgid "library.edit-card.word-save-failed"
 msgstr "Không lưu được từ. Thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:203
+#: src/features/cardEdit/EditCardDialog.tsx:207
 msgid "library.edit-card.word-too-long"
 msgstr "Từ quá dài."
 
@@ -2280,7 +2280,7 @@ msgctxt "library.deck.progress-kept"
 msgid "Review schedules and mastery are kept for every card."
 msgstr "Lịch ôn tập và mức thành thạo của mọi thẻ đều được giữ nguyên."
 
-#: src/features/cardEdit/EditCardDialog.tsx:844
+#: src/features/cardEdit/EditCardDialog.tsx:848
 msgctxt "library.edit-card.source-label"
 msgid "Captured from"
 msgstr "Thu thập từ"
@@ -2300,8 +2300,8 @@ msgctxt "library.overview.due"
 msgid "due today"
 msgstr "đến hạn hôm nay"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1021
-#: src/features/cardEdit/EditCardDialog.tsx:1021
+#: src/features/cardEdit/EditCardDialog.tsx:1025
+#: src/features/cardEdit/EditCardDialog.tsx:1025
 msgctxt "library.edit-card.discard-description"
 msgid "Your remaining draft will be removed."
 msgstr "Bản nháp còn lại của bạn sẽ bị xóa."
@@ -2376,7 +2376,7 @@ msgctxt "library.grid.page"
 msgid "Page {current} / {total}"
 msgstr "Trang {current} / {total}"
 
-#: src/features/cardEdit/EditCardDialog.tsx:732
+#: src/features/cardEdit/EditCardDialog.tsx:736
 msgctxt "library.edit-card.category"
 msgid "Category"
 msgstr "Chủ đề"
@@ -2443,7 +2443,7 @@ msgctxt "library.import.mapping-required"
 msgid "Required"
 msgstr "Bắt buộc"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1021
+#: src/features/cardEdit/EditCardDialog.tsx:1025
 #: src/features/library/LibraryCardGrid.tsx:416
 msgctxt "library.delete.description"
 msgid "This will permanently remove {word} from your library."
@@ -2511,7 +2511,7 @@ msgctxt "library.insights.no-category"
 msgid "No category data yet."
 msgstr "Chưa có dữ liệu danh mục."
 
-#: src/features/cardEdit/EditCardDialog.tsx:1032
+#: src/features/cardEdit/EditCardDialog.tsx:1036
 #: src/features/library/LibraryCardGrid.tsx:416
 msgctxt "library.delete.confirm"
 msgid "Delete card"
@@ -2552,7 +2552,7 @@ msgctxt "library.bulk.deck-label"
 msgid "Move selected cards to deck"
 msgstr "Chuyển các thẻ đã chọn sang deck"
 
-#: src/features/cardEdit/EditCardDialog.tsx:982
+#: src/features/cardEdit/EditCardDialog.tsx:986
 msgctxt "library.edit-card.history-note"
 msgid "Your review history is kept. Changes appear on this card right away."
 msgstr "Lịch sử ôn tập của bạn được giữ lại. Thay đổi sẽ hiện trên thẻ này ngay."
@@ -2593,7 +2593,7 @@ msgctxt "library.deck.created"
 msgid "Deck created. Your cards can be assigned to it from the library."
 msgstr "Đã tạo deck. Bạn có thể gán thẻ vào deck này từ thư viện."
 
-#: src/features/cardEdit/EditCardDialog.tsx:1015
+#: src/features/cardEdit/EditCardDialog.tsx:1019
 msgctxt "library.edit-card.discard-title"
 msgid "Discard unsaved changes?"
 msgstr "Bỏ các thay đổi chưa lưu?"
@@ -2665,7 +2665,7 @@ msgctxt "library.insights.empty"
 msgid "There is not enough learning data to show insights yet."
 msgstr "Chưa đủ dữ liệu học tập để hiển thị thống kê."
 
-#: src/features/cardEdit/EditCardDialog.tsx:745
+#: src/features/cardEdit/EditCardDialog.tsx:749
 msgctxt "library.edit-card.image"
 msgid "Image"
 msgstr "Hình ảnh"
@@ -2675,12 +2675,12 @@ msgctxt "library.clear.mastered"
 msgid "mastered words"
 msgstr "từ đã thành thạo"
 
-#: src/features/cardEdit/EditCardDialog.tsx:724
+#: src/features/cardEdit/EditCardDialog.tsx:728
 msgctxt "library.edit-card.part-of-speech-locked"
 msgid "Locked to this card's published sense."
 msgstr "Đã khoá theo nghĩa đã xuất bản của thẻ này."
 
-#: src/features/cardEdit/EditCardDialog.tsx:998
+#: src/features/cardEdit/EditCardDialog.tsx:1002
 msgctxt "library.edit-card.retry-save"
 msgid "Retry save"
 msgstr "Thử lưu lại"
@@ -2705,8 +2705,8 @@ msgctxt "library.import.pending-hint"
 msgid "save not confirmed"
 msgstr "chưa xác nhận lưu"
 
-#: src/features/cardEdit/EditCardDialog.tsx:869
-#: src/features/cardEdit/EditCardDialog.tsx:919
+#: src/features/cardEdit/EditCardDialog.tsx:873
+#: src/features/cardEdit/EditCardDialog.tsx:923
 msgctxt "library.edit-card.unsaved-badge"
 msgid "Unsaved"
 msgstr "Chưa lưu"
@@ -2721,8 +2721,8 @@ msgctxt "library.import.retry-guidance"
 msgid "Retry failed or skipped words after checking the source rows."
 msgstr "Thử lại các từ lỗi hoặc bị bỏ qua sau khi kiểm tra dòng nguồn."
 
-#: src/features/cardEdit/EditCardDialog.tsx:803
-#: src/features/cardEdit/EditCardDialog.tsx:816
+#: src/features/cardEdit/EditCardDialog.tsx:807
+#: src/features/cardEdit/EditCardDialog.tsx:820
 msgctxt "library.edit-card.remove-image-short"
 msgid "Remove"
 msgstr "Xoá"
@@ -2793,7 +2793,7 @@ msgctxt "library.clear.description-scope"
 msgid "This permanently deletes every card, deck and review history on all your synced devices."
 msgstr "Thao tác này xóa vĩnh viễn mọi thẻ, bộ thẻ và lịch sử ôn tập trên tất cả thiết bị đã đồng bộ."
 
-#: src/features/cardEdit/EditCardDialog.tsx:891
+#: src/features/cardEdit/EditCardDialog.tsx:895
 msgctxt "library.edit-card.title"
 msgid "Edit card"
 msgstr "Sửa thẻ"
@@ -2818,7 +2818,7 @@ msgctxt "library.overview.across-decks"
 msgid "across {count, plural, one {# deck} other {# decks}}"
 msgstr "trên {count, plural, other {# deck}}"
 
-#: src/features/cardEdit/EditCardDialog.tsx:994
+#: src/features/cardEdit/EditCardDialog.tsx:998
 msgctxt "library.edit-card.discard"
 msgid "Discard"
 msgstr "Bỏ"

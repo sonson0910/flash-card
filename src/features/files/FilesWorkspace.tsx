@@ -7,6 +7,7 @@ import {
   CHECK_CHIPS, CHECK_FAILED, CHECK_LABELS, CHECK_PENDING, KIND_LABELS, PHASE_CAPTIONS, REJECTION_DETAILS, REJECTION_FALLBACK,
   STATUS_LABELS, formatMessage,
 } from './fileCopy';
+import type { FileCardPhotos } from './fileCardPhotos';
 import { FILE_INPUT_ACCEPT, formatBytes, type ClientCheck, type FileKind, type FileListing, type FileSummary } from './fileModel';
 import { toFileError, type FilePort } from './filePort';
 import { StorageUsageMeter } from './StorageUsageMeter';
@@ -26,6 +27,8 @@ export interface FilesWorkspaceProps {
   readonly defaultCourseId?: string | null;
   /** Shown as "Manage all files" under the list when the host has a fuller files view. */
   readonly onManageFiles?: () => void;
+  /** The learner's cards that show a stored photo; see `FileCardPhotos`. */
+  readonly cardPhotos?: FileCardPhotos;
   /** Polling and resizing overrides for tests and fixture pages. */
   readonly sessionOptions?: Pick<UploadSessionOptions, 'pollIntervalMs' | 'pollAttempts' | 'resize'>;
   /** The app shell's view heading: the page title takes it and the focus after a view change. */
@@ -70,7 +73,7 @@ const useUploadSession = (port: FilePort, options: Omit<UploadSessionOptions, 'p
  * device checks, the transfer and the service's verdict, then attach it to a course. Mount it on
  * a signed-in route with the `files` catalog loaded and a port from `createFirebaseFilePort`.
  */
-export function FilesWorkspace({ port, courses = [], defaultCourseId = null, onManageFiles, sessionOptions, headingRef, focusIntent = 0 }: FilesWorkspaceProps) {
+export function FilesWorkspace({ port, courses = [], defaultCourseId = null, onManageFiles, cardPhotos, sessionOptions, headingRef, focusIntent = 0 }: FilesWorkspaceProps) {
   const library = useFileLibrary(port);
   useLayoutEffect(() => {
     if (focusIntent > 0) headingRef?.current?.focus({ preventScroll: true });
@@ -91,7 +94,12 @@ export function FilesWorkspace({ port, courses = [], defaultCourseId = null, onM
       courses={courses}
       defaultCourseId={defaultCourseId}
       onRetryList={() => { void library.refresh(); }}
-      onDelete={library.remove}
+      onDelete={async fileId => {
+        // Cards first: if the file then fails to delete it is still there to put back on a card.
+        await cardPhotos?.clear(fileId);
+        await library.remove(fileId);
+      }}
+      cardPhotoCount={cardPhotos?.count}
       onOpen={fileId => port.downloadUrl(fileId)}
       onManageFiles={onManageFiles}
       headingRef={headingRef}
@@ -108,12 +116,14 @@ export interface FilesWorkspaceViewProps {
   readonly defaultCourseId: string | null;
   readonly onRetryList: () => void;
   readonly onDelete: (fileId: string) => Promise<void>;
+  /** How many cards show a file as their photo; the delete confirmation states it. */
+  readonly cardPhotoCount?: (fileId: string) => number;
   readonly onOpen: (fileId: string) => Promise<string>;
   readonly onManageFiles?: () => void;
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
 }
 
-export function FilesWorkspaceView({ upload, session, library, courses, defaultCourseId, onRetryList, onDelete, onOpen, onManageFiles, headingRef }: FilesWorkspaceViewProps) {
+export function FilesWorkspaceView({ upload, session, library, courses, defaultCourseId, onRetryList, onDelete, cardPhotoCount, onOpen, onManageFiles, headingRef }: FilesWorkspaceViewProps) {
   const { _ } = useLingui();
   const inputRef = useRef<HTMLInputElement>(null);
   const filesHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -200,6 +210,7 @@ export function FilesWorkspaceView({ upload, session, library, courses, defaultC
           {deleteTarget && (
             <DeleteFileDialog
               file={deleteTarget}
+              cardCount={cardPhotoCount?.(deleteTarget.id) ?? 0}
               onCancel={() => setDeleteTarget(null)}
               onConfirm={async () => {
                 await onDelete(deleteTarget.id);
@@ -741,7 +752,7 @@ function FileShelf({ library, courses, headingId, headingRef, onBrowse, onRetry,
   );
 }
 
-function DeleteFileDialog({ file, onCancel, onConfirm }: { file: FileSummary; onCancel: () => void; onConfirm: () => Promise<void> }) {
+function DeleteFileDialog({ file, cardCount, onCancel, onConfirm }: { file: FileSummary; cardCount: number; onCancel: () => void; onConfirm: () => Promise<void> }) {
   const { _ } = useLingui();
   const keepRef = useRef<HTMLButtonElement>(null);
   const [busy, setBusy] = useState(false);
@@ -774,6 +785,14 @@ function DeleteFileDialog({ file, onCancel, onConfirm }: { file: FileSummary; on
         <h3 id={titleId}><Trans {...msg({ id: 'files.delete.title', message: 'Delete this file?' })} /></h3>
         <p id={detailId}>
           <Trans {...msg({ id: 'files.delete.detail', message: '<0>{name}</0> will be removed from My files after confirmation.' })} values={{ name: file.name }} components={{ 0: <span data-mono /> }} />
+          {cardCount > 0 && (
+            <>
+              {' '}
+              <span data-card-photo-count>
+                {formatMessage(_, msg({ id: 'files.delete.card-photos', message: '{count, plural, one {# card shows this photo; it will be removed from that card.} other {# cards show this photo; it will be removed from those cards.}}' }), { count: cardCount })}
+              </span>
+            </>
+          )}
         </p>
         {failed && <p className="sf-files-panel__notice" data-tone="error" role="alert"><Trans {...msg({ id: 'files.delete.failed', message: 'The file could not be deleted. Try again.' })} /></p>}
         <div className="sf-files-dialog__actions">

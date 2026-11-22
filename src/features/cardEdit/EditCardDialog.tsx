@@ -38,6 +38,7 @@ import {
   type EditableCardField,
   type EditCardDraft,
 } from './editCardModel';
+import { useCardEditorServices } from './cardEditorServices';
 
 export interface EditCardDialogProps {
   card: CardData;
@@ -118,7 +119,10 @@ function StressedHeadword({ word, phonetic, language }: { word: string; phonetic
   return <>{parts.before}<span className="edit-sheet-stress">{parts.stressed}</span>{parts.after}</>;
 }
 
-export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, context, imageUpload, customDecks }: EditCardDialogProps) {
+export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, context, imageUpload: imageUploadProp, customDecks: customDecksProp }: EditCardDialogProps) {
+  const services = useCardEditorServices();
+  const imageUpload = imageUploadProp ?? services.imageUpload;
+  const customDecks = customDecksProp ?? services.customDecks;
   const { _ } = useLingui();
   // The snapshot is intentionally stable while the sheet is open. A remote
   // update to a field the learner never touched therefore stays out of the

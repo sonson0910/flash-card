@@ -33,6 +33,10 @@ vi.mock('react', async importOriginal => {
   };
 });
 
+// What the app runtime provides to the editor; a test sets it to act as the app.
+const appServices = vi.hoisted(() => ({ current: {} as { imageUpload?: unknown; customDecks?: readonly string[] } }));
+vi.mock('./cardEditorServices', () => ({ useCardEditorServices: () => appServices.current }));
+
 vi.mock('@lingui/react', () => ({
   Trans: ({ message }: { message: string }) => message,
   useLingui: () => ({
@@ -157,6 +161,7 @@ const render = (props: Parameters<typeof EditCardDialog>[0]) => {
 
 describe('EditCardDialog', () => {
   beforeEach(() => {
+    appServices.current = {};
     hooks.cursor = 0;
     hooks.states = [];
     hooks.locale = 'en';
@@ -316,6 +321,15 @@ describe('EditCardDialog', () => {
     const options = findAllByType(findByProp(view.tree, 'data-edit-deck-select')!, 'option');
     expect(options.map(option => option.props?.value)).toEqual(['', 'IELTS']);
     expect(options[1]!.props?.children).toBe('IELTS');
+  });
+
+  it('takes the deck list from the app when the host passes none, and the host list when it passes one', () => {
+    appServices.current = { customDecks: ['Travel', 'Work'] };
+    const fromApp = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+    expect(findAllByType(findByProp(fromApp.tree, 'data-edit-deck-select')!, 'option').map(option => option.props?.value)).toEqual(['', 'Travel', 'Work']);
+    hooks.states = [];
+    const fromHost = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), customDecks: ['IELTS'] });
+    expect(findAllByType(findByProp(fromHost.tree, 'data-edit-deck-select')!, 'option').map(option => option.props?.value)).toEqual(['', 'IELTS']);
   });
 
   it('saves the deck and the star with the other fields in one patch, in both editor modes', async () => {

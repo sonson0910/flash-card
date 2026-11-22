@@ -77,6 +77,11 @@ export const ownStorageImageOwner = (url: string | null | undefined): string | n
   return match[2]!;
 };
 
+/** The id of the learner file (`users/{uid}/files/{fileId}`) a card photo URL points at, or null. */
+export const ownStorageImageFileId = (url: string | null | undefined): string | null => (
+  ownStorageImageOwner(url) === null ? null : OWN_FILE_DOWNLOAD_PATH.exec(new URL(url!).pathname)?.[3] ?? null
+);
+
 /** A card image: a stock photo, or a photo the learner uploaded to their own files. */
 export const isSupportedImageUrl = (url: string | null | undefined): url is string =>
   isStockImageUrl(url) || ownStorageImageOwner(url) !== null;
