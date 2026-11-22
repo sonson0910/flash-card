@@ -13,107 +13,147 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/rewards/AnimeReveal.tsx:31
+#: src/features/rewards/AnimeReveal.tsx:43
 msgctxt "rewards.reveal.tier.new"
 msgid "New"
 msgstr "Mới"
 
-#: src/features/rewards/AnimeReveal.tsx:25
+#: src/features/rewards/AnimeReveal.tsx:37
 msgctxt "rewards.reveal.streak.kicker"
 msgid "Streak milestone"
 msgstr "Cột mốc chuỗi ngày"
 
-#: src/features/rewards/AnimeReveal.tsx:24
+#: src/features/rewards/AnimeReveal.tsx:36
 msgctxt "rewards.reveal.tierup.continue"
 msgid "Continue learning"
 msgstr "Tiếp tục học"
 
-#: src/features/rewards/AnimeReveal.tsx:26
+#: src/features/rewards/AnimeReveal.tsx:38
 msgctxt "rewards.reveal.levelup.description"
 msgid "You unlocked the Crimson Wing frame and Word Collector title. You can hold up to three hint tokens."
 msgstr "Bạn đã mở khóa khung ảnh Crimson Wing và danh hiệu Word Collector. Bạn có thể giữ tối đa ba lượt gợi ý."
 
-#: src/features/rewards/AnimeReveal.tsx:24
+#: src/features/rewards/AnimeReveal.tsx:36
 msgctxt "rewards.reveal.tierup.description"
 msgid "This card is now mastered. Review it again when it is due."
 msgstr "Bạn đã thành thạo thẻ này. Hãy ôn lại khi thẻ đến hạn."
 
-#: src/features/rewards/AnimeReveal.tsx:80
+#: src/features/rewards/AnimeReveal.tsx:117
 msgctxt "rewards.reveal.later"
 msgid "Later"
 msgstr "Để sau"
 
-#: src/features/rewards/AnimeReveal.tsx:25
+#: src/features/rewards/AnimeReveal.tsx:37
 msgctxt "rewards.reveal.streak.description"
 msgid "Your verified review streak earned the Web Wanderer badge."
 msgstr "Chuỗi ngày ôn tập đã xác minh giúp bạn nhận huy hiệu Web Wanderer."
 
-#: src/features/rewards/AnimeReveal.tsx:24
+#: src/features/rewards/AnimeReveal.tsx:36
 msgctxt "rewards.reveal.tierup.kicker"
 msgid "Tier up"
 msgstr "Lên bậc"
 
-#: src/features/rewards/AnimeReveal.tsx:35
+#: src/features/rewards/AnimeReveal.tsx:47
 msgctxt "rewards.reveal.tier.mastered"
 msgid "Mastered"
 msgstr "Đã thành thạo"
 
-#: src/features/rewards/AnimeReveal.tsx:26
+#: src/features/rewards/AnimeReveal.tsx:38
 msgctxt "rewards.reveal.levelup.kicker"
 msgid "Level up"
 msgstr "Lên cấp"
 
-#: src/features/rewards/AnimeReveal.tsx:55
+#: src/features/rewards/AnimeReveal.tsx:85
 msgctxt "rewards.reveal.levelup.title-reached"
 msgid "Level up: level {current}"
 msgstr "Đã lên cấp: cấp {current}"
 
-#: src/features/rewards/AnimeReveal.tsx:25
+#: src/features/rewards/AnimeReveal.tsx:37
 msgctxt "rewards.reveal.streak.title"
 msgid "Streak reached"
 msgstr "Đạt mốc chuỗi ngày"
 
-#: src/features/rewards/AnimeReveal.tsx:25
-msgctxt "rewards.reveal.streak.continue"
-msgid "Continue learning"
-msgstr "Tiếp tục học"
-
-#: src/features/rewards/AnimeReveal.tsx:24
+#: src/features/rewards/AnimeReveal.tsx:36
 msgctxt "rewards.reveal.tierup.title"
 msgid "Mastered"
 msgstr "Đã thành thạo"
 
-#: src/features/rewards/AnimeReveal.tsx:26
+#: src/features/rewards/AnimeReveal.tsx:38
 msgctxt "rewards.reveal.levelup.equip"
 msgid "Use frame"
 msgstr "Dùng khung ảnh"
 
+#: src/features/rewards/AnimeReveal.tsx:37
+msgctxt "rewards.reveal.streak.continue"
+msgid "Keep going"
+msgstr "Tiếp tục nào"
+
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:75
+#: src/features/rewards/AnimeReveal.tsx:110
 msgid "rewards.reveal.close"
 msgstr "Đóng phần thưởng"
 
 #. js-lingui-explicit-id
-#: src/features/rewards/AnimeReveal.tsx:78
+#: src/features/rewards/AnimeReveal.tsx:113
 msgid "rewards.reveal.rewards-label"
 msgstr "Phần thưởng đã mở khóa"
 
-#: src/features/rewards/AnimeReveal.tsx:54
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:72
+msgid "rewards.reveal.streak.chip.badge"
+msgstr "Huy hiệu · {badge}"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:70
+msgid "rewards.reveal.streak.chip.freeze"
+msgstr "{count, plural, other {+# lượt đóng băng chuỗi}}"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:71
+msgid "rewards.reveal.streak.chip.xp"
+msgstr "+{xp} XP"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:102
+msgid "rewards.reveal.streak.days"
+msgstr "Chuỗi {count} ngày"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:63
+msgid "rewards.reveal.streak.freeze-earned"
+msgstr "{count, plural, =1 {Bạn nhận được 1 lượt đóng băng chuỗi, nên lỡ một ngày cũng không làm đứt chuỗi.} other {Bạn nhận được # lượt đóng băng chuỗi, nên lỡ # ngày cũng không làm đứt chuỗi.}}"
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:64
+msgid "rewards.reveal.streak.freeze-held"
+msgstr "Hiện bạn đang giữ {count} lượt."
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:61
+msgid "rewards.reveal.streak.month"
+msgstr "Tròn một tháng học tập."
+
+#. js-lingui-explicit-id
+#: src/features/rewards/AnimeReveal.tsx:62
+msgid "rewards.reveal.streak.run"
+msgstr "{count} ngày học liên tiếp."
+
+#: src/features/rewards/AnimeReveal.tsx:84
 msgctxt "rewards.reveal.levelup.title-move"
 msgid "Level up: level {previous} to {current}"
 msgstr "Đã lên cấp: từ cấp {previous} lên cấp {current}"
 
-#: src/features/rewards/AnimeReveal.tsx:26
+#: src/features/rewards/AnimeReveal.tsx:38
 msgctxt "rewards.reveal.levelup.title"
 msgid "Level up"
 msgstr "Đã lên cấp"
 
-#: src/features/rewards/AnimeReveal.tsx:33
+#: src/features/rewards/AnimeReveal.tsx:45
 msgctxt "rewards.reveal.tier.learning"
 msgid "Learning"
 msgstr "Đang học"
 
-#: src/features/rewards/AnimeReveal.tsx:79
+#: src/features/rewards/AnimeReveal.tsx:116
 msgctxt "rewards.reveal.equip-error"
 msgid "Could not use this reward. Try again."
 msgstr "Không thể dùng phần thưởng này. Vui lòng thử lại."

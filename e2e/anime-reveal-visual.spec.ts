@@ -66,7 +66,14 @@ for (const theme of themes) for (const viewport of viewports) for (const event o
     await expect(page.locator('.anime-reveal')).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('.anime-reveal')).toHaveAttribute('data-event', event);
     await expect(page.locator('.anime-reveal')).toHaveAttribute('data-motion', 'reduced');
-    await expect(page.locator('.anime-reveal')).not.toContainText(/\+25 XP|\+100 XP|daily plan now adds|you now hold 2/i);
+    if (event === 'streak') {
+      await expect(page.locator('.anime-reveal__title')).toHaveText('30-day streak');
+      await expect(page.locator('.anime-reveal__description')).toHaveText('A full month of study. You earned 1 streak freeze, so one missed day will not break the chain. You now hold 2.');
+      await expect(page.locator('.anime-reveal__rewards li')).toHaveText(['+1 streak freeze', '+100 XP', 'Badge · Web Wanderer']);
+      await expect(page.locator('.anime-reveal')).not.toContainText(/\bPro\b|refills|daily plan now adds/i);
+    } else {
+      await expect(page.locator('.anime-reveal')).not.toContainText(/\+25 XP|\+100 XP|daily plan now adds|you now hold 2/i);
+    }
     if (event === 'tierup') await expect(page.locator('.anime-reveal__tier-card')).toContainText('New → Mastered');
     if (event === 'levelup') {
       await expect(page.locator('.anime-reveal__level-art')).toHaveText('LV13');
@@ -97,7 +104,7 @@ for (const locale of ['vi', 'pseudo'] as const) for (const event of events) {
     await expect(page.locator('.anime-reveal')).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('html')).toHaveAttribute('lang', locale === 'pseudo' ? 'en-XA' : 'vi');
     await expect(page.locator('.anime-reveal__title')).toContainText(locale === 'pseudo' ? '[' :
-      event === 'tierup' ? 'Đã thành thạo' : event === 'streak' ? 'Đạt mốc chuỗi ngày' : 'Đã lên cấp');
+      event === 'tierup' ? 'Đã thành thạo' : event === 'streak' ? 'Chuỗi 30 ngày' : 'Đã lên cấp');
     await expectAccessibleAndContained(page, `${locale} ${event}`, event);
     await expect(page).toHaveScreenshot(`anime-reveal-${event}-${locale}-crystal-dark-mobile.png`, {
       fullPage: true, animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,

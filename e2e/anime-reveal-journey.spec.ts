@@ -76,7 +76,7 @@ test('authoritative review queues tier, streak, then level rewards and a dismiss
   });
   await page.getByRole('button', { name: 'Continue learning' }).click();
   await expect(page.locator('.anime-reveal')).toHaveAttribute('data-event', 'streak');
-  await page.getByRole('button', { name: 'Continue learning' }).click();
+  await page.getByRole('button', { name: 'Keep going' }).click();
   await expect(page.locator('.anime-reveal')).toHaveAttribute('data-event', 'levelup');
   await expect(page.locator('.anime-reveal__level-art')).toHaveText('LV13');
   await expect(page.getByRole('dialog', { name: 'Level up: level 12 to 13' })).toBeVisible();
@@ -98,7 +98,8 @@ test('level reward retries the real equip callable after an ownership error and 
 
   await triggerThresholdReview(page);
   await page.getByRole('button', { name: 'Continue learning' }).click();
-  await page.getByRole('button', { name: 'Continue learning' }).click();
+  await expect(page.locator('.anime-reveal')).toHaveAttribute('data-event', 'streak');
+  await page.getByRole('button', { name: 'Keep going' }).click();
   await expect(page.locator('.anime-reveal')).toHaveAttribute('data-event', 'levelup');
 
   const rewards = db.collection('users').doc(testUser.uid).collection('profile').doc('rewards');
