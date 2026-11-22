@@ -46,6 +46,13 @@ export type ReviewCeremonyEvent = 'tierup' | 'streak' | 'levelup';
 export type ReviewPersistenceResult = {
   applied: true;
   duplicate: boolean;
+  /**
+   * Set when this result repeats an operation that an earlier request already applied. The
+   * gamification and ceremony fields then describe that earlier commit: the client keeps the
+   * card and the authoritative totals but must not credit the study time or show the streak
+   * change or ceremonies a second time. Older clients ignore the key.
+   */
+  replayed?: true;
   xpAwarded: number;
   card: CardRecord;
   gamification?: VerifiedGamificationOutcome;
@@ -282,6 +289,7 @@ const receiptResult = (value: unknown): ReviewPersistenceResult | null => {
   return {
     applied: true,
     duplicate: true,
+    replayed: true,
     xpAwarded: result.xpAwarded === REVIEW_CARD_XP ? REVIEW_CARD_XP : 0,
     card: result.card as CardRecord,
     ...(result.gamification === undefined ? {} : { gamification: result.gamification as VerifiedGamificationOutcome }),
@@ -381,7 +389,7 @@ export async function applyReviewForOwner(
       ? stored.appliedReviewOperationIds as string[]
       : [];
     if (!strict && operationIds.includes(request.opId)) {
-      return { applied: true, duplicate: true, xpAwarded: 0, card: serializeCardResponse(stored) };
+      return { applied: true, duplicate: true, replayed: true, xpAwarded: 0, card: serializeCardResponse(stored) };
     }
     if (request.baseRevision !== revision) {
       throw new ReviewPersistenceConflictError('revision-conflict', revision, serializeCardResponse(stored));

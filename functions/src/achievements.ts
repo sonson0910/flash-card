@@ -4,8 +4,8 @@
 import type { DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
 import {
   ACHIEVEMENT_BADGES, ACHIEVEMENT_CATALOG_VERSION, ACHIEVEMENT_TITLES, LATE_REVIEW_END_HOUR, LATE_REVIEW_START_HOUR,
-  levelForVerifiedXp, zeroAchievementCounters,
-  type AchievementCounters, type AchievementMetric, type AchievementRecord, type AchievementsStateV1,
+  levelForVerifiedXp,
+  type AchievementCounters, type AchievementMetric, type AchievementRecord, type AchievementSalvage, type AchievementsStateV1,
 } from './achievement-rules.js';
 import { addCount, isCount, isPlainRecord, isStudyDay } from './study-day-rules.js';
 
@@ -51,11 +51,25 @@ export const isLateHour = (date: Date, timeZone: string): boolean => {
   return Number.isInteger(hour) && (hour >= LATE_REVIEW_START_HOUR || hour < LATE_REVIEW_END_HOUR);
 };
 
-/** The record of an account's first evaluation, from its stored evidence. */
+/**
+ * The record of an account's first evaluation, from its stored evidence, or the rebuild of an
+ * unusable stored record, which also passes what that record still holds (`salvaged`).
+ *
+ * A rebuild keeps every valid badge and title record and every counter whose own value is valid.
+ * Where the baseline recounts a counter (active days, best day XP and the last XP day from the XP
+ * history; reviewed cards and mastered words from the two card counts), the higher value is kept:
+ * the card counts miss deleted cards and cards that lapsed, so the stored value can be the higher
+ * one. Late reviews and correct spelling answers are counted nowhere else: a late
+ * review is one that earned XP, which the seven-day XP awards decide and per-card review history
+ * (at most 100 entries) cannot show, and spelling answers are only in each completed practice
+ * session, which would take an unbounded read inside the action. So those two are kept when their
+ * stored value is valid and otherwise start over at zero. No counter ever decreases, so a held
+ * badge also keeps its counter at least at that badge's target.
+ */
 export const backfilledAchievements = (
   studyDay: string,
   baseline: AchievementBaseline,
-  salvaged: Pick<AchievementsStateV1, 'badges' | 'titles'> = { badges: {}, titles: {} },
+  salvaged: AchievementSalvage = { badges: {}, titles: {}, counters: {} },
   storedCatalogVersion = 0,
 ): AchievementsStateV1 => {
   const days = isPlainRecord(baseline.verifiedByDay)
@@ -64,17 +78,29 @@ export const backfilledAchievements = (
     ))
     : [];
   const latest = days.reduce<[string, number] | null>((found, entry) => (!found || entry[0] > found[0] ? entry : found), null);
+  const kept = salvaged.counters;
+  const keptLatest: [string, number] | null = kept.lastXpDay ? [kept.lastXpDay, kept.lastXpDayXp ?? 0] : null;
+  // The later of the two last XP days; on the same day, the larger XP.
+  const last: [string, number] | null = !keptLatest ? latest
+    : !latest || keptLatest[0] > latest[0] ? keptLatest
+      : keptLatest[0] === latest[0] ? [latest[0], Math.max(latest[1], keptLatest[1])]
+        : latest;
+  const counter = (metric: Exclude<keyof AchievementCounters, 'lastXpDay' | 'lastXpDayXp'>, counted: number) => ACHIEVEMENT_BADGES
+    .filter(badge => badge.metric === metric && Object.hasOwn(salvaged.badges, badge.id))
+    .reduce((floor, badge) => Math.max(floor, badge.target), Math.max(counted, kept[metric] ?? 0));
+  const lastXpDayXp = last?.[1] ?? 0;
   return {
     catalogVersion: Math.max(ACHIEVEMENT_CATALOG_VERSION, storedCatalogVersion),
     recordingStartedOn: studyDay,
     counters: {
-      ...zeroAchievementCounters(),
-      activeDays: days.length,
-      lastXpDay: latest?.[0] ?? null,
-      lastXpDayXp: latest?.[1] ?? 0,
-      bestDayXp: days.reduce((best, [, xp]) => Math.max(best, xp), 0),
-      reviewedCards: baseline.reviewedCards,
-      masteredWords: baseline.masteredWords,
+      activeDays: counter('activeDays', days.length),
+      lastXpDay: last?.[0] ?? null,
+      lastXpDayXp,
+      bestDayXp: Math.max(counter('bestDayXp', days.reduce((best, [, xp]) => Math.max(best, xp), 0)), lastXpDayXp),
+      reviewedCards: counter('reviewedCards', baseline.reviewedCards),
+      masteredWords: counter('masteredWords', baseline.masteredWords),
+      lateReviews: counter('lateReviews', 0),
+      spellingCorrect: counter('spellingCorrect', 0),
     },
     badges: salvaged.badges,
     titles: salvaged.titles,

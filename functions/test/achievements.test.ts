@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseAchievements, zeroAchievementCounters, type AchievementsStateV1 } from '../src/achievement-rules';
+import { parseAchievementSalvage, parseAchievements, zeroAchievementCounters, type AchievementsStateV1 } from '../src/achievement-rules';
 import { backfilledAchievements, evaluateAchievements, isLateHour, type AchievementSignals } from '../src/achievements';
 
 const signals = (fields: Partial<AchievementSignals> = {}): AchievementSignals => ({
@@ -141,15 +141,59 @@ describe('evaluateAchievements counters', () => {
     expect(result.patch).not.toHaveProperty('badges');
   });
 
+  it('keeps what an unusable record still holds when it is rebuilt', () => {
+    const verifiedByDay = { '2026-11-20': 12, '2026-11-24': 80, '2026-11-26': 6 };
+    const baseline = { verifiedByDay, reviewedCards: 37, masteredWords: 12 };
+    const salvage = {
+      badges: { 'late-reviews-10': { on: '2026-11-20', exact: true } },
+      titles: {},
+      counters: { activeDays: 2, lastXpDay: '2026-11-25', lastXpDayXp: 40, reviewedCards: 50, lateReviews: 4, spellingCorrect: 9 },
+    };
+    // The higher of each recounted counter, the later last XP day, the stored late reviews and
+    // spelling answers, and at least the target of a held badge.
+    expect(backfilledAchievements('2026-11-27', baseline, salvage).counters).toEqual({
+      activeDays: 3, lastXpDay: '2026-11-26', lastXpDayXp: 6, bestDayXp: 80,
+      reviewedCards: 50, masteredWords: 12, lateReviews: 10, spellingCorrect: 9,
+    });
+    // On the same last XP day the larger XP is kept, and the best day is never below it.
+    expect(backfilledAchievements('2026-11-27', baseline, {
+      ...salvage, counters: { lastXpDay: '2026-11-26', lastXpDayXp: 95 },
+    }).counters).toMatchObject({ lastXpDay: '2026-11-26', lastXpDayXp: 95, bestDayXp: 95, lateReviews: 10, spellingCorrect: 0 });
+    // A stored last XP day after the history's is kept with its XP.
+    expect(backfilledAchievements('2026-11-27', { ...baseline, verifiedByDay: undefined }, salvage).counters)
+      .toMatchObject({ activeDays: 2, lastXpDay: '2026-11-25', lastXpDayXp: 40, bestDayXp: 40 });
+  });
+
   it('writes every field of a rebuilt record and never an empty map', () => {
     const base = backfilledAchievements('2026-12-03', { verifiedByDay: null, reviewedCards: 0, masteredWords: 0 },
-      { badges: { 'xp-500': { on: '2026-11-01', exact: true } }, titles: {} }, 4);
+      { badges: { 'xp-500': { on: '2026-11-01', exact: true } }, titles: {}, counters: {} }, 4);
     const result = evaluate({ stored: base, rebuilt: true, signals: signals({ xpGained: 0 }), after: { verifiedXp: 100, streak: 1 } });
     expect(result.patch).toEqual({
       catalogVersion: 4, recordingStartedOn: '2026-12-03', counters: zeroAchievementCounters(),
       badges: { 'xp-500': { on: '2026-11-01', exact: true } },
     });
     expect(parseAchievements(result.patch)).toEqual(result.state);
+  });
+});
+
+describe('parseAchievementSalvage', () => {
+  it('keeps each valid counter of an unusable record and the last XP day only with its XP', () => {
+    const value = {
+      catalogVersion: 'one', recordingStartedOn: 'soon',
+      counters: {
+        activeDays: 4, lastXpDay: '2026-11-26', lastXpDayXp: -1, bestDayXp: 'many',
+        reviewedCards: 20, masteredWords: 1.5, lateReviews: 3, spellingCorrect: 41,
+      },
+      badges: { 'spelling-50': { on: '2026-11-01', exact: true }, broken: { on: 'never', exact: true } },
+      titles: 'none',
+    };
+    expect(parseAchievements(value)).toBeUndefined();
+    expect(parseAchievementSalvage(value)).toEqual({
+      badges: { 'spelling-50': { on: '2026-11-01', exact: true } },
+      titles: {},
+      counters: { activeDays: 4, reviewedCards: 20, lateReviews: 3, spellingCorrect: 41 },
+    });
+    expect(parseAchievementSalvage('lost')).toEqual({ badges: {}, titles: {}, counters: {} });
   });
 });
 

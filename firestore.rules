@@ -180,8 +180,17 @@ service cloud.firestore {
         );
     }
 
+    // The new data must be a current-protocol card (isCurrentProtocolCard)
+    // carrying the next revision. isNextCardRevision already pins that
+    // revision between 1 and the counter maximum, so only its type is left
+    // to check, which costs fewer expressions than isValidProtocolCounter and
+    // `> 0` again.
     function canUpdateCurrentCard(data, epoch) {
-      return isCurrentProtocolCard(data, epoch)
+      return data.keys().hasAll(['schemaVersion', 'revision', 'libraryEpoch'])
+        && data.schemaVersion == 2
+        && data.revision is int
+        && isValidProtocolCounter(data.libraryEpoch)
+        && data.libraryEpoch == epoch
         && isNextCardRevision(resource.data, data.revision)
         && (
           (!resource.data.keys().hasAny(['libraryEpoch'])
@@ -193,8 +202,7 @@ service cloud.firestore {
         );
     }
 
-    function canInitializeLegacyDifficulty(data) {
-      let changed = data.diff(resource.data).affectedKeys();
+    function canInitializeLegacyDifficulty(data, changed) {
       return !resource.data.keys().hasAny(['difficulty'])
         && changed.hasAny(['difficulty'])
         && data.difficulty == 'unrated';
@@ -595,28 +603,36 @@ service cloud.firestore {
         && data.normalizedWord.size() > 0;
     }
 
+    // A stored card with an identity keeps it: the new data carries the very
+    // same non-empty normalizedWord (so hasCardIdentity(data) would add
+    // nothing) and the same word, and the card is current or its reservation
+    // matches. A stored card without one keeps its word and may claim the
+    // identity that word gives, with a matching reservation.
+    // hasCardIdentity(resource.data) cannot fail, so one conditional replaces
+    // two branches that tested it and its negation. A claimed identity is
+    // tested before the absence of one: the same condition, but a claim then
+    // spends nothing on hasCardIdentity(data).
     function hasValidCardIdentityUpdate(userId, cardId, data, epoch) {
-      return (
-        hasCardIdentity(resource.data)
-        && hasCardIdentity(data)
-        && resource.data.normalizedWord == data.normalizedWord
-        && resource.data.word == data.word
-        && (
-          isCurrentProtocolCard(resource.data, epoch)
-          || hasMatchingCardReservation(userId, cardId, data)
-        )
-      ) || (
-        !hasCardIdentity(resource.data)
-        && resource.data.word is string
-        && data.word == resource.data.word
-        && (
-          !hasCardIdentity(data)
-          || (
-            data.normalizedWord == resource.data.word.lower()
-            && hasMatchingCardReservation(userId, cardId, data)
+      return hasCardIdentity(resource.data)
+        ? (
+          resource.data.normalizedWord == data.normalizedWord
+          && resource.data.word == data.word
+          && (
+            isCurrentProtocolCard(resource.data, epoch)
+            || hasMatchingCardReservation(userId, cardId, data)
           )
         )
-      );
+        : (
+          resource.data.word is string
+          && data.word == resource.data.word
+          && (
+            (
+              data.get('normalizedWord', null) == resource.data.word.lower()
+              && hasMatchingCardReservation(userId, cardId, data)
+            )
+            || !hasCardIdentity(data)
+          )
+        );
     }
 
     function isBoundedText(value, maximum) {
@@ -625,11 +641,6 @@ service cloud.firestore {
 
     function isOptionalBoundedText(data, field, maximum) {
       return isBoundedText(data.get(field, ''), maximum);
-    }
-
-    function isOptionalTimestampOrText(data, field, maximum) {
-      let value = data.get(field, '');
-      return value is timestamp || isBoundedText(value, maximum);
     }
 
     function isValidCardFsrs(fsrs) {
@@ -692,30 +703,71 @@ service cloud.firestore {
 
     // Update validation only evaluates fields that this write changes. Legacy
     // cards can retain old sparse values, but every new or changed value must
-    // still cross the same bounds as a canonical application write. This also
-    // keeps a boundary-valid update below Rules' expression limit: a one-field
-    // update does not revalidate every unrelated nested list and history entry.
-    // Grouped behind one cheap group-level changed.hasAny(...) gate per
-    // block. A single flat &&-chain of 43 independent per-field guards
-    // always pays for every guard on any successful update (a passing
-    // update never makes an early && operand false, so nothing short-
-    // circuits away), which was measured to consume most of the Rules
-    // per-request 1,000-expression ceiling even for a one-field patch. An
-    // untouched group's individual guards are skipped entirely once the
-    // group-level check is false; a touched group still runs the exact
-    // same per-field validators as before.
+    // still cross the same bounds as a canonical application write.
+    //
+    // Rules refuse a request once it evaluates 1,000 expressions, and every
+    // operand, call, list item and field read counts, so this chain is shaped
+    // by cost as well as meaning:
+    // - Fields are grouped behind one group-level changed.hasAny(...) gate, so
+    //   an untouched group costs one gate instead of one guard per field. The
+    //   groups follow the writers: updatedAt rides on every client patch and
+    //   stands alone; the card editor's fields form two groups; the identity
+    //   fields form one; everything else a client patch rarely touches sits
+    //   behind one outer gate.
+    // - In the editor groups, a cheap scalar check is written as
+    //   `valid || unchanged`. That is the same condition as
+    //   `unchanged || valid`, but a save that changes many fields then pays
+    //   for the check alone; only a stored legacy value that fails the check
+    //   also pays for the gate. Checks that cost more than the gate (photo
+    //   URL, tags, lists, maps) and the rarely touched fields keep the gate
+    //   first.
+    // - No eager `let` here: Rules evaluate every `let` even when its branch
+    //   is skipped.
     // isValidCardUpdate rejects any change to the keys it keeps immutable
     // (origin, lexemeId, language, translationLanguage, senseKey,
     // normalizedLemma, ...) before calling this, so those keys need no checks
-    // here; every gate below costs expressions on every card update.
+    // here.
     function isValidChangedCardFields(data, changed) {
-      let fields = data.keys();
-      let audioUrl = data.get('audioUrl', null);
-      let imageUrl = data.get('imageUrl', null);
-      let customDeck = data.get('customDeck', null);
-      let wordFamily = data.get('wordFamily', null);
-      let fsrs = data.get('fsrs', null);
-      return (
+      return (data.get('updatedAt', '') is timestamp
+          || isBoundedText(data.get('updatedAt', ''), 128)
+          || !changed.hasAny(['updatedAt']))
+      && (
+        !changed.hasAny([
+          'translation', 'explanation', 'explanationTranslation', 'phonetic', 'category',
+          'partOfSpeech', 'exampleSentence', 'exampleTranslation', 'mnemonic', 'imageSearchQuery'
+        ])
+        || (
+          (isBoundedText(data.get('translation', ''), 256) || !changed.hasAny(['translation']))
+          && (isBoundedText(data.get('explanation', ''), 2048) || !changed.hasAny(['explanation']))
+          && (isBoundedText(data.get('explanationTranslation', ''), 2048) || !changed.hasAny(['explanationTranslation']))
+          && (isBoundedText(data.get('phonetic', ''), 256) || !changed.hasAny(['phonetic']))
+          && (isBoundedText(data.get('category', ''), 128) || !changed.hasAny(['category']))
+          && (isBoundedText(data.get('partOfSpeech', ''), 64) || !changed.hasAny(['partOfSpeech']))
+          && (isBoundedText(data.get('exampleSentence', ''), 2048) || !changed.hasAny(['exampleSentence']))
+          && (isBoundedText(data.get('exampleTranslation', ''), 2048) || !changed.hasAny(['exampleTranslation']))
+          && (isBoundedText(data.get('mnemonic', ''), 2048) || !changed.hasAny(['mnemonic']))
+          && (isBoundedText(data.get('imageSearchQuery', ''), 256) || !changed.hasAny(['imageSearchQuery']))
+        )
+      )
+      // The photo and the learner's own labels: deck, star, tags and
+      // difficulty. Scheduling never reads learnerDifficulty, so it is
+      // deliberately not in the scheduling guard of canPatchOwnedCard.
+      && (
+        !changed.hasAny(['imageUrl', 'customDeck', 'bookmarked', 'tags', 'learnerDifficulty'])
+        || (
+          (!changed.hasAny(['imageUrl']) || data.get('imageUrl', null) == null || isTrustedImageUrl(data.imageUrl))
+          && (data.get('customDeck', null) == null || isBoundedText(data.customDeck, 128) || !changed.hasAny(['customDeck']))
+          && (data.get('bookmarked', false) is bool || !changed.hasAny(['bookmarked']))
+          && (!changed.hasAny(['tags']) || !data.keys().hasAny(['tags']) || isValidCardTags(data.tags))
+          && (data.get('learnerDifficulty', null) == null
+            || data.get('learnerDifficulty', null) in ['easy', 'medium', 'hard']
+            || !changed.hasAny(['learnerDifficulty']))
+        )
+      )
+      // Identity fields change only when a legacy card is upgraded and claims
+      // its identity; they stay outside the rarely touched group below so
+      // that upgrade does not open it.
+      && (
         !changed.hasAny(['id', 'word', 'normalizedWord'])
         || (
           (!changed.hasAny(['id']) || isBoundedText(data.get('id', ''), 128))
@@ -724,124 +776,90 @@ service cloud.firestore {
         )
       )
       && (
-        !changed.hasAny(['translation', 'explanation', 'explanationTranslation', 'phonetic', 'category', 'emoji'])
+        !changed.hasAny([
+          'emoji', 'audioUrl', 'createdAt', 'lastOpenedAt', 'sortTouchedAt',
+          'cefrLevel', 'register', 'commonMistake', 'wordFamily',
+          'nextReviewDate', 'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+          'collocations', 'synonyms', 'antonyms', 'reviewHistory', 'fsrs'
+        ])
         || (
-          (!changed.hasAny(['translation']) || isBoundedText(data.get('translation', ''), 256))
-          && (!changed.hasAny(['explanation']) || isBoundedText(data.get('explanation', ''), 2048))
-          && (!changed.hasAny(['explanationTranslation']) || isBoundedText(data.get('explanationTranslation', ''), 2048))
-          && (!changed.hasAny(['phonetic']) || isBoundedText(data.get('phonetic', ''), 256))
-          && (!changed.hasAny(['category']) || isBoundedText(data.get('category', ''), 128))
-          && (!changed.hasAny(['emoji']) || isBoundedText(data.get('emoji', ''), 64))
-        )
-      )
-      && (
-        !changed.hasAny(['audioUrl', 'imageUrl', 'imageSearchQuery'])
-        || (
-          (!changed.hasAny(['audioUrl']) || audioUrl == null || isTrustedAudioUrl(audioUrl))
-          && (!changed.hasAny(['imageUrl']) || imageUrl == null || isTrustedImageUrl(imageUrl))
-          && (!changed.hasAny(['imageSearchQuery']) || isOptionalBoundedText(data, 'imageSearchQuery', 256))
-        )
-      )
-      && (
-        !changed.hasAny(['createdAt', 'updatedAt', 'lastOpenedAt', 'sortTouchedAt', 'customDeck'])
-        || (
-          (!changed.hasAny(['createdAt']) || isBoundedText(data.get('createdAt', ''), 128))
-          && (!changed.hasAny(['updatedAt']) || isOptionalTimestampOrText(data, 'updatedAt', 128))
-          && (!changed.hasAny(['lastOpenedAt']) || isOptionalBoundedText(data, 'lastOpenedAt', 128))
-          && (!changed.hasAny(['sortTouchedAt']) || isOptionalBoundedText(data, 'sortTouchedAt', 128))
-          && (!changed.hasAny(['customDeck']) || customDeck == null || isBoundedText(customDeck, 128))
-        )
-      )
-      && (
-        !changed.hasAny(['nextReviewDate', 'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak'])
-        || (
-          (!changed.hasAny(['nextReviewDate']) || isOptionalBoundedText(data, 'nextReviewDate', 128))
-          && (!changed.hasAny(['difficulty']) || data.get('difficulty', '') in ['easy', 'good', 'hard', 'unrated'])
-          && (!changed.hasAny(['reviews']) || (data.get('reviews', 0) is int && data.get('reviews', 0) >= 0 && data.get('reviews', 0) <= 9007199254740991))
-          && (!changed.hasAny(['interval']) || (data.get('interval', 0) is number && data.get('interval', 0) >= 0 && data.get('interval', 0) <= 9007199254740991))
-          && (!changed.hasAny(['easeFactor']) || (data.get('easeFactor', 0) is number && data.get('easeFactor', 0) >= 0 && data.get('easeFactor', 0) <= 5))
-          && (!changed.hasAny(['correctStreak']) || (data.get('correctStreak', 0) is int && data.get('correctStreak', 0) >= 0 && data.get('correctStreak', 0) <= 9007199254740991))
-        )
-      )
-      && (
-        !changed.hasAny(['partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation', 'register', 'commonMistake', 'mnemonic', 'wordFamily'])
-        || (
-          (!changed.hasAny(['partOfSpeech']) || isOptionalBoundedText(data, 'partOfSpeech', 64))
-          && (!changed.hasAny(['cefrLevel']) || isOptionalBoundedText(data, 'cefrLevel', 8))
-          && (!changed.hasAny(['exampleSentence']) || isOptionalBoundedText(data, 'exampleSentence', 2048))
-          && (!changed.hasAny(['exampleTranslation']) || isOptionalBoundedText(data, 'exampleTranslation', 2048))
-          && (!changed.hasAny(['register']) || isOptionalBoundedText(data, 'register', 64))
-          && (!changed.hasAny(['commonMistake']) || isOptionalBoundedText(data, 'commonMistake', 2048))
-          && (!changed.hasAny(['mnemonic']) || isOptionalBoundedText(data, 'mnemonic', 2048))
-          && (!changed.hasAny(['wordFamily']) || wordFamily == null || isValidCardWordFamily(wordFamily))
-        )
-      )
-      && (
-        !changed.hasAny(['collocations', 'synonyms', 'antonyms', 'reviewHistory', 'fsrs'])
-        || (
-          (!changed.hasAny(['collocations']) || !fields.hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
-          && (!changed.hasAny(['synonyms']) || !fields.hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
-          && (!changed.hasAny(['antonyms']) || !fields.hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
-          && (!changed.hasAny(['reviewHistory']) || !fields.hasAny(['reviewHistory']) || isValidReviewHistory(data.reviewHistory))
-          && (!changed.hasAny(['fsrs']) || fsrs == null || isValidCardFsrs(fsrs))
-        )
-      )
-      // The learner's own labels: star, tags and difficulty. Scheduling never
-      // reads learnerDifficulty, so it is deliberately not in the scheduling
-      // guard of canPatchOwnedCard. Starring sits here rather than with the
-      // review counters so a star toggle opens a three-key group.
-      && (
-        !changed.hasAny(['bookmarked', 'tags', 'learnerDifficulty'])
-        || (
-          (!changed.hasAny(['bookmarked']) || data.get('bookmarked', false) is bool)
-          && (!changed.hasAny(['tags']) || !fields.hasAny(['tags']) || isValidCardTags(data.tags))
-          && (!changed.hasAny(['learnerDifficulty']) || data.get('learnerDifficulty', null) == null
-            || data.get('learnerDifficulty', null) in ['easy', 'medium', 'hard'])
+          (
+            !changed.hasAny(['emoji', 'audioUrl', 'createdAt', 'lastOpenedAt', 'sortTouchedAt', 'cefrLevel', 'register', 'commonMistake', 'wordFamily'])
+            || (
+              (!changed.hasAny(['emoji']) || isBoundedText(data.get('emoji', ''), 64))
+              && (!changed.hasAny(['audioUrl']) || data.get('audioUrl', null) == null || isTrustedAudioUrl(data.audioUrl))
+              && (!changed.hasAny(['createdAt']) || isBoundedText(data.get('createdAt', ''), 128))
+              && (!changed.hasAny(['lastOpenedAt']) || isOptionalBoundedText(data, 'lastOpenedAt', 128))
+              && (!changed.hasAny(['sortTouchedAt']) || isOptionalBoundedText(data, 'sortTouchedAt', 128))
+              && (!changed.hasAny(['cefrLevel']) || isOptionalBoundedText(data, 'cefrLevel', 8))
+              && (!changed.hasAny(['register']) || isOptionalBoundedText(data, 'register', 64))
+              && (!changed.hasAny(['commonMistake']) || isOptionalBoundedText(data, 'commonMistake', 2048))
+              && (!changed.hasAny(['wordFamily']) || data.get('wordFamily', null) == null || isValidCardWordFamily(data.wordFamily))
+            )
+          )
+          && (
+            !changed.hasAny(['nextReviewDate', 'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak'])
+            || (
+              (!changed.hasAny(['nextReviewDate']) || isOptionalBoundedText(data, 'nextReviewDate', 128))
+              && (!changed.hasAny(['difficulty']) || data.get('difficulty', '') in ['easy', 'good', 'hard', 'unrated'])
+              && (!changed.hasAny(['reviews']) || (data.get('reviews', 0) is int && data.get('reviews', 0) >= 0 && data.get('reviews', 0) <= 9007199254740991))
+              && (!changed.hasAny(['interval']) || (data.get('interval', 0) is number && data.get('interval', 0) >= 0 && data.get('interval', 0) <= 9007199254740991))
+              && (!changed.hasAny(['easeFactor']) || (data.get('easeFactor', 0) is number && data.get('easeFactor', 0) >= 0 && data.get('easeFactor', 0) <= 5))
+              && (!changed.hasAny(['correctStreak']) || (data.get('correctStreak', 0) is int && data.get('correctStreak', 0) >= 0 && data.get('correctStreak', 0) <= 9007199254740991))
+            )
+          )
+          && (
+            !changed.hasAny(['collocations', 'synonyms', 'antonyms', 'reviewHistory', 'fsrs'])
+            || (
+              (!changed.hasAny(['collocations']) || !data.keys().hasAny(['collocations']) || isValidBoundedStringList(data.collocations))
+              && (!changed.hasAny(['synonyms']) || !data.keys().hasAny(['synonyms']) || isValidBoundedStringList(data.synonyms))
+              && (!changed.hasAny(['antonyms']) || !data.keys().hasAny(['antonyms']) || isValidBoundedStringList(data.antonyms))
+              && (!changed.hasAny(['reviewHistory']) || !data.keys().hasAny(['reviewHistory']) || isValidReviewHistory(data.reviewHistory))
+              && (!changed.hasAny(['fsrs']) || data.get('fsrs', null) == null || isValidCardFsrs(data.fsrs))
+            )
+          )
         )
       );
     }
 
-    // wasCanonical (full 30-key hasAll on the OLD document) is replaced by a
-    // cheaper equivalent: a canonical field can only stop being present if a
-    // canonical key was actually removed in this diff, which
-    // mapDiff.removedKeys() answers in one pass instead of a second 30-item
-    // hasAll. If nothing canonical was removed the guard passes without ever
-    // needing isCanonical; if something was removed, isCanonical is false
-    // too (that key is now missing), so the outcome matches the original
-    // "was fully canonical implies must stay fully canonical" check exactly.
-    // This and reusing one data.diff(resource.data) call for both `changed`
-    // and the removed-keys check were measured to matter: the Rules
-    // per-request 1,000-expression ceiling is otherwise nearly exhausted by
-    // this function alone, on every card update regardless of which fields
-    // actually changed.
-    function isValidCardUpdate(data) {
+    // The keys of a card update must all be known card fields, the same set
+    // a hasOnly([...]) list would name. One pattern over the comma-joined
+    // keys costs a handful of expressions where that list literal costs one
+    // per name. Each name in the pattern is followed by a comma, so the
+    // joined text gets a closing comma and no piece can be empty. A key may
+    // itself contain a comma, so the joined text must also split back into
+    // exactly as many pieces as there are keys; with no empty piece the
+    // counts only match when no key carries a comma, and each piece is then
+    // one whole key.
+    function hasOnlyCardFields(fields) {
+      let joined = fields.join(',');
+      return (joined + ',').matches('^((id|origin|lexemeId|language|translationLanguage|senseKey|word|normalizedWord|normalizedLemma|translation|explanation|explanationTranslation|phonetic|category|emoji|audioUrl|imageUrl|imageSearchQuery|createdAt|lastOpenedAt|updatedAt|sortTouchedAt|schemaVersion|revision|libraryEpoch|bookmarked|customDeck|difficulty|nextReviewDate|reviews|interval|easeFactor|correctStreak|partOfSpeech|cefrLevel|exampleSentence|exampleTranslation|collocations|synonyms|antonyms|register|commonMistake|reviewHistory|fsrs|mnemonic|wordFamily|appliedReviewOperationIds|masteredAt|japanesePitchAccent|source|tags|learnerDifficulty|translationAlternatives),)+$')
+        && joined.split(',').size() == fields.size();
+    }
+
+    // A canonical card stays canonical: no update may remove one of these
+    // keys. (Keeping every key present also keeps a fully canonical card
+    // fully canonical, which is what this guards.) Most updates remove no key
+    // at all, and then the 30-name list is never built.
+    // The new data must still hold id, word and translation, which every
+    // canonical card holds too.
+    // mapDiff and changed come from the one data.diff(resource.data) that
+    // canPatchOwnedCard computes for the whole chain.
+    function isValidCardUpdate(data, mapDiff, changed) {
       let fields = data.keys();
-      let mapDiff = data.diff(resource.data);
-      let changed = mapDiff.affectedKeys();
-      let canonicalFields = [
-        'id', 'word', 'normalizedWord', 'translation', 'explanation',
-        'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
-        'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
-        'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
-        'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
-        'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-        'reviewHistory'
-      ];
-      let isCanonical = fields.hasAll(canonicalFields);
-      let removedCanonicalKey = mapDiff.removedKeys().hasAny(canonicalFields);
-      return fields.hasOnly([
-          'id', 'origin', 'lexemeId', 'language', 'translationLanguage', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation',
-          'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
-          'imageUrl', 'imageSearchQuery', 'createdAt', 'lastOpenedAt', 'updatedAt',
-          'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
-          'bookmarked', 'customDeck', 'difficulty',
-          'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
-          'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
-          'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
-          'reviewHistory', 'fsrs', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'japanesePitchAccent', 'source',
-          'tags', 'learnerDifficulty', 'translationAlternatives'
-        ])
-        && (!removedCanonicalKey || isCanonical)
+      return hasOnlyCardFields(fields)
+        && (
+          mapDiff.removedKeys().size() == 0
+          || !mapDiff.removedKeys().hasAny([
+            'id', 'word', 'normalizedWord', 'translation', 'explanation',
+            'explanationTranslation', 'phonetic', 'category', 'emoji', 'audioUrl',
+            'imageUrl', 'imageSearchQuery', 'createdAt', 'bookmarked', 'customDeck',
+            'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
+            'partOfSpeech', 'cefrLevel', 'exampleSentence', 'exampleTranslation',
+            'collocations', 'synonyms', 'antonyms', 'register', 'commonMistake',
+            'reviewHistory'
+          ])
+        )
         // Server-owned origin, capture, mastery, pitch, AI meaning alternatives
         // and canonical lexeme identity cannot be introduced, removed or
         // changed by a client update.
@@ -856,33 +874,43 @@ service cloud.firestore {
         // value predates this shape (or was written directly), so an
         // unrelated field update can never silently keep coasting on a
         // corrupt language forever.
-        && (!fields.hasAny(['language']) || isValidStoredCardLanguage(data.language))
-        && (!fields.hasAny(['translationLanguage']) || isValidStoredTranslationLanguage(data.translationLanguage))
-        && (isCanonical || fields.hasAll(['id', 'word', 'translation']))
+        // A card without these fields reads as English; 'en' passes both
+        // checks, exactly as an absent field did.
+        && isValidStoredCardLanguage(data.get('language', 'en'))
+        && isValidStoredTranslationLanguage(data.get('translationLanguage', 'en'))
+        && fields.hasAll(['id', 'word', 'translation'])
         && (!fields.hasAny(['lexemeId', 'senseKey', 'normalizedLemma'])
           || (fields.hasAll(['lexemeId', 'language', 'senseKey', 'partOfSpeech', 'normalizedLemma'])
             && !changed.hasAny(['partOfSpeech'])))
         && isValidChangedCardFields(data, changed);
     }
 
-    // One shared currentLibraryEpoch(userId) lookup for the whole update
-    // chain (see isCurrentProtocolCard above). Wrapping the update condition
-    // in a function is what makes a single `let epoch = ...` possible; an
+    // One library_state lookup and one data.diff(resource.data) for the
+    // whole update chain (see isCurrentProtocolCard above). libraryState
+    // gives the same epoch as currentLibraryEpoch(userId) and the same fence
+    // flag as hasActiveLibraryMigrationFence(userId) without building the
+    // document path and reading it a second time. Wrapping the update
+    // condition in a function is what makes these `let`s possible; an
     // `allow update: if <expr>` clause cannot declare its own `let`.
     function canPatchOwnedCard(userId, cardId, data) {
-      let epoch = currentLibraryEpoch(userId);
-      return !hasActiveLibraryMigrationFence(userId)
+      let libraryState = hasLibraryEpochState(userId)
+        ? get(/databases/$(database)/documents/users/$(userId)/profile/library_state).data
+        : {'libraryEpoch': 0};
+      let epoch = libraryState.libraryEpoch;
+      let mapDiff = data.diff(resource.data);
+      let changed = mapDiff.affectedKeys();
+      return libraryState.get('libraryMigrationFenceActive', false) != true
         && data.id == cardId
-        && isValidCardUpdate(data)
+        && isValidCardUpdate(data, mapDiff, changed)
         && hasValidCardIdentityUpdate(userId, cardId, data, epoch)
         && (
-          !data.diff(resource.data).affectedKeys().hasAny([
+          !changed.hasAny([
             'difficulty', 'nextReviewDate', 'reviews', 'interval', 'easeFactor',
             'correctStreak', 'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
           ])
           || (
-            canInitializeLegacyDifficulty(data)
-            && !data.diff(resource.data).affectedKeys().hasAny([
+            canInitializeLegacyDifficulty(data, changed)
+            && !changed.hasAny([
               'nextReviewDate', 'reviews', 'interval', 'easeFactor', 'correctStreak',
               'fsrs', 'reviewHistory', 'appliedReviewOperationIds'
             ])

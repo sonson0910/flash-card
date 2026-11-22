@@ -101,3 +101,7 @@ export const servedReviewOutcome = {
     studyTimeMs: 20000
   }
 };
+
+// The same review answered again from its stored receipt, as a retry or a resent request receives
+// it: the content repeats the first answer and the receipt says it is a replay.
+export const servedReplayedReviewOutcome = { ...servedReviewOutcome, duplicate: true, replayed: true };

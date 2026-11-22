@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CardData } from '../types/card';
-import { servedReviewOutcome } from '../../functions/test/support/review-outcome';
+import { servedReplayedReviewOutcome, servedReviewOutcome } from '../../functions/test/support/review-outcome';
 const mocks = vi.hoisted(() => ({
   callable: vi.fn(),
   httpsCallable: vi.fn(),
@@ -150,6 +150,22 @@ describe('review conflict recovery', () => {
     expect(result).toMatchObject({
       gamification: { streakChange: { freezesUsed: 0, freezesEarned: 1, milestone: 7 }, studyTimeMs: 20_000 },
     });
+  });
+
+  it('keeps the replayed mark of a receipt the functions serve again, with what it repeats', async () => {
+    mocks.callable.mockResolvedValueOnce({ data: structuredClone(servedReplayedReviewOutcome) });
+    const result = await applyReviewViaCallable({} as never, 'owner-a', { ...command, reviewedAt: '2026-11-22T17:00:10.000Z' });
+    expect(result).toMatchObject({
+      applied: true, duplicate: true, replayed: true, xpAwarded: 2,
+      gamification: { streakChange: { freezesUsed: 0, freezesEarned: 1, milestone: 7 }, studyTimeMs: 20_000 },
+    });
+  });
+
+  it.each([undefined, false, 'true', 1])('does not read a replayed value of %o as a replay', async replayed => {
+    mocks.callable.mockResolvedValueOnce({ data: { ...structuredClone(servedReviewOutcome), duplicate: true, replayed } });
+    const result = await applyReviewViaCallable({} as never, 'owner-a', { ...command, reviewedAt: '2026-11-22T17:00:10.000Z' });
+    expect(result).toMatchObject({ applied: true, duplicate: true });
+    expect(result).not.toHaveProperty('replayed');
   });
 
   it.each([

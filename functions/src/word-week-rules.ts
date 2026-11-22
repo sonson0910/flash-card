@@ -104,6 +104,19 @@ export const parseWordWeeks = (value: unknown): WordWeeksV1 | undefined => {
   };
 };
 
+/**
+ * The record an account starts when its first verified action is not a counted review (a card
+ * create, a practice completion, or a review in a language that is not a course language).
+ * Coverage begins with the account, so its first partial week counts toward the best week.
+ */
+export const firstActionWordWeeks = (studyDay: string): WordWeeksV1 => ({
+  coverageStartedOn: studyDay,
+  fromFirstAction: true,
+  daysByLanguage: {},
+  bestWeekByLanguage: {},
+  wordOfWeekByLanguage: {},
+});
+
 /** One verified review as the weekly word record sees it. */
 export interface WordWeekReview {
   readonly studyDay: string;
