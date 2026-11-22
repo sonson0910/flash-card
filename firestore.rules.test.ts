@@ -5,7 +5,7 @@ import {
   type RulesTestContext,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch, type Firestore } from 'firebase/firestore';
+import { collection, deleteDoc, deleteField, doc, FieldPath, getDoc, getDocs, query, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch, type Firestore } from 'firebase/firestore';
 import { readFile } from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -2864,6 +2864,110 @@ describe('Firestore security rules', () => {
         revision: 2,
         updatedAt: serverTimestamp(),
       }));
+    });
+
+    describe('one save that changes every field the editor offers', () => {
+      const storedCard = (id: string) => ({
+        ...validCard(id), word: 'lead', normalizedWord: 'lead', language: 'en', origin: 'ai',
+        translation: 'chì', explanation: 'a soft metal', explanationTranslation: 'một kim loại mềm', phonetic: '/led/',
+        category: 'Science', emoji: '🔩', audioUrl: null, imageUrl: 'https://images.pexels.com/photos/1/old.jpg',
+        imageSearchQuery: 'metal', createdAt: '2026-08-01T00:00:00.000Z', bookmarked: false, customDeck: null,
+        difficulty: 'unrated', reviews: 0, interval: 0, easeFactor: 2.5, correctStreak: 0, partOfSpeech: 'noun',
+        cefrLevel: 'B1', exampleSentence: 'Lead is heavy.', exampleTranslation: 'Chì nặng.', collocations: [],
+        synonyms: [], antonyms: [], register: '', commonMistake: '', reviewHistory: [], mnemonic: 'led',
+        tags: ['news'], learnerDifficulty: 'easy', translationAlternatives: ['dẫn dắt'],
+      });
+      const withoutRevisions = (card: Record<string, unknown>) => {
+        const { schemaVersion: _schemaVersion, revision: _revision, libraryEpoch: _libraryEpoch, ...rest } = card;
+        return rest;
+      };
+      const ownPhoto = async () => {
+        const config = JSON.parse(await readFile('firebase-applet-config.json', 'utf8')) as { targets: { production: { storageBucket: string } } };
+        return `https://firebasestorage.googleapis.com/v0/b/${config.targets.production.storageBucket}/o/users%2Fowner%2Ffiles%2FAbCdEfGhIjKlMnOpQrSt?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d`;
+      };
+      const everyEditorField = (imageUrl: string | null) => ({
+        translation: 'dẫn dắt', explanation: 'to guide a group', explanationTranslation: 'hướng dẫn một nhóm',
+        phonetic: '/liːd/', category: 'Work', partOfSpeech: 'verb', exampleSentence: 'She will lead the team.',
+        exampleTranslation: 'Cô ấy sẽ dẫn dắt đội.', mnemonic: 'lead the way', imageUrl, imageSearchQuery: '',
+        customDeck: 'IELTS', bookmarked: true,
+        tags: Array.from({ length: 8 }, (_, index) => `${'x'.repeat(24)} tag ${index}`), learnerDifficulty: 'hard',
+        updatedAt: serverTimestamp(),
+      });
+
+      it('accepts it on a current card with a photo from the learner files, a stock photo or no photo', async () => {
+        const owner = testEnvironment.authenticatedContext('owner').firestore();
+        const photos = [await ownPhoto(), 'https://images.unsplash.com/photo-2', null];
+        for (const [index, imageUrl] of photos.entries()) {
+          const cardId = `edit-sheet-every-field-${index}`;
+          await seedCurrentCard(testEnvironment, 'owner', cardId, storedCard(cardId));
+          await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${cardId}`), { ...everyEditorField(imageUrl), revision: 2 }));
+        }
+      });
+
+      it('accepts it on a card stored before revisions, with or without its identity', async () => {
+        const owner = testEnvironment.authenticatedContext('owner').firestore();
+        const withIdentity = 'edit-sheet-every-field-legacy';
+        await seedCurrentCard(testEnvironment, 'owner', withIdentity, withoutRevisions(storedCard(withIdentity)));
+        await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${withIdentity}`), {
+          ...everyEditorField(await ownPhoto()), schemaVersion: 2, revision: 1, libraryEpoch: 0,
+        }));
+
+        const withoutIdentity = 'edit-sheet-every-field-legacy-unclaimed';
+        const { normalizedWord: _normalizedWord, ...unclaimed } = withoutRevisions(storedCard(withoutIdentity));
+        await testEnvironment.withSecurityRulesDisabled(async context => {
+          const database = context.firestore();
+          await setDoc(doc(database, 'users/owner/profile/library_state'), { schemaVersion: 2, libraryEpoch: 0 });
+          await setDoc(doc(database, 'users', 'owner', 'card_reservations', createCardIdentityReservationId('lead')), {
+            schemaVersion: 1, cardId: withoutIdentity, normalizedWord: 'lead',
+          });
+          await setDoc(doc(database, `users/owner/cards/${withoutIdentity}`), unclaimed);
+        });
+        await assertSucceeds(updateDoc(doc(owner, `users/owner/cards/${withoutIdentity}`), {
+          ...everyEditorField(await ownPhoto()), normalizedWord: 'lead', schemaVersion: 2, revision: 1, libraryEpoch: 0,
+        }));
+      });
+
+      it('still refuses it when any one field breaks its limit or a key is not a card field', async () => {
+        const owner = testEnvironment.authenticatedContext('owner').firestore();
+        const cardId = 'edit-sheet-every-field-invalid';
+        await seedCurrentCard(testEnvironment, 'owner', cardId, storedCard(cardId));
+        const card = doc(owner, `users/owner/cards/${cardId}`);
+        const save = { ...everyEditorField(await ownPhoto()), revision: 2 };
+        const notDenied: string[] = [];
+        const expectDenied = async (label: string, write: Promise<void>) => {
+          const outcome = await write.then(() => 'allowed', (error: { code?: string }) => error.code);
+          if (outcome !== 'permission-denied') notDenied.push(`${label}: ${outcome}`);
+        };
+        for (const [label, override] of Object.entries({
+          translation: { translation: 'x'.repeat(257) },
+          explanation: { explanation: 'x'.repeat(2049) },
+          explanationTranslation: { explanationTranslation: 'x'.repeat(2049) },
+          phonetic: { phonetic: 'x'.repeat(257) },
+          category: { category: 'x'.repeat(129) },
+          partOfSpeech: { partOfSpeech: 'x'.repeat(65) },
+          exampleSentence: { exampleSentence: 'x'.repeat(2049) },
+          exampleTranslation: { exampleTranslation: 'x'.repeat(2049) },
+          mnemonic: { mnemonic: 7 },
+          imageSearchQuery: { imageSearchQuery: 'x'.repeat(257) },
+          imageUrl: { imageUrl: 'https://attacker.example/photo.jpg' },
+          customDeck: { customDeck: 'x'.repeat(129) },
+          bookmarked: { bookmarked: 'yes' },
+          tags: { tags: Array.from({ length: 9 }, (_, index) => `tag ${index}`) },
+          learnerDifficulty: { learnerDifficulty: 'good' },
+          updatedAt: { updatedAt: 'x'.repeat(129) },
+          emoji: { emoji: 'x'.repeat(65) },
+          scheduler: { difficulty: 'easy' },
+          alternatives: { translationAlternatives: ['lãnh đạo'] },
+          unknownKey: { nickname: 'lead' },
+          removedCanonicalKey: { exampleSentence: deleteField() },
+        })) {
+          await expectDenied(label, updateDoc(card, { ...save, ...override }));
+        }
+        // Both halves of this key are card fields, so only the comma check can refuse it.
+        const saveAsPairs = Object.entries(save).flatMap(([key, value]) => [key, value]);
+        await expectDenied('commaKey', updateDoc(card, new FieldPath('translation,category'), 'x', ...saveAsPairs));
+        expect(notDenied).toEqual([]);
+      });
     });
 
     it('accepts a boolean star and rejects any other star value', async () => {
