@@ -1,25 +1,16 @@
-import { Award, Check, Download, Share2, Star } from 'lucide-react';
+import { Check, Download, Share2, Star } from 'lucide-react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import type { ReactNode } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
-import { formatNumber } from '../../lib/format';
-import { heatmapLevelForXp } from '../../components/stats/ActivityHeatmap';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import { useTheme } from '../theme/ThemeProvider';
-import type { WeeklyRecapData } from './weeklyRecapModel';
+import { weeklyRecapShortDate, type WeeklyRecapCardContent, type WeeklyRecapEmphasis } from './weeklyRecapCard';
 import {
   WEEKLY_RECAP_CAPTION_MAX_LENGTH,
-  WEEKLY_RECAP_SELECTION_KEYS,
   type WeeklyRecapSelection,
   type WeeklyRecapSelectionKey,
 } from './weeklyRecapSelection';
 import type { WeeklyRecapShareOutcome } from './weeklyRecapShare';
-
-export interface WeeklyRecapMilestones {
-  readonly unlocked: number;
-  readonly total: number;
-}
 
 export interface WeeklyRecapScreenActions {
   toggleSelection(key: WeeklyRecapSelectionKey): void;
@@ -28,12 +19,25 @@ export interface WeeklyRecapScreenActions {
   download(): void;
 }
 
+/** The controls' headline and notes, derived from the same week as the card. */
+export interface WeeklyRecapIntro {
+  /** This week beats the best complete week: "so far" when `since` is null. */
+  readonly bestWeek: { readonly since: string | null } | null;
+  readonly aheadOfLastWeek: number | null;
+  /** "Weekly word counts started on {date}", only for a week that is not fully counted. */
+  readonly countedSince: string | null;
+}
+
 export interface WeeklyRecapScreenProps {
-  readonly data: WeeklyRecapData;
+  readonly content: WeeklyRecapCardContent;
+  readonly intro: WeeklyRecapIntro;
   readonly dateRangeLabel: string;
   readonly selection: WeeklyRecapSelection;
+  /** The toggles that have something to show. */
+  readonly selectionKeys: readonly WeeklyRecapSelectionKey[];
+  /** The hero shows XP until words are counted for this course. */
+  readonly heroIsXp: boolean;
   readonly caption: string;
-  readonly milestones: WeeklyRecapMilestones;
   readonly isBusy: boolean;
   readonly lastOutcome: WeeklyRecapShareOutcome | null;
   readonly exportError: boolean;
@@ -41,13 +45,13 @@ export interface WeeklyRecapScreenProps {
 }
 
 const selectionCopy: Record<WeeklyRecapSelectionKey, ReturnType<typeof msg>> = {
-  totalXp: msg({ id: 'weeklyRecap.toggle.total-xp', message: 'Total XP' }),
-  reviewed: msg({ id: 'weeklyRecap.toggle.reviews', message: 'Reviews this week' }),
-  activeDays: msg({ id: 'weeklyRecap.toggle.active-days', message: 'Active days' }),
-  bestDay: msg({ id: 'weeklyRecap.toggle.best-day', message: 'Best day' }),
-  heatmap: msg({ id: 'weeklyRecap.toggle.heatmap', message: 'Day-by-day heatmap' }),
-  milestones: msg({ id: 'weeklyRecap.toggle.milestones', message: 'Milestones unlocked' }),
+  words: msg({ id: 'weeklyRecap.toggle.words', message: 'Words learned' }),
+  streak: msg({ id: 'weeklyRecap.toggle.streak', message: 'Streak' }),
+  recall: msg({ id: 'weeklyRecap.toggle.recall', message: 'Recall' }),
+  wordOfWeek: msg({ id: 'weeklyRecap.toggle.word-of-week', message: 'Word of the week' }),
+  heatmap: msg({ id: 'weeklyRecap.toggle.heat', message: 'Heatmap' }),
 };
+const xpToggle = msg({ id: 'weeklyRecap.toggle.total-xp', message: 'Total XP' });
 
 const outcomeCopy: Record<WeeklyRecapShareOutcome, ReturnType<typeof msg>> = {
   shared: msg({ id: 'weeklyRecap.outcome.shared', message: 'Shared.' }),
@@ -59,104 +63,101 @@ const outcomeCopy: Record<WeeklyRecapShareOutcome, ReturnType<typeof msg>> = {
 export const weeklyRecapCopy = {
   weeklyRecap: msg({ id: 'weeklyRecap.kicker', message: 'Weekly recap' }),
   title: msg({ id: 'weeklyRecap.dialog.title', message: 'Your weekly recap' }),
-  xpThisWeek: msg({ id: 'weeklyRecap.metric.total-xp', message: 'XP this week' }),
-  reviewsThisWeek: msg({ id: 'weeklyRecap.metric.reviews', message: 'Reviews this week' }),
-  noStudyActivity: msg({ id: 'weeklyRecap.empty', message: 'No study activity yet this week. Come back after a review to see your recap.' }),
-  activeDays: msg({ id: 'weeklyRecap.metric.active-days', message: 'Active days' }),
-  bestDay: msg({ id: 'weeklyRecap.metric.best-day', message: 'Best day' }),
-  dailyXp: msg({ id: 'weeklyRecap.heatmap.label', message: 'Daily XP for the last 7 days' }),
-  milestones: msg({ id: 'weeklyRecap.milestones', message: '{unlocked} of {total} milestones unlocked (all-time)' }),
+  dailyXp: msg({ id: 'weeklyRecap.heatmap.week-label', message: 'Daily XP, Monday to Sunday' }),
   privacy: msg({ id: 'weeklyRecap.privacy', message: 'The image includes the selected metrics and your caption. Private words are never added automatically.' }),
 };
 
-const metric = (label: string, value: ReactNode) => <div><dt>{label}</dt><dd>{value}</dd></div>;
+const Emphasis = ({ parts }: { readonly parts: WeeklyRecapEmphasis }) =>
+  <>{parts.before}{parts.em && <em>{parts.em}</em>}{parts.after}</>;
 
-function MiniHeatmap({ days }: { readonly days: WeeklyRecapData['days'] }) {
-  const { i18n: activeI18n } = useLingui();
-  const locale = activeI18n.locale === 'pseudo' ? 'en' : activeI18n.locale || 'en';
-  const weekdayFormatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
-  const initialFormatter = new Intl.DateTimeFormat(locale, { weekday: 'narrow' });
-  return <div className="weekly-recap-card__heatmap-grid" role="list" aria-label={activeI18n._(weeklyRecapCopy.dailyXp)}>
-    {days.map(day => {
-      const weekday = weekdayFormatter.format(new Date(`${day.dateKey}T12:00:00`));
-      return <div key={day.dateKey} role="listitem" className="weekly-recap-card__heatmap-day">
-        <span role="img" className="weekly-recap-card__heatmap-cell" style={{ backgroundColor: `var(--weekly-recap-heat-${heatmapLevelForXp(day.xp)})` }} title={`${day.dateKey}: ${formatNumber(day.xp)} XP`} aria-label={`${weekday}, ${day.dateKey}: ${formatNumber(day.xp)} XP`} />
-        <small aria-hidden="true">{initialFormatter.format(new Date(`${day.dateKey}T12:00:00`))}</small>
-      </div>;
-    })}
-  </div>;
-}
-
-export function WeeklyRecapScreen({
-  data, dateRangeLabel, selection, caption, milestones, isBusy, lastOutcome, exportError, actions,
-}: WeeklyRecapScreenProps) {
+function WeeklyRecapCard({ content, dateRangeLabel, caption }: { readonly content: WeeklyRecapCardContent; readonly dateRangeLabel: string; readonly caption: string }) {
   const { _ } = useLingui();
   const isCrystal = useTheme().family === 'crystal';
   const showLumi = isCrystal && readLumiEnabled();
-  const visibleCaption = caption.trim();
-  const reviewedCount = data.reviewedCount ?? null;
-  const hasXp = data.totalXp > 0;
-  const selectionKeys = WEEKLY_RECAP_SELECTION_KEYS.filter(key =>
-    (key !== 'reviewed' || reviewedCount !== null)
-    && (hasXp || key === 'reviewed' || key === 'milestones'),
-  );
-  const bestDayLabel = data.bestDay
-    ? `${data.bestDay.dateKey} · ${formatNumber(data.bestDay.xp)} XP`
-    : '—';
-  return <div className="weekly-recap-screen" data-family={isCrystal ? 'crystal' : 'classic'}>
-    <section className={`weekly-recap-card${isCrystal ? ' weekly-recap-card--crystal' : ''}${showLumi ? ' weekly-recap-card--with-companion' : ''}`} aria-label={_(weeklyRecapCopy.title)}>
-      {isCrystal && <span className="weekly-recap-card__stack" aria-hidden="true" />}
-      {showLumi && <Lumi pose="proud" size={104} className="weekly-recap-card__companion" />}
-      <header className="weekly-recap-card__header">
-        {isCrystal
-          ? <Star size={18} fill="currentColor" strokeWidth={0} className="weekly-recap-card__brand-star" aria-hidden="true" />
-          : <span className="weekly-recap-card__brand-mark" aria-hidden="true">S</span>}
-        <p className="weekly-recap-card__kicker">{_(weeklyRecapCopy.weeklyRecap)}</p>
-        <p className="weekly-recap-card__range">{dateRangeLabel}</p>
-      </header>
+  return <section className={`weekly-recap-card${isCrystal ? ' weekly-recap-card--crystal' : ''}${showLumi ? ' weekly-recap-card--with-companion' : ''}`} aria-label={_(weeklyRecapCopy.title)}>
+    {isCrystal && <span className="weekly-recap-card__stack" aria-hidden="true" />}
+    {showLumi && <Lumi pose="proud" size={104} className="weekly-recap-card__companion" />}
+    <header className="weekly-recap-card__header">
+      {isCrystal
+        ? <Star size={18} fill="currentColor" strokeWidth={0} className="weekly-recap-card__brand-star" aria-hidden="true" />
+        : <span className="weekly-recap-card__brand-mark" aria-hidden="true">S</span>}
+      <p className="weekly-recap-card__kicker">{content.kicker}</p>
+      <p className="weekly-recap-card__range">{dateRangeLabel}</p>
+    </header>
 
-      {!data.hasActivity ? (
-        <div className="weekly-recap-card__empty">
-          {_(weeklyRecapCopy.noStudyActivity)}
-          {selection.reviewed && reviewedCount !== null && <dl className="weekly-recap-card__metrics">{metric(_(weeklyRecapCopy.reviewsThisWeek), formatNumber(reviewedCount))}</dl>}
+    {content.empty !== null ? <div className="weekly-recap-card__empty">{content.empty}</div> : <>
+      {content.hero && (content.hero.value === null
+        ? <p className="weekly-recap-card__hero-note" data-hero="none-yet"><Emphasis parts={content.hero.label} /></p>
+        : <div className="weekly-recap-card__hero-metric">
+          <strong>{content.hero.value}</strong>
+          <span><Emphasis parts={content.hero.label} /></span>
+        </div>)}
+      {content.chips.length > 0 && <dl className="weekly-recap-card__metrics">
+        {content.chips.map(chip => <div key={chip.key} data-chip={chip.key}><dt>{chip.label}</dt><dd>{chip.value}</dd></div>)}
+      </dl>}
+      {content.wordOfWeek && <div className="weekly-recap-card__word">
+        <span className="weekly-recap-card__word-label">{content.wordOfWeek.label}</span>
+        <strong className="weekly-recap-card__word-value">{content.wordOfWeek.word}</strong>
+        <span className="weekly-recap-card__word-detail">{content.wordOfWeek.detail}</span>
+      </div>}
+      {content.heatmap && <div className="weekly-recap-card__heatmap">
+        <div className="weekly-recap-card__heatmap-grid" role="list" aria-label={_(weeklyRecapCopy.dailyXp)}>
+          {content.heatmap.map(day => <div key={day.dateKey} role="listitem" className="weekly-recap-card__heatmap-day">
+            <span role="img" className="weekly-recap-card__heatmap-cell" data-level={day.level} data-future={day.future ? 'true' : undefined} style={day.future ? undefined : { backgroundColor: `var(--weekly-recap-heat-${day.level})` }} title={day.label} aria-label={day.label} />
+            <small aria-hidden="true">{day.initial}</small>
+          </div>)}
         </div>
-      ) : (
-        <>
-          {selection.totalXp && hasXp && <div className="weekly-recap-card__hero-metric">
-            <strong>{formatNumber(data.totalXp)}</strong>
-            <span><Trans {...msg({ id: 'weeklyRecap.hero.total-xp', message: 'XP <0>this week</0>' })} components={{ 0: <em /> }} /></span>
-          </div>}
-          <dl className="weekly-recap-card__metrics">
-            {selection.reviewed && reviewedCount !== null && metric(_(weeklyRecapCopy.reviewsThisWeek), formatNumber(reviewedCount))}
-            {selection.activeDays && hasXp && metric(_(weeklyRecapCopy.activeDays), <>{formatNumber(data.activeDays)} / {formatNumber(data.days.length)}</>)}
-            {selection.bestDay && hasXp && metric(_(weeklyRecapCopy.bestDay), bestDayLabel)}
-          </dl>
-        </>
-      )}
+      </div>}
+      {isCrystal && content.garden && <div className="weekly-recap-card__bloom">
+        <p className="weekly-recap-card__bloom-label">{content.garden.label}</p>
+        <div className="weekly-recap-card__bloom-cells">
+          {content.garden.cells.map(cell => <div key={cell.key} className="weekly-recap-card__bloom-cell crystal-chamfer-sm" data-tier={cell.key}>
+            <span>{cell.from} <span aria-hidden="true">→</span> {cell.to}</span>
+            <strong>{cell.count}</strong>
+          </div>)}
+        </div>
+      </div>}
+    </>}
+    {caption && <p className="weekly-recap-card__range weekly-recap-card__caption">{caption}</p>}
+  </section>;
+}
 
-      {selection.heatmap && hasXp && <div className="weekly-recap-card__heatmap"><MiniHeatmap days={data.days} /></div>}
-      {visibleCaption && <p className="weekly-recap-card__range weekly-recap-card__caption">{visibleCaption}</p>}
-      {selection.milestones && <p className="weekly-recap-card__milestones"><span className="weekly-recap-card__garden" aria-hidden="true"><i /><i /><i /></span><Award size={16} aria-hidden="true" /><Trans {...msg({ id: 'weeklyRecap.milestones', message: '{unlocked} of {total} milestones unlocked (all-time)' })} values={{ unlocked: milestones.unlocked, total: milestones.total }} /></p>}
-    </section>
+function IntroHeadline({ bestWeek, locale }: { readonly bestWeek: WeeklyRecapIntro['bestWeek']; readonly locale: string }) {
+  const em = { 0: <em /> };
+  if (!bestWeek) return <Trans {...msg({ id: 'weeklyRecap.controls.title', message: 'Your week <0>so far.</0>' })} components={em} />;
+  if (bestWeek.since === null) return <Trans {...msg({ id: 'weeklyRecap.controls.best-week', message: 'Your best week <0>so far.</0>' })} components={em} />;
+  return <Trans {...msg({ id: 'weeklyRecap.controls.best-week-since', message: 'Your best week <0>since {date}.</0>' })} values={{ date: weeklyRecapShortDate(bestWeek.since, locale) }} components={em} />;
+}
+
+export function WeeklyRecapScreen({
+  content, intro, dateRangeLabel, selection, selectionKeys, heroIsXp, caption, isBusy, lastOutcome, exportError, actions,
+}: WeeklyRecapScreenProps) {
+  const { _, i18n: activeI18n } = useLingui();
+  const isCrystal = useTheme().family === 'crystal';
+  const locale = activeI18n.locale || 'en';
+  return <div className="weekly-recap-screen" data-family={isCrystal ? 'crystal' : 'classic'}>
+    <WeeklyRecapCard content={content} dateRangeLabel={dateRangeLabel} caption={caption.trim()} />
 
     <section className="weekly-recap-controls">
       <header className="weekly-recap-controls__intro">
         <p className="weekly-recap-controls__kicker"><Trans {...msg({ id: 'weeklyRecap.controls.kicker', message: 'Weekly recap <0/> Ready to share' })} components={{ 0: <span className="weekly-recap-controls__kicker-separator" aria-hidden="true" /> }} /></p>
-        <h1><Trans {...msg({ id: 'weeklyRecap.controls.title', message: 'Your week <0>so far.</0>' })} components={{ 0: <em /> }} /></h1>
+        <h1><IntroHeadline bestWeek={intro.bestWeek} locale={locale} /></h1>
+        {intro.aheadOfLastWeek !== null && intro.aheadOfLastWeek > 0 && <p className="weekly-recap-controls__lead">
+          <Trans {...msg({ id: 'weeklyRecap.controls.ahead', message: '<0>+{words, plural, one {# word} other {# words}}</0> compared with last week.' })} values={{ words: intro.aheadOfLastWeek }} components={{ 0: <strong /> }} />
+        </p>}
       </header>
-      <div className="weekly-recap-controls__unavailable">
-        <Trans {...msg({ context: 'weeklyRecap.unavailable', message: 'Word of the week, words learned, recall rate, study time, and streak need a reliable weekly data source we don\'t have yet, so they are left out rather than guessed.' })} />
-        {reviewedCount === null && <p><Trans {...msg({ context: 'weeklyRecap.reviews-unavailable', message: 'Reviews this week are unavailable until activity covers all seven days.' })} /></p>}
-      </div>
+      {intro.countedSince && <p className="weekly-recap-controls__unavailable">
+        <Trans {...msg({ id: 'weeklyRecap.counted-since', message: 'Weekly word counts started on {date}.' })} values={{ date: weeklyRecapShortDate(intro.countedSince, locale) }} />
+      </p>}
 
-      <fieldset className="weekly-recap-controls__selection">
+      {selectionKeys.length > 0 && <fieldset className="weekly-recap-controls__selection">
         <legend><Trans {...msg({ context: 'weeklyRecap.selection.legend', message: 'Show on the card' })} /></legend>
         <div>{selectionKeys.map(key => <label key={key} className={selection[key] ? 'is-selected' : undefined}>
           <input type="checkbox" checked={selection[key]} onChange={() => actions.toggleSelection(key)} data-selection-key={key} />
           {selection[key] && <Check size={13} strokeWidth={2.6} aria-hidden="true" />}
-          {_(selectionCopy[key])}
+          {_(key === 'words' && heroIsXp ? xpToggle : selectionCopy[key])}
         </label>)}</div>
-      </fieldset>
+      </fieldset>}
 
       <div className="weekly-recap-controls__caption">
         <label htmlFor="weekly-recap-caption"><Trans {...msg({ context: 'weeklyRecap.caption.label', message: 'Caption' })} /></label>

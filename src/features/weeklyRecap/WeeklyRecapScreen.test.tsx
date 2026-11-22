@@ -3,8 +3,9 @@ import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import type { WeeklyRecapData } from './weeklyRecapModel';
-import { buildSuggestedWeeklyRecapCaption, defaultWeeklyRecapSelection, toggleWeeklyRecapSelection } from './weeklyRecapSelection';
+import { buildWeeklyRecapCardContent } from './weeklyRecapCard';
+import type { WeeklyRecapData, WeeklyRecapStats } from './weeklyRecapModel';
+import { defaultWeeklyRecapSelection } from './weeklyRecapSelection';
 import { WeeklyRecapScreen, type WeeklyRecapScreenProps } from './WeeklyRecapScreen';
 
 i18n.load('en', {});
@@ -13,118 +14,114 @@ i18n.activate('en');
 const render = (node: ReactNode) => renderToStaticMarkup(<I18nProvider i18n={i18n}>{node}</I18nProvider>);
 
 const data = (overrides: Partial<WeeklyRecapData> = {}): WeeklyRecapData => ({
-  rangeStart: '2026-09-21',
-  rangeEnd: '2026-09-27',
-  days: Array.from({ length: 7 }, (_, index) => ({ dateKey: `2026-09-2${index}`, xp: index === 3 ? 90 : 0 })),
+  rangeStart: '2026-11-16',
+  rangeEnd: '2026-11-22',
+  days: Array.from({ length: 7 }, (_, index) => ({ dateKey: `2026-11-${16 + index}`, xp: index === 1 ? 90 : 0, ...(index > 3 ? { future: true } : {}) })),
   totalXp: 90,
   activeDays: 1,
-  bestDay: { dateKey: '2026-09-23', xp: 90 },
+  bestDay: { dateKey: '2026-11-17', xp: 90 },
   reviewedCount: null,
   hasActivity: true,
   ...overrides,
 });
 
-const baseProps = (overrides: Partial<WeeklyRecapScreenProps> = {}): WeeklyRecapScreenProps => ({
-  data: data(),
-  dateRangeLabel: 'Sep 21 – Sep 27',
-  selection: defaultWeeklyRecapSelection(),
-  caption: 'Great week!',
-  milestones: { unlocked: 2, total: 6 },
-  isBusy: false,
-  lastOutcome: null,
-  exportError: false,
-  actions: { toggleSelection: vi.fn(), setCaption: vi.fn(), share: vi.fn(), download: vi.fn() },
-  ...overrides,
-});
+const verified: WeeklyRecapStats = {
+  weekStart: '2026-11-16',
+  words: { started: 146, mastered: 10, since: null },
+  bestWeek: null,
+  aheadOfLastWeek: null,
+  streakDays: 12,
+  recall: { percent: 91, since: null },
+  studied: { activeMs: 9_600_000, since: null },
+  wordOfWeek: null,
+};
+
+const props = (overrides: Partial<WeeklyRecapScreenProps> & { stats?: WeeklyRecapStats | null; recap?: WeeklyRecapData } = {}): WeeklyRecapScreenProps => {
+  const { stats = verified, recap = data(), ...rest } = overrides;
+  const selection = rest.selection ?? defaultWeeklyRecapSelection();
+  return {
+    content: buildWeeklyRecapCardContent({ data: recap, stats, selection, wordOfWeek: null, locale: 'en' }),
+    intro: { bestWeek: null, aheadOfLastWeek: null, countedSince: null },
+    dateRangeLabel: '16 – 22 Nov',
+    selection,
+    selectionKeys: ['words', 'streak', 'recall', 'heatmap'],
+    heroIsXp: stats?.words == null,
+    caption: 'Great week!',
+    isBusy: false,
+    lastOutcome: null,
+    exportError: false,
+    actions: { toggleSelection: vi.fn(), setCaption: vi.fn(), share: vi.fn(), download: vi.fn() },
+    ...rest,
+  };
+};
+
+const cardOf = (html: string) => html.split('<section class="weekly-recap-controls"')[0];
 
 describe('WeeklyRecapScreen', () => {
-  it('shows an honest empty state instead of inventing a best week', () => {
-    const html = render(<WeeklyRecapScreen {...baseProps({ data: data({ hasActivity: false, totalXp: 0, activeDays: 0, bestDay: null }) })} />);
-    expect(html).toContain('No study activity yet this week.');
-    expect(html).not.toContain('best week');
+  it('draws the board card: words hero, streak, recall and studied chips, Monday to Sunday heat', () => {
+    const card = cardOf(render(<WeeklyRecapScreen {...props()} />));
+    expect(card).toContain('My week');
+    expect(card).toContain('<strong>146</strong><span>words <em>this week</em></span>');
+    expect(card).toContain('<div data-chip="streak"><dt>streak</dt><dd>12 d</dd></div>');
+    expect(card).toContain('<div data-chip="recall"><dt>recall</dt><dd>91%</dd></div>');
+    expect(card).toContain('<div data-chip="studied"><dt>studied</dt><dd>2 h 40</dd></div>');
+    expect(card.match(/weekly-recap-card__heatmap-day/g)).toHaveLength(7);
+    expect(card.match(/data-future="true"/g)).toHaveLength(3);
+    expect(card).not.toContain('weekly-recap-card__bloom');
   });
 
-  it('renders only the metrics that are toggled on', () => {
-    const selection = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'bestDay');
-    const html = render(<WeeklyRecapScreen {...baseProps({ selection })} />);
-    expect(html).toContain('XP <em>this week</em>');
-    // "Best day" still appears once, as the always-visible toggle checkbox label; the metric card itself is gone.
-    expect(html.match(/Best day/g)).toHaveLength(1);
+  it('shows an honest empty state instead of zero metrics', () => {
+    const html = render(<WeeklyRecapScreen {...props({ stats: null, recap: data({ totalXp: 0, activeDays: 0, bestDay: null, hasActivity: false }), caption: '' })} />);
+    expect(html).toContain('No study activity yet this week. Come back after a review to see your recap.');
+    expect(cardOf(html)).not.toContain('weekly-recap-card__metrics');
   });
 
-  it('always discloses that word-of-week and recall are unavailable rather than guessed', () => {
-    const html = render(<WeeklyRecapScreen {...baseProps()} />);
-    expect(html).toContain("don&#x27;t have yet");
+  it('keeps the XP hero and its toggle until words are counted for the course', () => {
+    const html = render(<WeeklyRecapScreen {...props({ stats: null, selectionKeys: ['words', 'heatmap'] })} />);
+    expect(cardOf(html)).toContain('<strong>90</strong><span>XP <em>this week</em></span>');
+    expect(html).toContain('data-selection-key="words" checked=""/><svg');
+    expect(html).toContain('Total XP</label>');
   });
 
-  it('shows the reviewed count only when authoritative activity covers the full week', () => {
-    const available = render(<WeeklyRecapScreen {...baseProps({ data: data({ reviewedCount: 14 }) })} />);
-    expect(available).toContain('Reviews this week');
-    expect(available).toContain('14');
-    expect(available).toContain('data-selection-key="reviewed"');
+  it('writes the headline, the gain on last week and the counting note from the week', () => {
+    const best = render(<WeeklyRecapScreen {...props({ intro: { bestWeek: { since: null }, aheadOfLastWeek: 38, countedSince: null } })} />);
+    expect(best).toContain('Your best week <em>so far.</em>');
+    expect(best).toContain('<strong>+38 words</strong> compared with last week.');
 
-    const hidden = render(<WeeklyRecapScreen {...baseProps({
-      data: data({ reviewedCount: 14 }),
-      selection: toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'reviewed'),
-    })} />);
-    expect(hidden.match(/Reviews this week/g)).toHaveLength(1); // The toggle remains; the card metric is gone.
-    expect(hidden).not.toContain('<dd>14</dd>');
+    const since = render(<WeeklyRecapScreen {...props({ intro: { bestWeek: { since: '2026-11-26' }, aheadOfLastWeek: null, countedSince: '2026-11-26' } })} />);
+    expect(since).toContain('Your best week <em>since 26 Nov.</em>');
+    expect(since).toContain('Weekly word counts started on 26 Nov.');
+    expect(since).not.toContain('compared with last week');
 
-    const unavailable = render(<WeeklyRecapScreen {...baseProps()} />);
-    expect(unavailable).toContain('Reviews this week are unavailable until activity covers all seven days.');
-    expect(unavailable).not.toContain('data-selection-key="reviewed"');
+    const plain = render(<WeeklyRecapScreen {...props()} />);
+    expect(plain).toContain('Your week <em>so far.</em>');
+    expect(plain).not.toContain('Weekly word counts started on');
   });
 
-  it('shows reviews without presenting zero XP days as zero study days', () => {
-    const html = render(<WeeklyRecapScreen {...baseProps({ data: data({ totalXp: 0, activeDays: 0, bestDay: null, reviewedCount: 9 }) })} />);
-    const [card] = html.split('<section class="weekly-recap-controls"');
-    expect(card).toContain('<dd>9</dd>');
-    expect(card).not.toContain('XP <em>this week</em>');
-    expect(card).not.toContain('weekly-recap-card__hero-metric');
-    expect(card).not.toContain('Active days');
-    expect(html).not.toContain('data-selection-key="activeDays"');
-    expect(html).not.toContain('data-selection-key="heatmap"');
+  it('lists only the toggles that have something to show', () => {
+    const html = render(<WeeklyRecapScreen {...props({ selectionKeys: ['words', 'heatmap'] })} />);
+    expect(html).toContain('data-selection-key="words"');
+    expect(html).toContain('data-selection-key="heatmap"');
+    expect(html).not.toContain('data-selection-key="streak"');
+    expect(html).not.toContain('data-selection-key="wordOfWeek"');
   });
 
-  it('does not keep an automatic review count in the preview after that metric is unchecked', () => {
-    const reviewOnly = data({ totalXp: 0, activeDays: 0, bestDay: null, reviewedCount: 9 });
-    const selection = toggleWeeklyRecapSelection(defaultWeeklyRecapSelection(), 'reviewed');
-    const html = render(<WeeklyRecapScreen {...baseProps({
-      data: reviewOnly, selection, caption: buildSuggestedWeeklyRecapCaption(reviewOnly, selection),
-    })} />);
-    const [card] = html.split('<section class="weekly-recap-controls"');
-    expect(card).not.toContain('9 reviews');
-    expect(card).not.toContain('<dd>9</dd>');
-  });
-
-  it('shows the caption character budget', () => {
-    const html = render(<WeeklyRecapScreen {...baseProps({ caption: 'hi' })} />);
-    expect(html).toContain('2 / 220');
-  });
-
-  it('shows the trimmed caption in the recap card and omits whitespace-only captions', () => {
-    const withCaption = render(<WeeklyRecapScreen {...baseProps({ caption: '  Great week!  ' })} />);
-    const [cardWithCaption] = withCaption.split('<section class="weekly-recap-controls"');
-    expect(cardWithCaption).toContain('Great week!');
-    expect(cardWithCaption).not.toContain('  Great week!  ');
-    expect(cardWithCaption.match(/weekly-recap-card__range/g)).toHaveLength(2);
-
-    const withoutCaption = render(<WeeklyRecapScreen {...baseProps({ caption: '   ' })} />);
-    const [cardWithoutCaption] = withoutCaption.split('<section class="weekly-recap-controls"');
-    expect(cardWithoutCaption).not.toContain('Great week!');
-    expect(cardWithoutCaption.match(/weekly-recap-card__range/g)).toHaveLength(1);
+  it('shows the caption character budget and the trimmed caption on the card', () => {
+    const html = render(<WeeklyRecapScreen {...props({ caption: '  Great week!  ' })} />);
+    expect(html).toContain('15 / 220');
+    expect(cardOf(html)).toContain('<p class="weekly-recap-card__range weekly-recap-card__caption">Great week!</p>');
+    expect(cardOf(render(<WeeklyRecapScreen {...props({ caption: '   ' })} />))).not.toContain('weekly-recap-card__caption');
   });
 
   it('disables both share actions while an export is in flight', () => {
-    const html = render(<WeeklyRecapScreen {...baseProps({ isBusy: true })} />);
-    expect(html.match(/disabled=""/g)?.length).toBe(2);
+    const html = render(<WeeklyRecapScreen {...props({ isBusy: true })} />);
+    expect(html.match(/disabled=""/g)).toHaveLength(2);
   });
 
   it('surfaces the last share outcome and a distinct export error', () => {
-    const shared = render(<WeeklyRecapScreen {...baseProps({ lastOutcome: 'copied' })} />);
-    expect(shared).toContain('Copied to your clipboard.');
-
-    const failed = render(<WeeklyRecapScreen {...baseProps({ exportError: true })} />);
-    expect(failed).toContain('Could not create the image.');
+    expect(render(<WeeklyRecapScreen {...props({ lastOutcome: 'copied' })} />)).toContain('Copied to your clipboard.');
+    const error = render(<WeeklyRecapScreen {...props({ exportError: true, lastOutcome: 'shared' })} />);
+    expect(error).toContain('Could not create the image. Please try again.');
+    expect(error).not.toContain('Shared.');
   });
 });

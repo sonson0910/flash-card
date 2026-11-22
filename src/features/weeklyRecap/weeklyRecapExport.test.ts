@@ -1,6 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
-import type { WeeklyRecapData } from './weeklyRecapModel';
-import { buildSuggestedWeeklyRecapCaption, defaultWeeklyRecapSelection } from './weeklyRecapSelection';
+import { i18n } from '@lingui/core';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { buildWeeklyRecapCardContent, type WeeklyRecapCardContent } from './weeklyRecapCard';
+import type { WeeklyRecapData, WeeklyRecapStats } from './weeklyRecapModel';
+import { defaultWeeklyRecapSelection, type WeeklyRecapSelection } from './weeklyRecapSelection';
 import {
   drawWeeklyRecapCard,
   renderWeeklyRecapPng,
@@ -11,50 +13,50 @@ import {
   type WeeklyRecapExportTheme,
 } from './weeklyRecapExport';
 
+beforeAll(() => {
+  i18n.load('en', {});
+  i18n.activate('en');
+});
+
 const theme: WeeklyRecapExportTheme = {
   background: '#0b1220', text: '#f5f7fb', textMuted: '#9aa5b8', brand: '#38bdf8',
-  heatLevels: ['#111827', '#164e63', '#0e7490', '#0891b2', '#22d3ee'],
+  heatLevels: ['#111827', '#164e63', '#0e7490', '#0891b2', '#22d3ee'], cardChip: 'chip-tint',
 };
 
-const englishCopy: WeeklyRecapExportCopy = {
+const copy: WeeklyRecapExportCopy = {
   weeklyRecap: 'Weekly recap',
-  xpThisWeek: 'XP this week',
-  reviewsThisWeek: 'Reviews this week',
-  noStudyActivity: 'No study activity yet this week.',
-  activeDays: 'active days',
-  bestDay: 'Best day',
-  dailyXp: 'Daily XP',
-  milestones: (unlocked, total) => `${unlocked} / ${total} milestones unlocked (all-time)`,
   privacy: 'The image includes the selected metrics and your caption. Private words are never added automatically.',
 };
 
-const vietnameseCopy: WeeklyRecapExportCopy = {
-  weeklyRecap: 'Tổng kết tuần',
-  xpThisWeek: 'XP tuần này',
-  reviewsThisWeek: 'Lượt ôn tuần này',
-  noStudyActivity: 'Tuần này chưa có hoạt động học nào.',
-  activeDays: 'Ngày học',
-  bestDay: 'Ngày tốt nhất',
-  dailyXp: 'XP mỗi ngày trong 7 ngày qua',
-  milestones: (unlocked, total) => `Đã mở khóa ${unlocked} / ${total} cột mốc (từ trước đến nay)`,
-  privacy: 'Ảnh chia sẻ gồm các chỉ số đã chọn và chú thích của bạn. Từ riêng tư không được tự động thêm vào.',
-};
-
 const recap = (overrides: Partial<WeeklyRecapData> = {}): WeeklyRecapData => ({
-  rangeStart: '2026-09-21',
-  rangeEnd: '2026-09-27',
+  rangeStart: '2026-11-16',
+  rangeEnd: '2026-11-22',
   days: [
-    { dateKey: '2026-09-21', xp: 0 }, { dateKey: '2026-09-22', xp: 40 }, { dateKey: '2026-09-23', xp: 0 },
-    { dateKey: '2026-09-24', xp: 90 }, { dateKey: '2026-09-25', xp: 0 }, { dateKey: '2026-09-26', xp: 20 },
-    { dateKey: '2026-09-27', xp: 0 },
+    { dateKey: '2026-11-16', xp: 0 }, { dateKey: '2026-11-17', xp: 40 }, { dateKey: '2026-11-18', xp: 0 },
+    { dateKey: '2026-11-19', xp: 90 }, { dateKey: '2026-11-20', xp: 0, future: true },
+    { dateKey: '2026-11-21', xp: 0, future: true }, { dateKey: '2026-11-22', xp: 0, future: true },
   ],
-  totalXp: 150,
-  activeDays: 3,
-  bestDay: { dateKey: '2026-09-24', xp: 90 },
+  totalXp: 130,
+  activeDays: 2,
+  bestDay: { dateKey: '2026-11-19', xp: 90 },
   reviewedCount: null,
   hasActivity: true,
   ...overrides,
 });
+
+const verified: WeeklyRecapStats = {
+  weekStart: '2026-11-16',
+  words: { started: 146, mastered: 10, since: null },
+  bestWeek: { since: null },
+  aheadOfLastWeek: 38,
+  streakDays: 12,
+  recall: { percent: 91, since: null },
+  studied: { activeMs: 9_600_000, since: null },
+  wordOfWeek: { cardId: 'word-immediate', reviews: 4 },
+};
+
+const content = (selection: WeeklyRecapSelection = defaultWeeklyRecapSelection(), stats: WeeklyRecapStats | null = verified, data = recap()): WeeklyRecapCardContent =>
+  buildWeeklyRecapCardContent({ data, stats, selection, wordOfWeek: { word: 'immediate', reviews: 4 }, locale: 'en' });
 
 function createMockContext() {
   const calls: {
@@ -79,133 +81,78 @@ function createMockContext() {
 }
 
 describe('drawWeeklyRecapCard', () => {
-  it('draws every selected field and always draws the privacy footer', () => {
+  it('draws the same fields the card shows, and always the privacy footer', () => {
     const { context, calls } = createMockContext();
-    drawWeeklyRecapCard(context, {
-      data: recap(), selection: defaultWeeklyRecapSelection(), caption: 'Great week!',
-      milestones: { unlocked: 2, total: 6 }, dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
-    });
+    drawWeeklyRecapCard(context, { content: content(), caption: '146 new words this week on SonFlash.', dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme });
+    const text = calls.fillText.join(' | ');
 
-    expect(calls.fillText).toContain('150');
-    expect(calls.fillText).toContain('3 / 7 active days');
-    expect(calls.fillText.some(text => text.includes('Best day'))).toBe(true);
-    expect(calls.fillText).toContain('2 / 6 milestones unlocked (all-time)');
-    expect(calls.fillText).toContain('Great week!');
-    expect(calls.fillText.join(' ')).toContain(englishCopy.privacy);
-    expect(calls.fillRect).toBe(8); // 1 background rect + 7 heatmap-day cells.
-
-    const date = calls.fillTextY.find(call => call.text === 'Sep 21 – Sep 27');
-    const xp = calls.fillTextY.find(call => call.text === '150');
-    if (!date || !xp) throw new Error('Expected date and XP baselines in the export.');
-    expect(xp.y - date.y).toBeGreaterThanOrEqual(136);
+    expect(text).toContain('SONFLASH · MY WEEK');
+    expect(text).toContain('16 – 22 Nov');
+    expect(text).toContain('146');
+    expect(text).toContain('this week');
+    for (const value of ['12 d', 'streak', '91%', 'recall', '2 h 40', 'studied']) expect(text).toContain(value);
+    expect(text).toContain('146 new words this week on SonFlash.');
+    expect(calls.fillText.join(' ')).toContain(copy.privacy);
   });
 
-  it('localizes labels and weekday abbreviations for the active locale', () => {
-    const { context, calls } = createMockContext();
-    drawWeeklyRecapCard(context, {
-      data: recap(), selection: defaultWeeklyRecapSelection(), caption: '',
-      milestones: { unlocked: 2, total: 6 }, dateRangeLabel: '21 thg 9 – 27 thg 9', locale: 'vi', copy: vietnameseCopy, theme,
-    });
+  it('leaves the word of the week off the image until the learner turns it on', () => {
+    const off = createMockContext();
+    drawWeeklyRecapCard(off.context, { content: content(), caption: '', dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme });
+    expect(off.calls.fillText).not.toContain('immediate');
 
-    expect(calls.fillText).toContain('SONFLASH · TỔNG KẾT TUẦN');
-    expect(calls.fillText).toContain('XP tuần này');
-    expect(calls.fillText).toContain('3 / 7 Ngày học');
-    expect(calls.fillText.some(text => text.includes('Ngày tốt nhất'))).toBe(true);
-    expect(calls.fillText).toContain('XP MỖI NGÀY TRONG 7 NGÀY QUA');
-    expect(calls.fillText).toContain('Đã mở khóa 2 / 6 cột mốc (từ trước đến nay)');
-    expect(calls.fillText).toContain('T2');
-    expect(calls.fillText).toContain('CN');
-    expect(calls.fillText).not.toContain('M');
+    const on = createMockContext();
+    drawWeeklyRecapCard(on.context, { content: content({ ...defaultWeeklyRecapSelection(), wordOfWeek: true }), caption: '', dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme });
+    expect(on.calls.fillText).toContain('immediate');
+    expect(on.calls.fillText).toContain('Reviewed 4 times this week');
   });
 
   it('omits a field entirely when the selection turns it off', () => {
     const { context, calls } = createMockContext();
     drawWeeklyRecapCard(context, {
-      data: recap(), selection: { ...defaultWeeklyRecapSelection(), totalXp: false, heatmap: false, milestones: false },
-      caption: '', milestones: { unlocked: 2, total: 6 }, dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
+      content: content({ ...defaultWeeklyRecapSelection(), streak: false, recall: false, heatmap: false }),
+      caption: '', dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme,
     });
-
-    expect(calls.fillText).not.toContain('150');
-    expect(calls.fillText.some(text => text.includes('milestones unlocked'))).toBe(false);
-    // Background fillRect only; no heatmap day cells were drawn.
-    expect(calls.fillRect).toBe(1);
+    expect(calls.fillText).not.toContain('12 d');
+    expect(calls.fillText).not.toContain('91%');
+    expect(calls.fillText).not.toContain('M');
+    expect(calls.fillText).toContain('2 h 40');
   });
 
-  it('keeps reviewed count in parity with its selection toggle', () => {
-    const selected = createMockContext();
-    drawWeeklyRecapCard(selected.context, {
-      data: recap({ reviewedCount: 14 }), selection: defaultWeeklyRecapSelection(), caption: '',
-      milestones: { unlocked: 2, total: 6 }, dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
-    });
-    expect(selected.calls.fillText).toContain('14');
-    expect(selected.calls.fillText).toContain('Reviews this week');
-
-    const omitted = createMockContext();
-    drawWeeklyRecapCard(omitted.context, {
-      data: recap({ reviewedCount: 14 }), selection: { ...defaultWeeklyRecapSelection(), reviewed: false }, caption: '',
-      milestones: { unlocked: 2, total: 6 }, dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
-    });
-
-    expect(omitted.calls.fillText).not.toContain('14');
-    expect(omitted.calls.fillText).not.toContain('Reviews this week');
-  });
-
-  it('exports reviews without showing zero XP activity metrics', () => {
+  it('draws days still to come empty, never as a heat step', () => {
     const { context, calls } = createMockContext();
-    drawWeeklyRecapCard(context, {
-      data: recap({ totalXp: 0, activeDays: 0, bestDay: null, reviewedCount: 9 }),
-      selection: defaultWeeklyRecapSelection(), caption: '',
-      milestones: { unlocked: 2, total: 6 }, dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
-    });
-    expect(calls.fillText).toContain('9');
-    expect(calls.fillText).toContain('Reviews this week');
-    expect(calls.fillText).not.toContain(englishCopy.xpThisWeek);
-    expect(calls.fillText.some(text => text.includes('active days'))).toBe(false);
-    expect(calls.fillText).not.toContain('DAILY XP');
+    drawWeeklyRecapCard(context, { content: content(), caption: '', dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme });
+    // Monday 0 XP, Tuesday 40, Wednesday 0, Thursday 90, then three future days.
+    const cells = calls.fillStyle.filter(style => theme.heatLevels.includes(style as never) || style === 'chip-tint');
+    expect(cells.slice(-7)).toEqual(['#111827', '#0e7490', '#111827', '#0891b2', 'chip-tint', 'chip-tint', 'chip-tint']);
   });
 
-  it('does not export unchecked metrics through the automatic caption', () => {
-    const reviewOnly = recap({ totalXp: 0, activeDays: 0, bestDay: null, reviewedCount: 9 });
-    const selection = { ...defaultWeeklyRecapSelection(), reviewed: false };
-    const { context, calls } = createMockContext();
-    drawWeeklyRecapCard(context, {
-      data: reviewOnly, selection, caption: buildSuggestedWeeklyRecapCaption(reviewOnly, selection),
-      milestones: { unlocked: 2, total: 6 }, dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
-    });
-    expect(calls.fillText).not.toContain('9');
-    expect(calls.fillText).not.toContain('9 reviews this week.');
+  it('draws the bloom garden only in Crystal', () => {
+    const classic = createMockContext();
+    drawWeeklyRecapCard(classic.context, { content: content(), caption: '', dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme });
+    expect(classic.calls.fillText.join(' ')).not.toContain('BLOOM GARDEN');
 
-    const xpWeek = recap();
-    const withoutXp = { ...defaultWeeklyRecapSelection(), totalXp: false, activeDays: false };
-    const xpOutput = createMockContext();
-    drawWeeklyRecapCard(xpOutput.context, {
-      data: xpWeek, selection: withoutXp, caption: buildSuggestedWeeklyRecapCaption(xpWeek, withoutXp),
-      milestones: { unlocked: 2, total: 6 }, dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
-    });
-    expect(xpOutput.calls.fillText).not.toContain('150 XP and 3 active days this week.');
-    expect(xpOutput.calls.fillText).not.toContain('150');
-    expect(xpOutput.calls.fillText).not.toContain('3 / 7 active days');
+    const crystal = createMockContext();
+    drawWeeklyRecapCard(crystal.context, { content: content(), caption: '', dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme: { ...theme, family: 'crystal' } });
+    const text = crystal.calls.fillText.join(' | ');
+    expect(text).toContain('BLOOM GARDEN');
+    expect(text).toContain('BUD → BLOOM');
+    expect(text).toContain('BLOOM → STAR');
+    expect(text).toContain('10');
   });
 
-  it('omits unavailable reviewed counts from the shared image', () => {
+  it('draws the empty-week sentence instead of zero metrics', () => {
     const { context, calls } = createMockContext();
-    drawWeeklyRecapCard(context, {
-      data: recap(), selection: defaultWeeklyRecapSelection(), caption: '',
-      milestones: { unlocked: 2, total: 6 }, dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
-    });
-
-    expect(calls.fillText).not.toContain('14');
-    expect(calls.fillText).not.toContain('Reviews this week');
+    const empty = content(defaultWeeklyRecapSelection(), null, recap({ days: recap().days.map(day => ({ ...day, xp: 0 })), totalXp: 0, activeDays: 0, bestDay: null, hasActivity: false }));
+    drawWeeklyRecapCard(context, { content: empty, caption: '', dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme });
+    const text = calls.fillText.join(' ');
+    expect(text).toContain('No study activity yet this week.');
+    expect(text).not.toContain('XP');
   });
 
   it('never draws an empty caption line', () => {
     const { context, calls } = createMockContext();
-    drawWeeklyRecapCard(context, {
-      data: recap({ hasActivity: false, totalXp: 0 }), selection: defaultWeeklyRecapSelection(), caption: '   ',
-      milestones: { unlocked: 0, total: 6 }, dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
-    });
-
-    expect(calls.fillText.join(' ')).toContain(englishCopy.privacy);
+    drawWeeklyRecapCard(context, { content: content(), caption: '   ', dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme });
+    expect(calls.fillTextY.filter(entry => entry.y === WEEKLY_RECAP_EXPORT_HEIGHT - 220)).toHaveLength(0);
   });
 });
 
@@ -221,8 +168,8 @@ describe('renderWeeklyRecapPng', () => {
     } as unknown as HTMLCanvasElement;
 
     const blob = await renderWeeklyRecapPng({
-      data: recap(), selection: defaultWeeklyRecapSelection(), caption: 'Hi', milestones: { unlocked: 1, total: 6 },
-      dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
+      content: content(), caption: 'Hi',
+      dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme,
     }, () => canvas);
 
     expect(canvas.width).toBe(WEEKLY_RECAP_EXPORT_WIDTH);
@@ -238,8 +185,8 @@ describe('renderWeeklyRecapPng', () => {
     } as unknown as HTMLCanvasElement;
 
     await expect(renderWeeklyRecapPng({
-      data: recap(), selection: defaultWeeklyRecapSelection(), caption: '', milestones: { unlocked: 0, total: 6 },
-      dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
+      content: content(), caption: '',
+      dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme,
     }, () => canvas)).rejects.toBeInstanceOf(WeeklyRecapExportUnavailableError);
   });
 
@@ -256,8 +203,8 @@ describe('renderWeeklyRecapPng', () => {
       } as unknown as HTMLCanvasElement;
 
       const promise = renderWeeklyRecapPng({
-        data: recap(), selection: defaultWeeklyRecapSelection(), caption: 'Hi', milestones: { unlocked: 1, total: 6 },
-        dateRangeLabel: 'Sep 21 – Sep 27', locale: 'en', copy: englishCopy, theme,
+        content: content(), caption: 'Hi',
+        dateRangeLabel: '16 – 22 Nov', locale: 'en', copy, theme,
       }, () => canvas);
 
       await vi.advanceTimersByTimeAsync(250);
