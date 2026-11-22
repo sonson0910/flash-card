@@ -18,7 +18,7 @@ msgctxt "progress.studied-since"
 msgid "<0>{duration}</0> studied since {date}"
 msgstr "Đã học <0>{duration}</0> kể từ {date}"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:175
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:181
 msgctxt "weeklyRecap.action.share"
 msgid "Share"
 msgstr "Chia sẻ"
@@ -263,7 +263,7 @@ msgstr "Danh hiệu"
 msgid "achievements.unlocked-count"
 msgstr "Đã mở khóa {earned} / {total}"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:172
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:178
 msgctxt "weeklyRecap.export-error"
 msgid "Could not create the image. Please try again."
 msgstr "Không tạo được ảnh. Vui lòng thử lại."
@@ -283,7 +283,7 @@ msgctxt "progress.studied"
 msgid "<0>{duration}</0> studied"
 msgstr "Đã học <0>{duration}</0>"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:163
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:169
 msgctxt "weeklyRecap.caption.label"
 msgid "Caption"
 msgstr "Chú thích"
@@ -293,7 +293,7 @@ msgctxt "weeklyRecap.saved-warning"
 msgid "Showing saved recap. Recent reviews may not be included."
 msgstr "Đang hiển thị bản tổng kết đã lưu. Các lượt ôn gần đây có thể chưa được tính."
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:154
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:160
 msgctxt "weeklyRecap.selection.legend"
 msgid "Show on the card"
 msgstr "Hiển thị trên thẻ"
@@ -918,32 +918,32 @@ msgid "weeklyRecap.chip.under-minute"
 msgstr "< 1 phút"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:146
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:152
 msgid "weeklyRecap.controls.ahead"
 msgstr "<0>+{words, plural, other {# từ}}</0> so với tuần trước."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:128
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:127
 msgid "weeklyRecap.controls.best-week"
 msgstr "Tuần tốt nhất của bạn <0>từ trước đến nay.</0>"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:129
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:128
 msgid "weeklyRecap.controls.best-week-since"
 msgstr "Tuần tốt nhất của bạn <0>kể từ {date}.</0>"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:143
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:149
 msgid "weeklyRecap.controls.kicker"
 msgstr "Tổng kết tuần <0/> Sẵn sàng chia sẻ"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:127
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:126
 msgid "weeklyRecap.controls.title"
 msgstr "Tuần của bạn <0>đến lúc này.</0>"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:150
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:156
 msgid "weeklyRecap.counted-since"
 msgstr "Số từ theo tuần được đếm từ ngày {date}."
 
@@ -1093,7 +1093,7 @@ msgstr "Đã ôn {reviews, plural, other {# lần}} trong tuần này"
 msgid "weeklyRecap.word-of-week.label"
 msgstr "Từ của tuần"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:176
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:182
 msgctxt "weeklyRecap.action.download"
 msgid "Download PNG"
 msgstr "Tải ảnh PNG"

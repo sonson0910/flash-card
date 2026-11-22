@@ -28,7 +28,7 @@ msgctxt "progress.lumi.link"
 msgid "Lumi · Link"
 msgstr ""
 
-#: src/features/dailyLearning/SessionBridge.tsx:168
+#: src/features/dailyLearning/SessionBridge.tsx:192
 msgctxt "session.bridge.skip"
 msgid "Skip"
 msgstr ""
@@ -871,7 +871,7 @@ msgctxt "webWords.actions.add-selected-to-session"
 msgid "Add to today’s session"
 msgstr ""
 
-#: src/features/dailyLearning/SessionBridge.tsx:164
+#: src/features/dailyLearning/SessionBridge.tsx:188
 msgctxt "session.bridge.continue"
 msgid "Continue"
 msgstr ""
@@ -992,7 +992,7 @@ msgstr ""
 msgid "progress.message.ready"
 msgstr ""
 
-#: src/features/dailyLearning/SessionBridge.tsx:112
+#: src/features/dailyLearning/SessionBridge.tsx:135
 msgctxt "session.bridge.combo"
 msgid "correct answers in a row"
 msgstr ""
@@ -1018,28 +1018,53 @@ msgid "{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards review
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:124
+#: src/features/dailyLearning/SessionBridge.tsx:148
 msgid "session.bridge.answer.correct"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:124
+#: src/features/dailyLearning/SessionBridge.tsx:148
 msgid "session.bridge.answer.missed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:40
+#: src/features/dailyLearning/SessionBridge.tsx:54
 msgid "session.bridge.card.flip"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:43
+#: src/features/dailyLearning/SessionBridge.tsx:57
 msgid "session.bridge.card.meaning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:34
+#: src/features/dailyLearning/SessionBridge.tsx:48
 msgid "session.bridge.card.source"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:25
+msgid "session.bridge.combo-tier.dreamy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:26
+msgid "session.bridge.combo-tier.dreamy-plus"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:23
+msgid "session.bridge.combo-tier.lovely"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:24
+msgid "session.bridge.combo-tier.sparkly"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:22
+msgid "session.bridge.combo-tier.sweet"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -1053,27 +1078,27 @@ msgid "session.bridge.completed-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:79
+#: src/features/dailyLearning/SessionBridge.tsx:97
 msgid "session.bridge.exit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:65
+#: src/features/dailyLearning/SessionBridge.tsx:79
 msgid "session.bridge.feedback.both"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:66
+#: src/features/dailyLearning/SessionBridge.tsx:80
 msgid "session.bridge.feedback.haptics"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:66
+#: src/features/dailyLearning/SessionBridge.tsx:80
 msgid "session.bridge.feedback.none"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:65
+#: src/features/dailyLearning/SessionBridge.tsx:79
 msgid "session.bridge.feedback.sound"
 msgstr ""
 
@@ -1088,32 +1113,32 @@ msgid "session.bridge.live-recap"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:136
+#: src/features/dailyLearning/SessionBridge.tsx:160
 msgid "session.bridge.lumi.body"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:134
+#: src/features/dailyLearning/SessionBridge.tsx:158
 msgid "session.bridge.lumi.name"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:135
+#: src/features/dailyLearning/SessionBridge.tsx:159
 msgid "session.bridge.lumi.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:142
+#: src/features/dailyLearning/SessionBridge.tsx:166
 msgid "session.bridge.preview"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:82
+#: src/features/dailyLearning/SessionBridge.tsx:100
 msgid "session.bridge.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:121
+#: src/features/dailyLearning/SessionBridge.tsx:145
 msgid "session.bridge.recent-answers"
 msgstr ""
 
@@ -1143,7 +1168,7 @@ msgid "session.bridge.summary.new-web"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:129
+#: src/features/dailyLearning/SessionBridge.tsx:153
 msgid "session.bridge.xp"
 msgstr ""
 
@@ -1193,7 +1218,7 @@ msgid "session.stage.review.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:99
+#: src/features/dailyLearning/SessionBridge.tsx:117
 msgid "shell.theme.quick-toggle"
 msgstr ""
 
@@ -1215,6 +1240,11 @@ msgstr ""
 #: src/features/dailyLearning/ProgressWorkspace.tsx:109
 msgctxt "progress.mastered.chip"
 msgid "Star"
+msgstr ""
+
+#: src/features/dailyLearning/SessionBridge.tsx:134
+msgctxt "session.bridge.combo-crystal"
+msgid "correct in a row"
 msgstr ""
 
 #. js-lingui-explicit-id

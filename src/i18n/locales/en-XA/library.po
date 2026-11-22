@@ -28,7 +28,7 @@ msgctxt "library.clear.decks"
 msgid "decks"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:233
+#: src/features/importExport/SpreadsheetImportDialog.tsx:244
 msgctxt "library.import.failed-save"
 msgid "The cards could not be saved. Check your connection and try again."
 msgstr ""
@@ -79,7 +79,7 @@ msgctxt "library.edit-card.save"
 msgid "Save changes"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:212
+#: src/features/importExport/SpreadsheetImportDialog.tsx:223
 msgctxt "library.import.more-issues"
 msgid "{count, plural, one {# more issue in the error report} other {# more issues in the error report}}"
 msgstr ""
@@ -158,7 +158,7 @@ msgctxt "library.edit-card.back-to-card"
 msgid "back to card"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:192
+#: src/features/importExport/SpreadsheetImportDialog.tsx:203
 msgctxt "library.import.deck-unassigned"
 msgid "{count, plural, one {# new card named a deck you do not have, so it was saved to Unassigned.} other {# new cards named decks you do not have, so they were saved to Unassigned.}}"
 msgstr ""
@@ -209,7 +209,7 @@ msgctxt "library.tools.dialogue"
 msgid "AI Dialogue"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:209
+#: src/features/importExport/SpreadsheetImportDialog.tsx:220
 msgctxt "library.import.issue-failed"
 msgid "Could not save"
 msgstr ""
@@ -234,7 +234,7 @@ msgctxt "library.clear.success"
 msgid "Your library was cleared."
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:231
+#: src/features/importExport/SpreadsheetImportDialog.tsx:242
 msgctxt "library.import.failed-empty"
 msgid "No supported card rows were found in this spreadsheet."
 msgstr ""
@@ -249,7 +249,7 @@ msgctxt "library.import.failed"
 msgid "Import failed"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:235
+#: src/features/importExport/SpreadsheetImportDialog.tsx:246
 msgctxt "library.import.failed-items"
 msgid "No cards were imported. Check the failed rows and your connection, then try again."
 msgstr ""
@@ -264,7 +264,7 @@ msgctxt "library.bulk.select-page"
 msgid "Select page"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:209
+#: src/features/importExport/SpreadsheetImportDialog.tsx:220
 msgctxt "library.import.issue-pending"
 msgid "Save not confirmed"
 msgstr ""
@@ -291,7 +291,7 @@ msgctxt "library.deck.unassigned"
 msgid "Unassigned"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:183
+#: src/features/importExport/SpreadsheetImportDialog.tsx:192
 msgctxt "library.import.results-so-far"
 msgid "Results so far"
 msgstr ""
@@ -341,7 +341,7 @@ msgctxt "library.edit-card.saving"
 msgid "Saving changes…"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:221
+#: src/features/importExport/SpreadsheetImportDialog.tsx:232
 msgctxt "library.import.partial-description"
 msgid "Some rows were saved. Review the summary and retry the rows that need attention."
 msgstr ""
@@ -494,6 +494,11 @@ msgctxt "library.edit-card.cancel"
 msgid "Cancel"
 msgstr ""
 
+#: src/features/importExport/SpreadsheetImportDialog.tsx:189
+msgctxt "library.import.partial-chip"
+msgid "Partial"
+msgstr ""
+
 #: src/features/library/LibraryDialogOverlays.tsx:387
 msgctxt "library.clear.try-again"
 msgid "Try again"
@@ -539,7 +544,7 @@ msgctxt "library.edit-card.description"
 msgid "Changes update this card while its review history stays intact."
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:202
+#: src/features/importExport/SpreadsheetImportDialog.tsx:213
 msgctxt "library.import.issues-title"
 msgid "Rows needing attention"
 msgstr ""
@@ -2290,7 +2295,7 @@ msgctxt "library.import.complete"
 msgid "Import complete"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:225
+#: src/features/importExport/SpreadsheetImportDialog.tsx:236
 msgctxt "library.import.failed-size"
 msgid "This file is too large to import. Choose a smaller spreadsheet and try again."
 msgstr ""
@@ -2310,7 +2315,7 @@ msgctxt "library.deck.dialog-description"
 msgid "Group words by exam, trip, book — anything you like."
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:209
+#: src/features/importExport/SpreadsheetImportDialog.tsx:220
 msgctxt "library.import.issue-invalid"
 msgid "Invalid row"
 msgstr ""
@@ -2386,7 +2391,7 @@ msgctxt "library-tools.deck-space"
 msgid "Deck space"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:229
+#: src/features/importExport/SpreadsheetImportDialog.tsx:240
 msgctxt "library.import.failed-parse"
 msgid "The spreadsheet rows could not be read. Check the Word and Translation columns."
 msgstr ""
@@ -2427,6 +2432,11 @@ msgctxt "library.card.open-details"
 msgid "Open card"
 msgstr ""
 
+#: src/features/importExport/SpreadsheetImportDialog.tsx:193
+msgctxt "library.import.result-preview"
+msgid "Result preview"
+msgstr ""
+
 #: src/features/library/LibraryDialogOverlays.tsx:474
 msgctxt "common.retry"
 msgid "Retry"
@@ -2458,7 +2468,7 @@ msgctxt "library.bulk.error"
 msgid "Some cards could not be updated. Try again."
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:244
+#: src/features/importExport/SpreadsheetImportDialog.tsx:255
 msgctxt "library.import.mapping-required"
 msgid "Required"
 msgstr ""
@@ -2603,7 +2613,7 @@ msgctxt "library.overview.kicker"
 msgid "Vocabulary"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:227
+#: src/features/importExport/SpreadsheetImportDialog.tsx:238
 msgctxt "library.import.failed-read"
 msgid "The spreadsheet could not be opened. Check the file and try again."
 msgstr ""
@@ -2624,12 +2634,12 @@ msgctxt "library.filters.starred"
 msgid "Starred"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:209
+#: src/features/importExport/SpreadsheetImportDialog.tsx:220
 msgctxt "library.import.issue-duplicate"
 msgid "Duplicate"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:218
+#: src/features/importExport/SpreadsheetImportDialog.tsx:229
 msgctxt "library.import.completed-description"
 msgid "The imported cards are ready in your library."
 msgstr ""
@@ -2640,12 +2650,12 @@ msgctxt "library.import.current-word"
 msgid "Current word: {word}"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:209
+#: src/features/importExport/SpreadsheetImportDialog.tsx:220
 msgctxt "library.import.issue-generation"
 msgid "Not generated"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:206
+#: src/features/importExport/SpreadsheetImportDialog.tsx:217
 msgctxt "library.import.issue-column"
 msgid "Column {column, number}"
 msgstr ""
@@ -2670,7 +2680,7 @@ msgctxt "library.import.summary"
 msgid "{created, plural, one {# created} other {# created}} · {reused, plural, one {# already present} other {# already present}} · {failed, plural, one {# failed} other {# failed}} · {skipped, plural, one {# skipped} other {# skipped}}"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:205
+#: src/features/importExport/SpreadsheetImportDialog.tsx:216
 msgctxt "library.import.issue-row"
 msgid "Row {row, number}"
 msgstr ""
@@ -2773,7 +2783,7 @@ msgctxt "library.deck.dialog-title"
 msgid "New deck"
 msgstr ""
 
-#: src/features/importExport/SpreadsheetImportDialog.tsx:242
+#: src/features/importExport/SpreadsheetImportDialog.tsx:253
 msgctxt "library.import.mapping-title"
 msgid "Column mapping"
 msgstr ""
@@ -2786,6 +2796,11 @@ msgstr ""
 #: src/features/library/LibraryCardGrid.tsx:332
 msgctxt "library.grid.collection-caption"
 msgid "Your words, ready when you are."
+msgstr ""
+
+#: src/features/importExport/SpreadsheetImportDialog.tsx:190
+msgctxt "library.import.partial-chip-detail"
+msgid "Some rows will not be imported."
 msgstr ""
 
 #: src/features/library/LibraryTools.tsx:935

@@ -18,7 +18,7 @@ msgctxt "progress.studied-since"
 msgid "<0>{duration}</0> studied since {date}"
 msgstr ""
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:175
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:181
 msgctxt "weeklyRecap.action.share"
 msgid "Share"
 msgstr ""
@@ -263,7 +263,7 @@ msgstr ""
 msgid "achievements.unlocked-count"
 msgstr ""
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:172
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:178
 msgctxt "weeklyRecap.export-error"
 msgid "Could not create the image. Please try again."
 msgstr ""
@@ -283,7 +283,7 @@ msgctxt "progress.studied"
 msgid "<0>{duration}</0> studied"
 msgstr ""
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:163
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:169
 msgctxt "weeklyRecap.caption.label"
 msgid "Caption"
 msgstr ""
@@ -293,7 +293,7 @@ msgctxt "weeklyRecap.saved-warning"
 msgid "Showing saved recap. Recent reviews may not be included."
 msgstr ""
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:154
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:160
 msgctxt "weeklyRecap.selection.legend"
 msgid "Show on the card"
 msgstr ""
@@ -918,32 +918,32 @@ msgid "weeklyRecap.chip.under-minute"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:146
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:152
 msgid "weeklyRecap.controls.ahead"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:128
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:127
 msgid "weeklyRecap.controls.best-week"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:129
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:128
 msgid "weeklyRecap.controls.best-week-since"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:143
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:149
 msgid "weeklyRecap.controls.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:127
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:126
 msgid "weeklyRecap.controls.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:150
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:156
 msgid "weeklyRecap.counted-since"
 msgstr ""
 
@@ -1093,7 +1093,7 @@ msgstr ""
 msgid "weeklyRecap.word-of-week.label"
 msgstr ""
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:176
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:182
 msgctxt "weeklyRecap.action.download"
 msgid "Download PNG"
 msgstr ""

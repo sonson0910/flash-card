@@ -28,7 +28,7 @@ msgctxt "progress.lumi.link"
 msgid "Lumi · Link"
 msgstr "Lumi · Link"
 
-#: src/features/dailyLearning/SessionBridge.tsx:168
+#: src/features/dailyLearning/SessionBridge.tsx:192
 msgctxt "session.bridge.skip"
 msgid "Skip"
 msgstr "Skip"
@@ -871,7 +871,7 @@ msgctxt "webWords.actions.add-selected-to-session"
 msgid "Add to today’s session"
 msgstr "Add to today’s session"
 
-#: src/features/dailyLearning/SessionBridge.tsx:164
+#: src/features/dailyLearning/SessionBridge.tsx:188
 msgctxt "session.bridge.continue"
 msgid "Continue"
 msgstr "Continue"
@@ -992,7 +992,7 @@ msgstr "Refreshing progress; saved metrics remain visible."
 msgid "progress.message.ready"
 msgstr "Progress is calculated from your learning history."
 
-#: src/features/dailyLearning/SessionBridge.tsx:112
+#: src/features/dailyLearning/SessionBridge.tsx:135
 msgctxt "session.bridge.combo"
 msgid "correct answers in a row"
 msgstr "correct answers in a row"
@@ -1018,29 +1018,54 @@ msgid "{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards review
 msgstr "{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards reviewed}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:124
+#: src/features/dailyLearning/SessionBridge.tsx:148
 msgid "session.bridge.answer.correct"
 msgstr "Remembered"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:124
+#: src/features/dailyLearning/SessionBridge.tsx:148
 msgid "session.bridge.answer.missed"
 msgstr "Missed"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:40
+#: src/features/dailyLearning/SessionBridge.tsx:54
 msgid "session.bridge.card.flip"
 msgstr "Tap or press <0>Space</0> to flip"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:43
+#: src/features/dailyLearning/SessionBridge.tsx:57
 msgid "session.bridge.card.meaning"
 msgstr "Meaning"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:34
+#: src/features/dailyLearning/SessionBridge.tsx:48
 msgid "session.bridge.card.source"
 msgstr "From {site}"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:25
+msgid "session.bridge.combo-tier.dreamy"
+msgstr "Dreamy"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:26
+msgid "session.bridge.combo-tier.dreamy-plus"
+msgstr "Dreamy+"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:23
+msgid "session.bridge.combo-tier.lovely"
+msgstr "Lovely"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:24
+msgid "session.bridge.combo-tier.sparkly"
+msgstr "Sparkly"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:22
+msgid "session.bridge.combo-tier.sweet"
+msgstr "Sweet"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1092
@@ -1053,27 +1078,27 @@ msgid "session.bridge.completed-count"
 msgstr "{stage} done · {done} of {total}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:79
+#: src/features/dailyLearning/SessionBridge.tsx:97
 msgid "session.bridge.exit"
 msgstr "Exit session"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:65
+#: src/features/dailyLearning/SessionBridge.tsx:79
 msgid "session.bridge.feedback.both"
 msgstr "Sound and haptics on"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:66
+#: src/features/dailyLearning/SessionBridge.tsx:80
 msgid "session.bridge.feedback.haptics"
 msgstr "Sound off, haptics on"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:66
+#: src/features/dailyLearning/SessionBridge.tsx:80
 msgid "session.bridge.feedback.none"
 msgstr "Sound and haptics off"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:65
+#: src/features/dailyLearning/SessionBridge.tsx:79
 msgid "session.bridge.feedback.sound"
 msgstr "Sound on, haptics off"
 
@@ -1088,32 +1113,32 @@ msgid "session.bridge.live-recap"
 msgstr "This session is complete."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:136
+#: src/features/dailyLearning/SessionBridge.tsx:160
 msgid "session.bridge.lumi.body"
 msgstr "Your answers so far are saved."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:134
+#: src/features/dailyLearning/SessionBridge.tsx:158
 msgid "session.bridge.lumi.name"
 msgstr "Lumi"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:135
+#: src/features/dailyLearning/SessionBridge.tsx:159
 msgid "session.bridge.lumi.title"
 msgstr "Nice rhythm!"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:142
+#: src/features/dailyLearning/SessionBridge.tsx:166
 msgid "session.bridge.preview"
 msgstr "Next stage preview"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:82
+#: src/features/dailyLearning/SessionBridge.tsx:100
 msgid "session.bridge.progress"
 msgstr "Session progress"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:121
+#: src/features/dailyLearning/SessionBridge.tsx:145
 msgid "session.bridge.recent-answers"
 msgstr "Latest answers"
 
@@ -1143,7 +1168,7 @@ msgid "session.bridge.summary.new-web"
 msgstr "{count, plural, one {# word} other {# words}} · {web} from the web"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:129
+#: src/features/dailyLearning/SessionBridge.tsx:153
 msgid "session.bridge.xp"
 msgstr "+{xp} XP this session"
 
@@ -1193,7 +1218,7 @@ msgid "session.stage.review.description"
 msgstr "Review the words that are due or need another pass."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:99
+#: src/features/dailyLearning/SessionBridge.tsx:117
 msgid "shell.theme.quick-toggle"
 msgstr "Switch light and dark mode"
 
@@ -1216,6 +1241,11 @@ msgstr "No web words yet"
 msgctxt "progress.mastered.chip"
 msgid "Star"
 msgstr "Star"
+
+#: src/features/dailyLearning/SessionBridge.tsx:134
+msgctxt "session.bridge.combo-crystal"
+msgid "correct in a row"
+msgstr "correct in a row"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayScreen.tsx:268

@@ -18,7 +18,7 @@ msgctxt "flashcard.visual-hint.hidden"
 msgid "Visual hint hidden"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:388
+#: src/components/AppOverlays.tsx:400
 msgctxt "shell.practice-menu.keys"
 msgid "<0>Press</0> <1/> to pick"
 msgstr ""
@@ -33,12 +33,12 @@ msgctxt "cardReport.submit"
 msgid "Send report"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:370
+#: src/components/AppOverlays.tsx:381
 msgctxt "shell.practice-menu.title"
 msgid "Choose a practice mode"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:635
+#: src/components/AppOverlays.tsx:647
 msgctxt "shell.share.fact-revoke"
 msgid "You can revoke this link at any time."
 msgstr ""
@@ -58,8 +58,8 @@ msgctxt "flashcard.mnemonic.title"
 msgid "AI Mnemonic · Memory Hook"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:491
-#: src/components/AppOverlays.tsx:603
+#: src/components/AppOverlays.tsx:503
+#: src/components/AppOverlays.tsx:615
 msgctxt "shell.share.cards-count"
 msgid "{count, plural, one {# card} other {# cards}}"
 msgstr ""
@@ -71,12 +71,12 @@ msgctxt "flashcard.reveal-meaning"
 msgid "Reveal meaning"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:341
+#: src/components/AppOverlays.tsx:352
 msgctxt "shell.share.revoking"
 msgid "Revoking…"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:752
+#: src/components/AppOverlays.tsx:766
 msgctxt "shell.practice-menu.preparing"
 msgid "Preparing…"
 msgstr ""
@@ -91,7 +91,7 @@ msgctxt "flashcard.ai.description"
 msgid "Ask questions about usage, nuances & practical examples."
 msgstr ""
 
-#: src/components/AppOverlays.tsx:518
+#: src/components/AppOverlays.tsx:530
 msgctxt "shell.share.incoming-safeguard"
 msgid "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
 msgstr ""
@@ -101,7 +101,7 @@ msgctxt "flashcard.hangul-breakdown"
 msgid "Hangul breakdown"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:187
+#: src/components/AppOverlays.tsx:198
 msgctxt "app-overlays.text-practice.offline"
 msgid "Reconnect to start text practice."
 msgstr ""
@@ -111,12 +111,12 @@ msgctxt "flashcard.details.antonyms"
 msgid "Antonyms"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:613
+#: src/components/AppOverlays.tsx:625
 msgctxt "shell.share.link-label"
 msgid "Share link"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:513
+#: src/components/AppOverlays.tsx:525
 msgctxt "shell.share.no-sample-preview"
 msgid "A card preview is not available for this shared deck."
 msgstr ""
@@ -131,7 +131,7 @@ msgctxt "flashcard.recall.instructions"
 msgid "Recall first, then type your answer to check it."
 msgstr ""
 
-#: src/components/AppOverlays.tsx:341
+#: src/components/AppOverlays.tsx:352
 msgctxt "shell.share.revoke"
 msgid "Revoke link"
 msgstr ""
@@ -141,12 +141,12 @@ msgctxt "flashcard.ask-ai-tutor"
 msgid "Ask AI Tutor"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:368
+#: src/components/AppOverlays.tsx:379
 msgctxt "shell.practice-menu.kicker-count"
 msgid "Practice · {count, plural, one {# card} other {# cards}}"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:562
+#: src/components/AppOverlays.tsx:574
 msgctxt "shell.share.language-pair"
 msgid "{target} → {native}"
 msgstr ""
@@ -161,7 +161,7 @@ msgctxt "flashcard.delete.description"
 msgid "The card will be removed from your library and the change will sync to the shared store."
 msgstr ""
 
-#: src/components/AppOverlays.tsx:633
+#: src/components/AppOverlays.tsx:645
 msgctxt "shell.share.fact-private"
 msgid "Recipients get their own copy; your progress and review history stay private."
 msgstr ""
@@ -183,7 +183,7 @@ msgctxt "flashcard.say-it"
 msgid "Say it"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:634
+#: src/components/AppOverlays.tsx:646
 msgctxt "shell.share.fact-edits"
 msgid "Edits you make later are not pushed to copies already taken."
 msgstr ""
@@ -193,12 +193,12 @@ msgctxt "flashcard.lexicon-context-description"
 msgid "Examples, collocations & nuances"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:544
+#: src/components/AppOverlays.tsx:556
 msgctxt "shell.share.adding"
 msgid "Adding…"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:117
+#: src/components/AppOverlays.tsx:119
 msgctxt "shell.share.incoming-description"
 msgid "Review this shared deck before deciding whether to add it."
 msgstr ""
@@ -303,18 +303,23 @@ msgstr ""
 msgid "cardReport.validation.reason"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:295
+#: src/components/AppOverlays.tsx:306
 msgctxt "shell.share.outgoing-title"
 msgid "Share “{title}”"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:521
-#: src/components/AppOverlays.tsx:638
+#: src/components/AppOverlays.tsx:533
+#: src/components/AppOverlays.tsx:650
 msgctxt "shell.share.expires-on"
 msgid "Link expires on {date}"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:483
+#: src/components/AppOverlays.tsx:387
+msgctxt "shell.practice-menu.scope"
+msgid "Course language:"
+msgstr ""
+
+#: src/components/AppOverlays.tsx:495
 msgctxt "shell.share.cards"
 msgid "Cards"
 msgstr ""
@@ -324,7 +329,7 @@ msgctxt "flashcard.ai.kicker-lumi"
 msgid "Lumi · AI tutor"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:374
+#: src/components/AppOverlays.tsx:385
 msgctxt "shell.practice-menu.description"
 msgid "Choose a different way to practice with words from your library."
 msgstr ""
@@ -334,12 +339,12 @@ msgctxt "cardReport.privacy-hint"
 msgid "Don't include personal information or private content in the note."
 msgstr ""
 
-#: src/components/AppOverlays.tsx:598
+#: src/components/AppOverlays.tsx:610
 msgctxt "shell.share.updating"
 msgid "Updating this share link…"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:342
+#: src/components/AppOverlays.tsx:353
 msgctxt "shell.share.done"
 msgid "Done"
 msgstr ""
@@ -805,7 +810,7 @@ msgctxt "flashcard.status.needs-practice"
 msgid "Needs practice"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:644
+#: src/components/AppOverlays.tsx:656
 msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr ""
@@ -825,9 +830,9 @@ msgctxt "cardReport.submit.busy"
 msgid "Sending…"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:503
-#: src/components/AppOverlays.tsx:520
-#: src/components/AppOverlays.tsx:643
+#: src/components/AppOverlays.tsx:515
+#: src/components/AppOverlays.tsx:532
+#: src/components/AppOverlays.tsx:655
 #: src/components/flashcard/CardBack.tsx:138
 #: src/components/flashcard/CardBack.tsx:361
 msgctxt "flashcard.ai-disclosure"
@@ -845,12 +850,12 @@ msgctxt "flashcard.quiz.incorrect"
 msgid "Nice try! Flip the card to review the definition."
 msgstr ""
 
-#: src/components/AppOverlays.tsx:513
+#: src/components/AppOverlays.tsx:525
 msgctxt "shell.share.no-cards"
 msgid "This shared deck has no cards to add."
 msgstr ""
 
-#: src/components/AppOverlays.tsx:371
+#: src/components/AppOverlays.tsx:382
 msgctxt "shell.practice-menu.kicker"
 msgid "Practice"
 msgstr ""
@@ -865,17 +870,17 @@ msgctxt "flashcard.language-card.phrases"
 msgid "Common phrases"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:618
+#: src/components/AppOverlays.tsx:630
 msgctxt "shell.share.copy-short"
 msgid "Copy"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:373
+#: src/components/AppOverlays.tsx:384
 msgctxt "shell.practice-menu.library-count"
 msgid "From your library · {count, plural, one {# card} other {# cards}}"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:381
+#: src/components/AppOverlays.tsx:393
 msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr ""
@@ -885,7 +890,7 @@ msgctxt "flashcard.return-to-english"
 msgid "Return to English"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:288
+#: src/components/AppOverlays.tsx:299
 msgctxt "shell.share.incoming-kicker"
 msgid "Shared with you"
 msgstr ""
@@ -896,7 +901,7 @@ msgctxt "flashcard.deck.choose"
 msgid "Choose deck"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:487
+#: src/components/AppOverlays.tsx:499
 msgctxt "shell.share.copy"
 msgid "Your copy"
 msgstr ""
@@ -933,7 +938,7 @@ msgctxt "cardReport.kicker"
 msgid "Card quality"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:609
+#: src/components/AppOverlays.tsx:621
 msgctxt "shell.share.truncation"
 msgid "This link includes {shared} of {total} cards. Create smaller decks to share the rest."
 msgstr ""
@@ -943,7 +948,7 @@ msgctxt "flashcard.language-card.example"
 msgid "Example"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:502
+#: src/components/AppOverlays.tsx:514
 msgctxt "shell.share.no-translation"
 msgid "Translation not available"
 msgstr ""
@@ -953,7 +958,7 @@ msgctxt "flashcard.recall.reveal"
 msgid "Reveal answer"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:189
+#: src/components/AppOverlays.tsx:200
 msgctxt "app-overlays.text-practice.description"
 msgid "Use your vocabulary in a bounded six-turn text mission."
 msgstr ""
@@ -968,17 +973,17 @@ msgctxt "flashcard.mnemonic.generating"
 msgid "Generating memory hint…"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:486
+#: src/components/AppOverlays.tsx:498
 msgctxt "shell.share.languages"
 msgid "Languages"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:421
+#: src/components/AppOverlays.tsx:433
 msgctxt "app-overlays.practise-your-vocabulary-in-a-bounded-text-conversation"
 msgid "Practise your vocabulary in a bounded text conversation."
 msgstr ""
 
-#: src/components/AppOverlays.tsx:190
+#: src/components/AppOverlays.tsx:201
 msgctxt "app-overlays.text-practice.needs-card"
 msgid "Add a vocabulary card with a word and meaning first."
 msgstr ""
@@ -993,12 +998,12 @@ msgctxt "flashcard.audio.listening"
 msgid "Listening"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:484
+#: src/components/AppOverlays.tsx:496
 msgctxt "shell.share.category"
 msgid "Category"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:490
+#: src/components/AppOverlays.tsx:502
 msgctxt "shell.share.words-inside"
 msgid "A few words inside"
 msgstr ""
@@ -1008,7 +1013,7 @@ msgctxt "flashcard.turn-card"
 msgid "Turn the card"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:390
+#: src/components/AppOverlays.tsx:402
 msgctxt "shell.practice-menu.cancel"
 msgid "Cancel"
 msgstr ""
@@ -1099,12 +1104,12 @@ msgstr ""
 msgid "review.strength"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:381
+#: src/components/AppOverlays.tsx:393
 msgctxt "app-overlays.text-practice.duration"
 msgid "6 turns"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:116
+#: src/components/AppOverlays.tsx:118
 msgctxt "shell.share.incoming-created"
 msgid "Shared on {date}"
 msgstr ""
@@ -1114,12 +1119,12 @@ msgctxt "flashcard.definition.hidden"
 msgid "Definition hidden"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:544
+#: src/components/AppOverlays.tsx:556
 msgctxt "shell.share.add-count"
 msgid "Add {count} cards"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:302
+#: src/components/AppOverlays.tsx:313
 msgctxt "shell.share.outgoing-description"
 msgid "Anyone with the link can preview this deck and copy it into their own library."
 msgstr ""
@@ -1145,73 +1150,73 @@ msgid "shell.error-boundary.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:376
+#: src/components/AppOverlays.tsx:388
 msgid "shell.practice-menu.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:292
-#: src/components/AppOverlays.tsx:295
-#: src/components/AppOverlays.tsx:484
-#: src/components/AppOverlays.tsx:593
+#: src/components/AppOverlays.tsx:303
+#: src/components/AppOverlays.tsx:306
+#: src/components/AppOverlays.tsx:496
+#: src/components/AppOverlays.tsx:605
 msgid "shell.share.all-library"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:631
+#: src/components/AppOverlays.tsx:643
 msgid "shell.share.behavior"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:305
+#: src/components/AppOverlays.tsx:316
 msgid "shell.share.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:624
+#: src/components/AppOverlays.tsx:636
 msgid "shell.share.copy-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:617
+#: src/components/AppOverlays.tsx:629
 msgid "shell.share.copy-link"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:625
+#: src/components/AppOverlays.tsx:637
 msgid "shell.share.dismiss-copy-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:313
-#: src/components/AppOverlays.tsx:481
+#: src/components/AppOverlays.tsx:324
+#: src/components/AppOverlays.tsx:493
 msgid "shell.share.dismiss-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:288
-#: src/components/AppOverlays.tsx:295
-#: src/components/AppOverlays.tsx:309
+#: src/components/AppOverlays.tsx:299
+#: src/components/AppOverlays.tsx:306
+#: src/components/AppOverlays.tsx:320
 msgid "shell.share.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:616
+#: src/components/AppOverlays.tsx:628
 msgid "shell.share.link-input"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:494
+#: src/components/AppOverlays.tsx:506
 msgid "shell.share.sample-vocabulary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:564
+#: src/components/AppOverlays.tsx:576
 msgid "shell.share.target-unspecified"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:565
+#: src/components/AppOverlays.tsx:577
 msgid "shell.share.translation-unspecified"
 msgstr ""
 
@@ -1225,7 +1230,7 @@ msgctxt "flashcard.ai.ask-about"
 msgid "Ask about <0>{word}</0>"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:491
+#: src/components/AppOverlays.tsx:503
 msgctxt "shell.share.more-cards"
 msgid "+{count} more"
 msgstr ""
@@ -1256,7 +1261,7 @@ msgctxt "flashcard.shortcut.space"
 msgid "Space"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:420
+#: src/components/AppOverlays.tsx:432
 msgctxt "app-overlays.text-practice-mission"
 msgid "Text practice mission"
 msgstr ""
@@ -1276,7 +1281,7 @@ msgctxt "flashcard.details.vocabulary"
 msgid "Vocabulary"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:301
+#: src/components/AppOverlays.tsx:312
 msgctxt "shell.share.empty-description"
 msgid "Close this dialog and try opening the share link again."
 msgstr ""
@@ -1286,7 +1291,7 @@ msgctxt "flashcard.details.synonyms"
 msgid "Synonyms"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:544
+#: src/components/AppOverlays.tsx:556
 msgctxt "shell.share.add-none"
 msgid "No cards to add"
 msgstr ""
@@ -1296,12 +1301,12 @@ msgctxt "flashcard.quiz.heading"
 msgid "Active Recall Quiz · Guess the Meaning"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:121
+#: src/components/AppOverlays.tsx:123
 msgctxt "shell.share.loading"
 msgid "Preparing the shared deck…"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:618
+#: src/components/AppOverlays.tsx:630
 msgctxt "shell.share.copied"
 msgid "Copied"
 msgstr ""
@@ -1311,17 +1316,17 @@ msgctxt "cardReport.reason.label"
 msgid "Reason"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:641
+#: src/components/AppOverlays.tsx:653
 msgctxt "shell.share.privacy-warning"
 msgid "Shared cards may include memory hooks and personal notes. Review them for private information before sharing."
 msgstr ""
 
-#: src/components/AppOverlays.tsx:487
+#: src/components/AppOverlays.tsx:499
 msgctxt "shell.share.copy-detail"
 msgid "New library deck"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:387
+#: src/components/AppOverlays.tsx:399
 msgctxt "shell.practice-menu.keys-unlock"
 msgid "<0>Press</0> <1/> to pick · add cards to unlock more"
 msgstr ""
@@ -1331,7 +1336,7 @@ msgctxt "cardReport.submitted"
 msgid "Thank you. Your report has been sent for review."
 msgstr ""
 
-#: src/components/AppOverlays.tsx:185
+#: src/components/AppOverlays.tsx:196
 msgctxt "app-overlays.text-practice.signed-out"
 msgid "Sign in to practise with your vocabulary."
 msgstr ""
@@ -1347,7 +1352,7 @@ msgctxt "flashcard.report"
 msgid "Report incorrect card"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:541
+#: src/components/AppOverlays.tsx:553
 msgctxt "shell.share.cancel"
 msgid "Cancel"
 msgstr ""
@@ -1357,7 +1362,7 @@ msgctxt "cardReport.title"
 msgid "Report a wrong card"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:294
+#: src/components/AppOverlays.tsx:305
 msgctxt "shell.share.empty-title"
 msgid "No shared deck to show"
 msgstr ""
@@ -1377,7 +1382,7 @@ msgctxt "flashcard.quiz.flip-now"
 msgid "Flip card now"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:629
+#: src/components/AppOverlays.tsx:641
 msgctxt "shell.share.link-copied"
 msgid "Link copied"
 msgstr ""
@@ -1387,12 +1392,12 @@ msgctxt "flashcard.quiz.select-option"
 msgid "Select 1 option"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:666
+#: src/components/AppOverlays.tsx:678
 msgctxt "shell.share.manage"
 msgid "Manage shared link"
 msgstr ""
 
-#: src/components/AppOverlays.tsx:480
+#: src/components/AppOverlays.tsx:492
 msgctxt "shell.share.importing"
 msgid "Adding {count} cards to your new deck…"
 msgstr ""
