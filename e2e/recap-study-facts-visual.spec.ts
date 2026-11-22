@@ -126,6 +126,11 @@ for (const theme of themes) {
       dialog = page.getByRole('dialog', { name: 'Your weekly recap' });
       await expect(dialog.locator('.weekly-recap-card__empty')).toBeVisible({ timeout: 15_000 });
       await expect(dialog.locator('.weekly-recap-card')).not.toContainText(/\b0\b/);
+      await expect(dialog.locator('input[data-selection-key]')).toHaveCount(0);
+      // The empty sentence stays clear of the Crystal companion.
+      const companion = await dialog.locator('.weekly-recap-card__companion').boundingBox();
+      const empty = await dialog.locator('.weekly-recap-card__empty').boundingBox();
+      if (companion && empty) expect(empty.x + empty.width).toBeLessThanOrEqual(companion.x + 1);
       await expectAccessibleAndContained(page, '[role="dialog"]', `${label} empty week`);
       await attach(dialog, testInfo, `weekly-recap-empty-${theme.family}-${theme.mode}-${viewport.name}`);
     });

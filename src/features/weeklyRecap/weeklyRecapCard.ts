@@ -108,13 +108,17 @@ export function weeklyRecapRangeLabel(rangeStart: string, rangeEnd: string, loca
 export const weeklyRecapShortDate = (day: string, locale: string): string =>
   formatBoardDate(day, locale, { day: 'numeric', month: 'short' });
 
-/** Which toggles have something to show; the word of the week also needs its card to exist. */
+/**
+ * Which toggles have something to show; the word of the week also needs its card to exist.
+ * An empty week shows its sentence alone, so it offers none.
+ */
 export function availableWeeklyRecapSelectionKeys(
   data: WeeklyRecapData,
   stats: WeeklyRecapStats | null,
   wordOfWeekAvailable: boolean,
 ): WeeklyRecapSelectionKey[] {
   const keys: WeeklyRecapSelectionKey[] = [];
+  if (!weeklyRecapHasActivity(data, stats)) return keys;
   if (stats?.words || data.totalXp > 0) keys.push('words');
   if (stats?.streakDays) keys.push('streak');
   if (stats?.recall) keys.push('recall');

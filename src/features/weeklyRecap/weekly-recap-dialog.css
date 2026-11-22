@@ -698,8 +698,13 @@
 }
 
 [data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__header,
-[data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__hero-metric {
+[data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__hero-metric,
+[data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__hero-note {
   padding-right: 6rem;
+}
+
+[data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__empty {
+  margin-right: 6rem;
 }
 
 [data-family="crystal"] .weekly-recap-card__companion {
@@ -1020,8 +1025,13 @@
   }
 
   [data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__header,
-  [data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__hero-metric {
+  [data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__hero-metric,
+  [data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__hero-note {
     padding-right: 4.6rem;
+  }
+
+  [data-family="crystal"] .weekly-recap-card--with-companion .weekly-recap-card__empty {
+    margin-right: 4.6rem;
   }
 
   [data-family="crystal"] .weekly-recap-card__companion {

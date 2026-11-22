@@ -86,6 +86,7 @@ describe('weekly recap card content', () => {
     expect(availableWeeklyRecapSelectionKeys(week(), pick, true)).toEqual(['words', 'streak', 'recall', 'wordOfWeek', 'heatmap']);
     expect(availableWeeklyRecapSelectionKeys(week(), pick, false)).not.toContain('wordOfWeek');
     expect(availableWeeklyRecapSelectionKeys(week(0), null, true)).toEqual([]);
+    expect(availableWeeklyRecapSelectionKeys(week(0), stats({ words: { started: 0, mastered: 0, since: null } }), true)).toEqual([]);
   });
 
   it('splits an emphasised run out of a translated label', () => {
