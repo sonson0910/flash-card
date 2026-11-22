@@ -2,7 +2,9 @@ import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { renderToStaticMarkup as renderReactToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { stateFromFixture, streakFixtures } from '../../features/gamification/testing/verifiedStatsFixtures';
 import StatsCharts, { reviewDayInRange } from './StatsCharts';
+import { VerifiedStatsProvider } from './VerifiedStatsContext';
 
 const renderToStaticMarkup = (node: React.ReactNode) => renderReactToStaticMarkup(<I18nProvider i18n={i18n}>{node}</I18nProvider>);
 
@@ -140,6 +142,30 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('Reviews per day, last 30 days');
     expect(html).not.toContain('26 weeks');
     expect(html).not.toContain('role="group"');
+  });
+
+  it('offers All time while counting began inside the kept window and reads every day since then', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-19T05:00:00.000Z'));
+    const data = (coverageStartedOn: string) => ({
+      xpChartData: [], difficultyChart: [], categoryChart: [], categoryChartIsPartial: false,
+      rewardTimeZone: 'Asia/Ho_Chi_Minh',
+      reviewActivity: { coverageStartedOn, days: { [coverageStartedOn]: { reviewed: 3, again: 1, hard: 1, good: 1, easy: 0 } } },
+    });
+    const html = renderToStaticMarkup(<StatsCharts darkMode={false} section="primary" data={data('2026-09-28')} />);
+    expect(html).toContain('<span>All time</span>');
+    // Older than the 182 days the server keeps: "All time" would be incomplete, so it is not offered.
+    expect(renderToStaticMarkup(<StatsCharts darkMode={false} section="primary" data={data('2026-03-01')} />)).not.toContain('All time');
+  });
+
+  it('shows the best streak only once the server recorded a run', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(streakFixtures.frozenOneDay.now);
+    const chart = <StatsCharts darkMode={false} section="primary" data={{ xpChartData: [], difficultyChart: [{ name: 'Mastered', value: 2 }], categoryChart: [], categoryChartIsPartial: false }} />;
+    const html = renderToStaticMarkup(<VerifiedStatsProvider source={{ state: stateFromFixture(streakFixtures.frozenOneDay), language: 'en' }}>{chart}</VerifiedStatsProvider>);
+    expect(html).toContain('data-fact="best-streak"');
+    expect(html).toContain('<dt>Best streak</dt><dd>11 days</dd>');
+    expect(renderToStaticMarkup(chart)).not.toContain('Best streak');
   });
 
   it('leaves review activity unavailable without the server reward time zone', () => {
