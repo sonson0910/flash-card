@@ -67,7 +67,6 @@ const options = (overrides: Partial<IeltsGoalProgressOptions> = {}): IeltsGoalPr
   course: course('ielts'),
   isOffline: false,
   rewardTimeZone: 'Asia/Ho_Chi_Minh',
-  verifiedHistoryStartedOn: '2026-10-01',
   now: new Date('2026-11-18T18:30:00.000Z'),
   ...overrides,
 });
@@ -88,7 +87,7 @@ const settle = () => act(async () => { for (let index = 0; index < 5; index += 1
 describe('IELTS goal progress hook', () => {
   beforeEach(() => {
     sources.lexemeIds = ['lexeme-a', 'lexeme-b'];
-    sources.counts = { total: 2, started: 2, mastered: 1, masteredLast7: 1, masteredLast28: 1 };
+    sources.counts = { total: 2, started: 2, mastered: 1, masteredLast7: 1 };
     sources.stored = { schemaVersion: 1, goals: { 'goal-1': { courseId: 'course-en', band: '6.5', updatedAt: '2026-11-01T00:00:00.000Z' } } };
     sources.countsError = null;
     vi.mocked(readIeltsPathCounts).mockClear();

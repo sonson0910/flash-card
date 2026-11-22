@@ -14,7 +14,7 @@ import { parseSetLatestExamScoreRequest, setLatestExamScore } from '../src/exam-
 
 const describeWithEmulator = process.env.FIRESTORE_EMULATOR_HOST ? describe : describe.skip;
 const createdAt = '2026-09-25T00:00:00.000Z';
-const pathCounts = { total: 40, started: 6, mastered: 2, masteredLast7: 1, masteredLast28: 2 };
+const pathCounts = { total: 40, started: 6, mastered: 2, masteredLast7: 1 };
 
 describeWithEmulator('course goals in Firestore, read the way the IELTS panel reads them', () => {
   let app: App;
@@ -46,7 +46,6 @@ describeWithEmulator('course goals in Firestore, read the way the IELTS panel re
       goal: { kind: goal.kind, level: goal.level, targetDate: goal.targetDate },
       latestScore,
       today: '2026-11-19',
-      verifiedHistoryStartedOn: null,
     });
     return { course, goal, model };
   };

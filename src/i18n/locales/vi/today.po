@@ -28,7 +28,7 @@ msgctxt "progress.lumi.link"
 msgid "Lumi · Link"
 msgstr "Lumi · Link"
 
-#: src/features/dailyLearning/SessionBridge.tsx:192
+#: src/features/dailyLearning/SessionBridge.tsx:220
 msgctxt "session.bridge.skip"
 msgid "Skip"
 msgstr "Bỏ qua"
@@ -99,12 +99,12 @@ msgctxt "today-screen.immerse"
 msgid "Immerse"
 msgstr "Đắm mình"
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1149
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1150
 msgctxt "today.match.verification-failed"
 msgid "We could not verify your result. Your completed pairs are still here."
 msgstr "Chúng tôi không thể xác minh kết quả của bạn. Các cặp bạn đã hoàn tất vẫn được giữ lại."
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1152
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1153
 msgctxt "today.match.retry-verification"
 msgid "Retry verification"
 msgstr "Thử xác minh lại"
@@ -165,7 +165,7 @@ msgid "daily.lesson.answer-feedback"
 msgstr "Phản hồi câu trả lời"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1154
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1155
 #: src/features/dailyLearning/LessonScreen.tsx:270
 msgid "daily.lesson.back-to-today"
 msgstr "Quay lại Hôm nay"
@@ -539,7 +539,7 @@ msgid "daily.placement.lumi-label"
 msgstr "Ghi chú của Lumi"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1222
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1223
 msgid "daily.placement.meaning-question"
 msgstr "Nghĩa là gì?"
 
@@ -581,7 +581,7 @@ msgid "daily.placement.result-note"
 msgstr "Đây là hướng dẫn đánh giá, không phải điểm thi chính thức. Nó không thay đổi lịch sử ôn tập, mức thành thạo, XP hoặc quyền truy cập lộ trình của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1153
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1154
 #: src/features/dailyLearning/PlacementScreen.tsx:193
 msgid "daily.placement.retry"
 msgstr "Thử lại"
@@ -714,12 +714,12 @@ msgid "exam-progress.classic.week"
 msgstr "{count, plural, other {+# từ tuần này.}}"
 
 #. js-lingui-explicit-id
-#: src/features/examProgress/IeltsGoalPanel.tsx:179
+#: src/features/examProgress/IeltsGoalPanel.tsx:178
 msgid "exam-progress.crystal.exam-days"
 msgstr "{days, plural, other {Còn # ngày đến kỳ thi.}}"
 
 #. js-lingui-explicit-id
-#: src/features/examProgress/IeltsGoalPanel.tsx:183
+#: src/features/examProgress/IeltsGoalPanel.tsx:182
 msgid "exam-progress.crystal.footnote"
 msgstr "Tiến độ từ vựng, không phải điểm IELTS."
 
@@ -727,11 +727,6 @@ msgstr "Tiến độ từ vựng, không phải điểm IELTS."
 #: src/features/examProgress/IeltsGoalPanel.tsx:147
 msgid "exam-progress.crystal.heading"
 msgstr "Mục tiêu IELTS"
-
-#. js-lingui-explicit-id
-#: src/features/examProgress/IeltsGoalPanel.tsx:178
-msgid "exam-progress.crystal.pace"
-msgstr "{weeks, plural, other {Với tốc độ này, phần còn lại mất khoảng # tuần.}}"
 
 #. js-lingui-explicit-id
 #: src/features/examProgress/IeltsGoalPanel.tsx:177
@@ -856,7 +851,7 @@ msgid "Learn"
 msgstr "Học"
 
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:102
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1156
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1157
 msgctxt "today.activity.preparing"
 msgid "Preparing activity…"
 msgstr "Đang chuẩn bị hoạt động…"
@@ -871,12 +866,12 @@ msgctxt "webWords.actions.add-selected-to-session"
 msgid "Add to today’s session"
 msgstr "Thêm vào buổi học hôm nay"
 
-#: src/features/dailyLearning/SessionBridge.tsx:188
+#: src/features/dailyLearning/SessionBridge.tsx:216
 msgctxt "session.bridge.continue"
 msgid "Continue"
 msgstr "Tiếp tục"
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1166
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1167
 msgctxt "daily-learning-workspace.back-to-today"
 msgid "Back to Today"
 msgstr "Về Hôm nay"
@@ -886,7 +881,7 @@ msgctxt "webWords.selection.count"
 msgid "{count, plural, one {# word selected} other {# words selected}}"
 msgstr "Đã chọn {count} từ"
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1155
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1156
 msgctxt "today.match.abandon"
 msgid "Abandon round and start over"
 msgstr "Bỏ lượt và bắt đầu lại"
@@ -992,7 +987,7 @@ msgstr "Đang làm mới tiến độ; các chỉ số đã lưu vẫn hiển th
 msgid "progress.message.ready"
 msgstr "Tiến độ được tính từ lịch sử học tập của bạn."
 
-#: src/features/dailyLearning/SessionBridge.tsx:135
+#: src/features/dailyLearning/SessionBridge.tsx:163
 msgctxt "session.bridge.combo"
 msgid "correct answers in a row"
 msgstr "câu đúng liên tiếp"
@@ -1018,29 +1013,59 @@ msgid "{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards review
 msgstr "{count, plural, one {<0>#</0> thẻ đã ôn} other {<0>#</0> thẻ đã ôn}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:148
+#: src/features/dailyLearning/SessionBridge.tsx:176
 msgid "session.bridge.answer.correct"
 msgstr "Nhớ được"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:148
+#: src/features/dailyLearning/SessionBridge.tsx:176
 msgid "session.bridge.answer.missed"
 msgstr "Chưa nhớ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:54
+#: src/features/dailyLearning/SessionBridge.tsx:82
 msgid "session.bridge.card.flip"
 msgstr "Chạm hoặc nhấn <0>Space</0> để lật thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:57
+#: src/features/dailyLearning/SessionBridge.tsx:85
 msgid "session.bridge.card.meaning"
 msgstr "Nghĩa"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:48
+#: src/features/dailyLearning/SessionBridge.tsx:75
 msgid "session.bridge.card.source"
 msgstr "Từ {site}"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:41
+msgid "session.bridge.card.tier-status.learning"
+msgstr "Đang học"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:42
+msgid "session.bridge.card.tier-status.mastered"
+msgstr "Đã thuộc"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:40
+msgid "session.bridge.card.tier-status.new"
+msgstr "Mới"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:36
+msgid "session.bridge.card.tier.learning"
+msgstr "Nở"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:37
+msgid "session.bridge.card.tier.mastered"
+msgstr "Sao"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/SessionBridge.tsx:35
+msgid "session.bridge.card.tier.new"
+msgstr "Nụ"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/SessionBridge.tsx:25
@@ -1078,67 +1103,67 @@ msgid "session.bridge.completed-count"
 msgstr "Xong phần {stage} · {done}/{total}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:97
+#: src/features/dailyLearning/SessionBridge.tsx:125
 msgid "session.bridge.exit"
 msgstr "Thoát buổi học"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:79
+#: src/features/dailyLearning/SessionBridge.tsx:107
 msgid "session.bridge.feedback.both"
 msgstr "Đang bật âm thanh và rung"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:80
+#: src/features/dailyLearning/SessionBridge.tsx:108
 msgid "session.bridge.feedback.haptics"
 msgstr "Tắt âm thanh, bật rung"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:80
+#: src/features/dailyLearning/SessionBridge.tsx:108
 msgid "session.bridge.feedback.none"
 msgstr "Đã tắt âm thanh và rung"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:79
+#: src/features/dailyLearning/SessionBridge.tsx:107
 msgid "session.bridge.feedback.sound"
 msgstr "Bật âm thanh, tắt rung"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1123
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1124
 msgid "session.bridge.live-next"
 msgstr "Tiếp theo: {count} mục."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1122
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1123
 msgid "session.bridge.live-recap"
 msgstr "Buổi học đã hoàn tất."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:160
+#: src/features/dailyLearning/SessionBridge.tsx:188
 msgid "session.bridge.lumi.body"
 msgstr "Các câu trả lời của bạn đã được lưu."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:158
+#: src/features/dailyLearning/SessionBridge.tsx:186
 msgid "session.bridge.lumi.name"
 msgstr "Lumi"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:159
+#: src/features/dailyLearning/SessionBridge.tsx:187
 msgid "session.bridge.lumi.title"
 msgstr "Nhịp học tốt lắm!"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:166
+#: src/features/dailyLearning/SessionBridge.tsx:194
 msgid "session.bridge.preview"
 msgstr "Xem trước chặng tiếp theo"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:100
+#: src/features/dailyLearning/SessionBridge.tsx:128
 msgid "session.bridge.progress"
 msgstr "Tiến độ phiên học"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:145
+#: src/features/dailyLearning/SessionBridge.tsx:173
 msgid "session.bridge.recent-answers"
 msgstr "Các câu trả lời gần nhất"
 
@@ -1168,7 +1193,7 @@ msgid "session.bridge.summary.new-web"
 msgstr "{count, plural, other {# từ}} · {web} từ trang web"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:153
+#: src/features/dailyLearning/SessionBridge.tsx:181
 msgid "session.bridge.xp"
 msgstr "+{xp} XP trong phiên này"
 
@@ -1218,11 +1243,11 @@ msgid "session.stage.review.description"
 msgstr "Ôn những từ đến hạn hoặc cần luyện thêm."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:117
+#: src/features/dailyLearning/SessionBridge.tsx:145
 msgid "shell.theme.quick-toggle"
 msgstr "Chuyển giữa chế độ sáng và tối"
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1165
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1166
 msgctxt "daily-learning-workspace.immerse-listen"
 msgid "Immerse · Listen"
 msgstr "Đắm mình · Nghe"
@@ -1242,7 +1267,7 @@ msgctxt "progress.mastered.chip"
 msgid "Star"
 msgstr "Sao"
 
-#: src/features/dailyLearning/SessionBridge.tsx:134
+#: src/features/dailyLearning/SessionBridge.tsx:162
 msgctxt "session.bridge.combo-crystal"
 msgid "correct in a row"
 msgstr "đúng liên tiếp"
@@ -1258,12 +1283,12 @@ msgid "today.adult-statement"
 msgstr "SonFlash dành cho người học từ 18 tuổi trở lên."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1319
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1320
 msgid "today.answer.correct"
 msgstr "Đúng."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1319
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1320
 msgid "today.answer.incorrect"
 msgstr "Chưa đúng."
 
@@ -1300,8 +1325,8 @@ msgstr "Khóa học hiện tại của bạn"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayReadyHero.tsx:531
-msgid "today.crystal.day"
-msgstr "Ngày {day}"
+msgid "today.crystal.day-title"
+msgstr "Ngày <0>{day}</0>"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayReadyHero.tsx:527
@@ -1314,37 +1339,37 @@ msgid "today.crystal.lede"
 msgstr "{count, plural, other {# thẻ đang chờ bạn.}} Một bài học gồm {steps, plural, one {# bước} other {cả # bước}}."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:579
+#: src/features/dailyLearning/TodayReadyHero.tsx:578
 msgid "today.crystal.level"
 msgstr "Cấp độ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:583
+#: src/features/dailyLearning/TodayReadyHero.tsx:584
 msgid "today.crystal.level-next"
 msgstr "+{xp} XP để lên Lv {level}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:580
+#: src/features/dailyLearning/TodayReadyHero.tsx:579
 msgid "today.crystal.level-value"
 msgstr "Lv {level}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:556
+#: src/features/dailyLearning/TodayReadyHero.tsx:555
 msgid "today.crystal.lumi-hi"
 msgstr "{count, plural, other {Chào bạn! # thẻ đang chờ.}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:555
+#: src/features/dailyLearning/TodayReadyHero.tsx:554
 msgid "today.crystal.lumi-hi.named"
 msgstr "{count, plural, other {Chào {name}! # thẻ đang chờ.}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:552
+#: src/features/dailyLearning/TodayReadyHero.tsx:551
 msgid "today.crystal.lumi-link"
 msgstr "Lumi · Link"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:561
+#: src/features/dailyLearning/TodayReadyHero.tsx:560
 msgid "today.crystal.lumi-streak.extend"
 msgstr "Học xong hôm nay để có {count} ngày liên tiếp."
 
@@ -1355,57 +1380,57 @@ msgstr "{count, plural, other {Streak # ngày.}} {left, plural, other {Còn # ng
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayReadyHero.tsx:516
-#: src/features/dailyLearning/TodayReadyHero.tsx:562
+#: src/features/dailyLearning/TodayReadyHero.tsx:561
 msgid "today.crystal.lumi-streak.start"
 msgstr "Học xong hôm nay để bắt đầu streak mới."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:559
+#: src/features/dailyLearning/TodayReadyHero.tsx:558
 msgid "today.crystal.lumi-streak.today"
 msgstr "{count, plural, other {Streak # ngày. Hôm nay bạn làm tốt lắm.}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:570
+#: src/features/dailyLearning/TodayReadyHero.tsx:569
 msgid "today.crystal.path"
 msgstr "Lộ trình hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:571
+#: src/features/dailyLearning/TodayReadyHero.tsx:570
 msgid "today.crystal.path-minutes"
 msgstr "~{minutes} phút"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:570
+#: src/features/dailyLearning/TodayReadyHero.tsx:569
 msgid "today.crystal.path-steps"
 msgstr "{steps, plural, other {# bước}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:543
+#: src/features/dailyLearning/TodayReadyHero.tsx:542
 msgid "today.crystal.start"
 msgstr "Bắt đầu bài học hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:544
+#: src/features/dailyLearning/TodayReadyHero.tsx:543
 msgid "today.crystal.start-meta"
 msgstr "{minutes} phút · {steps, plural, other {# bước}} · tối đa +{xp} XP"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:598
+#: src/features/dailyLearning/TodayReadyHero.tsx:599
 msgid "today.crystal.words.session"
 msgstr "Trong bài học hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:601
+#: src/features/dailyLearning/TodayReadyHero.tsx:602
 msgid "today.crystal.words.session-count"
 msgstr "{count, plural, other {# từ}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:598
+#: src/features/dailyLearning/TodayReadyHero.tsx:599
 msgid "today.crystal.words.web"
 msgstr "Từ gặp trên web"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:600
+#: src/features/dailyLearning/TodayReadyHero.tsx:601
 msgid "today.crystal.words.web-count"
 msgstr "Đã lưu {count} · {inSession} trong bài này"
 
@@ -1676,7 +1701,7 @@ msgid "today.kicker"
 msgstr "Học hằng ngày"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1323
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1324
 msgid "today.lesson.fallback"
 msgstr "{mode} không khả dụng cho thẻ này, nên đã dùng nhớ chủ động."
 
@@ -1786,7 +1811,7 @@ msgid "today.mode.spelling.label"
 msgstr "Đánh vần"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1147
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1148
 #: src/features/dailyLearning/TodayScreen.tsx:348
 #: src/features/dailyLearning/TodayScreen.tsx:379
 #: src/features/dailyLearning/TodayScreen.tsx:403
@@ -1799,13 +1824,13 @@ msgid "today.placement.action"
 msgstr "Làm kiểm tra xếp trình độ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1207
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1208
 #: src/features/dailyLearning/PlacementScreen.tsx:32
 msgid "today.placement.advanced"
 msgstr "Nâng cao"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1206
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1207
 #: src/features/dailyLearning/PlacementScreen.tsx:33
 msgid "today.placement.core"
 msgstr "Cốt lõi"
@@ -1816,18 +1841,18 @@ msgid "today.placement.description"
 msgstr "Làm kiểm tra đánh giá. Kết quả không thay đổi lịch sử ôn tập hoặc mở khóa nội dung."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1205
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1206
 #: src/features/dailyLearning/PlacementScreen.tsx:34
 msgid "today.placement.foundation"
 msgstr "Nền tảng"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1199
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1200
 msgid "today.placement.insufficient"
 msgstr "Cần ít nhất 6 từ riêng biệt đã biết cấp độ và có các lựa chọn trả lời."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1212
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1213
 msgid "today.placement.intro"
 msgstr "Kiểm tra chứng cứ từ vựng hiện tại của bạn qua 6–12 câu hỏi."
 
@@ -1837,12 +1862,12 @@ msgid "today.placement.kicker"
 msgstr "Tùy chọn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1196
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1197
 msgid "today.placement.preparing"
 msgstr "Đang chuẩn bị chứng cứ xếp trình độ…"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1203
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1204
 #: src/features/dailyLearning/PlacementScreen.tsx:210
 msgid "today.placement.result"
 msgstr "Câu trả lời của bạn cho thấy nên bắt đầu từ đây."
@@ -1853,12 +1878,12 @@ msgid "today.placement.title"
 msgstr "Chưa biết bắt đầu từ đâu?"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1427
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1428
 msgid "today.plan.caught-up"
 msgstr "Kế hoạch hôm nay không còn thẻ đến hạn hoặc thẻ mới."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1428
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1429
 msgid "today.plan.empty"
 msgstr "Thêm từ vựng hoặc quay lại khi đến hạn ôn thẻ."
 
@@ -1873,17 +1898,17 @@ msgid "today.plan.order"
 msgstr "Thứ tự kế hoạch hằng ngày"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1425
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1426
 msgid "today.plan.preparing"
 msgstr "Đang chuẩn bị kế hoạch hằng ngày có giới hạn…"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1429
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1430
 msgid "today.plan.ready"
 msgstr "Kế hoạch của bạn đã sẵn sàng."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1429
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1430
 msgid "today.plan.short"
 msgstr "Kế hoạch ngắn hơn đã sẵn sàng."
 
@@ -1963,7 +1988,7 @@ msgid "today.prompt.spell-context"
 msgstr "Đánh vần mục từ vựng từ ngữ cảnh"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1220
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1221
 msgid "today.question.progress"
 msgstr "Câu {current} trên {total}."
 
@@ -2369,7 +2394,7 @@ msgstr "Trong buổi học hôm nay"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayReadyHero.tsx:353
-#: src/features/dailyLearning/TodayReadyHero.tsx:609
+#: src/features/dailyLearning/TodayReadyHero.tsx:610
 msgid "today.words.web.open"
 msgstr "Xem tất cả kèm câu gốc"
 
@@ -2398,7 +2423,7 @@ msgctxt "webWords.group.word-count"
 msgid "{count, plural, one {# word} other {# words}}"
 msgstr "{count, plural, other {# từ}}"
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1150
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1151
 msgctxt "today.match.start-failed"
 msgid "Word Match could not start. Your completed reviews are saved."
 msgstr "Không thể bắt đầu Word Match. Các lượt ôn đã hoàn tất của bạn đã được lưu."
@@ -2503,38 +2528,3 @@ msgstr "Những thẻ này đã theo lịch ôn tập thông thường."
 msgctxt "webWords.chip.new"
 msgid "New"
 msgstr "Mới"
-
-#. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:41
-msgid "session.bridge.card.tier-status.learning"
-msgstr "Đang học"
-
-#. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:42
-msgid "session.bridge.card.tier-status.mastered"
-msgstr "Đã thuộc"
-
-#. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:40
-msgid "session.bridge.card.tier-status.new"
-msgstr "Mới"
-
-#. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:36
-msgid "session.bridge.card.tier.learning"
-msgstr "Nở"
-
-#. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:37
-msgid "session.bridge.card.tier.mastered"
-msgstr "Sao"
-
-#. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:35
-msgid "session.bridge.card.tier.new"
-msgstr "Nụ"
-
-#. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:531
-msgid "today.crystal.day-title"
-msgstr "Ngày <0>{day}</0>"

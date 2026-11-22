@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { activeIeltsGoal, buildIeltsGoalModel, daysBetween, type IeltsGoalModelInput, type IeltsPathCounts } from './ieltsGoalModel';
 
 const counts = (overrides: Partial<IeltsPathCounts> = {}): IeltsPathCounts => ({
-  total: 100, started: 40, mastered: 30, masteredLast7: 4, masteredLast28: 12, ...overrides,
+  total: 100, started: 40, mastered: 30, masteredLast7: 4, ...overrides,
 });
 
 const input = (overrides: Partial<IeltsGoalModelInput> = {}): IeltsGoalModelInput => ({
@@ -10,7 +10,6 @@ const input = (overrides: Partial<IeltsGoalModelInput> = {}): IeltsGoalModelInpu
   goal: { kind: 'ielts', level: '7.0', targetDate: '2026-12-19' },
   latestScore: '6.5',
   today: '2026-11-19',
-  verifiedHistoryStartedOn: '2026-10-01',
   ...overrides,
 });
 
@@ -42,17 +41,6 @@ describe('IELTS goal model', () => {
     expect(buildIeltsGoalModel(input({ latestScore: '7.5' }))).toMatchObject({ latestScore: '7.5', targetBand: '7.0' });
     expect(buildIeltsGoalModel(input({ latestScore: null }))?.latestScore).toBeNull();
     expect(buildIeltsGoalModel(input({ latestScore: '10' }))?.latestScore).toBeNull();
-  });
-
-  it('estimates the pace only from enough verified history and recent mastery', () => {
-    expect(buildIeltsGoalModel(input())?.weeksLeft).toBe(Math.ceil(70 / (12 / 4)));
-    expect(buildIeltsGoalModel(input({ verifiedHistoryStartedOn: '2026-11-07' }))?.weeksLeft).toBeNull();
-    expect(buildIeltsGoalModel(input({ verifiedHistoryStartedOn: '2026-11-06' }))?.weeksLeft).not.toBeNull();
-    expect(buildIeltsGoalModel(input({ verifiedHistoryStartedOn: null }))?.weeksLeft).toBeNull();
-    expect(buildIeltsGoalModel(input({ counts: counts({ masteredLast28: 2 }) }))?.weeksLeft).toBeNull();
-    expect(buildIeltsGoalModel(input({ counts: counts({ masteredLast28: null }) }))?.weeksLeft).toBeNull();
-    expect(buildIeltsGoalModel(input({ counts: counts({ total: 2_000, mastered: 10, started: 20, masteredLast28: 3 }) }))?.weeksLeft).toBeNull();
-    expect(buildIeltsGoalModel(input({ counts: counts({ started: 100, mastered: 100 }) }))?.weeksLeft).toBeNull();
   });
 
   it('shows the exam date only while it is ahead', () => {

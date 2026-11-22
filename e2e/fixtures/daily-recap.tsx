@@ -40,14 +40,14 @@ const loadTomorrowDue = () => Promise.resolve(8);
 // panel renders nothing. The counts stand in for the path progress the app reads.
 const ieltsGoals: Record<string, IeltsGoalModelInput> = {
   ready: {
-    counts: { total: 100, started: 86, mastered: 78, masteredLast7: 2, masteredLast28: 12 },
+    counts: { total: 100, started: 86, mastered: 78, masteredLast7: 2 },
     goal: { kind: IELTS_GOAL_KIND, level: '7.0', targetDate: '2026-12-19' },
-    latestScore: '6.5', today: '2026-11-19', verifiedHistoryStartedOn: '2026-09-01',
+    latestScore: '6.5', today: '2026-11-19',
   },
   little: {
-    counts: { total: 100, started: 4, mastered: 0, masteredLast7: 0, masteredLast28: 0 },
+    counts: { total: 100, started: 4, mastered: 0, masteredLast7: 0 },
     goal: { kind: IELTS_GOAL_KIND, level: '7.0', targetDate: null },
-    latestScore: null, today: '2026-11-19', verifiedHistoryStartedOn: '2026-11-17',
+    latestScore: null, today: '2026-11-19',
   },
 };
 const goalInput = ieltsGoals[new URLSearchParams(window.location.search).get('goal') ?? 'none'];

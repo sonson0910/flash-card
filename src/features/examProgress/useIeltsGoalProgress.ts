@@ -16,8 +16,6 @@ export interface IeltsGoalProgressOptions {
   readonly course: Course | null;
   readonly isOffline: boolean;
   readonly rewardTimeZone?: string;
-  /** First day of verified English review history (`reviewActivityByLanguage.en.coverageStartedOn`). */
-  readonly verifiedHistoryStartedOn?: string | null;
   /** A fixed clock for fixtures and tests. */
   readonly now?: Date;
 }
@@ -82,7 +80,6 @@ export function useIeltsGoalProgress(options: IeltsGoalProgressOptions): IeltsGo
     goal: { kind: goal.kind, level: goal.level, targetDate: goal.targetDate },
     latestScore: loaded.latestScore,
     today,
-    verifiedHistoryStartedOn: options.verifiedHistoryStartedOn ?? null,
   });
   return model ? { status: 'ready', model, courseId, goalId, latestScore: loaded.latestScore } : { status: 'hidden' };
 }

@@ -14,7 +14,7 @@ import { IELTS_PATH_LANGUAGE } from './ieltsPathReader';
 
 /** Firestore allows at most 30 values in an `in` filter. */
 export const CATALOG_PROGRESS_BATCH_SIZE = 30;
-/** Cards mastered in the last 28 days read at most; one more document tells that the limit was reached. */
+/** Cards mastered in the last 7 days read at most; one more document tells that the limit was reached. */
 export const RECENT_MASTERY_LIMIT = 500;
 
 const DAY_MS = 86_400_000;
@@ -41,7 +41,7 @@ const validIsoInstant = (value: unknown): value is string => typeof value === 's
 
 /**
  * Reads progress for the path's lexemes only: their catalog progress projections in batches, and
- * the cards mastered in the last 28 days. A recent mastery counts only for a path lexeme whose
+ * the cards mastered in the last 7 days. A recent mastery counts only for a path lexeme whose
  * projection is still mastered in the current library epoch.
  */
 export async function readIeltsPathCounts(request: IeltsPathProgressRequest): Promise<IeltsPathCounts> {
@@ -65,36 +65,26 @@ export async function readIeltsPathCounts(request: IeltsPathProgressRequest): Pr
     }
   }
 
-  const since28 = new Date(now.getTime() - 28 * DAY_MS).toISOString();
   const since7 = new Date(now.getTime() - 7 * DAY_MS).toISOString();
   const recent = await getDocs(query(
     collection(database, 'users', ownerId, 'cards'),
     where('language', '==', IELTS_PATH_LANGUAGE),
-    where('masteredAt', '>=', since28),
+    where('masteredAt', '>=', since7),
     orderBy('masteredAt', 'desc'),
     limit(RECENT_MASTERY_LIMIT + 1),
   ));
   const reachedLimit = recent.docs.length > RECENT_MASTERY_LIMIT;
   const documents = recent.docs.slice(0, RECENT_MASTERY_LIMIT);
-  const latestMastery = new Map<string, string>();
-  let oldestRead: string | null = null;
+  const masteredThisWeek = new Set<string>();
   for (const document of documents) {
     const card = document.data() as Record<string, unknown>;
-    const masteredAt = card.masteredAt;
-    if (!validIsoInstant(masteredAt)) continue;
-    if (oldestRead === null || masteredAt < oldestRead) oldestRead = masteredAt;
-    if (!isIdentifier(card.lexemeId) || !mastered.has(card.lexemeId)) continue;
-    const previous = latestMastery.get(card.lexemeId);
-    if (previous === undefined || masteredAt > previous) latestMastery.set(card.lexemeId, masteredAt);
+    if (!validIsoInstant(card.masteredAt)) continue;
+    if (isIdentifier(card.lexemeId) && mastered.has(card.lexemeId)) masteredThisWeek.add(card.lexemeId);
   }
-  const lastWeek = [...latestMastery.values()].filter(masteredAt => masteredAt >= since7).length;
-  // When the limit was reached, the week is still complete if the oldest card read is older than a week.
-  const weekComplete = !reachedLimit || (oldestRead !== null && oldestRead < since7);
   return {
     total: lexemeIds.length,
     started: started.size,
     mastered: mastered.size,
-    masteredLast7: weekComplete ? lastWeek : null,
-    masteredLast28: reachedLimit ? null : latestMastery.size,
+    masteredLast7: reachedLimit ? null : masteredThisWeek.size,
   };
 }

@@ -175,7 +175,6 @@ function CrystalPanel({ model, onOpenPath, onSetTargetBand, onEditLatestScore, h
           </div>
           <p className="ielts-goal-panel__summary" data-mastered={model.mastered} data-total={model.total}>
             {_({ ...msg({ id: 'exam-progress.crystal.summary', message: '{mastered} of {total} IELTS path words are mastered in your deck.' }), values: { mastered: model.mastered, total: model.total } })}
-            {model.weeksLeft !== null && <>{' '}{_({ ...msg({ id: 'exam-progress.crystal.pace', message: '{weeks, plural, one {At this pace, the rest takes about # week.} other {At this pace, the rest takes about # weeks.}}' }), values: { weeks: model.weeksLeft } })}</>}
             {model.daysToExam !== null && <>{' '}{_({ ...msg({ id: 'exam-progress.crystal.exam-days', message: '{days, plural, one {Exam in # day.} other {Exam in # days.}}' }), values: { days: model.daysToExam } })}</>}
           </p>
         </>

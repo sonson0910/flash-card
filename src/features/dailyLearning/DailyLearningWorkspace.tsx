@@ -1520,7 +1520,6 @@ export default function DailyLearningWorkspace({
             course={activeCourse}
             isOffline={isOffline}
             rewardTimeZone={verifiedGamification.rewardTimeZone ?? rewardTimeZone}
-            verifiedHistoryStartedOn={verifiedGamification.reviewActivityByLanguage.en?.coverageStartedOn ?? null}
             onOpenPath={() => { finishMultiStageSession(false); openPaths(); }}
             {...(activeCourse && openCourseGoals ? {
               onSetTargetBand: () => { finishMultiStageSession(false); openCourseGoals(activeCourse.id); },

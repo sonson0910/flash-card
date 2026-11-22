@@ -32,14 +32,13 @@ const text = (html: string) => html
 const attributes = (html: string) => [...html.matchAll(/aria-(?:label|valuetext)="([^"]*)"/g)].map(match => match[1]).join(' ');
 
 const counts = (overrides: Partial<IeltsPathCounts> = {}): IeltsPathCounts => ({
-  total: 100, started: 40, mastered: 30, masteredLast7: 4, masteredLast28: 12, ...overrides,
+  total: 100, started: 40, mastered: 30, masteredLast7: 4, ...overrides,
 });
 const model = (overrides: Partial<IeltsGoalModelInput> = {}) => buildIeltsGoalModel({
   counts: counts(),
   goal: { kind: 'ielts', level: '7.0', targetDate: '2026-12-19' },
   latestScore: '6.5',
   today: '2026-11-19',
-  verifiedHistoryStartedOn: '2026-10-01',
   ...overrides,
 })!;
 
@@ -50,8 +49,8 @@ const states: Record<string, Partial<IeltsGoalModelInput>> = {
   'without a latest score': { latestScore: null },
   'without a target band': { goal: { kind: 'ielts', level: null, targetDate: null } },
   'with a latest score above the target': { latestScore: '8.0' },
-  'before any path word is started': { counts: counts({ started: 0, mastered: 0, masteredLast7: 0, masteredLast28: 0 }) },
-  'with words started but none mastered': { counts: counts({ started: 4, mastered: 0, masteredLast7: 0, masteredLast28: 0 }) },
+  'before any path word is started': { counts: counts({ started: 0, mastered: 0, masteredLast7: 0 }) },
+  'with words started but none mastered': { counts: counts({ started: 4, mastered: 0, masteredLast7: 0 }) },
   'with the path complete': { counts: counts({ started: 100, mastered: 100 }) },
 };
 
@@ -136,16 +135,15 @@ describe('IELTS goal panel', () => {
     expect(noWeek).not.toContain('this week');
   });
 
-  it('writes the Crystal copy with the pace and the days to the exam', () => {
+  it('writes the Crystal copy with the days to the exam and no forecast', () => {
     theme.family = 'crystal';
     const html = render(<IeltsGoalPanelView model={model()} {...actions} />);
     const visible = text(html);
     expect(visible).toContain('IELTS goal');
-    expect(visible).toContain('30 of 100 IELTS path words are mastered in your deck. At this pace, the rest takes about 24 weeks. Exam in 30 days.');
+    expect(visible).toContain('30 of 100 IELTS path words are mastered in your deck. Exam in 30 days.');
+    expect(visible).not.toContain('At this pace');
     expect(html).toContain('aria-valuenow="30"');
     expect(html).toContain('style="width:30%"');
-    const unknownPace = text(render(<IeltsGoalPanelView model={model({ verifiedHistoryStartedOn: '2026-11-15' })} {...actions} />));
-    expect(unknownPace).not.toContain('At this pace');
   });
 
   it('renders nothing when the goal is not IELTS or the app is offline', () => {

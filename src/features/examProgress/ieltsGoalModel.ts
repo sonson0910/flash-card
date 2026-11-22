@@ -11,10 +11,8 @@ export interface IeltsPathCounts {
   readonly started: number;
   /** Path lexemes whose projection is mastered. */
   readonly mastered: number;
-  /** Path lexemes mastered in the last 7 days; null when the read could not cover the whole week. */
+  /** Path lexemes mastered in the last 7 days; null when the read reached its limit. */
   readonly masteredLast7: number | null;
-  /** Path lexemes mastered in the last 28 days; null when the read reached its limit. */
-  readonly masteredLast28: number | null;
 }
 
 export interface IeltsGoalFacts {
@@ -31,8 +29,6 @@ export interface IeltsGoalModelInput {
   readonly latestScore: string | null;
   /** Today's study day ("2026-11-19"). */
   readonly today: string;
-  /** First day of verified review history for English, or null when there is none. */
-  readonly verifiedHistoryStartedOn: string | null;
 }
 
 export type IeltsGoalState = 'not-started' | 'started' | 'in-progress' | 'complete';
@@ -46,8 +42,6 @@ export interface IeltsGoalModel {
   readonly percent: number;
   /** Shown only when above zero. */
   readonly masteredThisWeek: number | null;
-  /** About how many weeks the rest of the path takes at the last 28 days' pace, when that is known. */
-  readonly weeksLeft: number | null;
   readonly targetBand: string | null;
   /** Shown only beside a target band. */
   readonly latestScore: string | null;
@@ -65,10 +59,6 @@ export interface IeltsGoalModel {
  */
 export const activeIeltsGoal = (course: { readonly goals: readonly CourseGoal[] } | null | undefined): CourseGoal | null =>
   course?.goals.find(goal => goal.kind === IELTS_GOAL_KIND && goal.status === 'active') ?? null;
-
-export const MIN_PACE_HISTORY_DAYS = 14;
-export const MIN_PACE_MASTERED_WORDS = 3;
-export const MAX_PACE_WEEKS = 104;
 
 const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 86_400_000;
@@ -88,15 +78,6 @@ export const daysBetween = (from: string, to: string): number | null => {
 };
 
 const safeCount = (value: number): number => (Number.isSafeInteger(value) && value > 0 ? value : 0);
-
-const paceWeeks = (input: IeltsGoalModelInput, remaining: number): number | null => {
-  const last28 = input.counts.masteredLast28;
-  if (remaining <= 0 || last28 === null || last28 < MIN_PACE_MASTERED_WORDS || !input.verifiedHistoryStartedOn) return null;
-  const historyDays = daysBetween(input.verifiedHistoryStartedOn, input.today);
-  if (historyDays === null || historyDays + 1 < MIN_PACE_HISTORY_DAYS) return null;
-  const weeks = Math.ceil(remaining / (last28 / 4));
-  return weeks <= MAX_PACE_WEEKS ? weeks : null;
-};
 
 /** Null when the goal is not an IELTS goal or the path has no words, so the panel is omitted. */
 export const buildIeltsGoalModel = (input: IeltsGoalModelInput): IeltsGoalModel | null => {
@@ -120,7 +101,6 @@ export const buildIeltsGoalModel = (input: IeltsGoalModelInput): IeltsGoalModel 
     mastered,
     percent: Math.round((100 * mastered) / total),
     masteredThisWeek: week === null ? null : safeCount(week),
-    weeksLeft: paceWeeks(input, total - mastered),
     targetBand,
     latestScore,
     examDate: futureExam ? input.goal.targetDate : null,
