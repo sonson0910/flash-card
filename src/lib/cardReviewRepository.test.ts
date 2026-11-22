@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CardData } from '../types/card';
+import { servedReviewOutcome } from '../../functions/test/support/review-outcome';
 const mocks = vi.hoisted(() => ({
   callable: vi.fn(),
   httpsCallable: vi.fn(),
@@ -132,6 +133,23 @@ describe('review conflict recovery', () => {
     expect(result).toMatchObject({ gamification });
     expect((result as { gamification: object }).gamification).not.toHaveProperty('streakChange');
     expect((result as { gamification: object }).gamification).not.toHaveProperty('studyTimeMs');
+  });
+
+  it('accepts the review outcome the functions serve with the verified stats records', async () => {
+    mocks.callable.mockResolvedValueOnce({ data: structuredClone(servedReviewOutcome) });
+    const result = await applyReviewViaCallable({} as never, 'owner-a', { ...command, reviewedAt: '2026-11-22T17:00:10.000Z' });
+    expect(result).toMatchObject({
+      applied: true, duplicate: false, xpAwarded: 2, card: { id: 'word-focus', revision: 4, reviews: 1 },
+      gamification: { xp: 642, level: 3, streak: 7, studyDay: '2026-11-23', events: [], rewardTimeZone: 'Asia/Saigon' },
+    });
+  });
+
+  it('keeps the streak change and the credited study time of the served review outcome', async () => {
+    mocks.callable.mockResolvedValueOnce({ data: structuredClone(servedReviewOutcome) });
+    const result = await applyReviewViaCallable({} as never, 'owner-a', { ...command, reviewedAt: '2026-11-22T17:00:10.000Z' });
+    expect(result).toMatchObject({
+      gamification: { streakChange: { freezesUsed: 0, freezesEarned: 1, milestone: 7 }, studyTimeMs: 20_000 },
+    });
   });
 
   it.each([

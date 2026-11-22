@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CourseError } from './courseModel';
 import type { Course, CourseProfile } from './courseModel';
-import type { CoursePort, CourseProfileRead } from './coursePort';
+import type { CoursePort, CourseProfileRead, CreateCourseResult } from './coursePort';
 import { createCourseSessionController } from './courseSessionController';
 
 const makeCourse = (id: string, overrides: Partial<Course> = {}): Course => ({
@@ -101,12 +101,15 @@ describe('createCourseSessionController', () => {
     const initialProfile = makeProfile('course-en');
     const updatedProfile = makeProfile('course-en', [makeCourse('course-en'), makeCourse('course-ko', { targetLanguage: 'ko' })]);
     const port = createFakePort(async () => ({ source: 'cloud', profile: initialProfile }));
-    (port.createCourse as ReturnType<typeof vi.fn>).mockResolvedValue(updatedProfile);
+    (port.createCourse as ReturnType<typeof vi.fn>).mockResolvedValue({
+      profile: updatedProfile,
+      created: { courseId: 'course-ko', goals: [] },
+    });
     const controller = createCourseSessionController(async () => port);
     await controller.activate('owner-1');
 
     const result = await controller.actions.createCourse({ targetLanguage: 'ko', nativeLanguage: 'vi' });
-    expect(result.ok).toBe(true);
+    expect(result).toEqual({ ok: true, created: { courseId: 'course-ko', goals: [] } });
     expect(port.load).toHaveBeenCalledTimes(1);
     expect(controller.getSnapshot().profile?.courses).toHaveLength(2);
     expect(controller.getSnapshot().pending).toBe(false);
@@ -243,7 +246,7 @@ describe('createCourseSessionController', () => {
     const port = createFakePort(async () => ({ source: 'cloud', profile: makeProfile('course-en') }));
     (port.createCourse as ReturnType<typeof vi.fn>)
       .mockRejectedValueOnce(new CourseError('cloud-write-failed', 'response lost'))
-      .mockResolvedValueOnce(makeProfile('course-en'));
+      .mockResolvedValueOnce({ profile: makeProfile('course-en'), created: null });
     const controller = createCourseSessionController(async () => port);
     await controller.activate('owner-1');
 
@@ -264,7 +267,7 @@ describe('createCourseSessionController', () => {
     (port.createCourse as ReturnType<typeof vi.fn>)
       .mockRejectedValueOnce(new CourseError('cloud-write-failed', 'response lost for A'))
       .mockRejectedValueOnce(new CourseError('cloud-write-failed', 'response lost for B'))
-      .mockResolvedValueOnce(makeProfile('course-en'));
+      .mockResolvedValueOnce({ profile: makeProfile('course-en'), created: null });
     const controller = createCourseSessionController(async () => port);
     const input = { targetLanguage: 'ko' as const, nativeLanguage: 'vi' as const };
 
@@ -288,8 +291,8 @@ describe('createCourseSessionController', () => {
     (port.createCourse as ReturnType<typeof vi.fn>)
       .mockRejectedValueOnce(new CourseError('cloud-write-failed', 'response lost for Korean'))
       .mockRejectedValueOnce(new CourseError('cloud-write-failed', 'response lost for Japanese'))
-      .mockResolvedValueOnce(makeProfile('course-en'))
-      .mockResolvedValueOnce(makeProfile('course-en'));
+      .mockResolvedValueOnce({ profile: makeProfile('course-en'), created: null })
+      .mockResolvedValueOnce({ profile: makeProfile('course-en'), created: null });
     const controller = createCourseSessionController(async () => port);
     const korean = { targetLanguage: 'ko' as const, nativeLanguage: 'vi' as const };
     const japanese = { targetLanguage: 'ja' as const, nativeLanguage: 'vi' as const };
@@ -310,8 +313,8 @@ describe('createCourseSessionController', () => {
     (port.createCourse as ReturnType<typeof vi.fn>)
       .mockRejectedValueOnce(new CourseError('cloud-write-failed', 'response lost for Korean'))
       .mockRejectedValueOnce(new CourseError('cloud-write-failed', 'response lost for Japanese'))
-      .mockResolvedValueOnce(makeProfile('course-en'))
-      .mockResolvedValueOnce(makeProfile('course-en'));
+      .mockResolvedValueOnce({ profile: makeProfile('course-en'), created: null })
+      .mockResolvedValueOnce({ profile: makeProfile('course-en'), created: null });
     const controller = createCourseSessionController(async () => port);
     const korean = { targetLanguage: 'ko' as const, nativeLanguage: 'vi' as const };
     const japanese = { targetLanguage: 'ja' as const, nativeLanguage: 'vi' as const };
@@ -331,7 +334,7 @@ describe('createCourseSessionController', () => {
     (port.createCourse as ReturnType<typeof vi.fn>)
       .mockRejectedValueOnce(new CourseError('cloud-write-failed', 'first response lost'))
       .mockRejectedValueOnce(new CourseError('cloud-write-failed', 'second response lost'))
-      .mockResolvedValueOnce(makeProfile('course-en'));
+      .mockResolvedValueOnce({ profile: makeProfile('course-en'), created: null });
     const controller = createCourseSessionController(async () => port);
     const korean = { targetLanguage: 'ko' as const, nativeLanguage: 'vi' as const };
     await controller.activate('owner-a');
@@ -438,14 +441,17 @@ describe('createCourseSessionController', () => {
   it('drops a mutation whose owner changed before the callable resolved', async () => {
     const initialProfile = makeProfile('course-en');
     const port = createFakePort(async () => ({ source: 'cloud', profile: initialProfile }));
-    const pendingCreate = deferred<CourseProfile>();
+    const pendingCreate = deferred<CreateCourseResult>();
     (port.createCourse as ReturnType<typeof vi.fn>).mockReturnValue(pendingCreate.promise);
     const controller = createCourseSessionController(async () => port);
     await controller.activate('owner-1');
 
     const mutation = controller.actions.createCourse({ targetLanguage: 'ko', nativeLanguage: 'vi' });
     await controller.activate('owner-2');
-    pendingCreate.resolve(makeProfile('course-en', [makeCourse('course-en'), makeCourse('course-ko', { targetLanguage: 'ko' })]));
+    pendingCreate.resolve({
+      profile: makeProfile('course-en', [makeCourse('course-en'), makeCourse('course-ko', { targetLanguage: 'ko' })]),
+      created: { courseId: 'course-ko', goals: [] },
+    });
     const result = await mutation;
 
     expect(result.ok).toBe(false);

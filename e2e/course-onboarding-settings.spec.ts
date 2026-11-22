@@ -185,15 +185,15 @@ test('a new signed-in learner advances from language selection to a target choic
   await expect(continueButton).toBeEnabled();
   await continueButton.click();
 
-  // The goal comes first; an exam goal adds the score and countdown step.
+  // The goal comes first; an exam goal adds the score and countdown step, and Korean adds the Hangul primer.
   const progress = dialog.getByRole('progressbar', { name: 'Setup progress' });
   await expect(dialog.getByRole('heading', { name: 'What are you learning for?' })).toBeVisible();
   await expect(dialog.getByRole('button', { name: /^Just curious/ })).toHaveAttribute('aria-pressed', 'true');
-  await expect(progress).toHaveAttribute('aria-valuetext', '3 / 6');
+  await expect(progress).toHaveAttribute('aria-valuetext', '3 / 8');
   const examGoal = dialog.getByRole('button', { name: /^Pass TOPIK/ });
   await examGoal.click();
   await expect(examGoal).toHaveAttribute('aria-pressed', 'true');
-  await expect(progress).toHaveAttribute('aria-valuetext', '3 / 7');
+  await expect(progress).toHaveAttribute('aria-valuetext', '3 / 9');
   await continueButton.click();
   await expect(dialog.getByRole('heading', { name: 'Which test, and what score?' })).toBeVisible();
   const exams = dialog.getByRole('group', { name: 'Exam' });
@@ -223,11 +223,20 @@ test('a new signed-in learner advances from language selection to a target choic
   await page.screenshot({ path: testInfo.outputPath('onboarding-chinese-script.png'), animations: 'disabled', caret: 'hide' });
   await continueButton.click();
   await expect(dialog.getByRole('button', { name: /^Just curious/ })).toHaveAttribute('aria-pressed', 'true');
-  await expect(progress).toHaveAttribute('aria-valuetext', '3 / 6');
+  await expect(progress).toHaveAttribute('aria-valuetext', '3 / 7');
+  await continueButton.click();
+
+  // The starting level is the learner's own answer and stays optional; Chinese has no script primer.
+  await expect(dialog.getByRole('heading', { name: 'Where are you starting from?' })).toBeVisible();
+  const levels = dialog.getByRole('group', { name: 'Starting level' });
+  await expect(levels.getByRole('button')).toHaveCount(3);
+  await levels.getByRole('button', { name: /^Core/ }).click();
+  await expect(levels.getByRole('button', { name: /^Core/ })).toHaveAttribute('aria-pressed', 'true');
   await continueButton.click();
 
   await expect(dialog.getByRole('heading', { name: 'How many new words each day?' })).toBeVisible();
-  await expect(dialog.locator('.onb-projection')).toHaveText('70new words a week in your plan at 10 a day.');
+  await expect(progress).toHaveAttribute('aria-valuetext', '5 / 7');
+  await expect(dialog.locator('.onb-projection')).toHaveText('70new words a week in your plan at 10 a day.About 7 min a day for new words, plus the reviews that come due.');
   await dialog.getByRole('button', { name: 'Try 5 cards' }).click();
 
   // The trial grades the real starter cards the server wrote for this course.
@@ -235,7 +244,7 @@ test('a new signed-in learner advances from language selection to a target choic
   await expect(dialog.getByRole('heading', { name: 'Flip each card, then grade yourself.' })).toBeVisible({ timeout: 30_000 });
   const firstCard = dialog.getByRole('group', { name: /^你好 flashcard/ });
   await expect(firstCard).toBeVisible({ timeout: 15_000 });
-  await expect(firstCard).toHaveAccessibleName(/Showing the English word/);
+  await expect(firstCard).toHaveAccessibleName(/Showing the Chinese word/);
   await firstCard.getByRole('button', { name: /^Reveal the .*meaning of 你好$/ }).click();
   await expect(firstCard).toHaveAccessibleName(/meaning/);
   await expect(firstCard).toContainText('hello');
@@ -245,7 +254,7 @@ test('a new signed-in learner advances from language selection to a target choic
   await grades.getByRole('button', { name: 'Got it' }).click();
   // Onboarding is a dialog; a tap on the card face must still turn the card it hosts.
   const secondCard = dialog.getByRole('group', { name: / flashcard/ });
-  await expect(secondCard).toHaveAccessibleName(/Showing the English word/);
+  await expect(secondCard).toHaveAccessibleName(/Showing the Chinese word/);
   await secondCard.locator('[data-flashcard-stage]').click({ position: { x: 16, y: 120 } });
   await expect(secondCard).toHaveAccessibleName(/meaning/);
   for (const answer of ['Forgot', 'Got it', 'Got it', 'Forgot']) {
@@ -258,6 +267,8 @@ test('a new signed-in learner advances from language selection to a target choic
 
   await dialog.getByRole('button', { name: 'Set my reminder' }).click();
   await expect(dialog.getByRole('heading', { name: 'When should we nudge you?' })).toBeVisible();
+  // The preview counts the starter cards the trial just graded, not an invented number.
+  await expect(dialog.getByRole('figure', { name: 'Reminder preview' })).toContainText('5 cards are ready for review.');
   await dialog.getByRole('button', { name: 'Start learning' }).click();
   await expect(dialog).toHaveCount(0, { timeout: 15_000 });
   await expect(page.locator('.claude-course-switcher-trigger')).toHaveText(/Chinese/);
@@ -265,6 +276,8 @@ test('a new signed-in learner advances from language selection to a target choic
   const selectedCourse = profile?.courses?.find((course: { targetLanguage: string }) => course.targetLanguage === 'zh');
   expect(selectedCourse?.preferences?.zhScript).toBe('hant');
   expect(profile?.activeCourseId).toBe(selectedCourse?.id);
+  // The starting level stays on this device for the course language; it costs no Firestore write.
+  expect(await page.evaluate(key => localStorage.getItem(key), `sonflash_starting_tier_v1_${testUser.uid}_zh`)).toBe('core');
 });
 
 test('onboarding keeps reminder save failure visible until the learner explicitly skips it', async ({ page, signIn, blockExternalNetwork }) => {
@@ -275,6 +288,10 @@ test('onboarding keeps reminder save failure visible until the learner explicitl
   await dialog.getByRole('button', { name: 'Continue' }).click();
   await dialog.getByRole('button', { name: /Korean/ }).click();
   await dialog.getByRole('button', { name: 'Continue' }).click();
+  await dialog.getByRole('button', { name: 'Continue' }).click();
+  await expect(dialog.getByRole('heading', { name: 'Where are you starting from?' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Continue' }).click();
+  await expect(dialog.getByRole('heading', { name: 'Read Hangul before your first words' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Continue' }).click();
   await dialog.getByRole('button', { name: 'Try 5 cards' }).click();
   await dialog.getByRole('button', { name: 'Set my reminder' }).click();

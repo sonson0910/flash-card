@@ -2,6 +2,14 @@
   --account-menu-rim: var(--sf-rim-learning);
 }
 
+/* The crimson-wing frame is a Crystal reward that keeps its colours in every theme. */
+.account-menu-trigger[data-equipped-frame="crimson-wing"],
+.account-menu-avatar[data-equipped-frame="crimson-wing"] {
+  --wing-frame-crimson: #ff5470;
+  --wing-frame-glow: #ff2a4d;
+  --wing-frame-holo: #5ef2ff;
+}
+
 .claude-app-shell .account-menu-trigger {
   position: relative;
   width: 44px !important;
@@ -9,9 +17,12 @@
   min-height: 44px !important;
   padding: 0;
   overflow: hidden;
+  /* The board's 40px avatar inside the 44px target: a transparent 2px border and an inset line. */
+  border: 2px solid transparent;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--sf-brand) 10%, var(--sf-surface));
-  color: var(--sf-brand-text);
+  background: var(--sf-avatar-bg) padding-box;
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+  color: var(--sf-avatar-text);
   font-size: 13px;
   font-weight: 700;
 }
@@ -25,8 +36,8 @@
 
 .account-menu-trigger[data-equipped-frame="crimson-wing"],
 .account-menu-avatar[data-equipped-frame="crimson-wing"] {
-  border-color: #ff5470;
-  box-shadow: 0 0 0 2px #5ef2ff, 0 0 13px rgb(255 42 77 / .82), 0 0 21px rgb(94 242 255 / .56);
+  border-color: var(--wing-frame-crimson);
+  box-shadow: 0 0 0 2px var(--wing-frame-holo), 0 0 13px color-mix(in srgb, var(--wing-frame-glow) 82%, transparent), 0 0 21px color-mix(in srgb, var(--wing-frame-holo) 56%, transparent);
 }
 
 .account-menu-trigger[data-equipped-frame="crimson-wing"]::before,
@@ -35,8 +46,8 @@
   z-index: 1;
   width: 150%;
   height: 55%;
-  border-top: 2px solid #ff5470;
-  border-bottom: 2px solid #5ef2ff;
+  border-top: 2px solid var(--wing-frame-crimson);
+  border-bottom: 2px solid var(--wing-frame-holo);
   border-radius: 50%;
   content: "";
   pointer-events: none;
@@ -118,7 +129,7 @@
   overflow: hidden;
   margin-top: 2px;
   color: var(--sf-text-muted);
-  font-family: var(--sf-font-mono, ui-monospace, monospace);
+  font-family: var(--sf-font-mono);
   font-size: 11.5px;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -223,7 +234,7 @@
   gap: 5px;
   overflow: hidden;
   color: var(--sf-text-muted);
-  font-family: var(--sf-font-mono, ui-monospace, monospace);
+  font-family: var(--sf-font-mono);
   font-size: 10px;
   font-weight: 500;
   text-overflow: ellipsis;
@@ -283,20 +294,21 @@ html[data-theme-family="crystal"] .claude-app-shell .account-menu-trigger {
   border: 0;
   border-radius: 0;
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-  background: var(--sf-crimson-gradient, linear-gradient(145deg, #ff5470, #7a0820));
-  color: #fff;
-  font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
+  background: var(--sf-avatar-bg);
+  box-shadow: none;
+  color: var(--sf-avatar-text);
+  font-family: var(--sf-font-display);
   font-size: 14px;
   font-style: italic;
   font-weight: 900;
-  filter: drop-shadow(0 0 9px rgb(255 42 77 / 0.42));
+  filter: drop-shadow(0 0 9px color-mix(in srgb, var(--sf-brand) 42%, transparent));
 }
 
 html[data-theme-family="crystal"] .claude-app-shell .account-menu-panel {
   padding: 1.5px;
   border: 0;
   border-radius: 0;
-  background: var(--sf-menu-rim, linear-gradient(160deg, #ff5470, rgb(255 255 255 / 0.12) 40%, #1aa7c9));
+  background: linear-gradient(160deg, var(--sf-star-face), color-mix(in srgb, var(--sf-on-primary) 12%, transparent) 40%, #1aa7c9);
   clip-path: var(--nk-chamfer, polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%));
   filter: drop-shadow(0 18px 28px rgb(0 0 0 / 0.24));
 }
@@ -317,9 +329,9 @@ html[data-theme-family="crystal"] .account-menu-avatar {
   border: 0;
   border-radius: 0;
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-  background: var(--sf-crimson-gradient, linear-gradient(145deg, #ff5470, #7a0820));
-  color: #fff;
-  font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
+  background: var(--sf-avatar-bg);
+  color: var(--sf-avatar-text);
+  font-family: var(--sf-font-display);
   font-style: italic;
   font-weight: 900;
 }
@@ -333,17 +345,12 @@ html[data-theme-family="crystal"] .account-menu-status {
 }
 
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="synced"] {
-  background: rgb(26 167 201 / 0.12);
-  color: #0a7d99;
-}
-
-html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="synced"] {
-  background: rgb(94 242 255 / 0.07);
-  color: var(--sf-success);
+  background: var(--sf-success-soft);
+  color: var(--sf-success-text);
 }
 
 html[data-theme-family="crystal"] .account-menu-name {
-  font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
+  font-family: var(--sf-font-display);
   font-size: 15px;
   font-style: italic;
   font-weight: 800;
@@ -356,23 +363,23 @@ html[data-theme-family="crystal"] .account-menu-email {
 
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="session-lost"],
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="needs-attention"] {
-  background: rgb(224 23 63 / 0.1);
-  color: #c40f35;
+  background: var(--sf-danger-soft);
+  color: var(--sf-brand-text);
 }
 
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="offline"],
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="cloud-paused"],
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="device"] {
-  background: rgb(255 190 60 / 0.16);
-  color: #8a5a00;
+  background: var(--sf-warn-bg);
+  color: var(--sf-warn);
 }
 
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="checking"],
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="syncing"],
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="queued"],
 html[data-theme-family="crystal"] .account-menu-status[data-status-kind="saving-offline"] {
-  background: rgb(31 111 214 / 0.1);
-  color: #1f5fc4;
+  background: var(--sf-info-bg);
+  color: var(--sf-info);
 }
 
 html[data-theme-family="crystal"] .account-menu-divider {
@@ -397,32 +404,12 @@ html[data-theme-family="crystal"] .account-menu-item:focus-visible {
 }
 
 html[data-theme-family="crystal"] .account-menu-danger-action {
-  background: rgb(224 23 63 / 0.08);
-  color: #c40f35;
-}
-
-html[data-theme-family="crystal"] .account-menu-danger-action > svg {
-  color: #c40f35;
-}
-
-html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="session-lost"],
-html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="needs-attention"],
-html[data-theme-family="crystal"].dark .account-menu-danger-action,
-html[data-theme-family="crystal"].dark .account-menu-danger-action > svg {
+  background: color-mix(in srgb, var(--sf-danger-soft) 80%, transparent);
   color: var(--sf-brand-text);
 }
 
-html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="offline"],
-html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="cloud-paused"],
-html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="device"] {
-  color: #ffd166;
-}
-
-html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="checking"],
-html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="syncing"],
-html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="queued"],
-html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="saving-offline"] {
-  color: #8fc4ff;
+html[data-theme-family="crystal"] .account-menu-danger-action > svg {
+  color: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -432,4 +419,25 @@ html[data-theme-family="crystal"].dark .account-menu-status[data-status-kind="sa
     scroll-behavior: auto;
     transition: none;
   }
+}
+
+/* Theme and language controls that leave the header at narrower widths. The stylesheet in
+   src/styles/shell.css decides when this group shows; popovers open in flow so the scrolling
+   panel never clips them. */
+.account-menu-preferences {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 10px;
+}
+
+.account-menu-preferences :is(.claude-theme-menu, .claude-language-menu) {
+  display: contents;
+}
+
+.account-menu-preferences :is(.claude-theme-menu-popover, .claude-language-menu-popover) {
+  position: static;
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 0;
 }

@@ -84,6 +84,15 @@ vi.mock('../../lib/images', () => ({
   getDisplayImageUrl: (url: string) => url,
 }));
 
+vi.mock('../files/imageResize', async original => ({
+  ...(await original<typeof import('../files/imageResize')>()),
+  resizeImageForUpload: async (blob: Blob) => ({ blob: new Blob([await blob.arrayBuffer()], { type: 'image/webp' }), contentType: 'image/webp', width: 10, height: 10 }),
+}));
+
+import { normalizeCardData } from '../../lib/cardNormalization';
+import { isSupportedImageUrl, ownStorageImageOwner } from '../../lib/mediaUrlPolicy';
+import { createCardImageUploader } from '../files/fileLibrary';
+import { createMemoryFilePort } from '../files/memoryFileAdapter';
 import { EDIT_CARD_FIELDS } from './editCardModel';
 import { EditCardDialog } from './EditCardDialog';
 
@@ -290,6 +299,285 @@ describe('EditCardDialog', () => {
     expect(JSON.stringify(view.tree)).toContain('This card could not be deleted. Try again.');
     expect(JSON.stringify(view.tree)).toContain('Retry delete');
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  });
+
+  it('offers Unassigned and the profile decks, and keeps a deck missing from the list selectable with a note', () => {
+    const view = render({ card: { ...card, customDeck: 'Old deck' }, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), customDecks: ['IELTS', 'Work'] });
+    const select = findByProp(view.tree, 'data-edit-deck-select')!;
+    expect(select.props.value).toBe('Old deck');
+    const options = findAllByType(select, 'option');
+    expect(options.map(option => option.props?.value)).toEqual(['', 'IELTS', 'Work', 'Old deck']);
+    expect(options[0]!.props?.children).toBe('Unassigned');
+    expect(options[3]!.props?.children).toBe('{name} (not in your deck list)');
+  });
+
+  it('offers only Unassigned and the current deck when the host passes no deck list', () => {
+    const view = render({ card: { ...card, customDeck: 'IELTS' }, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+    const options = findAllByType(findByProp(view.tree, 'data-edit-deck-select')!, 'option');
+    expect(options.map(option => option.props?.value)).toEqual(['', 'IELTS']);
+    expect(options[1]!.props?.children).toBe('IELTS');
+  });
+
+  it('saves the deck and the star with the other fields in one patch, in both editor modes', async () => {
+    for (const context of [undefined, { kind: 'review' as const, current: 2, total: 9 }]) {
+      hooks.states = [];
+      const onSave = vi.fn(async (): Promise<LearningStateOutcome> =>
+        ({ status: 'published', result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } }));
+      const props = { card, open: true, onOpenChange: vi.fn(), onSave, customDecks: ['IELTS', 'Work'], context };
+      let view = render(props);
+      (findByProp(view.tree, 'data-edit-deck-select')!.props.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'Work' } });
+      view = render(props);
+      const star = findByProp(view.tree, 'data-edit-starred')!;
+      expect(star.props['aria-pressed']).toBe(false);
+      (star.props.onClick as () => void)();
+      (view.textareas[translationFieldIndex]!.props!.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'dẫn đầu' } });
+      view = render(props);
+      expect(findByProp(view.tree, 'data-edit-starred')!.props['aria-pressed']).toBe(true);
+
+      await view.submit({ preventDefault: vi.fn() });
+      expect(onSave).toHaveBeenCalledTimes(1);
+      expect(onSave).toHaveBeenCalledWith('card-1', { translation: 'dẫn đầu', customDeck: 'Work', bookmarked: true });
+    }
+  });
+
+  it('refuses to save a deck that was deleted while the editor was open', async () => {
+    const onSave = vi.fn();
+    const onOpenChange = vi.fn();
+    let view = render({ card, open: true, onOpenChange, onSave, customDecks: ['IELTS', 'Work'] });
+    (findByProp(view.tree, 'data-edit-deck-select')!.props.onChange as (event: { target: { value: string } }) => void)({ target: { value: 'Work' } });
+    view = render({ card, open: true, onOpenChange, onSave, customDecks: ['IELTS'] });
+    expect(findAllByType(findByProp(view.tree, 'data-edit-deck-select')!, 'option').map(option => option.props?.value)).toEqual(['', 'IELTS', 'Work']);
+
+    await view.submit({ preventDefault: vi.fn() });
+    view = render({ card, open: true, onOpenChange, onSave, customDecks: ['IELTS'] });
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    expect(view.errorText).toBe('This deck no longer exists. Choose another deck.');
+  });
+
+  describe('tags, difficulty label and AI meanings', () => {
+    type Handler<T> = (event: T) => void;
+    const key = (name: string) => ({ key: name, preventDefault: vi.fn(), nativeEvent: { isComposing: false } });
+    const findAllByProp = (node: unknown, name: string): Array<{ props: Record<string, unknown> }> => {
+      const out: Array<{ props: Record<string, unknown> }> = [];
+      walk(node, element => { if (element.props && name in element.props) out.push(element as { props: Record<string, unknown> }); });
+      return out;
+    };
+    const published = async (): Promise<LearningStateOutcome> =>
+      ({ status: 'published', result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } });
+    const tagInput = (tree: unknown) => findByProp(tree, 'data-edit-tag-input')!.props;
+    const tagTexts = (tree: unknown) => findAllByProp(tree, 'data-edit-tag-remove').map(button => button.props['data-edit-tag-remove']);
+
+    it('shows the stored tags as removable chips and saves the edited list', async () => {
+      const onSave = vi.fn(published);
+      const props = { card: { ...card, tags: ['news', 'B2'] }, open: true, onOpenChange: vi.fn(), onSave };
+      let view = render(props);
+      expect(tagTexts(view.tree)).toEqual(['news', 'B2']);
+      expect(findByProp(view.tree, 'data-edit-tag-remove')!.props['aria-label']).toBe('Remove tag {tag}');
+
+      (findByProp(view.tree, 'data-edit-tag-remove')!.props.onClick as () => void)();
+      view = render(props);
+      (tagInput(view.tree).onChange as Handler<{ target: { value: string } }>)({ target: { value: 'travel' } });
+      view = render(props);
+      const enter = key('Enter');
+      (tagInput(view.tree).onKeyDown as Handler<ReturnType<typeof key>>)(enter);
+      expect(enter.preventDefault).toHaveBeenCalled();
+      view = render(props);
+      expect(tagTexts(view.tree)).toEqual(['B2', 'travel']);
+      expect(tagInput(view.tree).value).toBe('');
+
+      await view.submit({ preventDefault: vi.fn() });
+      expect(onSave).toHaveBeenCalledWith('card-1', { tags: ['B2', 'travel'] });
+    });
+
+    it('adds a tag when a comma is typed and removes the last chip with Backspace on an empty input', () => {
+      const props = { card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() };
+      let view = render(props);
+      expect(tagInput(view.tree).placeholder).toBe('Add a tag');
+      (tagInput(view.tree).onChange as Handler<{ target: { value: string } }>)({ target: { value: 'news, phrasal  verbs,' } });
+      view = render(props);
+      expect(tagTexts(view.tree)).toEqual(['news', 'phrasal verbs']);
+      expect(tagInput(view.tree).placeholder).toBeUndefined();
+
+      const backspace = key('Backspace');
+      (tagInput(view.tree).onKeyDown as Handler<ReturnType<typeof key>>)(backspace);
+      view = render(props);
+      expect(backspace.preventDefault).toHaveBeenCalled();
+      expect(tagTexts(view.tree)).toEqual(['news']);
+    });
+
+    it('leaves Enter to the form when the tag input is empty and ignores keys while composing', () => {
+      const props = { card: { ...card, tags: ['news'] }, open: true, onOpenChange: vi.fn(), onSave: vi.fn() };
+      let view = render(props);
+      const enter = key('Enter');
+      (tagInput(view.tree).onKeyDown as Handler<ReturnType<typeof key>>)(enter);
+      expect(enter.preventDefault).not.toHaveBeenCalled();
+
+      const composing = { ...key('Backspace'), nativeEvent: { isComposing: true } };
+      (tagInput(view.tree).onKeyDown as Handler<typeof composing>)(composing);
+      view = render(props);
+      expect(tagTexts(view.tree)).toEqual(['news']);
+    });
+
+    it('announces a duplicate or an over-long tag politely and keeps the long text for editing', () => {
+      const props = { card: { ...card, tags: ['News'] }, open: true, onOpenChange: vi.fn(), onSave: vi.fn() };
+      let view = render(props);
+      const notice = () => findByProp(view.tree, 'data-edit-tag-notice')!.props;
+      expect(notice()['aria-live']).toBe('polite');
+      expect(notice().role).toBeUndefined();
+      expect(notice().children).toBe('');
+
+      (tagInput(view.tree).onChange as Handler<{ target: { value: string } }>)({ target: { value: 'news,' } });
+      view = render(props);
+      expect(notice().children).toBe('Already added');
+      expect(tagTexts(view.tree)).toEqual(['News']);
+
+      (tagInput(view.tree).onChange as Handler<{ target: { value: string } }>)({ target: { value: `${'x'.repeat(33)},` } });
+      view = render(props);
+      expect(notice().children).toBe('Tags can be up to {max} characters');
+      expect(tagInput(view.tree).value).toBe('x'.repeat(33));
+    });
+
+    it('stops taking tags at 8 without moving focus away from the input', () => {
+      const full = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+      const view = render({ card: { ...card, tags: full }, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      expect(tagInput(view.tree).readOnly).toBe(true);
+      expect(tagInput(view.tree)['aria-disabled']).toBe(true);
+      expect(tagInput(view.tree).disabled).toBeUndefined();
+      expect(tagInput(view.tree)['aria-describedby']).toBe('edit-card-tags-limit');
+      expect(JSON.stringify(view.tree)).toContain('Up to {max} tags');
+      expect(findByProp(view.tree, 'data-edit-tag-suggestions')).toBeNull();
+    });
+
+    it('suggests the card category and CEFR level as tags, never as AI suggestions', () => {
+      const props = { card: { ...card, category: 'Travel', cefrLevel: 'B2', tags: ['b2'] }, open: true, onOpenChange: vi.fn(), onSave: vi.fn() };
+      let view = render(props);
+      const suggestions = findByProp(view.tree, 'data-edit-tag-suggestions')!;
+      expect(JSON.stringify(suggestions)).toContain('From this card:');
+      expect(JSON.stringify(suggestions)).not.toContain('AI suggested');
+      expect(findAllByProp(view.tree, 'data-edit-tag-suggestion').map(button => button.props['data-edit-tag-suggestion'])).toEqual(['Travel']);
+
+      (findByProp(view.tree, 'data-edit-tag-suggestion')!.props.onClick as () => void)();
+      view = render(props);
+      expect(tagTexts(view.tree)).toEqual(['b2', 'Travel']);
+      expect(findByProp(view.tree, 'data-edit-tag-suggestions')).toBeNull();
+    });
+
+    it('offers the difficulty label as native radios in the library dialog and clears it to no label', async () => {
+      const onSave = vi.fn(published);
+      const props = { card: { ...card, learnerDifficulty: 'easy' as const }, open: true, onOpenChange: vi.fn(), onSave };
+      let view = render(props);
+      const radios = findAllByType(findByProp(view.tree, 'data-edit-difficulty')!, 'input');
+      expect(radios.map(radio => [radio.props?.type, radio.props?.name, radio.props?.value, radio.props?.checked])).toEqual([
+        ['radio', 'edit-card-learner-difficulty', 'easy', true],
+        ['radio', 'edit-card-learner-difficulty', 'medium', false],
+        ['radio', 'edit-card-learner-difficulty', 'hard', false],
+      ]);
+      expect(findAllByType(findByProp(view.tree, 'data-edit-difficulty')!, 'legend')).toHaveLength(1);
+      expect(JSON.stringify(view.tree)).toContain('Your own label. It does not change when this card is due.');
+
+      (radios[2]!.props!.onChange as () => void)();
+      view = render(props);
+      expect(findAllByType(findByProp(view.tree, 'data-edit-difficulty')!, 'input')[2]!.props?.checked).toBe(true);
+      await view.submit({ preventDefault: vi.fn() });
+      expect(onSave).toHaveBeenLastCalledWith('card-1', { learnerDifficulty: 'hard' });
+
+      hooks.states = [];
+      view = render(props);
+      (findByProp(view.tree, 'data-edit-difficulty-clear')!.props.onClick as () => void)();
+      view = render(props);
+      expect(findByProp(view.tree, 'data-edit-difficulty-clear')).toBeNull();
+      expect(findAllByType(findByProp(view.tree, 'data-edit-difficulty')!, 'input').every(radio => radio.props?.checked === false)).toBe(true);
+      await view.submit({ preventDefault: vi.fn() });
+      expect(onSave).toHaveBeenLastCalledWith('card-1', { learnerDifficulty: null });
+    });
+
+    it('shows the last review rating read-only beside the label only once the card was reviewed', () => {
+      const unreviewed = render({ card: { ...card, difficulty: 'good' }, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      expect(JSON.stringify(unreviewed.tree)).not.toContain('Last review');
+
+      hooks.states = [];
+      const reviewed = render({ card: { ...card, difficulty: 'good', reviews: 3 }, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      expect(JSON.stringify(findByProp(reviewed.tree, 'data-edit-difficulty'))).toContain('Last review: Good');
+    });
+
+    it('keeps the difficulty label out of the paused-review sheet, which shows tags beside the deck', () => {
+      const view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), context: { kind: 'review', current: 1, total: 3 } });
+      expect(findByProp(view.tree, 'data-edit-difficulty')).toBeNull();
+      expect(findByProp(view.tree, 'data-edit-tag-input')).not.toBeNull();
+      expect(findByProp(view.tree, 'data-edit-starred')).not.toBeNull();
+    });
+
+    it('offers the AI meanings that differ from the draft and picks one into the draft', async () => {
+      const onSave = vi.fn(published);
+      const aiCard: CardData = { ...card, origin: 'ai', translationAlternatives: ['dẫn dắt', 'chì', 'kim loại; nặng'] };
+      for (const context of [undefined, { kind: 'review' as const, current: 1, total: 3 }]) {
+        hooks.states = [];
+        onSave.mockClear();
+        const props = { card: aiCard, open: true, onOpenChange: vi.fn(), onSave, context };
+        let view = render(props);
+        expect(findByProp(view.tree, 'data-edit-ai-suggested')).not.toBeNull();
+        const choices = findAllByProp(view.tree, 'data-edit-meaning-choice');
+        expect(choices.map(choice => choice.props.children)).toEqual(['dẫn dắt', 'kim loại']);
+        expect(choices[1]!.props['aria-label']).toBe('Use meaning: {meaning}');
+
+        (choices[1]!.props.onClick as () => void)();
+        view = render(props);
+        expect(view.textareas[0]!.props!.value).toBe('kim loại; nặng');
+        expect(findAllByProp(view.tree, 'data-edit-meaning-choice').map(choice => choice.props.children)).toEqual(['dẫn dắt', 'chì']);
+        await view.submit({ preventDefault: vi.fn() });
+        expect(onSave).toHaveBeenCalledWith('card-1', { translation: 'kim loại; nặng' });
+      }
+    });
+
+    it('shows no AI badge or meaning chips for a card without alternatives', () => {
+      const view = render({ card: { ...card, translationAlternatives: ['chì'] }, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      expect(findByProp(view.tree, 'data-edit-ai-suggested')).toBeNull();
+      expect(findByProp(view.tree, 'data-edit-meaning-choice')).toBeNull();
+    });
+
+    it('saves meaning, deck, star, tags and difficulty label in one patch', async () => {
+      const onSave = vi.fn(published);
+      const props = {
+        card: { ...card, origin: 'ai' as const, translationAlternatives: ['dẫn dắt'], tags: ['news'] },
+        open: true, onOpenChange: vi.fn(), onSave, customDecks: ['IELTS', 'Work'],
+      };
+      let view = render(props);
+      (findByProp(view.tree, 'data-edit-meaning-choice')!.props.onClick as () => void)();
+      (findByProp(view.tree, 'data-edit-deck-select')!.props.onChange as Handler<{ target: { value: string } }>)({ target: { value: 'IELTS' } });
+      view = render(props);
+      (findByProp(view.tree, 'data-edit-starred')!.props.onClick as () => void)();
+      (tagInput(view.tree).onChange as Handler<{ target: { value: string } }>)({ target: { value: 'B2,' } });
+      view = render(props);
+      (findAllByType(findByProp(view.tree, 'data-edit-difficulty')!, 'input')[1]!.props!.onChange as () => void)();
+      view = render(props);
+
+      await view.submit({ preventDefault: vi.fn() });
+      expect(onSave).toHaveBeenCalledTimes(1);
+      expect(onSave).toHaveBeenCalledWith('card-1', {
+        translation: 'dẫn dắt', customDeck: 'IELTS', bookmarked: true, tags: ['news', 'B2'], learnerDifficulty: 'medium',
+      });
+    });
+
+    it('drops typed tags and a picked meaning when the editor reopens after a discard', () => {
+      const aiCard: CardData = { ...card, origin: 'ai', translationAlternatives: ['dẫn dắt'] };
+      const props = { card: aiCard, open: true, onOpenChange: vi.fn(), onSave: vi.fn() };
+      let view = render(props);
+      (findByProp(view.tree, 'data-edit-meaning-choice')!.props.onClick as () => void)();
+      (tagInput(view.tree).onChange as Handler<{ target: { value: string } }>)({ target: { value: 'half typed' } });
+      view = render(props);
+      (tagInput(view.tree).onChange as Handler<{ target: { value: string } }>)({ target: { value: 'news,' } });
+      view = render(props);
+      expect(tagTexts(view.tree)).toEqual(['news']);
+
+      render({ ...props, open: false });
+      render(props);
+      view = render(props);
+      expect(view.textareas[0]!.props!.value).toBe('chì');
+      expect(tagTexts(view.tree)).toEqual([]);
+      expect(tagInput(view.tree).value).toBe('');
+      expect(findAllByProp(view.tree, 'data-edit-meaning-choice')).toHaveLength(1);
+    });
   });
 
   it('treats an unsaved headword as dirty when Escape requests a close', () => {
@@ -685,6 +973,27 @@ describe('EditCardDialog', () => {
       view = render(props);
       expect(findAllByType(view.tree, 'img').some(image => String(image.props?.src).startsWith('https://firebasestorage.googleapis.com/'))).toBe(true);
       expect(findByProp(view.tree, 'data-edit-image-remove')).not.toBeNull();
+    });
+
+    it('saves a photo from the uploader the hosts pass, and the card keeps it once stored', async () => {
+      const port = createMemoryFilePort({ limits: { tier: 'free', limitBytes: 4_096, maxFileBytes: 2_048 } });
+      port.downloadUrl = async fileId =>
+        `https://firebasestorage.googleapis.com/v0/b/encoded-hangout-433912-h2.firebasestorage.app/o/users%2Fuser-1%2Ffiles%2F${fileId}?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d`;
+      const onSave = vi.fn(async (): Promise<LearningStateOutcome> => ({ status: 'missing-card' }));
+      const props = { card, open: true, onOpenChange: vi.fn(), onSave, imageUpload: createCardImageUploader(port) };
+      pick(render(props).tree);
+      await vi.waitFor(() => {
+        expect(findAllByType(render(props).tree, 'img').some(image => String(image.props?.src).startsWith('https://firebasestorage.googleapis.com/'))).toBe(true);
+      }, { timeout: 8_000, interval: 50 });
+      await render(props).submit({ preventDefault: vi.fn() });
+      expect(onSave).toHaveBeenCalledTimes(1);
+      const [, patch] = onSave.mock.calls[0] as unknown as [string, Partial<CardData>];
+      const [stored] = (await port.list()).files;
+      expect(stored).toMatchObject({ purpose: 'card-image', status: 'ready' });
+      expect(patch).toMatchObject({ imageUrl: expect.stringContaining(`%2Ffiles%2F${stored!.id}?alt=media`), imageSearchQuery: '' });
+      expect(isSupportedImageUrl(patch.imageUrl)).toBe(true);
+      expect(ownStorageImageOwner(patch.imageUrl)).toBe('user-1');
+      expect(normalizeCardData({ ...card, ...patch }, card.id).imageUrl).toBe(patch.imageUrl);
     });
 
     it('cancels quietly and keeps the previous photo', async () => {

@@ -31,13 +31,38 @@ const protectedOperationLabel = {
   conversation: 'Text conversation',
 } as const;
 
+type WordGenerationServerStage = 'reserving' | 'drafting' | 'field' | 'done' | 'error';
+
+/**
+ * Progress of one word generation. The server sends the first five stages. `retrying` is emitted
+ * on this device before an automatic retry of the same operation, and `finding-image` is set by
+ * the card creator after the text is complete; the server never sends either.
+ */
 export type WordGenerationProgress = {
   operationId: string;
-  stage: 'reserving' | 'drafting' | 'field' | 'done' | 'error';
+  stage: WordGenerationServerStage | 'retrying' | 'finding-image';
   field?: string;
   value?: unknown;
   errorReason?: string;
   result?: unknown;
+};
+
+const WORD_GENERATION_SERVER_STAGES: readonly string[] = ['reserving', 'drafting', 'field', 'done', 'error'] satisfies readonly WordGenerationServerStage[];
+
+/** The server refuses a fourth attempt of one operation; a new operation is charged again. */
+export const WORD_ATTEMPTS_EXHAUSTED_REASON = 'operation-attempts-exhausted';
+
+const attemptsExhaustedError = (error: unknown): ProtectedFunctionError | null => {
+  if (!error || typeof error !== 'object' || error instanceof ProtectedFunctionError) return null;
+  const rawCode = (error as { code?: unknown }).code;
+  const code = typeof rawCode === 'string' ? rawCode.trim().toLowerCase().replace(/^functions\//, '') : '';
+  const details = (error as { details?: unknown }).details;
+  const reason = details && typeof details === 'object' ? (details as { reason?: unknown }).reason : undefined;
+  if (code !== 'failed-precondition' || reason !== WORD_ATTEMPTS_EXHAUSTED_REASON) return null;
+  return new ProtectedFunctionError({
+    message: 'This AI request has used all of its retries. Trying again starts a new request.',
+    kind: 'unknown', code, retryable: false, reason: WORD_ATTEMPTS_EXHAUSTED_REASON,
+  });
 };
 
 const callProductionAI = async <T,>(
@@ -70,24 +95,31 @@ const callProductionAI = async <T,>(
       action: string; input: unknown; expectedOwnerId: string; operationId?: string;
     }, { result: T }>(functions, 'generateVocabulary');
     const request = { action, input, expectedOwnerId, ...(operationId ? { operationId } : {}) };
-    if (onProgress && operationId) {
-      const { stream, data } = await (signal
-        ? callable.stream(request, { signal }) : callable.stream(request));
-      for await (const chunk of stream) {
-        if (chunk && typeof chunk === 'object' && 'operationId' in chunk
-          && chunk.operationId === operationId && 'stage' in chunk
-          && (chunk.stage === 'reserving' || chunk.stage === 'drafting' || chunk.stage === 'field'
-            || chunk.stage === 'done' || chunk.stage === 'error')) {
-          onProgress(chunk as WordGenerationProgress);
+    try {
+      if (onProgress && operationId) {
+        const { stream, data } = await (signal
+          ? callable.stream(request, { signal }) : callable.stream(request));
+        for await (const chunk of stream) {
+          if (chunk && typeof chunk === 'object' && 'operationId' in chunk
+            && chunk.operationId === operationId && 'stage' in chunk
+            && typeof chunk.stage === 'string' && WORD_GENERATION_SERVER_STAGES.includes(chunk.stage)) {
+            onProgress(chunk as WordGenerationProgress);
+          }
         }
+        return (await data).result;
       }
-      return (await data).result;
+      return (await callable(request)).data.result;
+    } catch (error) {
+      throw attemptsExhaustedError(error) ?? error;
     }
-    return (await callable(request)).data.result;
   });
 };
 
-export const withNetworkRetry = async <T>(operation: () => Promise<T>, signal?: AbortSignal): Promise<T> => {
+export const withNetworkRetry = async <T>(
+  operation: () => Promise<T>,
+  signal?: AbortSignal,
+  onRetry?: () => void,
+): Promise<T> => {
   if (signal?.aborted) throw new DOMException('AI generation cancelled.', 'AbortError');
   let expired = false;
   const retry = async (): Promise<T> => {
@@ -112,6 +144,7 @@ export const withNetworkRetry = async <T>(operation: () => Promise<T>, signal?: 
         const inFlight = error instanceof ProtectedFunctionError && error.retryAfterMs !== undefined;
         if (!isRetryable || attempt === 11 || (!inFlight && ordinaryRetries >= AI_MAX_ATTEMPTS - 1)) break;
         const delay = inFlight ? error.retryAfterMs : 500 * (2 ** ordinaryRetries++);
+        try { onRetry?.(); } catch { /* A progress observer cannot stop the retry. */ }
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -165,19 +198,30 @@ export async function generateWordInfo(word: string, options: WordGenerationOpti
     ...(context ? { context } : {}),
     ...(options.partOfSpeech ? { partOfSpeech: options.partOfSpeech } : {}),
   } : safeWord;
+  const onProgress = options.onProgress;
   return parseWordInfo(await withNetworkRetry(() => callProductionAI<unknown>(
-    'word', input, expectedOwnerId, operationId, options.onProgress, options.signal,
-  ), options.signal));
+    'word', input, expectedOwnerId, operationId, onProgress, options.signal,
+  ), options.signal, onProgress ? () => onProgress({ operationId, stage: 'retrying' }) : undefined));
 }
 
-export async function cancelWordInfoGeneration(operationId: string, expectedOwnerId: string): Promise<boolean> {
+/**
+ * Stops a word generation on the server. Resolves true when the request was refunded, false when
+ * it still counts (part of the card had reached the learner, or it had finished), and null when
+ * the server's answer does not say.
+ */
+export async function cancelWordInfoGeneration(operationId: string, expectedOwnerId: string): Promise<boolean | null> {
   return runProtectedFunction(protectedFunctionsCapability, 'AI generation', async () => {
     if (!app || auth?.currentUser?.uid !== expectedOwnerId) throw new Error('The AI account changed.');
     const { httpsCallable } = await import('firebase/functions');
     const functions = await getSonFlashFunctions(app);
     if (auth?.currentUser?.uid !== expectedOwnerId) throw new Error('The AI account changed.');
-    const cancel = httpsCallable<{ operationId: string; expectedOwnerId: string }, { cancelled: boolean }>(functions, 'cancelCardGeneration');
-    return (await cancel({ operationId, expectedOwnerId })).data.cancelled;
+    const cancel = httpsCallable<
+      { operationId: string; expectedOwnerId: string },
+      { cancelled?: unknown; counted?: unknown }
+    >(functions, 'cancelCardGeneration');
+    const { cancelled, counted } = (await cancel({ operationId, expectedOwnerId })).data ?? {};
+    if (typeof counted === 'boolean') return !counted;
+    return cancelled === true ? true : null;
   });
 }
 

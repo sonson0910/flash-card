@@ -168,14 +168,15 @@ for (const motion of ['reduced', 'interrupted'] as const) {
       await route.continue();
     });
     await signIn(page, '/?view=library&locale=en');
-    const themeTrigger = page.getByRole('button', { name: 'Choose theme' });
+    // At this width the header has no room for the theme control; it lives in the account menu.
+    await page.getByRole('button', { name: 'Manage library' }).click();
+    await expect(page.getByRole('menuitem', { name: 'See Pro plan' })).toBeVisible();
+    const themeTrigger = page.getByRole('group', { name: 'Theme and language' }).getByRole('button', { name: 'Choose theme' });
     await themeTrigger.focus();
     await page.keyboard.press('Enter');
     await expect(page.getByRole('menuitemradio', { name: 'Midnight Aurora' })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(themeTrigger).toBeFocused();
-    await page.getByRole('button', { name: 'Manage library' }).click();
-    await expect(page.getByRole('menuitem', { name: 'See Pro plan' })).toBeVisible();
     await page.getByRole('menuitem', { name: 'Appearance settings' }).click();
     if (motion === 'interrupted') await page.emulateMedia({ reducedMotion: 'reduce' });
     const heading = page.getByRole('heading', { name: 'Make your study space yours' });

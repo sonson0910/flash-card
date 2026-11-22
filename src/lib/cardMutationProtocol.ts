@@ -29,6 +29,8 @@ const mutableCardFields = new Set<CardMutableField>([
   'bookmarked',
   'difficulty',
   'customDeck',
+  'tags',
+  'learnerDifficulty',
   'nextReviewDate',
   'reviews',
   'interval',

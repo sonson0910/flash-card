@@ -7,6 +7,7 @@ import {
   startPracticeSessionV1,
   type StartPracticeSessionV1Request,
 } from '../src/practiceSessionPersistence.js';
+import { steadyStats } from './support/steady-stats.js';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({ exists, data: () => data } as DocumentSnapshot);
 
@@ -17,7 +18,24 @@ const harness = (documents: Record<string, DocumentData>) => {
   const reads: string[] = [];
   const writes: Array<{ path: string; data: DocumentData }> = [];
   const document = (path: string) => ({ path, collection: (name: string) => collection(`${path}/${name}`) }) as unknown as DocumentReference;
-  const collection = (path: string) => ({ doc: (id: string) => document(`${path}/${id}`) });
+  // Count queries outside the transaction, over the stored direct children of a collection.
+  const matches = (data: DocumentData, field: string, operator: string, value: unknown) => (
+    operator === '>' ? Number(data[field]) > Number(value) : data[field] === value
+  );
+  const collection = (path: string) => ({
+    doc: (id: string) => document(`${path}/${id}`),
+    where: (field: string, operator: string, value: unknown) => ({
+      count: () => ({
+        get: async () => ({
+          data: () => ({
+            count: [...values.entries()].filter(([key, data]) => (
+              key.startsWith(`${path}/`) && !key.slice(path.length + 1).includes('/') && matches(data, field, operator, value)
+            )).length,
+          }),
+        }),
+      }),
+    }),
+  });
   const transaction = {
     get: vi.fn(async (reference: DocumentReference) => {
       reads.push(reference.path);
@@ -120,6 +138,44 @@ describe('practice session persistence', () => {
     expect(test.writes.map(write => write.path)).toEqual([
       'users/owner/profile/stats', 'users/owner/profile/xp_history', 'users/owner/practice_sessions/practice-1',
     ]);
+    // The correct answers count toward the spelling badge in the same stats write.
+    expect(test.writes[0].data.achievementsV1).toMatchObject({ counters: { spellingCorrect: 2, activeDays: 1, bestDayXp: 10 } });
+  });
+
+  it('credits the study time since the session started on the server', async () => {
+    const test = harness({
+      'users/owner/cards/card-1': card('card-1', 'hello', 'xin chào'),
+      'users/owner/cards/card-2': card('card-2', 'bye', 'tạm biệt'),
+    });
+    await startPracticeSessionV1(test.database, 'owner', request(), new Date('2026-09-27T10:00:00.000Z'));
+    const path = 'users/owner/practice_sessions/practice-1';
+    test.values.set(path, { ...test.values.get(path)!, createdAt: new Date('2026-09-27T10:00:00.000Z') });
+    const result = await completePracticeSessionV1(test.database, 'owner', {
+      sessionId: 'practice-1', completionId: 'complete-1', timeZone: 'UTC', answers: { responses: { 'card-1': 'hello', 'card-2': 'bye' } },
+    }, new Date('2026-09-27T10:01:00.000Z'));
+    // Two cards are credited at most 20 s each.
+    expect(result.outcome).toMatchObject({ studyTimeMs: 40_000 });
+    expect(test.writes.find(write => write.path === 'users/owner/profile/stats')?.data.studyTimeV1).toMatchObject({
+      fromFirstAction: true, days: { '2026-09-27': { activeMs: 40_000, reviewMs: 0, timedReviews: 0 } },
+    });
+  });
+
+  it('reads and writes only the documents a practice completion always has once the stats records exist', async () => {
+    const test = harness({
+      'users/owner/cards/card-1': card('card-1', 'hello', 'xin chào'),
+      'users/owner/cards/card-2': card('card-2', 'bye', 'tạm biệt'),
+      'users/owner/profile/stats': steadyStats(),
+    });
+    await startPracticeSessionV1(test.database, 'owner', request(), new Date('2026-11-19T12:59:00.000Z'));
+    test.reads.length = 0;
+    test.writes.length = 0;
+    await completePracticeSessionV1(test.database, 'owner', {
+      sessionId: 'practice-1', completionId: 'complete-1', timeZone: 'Asia/Saigon', answers: { responses: { 'card-1': 'hello', 'card-2': 'bye' } },
+    }, new Date('2026-11-19T13:00:00.000Z'));
+    expect(test.reads).toEqual(['users/owner/practice_sessions/practice-1', 'users/owner/profile/stats']);
+    expect(test.writes.map(write => write.path)).toEqual([
+      'users/owner/profile/stats', 'users/owner/profile/xp_history', 'users/owner/practice_sessions/practice-1',
+    ]);
   });
 
   it('accepts legacy spelling answer keys without a target language', async () => {
@@ -171,8 +227,9 @@ describe('practice session persistence', () => {
       sessionId: 'practice-1', completionId: 'complete-1', timeZone: 'UTC', answers: { responses: { 'card-1': 'hello' } },
     }, new Date('2026-09-27T10:01:00.000Z'));
     expect(result.outcome).toMatchObject({ xp: 14400, level: 13, events: ['levelup'] });
+    // The first verified action after the stats records were added also reads XP history, once.
     expect(test.reads).toEqual([
-      'users/owner/practice_sessions/practice-1', 'users/owner/profile/stats', 'users/owner/profile/rewards',
+      'users/owner/practice_sessions/practice-1', 'users/owner/profile/stats', 'users/owner/profile/rewards', 'users/owner/profile/xp_history',
     ]);
     expect(test.writes.map(write => write.path)).toEqual([
       'users/owner/profile/stats', 'users/owner/profile/xp_history', 'users/owner/profile/rewards', 'users/owner/practice_sessions/practice-1',

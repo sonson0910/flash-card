@@ -63,9 +63,13 @@ test('authoritative review queues tier, streak, then level rewards and a dismiss
   await triggerThresholdReview(page);
   await expect(page.locator('.anime-reveal__tier-card')).toContainText('New → Mastered');
   const profile = db.collection('users').doc(testUser.uid).collection('profile');
-  expect((await profile.doc('stats').get()).data()).toMatchObject({ verifiedXp: 14_401, verifiedStreak: 30 });
-  expect((await profile.doc('rewards').get()).data()).toMatchObject({
-    streakFreezes: 1,
+  // The 30-day milestone grants its XP, and freezes now live in the verified streak record.
+  expect((await profile.doc('stats').get()).data()).toMatchObject({
+    verifiedXp: 14_501, verifiedStreak: 30, streakV1: { freezes: 2 },
+  });
+  const rewards = (await profile.doc('rewards').get()).data();
+  expect(rewards).not.toHaveProperty('streakFreezes');
+  expect(rewards).toMatchObject({
     hintTokens: 1,
     ownedFrameIds: ['crimson-wing'],
     ownedTitleIds: ['word-collector'],

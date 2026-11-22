@@ -1,6 +1,8 @@
 import { COURSE_NATIVE_LANGUAGES, COURSE_TARGET_LANGUAGES, type CourseNativeLanguage, type CourseTargetLanguage } from '../courses/courseModel';
 import { goalKindsFor } from '../courses/courseGoalCatalog';
+import { isStartingTier, type StartingTier } from '../courses/courseStartingTier';
 import { isDailyPace, type DailyPace } from '../settings/dailyPacePreference';
+import { IELTS_TARGET_BANDS } from '../../../functions/src/course-profile-contract';
 
 export interface OnboardingDraft {
   readonly nativeLanguage: CourseNativeLanguage;
@@ -10,6 +12,12 @@ export interface OnboardingDraft {
   readonly goalTargetDate: string;
   readonly zhScript: 'hans' | 'hant' | null;
   readonly pace: DailyPace;
+  /** The learner's latest IELTS band, saved once the course and its goal exist. */
+  readonly latestScore?: string | null;
+  /** The level the learner says they start at. */
+  readonly startingTier?: StartingTier | null;
+  /** Whether the learner wants romanization while learning a new script; null until they choose. */
+  readonly romanization?: boolean | null;
 }
 
 const draftKey = (ownerId: string) => `sonflash_onboarding_draft_v1_${ownerId}`;
@@ -37,7 +45,10 @@ export const readOnboardingDraft = (
       || typeof draft.goalLevel !== 'string' || draft.goalLevel.length > 32
       || typeof draft.goalTargetDate !== 'string' || draft.goalTargetDate.length > 10
       || (draft.zhScript !== null && draft.zhScript !== 'hans' && draft.zhScript !== 'hant')
-      || !isDailyPace(draft.pace)) return null;
+      || !isDailyPace(draft.pace)
+      || (draft.latestScore != null && !(IELTS_TARGET_BANDS as readonly unknown[]).includes(draft.latestScore))
+      || (draft.startingTier != null && !isStartingTier(draft.startingTier))
+      || (draft.romanization != null && typeof draft.romanization !== 'boolean')) return null;
     return draft as unknown as OnboardingDraft;
   } catch { return null; }
 };

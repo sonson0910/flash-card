@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { captureFailureMessage } from '../../lib/captureFailureMessage';
+import type { CardData } from '../../types/card';
 import { CourseError } from '../courses/courseModel';
 import { createSharedDeckCoursePort } from '../sharing/shareCourseMatching';
 import {
@@ -515,6 +516,40 @@ describe('browser extension import runtime', () => {
     await new Promise(resolve => setImmediate(resolve));
     secondRuntime.dispose();
     expect(generated).toBe(0);
+  });
+
+  it('returns the created card with its part of speech, and a reading only where the card has one', async () => {
+    const created = async (text: string, card: Partial<CardData>) => {
+      const posted: unknown[] = [];
+      vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+      const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+      storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+        v: 3, id: `intent_created_${text.length}_123`, nonce, text, createdAt: Date.now(), mode: 'silent',
+      }));
+      const runtime = startBrowserExtensionImportRuntime(optionsFor(async () => ({
+        status: 'created' as const,
+        card: {
+          id: 'card-1', word: text, translation: 'nghĩa', explanation: '', phonetic: '', emoji: '', category: '',
+          audioUrl: null, imageUrl: null, origin: 'ai' as const, ...card,
+        },
+        mediaTask: Promise.resolve(),
+      })), browser);
+      await new Promise(resolve => setImmediate(resolve));
+      runtime.dispose();
+      vi.unstubAllGlobals();
+      const result = posted.find(message => (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_RESULT') as
+        { payload: Record<string, unknown> } | undefined;
+      return result?.payload;
+    };
+
+    expect(await created('resilient', { language: 'en', phonetic: '/rɪˈzɪliənt/', partOfSpeech: 'adjective' }))
+      .toMatchObject({ status: 'created', partOfSpeech: 'adjective', reading: '', phonetic: '/rɪˈzɪliənt/', aiGenerated: true });
+    expect(await created('食べる', { language: 'ja', phonetic: 'たべる', partOfSpeech: 'verb' }))
+      .toMatchObject({ partOfSpeech: 'verb', reading: 'たべる', phonetic: 'たべる' });
+    expect(await created('你好', { language: 'zh-CN', phonetic: 'nǐ hǎo' }))
+      .toMatchObject({ partOfSpeech: '', reading: 'nǐ hǎo' });
+    expect(await created('stretch', { language: 'en', phonetic: '', partOfSpeech: `${'x'.repeat(60)}` }))
+      .toMatchObject({ partOfSpeech: 'x'.repeat(40), reading: '' });
   });
 
   it('generates once ensureCaptureCourse resolves proceed', async () => {

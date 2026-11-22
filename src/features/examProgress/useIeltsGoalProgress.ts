@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { Firestore } from 'firebase/firestore';
-import { IELTS_GOAL_KIND } from '../../../functions/src/course-profile-contract';
 import type { Course } from '../courses/courseModel';
 import { resolveStudyTimeZone, studyDayInZone } from '../dailyGoals/studyDayCountdown';
-import { buildIeltsGoalModel, type IeltsGoalModel, type IeltsPathCounts } from './ieltsGoalModel';
+import { activeIeltsGoal, buildIeltsGoalModel, type IeltsGoalModel, type IeltsPathCounts } from './ieltsGoalModel';
 import { readIeltsPathCounts } from './ieltsPathProgress';
 import { IELTS_PATH_LANGUAGE, readIeltsPathLexemeIds } from './ieltsPathReader';
 import { readLatestExamScore, subscribeToLatestExamScores } from './latestExamScore';
@@ -13,7 +12,7 @@ export interface IeltsGoalProgressOptions {
   readonly database: Firestore | null;
   /** The verified library epoch; progress projections from another epoch are ignored. */
   readonly libraryEpoch: number | null;
-  /** The active course. The panel uses its first active goal, the same goal the app shows elsewhere. */
+  /** The active course. The panel reads its active IELTS goal, whatever other goals the course has. */
   readonly course: Course | null;
   readonly isOffline: boolean;
   readonly rewardTimeZone?: string;
@@ -38,9 +37,9 @@ interface Loaded {
 /** Loads the IELTS path progress and the learner's latest score once per goal, owner and epoch. */
 export function useIeltsGoalProgress(options: IeltsGoalProgressOptions): IeltsGoalProgress {
   const { ownerId, database, libraryEpoch, course, isOffline } = options;
-  const goal = course?.goals.find(candidate => candidate.status === 'active') ?? null;
+  const goal = activeIeltsGoal(course);
   const eligible = Boolean(ownerId && database && libraryEpoch !== null && !isOffline && course
-    && course.targetLanguage === IELTS_PATH_LANGUAGE && goal?.kind === IELTS_GOAL_KIND);
+    && course.targetLanguage === IELTS_PATH_LANGUAGE && goal !== null);
   const courseId = course?.id ?? '';
   const goalId = goal?.id ?? '';
   const key = eligible ? `${ownerId}\u0000${libraryEpoch}\u0000${courseId}\u0000${goalId}` : '';
