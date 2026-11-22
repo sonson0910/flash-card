@@ -557,3 +557,12 @@
     .profile-gate__footer-links { flex-wrap: nowrap; white-space: nowrap; }
   }
 }
+
+/* On a phone the header pill is a plain label. The chamfer utility sits in a later layer, so its clip
+   would still cut the last italic letter; this unlayered rule lifts it. */
+@media (max-width: 767px) {
+  .profile-gate__pill.crystal-chamfer-sm {
+    clip-path: none;
+    background-image: none;
+  }
+}
