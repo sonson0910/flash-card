@@ -199,6 +199,8 @@
   --cs-emblem-glow: drop-shadow(0 0 30px color-mix(in srgb, var(--sf-tier-star) 90%, transparent));
   --cs-eyebrow: var(--cs-gold-text); --cs-em: var(--cs-hot); --cs-em-glow: color-mix(in srgb, var(--sf-reward) 50%, transparent);
 }
+/* The repair and milestone words stay in the emphasis metal on Prism Day too, past the light page's ice emphasis. */
+:root[data-theme-family="crystal"] .streak-dialog[data-family="crystal"]:is([data-streak-state="repair"], [data-streak-state="milestone"]) { --cs-em: var(--cs-hot); }
 [data-family="crystal"] .streak-dialog-rim { position: absolute; inset: 0; z-index: 0; display: block; clip-path: var(--nk-chamfer); background: var(--cs-rim); }
 [data-family="crystal"] .streak-dialog-rim::after { content: ''; position: absolute; inset: 3px; clip-path: inherit; background: var(--sf-card-front); }
 [data-family="crystal"] .streak-dialog-confetti { clip-path: var(--nk-chamfer); }
