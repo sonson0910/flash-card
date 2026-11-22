@@ -2094,7 +2094,7 @@ msgid "library.import.partial-guidance"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/importExport/spreadsheetWorkbook.ts:715
+#: src/features/importExport/spreadsheetWorkbook.ts:714
 msgid "library.import.xls-unsupported"
 msgstr ""
 
