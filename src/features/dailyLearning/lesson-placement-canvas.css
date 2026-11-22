@@ -677,7 +677,8 @@ html[data-theme-family='crystal'] .lesson-shard {
 }
 
 html[data-theme-family='crystal'] .lesson-shard--left { left: -150px; bottom: -40px; transform: rotate(-12deg); }
-html[data-theme-family='crystal'] .lesson-shard--right { right: -120px; top: 40px; transform: scaleX(-1) rotate(-18deg); }
+/* Both shards sit in the bottom corners, so the top-right corner stays clear for the header and the combo plate. */
+html[data-theme-family='crystal'] .lesson-shard--right { right: -150px; bottom: -40px; transform: scaleX(-1) rotate(-12deg); }
 
 html[data-theme-family='crystal'] .lesson-topbar { height: 84px; }
 
@@ -971,7 +972,7 @@ html[data-theme-family='crystal'] .placement-fact { border: 0; border-radius: 0;
   .placement-action-row > .lesson-secondary { width: 100%; }
   html[data-theme-family='crystal'] .lesson-shard { opacity: .35; transform: scale(.6); }
   html[data-theme-family='crystal'] .lesson-shard--left { left: -220px; bottom: -80px; }
-  html[data-theme-family='crystal'] .lesson-shard--right { right: -220px; top: 10px; }
+  html[data-theme-family='crystal'] .lesson-shard--right { right: -220px; bottom: -80px; }
   html[data-theme-family='crystal'] .lesson-title { font-size: 13px; }
   html[data-theme-family='crystal'] .lesson-title-sep::before { font-size: 13px; }
   html[data-theme-family='crystal'] .placement-title-kicker { display: none; }
