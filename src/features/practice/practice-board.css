@@ -356,5 +356,5 @@ button.practice-recap-chip:hover { filter: brightness(1.08); }
   .practice-board--study [data-study-recall-mode] { margin-bottom: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .practice-board *, .practice-board *::before, .practice-board *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  .practice-board *, .practice-board *::before, .practice-board *::after { transition-duration: 0s !important; animation-duration: .01ms !important; }
 }

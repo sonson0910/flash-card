@@ -767,13 +767,16 @@ html[data-save-data="true"] .zen-glass-slab {
     animation: none;
   }
 
+  /* Transitions are switched off outright instead of shortened: a shortened transition still starts on
+     every element (the default transition-property is all), and until the browser draws its next
+     frame the element keeps its old colours. Animations keep a token duration so animationend fires. */
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0s !important;
   }
 }
 
@@ -783,7 +786,7 @@ html[data-motion="reduced"] *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   scroll-behavior: auto !important;
-  transition-duration: 0.01ms !important;
+  transition-duration: 0s !important;
 }
 
 html[data-lumi="off"] [data-lumi-pose] {
