@@ -280,6 +280,8 @@ export interface SessionBridgePreviewCard {
   /** Host name of the page the word was captured from. */
   readonly sourceSite?: string;
   readonly exampleSentence?: string;
+  /** The word's mastery tier, shown on the Crystal card as Bud, Bloom or Star. */
+  readonly tier?: 'new' | 'learning' | 'mastered';
 }
 
 export interface SessionBridgeModel {

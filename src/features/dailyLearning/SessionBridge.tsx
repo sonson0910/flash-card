@@ -31,6 +31,27 @@ function crystalComboTier(count: number) {
   return comboTiers[Math.min(Math.max(count, 2), 6) - 2];
 }
 
+const tierNames = {
+  new: msg({ id: 'session.bridge.card.tier.new', message: 'Bud' }),
+  learning: msg({ id: 'session.bridge.card.tier.learning', message: 'Bloom' }),
+  mastered: msg({ id: 'session.bridge.card.tier.mastered', message: 'Star' }),
+} as const;
+const tierStatuses = {
+  new: msg({ id: 'session.bridge.card.tier-status.new', message: 'New' }),
+  learning: msg({ id: 'session.bridge.card.tier-status.learning', message: 'Learning' }),
+  mastered: msg({ id: 'session.bridge.card.tier-status.mastered', message: 'Mastered' }),
+} as const;
+
+/** The example with the previewed word picked out, as the AnimeBridge card quotes it. */
+function ExampleQuote({ sentence, word, language }: { readonly sentence: string; readonly word: string; readonly language: string }) {
+  const found = word.trim() ? new RegExp(word.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'iu').exec(sentence) : null;
+  return (
+    <span className="session-bridge-card-quote" lang={language}>
+      {found ? <>{sentence.slice(0, found.index)}<b>{found[0]}</b>{sentence.slice(found.index + found[0].length)}</> : sentence}
+    </span>
+  );
+}
+
 /** The board sets the first word of the stage name in the accent ink and breaks the rest onto a second line. */
 function StageTitle({ label }: { readonly label: string }) {
   const space = label.indexOf(' ');
@@ -38,12 +59,18 @@ function StageTitle({ label }: { readonly label: string }) {
   return <><em>{label.slice(0, space)}</em><br /><span>{label.slice(space + 1)}</span></>;
 }
 
-function PreviewCard({ card, flipped }: { readonly card: SessionBridgePreviewCard; readonly flipped: boolean }) {
+function PreviewCard({ card, flipped, crystal }: { readonly card: SessionBridgePreviewCard; readonly flipped: boolean; readonly crystal: boolean }) {
+  const { _ } = useLingui();
   const meta = [card.phonetic, card.partOfSpeech].filter(Boolean).join(' · ');
   return (
     <span className="session-bridge-card-rotor" data-flipped={flipped || undefined}>
       <span className="session-bridge-card-face session-bridge-card-front" aria-hidden={flipped || undefined}>
         <span className="session-bridge-card-chips">
+          {crystal && card.tier && (
+            <span className="session-bridge-card-tier" data-tier={card.tier}>
+              <b>{_(tierNames[card.tier])}</b><span>{_(tierStatuses[card.tier])}</span>
+            </span>
+          )}
           {card.sourceSite
             ? <span className="session-bridge-card-category"><span className="session-bridge-card-site" aria-hidden="true">{card.sourceSite.charAt(0).toUpperCase()}</span><Trans {...msg({ id: 'session.bridge.card.source', message: 'From {site}' })} values={{ site: card.sourceSite }} /></span>
             : card.category ? <span className="session-bridge-card-category">{card.category}</span> : null}
@@ -51,6 +78,7 @@ function PreviewCard({ card, flipped }: { readonly card: SessionBridgePreviewCar
         {card.partOfSpeech && <span className="session-bridge-card-kind">{card.partOfSpeech}{card.category ? <span> // {card.category}</span> : null}</span>}
         <span className="session-bridge-card-word" lang={card.language}>{card.word}</span>
         {meta && <span className="session-bridge-card-phonetic">{meta}</span>}
+        {crystal && card.exampleSentence && <ExampleQuote sentence={card.exampleSentence} word={card.word} language={card.language} />}
         <span className="session-bridge-card-hint"><Trans {...msg({ id: 'session.bridge.card.flip', message: 'Tap or press <0>Space</0> to flip' })} components={{ 0: <kbd /> }} /></span>
       </span>
       <span className="session-bridge-card-face session-bridge-card-back" aria-hidden={flipped ? undefined : true}>
@@ -170,7 +198,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
               <span className="session-bridge-ghosts" aria-hidden="true"><span /><span /><span /></span>
               <span className="session-bridge-trails" aria-hidden="true"><span /><span /></span>
               <button type="button" className="session-bridge-card" aria-pressed={flipped} onClick={() => setFlipped(value => !value)}>
-                <PreviewCard card={card} flipped={flipped} />
+                <PreviewCard card={card} flipped={flipped} crystal={crystal} />
               </button>
             </>
           ) : <Sparkles className="session-bridge-finale" size={92} aria-hidden="true" />}

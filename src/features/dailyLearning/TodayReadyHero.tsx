@@ -528,15 +528,14 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
           {streakChip}
         </div>
         <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-crystal-title">
-          {_({ ...msg({ id: 'today.crystal.day', message: 'Day {day}' }), values: { day } })}
+          <Trans {...msg({ id: 'today.crystal.day-title', message: 'Day <0>{day}</0>' })} values={{ day }} components={{ 0: <span className="today-crystal-title-number" /> }} />
         </h1>
         <p className="today-crystal-lede">
           {_({ ...msg({ id: 'today.crystal.lede', message: '{count, plural, one {# card is waiting for you.} other {# cards are waiting for you.}} One lesson covers {steps, plural, one {# step} other {all # steps}}.' }), values: { count: facts.readyCount, steps: facts.activeSteps } })}
         </p>
         <p className="sr-only" role="status" aria-live="polite">{model.message}</p>
         <div className="today-crystal-cta">
-          <span className="today-crystal-wing today-crystal-wing--left" aria-hidden="true" />
-          <span className="today-crystal-wing today-crystal-wing--right" aria-hidden="true" />
+          <span className="today-crystal-wing crystal-wing-art" aria-hidden="true" />
           <PrimaryAction model={model} actions={actions} facts={facts} shortcut="Enter" className="today-crystal-start" label="">
             <span className="today-crystal-start-icon" aria-hidden="true"><Star size={22} fill="currentColor" /></span>
             <span className="today-crystal-start-copy">
@@ -547,7 +546,7 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
         </div>
         {showLumi && (
           <div className="today-crystal-lumi" data-today-lumi="hero">
-            <Lumi pose="idle" size={200} eager className="crystal-ornament" />
+            <Lumi pose="idle" size={238} eager className="crystal-ornament" />
             <div className="today-crystal-bubble">
               <p className="today-crystal-bubble-kicker">{_(msg({ id: 'today.crystal.lumi-link', message: 'Lumi · Link' }))}</p>
               <p className="today-crystal-bubble-title">
@@ -578,8 +577,10 @@ function CrystalHero({ model, actions, ownerId, targetLanguage, translationLangu
             <section className="today-crystal-panel today-crystal-level" aria-labelledby="today-crystal-level-heading">
               <h2 id="today-crystal-level-heading">{_(msg({ id: 'today.crystal.level', message: 'Level' }))}</h2>
               <p className="today-crystal-level-value">{_({ ...msg({ id: 'today.crystal.level-value', message: 'Lv {level}' }), values: { level: facts.level.level } })}</p>
-              <p className="today-crystal-level-xp">{number.format(facts.level.xp)} / {number.format(facts.level.next)} XP</p>
-              <span className="today-crystal-goal-bar" role="progressbar" aria-label={_(msg({ id: 'today.hero.level-progress', message: 'Level progress' }))} aria-valuemin={0} aria-valuemax={100} aria-valuenow={facts.level.percent}><span style={{ width: `${facts.level.percent}%` }} /></span>
+              <div className="today-crystal-level-progress">
+                <p className="today-crystal-level-xp">{number.format(facts.level.xp)} / {number.format(facts.level.next)} XP</p>
+                <span className="today-crystal-goal-bar" role="progressbar" aria-label={_(msg({ id: 'today.hero.level-progress', message: 'Level progress' }))} aria-valuemin={0} aria-valuemax={100} aria-valuenow={facts.level.percent}><span style={{ width: `${facts.level.percent}%` }} /></span>
+              </div>
               <p className="today-crystal-level-next">{_({ ...msg({ id: 'today.crystal.level-next', message: '+{xp} XP to Lv {level}' }), values: { xp: number.format(facts.level.remaining), level: facts.level.level + 1 } })}</p>
             </section>
           )}

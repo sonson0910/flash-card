@@ -171,8 +171,9 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
 [data-family="crystal"] .session-bridge-result { display: flex; height: 100%; flex-direction: column; justify-self: stretch; }
 [data-family="crystal"] .session-bridge-eyebrow { margin-top: 40px; color: var(--cb-holo); font-family: var(--cb-display); font-size: 14px; font-style: italic; font-weight: 800; letter-spacing: .16em; }
 [data-family="crystal"] .session-bridge-combo { height: 170px; flex-direction: row; align-items: center; gap: 16px; margin-top: 10px; padding: 16px 0 0 58px; }
-[data-family="crystal"] .session-bridge-combo-banner { position: absolute; top: 26px; right: 20px; left: -10px; display: block; height: 110px; background: linear-gradient(90deg, rgb(179 15 51 / .95), rgb(255 42 77 / .85) 60%, rgb(255 42 77 / 0)); box-shadow: 0 0 40px -6px rgb(255 42 77 / .7); transform: skewX(-16deg); }
-[data-family="crystal"] .session-bridge-combo strong { position: relative; background: linear-gradient(180deg, #fff 0%, #ffe3ea 48%, #ffb3c2 52%, #fff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: var(--cb-display); font-size: 92px; font-style: italic; font-weight: 900; line-height: 1; letter-spacing: 0; text-shadow: none; filter: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .8)); }
+/* The banner runs past the tier name and fades only beyond it, so no word sits on a clear strip. */
+[data-family="crystal"] .session-bridge-combo-banner { position: absolute; top: 26px; right: -44px; left: -10px; display: block; height: 110px; background: linear-gradient(90deg, rgb(179 15 51 / .95), rgb(255 42 77 / .9) 60%, rgb(255 42 77 / .88) 88%, rgb(255 42 77 / 0)); box-shadow: 0 0 40px -6px rgb(255 42 77 / .7); transform: skewX(-16deg); }
+[data-family="crystal"] .session-bridge-combo strong { position: relative; background: var(--sf-metal-hot); -webkit-background-clip: text; background-clip: text; color: transparent; font-family: var(--cb-display); font-size: 92px; font-style: italic; font-weight: 900; line-height: 1; letter-spacing: 0; text-shadow: none; filter: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .8)); }
 [data-family="crystal"] .session-bridge-combo-star { position: absolute; top: 0; left: -16px; width: 76px; height: 76px; filter: drop-shadow(0 0 12px rgb(255 42 77 / .9)); }
 [data-family="crystal"] .session-bridge-combo-text { position: relative; gap: 2px; }
 [data-family="crystal"] .session-bridge-combo-tier { color: #fff; font-family: var(--cb-display); font-size: 34px; font-style: italic; font-weight: 900; line-height: 1.1; letter-spacing: .04em; text-shadow: 0 3px 0 #7a0820; text-transform: uppercase; white-space: nowrap; }
@@ -205,13 +206,24 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
 [data-family="crystal"] .session-bridge-card-face::after { position: absolute; z-index: -1; inset: 3px; clip-path: var(--nk-chamfer); background: var(--cb-card-front); content: ''; }
 [data-family="crystal"] .session-bridge-card-back::after { background: var(--cb-card-back); }
 [data-family="crystal"] .session-bridge-card-category { height: 30px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-text2); font-size: 12.5px; font-weight: 800; }
+/* Small tier chip: the flat tier fill keeps the name crisp under 30 px. */
+[data-family="crystal"] .session-bridge-card-tier { display: inline-flex; height: 30px; align-items: center; gap: 6px; padding: 0 10px; clip-path: var(--nk-chamfer-sm); background: var(--sf-tier-bud-fill); font-family: var(--cb-display); font-style: italic; --cb-tier-shadow: var(--sf-tier-bud-fill-shadow); }
+[data-family="crystal"] .session-bridge-card-tier[data-tier="learning"] { background: var(--sf-tier-bloom-fill); --cb-tier-shadow: var(--sf-tier-bloom-fill-shadow); }
+[data-family="crystal"] .session-bridge-card-tier[data-tier="mastered"] { background: var(--sf-tier-star-fill); --cb-tier-shadow: var(--sf-tier-star-fill-shadow); }
+[data-family="crystal"] .session-bridge-card-tier b { color: #fff; font-size: 16px; font-weight: 900; text-shadow: 0 2px 0 var(--cb-tier-shadow); }
+[data-family="crystal"] .session-bridge-card-tier span { color: #031820; font-size: 12px; font-weight: 700; }
+[data-family="crystal"] .session-bridge-card-tier[data-tier="mastered"] span { color: #fff; text-shadow: 0 1px 0 var(--cb-tier-shadow); }
 [data-family="crystal"] .session-bridge-card-site { width: 18px; height: 18px; border-radius: 0; background: #b30f33; color: #fff; font-size: 11px; font-weight: 900; }
 [data-family="crystal"] .session-bridge-card-kind { display: block; margin-top: auto; color: var(--cb-crimson); font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 [data-family="crystal"] .session-bridge-card-kind span { color: var(--cb-text3); }
 [data-family="crystal"] .session-bridge-card-kind + .session-bridge-card-word { margin-top: 2px; }
 [data-family="crystal"] .session-bridge-card-word { color: var(--cb-text-strong); font-family: var(--cb-display); font-size: 58px; font-style: italic; font-weight: 900; line-height: 1.02; letter-spacing: 0; }
 [data-family="crystal"] .session-bridge-card-phonetic { margin-top: 8px; color: var(--cb-body); font-size: 14px; }
-[data-family="crystal"] .session-bridge-card-hint { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--cb-line-strong); color: var(--cb-text2); font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+/* The example on the front fills the card between the word and the hint; a long one stops at four lines. */
+[data-family="crystal"] .session-bridge-card-quote { position: relative; display: -webkit-box; flex: none; margin-top: 18px; padding: 12px 14px 13px 16px; overflow: hidden; clip-path: var(--nk-chamfer-sm); background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); color: var(--cb-text-strong); font-size: 14.5px; font-weight: 700; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; }
+[data-family="crystal"] .session-bridge-card-quote::before { position: absolute; top: 10px; bottom: 10px; left: 0; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d); content: ''; }
+[data-family="crystal"] .session-bridge-card-quote b { color: var(--cb-crimson); font-weight: 900; }
+[data-family="crystal"] .session-bridge-card-hint { display: flex; margin-top: auto; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--cb-line-strong); color: var(--cb-text2); font-family: var(--cb-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 [data-family="crystal"] .session-bridge-card-hint kbd { display: inline-flex; height: 22px; align-items: center; padding: 0 7px; background: var(--cb-chip); box-shadow: inset 0 0 0 1px var(--cb-line-strong); font-family: var(--sb-mono); font-size: 11px; font-style: normal; font-weight: 500; letter-spacing: 0; text-transform: none; }
 [data-family="crystal"] .session-bridge-card-back .session-bridge-card-kind { margin-top: 0; color: var(--cb-holo); }
 [data-family="crystal"] .session-bridge-card-translation { color: var(--cb-text-strong); font-family: var(--cb-display); font-size: 40px; font-style: italic; font-weight: 900; line-height: 1.1; }
@@ -274,6 +286,7 @@ html[data-theme-family="crystal"]:not(.dark) .session-bridge {
   .session-bridge-card-face { padding: 24px; }
   .session-bridge-card-word { font-size: 44px; }
   [data-family="crystal"] .session-bridge-card-word { font-size: 44px; }
+  [data-family="crystal"] .session-bridge-card-quote { margin-top: 12px; padding: 9px 12px 10px 14px; font-size: 13.5px; -webkit-line-clamp: 3; line-clamp: 3; }
   .session-bridge-ghosts > span { width: 270px; height: 360px; margin: -180px 0 0 -135px; }
   [data-family="crystal"] .session-bridge-ghosts > span { width: 270px; height: 360px; margin: -180px 0 0 -135px; }
   .session-bridge-ghosts > span:nth-child(1) { transform: translate(60px, 30px) rotate(10deg) scale(.86); }
