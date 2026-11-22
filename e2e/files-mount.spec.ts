@@ -85,7 +85,7 @@ test('uploads a photo to the Storage emulator and keeps it on the shelf', async 
   await expect(page.getByRole('complementary', { name: 'My files' }).getByText(record.name as string)).toBeVisible();
 });
 
-test('deleting a photo that a card shows says so and takes the photo off the card', async ({ page, db, testUser, seedCards, seedCourseProfile, signIn, blockExternalNetwork }) => {
+test('deleting a photo counts the cards that show it in every course and takes the photo off them', async ({ page, db, testUser, seedCards, seedCourseProfile, signIn, blockExternalNetwork }) => {
   test.setTimeout(120_000);
   await seedCourseProfile({ targetLanguage: 'ko' });
   await blockExternalNetwork(page, [STORAGE_EMULATOR_PORT]);
@@ -110,14 +110,20 @@ test('deleting a photo that a card shows says so and takes the photo off the car
     language: 'ko', translationLanguage: 'vi',
     schemaVersion: 2, revision: 1,
   };
-  await seedCards([card, { ...card, id: 'word-pipe', word: '관', normalizedWord: '관', imageUrl: null }]);
+  // A card of the English course, which the open Korean library does not hold, shows the same file
+  // with another download token.
+  const englishCard = {
+    ...card, id: 'word-lead-en', word: 'lead', normalizedWord: 'lead', translation: 'chì', phonetic: 'led',
+    language: 'en', imageUrl: imageUrl.replace(/token=.*$/, 'token=fedcba9876543210-9999'),
+  };
+  await seedCards([card, englishCard, { ...card, id: 'word-pipe', word: '관', normalizedWord: '관', imageUrl: null }]);
   await page.reload();
 
   const shelf = page.getByRole('complementary', { name: 'My files' });
   const name = stored.docs[0]!.data().name as string;
   await shelf.getByRole('button', { name: `Delete ${name}` }).click();
   const dialog = page.getByRole('alertdialog', { name: 'Delete this file?' });
-  await expect(dialog).toContainText('1 card shows this photo; it will be removed from that card.');
+  await expect(dialog).toContainText('2 cards show this photo; it will be removed from those cards.');
   await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(shelf.getByText('No files yet')).toBeVisible();
@@ -125,5 +131,8 @@ test('deleting a photo that a card shows says so and takes the photo off the car
   const cards = db.collection('users').doc(testUser.uid).collection('cards');
   await expect.poll(async () => (await cards.doc('word-lead').get()).data()?.imageUrl ?? null).toBeFalsy();
   expect((await cards.doc('word-lead').get()).exists).toBe(true);
+  expect((await cards.doc('word-lead-en').get()).data()).toMatchObject({ imageUrl: null, imageSearchQuery: '', word: 'lead' });
+  // A card without the photo is not written.
+  expect((await cards.doc('word-pipe').get()).data()).toMatchObject({ imageUrl: null, revision: 1 });
   expect((await db.collection('users').doc(testUser.uid).collection('files').get()).docs).toHaveLength(0);
 });

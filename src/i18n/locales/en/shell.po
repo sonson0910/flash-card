@@ -775,7 +775,7 @@ msgid "exam-band-picker.legend"
 msgstr "Target band"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:276
+#: src/app/AppRuntime.tsx:277
 msgid "extension.import.course-mismatch-confirm"
 msgstr "This word was saved for a different language than your active course. Switch to (or create) the matching course to save it?"
 
@@ -921,7 +921,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Text practice"
 
-#: src/app/AppRuntime.tsx:642
+#: src/app/AppRuntime.tsx:647
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -1898,7 +1898,7 @@ msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:631
+#: src/app/AppRuntime.tsx:636
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
@@ -2196,7 +2196,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Live cloud updates are unavailable. Retry when your connection improves."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:477
+#: src/app/AppRuntime.tsx:482
 msgid "shell.sync.retry-failed"
 msgstr "Sync could not finish. Your changes remain on this device. Try again."
 
@@ -2283,7 +2283,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr "Pick a time and SonFlash will remind you to review."
 
-#: src/app/AppRuntime.tsx:643
+#: src/app/AppRuntime.tsx:648
 #: src/components/shell/CourseSwitcherControl.tsx:127
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2460,7 +2460,7 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Pick one language for now. You can add more from the course switcher."
 
-#: src/app/AppRuntime.tsx:645
+#: src/app/AppRuntime.tsx:650
 #: src/app/AppViewStage.tsx:160
 msgctxt "course.loading"
 msgid "Preparing your courses…"
@@ -2572,7 +2572,7 @@ msgid "Manage shared link"
 msgstr "Manage shared link"
 
 #: src/app/AppDeferredViews.tsx:23
-#: src/app/AppRuntime.tsx:90
+#: src/app/AppRuntime.tsx:91
 msgctxt "shell.opening-dialog"
 msgid "Opening dialog"
 msgstr "Opening dialog"

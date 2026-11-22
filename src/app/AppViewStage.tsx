@@ -118,7 +118,7 @@ interface AppViewStageProps {
   /** Courses a stored file can be attached to, and the one new uploads go to first. */
   readonly fileCourses: readonly FileCourseOption[];
   /** The loaded cards that show a stored photo, for the delete confirmation in My files. */
-  readonly fileCardPhotos: FileCardPhotos;
+  readonly fileCardPhotos: FileCardPhotos | undefined;
   readonly activeCourseId: string | null;
   readonly openFiles: () => void;
   /** Opens Today, where the courses page's start button leads. */

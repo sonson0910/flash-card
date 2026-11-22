@@ -7,7 +7,7 @@ import {
   CHECK_CHIPS, CHECK_FAILED, CHECK_LABELS, CHECK_PENDING, KIND_LABELS, PHASE_CAPTIONS, REJECTION_DETAILS, REJECTION_FALLBACK,
   STATUS_LABELS, formatMessage,
 } from './fileCopy';
-import type { FileCardPhotos } from './fileCardPhotos';
+import type { FileCardPhotoMatch, FileCardPhotos } from './fileCardPhotos';
 import { FILE_INPUT_ACCEPT, formatBytes, type ClientCheck, type FileKind, type FileListing, type FileSummary } from './fileModel';
 import { toFileError, type FilePort } from './filePort';
 import { StorageUsageMeter } from './StorageUsageMeter';
@@ -45,6 +45,9 @@ const PHASE_TONES: Record<UploadPhase, Tone> = {
 };
 
 const KIND_ACCEPT: Record<FileKind, string> = { pdf: '.pdf,application/pdf', epub: '.epub,application/epub+zip', image: 'image/*' };
+
+/** Only a photo can be on a card, so only deleting one looks the cards up. */
+export const canShowOnCards = (file: FileSummary): boolean => file.kind === 'image';
 const CHECK_ORDER: readonly ClientCheck[] = ['type', 'size', 'plan'];
 
 const KindIcon = ({ kind }: { kind: FileKind | null }) => {
@@ -86,6 +89,8 @@ export function FilesWorkspace({ port, courses = [], defaultCourseId = null, onM
     onChanged: library.apply,
   });
   const upload = useSyncExternalStore(session.subscribe, session.getState, session.getState);
+  // The lookup the confirmation started, per file, so deleting clears exactly the cards it counted.
+  const photoLookups = useRef(new Map<string, Promise<FileCardPhotoMatch>>());
   return (
     <FilesWorkspaceView
       upload={upload}
@@ -94,12 +99,22 @@ export function FilesWorkspace({ port, courses = [], defaultCourseId = null, onM
       courses={courses}
       defaultCourseId={defaultCourseId}
       onRetryList={() => { void library.refresh(); }}
-      onDelete={async fileId => {
-        // Cards first: if the file then fails to delete it is still there to put back on a card.
-        await cardPhotos?.clear(fileId);
-        await library.remove(fileId);
+      onDelete={async file => {
+        if (cardPhotos && canShowOnCards(file)) {
+          const lookup = photoLookups.current.get(file.id);
+          photoLookups.current.delete(file.id);
+          // A lookup that failed or never ran runs now: the file goes only once no card shows it.
+          const match = await (lookup?.catch(() => cardPhotos.find(file.id)) ?? cardPhotos.find(file.id));
+          // Cards first: if the file then fails to delete it is still there to put back on a card.
+          await match.clear();
+        }
+        await library.remove(file.id);
       }}
-      cardPhotoCount={cardPhotos?.count}
+      cardPhotoCount={cardPhotos && (async fileId => {
+        const lookup = cardPhotos.find(fileId);
+        photoLookups.current.set(fileId, lookup);
+        return (await lookup).count;
+      })}
       onOpen={fileId => port.downloadUrl(fileId)}
       onManageFiles={onManageFiles}
       headingRef={headingRef}
@@ -115,9 +130,9 @@ export interface FilesWorkspaceViewProps {
   readonly courses: readonly FileCourseOption[];
   readonly defaultCourseId: string | null;
   readonly onRetryList: () => void;
-  readonly onDelete: (fileId: string) => Promise<void>;
-  /** How many cards show a file as their photo; the delete confirmation states it. */
-  readonly cardPhotoCount?: (fileId: string) => number;
+  readonly onDelete: (file: FileSummary) => Promise<void>;
+  /** Counts the cards, in every course, that show a photo; the delete confirmation states it. */
+  readonly cardPhotoCount?: (fileId: string) => Promise<number>;
   readonly onOpen: (fileId: string) => Promise<string>;
   readonly onManageFiles?: () => void;
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
@@ -210,10 +225,10 @@ export function FilesWorkspaceView({ upload, session, library, courses, defaultC
           {deleteTarget && (
             <DeleteFileDialog
               file={deleteTarget}
-              cardCount={cardPhotoCount?.(deleteTarget.id) ?? 0}
+              countCardPhotos={canShowOnCards(deleteTarget) ? cardPhotoCount : undefined}
               onCancel={() => setDeleteTarget(null)}
               onConfirm={async () => {
-                await onDelete(deleteTarget.id);
+                await onDelete(deleteTarget);
                 setDeleteTarget(null);
               }}
             />
@@ -752,13 +767,45 @@ function FileShelf({ library, courses, headingId, headingRef, onBrowse, onRetry,
   );
 }
 
-function DeleteFileDialog({ file, cardCount, onCancel, onConfirm }: { file: FileSummary; cardCount: number; onCancel: () => void; onConfirm: () => Promise<void> }) {
+/** What the confirmation knows about the cards that show the photo. */
+export type CardPhotoCount =
+  | { readonly status: 'checking' }
+  | { readonly status: 'counted'; readonly count: number }
+  | { readonly status: 'unknown' };
+
+/** The card photo line of the delete confirmation; it is a live region, so the count is announced once it arrives. */
+export function CardPhotoCountNote({ state }: { readonly state: CardPhotoCount }) {
+  const { _ } = useLingui();
+  return (
+    <span data-card-photo-count={state.status} aria-live="polite">
+      {state.status === 'checking' && <>{' '}<Trans {...msg({ id: 'files.delete.card-photos-checking', message: 'Checking which cards show this photo…' })} /></>}
+      {state.status === 'unknown' && <>{' '}<Trans {...msg({ id: 'files.delete.card-photos-unknown', message: 'The cards that show this photo could not be counted. Deleting checks them again and removes the photo from them first.' })} /></>}
+      {state.status === 'counted' && state.count > 0 && (
+        <>{' '}{formatMessage(_, msg({ id: 'files.delete.card-photos', message: '{count, plural, one {# card shows this photo; it will be removed from that card.} other {# cards show this photo; it will be removed from those cards.}}' }), { count: state.count })}</>
+      )}
+    </span>
+  );
+}
+
+function DeleteFileDialog({ file, countCardPhotos, onCancel, onConfirm }: { file: FileSummary; countCardPhotos?: (fileId: string) => Promise<number>; onCancel: () => void; onConfirm: () => Promise<void> }) {
   const { _ } = useLingui();
   const keepRef = useRef<HTMLButtonElement>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [cardCount, setCardCount] = useState<CardPhotoCount>(countCardPhotos ? { status: 'checking' } : { status: 'counted', count: 0 });
   const titleId = useId();
   const detailId = useId();
+  // The dialog mounts once per file, so the lookup runs once per confirmation.
+  const countRef = useRef(countCardPhotos);
+
+  useEffect(() => {
+    let current = true;
+    countRef.current?.(file.id).then(
+      count => { if (current) setCardCount({ status: 'counted', count }); },
+      () => { if (current) setCardCount({ status: 'unknown' }); },
+    );
+    return () => { current = false; };
+  }, [file.id]);
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -785,14 +832,7 @@ function DeleteFileDialog({ file, cardCount, onCancel, onConfirm }: { file: File
         <h3 id={titleId}><Trans {...msg({ id: 'files.delete.title', message: 'Delete this file?' })} /></h3>
         <p id={detailId}>
           <Trans {...msg({ id: 'files.delete.detail', message: '<0>{name}</0> will be removed from My files after confirmation.' })} values={{ name: file.name }} components={{ 0: <span data-mono /> }} />
-          {cardCount > 0 && (
-            <>
-              {' '}
-              <span data-card-photo-count>
-                {formatMessage(_, msg({ id: 'files.delete.card-photos', message: '{count, plural, one {# card shows this photo; it will be removed from that card.} other {# cards show this photo; it will be removed from those cards.}}' }), { count: cardCount })}
-              </span>
-            </>
-          )}
+          <CardPhotoCountNote state={cardCount} />
         </p>
         {failed && <p className="sf-files-panel__notice" data-tone="error" role="alert"><Trans {...msg({ id: 'files.delete.failed', message: 'The file could not be deleted. Try again.' })} /></p>}
         <div className="sf-files-dialog__actions">
@@ -802,8 +842,8 @@ function DeleteFileDialog({ file, cardCount, onCancel, onConfirm }: { file: File
           <button
             type="button"
             className="sf-files-button sf-files-button--danger crystal-chamfer-sm"
-            disabled={busy}
-            aria-busy={busy || undefined}
+            disabled={busy || cardCount.status === 'checking'}
+            aria-busy={busy || cardCount.status === 'checking' || undefined}
             onClick={async () => {
               setBusy(true);
               setFailed(false);

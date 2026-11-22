@@ -4233,7 +4233,12 @@
     {
       "collectionGroup": "cards",
       "fieldPath": "imageUrl",
-      "indexes": []
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
     },
     {
       "collectionGroup": "cards",

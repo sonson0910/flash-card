@@ -36,6 +36,7 @@ import { VerifiedStatsProvider, type VerifiedStatsSource } from '../components/s
 import { findCardById } from '../lib/cardRepository';
 import { MASTERED_CARD_DIFFICULTY } from '../features/catalog/libraryCatalogQuery';
 import { createFileCardPhotos } from '../features/files/fileCardPhotos';
+import { firestoreCardPhotoStore } from '../features/files/firestoreCardPhotoStore';
 import { createDeferredCardImageUploader } from './cardImageUpload';
 import { ProfileCompletionGate } from '../features/profileCompletion/ProfileCompletionGate';
 import { useAccountProfileGate } from '../features/profileCompletion/useAccountProfileGate';
@@ -419,10 +420,14 @@ export default function AppRuntime({
     customDecks,
   }), [filePort, customDecks]);
   const libraryCards = library.model.cards;
-  const fileCardPhotos = useMemo(() => createFileCardPhotos(libraryCards, async cardId => {
-    const outcome = await updateCard(cardId, { imageUrl: null, imageSearchQuery: '' });
-    return outcome.status === 'published' || outcome.status === 'noop';
-  }), [libraryCards, updateCard]);
+  // Deleting a photo finds its cards in every course; the open library saves the ones it holds.
+  const fileCardPhotos = useMemo(() => (currentOwnerId && db ? createFileCardPhotos(firestoreCardPhotoStore(db, currentOwnerId), {
+    has: cardId => libraryCards.some(card => card.id === cardId),
+    removePhoto: async cardId => {
+      const outcome = await updateCard(cardId, { imageUrl: null, imageSearchQuery: '' });
+      return outcome.status === 'published' || outcome.status === 'noop';
+    },
+  }) : undefined), [currentOwnerId, libraryCards, updateCard]);
   const { share } = intakeSharing;
   const isShareModalOpen = share.isShareDialogOpen || share.isLoading;
   const libraryReady = !!(
