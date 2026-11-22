@@ -5,7 +5,7 @@ import { practiceDeckScopeMatchesCard, type PracticeDeckScope } from '../../lib/
 import { resolvePracticeLibraryCount } from '../../lib/practiceAvailability';
 import { isCardDue } from '../../lib/srs';
 import type { CardData } from '../../types/card';
-import type { LibraryDifficulty } from '../catalog/libraryCatalogQuery';
+import { MASTERED_CARD_DIFFICULTY, type LibraryDifficulty } from '../catalog/libraryCatalogQuery';
 import { formatCardDate, groupCardsByDate } from './libraryPresentation';
 import type { ReviewActivity } from '../gamification/verifiedGamificationClient';
 
@@ -143,7 +143,9 @@ const matchesLocalQuery = (card: CardData, query: LibraryViewQuery): boolean => 
       ? !card.difficulty || card.difficulty === 'unrated'
       : query.difficulty === 'due'
         ? isCardDue(card)
-        : card.difficulty === query.difficulty);
+        : query.difficulty === 'mastered'
+          ? card.difficulty === MASTERED_CARD_DIFFICULTY
+          : card.difficulty === query.difficulty);
   const matchPartOfSpeech = query.partOfSpeech === 'All'
     || normalizePartOfSpeech(card.partOfSpeech) === query.partOfSpeech;
   const matchStarred = !query.starredOnly || card.bookmarked === true;
