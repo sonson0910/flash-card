@@ -32,11 +32,7 @@ export function ApplicationErrorPanel({
         aria-busy={isActionBusy}
       >
         <div className="application-error-inner">
-          <span className="application-error-warning-icon" aria-hidden="true">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3 2 20h20zM12 10v4M12 17h.01" />
-            </svg>
-          </span>
+          <span className="application-error-warning-icon" aria-hidden="true" />
           <div className="application-error-heading-row">
             <img
               src={lumiSad}
@@ -56,10 +52,7 @@ export function ApplicationErrorPanel({
             </h1>
           </div>
           <p>{description}</p>
-          <svg className="application-error-lightning" aria-hidden="true" width="210" height="120" viewBox="0 0 210 120">
-            <path d="M210 10 L170 30 L182 44 L130 66 L142 82 L96 104" fill="none" stroke="currentColor" strokeWidth="2" />
-            <path d="M170 30 L156 12 M130 66 L112 52 M142 82 L166 104" fill="none" stroke="currentColor" strokeWidth="1.2" opacity="0.8" />
-          </svg>
+          <span className="application-error-lightning" aria-hidden="true" />
           <div className="application-error-actions">
             <button type="button" onClick={onAction} disabled={isActionBusy}>
               {isActionBusy && actionBusyLabel ? actionBusyLabel : actionLabel}
