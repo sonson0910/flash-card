@@ -26,7 +26,7 @@ import {
 } from 'firebase/firestore';
 import type { CardData, CardLanguageCode } from '../types/card';
 import type { AuthoritativeGamification } from './cardReviewRepository';
-import { progressEvidenceCachePrefix, readLocalJson, writeLocalValue } from '../features/library/libraryStorage';
+import { progressEvidenceCachePrefix, readLocalJson, removeLocalValue, writeLocalValue } from '../features/library/libraryStorage';
 import type { LibraryStats } from './libraryStats';
 export type { LibraryStats } from './libraryStats';
 import { mapWithConcurrencyUntilFailure } from './asyncPool';
@@ -252,6 +252,9 @@ async function repairNormalizedWord(
     console.warn('A legacy card was found but its search identity could not be repaired.', error);
   }
 }
+
+/** A pending reservation older than this was left by a closed tab or a crashed fetch. */
+const PROGRESS_FORECAST_PENDING_TTL_MS = 2 * 60 * 1_000;
 
 function dateRange(date: string): { start: string; end: string } | null {
   const parsed = new Date(`${date}T00:00:00`);
@@ -489,8 +492,11 @@ export async function fetchProgressEvidence(
     // thirteen queries on every Progress hydration.
     if (cached && typeof cached === 'object' && !Array.isArray(cached)
       && (cached as { date?: unknown; status?: unknown }).date === localDate
-      && (cached as { status?: unknown }).status === 'pending') return { recentlyMastered };
-    if (!writeLocalValue(cacheKey, JSON.stringify({ date: localDate, status: 'pending' }))) {
+      && (cached as { status?: unknown }).status === 'pending'
+      && now.getTime() - Number((cached as { startedAt?: unknown }).startedAt) < PROGRESS_FORECAST_PENDING_TTL_MS) {
+      return { recentlyMastered };
+    }
+    if (!writeLocalValue(cacheKey, JSON.stringify({ date: localDate, status: 'pending', startedAt: now.getTime() }))) {
       return { recentlyMastered };
     }
     pendingForecast = Promise.all(Array.from({ length: 13 }, async (_, index) => {
@@ -504,7 +510,11 @@ export async function fetchProgressEvidence(
     pendingProgressForecasts.set(`${cacheKey}_${localDate}`, pendingForecast);
     void pendingForecast.then(
       () => pendingProgressForecasts.delete(`${cacheKey}_${localDate}`),
-      () => pendingProgressForecasts.delete(`${cacheKey}_${localDate}`),
+      () => {
+        pendingProgressForecasts.delete(`${cacheKey}_${localDate}`);
+        // A failed attempt must not keep the day's reservation, or the forecast stays hidden until midnight.
+        removeLocalValue(cacheKey);
+      },
     );
   }
   const dueForecast = await pendingForecast;
