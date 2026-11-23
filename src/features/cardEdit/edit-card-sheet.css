@@ -983,7 +983,7 @@
 :root[data-theme-family="crystal"] .edit-sheet-preview-card {
   border: 2px solid transparent;
   background:
-    var(--sf-card-bg, var(--sf-surface)) padding-box,
+    var(--sf-solid-card, var(--sf-card-bg, var(--sf-surface))) padding-box,
     linear-gradient(160deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 30%, transparent) 45%, var(--sf-second)) border-box;
   box-shadow: 0 0 40px -12px color-mix(in srgb, var(--sf-brand) 55%, transparent);
 }

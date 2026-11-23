@@ -455,7 +455,7 @@ export function StudyView({
           </div>
         )}
 
-        {!needsIntroduction && onLearnFirst && <button type="button" onClick={onLearnFirst} className="my-4 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 font-bold"><Trans {...msg({ context: 'practice.learn-first', message: 'I don\'t know this — learn first' })} /></button>}
+        {!needsIntroduction && onLearnFirst && <button type="button" onClick={onLearnFirst} className="study-shell-learn-first my-4 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 font-bold"><Trans {...msg({ context: 'practice.learn-first', message: 'I don\'t know this — learn first' })} /></button>}
         <GsapEntrance animationKey={index} direction={direction} variant="step">
           {needsIntroduction ? (
             <section data-study-introduction className="mx-auto w-full max-w-2xl rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 shadow-xl sm:p-5" aria-labelledby="study-introduction-heading">

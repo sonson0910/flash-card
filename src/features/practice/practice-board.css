@@ -72,7 +72,7 @@
   --rc-again: var(--sf-rating-again); --rc-warm: var(--sf-warm); --rc-warm-bg: var(--sf-warm-bg); --rc-warm-line: var(--sf-warm-line);
   --rc-primary-bg: var(--sf-primary-bg); --rc-primary-text: var(--sf-on-primary); --rc-primary-shadow: var(--sf-primary-shadow); --rc-btn-radius: 16px;
   --rc-secondary-bg: var(--sf-surface-raised); --rc-secondary-shadow: none;
-  --rc-card-radius: 22px; --rc-card-border: 1.5px solid transparent; --rc-card-bg: var(--sf-card-bg);
+  --rc-card-radius: 22px; --rc-card-border: 1.5px solid transparent; --rc-card-bg: var(--sf-solid-card, var(--sf-card-bg));
   --rc-card-shadow: 0 30px 70px -30px rgb(0 0 0 / .9);
   --rc-img-margin: 0; --rc-img-radius: 0; --rc-img-mask: linear-gradient(to bottom, #000 42%, transparent 100%);
   --rc-gold: var(--sf-reward); --rc-gold-text: var(--sf-reward); --rc-learning-text: var(--sf-brand-text); --rc-foil-blend: screen;

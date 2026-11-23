@@ -94,3 +94,30 @@ html[data-theme-family=crystal] .claude-app-shell:is([data-view=quiz], [data-vie
   html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage]::before { left: -150px; transform: rotate(-12deg); }
   html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage]::after { right: -150px; transform: scaleX(-1) rotate(-12deg); }
 }
+
+/* Text that sits directly on the painted backdrop, with no panel behind it. The backdrop has bright and
+   dark regions, so one text colour cannot hold contrast everywhere; a soft halo in the canvas colour gives
+   each glyph its own backing and leaves the painting untouched. Add a selector here whenever a page puts
+   secondary text or a text-only control straight on the backdrop. Filled chips are left out: the halo
+   would wash out light text on a dark fill. */
+html[data-theme-family=crystal] :is(
+  .paths-browse, .paths-shelf-count, .paths-shelf-title, .paths-header-kicker, .paths-subtitle, .paths-hero-copy,
+  .library-canvas-collection-caption, .library-canvas-summary, .library-canvas-rail button:not(.is-active), .library-canvas-view-toggle button:not(.is-active),
+  .ss-courses__add, .ss-subtitle, .ss-eyebrow, .ss-lang-note, .ss-course-add__sub, .course-manage__kicker,
+  .lesson-link, .lesson-footer-count, .placement-field-label, .placement-card-kicker, .placement-question-note,
+  .review-grades-message, .study-shell-hint,
+  .ach-back, .ach-unlocked-count, .progress-board-kicker, .progress-board-subtitle,
+  .today-crystal-lede, .profile-gate__link, .practice-story__text, .ach-profile-level
+) { text-shadow: var(--sf-on-art-halo); }
+/* Dark mode keeps the active rail chip as a faint tint over the backdrop, so its label needs the halo too. */
+html.dark[data-theme-family=crystal] :is(.library-canvas-rail, .library-canvas-view-toggle) button.is-active { text-shadow: var(--sf-on-art-halo); }
+/* Dark control tints are a few percent of white, which is no backing at all on the backdrop: these two take the glass fill. */
+html.dark[data-theme-family=crystal] :is(.library-canvas-search, .study-shell-kbd) { background: var(--sf-glass-surface); }
+/* An outline-only button on the backdrop takes the glass fill in both modes. */
+html[data-theme-family=crystal] .study-shell-learn-first { background: var(--sf-glass-surface); }
+/* The speech bubble sits next to the shards, where the light glass panel is too thin for its small accent kicker. */
+html:not(.dark)[data-theme-family=crystal] .today-crystal-bubble { --tc-panel: var(--sf-glass-card-front); }
+/* Light course cards carry small accent labels that the glass fill cannot back over the rose shards. */
+html:not(.dark)[data-theme-family=crystal] .course-card { --sf-chamfer-fill: var(--sf-solid-card); }
+/* The shelf count sits over the brightest part of the dark backdrop, where the subtle text colour falls short even with the halo. */
+html.dark[data-theme-family=crystal] .paths-shelf-count { color: var(--sf-text-muted); }

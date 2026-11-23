@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Paints the Crystal dark backdrop: a layered nebula with a light source, light rays, stars with
-glow and three depth layers of crimson crystal shards (far and hazy, middle and sharp, near and out of
-focus). Everything is generated here; no outside image is used.
+"""Paints the two Crystal backdrops. Everything is generated here; no outside image is used.
 
-  paint.py <out file> [width height] [--exposure 1.0]
+Dark: a layered nebula with a light source, light rays, stars with glow and three depth layers of crimson
+crystal shards (far and hazy, middle and sharp, near and out of focus).
+Light: the same scene at daybreak, kept pale enough for dark text: aurora ribbons, cloud banks, soft
+discs of light and rose glass shards in the same three depth layers.
+
+  paint-crystal-nebula.py <out file> [width height] [--light] [--exposure 1.0]
 """
 import math
 import sys
@@ -52,75 +55,27 @@ def rgb(*c: float) -> np.ndarray:
     return np.array(c, np.float32)[None, None, :]
 
 
+
 clouds = warp(fbm(11), 21, 0.22)
 wisps = warp(fbm(31, 5, 7, 0.6), 41, 0.3)
 dark = warp(fbm(51, 2, 6), 61, 0.25)
 
-# Base sky: violet in the lower left, deep blue through the middle, teal toward the upper right.
-t = np.clip(0.62 * u + 0.38 * (1 - v), 0, 1)[..., None]
-violet, blue, teal = rgb(0.13, 0.04, 0.34), rgb(0.04, 0.10, 0.44), rgb(0.02, 0.34, 0.50)
-img = np.where(t < 0.5, violet + (blue - violet) * (t / 0.5), blue + (teal - blue) * ((t - 0.5) / 0.5))
 
-# The light source and the clouds it lights.
-LX, LY = 0.76, 0.72
-core = glow(LX, LY, 0.19, 0.21)
-halo = glow(LX, LY, 0.42, 0.50)
-img += (core * (0.15 + 1.35 * clouds ** 1.4))[..., None] * rgb(0.10, 0.78, 0.82) * 0.95
-img += (halo * (0.25 + 0.9 * wisps ** 1.5))[..., None] * rgb(0.05, 0.42, 0.62) * 0.55
-img += (glow(LX + 0.03, LY - 0.02, 0.07, 0.085) * (0.5 + 0.7 * clouds))[..., None] * rgb(0.75, 1.0, 0.98) * 0.55
-# Coloured gas: magenta low on the left, violet high on the left, a warm crimson breath at the lower right.
-img += (glow(0.10, 0.86, 0.26, 0.30) * (0.2 + wisps))[..., None] * rgb(0.62, 0.10, 0.52) * 0.55
-img += (glow(0.20, 0.16, 0.24, 0.26) * (0.2 + clouds))[..., None] * rgb(0.30, 0.12, 0.70) * 0.45
-img += (glow(0.90, 0.95, 0.22, 0.22) * (0.2 + wisps))[..., None] * rgb(0.70, 0.08, 0.26) * 0.40
-
-# Dust lanes in front of the light give the sky its depth.
-img *= (0.30 + 1.05 * dark ** 1.5)[..., None]
-
-# Light rays fanning out of the source.
-ang = np.arctan2((v - LY) / aspect, u - LX)
-dist = np.hypot((u - LX), (v - LY) / aspect)
-r = np.random.default_rng(71)
-strip = gaussian_filter(r.random(2048).astype(np.float32), 5, mode="wrap")
-strip = np.clip((strip - strip.mean()) / (strip.std() * 2.2), 0, 1) ** 2
-rays = strip[((ang + math.pi) / (2 * math.pi) * 2047).astype(np.int32)]
-rays = gaussian_filter(rays, 2 * S) * np.exp(-dist / 0.55) * np.clip(dist / 0.05, 0, 1)
-img += rays[..., None] * rgb(0.55, 0.95, 1.0) * 0.30
-
-# Two long diagonal streaks, as if a shard caught the light.
-for offset, width, tint, strength in ((0.47, 0.012, rgb(0.6, 1.0, 1.0), 0.16), (0.60, 0.007, rgb(1.0, 0.6, 0.8), 0.11)):
-    line = np.exp(-(((u * 0.80 + v * 0.60 / aspect * 1.6) / 1.4 - offset) / width) ** 2)
-    img += (line * (0.4 + 0.6 * wisps))[..., None] * tint * strength
-
-# Vignette.
-img *= np.clip(1.08 - 0.75 * ((u - 0.56) ** 2 * 1.5 + (v - 0.46) ** 2 * 1.7), 0.25, 1.1)[..., None]
-
-# Stars: dust, small glowing stars, a few flares.
-stars = np.zeros((H, W), np.float32)
-n = int(5200 * S * S)
-sx, sy = r.integers(0, W, n), r.integers(0, H, n)
-np.maximum.at(stars, (sy, sx), r.random(n).astype(np.float32) ** 4)
-stars = np.maximum(stars, gaussian_filter(stars, 0.7 * S) * 2.4)
-medium = np.zeros((H, W), np.float32)
-n = int(70 * S)
-np.maximum.at(medium, (r.integers(0, H, n), r.integers(0, W, n)), 0.15 + 0.85 * r.random(n).astype(np.float32) ** 2)
-medium = gaussian_filter(medium, 1.4 * S) * 14 + gaussian_filter(medium, 5 * S) * 50
-star_tint = 0.7 + 0.3 * np.stack([wisps, clouds, np.ones_like(clouds)], -1)
-img += (stars * 0.9 + np.clip(medium, 0, 1.2))[..., None] * star_tint
-
-
-def flare(cx: float, cy: float, size: float, tint: np.ndarray, turn: float = 0.35) -> None:
+def flare(cx: float, cy: float, size: float, tint: np.ndarray, turn: float = 0.35) -> np.ndarray:
     px, py = (u - cx) * W, (v - cy) * H
     a, b = px * math.cos(turn) + py * math.sin(turn), -px * math.sin(turn) + py * math.cos(turn)
     size *= S
     spike = np.exp(-np.abs(a) / (size * 0.42)) * np.exp(-(b / (1.4 * S)) ** 2) + np.exp(-np.abs(b) / (size * 0.42)) * np.exp(-(a / (1.4 * S)) ** 2)
     body = np.exp(-(a * a + b * b) / (2 * (size * 0.07) ** 2)) * 1.4 + np.exp(-(a * a + b * b) / (2 * (size * 0.30) ** 2)) * 0.28
-    global img
-    img += (spike * 0.9 + body)[..., None] * tint
+    return (spike * 0.9 + body)[..., None] * tint
 
 
-# Crystal shards, drawn at twice the size and scaled down for clean edges.
+
 Q = 2
-LIGHT, MID, DARK, EDGE = (255, 66, 100), (190, 20, 58), (70, 5, 26), (255, 214, 222)
+# Facet colours: lit face, mid face, dark face, bright edge, underside, shaded side, tip face, glint, ridge line, rim line.
+CRIMSON = ((255, 66, 100), (190, 20, 58), (70, 5, 26), (255, 214, 222), (112, 9, 38), (128, 11, 42), (232, 40, 82), (255, 176, 192), (255, 104, 134), (150, 16, 50))
+ROSE_GLASS = ((255, 158, 180), (246, 92, 126), (204, 44, 86), (255, 246, 248), (220, 62, 102), (230, 76, 112), (252, 120, 148), (255, 230, 236), (255, 196, 210), (212, 70, 106))
+LIGHT, MID, DARK, EDGE, UNDER, SIDE, TIP, GLINT, RIDGE, RIM = ROSE_GLASS if "--light" in sys.argv else CRIMSON
 
 
 def shard(draw: ImageDraw.ImageDraw, x: float, y: float, angle: float, length: float, width: float, fade: float = 1.0) -> tuple[float, float]:
@@ -130,15 +85,15 @@ def shard(draw: ImageDraw.ImageDraw, x: float, y: float, angle: float, length: f
     tail, tip, left, right, ridge = p(-0.12, 0), p(1, 0), p(0.24, 1), p(0.30, -1), p(0.33, 0.18)
     shade = lambda c, a=255: tuple(int(k * fade) for k in c) + (a,)
     draw.polygon([tail, right, tip, ridge], fill=shade(DARK))
-    draw.polygon([right, tip, p(0.42, -0.42)], fill=shade((112, 9, 38)))
-    draw.polygon([tail, left, ridge], fill=shade((128, 11, 42)))
+    draw.polygon([right, tip, p(0.42, -0.42)], fill=shade(UNDER))
+    draw.polygon([tail, left, ridge], fill=shade(SIDE))
     draw.polygon([left, tip, ridge], fill=shade(MID))
     draw.polygon([left, p(0.62, 0.50), p(0.40, 0.42)], fill=shade(LIGHT))
-    draw.polygon([p(0.40, 0.42), p(0.62, 0.50), tip, p(0.52, 0.24)], fill=shade((232, 40, 82)))
-    draw.polygon([p(0.28, 0.80), p(0.46, 0.66), p(0.33, 0.52)], fill=shade((255, 176, 192)))
+    draw.polygon([p(0.40, 0.42), p(0.62, 0.50), tip, p(0.52, 0.24)], fill=shade(TIP))
+    draw.polygon([p(0.28, 0.80), p(0.46, 0.66), p(0.33, 0.52)], fill=shade(GLINT))
     draw.line([left, tip], fill=shade(EDGE), width=max(1, int(1.8 * Q * S)))
-    draw.line([tail, ridge, tip], fill=shade((255, 104, 134)), width=max(1, int(0.9 * Q * S)))
-    draw.line([right, tip], fill=shade((150, 16, 50)), width=max(1, int(0.9 * Q * S)))
+    draw.line([tail, ridge, tip], fill=shade(RIDGE), width=max(1, int(0.9 * Q * S)))
+    draw.line([right, tip], fill=shade(RIM), width=max(1, int(0.9 * Q * S)))
     return (x + length * dx) / 1920, (y + length * dy) / (1920 / aspect)
 
 
@@ -158,47 +113,193 @@ def layer(shards: list[tuple[float, float, float, float, float]], blur: float, o
     return arr[..., :3] * arr[..., 3:], arr[..., 3] * opacity, tips
 
 
-HH = 1920 / aspect
-far = []
-fr = np.random.default_rng(5)
-for _ in range(16):
-    fx, fy = fr.random() * 1920, (0.34 + 0.66 * fr.random()) * HH
-    away = math.degrees(math.atan2(fy - LY * HH, fx - LX * 1920)) + fr.normal(0, 22)
-    far.append((fx, fy, away, 46 + fr.random() * 110, 6 + fr.random() * 10))
-pre, alpha, _ = layer(far, 2.2, 0.55, fade=0.8)
-img = img * (1 - alpha[..., None]) + pre * 0.55
-img += (gaussian_filter(alpha, 14 * S) * 0.10)[..., None] * rgb(1.0, 0.25, 0.4)
 
-mid = [
+HH = 1920 / aspect
+MIDDLE = [
     (1990, HH + 70, 196, 520, 46), (1990, HH + 70, 213, 820, 78), (1990, HH + 70, 229, 640, 58), (1990, HH + 70, 246, 880, 84), (1990, HH + 70, 263, 480, 40),
     (-70, HH + 70, -12, 430, 38), (-70, HH + 70, -30, 640, 62), (-70, HH + 70, -50, 500, 46), (-70, HH + 70, -70, 560, 52),
     (1990, -70, 112, 300, 30), (1990, -70, 133, 430, 44), (1990, -70, 156, 340, 32),
     (1500, HH * 0.52, -52, 170, 24), (1530, HH * 0.52 + 40, -18, 120, 17), (1470, HH * 0.52 + 55, -96, 105, 15),
     (420, HH * 0.70, 205, 150, 21), (450, HH * 0.70 + 30, 250, 120, 17),
 ]
-pre, alpha, tips = layer(mid, 0.5, 1.0)
-halo_red = np.stack([gaussian_filter(pre[..., k], 26 * S) for k in range(3)], -1)
-img += halo_red * 0.42
-lit = (0.50 + 0.75 * halo + 0.25 * clouds)[..., None] * (1 + 0.5 * core[..., None] * rgb(0.2, 0.9, 1.0))
-img = img * (1 - alpha[..., None]) + np.clip(pre * lit, 0, 1.3)
+NEAR = [(-190, HH * 0.86, -14, 900, 150), (760, HH + 240, -74, 600, 110), (2100, HH * 0.30, 196, 520, 120)]
 
-near = [(-190, HH * 0.86, -14, 900, 150), (760, HH + 240, -74, 600, 110), (2100, HH * 0.30, 196, 520, 120)]
-pre, alpha, _ = layer(near, 13, 1.0, fade=0.62)
-img = img * (1 - (alpha * 0.92)[..., None]) + pre * 0.92 * (0.75 + 0.5 * dark)[..., None]
-img += np.stack([gaussian_filter(pre[..., k], 70 * S) for k in range(3)], -1) * 0.28
 
-flare(tips[1][0], tips[1][1], 250, rgb(1.0, 0.86, 0.90) * 0.95)
-flare(tips[6][0], tips[6][1], 170, rgb(1.0, 0.86, 0.90) * 0.8, 0.2)
-flare(tips[12][0], tips[12][1], 120, rgb(1.0, 0.9, 0.93) * 0.8, 0.5)
-flare(0.93, 0.34, 80, rgb(0.8, 1.0, 1.0) * 0.7)
-flare(0.50, 0.86, 70, rgb(0.8, 1.0, 1.0) * 0.7, 0.1)
-flare(0.30, 0.52, 56, rgb(1.0, 0.85, 0.95) * 0.55, 0.6)
+def paint_dark() -> np.ndarray:
+    # Base sky: violet in the lower left, deep blue through the middle, teal toward the upper right.
+    t = np.clip(0.62 * u + 0.38 * (1 - v), 0, 1)[..., None]
+    violet, blue, teal = rgb(0.13, 0.04, 0.34), rgb(0.04, 0.10, 0.44), rgb(0.02, 0.34, 0.50)
+    img = np.where(t < 0.5, violet + (blue - violet) * (t / 0.5), blue + (teal - blue) * ((t - 0.5) / 0.5))
 
-# Bloom, exposure, a soft filmic shoulder and a little grain against banding.
-bright = np.clip(img - 0.55, 0, None)
-img += np.stack([gaussian_filter(bright[..., k], 22 * S) for k in range(3)], -1) * 0.7
-img *= exposure
-img = 1 - np.exp(-img * 1.25)
-img += (np.random.default_rng(99).random((H, W, 1)).astype(np.float32) - 0.5) * 0.012
+    # The light source and the clouds it lights.
+    LX, LY = 0.76, 0.72
+    core = glow(LX, LY, 0.19, 0.21)
+    halo = glow(LX, LY, 0.42, 0.50)
+    img += (core * (0.15 + 1.35 * clouds ** 1.4))[..., None] * rgb(0.10, 0.78, 0.82) * 0.95
+    img += (halo * (0.25 + 0.9 * wisps ** 1.5))[..., None] * rgb(0.05, 0.42, 0.62) * 0.55
+    img += (glow(LX + 0.03, LY - 0.02, 0.07, 0.085) * (0.5 + 0.7 * clouds))[..., None] * rgb(0.75, 1.0, 0.98) * 0.55
+    # Coloured gas: magenta low on the left, violet high on the left, a warm crimson breath at the lower right.
+    img += (glow(0.10, 0.86, 0.26, 0.30) * (0.2 + wisps))[..., None] * rgb(0.62, 0.10, 0.52) * 0.55
+    img += (glow(0.20, 0.16, 0.24, 0.26) * (0.2 + clouds))[..., None] * rgb(0.30, 0.12, 0.70) * 0.45
+    img += (glow(0.90, 0.95, 0.22, 0.22) * (0.2 + wisps))[..., None] * rgb(0.70, 0.08, 0.26) * 0.40
+
+    # Dust lanes in front of the light give the sky its depth.
+    img *= (0.30 + 1.05 * dark ** 1.5)[..., None]
+
+    # Light rays fanning out of the source.
+    ang = np.arctan2((v - LY) / aspect, u - LX)
+    dist = np.hypot((u - LX), (v - LY) / aspect)
+    r = np.random.default_rng(71)
+    strip = gaussian_filter(r.random(2048).astype(np.float32), 5, mode="wrap")
+    strip = np.clip((strip - strip.mean()) / (strip.std() * 2.2), 0, 1) ** 2
+    rays = strip[((ang + math.pi) / (2 * math.pi) * 2047).astype(np.int32)]
+    rays = gaussian_filter(rays, 2 * S) * np.exp(-dist / 0.55) * np.clip(dist / 0.05, 0, 1)
+    img += rays[..., None] * rgb(0.55, 0.95, 1.0) * 0.30
+
+    # Two long diagonal streaks, as if a shard caught the light.
+    for offset, width, tint, strength in ((0.47, 0.012, rgb(0.6, 1.0, 1.0), 0.16), (0.60, 0.007, rgb(1.0, 0.6, 0.8), 0.11)):
+        line = np.exp(-(((u * 0.80 + v * 0.60 / aspect * 1.6) / 1.4 - offset) / width) ** 2)
+        img += (line * (0.4 + 0.6 * wisps))[..., None] * tint * strength
+
+    # Vignette.
+    img *= np.clip(1.08 - 0.75 * ((u - 0.56) ** 2 * 1.5 + (v - 0.46) ** 2 * 1.7), 0.25, 1.1)[..., None]
+
+    # Stars: dust, small glowing stars, a few flares.
+    stars = np.zeros((H, W), np.float32)
+    n = int(5200 * S * S)
+    sx, sy = r.integers(0, W, n), r.integers(0, H, n)
+    np.maximum.at(stars, (sy, sx), r.random(n).astype(np.float32) ** 4)
+    stars = np.maximum(stars, gaussian_filter(stars, 0.7 * S) * 2.4)
+    medium = np.zeros((H, W), np.float32)
+    n = int(70 * S)
+    np.maximum.at(medium, (r.integers(0, H, n), r.integers(0, W, n)), 0.15 + 0.85 * r.random(n).astype(np.float32) ** 2)
+    medium = gaussian_filter(medium, 1.4 * S) * 14 + gaussian_filter(medium, 5 * S) * 50
+    star_tint = 0.7 + 0.3 * np.stack([wisps, clouds, np.ones_like(clouds)], -1)
+    img += (stars * 0.9 + np.clip(medium, 0, 1.2))[..., None] * star_tint
+    far = []
+    fr = np.random.default_rng(5)
+    for _ in range(16):
+        fx, fy = fr.random() * 1920, (0.34 + 0.66 * fr.random()) * HH
+        away = math.degrees(math.atan2(fy - LY * HH, fx - LX * 1920)) + fr.normal(0, 22)
+        far.append((fx, fy, away, 46 + fr.random() * 110, 6 + fr.random() * 10))
+    pre, alpha, _ = layer(far, 2.2, 0.55, fade=0.8)
+    img = img * (1 - alpha[..., None]) + pre * 0.55
+    img += (gaussian_filter(alpha, 14 * S) * 0.10)[..., None] * rgb(1.0, 0.25, 0.4)
+
+    pre, alpha, tips = layer(MIDDLE, 0.5, 1.0)
+    halo_red = np.stack([gaussian_filter(pre[..., k], 26 * S) for k in range(3)], -1)
+    img += halo_red * 0.42
+    lit = (0.50 + 0.75 * halo + 0.25 * clouds)[..., None] * (1 + 0.5 * core[..., None] * rgb(0.2, 0.9, 1.0))
+    img = img * (1 - alpha[..., None]) + np.clip(pre * lit, 0, 1.3)
+
+    pre, alpha, _ = layer(NEAR, 13, 1.0, fade=0.62)
+    img = img * (1 - (alpha * 0.92)[..., None]) + pre * 0.92 * (0.75 + 0.5 * dark)[..., None]
+    img += np.stack([gaussian_filter(pre[..., k], 70 * S) for k in range(3)], -1) * 0.28
+
+    img += flare(tips[1][0], tips[1][1], 250, rgb(1.0, 0.86, 0.90) * 0.95)
+    img += flare(tips[6][0], tips[6][1], 170, rgb(1.0, 0.86, 0.90) * 0.8, 0.2)
+    img += flare(tips[12][0], tips[12][1], 120, rgb(1.0, 0.9, 0.93) * 0.8, 0.5)
+    img += flare(0.93, 0.34, 80, rgb(0.8, 1.0, 1.0) * 0.7)
+    img += flare(0.50, 0.86, 70, rgb(0.8, 1.0, 1.0) * 0.7, 0.1)
+    img += flare(0.30, 0.52, 56, rgb(1.0, 0.85, 0.95) * 0.55, 0.6)
+
+    # Bloom, exposure, a soft filmic shoulder and a little grain against banding.
+    bright = np.clip(img - 0.55, 0, None)
+    img += np.stack([gaussian_filter(bright[..., k], 22 * S) for k in range(3)], -1) * 0.7
+    img *= exposure
+    img = 1 - np.exp(-img * 1.25)
+    img += (np.random.default_rng(99).random((H, W, 1)).astype(np.float32) - 0.5) * 0.012
+    return img
+
+
+def paint_light() -> np.ndarray:
+    # Sky: near white in the upper left, clear blue through the middle, lilac toward the lower right.
+    t = np.clip(0.60 * u + 0.40 * v, 0, 1)[..., None]
+    pale, sky, lilac = rgb(0.93, 0.97, 1.0), rgb(0.79, 0.91, 1.0), rgb(0.86, 0.85, 1.0)
+    img = np.where(t < 0.5, pale + (sky - pale) * (t / 0.5), sky + (lilac - sky) * ((t - 0.5) / 0.5))
+
+    LX, LY = 0.78, 0.70
+    core = glow(LX, LY, 0.17, 0.19)
+    halo = glow(LX, LY, 0.44, 0.52)
+
+    # Aurora ribbons. Colour is taken out of the light, never added, so the sky stays pale.
+    def ribbon(centre: np.ndarray, width: float, field: np.ndarray) -> np.ndarray:
+        return np.exp(-(((v - centre + 0.16 * (field - 0.5)) / width) ** 2)) * (0.30 + 0.70 * field)
+
+    img *= 1 - ribbon(0.66 - 0.30 * u, 0.11, wisps)[..., None] * rgb(0.42, 0.06, 0.0) * 0.62      # aqua
+    img *= 1 - ribbon(0.22 + 0.34 * u, 0.09, clouds)[..., None] * rgb(0.0, 0.30, 0.12) * 0.58     # rose
+    img *= 1 - ribbon(0.98 - 0.20 * u, 0.12, clouds)[..., None] * rgb(0.16, 0.22, 0.0) * 0.55     # violet
+    img *= 1 - (glow(0.08, 0.88, 0.24, 0.26) * (0.3 + wisps))[..., None] * rgb(0.0, 0.26, 0.06) * 0.50
+    img *= 1 - (glow(0.94, 0.10, 0.22, 0.24) * (0.3 + clouds))[..., None] * rgb(0.02, 0.24, 0.08) * 0.45
+
+    # Cloud banks in front of the ribbons, brightest near the light; their undersides carry a blue shade.
+    bank = np.clip((clouds - 0.42) / 0.5, 0, 1) ** 1.5
+    img *= 1 - (np.clip((dark - 0.5) / 0.5, 0, 1) ** 2 * 0.16)[..., None] * rgb(0.75, 0.45, 0.12)
+    img += (bank * (0.22 + 0.55 * halo))[..., None] * (1 - img)
+
+    # The light itself and its rays.
+    img += (core * 0.80 + halo * 0.16)[..., None] * (1 - img)
+    ang = np.arctan2((v - LY) / aspect, u - LX)
+    reach = np.hypot((u - LX), (v - LY) / aspect)
+    r = np.random.default_rng(71)
+    strip = gaussian_filter(r.random(2048).astype(np.float32), 5, mode="wrap")
+    strip = np.clip((strip - strip.mean()) / (strip.std() * 2.2), 0, 1) ** 2
+    rays = strip[((ang + math.pi) / (2 * math.pi) * 2047).astype(np.int32)]
+    rays = gaussian_filter(rays, 2 * S) * np.exp(-reach / 0.6) * np.clip(reach / 0.05, 0, 1)
+    img += (rays * 0.55)[..., None] * (1 - img)
+
+    # Soft discs of light, larger and fainter the nearer they are.
+    discs = Image.new("L", (W, H), 0)
+    d = ImageDraw.Draw(discs)
+    for _ in range(46):
+        cx, cy = r.random() * W, (0.30 + 0.70 * r.random()) * H
+        radius = (10 + 54 * r.random() ** 2) * S
+        d.ellipse([cx - radius, cy - radius, cx + radius, cy + radius], fill=int(40 + 70 * r.random()))
+    bokeh = gaussian_filter(np.asarray(discs, np.float32) / 255, 2.5 * S)
+    img += (bokeh * (0.25 + 0.75 * halo) * 0.85)[..., None] * (1 - img)
+
+    def tinted(base: np.ndarray, pre: np.ndarray, alpha: np.ndarray, strength: float) -> np.ndarray:
+        return base * (1 - alpha[..., None] * strength) + pre * strength
+
+    # Far shards: small, hazy, washed toward the sky.
+    far, fr = [], np.random.default_rng(5)
+    for _ in range(16):
+        fx, fy = fr.random() * 1920, (0.34 + 0.66 * fr.random()) * HH
+        away = math.degrees(math.atan2(fy - LY * HH, fx - LX * 1920)) + fr.normal(0, 22)
+        far.append((fx, fy, away, 46 + fr.random() * 110, 6 + fr.random() * 10))
+    pre, alpha, _ = layer(far, 2.2, 1.0)
+    img = tinted(img, pre, alpha, 0.34)
+
+    # Middle shards: sharp, grouped in the corners, washed out where the light falls on them.
+    pre, alpha, tips = layer(MIDDLE, 0.5, 1.0)
+    shade = gaussian_filter(alpha, 20 * S)
+    img *= 1 - (shade * 0.10)[..., None] * rgb(0.5, 0.75, 0.35)
+    wash = np.clip(0.10 + 0.55 * core + 0.25 * halo, 0, 0.8)[..., None]
+    img = tinted(img, pre + (alpha[..., None] - pre) * wash, alpha, 0.90)
+
+    # Near shards: large and far out of focus.
+    pre, alpha, _ = layer(NEAR, 13, 1.0)
+    img = tinted(img, pre, alpha, 0.50)
+
+    # Glints: a rose or aqua star with a white heart.
+    for (cx, cy), size, tint, turn in (
+        (tips[1], 230, (1.0, 0.42, 0.58), 0.35), (tips[6], 160, (1.0, 0.42, 0.58), 0.2), (tips[12], 110, (1.0, 0.5, 0.64), 0.5),
+        ((0.93, 0.34), 80, (0.2, 0.74, 0.92), 0.35), ((0.50, 0.86), 70, (0.2, 0.74, 0.92), 0.1), ((0.30, 0.52), 56, (1.0, 0.5, 0.7), 0.6),
+    ):
+        mark = np.clip(flare(cx, cy, size, rgb(1.0, 1.0, 1.0), turn)[..., 0], 0, 1)
+        img = img * (1 - mark[..., None] * 0.55) + rgb(*tint) * mark[..., None] * 0.55
+        img += (np.clip(flare(cx, cy, size * 0.45, rgb(1.0, 1.0, 1.0), turn)[..., 0], 0, 1))[..., None] * (1 - img)
+    sparks = np.zeros((H, W), np.float32)
+    n = int(90 * S)
+    np.maximum.at(sparks, (r.integers(0, H, n), r.integers(0, W, n)), 0.3 + 0.7 * r.random(n).astype(np.float32))
+    sparks = np.clip(gaussian_filter(sparks, 1.3 * S) * 16 + gaussian_filter(sparks, 5 * S) * 60, 0, 1)
+    img += sparks[..., None] * (1 - img)
+
+    img = img ** (1 / exposure)
+    img += (np.random.default_rng(99).random((H, W, 1)).astype(np.float32) - 0.5) * 0.008
+    return img
+
+
+img = paint_light() if "--light" in sys.argv else paint_dark()
 Image.fromarray((np.clip(img, 0, 1) * 255 + 0.5).astype(np.uint8)).save(out, quality=84, method=6)
 print(out, W, H)

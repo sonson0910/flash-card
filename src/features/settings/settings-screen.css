@@ -181,7 +181,8 @@
 .ss-course-add__sub { margin-top: 2px; font-size: 11.5px; color: var(--ss-text2); }
 :root[data-theme-family="crystal"] .ss-course-add,
 :root[data-theme-family="crystal"] .ss-course-add__option { border-radius: 0; }
-:root[data-theme-family="crystal"] .ss-course-add__option { border-color: var(--sf-edge-highlight); background-color: transparent; --sf-chamfer-edge: var(--sf-edge-highlight); --sf-chamfer-fill: var(--sf-surface-control); }
+/* These options sit on the page backdrop, so they take the glass fill. The fill is a background-image layer and must be an image. */
+:root[data-theme-family="crystal"] .ss-course-add__option { border-color: var(--sf-edge-highlight); background-color: transparent; --sf-chamfer-edge: var(--sf-edge-highlight); --sf-chamfer-fill: linear-gradient(var(--sf-glass-surface), var(--sf-glass-surface)); }
 .ss-course-hint { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ss-text2); }
 .ss-lang-serif { font-family: var(--sf-font-display); font-weight: 400; }
 :root[data-theme-family="crystal"] .ss-lang-serif { font-style: italic; font-weight: 800; }

@@ -36,7 +36,7 @@
   --ss-focus-ring: 0 0 0 4px rgb(40 211 244 / .12);
   --ss-info-bg: rgb(40 211 244 / .1); --ss-info-line: rgb(40 211 244 / .3);
   --ss-card-radius: 30px; --ss-card-border: 1.5px solid transparent;
-  --ss-card-bg: radial-gradient(ellipse 80% 60% at 100% 0%, rgb(150 108 215 / .22), transparent 70%) padding-box, var(--sf-card-bg) padding-box, var(--sf-rim-learning) border-box;
+  --ss-card-bg: radial-gradient(ellipse 80% 60% at 100% 0%, rgb(150 108 215 / .22), transparent 70%) padding-box, var(--sf-solid-card, var(--sf-card-bg)) padding-box, var(--sf-rim-learning) border-box;
   --ss-card-shadow: 0 0 50px -20px rgb(40 211 244 / .5), 0 30px 60px -30px rgb(0 0 0 / .9);
 }
 :root[data-theme-family="crystal"] .sf-settings-scope {

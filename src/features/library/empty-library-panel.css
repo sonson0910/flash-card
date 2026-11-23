@@ -81,7 +81,7 @@
 html.dark .empty-library__mini-card {
   border: 1.5px solid transparent;
   border-radius: 1.125rem;
-  background: var(--sf-card-bg) padding-box, var(--sf-rim-learning) border-box;
+  background: var(--sf-solid-card, var(--sf-card-bg)) padding-box, var(--sf-rim-learning) border-box;
   box-shadow: 0 16px 30px -18px rgb(0 0 0 / .9), 0 0 24px -12px rgb(40 211 244 / .5);
   font-style: normal;
 }

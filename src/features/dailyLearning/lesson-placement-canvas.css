@@ -186,7 +186,7 @@ html:not([data-theme-family='crystal']):not(.dark) :is(.lesson-canvas, .placemen
   border-radius: var(--lp-card-radius);
   background:
     radial-gradient(ellipse 70% 60% at 100% 0%, color-mix(in srgb, var(--sf-second) 22%, transparent), transparent 70%) padding-box,
-    var(--sf-card-bg) padding-box,
+    var(--sf-solid-card, var(--sf-card-bg)) padding-box,
     var(--sf-rim-learning) border-box;
   box-shadow: 0 30px 70px -30px rgb(0 0 0 / .9), 0 0 60px -20px color-mix(in srgb, var(--sf-brand) 45%, transparent);
 }
@@ -742,7 +742,7 @@ html[data-theme-family='crystal'] .lesson-card,
 html[data-theme-family='crystal'] .lesson-complete-card {
   border: 3px solid transparent;
   border-radius: 0;
-  background: var(--sf-card-bg) padding-box, linear-gradient(150deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 40%, transparent) 45%, var(--sf-second)) border-box;
+  background: var(--sf-solid-card, var(--sf-card-bg)) padding-box, linear-gradient(150deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 40%, transparent) 45%, var(--sf-second)) border-box;
   box-shadow: none;
   clip-path: var(--nk-chamfer);
 }
