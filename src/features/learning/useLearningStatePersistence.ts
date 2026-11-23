@@ -40,6 +40,7 @@ import {
 } from '../library/libraryStorage';
 import { planClearFailureRecovery, runEpochProtectedLibraryClear } from '../library/libraryMutationRecovery';
 import { reviewConflictMessage } from './learningStateController';
+import { trackCardPhotoSave, withoutTakenOffPhoto } from '../files/cardPhotoSaves';
 import type {
   LearningRestoreConflictReason,
   LearningStateMutation,
@@ -264,13 +265,13 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               rememberReviewCommand(commandKey, nextCommand),
             ));
           } else {
-            result = await applyCardPatchWithConflictRecovery({
+            result = await trackCardPhotoSave(mutation.fields.imageUrl, applyCardPatchWithConflictRecovery({
               cardId: mutation.cardId,
               fields: mutation.fields,
               fieldMask: mutation.fieldMask,
               baseRevision: mutation.baseRevision,
               libraryEpoch: mutation.libraryEpoch,
-            }, command => applyCardPatchIfCurrent(database, ownerId, command));
+            }, command => applyCardPatchIfCurrent(database, ownerId, command)));
           }
 
           if (result.applied) {
@@ -542,14 +543,16 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         }
         const database = db;
         let created;
+        // The photo file can have been deleted since the card was; the card comes back without it then.
+        const restoredCard = withoutTakenOffPhoto(mutation.card);
         try {
-          created = await createCardIfAbsent(database, ownerId, mutation.card, {
+          created = await trackCardPhotoSave(restoredCard.imageUrl, createCardIfAbsent(database, ownerId, restoredCard, {
             libraryEpoch: mutation.expectedLibraryEpoch,
             baseRevision: mutation.card.revision ?? 0,
             opId: mutation.operationId,
             operationCreatedAt: mutation.operationCreatedAt,
             restore: true,
-          });
+          }));
         } catch (cause) {
           if (cause instanceof CardMutationPreconditionError) {
             return resultFor(mutation, mutation.publication, undefined, {

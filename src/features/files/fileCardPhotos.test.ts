@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { OWN_STORAGE_BUCKETS } from '../../lib/mediaUrlPolicy';
+import { trackCardPhotoSave } from './cardPhotoSaves';
 import { clearFileCardPhotos, createFileCardPhotos, type FileCardPhotoCard, type FileCardPhotoStore, type LoadedCardPhotos } from './fileCardPhotos';
 
 const fileA = 'a'.repeat(24);
@@ -58,6 +60,34 @@ describe('cards that show a stored photo', () => {
   it('rejects when a card in another course could not be saved', async () => {
     const store = storeWith(found, false);
     await expect((await createFileCardPhotos(store, openLibrary()).find(fileA)).clear()).rejects.toThrow();
+  });
+
+  it('looks the cards up only after a card save still putting this photo on a card has ended, even a failed one', async () => {
+    const photo = `https://firebasestorage.googleapis.com/v0/b/${[...OWN_STORAGE_BUCKETS][0]}/o/users%2Flearner-1%2Ffiles%2F${fileA}?alt=media&token=0123456789abcdef-0123`;
+    let failSave!: (cause: Error) => void;
+    const save = trackCardPhotoSave(photo, new Promise<void>((_resolve, reject) => { failSave = reject; }));
+    void save.catch(() => undefined);
+    const store = storeWith([]);
+
+    const lookup = createFileCardPhotos(store, openLibrary()).find(fileA);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(store.find).not.toHaveBeenCalled();
+    failSave(new Error('offline'));
+
+    await expect(lookup).resolves.toMatchObject({ count: 0 });
+    expect(store.find).toHaveBeenCalledExactlyOnceWith(fileA);
+  });
+
+  it('does not wait for a card save putting a different photo on a card', async () => {
+    const otherPhoto = `https://firebasestorage.googleapis.com/v0/b/${[...OWN_STORAGE_BUCKETS][0]}/o/users%2Flearner-1%2Ffiles%2F${'b'.repeat(24)}?alt=media&token=0123456789abcdef-0123`;
+    let endSave!: () => void;
+    trackCardPhotoSave(otherPhoto, new Promise<void>(resolve => { endSave = resolve; }));
+    const store = storeWith([]);
+
+    await createFileCardPhotos(store, openLibrary()).find(fileA);
+
+    expect(store.find).toHaveBeenCalledExactlyOnceWith(fileA);
+    endSave();
   });
 
   describe('clearing before a file is deleted', () => {

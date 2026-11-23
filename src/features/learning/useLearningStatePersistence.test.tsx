@@ -12,6 +12,8 @@ import type { CardMutableField } from '../../lib/cardMutationProtocol';
 import { scheduleReview } from '../../lib/reviewScheduler';
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { deriveLibraryFacetOperationId } from '../../lib/cardRepository';
+import { OWN_STORAGE_BUCKETS, ownStorageImageFileId } from '../../lib/mediaUrlPolicy';
+import { clearFileCardPhotos, createFileCardPhotos, type FileCardPhotoStore } from '../files/fileCardPhotos';
 
 const mocks = vi.hoisted(() => ({
   applyCardPatchIfCurrent: vi.fn(),
@@ -1239,5 +1241,129 @@ describe('useLearningStatePersistence bulk patching', () => {
     await expect(harness.persistence.persistBulkPatch!([{ cardId: card.id, fields: { bookmarked: true } }]))
       .rejects.toThrow('Cloud library storage is not ready yet. Try again in a moment.');
     expect(mocks.bulkPatchCards).not.toHaveBeenCalled();
+  });
+});
+
+describe('useLearningStatePersistence card photo saves', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('leaves no card showing a photo file that was deleted while a card save was putting it on the card', async () => {
+    const fileId = 'f'.repeat(24);
+    const photo = `https://firebasestorage.googleapis.com/v0/b/${[...OWN_STORAGE_BUCKETS][0]}/o/users%2Fuser-a%2Ffiles%2F${fileId}?alt=media&token=0123456789abcdef-0123`;
+    // The card as the cloud holds it; the save lands only when the test lets it.
+    const cloud: { imageUrl: string | null; revision: number } = { imageUrl: null, revision: 3 };
+    let land: (() => void) | undefined;
+    mocks.applyCardPatchIfCurrent.mockImplementationOnce((_db: unknown, _owner: string, command: { fields: Partial<CardData> }) =>
+      new Promise(resolve => {
+        land = () => {
+          cloud.imageUrl = command.fields.imageUrl ?? null;
+          cloud.revision += 1;
+          resolve({ applied: true, revision: cloud.revision });
+        };
+      }));
+    const harness = createHarness();
+    const saving = harness.persistence.persist({
+      ownerKey: 'user-a',
+      operationId: 'edit-photo',
+      operation: 'patch',
+      intent: 'patch',
+      cardId: card.id,
+      fields: { imageUrl: photo, imageSearchQuery: '' },
+      fieldMask: ['imageUrl', 'imageSearchQuery'],
+      baseRevision: 3,
+      libraryEpoch: 2,
+      publication: { kind: 'patch', cardId: card.id, fields: { imageUrl: photo, imageSearchQuery: '' } },
+    });
+    const store: FileCardPhotoStore = {
+      find: async id => (ownStorageImageFileId(cloud.imageUrl) === id ? [{ id: card.id, revision: cloud.revision }] : []),
+      clear: async () => {
+        cloud.imageUrl = null;
+        cloud.revision += 1;
+        return true;
+      },
+    };
+    const photos = createFileCardPhotos(store, { has: () => false, removePhoto: async () => false });
+
+    // The delete starts while the save is still on its way to the cloud.
+    const deleting = clearFileCardPhotos(photos, fileId, undefined);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    land?.();
+    await saving;
+    await deleting;
+
+    expect(cloud.imageUrl).toBeNull();
+  });
+
+  const restoreOf = (deleted: CardData, operationId: string): LearningStateMutation => ({
+    ownerKey: 'user-a', operationId, operation: 'restore', intent: 'restore',
+    undoToken: {
+      ownerKey: 'user-a', ownerId: 'user-a', card: deleted,
+      expectedLibraryEpoch: 2, deleteOperationId: `delete-${operationId}`,
+      deletedAt: '2026-08-09T00:00:01.000Z', lifecycleId: `life-${operationId}`, clearGeneration: 0,
+    },
+    card: deleted, expectedLibraryEpoch: 2, operationCreatedAt: '2026-08-09T00:00:02.000Z',
+    publication: { kind: 'restore', card: deleted },
+  });
+  const photoOf = (fileId: string) =>
+    `https://firebasestorage.googleapis.com/v0/b/${[...OWN_STORAGE_BUCKETS][0]}/o/users%2Fuser-a%2Ffiles%2F${fileId}?alt=media&token=0123456789abcdef-0123`;
+
+  it('puts a deleted card back without the photo of a file deleted after the card was', async () => {
+    const fileId = 'g'.repeat(24);
+    const deleted: CardData = { ...card, imageUrl: photoOf(fileId), imageSearchQuery: 'lens' };
+    mocks.createCardIfAbsent.mockImplementation(async (_db: unknown, _owner: string, restored: CardData) => ({ card: restored, created: true }));
+    // The card is deleted, so the lookup finds no card showing the photo and the file goes.
+    const photos = createFileCardPhotos({ find: async () => [], clear: async () => true }, { has: () => false, removePhoto: async () => false });
+    await clearFileCardPhotos(photos, fileId, undefined);
+
+    await createHarness().persistence.persist(restoreOf(deleted, 'restore-after-photo-delete'));
+
+    expect(mocks.createCardIfAbsent).toHaveBeenCalledOnce();
+    expect(mocks.createCardIfAbsent.mock.calls[0]![2]).toMatchObject({ id: card.id, imageUrl: null, imageSearchQuery: '' });
+  });
+
+  it('keeps the photo on a card put back while its file is not being deleted', async () => {
+    const deleted: CardData = { ...card, imageUrl: photoOf('h'.repeat(24)) };
+    mocks.createCardIfAbsent.mockImplementation(async (_db: unknown, _owner: string, restored: CardData) => ({ card: restored, created: true }));
+
+    await createHarness().persistence.persist(restoreOf(deleted, 'restore-with-photo'));
+
+    expect(mocks.createCardIfAbsent.mock.calls[0]![2]).toBe(deleted);
+  });
+
+  it('clears the photo from a card put back while the photo file was being deleted', async () => {
+    const fileId = 'k'.repeat(24);
+    const deleted: CardData = { ...card, imageUrl: photoOf(fileId) };
+    // The card as the cloud holds it: deleted until the undo lands.
+    let state: { deleted: true } | { imageUrl: string | null; revision: number } = { deleted: true };
+    let land: (() => void) | undefined;
+    mocks.createCardIfAbsent.mockImplementationOnce((_db: unknown, _owner: string, restored: CardData) =>
+      new Promise(resolve => {
+        land = () => {
+          state = { imageUrl: restored.imageUrl, revision: 4 };
+          resolve({ card: restored, created: true });
+        };
+      }));
+    const restoring = createHarness().persistence.persist(restoreOf(deleted, 'restore-during-photo-delete'));
+    const store: FileCardPhotoStore = {
+      find: async id => ('imageUrl' in state && ownStorageImageFileId(state.imageUrl) === id ? [{ id: card.id, revision: state.revision }] : []),
+      clear: async () => {
+        if ('imageUrl' in state) state = { imageUrl: null, revision: state.revision + 1 };
+        return true;
+      },
+    };
+    const photos = createFileCardPhotos(store, { has: () => false, removePhoto: async () => false });
+
+    // The confirmation counted no card; the undo is still on its way when the delete runs.
+    const counted = photos.find(fileId);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const deleting = clearFileCardPhotos(photos, fileId, counted);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    land?.();
+    await restoring;
+    await deleting;
+
+    expect(state).toMatchObject({ imageUrl: null });
   });
 });

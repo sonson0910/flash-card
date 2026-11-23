@@ -1,3 +1,5 @@
+import { cardPhotoSavesSettled, takeCardPhotoOff } from './cardPhotoSaves';
+
 /**
  * Cards that show a stored file as their photo. Deleting such a file takes the photo off those
  * cards first, so no card is left pointing at a file that is gone; the confirmation says how many.
@@ -43,6 +45,8 @@ const saveFailed = () => new Error('The photo could not be removed from a card.'
  */
 export const createFileCardPhotos = (store: FileCardPhotoStore, loaded: LoadedCardPhotos): FileCardPhotos => ({
   find: async fileId => {
+    // A card save still putting this photo on a card has not reached the store yet: let it land first.
+    await cardPhotoSavesSettled(fileId);
     const cards = await store.find(fileId);
     return {
       count: cards.length,
@@ -69,6 +73,8 @@ export const clearFileCardPhotos = async (
   fileId: string,
   counted: Promise<FileCardPhotoMatch> | undefined,
 ): Promise<void> => {
+  // A deleted card put back from here on must not bring the photo back either.
+  takeCardPhotoOff(fileId);
   let match: FileCardPhotoMatch | null = null;
   if (counted) match = await counted.catch(() => null);
   const lookedUpEarlier = match !== null;
