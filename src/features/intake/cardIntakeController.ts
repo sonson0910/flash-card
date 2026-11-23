@@ -397,12 +397,16 @@ const sharedCardCandidate = (
   if (!word || !translation) return null;
   const partOfSpeech = normalizePartOfSpeech(source.partOfSpeech);
   const lexemeId = boundedText(source.lexemeId, 128);
-  const identity = lexemeId || boundedText(source.language, 64) || boundedText(source.senseKey, 128);
   const languageCode = boundedText(source.language, 64);
   const senseKey = boundedText(source.senseKey, 128);
   const normalizedLemma = boundedText(source.normalizedLemma, 256) || word;
-  if (identity && (!lexemeId || !languageCode || !senseKey || !partOfSpeech
-    || createLexemeId({ language: languageCode, normalizedLemma, partOfSpeech, senseKey }) !== lexemeId)) return null;
+  if (lexemeId || senseKey) {
+    if (!lexemeId || !languageCode || !senseKey || !partOfSpeech
+      || createLexemeId({ language: languageCode, normalizedLemma, partOfSpeech, senseKey }) !== lexemeId) return null;
+  } else if (languageCode && languageCode !== language.source.code) {
+    // A plain card has no catalog identity to verify; its own language claim only has to agree with the course.
+    return null;
+  }
   const wordFamily = boundedWordFamily(source.wordFamily);
   const origin = source.origin === 'ai' || source.origin === 'manual' ? source.origin : undefined;
   return {
