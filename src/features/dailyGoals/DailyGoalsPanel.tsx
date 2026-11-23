@@ -87,6 +87,7 @@ export function DailyGoalsPanel({ gamification, planHasMatch, dailyPace, now: fi
     dailyGoals: gamification.dailyGoals,
     streakState: gamification.streakState,
     rewards: gamification.rewards,
+    hydrationFailed: gamification.hydrationFailed,
   });
   return (
     <section className={`daily-goals-panel daily-goals-panel--${family} crystal-chamfer`} aria-labelledby={headingId} data-daily-goals="true">

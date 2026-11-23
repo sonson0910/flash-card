@@ -12,6 +12,8 @@ export interface DailyGoalsSource {
   /** Freezes held by the streak record; with the reward inventory they decide whether missed days end the run. */
   readonly streakState?: StreakStateV1;
   readonly rewards?: { readonly streakFreezes: number };
+  /** The verified documents never loaded, so no figure here can be shown as counted. */
+  readonly hydrationFailed?: boolean;
 }
 
 export interface DailyGoalsInput extends DailyGoalsSource {
@@ -65,7 +67,7 @@ const countsForDay = (
 export const buildDailyGoals = (input: DailyGoalsInput): DailyGoalsModel => {
   const studyDay = studyDayInZone(input.now, input.timeZone);
   const earnedToday = input.xpHistory[studyDay] ?? 0;
-  const counts = countsForDay(studyDay, input.dailyGoals, earnedToday);
+  const counts = input.hydrationFailed ? null : countsForDay(studyDay, input.dailyGoals, earnedToday);
   const cards = Math.max(1, Math.floor(input.dailyPace));
   const goals: DailyGoal[] = [{
     id: 'study-cards',
@@ -92,7 +94,7 @@ export const buildDailyGoals = (input: DailyGoalsInput): DailyGoalsModel => {
   goals.push({
     id: 'keep-streak',
     streakDays: keptRun,
-    progress: counted(studiedToday ? 1 : 0, 1),
+    progress: input.hydrationFailed ? { state: 'unknown', target: 1 } : counted(studiedToday ? 1 : 0, 1),
   });
   return { studyDay, resetsIn: studyDayCountdown(input.now, input.timeZone), goals };
 };
