@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createPilotAnalyticsClient, type PilotClientEvent } from './analytics';
+import { captureAnalyticsErrorCode, createPilotAnalyticsClient, type PilotClientEvent } from './analytics';
+import { classifyProtectedFunctionError } from './protectedFunctionsCapability';
 
 const event: PilotClientEvent = { name: 'paywall_viewed', props: { trigger: 'menu', offerId: 'pro-vn-30d-v1' } };
 
@@ -49,5 +50,18 @@ describe('pilot analytics client', () => {
     await client.flush();
     expect(send).toHaveBeenCalledTimes(2);
     client.dispose();
+  });
+});
+
+describe('capture failure analytics code', () => {
+  const classify = (reason: string) => classifyProtectedFunctionError(
+    Object.assign(new Error('private detail'), { code: 'functions/resource-exhausted', details: { reason } }), 'Capture');
+  it.each([
+    ['service-daily-cap', 'spend'],
+    ['account-daily-spend', 'spend'],
+    ['ai-daily-allowance', 'allowance'],
+    ['ai-card-quota', 'quota'],
+  ])('buckets %s as %s from the structured reason, not the message copy', (reason, code) => {
+    expect(captureAnalyticsErrorCode(classify(reason))).toBe(code);
   });
 });

@@ -12,8 +12,8 @@ export function captureAnalyticsErrorCode(error: unknown): string {
   if (error instanceof ProtectedFunctionError) {
     if (error.kind === 'authentication') return 'auth';
     if (error.kind === 'quota') {
-      if (error.message.includes('chi phí')) return 'spend';
-      if (error.message.includes('AI phụ')) return 'allowance';
+      if (error.reason === 'service-daily-cap' || error.reason === 'account-daily-spend') return 'spend';
+      if (error.reason === 'ai-daily-allowance') return 'allowance';
       return 'quota';
     }
     if (error.kind === 'network') return 'network';
