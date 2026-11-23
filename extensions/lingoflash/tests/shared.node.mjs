@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createI18nMock } from './i18n-test-helper.mjs';
 
 await import('../shared.js');
 
@@ -627,4 +628,15 @@ test('wraps callback-style Chrome APIs', async () => {
 test('retains the newest sixteen retired scopes', () => {
   const scopes = Array.from({length: 100}, (_, i) => `opaque_scope_${i}_123456`);
   assert.deepEqual(globalThis.LingoFlashExtension.normalizeRetiredDeckScopes(scopes), scopes.slice(-16));
+});
+
+test('selection validation errors follow the UI language', () => {
+  globalThis.chrome = { i18n: createI18nMock('en') };
+  try {
+    assert.equal(selectionValidation('x'.repeat(MAX_TEXT_LENGTH + 1)).error,
+      `The selection is ${MAX_TEXT_LENGTH + 1} characters long. SonFlash supports at most ${MAX_TEXT_LENGTH} characters.`);
+    assert.equal(selectionValidation('  ').error, 'Select an English word or phrase first.');
+  } finally {
+    delete globalThis.chrome;
+  }
 });

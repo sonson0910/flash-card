@@ -147,12 +147,12 @@
   const selectionValidation = value => {
     const text = normalizeSelectedText(value);
     if (!text) {
-      return { ok: false, error: 'Hãy bôi đen một từ hoặc cụm từ tiếng Anh trước.' };
+      return { ok: false, error: t('errorSelectionEmpty', undefined, 'Hãy bôi đen một từ hoặc cụm từ tiếng Anh trước.') };
     }
     if (text.length > MAX_TEXT_LENGTH) {
       return {
         ok: false,
-        error: `Đoạn đã chọn dài ${text.length} ký tự. LingoFlash hỗ trợ tối đa ${MAX_TEXT_LENGTH} ký tự.`,
+        error: t('errorSelectionTooLong', [text.length, MAX_TEXT_LENGTH], `Đoạn đã chọn dài ${text.length} ký tự. LingoFlash hỗ trợ tối đa ${MAX_TEXT_LENGTH} ký tự.`),
       };
     }
     return { ok: true, text };

@@ -53,3 +53,20 @@ test('manifest keeps the SonFlash brand within the Chrome Web Store field limits
     assert.match(manifest[field], /SonFlash/);
   }
 });
+
+test('user-visible worker, popup and shared strings come from the catalog, not Vietnamese literals', async () => {
+  // Internal protocol and provider-validation errors never reach a learner.
+  const internal = /metadata|Scope|due-count|Due-count|course locale|Course locale|Nguồn|Kênh app|Kết quả LingoFlash|Nonce|Tab\/frame|URL ứng dụng|production|xác nhận kết quả đã hiển thị/;
+  const vietnamese = /[ăâđêôơưáàảãạéèẻẽẹíìỉĩịóòỏõọúùủũụýỳỷỹỵ]/i;
+  const offenders = [];
+  for (const file of ['shared.js', 'background-core.js']) {
+    const source = await readFile(new URL(`../${file}`, import.meta.url), 'utf8');
+    source.split('\n').forEach((line, index) => {
+      const code = line.trim();
+      if (code.startsWith('//') || !vietnamese.test(code) || internal.test(code)) return;
+      if (/\bt\('[A-Za-z_]+'/.test(code)) return;
+      offenders.push(`${file}:${index + 1}: ${code.slice(0, 120)}`);
+    });
+  }
+  assert.deepEqual(offenders, []);
+});
