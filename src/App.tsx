@@ -25,6 +25,8 @@ const AppRuntime = runtimeRetry
     loadCatalog(getActiveUiLocale(), 'practice'),
   ]).then(([component]) => component));
 
+const appLoadingLabel = <Trans {...msg({ context: 'shell.loading.app', message: 'Loading SonFlash…' })} />;
+
 interface LandingUser {
   readonly displayName?: string | null;
   readonly email?: string | null;
@@ -84,7 +86,7 @@ export default function App() {
   return (
     <>
       {navigation.viewMode === 'landing' && !runtimeFailed && (
-          <Suspense fallback={<div className="app-loading crystal-starfield font-bold text-[var(--sf-brand-text)]"><Trans {...msg({ context: 'shell.loading.app', message: 'Loading SonFlash…' })} /></div>}>
+          <Suspense fallback={<div className="app-loading crystal-starfield font-bold text-[var(--sf-brand-text)]">{appLoadingLabel}</div>}>
             <LandingPage
               onEnterApp={enterApp}
               onOpenLibrary={openLibrary}
@@ -97,7 +99,7 @@ export default function App() {
       )}
       {runtimeActivated && (
           <AppRuntimeBoundary onError={handleRuntimeError} onRetry={retryRuntime}>
-            <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="app-loading"><WorkspaceLoadingPanel /></div>}>
+            <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="app-loading"><WorkspaceLoadingPanel>{appLoadingLabel}</WorkspaceLoadingPanel></div>}>
               <AppRuntime
                 navigation={navigation}
                 practiceOpenerRef={practiceOpenerRef}

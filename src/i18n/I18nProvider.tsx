@@ -73,7 +73,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [applyLocale]);
 
   useEffect(() => {
-    void Promise.all([loadCatalog(locale, 'shell'), loadCatalog(locale, 'landing')])
+    void Promise.all([loadCatalog(locale, 'shell', false), loadCatalog(locale, 'landing', false)])
+      .then(() => { if (!i18n.locale) activateCatalogLocale(locale); })
       .catch(error => setCatalogError(error instanceof Error ? error : new Error(String(error))));
   }, [locale]);
 
