@@ -641,12 +641,18 @@ export function createSharedDeckSessionController({
     const existing = pending.some(candidate => (
       candidate.ownerId === operation.ownerId && candidate.fingerprint === operation.fingerprint
     ));
-    const operations = pending.filter(candidate => (
+    let operations = pending.filter(candidate => (
       candidate.ownerId !== operation.ownerId || candidate.fingerprint !== operation.fingerprint
     ));
     // The cap bounds one owner's unresolved retries; another account on this browser must not use it up.
+    // At the cap the oldest unresolved retry is dropped so a long offline spell cannot block every new share.
     const ownerOperations = operations.filter(candidate => candidate.ownerId === operation.ownerId);
-    if (!existing && ownerOperations.length >= MAX_PENDING_SHARED_DECK_OPERATIONS) return false;
+    if (!existing && ownerOperations.length >= MAX_PENDING_SHARED_DECK_OPERATIONS) {
+      const oldest = ownerOperations.reduce((a, b) => (
+        a.operationCreatedAt < b.operationCreatedAt || (a.operationCreatedAt === b.operationCreatedAt && a.opId < b.opId) ? a : b
+      ));
+      operations = operations.filter(candidate => candidate.opId !== oldest.opId);
+    }
     return persistPendingCreates(normalizePendingCreates([...operations, operation]));
   };
 

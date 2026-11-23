@@ -1021,36 +1021,40 @@ describe('shared deck session controller', () => {
     expect(manualOperation.opId).not.toBe(aiOperation.opId);
   });
 
-  it('fails closed at the pending-operation cap without evicting unresolved retries', async () => {
+  it('keeps sharing new decks after 20 unresolved attempts by dropping the oldest retry record', async () => {
     const storage = new MemoryStorage();
     const first = setup(undefined, storage);
     await first.controller.activate('owner-1');
-    vi.mocked(first.adapter.create).mockRejectedValue(new Error('ambiguous'));
+    vi.mocked(first.adapter.create).mockRejectedValue(new Error('offline'));
     const requests = Array.from({ length: 20 }, (_, index) => ({
       category: 'IELTS', cards: [card(`word-${index}`)], total: 1, hasNext: false,
     }));
 
     for (const request of requests) {
       await expect(first.controller.actions.createShare(request)).resolves.toEqual({ status: 'failed' });
+      await new Promise(resolve => setTimeout(resolve, 2));
     }
-    const firstOperation = vi.mocked(first.adapter.create).mock.calls[0][0];
-    const stored = JSON.parse(storage.getItem('lingoflash_shared_deck_operation_v1') ?? '{}') as {
-      operations?: unknown[];
-    };
-    expect(stored.operations).toHaveLength(20);
+    const operationOf = (index: number) => vi.mocked(first.adapter.create).mock.calls[index][0];
+    const newestOperation = operationOf(19);
 
+    vi.mocked(first.adapter.create).mockResolvedValue({ shareId: 'share-new', expiresAt: '2026-08-10T00:00:00.000Z' });
     await expect(first.controller.actions.createShare({
       category: 'IELTS', cards: [card('word-overflow')], total: 1, hasNext: false,
-    })).resolves.toEqual({ status: 'failed' });
-    expect(first.adapter.create).toHaveBeenCalledTimes(20);
-    expect(first.controller.getSnapshot().error).toMatch(/too many share requests/i);
+    })).resolves.toMatchObject({ status: 'created' });
+    expect(first.adapter.create).toHaveBeenCalledTimes(21);
+
+    const stored = JSON.parse(storage.getItem('lingoflash_shared_deck_operation_v1') ?? '{}') as {
+      operations?: Array<{ opId: string }>;
+    };
+    expect(stored.operations).toHaveLength(19);
+    expect(stored.operations?.some(operation => operation.opId === operationOf(0).opId)).toBe(false);
 
     const reloaded = setup(undefined, storage);
     await reloaded.controller.activate('owner-1');
-    await expect(reloaded.controller.actions.createShare(requests[0])).resolves.toMatchObject({ status: 'created' });
+    await expect(reloaded.controller.actions.createShare(requests[19])).resolves.toMatchObject({ status: 'created' });
     expect(vi.mocked(reloaded.adapter.create).mock.calls[0][0]).toMatchObject({
-      opId: firstOperation.opId,
-      operationCreatedAt: firstOperation.operationCreatedAt,
+      opId: newestOperation.opId,
+      operationCreatedAt: newestOperation.operationCreatedAt,
     });
   });
 
