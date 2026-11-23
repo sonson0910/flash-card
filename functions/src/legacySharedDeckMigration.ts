@@ -2505,8 +2505,8 @@ const timestampMillis = (value: unknown): number | null => (
  * the freeze therefore covers a subset of the inventory and may still list
  * shares that expired.  Apply can replace it with the inventory's ledger when
  * it is internally consistent and every share it counts as live at the scan is
- * the same share in the inventory; anything else is a conflict an operator
- * must look at.
+ * the same share in the inventory, with the expiry the inventory sealed for
+ * it; anything else is a conflict an operator must look at.
  */
 const usageReconcilable = (
   value: unknown,
@@ -2529,7 +2529,11 @@ const usageReconcilable = (
     allBytes += payloadBytes;
     if (expiresAt <= scanMillis) continue;
     const sealed = Object.hasOwn(expected.shares, shareId) ? expected.shares[shareId] : undefined;
-    if (!sealed || sealed.payloadBytes !== payloadBytes || sealed.expiresAt.toMillis() !== expiresAt) return false;
+    // The scan time is stamped before sharing is closed, so a share created in
+    // between runs longer than thirty days from the scan.  The inventory seals
+    // it at that limit and apply rewrites the share to match.
+    const sealedExpiry = Math.min(expiresAt, scanMillis + LEGACY_SHARED_DECK_TTL_MS);
+    if (!sealed || sealed.payloadBytes !== payloadBytes || sealed.expiresAt.toMillis() !== sealedExpiry) return false;
     liveCount += 1;
     liveBytes += payloadBytes;
   }

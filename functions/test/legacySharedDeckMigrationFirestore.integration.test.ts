@@ -1,6 +1,6 @@
 import { generateKeyPairSync, randomUUID, sign } from 'node:crypto';
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
-import { getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { FieldPath, getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { parseCreateSharedDeckRequest } from '../src/inputValidation.js';
 import { createFirestoreLegacySharedDeckInventoryStore } from '../src/legacySharedDeckInventoryFirestore.js';
@@ -216,6 +216,42 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
       expect(await state()).toMatchObject({ phase: 'verified', ledgerReady: true });
       expect(await usage()).toMatchObject({ activeCount: 1, shares: { 'legacy-a': {} } });
       expect(Object.keys((await usage())!.shares as object)).toEqual(['legacy-a']);
+    }, 30_000);
+
+    it('completes when the owner shared between the stamped scan time and the freeze', async () => {
+      await seedLegacyShares('legacy-a');
+      const sharedAt = Timestamp.now();
+      await share(ownerUid, 'current-share', sharedAt);
+      // The workflow stamps the scan time some seconds before the freeze closes sharing.
+      const scanStartedAt = new Date(sharedAt.toMillis() - 5_000).toISOString();
+      const sealedExpiry = Timestamp.fromMillis(Date.parse(scanStartedAt) + 30 * DAY_MS);
+
+      const inventory = await seal(sealingRevision, scanStartedAt);
+      expect(inventory.applyEligible).toBe(true);
+      await applyLegacySharedDeckMigration(database, inventory, applyOptions(inventory));
+      await expect(verifyLegacySharedDeckCutover(database, inventory))
+        .resolves.toEqual({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 2 });
+
+      // A migrated share keeps at most thirty days from the scan, and its ledger entry follows it.
+      expect((await usage())!.shares).toMatchObject({ 'current-share': { expiresAt: sealedExpiry } });
+      expect((await publicShare('current-share').get()).data()).toMatchObject({ expiresAt: sealedExpiry });
+      expect((await privateShare('current-share').get()).data()).toMatchObject({ expiresAt: sealedExpiry });
+      await expect(revokeSharedDeckAtomically(database, publicShare('current-share'), privateShare('current-share'), ownerUid))
+        .resolves.toBe(true);
+    }, 30_000);
+
+    it('still stops when a ledger entry carries another expiry than its share', async () => {
+      await seedLegacyShares('legacy-a');
+      const current = await share(ownerUid, 'current-share');
+      await usageDocument().update(
+        new FieldPath('shares', 'current-share', 'expiresAt'),
+        Timestamp.fromMillis((current.ownership.expiresAt as Timestamp).toMillis() - DAY_MS),
+      );
+
+      const inventory = await seal(sealingRevision);
+      await expect(applyLegacySharedDeckMigration(database, inventory, applyOptions(inventory)))
+        .rejects.toThrow('Existing shared-deck ledger does not match inventory.');
+      expect(await state()).toMatchObject({ phase: 'sealed' });
     }, 30_000);
 
     it('still stops before any write when the ledger counts a live share the inventory does not hold', async () => {

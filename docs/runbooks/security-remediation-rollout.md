@@ -182,7 +182,9 @@ inputs; produce a new inventory and approval.
 The owner's usage ledger may already exist, because the share callable creates
 it on the owner's first share. Apply replaces it with the sealed ledger when its
 counters are consistent and every share it counts as live at the scan is the
-same share in the inventory. It still stops before any write when that ledger
+same share in the inventory. A share the owner created after the workflow
+stamped the scan time is kept, with its expiry cut to thirty days from the scan
+like every migrated share. Apply still stops before any write when that ledger
 counts a live share the inventory does not hold; repair that by hand before a
 new approval.
 
