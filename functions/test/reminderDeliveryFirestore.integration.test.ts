@@ -352,6 +352,39 @@ describeWithEmulator('reminder delivery in Firestore', () => {
       } finally { await database.recursiveDelete(owner); }
     }, 30_000);
 
+    it('sends the push of the new local day after a short move west that left less than twelve hours since the claim', async () => {
+      const uid = `zone-short-west-${randomUUID()}`;
+      const owner = await seedZone(uid, 'Asia/Ho_Chi_Minh', new Date('2026-11-09T12:00:00.000Z'));
+      try {
+        const send = vi.fn(async () => 1);
+        // 01:00Z is 22:00 on 9 November in Sao Paulo, so 08:00 on 10 November there is a new local day.
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T01:00:00.000Z')))
+          .toEqual({ claimed: 1, sent: 1 });
+        await saveZone(uid, 'America/Sao_Paulo', new Date('2026-11-10T03:00:00.000Z'));
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T11:00:00.000Z')))
+          .toEqual({ claimed: 1, sent: 1 });
+        expect(send).toHaveBeenCalledTimes(2);
+      } finally { await database.recursiveDelete(owner); }
+    }, 30_000);
+
+    it('sends no second push on a local day of the new zone when push was switched off and on after a move east', async () => {
+      const uid = `zone-east-toggle-${randomUUID()}`;
+      const owner = await seedZone(uid, 'America/Los_Angeles', new Date('2026-11-09T20:00:00.000Z'));
+      try {
+        const send = vi.fn(async () => 1);
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T16:00:00.000Z')))
+          .toEqual({ claimed: 1, sent: 1 });
+        await updateReminderSettingsForOwner(database, uid, {
+          days: everyDay, sendAtLocal: '08:00', timezone: 'Asia/Tokyo', locale: 'en', quietHours: null,
+          onlyIfNotStudiedToday: true, channels: { push: false, emailDigest: false },
+        }, new Date('2026-11-10T17:00:00.000Z'));
+        await saveZone(uid, 'Asia/Tokyo', new Date('2026-11-10T17:30:00.000Z'));
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T23:00:00.000Z')))
+          .toEqual({ claimed: 0, sent: 0 });
+        expect(send).toHaveBeenCalledTimes(1);
+      } finally { await database.recursiveDelete(owner); }
+    }, 30_000);
+
     it('still sends one push per local day when the zone stays the same', async () => {
       const uid = `zone-same-${randomUUID()}`;
       const owner = await seedZone(uid, 'Asia/Ho_Chi_Minh', new Date('2026-11-09T12:00:00.000Z'));

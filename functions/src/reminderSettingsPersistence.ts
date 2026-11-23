@@ -171,6 +171,8 @@ export function reminderStateForSettings(
       && previous.consecutiveIgnored >= 0 ? previous.consecutiveIgnored : 0,
     lastPushReceiptId: keepBackoff && typeof previous?.lastPushReceiptId === 'string'
       ? previous.lastPushReceiptId : null,
+    // Not backoff state: it must outlive a push off and on, or a zone change could send a second push on one day.
+    lastPushClaim: previous?.lastPushClaim ?? null,
     lastEvaluatedSentAt: keepBackoff && previous?.lastEvaluatedSentAt instanceof Timestamp
       ? previous.lastEvaluatedSentAt : null,
     backoffSkipNext: keepBackoff && previous?.backoffSkipNext === true,
