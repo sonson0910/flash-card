@@ -14,12 +14,8 @@ import { useLibraryScreenContract } from '../features/library/useLibraryScreenCo
 import { canStartLibraryClear } from '../features/library/libraryMutationRecovery';
 import { existingCardRevealState, forgetRecentlyPromotedCard, patchRecentlyPromotedCards } from '../features/library/libraryPresentation';
 import {
-  cloudFacetsCacheKey,
-  cloudPageCacheKey,
-  removeCloudStatsCaches,
-  clearImageNegativeCache,
-  isCloudBackoffActive,
-  removeLocalValue,
+  cloudFacetsCacheKey, cloudPageCacheKey, removeCloudStatsCaches,
+  clearImageNegativeCache, isCloudBackoffActive, removeLocalValue,
 } from '../features/library/libraryStorage';
 import { useLearningWorkspace, type LearningWorkspaceActions } from '../features/learning/useLearningWorkspace';
 import type { LearningStateOutcome } from '../features/learning/learningStateController';
@@ -27,6 +23,7 @@ import type { AppViewMode } from '../features/navigation/useAppNavigation';
 import { usePracticeWorkspace } from '../features/practice/usePracticeWorkspace';
 import type { PracticeGamificationOutcome } from '../features/practice/practiceSessionService';
 import type { CeremonyEvent, VerifiedGamificationOutcome } from '../features/gamification/verifiedGamificationClient';
+import { announceStreakRepair } from './announceStreakRepair';
 import { appDependencies } from './appDependencies';
 import type { AppLibraryRuntime } from './useAppLibraryRuntime';
 import { useLibraryMutationFeedback } from './use-library-mutation-feedback';
@@ -160,7 +157,7 @@ export function useAppLearningCoordination({
       mutationPendingChanged: ports.setLibraryMutationPending,
       reportError,
       onReviewOutcome: (outcome, operationId, card) => {
-        if (outcome.gamification) acceptAuthoritativeOutcome(outcome.gamification);
+        if (outcome.gamification) { acceptAuthoritativeOutcome(outcome.gamification); announceStreakRepair(outcome.gamification, notify); }
         offerCeremony(operationId, outcome.ceremonyEvents, card, outcome.gamification);
       },
     },

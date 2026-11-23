@@ -2156,6 +2156,11 @@ msgid "shell.streak"
 msgstr "Chuỗi {count} ngày"
 
 #. js-lingui-explicit-id
+#: src/app/announceStreakRepair.ts:8
+msgid "shell.streak.repaired"
+msgstr "Đã khôi phục chuỗi. Bạn lại có chuỗi {count} ngày."
+
+#. js-lingui-explicit-id
 #: src/components/shell/localized-sync-status.ts:38
 #: src/components/shell/localized-sync-status.ts:39
 msgid "shell.sync.awaiting-cloud"

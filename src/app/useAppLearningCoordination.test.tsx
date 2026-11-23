@@ -1,9 +1,13 @@
+import { i18n } from '@lingui/core';
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const captured = vi.hoisted(() => ({
-  learning: null as null | { library: { publication: { remove(id: string): void; clear(): void; patch(id: string, f: object): void; restore(c: object): void } } },
+  learning: null as null | {
+    library: { publication: { remove(id: string): void; clear(): void; patch(id: string, f: object): void; restore(c: object): void } };
+    ports: { onReviewOutcome(outcome: object, operationId: string, card: object): void };
+  },
   intake: null as null | { intake: { rememberPromoted(card: object): void; forgetPromoted(card: object): void } },
   decks: null as null | { ports: { publishCards(cardIds: ReadonlySet<string>, fields: object): void } },
 }));
@@ -54,6 +58,7 @@ import { useAppLearningCoordination } from './useAppLearningCoordination';
 import { overlayRecentlyPromotedCards } from '../features/library/libraryPresentation';
 import { ALL_PRACTICE_DECK_SCOPE } from '../lib/practiceScope';
 import type { CardData } from '../types/card';
+import { messages as enShell } from '../i18n/locales/en/shell.po';
 
 const installMinimalReactDom = () => {
   const documentLike: Record<string, unknown> = {
@@ -83,7 +88,7 @@ const filters = {
   bookmarkedOnly: false, createdDate: null, wordPrefix: '',
 } as never;
 
-const renderCoordination = async () => {
+const renderCoordination = async (notify: (message: string | null) => void = vi.fn()) => {
   const promotedRef = { current: new Map<string, CardData>() };
   const library = {
     model: {
@@ -109,7 +114,7 @@ const renderCoordination = async () => {
       library: library as never, courseScopeReady: true, viewMode: 'library' as never,
       languageProfile: { source: { code: 'en' }, target: { code: 'vi' } } as never, coursePort: null, setViewMode: vi.fn(),
       setPracticeMenuOpen: vi.fn(), rememberOpener: vi.fn(), shareOpenerRef: { current: null },
-      reportError: vi.fn(), notify: vi.fn(), offerUndo: vi.fn(),
+      reportError: vi.fn(), notify, offerUndo: vi.fn(),
     });
     return null;
   }
@@ -205,6 +210,33 @@ describe('recently promoted overlay follows later library mutations', () => {
       captured.learning!.library.publication.remove(apple.id);
       captured.learning!.library.publication.restore(apple);
       expect(page1([]).map(c => c.word)).toEqual(['apple']);
+    } finally { await act(async () => { root.unmount(); }); }
+  });
+});
+
+describe('a review outcome that completes a streak repair', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+  const outcome = (streakChange?: object) => ({ gamification: { xp: 120, level: 2, streak: 24, ...(streakChange ? { streakChange } : {}) } });
+
+  it('tells the learner once that the streak is back, with the restored length', async () => {
+    i18n.load('en', enShell);
+    i18n.activate('en');
+    const notify = vi.fn();
+    const { root } = await renderCoordination(notify);
+    try {
+      captured.learning!.ports.onReviewOutcome(outcome({ freezesUsed: 0, freezesEarned: 0, repaired: true }), 'op-1', card('apple'));
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(notify).toHaveBeenCalledWith("Streak repaired. You're on a 24-day streak again.");
+    } finally { await act(async () => { root.unmount(); }); }
+  });
+
+  it('stays quiet for a review that did not repair a streak', async () => {
+    const notify = vi.fn();
+    const { root } = await renderCoordination(notify);
+    try {
+      captured.learning!.ports.onReviewOutcome(outcome({ freezesUsed: 1, freezesEarned: 0 }), 'op-2', card('apple'));
+      captured.learning!.ports.onReviewOutcome(outcome(), 'op-3', card('apple'));
+      expect(notify).not.toHaveBeenCalled();
     } finally { await act(async () => { root.unmount(); }); }
   });
 });

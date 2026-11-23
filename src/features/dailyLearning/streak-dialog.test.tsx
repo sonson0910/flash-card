@@ -144,8 +144,25 @@ describe('StreakChip from the server streak record', () => {
     expect(closeOnly).not.toContain('Keep repairing');
   });
 
-  it('hides the chip once the run has ended without a repair', () => {
-    expect(renderFixture(streakFixtures.endedNoRepair)).toBe('');
+  it('keeps a chip and explains the end once the run has ended without a repair', () => {
+    theme.family = 'classic';
+    const html = renderFixture(streakFixtures.endedNoRepair, { onStartSession: () => undefined });
+    expect(html).toContain('data-streak-chip="ended"');
+    expect(html).toContain('Streak ended');
+    expect(html).toContain('data-streak-state="ended"');
+    expect(html).toContain('23 → 0');
+    expect(html).toContain('Your 23-day streak <em>ended.</em>');
+    expect(html).toContain('Start a new run today. Your XP and words are safe.');
+    expect(html).toContain('Start a session');
+    expect(html).not.toMatch(/Repair|Start fresh|freezes left|window/);
+    expect(html).not.toMatch(forbiddenCopy);
+  });
+
+  it('offers only a way out of the ended dialog when there is no session to start', () => {
+    const html = renderFixture(streakFixtures.endedNoRepair);
+    expect(html).toContain('Your 23-day streak <em>ended.</em>');
+    expect(html).not.toContain('Start a session');
+    expect(html).toContain('Continue');
   });
 
   it('celebrates the 30-day milestone with the real XP and the best streak', () => {

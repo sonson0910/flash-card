@@ -2156,6 +2156,11 @@ msgid "shell.streak"
 msgstr "{count} day streak"
 
 #. js-lingui-explicit-id
+#: src/app/announceStreakRepair.ts:8
+msgid "shell.streak.repaired"
+msgstr "Streak repaired. You're on a {count}-day streak again."
+
+#. js-lingui-explicit-id
 #: src/components/shell/localized-sync-status.ts:38
 #: src/components/shell/localized-sync-status.ts:39
 msgid "shell.sync.awaiting-cloud"

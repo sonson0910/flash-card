@@ -50,7 +50,7 @@
   --sd-hero-glow: var(--sd-ice-glow);
   --sd-em-glow: 0 0 30px color-mix(in srgb, var(--sd-ice-flame) 50%, transparent);
 }
-.streak-dialog[data-streak-state="repair"] {
+.streak-dialog:is([data-streak-state="repair"], [data-streak-state="ended"]) {
   --sd-hero-border: 1.5px dashed var(--sf-edge-highlight); --sd-hero-bg: var(--sf-surface-muted); --sd-hero-shadow: none;
   --sd-hero-fg: var(--sf-text-tertiary); --sd-hero-glow: none;
   --sd-eyebrow: var(--sf-danger); --sd-em: var(--sf-danger); --sd-em-glow: none;
@@ -189,7 +189,7 @@
   --cs-em: linear-gradient(180deg, color-mix(in srgb, var(--sf-holo-text) 70%, var(--sf-second)) 0%, var(--sf-holo-text) 60%, color-mix(in srgb, var(--sf-holo-text) 70%, var(--sf-text-strong)) 100%);
   --cs-gold-text: color-mix(in srgb, var(--sf-reward) 45%, var(--sf-text-strong));
 }
-.streak-dialog[data-family="crystal"][data-streak-state="repair"] {
+.streak-dialog[data-family="crystal"]:is([data-streak-state="repair"], [data-streak-state="ended"]) {
   --cs-rim: var(--sf-rim-learning); --cs-rim-glow: color-mix(in srgb, var(--sf-tier-bloom) 55%, transparent);
   --cs-emblem-rim: var(--sf-edge-highlight); --cs-emblem-bg: var(--sf-surface); --cs-emblem-fg: var(--sf-text-tertiary); --cs-emblem-glow: none;
   --cs-eyebrow: var(--sf-brand-text); --cs-em: var(--cs-hot); --cs-em-glow: color-mix(in srgb, var(--sf-brand) 40%, transparent);
@@ -200,7 +200,7 @@
   --cs-eyebrow: var(--cs-gold-text); --cs-em: var(--cs-hot); --cs-em-glow: color-mix(in srgb, var(--sf-reward) 50%, transparent);
 }
 /* The repair and milestone words stay in the emphasis metal on Prism Day too, past the light page's ice emphasis. */
-:root[data-theme-family="crystal"] .streak-dialog[data-family="crystal"]:is([data-streak-state="repair"], [data-streak-state="milestone"]) { --cs-em: var(--cs-hot); }
+:root[data-theme-family="crystal"] .streak-dialog[data-family="crystal"]:is([data-streak-state="repair"], [data-streak-state="ended"], [data-streak-state="milestone"]) { --cs-em: var(--cs-hot); }
 [data-family="crystal"] .streak-dialog-rim { position: absolute; inset: 0; z-index: 0; display: block; clip-path: var(--nk-chamfer); background: var(--cs-rim); }
 [data-family="crystal"] .streak-dialog-rim::after { content: ''; position: absolute; inset: 3px; clip-path: inherit; background: var(--sf-card-front); }
 [data-family="crystal"] .streak-dialog-confetti { clip-path: var(--nk-chamfer); }
@@ -223,7 +223,7 @@
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--cs-emblem-bg);
 }
 [data-family="crystal"] .streak-dialog-emblem-flame { width: 58px; height: 58px; filter: none; }
-[data-family="crystal"][data-streak-state="repair"] .streak-dialog-emblem-flame { opacity: .55; }
+[data-family="crystal"]:is([data-streak-state="repair"], [data-streak-state="ended"]) .streak-dialog-emblem-flame { opacity: .55; }
 [data-family="crystal"] .streak-dialog-badge {
   right: -8px; bottom: 14px; width: 46px; height: 52px; border: 0; border-radius: 0;
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--sf-rim-new); color: var(--sf-on-brand);
