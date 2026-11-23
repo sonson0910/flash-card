@@ -20,6 +20,7 @@ import {
   deriveLibraryFacetOperationId,
   deleteAllCards,
   deleteCardWithTombstone,
+  findCardById,
   getLibraryEpoch,
   incrementLibraryEpoch,
 } from '../../lib/cardRepository';
@@ -545,7 +546,15 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               restoreConflictReason: restoreConflictReasonFor(cause.reason),
             });
           }
-          throw cause;
+          // The response may have been lost after the server committed the restore. Read the card once: if it
+          // is back in this epoch past its deleted revision, the restore happened and is reported as such.
+          const outcomeUnknown = isRetryableSyncError(cause) || (cause instanceof ProtectedFunctionError && cause.retryable);
+          const restoredCard = outcomeUnknown
+            ? await findCardById(database, ownerId, mutation.card.id).catch(() => null)
+            : null;
+          if (!restoredCard || restoredCard.libraryEpoch !== mutation.expectedLibraryEpoch
+            || (restoredCard.revision ?? 0) <= (mutation.card.revision ?? 0)) throw cause;
+          created = { card: restoredCard, created: true };
         }
         const latest = latestRef.current;
         if (latest.ownerId !== ownerId) {

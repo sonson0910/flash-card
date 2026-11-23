@@ -37,6 +37,7 @@ vi.mock('../../lib/cardRepository', async () => {
     deleteAllCards: mocks.deleteAllCards,
     clearLibraryFacets: mocks.clearLibraryFacets,
     deleteCardWithTombstone: mocks.deleteCardWithTombstone,
+    findCardById: mocks.findCardById,
     getLibraryEpoch: mocks.getLibraryEpoch,
     incrementLibraryEpoch: mocks.incrementLibraryEpoch,
   };
@@ -932,6 +933,32 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       expect.objectContaining({ restore: true, opId: 'restore-counts' }),
     );
     expect(harness.updateCloudStats).toHaveBeenCalledOnce();
+  });
+
+  it('publishes a restore whose response was lost after the server committed it', async () => {
+    const restoredCard = { ...card, revision: 5 };
+    mocks.createCardIfAbsent.mockRejectedValue(Object.assign(new Error('deadline'), { code: 'deadline-exceeded' }));
+    mocks.findCardById.mockResolvedValue(restoredCard);
+    const harness = createHarness();
+    const undoToken = {
+      ownerKey: 'user-a', ownerId: 'user-a', card,
+      expectedLibraryEpoch: 2, deleteOperationId: 'cleanup-1',
+      deletedAt: '2026-08-09T00:00:01.000Z', lifecycleId: 'delete-life-lost', clearGeneration: 0,
+    };
+    const mutation: LearningStateMutation = {
+      ownerKey: 'user-a', operationId: 'restore-lost', operation: 'restore', intent: 'restore',
+      undoToken, card, expectedLibraryEpoch: 2, operationCreatedAt: '2026-08-09T00:00:02.000Z',
+      publication: { kind: 'restore', card },
+    };
+
+    await expect(harness.persistence.persist(mutation)).resolves.toMatchObject({
+      restoreFinality: 'restored', publication: { kind: 'restore', card: restoredCard },
+    });
+    expect(harness.updateCloudStats).toHaveBeenCalledOnce();
+
+    mocks.findCardById.mockResolvedValue(null);
+    await expect(harness.persistence.persist({ ...mutation, operationId: 'restore-lost-2' }))
+      .rejects.toThrow('deadline');
   });
 
   it('maps a deleted precondition to a deleted-again conflict', async () => {
