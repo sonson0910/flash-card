@@ -1,5 +1,5 @@
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
-import { COURSE_TARGET_LANGUAGES, type CourseTargetLanguage } from '../courses/courseModel';
+import { COURSE_NATIVE_LANGUAGES, COURSE_TARGET_LANGUAGES, type CourseNativeLanguage, type CourseTargetLanguage } from '../courses/courseModel';
 import type { StarterCardOutcome } from './createStarterCards';
 
 export type StarterTrialResult = StarterCardOutcome | 'already-added';
@@ -12,6 +12,7 @@ export interface StarterClaimStore {
 
 type ClaimStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const claimKey = (ownerId: string) => `sonflash_onboarding_starter_claim_v1_${ownerId}`;
+const languageKey = (ownerId: string) => `sonflash_onboarding_starter_language_v1_${ownerId}`;
 const getStorage = (): ClaimStorage | null => {
   try { return globalThis.localStorage; } catch { return null; }
 };
@@ -31,8 +32,29 @@ export const starterClaimStore = (ownerId: string, storage: ClaimStorage | null 
   },
 });
 
+/** The native language the first starter batch was written with, kept beside the claim for the same setup. */
+export const starterMeaningsLanguageStore = (ownerId: string, storage: ClaimStorage | null = getStorage()) => {
+  const read = (): CourseNativeLanguage | null => {
+    try {
+      const value = storage?.getItem(languageKey(ownerId));
+      return COURSE_NATIVE_LANGUAGES.find(language => language === value) ?? null;
+    } catch { return null; }
+  };
+  return {
+    read,
+    /** Keeps the language of the first batch; a later batch in another language does not replace it. */
+    rememberFirst: (language: CourseNativeLanguage): CourseNativeLanguage => {
+      const earlier = read();
+      if (earlier !== null) return earlier;
+      try { storage?.setItem(languageKey(ownerId), language); } catch { /* the language then lasts for this page load only */ }
+      return language;
+    },
+  };
+};
+
 export const clearStarterClaim = (ownerId: string, storage: ClaimStorage | null = getStorage()): void => {
   starterClaimStore(ownerId, storage).write(null);
+  try { storage?.removeItem(languageKey(ownerId)); } catch { /* nothing to clear */ }
 };
 
 // A refusal the server or the client raised before any card was written. Anything else, a lost reply
