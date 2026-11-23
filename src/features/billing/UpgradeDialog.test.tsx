@@ -270,7 +270,7 @@ describe('UpgradeDialog', () => {
   });
 
   it('keeps the interest action available at the real Free quota boundary', async () => {
-    plan.state = { status: 'ready', usage: { tier: 'free', used: 30, limit: 30, periodEndsAt: new Date('2026-10-01T00:00:00.000Z') } };
+    plan.state = { status: 'ready', usage: { tier: 'free', used: 30, limit: 30, enforced: true, periodEndsAt: new Date('2026-10-01T00:00:00.000Z') } };
     billing.getPilotOffer.mockResolvedValue({ proMonthlyAiCards: 1_000, displayPriceVnd: null, proDurationDays: 30, intentEligibility: 'eligible', offerVersion });
 
     render({ open: true, onOpenChange: vi.fn(), trigger: 'quota' });
@@ -279,6 +279,30 @@ describe('UpgradeDialog', () => {
 
     expect(JSON.stringify(view.status?.props?.children)).toContain('allowance is exhausted');
     expect(view.buttons.some(button => JSON.stringify(button.props?.children).includes('Register interest'))).toBe(true);
+  });
+
+  it('does not call the allowance exhausted while the server is not enforcing it', async () => {
+    plan.state = { status: 'ready', usage: { tier: 'free', used: 31, limit: 30, enforced: false, periodEndsAt: new Date('2026-10-01T00:00:00.000Z') } };
+    billing.getPilotOffer.mockResolvedValue({ proMonthlyAiCards: 1_000, displayPriceVnd: null, proDurationDays: 30, intentEligibility: 'eligible', offerVersion });
+
+    render({ open: true, onOpenChange: vi.fn(), trigger: 'quota' });
+    await flush();
+    const view = render({ open: true, onOpenChange: vi.fn(), trigger: 'quota' });
+
+    expect(JSON.stringify(view.tree)).not.toContain('allowance is exhausted');
+  });
+
+  it('describes the offer as one allowance for the whole Pro window, not a monthly one', async () => {
+    plan.state = { status: 'ready', usage: { tier: 'free', used: 0, limit: 30, enforced: true, periodEndsAt: new Date('2026-10-01T00:00:00.000Z') } };
+    billing.getPilotOffer.mockResolvedValue({ proMonthlyAiCards: 1_000, displayPriceVnd: null, proDurationDays: 90, intentEligibility: 'eligible', offerVersion });
+
+    render({ open: true, onOpenChange: vi.fn(), trigger: 'menu' });
+    await flush();
+    const view = render({ open: true, onOpenChange: vi.fn(), trigger: 'menu' });
+    const tree = JSON.stringify(view.tree);
+
+    expect(tree).not.toContain('per month');
+    expect(tree).toContain('AI cards}} for {days, plural');
   });
 
   it('clears a previous offer while reopening so a failed refresh cannot record interest', async () => {

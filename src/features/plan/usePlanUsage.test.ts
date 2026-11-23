@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolvePlanPeriod } from './usePlanUsage';
+import { readPlanUsageCounters, resolvePlanPeriod } from './usePlanUsage';
 
 const timestamp = (date: Date) => ({ toDate: () => date });
 
@@ -70,5 +70,17 @@ describe('resolvePlanPeriod', () => {
     expect(resolvePlanPeriod(undefined, now).tier).toBe('free');
     expect(resolvePlanPeriod({ tier: 'pro' }, now).tier).toBe('free');
     expect(resolvePlanPeriod(undefined, now).key).toBe('free-2026-09');
+  });
+});
+
+describe('readPlanUsageCounters', () => {
+  it('reads the usage counters and treats a missing document as the plan default', () => {
+    expect(readPlanUsageCounters({ used: 4, limit: 50, enforced: true }, 'free')).toEqual({ used: 4, limit: 50, enforced: true });
+    expect(readPlanUsageCounters(undefined, 'free')).toEqual({ used: 0, limit: 30, enforced: true });
+    expect(readPlanUsageCounters(undefined, 'pro')).toEqual({ used: 0, limit: 1_000, enforced: true });
+  });
+
+  it('reports an allowance that the server did not enforce when it recorded the usage', () => {
+    expect(readPlanUsageCounters({ used: 31, limit: 30, enforced: false }, 'free')).toEqual({ used: 31, limit: 30, enforced: false });
   });
 });

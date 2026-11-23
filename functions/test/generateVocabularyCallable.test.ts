@@ -161,6 +161,18 @@ describe('generateVocabulary callable', () => {
     expect(refundNonCardAction).toHaveBeenCalledWith(expect.anything(), 'owner-1', '2026-09-30');
   });
 
+  it('tells the cost ledger that a cancelled card stream is a learner stop and a provider failure is not', async () => {
+    const failure = new Error('provider unavailable');
+    runMeteredGemini.mockRejectedValue(failure);
+    const { generateVocabulary } = await import('../src/index.js');
+    await expect(generateVocabulary.run({ auth: { uid: 'owner-1' }, data: nonCardRequests[0] } as never)).rejects.toBe(failure);
+    const { isClientAbort } = runMeteredGemini.mock.calls[0][0] as { isClientAbort: (error: unknown) => boolean };
+    const { HttpsError } = await import('firebase-functions/v2/https');
+    expect(isClientAbort(new HttpsError('aborted', 'AI card generation was cancelled.'))).toBe(true);
+    expect(isClientAbort(new HttpsError('internal', 'AI returned an invalid response.'))).toBe(false);
+    expect(isClientAbort(failure)).toBe(false);
+  });
+
   it('cancels only the authenticated owner operation with a validated ID', async () => {
     cancelWordOperation.mockResolvedValue({ cancelled: true, counted: false });
     const { cancelCardGeneration } = await import('../src/index.js');

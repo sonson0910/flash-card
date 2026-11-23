@@ -3,7 +3,7 @@ import { MAX_AI_OUTPUT_TOKENS } from './aiGeneration.js';
 import type { VocabularyAiAction } from './aiRequestBudget.js';
 import type { PilotConfig } from './pilotConfig.js';
 
-export type AiCallOutcome = 'ok' | 'provider-error' | 'parse-error' | 'timeout';
+export type AiCallOutcome = 'ok' | 'provider-error' | 'parse-error' | 'timeout' | 'client-abort';
 
 export class AiSpendLimitError extends Error {
   constructor(readonly reason: 'service-daily-cap' | 'account-daily-spend') {
@@ -139,6 +139,8 @@ export async function runMeteredGemini<T, Response extends { usageMetadata?: unk
   model: string;
   contents: string;
   config: PilotConfig;
+  /** True when the learner, not the provider, ended the call (a stop, a closed tab or a dropped connection). */
+  isClientAbort?(error: unknown): boolean;
   generate(signal: AbortSignal): Promise<Response>;
   parse(response: Response): T;
   now?: () => Date;
@@ -175,11 +177,13 @@ export async function runMeteredGemini<T, Response extends { usageMetadata?: unk
       outcome = 'timeout';
       throw new AiCallTimeoutError();
     }
+    // A learner stop or a dropped connection is not a provider failure; the missing usage still keeps the reservation.
+    if (options.isClientAbort?.(error)) outcome = 'client-abort';
     throw error;
   } finally {
     if (timer) clearTimeout(timer);
     // Unknown usage may still be billed; preserve the worst-case reservation.
-    const estimatedUsdMicros = usage.usageMissing || outcome === 'timeout' || outcome === 'provider-error'
+    const estimatedUsdMicros = usage.usageMissing || outcome === 'timeout' || outcome === 'provider-error' || outcome === 'client-abort'
       ? reservedUsdMicros : estimateCostUsdMicros(usage, config);
     if (estimatedUsdMicros !== reservedUsdMicros) {
       try {
