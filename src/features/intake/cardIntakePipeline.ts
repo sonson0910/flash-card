@@ -103,25 +103,36 @@ type OptimisticDuplicateCompensationPort = Pick<
   'resetCloudPage' | 'updateCategoryFacets' | 'updateCloudStats'
 >;
 
+const compensateOptimisticCard = (
+  card: CardData,
+  port: OptimisticDuplicateCompensationPort,
+  operationId: string | undefined,
+  reason: 'duplicate' | 'failed',
+): void => {
+  // Each counter takes back exactly what the optimistic create added for this card.
+  port.updateCloudStats(stats => ({
+    ...stats,
+    total: Math.max(0, stats.total - 1),
+    unrated: (card.difficulty ?? 'unrated') === 'unrated' ? Math.max(0, stats.unrated - 1) : stats.unrated,
+    bookmarked: card.bookmarked ? Math.max(0, stats.bookmarked - 1) : stats.bookmarked,
+  }));
+  const category = card.category || 'Other';
+  const delta = { [category]: -1 };
+  const update = operationId
+    ? port.updateCategoryFacets(delta, deriveLibraryFacetOperationId(operationId, reason))
+    : port.updateCategoryFacets(delta);
+  void update.catch(cause => {
+    console.warn('The card was reconciled, but its category facet needs a refresh.', cause);
+  });
+  port.resetCloudPage();
+};
+
 export function compensateOptimisticDuplicateCard(
   card: CardData,
   port: OptimisticDuplicateCompensationPort,
   operationId?: string,
 ): void {
-  port.updateCloudStats(stats => ({
-    ...stats,
-    total: Math.max(0, stats.total - 1),
-    unrated: Math.max(0, stats.unrated - 1),
-  }));
-  const category = card.category || 'Other';
-  const delta = { [category]: -1 };
-  const update = operationId
-    ? port.updateCategoryFacets(delta, deriveLibraryFacetOperationId(operationId, 'duplicate'))
-    : port.updateCategoryFacets(delta);
-  void update.catch(cause => {
-    console.warn('The duplicate was reconciled, but its category facet needs a refresh.', cause);
-  });
-  port.resetCloudPage();
+  compensateOptimisticCard(card, port, operationId, 'duplicate');
 }
 
 const rewardTimeZone = (): string => {
@@ -469,16 +480,15 @@ export function createCardIntakePipeline({
             if (storedElsewhere) adoptStoredCardId(candidate, result.card.id, latest);
             return outcome;
           }
-          // Someone else already created this word; reconcile the optimistic
-          // duplicate with the authoritative card the cloud returned. A word held
-          // under another id leaves a second row behind even when its card is shown.
-          if (storedElsewhere || !latest.getCards().some(existing => existing.id === result.card.id)) {
-            compensateOptimisticDuplicateCard(candidate, latest, facetOperationId);
-            const cardToTouch = !keepExistingDeck && candidate.customDeck && candidate.customDeck !== result.card.customDeck
-              ? await assignExistingDeck(result.card, candidate.customDeck)
-              : result.card;
-            await touchExisting(cardToTouch, new Date().toISOString(), storedElsewhere ? candidate.id : undefined);
-          }
+          // The word already existed: take back the optimistic create and bring the authoritative
+          // card forward. Ids are deterministic, so the card shown at once can carry the stored id
+          // and still be the optimistic one; only the answer tells the two apart. The compensation
+          // id names this call and this card, so every duplicate in a batch is counted once.
+          compensateOptimisticCard(candidate, latest, `${facetOperationId}:${operationId}`, 'duplicate');
+          const cardToTouch = !keepExistingDeck && candidate.customDeck && candidate.customDeck !== result.card.customDeck
+            ? await assignExistingDeck(result.card, candidate.customDeck)
+            : result.card;
+          await touchExisting(cardToTouch, new Date().toISOString(), storedElsewhere ? candidate.id : undefined);
         } catch (cause) {
           console.warn('The saved card could not be reconciled locally.', cause);
         }
@@ -495,6 +505,8 @@ export function createCardIntakePipeline({
           const latest = getContext();
           latest.forgetPromoted(candidate);
           latest.publishCards(latest.getCards().filter(existing => existing.id !== candidate.id));
+          // The card never reached the library, so the optimistic counts and facet go back too.
+          compensateOptimisticCard(candidate, latest, `${facetOperationId}:${operationId}`, 'failed');
           latest.setCloudUnavailable(true);
           latest.notify('The card could not be saved. Check your connection and try again.');
         }
