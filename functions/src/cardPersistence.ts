@@ -62,10 +62,15 @@ export class CardAllocationConflictError extends Error {
 
 export type CardRecord = Record<string, unknown>;
 
+export const isMasteredCard = (card: CardRecord): boolean => card.difficulty === 'easy'
+  || Number(card.interval ?? (card.fsrs as Record<string, unknown> | undefined)?.scheduledDays ?? 0) >= 21;
+
 export type CardAllocationResult = {
   created: boolean;
   card: DocumentData;
   restored?: true;
+  /** Set on a result answered from a stored receipt; callables keep it off the response. */
+  replayed?: true;
 };
 
 export type CardAllocationRequest = {
@@ -912,7 +917,7 @@ export async function createCardForOwner(
         || typeof result.created !== 'boolean' || !result.card || typeof result.card !== 'object') {
         throw new CardAllocationConflictError('identity-conflict', 'The card create receipt is invalid.');
       }
-      return result as CardAllocationResult;
+      return { ...(result as CardAllocationResult), replayed: true as const };
     }
     await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
     const stateSnapshot = await transaction.get(libraryState);
@@ -1032,7 +1037,12 @@ export async function createCardForOwner(
     // A generated canonical timestamp is not proof of a deliberate replay. Only
     // an explicit protocol timestamp or caller-supplied creation time may pass
     // the deletion barrier, matching the prior offline mutation semantics.
-    const operationTime = Date.parse(operationCreatedAt ?? String(cardSource.createdAt ?? ''));
+    // A verified create is a fresh capture: replaying the same operation is
+    // answered from its receipt, so its time is the server receive time. The
+    // device clock cannot be compared with the server's deletion time.
+    const operationTime = verifiedCreate
+      ? verifiedCreate.receivedAt.getTime()
+      : Date.parse(operationCreatedAt ?? String(cardSource.createdAt ?? ''));
     const deletionTime = tombstoneSnapshot.exists
       ? Date.parse(String((tombstoneSnapshot.data() as CardRecord).deletedAt ?? ''))
       : Number.NaN;
@@ -1044,14 +1054,27 @@ export async function createCardForOwner(
     // new card lifetime even when its word has a prior deletion tombstone.
     const originalCreationTime = Date.parse(String(cardSource.createdAt ?? ''));
     const restoresPriorCard = explicitlyRecreatesAfterDeletion
+      && !verifiedCreate
       && Number.isFinite(originalCreationTime)
       && originalCreationTime <= deletionTime;
     if (tombstoneRevision > requestedBaseRevision && !explicitlyRecreatesAfterDeletion) {
       throw new CardAllocationConflictError('deleted', 'The card was deleted by a newer operation.');
     }
+    // Mastery time is server-stamped, so a create never takes it from the
+    // client. Restoring a deleted card is the exception: the card keeps the
+    // date it was mastered when that date fits the card's own lifetime, so it
+    // stays in the recently mastered views and a later review does not restamp it.
+    const suppliedMasteredAt = restoresPriorCard ? optionalDate(cardSource.masteredAt, 'masteredAt') : undefined;
+    const restoredMasteredAt = suppliedMasteredAt
+      && isMasteredCard(normalizedCard)
+      && Date.parse(suppliedMasteredAt) >= originalCreationTime
+      && Date.parse(suppliedMasteredAt) <= deletionTime
+      ? suppliedMasteredAt
+      : undefined;
 
     const createdCard = {
       ...normalizedCard,
+      ...(restoredMasteredAt ? { masteredAt: restoredMasteredAt } : {}),
       id,
       schemaVersion: 2,
       revision: tombstoneRevision > 0 ? nextProtocolCounter(tombstoneRevision, 'revision') : 1,

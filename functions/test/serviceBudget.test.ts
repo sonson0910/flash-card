@@ -4,6 +4,8 @@ import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Tran
 import { HttpsError } from 'firebase-functions/v2/https';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  assertPersistentRateLimitAvailable,
+  consumePersistentRateLimit,
   consumeRateLimitFailClosed,
   RATE_LIMIT_STORAGE_DEADLINE_MS,
   RateLimitExceededError,
@@ -11,6 +13,7 @@ import {
 import { createReviewCardHandler, toRateLimitHttpsError } from '../src/index.js';
 import {
   consumeOwnerAndServiceBudget,
+  consumeOwnerBudgetsAndServiceBudget,
   consumeServiceBudget,
   withServiceBudget,
 } from '../src/serviceBudget.js';
@@ -19,7 +22,10 @@ const createDatabase = () => {
   const documents = new Map<string, DocumentData>();
   const database = {
     collection: (name: string) => ({
-      doc: (id: string) => ({ path: `${name}/${id}` }),
+      doc: (id: string) => ({
+        path: `${name}/${id}`,
+        get: async () => ({ exists: documents.has(`${name}/${id}`), data: () => documents.get(`${name}/${id}`) }),
+      }),
     }),
     runTransaction: async (update: (transaction: Transaction) => Promise<unknown>) => {
       const transaction = {
@@ -123,6 +129,33 @@ describe('service budgets', () => {
     await expect(consume('user-a')).rejects.toBeInstanceOf(RateLimitExceededError);
     await expect(consume('user-b')).resolves.toBeUndefined();
     await expect(consume('user-c')).rejects.toBeInstanceOf(RateLimitExceededError);
+  });
+
+  it('spends none of the learner budgets when the shared budget refuses', async () => {
+    const database = createDatabase();
+    const ownerBudgets = [{ scope: 'ai-card', maximum: 1 }, { scope: 'gemini-owner', maximum: 1 }];
+    await consumeServiceBudget(database, 'gemini', 1, 1_000);
+
+    await expect(consumeOwnerBudgetsAndServiceBudget(database, 'user-a', ownerBudgets, 'gemini', 1, 1_000))
+      .rejects.toBeInstanceOf(RateLimitExceededError);
+
+    // A spent counter would refuse this second attempt for the learner's own limit.
+    await expect(consumeOwnerBudgetsAndServiceBudget(database, 'user-a', ownerBudgets, 'gemini-other', 1, 1_000))
+      .resolves.toBeUndefined();
+  });
+
+  it('reads a learner budget without spending it', async () => {
+    const database = createDatabase();
+    await consumePersistentRateLimit(database, 'user-a', 'ai-tutor', 2, 1_000);
+
+    // Reading never counts: the budget stays at one spent call however often it is read.
+    await assertPersistentRateLimitAvailable(database, 'user-a', 'ai-tutor', 2, 1_000);
+    await assertPersistentRateLimitAvailable(database, 'user-a', 'ai-tutor', 2, 1_000);
+    await consumePersistentRateLimit(database, 'user-a', 'ai-tutor', 2, 1_000);
+    await expect(assertPersistentRateLimitAvailable(database, 'user-a', 'ai-tutor', 2, 1_000))
+      .rejects.toBeInstanceOf(RateLimitExceededError);
+    await expect(assertPersistentRateLimitAvailable(database, 'user-b', 'ai-tutor', 2, 1_000))
+      .resolves.toBeUndefined();
   });
 
   it('requires another aggregate allowance before Unsplash after no usable Pexels results', async () => {

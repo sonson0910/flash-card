@@ -182,6 +182,21 @@ export const consumePersistentRateLimit = async (
   await consumePersistentRateLimits(database, [{ userId, scope, maximum }], now);
 };
 
+// Reads a budget without spending it, so a caller can refuse a learner who is already over
+// their own limit with one read before it reserves anything else. The spend itself is still
+// the transaction that takes every budget together.
+export const assertPersistentRateLimitAvailable = async (
+  database: Firestore,
+  userId: string,
+  scope: string,
+  maximum: number,
+  now = Date.now(),
+): Promise<void> => {
+  const snapshot = await database.collection(RATE_LIMIT_COLLECTION).doc(budgetDocumentId(userId, scope)).get();
+  const decision = evaluateRateLimit(persistedState(snapshot.data()), now, maximum);
+  if (!decision.allowed) throw new RateLimitExceededError(decision.retryAfterMs);
+};
+
 export const consumePersistentRateLimits = async (
   database: Firestore,
   budgets: readonly { userId: string; scope: string; maximum: number }[],

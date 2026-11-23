@@ -3,7 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { InputValidationError } from './inputValidation.js';
 import { REVIEW_CARD_XP } from './xp-rules.js';
-import { canonicalCard, serializeCardResponse, type CardRecord } from './cardPersistence.js';
+import { canonicalCard, isMasteredCard, serializeCardResponse, type CardRecord } from './cardPersistence.js';
 import { scheduleReviewTransition } from './reviewScheduler.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
 import { upsertCatalogProgressForCard } from './catalogProgressPersistence.js';
@@ -303,9 +303,6 @@ const hasReviewEvidence = (card: CardRecord): boolean => Number(card.reviews ?? 
   || Number((card.fsrs as Record<string, unknown> | undefined)?.reps ?? 0) > 0
   || Boolean(card.nextReviewDate);
 
-const isMastered = (card: CardRecord): boolean => card.difficulty === 'easy'
-  || Number(card.interval ?? (card.fsrs as Record<string, unknown> | undefined)?.scheduledDays ?? 0) >= 21;
-
 const receiptExpiresAt = (value: unknown): number => {
   if (value instanceof Date) return value.getTime();
   if (value && typeof value === 'object' && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
@@ -464,7 +461,7 @@ export async function applyReviewForOwner(
             firstEasy: request.rating === 'easy' && stored.difficulty !== 'easy'
               && !previousHistory.some(entry => entry?.rating === 'easy'),
             started: !hasReviewEvidence(stored),
-            mastered: isMastered(candidate) && !isMastered(stored),
+            mastered: isMasteredCard(candidate) && !isMasteredCard(stored),
             reviewTimesMs: resultHistory.map(entry => Date.parse(String(entry?.reviewedAt))).filter(Number.isFinite),
           },
         });
@@ -481,7 +478,7 @@ export async function applyReviewForOwner(
     const nextOperationIds = [...operationIds, request.opId].slice(-MAX_REVIEW_OPERATION_IDS);
     const nextRevision = revision + 1;
     const updatedAt = (receivedAt ?? new Date()).toISOString();
-    const masteredAt = isMastered(candidate) ? stored.masteredAt ?? updatedAt : undefined;
+    const masteredAt = isMasteredCard(candidate) ? stored.masteredAt ?? updatedAt : undefined;
     const persisted = {
       ...canonicalFields,
       ...(masteredAt ? { masteredAt } : { masteredAt: FieldValue.delete() }),
@@ -506,7 +503,7 @@ export async function applyReviewForOwner(
     });
     upsertCatalogProgressForCard(database, transaction, ownerId, responseCard);
     const ceremonyEvents: ReviewCeremonyEvent[] = [
-      ...(isMastered(candidate) && !isMastered(stored) ? ['tierup'] as const : []),
+      ...(isMasteredCard(candidate) && !isMasteredCard(stored) ? ['tierup'] as const : []),
       ...(gamification?.events ?? []),
     ];
     const result = {

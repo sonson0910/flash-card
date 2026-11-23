@@ -121,13 +121,14 @@ import {
   PronunciationAssessmentValidationError,
 } from './pronunciationAssessment.js';
 import {
+  assertPersistentRateLimitAvailable,
   consumeRateLimitFailClosed,
   consumePersistentRateLimit,
   RateLimitExceededError,
   RateLimitStorageTimeoutError,
   RATE_LIMIT_WINDOW_MS,
 } from './rateLimiter.js';
-import { consumeOwnerAndServiceBudget, withServiceBudget } from './serviceBudget.js';
+import { consumeOwnerAndServiceBudget, consumeOwnerBudgetsAndServiceBudget, withServiceBudget } from './serviceBudget.js';
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
@@ -547,22 +548,30 @@ const consumeBudget = async (
   serviceOwnerMaximum = maximum,
 ) => {
   await consumeCallableBudget(
+    () => consumeRateLimitFailClosed(() => serviceScope
+      ? consumeOwnerBudgetsAndServiceBudget(
+        database, userId,
+        [{ scope, maximum }, { scope: `${serviceScope}-owner`, maximum: serviceOwnerMaximum }],
+        serviceScope, serviceMaximum,
+      )
+      : consumePersistentRateLimit(database, userId, scope, maximum)),
+    message,
+  );
+};
+
+// Refuses a learner who is already over their own hourly limit without spending anything.
+const assertBudgetAvailable = async (
+  userId: string,
+  scope: string,
+  maximum: number,
+  message: string,
+) => {
+  await consumeCallableBudget(
     () => consumeRateLimitFailClosed(
-      () => consumePersistentRateLimit(database, userId, scope, maximum),
+      () => assertPersistentRateLimitAvailable(database, userId, scope, maximum),
     ),
     message,
   );
-  if (serviceScope) {
-    await consumeCallableBudget(
-      () => consumeRateLimitFailClosed(
-        () => consumeOwnerAndServiceBudget(
-          database, userId, `${serviceScope}-owner`, serviceOwnerMaximum,
-          serviceScope, serviceMaximum,
-        ),
-      ),
-      message,
-    );
-  }
 };
 
 const safeText = (value: unknown, maximum: number) => typeof value === 'string'
@@ -872,9 +881,11 @@ exact meaning selected above and disambiguating polysemous words. Do not request
     }
   }
 
-    // The shared Gemini budget is spent only after the daily allowance admits the action,
-    // so a refused request cannot use up the hourly calls that every learner shares.
-    await consumeBudget(userId, budget.scope, budget.maximum, budget.message);
+    // A learner already over their own hourly limit is refused here, before the allowance is
+    // reserved. The hourly budgets are spent only after the daily allowance admits the action,
+    // so a refused request cannot use up the hourly calls that every learner shares, and all of
+    // them are taken together so a refused shared budget leaves the learner's own unspent.
+    await assertBudgetAvailable(userId, budget.scope, budget.maximum, budget.message);
     let allowanceConfig;
     try { allowanceConfig = await loadPilotConfig(database); }
     catch { throw new HttpsError('unavailable', 'AI allowance is unavailable. Try again later.'); }
@@ -888,12 +899,14 @@ exact meaning selected above and disambiguating polysemous words. Do not request
       throw error;
     }
     try {
-    await consumeCallableBudget(
-      () => consumeRateLimitFailClosed(() => consumeOwnerAndServiceBudget(
-        database, userId, 'gemini-owner', MAX_GEMINI_CALLS_PER_OWNER_HOUR,
-        'gemini', MAX_GEMINI_CALLS_PER_HOUR,
-      )),
+    await consumeBudget(
+      userId,
+      budget.scope,
+      budget.maximum,
       budget.message,
+      'gemini',
+      MAX_GEMINI_CALLS_PER_HOUR,
+      MAX_GEMINI_CALLS_PER_OWNER_HOUR,
     );
   if (input.action === 'story' && input.schemaVersion === undefined) {
     const { words, targetLanguage, translationLanguage } = input;
@@ -1157,7 +1170,9 @@ export const askCardTutor = onCall({
     throw new HttpsError('permission-denied', 'The AI account changed.');
   }
   const budget = getVocabularyAiBudget('tutor');
-  await consumeBudget(userId, budget.scope, budget.maximum, budget.message);
+  // The learner's own limit is only read here, which still guards the card read and the
+  // allowance; it is spent together with the shared budget once the allowance admits the turn.
+  await assertBudgetAvailable(userId, budget.scope, budget.maximum, budget.message);
   const card = await loadTutorCard(database, userId, input.cardId).catch(error => {
     if (error instanceof TutorCardNotFoundError) throw new HttpsError('not-found', error.message);
     throw error;
@@ -1175,12 +1190,14 @@ export const askCardTutor = onCall({
     throw error;
   }
   try {
-    await consumeCallableBudget(
-      () => consumeRateLimitFailClosed(() => consumeOwnerAndServiceBudget(
-        database, userId, 'gemini-owner', MAX_GEMINI_CALLS_PER_OWNER_HOUR,
-        'gemini', MAX_GEMINI_CALLS_PER_HOUR,
-      )),
+    await consumeBudget(
+      userId,
+      budget.scope,
+      budget.maximum,
       budget.message,
+      'gemini',
+      MAX_GEMINI_CALLS_PER_HOUR,
+      MAX_GEMINI_CALLS_PER_OWNER_HOUR,
     );
     const answer = await callGemini(userId, 'tutor', {
       model: MODEL,
@@ -1233,6 +1250,7 @@ export const findVocabularyImage = onCall({
   const { word, query } = input;
   const deadline = Date.now() + IMAGE_SEARCH_DEADLINE_MS;
   let hadTransientProviderFailure = false;
+  let paidProviderBudgetRefused = false;
   const consumeImageProviderBudget = () => consumeCallableBudget(
     () => consumeRateLimitFailClosed(() => consumeOwnerAndServiceBudget(
       database,
@@ -1265,9 +1283,20 @@ export const findVocabularyImage = onCall({
         clearTimeout(timeoutId);
       }
     };
-    const response = paid
-      ? await withServiceBudget(consumeImageProviderBudget, request)
-      : await request();
+    // A paid provider whose budget is used up is skipped like an unavailable
+    // one, so the free encyclopedia below can still answer.
+    if (paid && paidProviderBudgetRefused) return null;
+    let response: Response | null;
+    try {
+      response = paid
+        ? await withServiceBudget(consumeImageProviderBudget, request)
+        : await request();
+    } catch (error) {
+      if (!paid || !(error instanceof HttpsError) || !['resource-exhausted', 'unavailable'].includes(error.code)) throw error;
+      paidProviderBudgetRefused = true;
+      hadTransientProviderFailure = true;
+      return null;
+    }
     if (response && isImageProviderUnavailable(response)) hadTransientProviderFailure = true;
     return response;
   };
@@ -1310,6 +1339,7 @@ export const findVocabularyImage = onCall({
 
 export const assessPronunciation = onCall({
   region: REGION,
+  secrets: [analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 35,
   memory: '256MiB',
@@ -1409,7 +1439,7 @@ export const createCardV2 = onCall({
   await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
     'Card creation limit reached. Try again later.');
   try {
-    return await createCardV2ForOwner(database, userId, input.card, {
+    const { replayed, ...result } = await createCardV2ForOwner(database, userId, input.card, {
       maximumCards: MAX_CARD_ALLOCATION,
       libraryEpoch: input.libraryEpoch,
       baseRevision: input.baseRevision,
@@ -1418,6 +1448,11 @@ export const createCardV2 = onCall({
       timeZone: input.timeZone,
       receivedAt: new Date(),
     });
+    if (result.created && !result.restored && !replayed) await emitPilotEvent(userId, 'capture_completed', key => ({
+      origin: result.card.origin === 'ai' ? 'ai' : 'manual',
+      cardRef: analyticsCardRef(userId, result.card.id, key),
+    }));
+    return result;
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
       throw libraryFencedHttpsError();
