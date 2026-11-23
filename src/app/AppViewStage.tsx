@@ -1,3 +1,4 @@
+import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { lazy, Suspense, type ReactNode, type RefObject } from 'react';
 import type { Firestore } from 'firebase/firestore';
@@ -38,9 +39,9 @@ export const capListenPracticeCards = (cards: readonly CardData[]): readonly Car
 export const listenPracticeUnavailableMessage = (
   ownerId: string | null,
   isOffline: boolean,
-): string | null => !ownerId
-  ? 'Sign in to practise this phrase.'
-  : isOffline ? 'Reconnect to practise this phrase.' : null;
+): MessageDescriptor | null => !ownerId
+  ? msg({ id: 'shell.listen-practice.sign-in', message: 'Sign in to practise this phrase.' })
+  : isOffline ? msg({ id: 'shell.listen-practice.reconnect', message: 'Reconnect to practise this phrase.' }) : null;
 
 const CatalogWorkspace = lazy(() => Promise.all([
   import('../features/catalogWorkspace/CatalogWorkspace'), loadCatalog(getActiveUiLocale(), 'catalog'),

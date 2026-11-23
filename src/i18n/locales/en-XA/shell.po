@@ -155,7 +155,7 @@ msgctxt "onboarding.trial.state.known"
 msgid "Got it"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:151
+#: src/app/AppViewStage.tsx:152
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr ""
@@ -451,7 +451,7 @@ msgctxt "onboarding.primer.block.title"
 msgid "Build one syllable block"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:159
+#: src/app/AppViewStage.tsx:160
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr ""
@@ -835,7 +835,7 @@ msgctxt "onboarding.trial.again"
 msgid "Forgot"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:160
+#: src/app/AppViewStage.tsx:161
 msgctxt "shell.loading.web-words"
 msgid "Preparing your web words…"
 msgstr ""
@@ -1265,7 +1265,7 @@ msgctxt "onboarding.phone.body"
 msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:161
+#: src/app/AppViewStage.tsx:162
 msgctxt "shell.loading.files"
 msgid "Preparing your files…"
 msgstr ""
@@ -1618,7 +1618,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:143
+#: src/app/AppViewStage.tsx:144
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr ""
@@ -1953,6 +1953,16 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/components/shell/LibraryManagementMenu.tsx:312
 msgid "shell.library-menu.zen-toggle-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:44
+msgid "shell.listen-practice.reconnect"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:43
+msgid "shell.listen-practice.sign-in"
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -2432,7 +2442,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr ""
 
-#: src/app/AppViewStage.tsx:158
+#: src/app/AppViewStage.tsx:159
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr ""
@@ -2479,7 +2489,7 @@ msgid "Pick one language for now. You can add more from the course switcher."
 msgstr ""
 
 #: src/app/AppRuntime.tsx:652
-#: src/app/AppViewStage.tsx:162
+#: src/app/AppViewStage.tsx:163
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr ""

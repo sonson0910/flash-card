@@ -155,7 +155,7 @@ msgctxt "onboarding.trial.state.known"
 msgid "Got it"
 msgstr "Got it"
 
-#: src/app/AppViewStage.tsx:151
+#: src/app/AppViewStage.tsx:152
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr "Preparing today’s learning plan…"
@@ -451,7 +451,7 @@ msgctxt "onboarding.primer.block.title"
 msgid "Build one syllable block"
 msgstr "Build one syllable block"
 
-#: src/app/AppViewStage.tsx:159
+#: src/app/AppViewStage.tsx:160
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr "Preparing appearance settings…"
@@ -835,7 +835,7 @@ msgctxt "onboarding.trial.again"
 msgid "Forgot"
 msgstr "Forgot"
 
-#: src/app/AppViewStage.tsx:160
+#: src/app/AppViewStage.tsx:161
 msgctxt "shell.loading.web-words"
 msgid "Preparing your web words…"
 msgstr "Preparing your web words…"
@@ -1265,7 +1265,7 @@ msgctxt "onboarding.phone.body"
 msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
 msgstr "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
 
-#: src/app/AppViewStage.tsx:161
+#: src/app/AppViewStage.tsx:162
 msgctxt "shell.loading.files"
 msgid "Preparing your files…"
 msgstr "Preparing your files…"
@@ -1618,7 +1618,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr "Create course"
 
-#: src/app/AppViewStage.tsx:143
+#: src/app/AppViewStage.tsx:144
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr "Preparing learning paths…"
@@ -1954,6 +1954,16 @@ msgstr "Manage library"
 #: src/components/shell/LibraryManagementMenu.tsx:312
 msgid "shell.library-menu.zen-toggle-description"
 msgstr "Toggle between Standard Learning mode and Zen Minimalist Glass mode"
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:44
+msgid "shell.listen-practice.reconnect"
+msgstr "Reconnect to practise this phrase."
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:43
+msgid "shell.listen-practice.sign-in"
+msgstr "Sign in to practise this phrase."
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:76
@@ -2432,7 +2442,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/app/AppViewStage.tsx:158
+#: src/app/AppViewStage.tsx:159
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr "Preparing learning progress…"
@@ -2479,7 +2489,7 @@ msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Pick one language for now. You can add more from the course switcher."
 
 #: src/app/AppRuntime.tsx:652
-#: src/app/AppViewStage.tsx:162
+#: src/app/AppViewStage.tsx:163
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Preparing your courses…"

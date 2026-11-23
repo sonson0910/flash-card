@@ -499,7 +499,7 @@ export default function AppRuntime({
     const activeOwnerId = user?.uid ?? null;
     const unavailableMessage = listenPracticeUnavailableMessage(activeOwnerId, !isBrowserOnline);
     if (unavailableMessage) {
-      setNotice(unavailableMessage);
+      setNotice(_(unavailableMessage));
       return;
     }
     if (!getSafeListenPracticeHandoff(handoff, listenPracticeScopeRef.current, activeOwnerId)
@@ -512,7 +512,7 @@ export default function AppRuntime({
       ownerId: activeOwnerId,
       cards: capListenPracticeCards(handoff.cards),
     });
-  }, [isBrowserOnline, overlayPracticeOpenerRef, rememberOpener, setIsPracticeMenuOpen, setNotice, user?.uid]);
+  }, [_, isBrowserOnline, overlayPracticeOpenerRef, rememberOpener, setIsPracticeMenuOpen, setNotice, user?.uid]);
   const dismissListenPractice = useCallback(() => {
     setListenPracticeHandoff(null);
   }, []);
