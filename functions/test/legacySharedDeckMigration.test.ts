@@ -384,6 +384,21 @@ describe('legacy shared-deck exact inventory', () => {
     });
   });
 
+  it('leaves an expired current share whose owner record is already gone to the TTL policy', () => {
+    const scan = { scanStartedAt: '2026-08-24T00:00:00.000Z' };
+    const expired = current('expired-half-removed', { expiresAt: { seconds: 1_700_000_100, nanoseconds: 0 } });
+    expect(classifyLegacyShare(expired, ownerUid, scan)).toMatchObject({
+      action: 'keep',
+      disposition: 'keep-current',
+      expired: true,
+    });
+    // Without its owner record a share that is still live belongs to nobody the scan can name.
+    expect(classifyLegacyShare(current('live-half-removed'), ownerUid, scan)).toMatchObject({
+      disposition: 'block',
+      reasonCode: 'private-missing',
+    });
+  });
+
   it('normalizes pre-epoch timestamps with floor semantics and blocks out-of-range timestamps', () => {
     const preEpoch = { seconds: '-1', nanoseconds: 999_000_000 };
     expect(classifyLegacyShare(legacy('pre-epoch', {

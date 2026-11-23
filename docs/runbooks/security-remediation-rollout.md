@@ -142,7 +142,11 @@ artifact and its SHA-256. Review only redacted counters and digests:
 
 Stop if the scan is incomplete, quota is exceeded, the backup is unsealed, a
 valid deck lacks an owner, or any digest/counter is unstable between identical
-inventory runs. Invalid records remain recoverable; do not delete them.
+inventory runs. Invalid records remain recoverable; do not delete them. An
+expired current-format share whose owner record the TTL policy has already
+removed does not block the inventory: it is sealed as expired, never rewritten
+or charged to the owner, and left for the policy to remove. A share that has not
+expired and has no owner record still blocks.
 
 If the migration is already in the durable `verified` phase, run the workflow in
 `verify` mode with the immutable `source_revision` that owns that migration. This

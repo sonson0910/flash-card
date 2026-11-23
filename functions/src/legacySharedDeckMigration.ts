@@ -1183,8 +1183,15 @@ export const classifyLegacyShare = (
     ...base, action: 'block', disposition: 'block', reasonCode: 'owner-mismatch', issue: issueFor('owner-mismatch'),
   };
   if (!privateResult.shape) {
-    return shape.kind === 'transitional'
-      ? { ...base, action: 'migrate', disposition: 'migrate-transitional', reasonCode: 'transitional-v1', issue: null }
+    if (shape.kind === 'transitional') return {
+      ...base, action: 'migrate', disposition: 'migrate-transitional', reasonCode: 'transitional-v1', issue: null,
+    };
+    // The TTL policy deletes the two documents of an expired share separately,
+    // so the owner record can be gone first.  What is left is never rewritten,
+    // charged to the owner or copied: it stays as it is until the policy
+    // removes it.  A share that has not expired still needs its owner record.
+    return base.expired
+      ? { ...base, action: 'keep', disposition: 'keep-current', reasonCode: 'current', issue: null }
       : { ...base, action: 'block', disposition: 'block', reasonCode: 'private-missing', issue: issueFor('private-missing') };
   }
   const privateRecord = privateResult.shape.data;

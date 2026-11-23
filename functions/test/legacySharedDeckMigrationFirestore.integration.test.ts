@@ -276,6 +276,23 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
         .resolves.toBe(true);
     }, 30_000);
 
+    it('completes when the TTL policy had removed only the owner record of an expired share', async () => {
+      await expiredShare('half-removed');
+      await privateShare('half-removed').delete();
+      await seedLegacyShares('legacy-a');
+
+      const inventory = await seal(sealingRevision);
+      expect(inventory.applyEligible).toBe(true);
+      await applyLegacySharedDeckMigration(database, inventory, applyOptions(inventory));
+      await expect(verifyLegacySharedDeckCutover(database, inventory))
+        .resolves.toEqual({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 1 });
+
+      // The remaining half is not rewritten and gets no owner record back: the policy removes it.
+      expect((await privateShare('half-removed').get()).exists).toBe(false);
+      expect(Object.keys((await usage())!.shares as object)).toEqual(['legacy-a']);
+      await expect(share('another-learner', 'after-cutover')).resolves.toBeDefined();
+    }, 30_000);
+
     it('still stops when a ledger entry carries another expiry than its share', async () => {
       await seedLegacyShares('legacy-a');
       const current = await share(ownerUid, 'current-share');
