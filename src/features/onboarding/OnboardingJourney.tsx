@@ -17,7 +17,7 @@ import { saveLatestExamScore, type LatestExamScoreRequest } from '../examProgres
 import { defaultLatestExamScorePorts } from '../examProgress/latestExamScorePorts';
 import type { CreatedCourseIds } from '../courses/coursePort';
 import { STARTING_TIERS, writeStartingTier, type StartingTier } from '../courses/courseStartingTier';
-import { stageMinutes } from '../dailyLearning/todayScreenFacts';
+import { sessionMinutes } from '../dailyLearning/todayScreenFacts';
 import { MAXIMUM_NEW_WORDS_PER_DAY } from '../dailyLearning/dailyPlan';
 import { DAILY_PACE_OPTIONS, writeDailyPace, type DailyPace } from '../settings/dailyPacePreference';
 import { ReminderSettingsSection } from '../reminders/ReminderSettingsSection';
@@ -95,8 +95,14 @@ const LEVEL_DESCRIPTION: Readonly<Record<StartingTier, MessageDescriptor>> = {
   advanced: msg({ context: 'onboarding.level.advanced.description', message: 'You are at ease with most topics and want precise words.' }),
 };
 
-/** Minutes the learner's daily new words take, with the same per-card time the Today plan uses. */
-export const paceMinutes = (pace: DailyPace): number => stageMinutes({ id: 'new', count: pace, skipped: false });
+/** Minutes a day at this pace: the new words Today adds cost the new-card time, the rest of the pace is reviews. */
+export const paceMinutes = (pace: DailyPace): number => {
+  const newWords = Math.min(pace, MAXIMUM_NEW_WORDS_PER_DAY);
+  return sessionMinutes([
+    { id: 'new', count: newWords, skipped: false },
+    { id: 'review', count: pace - newWords, skipped: pace === newWords },
+  ]);
+};
 
 function SelectionMark({ on }: { readonly on: boolean }) {
   return <span className="onb-mark" data-on={on} aria-hidden="true"><Check size={14} strokeWidth={3} /></span>;

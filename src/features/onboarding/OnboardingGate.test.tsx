@@ -197,8 +197,8 @@ describe('OnboardingGate', () => {
 
       expect(html).toContain('onboarding-pace-grid');
       expect(html).toContain('sm:grid-cols-4');
-      // Minutes are an estimate from the card pace, with the Today plan's time per new card.
-      for (const [count, minutes, tag] of [[5, 4, 'Light'], [10, 7, 'Recommended'], [15, 10, 'Serious'], [20, 14, 'Intense']] as const) {
+      // Minutes price the new words Today adds at the new-card time and the rest of the pace as reviews.
+      for (const [count, minutes, tag] of [[5, 4, 'Light'], [10, 6, 'Recommended'], [15, 8, 'Serious'], [20, 9, 'Intense']] as const) {
         expect(html).toContain(`<span class="onb-pace-number">${count}</span><span class="onb-option-sub">cards / day</span><span class="onb-pace-minutes">≈ ${minutes} min a day</span><span class="onb-pace-tag">${tag}</span>`);
       }
       // Without a goal date the plan restates the chosen pace over one week, and the exam step is not counted.
@@ -207,7 +207,7 @@ describe('OnboardingGate', () => {
       expect(visibleText(html)).toContain('How many cards each day?');
       expect(visibleText(html)).toContain('Today adds up to 5 new words a day.');
       expect(visibleText(html)).not.toContain('How many new words');
-      expect(visibleText(html)).toContain('About 7 min a day at this pace.');
+      expect(visibleText(html)).toContain('About 6 min a day at this pace.');
       expect(html).toContain('aria-valuemax="8"');
       expect(html).toContain('Try 5 cards');
     } finally {
