@@ -5,11 +5,13 @@ import {
   canonicalLegacySharedDeckBackupManifest,
   parseLegacySharedDeckOperatorMode,
   runLegacySharedDeckApplyAndVerify,
+  runLegacySharedDeckApplyOperator,
   runLegacySharedDeckVerification,
   runLegacySharedDeckSupersedeOperator,
   validateLegacySharedDeckOperatorEnvironment,
   verifyLegacySharedDeckBackupManifest,
 } from '../src/legacySharedDeckMigrationOperator.js';
+import { digestCanonicalValue } from '../src/legacySharedDeckMigration.js';
 import type {
   LegacySharedDeckCutoverVerification,
   LegacySharedDeckInventory,
@@ -151,6 +153,80 @@ describe('legacy shared-deck migration operator', () => {
       INDEX_PREPARATION_REPORT_SHA256: 'a'.repeat(64),
       INDEX_PREPARATION_REPORT_JSON: '{}',
     })).toMatchObject({ mode: 'apply', indexPreparationRunId: '123' });
+  });
+
+  it('accepts a distinct immutable source revision to resume an apply', () => {
+    const base = {
+      FIREBASE_PROJECT_ID: 'encoded-hangout-433912-h2',
+      FIRESTORE_DATABASE_ID: 'ai-studio-945b4052-4462-4668-8936-277f09f07a37',
+      OWNER_UID: 'protected-owner',
+      MIGRATION_REVISION: 'b'.repeat(40),
+      SCAN_STARTED_AT: '2026-08-24T00:00:00.000Z',
+      MIGRATION_MODE: 'apply',
+      APPLY_CONFIRMATION: 'APPLY_SHARED_DECK_V2',
+      BACKUP_MANIFEST_JSON: '{}',
+      BACKUP_PUBLIC_KEY: 'trusted',
+      INDEX_PREPARATION_RUN_ID: '123',
+      INDEX_PREPARATION_REPORT_SHA256: 'a'.repeat(64),
+      INDEX_PREPARATION_REPORT_JSON: '{}',
+    } as NodeJS.ProcessEnv;
+    expect(validateLegacySharedDeckOperatorEnvironment(base)).toMatchObject({ mode: 'apply', sourceRevision: '' });
+    expect(validateLegacySharedDeckOperatorEnvironment({ ...base, MIGRATION_SOURCE_REVISION: 'a'.repeat(40) }))
+      .toMatchObject({ mode: 'apply', revision: 'b'.repeat(40), sourceRevision: 'a'.repeat(40) });
+    expect(() => validateLegacySharedDeckOperatorEnvironment({ ...base, MIGRATION_SOURCE_REVISION: base.MIGRATION_REVISION }))
+      .toThrow(/sealed the migration/i);
+    expect(() => validateLegacySharedDeckOperatorEnvironment({ ...base, MIGRATION_SOURCE_REVISION: 'main' }))
+      .toThrow(/sealed the migration/i);
+  });
+
+  it('resumes an apply from a later revision against the revision that sealed the migration', async () => {
+    const migrationRevision = 'a'.repeat(40);
+    const releaseRevision = 'b'.repeat(40);
+    const inventory = {
+      revision: migrationRevision,
+      target: 'project/database',
+      inventoryDigest: 'c'.repeat(64),
+      activeOwner: { ownerKey: 'd'.repeat(64) },
+      sealedManifest: { rootDigest: 'e'.repeat(64) },
+      entries: [],
+    } as unknown as LegacySharedDeckInventory;
+    const indexReport = { schemaVersion: 1, revision: releaseRevision };
+    const read = vi.fn(async () => inventory);
+    const apply = vi.fn(async () => ({ applied: true }));
+    const verify = vi.fn(async () => ({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 0 }));
+    const environment = {
+      ownerUid: 'protected-owner',
+      revision: releaseRevision,
+      target: inventory.target,
+      applyConfirmation: 'APPLY_SHARED_DECK_V2',
+      backupManifest: JSON.stringify({ revision: migrationRevision }),
+      backupPublicKey: 'trusted',
+      indexPreparationRunId: '123',
+      indexPreparationReportSha256: digestCanonicalValue(indexReport),
+      indexPreparationReport: JSON.stringify(indexReport),
+    };
+
+    const report = JSON.parse(await runLegacySharedDeckApplyOperator(
+      { ...environment, sourceRevision: migrationRevision },
+      { read, apply, verify },
+    ));
+
+    expect(read).toHaveBeenCalledWith({ ownerUid: 'protected-owner', revision: migrationRevision, target: inventory.target });
+    expect(apply).toHaveBeenCalledWith(inventory, expect.objectContaining({
+      revision: migrationRevision,
+      releaseRevision,
+      backupManifest: { revision: migrationRevision },
+    }));
+    expect(verify).toHaveBeenCalledWith(inventory);
+    expect(report).toMatchObject({ revision: releaseRevision, migrationRevision, verified: true });
+
+    // Without a source revision the run owns the migration it applies.
+    await runLegacySharedDeckApplyOperator({ ...environment, sourceRevision: '' }, { read, apply, verify });
+    expect(read).toHaveBeenLastCalledWith({ ownerUid: 'protected-owner', revision: releaseRevision, target: inventory.target });
+    expect(apply).toHaveBeenLastCalledWith(inventory, expect.objectContaining({
+      revision: releaseRevision,
+      releaseRevision,
+    }));
   });
 
   it('requires an immutable source revision for a supersede handoff', () => {

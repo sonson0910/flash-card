@@ -9,6 +9,7 @@ import {
   supersedeLegacySharedDeckMigration,
   digestCanonicalValue,
   verifyLegacySharedDeckCutover,
+  type LegacySharedDeckApplyOptions,
   type LegacySharedDeckSupersedeOptions,
   type LegacySharedDeckCutoverVerification,
   type LegacySharedDeckInventory,
@@ -77,6 +78,60 @@ export const runLegacySharedDeckVerification = async (
     phase: 'verified',
   });
   const verification = await verify(inventory);
+  return buildLegacySharedDeckMigrationOperatorReport(inventory, verification, environment.revision);
+};
+
+export type LegacySharedDeckApplyOperatorInput = Pick<
+  LegacySharedDeckOperatorEnvironment,
+  'ownerUid' | 'revision' | 'sourceRevision' | 'applyConfirmation' | 'backupManifest' | 'backupPublicKey'
+  | 'indexPreparationRunId' | 'indexPreparationReportSha256' | 'indexPreparationReport'
+> & {
+  readonly target: string;
+};
+
+export const runLegacySharedDeckApplyOperator = async (
+  environment: LegacySharedDeckApplyOperatorInput,
+  operations: {
+    readonly read: (expected: {
+      readonly ownerUid: string;
+      readonly revision: string;
+      readonly target: string;
+    }) => Promise<LegacySharedDeckInventory>;
+    readonly apply: (inventory: LegacySharedDeckInventory, options: LegacySharedDeckApplyOptions) => Promise<unknown>;
+    readonly verify: (inventory: LegacySharedDeckInventory) => Promise<LegacySharedDeckCutoverVerification>;
+  },
+): Promise<string> => {
+  // The migration state stays bound to the revision that sealed it.  When the
+  // default branch moved on while an apply was in flight, the operator names
+  // that revision and this run finishes the same migration from the new one.
+  const migrationRevision = environment.sourceRevision || environment.revision;
+  const inventory = await operations.read({
+    ownerUid: environment.ownerUid,
+    revision: migrationRevision,
+    target: environment.target,
+  });
+  const backupManifest = JSON.parse(environment.backupManifest) as unknown;
+  const indexPreparationReport = JSON.parse(environment.indexPreparationReport) as unknown;
+  if (digestCanonicalValue(indexPreparationReport) !== environment.indexPreparationReportSha256) {
+    throw new Error('Index-preparation report digest is invalid.');
+  }
+  const verification = await runLegacySharedDeckApplyAndVerify(
+    () => operations.apply(inventory, {
+      ownerUid: environment.ownerUid,
+      revision: migrationRevision,
+      releaseRevision: environment.revision,
+      target: environment.target,
+      confirmation: environment.applyConfirmation,
+      backupManifest,
+      backupPublicKey: environment.backupPublicKey,
+      indexPreparation: {
+        workflowRunId: environment.indexPreparationRunId,
+        reportSha256: environment.indexPreparationReportSha256,
+        report: indexPreparationReport as never,
+      },
+    }),
+    () => operations.verify(inventory),
+  );
   return buildLegacySharedDeckMigrationOperatorReport(inventory, verification, environment.revision);
 };
 
@@ -186,6 +241,9 @@ export const validateLegacySharedDeckOperatorEnvironment = (
     || !/^[a-f0-9]{64}$/.test(supersedeRootDigest))) {
     throw new Error('Supersede requires an immutable source revision and exact sealed inventory and root digests.');
   }
+  if (mode === 'apply' && sourceRevision !== '' && (!FULL_REVISION.test(sourceRevision) || sourceRevision === revision)) {
+    throw new Error('Resuming an apply requires the immutable revision that sealed the migration.');
+  }
   if (mode === 'verify' && (!FULL_REVISION.test(sourceRevision) || sourceRevision === revision)) {
     throw new Error('Verification requires the immutable revision that owns the completed migration.');
   }
@@ -259,43 +317,21 @@ export const runLegacySharedDeckInventoryOperator = async (
     }, expected => readSealedLegacySharedDeckInventory(database, expected),
     inventory => verifyLegacySharedDeckCutover(database, inventory));
   }
-  const inventory = environment.mode === 'inventory'
-    ? await createFrozenLegacySharedDeckInventory({
+  if (environment.mode === 'inventory') {
+    return buildInventoryReport(await createFrozenLegacySharedDeckInventory({
       store: createFirestoreLegacySharedDeckInventoryStore(database),
       ownerUid: environment.ownerUid,
       runId: environment.revision,
       revision: environment.revision,
       target,
       scanStartedAt: environment.scanStartedAt,
-    })
-    : await readSealedLegacySharedDeckInventory(database, {
-      ownerUid: environment.ownerUid,
-      revision: environment.revision,
-      target,
-    });
-  if (environment.mode === 'inventory') return buildInventoryReport(inventory);
-  const backupManifest = JSON.parse(environment.backupManifest) as unknown;
-  const indexPreparationReport = JSON.parse(environment.indexPreparationReport) as unknown;
-  if (digestCanonicalValue(indexPreparationReport) !== environment.indexPreparationReportSha256) {
-    throw new Error('Index-preparation report digest is invalid.');
+    }));
   }
-  const verification = await runLegacySharedDeckApplyAndVerify(
-    () => applyLegacySharedDeckMigration(database, inventory, {
-      ownerUid: environment.ownerUid,
-      revision: environment.revision,
-      target,
-      confirmation: environment.applyConfirmation,
-      backupManifest,
-      backupPublicKey: environment.backupPublicKey,
-      indexPreparation: {
-        workflowRunId: environment.indexPreparationRunId,
-        reportSha256: environment.indexPreparationReportSha256,
-        report: indexPreparationReport as never,
-      },
-    }),
-    () => verifyLegacySharedDeckCutover(database, inventory),
-  );
-  return buildLegacySharedDeckMigrationOperatorReport(inventory, verification);
+  return runLegacySharedDeckApplyOperator({ ...environment, target }, {
+    read: expected => readSealedLegacySharedDeckInventory(database, expected),
+    apply: (inventory, options) => applyLegacySharedDeckMigration(database, inventory, options),
+    verify: inventory => verifyLegacySharedDeckCutover(database, inventory),
+  });
 };
 
 export const main = async (): Promise<void> => {

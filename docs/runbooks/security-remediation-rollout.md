@@ -154,6 +154,8 @@ approval with the same `firestore_safety_run_id` and
 `firestore_safety_receipt_sha256`, then bind `indexes_run_id` and
 `indexes_report_sha256` to the later apply. Never use `supersede` without a separate
 incident/change approval and the exact sealed ineligible-inventory and root digests.
+`supersede` accepts a sealed inventory, or one whose apply stopped before it wrote
+any source; once a source has been written the migration can only be finished.
 
 ### 5. Apply migration
 
@@ -169,6 +171,21 @@ The apply report must prove:
 
 Any mismatch stops the rollout before Rules cutover. Do not retry with changed
 inputs; produce a new inventory and approval.
+
+Sharing is closed for every learner from the inventory until the migration
+reaches `verified`, so an apply that stops part-way must be finished, not left:
+
+- Re-run `apply` with the same inputs to resume from the last committed source.
+- If the default branch has advanced, run `apply` from the current head with
+  `source_revision` set to the revision that sealed the inventory. It needs a
+  `prepare-indexes` run for the current head and the backup manifest that is
+  bound to the sealing revision and inventory digest (re-signed when its
+  `verifiedAt` is more than 24 hours old). The run finishes the same sealed
+  inventory without rescanning, and its report is bound to the current head.
+- An apply that stopped before writing any source can be superseded and
+  inventoried again instead.
+- A sealed inventory that was never applied is not applied from a later
+  revision: supersede it and produce a new inventory and approval.
 
 ### 6. Cut over Firestore Rules
 

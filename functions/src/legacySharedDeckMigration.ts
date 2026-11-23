@@ -1875,7 +1875,14 @@ export class LegacySharedDeckApplyError extends Error {
 
 export type LegacySharedDeckApplyOptions = {
   readonly ownerUid: string;
+  /** Revision that sealed the inventory; the migration state and backup stay bound to it. */
   readonly revision: string;
+  /**
+   * Revision the operator runs from, when the default branch moved on after an
+   * apply started.  Index evidence is produced by that run, so it is checked
+   * against this revision.  Defaults to `revision`.
+   */
+  readonly releaseRevision?: string;
   readonly target: string;
   readonly confirmation: string;
   readonly backupManifest: unknown;
@@ -1942,8 +1949,14 @@ export const supersedeLegacySharedDeckMigration = async (
         && historyMatches(historySnapshot.data())) return;
       throw new LegacySharedDeckApplyError('Superseded migration state is mismatched.');
     }
+    // Apply commits each source together with its progress counter, so a job
+    // that stopped right after `sealed -> applying` has written nothing and
+    // can still be abandoned for a fresh inventory.
+    const unstarted = isRecord(state) && (state.phase === 'sealed'
+      ? !(isRecord(state.progress) && state.progress.nextEntry !== 0)
+      : state.phase === 'applying' && isRecord(state.progress) && state.progress.nextEntry === 0);
     if (!isRecord(state)
-      || state.phase !== 'sealed'
+      || !unstarted
       || state.ownerUid !== options.ownerUid
       || state.target !== options.target
       || state.revision !== options.revision
@@ -1955,9 +1968,8 @@ export const supersedeLegacySharedDeckMigration = async (
         inventoryDigest: options.inventoryDigest,
       })
       || state.manifest.rootDigest !== options.rootDigest
-      || (isRecord(state.progress) && state.progress.nextEntry !== 0)
       || (isRecord(state.verificationProgress) && state.verificationProgress.active === true)) {
-      throw new LegacySharedDeckApplyError('Only a sealed migration with zero progress may be superseded.');
+      throw new LegacySharedDeckApplyError('Only a sealed migration that has written no source may be superseded.');
     }
     if (historySnapshot.exists) {
       if (!historyMatches(historySnapshot.data())) {
@@ -2513,9 +2525,10 @@ export async function applyLegacySharedDeckMigration(
     revision: options.revision,
     ownerUid: options.ownerUid,
   }, options.backupPublicKey, options.now?.toMillis() ?? Date.now());
+  const releaseRevision = options.releaseRevision ?? options.revision;
   if (!verifyIndexPreparationEvidence(options.indexPreparation, {
     target: options.target,
-    revision: options.revision,
+    revision: releaseRevision,
   })) {
     throw new LegacySharedDeckApplyError('A successful immutable index-preparation report is required.');
   }
@@ -2560,6 +2573,12 @@ export async function applyLegacySharedDeckMigration(
   await database.runTransaction(async transaction => {
     const snapshot = await transaction.get(stateRef);
     state = assertState(snapshot.data());
+    // A later revision may only finish a migration that already started.  An
+    // inventory nobody applied yet is superseded and sealed again instead, so
+    // the approval always names the code that begins the rewrite.
+    if (state.phase === 'sealed' && releaseRevision !== options.revision) {
+      throw new LegacySharedDeckApplyError('A sealed migration that has not started must be applied from the revision that sealed it.');
+    }
     const usageSnapshot = await transaction.get(usageRef);
     if (usageSnapshot.exists && !usageEqual(usageSnapshot.data(), ledger)) {
       throw new LegacySharedDeckApplyError('Existing shared-deck ledger does not match inventory.');
