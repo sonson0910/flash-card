@@ -10,6 +10,7 @@ import type { AiGenerationAccess } from './aiGenerationAccess';
 import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import {
   DeckDeletionDialogContent,
+  countDeckCardsForDeletion,
   LibraryTools,
   SpreadsheetImportStatus,
   createDeckThenClearInput,
@@ -519,6 +520,23 @@ describe('DeckDeletionDialog', () => {
     expect(html).toContain('Review schedules and mastery are kept for every card.');
     expect(html).toContain('Keep deck');
     expect(html).toContain('Delete deck');
+  });
+
+  it('states no card count when the deck size is not known', () => {
+    const cards = [{ customDeck: 'Travel' }, { customDeck: 'Travel' }, { customDeck: null }];
+    expect(countDeckCardsForDeletion(cards, 'Travel', false)).toBe(2);
+    expect(countDeckCardsForDeletion(cards, 'Travel', true)).toBeUndefined();
+
+    const html = renderMarkup(
+      <AlertDialog.Root open>
+        <DeckDeletionDialogContent deckName="Travel" assignedCardCount={undefined} onConfirm={vi.fn()} />
+      </AlertDialog.Root>,
+    );
+
+    expect(html).toContain('its cards stay in your library and move to <strong>Unassigned</strong>');
+    expect(html).not.toMatch(/<code>\d+<\/code>/);
+    expect(html).not.toContain('<s>');
+    expect(html).not.toMatch(/\+\d/);
   });
 
   it('does not delegate confirmation to the browser', () => {

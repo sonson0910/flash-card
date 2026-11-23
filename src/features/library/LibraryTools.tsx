@@ -279,6 +279,18 @@ export function restoreDeckDeletionFocus(
   restoreFocusRef?.current?.focus();
 }
 
+/**
+ * The deck's exact size for the delete confirmation, or `undefined` when it is not known: a signed-in
+ * learner's `cards` is one cloud page, so counting it would understate the cards that move to Unassigned.
+ */
+export function countDeckCardsForDeletion(
+  cards: readonly Pick<CardData, 'customDeck'>[],
+  deckName: string,
+  authenticated: boolean,
+): number | undefined {
+  return authenticated ? undefined : cards.filter(card => card.customDeck === deckName).length;
+}
+
 export function DeckDeletionDialogContent({
   deckName,
   assignedCardCount,
@@ -289,7 +301,7 @@ export function DeckDeletionDialogContent({
   error = false,
 }: {
   deckName: string;
-  assignedCardCount: number;
+  assignedCardCount?: number;
   /** Cards already unassigned; omitted when the local list is not the full library. */
   unassignedCardCount?: number;
   onConfirm: () => void;
@@ -326,22 +338,29 @@ export function DeckDeletionDialogContent({
 
         <div className="library-dialog-body">
           <AlertDialog.Description className="library-dialog-description library-dialog-description--body">
-            <Trans
+            {assignedCardCount === undefined ? (
+              <Trans
+                {...msg({ context: 'library.deck.delete-effect-uncounted', message: 'The deck goes away, but its cards stay in your library and move to <0>Unassigned</0>. Nothing you have learned is lost.' })}
+                components={{ 0: <strong /> }}
+              />
+            ) : <Trans
               {...msg({ context: 'library.deck.delete-effect', message: '{count, plural, one {The deck goes away, but its <0>#</0> card stays in your library and moves to <1>Unassigned</1>. Nothing you have learned is lost.} other {The deck goes away, but its <0>#</0> cards stay in your library and move to <1>Unassigned</1>. Nothing you have learned is lost.}}' })}
               values={{ count: assignedCardCount }}
               components={{ 0: <code />, 1: <strong /> }}
-            />
+            />}
           </AlertDialog.Description>
           <div className="library-deck-transfer">
             <div>
               <span>{deckName}</span>
-              <strong><s>{formatNumber(assignedCardCount)}</s></strong>
+              {assignedCardCount !== undefined && <strong><s>{formatNumber(assignedCardCount)}</s></strong>}
               <small><Trans {...msg({ context: 'library.deck.removed-caption', message: 'deck removed' })} /></small>
             </div>
             <ArrowRight size={16} aria-hidden="true" />
             <div>
               <span><Trans {...msg({ context: 'library.deck.unassigned', message: 'Unassigned' })} /></span>
-              {typeof unassignedCardCount === 'number' ? (
+              {assignedCardCount === undefined ? (
+                <small><Trans {...msg({ context: 'library.deck.unassigned-incoming-uncounted', message: 'its cards move here' })} /></small>
+              ) : typeof unassignedCardCount === 'number' ? (
                 <>
                   <strong>{formatNumber(unassignedCardCount + assignedCardCount)}</strong>
                   <small><Trans {...msg({ context: 'library.deck.unassigned-sum', message: '{current} + {moved, plural, one {# card} other {# cards}}' })} values={{ current: formatNumber(unassignedCardCount), moved: assignedCardCount }} /></small>
@@ -390,7 +409,8 @@ export function DeckDeletionDialog({
   error,
 }: {
   deckName: string;
-  assignedCardCount: number;
+  /** Omitted when the deck's exact size is not loaded, so the dialog states no number. */
+  assignedCardCount?: number;
   unassignedCardCount?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -490,8 +510,8 @@ export function LibraryTools({
 
   const currentPendingDeletion = deckPendingDeletion?.ownerId === ownerIdRef.current ? deckPendingDeletion : null;
   const pendingDeckCardCount = currentPendingDeletion
-    ? cards.filter(card => card.customDeck === currentPendingDeletion.name).length
-    : 0;
+    ? countDeckCardsForDeletion(cards, currentPendingDeletion.name, authenticated)
+    : undefined;
   const canSubmitWord = Boolean(wordInput.trim()) && !isLoading;
 
   const handleImportChange = (event: ChangeEvent<HTMLInputElement>) => {
