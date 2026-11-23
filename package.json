@@ -49,6 +49,7 @@
     "staging:prepare": "node scripts/prepare-staging-target.mjs",
     "build:staging": "npm run staging:prepare && RELEASE_REVISION=$(git rev-parse HEAD) SONFLASH_TARGET=staging npm run build",
     "staging:deploy:rules": "GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only firestore:rules --non-interactive",
+    "staging:deploy:storage": "GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only storage --non-interactive",
     "staging:deploy:indexes": "GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only firestore:indexes --non-interactive",
     "staging:verify:indexes": "gcloud firestore indexes composite list --project=sonflash-staging-20260906 --database=ai-studio-945b4052-4462-4668-8936-277f09f07a37 --format=json | node scripts/verify-entitlement-index.mjs sonflash-staging-20260906 ai-studio-945b4052-4462-4668-8936-277f09f07a37",
     "staging:deploy:functions": "npm run staging:verify:indexes && npm run staging:deploy:functions:existing && npm run staging:deploy:functions:pilot",

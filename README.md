@@ -232,7 +232,8 @@ hosts fail closed.
 3. [`deploy-production.yml`](./.github/workflows/deploy-production.yml) promotes the verified
    candidate through protected Hosting and Functions environments.
 4. [`deploy-firestore-rules.yml`](./.github/workflows/deploy-firestore-rules.yml) performs the
-   separately approved Firestore Rules cutover with migration and rollback evidence.
+   separately approved Firestore Rules cutover with migration and rollback evidence, then
+   deploys the sealed Storage Rules when Cloud Storage is set up on the project.
 
 Environment-specific deployment identity belongs in protected GitHub environments.
 Staging uses GitHub OIDC Workload Identity Federation through

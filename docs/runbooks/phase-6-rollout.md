@@ -63,7 +63,7 @@ runtime dependencies still come from the candidate's sealed Functions lockfile.
    Verified readiness evidence is emitted only when that revision exactly matches
    a clean Git HEAD; a missing/mismatched revision or dirty worktree aborts before
    the evidence file is written. Ignore legacy schema-1 or `"local"` artifacts.
-2. The final step seals `dist`, compiled Functions, Firestore Rules/indexes,
+2. The final step seals `dist`, compiled Functions, Firestore Rules/indexes, Storage Rules,
    `firebase.json` and readiness evidence. Retain together:
    - candidate workflow run ID;
    - full 40/64-character revision;
@@ -161,11 +161,42 @@ retired. Rules promotion now accepts only a sealed release candidate produced by
 `Build release candidate` workflow. Provide that run ID, full revision, candidate
 SHA-256, operation and approval reference. The workflow verifies the source run,
 revision and artifact digest before approval, then verifies the protected project and
-database binding again before deploying only Firestore Rules (never indexes).
+database binding again before deploying only Firestore Rules (never indexes), then the
+sealed Storage Rules in the same approved job.
 
 For rollback, select a retained last-known-good release candidate and use `operation:
 rollback`. Do not rebuild the revision or upload database snapshots to Actions. Data
 repair is a separate incident procedure and must not be coupled to a Rules deployment.
+
+### Storage Rules and enabling Cloud Storage
+
+`storage.rules` is sealed in every candidate and only these Rules paths deploy it: the
+staging workflow right after Firestore Rules (before Functions and Hosting), and this
+production Rules workflow for cutover and rollback. `deploy-production.yml` never deploys
+it. Before the Storage step, both workflows read the project's Firebase default bucket
+with `scripts/cloud-storage-state.mjs`, the same lookup the Firebase CLI makes. When
+Cloud Storage is not set up on the project, they skip only the Storage Rules, raise a
+`Storage Rules not deployed` warning with a step-summary line, and continue. Any other
+answer, such as a denied lookup, fails the job.
+
+Cloud Storage is not yet enabled in production, so uploads (My files) cannot work there
+yet. Before enabling it, the owner:
+
+1. Gives the Rules deployment identity (`GCP_SERVICE_ACCOUNT_JSON` in
+   `production-rules-cutover` and `production-rules-rollback`) the
+   `firebasestorage.defaultBucket.get` permission and Firebase Rules release permissions
+   (Firebase Rules Admin), so the lookup and the Storage deploy can succeed.
+2. Sets up Cloud Storage in the Firebase console in **production mode** (deny all), never
+   test mode, which would let any client read or overwrite any learner's files.
+3. Immediately dispatches this Rules workflow for the promoted candidate, with the same
+   inputs and approval as a cutover, and confirms the summary shows Storage Rules
+   deployed rather than the skip warning. Until then every upload fails closed.
+4. Smoke-tests that a learner can upload and open their own file, and that another
+   account and a signed-out client cannot read it.
+
+Staging follows the same order: set up Cloud Storage on the staging project in production
+mode, then run `deploy-staging.yml` (or `npm run staging:deploy:storage` for the local
+staging route) and check the Storage step did not skip.
 
 ## 3. Candidate-bound staging deploy and smoke
 
@@ -327,8 +358,8 @@ and production; deployment credentials never enter the browser artifact.
    approval and deploys only the sealed compiled Functions; the already-compatible
    Hosting artifact is then promoted idempotently. `ENFORCE_APP_CHECK` defaults to
    true. Never deploy incompatible Functions enforcement before its Hosting client.
-5. Do not select or infer an all-target deploy. Firestore Rules use only the protected
-   candidate-bound workflow in section 2.
+5. Do not select or infer an all-target deploy. Firestore and Storage Rules use only the
+   protected candidate-bound workflow in section 2.
 
 ## 5. Canary decision (advisory only)
 
@@ -411,8 +442,8 @@ Only the versioned shell namespace may be replaced by the normal worker lifecycl
    and Rules, dispatch that same candidate with `promote_functions=true`, attach the
    same rollback operation and incident/compatibility reference, and verify Auth/App
    Check/error/latency metrics. Otherwise hold and mitigate forward.
-3. **Firestore Rules:** never use the normal deployment workflow. Dispatch the separate
-   Rules workflow with `operation: rollback`, the retained last-known-good candidate run
+3. **Firestore and Storage Rules:** never use the normal deployment workflow. Dispatch the
+   separate Rules workflow with `operation: rollback`, the retained last-known-good candidate run
    ID, revision and digest, then obtain protected approval.
 4. **Data:** a Rules rollback does not mutate Firestore documents. Preserve current
    documents and handle any data repair as a separately authorized incident operation

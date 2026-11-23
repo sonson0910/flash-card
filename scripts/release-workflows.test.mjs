@@ -560,6 +560,61 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);
   });
 
+  it('deploys every sealed Firebase target from the promoted config on staging and production', () => {
+    const sealedTargets = ['firestore:indexes', 'firestore:rules', 'storage', 'functions', 'hosting'];
+    const deployedTargets = source => [...source.matchAll(/firebase" deploy --only (\S+) --config firebase\.promoted\.json/g)]
+      .flatMap(([, targets]) => targets.split(','));
+    const staging = deployedTargets(read('.github/workflows/deploy-staging.yml'));
+    const production = deployedTargets([
+      read('.github/workflows/deploy-production.yml'),
+      read('.github/workflows/deploy-firestore-rules.yml'),
+    ].join('\n'));
+    expect(sealedTargets.filter(target => !staging.includes(target)).join(',')).toBe('');
+    expect(sealedTargets.filter(target => !production.includes(target)).join(',')).toBe('');
+    expect(JSON.parse(read('firebase.json')).storage.rules).toBe('storage.rules');
+    expect(read('scripts/release-artifact.mjs')).toContain("storageRules: { path: 'storage.rules', type: 'file' }");
+  });
+
+  it('deploys sealed Storage Rules beside Firestore Rules and skips only a project without Cloud Storage', () => {
+    const stepOf = (workflow, name) => workflow.split(`- name: ${name}\n`)[1]?.split('\n      - ')[0] ?? '';
+    const storageStepName = 'Deploy only sealed Storage Rules when Cloud Storage is enabled';
+    const checkStorageStep = step => {
+      expect(step).toContain('set -euo pipefail');
+      expect(step).toContain('ACCESS_TOKEN="$(gcloud auth print-access-token)" node "$GITHUB_WORKSPACE/scripts/cloud-storage-state.mjs" --project "$FIREBASE_PROJECT_ID"');
+      expect(step).toContain('if [[ "$storage_state" == "not-enabled" ]]; then');
+      expect(step).toContain('>> "$GITHUB_STEP_SUMMARY"');
+      expect(step).toContain('test "$storage_state" = "enabled"');
+      expect(step).toContain('"$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only storage --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive');
+      expect(step.indexOf('exit 0')).toBeLessThan(step.indexOf('deploy --only storage'));
+    };
+
+    const staging = read('.github/workflows/deploy-staging.yml');
+    const stagingStep = stepOf(staging, storageStepName);
+    checkStorageStep(stagingStep);
+    expect(stagingStep).toContain('if: ${{ !inputs.hosting_only }}');
+    expect(stagingStep).toContain('working-directory: candidate');
+    const stagingStorage = staging.indexOf(`- name: ${storageStepName}`);
+    expect(stagingStorage).toBeGreaterThan(staging.indexOf('- name: Deploy only sealed Firestore Rules'));
+    expect(stagingStorage).toBeLessThan(staging.indexOf('- name: Deploy only sealed Functions'));
+    expect(stagingStorage).toBeLessThan(staging.indexOf('- name: Deploy only sealed Hosting bytes'));
+    expect(stagingStorage).toBeGreaterThan(staging.indexOf('google-github-actions/setup-gcloud@'));
+
+    const rules = read('.github/workflows/deploy-firestore-rules.yml');
+    const rulesJob = rules.slice(rules.indexOf('  deploy_rules:'));
+    const rulesStep = stepOf(rulesJob, storageStepName);
+    checkStorageStep(rulesStep);
+    expect(rulesStep).toContain('working-directory: validated');
+    const productionStorage = rulesJob.indexOf(`- name: ${storageStepName}`);
+    expect(productionStorage).toBeGreaterThan(rulesJob.indexOf('- name: Deploy only Firestore Rules'));
+    expect(rulesJob.indexOf('google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db'))
+      .toBeGreaterThan(rulesJob.indexOf('google-github-actions/auth@'));
+    expect(productionStorage).toBeGreaterThan(rulesJob.indexOf('google-github-actions/setup-gcloud@'));
+    expect(read('.github/workflows/deploy-production.yml')).not.toContain('--only storage');
+
+    const scripts = JSON.parse(read('package.json')).scripts;
+    expect(scripts['staging:deploy:storage']).toBe('GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only storage --non-interactive');
+  });
+
   it('checks the ready Pro entitlement index before promoting production Functions', () => {
     const workflow = read('.github/workflows/deploy-production.yml');
     expect(workflow).toContain('gcloud firestore indexes composite list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --format=json');
