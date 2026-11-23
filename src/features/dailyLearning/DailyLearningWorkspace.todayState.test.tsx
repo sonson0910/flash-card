@@ -141,32 +141,46 @@ const flushReact = async () => {
   await Promise.resolve();
 };
 
-const card = (id: string, word: string): CardData => ({
+const card = (id: string, word: string, overrides: Partial<CardData> = {}): CardData => ({
   id, word, translation: `meaning of ${word}`, explanation: '', phonetic: '', emoji: '', category: 'Test',
-  audioUrl: `https://ssl.gstatic.com/${id}.mp3`, imageUrl: null, reviews: 1, nextReviewDate: '2000-01-01T00:00:00.000Z',
+  audioUrl: `https://ssl.gstatic.com/${id}.mp3`, imageUrl: null, reviews: 1, nextReviewDate: '2000-01-01T00:00:00.000Z', language: 'en', translationLanguage: 'vi', ...overrides,
 });
 
-const startRecognitionAfter = async (steps: readonly boolean[]) => {
+const renderWorkspace = async (
+  pool: readonly CardData[],
+  steps: readonly boolean[],
+  act2?: (container: FakeElement) => Promise<void>,
+  extraProps: Record<string, unknown> = {},
+) => {
   const container = installMinimalReactDom();
   const root = createRoot(container as unknown as Element);
-  const loadPracticePool = vi.fn(async () => [card('first', 'first word'), card('second', 'second word')]);
+  const loadPracticePool = vi.fn(async () => [...pool]);
   const base = {
     languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE, streak: 0, studyXpHistory: [], openWeeklyRecap: () => undefined,
     onVerifiedPracticeOutcome: () => undefined, ownerId: null, initialLesson: null, loadPracticePool,
     reviewCard: vi.fn(), openLesson: vi.fn(), openVocabulary: vi.fn(), openPaths: vi.fn(), continueReview: vi.fn(), openMorePractice: vi.fn(),
+    ...extraProps,
   };
   const render = (isOffline: boolean) => root.render(createElement(I18nProvider, { i18n }, createElement(DailyLearningWorkspace, { ...base, isOffline } as never)));
   try {
     for (const isOffline of steps) await act(async () => { render(isOffline); await flushReact(); });
-    const start = findButton(container, 'Recognition');
-    if (!start) throw new Error('lesson mode button not rendered: ' + textContent(container).slice(0, 400));
-    await act(async () => { invokeClick(start); await flushReact(); });
+    if (act2) await act2(container);
     return textContent(container);
   } finally {
     await act(async () => root.unmount());
     vi.unstubAllGlobals();
   }
 };
+
+const startRecognitionAfter = (steps: readonly boolean[]) => renderWorkspace(
+  [card('first', 'first word'), card('second', 'second word')],
+  steps,
+  async container => {
+    const start = findButton(container, 'Recognition');
+    if (!start) throw new Error('lesson mode button not rendered: ' + textContent(container).slice(0, 400));
+    await act(async () => { invokeClick(start); await flushReact(); });
+  },
+);
 
 describe('a lesson follows the connectivity at the moment it starts', () => {
   it('keeps card audio when the network came back before the lesson started', async () => {
@@ -179,5 +193,20 @@ describe('a lesson follows the connectivity at the moment it starts', () => {
     const text = await startRecognitionAfter([false, true]);
     expect(text).toContain('word:');
     expect(text).toContain('audio:null');
+  });
+});
+
+describe('the recommended next lesson', () => {
+  it('describes the current language pair, not a card of another translation language', async () => {
+    const pool = [
+      card('current-new', 'current new', { audioUrl: null, reviews: 0, nextReviewDate: undefined }),
+      card('other-pair-weak', 'other pair weak', {
+        audioUrl: null, translationLanguage: 'es', reviews: 1, difficulty: 'hard', nextReviewDate: '2999-01-01T00:00:00.000Z',
+      }),
+    ];
+    const text = await renderWorkspace(pool, [false], undefined, { ownerId: 'owner-a' });
+    expect(text).toContain('Recommended next');
+    expect(text).toContain('Learn a new item');
+    expect(text).not.toContain('Strengthen a weak item');
   });
 });

@@ -762,12 +762,23 @@ export default function DailyLearningWorkspace({
     ? buildTodayAdaptiveRecommendation({
       ownerId,
       plan,
-      cards: activePool.cards,
+      cards: currentPairCards,
       skillStatesByLexeme,
       isOffline,
       now: new Date(),
+      contentLanguage: targetLanguage,
+      supportLanguage: translationLanguage,
     })
-    : null, [activePool.cards, activePool.status, isOffline, ownerId, plan, skillStatesByLexeme]);
+    : null, [activePool.status, currentPairCards, isOffline, ownerId, plan, skillStatesByLexeme, targetLanguage, translationLanguage]);
+  const recommendationReasonLabel = (kind: NonNullable<typeof recommendation>['reason']['kind']) => {
+    switch (kind) {
+      case 'due': return _(msg({ id: 'today.recommended.reason.due', message: 'Review due' }));
+      case 'weak': return _(msg({ id: 'today.recommended.reason.weak', message: 'Strengthen a weak item' }));
+      case 'new': return _(msg({ id: 'today.recommended.reason.new', message: 'Learn a new item' }));
+      case 'skill-gap': return _(msg({ id: 'today.recommended.reason.skill-gap', message: 'Practice an unobserved skill' }));
+      case 'next': return _(msg({ id: 'today.recommended.reason.next', message: 'Continue the scenario' }));
+    }
+  };
   const availablePlacement = useMemo(() => buildPlacementCheck(placementCandidates), [placementCandidates]);
   const navigateLesson = useCallback((mode: DailyLessonMode | null, focusDestination = true) => {
     setRouteLesson(mode);
@@ -1503,7 +1514,7 @@ export default function DailyLearningWorkspace({
       recommendation: {
         activityId: recommendation.activityId,
         mode: recommendation.mode,
-        reason: recommendation.reason.label,
+        reason: recommendationReasonLabel(recommendation.reason.kind),
       },
     } : {}),
     listenPilotAvailable: listenPilotOffered(targetLanguage),
