@@ -215,10 +215,10 @@ const IMAGE_PROVIDER_TIMEOUT_MS = 4_000;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
 const MAX_SHARED_DECK_CREATIONS_PER_SERVICE_HOUR = 200;
 const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
-const MAX_SHARED_DECK_REVOCATIONS_PER_SERVICE_HOUR = 1_200;
-// Learner writes that only touch Firestore (reviews, card creation, gamification saves and
-// library facets) are bounded per account. A service-wide hourly counter on them would let a
-// handful of accounts block every learner, and would put every such write on one document.
+// Learner writes that only touch Firestore (reviews, card creation, gamification saves, library
+// facets, share revocation and legacy library migration) are bounded per account. A service-wide
+// hourly counter on them would let a handful of accounts block every learner, and would put every
+// such write on one document.
 const MAX_GAMIFICATION_SAVES_PER_HOUR = 120;
 const MAX_CARD_CREATIONS_PER_HOUR = 120;
 const MAX_CARD_REVIEWS_PER_HOUR = 600;
@@ -232,7 +232,6 @@ const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
 const MAX_COURSE_PROFILE_MUTATIONS_PER_HOUR = 120;
 const MAX_ACCOUNT_PROFILE_COMPLETIONS_PER_HOUR = 20;
 const MAX_LEGACY_LIBRARY_MIGRATIONS_PER_HOUR = 30;
-const MAX_LEGACY_LIBRARY_MIGRATIONS_PER_SERVICE_HOUR = 60;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps()[0] ?? initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
@@ -2084,8 +2083,6 @@ export const revokeSharedDeck = onCall({
     'shared-deck-revoke',
     MAX_SHARED_DECK_REVOCATIONS_PER_HOUR,
  'Shared-deck revocation limit reached. Try again later.',
- 'shared-deck-revoke-service',
- MAX_SHARED_DECK_REVOCATIONS_PER_SERVICE_HOUR,
  );
 
   const document = database.collection(SHARED_DECK_COLLECTION).doc(shareId);
@@ -2118,8 +2115,6 @@ export const migrateLegacyLibrary = onCall({
  'legacy-library-migration',
  MAX_LEGACY_LIBRARY_MIGRATIONS_PER_HOUR,
  'Library migration request limit reached. Try again later.',
- 'legacy-library-migration-service',
- MAX_LEGACY_LIBRARY_MIGRATIONS_PER_SERVICE_HOUR,
  );
   try {
     return await runLegacyLibraryDiscovery(legacyLibraryMigrationStore, userId, {

@@ -57,6 +57,14 @@ vi.mock('../src/libraryFacetPersistence.js', async importOriginal => ({
   findLibraryFacetReceipt: vi.fn(async () => null),
   applyLibraryFacetMutation: vi.fn(async () => ({ applied: true })),
 }));
+vi.mock('../src/sharedDeckPersistence.js', async importOriginal => ({
+  ...await importOriginal<typeof import('../src/sharedDeckPersistence.js')>(),
+  revokeSharedDeckAtomically: vi.fn(async () => false),
+}));
+vi.mock('../src/legacyLibraryMigration.js', async importOriginal => ({
+  ...await importOriginal<typeof import('../src/legacyLibraryMigration.js')>(),
+  runLegacyLibraryDiscovery: vi.fn(async () => ({ status: 'complete' })),
+}));
 
 type CallableModule = typeof import('../src/index.js');
 type Callable = { run: (request: never) => Promise<unknown> };
@@ -90,6 +98,8 @@ const learnerWrites: readonly [string, number, (module: CallableModule) => Calla
   ['createCardV2', 120, module => module.createCardV2, owner => createData(owner, true)],
   ['saveGamification', 120, module => module.saveGamification, () => ({})],
   ['updateLibraryFacets', 120, module => module.updateLibraryFacets, owner => ({ ownerId: owner })],
+  ['revokeSharedDeck', 120, module => module.revokeSharedDeck, () => ({ shareId: 'missing-share' })],
+  ['migrateLegacyLibrary', 30, module => module.migrateLegacyLibrary, () => ({})],
 ];
 
 describe('Firestore-only learner writes', () => {
