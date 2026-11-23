@@ -255,12 +255,12 @@ describe("practice view accessibility contracts", () => {
     expect(studyHtml).toContain('0 / 1 saved');
   });
 
-  it('renders no card, and so no edit sheet, once the session has no cards after an owner change', () => {
-    // The session reports no study cards in the render that follows an owner change, so a sheet
-    // opened for the earlier owner's card is unmounted instead of saving against the new owner.
-    const studyHtml = renderToStaticMarkup(
+  it('renders nothing, and so no edit sheet, when the session has no card to study', () => {
+    // After an owner change the session reports no study cards; the screen must unmount the card
+    // (and the edit sheet it holds) instead of keeping the earlier owner's card on screen.
+    const render = (cards: CardData[]) => renderToStaticMarkup(
       <StudyView
-        cards={[]}
+        cards={cards}
         index={0}
         recallMode="target-to-native"
         revealed
@@ -278,7 +278,8 @@ describe("practice view accessibility contracts", () => {
       />,
     );
 
-    expect(studyHtml).toBe('');
+    expect(render([quizQuestion.card])).toContain('data-study-card');
+    expect(render([])).toBe('');
   });
 
   it('introduces an unreviewed card before recall and rating', () => {
