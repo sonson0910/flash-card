@@ -1754,6 +1754,7 @@ test('forwards AI result details and source locale to the popup status', async (
       exampleSentence: 'She is resilient.',
       exampleTranslation: 'Cô ấy kiên cường.',
       aiGenerated: true,
+      language: 'en',
     },
   }, appSender(worker));
 
@@ -1767,6 +1768,50 @@ test('forwards AI result details and source locale to the popup status', async (
   assert.equal(statusCall?.message.payload?.aiGenerated, true);
   assert.equal(statusCall?.message.payload?.sourceLanguage, 'en');
   assert.equal(statusCall?.message.payload?.speechLocale, 'en-US');
+});
+
+test('labels a capture of unknown language with the language of the card the app saved', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).sourceLanguage, undefined);
+
+  const valid = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'khả năng phục hồi', language: 'ko' }),
+  }, appSender(worker));
+
+  assert.equal(valid.ignored, false);
+  const statusCall = worker.calls.find(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'created');
+  assert.equal(statusCall?.message.payload?.sourceLanguage, 'ko');
+  assert.equal(statusCall?.message.payload?.speechLocale, 'ko-KR');
+  const renderCall = worker.calls.find(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'created');
+  assert.equal(renderCall?.details.args[0].sourceLanguage, 'ko');
+  assert.equal(renderCall?.details.args[0].speechLocale, 'ko-KR');
+  const recent = worker.storageValues.get('lingoflash_recent_lookups');
+  assert.equal(recent?.[0]?.kind, 'create');
+  assert.equal(recent?.[0]?.sourceLanguage, 'ko');
+});
+
+test('does not label a capture as English when neither the capture nor the app reported a language', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+
+  const valid = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'khả năng phục hồi', language: 'not a language' }),
+  }, appSender(worker));
+
+  assert.equal(valid.ignored, false);
+  const statusCall = worker.calls.find(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'created');
+  assert.equal(statusCall?.message.payload?.sourceLanguage, '');
+  const recent = worker.storageValues.get('lingoflash_recent_lookups');
+  // 'auto' is how the lookup history records a language it does not know.
+  assert.equal(recent?.[0]?.sourceLanguage, 'auto');
 });
 
 test('retries a failed capture with its original word, context, and operation ID', async () => {

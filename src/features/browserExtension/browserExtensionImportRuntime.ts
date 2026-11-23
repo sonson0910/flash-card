@@ -77,10 +77,13 @@ const boundedText = (value: unknown, maximum: number): string =>
  */
 const READING_LANGUAGES = new Set(['ja', 'zh']);
 
-const cardReading = (card: { language?: unknown; phonetic?: unknown } | undefined): string => {
+const cardPrimaryLanguage = (card: { language?: unknown } | undefined): string => {
   const language = typeof card?.language === 'string' ? card.language.trim().toLowerCase().split('-')[0] : '';
-  return READING_LANGUAGES.has(language) ? boundedText(card?.phonetic, 256) : '';
+  return /^[a-z]{2,3}$/.test(language) ? language : '';
 };
+
+const cardReading = (card: { language?: unknown; phonetic?: unknown } | undefined): string =>
+  READING_LANGUAGES.has(cardPrimaryLanguage(card)) ? boundedText(card?.phonetic, 256) : '';
 
 const publishSilentResult = (
   intent: BrowserExtensionImportIntent,
@@ -119,6 +122,9 @@ const publishSilentResult = (
       // Optional additions the extension may show; an extension that predates them ignores them.
       partOfSpeech: boundedText(card?.partOfSpeech, 40),
       reading: cardReading(card),
+      // The saved card's language: a capture sent without one is saved in the active course, so
+      // the extension labels and speaks the word in this language instead of guessing.
+      language: cardPrimaryLanguage(card),
       aiGenerated: card?.origin === 'ai',
       message: boundedText(payload.message, 512),
     },

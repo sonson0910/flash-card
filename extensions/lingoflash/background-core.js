@@ -968,7 +968,7 @@
 
   const normalizeResult = p => {
     if (!p||typeof p!=='object'||Array.isArray(p)||typeof p.id!=='string'||!/^[A-Za-z0-9_-]{8,128}$/.test(p.id)||!isValidImportNonce(p.nonce)||!['created','existing','auth-required','error'].includes(p.status)) return null;
-    return {id:p.id,nonce:p.nonce,status:p.status,word:bounded(p.word,80),translation:bounded(p.translation,256),phonetic:bounded(p.phonetic,256),explanation:bounded(p.explanation,1024),exampleSentence:bounded(p.exampleSentence,1024),exampleTranslation:bounded(p.exampleTranslation,1024),aiGenerated:p.aiGenerated===true,message:bounded(p.message,512)};
+    return {id:p.id,nonce:p.nonce,status:p.status,word:bounded(p.word,80),translation:bounded(p.translation,256),phonetic:bounded(p.phonetic,256),explanation:bounded(p.explanation,1024),exampleSentence:bounded(p.exampleSentence,1024),exampleTranslation:bounded(p.exampleTranslation,1024),aiGenerated:p.aiGenerated===true,language:normalizeCourseTargetLanguage(p.language),message:bounded(p.message,512)};
   };
   const appResult = async (payload,sender) => {
     const r=normalizeResult(payload); if (!r) throw new Error('Kết quả LingoFlash không hợp lệ.');
@@ -993,7 +993,9 @@
       let inlineShown = true;
       if (r.status==='created'||r.status==='existing') {
         await clearRetry(job.sourceTabId);
-        let translated = { text: r.translation, sourceLanguage: job.sourceLanguage || 'en' };
+        // The saved card's language is the truth: a capture sent without a language is saved in the
+        // learner's active course, whatever language that is. Leave the label empty rather than guess.
+        let translated = { text: r.translation, sourceLanguage: r.language || normalizeCourseTargetLanguage(job.sourceLanguage) || '' };
         if (!translated.text) try { translated = await googleTranslate(job.text); } catch {}
         const t=bounded(translated.text,256);
         await recordRecentLookup({text:job.text,translation:t,sourceLanguage:translated.sourceLanguage,targetLanguage:'vi',kind:'create',status:r.status,timestamp:Date.now()});
