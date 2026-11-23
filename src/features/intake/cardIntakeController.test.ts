@@ -508,6 +508,23 @@ describe('card intake controller', () => {
     });
   });
 
+  it('leaves a capture untouched until the controller is bound to the expected target language', async () => {
+    const { port, persistCards } = createFakePort();
+    const intake = createCardIntakeController({ port, language: ENGLISH_TO_VIETNAMESE_PROFILE });
+    intake.setDraft('회복력');
+
+    await expect(intake.generateDraft({ expectedTargetLanguage: 'ko' })).resolves.toEqual({ status: 'pair-mismatch' });
+    expect(port.findExisting).not.toHaveBeenCalled();
+    expect(port.generateCard).not.toHaveBeenCalled();
+    expect(persistCards).not.toHaveBeenCalled();
+    expect(intake.getSnapshot().draft).toBe('회복력');
+    expect(intake.getSnapshot().error).toBeNull();
+
+    intake.setDraft('apple');
+    await intake.generateDraft({ expectedTargetLanguage: 'en' });
+    expect(port.generateCard).toHaveBeenCalledTimes(1);
+  });
+
   it('passes bounded extension context and requested deck through structured generation', async () => {
     const { port } = createFakePort();
     const intake = createCardIntakeController({ port });

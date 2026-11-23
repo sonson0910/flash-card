@@ -1,6 +1,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
+import { extensionOwnerMarkerFor } from './extensionOwnerMarker';
 import { useExtensionDueCountBridge, type ExtensionDueCountBridgeOptions } from './useExtensionDueCountBridge';
 
 const installMinimalReactDom = () => {
@@ -61,10 +62,11 @@ describe('useExtensionDueCountBridge', () => {
         root.render(<Harness options={optionsFor({ ready: true, dueCount: 12 })} />);
       });
       expect(posted).toHaveLength(1);
-      const synced = posted[0] as { type: string; payload: { scope: string; count: number } };
+      const synced = posted[0] as { type: string; payload: { scope: string; count: number; owner: string } };
       expect(synced.type).toBe('LINGOFLASH_EXTENSION_DUE_COUNT');
       expect(synced.payload.scope).toMatch(/^[\w-]{8,}$/);
       expect(synced.payload.count).toBe(12);
+      expect(synced.payload.owner).toBe(extensionOwnerMarkerFor('owner-a'));
       expect(JSON.stringify(synced)).not.toContain('owner-a');
     } finally {
       act(() => root.unmount());
@@ -145,6 +147,36 @@ describe('useExtensionDueCountBridge', () => {
         payload: { count: 12 },
       });
       expect(recoveredSync.payload.scope).not.toBe(firstSync.payload.scope);
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
+  it('clears the posted count when the active course has no real count yet, and posts the new course count once it arrives', async () => {
+    const posted: Array<{ type: string; payload: { scope: string; count?: number } }> = [];
+    vi.stubGlobal('location', { origin: 'https://app.example.test' });
+    vi.stubGlobal('postMessage', (message: never) => posted.push(message));
+    const root = createRoot(installMinimalReactDom());
+
+    try {
+      await act(async () => { root.render(<Harness options={optionsFor({ dueCount: 5 })} />); });
+      const first = posted[0]!;
+      expect(first).toMatchObject({ type: 'LINGOFLASH_EXTENSION_DUE_COUNT', payload: { count: 5 } });
+
+      // The learner switched course: nothing real is known for it yet.
+      await act(async () => { root.render(<Harness options={optionsFor({ dueCount: null })} />); });
+      expect(posted.at(-1)).toEqual({
+        source: 'lingoflash-web-app',
+        type: 'LINGOFLASH_EXTENSION_DUE_COUNT_CLEAR',
+        payload: { scope: first.payload.scope },
+      });
+      const afterClear = posted.length;
+      await act(async () => { root.render(<Harness options={optionsFor({ dueCount: null })} />); });
+      expect(posted).toHaveLength(afterClear);
+
+      await act(async () => { root.render(<Harness options={optionsFor({ dueCount: 2 })} />); });
+      expect(posted.at(-1)).toMatchObject({ type: 'LINGOFLASH_EXTENSION_DUE_COUNT', payload: { count: 2 } });
+      expect(posted.at(-1)!.payload.scope).not.toBe(first.payload.scope);
     } finally {
       act(() => root.unmount());
     }

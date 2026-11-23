@@ -148,7 +148,7 @@ export function useAppLibraryRuntime({
       // needs to opt in the same way the progress view already does, or an
       // authenticated visitor sees an all-zero summary even with data in the
       // library.
-      statsOpen: isStatsOpen || viewMode === 'progress' || viewMode === 'catalog',
+      statsOpen: isStatsOpen || viewMode === 'today' || viewMode === 'progress' || viewMode === 'catalog',
       courseScopeReady,
       statsRefreshRequest,
       progressEvidenceOpen: viewMode === 'progress' && Math.max(cloudTotal, cloudStats.total, cards.length) > 0,

@@ -6,6 +6,7 @@ const runtime = vi.hoisted(() => ({
   revoke: vi.fn<() => Promise<void>>(),
   finish: vi.fn(),
   signOut: vi.fn<() => Promise<{ status: 'completed' | 'failed' }>>(),
+  sessionInputs: [] as Array<{ catalog: { statsOpen: boolean } }>,
 }));
 
 vi.mock('../features/reminders/reminderService', () => ({
@@ -23,7 +24,8 @@ vi.mock('../features/catalog/useLibraryCatalogQuery', () => ({
   }),
 }));
 vi.mock('../features/librarySession/useLibrarySession', () => ({
-  useLibrarySession: () => ({
+  useLibrarySession: (input: { catalog: { statsOpen: boolean } }) => ({
+    ...(runtime.sessionInputs.push(input), {}),
     model: {
       identity: {
         owner: { id: 'owner-a', displayName: null, email: null, photoUrl: null },
@@ -161,6 +163,30 @@ describe('useAppLibraryRuntime sign-out', () => {
       await expect(captured.current!.actions.signOut()).rejects.toThrow(failure);
       expect(captured.current!.model.cards).toHaveLength(1);
       expect(runtime.finish).toHaveBeenCalledOnce();
+    } finally {
+      await act(async () => { root.unmount(); });
+    }
+  });
+
+  it.each([
+    ['today', true],
+    ['progress', true],
+    ['catalog', true],
+    ['library', false],
+  ])('reads library stats on the %s view: %s', async (viewMode, statsOpen) => {
+    runtime.sessionInputs.length = 0;
+    const root = createRoot(installMinimalReactDom());
+    function Harness() {
+      useAppLibraryRuntime({
+        identity: {} as never, courseScopeReady: true, viewMode: viewMode as never, isStatsOpen: false,
+        statsRefreshRequest: null, targetLanguage: 'en', reportError: vi.fn(), clearError: vi.fn(), notify: vi.fn(),
+      });
+      return null;
+    }
+
+    try {
+      await act(async () => { root.render(<Harness />); });
+      expect(runtime.sessionInputs.at(-1)?.catalog.statsOpen).toBe(statsOpen);
     } finally {
       await act(async () => { root.unmount(); });
     }
