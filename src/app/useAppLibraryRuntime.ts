@@ -274,7 +274,7 @@ export function useAppLibraryRuntime({
       signOut,
       migrateLegacyCards,
       clearAuthError: librarySession.actions.identity.clearError,
-      retrySync: async () => { setCloudRefresh(value => value + 1); },
+      retrySync: async () => { librarySession.actions.identity.retry(); setCloudRefresh(value => value + 1); },
     },
     ports: {
       setCards,
