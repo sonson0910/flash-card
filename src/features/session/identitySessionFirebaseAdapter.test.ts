@@ -19,9 +19,14 @@ vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(),
 }));
 
-vi.mock('../../lib/cardRepository', () => ({
-  getLibraryEpoch: vi.fn(),
+const repository = vi.hoisted(() => ({
+  getLibraryState: vi.fn(),
+  deleteAllCards: vi.fn(),
+  clearLibraryFacets: vi.fn(),
+  settleLibraryClear: vi.fn(),
 }));
+
+vi.mock('../../lib/cardRepository', () => repository);
 
 import { createIdentitySessionFirebaseAdapter } from './identitySessionFirebaseAdapter';
 import { createIdentitySessionController } from './identitySessionController';
@@ -83,6 +88,57 @@ describe('identity session Firebase adapter', () => {
       ownerEpoch: null,
       canPublishMutations: false,
       authenticationRecovery: 'session-lost',
+    });
+  });
+
+  describe('owner epoch load', () => {
+    const database = { kind: 'database' };
+    const createAdapter = () => createIdentitySessionFirebaseAdapter({
+      app: null,
+      auth: { kind: 'auth' } as never,
+      database: database as never,
+      configured: true,
+      storage: null,
+    });
+
+    it('finishes a clear of the current generation that stopped part way before returning the epoch', async () => {
+      const order: string[] = [];
+      repository.getLibraryState.mockResolvedValue({ libraryEpoch: 5, clearPendingEpoch: 5 });
+      repository.deleteAllCards.mockImplementation(async () => { order.push('delete-cards'); });
+      repository.clearLibraryFacets.mockImplementation(async () => { order.push('clear-facets'); });
+      repository.settleLibraryClear.mockImplementation(async () => { order.push('settle'); });
+
+      await expect(createAdapter().loadOwnerEpoch('owner-1')).resolves.toBe(5);
+
+      expect(order).toEqual(['delete-cards', 'clear-facets', 'settle']);
+      expect(repository.deleteAllCards).toHaveBeenCalledWith(database, 'owner-1', 5);
+      expect(repository.clearLibraryFacets).toHaveBeenCalledWith(database, 'owner-1');
+      expect(repository.settleLibraryClear).toHaveBeenCalledWith(database, 'owner-1', 5);
+    });
+
+    it('adds no clear work when no clear of the current generation is pending', async () => {
+      repository.getLibraryState
+        .mockResolvedValueOnce({ libraryEpoch: 5, clearPendingEpoch: null })
+        .mockResolvedValueOnce({ libraryEpoch: 6, clearPendingEpoch: 5 });
+
+      await expect(createAdapter().loadOwnerEpoch('owner-1')).resolves.toBe(5);
+      await expect(createAdapter().loadOwnerEpoch('owner-1')).resolves.toBe(6);
+
+      expect(repository.deleteAllCards).not.toHaveBeenCalled();
+      expect(repository.clearLibraryFacets).not.toHaveBeenCalled();
+      expect(repository.settleLibraryClear).not.toHaveBeenCalled();
+    });
+
+    it('keeps the marker and still verifies the epoch when finishing the clear fails', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      repository.getLibraryState.mockResolvedValue({ libraryEpoch: 5, clearPendingEpoch: 5 });
+      repository.deleteAllCards.mockRejectedValue(new Error('clear page unavailable'));
+
+      await expect(createAdapter().loadOwnerEpoch('owner-1')).resolves.toBe(5);
+
+      expect(repository.clearLibraryFacets).not.toHaveBeenCalled();
+      expect(repository.settleLibraryClear).not.toHaveBeenCalled();
+      warn.mockRestore();
     });
   });
 });

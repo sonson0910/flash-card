@@ -21,7 +21,9 @@ import {
   deleteAllCards,
   deleteCardWithTombstone,
   getLibraryEpoch,
+  getLibraryState,
   incrementLibraryEpoch,
+  settleLibraryClear,
 } from '../../lib/cardRepository';
 import { db, handleFirestoreError, isFirebaseConfigured, OperationType } from '../../lib/firebase';
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
@@ -67,6 +69,8 @@ const resultFor = (
 });
 
 const MAX_RETAINED_RESTORE_STATS_OPERATIONS = 500;
+const UNFINISHED_CLEAR_DELETE_MESSAGE =
+  'An earlier clear of your library has not finished, so this card is still stored. Reload the app to finish the clear.';
 const MAX_RETAINED_REVIEW_COMMANDS = 500;
 
 function cacheCloudBackoff(ownerId: string): void {
@@ -430,6 +434,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         const database = db;
         let stableSource = source ?? mutation.card;
         let deleteReceipt: LearningStateMutationResult['deleteReceipt'];
+        let clearUnfinished = false;
         try {
           const result = await deleteCardWithConflictRecovery({
             cardId: mutation.cardId,
@@ -454,8 +459,10 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             };
             if (result.deletedCard) stableSource = result.deletedCard;
           } else {
-            const activeEpoch = await getLibraryEpoch(database, ownerId);
-            current.acceptVerifiedEpoch(ownerId, activeEpoch);
+            const state = await getLibraryState(database, ownerId);
+            current.acceptVerifiedEpoch(ownerId, state.libraryEpoch);
+            // While a clear of the current generation is unfinished, an older card may still be stored.
+            clearUnfinished = state.clearPendingEpoch === state.libraryEpoch;
           }
           if (result.deleted && stableSource && latestRef.current.ownerId === ownerId) {
             const difficulty = stableSource.difficulty && stableSource.difficulty !== 'unrated' ? stableSource.difficulty : 'unrated';
@@ -485,6 +492,10 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             current.reportError('Firebase rejected the delete. The card has been restored on screen.');
           }
           throw cause;
+        }
+        if (clearUnfinished) {
+          current.reportError(UNFINISHED_CLEAR_DELETE_MESSAGE);
+          throw new Error('Delete rejected: an earlier library clear has not finished.');
         }
         return resultFor(mutation, mutation.publication, undefined, { ...(deleteReceipt ? { deleteReceipt } : {}) });
       }
@@ -580,19 +591,26 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         current.setMutationPending(true);
         const database = db;
         let cardDeletionCompleted = false;
+        let epochAdvanced = false;
         try {
-          await runEpochProtectedLibraryClear({
+          const clearedEpoch = await runEpochProtectedLibraryClear({
             incrementEpoch: () => incrementLibraryEpoch(database, ownerId),
-            onEpochAdvanced: epoch => current.acceptVerifiedEpoch(ownerId, epoch),
+            onEpochAdvanced: epoch => {
+              epochAdvanced = true;
+              current.acceptVerifiedEpoch(ownerId, epoch);
+            },
             deleteCards: epoch => deleteAllCards(database, ownerId, epoch),
           });
           cardDeletionCompleted = true;
           await clearLibraryFacets(database, ownerId, mutation.operationId);
+          // A marker left behind only makes the next load run one more empty clear pass.
+          await settleLibraryClear(database, ownerId, clearedEpoch)
+            .catch(error => console.warn('The finished library clear could not be recorded.', error));
           if (latestRef.current.ownerId === ownerId) current.resetCloudState(true);
           if (latestRef.current.ownerId === ownerId) current.resetCloudPage();
           return resultFor(mutation);
         } catch (cause) {
-          const recovery = planClearFailureRecovery(cardDeletionCompleted);
+          const recovery = planClearFailureRecovery(cardDeletionCompleted, epochAdvanced);
           clearCloudCaches(ownerId);
           if (latestRef.current.ownerId === ownerId) {
             current.resetCloudPage();

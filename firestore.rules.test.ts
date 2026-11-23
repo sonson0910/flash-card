@@ -363,6 +363,32 @@ describe('Firestore security rules', () => {
     }));
   });
 
+  it('lets the owner record a pending clear with the epoch bump and remove it afterwards', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const state = doc(owner, 'users/owner/profile/library_state');
+    await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 1, clearPendingEpoch: 1 }, { merge: true }));
+    await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 2, clearPendingEpoch: 2 }, { merge: true }));
+    await assertSucceeds(updateDoc(state, { clearPendingEpoch: deleteField() }));
+    expect((await getDoc(state)).data()).toEqual({ schemaVersion: 2, libraryEpoch: 2 });
+  });
+
+  it('keeps a pending clear marker a counter no newer than the library epoch', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const state = doc(owner, 'users/owner/profile/library_state');
+    await assertFails(setDoc(state, { schemaVersion: 2, libraryEpoch: 1, clearPendingEpoch: 2 }));
+    await assertFails(setDoc(state, { schemaVersion: 2, libraryEpoch: 1, clearPendingEpoch: '1' }));
+    await assertFails(setDoc(state, { schemaVersion: 2, libraryEpoch: 1, clearPendingEpoch: -1 }));
+    await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 1, clearPendingEpoch: 1 }));
+    await assertFails(updateDoc(state, { clearPendingEpoch: 2 }));
+  });
+
+  it('still accepts an epoch bump without the marker over a stored pending clear', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const state = doc(owner, 'users/owner/profile/library_state');
+    await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 1, clearPendingEpoch: 1 }));
+    await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 2 }, { merge: true }));
+  });
+
   it('requires the document id and card id to match', async () => {
     const owner = testEnvironment.authenticatedContext('owner').firestore();
 

@@ -39,7 +39,12 @@ must not increment facets again or award capture XP/AI usage. An internal restor
 receipt can settle a durable offline operation beyond the public facet-update
 TTL; the public update endpoint retains its existing TTL and future-timestamp
 validation. Clearing the library invalidates old restore operations through the
-library epoch.
+library epoch. The same client write that advances the epoch records it as
+`clearPendingEpoch` on `profile/library_state`, and the marker is removed after
+the facet reset. A clear that stops part way is finished when the owner's epoch
+is next verified (sign-in or app load) before card writes resume, and a delete
+rejected as stale is not reported as done while that clear is pending. List,
+count and practice queries keep no epoch filter.
 
 Keep custom deck writes on the client because the complete bounded string list
 can be validated in Rules with a delimiter-safe joined representation. Inventory

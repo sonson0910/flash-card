@@ -375,14 +375,22 @@ service cloud.firestore {
     // answers both "current epoch" and "is a migration fence active" instead
     // of needing a second dependent-document read on a standalone fence doc.
     // A client set()/update() through these Rules only ever touches
-    // schemaVersion/libraryEpoch, so the field must stay optional here rather
+    // schemaVersion/libraryEpoch/clearPendingEpoch, so the field must stay optional here rather
     // than required.
+    // clearPendingEpoch is optional: the client records the generation of a
+    // clear in the same write that advances libraryEpoch and removes it when
+    // the clear finishes. A value below libraryEpoch is a stale marker that an
+    // older client's later clear left in place.
     function isValidLibraryState(data) {
       return data.keys().hasAll(['schemaVersion', 'libraryEpoch'])
-        && data.keys().hasOnly(['schemaVersion', 'libraryEpoch', 'libraryMigrationFenceActive'])
+        && data.keys().hasOnly(['schemaVersion', 'libraryEpoch', 'libraryMigrationFenceActive', 'clearPendingEpoch'])
         && data.schemaVersion == 2
         && isValidProtocolCounter(data.libraryEpoch)
-        && (!data.keys().hasAny(['libraryMigrationFenceActive']) || data.libraryMigrationFenceActive is bool);
+        && (!data.keys().hasAny(['libraryMigrationFenceActive']) || data.libraryMigrationFenceActive is bool)
+        && (!data.keys().hasAny(['clearPendingEpoch']) || (
+          isValidProtocolCounter(data.clearPendingEpoch)
+          && data.clearPendingEpoch <= data.libraryEpoch
+        ));
     }
 
     function isValidCustomDeckProfile(data) {

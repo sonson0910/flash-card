@@ -22,7 +22,9 @@ const mocks = vi.hoisted(() => ({
   deleteCardWithTombstone: vi.fn(),
   findCardById: vi.fn(),
   getLibraryEpoch: vi.fn(),
+  getLibraryState: vi.fn(),
   incrementLibraryEpoch: vi.fn(),
+  settleLibraryClear: vi.fn(async () => undefined),
   applyReviewViaCallable: vi.fn(),
   applyReviewWithConflictRecovery: vi.fn(),
 }));
@@ -38,7 +40,9 @@ vi.mock('../../lib/cardRepository', async () => {
     clearLibraryFacets: mocks.clearLibraryFacets,
     deleteCardWithTombstone: mocks.deleteCardWithTombstone,
     getLibraryEpoch: mocks.getLibraryEpoch,
+    getLibraryState: mocks.getLibraryState,
     incrementLibraryEpoch: mocks.incrementLibraryEpoch,
+    settleLibraryClear: mocks.settleLibraryClear,
   };
 });
 
@@ -821,6 +825,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
 
   it('refreshes the epoch without a receipt when a delete is stale', async () => {
     mocks.deleteCardWithTombstone.mockResolvedValue({ deleted: false, reason: 'stale-library-epoch' });
+    mocks.getLibraryState.mockResolvedValue({ libraryEpoch: 3, clearPendingEpoch: null });
     const harness = createHarness();
 
     await expect(harness.persistence.persist(deleteMutation)).resolves.toEqual({
@@ -830,6 +835,17 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     });
     expect(harness.acceptVerifiedEpoch).toHaveBeenCalledWith('user-a', 3);
     expect(harness.updateCloudStats).not.toHaveBeenCalled();
+  });
+
+  it('does not publish a stale delete as done while the clear of the current generation is unfinished', async () => {
+    mocks.deleteCardWithTombstone.mockResolvedValue({ deleted: false, reason: 'stale-library-epoch' });
+    mocks.getLibraryState.mockResolvedValue({ libraryEpoch: 3, clearPendingEpoch: 3 });
+    const harness = createHarness();
+
+    await expect(harness.persistence.persist(deleteMutation)).rejects.toThrow(/clear has not finished/);
+    expect(harness.acceptVerifiedEpoch).toHaveBeenCalledWith('user-a', 3);
+    expect(harness.reportError).toHaveBeenLastCalledWith(expect.stringMatching(/clear of your library has not finished/));
+    expect(harness.updateCategoryFacets).not.toHaveBeenCalled();
   });
 
   it('reports an error and throws when a delete conflicts on a future epoch', async () => {
@@ -961,6 +977,27 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     );
     expect(harness.acceptVerifiedEpoch).toHaveBeenCalledWith('user-a', 4);
     expect(harness.options.resetCloudState).toHaveBeenCalledWith(true);
+    expect(mocks.settleLibraryClear).toHaveBeenCalledWith({ kind: 'database' }, 'user-a', 4);
+  });
+
+  it('leaves the clear pending and says it finishes on the next load when a later page fails', async () => {
+    const clearMutation: LearningStateMutation = {
+      ownerKey: 'user-a',
+      operationId: 'clear-operation',
+      operation: 'clear',
+      intent: 'clear',
+      publication: { kind: 'clear' },
+    };
+    mocks.incrementLibraryEpoch.mockResolvedValue(4);
+    mocks.deleteAllCards.mockRejectedValue(new Error('second clear page failed'));
+    const harness = createHarness();
+
+    await expect(harness.persistence.persist(clearMutation)).rejects.toThrow(
+      /the rest are deleted the next time the app opens, or clear the library again now/,
+    );
+    expect(mocks.clearLibraryFacets).not.toHaveBeenCalled();
+    expect(mocks.settleLibraryClear).not.toHaveBeenCalled();
+    expect(harness.options.refreshCloud).toHaveBeenCalled();
   });
 
   it('propagates a partial clear when metadata cleanup fails after cards were deleted', async () => {

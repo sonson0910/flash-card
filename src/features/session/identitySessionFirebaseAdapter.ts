@@ -10,7 +10,12 @@ import {
   type Auth,
 } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getLibraryEpoch } from '../../lib/cardRepository';
+import {
+  clearLibraryFacets,
+  deleteAllCards,
+  getLibraryState,
+  settleLibraryClear,
+} from '../../lib/cardRepository';
 import type { IdentitySessionAdapter } from './identitySessionController';
 
 const epochCacheKey = (ownerId: string) => `lingoflash_library_epoch_${encodeURIComponent(ownerId)}`;
@@ -95,7 +100,19 @@ export function createIdentitySessionFirebaseAdapter({
     },
     loadOwnerEpoch: async ownerId => {
       if (!database) throw new Error('Cloud library storage is not configured.');
-      return getLibraryEpoch(database, ownerId);
+      const { libraryEpoch, clearPendingEpoch } = await getLibraryState(database, ownerId);
+      if (clearPendingEpoch === libraryEpoch) {
+        // A clear of this generation stopped part way, so older cards may still be stored.
+        // Finish it before card writes resume; a failure leaves the marker for the next load.
+        try {
+          await deleteAllCards(database, ownerId, libraryEpoch);
+          await clearLibraryFacets(database, ownerId);
+          await settleLibraryClear(database, ownerId, libraryEpoch);
+        } catch (error) {
+          console.warn('An unfinished library clear could not be completed yet.', error);
+        }
+      }
+      return libraryEpoch;
     },
   };
 }
