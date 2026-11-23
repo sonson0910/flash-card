@@ -250,18 +250,21 @@ receipt's HTTPS origin:
 ```sh
 STAGING_ORIGIN=https://staging.example.test \
 EXPECTED_REVISION=<full-immutable-commit-sha> \
-CATALOG_MANIFEST_PATH=/catalog/english-core/release-manifest.json npm run phase6:smoke
+CATALOG_MANIFEST_PATH=/catalog/english-core/<releaseId>/release-manifest.json npm run phase6:smoke
 ```
 
 The operator rejects redirects, a non-2xx application document, revision mismatch,
 unhealthy metadata, missing CSP/nosniff/referrer headers, a failed manifest probe and
 a release manifest whose `Cache-Control` lacks `no-cache`, `no-store` or
-`must-revalidate`. Mutable manifest pointers must never be `immutable`; reserve
+`must-revalidate`. `CATALOG_MANIFEST_PATH` is required and names the release the
+candidate ships under `public/catalog/`; the manifest probe passes only when that path
+returns a JSON release manifest for the same catalog and release, so the SPA fallback
+that Hosting serves for a missing file fails it. Mutable manifest pointers must never be `immutable`; reserve
 `public, max-age=31536000, immutable` for hashed content assets.
 
 `npm run phase6:smoke` is only an automated HTTPS/network probe. It checks the
 application document, `/health.json` revision and status, required page security
-headers, and the selected release-manifest status/cache policy. It does not inspect
+headers, and the selected release manifest's body, status and cache policy. It does not inspect
 `/sw.js`, install or update a worker, close/reopen a browser, download a real pack,
 or run the Listen journey. A passing JSON result is necessary but never sufficient
 staging evidence.
