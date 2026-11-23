@@ -77,6 +77,7 @@ const loadCategoryCards = async (
   ownerId: string | null,
   selection: ShareCategorySelection,
   targetLanguage?: string,
+  nativeLanguage?: string,
 ): Promise<SharedDeckCardBatch> => {
   if (!cloudAvailable || !db || !ownerId) {
     return { cards: [], total: 0, hasNext: false };
@@ -107,7 +108,15 @@ const loadCategoryCards = async (
     )
     : page.items.length;
   return {
-    cards: page.items,
+    // Cards saved before both languages were stored belong to the active course; naming its pair
+    // lets the share carry one, so the recipient is not left to guess the language.
+    cards: targetLanguage && nativeLanguage
+      ? page.items.map(card => ({
+        ...card,
+        language: card.language || targetLanguage,
+        translationLanguage: card.translationLanguage || nativeLanguage,
+      }))
+      : page.items,
     total: Math.max(total, page.items.length),
     hasNext: page.hasNext,
   };
@@ -162,12 +171,12 @@ export const appDependencies = {
     pool: practicePool,
   },
   intake: {
-    forOwner: (ownerId: string | null, targetLanguage?: string): {
+    forOwner: (ownerId: string | null, targetLanguage?: string, nativeLanguage?: string): {
       adapter: SharedDeckAdapter;
       loadCards(selection: ShareCategorySelection): Promise<SharedDeckCardBatch>;
     } => ({
       adapter: sharedDeck,
-      loadCards: selection => loadCategoryCards(ownerId, selection, targetLanguage),
+      loadCards: selection => loadCategoryCards(ownerId, selection, targetLanguage, nativeLanguage),
     }),
   },
 };
