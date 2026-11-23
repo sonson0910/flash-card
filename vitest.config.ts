@@ -12,6 +12,7 @@ export default defineConfig({
       'functions/**',
       'firestore.rules.test.ts',
       'firestore.gamification-diagnostic.rules.test.ts',
+      'firestore.library-paging.rules.test.ts',
     ],
   },
 });

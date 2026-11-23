@@ -16,7 +16,7 @@ describe('documentation states the rules the code enforces', () => {
     const operator = read('functions/src/legacyLibraryMigrationOperator.ts');
     const spec = read('docs/specs/legacy-library-admin-migration.md');
     const confirmations = [...operator.matchAll(/confirmation !== '([A-Z_0-9]+_QUERY_V\d+)'/g)].map(match => match[1]);
-    expect(confirmations.length).toBe(2);
+    expect(confirmations.length).toBe(3);
     for (const confirmation of confirmations) expect(spec).toContain(confirmation);
     const jobId = operator.match(/const JOB_ID = '([^']+)'/)?.[1];
     expect(jobId).toBeTruthy();
