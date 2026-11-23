@@ -1415,7 +1415,7 @@ export const createCardV2 = onCall({
   await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
     'Card creation limit reached. Try again later.');
   try {
-    return await createCardV2ForOwner(database, userId, input.card, {
+    const { replayed, ...result } = await createCardV2ForOwner(database, userId, input.card, {
       maximumCards: MAX_CARD_ALLOCATION,
       libraryEpoch: input.libraryEpoch,
       baseRevision: input.baseRevision,
@@ -1424,6 +1424,11 @@ export const createCardV2 = onCall({
       timeZone: input.timeZone,
       receivedAt: new Date(),
     });
+    if (result.created && !result.restored && !replayed) await emitPilotEvent(userId, 'capture_completed', key => ({
+      origin: result.card.origin === 'ai' ? 'ai' : 'manual',
+      cardRef: analyticsCardRef(userId, result.card.id, key),
+    }));
+    return result;
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
       throw libraryFencedHttpsError();

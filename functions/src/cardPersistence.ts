@@ -69,6 +69,8 @@ export type CardAllocationResult = {
   created: boolean;
   card: DocumentData;
   restored?: true;
+  /** Set on a result answered from a stored receipt; callables keep it off the response. */
+  replayed?: true;
 };
 
 export type CardAllocationRequest = {
@@ -915,7 +917,7 @@ export async function createCardForOwner(
         || typeof result.created !== 'boolean' || !result.card || typeof result.card !== 'object') {
         throw new CardAllocationConflictError('identity-conflict', 'The card create receipt is invalid.');
       }
-      return result as CardAllocationResult;
+      return { ...(result as CardAllocationResult), replayed: true as const };
     }
     await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
     const stateSnapshot = await transaction.get(libraryState);
