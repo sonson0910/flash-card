@@ -390,9 +390,35 @@ describe('parseImageRequest', () => {
     expect(() => parseImageRequest({ query: 'nature' }))
       .toThrowError(new InputValidationError('A word is required.'));
   });
+
+  it('rejects unknown fields and text longer than the bounds the client already keeps', () => {
+    expect(() => parseImageRequest({ word: 'x', query: 'y', extra: 1 })).toThrow(InputValidationError);
+    expect(() => parseImageRequest({ word: 'w'.repeat(81) })).toThrow(InputValidationError);
+    expect(() => parseImageRequest({ word: 'x', query: 'q'.repeat(161) })).toThrow(InputValidationError);
+    expect(parseImageRequest({ word: 'w'.repeat(80), query: 'q'.repeat(160) }))
+      .toEqual({ word: 'w'.repeat(80), query: 'q'.repeat(160) });
+  });
 });
 
 describe('shared deck validation', () => {
+  it('rejects an unknown top-level field and keeps dropping unknown card fields', () => {
+    const card = { word: 'hello', translation: 'xin chào' };
+    expect(() => parseCreateSharedDeckRequest({ category: 'Shared', cards: [card], extra: 1 }))
+      .toThrow(InputValidationError);
+    expect(parseCreateSharedDeckRequest({ category: 'Shared', cards: [{ ...card, id: 'card-1' }] }).cards[0])
+      .not.toHaveProperty('id');
+    expect(parseCreateSharedDeckRequest({
+      category: 'Shared', expectedOwnerId: 'owner', opId: 'op-1', operationCreatedAt: '2026-11-01T00:00:00.000Z',
+      targetLanguage: 'en', nativeLanguage: 'vi', cards: [{ ...card, origin: 'ai', mnemonic: 'm', wordFamily: [] }],
+    }).cards).toHaveLength(1);
+  });
+
+  it('rejects an unknown revoke field and a share id longer than the limit', () => {
+    expect(() => parseRevokeSharedDeckRequest({ shareId: 'abc', extra: 1 })).toThrow(InputValidationError);
+    expect(() => parseRevokeSharedDeckRequest({ shareId: 'a'.repeat(129) })).toThrow(InputValidationError);
+    expect(parseRevokeSharedDeckRequest({ shareId: 'a'.repeat(128) })).toEqual({ shareId: 'a'.repeat(128) });
+  });
+
   it('validates card language fields independently of lexeme identity', () => {
     expect(parseCardLanguagePair({ language: 'KO', translationLanguage: 'VI' }))
       .toEqual({ language: 'ko', translationLanguage: 'vi' });
