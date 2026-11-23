@@ -78,7 +78,8 @@ test('a signed-in learner completes the core course, library, review, recap, and
   await page.getByRole('button', { name: 'Reveal answer' }).click();
   await expect(page.locator('[data-study-rating]')).toBeVisible();
   await page.getByRole('button', { name: /Good/i }).last().click();
-  await expect.poll(async () => Number((await db.doc(`users/${testUser.uid}/cards/${reviewCard.id}`).get()).get('reviews') ?? 0)).toBeGreaterThan(0);
+  // The review is saved by a callable, which can be cold on the first call of a run.
+  await expect.poll(async () => Number((await db.doc(`users/${testUser.uid}/cards/${reviewCard.id}`).get()).get('reviews') ?? 0), { timeout: 30_000 }).toBeGreaterThan(0);
 
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: 'Vocabulary library' })).toBeVisible();

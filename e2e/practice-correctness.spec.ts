@@ -16,7 +16,8 @@ test.beforeEach(async ({ page, seedCards, seedCourseProfile, signIn, blockExtern
   await signIn(page, '/?view=today&locale=en');
   await page.getByRole('button', { name: 'More practice' }).click();
   await page.getByRole('dialog').getByRole('button', { name: /^Word Match / }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Word match', exact: true })).toBeVisible();
+  // The board waits for the practice session callable, which can be cold on the first call of a run.
+  await expect(page.getByRole('heading', { level: 1, name: 'Word match', exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('button', { name: 'alpha', exact: true })).toBeVisible();
 });
 
