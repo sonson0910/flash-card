@@ -69,10 +69,14 @@ type StudyKeyboardEvent = Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'defaultPre
 
 const ALT_SHORTCUT_KEYS = new Set(['1', '2', '3', '4', 's', 'p', 'r']);
 
-/** The shortcut character of an Alt chord. Option on macOS turns the typed character into a symbol (Option+3 types a pound sign), so fall back to the physical key. */
+/**
+ * The shortcut character of an Alt chord. Option on macOS turns the typed character into a symbol (Option+3 types a
+ * pound sign), so fall back to the physical key, but only when the typed character is not a plain ASCII one: on a
+ * Dvorak or Colemak layout the key at the S position types another ASCII character and must not fire the shortcut.
+ */
 const altShortcutKey = (event: Pick<StudyKeyboardEvent, 'key' | 'code'>): string => {
   const typed = event.key.toLocaleLowerCase();
-  if (ALT_SHORTCUT_KEYS.has(typed)) return typed;
+  if (ALT_SHORTCUT_KEYS.has(typed) || /^[\x20-\x7e]$/.test(typed)) return typed;
   const physical = /^(?:Digit([1-4])|Key([SPR]))$/.exec(event.code ?? '');
   return physical ? (physical[1] ?? physical[2]).toLowerCase() : typed;
 };

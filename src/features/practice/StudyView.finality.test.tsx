@@ -281,6 +281,29 @@ describe('StudyView final-card persistence', () => {
     expect(optionKey('º', 'Digit0')).not.toHaveBeenCalled();
   });
 
+  it('leaves an Alt chord alone when another layout types a letter or digit on a shortcut key', () => {
+    const onRate = vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const));
+    const onBookmark = vi.fn();
+    const view = render(onRate, { onBookmark });
+    const surface = view.surface?.onKeyDown as (event: unknown) => void;
+    const chord = (key: string, code: string) => {
+      const preventDefault = vi.fn();
+      surface({
+        key, code, altKey: true, ctrlKey: false, metaKey: false, shiftKey: false,
+        defaultPrevented: false, nativeEvent: { isComposing: false },
+        preventDefault, target: { closest: () => null },
+        currentTarget: { querySelector: () => ({ click: vi.fn() }) },
+      });
+      return preventDefault;
+    };
+
+    expect(chord('o', 'KeyS')).not.toHaveBeenCalled();
+    expect(chord(';', 'KeyP')).not.toHaveBeenCalled();
+    expect(chord('j', 'KeyR')).not.toHaveBeenCalled();
+    expect(onBookmark).not.toHaveBeenCalled();
+    expect(onRate).not.toHaveBeenCalled();
+  });
+
   it('lets the revealed Flashcard own the keyboard flip sound', () => {
     const clicked = vi.fn(() => flipSound());
     const view = render(vi.fn(async () => ({ status: 'committed', xpAwarded: 2 } as const)));
