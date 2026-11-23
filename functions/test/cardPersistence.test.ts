@@ -1141,6 +1141,10 @@ describe('starter card allocation', () => {
   const requestHashFor = (batch: readonly unknown[]) => createHash('sha256')
     .update(JSON.stringify(batch.map(item => canonicalCard(item).id)))
     .digest('hex');
+  const reservationFor = (word: string) => createHash('sha256').update(word).digest('hex');
+  const ownedStarterCard = (item: unknown) => ({
+    ...canonicalCard(item), id: canonicalCard(item).id, schemaVersion: 2, revision: 1, libraryEpoch: 0,
+  });
 
   it('reserves one quota unit per card and creates every card in a single transaction', async () => {
     const harness = transactionHarness(new Map([
@@ -1170,12 +1174,83 @@ describe('starter card allocation', () => {
       ['users/owner/ai_operations/onboarding-op-1', snapshot(true, {
         status: 'completed', requestHash: requestHashFor(starterBatch), result: cardIds,
       })],
+      ...cardIds.map(id => [`users/owner/cards/${id}`, snapshot(true, ownedStarterCard(starterBatch[cardIds.indexOf(id)]))] as const),
     ]));
 
     const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
 
     expect(result).toEqual({ kind: 'completed', cardIds });
     expect(harness.writes).toHaveLength(0);
+  });
+
+  it('replays only the starter cards that still exist after the learner deleted some', async () => {
+    const cardIds = starterBatch.map(item => canonicalCard(item).id);
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/ai_operations/onboarding-op-1', snapshot(true, {
+        status: 'completed', requestHash: requestHashFor(starterBatch), result: cardIds,
+      })],
+      [`users/owner/cards/${cardIds[1]}`, snapshot(true, ownedStarterCard(starterBatch[1]))],
+      [`users/owner/cards/${cardIds[3]}`, snapshot(true, ownedStarterCard(starterBatch[3]))],
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    expect(result).toEqual({ kind: 'completed', cardIds: [cardIds[1], cardIds[3]] });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('writes the other starter cards and charges only for them when a word is already claimed', async () => {
+    const [hello, thankYou, water, friend, love] = starterBatch;
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 2 })],
+      // A reservation left behind by a deleted card, with a tombstone and no live card.
+      [`users/owner/card_reservations/${reservationFor('hello')}`, snapshot(true, {
+        schemaVersion: 1, cardId: canonicalCard(hello).id, normalizedWord: 'hello',
+      })],
+      [`users/owner/card_tombstones/${canonicalCard(hello).id}`, snapshot(true, { revision: 2, libraryEpoch: 0, deletedAt: '2026-09-01T00:00:00.000Z' })],
+      // A word the learner still owns.
+      [`users/owner/card_reservations/${reservationFor('water')}`, snapshot(true, {
+        schemaVersion: 1, cardId: canonicalCard(water).id, normalizedWord: 'water',
+      })],
+      [`users/owner/cards/${canonicalCard(water).id}`, snapshot(true, ownedStarterCard(water))],
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    const ids = [thankYou, friend, love].map(item => canonicalCard(item).id);
+    expect(result).toEqual({
+      kind: 'created',
+      cardIds: [canonicalCard(thankYou).id, canonicalCard(water).id, canonicalCard(friend).id, canonicalCard(love).id],
+      createdCardIds: ids,
+    });
+    expect(harness.writes.filter(write => write.path.startsWith('users/owner/cards/')).map(write => write.path.split('/').pop()))
+      .toEqual(ids);
+    expect(harness.writes.filter(write => write.path.startsWith('users/owner/card_reservations/'))).toHaveLength(3);
+    expect(harness.writes.find(write => write.path.startsWith('users/owner/ai_usage/'))?.data).toMatchObject({ used: 3 });
+    expect(harness.writes.find(write => write.path === 'users/owner/profile/resource_usage')?.data).toMatchObject({ cardCount: 5 });
+    expect(harness.writes.find(write => write.path === 'users/owner/ai_operations/onboarding-op-1')?.data)
+      .toMatchObject({ status: 'completed', result: result.cardIds });
+  });
+
+  it('spends no quota and writes no card when every starter word is already claimed', async () => {
+    const periodKey = `free-${now.toISOString().slice(0, 7)}`;
+    const claimed = starterBatch.flatMap(item => [
+      [`users/owner/card_reservations/${reservationFor(item.word)}`, snapshot(true, {
+        schemaVersion: 1, cardId: canonicalCard(item).id, normalizedWord: item.word,
+      })] as const,
+    ]);
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/ai_usage/${periodKey}`, snapshot(true, { used: 30, limit: 30, tier: 'free' })],
+      ...claimed,
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    expect(result).toEqual({ kind: 'created', cardIds: [], createdCardIds: [] });
+    expect(harness.writes.map(write => write.path)).toEqual(['users/owner/ai_operations/onboarding-op-1']);
   });
 
   it('rejects a retried operationId whose card batch no longer matches what it originally completed', async () => {

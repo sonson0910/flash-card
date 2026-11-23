@@ -1088,21 +1088,39 @@ export async function createCardV2ForOwner(
 
 export const MAX_STARTER_CARDS_PER_BATCH = 20;
 
+/**
+ * `cardIds` lists the starter cards the learner holds after the call, in
+ * catalog order: the ones this call wrote and the ones they already owned. A
+ * starter word whose identity is already claimed without a live card (the
+ * learner deleted it earlier) is left out, and so is a replayed card that has
+ * since been deleted. `createdCardIds` is the subset this call wrote.
+ */
 export type StarterCardBatchResult =
   | { kind: 'completed'; cardIds: readonly string[] }
-  | { kind: 'created'; cardIds: readonly string[] };
+  | { kind: 'created'; cardIds: readonly string[]; createdCardIds: readonly string[] };
+
+const CARD_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+
+const isCurrentGenerationCard = (card: CardRecord, currentEpoch: number): boolean =>
+  (card.libraryEpoch === undefined ? 0 : Number(card.libraryEpoch)) === currentEpoch;
 
 /**
- * Reserves N units of the same monthly AI-card quota `reserveWordOperation`
- * spends and creates every starter card in one Firestore transaction —
+ * Reserves one unit of the same monthly AI-card quota `reserveWordOperation`
+ * spends for each starter card it writes, and writes them in one Firestore
+ * transaction —
  * unlike a real AI generation, a starter card's content is fully known
  * upfront from the static catalog, so there is no external call to bridge
  * between reserving and writing, and the two collapse into a single atomic
- * step. Either the whole batch (quota debit + every card) commits, or none
- * of it does: a client retry with the same `operationId` after a timeout or
- * crash either replays the already-completed result or safely redoes the
+ * step. Either the whole write (quota debit + every new card) commits, or
+ * none of it does: a client retry with the same `operationId` after a timeout
+ * or crash either replays the already-completed result or safely redoes the
  * whole batch, and never spends quota twice for it. Pro users resolve
  * through the same `resolvePlan` pro-period logic as any other AI spend.
+ *
+ * A starter word whose identity the learner already claimed (a live card, a
+ * permanent reservation left by a deleted card, or a tombstone) is never
+ * written again and costs no quota: the learner keeps the card they have, and
+ * a word they deleted stays deleted.
  */
 export async function createStarterCardsForOwner(
   database: Firestore,
@@ -1167,58 +1185,89 @@ export async function createStarterCardsForOwner(
     if (operation?.requestHash && operation.requestHash !== requestHash && operation.status === 'completed') {
       throw new AiQuotaError('operation-request-mismatch', { reason: 'operation-request-mismatch' });
     }
+    const currentEpoch = readEpoch(stateSnapshot);
     if (operation?.status === 'completed') {
-      const cardIds = Array.isArray(operation.result)
-        ? operation.result.filter((id): id is string => typeof id === 'string')
+      const storedIds = Array.isArray(operation.result)
+        ? operation.result.filter((id): id is string => typeof id === 'string' && CARD_ID_PATTERN.test(id))
         : [];
+      // The replay answers with the cards that still exist, so a card the
+      // learner deleted since is not reported as created again.
+      const storedCards = await Promise.all(storedIds.map(id => transaction.get(owner.collection('cards').doc(id))));
+      const cardIds = storedIds.filter((_, index) => {
+        const stored = storedCards[index];
+        return stored.exists && isCurrentGenerationCard(stored.data() as CardRecord, currentEpoch);
+      });
       return { kind: 'completed' as const, cardIds };
     }
+
+    // Read every identity before the first write. The permanent reservation is
+    // the claim on a word; a live card, a tombstone or a reservation each mean
+    // the word is not new to this learner.
+    const probes = await Promise.all(normalizedCards.map(async card => {
+      const identity = card.normalizedWord as string;
+      const plainTargetLanguage = typeof card.language === 'string' ? card.language : undefined;
+      const id = card.id as string;
+      const reservationRef = owner.collection('card_reservations').doc(reservationId(identity, plainTargetLanguage));
+      const canonicalRef = owner.collection('cards').doc(id);
+      const [reservationSnapshot, cardSnapshot, tombstoneSnapshot] = await Promise.all([
+        transaction.get(reservationRef),
+        transaction.get(canonicalRef),
+        transaction.get(owner.collection('card_tombstones').doc(id)),
+      ]);
+      const existingCard = cardSnapshot.exists ? cardSnapshot.data() as CardRecord : null;
+      const owned = Boolean(
+        existingCard
+        && isCurrentGenerationCard(existingCard, currentEpoch)
+        && cardMatchesIdentity(existingCard, identity, id, plainTargetLanguage),
+      );
+      const claimed = reservationSnapshot.exists || cardSnapshot.exists || tombstoneSnapshot.exists;
+      return {
+        card, identity, plainTargetLanguage, id, reservationRef, canonicalRef,
+        status: owned ? 'owned' as const : claimed ? 'claimed' as const : 'new' as const,
+      };
+    }));
+    const toCreate = probes.filter(probe => probe.status === 'new');
+    const cardIds = probes.filter(probe => probe.status !== 'claimed').map(probe => probe.id);
+    const createdCardIds = toCreate.map(probe => probe.id);
 
     const plan = resolvePlan(planSnapshot.data(), now, config);
     const periodKey = plan.periodKey;
     const usageRef = owner.collection('ai_usage').doc(periodKey);
     const quotaUsageSnapshot = await transaction.get(usageRef);
     const used = asAiQuotaCount(quotaUsageSnapshot.data()?.used);
-    const requestedUnits = normalizedCards.length;
-    if (config.quotaEnforced && used + requestedUnits > plan.limit) {
+    const requestedUnits = toCreate.length;
+    if (requestedUnits > 0 && config.quotaEnforced && used + requestedUnits > plan.limit) {
       throw new AiQuotaError('ai-card-quota', {
         reason: 'ai-card-quota', used, limit: plan.limit, requested: requestedUnits,
         periodEndsAt: plan.endsAt.toISOString(), tier: plan.tier,
       });
     }
 
-    const currentEpoch = readEpoch(stateSnapshot);
     const currentCount = safeStoredCardCount(usageSnapshot) ?? existingCardCount;
     if (currentCount + requestedUnits > MAX_CARD_ALLOCATION) {
       throw new CardAllocationLimitError();
     }
 
-    const cardIds: string[] = [];
-    for (const card of normalizedCards) {
-      const identity = card.normalizedWord as string;
-      const plainTargetLanguage = typeof card.language === 'string' ? card.language : undefined;
-      const id = card.id as string;
-      const reservationRef = owner.collection('card_reservations').doc(reservationId(identity, plainTargetLanguage));
-      const canonicalRef = owner.collection('cards').doc(id);
-      // .create() (not .set()) so a genuine identity collision — e.g. this
-      // exact batch already exists under a different operationId — aborts
-      // the whole transaction instead of silently overwriting a card.
+    for (const { card, identity, plainTargetLanguage, id, reservationRef, canonicalRef } of toCreate) {
+      // .create() (not .set()) so a collision that appeared after the reads
+      // above aborts the transaction instead of silently overwriting a card.
       transaction.create(reservationRef, createReservation(identity, id, plainTargetLanguage));
       transaction.create(canonicalRef, { ...card, id, schemaVersion: 2, revision: 1, libraryEpoch: currentEpoch });
-      cardIds.push(id);
     }
-    transaction.set(usageRef, {
-      periodKey, tier: plan.tier, used: used + requestedUnits, limit: plan.limit,
-      periodStartsAt: plan.startsAt, periodEndsAt: plan.endsAt, updatedAt: now,
-    }, { merge: true });
-    transaction.set(resourceUsage, {
-      schemaVersion: RESOURCE_USAGE_SCHEMA_VERSION,
-      cardCount: currentCount + requestedUnits,
-    }, { merge: true });
+    if (requestedUnits > 0) {
+      transaction.set(usageRef, {
+        periodKey, tier: plan.tier, used: used + requestedUnits, limit: plan.limit,
+        periodStartsAt: plan.startsAt, periodEndsAt: plan.endsAt, updatedAt: now,
+      }, { merge: true });
+      transaction.set(resourceUsage, {
+        schemaVersion: RESOURCE_USAGE_SCHEMA_VERSION,
+        cardCount: currentCount + requestedUnits,
+      }, { merge: true });
+    }
     transaction.set(operationRef, {
       status: 'completed', requestHash, periodKey, reservedAt: now, completedAt: now, result: cardIds,
     }, { merge: true });
-    return { kind: 'created' as const, cardIds };
+    return { kind: 'created' as const, cardIds, createdCardIds };
   });
 }
 
