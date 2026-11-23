@@ -102,10 +102,18 @@ if (composites !== undefined) {
     if (field.vectorConfig !== undefined) normalized.vectorConfig = field.vectorConfig;
     return normalized;
   };
+  // A Standard database orders every composite by document name last, in the direction of the last
+  // explicit order, and its readback lists that field even when the manifest leaves it implicit.
+  const withImplicitName = fields => {
+    if (databaseMetadata.databaseEdition !== 'STANDARD' || fields.at(-1)?.fieldPath === '__name__') return fields;
+    const order = fields.findLast(field => field.order !== undefined)?.order ?? 'ASCENDING';
+    return [...fields, { fieldPath: '__name__', order: normalizeScope(order) }];
+  };
   const sameFields = (expected, actual) => Array.isArray(actual)
     && expected.every(field => normalizeField(field))
     && actual.every(field => normalizeField(field))
-    && JSON.stringify(expected.map(normalizeField)) === JSON.stringify(actual.map(normalizeField));
+    && JSON.stringify(withImplicitName(expected.map(normalizeField)))
+      === JSON.stringify(withImplicitName(actual.map(normalizeField)));
   const activeComposite = (expected) => composites.find(index => {
     if (!index || typeof index !== 'object' || typeof index.name !== 'string') return false;
     if (!index.name.startsWith(targetPrefix)) return false;

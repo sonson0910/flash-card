@@ -1260,4 +1260,47 @@ describe('release workflow contracts', () => {
       fs.rmSync(directory, { recursive: true, force: true });
     }
   });
+
+  it('accepts a READY Standard composite that carries the implicit trailing document name', () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lingoflash-implicit-name-index-'));
+    try {
+      const fields = [
+        { fieldPath: 'status', order: 'ASCENDING' },
+        { fieldPath: 'expiresAt', order: 'DESCENDING' },
+      ];
+      const write = (name, value) => fs.writeFileSync(path.join(directory, name), JSON.stringify(value));
+      write('indexes.json', { indexes: [{ collectionGroup: 'entitlements', queryScope: 'COLLECTION', fields }], fieldOverrides: [] });
+      write('active-fields.json', []);
+      write('operations.json', []);
+      write('baseline.json', []);
+      const verify = (edition, readback) => {
+        write('database.json', { databaseEdition: edition });
+        write('active-composite.json', readback.map(entry => ({
+          name: 'projects/demo/databases/(default)/collectionGroups/entitlements/indexes/abc',
+          queryScope: 'COLLECTION',
+          ...entry,
+        })));
+        return () => execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+          '--indexes', path.join(directory, 'indexes.json'),
+          '--composite', path.join(directory, 'active-composite.json'),
+          '--active', path.join(directory, 'active-fields.json'),
+          '--database-metadata', path.join(directory, 'database.json'),
+          '--operations', path.join(directory, 'operations.json'),
+          '--baseline-operations', path.join(directory, 'baseline.json'),
+          '--target', 'demo/(default)', '--revision', 'a'.repeat(40),
+          '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
+      };
+      const suffixed = [...fields, { fieldPath: '__name__', order: 'DESCENDING' }];
+      verify('STANDARD', [{ fields: suffixed, state: 'READY' }])();
+      verify('STANDARD', [{ fields, state: 'READY' }])();
+      verify('ENTERPRISE', [{ fields, state: 'READY' }])();
+      assert.throws(verify('STANDARD', [{ fields: suffixed, state: 'CREATING' }]));
+      assert.throws(verify('STANDARD', [{
+        fields: [...fields, { fieldPath: '__name__', order: 'ASCENDING' }], state: 'READY',
+      }]));
+      assert.throws(verify('ENTERPRISE', [{ fields: suffixed, state: 'READY' }]));
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  });
 });
