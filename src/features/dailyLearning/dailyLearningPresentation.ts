@@ -15,6 +15,9 @@ export type LessonMode =
 
 export type DailySessionTarget = 5 | 10 | 15;
 
+/** The listening pilot clips and phrase cards are English; only an English course may play and save them. */
+export const LISTEN_PILOT_LANGUAGE = 'en';
+
 export const shouldUseListenPilot = (
   mode: LessonMode | 'placement' | 'session' | null,
   allowListenPilot: boolean,

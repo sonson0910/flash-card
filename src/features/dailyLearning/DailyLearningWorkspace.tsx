@@ -219,7 +219,7 @@ export function hasMatchOnlySession(
   ).match.cards.length > 0);
 }
 const PublishedListenMvp = lazy(() => import('../listenMvp/PublishedListenMvp'));
-import { shouldUseListenPilot } from './dailyLearningPresentation';
+import { LISTEN_PILOT_LANGUAGE, shouldUseListenPilot } from './dailyLearningPresentation';
 
 export interface DailyLearningWorkspaceProps {
   readonly ownerId: string | null;
@@ -329,6 +329,10 @@ const isResolvedListenCard = (value: unknown, expectedWord: string): value is Ca
   const normalizedWord = normalizeCardWord(card.normalizedWord) || normalizeCardWord(card.word);
   return normalizedWord === expectedWord;
 };
+
+const listenPilotOffered = (courseLanguage: string): boolean => (
+  courseLanguage === LISTEN_PILOT_LANGUAGE && LISTEN_MVP_PILOT_LESSONS.length > 0
+);
 
 export const adoptListenPhraseCard = async (
   chunk: ListenMvpLessonV1['chunk'],
@@ -581,10 +585,10 @@ export default function DailyLearningWorkspace({
   const [listenPilotRoute, setListenPilotRoute] = useState(() => shouldUseListenPilot(
     initialLesson,
     true,
-    LISTEN_MVP_PILOT_LESSONS.length > 0,
+    listenPilotOffered(targetLanguage),
   ));
   const listenPilotNextIndexRef = useRef(0);
-  const listenPilotLesson = listenPilotRoute && routeLesson === 'listening'
+  const listenPilotLesson = listenPilotRoute && listenPilotOffered(targetLanguage) && routeLesson === 'listening'
     ? selectListenMvpPilotLesson(listenPilotIndex)
     : null;
   const listenScopeKey = `${ownerId ?? 'guest'}:${listenPilotLesson?.clip.id ?? 'none'}`;
@@ -624,7 +628,7 @@ export default function DailyLearningWorkspace({
     const handlePopState = () => {
       const next = readDailyLearningUrlState(window.location.href).lesson;
       setRouteLesson(next);
-      setListenPilotRoute(shouldUseListenPilot(next, true, LISTEN_MVP_PILOT_LESSONS.length > 0));
+      setListenPilotRoute(shouldUseListenPilot(next, true, listenPilotOffered(targetLanguageRef.current)));
       setHeadingFocusIntent(intent => intent + 1);
       if (!next) {
         session.close();
@@ -767,7 +771,7 @@ export default function DailyLearningWorkspace({
     allowListenPilot = true,
     maximumActivities?: DailySessionTarget,
   ) => {
-    const pilot = shouldUseListenPilot(mode, allowListenPilot, LISTEN_MVP_PILOT_LESSONS.length > 0)
+    const pilot = shouldUseListenPilot(mode, allowListenPilot, listenPilotOffered(targetLanguage))
       ? selectListenMvpPilotLesson(listenPilotNextIndexRef.current)
       : null;
     setListenPilotRoute(Boolean(pilot));
@@ -1474,7 +1478,7 @@ export default function DailyLearningWorkspace({
         reason: recommendation.reason.label,
       },
     } : {}),
-    listenPilotAvailable: LISTEN_MVP_PILOT_LESSONS.length > 0,
+    listenPilotAvailable: listenPilotOffered(targetLanguage),
     ...(ownerId && firestore ? { dailyGoals: verifiedGamification } : {}),
     ...(caughtUp
       ? { caughtUp: {} }
