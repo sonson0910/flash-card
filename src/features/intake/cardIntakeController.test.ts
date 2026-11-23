@@ -1511,6 +1511,28 @@ describe('card intake controller', () => {
   });
 });
 
+describe('quick add after the server refused another attempt of one request', () => {
+  it('starts a new request on the next try for the same word', async () => {
+    const { port } = createFakePort();
+    const clearOperation = vi.fn();
+    const draft: CardIntakeDraftPort = { read: () => '', write: vi.fn(), clear: vi.fn(), clearOperation };
+    vi.mocked(port.generateCard).mockRejectedValueOnce(
+      Object.assign(new Error('retries used'), { reason: 'operation-attempts-exhausted' }),
+    );
+    const intake = createCardIntakeController({ port, draft });
+    intake.setDraft('apple');
+
+    await expect(intake.generateDraft()).resolves.toMatchObject({ status: 'failed' });
+    await expect(intake.generateDraft()).resolves.toMatchObject({ status: 'created' });
+
+    const [first, second] = vi.mocked(port.generateCard).mock.calls.map(([request]) => request.operationId);
+    expect(first).toBeTruthy();
+    expect(second).toBeTruthy();
+    expect(second).not.toBe(first);
+    expect(clearOperation).toHaveBeenCalled();
+  });
+});
+
 describe('card creator streaming, stop and try again', () => {
   type Generated = Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>;
   const noMedia = () => Promise.resolve({ audioUrl: null, imageUrl: null });

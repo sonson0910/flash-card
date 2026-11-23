@@ -828,6 +828,11 @@ export function createCardIntakeController({
         }); } catch { /* analytics cannot block capture */ }
       }
       diagnostics.generationFailed?.(error);
+      // The server refuses a fourth attempt of one request; the next try must start a new one.
+      if (errorReason(error) === ATTEMPTS_EXHAUSTED_REASON) {
+        draftOperation = null;
+        try { draftPort?.clearOperation?.(); } catch { /* storage is optional */ }
+      }
       publishError(
         error instanceof RequestedDeckUnavailableError ? error.message : captureFailureMessage(error),
         'generation',
