@@ -1749,6 +1749,32 @@ describe('card creator streaming, stop and try again', () => {
     await intake.cardCreator.save();
     expect(persistCards.mock.calls[1][0][0]).not.toHaveProperty('translationAlternatives');
   });
+
+  it('keeps a partly generated card unfinished when the duplicate lookup fails on try again', async () => {
+    const { port, persistCards } = createFakePort();
+    const firstAttempt = deferred<never>();
+    vi.mocked(port.generateCard).mockReturnValueOnce(firstAttempt.promise);
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'apple' });
+    const pending = intake.cardCreator.generatePreview();
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledOnce());
+    const request = vi.mocked(port.generateCard).mock.calls[0][0];
+    request.onProgress?.({ operationId: request.operationId!, stage: 'field', field: 'translation', value: 'táo' });
+    firstAttempt.reject(new Error('stream broke'));
+    await pending;
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      stage: 'error', generationOutcome: { kind: 'failed', partial: true },
+    });
+
+    vi.mocked(port.findExisting).mockRejectedValueOnce(Object.assign(new Error('denied'), { code: 'permission-denied' }));
+    await expect(intake.cardCreator.retryGeneration!()).resolves.toMatchObject({ status: 'failed' });
+    expect(intake.getSnapshot().cardCreator.generationOutcome).toMatchObject({ kind: 'failed', partial: true });
+
+    intake.cardCreator.updatePreview({ explanation: 'my edit' });
+    await expect(intake.cardCreator.save()).resolves.toMatchObject({ status: 'failed' });
+    expect(persistCards).not.toHaveBeenCalled();
+  });
 });
 
 describe('card creator regeneration that ends before it finishes', () => {

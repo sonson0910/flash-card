@@ -1127,7 +1127,14 @@ export function createCardIntakeController({
       }
       const createError = createCardCreatorError('generation', captureFailureMessage(error), error);
       diagnostics.generationFailed?.(error);
-      publishCardCreator({ stage: 'error', error: createError });
+      // Details that arrived before a failed Try again stay unchecked, so an edit cannot make them savable.
+      publishCardCreator({
+        stage: 'error',
+        error: createError,
+        generationOutcome: snapshot.cardCreator.streamedFields.length > 0
+          ? { kind: 'failed', partial: true, refunded: null }
+          : null,
+      });
       if (activeOperation === 'creator-generate' && activeOperationToken === invocation) {
         activeOperation = null;
         publish({ isSubmitting: false });
