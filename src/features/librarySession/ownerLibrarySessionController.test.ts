@@ -50,6 +50,23 @@ describe('owner library session controller', () => {
     expect(controller.getSnapshot()).toMatchObject({ ownerId: 'owner-a', decks: ['IELTS'] });
   });
 
+  it('does not publish an empty deck list before the deck profile has loaded', async () => {
+    const adapter = fakeAdapter();
+    const controller = createOwnerLibrarySessionController({ adapter });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
+    expect(controller.getSnapshot()).toMatchObject({ ownerId: 'owner-a', decks: null });
+    await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
+    adapter.emitDecks('owner-a', null);
+    adapter.emitDeckError('owner-a', Object.assign(new Error('Quota limit exceeded.'), {
+      code: 'firestore/resource-exhausted',
+    }));
+
+    expect(controller.getSnapshot().decks).toBeNull();
+    adapter.emitDecks('owner-a', { decks: [] });
+    expect(controller.getSnapshot().decks).toEqual([]);
+  });
+
   it('keeps only valid presets for active deck names', async () => {
     const adapter = fakeAdapter();
     const controller = createOwnerLibrarySessionController({ adapter });
@@ -250,6 +267,41 @@ describe('owner library session controller', () => {
     await controller.migrateLegacy();
 
     expect(controller.getSnapshot().legacyIssue).toMatchObject({ kind: 'trusted-migration', retryable: false });
+  });
+
+  it('keeps a legacy upgrade that needs an administrator non-retryable when the library total changes', async () => {
+    const adapter = fakeAdapter();
+    const blocked = Object.assign(new Error('Legacy library discovery needs administrator review.'), { reason: 'administrator-review' });
+    adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: false });
+    adapter.migrateLegacyCards = async () => { throw blocked; };
+    const controller = createOwnerLibrarySessionController({ adapter });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 1 });
+    await vi.waitFor(() => expect(controller.getSnapshot().legacyPending).toBe(1));
+    await controller.migrateLegacy();
+    expect(controller.getSnapshot().legacyIssue).toMatchObject({ kind: 'trusted-migration', retryable: false });
+
+    // The learner adds a card; the pending count refreshes, the issue stays.
+    await controller.updateContext({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 2 });
+    expect(controller.getSnapshot()).toMatchObject({
+      legacyPending: 2,
+      legacyIssue: { kind: 'trusted-migration', retryable: false },
+    });
+  });
+
+  it('still clears a temporary legacy upgrade failure when the library total changes and progress reads again', async () => {
+    const adapter = fakeAdapter();
+    adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: false });
+    adapter.migrateLegacyCards = async () => { throw new Error('offline'); };
+    const controller = createOwnerLibrarySessionController({ adapter });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 1 });
+    await vi.waitFor(() => expect(controller.getSnapshot().legacyPending).toBe(1));
+    await controller.migrateLegacy();
+    expect(controller.getSnapshot().legacyIssue).toMatchObject({ kind: 'temporary', retryable: true });
+
+    await controller.updateContext({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 2 });
+    expect(controller.getSnapshot().legacyIssue).toBeNull();
   });
 
   it('isolates owner B from late owner A work and cleans up A subscription', async () => {

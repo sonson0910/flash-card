@@ -105,6 +105,8 @@ export interface CloudLibraryPageSnapshot {
   isLoading: boolean;
   cloudUnavailable: boolean;
   serverConfirmed?: boolean;
+  /** The device cache answered with an empty page and the server has not answered yet. */
+  cacheOnly?: boolean;
   canRetryAutomatically: boolean;
   error: string | null;
   stats: CloudLibraryStats;
@@ -114,6 +116,16 @@ export interface CloudLibraryPageSnapshot {
   facets: Record<string, number>;
   facetsComplete: boolean;
 }
+
+/**
+ * True while the page the learner sees is not backed by a server answer: a
+ * loaded page that only the device cache or a queued write supports, or a
+ * load that the device cache could not answer and the server has not either.
+ * A load that has not heard from either source yet is just loading.
+ */
+export const isCloudPageAwaitingServer = (
+  page: Pick<CloudLibraryPageSnapshot, 'isLoading'> & { serverConfirmed?: boolean; cacheOnly?: boolean },
+): boolean => Boolean(page.cacheOnly) || (!page.isLoading && !page.serverConfirmed);
 
 const fallbackCategories = (cards: readonly CardData[]) => cards.reduce<Record<string, number>>((counts, card) => {
   const category = card.category || 'Other';
@@ -155,6 +167,7 @@ export function createCloudLibraryPageController({
     isLoading: false,
     cloudUnavailable: false,
     serverConfirmed: false,
+    cacheOnly: false,
     canRetryAutomatically: false,
     error: null,
     stats: EMPTY_LIBRARY_STATS,
@@ -169,6 +182,9 @@ export function createCloudLibraryPageController({
   let statsGeneration = 0;
   let progressEvidenceLanguage: string | null | undefined;
   let activeOwnerId: string | null = null;
+  let activeTargetLanguage: string | null = null;
+  // Counts course switches within one owner, so a stats read that started for the course the learner left can be told apart.
+  let courseSwitchCount = 0;
   let unsubscribePage: (() => void) | null = null;
   let unsubscribeFacets: (() => void) | null = null;
   const cursors = new Map<string, Map<number, string | null>>();
@@ -180,8 +196,23 @@ export function createCloudLibraryPageController({
   };
 
   const setupOwner = (ownerId: string, targetLanguage: string | null) => {
+    if (activeOwnerId === ownerId && activeTargetLanguage !== targetLanguage) {
+      // A course switch keeps the owner but not the personal counts: show the
+      // new course's cached stats, or none, until its own stats arrive.
+      activeTargetLanguage = targetLanguage;
+      courseSwitchCount += 1;
+      progressEvidenceGeneration += 1;
+      progressEvidenceLanguage = undefined;
+      const cachedStats = safeCacheRead(() => cache.readStats(ownerId, targetLanguage), null);
+      publish({
+        stats: cachedStats?.stats ?? EMPTY_LIBRARY_STATS,
+        statsTargetLanguage: cachedStats ? targetLanguage : undefined,
+        isStatsLoading: false,
+      });
+    }
     if (activeOwnerId !== ownerId) {
       activeOwnerId = ownerId;
+      activeTargetLanguage = targetLanguage;
       ownerGeneration += 1;
       statsGeneration += 1;
       progressEvidenceGeneration += 1;
@@ -330,6 +361,7 @@ export function createCloudLibraryPageController({
       isLoading: true,
       cloudUnavailable: false,
       serverConfirmed: false,
+      cacheOnly: false,
       canRetryAutomatically: false,
       error: null,
     });
@@ -359,6 +391,7 @@ export function createCloudLibraryPageController({
           const emission = ++pageEmissionSequence;
           // An empty SDK cache cannot invalidate the last confirmed device page.
           if (page.fromCache && !page.hasPendingWrites && page.items.length === 0) {
+            publish({ cacheOnly: true });
             await applyFallback(request, generation, new Error('Cloud page is not yet confirmed.'), emission);
             return;
           }
@@ -398,6 +431,7 @@ export function createCloudLibraryPageController({
             isLoading: awaitingServerForEmptyCache,
             cloudUnavailable: false,
             serverConfirmed: !page.fromCache && !page.hasPendingWrites,
+            cacheOnly: awaitingServerForEmptyCache,
             canRetryAutomatically: false,
             error: null,
           });
@@ -427,9 +461,12 @@ export function createCloudLibraryPageController({
               const cachedStats = defaultQuery
                 ? safeCacheRead(() => cache.readStats(request.ownerId, request.query.targetLanguage ?? null), null)
                 : null;
+              // The live stats are only a base for the course they describe.
+              const requestLanguage = request.query.targetLanguage ?? null;
               const nextStats = defaultQuery
                 ? {
-                  ...(cachedStats?.stats ?? snapshot.stats),
+                  ...(cachedStats?.stats
+                    ?? (snapshot.statsTargetLanguage === requestLanguage ? snapshot.stats : EMPTY_LIBRARY_STATS)),
                   total,
                 }
                 : null;
@@ -512,6 +549,8 @@ export function createCloudLibraryPageController({
     }
     const generation = ownerGeneration;
     const requestGeneration = ++statsGeneration;
+    const requestCourseSwitch = courseSwitchCount;
+    const courseSwitched = () => courseSwitchCount !== requestCourseSwitch;
     if (refresh) publish({ statsSettledRequestId: null });
     if (progressEvidenceLanguage !== targetLanguage) {
       progressEvidenceLanguage = targetLanguage;
@@ -542,7 +581,7 @@ export function createCloudLibraryPageController({
     try {
       if (!refresh && fullStatsFresh) {
         const dueStats = await adapter.loadDueStats(ownerId, targetLanguage);
-        if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
+        if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration || courseSwitched()) return;
         const stats = {
           ...(snapshot.statsTargetLanguage === targetLanguage ? snapshot.stats : cached.stats),
           ...dueStats,
@@ -553,6 +592,12 @@ export function createCloudLibraryPageController({
       }
       const stats = await adapter.loadStats(ownerId, targetLanguage);
       if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
+      if (courseSwitched()) {
+        // The learner moved to another course while this read was in flight:
+        // keep the result for the course it describes, but do not show it.
+        safeCacheWrite(() => cache.writeStats(ownerId, targetLanguage, stats, now()));
+        return;
+      }
       const publishedStats = {
         ...stats,
         ...(progressEvidenceLanguage === targetLanguage ? {
@@ -569,7 +614,7 @@ export function createCloudLibraryPageController({
       });
       safeCacheWrite(() => cache.writeStats(ownerId, targetLanguage, publishedStats, now()));
     } catch (error) {
-      if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
+      if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration || courseSwitched()) return;
       publish({
         isStatsLoading: false,
         ...(refresh ? { statsSettledRequestId: refresh.requestId } : {}),

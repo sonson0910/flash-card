@@ -70,7 +70,21 @@ describe('library view model', () => {
     expect(getLibraryCardTier(makeCard('new'))).toBe('new');
     expect(getLibraryCardTier(makeCard('learning', { reviews: 1, difficulty: 'good' }))).toBe('learning');
     expect(getLibraryCardTier(makeCard('mastered', { reviews: 1, difficulty: 'easy' }))).toBe('mastered');
-    expect(getLibraryCardTier(makeCard('long-interval', { reviews: 1, interval: 21 }))).toBe('mastered');
+  });
+
+  it('gives a long-interval card rated Good the same class on the badge, the mastered filter, the learning tab and the counts', () => {
+    const card = makeCard('long-interval-good', { difficulty: 'good', reviews: 5, interval: 30 });
+    const mastered = buildLibraryViewModel(input({
+      cards: [card],
+      query: { ...input().query, difficulty: 'mastered' },
+      pageSize: 10,
+    }));
+    const all = buildLibraryViewModel(input({ cards: [card], pageSize: 10 }));
+
+    expect(getLibraryCardTier(card)).toBe('learning');
+    expect(mastered.filteredCards).toEqual([]);
+    expect(all.difficultySummary.easy).toBe(0);
+    expect(all.difficultySummary.good).toBe(1);
   });
 
   it('uses the scheduled review date, including the FSRS fallback, for Canvas due labels', () => {

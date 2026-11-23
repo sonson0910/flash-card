@@ -31,6 +31,26 @@ describe('shell sync status', () => {
     });
   });
 
+  it('does not report Synced while the shown library page is only a cache snapshot', () => {
+    const status = getShellSyncStatus({
+      isOnline: true,
+      error: null,
+      cloudUnavailable: false,
+      awaitingCloudConfirmation: true,
+    });
+
+    expect(status).toMatchObject({ kind: 'awaiting-cloud', healthy: false, busy: true, canRetry: false });
+    expect(status.headerLabel).not.toBe('Synced');
+    expect(status.detail).not.toBe('All changes are saved.');
+  });
+
+  it('still reports offline, paused cloud and errors ahead of an unconfirmed cache page', () => {
+    const awaitingCloudConfirmation = true;
+    expect(getShellSyncStatus({ isOnline: false, cloudUnavailable: false, awaitingCloudConfirmation }).kind).toBe('offline');
+    expect(getShellSyncStatus({ isOnline: true, cloudUnavailable: true, awaitingCloudConfirmation }).kind).toBe('cloud-paused');
+    expect(getShellSyncStatus({ isOnline: true, cloudUnavailable: false, error: 'Boom', awaitingCloudConfirmation }).kind).toBe('needs-attention');
+  });
+
   it('keeps the offline indicator visible while the browser is disconnected', () => {
     expect(getShellSyncStatus({
       isOnline: false,

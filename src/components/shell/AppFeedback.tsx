@@ -124,7 +124,7 @@ export function AppFeedback({
   const { _ } = useLingui();
   const rawSync = syncStatus ? getShellSyncStatus(syncStatus) : null;
   const sync = rawSync && syncStatus ? localizeShellSyncStatus(rawSync, _) : null;
-  const syncSignature = rawSync && !rawSync.healthy && rawSync.kind !== 'checking'
+  const syncSignature = rawSync && !rawSync.healthy && !rawSync.busy
     ? `${rawSync.kind}\u0000${rawSync.headerLabel}\u0000${rawSync.detail}`
     : null;
   const [dismissedSyncSignature, setDismissedSyncSignature] = useState<string | null>(null);

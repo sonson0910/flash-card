@@ -18,6 +18,7 @@ export interface OwnerLibrarySessionAdapter {
   readonly available: boolean;
   subscribeDeckProfile(
     ownerId: string,
+    /** `null` means the device cache has no answer yet; a profile the server confirms is absent arrives as an empty profile. */
     onDecks: (profile: unknown | null) => void,
     onError: (error: unknown) => void,
   ): () => void;
@@ -30,7 +31,8 @@ export interface OwnerLibrarySessionAdapter {
 
 export interface OwnerLibrarySessionSnapshot {
   ownerId: string | null;
-  decks: string[];
+  /** `null` until the first deck profile snapshot arrives; an empty list means the profile is loaded and has no decks. */
+  decks: string[] | null;
   coverPresets: Record<string, CoverPreset>;
   legacyPending: number;
   legacyIssue: LegacyMigrationIssue | null;
@@ -67,6 +69,9 @@ const errorField = (error: unknown, field: 'code' | 'reason'): string => {
   return typeof value === 'string' ? value.toLowerCase() : '';
 };
 
+/** Error reason for a migration the server has stopped until an administrator repairs the library. */
+export const ADMINISTRATOR_REVIEW_REASON = 'administrator-review';
+
 const TRUSTED_MIGRATION_ISSUE: LegacyMigrationIssue = {
   kind: 'trusted-migration',
   retryable: false,
@@ -75,7 +80,7 @@ const TRUSTED_MIGRATION_ISSUE: LegacyMigrationIssue = {
 
 export function getLegacyMigrationIssue(error: unknown): LegacyMigrationIssue {
   const reason = errorField(error, 'reason');
-  if (reason === 'identity-conflict') return TRUSTED_MIGRATION_ISSUE;
+  if (reason === 'identity-conflict' || reason === ADMINISTRATOR_REVIEW_REASON) return TRUSTED_MIGRATION_ISSUE;
 
   const code = errorField(error, 'code').replace(/^firestore\//, '');
   if (code === 'unauthenticated') {
@@ -160,7 +165,7 @@ export function createOwnerLibrarySessionController({
     const activationGeneration = generation;
     publish({
       ownerId,
-      decks: [],
+      decks: null,
       coverPresets: {},
       legacyPending: 0,
       legacyIssue: null,
@@ -230,7 +235,9 @@ export function createOwnerLibrarySessionController({
       ) return;
       publish({
         legacyPending: pendingFromProgress(progress, total),
-        legacyIssue: null,
+        // The browser cannot read why a discovery stopped, so a repair that
+        // needs an administrator stays shown until a new upgrade run.
+        legacyIssue: snapshot.legacyIssue?.kind === 'trusted-migration' ? snapshot.legacyIssue : null,
       });
     } catch (error) {
       if (

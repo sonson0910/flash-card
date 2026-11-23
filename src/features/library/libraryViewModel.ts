@@ -15,7 +15,8 @@ export type LibrarySortOrder = 'recent' | 'alphabetical' | 'due';
 /**
  * Canvas calls the three learner states Bud, Bloom, and Star. The card model
  * stores the compatible review fields instead, so keep this mapping in one
- * place for both the grid and its filter controls.
+ * place for both the grid and its filter controls. Mastered is the stored Easy
+ * rating, the same rule as the Mastered filter and every mastered count.
  */
 export function getLibraryCardTier(card: CardData): LibraryCardTier {
   const hasReview = (card.reviews ?? 0) > 0
@@ -23,7 +24,7 @@ export function getLibraryCardTier(card: CardData): LibraryCardTier {
     || (card.fsrs?.reps ?? 0) > 0
     || Boolean(card.nextReviewDate);
   if (!hasReview) return 'new';
-  if (card.difficulty === 'easy' || (card.interval ?? card.fsrs?.scheduledDays ?? 0) >= 21) return 'mastered';
+  if (card.difficulty === MASTERED_CARD_DIFFICULTY) return 'mastered';
   return 'learning';
 }
 

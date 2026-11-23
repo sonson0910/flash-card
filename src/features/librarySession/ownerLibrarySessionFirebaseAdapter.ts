@@ -75,9 +75,13 @@ export function createOwnerLibrarySessionFirebaseAdapter({
       if (!database) return () => undefined;
       return onSnapshot(
         doc(database, 'users', ownerId, 'profile', 'custom_decks'),
+        // Metadata changes matter for a missing document: the device cache
+        // reports it as absent until the server confirms that it is.
+        { includeMetadataChanges: true },
         snapshot => {
           if (!snapshot.exists()) {
-            onDecks(null);
+            // Only the server can say the learner has no decks; a cache miss is no answer.
+            onDecks(snapshot.metadata.fromCache ? null : { decks: [], coverPresets: {} });
             return;
           }
           onDecks(snapshot.data());

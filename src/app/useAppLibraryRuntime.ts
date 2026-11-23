@@ -71,6 +71,7 @@ export function useAppLibraryRuntime({
   const [, setHasNextCloudPage] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [cloudReadUnavailable, setCloudReadUnavailable] = useState(false);
+  const [cloudAwaitingServer, setCloudAwaitingServer] = useState(false);
   const [cloudRefresh, setCloudRefresh] = useState(0);
   const [browserOwnerKey, setBrowserOwnerKey] = useState<string | null>(null);
   const cardsRef = useRef(cards);
@@ -177,19 +178,19 @@ export function useAppLibraryRuntime({
     isCheckingCloud: Boolean(user && !identitySession.canPublishMutations && !identitySession.error),
     error: identitySession.error,
     cloudUnavailable: cloudReadUnavailable,
+    awaitingCloudConfirmation: Boolean(user) && cloudAwaitingServer,
   };
   cardsRef.current = cards;
   const cloudProjectionPublication = useMemo(() => ({
     presentCards: setCards,
-    presentCloud: (value: { total: number; hasNext: boolean; isLoading: boolean; unavailable: boolean;
+    presentCloud: (value: { total: number; hasNext: boolean; isLoading: boolean; unavailable: boolean; awaitingServer: boolean;
       stats: LibrarySessionPortStats; facets: Record<string, number>; facetsComplete: boolean }) => {
-      setCloudTotal(value.total);
-      setHasNextCloudPage(value.hasNext);
+      setCloudTotal(value.total); setHasNextCloudPage(value.hasNext);
+      setCloudAwaitingServer(value.awaitingServer);
       setIsPageLoading(value.isLoading);
       setCloudReadUnavailable(value.unavailable);
       setCloudStats(value.stats);
-      setCloudCategoryCounts(value.facets);
-      setCloudFacetsComplete(value.facetsComplete);
+      setCloudCategoryCounts(value.facets); setCloudFacetsComplete(value.facetsComplete);
     },
     resetCloud: () => {
       setCloudTotal(0);

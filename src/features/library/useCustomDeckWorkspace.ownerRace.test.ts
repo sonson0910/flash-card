@@ -293,20 +293,33 @@ describe('useCustomDeckWorkspace owner isolation', () => {
     expect(render('owner-b', null).model.decks).toEqual(['Owner B private deck']);
   });
 
-  it('keeps local deck creation available without remote writes while owner mutation access is paused', async () => {
-    const { cacheWrites, mutations, render } = createWorkspaceHarness();
+  it('keeps the owner deck cache and shows its decks until the profile has loaded', () => {
+    const { cacheWrites, render } = createWorkspaceHarness();
+    render('owner-a', null);
+    flushEffects();
+    const view = render('owner-a', null);
+    flushEffects();
+
+    expect(view.model.decks).toEqual(['Owner A private deck']);
+    expect(cacheWrites).toEqual([]);
+  });
+
+  it('refuses deck creation without remote writes or local success while owner mutation access is paused', async () => {
+    const { cacheWrites, mutations, ports, render } = createWorkspaceHarness();
     const decks = ['Owner A private deck'];
     const workspace = render('owner-a', decks, true, false);
     flushEffects();
     cacheWrites.length = 0;
 
-    await workspace.actions.createDeck('Local deck');
+    await expect(workspace.actions.createDeck('Local deck')).rejects.toThrow('not ready yet');
 
     expect(mutations.add).not.toHaveBeenCalled();
-    expect(cacheWrites).toContainEqual({ ownerId: 'owner-a', decks: [...decks, 'Local deck'] });
+    expect(cacheWrites).toEqual([]);
+    expect(ports.reportError).toHaveBeenCalledWith(expect.stringContaining('not ready yet'));
+    expect(render('owner-a', null, true, false).model.decks).toEqual(decks);
   });
 
-  it('keeps local deck deletion available without remote writes while owner mutation access is paused', async () => {
+  it('refuses deck deletion without remote writes or local success while owner mutation access is paused', async () => {
     const ownerACard: CardData = {
       id: 'owner-a-card',
       word: 'private',
@@ -320,16 +333,19 @@ describe('useCustomDeckWorkspace owner isolation', () => {
       customDeck: 'Owner A private deck',
     };
     const decks = ['Owner A private deck'];
-    const { cacheWrites, mutations, render } = createWorkspaceHarness([ownerACard]);
+    const { cacheWrites, mutations, ports, render } = createWorkspaceHarness([ownerACard]);
     const workspace = render('owner-a', decks, true, false);
     flushEffects();
     cacheWrites.length = 0;
 
-    await workspace.actions.deleteDeck('Owner A private deck');
+    await expect(workspace.actions.deleteDeck('Owner A private deck')).rejects.toThrow('not ready yet');
 
     expect(mutations.clearAssignments).not.toHaveBeenCalled();
     expect(mutations.removeProfile).not.toHaveBeenCalled();
-    expect(cacheWrites).toContainEqual({ ownerId: 'owner-a', decks: [] });
+    expect(cacheWrites).toEqual([]);
+    expect(ports.publishCards).not.toHaveBeenCalled();
+    expect(ports.reportError).toHaveBeenCalledWith(expect.stringContaining('not ready yet'));
+    expect(render('owner-a', null, true, false).model.decks).toEqual(decks);
   });
 
   it('stops an in-flight same-owner creation after mutation access is paused', async () => {
