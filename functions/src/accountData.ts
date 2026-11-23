@@ -1,6 +1,7 @@
 import type { Auth } from 'firebase-admin/auth';
 import { FieldValue, type DocumentData, type Firestore, type Query } from 'firebase-admin/firestore';
 import { ACCOUNT_PROFILE_DOCUMENT_ID } from './account-profile-contract.js';
+import { VOCABULARY_AI_BUDGET_SCOPES } from './aiRequestBudget.js';
 import { analyticsPseudonym } from './analyticsEvents.js';
 import { budgetDocumentId } from './rateLimiter.js';
 import {
@@ -9,16 +10,19 @@ import {
 import { configuredAccountFileObjects, exportedFileRows, type FileObjectStore } from './userFiles.js';
 
 const HOUR = 3_600_000;
-export const ACCOUNT_RATE_SCOPES = [
-  'gamification-save', 'library-facets-update', 'ai-card', 'ai-story', 'ai-translate',
+// Every per-owner budget document a callable can write: the literal scopes and the `-owner` twin of each
+// service scope in index.ts, plus the vocabulary AI scopes. accountRateScopes.test.ts fails when one is missing.
+export const ACCOUNT_RATE_SCOPES: readonly string[] = [
+  ...VOCABULARY_AI_BUDGET_SCOPES, 'pronunciation-assessment', 'pronunciation-assessment-service-owner',
+  'gamification-save', 'library-facets-update',
   'gemini-owner', 'image', 'image-provider-owner', 'card-create', 'card-report',
   'purchase-intent', 'card-review', 'shared-deck-create', 'shared-deck-create-service-owner',
   'shared-deck-revoke', 'legacy-library-migration', 'account-export', 'practice-session-start',
   'practice-session-complete', 'reward-frame-equip',
   'clear-library-page', 'card-headword-rename', 'bulk-card-mutation', 'course-profile',
-  'reminder-settings', 'push-token-revoke', 'push-session-end', 'ai-card-cancel', 'ai-tutor-turn',
+  'reminder-settings', 'push-token-revoke', 'push-session-end', 'ai-card-cancel',
   'account-profile', 'file-prepare', 'file-list', 'file-update', 'file-delete',
-] as const;
+];
 
 const jsonValue = (value: unknown): unknown => {
   if (value instanceof Date) return value.toISOString();
