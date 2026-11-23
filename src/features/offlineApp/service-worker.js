@@ -152,6 +152,7 @@ const protectedPath = pathname => (
   || pathname === '/browser-extension-privacy.html'
   || pathname === ACTIVE_MARKER_PATH
   || pathname.startsWith('/privacy')
+  || pathname === '/terms'
   || PROTECTED_SHELL_PATH_PATTERN.test(pathname)
 );
 
@@ -257,7 +258,9 @@ const createServiceWorkerHandlers = options => {
     if (request?.method !== 'GET') return false;
     const url = requestUrl(request, origin);
     if (!url || url.origin !== origin || protectedPath(url.pathname)) return false;
-    if (request.mode === 'navigate') return url.pathname === '/';
+    // Every app route (locale landing paths, /library, ?view=...) boots from the one cached shell;
+    // a last segment with a dot is a static document (terms.html, robots.txt) that the shell must not stand in for.
+    if (request.mode === 'navigate') return !/\.[^/]*$/.test(url.pathname);
     return !url.search && !url.hash && allowedUrls.has(url.pathname);
   };
 
