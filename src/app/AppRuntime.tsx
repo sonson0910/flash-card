@@ -15,6 +15,7 @@ import { WorkspaceLoadingPanel } from '../components/WorkspaceLoadingPanel';
 import { useAppLibraryRuntime } from './useAppLibraryRuntime';
 import { useAppLearningCoordination } from './useAppLearningCoordination';
 import { consumeLandingSignInRequest } from './landingSignInRequest';
+import { publishLandingSignInState } from '../features/landing/landingSignInState';
 import { accountDeletionNoticePath, withoutAccountDeletionNotices } from '../features/account/account-deletion-notice';
 import { AppShellMotion } from '../components/motion/AppShellMotion';
 import { useBrowserExtensionImport } from '../features/browserExtension/useBrowserExtensionImport';
@@ -135,7 +136,6 @@ export interface AppRuntimeProps {
   readonly signInRequest: number | null;
   readonly onSignInRequestHandled: (request: number) => void;
   readonly onLandingUserChange: (user: LandingUser | null) => void;
-  readonly onLandingSignInState: (state: { readonly busy: boolean; readonly error: string | null }) => void;
 }
 
 export function useOwnerScopedMessage(
@@ -168,7 +168,6 @@ export default function AppRuntime({
   signInRequest,
   onSignInRequestHandled,
   onLandingUserChange,
-  onLandingSignInState,
 }: AppRuntimeProps) {
   const { _ } = useLingui();
   const identitySession = appDependencies.sessions.libraryHooks.useIdentitySession();
@@ -465,8 +464,8 @@ export default function AppRuntime({
     } : null);
   }, [onLandingUserChange, user?.displayName, user?.email, user?.photoURL]);
   useEffect(() => {
-    onLandingSignInState({ busy: identity.isSigningIn, error: user ? null : identity.error });
-  }, [identity.error, identity.isSigningIn, onLandingSignInState, user]);
+    publishLandingSignInState({ busy: identity.isSigningIn, error: user ? null : identity.error });
+  }, [identity.error, identity.isSigningIn, user]);
   useEffect(() => {
     void consumeLandingSignInRequest(
       signInRequest,

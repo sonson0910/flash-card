@@ -37,6 +37,7 @@ import animeImmediate from "../../assets/landing/anime-immediate.jpg";
 import animeInstant from "../../assets/landing/anime-instant.jpg";
 import { CrystalWings } from "./CrystalWings";
 import { LandingSignInNotice } from "./LandingSignInNotice";
+import { useLandingSignInState } from "./landingSignInState";
 import "./landing-page.css";
 
 interface LandingPageProps {
@@ -45,8 +46,6 @@ interface LandingPageProps {
   readonly onOpenCatalog?: () => void;
   readonly onOpenProgress?: () => void;
   readonly onSignIn?: () => void | Promise<void>;
-  readonly signInBusy?: boolean;
-  readonly signInError?: string | null;
   readonly user?: {
     displayName?: string | null;
     email?: string | null;
@@ -317,7 +316,7 @@ const crystalRibbonItems = [
   { id: 'ielts-band-goal', label: <Trans {...msg({ context: 'landing.ribbon.ielts-band-goal', message: 'IELTS band goal' })} /> },
 ];
 
-function CrystalLandingHero({ onEnterApp, onSignIn, signInBusy, user, showLumi }: Pick<LandingPageProps, 'onEnterApp' | 'onSignIn' | 'signInBusy' | 'user'> & { readonly showLumi: boolean }) {
+function CrystalLandingHero({ onEnterApp, onSignIn, signInBusy, user, showLumi }: Pick<LandingPageProps, 'onEnterApp' | 'onSignIn' | 'user'> & { readonly signInBusy: boolean; readonly showLumi: boolean }) {
   const { _ } = useLingui();
   // Lumi first paints small and grows once loaded, so the headline stays the largest paint.
   const [lumiRevealed, setLumiRevealed] = useState(false);
@@ -534,10 +533,10 @@ export function LandingPage({
   onOpenLibrary,
   onOpenCatalog,
   onSignIn,
-  signInBusy = false,
-  signInError = null,
   user,
 }: LandingPageProps) {
+  const signInState = useLandingSignInState();
+  const signInBusy = signInState.busy;
   const { _ } = useLingui();
   const [activeVideo, setActiveVideo] = useState(0);
   const { mode, family, setMode } = useTheme();
@@ -595,7 +594,7 @@ export function LandingPage({
   return (
     <div className="landing-canvas min-h-[100svh] overflow-x-clip bg-[var(--sf-canvas)] text-[var(--sf-text)] selection:bg-[var(--sf-brand)] selection:text-[var(--sf-on-brand)]">
       <main>
-        {!user && <LandingSignInNotice busy={signInBusy} error={signInError} />}
+        {!user && <LandingSignInNotice {...signInState} />}
         {!user && accountDeletionStarted && <p role="status" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-[var(--sf-success)] sm:px-8 lg:px-12"><Trans {...msg({ id: 'account.data.delete.started', message: 'We could not confirm whether account deletion finished. If you can still sign in later, contact support.' })} /></p>}
         {!user && accountDeletionCacheWarning && <p role="alert" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-[var(--sf-danger)] sm:px-8 lg:px-12"><Trans {...msg({ id: 'account.data.delete.cache-warning', message: 'SonFlash couldn\'t clear saved account data from this device. Clear SonFlash site data in your browser.' })} /></p>}
         <section
