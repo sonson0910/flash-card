@@ -4,6 +4,7 @@ import {
   completePracticeSessionV1,
   parseCompletePracticeSessionV1Request,
   parseStartPracticeSessionV1Request,
+  PracticeSessionExpiredError,
   startPracticeSessionV1,
   type StartPracticeSessionV1Request,
 } from '../src/practiceSessionPersistence.js';
@@ -213,6 +214,26 @@ describe('practice session persistence', () => {
     await expect(completePracticeSessionV1(test.database, 'owner', {
       ...completion, timeZone: 'Asia/Ho_Chi_Minh',
     })).rejects.toThrow(/fingerprint/i);
+  });
+
+  it('rejects a completion after the session expired with a typed error and writes nothing', async () => {
+    const test = harness({
+      'users/owner/cards/card-1': card('card-1', 'hello', 'xin chào'),
+      'users/owner/cards/card-2': card('card-2', 'bye', 'tạm biệt'),
+    });
+    await startPracticeSessionV1(test.database, 'owner', request(), new Date('2026-09-27T10:00:00.000Z'));
+    test.writes.length = 0;
+    const completion = {
+      sessionId: 'practice-1', completionId: 'complete-1', timeZone: 'UTC',
+      answers: { responses: { 'card-1': 'hello', 'card-2': 'bye' } },
+    };
+    const late = new Date('2026-09-27T10:31:00.000Z');
+
+    await expect(completePracticeSessionV1(test.database, 'owner', completion, late))
+      .rejects.toBeInstanceOf(PracticeSessionExpiredError);
+    await expect(completePracticeSessionV1(test.database, 'owner', completion, new Date(late.getTime() + 60_000)))
+      .rejects.toBeInstanceOf(PracticeSessionExpiredError);
+    expect(test.writes).toEqual([]);
   });
 
   it('writes the level reward in the same completed practice transaction', async () => {

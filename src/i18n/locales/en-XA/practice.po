@@ -1064,7 +1064,7 @@ msgid "practice.error.ai-daily-allowance"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:315
+#: src/features/practice/usePracticeGames.ts:338
 msgid "practice.error.complete"
 msgstr ""
 
@@ -1074,12 +1074,12 @@ msgid "practice.error.configuration"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:520
+#: src/features/practice/usePracticeGames.ts:543
 msgid "practice.error.language-drill-card-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:623
+#: src/features/practice/usePracticeGames.ts:646
 msgid "practice.error.match-card-count"
 msgstr ""
 
@@ -1099,12 +1099,12 @@ msgid "practice.error.permission"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:274
+#: src/features/practice/usePracticeGames.ts:277
 msgid "practice.error.prepare"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:353
+#: src/features/practice/usePracticeGames.ts:376
 msgid "practice.error.quiz-card-count"
 msgstr ""
 
@@ -1119,7 +1119,12 @@ msgid "practice.error.service-daily-cap"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:681
+#: src/features/practice/usePracticeGames.ts:335
+msgid "practice.error.session-expired"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:704
 msgid "practice.error.shadowing-no-cards"
 msgstr ""
 
@@ -1129,7 +1134,7 @@ msgid "practice.error.sign-in"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:432
+#: src/features/practice/usePracticeGames.ts:455
 msgid "practice.error.spelling-card-count"
 msgstr ""
 
@@ -1139,13 +1144,13 @@ msgid "practice.error.story"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:580
+#: src/features/practice/usePracticeGames.ts:603
 msgid "practice.error.story-no-cards"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/practice/usePracticeGames.ts:99
-#: src/features/practice/usePracticeGames.ts:273
+#: src/features/practice/usePracticeGames.ts:276
 msgid "practice.error.timeout"
 msgstr ""
 

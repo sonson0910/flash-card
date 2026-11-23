@@ -65,6 +65,7 @@ import {
   completePracticeSessionV1 as completePracticeSessionV1ForOwner,
   parseCompletePracticeSessionV1Request,
   parseStartPracticeSessionV1Request,
+  PracticeSessionExpiredError,
   startPracticeSessionV1 as startPracticeSessionV1ForOwner,
 } from './practiceSessionPersistence.js';
 import { equipOwnedFrame as equipOwnedFrameForOwner } from './verifiedGamification.js';
@@ -1466,6 +1467,9 @@ export const completePracticeSessionV1 = onCall({
   try {
     return await completePracticeSessionV1ForOwner(database, userId, input, new Date());
   } catch (error) {
+    if (error instanceof PracticeSessionExpiredError) {
+      throw new HttpsError('failed-precondition', error.message, { reason: 'practice-session-expired' });
+    }
     if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
     console.error('Practice session completion failed.', {
       errorName: error instanceof Error ? error.name : 'UnknownError',

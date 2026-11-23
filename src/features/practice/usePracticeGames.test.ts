@@ -161,6 +161,7 @@ const renderPracticeGames = (
       })),
     },
     openView: vi.fn(),
+    closeView: vi.fn(),
     reportError: vi.fn(),
     onAuthoritativeOutcome: vi.fn(),
   };
@@ -729,6 +730,90 @@ describe('usePracticeGames', () => {
     expect(dependencies.reportError).not.toHaveBeenCalled();
     expect(dependencies.onAuthoritativeOutcome).not.toHaveBeenCalled();
     expect(render().showQuizResults).toBe(false);
+  });
+
+  const expiredSession = () => classifyProtectedFunctionError(
+    Object.assign(new Error('Practice session has expired.'), {
+      code: 'functions/failed-precondition', details: { reason: 'practice-session-expired' },
+    }),
+    'Practice session',
+  );
+
+  it('ends a quiz whose session expired and says so instead of reporting a connection problem', async () => {
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+      dependencies.practiceSessionService.complete.mockRejectedValue(expiredSession());
+      await render().startQuiz();
+      let games = render();
+      for (let index = 0; index < games.quizQuestions.length; index += 1) {
+        games.selectQuizAnswer(games.quizQuestions[games.currentQuizIndex].correctAnswer);
+        games = render();
+        games.nextQuizQuestion();
+        games = render();
+      }
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(dependencies.reportError).toHaveBeenCalledTimes(1);
+      expect(dependencies.reportError.mock.calls[0][0]).toMatch(/new round/i);
+      expect(dependencies.reportError.mock.calls[0][0]).not.toMatch(/connection/i);
+      expect(dependencies.closeView).toHaveBeenCalledOnce();
+      expect(render().quizQuestions).toEqual([]);
+      expect(render().showQuizResults).toBe(false);
+      expect(render().quizCompletionSaving).toBe(false);
+      expect(dependencies.practiceSessionService.complete).toHaveBeenCalledTimes(1);
+    } finally {
+      consoleWarn.mockRestore();
+    }
+  });
+
+  it('ends a spelling round whose session expired instead of keeping the last answer open', async () => {
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+      dependencies.practiceSessionService.complete.mockRejectedValue(expiredSession());
+      await render().startSpelling();
+      let games = render();
+      for (let index = 0; index < games.spellingCards.length; index += 1) {
+        games.setSpellingInput(games.spellingCards[games.currentSpellingIndex].word);
+        games = render();
+        games.checkSpelling({ preventDefault: vi.fn() } as never);
+        games = render();
+        games.nextSpelling();
+        games = render();
+      }
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(dependencies.reportError.mock.calls[0][0]).toMatch(/new round/i);
+      expect(dependencies.closeView).toHaveBeenCalledOnce();
+      expect(render().spellingCards).toEqual([]);
+      expect(render().showSpellingResults).toBe(false);
+      expect(render().spellingCompletionSaving).toBe(false);
+      expect(dependencies.practiceSessionService.complete).toHaveBeenCalledTimes(1);
+    } finally {
+      consoleWarn.mockRestore();
+    }
+  });
+
+  it('ends a Word Match whose session expired instead of offering the same completion again', async () => {
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+      dependencies.practiceSessionService.complete.mockRejectedValue(expiredSession());
+      await render().startMatch();
+      const pairs = render().spellingCards.map(({ id: cardId, word, translation }) => ({ cardId, word, translation }));
+
+      expect(await render().completeMatch(pairs)).toBeNull();
+
+      expect(dependencies.reportError.mock.calls[0][0]).toMatch(/new round/i);
+      expect(dependencies.closeView).toHaveBeenCalledOnce();
+      expect(await render().completeMatch(pairs)).toBeNull();
+      expect(dependencies.practiceSessionService.complete).toHaveBeenCalledTimes(1);
+    } finally {
+      consoleWarn.mockRestore();
+    }
   });
 
   it('keeps the final spelling answer open after a failed save and retries the same completion', async () => {

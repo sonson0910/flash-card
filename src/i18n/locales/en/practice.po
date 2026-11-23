@@ -1064,7 +1064,7 @@ msgid "practice.error.ai-daily-allowance"
 msgstr "You have used today’s extra AI allowance. Try again after 00:00 Vietnam time."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:315
+#: src/features/practice/usePracticeGames.ts:338
 msgid "practice.error.complete"
 msgstr "Could not save this practice result. Check your connection and try again."
 
@@ -1074,12 +1074,12 @@ msgid "practice.error.configuration"
 msgstr "Story generation is unavailable. Please try again later."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:520
+#: src/features/practice/usePracticeGames.ts:543
 msgid "practice.error.language-drill-card-count"
 msgstr "You need at least 1 card for a language drill."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:623
+#: src/features/practice/usePracticeGames.ts:646
 msgid "practice.error.match-card-count"
 msgstr "You need at least 4 cards to play Word Match."
 
@@ -1099,12 +1099,12 @@ msgid "practice.error.permission"
 msgstr "Story generation was rejected by the protected cloud service. Reload and sign in again; if it continues, App Check or access rules need administrator attention."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:274
+#: src/features/practice/usePracticeGames.ts:277
 msgid "practice.error.prepare"
 msgstr "Could not prepare this activity. Check your connection and try again."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:353
+#: src/features/practice/usePracticeGames.ts:376
 msgid "practice.error.quiz-card-count"
 msgstr "You need at least 4 learned cards to start a quiz."
 
@@ -1119,7 +1119,12 @@ msgid "practice.error.service-daily-cap"
 msgstr "AI is paused because today’s shared limit is exhausted. Try again after 00:00 Vietnam time."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:681
+#: src/features/practice/usePracticeGames.ts:335
+msgid "practice.error.session-expired"
+msgstr "This round was open for too long, so its result could not be saved. Start a new round."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:704
 msgid "practice.error.shadowing-no-cards"
 msgstr "You need cards in your library to practice pronunciation shadowing."
 
@@ -1129,7 +1134,7 @@ msgid "practice.error.sign-in"
 msgstr "Sign in again to generate a story."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:432
+#: src/features/practice/usePracticeGames.ts:455
 msgid "practice.error.spelling-card-count"
 msgstr "You need at least 4 learned cards for spelling practice."
 
@@ -1139,13 +1144,13 @@ msgid "practice.error.story"
 msgstr "Could not generate a story right now. Please try again."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:580
+#: src/features/practice/usePracticeGames.ts:603
 msgid "practice.error.story-no-cards"
 msgstr "There are no suitable cards for an AI story yet. Add or sync some cards, then try again."
 
 #. js-lingui-explicit-id
 #: src/features/practice/usePracticeGames.ts:99
-#: src/features/practice/usePracticeGames.ts:273
+#: src/features/practice/usePracticeGames.ts:276
 msgid "practice.error.timeout"
 msgstr "Preparing this activity took too long. Check your connection and try again."
 

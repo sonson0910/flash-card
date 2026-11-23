@@ -403,6 +403,7 @@ export function usePracticeSession({
     practicePairScopeKey,
     onAuthoritativeOutcome,
     openView: openPracticeView,
+    closeView: () => openView('library'),
     reportError,
     normalizeAnswer: languageProfile.normalize,
   });

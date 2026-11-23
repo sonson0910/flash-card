@@ -114,6 +114,16 @@ describe('protected Firebase Functions failure classification', () => {
     expect(failure.message).not.toMatch(/out of sync/);
     expect(failure.message).toMatch(/upgrad/i);
   });
+  it('reports an expired practice session as final instead of a deployment mismatch', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), {
+        code: 'functions/failed-precondition', details: { reason: 'practice-session-expired' },
+      }), 'Practice session',
+    );
+    expect(failure).toMatchObject({ reason: 'practice-session-expired', retryable: false });
+    expect(failure.message).not.toMatch(/out of sync/);
+    expect(failure.message).toMatch(/expired/i);
+  });
   it.each([
     ['service-daily-cap', 'hạn mức chung'],
     ['account-daily-spend', 'hạn mức chi phí AI'],

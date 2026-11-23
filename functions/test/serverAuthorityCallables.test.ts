@@ -105,6 +105,17 @@ describe('server authority callables', () => {
     ]);
   });
 
+  it('names an expired practice session so the client can stop retrying it', async () => {
+    const { PracticeSessionExpiredError } = await import('../src/practiceSessionPersistence.js');
+    completePracticeSessionV1ForOwner.mockRejectedValue(new PracticeSessionExpiredError());
+
+    await expect(handlers.completePracticeSessionV1.run({ auth: { uid: 'owner-1' }, data: {} }))
+      .rejects.toMatchObject({
+        code: 'failed-precondition',
+        details: { reason: 'practice-session-expired' },
+      });
+  });
+
   it('equips an owned frame through the server and rejects malformed input before a rate-limit write', async () => {
     await expect(handlers.equipOwnedFrame.run({ auth: { uid: 'owner-1' }, data: { frameId: 'crimson-wing' } }))
       .resolves.toEqual({ equippedFrameId: 'crimson-wing' });
