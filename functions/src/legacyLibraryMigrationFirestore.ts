@@ -893,6 +893,39 @@ const verifyFreshManifest = (
   }
 };
 
+const manifestCanonicalCardId = (group: Pick<LegacyLibraryIdentityGroup, 'identity' | 'normalizedWord'>): string => (
+  canonicalCleanupCardId({
+    key: group.identity,
+    normalizedWord: group.normalizedWord,
+    ...(group.identity.startsWith('lexeme:') ? { lexemeId: group.identity.slice('lexeme:'.length) } : {}),
+  })
+);
+
+/**
+ * Reservations are permanent and outlive their cards, so an owner can hold
+ * more reservations than the manifest has groups: one for every word whose
+ * card was deleted. Those are left alone. The only reservation that conflicts
+ * with the migration is one for a different identity that names a card the
+ * migration keeps, because two identities would then own the same card.
+ */
+const assertNoOtherReservationNamesMigratedCard = (
+  reservations: readonly { id: string; data(): DocumentData | undefined }[],
+  groups: readonly LegacyLibraryIdentityGroup[],
+  reason: 'reservation' | 'final-scan',
+): void => {
+  const manifestReservationIds = new Set(groups.map(group => (
+    createLegacyReservationId(reservationKey(group.identity, group.normalizedWord))
+  )));
+  const keptCardIds = new Set(groups.map(manifestCanonicalCardId));
+  for (const reservation of reservations) {
+    if (manifestReservationIds.has(reservation.id)) continue;
+    const cardId = reservation.data()?.cardId;
+    if (typeof cardId === 'string' && keptCardIds.has(cardId)) {
+      throw new LegacyLibraryMigrationConflictError(reason);
+    }
+  }
+};
+
 const beginMigrationFence = async (
   database: Firestore,
   ownerId: string,
@@ -1520,7 +1553,7 @@ const scanFinalLibrary = async (
   }
   if (cardsByWord.size !== groups.length) throw new LegacyLibraryMigrationConflictError('final-scan');
   const reservationsSnapshot = await ownerRef(database, ownerId).collection('card_reservations').get();
-  if (reservationsSnapshot.size !== groups.length) throw new LegacyLibraryMigrationConflictError('final-scan');
+  assertNoOtherReservationNamesMigratedCard(reservationsSnapshot.docs, groups, 'final-scan');
   for (const group of groups) {
     const cards = cardsByWord.get(group.identity) ?? [];
     const canonicalId = canonicalCleanupCardId({
@@ -1716,6 +1749,13 @@ export async function applyLegacyLibraryMigration(
     if (fence.appliedGroupCount === 0) {
       const fresh = await readFreshLibrary(database, ownerId);
       verifyFreshManifest(fresh, job, groups);
+      // Checked before the first group is applied, while the fence can still
+      // be released without a rollback. The final scan repeats it.
+      assertNoOtherReservationNamesMigratedCard(
+        (await ownerRef(database, ownerId).collection('card_reservations').select('cardId').get()).docs,
+        groups,
+        'reservation',
+      );
       await ensureBackupRoot(database, ownerId, fence);
       for (const group of groups) {
         fence = await renewMigrationFence(database, ownerId, fence);

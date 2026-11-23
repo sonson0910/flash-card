@@ -251,6 +251,62 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
       .toEqual({ schemaVersion: 1, cardId: 'legacy-capital', normalizedWord: 'migrate' });
   });
 
+  it('completes and rolls back when the owner still holds a reservation for a deleted card', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const jobId = 'leftover-reservation-v3';
+    // Reservations outlive their cards: this one remains from a card the learner deleted.
+    const leftoverReference = owner.collection('card_reservations')
+      .doc(createHash('sha256').update('bye').digest('hex'));
+    const leftover = { schemaVersion: 1, cardId: 'word-bye', normalizedWord: 'bye' };
+    await leftoverReference.set(leftover);
+    const store = createFirestoreLegacyLibraryDiscoveryStore(database);
+    let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 2 });
+    while (discovery.phase === 'discover') {
+      discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 2 });
+    }
+    const sourceRevision = String((await owner.collection('admin_library_migration_jobs').doc(jobId).get())
+      .data()?.sourceRevision ?? '');
+
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision }))
+      .resolves.toMatchObject({ complete: true, phase: 'complete', groupCount: 2 });
+
+    expect((await owner.collection('profile').doc('library_migration_fence').get()).exists).toBe(false);
+    expect((await owner.collection('profile').doc('library_state').get()).data()?.libraryMigrationFenceActive)
+      .toBeUndefined();
+    expect((await owner.collection('cards').orderBy('__name__').get()).docs.map(document => document.id))
+      .toEqual(['word-migrate', 'word-quite']);
+    expect((await owner.collection('card_reservations').get()).size).toBe(3);
+    expect((await leftoverReference.get()).data()).toEqual(leftover);
+
+    await expect(rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, sourceRevision))
+      .resolves.toMatchObject({ complete: true });
+    expect((await owner.collection('cards').orderBy('__name__').get()).docs.map(document => document.id))
+      .toEqual(['duplicate-strong', 'duplicate-weak', 'legacy-capital']);
+    expect((await leftoverReference.get()).data()).toEqual(leftover);
+  });
+
+  it('refuses before any change when another word\'s reservation names a card the migration would keep', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const jobId = 'foreign-reservation-v3';
+    await owner.collection('card_reservations').doc(createHash('sha256').update('relocate').digest('hex'))
+      .set({ schemaVersion: 1, cardId: 'word-migrate', normalizedWord: 'relocate' });
+    const store = createFirestoreLegacyLibraryDiscoveryStore(database);
+    let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 2 });
+    while (discovery.phase === 'discover') {
+      discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 2 });
+    }
+    const sourceRevision = String((await owner.collection('admin_library_migration_jobs').doc(jobId).get())
+      .data()?.sourceRevision ?? '');
+
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision }))
+      .rejects.toMatchObject({ name: 'LegacyLibraryMigrationConflictError', reason: 'reservation' });
+
+    expect((await owner.collection('profile').doc('library_migration_fence').get()).exists).toBe(false);
+    expect((await owner.collection('cards').orderBy('__name__').get()).docs.map(document => document.id))
+      .toEqual(['duplicate-strong', 'duplicate-weak', 'legacy-capital']);
+    expect((await owner.collection('card_tombstones').get()).empty).toBe(true);
+  });
+
   it('resumes legacy identity-less groups and plans, including a 256-character word', async () => {
     const owner = database.collection('users').doc(OWNER_ID);
     const word = 'a'.repeat(256);
