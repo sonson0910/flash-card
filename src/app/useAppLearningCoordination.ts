@@ -12,11 +12,7 @@ import type { SharedDeckCoursePort } from '../features/sharing/shareCourseMatchi
 import { useCustomDeckWorkspace } from '../features/library/useCustomDeckWorkspace';
 import { useLibraryScreenContract } from '../features/library/useLibraryScreenContract';
 import { canStartLibraryClear } from '../features/library/libraryMutationRecovery';
-import {
-  existingCardRevealState,
-  forgetRecentlyPromotedCard,
-  patchRecentlyPromotedCards,
-} from '../features/library/libraryPresentation';
+import { existingCardRevealState, forgetRecentlyPromotedCard, patchRecentlyPromotedCards } from '../features/library/libraryPresentation';
 import {
   cloudFacetsCacheKey,
   cloudPageCacheKey,
@@ -233,6 +229,7 @@ export function useAppLearningCoordination({
         void mediaHydration.actions.hydrateCard(card, { force: true, allowInactive: true });
       },
       rememberPromoted: card => ports.recentlyPromotedCardsRef.current.set(cardWordKey(card), card),
+      forgetPromoted: card => forgetRecentlyPromotedCard(ports.recentlyPromotedCardsRef.current, card.id),
       resetCatalog: () => catalogActions.replaceQuery(existingCardRevealState()),
       resetCloudPage: () => { catalogActions.goToPage(1); ports.refreshCloud(); },
       updateCloudStats: ports.setCloudStats,

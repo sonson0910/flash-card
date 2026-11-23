@@ -50,6 +50,7 @@ const intakeOptions = (): CardIntakePortOptions => ({
   patchCard: async () => undefined,
   hydrateExisting: vi.fn(),
   rememberPromoted: vi.fn(),
+  forgetPromoted: vi.fn(),
   resetCatalog: vi.fn(),
   resetCloudPage: vi.fn(),
   updateCloudStats: vi.fn(),

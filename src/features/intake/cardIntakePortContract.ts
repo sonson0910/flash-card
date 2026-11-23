@@ -27,6 +27,8 @@ export interface CardIntakePortOptions {
   patchCard(cardId: string, fields: Partial<CardData>, source?: CardData): Promise<void>;
   hydrateExisting(card: CardData): void;
   rememberPromoted(card: CardData): void;
+  /** Stops pinning a card to page 1, for a new card whose save failed. */
+  forgetPromoted(card: CardData): void;
   resetCatalog(): void;
   resetCloudPage(): void;
   updateCloudStats(update: (current: CardIntakeCloudStats) => CardIntakeCloudStats): void;

@@ -461,6 +461,7 @@ export function createCardIntakePipeline({
         onSettlement?.(index, 'failed');
         if (sessionGuard.isCurrent(session)) {
           const latest = getContext();
+          latest.forgetPromoted(candidate);
           latest.publishCards(latest.getCards().filter(existing => existing.id !== candidate.id));
           latest.setCloudUnavailable(true);
           latest.notify('The card could not be saved. Check your connection and try again.');

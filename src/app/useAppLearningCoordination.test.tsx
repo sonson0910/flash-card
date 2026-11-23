@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const captured = vi.hoisted(() => ({
   learning: null as null | { library: { publication: { remove(id: string): void; clear(): void; patch(id: string, f: object): void; restore(c: object): void } } },
-  intake: null as null | { intake: { rememberPromoted(card: object): void } },
+  intake: null as null | { intake: { rememberPromoted(card: object): void; forgetPromoted(card: object): void } },
   decks: null as null | { ports: { publishCards(cardIds: ReadonlySet<string>, fields: object): void } },
 }));
 
@@ -184,6 +184,16 @@ describe('recently promoted overlay follows later library mutations', () => {
       captured.intake!.intake.rememberPromoted(apple);
       captured.decks!.ports.publishCards(new Set([apple.id]), { customDeck: null });
       expect(page1([]).find(c => c.id === apple.id)?.customDeck).toBeNull();
+    } finally { await act(async () => { root.unmount(); }); }
+  });
+
+  it('does not keep a new card whose save failed on page 1', async () => {
+    const { root, page1 } = await renderCoordination();
+    try {
+      const apple = card('apple', { sortTouchedAt: undefined });
+      captured.intake!.intake.rememberPromoted(apple);
+      captured.intake!.intake.forgetPromoted(apple);
+      expect(page1([card('banana', { sortTouchedAt: undefined })]).map(c => c.word)).toEqual(['banana']);
     } finally { await act(async () => { root.unmount(); }); }
   });
 
