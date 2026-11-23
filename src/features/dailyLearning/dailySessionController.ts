@@ -1,5 +1,5 @@
 import type { ReviewRatingValue } from '../../types/card';
-import type { LearningStateOutcome, LearningStatePublication } from '../learning/learningStateController';
+import { reviewConflictMessage, type LearningStateOutcome, type LearningStatePublication } from '../learning/learningStateController';
 import type { Exercise, ExerciseAnswer } from './exerciseEngine';
 import {
   createLessonState,
@@ -74,7 +74,10 @@ export function createDailySessionController({
       try {
         const outcome = await reviewCard(review.itemId, review.rating, review.operationId);
         if (outcome?.status !== 'published') {
-          throw new Error(`The review was not saved (${outcome?.status ?? 'missing outcome'}).`);
+          const conflictMessage = outcome?.status === 'review-conflict'
+            ? reviewConflictMessage(outcome.result.reviewConflictReason)
+            : undefined;
+          throw new Error(conflictMessage ?? `The review was not saved (${outcome?.status ?? 'missing outcome'}).`);
         }
         if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
         if (typeof outcome.result.xpAwarded !== 'number') {

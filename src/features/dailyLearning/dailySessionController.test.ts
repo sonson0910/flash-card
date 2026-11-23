@@ -146,6 +146,21 @@ describe('daily session controller', () => {
     await expect(controller.rate('good')).resolves.toEqual({ status: 'advanced', xpAwarded: 2, studyTimeMs: 4200 });
   });
 
+  it('tells the learner when a review was refused because another device reviewed the card later', async () => {
+    const controller = createDailySessionController({
+      reviewCard: vi.fn(async () => ({
+        status: 'review-conflict' as const,
+        result: { reviewConflictReason: 'stale-review', reviewConflictTerminal: true } as never,
+      })),
+    });
+    controller.start([exercise('card-a'), exercise('card-b')]);
+    controller.submit('word-card-a');
+
+    await expect(controller.rate('good')).resolves.toEqual({
+      status: 'failed', error: 'This card was reviewed on another device.',
+    });
+  });
+
   it('returns the server award of 2 XP after an advanced review', async () => {
     const controller = createDailySessionController({ reviewCard: vi.fn(async () => published(2)) });
     controller.start([exercise('card-a'), exercise('card-b')]);

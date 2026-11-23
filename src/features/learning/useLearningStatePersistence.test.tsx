@@ -336,7 +336,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(result).toMatchObject({ reviewFinality: 'committed', xpAwarded: 2 });
   });
 
-  it('applies a replayed receipt without crediting its study time or showing its streak change again', async () => {
+  it('applies a replayed receipt without crediting its study time or showing its streak change a second time', async () => {
     const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
     const fields = scheduleReview(card, 'good', reviewedAt);
     const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
@@ -365,7 +365,8 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     }, mutation.operationId, card);
 
     mocks.applyReviewViaCallable.mockResolvedValueOnce({ ...firstResponse, duplicate: true, replayed: true });
-    const replayed = createHarness();
+    const replayed = delivered;
+    replayed.onReviewOutcome.mockClear();
     const result = await replayed.persistence.persist(mutation);
     expect(result).toMatchObject({
       reviewFinality: 'committed',
@@ -376,6 +377,42 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     // The totals are authoritative and safe to apply again; the change itself was already shown.
     expect(replayed.onReviewOutcome).toHaveBeenCalledTimes(1);
     expect(replayed.onReviewOutcome).toHaveBeenCalledWith({ gamification: totals }, mutation.operationId, card);
+  });
+
+  it('delivers the study time, streak change and ceremonies of a replayed receipt whose first response was lost', async () => {
+    const fields = scheduleReview(card, 'good', new Date('2026-08-24T00:00:00.000Z'));
+    const authoritative = { ...card, ...fields, revision: 4, libraryEpoch: 2 };
+    const gamification = {
+      xp: 642, level: 3, streak: 7, studyDay: '2026-08-24', events: ['streak' as const],
+      streakChange: { freezesUsed: 0, freezesEarned: 1, milestone: 7 }, studyTimeMs: 30_000,
+    };
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (
+      command: ReviewCommand,
+      apply: (value: ReviewCommand) => Promise<ReviewApplyResult>,
+    ) => apply(command));
+    mocks.applyReviewViaCallable
+      .mockRejectedValueOnce(Object.assign(new Error('offline'), { code: 'unavailable' }))
+      .mockResolvedValueOnce({
+        applied: true, duplicate: true, replayed: true, xpAwarded: 2, card: authoritative,
+        gamification, ceremonyEvents: ['streak'],
+      });
+    const mutation: LearningStateMutation = {
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    };
+    const harness = createHarness();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      await expect(harness.persistence.persist(mutation)).rejects.toThrow('offline');
+    } finally {
+      warn.mockRestore();
+    }
+
+    await expect(harness.persistence.persist(mutation)).resolves.toMatchObject({
+      reviewFinality: 'committed', xpAwarded: 2, studyTimeMs: 30_000,
+    });
+    expect(harness.onReviewOutcome).toHaveBeenCalledOnce();
+    expect(harness.onReviewOutcome).toHaveBeenCalledWith({ gamification, ceremonyEvents: ['streak'] }, mutation.operationId, card);
   });
 
   it('reports the pinned command rating when a duplicate receipt returns a later card state', async () => {
@@ -730,6 +767,30 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       .resolves.toMatchObject({ reviewFinality: 'committed', xpAwarded: 2 });
     expect(commands.map(command => command.opId)).toEqual([mutation.operationId, mutation.operationId]);
   });
+
+  for (const [reason, message] of [
+    ['stale-review', 'This card was reviewed on another device.'],
+    ['future-review-clock-skew', 'The clock on this device is ahead of the cloud. Check the date and time, then try again.'],
+    ['receipt-fingerprint-conflict', 'The card changed again just now. Try again.'],
+    ['identity-conflict', 'The card changed again just now. Try again.'],
+  ] as const) {
+    it(`reports a final ${reason} answer as a review conflict, not a cloud outage`, async () => {
+      const fields = scheduleReview(card, 'good', new Date('2026-08-24T00:00:00.000Z'));
+      mocks.applyReviewWithConflictRecovery.mockResolvedValue({ applied: false, reason });
+      const harness = createHarness();
+      const mutation: LearningStateMutation = {
+        ...reviewMutation, operation: 'review', fields,
+        fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+      };
+
+      await expect(harness.persistence.persist(mutation)).resolves.toMatchObject({
+        reviewFinality: 'conflict', reviewConflictTerminal: true, reviewConflictReason: reason,
+      });
+      expect(harness.options.setCloudUnavailable).not.toHaveBeenCalled();
+      expect(harness.reportError).toHaveBeenCalledOnce();
+      expect(harness.reportError).toHaveBeenCalledWith(message);
+    });
+  }
 
   it('marks the cloud unavailable and rethrows on a retryable network failure', async () => {
     const networkError = Object.assign(new Error('offline'), { code: 'unavailable' });

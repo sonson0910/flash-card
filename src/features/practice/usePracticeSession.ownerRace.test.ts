@@ -1595,6 +1595,25 @@ describe('usePracticeSession owner isolation', () => {
     expect(feedbackSounds.success).toHaveBeenCalledOnce();
   });
 
+  it('tells the learner that another device reviewed the card when the server refused a stale review', async () => {
+    const { learning, render } = createSessionHarness([card(1)]);
+    learning.reviewCard.mockResolvedValueOnce({
+      status: 'review-conflict',
+      result: { reviewConflictReason: 'stale-review', reviewConflictTerminal: true } as never,
+    } as never);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+
+    await expect(session.commands.submitStudyRating('good')).resolves.toBe('retryable-error');
+    session = render();
+
+    expect(session.study.reviewError).toBe('This card was reviewed on another device. Choose a rating to try again.');
+  });
+
   it('retires a terminal conflict intent before the next Study retry', async () => {
     const { learning, render } = createSessionHarness([card(1)]);
     learning.reviewCard

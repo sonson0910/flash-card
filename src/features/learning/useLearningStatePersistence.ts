@@ -36,6 +36,7 @@ import {
   writeLocalValue,
 } from '../library/libraryStorage';
 import { planClearFailureRecovery, runEpochProtectedLibraryClear } from '../library/libraryMutationRecovery';
+import { reviewConflictMessage } from './learningStateController';
 import type {
   LearningRestoreConflictReason,
   LearningStateMutation,
@@ -57,7 +58,7 @@ const resultFor = (
   mutation: LearningStateMutation,
   publication: LearningStatePublication = mutation.publication,
   reviewFinality?: LearningStateMutationResult['reviewFinality'],
-  extras: Pick<LearningStateMutationResult, 'deleteReceipt' | 'restoreFinality' | 'restoreConflictReason' | 'reviewConflictTerminal' | 'xpAwarded' | 'studyTimeMs' | 'reviewRating' | 'reviewedAt'> = {},
+  extras: Pick<LearningStateMutationResult, 'deleteReceipt' | 'restoreFinality' | 'restoreConflictReason' | 'reviewConflictTerminal' | 'reviewConflictReason' | 'xpAwarded' | 'studyTimeMs' | 'reviewRating' | 'reviewedAt'> = {},
 ): LearningStateMutationResult => ({
   ownerKey: mutation.ownerKey,
   operationId: mutation.operationId,
@@ -150,8 +151,9 @@ const duplicateReceiptIsOlderThanSource = (
   return Number.isFinite(sourceTime) && Number.isFinite(receiptTime) && sourceTime > receiptTime;
 };
 
-// A replayed review receipt still carries the authoritative totals, which are safe to apply again,
-// but its credited study time and streak change were already delivered with the first response.
+// A replayed receipt repeats an operation the server applied earlier. When this client already received that
+// operation's outcome, only the authoritative totals are applied again: its credited study time, streak change
+// and ceremonies were delivered the first time. When the first response never arrived, they are delivered now.
 const withoutReplayedChanges = ({
   streakChange: _streakChange,
   studyTimeMs: _studyTimeMs,
@@ -169,10 +171,12 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
   latestRef.current = options;
   const restoreStatsOperationsRef = useRef(new Set<string>());
   const reviewCommandsRef = useRef(new Map<string, ReviewCommand>());
+  const deliveredReviewOutcomesRef = useRef(new Set<string>());
   const unresolvedReviewCommandKeysRef = useRef(new Set<string>());
   const reviewCommandOwnerRef = useRef(options.ownerId);
   if (reviewCommandOwnerRef.current !== options.ownerId) {
     reviewCommandsRef.current.clear();
+    deliveredReviewOutcomesRef.current.clear();
     unresolvedReviewCommandKeysRef.current.clear();
     reviewCommandOwnerRef.current = options.ownerId;
   }
@@ -218,6 +222,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         let requestedReviewRating: ReviewRating | undefined;
         let reviewCommandKey: string | undefined;
         let reviewConflictTerminal = false;
+        let reviewConflictReason: string | undefined;
         let staleDuplicatePublication = false;
 
         try {
@@ -290,14 +295,20 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
                   id: mutation.cardId,
                 }
               : applySuccessfulPatchMetadata(source!, mutation.fields, metadata, mutation.fieldMask);
-            // A replayed receipt repeats an operation the server applied earlier. Its card and totals
-            // still count, but its study time, streak change and ceremonies are neither added nor
-            // shown a second time.
-            const replayed = reviewResult?.replayed === true;
-            const outcomeGamification = reviewResult?.gamification && replayed
+            // A replay of an operation whose outcome this client already received must not add its study
+            // time again or show its streak change and ceremonies a second time.
+            const deliveredKey = `${ownerId}\u0000${mutation.operationId}`;
+            const alreadyDelivered = reviewResult?.replayed === true
+              && deliveredReviewOutcomesRef.current.has(deliveredKey);
+            const outcomeGamification = reviewResult?.gamification && alreadyDelivered
               ? withoutReplayedChanges(reviewResult.gamification)
               : reviewResult?.gamification;
-            const outcomeCeremonies = replayed ? undefined : reviewResult?.ceremonyEvents;
+            const outcomeCeremonies = alreadyDelivered ? undefined : reviewResult?.ceremonyEvents;
+            if (mutation.operation === 'review' && reviewResult && !alreadyDelivered) {
+              const delivered = deliveredReviewOutcomesRef.current;
+              if (delivered.size >= MAX_RETAINED_REVIEW_COMMANDS) delivered.delete(delivered.values().next().value as string);
+              delivered.add(deliveredKey);
+            }
             if (mutation.operation === 'review' && reviewResult
               && (outcomeGamification || outcomeCeremonies)
               && latestRef.current.ownerId === ownerId) {
@@ -343,18 +354,22 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             }
             current.reportError('This card is no longer available in your library.');
           } else {
-            if (mutation.operation === 'review' && result.reason !== 'revision-conflict') {
-              reviewFinality = 'conflict';
-              reviewConflictTerminal = true;
-            }
-            current.reportError(result.reason === 'future-library-epoch'
+            const message = reviewConflictMessage(result.reason) ?? (result.reason === 'future-library-epoch'
               ? 'Cloud library generation changed. Try again in a moment.'
               : 'The card changed again just now. Try again.');
-            const rejection = new Error(`Card mutation rejected: ${result.reason}.`);
-            if (reviewConflictTerminal) {
-              (rejection as Error & { reviewConflictTerminal?: boolean }).reviewConflictTerminal = true;
+            if (mutation.operation === 'review' && result.reason !== 'revision-conflict') {
+              // The server gave a final answer about this review, so the cloud is healthy: say what happened
+              // and let the retry be a new review instead of reporting an outage.
+              reviewFinality = 'conflict';
+              reviewConflictTerminal = true;
+              reviewConflictReason = result.reason;
+              // The server holds no receipt for a review it refused, so a retry of this question is a new review at the new time.
+              if (reviewCommandKey) reviewCommandsRef.current.delete(reviewCommandKey);
+              current.reportError(message);
+            } else {
+              current.reportError(message);
+              throw new Error(`Card mutation rejected: ${result.reason}.`);
             }
-            throw rejection;
           }
         } catch (cause) {
           if (mutation.operation === 'review' && reviewConflictTerminal) {
@@ -416,6 +431,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
         }
         return resultFor(mutation, publication, reviewFinality, {
           ...(reviewConflictTerminal ? { reviewConflictTerminal: true } : {}),
+          ...(reviewConflictReason ? { reviewConflictReason } : {}),
           ...(xpAwarded === undefined ? {} : { xpAwarded }),
           ...(studyTimeMs === undefined ? {} : { studyTimeMs }),
           ...(reviewRating === undefined ? {} : { reviewRating }),
