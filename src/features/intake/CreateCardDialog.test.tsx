@@ -7,6 +7,7 @@ import { createRadixDialogPassthroughMock } from '../../testing/radix-dialog-pas
 import {
   CreateCardDialog,
   cardCreatorErrorMessage,
+  manualDraftForEntry,
   type CreateCardDialogProps,
 } from './CreateCardDialog';
 import {
@@ -423,5 +424,25 @@ describe('cardCreatorErrorMessage', () => {
     }));
     expect(html).toContain('khoảng 20 phút');
     expect(html).toContain('Add manually');
+  });
+
+  it('carries the details of an existing preview into manual entry after a failed regeneration', () => {
+    const model = createModel({
+      open: true,
+      stage: 'error',
+      preview: card,
+      draft: { word: 'resilient', context: '', partOfSpeech: '', deck: '' },
+      error: { code: 'generation', message: 'AI quota exhausted for this period.' },
+    });
+    const blank = { word: '', deck: '', partOfSpeech: '', translation: '', explanation: '', phonetic: '', exampleSentence: '', exampleTranslation: '' };
+
+    expect(manualDraftForEntry(blank, model)).toMatchObject({
+      word: 'resilient',
+      translation: 'kiên cường',
+      explanation: card.explanation,
+      phonetic: card.phonetic,
+    });
+    expect(manualDraftForEntry({ ...blank, translation: 'typed' }, createModel({ open: true, draft: model.draft })))
+      .toMatchObject({ word: 'resilient', translation: 'typed' });
   });
 });

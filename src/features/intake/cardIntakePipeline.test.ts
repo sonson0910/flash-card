@@ -70,8 +70,9 @@ const card = (id: string) => ({
 
 const deferred = <T,>() => {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>(resolvePromise => { resolve = resolvePromise; });
-  return { promise, resolve };
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => { resolve = resolvePromise; reject = rejectPromise; });
+  return { promise, resolve, reject };
 };
 
 const createContext = (): CardIntakePortOptions => ({
@@ -1037,12 +1038,62 @@ describe('Card Intake Pipeline contract', () => {
     const persistence = pipeline.persistCards([candidate], 'generate');
     await vi.advanceTimersByTimeAsync(8_000);
     await persistence;
-    await vi.waitFor(() => expect(vi.mocked(context.setCloudUnavailable)).toHaveBeenCalledTimes(1));
 
     expect(vi.mocked(context.updateCloudStats)).toHaveBeenCalledTimes(1);
     const facetCalls = vi.mocked(context.updateCategoryFacets).mock.calls;
     expect(facetCalls.reduce((net, [delta]) => net + (delta.General ?? 0), 0)).toBe(1);
     cloud.resolve({ card: candidate, created: true, gamification: null });
+  });
+
+  it('keeps a single card whose save timed out and accepts the outcome the server returns later', async () => {
+    vi.useFakeTimers();
+    let shown: CardData[] = [];
+    const context = createContext();
+    context.getCards = () => shown;
+    context.publishCards = vi.fn((cards: CardData[]) => { shown = cards; }) as never;
+    const candidate = card('slow-save') as CardData;
+    const cloud = deferred<{ card: typeof candidate; created: boolean; gamification: unknown }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(cloud.promise as never);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+    const gamification = { xp: 110, level: 2, streak: 1, studyDay: '2026-11-23', events: ['levelup'] as const };
+
+    await expect(pipeline.persistCards([candidate], 'generate')).resolves.toEqual([{ card: candidate, created: true }]);
+    await vi.advanceTimersByTimeAsync(8_000);
+
+    expect(context.notify).not.toHaveBeenCalled();
+    expect(context.setCloudUnavailable).not.toHaveBeenCalled();
+    expect(shown).toHaveLength(1);
+
+    cloud.resolve({ card: candidate, created: true, gamification });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(shown).toHaveLength(1);
+    expect(context.notify).not.toHaveBeenCalled();
+    expect(context.acceptGamificationOutcome).toHaveBeenCalledTimes(1);
+    expect(context.acceptGamificationOutcome).toHaveBeenCalledWith(gamification, expect.any(String));
+  });
+
+  it('removes a single card whose save timed out when the server later refuses it', async () => {
+    vi.useFakeTimers();
+    let shown: CardData[] = [];
+    const context = createContext();
+    context.getCards = () => shown;
+    context.publishCards = vi.fn((cards: CardData[]) => { shown = cards; }) as never;
+    const candidate = card('refused-late') as CardData;
+    const cloud = deferred<never>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(cloud.promise as never);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await pipeline.persistCards([candidate], 'generate');
+    await vi.advanceTimersByTimeAsync(8_000);
+    expect(shown).toHaveLength(1);
+
+    cloud.reject(new Error('permission-denied'));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(shown).toHaveLength(0);
+    expect(context.setCloudUnavailable).toHaveBeenCalledWith(true);
+    expect(context.notify).toHaveBeenCalledWith('The card could not be saved. Check your connection and try again.');
   });
 
   it('reports a reused shared card under the id it is stored under', async () => {
@@ -1085,6 +1136,24 @@ describe('Card Intake Pipeline contract', () => {
     const [, aiOptions] = generationRuntime.generateWordInfo.mock.calls[0]!;
     expect(aiOptions).not.toHaveProperty('sourceUrl');
     expect(aiOptions).not.toHaveProperty('pageTitle');
+  });
+
+  it('gives a card made in the app with only a context sentence no web source', async () => {
+    generationRuntime.generateWordInfo.mockResolvedValueOnce({
+      translation: 'dẫn đầu', explanation: '', explanationTranslation: '', phonetic: '/liːd/',
+      emoji: '🎭', category: 'General', partOfSpeech: 'verb', cefrLevel: 'B1',
+      exampleSentence: '', exampleTranslation: '', collocations: [], synonyms: [], antonyms: [],
+      register: '', commonMistake: '', imageSearchQuery: 'lead actor',
+    });
+    const pipeline = createCardIntakePipeline({ getContext: createContext });
+
+    const generated = await pipeline.generateCard({
+      term: 'lead',
+      language: ENGLISH_TO_VIETNAMESE_PROFILE,
+      context: 'The lead actor arrived.',
+    });
+
+    expect(generated.card.source).toBeUndefined();
   });
 
   it.each([

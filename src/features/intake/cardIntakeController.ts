@@ -828,6 +828,11 @@ export function createCardIntakeController({
         }); } catch { /* analytics cannot block capture */ }
       }
       diagnostics.generationFailed?.(error);
+      // The server refuses a fourth attempt of one request; the next try must start a new one.
+      if (errorReason(error) === ATTEMPTS_EXHAUSTED_REASON) {
+        draftOperation = null;
+        try { draftPort?.clearOperation?.(); } catch { /* storage is optional */ }
+      }
       publishError(
         error instanceof RequestedDeckUnavailableError ? error.message : captureFailureMessage(error),
         'generation',
@@ -1127,7 +1132,14 @@ export function createCardIntakeController({
       }
       const createError = createCardCreatorError('generation', captureFailureMessage(error), error);
       diagnostics.generationFailed?.(error);
-      publishCardCreator({ stage: 'error', error: createError });
+      // Details that arrived before a failed Try again stay unchecked, so an edit cannot make them savable.
+      publishCardCreator({
+        stage: 'error',
+        error: createError,
+        generationOutcome: snapshot.cardCreator.streamedFields.length > 0
+          ? { kind: 'failed', partial: true, refunded: null }
+          : null,
+      });
       if (activeOperation === 'creator-generate' && activeOperationToken === invocation) {
         activeOperation = null;
         publish({ isSubmitting: false });

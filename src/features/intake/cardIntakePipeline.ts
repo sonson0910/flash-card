@@ -332,11 +332,10 @@ export function createCardIntakePipeline({
     assertCurrent(session);
     const sourceUrl = typeof request.sourceUrl === 'string' ? request.sourceUrl.trim() : '';
     const pageTitle = typeof request.pageTitle === 'string' ? request.pageTitle.trim() : '';
-    // Persist the capture context instead of only spending it on the Gemini
-    // prompt above: without this, "where did this word come from" is lost
-    // the moment generation finishes.
+    // Only a capture from the web (a page address, a page title or a capture time) leaves a source:
+    // Web words lists every card that has one, so a context sentence typed in the app must not make it.
     const capturedContext = typeof request.context === 'string' ? request.context.trim() : '';
-    const hasSource = Boolean(sourceUrl || pageTitle || capturedContext || request.capturedAt);
+    const hasSource = Boolean(sourceUrl || pageTitle || request.capturedAt);
     const source = hasSource ? {
       ...(sourceUrl ? { url: sourceUrl } : {}),
       ...(pageTitle ? { title: pageTitle } : {}),
@@ -412,7 +411,7 @@ export function createCardIntakePipeline({
     const facetOperationId = createLibraryFacetOperationId();
     const results: Array<{ card: CardData; created: boolean }> = [];
     const cloudSettlements: Array<{
-      settle: () => Promise<CreateCardV2IfAbsentResult>;
+      create: () => Promise<CreateCardV2IfAbsentResult>;
       candidate: CardData;
       operationId: string;
       index: number;
@@ -424,16 +423,12 @@ export function createCardIntakePipeline({
       storedCards.set(candidate, new Promise<CardData | null>(resolve => storedSettled.set(candidate, resolve)));
       const operationId = operationIds[index]!;
       cloudSettlements.push({
-        settle: () => withTimeout(
-          createCardV2IfAbsent(database, ownerId, candidate, {
-            libraryEpoch: activeLibraryEpoch,
-            opId: operationId,
-            operationCreatedAt: candidate.createdAt,
-            timeZone: rewardTimeZone(),
-          }),
-          8_000,
-          'Saving the card took too long. Try again.',
-        ),
+        create: () => createCardV2IfAbsent(database, ownerId, candidate, {
+          libraryEpoch: activeLibraryEpoch,
+          opId: operationId,
+          operationCreatedAt: candidate.createdAt,
+          timeZone: rewardTimeZone(),
+        }),
         candidate,
         operationId,
         index,
@@ -469,9 +464,8 @@ export function createCardIntakePipeline({
       active.resetCloudPage();
     }
 
-    const settlements = mapWithConcurrency(cloudSettlements, source === 'shared' ? 1 : 6, async ({ settle, candidate, operationId, index }) => {
-      try {
-        const result = await settle();
+    const settlements = mapWithConcurrency(cloudSettlements, source === 'shared' ? 1 : 6, async ({ create, candidate, operationId, index }) => {
+      const applyResult = async (result: CreateCardV2IfAbsentResult): Promise<SpreadsheetSaveOutcome> => {
         storedSettled.get(candidate)?.(result.card);
         const outcome: SpreadsheetSaveOutcome = result.created ? 'created' : 'reused';
         const storedElsewhere = result.card.id !== candidate.id;
@@ -501,12 +495,9 @@ export function createCardIntakePipeline({
           console.warn('The saved card could not be reconciled locally.', cause);
         }
         return outcome;
-      } catch (cause) {
+      };
+      const refuse = (cause: unknown): SpreadsheetSaveOutcome => {
         storedSettled.get(candidate)?.(null);
-        if (onSettlement && cause instanceof OperationTimeoutError) {
-          onSettlement?.(index, 'pending');
-          return 'pending' as const;
-        }
         console.warn('The card could not be saved to the cloud.', cause);
         onSettlementFailure?.(operationId);
         onSettlement?.(index, 'failed');
@@ -515,15 +506,26 @@ export function createCardIntakePipeline({
           latest.forgetPromoted(candidate);
           latest.publishCards(latest.getCards().filter(existing => existing.id !== candidate.id));
           // A refused card never reached the library, so the optimistic counts and facet go back too.
-          // A timeout proves nothing: the create may still land, so its counts are left as the
-          // create added them and a reload reads them again.
-          if (!(cause instanceof OperationTimeoutError)) {
-            compensateOptimisticCard(candidate, latest, `${facetOperationId}:${operationId}`, 'failed');
-          }
+          compensateOptimisticCard(candidate, latest, `${facetOperationId}:${operationId}`, 'failed');
           latest.setCloudUnavailable(true);
           latest.notify('The card could not be saved. Check your connection and try again.');
         }
-        return 'failed' as const;
+        return 'failed';
+      };
+      const pendingCreate = (async () => create())();
+      try {
+        return await applyResult(await withTimeout(pendingCreate, 8_000, 'Saving the card took too long. Try again.'));
+      } catch (cause) {
+        if (!(cause instanceof OperationTimeoutError)) return refuse(cause);
+        if (onSettlement) {
+          storedSettled.get(candidate)?.(null);
+          onSettlement(index, 'pending');
+          return 'pending' as const;
+        }
+        // The callable is not cancelled and may still commit: keep the optimistic card and take
+        // whatever the server answers later, a definite refusal included.
+        void pendingCreate.then(applyResult).catch(refuse);
+        return 'pending' as const;
       }
     });
     onSettlementsReady?.(settlements);

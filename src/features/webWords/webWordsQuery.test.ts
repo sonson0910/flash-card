@@ -85,6 +85,17 @@ describe('fetchWebWordsPage', () => {
     expect(WEB_WORDS_PAGE_SIZE).toBe(30);
   });
 
+  it('drops a card whose source has only a context sentence and a save time, as written by older app-made cards', async () => {
+    mocks.getDocs.mockResolvedValueOnce(snapshotFor([
+      { id: 'typed-context', word: 'x', translation: 'y', language: 'en', translationLanguage: 'vi', createdAt: '2026-09-27T00:00:00.000Z', source: { context: 'a sentence I typed', capturedAt: '2026-09-27T00:00:00.000Z' } },
+      webCard('from-page', '2026-09-26T00:00:00.000Z'),
+    ]));
+
+    const page = await fetchWebWordsPage({ db: {} as never, ownerId: 'owner-1', targetLanguage: 'en', translationLanguage: 'vi' });
+
+    expect(page.items.map(card => card.id)).toEqual(['from-page']);
+  });
+
   it('drops a normalized card that ends up without a source, as defense in depth against a future query-shape change', async () => {
     mocks.getDocs.mockResolvedValueOnce(snapshotFor([
       { id: 'no-source', word: 'x', translation: 'y', language: 'en', createdAt: '2026-09-27T00:00:00.000Z' },
