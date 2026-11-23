@@ -25,8 +25,18 @@ self.addEventListener('notificationclick', event => {
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const existing = windows.find(client => new URL(client.url).pathname === new URL(path, self.location.origin).pathname);
     if (existing) {
-      await existing.navigate(path);
-      await existing.focus();
+      // An open page can only be navigated by the worker that controls it, and this worker controls no page
+      // (the offline app shell worker holds the root scope). Otherwise focus the page and ask it to open the
+      // path itself; open a new window only when the page cannot be focused.
+      const navigated = await existing.navigate(path).then(() => true, () => false);
+      if (navigated) await existing.focus();
+      else {
+        const handedOver = await existing.focus().then(() => {
+          existing.postMessage({ type: 'sonflash-open-path', path });
+          return true;
+        }, () => false);
+        if (!handedOver) await self.clients.openWindow(path);
+      }
     } else {
       await self.clients.openWindow(path);
     }

@@ -213,6 +213,82 @@ describe('reminder device token ownership', () => {
     expect(runtime.httpsCallable).not.toHaveBeenCalled();
   });
 
+  it('registers the push worker at its own scope so it never replaces the offline shell worker at the root scope', async () => {
+    vi.stubEnv('VITE_FIREBASE_VAPID_KEY', 'test-vapid-key');
+    vi.stubGlobal('isSecureContext', true);
+    vi.stubGlobal('Notification', { requestPermission: vi.fn(async () => 'granted') });
+    const pushRegistration = { scope: 'push' };
+    const register = vi.fn(async () => pushRegistration);
+    vi.stubGlobal('navigator', { serviceWorker: { register } });
+    vi.resetModules();
+    const { saveReminderSettings: saveWithPush, defaultReminderSettings: defaults } = await import('./reminderService');
+
+    await saveWithPush({ ...defaults(), channels: { push: true, emailDigest: false } });
+
+    expect(register).toHaveBeenCalledOnce();
+    const [script, options] = register.mock.calls[0] as unknown as [string, { scope: string }];
+    expect(script).toBe('/firebase-messaging-sw.js');
+    expect(options.scope).not.toBe('/');
+    expect(options.scope.startsWith('/')).toBe(true);
+    expect(runtime.getToken).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ serviceWorkerRegistration: pushRegistration }));
+  });
+
+  describe('a push worker registered at the root scope by an earlier version', () => {
+    const legacyRoot = (script: string) => {
+      const order: string[] = [];
+      const root = {
+        active: { scriptURL: `https://sonflash.app${script}` },
+        waiting: null, installing: null,
+        unregister: vi.fn(async () => { order.push('unregister'); return true; }),
+      };
+      return { root, order };
+    };
+    const setup = async (script: string) => {
+      vi.stubEnv('VITE_FIREBASE_VAPID_KEY', 'test-vapid-key');
+      vi.stubGlobal('isSecureContext', true);
+      vi.stubGlobal('Notification', { permission: 'granted', requestPermission: vi.fn(async () => 'granted') });
+      const { root, order } = legacyRoot(script);
+      const register = vi.fn(async () => { order.push('register'); return { scope: 'push' }; });
+      const container = { register, getRegistration: vi.fn(async () => root) };
+      vi.stubGlobal('navigator', { serviceWorker: container });
+      runtime.callable.mockImplementation(async (request: { token?: string }) => {
+        order.push(request.token ? 'revoke' : 'save');
+        return { data: { saved: true } };
+      });
+      runtime.getToken.mockResolvedValue('b'.repeat(64));
+      runtime.getDocFromServer.mockResolvedValue({ data: () => ({ channels: { push: true, emailDigest: false } }) });
+      vi.resetModules();
+      const service = await import('./reminderService');
+      return { service, root, order, container, register };
+    };
+
+    it('moves the owner push subscription to the push scope before the root scope is taken over', async () => {
+      const { service, root, order, register } = await setup('/firebase-messaging-sw.js');
+      storage.set('sonflash_push_token_owner-a', 'a'.repeat(64));
+
+      await service.moveLegacyPushWorker();
+
+      expect(register).toHaveBeenCalledOnce();
+      expect(order).toEqual(['register', 'revoke', 'save', 'unregister']);
+      expect(root.unregister).toHaveBeenCalledOnce();
+      expect(storage.get('sonflash_push_token_owner-a')).toBe('b'.repeat(64));
+    });
+
+    it('leaves the root scope alone when it holds the offline shell worker or this device has no push token', async () => {
+      const shell = await setup('/sw.js');
+      storage.set('sonflash_push_token_owner-a', 'a'.repeat(64));
+      await shell.service.moveLegacyPushWorker();
+      expect(shell.register).not.toHaveBeenCalled();
+      expect(shell.root.unregister).not.toHaveBeenCalled();
+
+      const noToken = await setup('/firebase-messaging-sw.js');
+      storage.clear();
+      await noToken.service.moveLegacyPushWorker();
+      expect(noToken.register).not.toHaveBeenCalled();
+      expect(noToken.root.unregister).not.toHaveBeenCalled();
+    });
+  });
+
   it('keeps the previous token when rotation fails before the new token is saved', async () => {
     vi.stubEnv('VITE_FIREBASE_VAPID_KEY', 'test-vapid-key');
     vi.stubGlobal('isSecureContext', true);

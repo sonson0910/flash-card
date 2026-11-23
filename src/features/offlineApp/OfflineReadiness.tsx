@@ -13,6 +13,8 @@ export interface OfflineReadinessProps {
   readonly production?: boolean;
   readonly serviceWorker?: ServiceWorkerContainer;
   readonly registration?: ServiceWorkerRegistration | null;
+  /** Runs before the shell worker takes the root scope; a failure does not stop the preparation. */
+  readonly beforePrepare?: () => Promise<void>;
 }
 
 const statusMessage = (status: OfflineReadinessStatus): MessageDescriptor => {
@@ -38,10 +40,15 @@ const subscribeToConnection = (notify: () => void): (() => void) => {
 };
 const readConnection = (): boolean => typeof navigator === 'undefined' || navigator.onLine !== false;
 
+// Another worker (the reminder push worker registered at the root scope by an earlier version) does not serve the app offline.
+const isShellWorker = (worker: ServiceWorker | null): worker is ServiceWorker => (
+  worker !== null && new URL(worker.scriptURL, globalThis.location?.href ?? 'https://localhost/').pathname === SERVICE_WORKER_SCRIPT
+);
+
 const statusForRegistration = (registration: ServiceWorkerRegistration): OfflineReadinessStatus => (
   registration.waiting
     ? 'update'
-    : registration.active?.state === 'activated'
+    : isShellWorker(registration.active) && registration.active.state === 'activated'
       ? 'ready'
       : 'idle'
 );
@@ -132,6 +139,7 @@ export function OfflineReadiness({
   production = import.meta.env.PROD,
   serviceWorker: suppliedServiceWorker,
   registration: suppliedRegistration,
+  beforePrepare,
 }: OfflineReadinessProps) {
   const [status, setStatus] = useState<OfflineReadinessStatus>(() => (
     !production
@@ -273,6 +281,7 @@ export function OfflineReadiness({
     preparationTimedOutRef.current = false;
     setStatus('preparing');
     try {
+      await beforePrepare?.().catch(() => undefined);
       const registration = await installOfflineAppShell(serviceWorker, READY_TIMEOUT_MS, nextRegistration => {
         preparationRegistrationRef.current = nextRegistration;
         attachRegistrationRef.current(nextRegistration);

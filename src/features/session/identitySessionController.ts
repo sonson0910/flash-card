@@ -42,7 +42,9 @@ type IdentityActionResult =
   | { status: 'unavailable' }
   | { status: 'failed'; error: unknown };
 
-const safetyError = 'Cloud offline. Changes stay local.';
+const safetyError = 'Cloud connection is unavailable. Saving is paused until it is back.';
+/** Waits before each timed retry of a failed owner epoch read; later retries wait for the connection to return. */
+const EPOCH_RETRY_DELAYS_MS = [2_000, 4_000, 8_000, 16_000, 30_000] as const;
 const unavailableError = 'Cloud sync is not enabled. Check the Firebase configuration and reload the app.';
 const ownerTimeoutError = 'Cloud session check timed out. You can keep learning offline and retry sign-in later.';
 const signInTimeoutError = 'Sign-in took too long. Please check your connection and try again.';
@@ -50,6 +52,17 @@ const timeoutError = () => Object.assign(new Error(signInTimeoutError), { code: 
 
 const validEpoch = (value: unknown): number | null =>
   Number.isSafeInteger(value) && Number(value) >= 0 ? Number(value) : null;
+
+/** Calls back when the browser reports the connection is back or the page becomes visible again. */
+const subscribeBrowserReconnect = (onReconnect: () => void): (() => void) => {
+  const onVisibility = () => { if (globalThis.document?.visibilityState === 'visible') onReconnect(); };
+  globalThis.addEventListener?.('online', onReconnect);
+  globalThis.document?.addEventListener?.('visibilitychange', onVisibility);
+  return () => {
+    globalThis.removeEventListener?.('online', onReconnect);
+    globalThis.document?.removeEventListener?.('visibilitychange', onVisibility);
+  };
+};
 
 const errorCode = (error: unknown): string => {
   if (!error || typeof error !== 'object' || !('code' in error)) return '';
@@ -72,11 +85,13 @@ export function createIdentitySessionController({
   hostname = globalThis.location?.hostname ?? 'this domain',
   initialOwnerTimeoutMs = 8_000,
   signInTimeoutMs = 15_000,
+  subscribeReconnect = subscribeBrowserReconnect,
 }: {
   adapter: IdentitySessionAdapter;
   hostname?: string;
   initialOwnerTimeoutMs?: number;
   signInTimeoutMs?: number;
+  subscribeReconnect?: (onReconnect: () => void) => () => void;
 }) {
   let snapshot: IdentitySessionSnapshot = {
     status: adapter.available ? 'loading' : 'anonymous',
@@ -126,12 +141,80 @@ export function createIdentitySessionController({
     });
   });
 
+  // The pending retry of a failed owner epoch read: a backoff timer and a reconnect subscription.
+  let epochRetry: { retry: () => void; timer: ReturnType<typeof globalThis.setTimeout> | null; unsubscribe: () => void } | null = null;
+
+  const cancelEpochRetry = () => {
+    if (!epochRetry) return;
+    if (epochRetry.timer !== null) globalThis.clearTimeout(epochRetry.timer);
+    epochRetry.unsubscribe();
+    epochRetry = null;
+  };
+
   const stop = () => {
+    cancelEpochRetry();
     observationGeneration += 1;
     ownerPublication += 1;
     clearInitialOwnerTimer();
     unsubscribeOwner?.();
     unsubscribeOwner = null;
+  };
+
+  /** Reads the owner's library epoch. A failed read is retried, because card writes stay paused until it succeeds. */
+  const verifyOwnerEpoch = async (
+    owner: IdentityOwner,
+    publication: number,
+    activeObservation: number,
+    attempt: number,
+  ): Promise<void> => {
+    const current = () => activeObservation === observationGeneration && publication === ownerPublication;
+    let epoch: number | null = null;
+    let epochFailure: unknown = null;
+    try {
+      const refreshedEpoch = validEpoch(await adapter.loadOwnerEpoch(owner.id));
+      if (!current()) return;
+      if (refreshedEpoch !== null) {
+        const acceptedEpoch = snapshot.ownerEpoch?.ownerId === owner.id
+          ? snapshot.ownerEpoch.value
+          : null;
+        if (acceptedEpoch !== null && refreshedEpoch < acceptedEpoch) return;
+        epoch = refreshedEpoch;
+        try {
+          adapter.cacheOwnerEpoch(owner.id, refreshedEpoch);
+        } catch {
+          // A verified in-memory epoch remains usable when cache storage is denied.
+        }
+      }
+    } catch (error) {
+      epochFailure = error;
+      if (!current()) return;
+    }
+
+    if (!current()) return;
+    cancelEpochRetry();
+    publish({
+      status: 'authenticated',
+      owner,
+      ownerEpoch: epoch === null ? null : { ownerId: owner.id, value: epoch },
+      canPublishMutations: epoch !== null,
+      error: epoch === null ? ownerEpochFailureMessage(epochFailure) : null,
+    });
+    if (epoch !== null) return;
+
+    const retry = () => {
+      if (epochRetry?.retry !== retry) return;
+      cancelEpochRetry();
+      if (!current() || snapshot.ownerEpoch?.ownerId === owner.id) return;
+      void verifyOwnerEpoch(owner, publication, activeObservation, attempt + 1);
+    };
+    const delay = EPOCH_RETRY_DELAYS_MS[attempt];
+    epochRetry = {
+      retry,
+      timer: delay === undefined || isCloudQuotaError(epochFailure)
+        ? null
+        : globalThis.setTimeout(retry, delay),
+      unsubscribe: subscribeReconnect(retry),
+    };
   };
 
   const start = () => {
@@ -187,36 +270,7 @@ export function createIdentitySessionController({
         });
       }
 
-      let epoch: number | null = null;
-      let epochFailure: unknown = null;
-      try {
-        const refreshedEpoch = validEpoch(await adapter.loadOwnerEpoch(owner.id));
-        if (activeObservation !== observationGeneration || publication !== ownerPublication) return;
-        if (refreshedEpoch !== null) {
-          const acceptedEpoch = snapshot.ownerEpoch?.ownerId === owner.id
-            ? snapshot.ownerEpoch.value
-            : null;
-          if (acceptedEpoch !== null && refreshedEpoch < acceptedEpoch) return;
-          epoch = refreshedEpoch;
-          try {
-            adapter.cacheOwnerEpoch(owner.id, refreshedEpoch);
-          } catch {
-            // A verified in-memory epoch remains usable when cache storage is denied.
-          }
-        }
-      } catch (error) {
-        epochFailure = error;
-        if (activeObservation !== observationGeneration || publication !== ownerPublication) return;
-      }
-
-      if (activeObservation !== observationGeneration || publication !== ownerPublication) return;
-      publish({
-        status: 'authenticated',
-        owner,
-        ownerEpoch: epoch === null ? null : { ownerId: owner.id, value: epoch },
-        canPublishMutations: epoch !== null,
-        error: epoch === null ? ownerEpochFailureMessage(epochFailure) : null,
-      });
+      await verifyOwnerEpoch(owner, publication, activeObservation, 0);
     };
     const onOwnerError = (error: unknown) => {
       if (activeObservation !== observationGeneration) return;

@@ -329,8 +329,100 @@ describe('identity session controller', () => {
       owner: { id: 'cached' },
       ownerEpoch: null,
       canPublishMutations: false,
-      error: 'Cloud offline. Changes stay local.',
+      error: 'Cloud connection is unavailable. Saving is paused until it is back.',
       authenticationRecovery: null,
+    });
+  });
+
+  describe('after the owner epoch read fails', () => {
+    const unavailable = () => Object.assign(new Error('offline'), { code: 'unavailable' });
+    const withReconnect = () => {
+      let reconnect: (() => void) | null = null;
+      const unsubscribe = vi.fn();
+      const subscribeReconnect = vi.fn((onReconnect: () => void) => {
+        reconnect = onReconnect;
+        return unsubscribe;
+      });
+      return { subscribeReconnect, unsubscribe, fire: () => reconnect?.() };
+    };
+
+    it('retries the read with backoff and resumes saving without a reload', async () => {
+      vi.useFakeTimers();
+      const { adapter, emitOwner } = createFakeAdapter();
+      vi.mocked(adapter.loadOwnerEpoch).mockRejectedValueOnce(unavailable()).mockResolvedValue(4);
+      const session = createIdentitySessionController({ adapter, subscribeReconnect: withReconnect().subscribeReconnect });
+      session.start();
+
+      await emitOwner(owner('retry-owner'));
+      expect(session.getSnapshot()).toMatchObject({ canPublishMutations: false, ownerEpoch: null });
+
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(adapter.loadOwnerEpoch).toHaveBeenCalledTimes(2);
+      expect(session.getSnapshot()).toMatchObject({
+        ownerEpoch: { ownerId: 'retry-owner', value: 4 },
+        canPublishMutations: true,
+        error: null,
+      });
+    });
+
+    it('retries when the connection returns after the timed retries are used up', async () => {
+      vi.useFakeTimers();
+      const { adapter, emitOwner } = createFakeAdapter();
+      const reconnect = withReconnect();
+      vi.mocked(adapter.loadOwnerEpoch).mockRejectedValue(unavailable());
+      const session = createIdentitySessionController({ adapter, subscribeReconnect: reconnect.subscribeReconnect });
+      session.start();
+
+      await emitOwner(owner('reconnect-owner'));
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+      const attempts = vi.mocked(adapter.loadOwnerEpoch).mock.calls.length;
+      expect(attempts).toBeGreaterThan(1);
+      expect(attempts).toBeLessThan(10);
+      expect(session.getSnapshot().canPublishMutations).toBe(false);
+
+      vi.mocked(adapter.loadOwnerEpoch).mockResolvedValue(7);
+      reconnect.fire();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(session.getSnapshot()).toMatchObject({
+        ownerEpoch: { ownerId: 'reconnect-owner', value: 7 },
+        canPublishMutations: true,
+        error: null,
+      });
+      expect(reconnect.unsubscribe).toHaveBeenCalled();
+    });
+
+    it('stops retrying when the session stops or the owner changes', async () => {
+      vi.useFakeTimers();
+      const { adapter, emitOwner } = createFakeAdapter();
+      const reconnect = withReconnect();
+      vi.mocked(adapter.loadOwnerEpoch).mockRejectedValue(unavailable());
+      const session = createIdentitySessionController({ adapter, subscribeReconnect: reconnect.subscribeReconnect });
+      const stop = session.start();
+
+      await emitOwner(owner('first-owner'));
+      stop();
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+
+      expect(adapter.loadOwnerEpoch).toHaveBeenCalledTimes(1);
+      expect(reconnect.unsubscribe).toHaveBeenCalled();
+    });
+
+    it('does not spend reads on timed retries while the daily quota is exhausted', async () => {
+      vi.useFakeTimers();
+      const { adapter, emitOwner } = createFakeAdapter();
+      vi.mocked(adapter.loadOwnerEpoch).mockRejectedValue(Object.assign(
+        new Error('Quota limit exceeded.'),
+        { code: 'firestore/resource-exhausted' },
+      ));
+      const session = createIdentitySessionController({ adapter, subscribeReconnect: withReconnect().subscribeReconnect });
+      session.start();
+
+      await emitOwner(owner('quota-owner'));
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+
+      expect(adapter.loadOwnerEpoch).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -417,7 +509,7 @@ describe('identity session controller', () => {
       ownerEpoch: null,
       canPublishMutations: false,
       authenticationRecovery: null,
-      error: 'Cloud offline. Changes stay local.',
+      error: 'Cloud connection is unavailable. Saving is paused until it is back.',
     });
   });
 
