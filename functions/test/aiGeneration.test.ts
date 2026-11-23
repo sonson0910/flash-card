@@ -70,7 +70,7 @@ describe('AI generation limits', () => {
     expect(generateVocabulary).toMatch(/maxInstances:\s*1/);
     // Word replays avoid model spend; all non-card tools share the allowance boundary.
     expect(generateVocabulary.match(/await consumeBudget/g)).toHaveLength(2);
-    expect(generateVocabulary.match(/budget\.message,\s*'gemini',\s*MAX_GEMINI_CALLS_PER_HOUR/g)).toHaveLength(2);
+    expect(generateVocabulary.match(/'gemini',\s*MAX_GEMINI_CALLS_PER_HOUR/g)).toHaveLength(2);
     expect(generateVocabulary).not.toContain('ai.models.generateContent(');
     expect(source).toContain('consumeRateLimitFailClosed');
     expect(source).toContain('consumeOwnerAndServiceBudget');

@@ -132,6 +132,26 @@ describe('generateVocabulary callable', () => {
     expect(generateContent).not.toHaveBeenCalled();
   });
 
+  it.each(nonCardRequests)('leaves the shared Gemini budget unspent when the daily allowance refuses $action', async data => {
+    loadPilotConfig.mockResolvedValue({ ...PILOT_CONFIG_DEFAULTS, analyticsEnabled: false });
+    reserveNonCardAction.mockRejectedValue(new AiQuotaError('ai-daily-allowance', {}));
+    const { generateVocabulary } = await import('../src/index.js');
+    await expect(generateVocabulary.run({ auth: { uid: 'owner-1' }, data } as never))
+      .rejects.toMatchObject({ code: 'resource-exhausted' });
+    expect(consumePersistentRateLimits).not.toHaveBeenCalled();
+  });
+
+  it.each(nonCardRequests)('refunds the $action allowance when the shared Gemini budget is spent', async data => {
+    consumePersistentRateLimits.mockRejectedValue(new RateLimitExceededError(1_000));
+    const { generateVocabulary } = await import('../src/index.js');
+    await expect(generateVocabulary.run({ auth: { uid: 'owner-1' }, data } as never))
+      .rejects.toMatchObject({ code: 'resource-exhausted' });
+    expect(reserveNonCardAction.mock.invocationCallOrder[0])
+      .toBeLessThan(consumePersistentRateLimits.mock.invocationCallOrder[0]);
+    expect(refundNonCardAction).toHaveBeenCalledWith(expect.anything(), 'owner-1', '2026-09-30');
+    expect(runMeteredGemini).not.toHaveBeenCalled();
+  });
+
   it.each(nonCardRequests)('meters $action and refunds its allowance when generation fails', async data => {
     const failure = new Error('provider unavailable');
     runMeteredGemini.mockRejectedValue(failure);

@@ -846,15 +846,9 @@ exact meaning selected above and disambiguating polysemous words. Do not request
     }
   }
 
-    await consumeBudget(
-      userId,
-      budget.scope,
-      budget.maximum,
-      budget.message,
-      'gemini',
-      MAX_GEMINI_CALLS_PER_HOUR,
-      MAX_GEMINI_CALLS_PER_OWNER_HOUR,
-    );
+    // The shared Gemini budget is spent only after the daily allowance admits the action,
+    // so a refused request cannot use up the hourly calls that every learner shares.
+    await consumeBudget(userId, budget.scope, budget.maximum, budget.message);
     let allowanceConfig;
     try { allowanceConfig = await loadPilotConfig(database); }
     catch { throw new HttpsError('unavailable', 'AI allowance is unavailable. Try again later.'); }
@@ -868,6 +862,13 @@ exact meaning selected above and disambiguating polysemous words. Do not request
       throw error;
     }
     try {
+    await consumeCallableBudget(
+      () => consumeRateLimitFailClosed(() => consumeOwnerAndServiceBudget(
+        database, userId, 'gemini-owner', MAX_GEMINI_CALLS_PER_OWNER_HOUR,
+        'gemini', MAX_GEMINI_CALLS_PER_HOUR,
+      )),
+      budget.message,
+    );
   if (input.action === 'story' && input.schemaVersion === undefined) {
     const { words, targetLanguage, translationLanguage } = input;
     const targetLanguageName = { en: 'English', ko: 'Korean', ja: 'Japanese', zh: 'Chinese' }[targetLanguage];
