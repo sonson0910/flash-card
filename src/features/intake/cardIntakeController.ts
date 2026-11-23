@@ -56,6 +56,12 @@ export interface CardGenerationOptions {
   pageTitle?: string;
   /** ISO 8601 timestamp of the capture instant. Browser-extension capture only. */
   capturedAt?: string;
+  /**
+   * The target language the word was captured for. A controller bound to another course's
+   * language answers `pair-mismatch` without touching the word, so a capture can wait for a
+   * course switch to reach this controller instead of being generated in the previous course.
+   */
+  expectedTargetLanguage?: string;
 }
 
 export interface CardGenerationRequest extends CardGenerationOptions {
@@ -192,6 +198,7 @@ export interface CardIntakeLanguagePair {
 type GenerateResult =
   | { status: 'invalid'; reason: 'empty' | 'too-long' }
   | { status: 'busy' }
+  | { status: 'pair-mismatch' }
   | { status: 'existing'; card: CardData }
   | { status: 'created'; card: CardData; mediaTask: Promise<void> }
   | { status: 'failed'; error: unknown };
@@ -692,6 +699,10 @@ export function createCardIntakeController({
   });
 
   const generateDraft = async (generationOptions: CardGenerationOptions = {}): Promise<GenerateResult> => {
+    if (generationOptions.expectedTargetLanguage !== undefined
+      && language.source.code !== generationOptions.expectedTargetLanguage) {
+      return { status: 'pair-mismatch' };
+    }
     const normalizedWord = language.normalize(snapshot.draft);
     if (!normalizedWord) return { status: 'invalid', reason: 'empty' };
     if (normalizedWord.length > 80) {

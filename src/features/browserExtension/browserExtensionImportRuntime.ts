@@ -16,6 +16,11 @@ import {
   type BrowserExtensionImportStorage,
 } from './browserExtensionImport';
 
+// How long a capture waits for an accepted course switch to reach the card
+// intake controller, and how often it looks. Matches the shared deck handoff.
+const CAPTURE_PAIR_HANDOFF_TIMEOUT_MS = 5_000;
+const CAPTURE_PAIR_HANDOFF_POLL_MS = 25;
+
 export interface BrowserExtensionImportOptions {
   ownerId: string | null;
   identityLoading: boolean;
@@ -331,12 +336,15 @@ export const startBrowserExtensionImportRuntime = (
       && options.ownerId === ownerId
       && generationEpoch === epoch;
 
-    const runGeneration = () => {
+    const ensureCaptureCourse = options.ensureCaptureCourse;
+    const capturedLanguage = intent.sourceLanguage;
+    const runGeneration = (pairDeadline = Date.now() + CAPTURE_PAIR_HANDOFF_TIMEOUT_MS) => {
       if (!isCurrent()) return;
       clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
 
       void options.generate({
         operationId: intent.id,
+        ...(ensureCaptureCourse && capturedLanguage ? { expectedTargetLanguage: capturedLanguage } : {}),
         surface: 'extension',
         ...(intent.context ? { context: intent.context } : {}),
         ...(intent.sourceUrl ? { sourceUrl: intent.sourceUrl } : {}),
@@ -348,6 +356,27 @@ export const startBrowserExtensionImportRuntime = (
         } : {}),
       }).then(result => {
         if (!isCurrent()) return;
+        if (result.status === 'pair-mismatch') {
+          // The learner accepted a course switch or creation, but the intake
+          // controller still holds the previous course's language pair. Wait
+          // for the switch to reach it rather than generating in that course.
+          if (Date.now() >= pairDeadline) {
+            finishIntent(intent);
+            publishSilentResult(intent, {
+              status: 'error',
+              message: 'The course did not finish switching. The word was not saved; capture it again.',
+            });
+            return;
+          }
+          clearRetry();
+          retryTimer = globalThis.setTimeout(() => {
+            retryTimer = null;
+            if (!isCurrent()) return;
+            options.changeDraft(intent.text);
+            runGeneration(pairDeadline);
+          }, CAPTURE_PAIR_HANDOFF_POLL_MS);
+          return;
+        }
         if (result.status === 'busy') {
           if (activeIntentKey === key) activeIntentKey = null;
           clearRetry();
@@ -396,8 +425,6 @@ export const startBrowserExtensionImportRuntime = (
       });
     };
 
-    const ensureCaptureCourse = options.ensureCaptureCourse;
-    const capturedLanguage = intent.sourceLanguage;
     if (!ensureCaptureCourse || !capturedLanguage) {
       runGeneration();
       return;

@@ -613,6 +613,80 @@ describe('browser extension import runtime', () => {
     expect(generated).toBe(1);
   });
 
+  it('waits for the accepted course to reach card intake, then generates once without asking again', async () => {
+    const posted: unknown[] = [];
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_course_handoff_wait_123',
+      nonce,
+      text: '회복력',
+      createdAt: Date.now(),
+      mode: 'silent',
+      sourceLanguage: 'ko',
+    }));
+    const expectedLanguages: Array<string | undefined> = [];
+    const drafts: string[] = [];
+    let gateCalls = 0;
+    const generate: BrowserExtensionImportOptions['generate'] = async generationOptions => {
+      expectedLanguages.push(generationOptions?.expectedTargetLanguage);
+      return expectedLanguages.length < 3
+        ? { status: 'pair-mismatch' as const }
+        : { status: 'failed' as const, error: new Error('expected test failure') };
+    };
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(generate, { changeDraft: value => { drafts.push(value); } }),
+      ensureCaptureCourse: async () => {
+        gateCalls += 1;
+        return 'proceed' as const;
+      },
+    }, browser);
+    await vi.waitFor(() => expect(expectedLanguages).toHaveLength(3));
+    runtime.dispose();
+
+    expect(expectedLanguages).toEqual(['ko', 'ko', 'ko']);
+    expect(gateCalls).toBe(1);
+    expect(drafts.filter(value => value === '회복력').length).toBeGreaterThanOrEqual(3);
+    // Only the final generation outcome is reported; waiting posts nothing.
+    expect(posted).toHaveLength(1);
+  });
+
+  it('ends a capture with a terminal error when the accepted course never reaches card intake', async () => {
+    vi.useFakeTimers();
+    try {
+      const posted: Array<{ payload?: { id?: string; status?: string } }> = [];
+      vi.stubGlobal('postMessage', (message: { payload?: { id?: string; status?: string } }) => posted.push(message));
+      const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+      storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+        v: 3,
+        id: 'intent_course_handoff_timeout_123',
+        nonce,
+        text: '회복력',
+        createdAt: Date.now(),
+        mode: 'silent',
+        sourceLanguage: 'ko',
+      }));
+      const generate = vi.fn(async () => ({ status: 'pair-mismatch' as const }));
+      const runtime = startBrowserExtensionImportRuntime({
+        ...optionsFor(generate),
+        ensureCaptureCourse: async () => 'proceed' as const,
+      }, browser);
+      await vi.advanceTimersByTimeAsync(6_000);
+      runtime.dispose();
+
+      const results = posted.filter(message => message.payload?.id === 'intent_course_handoff_timeout_123');
+      expect(results).toHaveLength(1);
+      expect(results[0]?.payload?.status).toBe('error');
+      const calls = generate.mock.calls.length;
+      expect(calls).toBeGreaterThan(1);
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(generate.mock.calls.length).toBe(calls);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('generates in the active course without a course prompt when the extension reported no language', async () => {
     const now = Date.now();
     const { browser, storage } = createBrowser('https://app.example.test/?view=library');
