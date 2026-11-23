@@ -1905,6 +1905,44 @@ describe('card creator after a page reload', () => {
     expect(vi.mocked(secondPort.generateCard).mock.calls[0][0].operationId).toBe(firstId);
   });
 
+  it('restores the context and part of speech of the stored request so the same request id is reused', async () => {
+    const { storage, draft } = storageDraft();
+    const firstPort = createFakePort().port;
+    const before = createCardIntakeController({ port: firstPort, draft });
+    before.cardCreator.open();
+    before.cardCreator.updateDraft({ word: 'lead', context: 'in a pencil', partOfSpeech: 'noun' });
+    await before.cardCreator.generatePreview();
+    const firstId = vi.mocked(firstPort.generateCard).mock.calls[0][0].operationId;
+    expect(storage.operation).toMatchObject({ id: firstId, context: 'in a pencil', partOfSpeech: 'noun' });
+
+    const secondPort = createFakePort().port;
+    const after = createCardIntakeController({ port: secondPort, draft });
+    after.cardCreator.open();
+    expect(after.getSnapshot().cardCreator.draft).toMatchObject({
+      word: 'lead', context: 'in a pencil', partOfSpeech: 'noun',
+    });
+    await after.cardCreator.generatePreview();
+
+    expect(vi.mocked(secondPort.generateCard).mock.calls[0][0].operationId).toBe(firstId);
+    expect(storage.operation?.id).toBe(firstId);
+  });
+
+  it('does not restore the stored context for a different word', async () => {
+    const { storage, draft } = storageDraft();
+    const before = createCardIntakeController({ port: createFakePort().port, draft });
+    before.cardCreator.open();
+    before.cardCreator.updateDraft({ word: 'lead', context: 'in a pencil', partOfSpeech: 'noun' });
+    await before.cardCreator.generatePreview();
+    storage.word = 'ephemeral';
+
+    const after = createCardIntakeController({ port: createFakePort().port, draft });
+    after.cardCreator.open();
+
+    expect(after.getSnapshot().cardCreator.draft).toMatchObject({
+      word: 'ephemeral', context: '', partOfSpeech: '',
+    });
+  });
+
   it('drops the stored request id when the learner changes the word', async () => {
     const { storage, draft } = storageDraft();
     const before = createCardIntakeController({ port: createFakePort().port, draft });

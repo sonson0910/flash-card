@@ -895,12 +895,23 @@ export function createCardIntakeController({
     // Generate and Save must not make the same word a second charged request.
     clearCreatorOperation(false, true);
     creatorFocusTarget = opener ?? null;
+    // The browser draft holds only the word. The stored request also holds the context and part of
+    // speech it was made with, and the request id is reused only when all of them match, so they come
+    // back with the word.
+    const storedRequest = draftOperation
+      && draftOperation.languageId === language.id
+      && draftOperation.word === language.normalize(snapshot.draft.slice(0, 80))
+      ? draftOperation
+      : null;
     publishCardCreator({
       ...createInitialCardCreatorModel(),
       open: true,
       draft: normalizeCreatorDraft({
         ...createEmptyCardCreatorDraft(),
         word: snapshot.draft,
+        ...(storedRequest
+          ? { context: storedRequest.context, partOfSpeech: storedRequest.partOfSpeech ?? '' }
+          : {}),
       }),
       focusTarget: creatorFocusTarget,
     });
