@@ -378,12 +378,19 @@ function LibraryCanvasRail({
   const { tools } = model;
   const { i18n } = useLingui();
   const filter = (key: string, label: ReactNode, selected: boolean, onClick: () => void) => <button key={key} type="button" data-library-filter={key} aria-pressed={selected} className={selected ? 'is-active' : ''} onClick={onClick}>{label}</button>;
-  const deck = (key: string, name: ReactNode, selected: boolean, count: number, onClick: () => void) => <button key={key} type="button" role="tab" aria-selected={selected} className={selected ? 'is-active' : ''} onClick={onClick}><span>{name}</span><small>{count}</small></button>;
+  const deck = (key: string, name: ReactNode, selected: boolean, count: string | number | null, onClick: () => void) => <button key={key} type="button" role="tab" aria-selected={selected} className={selected ? 'is-active' : ''} onClick={onClick}><span>{name}</span>{count !== null && <small>{count}</small>}</button>;
   const filterMark = (mark: ReactNode) => <span className="library-filter-mark" aria-hidden="true">{mark}</span>;
   return <div className="library-canvas-rail">
     <div className="library-canvas-decks" role="tablist" aria-label={i18n._(msg({ id: 'library.decks.nav-label', message: 'Decks' }))}>
       {deck('all-decks', <Trans {...msg({ id: 'library.decks.all', message: 'All decks' })} />, tools.activeCustomDeck.kind === 'all', tools.libraryCount, () => actions.tools.changeCustomDeck({ kind: 'all' }))}
-      {tools.customDecks.map(deckName => deck(deckName, deckName, tools.activeCustomDeck.kind === 'deck' && tools.activeCustomDeck.name === deckName, tools.cards.filter(card => card.customDeck === deckName).length, () => actions.tools.changeCustomDeck({ kind: 'deck', name: deckName })))}
+      {tools.customDecks.map(deckName => {
+        const selected = tools.activeCustomDeck.kind === 'deck' && tools.activeCustomDeck.name === deckName;
+        // A signed-in learner's cards are one cloud page, so a deck's count is exact only for local libraries;
+        // the selected deck shows what the loaded page holds with a '+', the others show no number.
+        const loaded = tools.cards.filter(card => card.customDeck === deckName).length;
+        const count = !model.isAuthenticated ? loaded : selected ? `${loaded}+` : null;
+        return deck(deckName, deckName, selected, count, () => actions.tools.changeCustomDeck({ kind: 'deck', name: deckName }));
+      })}
     </div>
     <div className="library-canvas-filters">
       {filter('all', <>{filterMark('∗')}<Trans {...msg({ context: 'library.filters.all', message: 'All' })} /></>, activeFilter === 'all', () => onFilterChange('all'))}

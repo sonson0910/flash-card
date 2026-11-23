@@ -101,6 +101,25 @@ describe('LibraryScreen', () => {
     expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, legacyIssue: { kind: 'cloud-access', message: 'Retry sync', retryable: true } } })).toBe(false);
   });
 
+  it('shows deck rail counts for a signed-in learner only for the selected deck, marked as a lower bound', () => {
+    const deckCard = (id: string, customDeck: string): CardData => ({ ...card, id, customDeck });
+    const page = [deckCard('a', 'A'), deckCard('b', 'A'), deckCard('c', 'A')];
+    const railCounts = (activeCustomDeck: LibraryScreenModel['tools']['activeCustomDeck']) => {
+      const html = renderLibrary({
+        ...model,
+        isAuthenticated: true,
+        overview: { ...model.overview, total: 40 },
+        grid: { ...model.grid, filteredCards: page, paginatedCards: page, libraryCount: 40, customDecks: ['A', 'B'], activeCustomDeck },
+        tools: { ...model.tools, libraryCount: 40, cards: page, customDecks: ['A', 'B'], activeCustomDeck },
+      });
+      const rail = html.match(/<div class="library-canvas-decks"[\s\S]*?<\/div>/)?.[0] ?? '';
+      return [...rail.matchAll(/<span>([^<]*)<\/span>(?:<small>([^<]*)<\/small>)?/g)].map(match => [match[1], match[2] ?? null]);
+    };
+
+    expect(railCounts(ALL_PRACTICE_DECK_SCOPE)).toEqual([['All decks', '40'], ['A', null], ['B', null]]);
+    expect(railCounts({ kind: 'deck', name: 'A' })).toEqual([['All decks', '40'], ['A', '3+'], ['B', null]]);
+  });
+
   it('replaces generic empty CTAs with the Canvas first-use actions and one real import input', () => {
     const empty: LibraryScreenModel = {
       ...model,
