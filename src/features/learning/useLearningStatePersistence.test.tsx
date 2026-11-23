@@ -743,6 +743,24 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     );
   });
 
+  it('keeps the receipt but leaves stats and facets alone when another operation had already deleted the card', async () => {
+    mocks.deleteCardWithTombstone.mockResolvedValue({
+      deleted: true,
+      alreadyDeleted: true,
+      tombstone: {
+        cardId: card.id, opId: 'other-device-cleanup', libraryEpoch: 2, revision: 4, deletedAt: '2026-08-09T00:00:05.000Z',
+      },
+    });
+    const harness = createHarness();
+
+    await expect(harness.persistence.persist(deleteMutation)).resolves.toMatchObject({
+      publication: { kind: 'delete', cardId: card.id },
+      deleteReceipt: { finality: 'committed', operationId: 'other-device-cleanup', libraryEpoch: 2 },
+    });
+    expect(harness.updateCategoryFacets).not.toHaveBeenCalled();
+    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+  });
+
   it('refreshes the epoch without a receipt when a delete is stale', async () => {
     mocks.deleteCardWithTombstone.mockResolvedValue({ deleted: false, reason: 'stale-library-epoch' });
     const harness = createHarness();

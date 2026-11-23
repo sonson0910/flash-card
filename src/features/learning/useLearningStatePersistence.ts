@@ -451,7 +451,8 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             const activeEpoch = await getLibraryEpoch(database, ownerId);
             current.acceptVerifiedEpoch(ownerId, activeEpoch);
           }
-          if (result.deleted && stableSource && latestRef.current.ownerId === ownerId) {
+          // An operation that found the card already deleted changed nothing, so it owes no stats or facet change.
+          if (result.deleted && !result.alreadyDeleted && stableSource && latestRef.current.ownerId === ownerId) {
             const difficulty = stableSource.difficulty && stableSource.difficulty !== 'unrated' ? stableSource.difficulty : 'unrated';
             current.updateCloudStats(stats => ({
               ...stats,

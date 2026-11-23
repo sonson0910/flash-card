@@ -46,6 +46,11 @@ export type BulkCardDeleteCommand = {
 };
 
 export type BulkCardMutationRequest = {
+  /**
+   * The account the commands were prepared for. Optional so a client one release old keeps working; the
+   * callable refuses the request when it differs from the authenticated account.
+   */
+  expectedOwnerId?: string;
   libraryEpoch: number;
   patches: BulkCardPatchCommand[];
   deletes: BulkCardDeleteCommand[];
@@ -69,6 +74,8 @@ export type BulkCardMutationItemResult =
     deletedAt: string;
     opId: string;
     libraryEpoch: number;
+    /** Set when another operation had already deleted the card, so this one changed nothing. */
+    alreadyDeleted?: true;
   }
   | { cardId: string; op: 'delete'; applied: false; reason: 'revision-conflict'; currentRevision: number };
 
@@ -179,8 +186,13 @@ const parseDeleteCommand = (value: unknown): BulkCardDeleteCommand => {
 
 export function parseBulkCardMutationRequest(value: unknown): BulkCardMutationRequest {
   const source = asRecord(value, 'Bulk card mutation request must be an object.');
-  if (Object.keys(source).some(key => !new Set(['libraryEpoch', 'patches', 'deletes']).has(key))) {
+  if (Object.keys(source).some(key => !new Set(['expectedOwnerId', 'libraryEpoch', 'patches', 'deletes']).has(key))) {
     throw new InputValidationError('Bulk card mutation request contains an unsupported field.');
+  }
+  const expectedOwnerId = source.expectedOwnerId;
+  if (expectedOwnerId !== undefined && (typeof expectedOwnerId !== 'string' || expectedOwnerId.length < 1
+    || expectedOwnerId.length > 128 || expectedOwnerId.includes('/'))) {
+    throw new InputValidationError('Bulk card mutation expectedOwnerId is invalid.');
   }
   const libraryEpoch = nonNegativeInteger(source.libraryEpoch, 'libraryEpoch');
   const patches = source.patches === undefined ? [] : source.patches;
@@ -207,7 +219,10 @@ export function parseBulkCardMutationRequest(value: unknown): BulkCardMutationRe
     }
     seenIds.add(item.cardId);
   }
-  return { libraryEpoch, patches: parsedPatches, deletes: parsedDeletes };
+  return {
+    ...(expectedOwnerId === undefined ? {} : { expectedOwnerId }),
+    libraryEpoch, patches: parsedPatches, deletes: parsedDeletes,
+  };
 }
 
 const safeCounter = (value: unknown, fallback = 0): number =>
@@ -299,7 +314,7 @@ function resolveDeleteResult(
       revision: safeCounter(tombstoneData.revision, 1) || 1,
       deletedAt: String(tombstoneData.deletedAt ?? deletedAt),
       opId: typeof tombstoneData.opId === 'string' ? tombstoneData.opId : command.opId,
-      libraryEpoch: tombstoneEpoch,
+      libraryEpoch: tombstoneEpoch, alreadyDeleted: true,
     };
   }
   if (cardData && command.baseRevision !== cardRevision) {

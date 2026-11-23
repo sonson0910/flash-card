@@ -87,6 +87,14 @@ describe('parseBulkCardMutationRequest', () => {
     expect(parsed.deletes).toEqual([{ cardId: 'word-focus', baseRevision: 1, opId: 'device-a:delete-1' }]);
   });
 
+  it('keeps an expected owner and rejects one that is not a plain account id', () => {
+    expect(parseBulkCardMutationRequest({ ...patchRequest(), expectedOwnerId: 'owner-a' }).expectedOwnerId).toBe('owner-a');
+    expect(parseBulkCardMutationRequest(patchRequest())).not.toHaveProperty('expectedOwnerId');
+    for (const expectedOwnerId of ['', 'a/b', 7, 'x'.repeat(129)]) {
+      expect(() => parseBulkCardMutationRequest({ ...patchRequest(), expectedOwnerId })).toThrow();
+    }
+  });
+
   it('rejects an unsupported top-level field', () => {
     expect(() => parseBulkCardMutationRequest({ ...patchRequest(), extra: true })).toThrow();
   });
@@ -298,6 +306,25 @@ describe('applyBulkCardMutationsForOwner', () => {
     expect(result.results).toEqual([{
       cardId: 'word-focus', op: 'delete', applied: true, revision: 4, deletedAt: '2026-08-24T00:00:00.000Z',
       opId: 'device-a:delete-1', libraryEpoch: 2,
+    }]);
+    expect(test.writes).toEqual([]);
+    expect(test.deletes).toEqual([]);
+  });
+
+  it('marks a delete as already applied when another operation deleted the card first', async () => {
+    const test = harness({
+      'users/owner/card_tombstones/word-focus': snapshot(true, {
+        cardId: 'word-focus', opId: 'device-a:delete-1', libraryEpoch: 2, revision: 4, deletedAt: '2026-08-24T00:00:00.000Z',
+      }),
+    });
+    const result = await applyBulkCardMutationsForOwner(test.database, 'owner', {
+      libraryEpoch: 2,
+      patches: [],
+      deletes: [{ cardId: 'word-focus', baseRevision: 3, opId: 'device-b:delete-2' }],
+    });
+    expect(result.results).toEqual([{
+      cardId: 'word-focus', op: 'delete', applied: true, revision: 4, deletedAt: '2026-08-24T00:00:00.000Z',
+      opId: 'device-a:delete-1', libraryEpoch: 2, alreadyDeleted: true,
     }]);
     expect(test.writes).toEqual([]);
     expect(test.deletes).toEqual([]);

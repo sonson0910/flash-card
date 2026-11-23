@@ -10,6 +10,7 @@ const firestore = vi.hoisted(() => ({
 
 const firebaseRuntime = vi.hoisted(() => ({
   app: {},
+  auth: { currentUser: { uid: 'user-1' } },
   isFirebaseConfigured: true,
   protectedFunctionsCapability: {
     available: true,
@@ -91,6 +92,7 @@ describe('bulkPatchCards', () => {
     expect(functionsRuntime.httpsCallable).toHaveBeenCalledTimes(1);
     expect(callable).toHaveBeenCalledTimes(1);
     expect(callable).toHaveBeenCalledWith({
+      expectedOwnerId: 'user-1',
       libraryEpoch: 0,
       patches: [
         { cardId: 'card-1', baseRevision: 0, fields: { bookmarked: true }, fieldMask: ['bookmarked'] },

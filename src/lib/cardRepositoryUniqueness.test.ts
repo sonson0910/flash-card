@@ -12,6 +12,7 @@ const firestore = vi.hoisted(() => ({
 
 const firebaseRuntime = vi.hoisted(() => ({
   app: {},
+  auth: { currentUser: { uid: 'user-1' } },
   isFirebaseConfigured: false,
   protectedFunctionsCapability: {
     available: false,
@@ -1626,6 +1627,7 @@ describe('createCardIfAbsent', () => {
     });
     expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'bulkMutateCards');
     expect(callable).toHaveBeenCalledWith({
+      expectedOwnerId: 'user-1',
       libraryEpoch: 7,
       patches: [],
       deletes: [{ cardId: 'word-quite', baseRevision: 1, opId: 'delete-current' }],
@@ -2566,6 +2568,7 @@ describe('legacy card maintenance', () => {
     )).resolves.toBeUndefined();
     expect(functionsRuntime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'bulkMutateCards');
     expect(callable).toHaveBeenCalledWith({
+      expectedOwnerId: 'user-1',
       libraryEpoch: 0,
       patches: [{
         cardId: 'legacy-deck-card',
