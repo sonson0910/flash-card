@@ -1133,11 +1133,14 @@ export async function createCardV2ForOwner(
 export const MAX_STARTER_CARDS_PER_BATCH = 20;
 
 /**
- * `cardIds` lists the starter cards the learner holds after the call, in
- * catalog order: the ones this call wrote and the ones they already owned. A
- * starter word whose identity is already claimed without a live card (the
- * learner deleted it earlier) is left out, and so is a replayed card that has
- * since been deleted. `createdCardIds` is the subset this call wrote.
+ * `cardIds` lists the starter cards the learner holds under their catalog id
+ * after the call, in catalog order: the ones this call wrote and the ones they
+ * already owned. The client only accepts ids it asked for, so a starter word
+ * the learner holds under another id (renamed, or relocated by a collision) is
+ * left out, and so is a word whose identity is claimed without a live card
+ * (the learner deleted it earlier) or whose catalog id holds another word. A
+ * replayed card that has since been deleted is left out too. `createdCardIds`
+ * is the subset this call wrote.
  */
 export type StarterCardBatchResult =
   | { kind: 'completed'; cardIds: readonly string[] }

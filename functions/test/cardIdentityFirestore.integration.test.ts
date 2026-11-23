@@ -172,6 +172,24 @@ describeWithEmulator('card identity persistence in Firestore', () => {
       expect(usage.data()?.cardCount).toBe(1);
     });
 
+    it('takes one card-count unit for every capture payment, even when a card is renamed away from its word', async () => {
+      const ownerId = await newOwner();
+      let xp = 0;
+      for (let pass = 0; pass < 3; pass += 1) {
+        const created = await createV2(ownerId, 'water', `create-${pass}`, pass === 0 ? '2026-09-27T01:00:00.000Z' : afterDeletion());
+        xp += 10;
+        expect(created.gamification?.xp).toBe(xp);
+        const renamed = await renameCardHeadwordForOwner(database, ownerId, {
+          cardId: cardIdOf(created), word: `river ${pass}`, baseRevision: Number(created.card.revision), libraryEpoch: 0,
+        });
+        await deleteCard(ownerId, cardIdOf(created), Number(renamed.card.revision));
+      }
+
+      expect(await verifiedXp(ownerId)).toBe(xp);
+      const usage = await database.doc(`users/${ownerId}/profile/resource_usage`).get();
+      expect(usage.data()?.cardCount).toBe(xp / 10);
+    });
+
     it('does not pay again for a word created anew after the library was cleared', async () => {
       const ownerId = await newOwner();
       await createV2(ownerId, 'water', 'create-1', '2026-09-27T01:00:00.000Z');

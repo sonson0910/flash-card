@@ -1369,6 +1369,49 @@ describe('starter card allocation', () => {
       .toMatchObject({ status: 'completed', result: result.cardIds });
   });
 
+  it('leaves out a starter word whose catalog id now holds another word, without failing the batch', async () => {
+    // "hello" was renamed to "hullo": its reservation is gone and its card id holds the new word.
+    const [hello, thankYou, water, friend, love] = starterBatch;
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/cards/${canonicalCard(hello).id}`, snapshot(true, {
+        ...ownedStarterCard(hello), word: 'hullo', normalizedWord: 'hullo',
+      })],
+      [`users/owner/card_reservations/${reservationFor('hullo')}`, snapshot(true, {
+        schemaVersion: 1, cardId: canonicalCard(hello).id, normalizedWord: 'hullo',
+      })],
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    const ids = [thankYou, water, friend, love].map(item => canonicalCard(item).id);
+    expect(result).toEqual({ kind: 'created', cardIds: ids, createdCardIds: ids });
+    expect(harness.writes.find(write => write.path === `users/owner/cards/${canonicalCard(hello).id}`)).toBeUndefined();
+  });
+
+  it('does not list a starter word the learner holds under a relocated card id', async () => {
+    // The answer only names catalog ids, which are the ids the client asked for.
+    const [hello, thankYou, water, friend, love] = starterBatch;
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/card_reservations/${reservationFor('hello')}`, snapshot(true, {
+        schemaVersion: 1, cardId: `${canonicalCard(hello).id}-2`, normalizedWord: 'hello',
+      })],
+      [`users/owner/cards/${canonicalCard(hello).id}`, snapshot(true, {
+        ...ownedStarterCard(hello), word: 'hullo', normalizedWord: 'hullo',
+      })],
+      [`users/owner/cards/${canonicalCard(hello).id}-2`, snapshot(true, {
+        ...ownedStarterCard(hello), id: `${canonicalCard(hello).id}-2`,
+      })],
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    const ids = [thankYou, water, friend, love].map(item => canonicalCard(item).id);
+    expect(result).toEqual({ kind: 'created', cardIds: ids, createdCardIds: ids });
+    expect(harness.writes.find(write => write.path.startsWith('users/owner/ai_usage/'))?.data).toMatchObject({ used: 4 });
+  });
+
   it('spends no quota and writes no card when every starter word is already claimed', async () => {
     const periodKey = `free-${now.toISOString().slice(0, 7)}`;
     const claimed = starterBatch.flatMap(item => [
