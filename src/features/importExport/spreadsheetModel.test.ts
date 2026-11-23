@@ -19,6 +19,45 @@ describe('spreadsheet import/export model', () => {
     expect(rows[0]).toMatchObject({ word: 'hello', translation: 'Xin chào', partOfSpeech: 'modal verb', imageUrl: null });
   });
 
+  it('imports a row whose photo is another learner\'s uploaded file without the photo', () => {
+    const photo = (uid: string) => `https://firebasestorage.googleapis.com/v0/b/sonflash-staging-20260906.firebasestorage.app/o/users%2F${uid}%2Ffiles%2FAbCdEfGhIjKlMnOpQrSt?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d`;
+    const [foreign, stock] = classifyStructuredCardRows([
+      { row: { Word: 'apple', Translation: 'quả táo', Image: photo('other-learner') }, sourceRow: 2 },
+      { row: { Word: 'pear', Translation: 'quả lê', Image: 'https://images.pexels.com/photos/1/pear.jpg' }, sourceRow: 3 },
+    ]);
+    expect(foreign).toMatchObject({ kind: 'accepted', row: { word: 'apple', imageUrl: null } });
+    expect(stock).toMatchObject({ kind: 'accepted', row: { word: 'pear', imageUrl: 'https://images.pexels.com/photos/1/pear.jpg' } });
+  });
+
+  it('gives a row without language cells the active course pair', () => {
+    const japanese = { language: 'ja', translationLanguage: 'vi' };
+    const [plain, explicit, suppliedPair] = classifyStructuredCardRows([
+      { row: { Word: '猫', Translation: 'mèo' }, sourceRow: 2 },
+      { row: { Word: 'bank', Translation: 'ngân hàng', Language: 'ko', 'Translation Language': 'en' }, sourceRow: 3 },
+      { row: { Word: '犬', Translation: 'chó', 'Translation Language': 'en' }, sourceRow: 4 },
+    ], japanese);
+    expect(plain).toMatchObject({ kind: 'accepted', row: { word: '猫', language: 'ja', translationLanguage: 'vi' } });
+    expect(explicit).toMatchObject({ kind: 'accepted', row: { language: 'ko', translationLanguage: 'en' } });
+    expect(suppliedPair).toMatchObject({ kind: 'accepted', row: { language: 'ja', translationLanguage: 'en' } });
+  });
+
+  it('keeps an English row without a language so the library files it under English as before', () => {
+    const [row] = classifyStructuredCardRows(
+      [{ row: { Word: 'cat', Translation: 'mèo' }, sourceRow: 2 }],
+      { language: 'en', translationLanguage: 'vi' },
+    );
+    expect(row).toMatchObject({ kind: 'accepted', row: { word: 'cat', translationLanguage: 'vi' } });
+    expect(row.kind === 'accepted' && row.row.language).toBeUndefined();
+  });
+
+  it('does not lend the course language to a row that carries a canonical identity', () => {
+    const lexemeId = createLexemeId({ language: 'en', normalizedLemma: 'lead', partOfSpeech: 'noun', senseKey: 'metal' });
+    const [row] = classifyStructuredCardRows([
+      { row: { Word: 'lead', Translation: 'chì', 'Part of Speech': 'noun', 'Sense Key': 'metal', 'Lexeme ID': lexemeId }, sourceRow: 2 },
+    ], { language: 'ja', translationLanguage: 'vi' });
+    expect(row).toMatchObject({ kind: 'invalid' });
+  });
+
   it('rejects structured rows whose translation is empty after trimming', () => {
     expect(parseStructuredCardRows([
       { Word: 'empty', Translation: '' },

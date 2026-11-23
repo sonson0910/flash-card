@@ -23,6 +23,7 @@ const repositoryRuntime = vi.hoisted(() => ({
   })),
   findCardByNormalizedWord: vi.fn<(...args: unknown[]) => Promise<unknown>>(async () => null),
   findCardsByNormalizedWords: vi.fn(async () => new Map()),
+  createLibraryFacetOperationId: vi.fn(() => 'facet-op'),
 }));
 
 const createOperationIdAt = (call: readonly unknown[]) => (call[3] as { opId: string }).opId;
@@ -37,7 +38,7 @@ vi.mock('../../lib/gemini', () => ({
 }));
 vi.mock('../../lib/cardRepository', () => ({
   createCardV2IfAbsent: repositoryRuntime.createCardV2IfAbsent,
-  createLibraryFacetOperationId: () => 'facet-op',
+  createLibraryFacetOperationId: repositoryRuntime.createLibraryFacetOperationId,
   deriveLibraryFacetOperationId: (id: string, suffix: string) => `${id}:${suffix}`,
   findCardByNormalizedWord: repositoryRuntime.findCardByNormalizedWord,
   findCardsByNormalizedWords: repositoryRuntime.findCardsByNormalizedWords,
@@ -819,7 +820,7 @@ describe('Card Intake Pipeline contract', () => {
 
     await vi.waitFor(() => expect(publishCards.mock.calls.at(-1)![0].map(value => value.id)).toEqual([earlier.id]));
     expect(stats).toMatchObject({ total: 1, unrated: 1 });
-    expect(vi.mocked(context.updateCategoryFacets)).toHaveBeenLastCalledWith({ General: -1 }, 'facet-op:duplicate');
+    expect(vi.mocked(context.updateCategoryFacets)).toHaveBeenLastCalledWith({ General: -1 }, expect.stringMatching(/^facet-op:create-.+:duplicate$/));
     expect(vi.mocked(context.rememberPromoted)).toHaveBeenLastCalledWith(expect.objectContaining({ id: earlier.id }));
     // Media that arrives afterwards follows the stored card, as it does for a word held under the same id.
     await pipeline.applyMedia(persisted!.card, { audioUrl: null, imageUrl: 'https://images.example/apple.jpg' });
@@ -848,6 +849,129 @@ describe('Card Intake Pipeline contract', () => {
 
     await vi.waitFor(() => expect(publishCards.mock.calls.at(-1)![0]).toEqual([earlier]));
     expect(vi.mocked(context.rememberPromoted)).toHaveBeenLastCalledWith(earlier);
+  });
+
+  it('replaces the card shown at once with the stored card when the service answers that the word already exists under the same id', async () => {
+    const candidate = { ...card('apple'), id: createWordCardId('apple') };
+    const stored = { ...candidate, reviews: 5, revision: 3, libraryEpoch: 3, difficulty: 'good' as const } as CardData;
+    let shown: CardData[] = [];
+    let stats = { ...createContext().cloudStats };
+    const context: CardIntakePortOptions = {
+      ...createContext(),
+      getCards: () => shown,
+      publishCards: vi.fn((next: CardData[]) => { shown = next; }),
+      updateCloudStats: vi.fn(update => { stats = typeof update === 'function' ? update(stats) : update; }),
+    };
+    repositoryRuntime.createCardV2IfAbsent.mockResolvedValueOnce({ card: stored, created: false, gamification: null });
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await pipeline.persistCards([candidate], 'generate');
+
+    await vi.waitFor(() => expect(shown).toEqual([expect.objectContaining({ id: stored.id, reviews: 5, revision: 3, difficulty: 'good' })]));
+    expect(stats).toMatchObject({ total: 0, unrated: 0 });
+    expect(vi.mocked(context.updateCategoryFacets)).toHaveBeenLastCalledWith({ General: -1 }, expect.stringMatching(/:duplicate$/));
+  });
+
+  it('takes back each duplicate in a batch under its own compensation id', async () => {
+    let shown: CardData[] = [];
+    const context: CardIntakePortOptions = {
+      ...createContext(),
+      getCards: () => shown,
+      publishCards: vi.fn((next: CardData[]) => { shown = next; }),
+    };
+    repositoryRuntime.createCardV2IfAbsent.mockImplementation(async (...args: unknown[]) => ({
+      card: args[2] as CardData, created: false, gamification: null,
+    }));
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await pipeline.persistCards([card('apple'), card('pear')], 'shared');
+
+    const compensations = vi.mocked(context.updateCategoryFacets).mock.calls
+      .filter(([, operationId]) => String(operationId).endsWith(':duplicate'));
+    expect(compensations).toHaveLength(2);
+    expect(new Set(compensations.map(([, operationId]) => operationId)).size).toBe(2);
+    repositoryRuntime.createCardV2IfAbsent.mockImplementation(async (...args: unknown[]) => ({
+      card: args[2] as { id: string }, created: true, gamification: null,
+    }));
+  });
+
+  it('takes back the optimistic counts and category facet of a card the service refused', async () => {
+    let stats = { ...createContext().cloudStats };
+    const context: CardIntakePortOptions = {
+      ...createContext(),
+      updateCloudStats: vi.fn(update => { stats = typeof update === 'function' ? update(stats) : update; }),
+    };
+    repositoryRuntime.createCardV2IfAbsent
+      .mockRejectedValueOnce(new Error('The card limit was reached.'))
+      .mockImplementationOnce(async (...args: unknown[]) => ({ card: args[2] as { id: string }, created: true, gamification: null }));
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const result = await pipeline.persistStructured({
+      creates: [{ ...card('apple'), bookmarked: true } as CardData, card('pear') as CardData],
+      patches: [],
+    });
+
+    expect(result.outcomes).toEqual(['failed', 'created']);
+    expect(stats).toMatchObject({ total: 1, unrated: 1, bookmarked: 0 });
+    const facetCalls = vi.mocked(context.updateCategoryFacets).mock.calls;
+    expect(facetCalls.reduce((net, [delta]) => net + (delta.General ?? 0), 0)).toBe(1);
+    const failedCompensation = facetCalls.filter(([, operationId]) => String(operationId).endsWith(':failed'));
+    expect(failedCompensation).toHaveLength(1);
+  });
+
+  it('counts a retried refusal again instead of reusing the compensation id of the first attempt', async () => {
+    const context = createContext();
+    repositoryRuntime.createCardV2IfAbsent.mockRejectedValue(new Error('offline'));
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+    const candidate = card('apple') as CardData;
+    repositoryRuntime.createLibraryFacetOperationId.mockReturnValueOnce('facet-first').mockReturnValueOnce('facet-second');
+
+    await pipeline.persistCards([candidate], 'generate');
+    await vi.waitFor(() => expect(vi.mocked(context.setCloudUnavailable)).toHaveBeenCalledTimes(1));
+    await pipeline.persistCards([candidate], 'generate');
+    await vi.waitFor(() => expect(vi.mocked(context.setCloudUnavailable)).toHaveBeenCalledTimes(2));
+
+    const operationIds = vi.mocked(context.updateCategoryFacets).mock.calls
+      .filter(([, operationId]) => String(operationId).endsWith(':failed'))
+      .map(([, operationId]) => operationId);
+    expect(operationIds).toHaveLength(2);
+    expect(new Set(operationIds).size).toBe(2);
+    repositoryRuntime.createCardV2IfAbsent.mockReset();
+    repositoryRuntime.createCardV2IfAbsent.mockImplementation(async (...args: unknown[]) => ({
+      card: args[2] as { id: string }, created: true, gamification: null,
+    }));
+  });
+
+  it('does not reload the library page for a card the service refused', async () => {
+    const context = createContext();
+    repositoryRuntime.createCardV2IfAbsent.mockRejectedValueOnce(new Error('The card limit was reached.'));
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const result = await pipeline.persistStructured({ creates: [card('apple') as CardData], patches: [] });
+
+    expect(result.outcomes).toEqual(['failed']);
+    // The page was reset once when the card was added at once; the refusal removes a card the
+    // server never listed, so it needs no second read.
+    expect(vi.mocked(context.resetCloudPage)).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the optimistic counts of a single card whose save timed out, because the create may still land', async () => {
+    vi.useFakeTimers();
+    const context = createContext();
+    const candidate = card('apple') as CardData;
+    const cloud = deferred<{ card: typeof candidate; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(cloud.promise);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const persistence = pipeline.persistCards([candidate], 'generate');
+    await vi.advanceTimersByTimeAsync(8_000);
+    await persistence;
+    await vi.waitFor(() => expect(vi.mocked(context.setCloudUnavailable)).toHaveBeenCalledTimes(1));
+
+    expect(vi.mocked(context.updateCloudStats)).toHaveBeenCalledTimes(1);
+    const facetCalls = vi.mocked(context.updateCategoryFacets).mock.calls;
+    expect(facetCalls.reduce((net, [delta]) => net + (delta.General ?? 0), 0)).toBe(1);
+    cloud.resolve({ card: candidate, created: true, gamification: null });
   });
 
   it('reports a reused shared card under the id it is stored under', async () => {

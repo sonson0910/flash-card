@@ -1,9 +1,9 @@
 import { isSupportedAudioUrl } from '../../lib/audio';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
-import { isSupportedImageUrl } from '../../lib/images';
+import { isStockImageUrl } from '../../lib/mediaUrlPolicy';
 import { cardLogicalKey, normalizeCardLanguage, normalizeCardWord } from '../../lib/cardIdentity';
 import { isSupportedCardTranslationLanguage, normalizeCardTags } from '../../lib/cardNormalization';
-import type { CardData, LearnerDifficulty } from '../../types/card';
+import { LEGACY_CARD_LANGUAGE, type CardData, type LearnerDifficulty } from '../../types/card';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 import type { SpreadsheetFlatSourceCell, SpreadsheetStructuredSourceRow } from './spreadsheetWorkbook';
 
@@ -77,14 +77,27 @@ const learnerColumns = (row: unknown): Pick<StructuredCardRow, 'deck' | 'tags' |
   };
 };
 
+/** The active course's language pair, which a row without a Language or Translation Language cell takes. */
+export interface StructuredImportLanguageDefaults {
+  language: string;
+  translationLanguage: string;
+}
+
 export const structuredCardLogicalKey = (row: Pick<StructuredCardRow,
   'word' | 'lexemeId' | 'language' | 'senseKey' | 'partOfSpeech' | 'normalizedLemma'>,
 ) => cardLogicalKey({ id: '', normalizedWord: row.word, ...row });
 
 export const classifyStructuredCardRows = (
   sourceRows: SpreadsheetStructuredSourceRow[],
+  defaults?: StructuredImportLanguageDefaults,
 ): StructuredCardRowClassification[] => {
   const seen = new Set<string>();
+  // An English row stays without a language: the library already files it under English, and an
+  // explicit language would send every row through the per-word lookup that other languages need.
+  const defaultLanguage = normalizeCardLanguage(defaults?.language);
+  const rowDefaultLanguage = defaultLanguage === LEGACY_CARD_LANGUAGE ? '' : defaultLanguage;
+  const pairedTranslationLanguage = normalizeCardLanguage(defaults?.translationLanguage);
+  const defaultTranslationLanguage = isSupportedCardTranslationLanguage(pairedTranslationLanguage) ? pairedTranslationLanguage : '';
   return sourceRows.slice(0, 5000).map(({ row, sourceRow }) => {
     const word = normalizeCardWord(sanitize(getColumn(row, 'word', 'từ vựng'), 80));
     const translation = sanitize(getColumn(row, 'translation', 'nghĩa', 'ý nghĩa'), 256);
@@ -92,7 +105,8 @@ export const classifyStructuredCardRows = (
     const suppliedLanguage = sanitize(getColumn(row, 'language'), 64);
     const language = normalizeCardLanguage(suppliedLanguage);
     const suppliedTranslationLanguage = sanitize(getColumn(row, 'translation language', 'translationlanguage'), 64);
-    const translationLanguage = normalizeCardLanguage(suppliedTranslationLanguage);
+    const translationLanguage = normalizeCardLanguage(suppliedTranslationLanguage)
+      || (suppliedTranslationLanguage ? '' : defaultTranslationLanguage);
     const senseKey = sanitize(getColumn(row, 'sense key', 'sensekey'), 128);
     const suppliedNormalizedLemma = sanitize(getColumn(row, 'normalized lemma', 'normalizedlemma'), 256);
     const normalizedLemma = suppliedNormalizedLemma || word;
@@ -107,8 +121,9 @@ export const classifyStructuredCardRows = (
     if (invalidLanguage || invalidTranslationLanguage || invalidCanonicalIdentity) {
       return { kind: 'invalid', sourceRow, ...(word ? { word } : {}) };
     }
+    const rowLanguage = language || (lexemeId ? '' : rowDefaultLanguage);
     const identity = structuredCardLogicalKey({
-      word, lexemeId: lexemeId || undefined, language: language || undefined,
+      word, lexemeId: lexemeId || undefined, language: rowLanguage || undefined,
       senseKey: senseKey || undefined, partOfSpeech, normalizedLemma,
     });
     if (!word || !translation) return { kind: 'invalid', sourceRow, ...(word ? { word } : {}) };
@@ -128,7 +143,9 @@ export const classifyStructuredCardRows = (
         category: sanitize(getColumn(row, 'category', 'chủ đề'), 128) || 'Excel Import',
         emoji: sanitize(getColumn(row, 'emoji', 'biểu tượng'), 64) || '📝',
         audioUrl: isSupportedAudioUrl(audio) ? audio : null,
-        imageUrl: isSupportedImageUrl(image) ? image : null,
+        // A learner's own uploaded photo is refused by the card service unless it is the importer's
+        // own, and a sheet can carry another learner's link, so only stock photos are kept.
+        imageUrl: isStockImageUrl(image) ? image : null,
         ...(sanitize(getColumn(row, 'cefr level', 'cefrlevel', 'cefr'), 8) ? {
           cefrLevel: sanitize(getColumn(row, 'cefr level', 'cefrlevel', 'cefr'), 8).toUpperCase(),
         } : {}),
@@ -141,7 +158,7 @@ export const classifyStructuredCardRows = (
           senseKey,
           normalizedLemma,
         } : {}),
-        ...(!lexemeId && language ? { language } : {}),
+        ...(!lexemeId && rowLanguage ? { language: rowLanguage } : {}),
         ...(translationLanguage ? { translationLanguage } : {}),
         ...learnerColumns(row),
       },

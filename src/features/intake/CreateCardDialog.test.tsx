@@ -108,7 +108,7 @@ describe('CreateCardDialog', () => {
     expect(html).toContain('aria-label="Example translation"');
     expect(html).toContain('aria-label="Word family noun"');
     expect(html).toContain('Regenerate selected details');
-    expect(html).toContain('Each completed generation uses one AI request');
+    expect(html).toContain('Each generation that returns details uses one AI request');
     expect(html).toContain('Ready after saving');
     expect(html).toContain('Save card');
     expect(html).not.toContain('type="file"');
@@ -222,6 +222,57 @@ describe('CreateCardDialog', () => {
     expect(html).not.toContain('Ready after saving');
     expect(html).not.toContain('Regenerate selected details');
     expect(html).not.toContain('Word or phrase');
+  });
+
+  it('offers Try again and Save after a regeneration that delivered details ended before it finished', () => {
+    const base = {
+      open: true,
+      draft: { word: 'resilient', context: '', partOfSpeech: '', deck: '' },
+      preview: card,
+      regenerating: ['meaning'] as const,
+      streamedFields: ['translation'] as const,
+    };
+    const failed = renderDialog(createModel({
+      ...base, stage: 'preview',
+      error: { code: 'generation', message: 'The stream closed.' },
+      generationOutcome: { kind: 'failed', partial: true, refunded: null },
+    }));
+    expect(failed).toContain('Try again');
+    expect(failed).toContain('Regeneration stopped before it finished. Your card keeps its earlier details, and this request still counts.');
+    expect(failed).toContain('Regenerate');
+    expect(failed.match(/<button type="submit"[^>]*>/)?.[0]).not.toContain('disabled');
+
+    const stopped = renderDialog(createModel({
+      ...base, stage: 'preview',
+      error: { code: 'stopped', message: 'Generation stopped.' },
+      generationOutcome: { kind: 'stopped', partial: true, refunded: false },
+    }));
+    expect(stopped).toContain('Try again');
+    expect(stopped).toContain('Stopped. Part of the card had already arrived, so this request still counts.');
+  });
+
+  it('offers no Try again for a regeneration that finished or never delivered anything', () => {
+    const base = {
+      open: true,
+      draft: { word: 'resilient', context: '', partOfSpeech: '', deck: '' },
+      preview: card,
+      stage: 'preview' as const,
+    };
+    expect(renderDialog(createModel({ ...base, regenerating: ['meaning'], generationOutcome: null }))).not.toContain('Try again');
+    expect(renderDialog(createModel({
+      ...base, regenerating: ['meaning'],
+      generationOutcome: { kind: 'stopped', partial: false, refunded: true },
+    }))).not.toContain('Try again');
+    expect(renderDialog(createModel({ ...base, regenerating: [], generationOutcome: null }))).not.toContain('Try again');
+  });
+
+  it('says that a generation which returns details uses one AI request', () => {
+    const html = renderDialog(createModel({
+      open: true, stage: 'preview', preview: card,
+      draft: { word: 'resilient', context: '', partOfSpeech: '', deck: '' },
+    }));
+    expect(html).toContain('Each generation that returns details uses one AI request');
+    expect(html).not.toContain('Each completed generation');
   });
 
   it('keeps an unfinished card visible, unchecked and unsaveable, with Try again', () => {

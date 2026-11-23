@@ -5,6 +5,7 @@ import {
   classifyStructuredCardRows,
   structuredCardLogicalKey,
   type FlatWordClassification,
+  type StructuredImportLanguageDefaults,
 } from './spreadsheetModel';
 import { planStructuredImportMutation, type SortableCardData } from './spreadsheetMutation';
 import {
@@ -120,6 +121,8 @@ interface SpreadsheetImportServiceOptions {
   diagnostics?: SpreadsheetImportDiagnosticsPort;
   maxFileBytes?: number;
   maxAiCards?: number;
+  /** The active course's pair, for rows that name no language. Without it such a row names none. */
+  languageDefaults?: StructuredImportLanguageDefaults;
   now?: () => string;
   delay?: (milliseconds: number) => Promise<void>;
   isActive?: () => boolean;
@@ -177,6 +180,7 @@ export function createSpreadsheetImportService({
   diagnostics = {},
   maxFileBytes = MAX_SPREADSHEET_FILE_BYTES,
   maxAiCards = DEFAULT_MAX_AI_CARDS,
+  languageDefaults,
   now = () => new Date().toISOString(),
   delay = milliseconds => new Promise<void>(resolve => globalThis.setTimeout(resolve, milliseconds)),
   isActive = () => true,
@@ -276,7 +280,7 @@ export function createSpreadsheetImportService({
       if (structuredMode) {
         const sourceRows = workbook.structuredSourceRows
           ?? workbook.structuredRows.map((row, index) => ({ row, sourceRow: index + 2 }));
-        const classified = classifyStructuredCardRows(sourceRows);
+        const classified = classifyStructuredCardRows(sourceRows, languageDefaults);
         summary = { ...summary, total: 0, pending: 0 };
         const accepted = [] as Extract<typeof classified[number], { kind: 'accepted' }>[];
         for (const item of classified) {

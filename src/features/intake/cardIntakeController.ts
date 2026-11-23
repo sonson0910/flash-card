@@ -607,6 +607,8 @@ export function createCardIntakeController({
     partOfSpeech: string;
   } | null = null;
   let creatorMediaPromise: Promise<CardMediaPatch | null> | null = null;
+  // The card as it was when the running or interrupted regeneration started: complete and checked.
+  let creatorRegenerationBaseline: IntakeCard | null = null;
   let creatorGenerationAbort: AbortController | null = null;
   const creatorEditedFields = new Set<keyof CardData>();
   let creatorInvocation = 0;
@@ -685,6 +687,7 @@ export function createCardIntakeController({
       workbookFailed: error => diagnostics.generationFailed?.(error),
     },
     delay: spreadsheetDelay,
+    languageDefaults: { language: language.source.code, translationLanguage: language.target.code },
     now,
     isActive: () => spreadsheetLifecycle !== null
       && controllerLifecycle === spreadsheetLifecycle
@@ -825,12 +828,29 @@ export function createCardIntakeController({
     }
   };
 
-  const clearCreatorOperation = (keepMedia = false) => {
+  const clearCreatorOperation = (keepMedia = false, keepStoredOperation = false) => {
     creatorOperation = null;
     creatorEditedFields.clear();
+    creatorRegenerationBaseline = null;
     if (!keepMedia) creatorMediaPromise = null;
+    if (keepStoredOperation) return;
     draftOperation = null;
     try { draftPort?.clearOperation?.(); } catch { /* storage is optional */ }
+  };
+
+  /**
+   * A regeneration that ended before it finished leaves the card as it was before it started, minus
+   * nothing the learner typed meanwhile: the details that had arrived were never checked as a whole.
+   */
+  const revertInterruptedRegeneration = (fields: readonly CardGenerationField[]): CardData | null => {
+    const shown = snapshot.cardCreator.preview;
+    const baseline = creatorRegenerationBaseline;
+    if (!shown || !baseline) return shown;
+    const reverted = mergeRegeneratedFields(shown, baseline, fields);
+    for (const field of creatorEditedFields) {
+      if (field in shown) (reverted as unknown as Record<string, unknown>)[field] = shown[field];
+    }
+    return reverted;
   };
 
   /** Starts the next try under a new request while keeping the preview and the learner's edits. */
@@ -871,14 +891,27 @@ export function createCardIntakeController({
     if (activeOperation === 'creator-generate' || activeOperation === 'creator-save') {
       activeOperation = null;
     }
-    clearCreatorOperation();
+    // The word is prefilled from the stored draft, so its stored request id stays: a reload between
+    // Generate and Save must not make the same word a second charged request.
+    clearCreatorOperation(false, true);
     creatorFocusTarget = opener ?? null;
+    // The browser draft holds only the word. The stored request also holds the context and part of
+    // speech it was made with, and the request id is reused only when all of them match, so they come
+    // back with the word.
+    const storedRequest = draftOperation
+      && draftOperation.languageId === language.id
+      && draftOperation.word === language.normalize(snapshot.draft.slice(0, 80))
+      ? draftOperation
+      : null;
     publishCardCreator({
       ...createInitialCardCreatorModel(),
       open: true,
       draft: normalizeCreatorDraft({
         ...createEmptyCardCreatorDraft(),
         word: snapshot.draft,
+        ...(storedRequest
+          ? { context: storedRequest.context, partOfSpeech: storedRequest.partOfSpeech ?? '' }
+          : {}),
       }),
       focusTarget: creatorFocusTarget,
     });
@@ -890,7 +923,7 @@ export function createCardIntakeController({
     const requestChanged = nextDraft.word !== current.draft.word
       || nextDraft.context !== current.draft.context
       || nextDraft.partOfSpeech !== current.draft.partOfSpeech;
-    if (requestChanged && (creatorOperation
+    if (requestChanged && (creatorOperation || draftOperation
       || activeOperation === 'creator-generate'
       || activeOperation === 'creator-save')) {
       cancelCreatorGeneration();
@@ -1049,6 +1082,7 @@ export function createCardIntakeController({
     if (isRegeneration && !isRetry) {
       clearCreatorOperation(true);
     }
+    creatorRegenerationBaseline = isRegeneration ? current.preview as IntakeCard : null;
     // Try again keeps what the learner already edited; a new request starts from a clean slate.
     if (!isRetry) creatorEditedFields.clear();
     const regenerationScope = isRegeneration
@@ -1260,12 +1294,17 @@ export function createCardIntakeController({
       );
       diagnostics.generationFailed?.(error);
       const partial = snapshot.cardCreator.streamedFields.length > 0;
+      // A regeneration that delivered details and then failed still counts, but the card goes back to
+      // what it was; Try again resumes the same request.
+      const interrupted = partial && isRegeneration;
       publishCardCreator({
-        stage: 'error',
+        stage: interrupted ? 'preview' : 'error',
         generationStage: null,
-        preview: snapshot.cardCreator.preview === generationPreview
-          ? current.preview
-          : snapshot.cardCreator.preview,
+        preview: interrupted
+          ? revertInterruptedRegeneration(selectedFields)
+          : snapshot.cardCreator.preview === generationPreview
+            ? current.preview
+            : snapshot.cardCreator.preview,
         error: createError,
         generationOutcome: partial ? { kind: 'failed', partial: true, refunded: null } : null,
       });
@@ -1296,7 +1335,8 @@ export function createCardIntakeController({
   /**
    * Stops the running generation and asks the server whether the request still counts. A stop before
    * any field arrived normally refunds it, so the dialog returns to the word; once part of the card
-   * arrived the request is kept and the partial card stays, unchecked.
+   * arrived the request is kept and the partial card stays, unchecked. A stopped regeneration returns
+   * the card to what it was before the regeneration started.
    */
   const stopCardCreatorGeneration = async (): Promise<CardCreateResult> => {
     const current = snapshot.cardCreator;
@@ -1322,12 +1362,16 @@ export function createCardIntakeController({
     const isRegeneration = current.regenerating.length > 0;
     const stopError = createCardCreatorError('stopped', 'Generation stopped.');
     const outcome = (refunded: boolean | null): CardCreatorGenerationOutcome => ({ kind: 'stopped', partial, refunded });
-    const settled = (refunded: boolean | null): Partial<CardCreatorModel> => partial
+    // A first generation keeps the details that arrived, unchecked. A regeneration never leaves a mix
+    // of old and new details behind: the card returns to what it was and the request still counts.
+    const settled = (refunded: boolean | null): Partial<CardCreatorModel> => partial && !isRegeneration
       ? { stage: 'error', generationStage: null, error: stopError, generationOutcome: outcome(refunded) }
       : {
         stage: isRegeneration ? 'preview' : 'input',
         generationStage: null,
-        preview: isRegeneration ? snapshot.cardCreator.preview : null,
+        preview: isRegeneration
+          ? partial ? revertInterruptedRegeneration(current.regenerating) : snapshot.cardCreator.preview
+          : null,
         error: stopError,
         generationOutcome: outcome(refunded),
       };
