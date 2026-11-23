@@ -651,6 +651,91 @@ msgid "library.canvas.search-placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:27
+msgid "library.capture-failure.account-changed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:17
+msgid "library.capture-failure.auth"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:20
+msgid "library.capture-failure.configuration"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:24
+msgid "library.capture-failure.course-cancelled"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:25
+msgid "library.capture-failure.course-unavailable"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:23
+msgid "library.capture-failure.deck-missing"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:22
+msgid "library.capture-failure.failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:16
+msgid "library.capture-failure.in-flight"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:26
+msgid "library.capture-failure.invalid-selection"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:19
+msgid "library.capture-failure.network"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:28
+msgid "library.capture-failure.not-verified"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:18
+msgid "library.capture-failure.permission"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:15
+msgid "library.capture-failure.quota"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:12
+msgid "library.capture-failure.quota-ai-cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:13
+msgid "library.capture-failure.quota-daily"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:14
+msgid "library.capture-failure.quota-service"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:21
+msgid "library.capture-failure.timeout"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:425
 msgid "library.card.bookmark"
 msgstr ""

@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { i18n } from '@lingui/core';
 import { describe, expect, it, vi } from 'vitest';
+import { setActiveUiLocale } from '../../i18n/loadCatalog';
 import type { CardData } from '../../types/card';
 import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
@@ -1227,7 +1229,34 @@ describe('card intake controller', () => {
     const result = await intake.generateDraft();
 
     expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
-    expect(intake.getSnapshot()).toMatchObject({ draft: 'apple', isSubmitting: false, error: 'Chưa tạo hoặc lưu được thẻ. Từ đã chọn vẫn được giữ lại; hãy thử lại.' });
+    expect(intake.getSnapshot()).toMatchObject({ draft: 'apple', isSubmitting: false, error: 'The card could not be created or saved. The selected word is kept; try again.' });
+  });
+
+  it('shows a failed capture in the language of the app', async () => {
+    const { port } = createFakePort();
+    vi.mocked(port.generateCard).mockRejectedValue(new Error('AI unavailable'));
+    const intake = createCardIntakeController({ port });
+    intake.setDraft('apple');
+    setActiveUiLocale('vi');
+
+    try {
+      await intake.generateDraft();
+    } finally {
+      setActiveUiLocale('en');
+      i18n.activate('en');
+    }
+
+    expect(intake.getSnapshot().error).toBe('Chưa tạo hoặc lưu được thẻ. Từ đã chọn vẫn được giữ lại; hãy thử lại.');
+  });
+
+  it('names a deck that no longer exists in the language of the app', async () => {
+    const { port } = createFakePort();
+    const intake = createCardIntakeController({ port });
+    intake.setDraft('apple');
+
+    await intake.generateDraft({ requestedDeck: 'Travel', requestedDeckAvailable: () => false });
+
+    expect(intake.getSnapshot().error).toBe('The selected deck no longer exists. Choose a deck and try again.');
   });
 
   it('keeps one draft operation ID across a manual retry and clears it after save', async () => {
@@ -1322,7 +1351,7 @@ describe('card intake controller', () => {
 
     expect(intake.getSnapshot()).toMatchObject({
       draft: 'apple',
-      error: 'Dịch vụ AI chưa sẵn sàng. Từ đã chọn vẫn được giữ lại; hãy thử lại sau.',
+      error: 'The AI service is not ready. The selected word is kept; try again later.',
     });
   });
 

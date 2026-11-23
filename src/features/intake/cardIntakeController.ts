@@ -4,6 +4,7 @@ import { createLexemeId } from '../multilingual/lexemeIdentity';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { isSupportedImageUrl } from '../../lib/images';
 import { captureFailureMessage } from '../../lib/captureFailureMessage';
+import { captureFailureCopy } from './captureFailureCopy';
 import type { WordGenerationProgress } from '../../lib/gemini';
 import { normalizeTranslationAlternatives, normalizeWordInfoField } from '../../lib/wordInfo';
 import type { CardData } from '../../types/card';
@@ -829,7 +830,7 @@ export function createCardIntakeController({
       }
       diagnostics.generationFailed?.(error);
       publishError(
-        error instanceof RequestedDeckUnavailableError ? error.message : captureFailureMessage(error),
+        await captureFailureCopy(error, error instanceof RequestedDeckUnavailableError ? 'deck-missing' : undefined),
         'generation',
       );
       return { status: 'failed', error };
