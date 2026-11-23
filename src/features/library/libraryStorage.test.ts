@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   clearImageNegativeCache,
+  cloudBackoffCacheKey,
   hasImageNegativeCache,
   isCloudBackoffActive,
   markImageNegativeCache,
@@ -123,5 +124,22 @@ describe('library browser storage safeguards', () => {
     removeCloudStatsCaches('owner-a');
 
     expect([...values.keys()]).toEqual(['lingoflash_cloud_stats_owner-ab_en', 'lingoflash_cloud_page_owner-a']);
+  });
+
+  it('drops a cloud backoff that lies further ahead than the pause ever lasts', () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+      removeItem: (key: string) => { values.delete(key); },
+    });
+    const key = cloudBackoffCacheKey('owner-a');
+
+    values.set(key, String(Date.now() + 60_000));
+    expect(isCloudBackoffActive('owner-a')).toBe(true);
+
+    values.set(key, String(Date.now() + 6 * 60 * 60 * 1_000));
+    expect(isCloudBackoffActive('owner-a')).toBe(false);
+    expect(values.has(key)).toBe(false);
   });
 });

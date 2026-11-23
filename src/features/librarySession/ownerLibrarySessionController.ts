@@ -200,12 +200,17 @@ export function createOwnerLibrarySessionController({
       return pendingFromProgress(progress, total);
     };
 
+    // A later total update installs its own token, and its figure is then the newer one.
+    const activationToken = Symbol(ownerId);
+    legacyRefreshToken = activationToken;
     void countLegacy().then(legacyPending => {
       if (!active(ownerId, activationGeneration)) return;
-      publish({ legacyPending, status: 'ready' });
+      publish(legacyRefreshToken === activationToken ? { legacyPending, status: 'ready' } : { status: 'ready' });
     }).catch(error => {
       if (!active(ownerId, activationGeneration)) return;
-      publish({ status: 'ready', legacyIssue: getLegacyMigrationIssue(error) });
+      publish(legacyRefreshToken === activationToken
+        ? { status: 'ready', legacyIssue: getLegacyMigrationIssue(error) }
+        : { status: 'ready' });
     });
 
     return () => {

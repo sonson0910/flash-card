@@ -1226,4 +1226,28 @@ describe('an owner can revoke earlier share links', () => {
     await reloaded.activate('owner-1');
     expect(reloaded.getSnapshot().activeShareId).toBe('share-1');
   });
+  it('reuses the pending share operation after the device clock steps back within the server skew', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-08-01T00:00:10.000Z'));
+      const storage = new MemoryStorage();
+      const first = setup('https://sonflash.test/library', storage);
+      await first.controller.activate('owner-1');
+      vi.mocked(first.adapter.create).mockRejectedValueOnce(new Error('response lost'));
+      const args = { category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false };
+      await first.controller.actions.createShare(args);
+      vi.setSystemTime(new Date('2026-08-01T00:00:02.000Z'));
+      vi.mocked(first.adapter.create).mockRejectedValueOnce(new Error('response lost'));
+      await first.controller.actions.createShare(args);
+      const calls = vi.mocked(first.adapter.create).mock.calls;
+      expect(calls[1]![0].opId).toBe(calls[0]![0].opId);
+
+      const reloaded = setup('https://sonflash.test/library', storage);
+      await reloaded.controller.activate('owner-1');
+      await reloaded.controller.actions.createShare(args);
+      expect(vi.mocked(reloaded.adapter.create).mock.calls[0]![0].opId).toBe(calls[0]![0].opId);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

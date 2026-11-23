@@ -433,6 +433,11 @@ export function LibraryInsightsDialog({
   const { i18n } = useLingui();
   const isLoading = phase === 'loading';
   const hasStats = phase === 'ready' && stats !== null;
+  const difficultyLabels: Record<string, string> = {
+    Mastered: i18n._(msg({ id: 'stats.mastered', message: 'Mastered' })),
+    Learning: i18n._(msg({ id: 'stats.learning', message: 'Learning' })),
+    'Not reviewed': i18n._(msg({ id: 'stats.not-reviewed', message: 'Not reviewed' })),
+  };
   const maxCategory = hasStats ? Math.max(1, ...stats.categoryChart.map(item => item.value)) : 1;
   const difficultyTotal = hasStats ? stats.difficultyChart.reduce((sum, item) => sum + Math.max(0, item.value), 0) : 0;
   const difficultyShares = hasStats ? stats.difficultyChart.map(item => (difficultyTotal > 0 ? Math.max(0, item.value) / difficultyTotal : 0)) : [];
@@ -451,7 +456,7 @@ export function LibraryInsightsDialog({
         <Dialog.Content className="library-dialog-frame library-dialog-frame--insights" onCloseAutoFocus={event => restoreLibraryDialogFocus(event, restoreFocusRef)}>
           <header className="library-dialog-header">
             <div>
-              <p className="library-dialog-kicker"><Trans {...msg({ context: 'library.insights.kicker', message: 'Stats · last 30 days' })} /></p>
+              <p className="library-dialog-kicker"><Trans {...msg({ context: 'library.insights.kicker', message: 'Stats · all time' })} /></p>
               <Dialog.Title className="library-dialog-title"><Trans {...msg({ context: 'library.insights.title', message: 'Learning insights' })} /></Dialog.Title>
               <Dialog.Description className="library-dialog-description"><Trans {...msg({ context: 'library.insights.description', message: 'A truthful view of your memory strength and review momentum.' })} /></Dialog.Description>
             </div>
@@ -501,7 +506,7 @@ export function LibraryInsightsDialog({
                       <div className="library-insights-difficulty">
                         <span className="library-insights-donut" aria-hidden="true" style={{ background: difficultyTotal > 0 ? `conic-gradient(${difficultyRing})` : undefined }} />
                         <ul className="library-insights-legend">
-                          {stats.difficultyChart.map((item, index) => <li key={item.name} data-difficulty-index={index % 3}><span>{item.name}</span><strong>{formatNumber(item.value)}</strong><small>{Math.round((difficultyShares[index] ?? 0) * 100)}%</small></li>)}
+                          {stats.difficultyChart.map((item, index) => <li key={item.name} data-difficulty-index={index % 3}><span>{difficultyLabels[item.name] ?? item.name}</span><strong>{formatNumber(item.value)}</strong><small>{Math.round((difficultyShares[index] ?? 0) * 100)}%</small></li>)}
                         </ul>
                       </div>
                     )}

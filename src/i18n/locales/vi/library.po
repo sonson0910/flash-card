@@ -1342,9 +1342,9 @@ msgid "library.create.sign-in-help"
 msgstr "Đăng nhập để tạo thẻ thông minh."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:703
+#: src/features/library/courseLanguageCopy.ts:7
 msgid "library.create.word-placeholder"
-msgstr "Nhập một từ tiếng Anh (ví dụ: serendipity)…"
+msgstr "{language, select, ko {Nhập một từ tiếng Hàn (ví dụ: 사랑)…} ja {Nhập một từ tiếng Nhật (ví dụ: 桜)…} zh {Nhập một từ tiếng Trung (ví dụ: 你好)…} other {Nhập một từ tiếng Anh (ví dụ: serendipity)…}}"
 
 #. js-lingui-explicit-id
 #: src/features/library/libraryPresentation.ts:30
@@ -2072,9 +2072,9 @@ msgid "library.filters.part-of-speech-label"
 msgstr "Lọc theo từ loại"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:852
+#: src/features/library/courseLanguageCopy.ts:9
 msgid "library.filters.search-placeholder"
-msgstr "Tìm từ tiếng Anh…"
+msgstr "{language, select, ko {Tìm từ tiếng Hàn…} ja {Tìm từ tiếng Nhật…} zh {Tìm từ tiếng Trung…} other {Tìm từ tiếng Anh…}}"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryTools.tsx:879
@@ -2893,3 +2893,48 @@ msgstr "Bỏ"
 msgctxt "library.import.failure-limited"
 msgid "Your AI card allowance does not cover more generated cards right now."
 msgstr "Hạn mức thẻ AI của bạn hiện chưa đủ để tạo thêm thẻ."
+
+#: src/features/library/LibraryDialogOverlays.tsx:459
+msgctxt "library.insights.kicker"
+msgid "Stats · all time"
+msgstr "Thống kê · toàn thời gian"
+
+#. js-lingui-explicit-id
+#: src/features/library/courseLanguageCopy.ts:6
+msgid "library.create.word-label"
+msgstr "{language, select, ko {Từ tiếng Hàn} ja {Từ tiếng Nhật} zh {Từ tiếng Trung} other {Từ tiếng Anh}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:267
+msgid "library.deck.create-short"
+msgstr "Tạo"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:264
+msgid "library.deck.creating-aria"
+msgstr "Đang tạo bộ thẻ"
+
+#. js-lingui-explicit-id
+#: src/features/library/courseLanguageCopy.ts:8
+msgid "library.filters.search-label"
+msgstr "{language, select, ko {Tìm từ tiếng Hàn} ja {Tìm từ tiếng Nhật} zh {Tìm từ tiếng Trung} other {Tìm từ tiếng Anh}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:438
+msgid "stats.learning"
+msgstr "Đang học"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:437
+msgid "stats.mastered"
+msgstr "Đã thuộc"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:439
+msgid "stats.not-reviewed"
+msgstr "Chưa ôn"
+
+#: src/features/library/LibraryCardGrid.tsx:396
+msgctxt "library.grid.clear-search"
+msgid "Clear search"
+msgstr "Xóa tìm kiếm"

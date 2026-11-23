@@ -1342,9 +1342,9 @@ msgid "library.create.sign-in-help"
 msgstr "Sign in to generate smart cards."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:703
+#: src/features/library/courseLanguageCopy.ts:7
 msgid "library.create.word-placeholder"
-msgstr "Type an English word (e.g. serendipity)…"
+msgstr "{language, select, ko {Type a Korean word (e.g. 사랑)…} ja {Type a Japanese word (e.g. 桜)…} zh {Type a Chinese word (e.g. 你好)…} other {Type an English word (e.g. serendipity)…}}"
 
 #. js-lingui-explicit-id
 #: src/features/library/libraryPresentation.ts:30
@@ -2072,9 +2072,9 @@ msgid "library.filters.part-of-speech-label"
 msgstr "Filter by part of speech"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:852
+#: src/features/library/courseLanguageCopy.ts:9
 msgid "library.filters.search-placeholder"
-msgstr "Search English words…"
+msgstr "{language, select, ko {Search Korean words…} ja {Search Japanese words…} zh {Search Chinese words…} other {Search English words…}}"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryTools.tsx:879
@@ -2893,3 +2893,48 @@ msgstr "Discard"
 msgctxt "library.import.failure-limited"
 msgid "Your AI card allowance does not cover more generated cards right now."
 msgstr "Your AI card allowance does not cover more generated cards right now."
+
+#: src/features/library/LibraryDialogOverlays.tsx:459
+msgctxt "library.insights.kicker"
+msgid "Stats · all time"
+msgstr "Stats · all time"
+
+#. js-lingui-explicit-id
+#: src/features/library/courseLanguageCopy.ts:6
+msgid "library.create.word-label"
+msgstr "{language, select, ko {Korean word} ja {Japanese word} zh {Chinese word} other {English word}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:267
+msgid "library.deck.create-short"
+msgstr "Create"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:264
+msgid "library.deck.creating-aria"
+msgstr "Creating deck"
+
+#. js-lingui-explicit-id
+#: src/features/library/courseLanguageCopy.ts:8
+msgid "library.filters.search-label"
+msgstr "{language, select, ko {Search Korean words} ja {Search Japanese words} zh {Search Chinese words} other {Search English words}}"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:438
+msgid "stats.learning"
+msgstr "Learning"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:437
+msgid "stats.mastered"
+msgstr "Mastered"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:439
+msgid "stats.not-reviewed"
+msgstr "Not reviewed"
+
+#: src/features/library/LibraryCardGrid.tsx:396
+msgctxt "library.grid.clear-search"
+msgid "Clear search"
+msgstr "Clear search"

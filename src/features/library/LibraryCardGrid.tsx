@@ -67,6 +67,8 @@ interface LibraryCardGridProps {
   onPageChange?: (page: number) => void;
   hasNextCloudPage: boolean;
   onClearFilters: () => void;
+  /** Opens the create flow when the library has no cards to show. */
+  onCreateCard: () => void;
   libraryCount: number;
   isGenerating?: boolean;
   viewMode?: LibraryViewMode;
@@ -171,6 +173,9 @@ export function LibraryCardGrid({
   isPageLoading,
   hasNextCloudPage,
   onClearFilters,
+  onCreateCard,
+  searchQuery,
+  setSearchQuery,
   libraryCount,
   legacyCardsPending,
   legacyIssue,
@@ -385,7 +390,11 @@ export function LibraryCardGrid({
           <BookOpen size={24} aria-hidden="true" />
           <h3>{cloudReadUnavailable ? <Trans {...msg({ context: 'library.grid.cloud-unavailable-title', message: 'Cloud is taking a short break' })} /> : libraryCount ? <Trans {...msg({ context: 'library.grid.no-match-title', message: 'No cards match this view' })} /> : <Trans {...msg({ context: 'library.grid.empty-title', message: 'Your first word starts here' })} />}</h3>
           <p>{cloudReadUnavailable ? <Trans {...msg({ context: 'library.grid.cloud-unavailable-description', message: 'Your cloud cards are safe. Try again after the read quota resets, or create a card now and keep learning from this device.' })} /> : libraryCount ? <Trans {...msg({ context: 'library.grid.no-match-description', message: 'Clear the active filters to return to your complete vocabulary library.' })} /> : <Trans {...msg({ context: 'library.grid.empty-description', message: 'Add a word and SonFlash will turn it into a vivid card.' })} />}</p>
-          {!cloudReadUnavailable && <button type="button" onClick={onClearFilters}>{libraryCount ? <Trans {...msg({ context: 'library.grid.clear-filters', message: 'Clear filters' })} /> : <Trans {...msg({ context: 'library.grid.create-first', message: 'Create your first card' })} />}</button>}
+          {!cloudReadUnavailable && (libraryCount
+            ? <button type="button" onClick={onClearFilters}><Trans {...msg({ context: 'library.grid.clear-filters', message: 'Clear filters' })} /></button>
+            : searchQuery.trim()
+              ? <button type="button" onClick={() => setSearchQuery('')}><Trans {...msg({ context: 'library.grid.clear-search', message: 'Clear search' })} /></button>
+              : <button type="button" onClick={onCreateCard}><Trans {...msg({ context: 'library.grid.create-first', message: 'Create your first card' })} /></button>)}
         </div>
       ) : <div className="library-canvas-card-grid" data-library-view={viewMode}>
         {cards.map(card => {

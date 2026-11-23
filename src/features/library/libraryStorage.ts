@@ -94,9 +94,19 @@ export const normalizeLocalCards = (value: unknown): CardData[] => Array.isArray
     }))
   : [];
 
+const CLOUD_BACKOFF_MS = 5 * 60 * 1000;
+
 export const isCloudBackoffActive = (userId: string) => {
   try {
-    return Number(localStorage.getItem(cloudBackoffCacheKey(userId)) || 0) > Date.now();
+    const key = cloudBackoffCacheKey(userId);
+    const until = Number(localStorage.getItem(key) || 0);
+    const now = Date.now();
+    // A pause never lasts longer than CLOUD_BACKOFF_MS, so a later value comes from a clock that moved back.
+    if (until > now + CLOUD_BACKOFF_MS) {
+      removeLocalValue(key);
+      return false;
+    }
+    return until > now;
   } catch {
     return false;
   }

@@ -2893,3 +2893,48 @@ msgstr ""
 msgctxt "library.import.failure-limited"
 msgid "Your AI card allowance does not cover more generated cards right now."
 msgstr ""
+
+#: src/features/library/LibraryDialogOverlays.tsx:459
+msgctxt "library.insights.kicker"
+msgid "Stats · all time"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/courseLanguageCopy.ts:6
+msgid "library.create.word-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:267
+msgid "library.deck.create-short"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryTools.tsx:264
+msgid "library.deck.creating-aria"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/courseLanguageCopy.ts:8
+msgid "library.filters.search-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:438
+msgid "stats.learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:437
+msgid "stats.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryDialogOverlays.tsx:439
+msgid "stats.not-reviewed"
+msgstr ""
+
+#: src/features/library/LibraryCardGrid.tsx:396
+msgctxt "library.grid.clear-search"
+msgid "Clear search"
+msgstr ""

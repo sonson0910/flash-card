@@ -13,6 +13,7 @@ import {
   type LibraryInsightsStats,
 } from './LibraryDialogOverlays';
 import { setFormatLocale } from '../../lib/format';
+import { selectLibraryStats } from './libraryViewModel';
 
 i18n.load('en', {});
 i18n.activate('en');
@@ -154,5 +155,38 @@ describe('library dialog overlays', () => {
     );
     setFormatLocale('en');
     expect(html).toContain('1.200');
+  });
+});
+
+describe('library insights figures', () => {
+  const summary = { total: 9, reviewed: 6, easy: 3, good: 2, hard: 1, unrated: 3, bookmarked: 0, due: 2, dueAsOfDate: '2026-11-23', dueForecast: [], recentlyMastered: [] };
+  const buildStats = () => selectLibraryStats({
+    cards: [], difficultySummary: summary, isAuthenticated: false, cloudFacetsComplete: false,
+    cloudCategoryCounts: {}, xpHistory: {}, reviewActivity: undefined, rewardTimeZone: undefined,
+  } as never);
+
+  it('counts the same cards as Learning in the metric and in the difficulty legend', () => {
+    const built = buildStats();
+    expect(built.learning).toBe(built.difficultyChart.find(item => item.name === 'Learning')?.value);
+    expect(built.learning).toBe(3);
+  });
+
+  it('does not claim a 30-day window over all-time figures', () => {
+    const html = renderMarkup(<LibraryInsightsDialog open onOpenChange={vi.fn()} stats={buildStats()} />);
+    expect(html).not.toContain('last 30 days');
+  });
+
+  it('shows translated difficulty legend names', () => {
+    i18n.load('vi', { 'stats.mastered': 'Đã thuộc', 'stats.learning': 'Đang học', 'stats.not-reviewed': 'Chưa ôn' });
+    i18n.activate('vi');
+    try {
+      const html = renderMarkup(<LibraryInsightsDialog open onOpenChange={vi.fn()} stats={buildStats()} />);
+      expect(html).toContain('<span>Đã thuộc</span>');
+      expect(html).toContain('<span>Đang học</span>');
+      expect(html).toContain('<span>Chưa ôn</span>');
+      expect(html).not.toContain('<span>Not reviewed</span>');
+    } finally {
+      i18n.activate('en');
+    }
   });
 });
