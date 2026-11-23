@@ -24,9 +24,11 @@ const monthPeriod = (now: Date) => {
   return { key: `free-${month}`, endsAt: new Date(Date.UTC(year, number, 1, -7)) };
 };
 
-// A learner's device clock can run a few minutes behind the server. Without tolerance, a Pro grant whose
-// `startsAt` is "now" on the server reads as being in the future on the device, and the meter shows a stale
-// "Free, exhausted" state until the device clock catches up (or the free period rolls over).
+// A learner's device clock can run a few minutes behind the server, and an operator grant stamps `startsAt` with
+// the operator's own clock. Without tolerance, a Pro grant reads as being in the future on the device, and the
+// meter shows a stale "Free, exhausted" state until the clock catches up. The server accepts the same tolerance
+// when it resolves the plan, so the meter and the quota agree; a test keeps this copy equal to the server's
+// functions/src/plan-clock-rules.ts.
 const PRO_START_CLOCK_SKEW_TOLERANCE_MS = 5 * 60_000;
 
 export interface ResolvedPlanPeriod {
