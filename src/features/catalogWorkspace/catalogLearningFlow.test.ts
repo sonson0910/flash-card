@@ -12,6 +12,7 @@ import {
   settleCatalogLibraryAdd,
 } from './catalogLearningFlow';
 import type { CatalogVocabularyPresentation } from './catalogPresentation';
+import { createTargetAwareCardId } from '../../lib/cardIdentity';
 
 const entry: CatalogVocabularyPresentation = {
   id: 'published-analysis',
@@ -51,6 +52,45 @@ describe('catalog learning flow', () => {
       reviews: 0,
     });
     expect(plan.items.map(item => item.card.id)).toEqual(['word-analysis']);
+  });
+
+  describe('an entry without a lexeme in a non-English course', () => {
+    const korean: CatalogVocabularyPresentation = { ...entry, id: 'published-sagwa', lemma: '사과', language: 'ko' };
+
+    it('gets the id and language of its course so it cannot collide with an English card of the same spelling', () => {
+      const card = catalogEntryToLibraryCard(korean, '2026-08-04T04:00:00.000Z');
+
+      expect(card).toMatchObject({ id: createTargetAwareCardId('사과', 'ko'), language: 'ko', word: '사과' });
+      expect(card.id).not.toBe('word-사과');
+    });
+
+    it('keeps the word-only id and no language tag for an English entry', () => {
+      const card = catalogEntryToLibraryCard(entry);
+
+      expect(card.id).toBe('word-analysis');
+      expect(card).not.toHaveProperty('language');
+    });
+
+    it('is found again under the identity of its own course only', () => {
+      const first = mergeCatalogEntryIntoLibrary([], korean, '2026-08-04T04:00:00.000Z');
+      const again = mergeCatalogEntryIntoLibrary(first.cards, { ...korean, id: 'another-release-id' });
+      const english = mergeCatalogEntryIntoLibrary(first.cards, { ...entry, lemma: '사과' });
+      const index = createCatalogLibraryIdentityIndex(first.cards);
+
+      expect(again).toMatchObject({ status: 'existing', card: { id: first.card.id } });
+      expect(english.status).toBe('created');
+      expect(catalogEntryIsInLibrary(index, korean)).toBe(true);
+      expect(catalogEntryIsInLibrary(index, { ...entry, lemma: '사과' })).toBe(false);
+    });
+
+    it('does not take a card without a language tag for its own, since such a card is an English card', () => {
+      const untagged: CardData = { ...catalogEntryToLibraryCard(entry), id: 'word-사과', word: '사과', normalizedWord: '사과' };
+      const result = mergeCatalogEntryIntoLibrary([untagged], korean);
+
+      expect(result.status).toBe('created');
+      expect(result.card.id).toBe(createTargetAwareCardId('사과', 'ko'));
+      expect(catalogEntryIsInLibrary(createCatalogLibraryIdentityIndex([untagged]), korean)).toBe(false);
+    });
   });
 
   it('adds the same catalog entry idempotently by normalized word', () => {

@@ -255,6 +255,33 @@ describe("practice view accessibility contracts", () => {
     expect(studyHtml).toContain('0 / 1 saved');
   });
 
+  it('renders nothing, and so no edit sheet, when the session has no card to study', () => {
+    // After an owner change the session reports no study cards; the screen must unmount the card
+    // (and the edit sheet it holds) instead of keeping the earlier owner's card on screen.
+    const render = (cards: CardData[]) => renderToStaticMarkup(
+      <StudyView
+        cards={cards}
+        index={0}
+        recallMode="target-to-native"
+        revealed
+        needsIntroduction={false}
+        reviewedCardId={null}
+        customDecks={[]}
+        onClose={vi.fn()}
+        onRecallMode={vi.fn()}
+        onReveal={vi.fn()}
+        onBookmark={vi.fn()}
+        onAssignDeck={vi.fn()}
+        onUpdateCard={vi.fn()}
+        onRate={vi.fn()}
+        onIndex={vi.fn()}
+      />,
+    );
+
+    expect(render([quizQuestion.card])).toContain('data-study-card');
+    expect(render([])).toBe('');
+  });
+
   it('introduces an unreviewed card before recall and rating', () => {
     const studyHtml = renderToStaticMarkup(
       <StudyView

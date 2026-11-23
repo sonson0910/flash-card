@@ -10,6 +10,7 @@ const captured = vi.hoisted(() => ({
   },
   intake: null as null | { intake: { rememberPromoted(card: object): void; forgetPromoted(card: object): void } },
   decks: null as null | { ports: { publishCards(cardIds: ReadonlySet<string>, fields: object): void } },
+  invalidateIntakeCard: vi.fn(),
 }));
 
 vi.mock('../lib/firebase', () => ({ db: null }));
@@ -19,7 +20,7 @@ vi.mock('../features/learning/useLearningWorkspace', () => ({
 vi.mock('../features/intake/useIntakeSharingSession', () => ({
   useIntakeSharingSession: (options: never) => {
     captured.intake = options;
-    return { model: { isBusy: false }, actions: { createConfirmedCatalogCards: vi.fn(), shareCategory: vi.fn(), cardCreator: { open: vi.fn() } } };
+    return { model: { isBusy: false }, actions: { createConfirmedCatalogCards: vi.fn(), shareCategory: vi.fn(), cardCreator: { open: vi.fn() }, invalidateCard: captured.invalidateIntakeCard } };
   },
 }));
 vi.mock('../features/practice/usePracticeWorkspace', () => ({
@@ -123,7 +124,7 @@ const renderCoordination = async (notify: (message: string | null) => void = vi.
   const page1 = (snapshot: CardData[]) => overlayRecentlyPromotedCards({
     pageCards: snapshot, promotedCards: [...promotedRef.current.values()], filters, page: 1, pageSize: 20,
   });
-  return { root, page1 };
+  return { root, page1, cardsRef: library.ports.cardsRef as { current: CardData[] } };
 };
 
 describe('recently promoted overlay follows later library mutations', () => {
@@ -210,6 +211,25 @@ describe('recently promoted overlay follows later library mutations', () => {
       captured.learning!.library.publication.remove(apple.id);
       captured.learning!.library.publication.restore(apple);
       expect(page1([]).map(c => c.word)).toEqual(['apple']);
+    } finally { await act(async () => { root.unmount(); }); }
+  });
+
+  it('ends the pending media of a card that is deleted, so late media is not written to it', async () => {
+    captured.invalidateIntakeCard.mockClear();
+    const { root } = await renderCoordination();
+    try {
+      captured.learning!.library.publication.remove('word-apple');
+      expect(captured.invalidateIntakeCard).toHaveBeenCalledExactlyOnceWith('word-apple');
+    } finally { await act(async () => { root.unmount(); }); }
+  });
+
+  it('ends the pending media of every card when the library is cleared', async () => {
+    captured.invalidateIntakeCard.mockClear();
+    const { root, cardsRef } = await renderCoordination();
+    try {
+      cardsRef.current = [card('apple'), card('banana')];
+      captured.learning!.library.publication.clear();
+      expect(captured.invalidateIntakeCard.mock.calls.map(call => call[0])).toEqual(['word-apple', 'word-banana']);
     } finally { await act(async () => { root.unmount(); }); }
   });
 });

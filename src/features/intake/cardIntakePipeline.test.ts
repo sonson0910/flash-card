@@ -1096,6 +1096,20 @@ describe('Card Intake Pipeline contract', () => {
     expect(context.notify).toHaveBeenCalledWith('The card could not be saved. Check your connection and try again.');
   });
 
+  it('reports a newly created shared card under the id the service stored it under', async () => {
+    // A word that was once the new headword of a renamed card stays claimed by that card id,
+    // so the service stores the shared card there although it created it.
+    const shared = card('attention');
+    repositoryRuntime.createCardV2IfAbsent.mockResolvedValueOnce({
+      card: { ...shared, id: 'word-focus', revision: 1 } as CardData, created: true, gamification: null,
+    });
+    const pipeline = createCardIntakePipeline({ getContext: createContext });
+
+    const results = await pipeline.persistCards([shared], 'shared');
+
+    expect(results).toEqual([{ card: { ...shared, id: 'word-focus' }, created: true }]);
+  });
+
   it('reports a reused shared card under the id it is stored under', async () => {
     const earlier = { ...card('사과'), id: createWordCardId('사과'), language: 'ko', partOfSpeech: 'noun', revision: 4 };
     const shared = { ...card('사과'), id: createTargetAwareCardId('사과', 'ko'), language: 'ko' };

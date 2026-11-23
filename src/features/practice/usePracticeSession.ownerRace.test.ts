@@ -753,6 +753,19 @@ describe('usePracticeSession owner isolation', () => {
     await Promise.resolve();
   });
 
+  it('shows no study card in the first render after the owner changes, so an open edit sheet is unmounted', async () => {
+    const { render } = createSessionHarness([card(1), card(2)]);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    expect(session.study.cards.length).toBeGreaterThan(0);
+
+    const firstNextOwnerRender = render({ ownerId: 'owner-b' });
+
+    expect(firstNextOwnerRender.study.cards).toEqual([]);
+  });
+
   it.each([
     ['account switch', 'owner-b'],
     ['sign-out', null],

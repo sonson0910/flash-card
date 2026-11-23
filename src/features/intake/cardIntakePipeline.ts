@@ -535,11 +535,10 @@ export function createCardIntakePipeline({
         if (outcomes.some(outcome => outcome !== 'created' && outcome !== 'reused')) {
           throw new Error('Some shared cards could not be confirmed.');
         }
-        // A reused card is reported under the id it is stored under, so the caller can study it.
+        // A card is reported under the id it is stored under, created or reused, so the caller can study it.
         return results.map((result, index) => {
-          const created = outcomes[index] === 'created';
-          const storedId = created ? undefined : storedCardIds.get(result.card);
-          return { card: storedId ? { ...result.card, id: storedId } : result.card, created };
+          const storedId = storedCardIds.get(result.card);
+          return { card: storedId ? { ...result.card, id: storedId } : result.card, created: outcomes[index] === 'created' };
         });
       }
     } else void settlements;

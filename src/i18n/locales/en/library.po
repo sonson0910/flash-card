@@ -2929,3 +2929,104 @@ msgstr "across {count, plural, one {# deck} other {# decks}}"
 msgctxt "library.edit-card.discard"
 msgid "Discard"
 msgstr "Discard"
+
+#: src/features/library/EmptyLibraryPanel.tsx:226
+#: src/features/library/LibraryTools.tsx:686
+msgctxt "library.create.word-label"
+msgid "English word"
+msgstr "English word"
+
+#: src/features/library/LibraryTools.tsx:840
+msgctxt "library.filters.search-label"
+msgid "Search English words"
+msgstr "Search English words"
+
+#: src/features/library/LibraryDialogOverlays.tsx:454
+msgctxt "library.insights.kicker"
+msgid "Stats · last 30 days"
+msgstr "Stats · last 30 days"
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:27
+msgid "library.capture-failure.account-changed"
+msgstr "Import cancelled because the signed-in account changed. Select the word again."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:17
+msgid "library.capture-failure.auth"
+msgstr "Sign in with Google to create cards. The selected word is kept; sign in and try again."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:20
+msgid "library.capture-failure.configuration"
+msgstr "The AI service is not ready. The selected word is kept; try again later."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:24
+msgid "library.capture-failure.course-cancelled"
+msgstr "Import cancelled: switch to a matching course, then select the word again."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:25
+msgid "library.capture-failure.course-unavailable"
+msgstr "The matching course could not be prepared. The word was not saved."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:23
+msgid "library.capture-failure.deck-missing"
+msgstr "The selected deck no longer exists. Choose a deck and try again."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:22
+msgid "library.capture-failure.failed"
+msgstr "The card could not be created or saved. The selected word is kept; try again."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:16
+msgid "library.capture-failure.in-flight"
+msgstr "The AI card for this word is still being created. The selected word is kept; try again in a few seconds."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:26
+msgid "library.capture-failure.invalid-selection"
+msgstr "Select a word or a short phrase of at most 80 characters in your course's language."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:19
+msgid "library.capture-failure.network"
+msgstr "The connection or the AI service was interrupted. The selected word is kept; try again."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:28
+msgid "library.capture-failure.not-verified"
+msgstr "This import could not be verified securely. Select the word again."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:18
+msgid "library.capture-failure.permission"
+msgstr "AI access was denied. The selected word is kept; sign in again and retry."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:15
+msgid "library.capture-failure.quota"
+msgstr "The AI service has hit its quota. The selected word is kept; try again later."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:12
+msgid "library.capture-failure.quota-ai-cards"
+msgstr "You have used all your AI cards for this period. See the Pro plan or wait for the next period; reviewing and adding cards by hand still work."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:13
+msgid "library.capture-failure.quota-daily"
+msgstr "You have used up today's AI turns. Try again after 00:00 (Vietnam time)."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:14
+msgid "library.capture-failure.quota-service"
+msgstr "AI is paused because today's shared limit is used up. Try again after 00:00 (Vietnam time)."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:21
+msgid "library.capture-failure.timeout"
+msgstr "The AI service took too long to respond. The selected word is kept; try again."

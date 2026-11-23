@@ -4,6 +4,7 @@ import { createLexemeId } from '../multilingual/lexemeIdentity';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { isSupportedImageUrl } from '../../lib/images';
 import { captureFailureMessage } from '../../lib/captureFailureMessage';
+import { captureFailureCopy } from './captureFailureCopy';
 import type { WordGenerationProgress } from '../../lib/gemini';
 import { normalizeTranslationAlternatives, normalizeWordInfoField } from '../../lib/wordInfo';
 import type { CardData } from '../../types/card';
@@ -370,9 +371,6 @@ const validatePersistedResults = (
     const expectedCard = logicalId ? expectedByIdentity.get(logicalId) : undefined;
     if (!identity || !expectedCard) {
       throw new Error('Card intake persistence returned a card for the wrong word.');
-    }
-    if (result.created && identity.card.id !== expectedCard.id) {
-      throw new Error('Card intake persistence changed a newly created card identity.');
     }
     if (validated.has(logicalId)) {
       throw new Error('Card intake persistence returned duplicate card identities.');
@@ -838,7 +836,7 @@ export function createCardIntakeController({
         try { draftPort?.clearOperation?.(); } catch { /* storage is optional */ }
       }
       publishError(
-        error instanceof RequestedDeckUnavailableError ? error.message : captureFailureMessage(error),
+        await captureFailureCopy(error, error instanceof RequestedDeckUnavailableError ? 'deck-missing' : undefined),
         'generation',
       );
       return { status: 'failed', error };
