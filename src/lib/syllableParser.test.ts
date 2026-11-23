@@ -28,4 +28,14 @@ describe('syllableParser', () => {
     expect(result.syllables.length).toBe(1);
     expect(result.hasMultipleSyllables).toBe(false);
   });
+
+  it('keeps hyphenated headwords cut on letter boundaries in the fallback split', () => {
+    for (const word of ['self-esteem', 'well-known']) {
+      const parts = parseSyllables(word).syllables.map(part => part.text);
+      expect(parts.join('')).toBe(word);
+      expect(parts.length).toBeGreaterThan(1);
+      for (const part of parts) expect(part).toMatch(/^[a-z]/i);
+    }
+    expect(parseSyllables('self-esteem').syllables[0].text).toBe('self-');
+  });
 });

@@ -21,6 +21,12 @@ export interface SyllableAnalysis {
  * Standard English vowel cluster syllable splitting heuristic.
  */
 function splitWordByVowelClusters(word: string): string[] {
+  // Hyphen and space separated words are split per segment, each keeping its trailing separator.
+  const segments = word.match(/[^\s-]+[\s-]*|[\s-]+/g) ?? [word];
+  return segments.flatMap(splitSegmentByVowelClusters);
+}
+
+function splitSegmentByVowelClusters(word: string): string[] {
   const clean = word.trim().toLowerCase().replace(/[^a-z]/g, '');
   if (!clean || clean.length <= 3) return [word];
 
@@ -28,18 +34,20 @@ function splitWordByVowelClusters(word: string): string[] {
   const matches = clean.match(syllableRegex);
   if (!matches || matches.length <= 1) return [word];
 
-  // Re-map sliced parts back to original casing
+  // Cut the original word where the letters-only copy was cut. Characters outside a-z
+  // (hyphens, spaces, apostrophes) stay with the syllable before them.
   const parts: string[] = [];
   let cursor = 0;
-  for (let i = 0; i < matches.length; i += 1) {
-    const len = matches[i].length;
-    if (i === matches.length - 1) {
-      parts.push(word.slice(cursor));
-    } else {
-      parts.push(word.slice(cursor, cursor + len));
-      cursor += len;
+  for (let i = 0; i < matches.length - 1; i += 1) {
+    let remaining = matches[i].length;
+    while (cursor < word.length && remaining > 0) {
+      if (/[a-z]/i.test(word[cursor])) remaining -= 1;
+      cursor += 1;
     }
+    while (cursor < word.length && !/[a-z]/i.test(word[cursor])) cursor += 1;
+    parts.push(word.slice(parts.join('').length, cursor));
   }
+  parts.push(word.slice(parts.join('').length));
   return parts.filter(p => p.length > 0);
 }
 
