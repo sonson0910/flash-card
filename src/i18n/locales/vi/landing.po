@@ -246,6 +246,12 @@ msgctxt "landing.nav.pricing"
 msgid "Pricing & access"
 msgstr "Giá và quyền truy cập"
 
+#: src/features/landing/LandingPage.tsx:213
+#: src/features/landing/LandingPage.tsx:214
+msgctxt "landing.pricing.value.card-cap"
+msgid "Up to 5,000"
+msgstr "Tối đa 5.000"
+
 #: src/features/landing/LandingPage.tsx:1096
 msgctxt "landing.pricing.title"
 msgid "Pricing & access"
@@ -460,8 +466,6 @@ msgstr "Luyện phát âm"
 
 #: src/features/landing/LandingPage.tsx:207
 #: src/features/landing/LandingPage.tsx:208
-#: src/features/landing/LandingPage.tsx:213
-#: src/features/landing/LandingPage.tsx:214
 msgctxt "landing.pricing.value.unlimited"
 msgid "Unlimited"
 msgstr "Không giới hạn"

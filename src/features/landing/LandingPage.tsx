@@ -210,8 +210,8 @@ const pricingRows = [
   {
     id: "manual-cards",
     label: <Trans {...msg({ context: 'landing.pricing.row.manual-cards', message: 'Manual flashcards' })} />,
-    free: <Trans {...msg({ context: 'landing.pricing.value.unlimited', message: 'Unlimited' })} />,
-    pro: <Trans {...msg({ context: 'landing.pricing.value.unlimited', message: 'Unlimited' })} />,
+    free: <Trans {...msg({ context: 'landing.pricing.value.card-cap', message: 'Up to 5,000' })} />,
+    pro: <Trans {...msg({ context: 'landing.pricing.value.card-cap', message: 'Up to 5,000' })} />,
   },
   {
     id: "ai-cards",
