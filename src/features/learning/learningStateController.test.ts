@@ -211,6 +211,58 @@ describe('learning state controller', () => {
     expect(persisted).toHaveLength(2);
   });
 
+  it('applies the delete of a card that a terminal review conflict found removed to both snapshots', async () => {
+    const applied: string[] = [];
+    const persisted: LearningStateMutation[] = [];
+    const port: LearningStatePort = {
+      activeOwner: () => 'user:a',
+      findCard: cardId => cardId === card.id ? card : undefined,
+      // What the persistence layer returns for a review of a card another device deleted.
+      persist: async mutation => {
+        persisted.push(mutation);
+        return {
+          ownerKey: mutation.ownerKey,
+          operationId: mutation.operationId,
+          publication: { kind: 'delete', cardId: card.id },
+          reviewFinality: 'conflict',
+          reviewConflictTerminal: true,
+        };
+      },
+    };
+    const record = (snapshot: string) => (publication: LearningStatePublication) => {
+      applied.push(`${snapshot}:${publication.kind}`);
+    };
+    const controller = createLearningStateController({
+      port,
+      snapshots: { library: { apply: record('library') }, practice: { apply: record('practice') } },
+      now: () => new Date('2026-08-03T00:00:00.000Z'),
+    });
+
+    await expect(controller.review(card.id, 'good', 'review-deleted')).resolves.toMatchObject({
+      status: 'review-conflict',
+      result: { publication: { kind: 'delete', cardId: card.id } },
+    });
+    expect(applied).toEqual(['library:delete', 'practice:delete']);
+  });
+
+  it('does not apply a non-delete publication carried by a review conflict', async () => {
+    const applied: string[] = [];
+    const port: LearningStatePort = {
+      activeOwner: () => 'user:a',
+      findCard: cardId => cardId === card.id ? card : undefined,
+      persist: async mutation => ({ ...resultFor(mutation), reviewFinality: 'conflict', reviewConflictTerminal: true }),
+    };
+    const record = (publication: LearningStatePublication) => { applied.push(publication.kind); };
+    const controller = createLearningStateController({
+      port,
+      snapshots: { library: { apply: record }, practice: { apply: record } },
+      now: () => new Date('2026-08-03T00:00:00.000Z'),
+    });
+
+    await expect(controller.review(card.id, 'good', 'review-other')).resolves.toMatchObject({ status: 'review-conflict' });
+    expect(applied).toEqual([]);
+  });
+
   it('fails closed instead of evicting an unresolved review plan', async () => {
     let shouldFail = true;
     const persisted: LearningStateMutation[] = [];

@@ -55,13 +55,13 @@ describe('daily goals panel', () => {
     expect(visible.match(/\+\d+ XP/g)).toEqual([`+${10 * REVIEW_CARD_XP} XP`, `+${MATCH_WIN_XP} XP`]);
   });
 
-  it('shows a dash with a text alternative when today was not fully counted', () => {
+  it('shows a dash with a text alternative when today began before the counters', () => {
     const html = render(<DailyGoalsPanel {...props({
       gamification: {
         rewardTimeZone: 'Asia/Ho_Chi_Minh',
         xpHistory: { '2026-11-19': 50 },
         streak: 0,
-        dailyGoals: { coverageStartedOn: '2026-11-19', days: { '2026-11-19': { studiedCards: 1, matchWins: 0 } } },
+        dailyGoals: { coverageStartedOn: '2026-11-20', days: { '2026-11-19': { studiedCards: 1, matchWins: 0 } } },
       },
     })} />);
     expect(html).toContain('—');

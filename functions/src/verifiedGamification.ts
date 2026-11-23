@@ -266,7 +266,16 @@ const storedDailyGoals = (value: unknown): DailyGoals | undefined => {
   return { coverageStartedOn: value.coverageStartedOn, days };
 };
 
-const nextDailyGoals = (stored: unknown, studyDay: string, studiedCards: number, matchWins: number): DailyGoals => {
+// Coverage starts on the day of the account's first verified action, when every action of the day
+// reaches this map. Otherwise XP may already have been earned today without being counted, so the
+// first fully counted day is the next one.
+const nextDailyGoals = (
+  stored: unknown,
+  studyDay: string,
+  studiedCards: number,
+  matchWins: number,
+  fromFirstAction: boolean,
+): DailyGoals => {
   const previous = storedDailyGoals(stored);
   const days = { ...(previous?.days ?? {}) };
   const today = days[studyDay] ?? { studiedCards: 0, matchWins: 0 };
@@ -277,7 +286,7 @@ const nextDailyGoals = (stored: unknown, studyDay: string, studiedCards: number,
   const latestDay = Object.keys(days).reduce((latest, day) => day > latest ? day : latest, studyDay);
   const windowStart = dayOffset(latestDay, 1 - DAILY_GOALS_DAYS);
   return {
-    coverageStartedOn: previous?.coverageStartedOn ?? studyDay,
+    coverageStartedOn: previous?.coverageStartedOn ?? (fromFirstAction ? studyDay : dayOffset(studyDay, 1)),
     days: Object.fromEntries(Object.entries(days).filter(([day]) => day >= windowStart)),
   };
 };
@@ -365,12 +374,6 @@ export async function prepareVerifiedGamification(
   const activity = action.kind === 'review' && storedTimeZone
     ? nextReviewActivity(stats.reviewActivityV1, action.targetLanguage, studyDay, action.rating ?? '')
     : undefined;
-  const dailyGoals = nextDailyGoals(
-    stats[DAILY_GOALS_FIELD],
-    studyDay,
-    action.kind === 'review' && hasXpAward ? 1 : 0,
-    action.kind === 'match' ? 1 : 0,
-  );
   const xp = counter(stats.verifiedXp);
   const oldLevel = levelForXp(xp);
   const crossesRewardLevel = (gain: number) => gain > 0 && oldLevel < 13 && levelForXp(xp + gain) >= 13;
@@ -479,6 +482,13 @@ export async function prepareVerifiedGamification(
   // An action that does not write a record (a create, or a practice completion for the weekly words)
   // therefore starts it empty when it is the first, inside the same stats write.
   const fromFirstAction = !statsSnapshot.exists || (xp === 0 && stats.lastVerifiedStudyDay == null);
+  const dailyGoals = nextDailyGoals(
+    stats[DAILY_GOALS_FIELD],
+    studyDay,
+    action.kind === 'review' && hasXpAward ? 1 : 0,
+    action.kind === 'match' ? 1 : 0,
+    fromFirstAction,
+  );
   // Study time is credited to reviews and practice completions; creating a card is not counted.
   const storedStudyTime = parseStudyTime(stats[STUDY_TIME_FIELD]);
   if (!storedStudyTime && stats[STUDY_TIME_FIELD] !== undefined) console.warn('Stored study time was unusable and starts over.');

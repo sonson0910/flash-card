@@ -45,7 +45,9 @@ import {
   logicalIdsOf,
   nextOutstandingStage,
   outstandingItems,
+  parkPendingDailySessionPointer,
   readDailySessionPointer,
+  restoreParkedDailySessionPointer,
   readPendingFreshPriority,
   restoredSessionMatchStage,
   preparePendingMatchCompletion,
@@ -163,6 +165,7 @@ const pointerForSession = (state: MultiStageState): DailySessionPointer | null =
   matchSkipReason: state.stagePlan.match.skipReason,
   matchStartOpId: state.matchStartOpId,
   matchCompletionId: state.matchCompletionId,
+  ...(state.stagePlan.match.finished ? { matchFinished: true } : {}),
   ...(state.matchTimeZone ? { matchTimeZone: state.matchTimeZone } : {}),
   matchCompletionPending: state.matchCompletionPending,
   stats: state.stats,
@@ -220,7 +223,7 @@ export function hasMatchOnlySession(
   ).match.cards.length > 0);
 }
 const PublishedListenMvp = lazy(() => import('../listenMvp/PublishedListenMvp'));
-import { shouldUseListenPilot } from './dailyLearningPresentation';
+import { LISTEN_PILOT_LANGUAGE, shouldUseListenPilot } from './dailyLearningPresentation';
 
 export interface DailyLearningWorkspaceProps {
   readonly ownerId: string | null;
@@ -330,6 +333,10 @@ const isResolvedListenCard = (value: unknown, expectedWord: string): value is Ca
   const normalizedWord = normalizeCardWord(card.normalizedWord) || normalizeCardWord(card.word);
   return normalizedWord === expectedWord;
 };
+
+const listenPilotOffered = (courseLanguage: string): boolean => (
+  courseLanguage === LISTEN_PILOT_LANGUAGE && LISTEN_MVP_PILOT_LESSONS.length > 0
+);
 
 export const adoptListenPhraseCard = async (
   chunk: ListenMvpLessonV1['chunk'],
@@ -582,10 +589,10 @@ export default function DailyLearningWorkspace({
   const [listenPilotRoute, setListenPilotRoute] = useState(() => shouldUseListenPilot(
     initialLesson,
     true,
-    LISTEN_MVP_PILOT_LESSONS.length > 0,
+    listenPilotOffered(targetLanguage),
   ));
   const listenPilotNextIndexRef = useRef(0);
-  const listenPilotLesson = listenPilotRoute && routeLesson === 'listening'
+  const listenPilotLesson = listenPilotRoute && listenPilotOffered(targetLanguage) && routeLesson === 'listening'
     ? selectListenMvpPilotLesson(listenPilotIndex)
     : null;
   const listenScopeKey = `${ownerId ?? 'guest'}:${listenPilotLesson?.clip.id ?? 'none'}`;
@@ -625,7 +632,7 @@ export default function DailyLearningWorkspace({
     const handlePopState = () => {
       const next = readDailyLearningUrlState(window.location.href).lesson;
       setRouteLesson(next);
-      setListenPilotRoute(shouldUseListenPilot(next, true, LISTEN_MVP_PILOT_LESSONS.length > 0));
+      setListenPilotRoute(shouldUseListenPilot(next, true, listenPilotOffered(targetLanguageRef.current)));
       setHeadingFocusIntent(intent => intent + 1);
       if (!next) {
         session.close();
@@ -642,7 +649,13 @@ export default function DailyLearningWorkspace({
   useEffect(() => {
     const previousScope = previousSessionScopeRef.current;
     if (previousScope.ownerId !== ownerId || previousScope.targetLanguage !== targetLanguage || previousScope.translationLanguage !== translationLanguage) {
-      if (previousScope.ownerId) clearDailySessionPointer(previousScope.ownerId);
+      // A course switch by the same learner keeps an earned Word Match completion that is still
+      // waiting to be sent: it is parked for its course, so a session in the other course cannot
+      // overwrite it, and it is restored when the learner returns to that course.
+      const keepsPendingCompletion = previousScope.ownerId !== null && previousScope.ownerId === ownerId
+        && parkPendingDailySessionPointer(previousScope.ownerId);
+      if (previousScope.ownerId && !keepsPendingCompletion) clearDailySessionPointer(previousScope.ownerId);
+      if (ownerId) restoreParkedDailySessionPointer(ownerId, { targetLanguage, translationLanguage });
       previousSessionScopeRef.current = { ownerId, targetLanguage, translationLanguage };
     }
     session.close();
@@ -768,7 +781,7 @@ export default function DailyLearningWorkspace({
     allowListenPilot = true,
     maximumActivities?: DailySessionTarget,
   ) => {
-    const pilot = shouldUseListenPilot(mode, allowListenPilot, LISTEN_MVP_PILOT_LESSONS.length > 0)
+    const pilot = shouldUseListenPilot(mode, allowListenPilot, listenPilotOffered(targetLanguage))
       ? selectListenMvpPilotLesson(listenPilotNextIndexRef.current)
       : null;
     setListenPilotRoute(Boolean(pilot));
@@ -914,7 +927,10 @@ export default function DailyLearningWorkspace({
     startStageExercises(items);
     setMultiStage({
       ...current,
-      stagePlan: { ...current.stagePlan, review: items },
+      // Only the weak cards are played again: the new-word stage leaves the plan and the Word Match round
+      // is marked finished, so the retry goes from this lesson straight back to the recap, which still
+      // offers the round as an optional replay.
+      stagePlan: { review: items, fresh: [], match: { ...current.stagePlan.match, skipReason: null, finished: true } },
       stats: { ...current.stats, weakCardIds: [] },
       phase: { kind: 'lesson', stage: 'review' },
     });
@@ -951,9 +967,9 @@ export default function DailyLearningWorkspace({
 
   useEffect(() => {
     if (!routeLesson || routeLesson === 'placement' || routeLesson === 'session' || lesson || !plan?.items.length) return;
-    if (routeLesson === 'listening' && LISTEN_MVP_PILOT_LESSONS.length > 0) return;
+    if (routeLesson === 'listening' && listenPilotOffered(targetLanguage)) return;
     startLesson(routeLesson, false);
-  }, [lesson, plan, routeLesson, startLesson]);
+  }, [lesson, plan, routeLesson, startLesson, targetLanguage]);
 
   useEffect(() => {
     if (routeLesson !== 'session' || multiStage || lesson || activePool.status !== 'ready' || !ownerRef.current) return;
@@ -967,7 +983,10 @@ export default function DailyLearningWorkspace({
     const stagePlan: SessionStagePlan = {
       review: outstandingItems(pointer.reviewLogicalIds, freshPlan.items.filter(item => item.reason === 'due' || item.reason === 'weak')),
       fresh: freshItemsForResume(pointer.freshLogicalIds, currentPairCards, now),
-      match: restoredSessionMatchStage(activePool.cards, pointer.matchCardIds, { targetLanguage, translationLanguage }, Boolean(pointer.matchStartOpId)),
+      match: {
+        ...restoredSessionMatchStage(activePool.cards, pointer.matchCardIds, { targetLanguage, translationLanguage }, Boolean(pointer.matchStartOpId)),
+        ...(pointer.matchFinished ? { finished: true } : {}),
+      },
     };
     const resumeStage = pointer.bridgeCompletedStage || sessionStageItemCount(stagePlan, pointer.stage) === 0
       ? nextOutstandingStage(stagePlan, pointer.bridgeCompletedStage ?? pointer.stage)
@@ -1109,7 +1128,7 @@ export default function DailyLearningWorkspace({
       recentAnswers: completedAnswers.slice(-8).map(answer => answer.correct),
       xpEarned: (sessionStats.reviewXp ?? 0) + sessionStats.matchXp,
       stages: SESSION_STAGE_ORDER.map(id => {
-        const completed = stageIndex(id) <= stageIndex(completedStage);
+        const completed = stageIndex(id) <= stageIndex(completedStage) || (id === 'match' && stagePlan.match.finished === true);
         const planned = id === 'match' ? stagePlan.match.cards.length : plannedCount(id);
         const done = id === 'match' ? (completed ? planned : 0) : stageAnswers(id).length;
         return {
@@ -1488,7 +1507,7 @@ export default function DailyLearningWorkspace({
         reason: recommendation.reason.label,
       },
     } : {}),
-    listenPilotAvailable: LISTEN_MVP_PILOT_LESSONS.length > 0,
+    listenPilotAvailable: listenPilotOffered(targetLanguage),
     ...(ownerId && firestore ? { dailyGoals: verifiedGamification } : {}),
     ...(caughtUp
       ? { caughtUp: {} }

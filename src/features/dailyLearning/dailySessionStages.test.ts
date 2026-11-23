@@ -16,7 +16,9 @@ import {
   logicalIdsOf,
   nextOutstandingStage,
   outstandingItems,
+  parkPendingDailySessionPointer,
   readDailySessionPointer,
+  restoreParkedDailySessionPointer,
   restoredSessionMatchStage,
   preparePendingMatchCompletion,
   skippedUnavailableMatchStage,
@@ -163,6 +165,14 @@ describe('firstOutstandingStage / nextOutstandingStage', () => {
     expect(nextOutstandingStage(stagePlan, 'review')).toBe('new');
     expect(nextOutstandingStage(stagePlan, 'new')).toBe('match');
     expect(nextOutstandingStage(stagePlan, 'match')).toBe('recap');
+  });
+
+  it('does not send a session back to a Word Match round that was already played', () => {
+    const stagePlan = stagePlanWithAll();
+    const finished = { ...stagePlan, fresh: [], match: { ...stagePlan.match, finished: true } };
+    expect(finished.match.cards.length).toBeGreaterThan(0);
+    expect(nextOutstandingStage(finished, 'review')).toBe('recap');
+    expect(firstOutstandingStage({ ...finished, review: [] })).toBe('recap');
   });
 
   it('skips an empty bucket straight to the next non-empty one', () => {
@@ -411,6 +421,37 @@ describe('session pointer storage', () => {
     clearDailySessionPointer('owner-1');
     expect(readDailySessionPointer('owner-1')).toBeNull();
     expect(readDailySessionPointer('owner-2')).not.toBeNull();
+  });
+
+  it('round-trips the finished Word Match flag and rejects a malformed one', () => {
+    writeDailySessionPointer(pointer({ matchFinished: true }));
+    expect(readDailySessionPointer('owner-1')?.matchFinished).toBe(true);
+    globalThis.sessionStorage.setItem('sonflash:daily-session:owner-1', JSON.stringify({ ...pointer(), matchFinished: 'yes' }));
+    expect(readDailySessionPointer('owner-1')).toBeNull();
+  });
+
+  it('parks a pending Word Match completion for its course and restores it only for that course', () => {
+    const pending = pointer({ targetLanguage: 'en', translationLanguage: 'vi', stage: 'match', matchCompletionPending: true });
+    writeDailySessionPointer(pending);
+    expect(parkPendingDailySessionPointer('owner-1')).toBe(true);
+    expect(readDailySessionPointer('owner-1')).toBeNull();
+
+    // Another course writes and clears its own pointer without touching the parked round.
+    writeDailySessionPointer(pointer({ targetLanguage: 'ko', translationLanguage: 'vi' }));
+    clearDailySessionPointer('owner-1');
+    expect(restoreParkedDailySessionPointer('owner-1', { targetLanguage: 'ko', translationLanguage: 'vi' })).toBe(false);
+    expect(restoreParkedDailySessionPointer('owner-2', { targetLanguage: 'en', translationLanguage: 'vi' })).toBe(false);
+    expect(restoreParkedDailySessionPointer('owner-1', { targetLanguage: 'en', translationLanguage: 'vi' })).toBe(true);
+    expect(readDailySessionPointer('owner-1')).toEqual(pending);
+    // Restoring consumes the parked copy.
+    clearDailySessionPointer('owner-1');
+    expect(restoreParkedDailySessionPointer('owner-1', { targetLanguage: 'en', translationLanguage: 'vi' })).toBe(false);
+  });
+
+  it('parks nothing when the pointer has no pending completion', () => {
+    writeDailySessionPointer(pointer({ targetLanguage: 'en', translationLanguage: 'vi' }));
+    expect(parkPendingDailySessionPointer('owner-1')).toBe(false);
+    expect(readDailySessionPointer('owner-1')).not.toBeNull();
   });
 
   it('reads null without throwing when sessionStorage is unavailable', () => {

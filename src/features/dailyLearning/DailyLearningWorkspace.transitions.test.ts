@@ -79,7 +79,12 @@ describe('DailyLearningWorkspace session transitions', () => {
     const switchEffect = source.slice(source.indexOf('const previousScope = previousSessionScopeRef.current;'), source.indexOf('if (lastPoolLoaderRef.current'));
     expect(switchEffect).toContain('const previousScope = previousSessionScopeRef.current;');
     expect(switchEffect).toContain('previousScope.ownerId !== ownerId || previousScope.targetLanguage !== targetLanguage');
-    expect(switchEffect).toContain('if (previousScope.ownerId) clearDailySessionPointer(previousScope.ownerId);');
+    // A same-owner course switch parks a Word Match completion that is still waiting to be sent,
+    // and returning to that course restores it.
+    expect(switchEffect).toContain('previousScope.ownerId === ownerId');
+    expect(switchEffect).toContain('parkPendingDailySessionPointer(previousScope.ownerId)');
+    expect(switchEffect).toContain('restoreParkedDailySessionPointer(ownerId, { targetLanguage, translationLanguage })');
+    expect(switchEffect).toContain('if (previousScope.ownerId && !keepsPendingCompletion) clearDailySessionPointer(previousScope.ownerId);');
     expect(switchEffect).toContain('previousSessionScopeRef.current = { ownerId, targetLanguage, translationLanguage };');
   });
 
