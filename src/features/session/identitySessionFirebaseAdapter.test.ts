@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const firebaseAuth = vi.hoisted(() => ({
   getRedirectResult: vi.fn(),
   onAuthStateChanged: vi.fn(),
+  signInWithPopup: vi.fn(),
+  signInWithRedirect: vi.fn(),
 }));
 
 vi.mock('firebase/auth', () => ({
@@ -10,8 +12,8 @@ vi.mock('firebase/auth', () => ({
   getRedirectResult: firebaseAuth.getRedirectResult,
   GoogleAuthProvider: class GoogleAuthProvider {},
   onAuthStateChanged: firebaseAuth.onAuthStateChanged,
-  signInWithPopup: vi.fn(),
-  signInWithRedirect: vi.fn(),
+  signInWithPopup: firebaseAuth.signInWithPopup,
+  signInWithRedirect: firebaseAuth.signInWithRedirect,
   signOut: vi.fn(),
 }));
 
@@ -57,6 +59,31 @@ describe('identity session Firebase adapter', () => {
     await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(redirectError));
 
     expect(firebaseAuth.getRedirectResult).toHaveBeenCalledWith(auth);
+  });
+
+  it('prepares the sign-in synchronously before each Firebase sign-in request', async () => {
+    const auth = { kind: 'auth' };
+    const beforeSignIn = vi.fn();
+    firebaseAuth.signInWithPopup.mockResolvedValue(undefined);
+    firebaseAuth.signInWithRedirect.mockResolvedValue(undefined);
+    const adapter = createIdentitySessionFirebaseAdapter({
+      app: null,
+      auth: auth as never,
+      configured: true,
+      storage: null,
+      beforeSignIn,
+    });
+
+    const popup = adapter.signInWithPopup();
+    expect(beforeSignIn).toHaveBeenCalledWith('popup');
+    expect(beforeSignIn.mock.invocationCallOrder[0])
+      .toBeLessThan(firebaseAuth.signInWithPopup.mock.invocationCallOrder[0]);
+    await popup;
+    await adapter.signInWithRedirect();
+
+    expect(beforeSignIn).toHaveBeenLastCalledWith('redirect');
+    expect(beforeSignIn.mock.invocationCallOrder[1])
+      .toBeLessThan(firebaseAuth.signInWithRedirect.mock.invocationCallOrder[0]);
   });
 
   it('enters recoverable state when the Firebase auth observer loses a known user', async () => {

@@ -8,14 +8,16 @@ export function useIdentitySession({
   app,
   database,
   configured,
+  beforeSignIn,
 }: {
   app: FirebaseApp | null;
   database: Firestore | null;
   configured: boolean;
+  beforeSignIn?: (flow: 'popup' | 'redirect') => void;
 }) {
   const adapter = useMemo(
-    () => createIdentitySessionFirebaseAdapter({ app, database, configured }),
-    [app, configured, database],
+    () => createIdentitySessionFirebaseAdapter({ app, database, configured, beforeSignIn }),
+    [app, beforeSignIn, configured, database],
   );
   const controller = useMemo(() => createIdentitySessionController({ adapter }), [adapter]);
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);

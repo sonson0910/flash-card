@@ -44,6 +44,7 @@ export function createIdentitySessionFirebaseAdapter({
   provider = new GoogleAuthProvider(),
   configured = Boolean(app && auth),
   storage: suppliedStorage,
+  beforeSignIn = () => undefined,
 }: {
   app: FirebaseApp | null;
   auth?: Auth | null;
@@ -51,6 +52,8 @@ export function createIdentitySessionFirebaseAdapter({
   provider?: GoogleAuthProvider;
   configured?: boolean;
   storage?: Pick<Storage, 'getItem' | 'setItem'> | null;
+  /** Runs synchronously before a sign-in request, so a popup still opens inside the user's gesture. */
+  beforeSignIn?: (flow: 'popup' | 'redirect') => void;
 }): IdentitySessionAdapter {
   const storage = suppliedStorage === undefined ? browserStorage() : suppliedStorage;
   // Records one more try for this generation. Without browser storage the tries
@@ -109,10 +112,14 @@ export function createIdentitySessionFirebaseAdapter({
       };
     },
     signInWithPopup: async () => {
-      await signInWithPopup(requireAuth(), provider);
+      const currentAuth = requireAuth();
+      beforeSignIn('popup');
+      await signInWithPopup(currentAuth, provider);
     },
     signInWithRedirect: async () => {
-      await signInWithRedirect(requireAuth(), provider);
+      const currentAuth = requireAuth();
+      beforeSignIn('redirect');
+      await signInWithRedirect(currentAuth, provider);
     },
     signOut: async () => {
       await signOut(requireAuth());

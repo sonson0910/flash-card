@@ -9,7 +9,7 @@ import {
   fetchPracticeCards,
 } from '../lib/cardRepository';
 import { withTimeout } from '../lib/async';
-import { app, db, isFirebaseConfigured } from '../lib/firebase';
+import { app, db, ensureAppCheck, ensureAppCheckForSignIn, isFirebaseConfigured } from '../lib/firebase';
 import {
   createOwnerDeckMutationFirebaseAdapter,
   createOwnerLibrarySessionFirebaseAdapter,
@@ -30,7 +30,7 @@ const cloudAvailable = isFirebaseConfigured && db !== null;
 const SHARE_CATEGORY_QUERY_TIMEOUT_MS = 20_000;
 
 const libraryHooks = createLibrarySessionHookDependencies(
-  () => useIdentitySession({ app, database: db, configured: isFirebaseConfigured }),
+  () => useIdentitySession({ app, database: db, configured: isFirebaseConfigured, beforeSignIn: ensureAppCheckForSignIn }),
 );
 
 const ownerLibrary = createOwnerLibrarySessionFirebaseAdapter({
@@ -45,6 +45,7 @@ const sharedDeck = createSharedDeckFirebaseAdapter({
   app,
   database: db,
   configured: isFirebaseConfigured,
+  beforeRead: ensureAppCheck,
 });
 
 const updateCategoryFacets = async (
