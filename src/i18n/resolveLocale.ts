@@ -41,10 +41,12 @@ export const resolveLocale = ({
   }
   const stored = matchLocale(storedLocale, enabledLocales);
   if (stored) return stored;
-  const pathLocale = localeFromPath(pathname, enabledLocales);
+  // The bare root is the default entry rather than a choice, so a saved account language outranks it.
+  const pathLocale = pathname === '/' ? null : localeFromPath(pathname, enabledLocales);
   if (pathLocale) return pathLocale;
   const profile = matchLocale(profileLocale, enabledLocales);
   if (profile) return profile;
+  if (pathname === '/') return localeFromPath(pathname, enabledLocales) ?? 'en';
   for (const language of navigatorLanguages) {
     const browser = matchLocale(language, enabledLocales);
     if (browser) return browser;
