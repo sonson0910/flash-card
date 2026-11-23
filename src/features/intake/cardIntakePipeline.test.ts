@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 import { createCardIntakePipeline } from './cardIntakePipeline';
+import { createCardIntakeController, type CardIntakeControllerPort } from './cardIntakeController';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
 import { OperationTimeoutError } from '../../lib/async';
 
@@ -649,6 +650,39 @@ describe('Card Intake Pipeline contract', () => {
     const [, aiOptions] = generationRuntime.generateWordInfo.mock.calls[0]!;
     expect(aiOptions).not.toHaveProperty('sourceUrl');
     expect(aiOptions).not.toHaveProperty('pageTitle');
+  });
+
+  it.each([
+    ['with a context sentence', { context: 'The lead actor arrived.' }],
+    ['without a context sentence', {}],
+  ])('saves an extension capture made through the intake controller with its page and capture time (%s)', async (_label, extra) => {
+    generationRuntime.generateWordInfo.mockResolvedValueOnce({
+      translation: 'dẫn đầu', explanation: '', explanationTranslation: '', phonetic: '/liːd/',
+      emoji: '🎭', category: 'General', partOfSpeech: 'verb', cefrLevel: 'B1',
+      exampleSentence: '', exampleTranslation: '', collocations: [], synonyms: [], antonyms: [],
+      register: '', commonMistake: '', imageSearchQuery: 'lead actor',
+    });
+    const pipeline = createCardIntakePipeline({ getContext: createContext });
+    const intake = createCardIntakeController({ port: pipeline as unknown as CardIntakeControllerPort });
+    intake.setDraft('lead');
+
+    const result = await intake.generateDraft({
+      operationId: '123e4567-e89b-42d3-a456-426614174000',
+      surface: 'extension',
+      ...extra,
+      sourceUrl: 'https://example.com/article',
+      pageTitle: 'An Example Article',
+      capturedAt: '2026-09-27T00:00:00.000Z',
+    });
+
+    expect(result.status).toBe('created');
+    const savedCard = repositoryRuntime.createCardV2IfAbsent.mock.calls[0]?.[2] as { source?: unknown } | undefined;
+    expect(savedCard?.source).toEqual({
+      url: 'https://example.com/article',
+      title: 'An Example Article',
+      ...extra,
+      capturedAt: '2026-09-27T00:00:00.000Z',
+    });
   });
 
   it('carries alternative translations onto the generated card only when the model returned some', async () => {
