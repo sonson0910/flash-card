@@ -315,7 +315,69 @@ describe('generateVocabulary callable', () => {
     expect(settleWordOperation).not.toHaveBeenCalled();
   });
 
+  describe('model output that the learner client would reject', () => {
+    const extractItem = { word: 'crest', translation: 't', partOfSpeech: 'verb', cefrLevel: 'B2', example: 'e' };
+    const dialogueTurn = { speaker: 'Alex', en: 'Hello', vi: 'Xin chào' };
+    const dialogue = (turns: number) => ({
+      title: 'Market', context: 'Buying fruit', turns: Array.from({ length: turns }, () => dialogueTurn),
+    });
+    const conversationRequest = {
+      sessionId: 'session-1', turn: 1, history: [], userMessage: 'One apple, please.',
+      mission: { schemaVersion: 1, id: 'market', title: 'Market', goal: 'Buy fruit',
+        cards: [{ id: 'apple', word: 'apple', translation: 'táo' }] },
+    };
+    const conversationReply = (correctionExplanation: string) => ({
+      reply: 'Here you go.', sessionComplete: false,
+      correction: { original: 'one apple', corrected: 'an apple', explanation: correctionExplanation },
+    });
+    const cases: ReadonlyArray<readonly [string, { action: string; input: unknown }, unknown, unknown]> = [
+      ['extract with more than ten items', { action: 'extract', input: 'An apple.' },
+        Array.from({ length: 11 }, () => extractItem), Array.from({ length: 10 }, () => extractItem)],
+      ['extract with no items', { action: 'extract', input: 'An apple.' }, [], [extractItem]],
+      ['extract with a CEFR range', { action: 'extract', input: 'An apple.' },
+        [{ ...extractItem, cefrLevel: 'B1-B2' }], [extractItem]],
+      ['extract with a missing translation', { action: 'extract', input: 'An apple.' },
+        [{ ...extractItem, translation: '  ' }], [extractItem]],
+      ['dialogue with three turns', { action: 'dialogue', input: [{ word: 'apple', translation: 'táo' }] },
+        dialogue(3), dialogue(4)],
+      ['dialogue with seven turns', { action: 'dialogue', input: [{ word: 'apple', translation: 'táo' }] },
+        dialogue(7), dialogue(6)],
+      ['conversation with a 350 character correction', { action: 'conversation', input: conversationRequest },
+        conversationReply('x'.repeat(350)), conversationReply('x'.repeat(300))],
+      ['conversation without sessionComplete', { action: 'conversation', input: conversationRequest },
+        { reply: 'Here you go.' }, { reply: 'Here you go.', sessionComplete: true }],
+      ['legacy story without a translation', { action: 'story', input: ['apple'] },
+        { story: 'An apple.' }, { story: 'An apple.', translation: 'Một quả táo.' }],
+      ['plain story with an empty story', {
+        action: 'story', input: { words: ['안녕'], targetLanguage: 'ko', translationLanguage: 'en' },
+      }, { story: ' ', translation: 'Hello' }, { story: '안녕', translation: 'Hello' }],
+    ];
+
+    it.each(cases)('refunds the allowance and fails with an internal error for %s', async (_name, data, invalid) => {
+      runMeteredGemini.mockImplementation(async ({ parse }: { parse: (response: unknown) => unknown }) =>
+        parse({ text: JSON.stringify(invalid) }));
+      const { generateVocabulary } = await import('../src/index.js');
+
+      await expect(generateVocabulary.run({ auth: { uid: 'owner-1' }, data } as never))
+        .rejects.toMatchObject({ code: 'internal' });
+      expect(refundNonCardAction).toHaveBeenCalledWith(expect.anything(), 'owner-1', '2026-09-30');
+    });
+
+    it.each(cases)('still returns the boundary output next to %s', async (_name, data, _invalid, valid) => {
+      runMeteredGemini.mockImplementation(async ({ parse }: { parse: (response: unknown) => unknown }) =>
+        parse({ text: JSON.stringify(valid) }));
+      const { generateVocabulary } = await import('../src/index.js');
+
+      await expect(generateVocabulary.run({ auth: { uid: 'owner-1' }, data } as never))
+        .resolves.toEqual({ result: expect.anything() });
+      expect(refundNonCardAction).not.toHaveBeenCalled();
+    });
+  });
+
   it('uses the structured story languages in the Gemini prompt', async () => {
+    runMeteredGemini.mockImplementation(async ({ parse }: { parse: (response: unknown) => unknown }) => parse({
+      text: JSON.stringify({ story: '안녕하세요.', translation: 'Hello.' }),
+    }));
     const { generateVocabulary } = await import('../src/index.js');
     await expect(generateVocabulary.run({ auth: { uid: 'owner-1' }, data: {
       action: 'story', input: { words: ['안녕'], targetLanguage: 'ko', translationLanguage: 'en' },

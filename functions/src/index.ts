@@ -95,6 +95,12 @@ import {
   LegacyLibraryDiscoveryStateChangedError,
   LegacyLibraryGenerationChangedError,
 } from './legacyLibraryMigrationFirestore.js';
+import {
+  parseConversationOutput,
+  parseDialogueOutput,
+  parseExtractedWordsOutput,
+  parsePlainStoryOutput,
+} from './aiModelOutput.js';
 import { LegacyLibraryMigrationFenceError } from './legacyLibraryMigrationOwnerScope.js';
 import {
   isImageProviderUnavailable,
@@ -585,6 +591,16 @@ const parseModelJson = (text: string | undefined) => {
   }
 };
 
+const parseModelOutput = <T>(text: string | undefined, parser: (value: unknown) => T): T => {
+  const value = parseModelJson(text);
+  try {
+    return parser(value);
+  } catch (error) {
+    if (error instanceof InputValidationError) throw new HttpsError('internal', 'AI returned an invalid response.');
+    throw error;
+  }
+};
+
 const parseWordModelJson = (text: string | undefined): Record<string, unknown> => {
   const result = parseModelJson(text);
   if (!result || typeof result !== 'object' || Array.isArray(result)) {
@@ -890,7 +906,7 @@ exact meaning selected above and disambiguating polysemous words. Do not request
           required: ['story', 'translation'],
         },
       }),
-    }, response => parseModelJson(response.text));
+    }, response => parseModelOutput(response.text, parsePlainStoryOutput));
     return { result };
   }
 
@@ -908,7 +924,7 @@ exact meaning selected above and disambiguating polysemous words. Do not request
             required: ['story', 'translation'],
           },
         }),
-      }, response => parseModelJson(response.text));
+      }, response => parseModelOutput(response.text, parsePlainStoryOutput));
       return { result };
     }
     const result = await callGemini(userId, input.action, {
@@ -1002,7 +1018,9 @@ exact meaning selected above and disambiguating polysemous words. Do not request
           },
         },
       }),
-    }, response => keepVerifiedExtractSurfaces(parseModelJson(response.text), text));
+    }, response => keepVerifiedExtractSurfaces(
+      parseModelOutput(response.text, parseExtractedWordsOutput), text,
+    ));
     return { result };
   }
 
@@ -1034,7 +1052,7 @@ exact meaning selected above and disambiguating polysemous words. Do not request
           required: ['title', 'context', 'turns'],
         },
       }),
-    }, response => parseModelJson(response.text));
+    }, response => parseModelOutput(response.text, parseDialogueOutput));
     return { result };
   }
 
@@ -1075,7 +1093,7 @@ the client also ends the session at its hard turn limit.`,
           required: ['reply', 'sessionComplete'],
         },
       }),
-    }, response => parseModelJson(response.text));
+    }, response => parseModelOutput(response.text, parseConversationOutput));
     return { result };
   }
 
