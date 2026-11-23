@@ -647,7 +647,7 @@ export default function DailyLearningWorkspace({
     if (previousScope.ownerId !== ownerId || previousScope.targetLanguage !== targetLanguage || previousScope.translationLanguage !== translationLanguage) {
       // A course switch by the same learner keeps an earned Word Match completion that is still
       // waiting to be sent; the resume effect finishes it when the learner returns to that course.
-      const keepsPendingCompletion = previousScope.ownerId === ownerId
+      const keepsPendingCompletion = previousScope.ownerId !== null && previousScope.ownerId === ownerId
         && readDailySessionPointer(previousScope.ownerId)?.matchCompletionPending === true;
       if (previousScope.ownerId && !keepsPendingCompletion) clearDailySessionPointer(previousScope.ownerId);
       previousSessionScopeRef.current = { ownerId, targetLanguage, translationLanguage };

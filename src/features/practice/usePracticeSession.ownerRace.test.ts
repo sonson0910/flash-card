@@ -1548,13 +1548,14 @@ describe('usePracticeSession owner isolation', () => {
     const { learning, render } = createSessionHarness([card(1), card(2)]);
     let session = render();
     // The learning state controller drops the card from the practice snapshot before it reports the conflict.
-    learning.reviewCard.mockImplementationOnce(async (cardId: string) => {
+    learning.reviewCard.mockImplementationOnce((async (...args: unknown[]) => {
+      const cardId = args[0] as string;
       session.snapshot.removeCard(cardId);
       return {
         status: 'review-conflict',
-        result: { reviewConflictTerminal: true, publication: { kind: 'delete', cardId } } as never,
-      } as never;
-    });
+        result: { reviewConflictTerminal: true, publication: { kind: 'delete', cardId } },
+      };
+    }) as never);
     flushEffects();
     await session.commands.startStudy();
     session = renderAfterEffects(render);
