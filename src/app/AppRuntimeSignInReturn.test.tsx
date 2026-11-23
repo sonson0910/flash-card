@@ -184,6 +184,7 @@ describe('AppRuntime signed-out return', () => {
       signInRequest={null}
       onSignInRequestHandled={vi.fn()}
       onLandingUserChange={vi.fn()}
+      onLandingSignInState={vi.fn()}
     />);
 
     try {
@@ -223,6 +224,7 @@ describe('AppRuntime signed-out return', () => {
       signInRequest={null}
       onSignInRequestHandled={vi.fn()}
       onLandingUserChange={vi.fn()}
+      onLandingSignInState={vi.fn()}
     />);
 
     try {
@@ -268,6 +270,7 @@ describe('AppRuntime signed-out return', () => {
       signInRequest={null}
       onSignInRequestHandled={vi.fn()}
       onLandingUserChange={vi.fn()}
+      onLandingSignInState={vi.fn()}
     />);
 
     try {
@@ -307,6 +310,7 @@ describe('AppRuntime signed-out return', () => {
       signInRequest={null}
       onSignInRequestHandled={vi.fn()}
       onLandingUserChange={vi.fn()}
+      onLandingSignInState={vi.fn()}
     />);
 
     try {
@@ -344,6 +348,7 @@ describe('AppRuntime signed-out return', () => {
       signInRequest={null}
       onSignInRequestHandled={vi.fn()}
       onLandingUserChange={vi.fn()}
+      onLandingSignInState={vi.fn()}
     />);
 
     try {
