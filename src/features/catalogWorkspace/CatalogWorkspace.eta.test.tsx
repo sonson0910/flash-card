@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { i18n } from '@lingui/core';
-import type { HydratedCatalogEntry } from '../catalogCache/catalogCache';
 import type { CatalogScreenActions, CatalogScreenModel } from './catalogPresentation';
 
 const hooks = vi.hoisted(() => ({

@@ -168,12 +168,12 @@ msgid "catalog.personal.review-due-description"
 msgstr "Các thẻ đến hạn ôn ngay bây giờ."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/useCatalogLibraryActions.ts:15
+#: src/features/catalogWorkspace/useCatalogLibraryActions.ts:16
 msgid "catalog.workspace.added-to-library"
 msgstr "Đã thêm “{lemma}” vào thư viện và kế hoạch hôm nay của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/useCatalogLibraryActions.ts:16
+#: src/features/catalogWorkspace/useCatalogLibraryActions.ts:17
 msgid "catalog.workspace.already-in-library"
 msgstr "“{lemma}” đã có trong thư viện của bạn."
 

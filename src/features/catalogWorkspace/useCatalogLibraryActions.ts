@@ -11,9 +11,12 @@ import {
 import type { CatalogVocabularyPresentation } from './catalogPresentation';
 
 /** The toast shown after a catalog word is added, or found already in the library. */
-export const catalogAddNotice = (created: boolean, lemma: string): string => i18n._(created
-  ? msg({ id: 'catalog.workspace.added-to-library', message: '“{lemma}” was added to your library and today’s plan.' })
-  : msg({ id: 'catalog.workspace.already-in-library', message: '“{lemma}” is already in your library.' }), { lemma });
+export const catalogAddNotice = (created: boolean, lemma: string): string => {
+  const descriptor = created
+    ? msg({ id: 'catalog.workspace.added-to-library', message: '“{lemma}” was added to your library and today’s plan.' })
+    : msg({ id: 'catalog.workspace.already-in-library', message: '“{lemma}” is already in your library.' });
+  return i18n._(descriptor.id!, { lemma }, { message: descriptor.message });
+};
 
 interface UseCatalogLibraryActionsOptions {
   readonly cards: readonly CardData[];
