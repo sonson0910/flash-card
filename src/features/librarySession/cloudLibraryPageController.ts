@@ -448,7 +448,18 @@ export function createCloudLibraryPageController({
               countRefreshState = 1;
               const countedTotal = await adapter.countCards(request.ownerId, request.query).catch(() => null);
               if (generation !== pageGeneration) break;
-              if (countedTotal === null) continue;
+              if (countedTotal === null) {
+                // The cached total may be stale now. Leaving it undated makes the next activation count again
+                // instead of trusting it for the rest of the count TTL.
+                await safeCacheWriteAsync(() => cache.writePage({
+                  ...request,
+                  items: snapshot.items.slice(0, boundedPageSize),
+                  total,
+                  hasNext: snapshot.hasNext,
+                  countedAt: null,
+                }));
+                continue;
+              }
               const refreshedAt = now();
               const currentItems = snapshot.items.slice(0, boundedPageSize);
               total = Math.max(

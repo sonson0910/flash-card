@@ -731,6 +731,29 @@ describe('cloud library page controller', () => {
     expect(controller.getSnapshot()).toMatchObject({ items: [card('a')], total: 9 });
   });
 
+  it('leaves the cached total undated when a recount after a removal fails, so the next activation counts again', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const now = 1_700_000_000_000;
+    vi.mocked(cache.readCount).mockReturnValue({ total: 10, cachedAt: now });
+    vi.mocked(adapter.countCards).mockRejectedValue(new Error('unavailable'));
+    const controller = createCloudLibraryPageController({ adapter, cache, now: () => now });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await subscriptions[0].page({
+      items: [card('a')], hasNext: false, cursor: null,
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    });
+    expect(adapter.countCards).not.toHaveBeenCalled();
+
+    await subscriptions[0].page({
+      items: [card('a')], hasNext: false, cursor: null,
+      changeTypes: ['removed'], fromCache: false, hasPendingWrites: false,
+    });
+
+    expect(adapter.countCards).toHaveBeenCalledOnce();
+    expect(cache.writePage).toHaveBeenLastCalledWith(expect.objectContaining({ total: 10, countedAt: null }));
+  });
+
   it('unsubscribes the old query and ignores its late page/count publication', async () => {
     const { adapter, cache, subscriptions } = createFakes();
     const oldCount = deferred<number>();
