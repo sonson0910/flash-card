@@ -53,6 +53,7 @@ const inputs: LibrarySessionInputs = {
   ports: {
     ownerAdapter: { available: false } as never,
     getPromotedCards: () => [card],
+    releaseSavedPromotedCards: vi.fn(),
   },
 };
 
@@ -152,6 +153,7 @@ describe('useLibrarySession facade', () => {
       statsOpen: true,
       progressEvidenceOpen: false,
       getPromotedCards: inputs.ports.getPromotedCards,
+      releaseSavedPromotedCards: inputs.ports.releaseSavedPromotedCards,
     });
     expect(session.model.cloud.items).toEqual([card]);
   });

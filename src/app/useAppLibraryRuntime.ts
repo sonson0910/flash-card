@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CLOUD_PAGE_SIZE, queryStateKey, type CardQueryState } from '../lib/cardQuery';
 import { cardQueryDifficulty } from '../features/catalog/libraryCatalogQuery';
 import type { CardData } from '../types/card';
-import { dateLabelToQueryDate } from '../features/library/libraryPresentation';
+import { dateLabelToQueryDate, releaseSavedPromotedCards } from '../features/library/libraryPresentation';
 import { cloudFacetsCacheKey, writeLocalValue } from '../features/library/libraryStorage';
 import { useBrowserCapabilities } from '../features/browser/useBrowserCapabilities';
 import { useLibraryCatalogQuery } from '../features/catalog/useLibraryCatalogQuery';
@@ -123,16 +123,14 @@ export function useAppLibraryRuntime({
       cloud: {
         total: setCloudTotal,
         stats: setCloudStats,
-        facets: (categories, complete) => {
-          setCloudCategoryCounts(categories);
-          setCloudFacetsComplete(complete);
-        },
+        facets: (categories, complete) => { setCloudCategoryCounts(categories); setCloudFacetsComplete(complete); },
         hasNextPage: setHasNextCloudPage,
         unavailable: setCloudReadUnavailable,
         refresh: () => setCloudRefresh(previous => previous + 1),
       },
       navigation: { resetPage: () => catalogActions.goToPage(1), previousPage: catalogActions.goToPreviousPage },
       promotedCards: () => [...recentlyPromotedCardsRef.current.values()],
+      releaseSavedPromotedCards: pageCards => releaseSavedPromotedCards(recentlyPromotedCardsRef.current, pageCards),
     },
   });
   const librarySession = useLibrarySession({

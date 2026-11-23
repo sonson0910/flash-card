@@ -89,6 +89,7 @@ const createContext = (): CardIntakePortOptions => ({
   patchCard: vi.fn(async () => undefined),
   hydrateExisting: vi.fn(),
   rememberPromoted: vi.fn(),
+  forgetPromoted: vi.fn(),
   resetCatalog: vi.fn(),
   resetCloudPage: vi.fn(),
   updateCloudStats: vi.fn(),
@@ -228,6 +229,21 @@ describe('Card Intake Pipeline contract', () => {
       'Some shared cards could not be confirmed.',
     );
     expect(context.publishCards).toHaveBeenLastCalledWith([]);
+  });
+
+  it('stops pinning a generated card to page 1 when its save fails', async () => {
+    const context = createContext();
+    const candidate = card('unsaved-generated-card');
+    repositoryRuntime.createCardV2IfAbsent.mockRejectedValueOnce(new Error('cloud write failed'));
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await pipeline.persistCards([candidate], 'generate');
+
+    expect(vi.mocked(context.rememberPromoted).mock.calls[0]?.[0]).toEqual(candidate);
+    await vi.waitFor(() => expect(context.notify).toHaveBeenCalledWith(
+      'The card could not be saved. Check your connection and try again.',
+    ));
+    expect(context.forgetPromoted).toHaveBeenCalledWith(candidate);
   });
 
   it('reports a shared card as reused when the server already has it', async () => {

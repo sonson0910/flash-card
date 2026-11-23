@@ -27,6 +27,7 @@ const publications = () => ({
   },
   navigation: { resetPage: vi.fn(), previousPage: vi.fn() },
   promotedCards: vi.fn(() => [card]),
+  releaseSavedPromotedCards: vi.fn(),
 }) satisfies LibrarySessionPortPublications;
 
 describe('library session ports binding', () => {
@@ -46,6 +47,8 @@ describe('library session ports binding', () => {
 
     expect(binding.ports.session.ownerAdapter).toBe(ownerAdapter);
     expect(binding.ports.session.getPromotedCards()).toEqual([card]);
+    binding.ports.session.releaseSavedPromotedCards([card]);
+    expect(publish.releaseSavedPromotedCards).toHaveBeenCalledWith([card]);
   });
 
   it('owns cloud reset/refresh/unavailable glue', () => {

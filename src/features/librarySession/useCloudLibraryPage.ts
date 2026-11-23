@@ -28,6 +28,7 @@ export function useCloudLibraryPage({
   statsRefreshRequest,
   progressEvidenceOpen,
   getPromotedCards,
+  releaseSavedPromotedCards,
 }: {
   ownerId: string | null;
   query: CardQueryState;
@@ -39,11 +40,14 @@ export function useCloudLibraryPage({
   statsRefreshRequest?: { ownerId: string; requestId: number } | null;
   progressEvidenceOpen: boolean;
   getPromotedCards: () => readonly CardData[];
+  releaseSavedPromotedCards?: (pageCards: readonly CardData[]) => void;
 }) {
   const promotedRef = useRef(getPromotedCards);
+  const releaseRef = useRef(releaseSavedPromotedCards);
   const queryRef = useRef(query);
   const [localDay, setLocalDay] = useState(localDateKey);
   promotedRef.current = getPromotedCards;
+  releaseRef.current = releaseSavedPromotedCards;
   queryRef.current = query;
 
   useEffect(() => {
@@ -70,9 +74,15 @@ export function useCloudLibraryPage({
       page: request.page,
       pageSize: request.pageSize,
     }), []);
+  // Only a live page proves the server holds a card; the local page cache can
+  // be older than a delete or a re-creation.
+  const transformLivePage = useCallback((request: { query: CardQueryState; page: number; pageSize: number }, items: CardData[]) => {
+    releaseRef.current?.(items);
+    return transformPage(request, items);
+  }, [transformPage]);
 
   const controller = useMemo(() => {
-    const adapter = createCloudLibraryPageFirebaseAdapter({ database: db, configured: isFirebaseConfigured, transformPage });
+    const adapter = createCloudLibraryPageFirebaseAdapter({ database: db, configured: isFirebaseConfigured, transformPage: transformLivePage });
     const cache: CloudLibraryCachePort = {
       readPage: async request => {
         const cachedValue = readLocalJson<unknown>(cloudPageCacheKey(request.ownerId), null);
@@ -116,7 +126,7 @@ export function useCloudLibraryPage({
       markBackoff: id => { writeLocalValue(cloudBackoffCacheKey(id), String(Date.now() + 5 * 60 * 1000)); },
     };
     return createCloudLibraryPageController({ adapter, cache, pageSize });
-  }, [pageSize, transformPage]);
+  }, [pageSize, transformLivePage, transformPage]);
 
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
 

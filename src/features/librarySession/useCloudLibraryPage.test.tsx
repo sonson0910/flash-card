@@ -17,6 +17,9 @@ const adapterState = vi.hoisted(() => ({
   })),
   loadDueStats: vi.fn(async () => ({ due: 0, dueAsOfDate: '2026-09-28' })),
   getTargetLanguage: undefined as (() => string | null) | undefined,
+  transformPage: undefined as
+    | ((request: { query: CardQueryState; page: number; pageSize: number }, items: CardData[]) => Promise<CardData[]>)
+    | undefined,
 }));
 const cloudMocks = vi.hoisted(() => ({
   available: false,
@@ -25,8 +28,12 @@ const cloudMocks = vi.hoisted(() => ({
 
 vi.mock('../../lib/firebase', () => ({ db: null, isFirebaseConfigured: false }));
 vi.mock('./cloudLibraryPageFirebaseAdapter', () => ({
-  createCloudLibraryPageFirebaseAdapter: (options: { getTargetLanguage?: () => string | null }) => {
+  createCloudLibraryPageFirebaseAdapter: (options: {
+    getTargetLanguage?: () => string | null;
+    transformPage?: typeof adapterState.transformPage;
+  }) => {
     adapterState.getTargetLanguage = options.getTargetLanguage;
+    adapterState.transformPage = options.transformPage;
     return {
       available: adapterState.available || cloudMocks.available,
       subscribePage: cloudMocks.subscribePage,
@@ -196,6 +203,44 @@ it('overlays a promoted duplicate onto a paused-cloud fallback without requiring
   expect(captured.current?.items).toHaveLength(9);
   expect(captured.current?.items[0]?.id).toBe(promoted.id);
   expect(captured.current?.items.some(candidate => candidate.id === promoted.id)).toBe(true);
+
+  await act(async () => root.unmount());
+});
+
+it('releases promoted copies against live cloud pages but not against the local page cache', async () => {
+  installLocalStorage();
+  const cached = card('cached-copy');
+  writeCachedPage('user-a', 'all', 1, [cached], 1);
+  const releaseSavedPromotedCards = vi.fn();
+  const container = installMinimalReactDom();
+  const root = createRoot(container);
+  const captured: { current: ReturnType<typeof useCloudLibraryPage> | null } = { current: null };
+
+  function Harness() {
+    captured.current = useCloudLibraryPage({
+      ownerId: 'user-a',
+      query,
+      queryKey: 'all',
+      page: 1,
+      pageSize: 9,
+      refreshKey: 0,
+      statsOpen: false,
+      progressEvidenceOpen: false,
+      getPromotedCards: () => [],
+      releaseSavedPromotedCards,
+    });
+    return null;
+  }
+
+  await act(async () => { root.render(<Harness />); });
+  await act(async () => {
+    await vi.waitFor(() => expect(captured.current?.items.map(item => item.id)).toEqual([cached.id]));
+  });
+  expect(releaseSavedPromotedCards).not.toHaveBeenCalled();
+
+  const live = [card('live-copy')];
+  await adapterState.transformPage!({ query, page: 1, pageSize: 9 }, live);
+  expect(releaseSavedPromotedCards).toHaveBeenCalledWith(live);
 
   await act(async () => root.unmount());
 });
