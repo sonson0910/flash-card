@@ -15,6 +15,9 @@ card searchable/pageable under schema v2 without losing the strongest learning s
   12-character SHA-256 owner keys and aggregate counts only
 - Operator apply/rollback: dispatched only after selecting exactly one owner key from
   a clean dry-run for the same revision and target
+- Library changed after the dry-run: apply fails without migrating anything, releases
+  the fence and reopens discovery for that owner; dispatch dry-run again and approve
+  the new revision it reports. The earlier revision is never applied
 
 ## Project structure
 

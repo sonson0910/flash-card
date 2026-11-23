@@ -10,6 +10,11 @@ import {
 } from 'firebase-admin/firestore';
 import {
   canonicalCleanupCardId,
+  cleanupIdentityFromKey,
+  cleanupIdentityReservation,
+  cleanupIdentityStorageKey,
+  isCleanupIdentityKey,
+  legacyCardLanguage,
   normalizeCleanupWord,
   planLegacyIdentityGroup,
   summarizeFacetCounts,
@@ -40,7 +45,6 @@ import {
   type LegacyLibraryMigrationFence,
 } from './legacyLibraryMigrationOwnerScope.js';
 import {
-  isCanonicalLanguageCode,
   isSupportedCardTranslationLanguage,
   parseCardSourceMetadata,
   type CardSourceMetadata,
@@ -115,7 +119,6 @@ const assertSafeSegment = (value: string, label: string): string => {
 const DISCOVERY_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const DISCOVERY_DIGEST_RE = /^[a-f0-9]{64}$/;
 const MAX_DISCOVERY_SOURCE_ID_BYTES = 1_500;
-const MAX_DISCOVERY_IDENTITY_LENGTH = 256 + 'word:'.length;
 
 const isDiscoverySourceId = (value: unknown): value is string => (
   typeof value === 'string'
@@ -161,12 +164,15 @@ const reservationRef = (database: Firestore, ownerId: string, normalizedWord: st
     .collection('card_reservations')
     .doc(createLegacyReservationId(normalizedWord));
 
+// Both keys are the string a card create hashes into its reservation id: the
+// bare word for English, `<language>\0<word>` for another target, and the
+// whole `lexeme:<id>` identity for a lexeme card.
 const discoveryGroupKeyFromIdentity = (identity: string): string => (
-  identity.startsWith('word:') ? identity.slice('word:'.length) : identity
+  cleanupIdentityStorageKey(cleanupIdentityFromKey(identity, identity.slice(identity.indexOf(':') + 1)))
 );
 
 const reservationKey = (identity: string, normalizedWord: string): string => (
-  identity.startsWith('lexeme:') ? identity : normalizedWord
+  cleanupIdentityStorageKey(cleanupIdentityFromKey(identity, normalizedWord))
 );
 
 const libraryStateRef = (database: Firestore, ownerId: string) =>
@@ -481,11 +487,7 @@ const parseDiscoveryGroup = (value: DocumentData | undefined): LegacyLibraryIden
     || !isDiscoveryDigest(value.sourceRevision)
   ) throw new Error('Legacy library discovery group is invalid.');
   const identity = value.identity === undefined ? `word:${value.normalizedWord}` : value.identity;
-  if (
-    typeof identity !== 'string'
-    || !/^(?:word|lexeme):/.test(identity)
-    || identity.length > MAX_DISCOVERY_IDENTITY_LENGTH
-  ) throw new Error('Legacy library discovery group is invalid.');
+  if (!isCleanupIdentityKey(identity)) throw new Error('Legacy library discovery group is invalid.');
   const sources = value.sources.map(source => {
     if (!source || typeof source !== 'object' || Array.isArray(source)) {
       throw new Error('Legacy library discovery source descriptor is invalid.');
@@ -651,9 +653,10 @@ const requestCommitDiscoveryPage = async (
       groupSnapshots.flatMap(snapshot => {
         if (!snapshot.exists) return [];
         const group = parseDiscoveryGroup(snapshot.data());
+        // A group of a retired scan is a leftover; this page overwrites it.
+        if (group.scanId !== current.scanId) return [];
         if (
-          group.scanId !== current.scanId
-          || group.libraryEpoch !== current.libraryEpoch
+          group.libraryEpoch !== current.libraryEpoch
           || group.sourceRevision !== current.sourceRevision
         ) throw new LegacyLibraryDiscoveryStateChangedError();
         return [[discoveryGroupKey(group), group] as const];
@@ -724,7 +727,7 @@ const withoutUndefined = (value: CleanupCard): CleanupCard => Object.fromEntries
 export const legacyMigrationLanguageAndSourceFields = (
   strongest: CleanupCard,
 ): { language: string; translationLanguage?: string; source?: CardSourceMetadata } => {
-  const language = isCanonicalLanguageCode(strongest.language) ? (strongest.language as string) : 'en';
+  const language = legacyCardLanguage(strongest);
   const translationLanguage = isSupportedCardTranslationLanguage(strongest.translationLanguage)
     ? strongest.translationLanguage
     : undefined;
@@ -742,9 +745,7 @@ export const legacyMigrationLanguageAndSourceFields = (
 };
 
 const matchingReservation = (cardId: string, identity: string) => (
-  identity.startsWith('lexeme:')
-    ? { schemaVersion: 2, cardId, lexemeId: identity.slice('lexeme:'.length) }
-    : { schemaVersion: 1, cardId, normalizedWord: identity.slice('word:'.length) }
+  cleanupIdentityReservation(cleanupIdentityFromKey(identity, identity.slice(identity.indexOf(':') + 1)), cardId)
 );
 
 export type LegacyLibraryMigrationApplyOptions = {
@@ -775,10 +776,13 @@ const readManifestGroups = async (
   database: Firestore,
   ownerId: string,
   jobId: string,
+  scanId?: string,
 ): Promise<LegacyLibraryIdentityGroup[]> => {
   const snapshot = await discoveryJobRef(database, ownerId, jobId).collection(DISCOVERY_GROUP_COLLECTION)
     .orderBy(FieldPath.documentId()).get();
-  return snapshot.docs.map(document => parseDiscoveryGroup(document.data()));
+  const groups = snapshot.docs.map(document => parseDiscoveryGroup(document.data()));
+  // Groups of a retired scan can outlive it; they are not part of the manifest.
+  return scanId === undefined ? groups : groups.filter(group => group.scanId === scanId);
 };
 
 const readFreshLibrary = async (
@@ -873,6 +877,7 @@ const verifyFreshManifest = (
     throw new LegacyLibraryGenerationChangedError();
   }
   const expected = new Map<string, LegacyLibrarySourceDescriptor>();
+  const groupedIdentity = new Map<string, string>();
   for (const group of groups) {
     if (group.scanId !== job.scanId || group.libraryEpoch !== job.libraryEpoch) {
       throw new LegacyLibraryDiscoveryStateChangedError();
@@ -880,6 +885,7 @@ const verifyFreshManifest = (
     for (const source of group.sources) {
       if (expected.has(source.id)) throw new LegacyLibraryDiscoveryStateChangedError();
       expected.set(source.id, source);
+      groupedIdentity.set(source.id, group.identity);
     }
   }
   if (expected.size !== job.sourceCount || fresh.descriptors.length !== expected.size) {
@@ -889,6 +895,43 @@ const verifyFreshManifest = (
     const expectedDescriptor = expected.get(descriptor.id);
     if (!expectedDescriptor || !sameSourceDescriptor(descriptor, expectedDescriptor)) {
       throw new LegacyLibraryGenerationChangedError();
+    }
+  }
+  // A manifest scanned under earlier identity rules can group an unchanged
+  // card differently than those rules do now (two target languages under one
+  // word). It no longer describes this library, so no group of it is applied.
+  for (const card of fresh.cards) {
+    if (normalizedLegacyLibraryIdentity(card) !== groupedIdentity.get(card.id)) {
+      throw new LegacyLibraryGenerationChangedError();
+    }
+  }
+};
+
+const manifestCanonicalCardId = (group: Pick<LegacyLibraryIdentityGroup, 'identity' | 'normalizedWord'>): string => (
+  canonicalCleanupCardId(cleanupIdentityFromKey(group.identity, group.normalizedWord))
+);
+
+/**
+ * Reservations are permanent and outlive their cards, so an owner can hold
+ * more reservations than the manifest has groups: one for every word whose
+ * card was deleted. Those are left alone. The only reservation that conflicts
+ * with the migration is one for a different identity that names a card the
+ * migration keeps, because two identities would then own the same card.
+ */
+const assertNoOtherReservationNamesMigratedCard = (
+  reservations: readonly { id: string; data(): DocumentData | undefined }[],
+  groups: readonly LegacyLibraryIdentityGroup[],
+  reason: 'reservation' | 'final-scan',
+): void => {
+  const manifestReservationIds = new Set(groups.map(group => (
+    createLegacyReservationId(reservationKey(group.identity, group.normalizedWord))
+  )));
+  const keptCardIds = new Set(groups.map(manifestCanonicalCardId));
+  for (const reservation of reservations) {
+    if (manifestReservationIds.has(reservation.id)) continue;
+    const cardId = reservation.data()?.cardId;
+    if (typeof cardId === 'string' && keptCardIds.has(cardId)) {
+      throw new LegacyLibraryMigrationConflictError(reason);
     }
   }
 };
@@ -1087,6 +1130,85 @@ export const clearZeroProgressFence = async (
   clearLibraryMigrationFenceMirror(transaction, database, ownerId);
 });
 
+const RETIRED_GROUP_DELETE_PAGE = 200;
+
+/**
+ * Retires a manifest that no longer describes the library and reopens its job
+ * for a new scan, so a later discovery reports a new revision to approve.
+ *
+ * It runs only while no group has been applied. With a fence, the fence must
+ * still be the caller's own; without one (the library generation changed
+ * before a fence could be taken) the generation change is confirmed again.
+ * The job reset, the fence release and the backup root removal are one
+ * transaction: the owner is never left fenced on a manifest nobody can apply.
+ */
+const reopenDiscoveryForChangedLibrary = async (
+  database: Firestore,
+  ownerId: string,
+  options: LegacyLibraryMigrationApplyOptions,
+  fence: MigrationFence | null,
+): Promise<void> => {
+  const jobReference = discoveryJobRef(database, ownerId, options.jobId);
+  const retiredScanId = await database.runTransaction(async transaction => {
+    const fenceReference = migrationFenceReference(database, ownerId);
+    const [jobSnapshot, fenceSnapshot, stateSnapshot] = await Promise.all([
+      transaction.get(jobReference),
+      transaction.get(fenceReference),
+      transaction.get(libraryStateRef(database, ownerId)),
+    ]);
+    if (!jobSnapshot.exists) return null;
+    const job = validDiscoveryJob(jobSnapshot.data());
+    if (job.sourceRevision !== options.sourceRevision || (job.appliedGroupCount ?? 0) !== 0) return null;
+    if (fence) {
+      if (!fenceSnapshot.exists) return null;
+      const current = fenceFromSnapshot(fenceSnapshot);
+      if (
+        current.token !== fence.token
+        || current.leaseOwner !== fence.leaseOwner
+        || current.revision !== fence.revision
+        || current.phase === 'rollback'
+        || current.appliedGroupCount !== 0
+      ) return null;
+    } else {
+      const currentEpoch = stateSnapshot.exists ? safeCounter(stateSnapshot.data()?.libraryEpoch) : 0;
+      if (fenceSnapshot.exists || job.phase !== 'discovered' || currentEpoch === job.libraryEpoch) return null;
+    }
+    transaction.set(jobReference, discoveryJobData({
+      schemaVersion: 3,
+      scanId: randomUUID(),
+      phase: 'discover',
+      cursor: null,
+      libraryEpoch: null,
+      sourceRevision: '',
+      scanned: 0,
+      sourceCount: 0,
+      groupCount: 0,
+      lastPageDigest: null,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+    }, Timestamp.now()), { merge: false });
+    transaction.delete(backupRef(database, ownerId, options.jobId));
+    if (fence) {
+      transaction.delete(fenceReference);
+      clearLibraryMigrationFenceMirror(transaction, database, ownerId);
+    }
+    return job.scanId;
+  });
+  if (retiredScanId === null) return;
+  // Readers already ignore the retired scan's groups, so this only tidies up.
+  // Each page is a transaction, which keeps a new scan's writes out of it.
+  const retiredGroups = jobReference.collection(DISCOVERY_GROUP_COLLECTION)
+    .where('scanId', '==', retiredScanId).limit(RETIRED_GROUP_DELETE_PAGE);
+  for (;;) {
+    const deleted = await database.runTransaction(async transaction => {
+      const snapshot = await transaction.get(retiredGroups);
+      for (const document of snapshot.docs) transaction.delete(document.ref);
+      return snapshot.size;
+    });
+    if (deleted < RETIRED_GROUP_DELETE_PAGE) return;
+  }
+};
+
 const ensureBackupRoot = async (
   database: Firestore,
   ownerId: string,
@@ -1151,11 +1273,7 @@ const prepareGroupBackup = async (
 ): Promise<void> => {
   const sourceReferences = group.sources.map(source => cardsRef(database, ownerId).doc(source.id));
   const reservationReference = reservationRef(database, ownerId, reservationKey(group.identity, group.normalizedWord));
-  const canonicalId = canonicalCleanupCardId({
-    key: group.identity,
-    normalizedWord: group.normalizedWord,
-    ...(group.identity.startsWith('lexeme:') ? { lexemeId: group.identity.slice('lexeme:'.length) } : {}),
-  });
+  const canonicalId = manifestCanonicalCardId(group);
   const tombstoneIds = [...new Set([canonicalId, ...group.sources.map(source => source.id)])];
   const tombstoneReferences = tombstoneIds.map(cardId => tombstoneRef(database, ownerId, cardId));
   const [sourceSnapshots, reservationSnapshot, ...tombstoneSnapshots] = await Promise.all([
@@ -1180,12 +1298,16 @@ const prepareGroupBackup = async (
   let hasWrites = false;
   for (const [index, source] of group.sources.entries()) {
     const existing = existingBackups[index];
-    if (existing?.exists && !backupSourceMatches(existing, source, false)) {
+    const matches = Boolean(existing?.exists && backupSourceMatches(existing, source, false));
+    // Before the first group is applied the live card, checked against the
+    // manifest above, is the state to restore. A backup that differs was
+    // captured for a scan that has since been retired, so it is replaced.
+    if (existing?.exists && !matches && fence.appliedGroupCount !== 0) {
       throw new LegacyLibraryDiscoveryStateChangedError();
     }
-    if (!existing?.exists) {
+    if (!matches) {
       hasWrites = true;
-      batch.create(sourceBackupReferences[index], {
+      const backup = {
         sourceId: source.id,
         sourceDigest: source.sourceDigest,
         sourceBytes: source.sourceBytes,
@@ -1193,7 +1315,9 @@ const prepareGroupBackup = async (
         prepared: true,
         sealed: false,
         capturedAt: stableTimestamp(fence),
-      });
+      };
+      if (existing?.exists) batch.set(sourceBackupReferences[index], backup, { merge: false });
+      else batch.create(sourceBackupReferences[index], backup);
     }
   }
   if (hasWrites) await batch.commit();
@@ -1295,11 +1419,7 @@ const applyMigrationGroup = async (
   group: LegacyLibraryIdentityGroup,
 ): Promise<MigrationFence> => database.runTransaction(async transaction => {
   const sourceReferences = group.sources.map(source => cardsRef(database, ownerId).doc(source.id));
-  const canonicalReference = cardsRef(database, ownerId).doc(canonicalCleanupCardId({
-    key: group.identity,
-    normalizedWord: group.normalizedWord,
-    ...(group.identity.startsWith('lexeme:') ? { lexemeId: group.identity.slice('lexeme:'.length) } : {}),
-  }));
+  const canonicalReference = cardsRef(database, ownerId).doc(manifestCanonicalCardId(group));
   const canonicalIsSource = sourceReferences.some(reference => reference.id === canonicalReference.id);
   const sourceAndCanonicalReferences = canonicalIsSource
     ? sourceReferences
@@ -1520,18 +1640,15 @@ const scanFinalLibrary = async (
   }
   if (cardsByWord.size !== groups.length) throw new LegacyLibraryMigrationConflictError('final-scan');
   const reservationsSnapshot = await ownerRef(database, ownerId).collection('card_reservations').get();
-  if (reservationsSnapshot.size !== groups.length) throw new LegacyLibraryMigrationConflictError('final-scan');
+  assertNoOtherReservationNamesMigratedCard(reservationsSnapshot.docs, groups, 'final-scan');
   for (const group of groups) {
     const cards = cardsByWord.get(group.identity) ?? [];
-    const canonicalId = canonicalCleanupCardId({
-      key: group.identity,
-      normalizedWord: group.normalizedWord,
-      ...(group.identity.startsWith('lexeme:') ? { lexemeId: group.identity.slice('lexeme:'.length) } : {}),
-    });
+    const canonicalId = manifestCanonicalCardId(group);
     if (
       cards.length !== 1
       || cards[0].id !== canonicalId
-      || cards[0].word !== group.normalizedWord
+      // The headword keeps the learner's casing; it only has to spell the identity.
+      || normalizeCleanupWord(cards[0].word) !== group.normalizedWord
       || cards[0].normalizedWord !== group.normalizedWord
       || cards[0].schemaVersion !== 2
       || cards[0].libraryEpoch !== currentFence.libraryEpoch
@@ -1708,14 +1825,29 @@ export async function applyLegacyLibraryMigration(
       complete: true,
     };
   }
-  let fence = await beginMigrationFence(database, ownerId, options, 'verify');
+  let fence: MigrationFence;
+  try {
+    fence = await beginMigrationFence(database, ownerId, options, 'verify');
+  } catch (error) {
+    if (error instanceof LegacyLibraryGenerationChangedError) {
+      await reopenDiscoveryForChangedLibrary(database, ownerId, options, null);
+    }
+    throw error;
+  }
   try {
     const job = await readMigrationJob(database, ownerId, options.jobId);
-    const groups = await readManifestGroups(database, ownerId, options.jobId);
+    const groups = await readManifestGroups(database, ownerId, options.jobId, job.scanId);
     if (groups.length !== fence.groupCount) throw new LegacyLibraryDiscoveryStateChangedError();
     if (fence.appliedGroupCount === 0) {
       const fresh = await readFreshLibrary(database, ownerId);
       verifyFreshManifest(fresh, job, groups);
+      // Checked before the first group is applied, while the fence can still
+      // be released without a rollback. The final scan repeats it.
+      assertNoOtherReservationNamesMigratedCard(
+        (await ownerRef(database, ownerId).collection('card_reservations').select('cardId').get()).docs,
+        groups,
+        'reservation',
+      );
       await ensureBackupRoot(database, ownerId, fence);
       for (const group of groups) {
         fence = await renewMigrationFence(database, ownerId, fence);
@@ -1741,7 +1873,14 @@ export async function applyLegacyLibraryMigration(
     return await finalizeMigration(database, ownerId, fence, groups, finalState);
   } catch (error) {
     if (fence.appliedGroupCount === 0) {
-      await clearZeroProgressFence(database, ownerId, fence, 'discovered');
+      // A library that changed since the scan makes this manifest unusable for
+      // good, so the job goes back to discovery. Any other failure keeps the
+      // approved manifest for a retry with the same revision.
+      if (error instanceof LegacyLibraryGenerationChangedError) {
+        await reopenDiscoveryForChangedLibrary(database, ownerId, options, fence);
+      } else {
+        await clearZeroProgressFence(database, ownerId, fence, 'discovered');
+      }
     }
     throw error;
   }
@@ -1909,9 +2048,7 @@ const asRollbackPlan = (value: DocumentData): RollbackPlan => {
     || typeof value.appliedDigest !== 'string'
   ) throw new LegacyLibraryRollbackConflictError(1, 1);
   const identity = value.identity === undefined ? `word:${value.normalizedWord}` : value.identity;
-  if (typeof identity !== 'string' || !/^(?:word|lexeme):/.test(identity)) {
-    throw new LegacyLibraryRollbackConflictError(1, 1);
-  }
+  if (!isCleanupIdentityKey(identity)) throw new LegacyLibraryRollbackConflictError(1, 1);
   return { ...value, identity } as RollbackPlan;
 };
 
@@ -2117,14 +2254,19 @@ const rollbackOneGroup = async (
   }
   for (const [index, sourceId] of sourceIds.entries()) {
     const backup = backupSnapshots[index];
+    // Only a card the applied scan listed is restored from its backup. The
+    // kept card's id, when no listed card had it, was unused when the group
+    // was applied, so the card is removed. A backup stored under that id was
+    // captured for an earlier, retired scan and is not this library's state.
     if (originalSourceIds.includes(sourceId)) {
       const expected = originalSources.find(source => source.id === sourceId);
       if (!expected || !backupSourceMatches(backup, expected)) {
         throw new LegacyLibraryRollbackConflictError(1, sourceIds.length);
       }
+      transaction.set(sourceReferences[index], backup.data()?.source ?? {}, { merge: false });
+    } else {
+      transaction.delete(sourceReferences[index]);
     }
-    if (!backup.exists) transaction.delete(sourceReferences[index]);
-    else transaction.set(sourceReferences[index], backup.data()?.source ?? {}, { merge: false });
     const previous = beforeTombstones.find(item => item.cardId === sourceId)?.data;
     if (previous && typeof previous === 'object') transaction.set(tombstoneReferences[index], previous as DocumentData, { merge: false });
     else transaction.delete(tombstoneReferences[index]);
@@ -2170,7 +2312,10 @@ export async function rollbackLegacyLibraryMigration(
   let current = fence;
   try {
     await ensureBackupRoot(database, ownerId, current);
-    if (current.rollbackGroupCount === 0 && job.phase === 'complete') {
+    // Until the first group is restored the library must still be the sealed
+    // result of the migration. The backup root says whether it was sealed; the
+    // job phase does not, because an interrupted attempt leaves it 'rollback'.
+    if (current.rollbackGroupCount === 0 && rootData.complete === true) {
       await verifySealedFinalLibrary(database, ownerId, current);
     }
     const preflight = await preflightRollback(database, ownerId, current);
@@ -2213,8 +2358,11 @@ export async function rollbackLegacyLibraryMigration(
     });
     return { rolledBack: preflight.plans.length, complete: true };
   } catch (error) {
+    // A retry after an interrupted attempt reads the job as 'rollback', so the
+    // job phase cannot tell a completed migration from a half-applied one. The
+    // backup root can: it stays complete until a rollback has finished.
     if (current.rollbackGroupCount === 0
-        && (job.phase === 'complete' || current.appliedGroupCount === 0)) {
+        && (rootData.complete === true || current.appliedGroupCount === 0)) {
       await clearZeroProgressFence(database, ownerId, current, 'complete');
     }
     throw error;
