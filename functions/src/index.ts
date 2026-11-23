@@ -2406,8 +2406,10 @@ export const deleteMyFile = onCall({
 });
 
 // Settles every upload from the stored object itself: the browser's byte count is never trusted.
+// A failed run is delivered again: settling is idempotent, and a read of the object's head that
+// failed must be repeated rather than stored without its signature check.
 export const finalizeFileUpload = onObjectFinalized({
-  region: REGION, timeoutSeconds: 60, memory: '256MiB', maxInstances: 5,
+  region: REGION, timeoutSeconds: 60, memory: '256MiB', maxInstances: 5, retry: true,
 }, async event => {
   const bucket = getStorage(adminApp).bucket(event.data.bucket) as unknown as BucketLike;
   const objects = bucketFileObjects(() => bucket);

@@ -274,6 +274,102 @@ describeWithEmulators('learner file uploads against the emulators', () => {
     expect(await usageOf(uid)).toMatchObject({ reservedBytes: 0 });
   });
 
+  it('reports the usage after the expired reservation it just released', async () => {
+    const uid = owner();
+    await prepareFileUpload(database, uid, {
+      ownerId: uid, name: 'late.pdf', contentType: 'application/pdf', bytes: 700, purpose: 'source', courseId: null,
+    }, config, now);
+    const later = new Date(now.getTime() + 61 * 60_000);
+    const listing = await listFiles(database, uid, config, later);
+    expect(listing.files).toEqual([]);
+    expect(listing.usage).toEqual({ usedBytes: 0, reservedBytes: 0, fileCount: 0 });
+  });
+
+  it('answers a reservation with the usage it created', async () => {
+    const uid = owner();
+    const prepared = await prepareFileUpload(database, uid, {
+      ownerId: uid, name: 'a.pdf', contentType: 'application/pdf', bytes: 700, purpose: 'source', courseId: null,
+    }, config, now);
+    expect(prepared.usage).toEqual({ usedBytes: 0, reservedBytes: 700, fileCount: 0 });
+  });
+
+  it('answers a repeated delete of a removed file with the committed usage', async () => {
+    const uid = owner();
+    const prepared = await prepareFileUpload(database, uid, {
+      ownerId: uid, name: 'a.pdf', contentType: 'application/pdf', bytes: 300, purpose: 'source', courseId: null,
+    }, config, now);
+    const object = await upload(uid, prepared.fileId, pdf(300), 'application/pdf');
+    await finalizeUploadedFile(database, objects, object, config, now);
+    const first = await deleteFile(database, objects, uid, prepared.fileId, now);
+    expect(first.usage).toEqual({ usedBytes: 0, reservedBytes: 0, fileCount: 0 });
+    await expect(deleteFile(database, objects, uid, prepared.fileId, now)).resolves.toEqual(first);
+    expect(await exists(object.name)).toBe(false);
+  });
+
+  describe('repeating a reservation whose answer was lost', () => {
+    const request = (uid: string, fileId?: string) => ({
+      ownerId: uid, name: 'a.pdf', contentType: 'application/pdf', bytes: 2_500, purpose: 'source' as const, courseId: null,
+      ...(fileId ? { fileId } : {}),
+    });
+    const chosenId = () => `retry-${randomUUID()}`;
+
+    it('keeps one record and one reservation when the same file ID is prepared again', async () => {
+      const uid = owner();
+      const fileId = chosenId();
+      const first = await prepareFileUpload(database, uid, request(uid, fileId), config, now);
+      const second = await prepareFileUpload(database, uid, request(uid, fileId), config, new Date(now.getTime() + 60_000));
+      expect(first.fileId).toBe(fileId);
+      expect(second).toEqual(first);
+      expect(await usageOf(uid)).toMatchObject({ reservedBytes: 2_500 });
+      expect((await database.collection('users').doc(uid).collection('files').get()).size).toBe(1);
+    });
+
+    it('replaces a lapsed reservation of the same file ID without counting its bytes twice', async () => {
+      const uid = owner();
+      const fileId = chosenId();
+      await prepareFileUpload(database, uid, request(uid, fileId), config, now);
+      const later = new Date(now.getTime() + 61 * 60_000);
+      const again = await prepareFileUpload(database, uid, request(uid, fileId), config, later);
+      expect(again.expiresAt).toBe(new Date(later.getTime() + 60 * 60_000).toISOString());
+      expect(await usageOf(uid)).toMatchObject({ reservedBytes: 2_500 });
+      expect((await database.collection('users').doc(uid).collection('files').get()).size).toBe(1);
+    });
+
+    it('refuses a file ID that already belongs to a different upload or a settled file', async () => {
+      const uid = owner();
+      const fileId = chosenId();
+      await prepareFileUpload(database, uid, request(uid, fileId), config, now);
+      await expect(prepareFileUpload(database, uid, { ...request(uid, fileId), bytes: 100 }, config, now))
+        .rejects.toMatchObject({ name: 'InputValidationError' });
+      const object = await upload(uid, fileId, pdf(2_000), 'application/pdf');
+      await finalizeUploadedFile(database, objects, object, config, now);
+      await expect(prepareFileUpload(database, uid, request(uid, fileId), config, now))
+        .rejects.toMatchObject({ name: 'InputValidationError' });
+      expect(await usageOf(uid)).toMatchObject({ usedBytes: 2_000, reservedBytes: 0, fileCount: 1 });
+    });
+  });
+
+  describe('a head that cannot be read', () => {
+    const unreadable: FileObjectStore = {
+      readHead: async () => { throw new Error('transient read failure'); },
+      deleteObject: async () => undefined,
+      deleteOwnerObjects: async () => undefined,
+    };
+
+    it('fails the event without settling the file, so a retried event settles it', async () => {
+      const uid = owner();
+      const prepared = await prepareFileUpload(database, uid, {
+        ownerId: uid, name: 'photo.png', contentType: 'image/png', bytes: 100, purpose: 'card-image', courseId: null,
+      }, config, now);
+      const object = await upload(uid, prepared.fileId, Buffer.from('not a png at all, but long enough to look stored'), 'image/png');
+      await expect(finalizeUploadedFile(database, unreadable, object, config, now)).rejects.toThrow('transient read failure');
+      expect(await usageOf(uid)).toMatchObject({ usedBytes: 0, reservedBytes: 100, fileCount: 0 });
+      expect((await listFiles(database, uid, config, now)).files).toEqual([expect.objectContaining({ id: prepared.fileId, status: 'uploading' })]);
+      await expect(finalizeUploadedFile(database, objects, object, config, now)).resolves.toEqual({ kind: 'rejected', reason: 'signature' });
+      expect(await exists(object.name)).toBe(false);
+    });
+  });
+
   it('exports file records and removes both objects and records when the account is purged', async () => {
     const uid = owner();
     const prepared = await prepareFileUpload(database, uid, {

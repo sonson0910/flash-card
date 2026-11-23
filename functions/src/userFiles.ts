@@ -120,11 +120,16 @@ export interface PrepareFileUploadRequest {
   readonly bytes: number;
   readonly purpose: FilePurpose;
   readonly courseId: string | null;
+  /**
+   * A file ID the browser chose. Asking again with the same ID and details returns the reservation the
+   * first request made, so a request whose answer was lost does not reserve the bytes twice.
+   */
+  readonly fileId?: string;
 }
 
 export const parsePrepareFileUploadRequest = (value: unknown): PrepareFileUploadRequest => {
   const source = plainObject(value, 'request');
-  onlyKeys(source, ['ownerId', 'name', 'contentType', 'bytes', 'purpose', 'courseId'], 'request');
+  onlyKeys(source, ['ownerId', 'name', 'contentType', 'bytes', 'purpose', 'courseId', 'fileId'], 'request');
   const contentType = typeof source.contentType === 'string' ? source.contentType.trim().toLowerCase() : '';
   if (!FILE_CONTENT_TYPES[contentType]) fail('contentType', 'is not supported');
   if (!Number.isSafeInteger(source.bytes) || Number(source.bytes) <= 0) fail('bytes', 'must be a positive integer');
@@ -138,6 +143,7 @@ export const parsePrepareFileUploadRequest = (value: unknown): PrepareFileUpload
     bytes: Number(source.bytes),
     purpose: purpose as FilePurpose,
     courseId: courseIdAt(source.courseId),
+    ...(source.fileId === undefined ? {} : { fileId: fileIdAt(source.fileId) }),
   };
 };
 
@@ -220,23 +226,41 @@ export interface PreparedFileUpload {
   readonly path: string;
   readonly maxFileBytes: number;
   readonly expiresAt: string;
+  /** The account's usage once this upload is reserved, so the device never estimates it. */
+  readonly usage: FileListing['usage'];
 }
 
 export async function prepareFileUpload(database: Firestore, uid: string, request: PrepareFileUploadRequest,
   config: PilotConfig, now = new Date()): Promise<PreparedFileUpload> {
   const refs = ownerRefs(database, uid);
-  const fileId = newFileId();
+  const fileId = request.fileId ?? newFileId();
   const fileRef = refs.files.doc(fileId);
   const expiresAt = new Date(now.getTime() + FILE_RESERVATION_TTL_MS);
   return database.runTransaction(async transaction => {
-    const [planSnapshot, usageSnapshot, coursesSnapshot] = await Promise.all([
+    const [planSnapshot, usageSnapshot, coursesSnapshot, existingSnapshot] = await Promise.all([
       transaction.get(refs.plan), transaction.get(refs.usage),
       request.courseId ? transaction.get(refs.courses) : Promise.resolve(null),
+      request.fileId ? transaction.get(fileRef) : Promise.resolve(null),
     ]);
+    const limits = fileLimitsFor(planSnapshot.data(), now, config);
+    const existing = existingSnapshot?.exists ? existingSnapshot.data() as FileRecord : undefined;
+    if (existing) {
+      // The same request again: hand back its reservation instead of making a second one.
+      const reservationEndsAt = asDate(existing.reservationExpiresAt);
+      const sameUpload = existing.status === 'uploading' && existing.name === request.name
+        && existing.contentType === request.contentType && existing.purpose === request.purpose
+        && (existing.courseId ?? null) === request.courseId && existing.declaredBytes === request.bytes;
+      if (!sameUpload) fail('fileId', 'is already used by another file');
+      if (reservationEndsAt && reservationEndsAt > now) {
+        return {
+          fileId, path: fileObjectPath(uid, fileId), maxFileBytes: limits.maxFileBytes,
+          expiresAt: reservationEndsAt.toISOString(), usage: usageOf(usageSnapshot.data()),
+        };
+      }
+    }
     if (request.courseId && !courseExists(coursesSnapshot, request.courseId)) {
       throw new FileServiceError('course-not-found');
     }
-    const limits = fileLimitsFor(planSnapshot.data(), now, config);
     const { usage, released } = await releaseExpired(transaction, refs, usageOf(usageSnapshot.data()), now);
     if (request.bytes > limits.maxFileBytes) {
       throw new FileServiceError('size', { maxFileBytes: limits.maxFileBytes });
@@ -244,14 +268,11 @@ export async function prepareFileUpload(database: Firestore, uid: string, reques
     if (usage.usedBytes + usage.reservedBytes + request.bytes > limits.limitBytes) {
       throw new FileServiceError('quota', { limitBytes: limits.limitBytes, usedBytes: usage.usedBytes, reservedBytes: usage.reservedBytes });
     }
-    for (const ref of released) transaction.delete(ref);
-    transaction.set(refs.usage, {
-      usedBytes: usage.usedBytes,
-      reservedBytes: usage.reservedBytes + request.bytes,
-      fileCount: usage.fileCount,
-      updatedAt: now,
-    });
-    transaction.create(fileRef, {
+    // An expired reservation of this very file is replaced below rather than deleted first.
+    for (const ref of released) if (ref.path !== fileRef.path) transaction.delete(ref);
+    const nextUsage = { usedBytes: usage.usedBytes, reservedBytes: usage.reservedBytes + request.bytes, fileCount: usage.fileCount };
+    transaction.set(refs.usage, { ...nextUsage, updatedAt: now });
+    const record = {
       schemaVersion: 1,
       ownerId: uid,
       name: request.name,
@@ -268,8 +289,10 @@ export async function prepareFileUpload(database: Firestore, uid: string, reques
       createdAt: now,
       updatedAt: now,
       reservationExpiresAt: expiresAt,
-    });
-    return { fileId, path: fileObjectPath(uid, fileId), maxFileBytes: limits.maxFileBytes, expiresAt: expiresAt.toISOString() };
+    };
+    if (existing) transaction.set(fileRef, record);
+    else transaction.create(fileRef, record);
+    return { fileId, path: fileObjectPath(uid, fileId), maxFileBytes: limits.maxFileBytes, expiresAt: expiresAt.toISOString(), usage: nextUsage };
   });
 }
 
@@ -346,16 +369,11 @@ export async function finalizeUploadedFile(database: Firestore, objects: FileObj
   }
   const size = Number(object.size);
   const contentType = (object.contentType ?? '').toLowerCase();
-  let verification: 'complete' | 'partial' | 'failed' | 'unavailable';
-  if (contentType !== initialRecord.contentType || !FILE_CONTENT_TYPES[contentType]) {
-    verification = 'failed';
-  } else {
-    try {
-      verification = verifyFileSignature(contentType, await objects.readHead(object.name, FILE_HEAD_BYTES));
-    } catch {
-      verification = 'unavailable';
-    }
-  }
+  // A head that cannot be read settles nothing: the error fails the event so it is delivered again, and
+  // the file stays reserved until the leading bytes can be checked.
+  const verification = contentType !== initialRecord.contentType || !FILE_CONTENT_TYPES[contentType]
+    ? 'failed' as const
+    : verifyFileSignature(contentType, await objects.readHead(object.name, FILE_HEAD_BYTES));
   const outcome = await database.runTransaction(async transaction => {
     const [recordSnapshot, usageSnapshot, planSnapshot] = await Promise.all([
       transaction.get(fileRef), transaction.get(refs.usage), transaction.get(refs.plan),
@@ -482,17 +500,20 @@ export async function listFiles(database: Firestore, uid: string, config: PilotC
     for (const ref of staleRejected) batch.delete(ref);
     await batch.commit();
   }
+  // The usage shown is the one left after any reservation this call released.
+  let shownUsage = usage;
   if (expiredReservation) {
-    await database.runTransaction(async transaction => {
+    shownUsage = await database.runTransaction(async transaction => {
       const current = usageOf((await transaction.get(refs.usage)).data());
       const { usage: next, released } = await releaseExpired(transaction, refs, current, now);
       for (const ref of released) transaction.delete(ref);
       if (released.length) transaction.set(refs.usage, { ...next, updatedAt: now });
+      return next;
     });
   }
   return {
     files,
-    usage: { usedBytes: usage.usedBytes, reservedBytes: usage.reservedBytes, fileCount: usage.fileCount },
+    usage: { usedBytes: shownUsage.usedBytes, reservedBytes: shownUsage.reservedBytes, fileCount: shownUsage.fileCount },
     limits: fileLimitsFor(planSnapshot.data(), now, config),
     nextCursor: last && lastCreatedAt ? `${lastCreatedAt.getTime()}:${last.id}` : null,
   };
@@ -522,8 +543,8 @@ export async function deleteFile(database: Firestore, objects: FileObjectStore, 
   now = new Date()): Promise<{ usage: FileListing['usage'] }> {
   const refs = ownerRefs(database, uid);
   const fileRef = refs.files.doc(fileId);
-  const existing = await fileRef.get();
-  if (!existing.exists) throw new FileServiceError('not-found');
+  // A file that is already gone answers like the delete that removed it, so a repeated request after a
+  // lost response still succeeds; removing an absent object is harmless.
   await objects.deleteObject(fileObjectPath(uid, fileId));
   return database.runTransaction(async transaction => {
     const [recordSnapshot, usageSnapshot] = await Promise.all([transaction.get(fileRef), transaction.get(refs.usage)]);
