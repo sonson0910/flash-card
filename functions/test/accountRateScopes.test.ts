@@ -19,8 +19,14 @@ describe('per-owner rate-limit budgets removed with an account', () => {
       .map(match => match[1]);
     expect(ownerScopes.length).toBeGreaterThan(20);
     expect(serviceTwins).toContain('pronunciation-assessment-service-owner');
-    expect(directOwnerScopes).toEqual(expect.arrayContaining(['gemini-owner', 'image-provider-owner']));
-    for (const scope of [...ownerScopes, ...serviceTwins, ...directOwnerScopes]) expect(covered, scope).toContain(scope);
+    // A callable that names a shared budget and a per-owner maximum for it spends `<shared scope>-owner` as well.
+    const sharedBudgetTwins = [...indexSource.matchAll(/'([a-z0-9-]+)',\s*MAX_[A-Z_]+,\s*MAX_[A-Z_]*OWNER[A-Z_]*/g)]
+      .map(match => `${match[1]}-owner`);
+    expect(sharedBudgetTwins).toContain('gemini-owner');
+    expect(directOwnerScopes).toContain('image-provider-owner');
+    for (const scope of [...ownerScopes, ...serviceTwins, ...sharedBudgetTwins, ...directOwnerScopes]) {
+      expect(covered, scope).toContain(scope);
+    }
   });
 
   it('lists no scope that no callable consumes', () => {
