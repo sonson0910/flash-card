@@ -358,7 +358,11 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           }
         } catch (cause) {
           if (mutation.operation === 'review' && reviewConflictTerminal) {
-            if (reviewCommandKey) unresolvedReviewCommandKeysRef.current.delete(reviewCommandKey);
+            if (reviewCommandKey) {
+              unresolvedReviewCommandKeysRef.current.delete(reviewCommandKey);
+              // The server holds no receipt for a review it refused, so a retry of this question is a new review at the new time.
+              reviewCommandsRef.current.delete(reviewCommandKey);
+            }
             if (cause && typeof cause === 'object') {
               (cause as Error & { reviewConflictTerminal?: boolean }).reviewConflictTerminal = true;
             }
