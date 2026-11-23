@@ -95,8 +95,9 @@ jobs:
           test "$INVENTORY_REVISION" = "$GITHUB_SHA"
           [[ "$MIGRATION_MODE" = inventory || "$MIGRATION_MODE" = verify || "$MIGRATION_MODE" = apply || "$MIGRATION_MODE" = supersede || "$MIGRATION_MODE" = prepare-indexes ]]
           if [[ "$MIGRATION_MODE" = verify ]]; then
+            # The owning revision may be this release: verify is the only mode
+            # that can issue its report again once sharing has reopened.
             [[ "$MIGRATION_SOURCE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
-            test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"
           fi
           if [[ "$MIGRATION_MODE" = apply ]]; then
             test "$APPLY_CONFIRMATION" = "APPLY_SHARED_DECK_V2"

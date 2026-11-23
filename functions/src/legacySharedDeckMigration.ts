@@ -2226,6 +2226,48 @@ const quarantinedSourceRemoved = (
       || (copy === undefined && sealedExpiryPassed(entry, scanStartedAt, nowMillis)))
 );
 
+const sharePayload = (publicData: DataRecord): DataRecord => ({
+  category: publicData.category,
+  cards: publicData.cards,
+  ...(publicData.targetLanguage !== undefined ? {
+    targetLanguage: publicData.targetLanguage,
+    nativeLanguage: publicData.nativeLanguage,
+  } : {}),
+});
+
+/**
+ * The public document of a share the callable wrote.  The callable cuts long
+ * text at its limit after trimming, which can leave a trailing space, so the
+ * payload is held to what the callable accepts and not to the byte-exact form
+ * the inventory requires of a source it is about to rewrite.
+ */
+const isCurrentPublicRecord = (publicData: unknown): publicData is DataRecord => {
+  if (!isRecord(publicData)
+    || !isCurrentPublicShape(publicData)
+    || publicData.schemaVersion !== 2
+    || !isTimestampLike(publicData.createdAt)
+    || !isTimestampLike(publicData.expiresAt)) return false;
+  try {
+    parseCreateSharedDeckRequest(sharePayload(publicData));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const isCurrentPrivateRecord = (privateData: unknown): privateData is DataRecord => (
+  privateShape(privateData).shape?.version === 2
+);
+
+/** Both documents of a share the callable wrote: one lifetime, and the size the owner is charged for. */
+const isCurrentSharePair = (publicData: unknown, privateData: unknown): boolean => (
+  isCurrentPublicRecord(publicData)
+    && isCurrentPrivateRecord(privateData)
+    && timestampEqual(publicData.createdAt, privateData.createdAt)
+    && timestampEqual(publicData.expiresAt, privateData.expiresAt)
+    && privateData.payloadBytes === new TextEncoder().encode(JSON.stringify(sharePayload(publicData))).byteLength
+);
+
 const migrationStateReference = (database: Firestore) => (
   database.collection(SHARED_DECK_MIGRATION_STATE_COLLECTION).doc(SHARED_DECK_MIGRATION_STATE)
 );
@@ -3050,14 +3092,16 @@ export async function verifyLegacySharedDeckCutover(
   // created, revoked and outlived shares.  The store can no longer equal the
   // scan-time picture, and a pass that writes its cursor into the state would
   // fence every learner until it finished.  This pass therefore only reads.
-  const attestVerified = async (now: Timestamp): Promise<LegacySharedDeckCutoverVerification> => {
-    const nowMillis = now.toMillis();
+  const attestVerified = async (): Promise<LegacySharedDeckCutoverVerification> => {
     const readOnly = <T>(read: (transaction: Transaction) => Promise<T>): Promise<T> => (
       database.runTransaction(read, { readOnly: true })
     );
     const publicReference = (shareId: string) => database.collection('shared_decks').doc(shareId);
     const privateReference = (shareId: string) => database.collection('shared_deck_owners').doc(shareId);
-    const ledgerShares = (usage: unknown): DataRecord => {
+    // The migration created the ledger, and only deleting the owner's account
+    // removes it again, together with the owner's shares and quarantine copies.
+    const ledgerShares = (usage: unknown): DataRecord | null => {
+      if (usage === undefined) return null;
       if (!isRecord(usage) || usage.schemaVersion !== 1 || !isRecord(usage.shares)) {
         throw new LegacySharedDeckApplyError('Cutover verification found a mismatched usage ledger.');
       }
@@ -3065,18 +3109,15 @@ export async function verifyLegacySharedDeckCutover(
     };
     // A share created after the cutover belongs to whoever created it, so it
     // is judged against its own owner record instead of the migrated owner.
-    const assertCurrentShare = (shareId: string, publicData: unknown, privateData: unknown): void => {
-      if (isRecord(publicData) && isRecord(privateData)) {
-        if (publicData.schemaVersion === 2
-          && privateData.schemaVersion === 2
-          && typeof privateData.ownerUid === 'string'
-          && classifyLegacyShare({ shareId, publicData, privateData }, privateData.ownerUid)
-            .disposition === 'keep-current') return;
+    const assertCurrentShare = (publicData: unknown, privateData: unknown, nowMillis: number): void => {
+      if (publicData !== undefined && privateData !== undefined) {
+        if (isCurrentSharePair(publicData, privateData)) return;
       } else {
         // The TTL policy deletes the two sides of an expired share separately.
         const remaining = publicData ?? privateData;
+        const current = publicData !== undefined ? isCurrentPublicRecord(publicData) : isCurrentPrivateRecord(privateData);
         const expiresAt = isRecord(remaining) ? timestampMillis(remaining.expiresAt) : null;
-        if (isRecord(remaining) && remaining.schemaVersion === 2 && expiresAt !== null && expiresAt <= nowMillis) return;
+        if (current && expiresAt !== null && expiresAt <= nowMillis) return;
       }
       throw new LegacySharedDeckApplyError('Cutover verification found a share that is not in the current format.');
     };
@@ -3094,8 +3135,8 @@ export async function verifyLegacySharedDeckCutover(
             const counterpart = (await transaction.get(
               collection === 'shared_decks' ? privateReference(document.id) : publicReference(document.id),
             )).data();
-            if (collection === 'shared_decks') assertCurrentShare(document.id, document.data(), counterpart);
-            else assertCurrentShare(document.id, counterpart, document.data());
+            if (collection === 'shared_decks') assertCurrentShare(document.data(), counterpart, clock());
+            else assertCurrentShare(counterpart, document.data(), clock());
           }
           return { size: snapshot.size, lastId: snapshot.docs.at(-1)?.id ?? null };
         });
@@ -3109,6 +3150,7 @@ export async function verifyLegacySharedDeckCutover(
       await readOnly(async transaction => {
         // One snapshot per batch: a share and its ledger entry always change together.
         const shares = ledgerShares((await transaction.get(usageRef)).data());
+        const nowMillis = clock();
         for (const entry of batch) {
           const publicData = (await transaction.get(publicReference(entry.shareId))).data();
           const privateData = (await transaction.get(privateReference(entry.shareId))).data();
@@ -3120,14 +3162,18 @@ export async function verifyLegacySharedDeckCutover(
             const sourceUnchanged = (publicData === undefined ? null : sourceDigest(publicData)) === entry.publicSourceDigest
               && (privateData === undefined ? null : sourceDigest(privateData)) === entry.privateSourceDigest;
             const sourceRemoved = publicData === undefined && privateData === undefined;
-            if (!quarantineMatchesSource(copy, entry) || (!sourceUnchanged && !sourceRemoved)) {
+            const settled = quarantineMatchesSource(copy, entry)
+              // Account deletion clears the owner's copies; a copy that is still there has to match.
+              || (copy === undefined && shares === null)
+              || quarantinedSourceRemoved(entry, publicData, privateData, copy, inventory.scanStartedAt, nowMillis);
+            if (!settled || (!sourceUnchanged && !sourceRemoved)) {
               throw new LegacySharedDeckApplyError(`Cutover verification found an unverified quarantine copy for ${entry.shareId}.`);
             }
             continue;
           }
           const expiresAt = sourceExpiresAt(entry, inventory.scanStartedAt)?.toMillis() ?? null;
           const live = expiresAt !== null && expiresAt > nowMillis;
-          const ledgerEntry = Object.hasOwn(shares, entry.shareId) ? shares[entry.shareId] : undefined;
+          const ledgerEntry = shares !== null && Object.hasOwn(shares, entry.shareId) ? shares[entry.shareId] : undefined;
           if (publicData === undefined && privateData === undefined) {
             // Revoked by the owner, or expired and removed: either way the ledger let go of it.
             if (live && ledgerEntry !== undefined) {
@@ -3136,8 +3182,11 @@ export async function verifyLegacySharedDeckCutover(
             continue;
           }
           if (publicData === undefined || privateData === undefined) {
-            const remaining = publicData ?? privateData;
-            if (live || !isRecord(remaining) || timestampMillis(remaining.expiresAt) !== expiresAt) {
+            // Half of an expired share: what is left still has to be the migrated record.
+            const migrated = publicData !== undefined
+              ? isAppliedPublic(entry, publicData, inventory.scanStartedAt)
+              : isAppliedPrivate(entry, privateData, inventory.ownerUid, inventory.scanStartedAt);
+            if (live || !migrated) {
               throw new LegacySharedDeckApplyError('Cutover verification found a missing or mismatched schema2 pair.');
             }
             continue;
@@ -3158,7 +3207,8 @@ export async function verifyLegacySharedDeckCutover(
       if (assertState((await transaction.get(stateRef)).data()).phase !== 'verified') {
         throw new LegacySharedDeckApplyError('Cutover verification state is not ready.');
       }
-      const shares = ledgerShares((await transaction.get(usageRef)).data());
+      const shares = ledgerShares((await transaction.get(usageRef)).data()) ?? {};
+      const nowMillis = clock();
       return {
         verified: true,
         validLegacyPublicCount: 0,
@@ -3187,7 +3237,7 @@ export async function verifyLegacySharedDeckCutover(
     transaction.set(stateRef, { ...state, verificationProgress: progress });
     return progress;
   });
-  if (initialProgress === null) return attestVerified(options.now ?? Timestamp.now());
+  if (initialProgress === null) return attestVerified();
 
   const processSource = async (
     transaction: Transaction,

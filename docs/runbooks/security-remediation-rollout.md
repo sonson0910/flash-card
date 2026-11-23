@@ -148,13 +148,19 @@ If the migration is already in the durable `verified` phase, run the workflow in
 `verify` mode with the immutable `source_revision` that owns that migration. This
 reruns the live cutover checks and emits a report bound to the current release
 revision without a new inventory, reapplying, or replacing the sealed migration
-state. The run only reads: sharing stays open while it runs and if it fails.
+state. `source_revision` may equal the release revision: that is how the report
+for the revision that sealed the migration is issued again once its artifact has
+expired, because `apply` no longer completes after learners have used sharing.
+The run only reads: sharing stays open while it runs and if it fails.
 Shares that learners created after the cutover, shares the owner revoked, and
-shares that expired are expected. The run fails when a record is not in the
-current format, or when a migrated share that is still live disagrees with its
-sealed entry or its ledger entry. If an interrupted earlier run left sharing
-closed on a verified migration, this run reopens it. It reads every share once
-per collection, so watch the 30-minute job limit as the share count grows.
+shares that expired are expected, and so is a migration owner who has deleted
+their account, which removes the ledger and the quarantine copies. The run fails
+when a record is not in the current format, when what the TTL policy left of an
+expired share is not the migrated or current-format record, or when a migrated
+share that is still live disagrees with its sealed entry or its ledger entry. If
+an interrupted earlier run left sharing closed on a verified migration, this run
+reopens it. It reads every share once per collection, so watch the 30-minute job
+limit as the share count grows.
 
 If the report requires index preparation, run `prepare-indexes` under its separate
 approval with the same `firestore_safety_run_id` and

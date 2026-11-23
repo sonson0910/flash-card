@@ -2,6 +2,7 @@ import { generateKeyPairSync, randomUUID, sign } from 'node:crypto';
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { FieldPath, getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { purgeAccountData } from '../src/accountData.js';
 import { parseCreateSharedDeckRequest } from '../src/inputValidation.js';
 import { createFirestoreLegacySharedDeckInventoryStore } from '../src/legacySharedDeckInventoryFirestore.js';
 import {
@@ -16,7 +17,10 @@ import {
   verifyLegacySharedDeckCutover,
   type LegacySharedDeckInventory,
 } from '../src/legacySharedDeckMigration.js';
-import { runLegacySharedDeckApplyOperator } from '../src/legacySharedDeckMigrationOperator.js';
+import {
+  runLegacySharedDeckApplyOperator,
+  runLegacySharedDeckVerification,
+} from '../src/legacySharedDeckMigrationOperator.js';
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
@@ -99,6 +103,24 @@ const stoppingAfterTransactions = (database: Firestore, allowed: number): Firest
   });
 };
 
+/** Runs `before` ahead of the numbered transaction, like activity that lands while a job is running. */
+const beforeTransaction = (database: Firestore, number: number, before: () => Promise<void>): Firestore => {
+  let count = 0;
+  return new Proxy(database, {
+    get(source, property) {
+      if (property === 'runTransaction') {
+        return async (...parameters: Parameters<Firestore['runTransaction']>) => {
+          count += 1;
+          if (count === number) await before();
+          return source.runTransaction(...parameters);
+        };
+      }
+      const value = Reflect.get(source, property, source) as unknown;
+      return typeof value === 'function' ? (value as (...args: unknown[]) => unknown).bind(source) : value;
+    },
+  });
+};
+
 describeWithEmulator('Firestore legacy shared-deck migration', () => {
   let app: App;
   let database: Firestore;
@@ -115,9 +137,9 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
   const seedLegacyShares = (...shareIds: string[]) => Promise.all(
     shareIds.map(shareId => publicShare(shareId).set(legacyShareData)),
   );
-  const share = async (learner: string, shareId: string, now = Timestamp.now()) => {
+  const share = async (learner: string, shareId: string, now = Timestamp.now(), card: Record<string, unknown> = {}) => {
     const documents = buildSharedDeckDocuments(
-      parseCreateSharedDeckRequest({ category: 'Basics', cards: [{ word: 'hello', translation: 'xin chào' }] }),
+      parseCreateSharedDeckRequest({ category: 'Basics', cards: [{ word: 'hello', translation: 'xin chào', ...card }] }),
       learner,
       now,
       Timestamp.fromMillis(now.toMillis() + 30 * DAY_MS),
@@ -329,6 +351,113 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
 
       await expect(verifyLegacySharedDeckCutover(database, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
       await expect(share('another-learner', 'after-cutover')).resolves.toBeDefined();
+    }, 30_000);
+
+    it('does not treat a share that expired while the run was reading as live', async () => {
+      // The migrated shares run out a few seconds after the cutover.
+      const inventory = await cutOver(new Date(Date.now() - 30 * DAY_MS + 8_000).toISOString());
+      const expiry = Date.parse(inventory.scanStartedAt) + 30 * DAY_MS;
+      expect(Date.now()).toBeLessThan(expiry - 500);
+      // The run has started; before its first page the shares expire and the owner's next share drops them from the ledger.
+      const reading = beforeTransaction(database, 2, async () => {
+        await new Promise(resolve => { setTimeout(resolve, Math.max(0, expiry - Date.now()) + 100); });
+        await share(ownerUid, 'owner-later');
+      });
+
+      await expect(verifyLegacySharedDeckCutover(reading, inventory))
+        .resolves.toEqual({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 1 });
+      expect(Object.keys((await usage())!.shares as object)).toEqual(['owner-later']);
+    }, 40_000);
+
+    it('reports an expired migrated share whose remaining side is not in the migrated form', async () => {
+      const inventory = await cutOver(new Date(Date.now() - 31 * DAY_MS).toISOString());
+      const migrated = (await publicShare('legacy-b').get()).data()!;
+      await privateShare('legacy-b').delete();
+      await publicShare('legacy-b').set({
+        authorUid: ownerUid,
+        category: migrated.category,
+        cards: migrated.cards,
+        createdAt: migrated.createdAt,
+        expiresAt: migrated.expiresAt,
+        schemaVersion: 1,
+      });
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+      await expect(share('another-learner', 'after-cutover')).resolves.toBeDefined();
+    }, 30_000);
+
+    it('reports an expired one-sided record outside the inventory that is not a current-format share', async () => {
+      const inventory = await cutOver();
+      await publicShare('stray-share').set({
+        authorUid: 'another-learner',
+        category: 'Basics',
+        cards: [],
+        createdAt: longAgo(),
+        expiresAt: Timestamp.fromMillis(Date.now() - DAY_MS),
+        schemaVersion: 2,
+      });
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+    }, 30_000);
+
+    it('accepts a learner share whose text the length limit cut right after a space', async () => {
+      const inventory = await cutOver();
+      const documents = await share('another-learner', 'cut-at-a-space', Timestamp.now(), {
+        imageSearchQuery: `${'a'.repeat(119)} b`,
+      });
+      expect((documents.sharedDeck.cards as { imageSearchQuery: string }[])[0]!.imageSearchQuery).toBe(`${'a'.repeat(119)} `);
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory)).resolves.toMatchObject({ verified: true });
+    }, 30_000);
+
+    it('passes after the migrated owner deleted their account', async () => {
+      // An empty legacy share is copied to quarantine, which account deletion clears with the owner's data.
+      await publicShare('empty-share').set({ category: 'Basics', cards: [], createdAt: legacyShareData.createdAt });
+      const inventory = await cutOver();
+      expect((await quarantineCopy('empty-share').get()).data()).toMatchObject({ ownerUid, shareId: 'empty-share' });
+      for (const shareId of ['legacy-a', 'legacy-b', 'legacy-c']) {
+        await revokeSharedDeckAtomically(database, publicShare(shareId), privateShare(shareId), ownerUid);
+      }
+      await purgeAccountData(database, ownerUid, 'owner-pid', null);
+      expect((await usageDocument().get()).exists).toBe(false);
+      expect((await quarantineCopy('empty-share').get()).exists).toBe(false);
+      await share('another-learner', 'after-cutover');
+      const before = await state();
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory))
+        .resolves.toEqual({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 0 });
+      expect(await state()).toEqual(before);
+    }, 30_000);
+
+    it('reports a live migrated share that is still there when the owner ledger is gone', async () => {
+      const inventory = await cutOver();
+      await usageDocument().delete();
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+    }, 30_000);
+
+    it('reports a missing quarantine copy while the owner account still exists', async () => {
+      await publicShare('empty-share').set({ category: 'Basics', cards: [], createdAt: legacyShareData.createdAt });
+      const inventory = await cutOver();
+      await quarantineCopy('empty-share').delete();
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+    }, 30_000);
+
+    it('issues the report again for the revision that sealed the migration, after learners used sharing', async () => {
+      const inventory = await cutOver();
+      await share('another-learner', 'after-cutover');
+      await revokeSharedDeckAtomically(database, publicShare('legacy-a'), privateShare('legacy-a'), ownerUid);
+      // Apply cannot finish from here: the ledger no longer equals the sealed one.
+      await expect(applyOperator(sealingRevision, sealingRevision, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+
+      const report = JSON.parse(await runLegacySharedDeckVerification(
+        { ownerUid, revision: sealingRevision, sourceRevision: sealingRevision, target },
+        expected => readSealedLegacySharedDeckInventory(database, expected),
+        sealed => verifyLegacySharedDeckCutover(database, sealed),
+      )) as Record<string, unknown>;
+
+      expect(report).toMatchObject({ revision: sealingRevision, migrationRevision: sealingRevision, verified: true });
     }, 30_000);
 
     it('releases the fence that an interrupted verification run left on a verified migration', async () => {

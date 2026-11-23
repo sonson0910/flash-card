@@ -252,7 +252,7 @@ describe('legacy shared-deck migration operator', () => {
     })).toMatchObject({ mode: 'supersede', supersedeSourceRevision: 'a'.repeat(40) });
   });
 
-  it('requires a distinct immutable source revision for verification', () => {
+  it('requires the immutable revision that owns the migration for verification', () => {
     const base = {
       FIREBASE_PROJECT_ID: 'encoded-hangout-433912-h2',
       FIRESTORE_DATABASE_ID: 'ai-studio-945b4052-4462-4668-8936-277f09f07a37',
@@ -262,14 +262,25 @@ describe('legacy shared-deck migration operator', () => {
       MIGRATION_MODE: 'verify',
     } as NodeJS.ProcessEnv;
     expect(() => validateLegacySharedDeckOperatorEnvironment(base)).toThrow(/completed migration/i);
-    expect(() => validateLegacySharedDeckOperatorEnvironment({
-      ...base,
-      MIGRATION_SOURCE_REVISION: base.MIGRATION_REVISION,
-    })).toThrow(/completed migration/i);
+    expect(() => validateLegacySharedDeckOperatorEnvironment({ ...base, MIGRATION_SOURCE_REVISION: 'main' }))
+      .toThrow(/completed migration/i);
     expect(validateLegacySharedDeckOperatorEnvironment({
       ...base,
       MIGRATION_SOURCE_REVISION: 'a'.repeat(40),
     })).toMatchObject({ mode: 'verify', sourceRevision: 'a'.repeat(40) });
+  });
+
+  it('verifies again from the revision that sealed the migration', () => {
+    const revision = 'b'.repeat(40);
+    expect(validateLegacySharedDeckOperatorEnvironment({
+      FIREBASE_PROJECT_ID: 'encoded-hangout-433912-h2',
+      FIRESTORE_DATABASE_ID: 'ai-studio-945b4052-4462-4668-8936-277f09f07a37',
+      OWNER_UID: 'protected-owner',
+      MIGRATION_REVISION: revision,
+      SCAN_STARTED_AT: '2026-08-25T00:00:00.000Z',
+      MIGRATION_MODE: 'verify',
+      MIGRATION_SOURCE_REVISION: revision,
+    } as NodeJS.ProcessEnv)).toMatchObject({ mode: 'verify', revision, sourceRevision: revision });
   });
 
   it('resumes an active verification through the operator apply-then-verify path', async () => {

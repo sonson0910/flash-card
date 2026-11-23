@@ -244,7 +244,9 @@ export const validateLegacySharedDeckOperatorEnvironment = (
   if (mode === 'apply' && sourceRevision !== '' && (!FULL_REVISION.test(sourceRevision) || sourceRevision === revision)) {
     throw new Error('Resuming an apply requires the immutable revision that sealed the migration.');
   }
-  if (mode === 'verify' && (!FULL_REVISION.test(sourceRevision) || sourceRevision === revision)) {
+  // The owning revision may be the release itself: its first report expires with
+  // the workflow artifact, and apply cannot produce another once sharing reopened.
+  if (mode === 'verify' && !FULL_REVISION.test(sourceRevision)) {
     throw new Error('Verification requires the immutable revision that owns the completed migration.');
   }
   return {

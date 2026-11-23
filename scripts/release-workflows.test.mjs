@@ -714,6 +714,16 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('functions/lib/legacySharedDeckMigrationOperator.js --');
   });
 
+  it('lets verification name the release itself as the revision that owns the migration', () => {
+    const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
+    const verifyChecks = workflow.slice(
+      workflow.indexOf('if [[ "$MIGRATION_MODE" = verify ]]; then'),
+      workflow.indexOf('if [[ "$MIGRATION_MODE" = apply ]]; then'),
+    );
+    expect(verifyChecks).toContain('[[ "$MIGRATION_SOURCE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]');
+    expect(verifyChecks).not.toContain('test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"');
+  });
+
   it('lets a protected apply finish a shared-deck migration sealed at an earlier revision', () => {
     const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
     const applyChecks = workflow.slice(
