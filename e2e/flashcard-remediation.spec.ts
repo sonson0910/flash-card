@@ -224,6 +224,8 @@ for (const theme of [
         expect(button.width).toBeGreaterThanOrEqual(44);
         expect(button.height).toBeGreaterThanOrEqual(44);
       }
+      // The translation fades in after a short delay; capture the settled card, not a frame of the fade.
+      await expect(session.locator('[data-translation-reveal]')).toHaveCSS('opacity', '1');
       await captureStudyState(testInfo, page, `study-review-${theme.name}-${viewport.name}-revealed-rating`);
     });
   }
