@@ -1,10 +1,12 @@
 import { ownStorageImageFileId } from '../../lib/mediaUrlPolicy';
+import type { CardData } from '../../types/card';
 
 /**
  * Card saves in this tab that are putting an uploaded photo on a card, per file. The cloud lookup
  * of a photo's cards cannot see a save that has not landed yet, so deleting the file waits for
  * them first; otherwise the save could land after the delete and leave the card showing a file
- * that is gone.
+ * that is gone. Only this tab's saves are known here: a save from another tab or device that lands
+ * after the delete's last lookup is not seen.
  */
 const savesByFile = new Map<string, Set<Promise<unknown>>>();
 
@@ -28,4 +30,18 @@ export const cardPhotoSavesSettled = async (fileId: string): Promise<void> => {
   for (let saves = savesByFile.get(fileId); saves && saves.size > 0; saves = savesByFile.get(fileId)) {
     await Promise.allSettled([...saves]);
   }
+};
+
+/** Files whose photo this tab has started taking off every card, before deleting the file. */
+const photosTakenOff = new Set<string>();
+
+/** From now on a card put back in this tab (an undo of its delete) comes back without this file's photo. */
+export const takeCardPhotoOff = (fileId: string): void => {
+  photosTakenOff.add(fileId);
+};
+
+/** The card to put back: without its photo when that photo's file is being or has been deleted in this tab. */
+export const withoutTakenOffPhoto = (card: CardData): CardData => {
+  const fileId = ownStorageImageFileId(card.imageUrl);
+  return fileId && photosTakenOff.has(fileId) ? { ...card, imageUrl: null, imageSearchQuery: '' } : card;
 };

@@ -1,4 +1,4 @@
-import { cardPhotoSavesSettled } from './cardPhotoSaves';
+import { cardPhotoSavesSettled, takeCardPhotoOff } from './cardPhotoSaves';
 
 /**
  * Cards that show a stored file as their photo. Deleting such a file takes the photo off those
@@ -73,6 +73,8 @@ export const clearFileCardPhotos = async (
   fileId: string,
   counted: Promise<FileCardPhotoMatch> | undefined,
 ): Promise<void> => {
+  // A deleted card put back from here on must not bring the photo back either.
+  takeCardPhotoOff(fileId);
   let match: FileCardPhotoMatch | null = null;
   if (counted) match = await counted.catch(() => null);
   const lookedUpEarlier = match !== null;
