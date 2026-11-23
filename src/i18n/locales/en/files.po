@@ -240,7 +240,12 @@ msgid "files.error.not-found"
 msgstr "That file is no longer available."
 
 #. js-lingui-explicit-id
-#: src/features/files/fileCopy.ts:113
+#: src/features/files/fileCopy.ts:112
+msgid "files.error.not-ready"
+msgstr "The file is still being checked. Try again in a moment."
+
+#. js-lingui-explicit-id
+#: src/features/files/fileCopy.ts:114
 msgid "files.error.profile-required"
 msgstr "Finish setting up your profile before uploading files."
 
@@ -250,7 +255,7 @@ msgid "files.error.quota"
 msgstr "Your storage is full. Delete files you no longer need, then try again."
 
 #. js-lingui-explicit-id
-#: src/features/files/fileCopy.ts:112
+#: src/features/files/fileCopy.ts:113
 msgid "files.error.rate-limited"
 msgstr "Too many uploads in a short time. Wait a moment, then try again."
 
@@ -270,7 +275,7 @@ msgid "files.error.type"
 msgstr "Choose a PNG, JPEG, or WebP image."
 
 #. js-lingui-explicit-id
-#: src/features/files/fileCopy.ts:114
+#: src/features/files/fileCopy.ts:115
 msgid "files.error.unavailable"
 msgstr "Uploads are unavailable right now. Try again later."
 

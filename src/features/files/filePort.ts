@@ -37,6 +37,7 @@ export type FileErrorKind =
   | 'network'
   | 'rejected'
   | 'not-found'
+  | 'not-ready'
   | 'rate-limited'
   | 'profile-required'
   | 'unavailable';
@@ -74,6 +75,7 @@ export const toFileError = (error: unknown): FileError => {
   if (reason === 'file-type') return new FileError('type', error);
   if (reason === 'account-profile-required') return new FileError('profile-required', error);
   if (reason === 'file-not-found' || reason === 'course-not-found') return new FileError('not-found', error);
+  if (reason === 'file-not-ready') return new FileError('not-ready', error);
   switch (code) {
     case 'storage/canceled':
       return new FileError('canceled', error);

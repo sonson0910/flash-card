@@ -1051,5 +1051,14 @@ describe('EditCardDialog', () => {
       expect(alert).toContain('Your storage is full');
       expect(alert).not.toMatch(/upgrade|pricing|plan/i);
     });
+
+    it('asks the learner to finish their profile when the service requires it', async () => {
+      const held = heldUpload();
+      const props = { card, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), imageUpload: held.uploader };
+      pick(render(props).tree);
+      held.fail(Object.assign(new Error('profile'), { kind: 'profile-required' }));
+      await flush();
+      expect(JSON.stringify(findByProp(render(props).tree, 'role')?.props.children)).toContain('Finish setting up your profile');
+    });
   });
 });

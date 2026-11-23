@@ -10,6 +10,7 @@ describe('file service errors', () => {
     expect(toFileError(callableError('functions/invalid-argument', 'file-type')).kind).toBe('type');
     expect(toFileError(callableError('functions/failed-precondition', 'account-profile-required')).kind).toBe('profile-required');
     expect(toFileError(callableError('functions/not-found', 'course-not-found')).kind).toBe('not-found');
+    expect(toFileError(callableError('functions/failed-precondition', 'file-not-ready')).kind).toBe('not-ready');
   });
 
   it('maps storage and callable codes', () => {

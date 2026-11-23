@@ -240,7 +240,12 @@ msgid "files.error.not-found"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/fileCopy.ts:113
+#: src/features/files/fileCopy.ts:112
+msgid "files.error.not-ready"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/files/fileCopy.ts:114
 msgid "files.error.profile-required"
 msgstr ""
 
@@ -250,7 +255,7 @@ msgid "files.error.quota"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/fileCopy.ts:112
+#: src/features/files/fileCopy.ts:113
 msgid "files.error.rate-limited"
 msgstr ""
 
@@ -270,7 +275,7 @@ msgid "files.error.type"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/files/fileCopy.ts:114
+#: src/features/files/fileCopy.ts:115
 msgid "files.error.unavailable"
 msgstr ""
 

@@ -34,20 +34,25 @@ describe('upload request parsing', () => {
 
   it('refuses unsupported types, non-positive sizes, unknown fields and card images that are not images', () => {
     for (const request of [
-      { ...valid, contentType: 'text/html' },
-      { ...valid, contentType: 'image/svg+xml' },
       { ...valid, bytes: 0 },
       { ...valid, bytes: 1.5 },
       { ...valid, bytes: '1024' },
       { ...valid, extra: true },
       { ...valid, purpose: 'avatar' },
-      { ...valid, purpose: 'card-image' },
       { ...valid, ownerId: 'owner/1' },
       { ...valid, courseId: 'a/b' },
       { ...valid, name: '   ' },
       null,
       [],
     ]) expect(() => parsePrepareFileUploadRequest(request)).toThrow(InputValidationError);
+  });
+
+  it('names an unsupported type as the reason, including a card image that is not an image', () => {
+    for (const request of [
+      { ...valid, contentType: 'text/html' },
+      { ...valid, contentType: 'image/svg+xml' },
+      { ...valid, purpose: 'card-image' },
+    ]) expect(() => parsePrepareFileUploadRequest(request)).toThrow(expect.objectContaining({ reason: 'type' }));
   });
 
   it('keeps a readable name without separators or control characters', () => {

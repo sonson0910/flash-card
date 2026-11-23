@@ -77,7 +77,9 @@ describe('file callables', () => {
     await expect(endpoints.prepareFileUpload.run({ auth: { uid: 'owner-2' }, data: prepareData }))
       .rejects.toMatchObject({ code: 'permission-denied' });
     await expect(endpoints.prepareFileUpload.run({ auth: { uid: 'owner-1' }, data: { ...prepareData, contentType: 'text/html' } }))
-      .rejects.toMatchObject({ code: 'invalid-argument' });
+      .rejects.toMatchObject({ code: 'invalid-argument', details: { reason: 'file-type' } });
+    await expect(endpoints.prepareFileUpload.run({ auth: { uid: 'owner-1' }, data: { ...prepareData, bytes: 0 } }))
+      .rejects.toMatchObject({ code: 'invalid-argument', details: undefined });
     await expect(endpoints.deleteMyFile.run({ auth: { uid: 'owner-1' }, data: { ownerId: 'owner-1', fileId: '../x' } }))
       .rejects.toMatchObject({ code: 'invalid-argument' });
     expect(consumePersistentRateLimit).not.toHaveBeenCalled();

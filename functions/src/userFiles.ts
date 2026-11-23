@@ -126,11 +126,11 @@ export const parsePrepareFileUploadRequest = (value: unknown): PrepareFileUpload
   const source = plainObject(value, 'request');
   onlyKeys(source, ['ownerId', 'name', 'contentType', 'bytes', 'purpose', 'courseId'], 'request');
   const contentType = typeof source.contentType === 'string' ? source.contentType.trim().toLowerCase() : '';
-  if (!FILE_CONTENT_TYPES[contentType]) fail('contentType', 'is not supported');
+  if (!FILE_CONTENT_TYPES[contentType]) throw new FileServiceError('type');
   if (!Number.isSafeInteger(source.bytes) || Number(source.bytes) <= 0) fail('bytes', 'must be a positive integer');
   const purpose = source.purpose ?? 'source';
   if (!FILE_PURPOSES.includes(purpose as FilePurpose)) fail('purpose', 'is not supported');
-  if (purpose === 'card-image' && FILE_CONTENT_TYPES[contentType] !== 'image') fail('contentType', 'must be an image for a card image');
+  if (purpose === 'card-image' && FILE_CONTENT_TYPES[contentType] !== 'image') throw new FileServiceError('type');
   return {
     ownerId: ownerIdAt(source.ownerId),
     name: cleanFileName(source.name),
