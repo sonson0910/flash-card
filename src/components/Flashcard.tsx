@@ -316,7 +316,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
     try {
       const result = await translateExplanationSafely(async explanation => {
         const { translateText } = await import('../lib/gemini');
-        return translateText(explanation);
+        return translateText(explanation, { targetLanguage, translationLanguage });
       }, data.explanation);
 
       if (result.status === 'translated') {

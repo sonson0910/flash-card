@@ -43,11 +43,6 @@ msgctxt "settings.theme.crystal.description"
 msgid "A sparkling study space with Lumi."
 msgstr "Không gian học lấp lánh cùng Lumi."
 
-#: src/features/settings/CourseSettingsSection.tsx:201
-msgctxt "settings.course.pace.description"
-msgid "New words introduced each day"
-msgstr "Số từ mới giới thiệu mỗi ngày"
-
 #: src/features/reminders/ReminderSettingsSection.tsx:163
 msgctxt "settings.reminders.daily"
 msgid "Daily reminder"
@@ -212,6 +207,11 @@ msgstr "Ẩn biểu ngữ chuỗi khi học."
 msgctxt "settings.reminders.preview.mail-subject"
 msgid "Your SonFlash weekly recap"
 msgstr "Tổng kết tuần học SonFlash"
+
+#: src/features/settings/CourseSettingsSection.tsx:201
+msgctxt "settings.course.pace.description"
+msgid "Cards you aim to study each day"
+msgstr "Số thẻ bạn đặt mục tiêu học mỗi ngày"
 
 #: src/features/reminders/ReminderSettingsSection.tsx:226
 msgctxt "settings.reminders.saved"

@@ -53,7 +53,7 @@ msgctxt "flashcard.recall.correct"
 msgid "Correct. Reveal the answer to compare."
 msgstr "Đúng rồi. Hãy hiện đáp án để so sánh."
 
-#: src/components/flashcard/CardMnemonicSection.tsx:54
+#: src/components/flashcard/CardMnemonicSection.tsx:56
 msgctxt "flashcard.mnemonic.title"
 msgid "AI Mnemonic · Memory Hook"
 msgstr "Mẹo ghi nhớ AI · Liên tưởng"
@@ -586,17 +586,17 @@ msgstr "Chi tiết học tập: ví dụ, cụm từ và sắc thái"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardBack.tsx:197
-#: src/components/flashcard/CardMnemonicSection.tsx:61
+#: src/components/flashcard/CardMnemonicSection.tsx:63
 msgid "flashcard.memory-hook"
 msgstr "Liên tưởng ghi nhớ"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:42
+#: src/components/flashcard/CardMnemonicSection.tsx:44
 msgid "flashcard.mnemonic.error"
 msgstr "Không thể tạo liên tưởng lúc này. Vui lòng thử lại."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:55
+#: src/components/flashcard/CardMnemonicSection.tsx:57
 msgid "flashcard.mnemonic.generate"
 msgstr "Tạo liên tưởng mới"
 
@@ -969,7 +969,7 @@ msgctxt "flashcard.part-of-speech-prefix"
 msgid "Part of speech:"
 msgstr "Từ loại:"
 
-#: src/components/flashcard/CardMnemonicSection.tsx:61
+#: src/components/flashcard/CardMnemonicSection.tsx:63
 msgctxt "flashcard.mnemonic.generating"
 msgid "Generating memory hint…"
 msgstr "Đang tạo gợi ý ghi nhớ…"

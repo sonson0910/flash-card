@@ -43,11 +43,6 @@ msgctxt "settings.theme.crystal.description"
 msgid "A sparkling study space with Lumi."
 msgstr "A sparkling study space with Lumi."
 
-#: src/features/settings/CourseSettingsSection.tsx:201
-msgctxt "settings.course.pace.description"
-msgid "New words introduced each day"
-msgstr "New words introduced each day"
-
 #: src/features/reminders/ReminderSettingsSection.tsx:163
 msgctxt "settings.reminders.daily"
 msgid "Daily reminder"
@@ -212,6 +207,11 @@ msgstr "Hide combo banners while studying."
 msgctxt "settings.reminders.preview.mail-subject"
 msgid "Your SonFlash weekly recap"
 msgstr "Your SonFlash weekly recap"
+
+#: src/features/settings/CourseSettingsSection.tsx:201
+msgctxt "settings.course.pace.description"
+msgid "Cards you aim to study each day"
+msgstr "Cards you aim to study each day"
 
 #: src/features/reminders/ReminderSettingsSection.tsx:226
 msgctxt "settings.reminders.saved"

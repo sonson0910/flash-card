@@ -197,13 +197,17 @@ describe('OnboardingGate', () => {
 
       expect(html).toContain('onboarding-pace-grid');
       expect(html).toContain('sm:grid-cols-4');
-      // Minutes are an estimate from the card pace, with the Today plan's time per new card.
-      for (const [count, minutes, tag] of [[5, 4, 'Light'], [10, 7, 'Recommended'], [15, 10, 'Serious'], [20, 14, 'Intense']] as const) {
+      // Minutes price the new words Today adds at the new-card time and the rest of the pace as reviews.
+      for (const [count, minutes, tag] of [[5, 4, 'Light'], [10, 6, 'Recommended'], [15, 8, 'Serious'], [20, 9, 'Intense']] as const) {
         expect(html).toContain(`<span class="onb-pace-number">${count}</span><span class="onb-option-sub">cards / day</span><span class="onb-pace-minutes">≈ ${minutes} min a day</span><span class="onb-pace-tag">${tag}</span>`);
       }
       // Without a goal date the plan restates the chosen pace over one week, and the exam step is not counted.
-      expect(visibleText(html)).toContain('70new words a week in your plan at 10 a day.');
-      expect(visibleText(html)).toContain('About 7 min a day for new words, plus the reviews that come due.');
+      expect(visibleText(html)).toContain('70cards a week at 10 a day.');
+      // The pace is a study goal; the copy must not promise more new words than Today introduces.
+      expect(visibleText(html)).toContain('How many cards each day?');
+      expect(visibleText(html)).toContain('Today adds up to 5 new words a day.');
+      expect(visibleText(html)).not.toContain('How many new words');
+      expect(visibleText(html)).toContain('About 6 min a day at this pace.');
       expect(html).toContain('aria-valuemax="8"');
       expect(html).toContain('Try 5 cards');
     } finally {
@@ -285,7 +289,7 @@ describe('OnboardingGate', () => {
       </I18nProvider>);
 
       expect(html).toContain('<span class="onb-projection-number">600</span>');
-      expect(visibleText(html)).toMatch(/new words in your plan by .+: 15 a day for 40 days\./);
+      expect(visibleText(html)).toMatch(/cards to study by .+: 15 a day for 40 days\./);
       expect(html).toContain('aria-valuemax="9"');
     } finally {
       vi.unstubAllGlobals();

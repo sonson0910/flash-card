@@ -2658,3 +2658,28 @@ msgstr "Cài đặt giao diện"
 msgctxt "onboarding.aha.already-added"
 msgid "Starter cards were already requested earlier in this setup, so no more were added. You can add cards from the library any time."
 msgstr "Thẻ khởi đầu đã được yêu cầu trước đó trong lần thiết lập này nên không thêm thẻ nữa. Bạn có thể thêm thẻ từ thư viện bất cứ lúc nào."
+
+#: src/features/onboarding/OnboardingJourney.tsx:574
+msgctxt "onboarding.pace.estimate"
+msgid "About {minutes} min a day at this pace."
+msgstr "Khoảng {minutes} phút mỗi ngày với nhịp này."
+
+#: src/features/onboarding/OnboardingJourney.tsx:557
+msgctxt "onboarding.pace.heading"
+msgid "How many cards <0>each day?</0>"
+msgstr "Mỗi ngày học <0>bao nhiêu thẻ?</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:572
+msgctxt "onboarding.pace.plan.dated"
+msgid "cards to study by {date}: {pace} a day for {days, plural, one {# day} other {# days}}."
+msgstr "thẻ cần học đến {date}: {pace} thẻ mỗi ngày trong {days, plural, other {# ngày}}."
+
+#: src/features/onboarding/OnboardingJourney.tsx:573
+msgctxt "onboarding.pace.plan.weekly"
+msgid "cards a week at {pace} a day."
+msgstr "thẻ mỗi tuần, với {pace} thẻ mỗi ngày."
+
+#: src/features/onboarding/OnboardingJourney.tsx:558
+msgctxt "onboarding.pace.subtitle"
+msgid "Your daily study goal, new words and reviews together. Today adds up to {limit} new words a day. You can change this any time in Settings."
+msgstr "Mục tiêu học mỗi ngày, gồm cả từ mới và thẻ ôn tập. Hôm nay thêm tối đa {limit} từ mới mỗi ngày. Bạn có thể đổi bất cứ lúc nào trong Cài đặt."

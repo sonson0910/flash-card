@@ -47,9 +47,10 @@ type VocabularyRequest =
   | { action: 'story'; schemaVersion?: undefined; words: string[]; targetLanguage: CourseTargetLanguage; translationLanguage: CourseNativeLanguage }
   | { action: 'story'; schemaVersion: 1; words: string[] }
   | { action: 'story'; schemaVersion: 2; words: string[] }
-  | { action: 'translate'; text: string }
+  | { action: 'translate'; text: string; targetLanguage?: CourseTargetLanguage; translationLanguage?: CourseNativeLanguage }
   | { action: 'tutor'; word: string; translation: string; partOfSpeech?: string; question: string }
-  | { action: 'mnemonic'; word: string; translation: string; partOfSpeech?: string }
+  | { action: 'mnemonic'; word: string; translation: string; partOfSpeech?: string;
+    targetLanguage?: CourseTargetLanguage; translationLanguage?: CourseNativeLanguage }
   | { action: 'extract'; text: string; targetLanguage?: CourseTargetLanguage; translationLanguage?: CourseNativeLanguage }
   | { action: 'dialogue'; cards: Array<{ word: string; translation: string }> }
   | {
@@ -488,12 +489,29 @@ export const parseCancelCardGenerationRequest = (value: unknown): string => {
   return data.operationId;
 };
 
+/** The pair is optional so a client from before the pair was sent still works. */
+const parseOptionalLanguagePair = (
+  input: Record<string, unknown>,
+  message: string,
+): { targetLanguage?: CourseTargetLanguage; translationLanguage?: CourseNativeLanguage } => {
+  const { targetLanguage, translationLanguage } = input;
+  if (targetLanguage !== undefined
+    && !COURSE_TARGET_LANGUAGES.includes(targetLanguage as CourseTargetLanguage)) throw new InputValidationError(message);
+  if (translationLanguage !== undefined
+    && !COURSE_NATIVE_LANGUAGES.includes(translationLanguage as CourseNativeLanguage)) throw new InputValidationError(message);
+  return {
+    ...(targetLanguage !== undefined ? { targetLanguage: targetLanguage as CourseTargetLanguage } : {}),
+    ...(translationLanguage !== undefined ? { translationLanguage: translationLanguage as CourseNativeLanguage } : {}),
+  };
+};
+
 const parseVocabularyCardInput = (
   value: unknown,
   action: 'tutor' | 'mnemonic',
 ): { word: string; translation: string; partOfSpeech?: string } => {
   const input = asRecord(value);
-  assertAllowedFields(input, ['word', 'translation', 'partOfSpeech', ...(action === 'tutor' ? ['question'] : [])],
+  assertAllowedFields(input, ['word', 'translation', 'partOfSpeech',
+    ...(action === 'tutor' ? ['question'] : ['targetLanguage', 'translationLanguage'])],
     `Unsupported ${action} input field.`);
   const word = boundedText(input.word, 80);
   const translation = boundedText(input.translation, 256);
@@ -689,9 +707,11 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   }
 
   if (action === 'translate') {
-    const text = boundedText(data.input, 2_048);
+    const input = typeof data.input === 'string' ? null : asRecord(data.input);
+    if (input) assertAllowedFields(input, ['text', 'targetLanguage', 'translationLanguage'], 'Unsupported translation input field.');
+    const text = boundedText(input ? input.text : data.input, 2_048);
     if (!text) throw new InputValidationError('Text is required.');
-    return { action, text };
+    return { action, text, ...(input ? parseOptionalLanguagePair(input, 'Translation language pair is invalid.') : {}) };
   }
 
   if (action === 'tutor') {
@@ -703,7 +723,11 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   }
 
   if (action === 'mnemonic') {
-    return { action, ...parseVocabularyCardInput(data.input, action) };
+    return {
+      action,
+      ...parseVocabularyCardInput(data.input, action),
+      ...parseOptionalLanguagePair(asRecord(data.input), 'Mnemonic language pair is invalid.'),
+    };
   }
 
   if (action === 'extract') {

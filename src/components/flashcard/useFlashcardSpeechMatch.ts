@@ -67,7 +67,7 @@ const getSpeechRecognition = (): SpeechRecognitionConstructor | null => {
 
 const normalizeTranscript = (value: string) => value
   .toLowerCase()
-  .replace(/[.,?!:;'"()\-]/g, '')
+  .replace(/[.,?!:;"()]/g, '')
   .trim();
 
 const getFinalTranscript = (event: SpeechRecognitionResultEvent | null | undefined) => {

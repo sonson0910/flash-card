@@ -48,7 +48,14 @@ export function buildDailyLessonSteps(
 }
 
 const DEFAULT_MAXIMUM = 15;
-const DEFAULT_MAXIMUM_NEW = 5;
+/** The most new words Today introduces in a day; the daily pace setting is a study goal and does not raise it. */
+export const MAXIMUM_NEW_WORDS_PER_DAY = 5;
+const DEFAULT_MAXIMUM_NEW = MAXIMUM_NEW_WORDS_PER_DAY;
+
+/** Days to introduce the remaining words of a unit at the rate Today introduces them. */
+export const daysToIntroduceWords = (remainingWords: number, pace: number): number => (
+  Math.ceil(Math.max(0, remainingWords) / Math.min(pace, MAXIMUM_NEW_WORDS_PER_DAY))
+);
 const DEFAULT_TARGET_MINIMUM = 10;
 
 const boundedInteger = (value: number, minimum: number, maximum: number, label: string): number => {
@@ -108,7 +115,7 @@ export function buildDailyPlan(cards: readonly CardData[], options: DailyPlanOpt
   if (!Number.isFinite(now)) throw new TypeError('now must be a valid date.');
   const maximum = boundedInteger(options.maximum ?? DEFAULT_MAXIMUM, 1, DEFAULT_MAXIMUM, 'maximum');
   const maximumNew = Math.min(
-    boundedInteger(options.maximumNew ?? DEFAULT_MAXIMUM_NEW, 1, DEFAULT_MAXIMUM_NEW, 'maximumNew'),
+    boundedInteger(options.maximumNew ?? DEFAULT_MAXIMUM_NEW, 1, MAXIMUM_NEW_WORDS_PER_DAY, 'maximumNew'),
     maximum,
   );
   const targetMinimum = boundedInteger(options.targetMinimum ?? DEFAULT_TARGET_MINIMUM, 1, maximum, 'targetMinimum');

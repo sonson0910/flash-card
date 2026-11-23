@@ -17,7 +17,8 @@ import { saveLatestExamScore, type LatestExamScoreRequest } from '../examProgres
 import { defaultLatestExamScorePorts } from '../examProgress/latestExamScorePorts';
 import type { CreatedCourseIds } from '../courses/coursePort';
 import { STARTING_TIERS, writeStartingTier, type StartingTier } from '../courses/courseStartingTier';
-import { stageMinutes } from '../dailyLearning/todayScreenFacts';
+import { sessionMinutes } from '../dailyLearning/todayScreenFacts';
+import { MAXIMUM_NEW_WORDS_PER_DAY } from '../dailyLearning/dailyPlan';
 import { DAILY_PACE_OPTIONS, writeDailyPace, type DailyPace } from '../settings/dailyPacePreference';
 import { ReminderSettingsSection } from '../reminders/ReminderSettingsSection';
 import { readLumiEnabled } from '../settings/lumi-preference';
@@ -95,8 +96,14 @@ const LEVEL_DESCRIPTION: Readonly<Record<StartingTier, MessageDescriptor>> = {
   advanced: msg({ context: 'onboarding.level.advanced.description', message: 'You are at ease with most topics and want precise words.' }),
 };
 
-/** Minutes the learner's daily new words take, with the same per-card time the Today plan uses. */
-export const paceMinutes = (pace: DailyPace): number => stageMinutes({ id: 'new', count: pace, skipped: false });
+/** Minutes a day at this pace: the new words Today adds cost the new-card time, the rest of the pace is reviews. */
+export const paceMinutes = (pace: DailyPace): number => {
+  const newWords = Math.min(pace, MAXIMUM_NEW_WORDS_PER_DAY);
+  return sessionMinutes([
+    { id: 'new', count: newWords, skipped: false },
+    { id: 'review', count: pace - newWords, skipped: pace === newWords },
+  ]);
+};
 
 function SelectionMark({ on }: { readonly on: boolean }) {
   return <span className="onb-mark" data-on={on} aria-hidden="true"><Check size={14} strokeWidth={3} /></span>;
@@ -550,8 +557,8 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     const planDays = daysLeft !== null && daysLeft > 0 ? daysLeft : null;
     content = <>
       {eyebrow}
-      <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.pace.heading', message: 'How many new words <0>each day?</0>' })} components={accent} /></h2>
-      <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.pace.subtitle', message: 'New words added to your reviews each day. You can change this any time in Settings.' })} /></p>
+      <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.pace.heading', message: 'How many cards <0>each day?</0>' })} components={accent} /></h2>
+      <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.pace.subtitle', message: 'Your daily study goal, new words and reviews together. Today adds up to {limit} new words a day. You can change this any time in Settings.' })} values={{ limit: MAXIMUM_NEW_WORDS_PER_DAY }} /></p>
       <div className="onboarding-pace-grid onb-pace-grid grid sm:grid-cols-4">
         {DAILY_PACE_OPTIONS.map(option => <button key={option} type="button" aria-pressed={pace === option} className={`${optionButtonClass} onb-pace-card`} onClick={() => setPace(option)}>
           <span className="onb-pace-number">{option}</span>
@@ -565,9 +572,9 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
         <span className="onb-projection-number">{formatCount(planDays !== null ? pace * planDays : pace * 7, i18n.locale)}</span>
         <span className="onb-projection-text">
           {planDays !== null
-            ? <Trans {...msg({ context: 'onboarding.pace.plan.dated', message: 'new words in your plan by {date}: {pace} a day for {days, plural, one {# day} other {# days}}.' })} values={{ date: formatGoalDate(goalTargetDate, i18n.locale), pace, days: planDays }} />
-            : <Trans {...msg({ context: 'onboarding.pace.plan.weekly', message: 'new words a week in your plan at {pace} a day.' })} values={{ pace }} />}
-          <span className="onb-projection-estimate"><Trans {...msg({ context: 'onboarding.pace.estimate', message: 'About {minutes} min a day for new words, plus the reviews that come due.' })} values={{ minutes: paceMinutes(pace) }} /></span>
+            ? <Trans {...msg({ context: 'onboarding.pace.plan.dated', message: 'cards to study by {date}: {pace} a day for {days, plural, one {# day} other {# days}}.' })} values={{ date: formatGoalDate(goalTargetDate, i18n.locale), pace, days: planDays }} />
+            : <Trans {...msg({ context: 'onboarding.pace.plan.weekly', message: 'cards a week at {pace} a day.' })} values={{ pace }} />}
+          <span className="onb-projection-estimate"><Trans {...msg({ context: 'onboarding.pace.estimate', message: 'About {minutes} min a day at this pace.' })} values={{ minutes: paceMinutes(pace) }} /></span>
         </span>
       </p>
     </>;

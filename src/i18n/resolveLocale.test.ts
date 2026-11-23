@@ -32,7 +32,10 @@ describe('UI locale resolution', () => {
     expect(localeFromPath('/id/')).toBeNull();
     expect(resolveLocale({ pathname: '/vi/', navigatorLanguages: ['en-US'] })).toBe('vi');
     expect(resolveLocale({ pathname: '/vi/', storedLocale: 'en', navigatorLanguages: ['vi-VN'] })).toBe('en');
-    expect(resolveLocale({ pathname: '/', profileLocale: 'vi', navigatorLanguages: ['vi-VN'] })).toBe('en');
+    expect(resolveLocale({ pathname: '/', profileLocale: 'vi', navigatorLanguages: ['en-US'] })).toBe('vi');
+    expect(resolveLocale({ pathname: '/', storedLocale: 'en', profileLocale: 'vi' })).toBe('en');
+    expect(resolveLocale({ pathname: '/', navigatorLanguages: ['vi-VN'] })).toBe('en');
+    expect(resolveLocale({ pathname: '/vi/', profileLocale: 'en' })).toBe('vi');
   });
 
   it('matches only a region with an available catalog', () => {

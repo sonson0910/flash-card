@@ -628,6 +628,24 @@ describe('production AI protected-service capability', () => {
     ]);
   });
 
+  it('sends the card language pair with a translation and a mnemonic request', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: 'out' } });
+
+    await translateText('사과는 빨간 과일입니다.', { targetLanguage: 'ko', translationLanguage: 'en' });
+    await generateMnemonic({ word: '사과', translation: 'apple', targetLanguage: 'ko', translationLanguage: 'en' });
+    await translateText('Hello.', { targetLanguage: 'xx', translationLanguage: undefined });
+    await generateMnemonic({ word: 'greet', translation: 'chào', targetLanguage: 'fr' });
+
+    expect(runtime.callable.mock.calls.map(([payload]) => payload)).toEqual([
+      { action: 'translate', expectedOwnerId: 'owner-1',
+        input: { text: '사과는 빨간 과일입니다.', targetLanguage: 'ko', translationLanguage: 'en' } },
+      { action: 'mnemonic', expectedOwnerId: 'owner-1',
+        input: { word: '사과', translation: 'apple', targetLanguage: 'ko', translationLanguage: 'en' } },
+      { action: 'translate', expectedOwnerId: 'owner-1', input: 'Hello.' },
+      { action: 'mnemonic', expectedOwnerId: 'owner-1', input: { word: 'greet', translation: 'chào' } },
+    ]);
+  });
+
   it('uses dedicated extractor and dialogue actions with validated results', async () => {
     runtime.callable.mockImplementation(async ({ action }: { action: string }) => ({
       data: {

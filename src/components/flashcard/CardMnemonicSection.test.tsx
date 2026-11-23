@@ -36,5 +36,7 @@ describe('CardMnemonicSection', () => {
 
     expect(source).toContain('generateMnemonic');
     expect(source).not.toContain('translateText');
+    expect(source).toContain('targetLanguage: card.language');
+    expect(source).toContain('translationLanguage: card.translationLanguage');
   });
 });

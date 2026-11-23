@@ -2658,3 +2658,28 @@ msgstr "Appearance settings"
 msgctxt "onboarding.aha.already-added"
 msgid "Starter cards were already requested earlier in this setup, so no more were added. You can add cards from the library any time."
 msgstr "Starter cards were already requested earlier in this setup, so no more were added. You can add cards from the library any time."
+
+#: src/features/onboarding/OnboardingJourney.tsx:574
+msgctxt "onboarding.pace.estimate"
+msgid "About {minutes} min a day at this pace."
+msgstr "About {minutes} min a day at this pace."
+
+#: src/features/onboarding/OnboardingJourney.tsx:557
+msgctxt "onboarding.pace.heading"
+msgid "How many cards <0>each day?</0>"
+msgstr "How many cards <0>each day?</0>"
+
+#: src/features/onboarding/OnboardingJourney.tsx:572
+msgctxt "onboarding.pace.plan.dated"
+msgid "cards to study by {date}: {pace} a day for {days, plural, one {# day} other {# days}}."
+msgstr "cards to study by {date}: {pace} a day for {days, plural, one {# day} other {# days}}."
+
+#: src/features/onboarding/OnboardingJourney.tsx:573
+msgctxt "onboarding.pace.plan.weekly"
+msgid "cards a week at {pace} a day."
+msgstr "cards a week at {pace} a day."
+
+#: src/features/onboarding/OnboardingJourney.tsx:558
+msgctxt "onboarding.pace.subtitle"
+msgid "Your daily study goal, new words and reviews together. Today adds up to {limit} new words a day. You can change this any time in Settings."
+msgstr "Your daily study goal, new words and reviews together. Today adds up to {limit} new words a day. You can change this any time in Settings."
