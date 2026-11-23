@@ -1,20 +1,11 @@
-import { normalizeCustomDeckCollection } from '../library/customDecks';
 import { isCloudQuotaError } from '../../lib/cloudError';
-import { planCardsForSignedInSession } from '../../lib/sessionCards';
-import type { CardData } from '../../types/card';
-
-export interface OwnerLibraryCache {
-  readCards(): { ownerId: string | null; cards: CardData[] };
-  writeCards(ownerId: string, cards: CardData[]): void;
-  discardCards(): void;
-  readDecks(): { ownerId: string | null; decks: string[] };
-  writeDecks(ownerId: string, decks: string[]): void;
-  discardDecks(): void;
-}
+import { normalizeCustomDeckProfile, type CoverPreset } from '../library/customDecks';
 
 export interface LegacyMigrationProgress {
   scanned: number;
   complete: boolean;
+  /** The exact number of older cards still to upgrade, when the adapter counted them. */
+  pending?: number;
 }
 
 export interface LegacyMigrationIssue {
@@ -25,11 +16,10 @@ export interface LegacyMigrationIssue {
 
 export interface OwnerLibrarySessionAdapter {
   readonly available: boolean;
-  queueCardMigration(ownerId: string, cards: CardData[], libraryEpoch: number): Promise<void>;
-  seedDeckProfile(ownerId: string, decks: string[]): Promise<void>;
   subscribeDeckProfile(
     ownerId: string,
-    onDecks: (decks: unknown[] | null) => void,
+    /** `null` means the device cache has no answer yet; a profile the server confirms is absent arrives as an empty profile. */
+    onDecks: (profile: unknown | null) => void,
     onError: (error: unknown) => void,
   ): () => void;
   getLegacyMigrationProgress(ownerId: string): Promise<LegacyMigrationProgress>;
@@ -41,12 +31,13 @@ export interface OwnerLibrarySessionAdapter {
 
 export interface OwnerLibrarySessionSnapshot {
   ownerId: string | null;
-  cards: CardData[];
-  decks: string[];
+  /** `null` until the first deck profile snapshot arrives; an empty list means the profile is loaded and has no decks. */
+  decks: string[] | null;
+  coverPresets: Record<string, CoverPreset>;
   legacyPending: number;
   legacyIssue: LegacyMigrationIssue | null;
   isMigratingLegacy: boolean;
-  status: 'idle' | 'adopting' | 'ready' | 'error';
+  status: 'idle' | 'ready' | 'error';
   error: string | null;
 }
 
@@ -63,8 +54,8 @@ export type LegacyMigrationActionResult =
 
 const EMPTY_SNAPSHOT: OwnerLibrarySessionSnapshot = {
   ownerId: null,
-  cards: [],
   decks: [],
+  coverPresets: {},
   legacyPending: 0,
   legacyIssue: null,
   isMigratingLegacy: false,
@@ -78,15 +69,18 @@ const errorField = (error: unknown, field: 'code' | 'reason'): string => {
   return typeof value === 'string' ? value.toLowerCase() : '';
 };
 
+/** Error reason for a migration the server has stopped until an administrator repairs the library. */
+export const ADMINISTRATOR_REVIEW_REASON = 'administrator-review';
+
+const TRUSTED_MIGRATION_ISSUE: LegacyMigrationIssue = {
+  kind: 'trusted-migration',
+  retryable: false,
+  message: 'Some older cards need a secure one-time migration. Your cards are safe; this repair must run from the administrator migration tool.',
+};
+
 export function getLegacyMigrationIssue(error: unknown): LegacyMigrationIssue {
   const reason = errorField(error, 'reason');
-  if (reason === 'identity-conflict') {
-    return {
-      kind: 'trusted-migration',
-      retryable: false,
-      message: 'Some older cards need a secure one-time migration. Your cards are safe; this repair must run from the administrator migration tool.',
-    };
-  }
+  if (reason === 'identity-conflict' || reason === ADMINISTRATOR_REVIEW_REASON) return TRUSTED_MIGRATION_ISSUE;
 
   const code = errorField(error, 'code').replace(/^firestore\//, '');
   if (code === 'unauthenticated') {
@@ -118,12 +112,23 @@ export function getLegacyMigrationIssue(error: unknown): LegacyMigrationIssue {
   };
 }
 
+const pendingFromProgress = (progress: LegacyMigrationProgress, total: number): number => {
+  if (progress.complete) return 0;
+  if (Number.isSafeInteger(progress.pending) && Number(progress.pending) > 0) {
+    return Math.floor(Number(progress.pending));
+  }
+  const scanned = Number.isSafeInteger(progress.scanned) && progress.scanned > 0
+    ? Math.floor(progress.scanned)
+    : 0;
+  // An exact-size final batch still needs one empty follow-up scan before
+  // the server progress can safely be marked complete.
+  return Math.max(1, total - scanned);
+};
+
 export function createOwnerLibrarySessionController({
   adapter,
-  cache,
 }: {
   adapter: OwnerLibrarySessionAdapter;
-  cache: OwnerLibraryCache;
 }) {
   let snapshot = EMPTY_SNAPSHOT;
   let generation = 0;
@@ -131,7 +136,6 @@ export function createOwnerLibrarySessionController({
   let activeMigration: symbol | null = null;
   let currentCloudTotal = 0;
   let legacyRefreshToken: symbol | null = null;
-  let pendingAdoptedCards: { ownerId: string; cards: CardData[] } | null = null;
   const listeners = new Set<(snapshot: OwnerLibrarySessionSnapshot) => void>();
 
   const publish = (patch: Partial<OwnerLibrarySessionSnapshot>) => {
@@ -151,7 +155,7 @@ export function createOwnerLibrarySessionController({
     listeners.forEach(listener => listener(snapshot));
   };
 
-  const activate = ({ ownerId, libraryEpoch, cloudTotal }: OwnerLibraryActivation) => {
+  const activate = ({ ownerId, cloudTotal }: OwnerLibraryActivation) => {
     stop();
     if (!ownerId) return stop;
     currentCloudTotal = Number.isSafeInteger(cloudTotal) && cloudTotal > 0
@@ -159,79 +163,29 @@ export function createOwnerLibrarySessionController({
       : 0;
 
     const activationGeneration = generation;
-    let cachedCards: { ownerId: string | null; cards: CardData[] } = { ownerId: null, cards: [] };
-    let cachedDecks: { ownerId: string | null; decks: string[] } = { ownerId: null, decks: [] };
-    try {
-      cachedCards = cache.readCards();
-      cachedDecks = cache.readDecks();
-    } catch {
-      // Storage denial is treated as an empty cache; cloud state remains usable.
-    }
-
-    const cardsClaimedByAnotherOwner = cachedCards.ownerId === null
-      && pendingAdoptedCards !== null
-      && pendingAdoptedCards.ownerId !== ownerId;
-    const cardPlan = cardsClaimedByAnotherOwner
-      ? { visibleCards: [], cardsToMigrate: [], discardLocalCache: false }
-      : planCardsForSignedInSession(cachedCards.cards, cachedCards.ownerId, ownerId);
-    const normalizedDecks = normalizeCustomDeckCollection(cachedDecks.decks);
-    const deckPlan = planCardsForSignedInSession(normalizedDecks, cachedDecks.ownerId, ownerId);
-
-    try {
-      if (cardPlan.discardLocalCache) cache.discardCards();
-      if (!cardsClaimedByAnotherOwner && cardPlan.cardsToMigrate.length === 0) {
-        cache.writeCards(ownerId, cardPlan.visibleCards);
-      }
-      if (deckPlan.discardLocalCache) cache.discardDecks();
-      cache.writeDecks(ownerId, deckPlan.visibleCards);
-    } catch {
-      // The in-memory owner boundary is authoritative when browser storage is denied.
-    }
-
     publish({
       ownerId,
-      cards: cardPlan.visibleCards,
-      decks: deckPlan.visibleCards,
+      decks: null,
+      coverPresets: {},
       legacyPending: 0,
       legacyIssue: null,
       isMigratingLegacy: false,
-      status: 'adopting',
+      status: 'idle',
       error: null,
     });
-
-    if (cardPlan.cardsToMigrate.length > 0) {
-      pendingAdoptedCards = { ownerId, cards: cardPlan.cardsToMigrate };
-    }
 
     if (!adapter.available) {
       publish({ status: 'ready' });
       return stop;
     }
 
-    let deckSeedRequested = false;
-    const seedDecks = (decks: string[]) => {
-      if (deckSeedRequested || decks.length === 0) return Promise.resolve();
-      deckSeedRequested = true;
-      return adapter.seedDeckProfile(ownerId, decks).catch(() => {
-        if (active(ownerId, activationGeneration)) {
-          publish({ status: 'error', error: 'Could not migrate the local deck profile.' });
-        }
-      });
-    };
-
-    unsubscribeDecks = adapter.subscribeDeckProfile(ownerId, decks => {
+    unsubscribeDecks = adapter.subscribeDeckProfile(ownerId, profile => {
       if (!active(ownerId, activationGeneration)) return;
-      if (decks === null) {
-        void seedDecks(snapshot.decks);
-        return;
-      }
-      const normalized = normalizeCustomDeckCollection(decks);
-      try { cache.writeDecks(ownerId, normalized); } catch { /* keep in-memory cloud value */ }
-      publish({ decks: normalized });
+      if (profile === null) return;
+      publish(normalizeCustomDeckProfile(profile));
     }, error => {
       if (active(ownerId, activationGeneration)) {
         publish({
-          status: snapshot.status === 'adopting' ? 'adopting' : 'ready',
           error: isCloudQuotaError(error)
             ? "Firebase's daily read limit has been reached. Decks remain available from this device until the quota resets."
             : 'Deck cloud updates are temporarily unavailable. Decks remain available from this device.',
@@ -239,47 +193,24 @@ export function createOwnerLibrarySessionController({
       }
     });
 
-    const adoptedCards = pendingAdoptedCards?.ownerId === ownerId && libraryEpoch !== null
-      ? pendingAdoptedCards.cards
-      : [];
-    const cardMigration = adoptedCards.length > 0
-      ? adapter.queueCardMigration(ownerId, adoptedCards, libraryEpoch as number).then(() => {
-          if (pendingAdoptedCards?.ownerId === ownerId) pendingAdoptedCards = null;
-          try {
-            const currentOwnerId = cache.readCards().ownerId;
-            if (currentOwnerId === null || currentOwnerId === ownerId) {
-              cache.writeCards(ownerId, cardPlan.visibleCards);
-            }
-          } catch { /* Queued cards are durable in cloud. */ }
-        }).catch(() => {
-          if (active(ownerId, activationGeneration)) {
-            publish({ status: 'error', error: 'Could not queue the local cards for migration.' });
-          }
-        })
-      : Promise.resolve();
-    const deckMigration = deckPlan.cardsToMigrate.length > 0
-      ? seedDecks(deckPlan.cardsToMigrate)
-      : Promise.resolve();
-
     const countLegacy = async () => {
       const total = currentCloudTotal;
       if (total === 0) return 0;
       const progress = await adapter.getLegacyMigrationProgress(ownerId);
-      if (progress.complete) return 0;
-      const scanned = Number.isSafeInteger(progress.scanned) && progress.scanned > 0
-        ? Math.floor(progress.scanned)
-        : 0;
-      // An exact-size final batch still needs one empty follow-up scan before
-      // the server progress can safely be marked complete.
-      return Math.max(1, total - scanned);
+      return pendingFromProgress(progress, total);
     };
 
-    void Promise.all([cardMigration, deckMigration, countLegacy()]).then(([, , legacyPending]) => {
+    // A later total update installs its own token, and its figure is then the newer one.
+    const activationToken = Symbol(ownerId);
+    legacyRefreshToken = activationToken;
+    void countLegacy().then(legacyPending => {
       if (!active(ownerId, activationGeneration)) return;
-      publish({ legacyPending, status: snapshot.status === 'error' ? 'error' : 'ready' });
+      publish(legacyRefreshToken === activationToken ? { legacyPending, status: 'ready' } : { status: 'ready' });
     }).catch(error => {
       if (!active(ownerId, activationGeneration)) return;
-      publish({ status: 'ready', error: null, legacyIssue: getLegacyMigrationIssue(error) });
+      publish(legacyRefreshToken === activationToken
+        ? { status: 'ready', legacyIssue: getLegacyMigrationIssue(error) }
+        : { status: 'ready' });
     });
 
     return () => {
@@ -307,12 +238,11 @@ export function createOwnerLibrarySessionController({
         !active(ownerId, refreshGeneration)
         || legacyRefreshToken !== refreshToken
       ) return;
-      const scanned = Number.isSafeInteger(progress.scanned) && progress.scanned > 0
-        ? Math.floor(progress.scanned)
-        : 0;
       publish({
-        legacyPending: progress.complete ? 0 : Math.max(1, total - scanned),
-        legacyIssue: null,
+        legacyPending: pendingFromProgress(progress, total),
+        // The browser cannot read why a discovery stopped, so a repair that
+        // needs an administrator stays shown until a new upgrade run.
+        legacyIssue: snapshot.legacyIssue?.kind === 'trusted-migration' ? snapshot.legacyIssue : null,
       });
     } catch (error) {
       if (
@@ -340,7 +270,14 @@ export function createOwnerLibrarySessionController({
         const legacyPending = result.complete
           ? 0
           : Math.max(1, snapshot.legacyPending - scanned);
-        publish({ legacyPending, legacyIssue: null, status: 'ready' });
+        // The browser only discovers older cards; repairing them is an
+        // administrator job, so a run that ends without completing leaves
+        // nothing to retry from here.
+        publish({
+          legacyPending,
+          legacyIssue: result.complete ? null : TRUSTED_MIGRATION_ISSUE,
+          status: 'ready',
+        });
       }
       return { status: 'completed', ...result };
     } catch (error) {
@@ -354,18 +291,11 @@ export function createOwnerLibrarySessionController({
     }
   };
 
-  const discardCards = () => {
-    pendingAdoptedCards = null;
-    try { cache.discardCards(); } catch { /* cache cleanup is best-effort */ }
-    publish({ cards: [] });
-  };
-
   return {
     activate,
     updateContext,
     stop,
     migrateLegacy,
-    discardCards,
     getSnapshot: () => snapshot,
     subscribe: (listener: (snapshot: OwnerLibrarySessionSnapshot) => void) => {
       listeners.add(listener);

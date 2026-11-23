@@ -83,6 +83,7 @@ const deckInput = (category = 'Basics') => ({
   cards: [{
     word: 'hello',
     translation: 'xin chào',
+    origin: 'ai' as const,
     explanation: '',
     explanationTranslation: '',
     phonetic: '',
@@ -116,6 +117,7 @@ describe('shared-deck persistence', () => {
 
     expect(documents.sharedDeck).not.toHaveProperty('authorUid');
     expect(documents.sharedDeck).not.toHaveProperty('ownerUid');
+    expect(documents.sharedDeck.cards).toEqual([expect.objectContaining({ origin: 'ai' })]);
     expect(documents.ownership).toMatchObject({
       ownerUid: 'owner-uid',
       payloadBytes: calculateSharedDeckPayloadBytes(input),
@@ -123,6 +125,18 @@ describe('shared-deck persistence', () => {
     });
     expect((documents.ownership.createdAt as ReturnType<typeof time>).toMillis()).toBe(0);
     expect((documents.ownership.expiresAt as ReturnType<typeof time>).toMillis()).toBe(1_000);
+  });
+
+  it('writes an optional complete deck language pair to the public document', () => {
+    const documents = buildSharedDeckDocuments(
+      { ...deckInput(), targetLanguage: 'en', nativeLanguage: 'vi' },
+      'owner-uid', time(0), time(1_000),
+    );
+
+    expect(documents.sharedDeck).toMatchObject({
+      targetLanguage: 'en', nativeLanguage: 'vi',
+      cards: [{ origin: 'ai' }],
+    });
   });
 
   it('initializes a missing usage document for a new owner atomically', async () => {
@@ -320,6 +334,14 @@ describe('shared-deck persistence', () => {
       { ...options, migrationStateDocument },
     )).rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
     expect(harness.writes).toEqual([]);
+  });
+
+  it('documents the per-owner share limits it enforces', () => {
+    const decision = readFileSync(new URL(
+      '../../docs/architecture/adr-006-transactional-card-identity-and-private-share-ownership.md', import.meta.url,
+    ), 'utf8').replace(/\s+/g, ' ');
+    expect(decision).toContain(`at most ${MAX_SHARED_DECKS} active (unexpired) shares`);
+    expect(decision).toContain(`at most ${MAX_SHARED_DECK_BYTES.toLocaleString('en-US')} bytes of active share payload`);
   });
 
   it('enforces exact count and byte boundaries, allowing equality', async () => {
@@ -537,5 +559,13 @@ describe('shared-deck persistence', () => {
     expect(toSharedDeckHttpsError(new SharedDeckUsageStateError())?.code)
       .toBe('failed-precondition');
     expect(toSharedDeckHttpsError(new Error('unrelated'))).toBeNull();
+  });
+
+  it('gives each failed-precondition share state its own client-readable reason', () => {
+    const reasonOf = (error: Error) => (toSharedDeckHttpsError(error)?.details as { reason?: string } | undefined)?.reason;
+    expect(reasonOf(new SharedDeckOperationExpiredError())).toBe('operation-expired');
+    expect(reasonOf(new SharedDeckOperationConflictError())).toBe('operation-conflict');
+    expect(reasonOf(new SharedDeckMigrationRequiredError())).toBe('migration-frozen');
+    expect(reasonOf(new SharedDeckUsageStateError())).toBe('usage-state');
   });
 });

@@ -10,15 +10,29 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   CardAllocationConflictError,
   CardAllocationLimitError,
+  CardHeadwordRenameConflictError,
   canonicalCard,
   createCardForOwner,
+  createCardV2ForOwner,
+  createStarterCardsForOwner,
   parseCreateCardRequest,
+  parseCreateCardV2Request,
+  parseRenameCardHeadwordRequest,
+  renameCardHeadwordForOwner,
 } from '../src/cardPersistence.js';
 import { createHash } from 'node:crypto';
+import { InputValidationError } from '../src/inputValidation.js';
+import { OWN_STORAGE_BUCKETS, ownStorageImageOwner } from '../src/ownFileImageUrl.js';
+import { libraryFacetRestoreOperationId } from '../src/libraryFacetPersistence.js';
 import {
   toCardAllocationHttpsError,
+  toCardHeadwordRenameHttpsError,
 } from '../src/index.js';
 import { LegacyLibraryMigrationFenceError } from '../src/legacyLibraryMigrationOwnerScope.js';
+import { AiQuotaError } from '../src/aiQuota.js';
+import { PILOT_CONFIG_DEFAULTS } from '../src/pilotConfig.js';
+import { resolveJapanesePitchAccent } from '../src/japanesePitch.js';
+import { resolveStaticJapanesePitchAccent } from '../../src/features/languagePacks/japanesePitch';
 
 const snapshot = (exists: boolean, data?: DocumentData): DocumentSnapshot => ({
   exists,
@@ -88,32 +102,34 @@ const transactionHarness = (
       writes.push({ method: 'set', path: document.path, data });
       return transaction;
     }),
-  } as unknown as Transaction;
-  const database = {
-    collection: (name: string) => ({
-      count: () => ({
-        get: vi.fn(async () => ({ data: () => ({ count: existingCardCount }) })),
-      }),
-      doc: (ownerId: string) => ({
-        path: `${name}/${ownerId}`,
-        collection: (subcollection: string) => ({
-          count: () => ({
-            get: vi.fn(async () => ({ data: () => ({ count: existingCardCount }) })),
-          }),
-          doc: (documentId: string) => ({
-            path: `${name}/${ownerId}/${subcollection}/${documentId}`,
-          }),
-        }),
-      }),
+    delete: vi.fn((document: DocumentReference) => {
+      writing = true;
+      events.push(`delete:${document.path}`);
+      writes.push({ method: 'delete', path: document.path });
+      return transaction;
     }),
+  } as unknown as Transaction;
+  const nestedCollection = (path: string) => ({
+    count: () => ({
+      get: vi.fn(async () => ({ data: () => ({ count: existingCardCount }) })),
+    }),
+    doc: (documentId: string) => nestedDoc(`${path}/${documentId}`),
+  });
+  const nestedDoc = (path: string) => ({
+    path,
+    collection: (subcollection: string) => nestedCollection(`${path}/${subcollection}`),
+  });
+  const database = {
+    collection: (name: string) => nestedCollection(name),
     runTransaction: vi.fn(async (update: (value: Transaction) => Promise<unknown>) => update(transaction)),
   } as unknown as Firestore;
   return { database, transaction, writes, events };
 };
 
-const concurrentAllocationHarness = () => {
+const concurrentAllocationHarness = (seed: ReadonlyMap<string, DocumentSnapshot> = new Map()) => {
   const values = new Map<string, DocumentSnapshot>([
     ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+    ...seed,
   ]);
   let queue = Promise.resolve();
   const pathFor = (name: string, ownerId: string, subcollection: string, id: string) =>
@@ -160,6 +176,37 @@ const concurrentAllocationHarness = () => {
 };
 
 describe('card persistence', () => {
+  it('refuses a new card that carries review times from the future', async () => {
+    const ahead = new Date(Date.now() + 24 * 3_600_000).toISOString();
+    const entry = { rating: 'good', reviewedAt: ahead, scheduledDays: 1, elapsedDays: 0 };
+    const fsrs = {
+      due: ahead, stability: 2, difficulty: 5, elapsedDays: 0, scheduledDays: 1, learningSteps: 0,
+      reps: 1, lapses: 0, state: 2, lastReview: ahead,
+    };
+    for (const carried of [{ reviewHistory: [entry] }, { fsrs }]) {
+      const harness = transactionHarness(new Map([
+        ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+        ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+      ]));
+      await expect(createCardForOwner(harness.database, 'owner', { ...card, ...carried }, { libraryEpoch: 2 }))
+        .rejects.toBeInstanceOf(InputValidationError);
+      expect(harness.writes).toEqual([]);
+    }
+  });
+
+  it('refuses review times from the future on a restore request too', async () => {
+    const ahead = new Date(Date.now() + 24 * 3_600_000).toISOString();
+    const entry = { rating: 'good', reviewedAt: ahead, scheduledDays: 1, elapsedDays: 0 };
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+    await expect(createCardForOwner(harness.database, 'owner', { ...card, reviewHistory: [entry] }, {
+      libraryEpoch: 2, opId: 'restore-hello', operationCreatedAt: new Date().toISOString(), restore: true,
+    })).rejects.toBeInstanceOf(InputValidationError);
+    expect(harness.writes).toEqual([]);
+  });
+
   it('creates canonical identity documents and increments the trusted owner counter atomically', async () => {
     const harness = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
@@ -193,6 +240,134 @@ describe('card persistence', () => {
       }),
     ]));
     expect(harness.transaction.get).toHaveBeenCalledTimes(6);
+  });
+
+  it('projects a newly created canonical lexeme in the same transaction', async () => {
+    const lexemeId = canonicalLexemeId();
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+
+    await createCardForOwner(harness.database, 'owner', {
+      ...card,
+      word: 'lead', normalizedWord: 'lead', normalizedLemma: 'lead', partOfSpeech: 'noun',
+      lexemeId, language: 'en', senseKey: 'metal',
+    }, { maximumCards: 5, libraryEpoch: 2 });
+
+    expect(harness.writes).toContainEqual(expect.objectContaining({
+      method: 'set',
+      path: `users/owner/catalog_progress/${lexemeId}`,
+      data: expect.objectContaining({
+        schemaVersion: 1, ownerId: 'owner', lexemeId, targetLanguage: 'en',
+        status: 'active', cardRevision: 1, libraryEpoch: 2,
+      }),
+    }));
+  });
+
+  describe('a create that carries scheduling state', () => {
+    const scheduled = {
+      difficulty: 'easy', reviews: 6, interval: 30, easeFactor: 2.9, correctStreak: 5,
+      nextReviewDate: '2026-07-01T00:00:00.000Z',
+      reviewHistory: [{ rating: 'easy', reviewedAt: '2026-06-01T00:00:00.000Z', scheduledDays: 30, elapsedDays: 0 }],
+      fsrs: {
+        due: '2026-07-01T00:00:00.000Z', stability: 30, difficulty: 3, elapsedDays: 0, scheduledDays: 30,
+        learningSteps: 0, reps: 6, lapses: 0, state: 2, lastReview: '2026-06-01T00:00:00.000Z',
+      },
+    };
+    const createWith = async (
+      options: Record<string, unknown>,
+      create = createCardForOwner,
+      deletedBefore = false,
+    ) => {
+      const lexemeId = canonicalLexemeId();
+      const harness = transactionHarness(new Map([
+        ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+        ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+        ...(deletedBefore ? [[`users/owner/card_tombstones/${lexemeId}`, snapshot(true, {
+          cardId: lexemeId, opId: 'delete-lead', libraryEpoch: 2, revision: 1, deletedAt: '2026-06-01T00:00:00.000Z',
+        })]] as [string, DocumentSnapshot][] : []),
+      ]));
+      await create(harness.database, 'owner', {
+        ...card,
+        word: 'lead', normalizedWord: 'lead', normalizedLemma: 'lead', partOfSpeech: 'noun',
+        lexemeId, language: 'en', senseKey: 'metal', ...scheduled,
+      }, { maximumCards: 5, libraryEpoch: 2, opId: 'create-lead', ...options } as never);
+      return {
+        stored: harness.writes.find(write => write.path === `users/owner/cards/${lexemeId}`)?.data,
+        projected: harness.writes.find(write => write.path === `users/owner/catalog_progress/${lexemeId}`)?.data,
+      };
+    };
+
+    it('starts a plain create unrated and active, whatever scheduling state it was sent with', async () => {
+      const { stored, projected } = await createWith({});
+      expect(stored).toMatchObject({
+        difficulty: 'unrated', reviews: 0, interval: 0, easeFactor: 2.5, correctStreak: 0, reviewHistory: [],
+      });
+      expect(stored).not.toHaveProperty('fsrs');
+      expect(stored).not.toHaveProperty('nextReviewDate');
+      expect(projected).toMatchObject({ status: 'active' });
+    });
+
+    it('starts a verified create unrated and active too', async () => {
+      const { stored, projected } = await createWith({ timeZone: 'Asia/Saigon' }, createCardV2ForOwner as never);
+      expect(stored).toMatchObject({ difficulty: 'unrated', interval: 0, reviews: 0 });
+      expect(stored).not.toHaveProperty('fsrs');
+      expect(projected).toMatchObject({ status: 'active' });
+    });
+
+    it('keeps the scheduling state a restore of a deleted card carries', async () => {
+      const { stored, projected } = await createWith(
+        { restore: true, operationCreatedAt: new Date().toISOString() }, createCardForOwner, true,
+      );
+      expect(stored).toMatchObject({ difficulty: 'easy', reviews: 6, interval: 30, correctStreak: 5 });
+      expect(stored).toHaveProperty('fsrs');
+      expect(projected).toMatchObject({ status: 'mastered' });
+    });
+
+    it('starts a restore of a card the server never held unrated and active', async () => {
+      const { stored, projected } = await createWith({ restore: true, operationCreatedAt: new Date().toISOString() });
+      expect(stored).toMatchObject({ difficulty: 'unrated', reviews: 0, interval: 0, correctStreak: 0 });
+      expect(stored).not.toHaveProperty('fsrs');
+      expect(projected).toMatchObject({ status: 'active' });
+    });
+  });
+
+  it('keeps a plain Korean card separate from an English card with the same spelling and preserves translationLanguage', async () => {
+    const englishHarness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+    const englishResult = await createCardForOwner(englishHarness.database, 'owner', card, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    });
+    expect(englishResult).toMatchObject({ created: true, card: { id: 'word-hello' } });
+    // Card creation always writes an explicit language so course-scoped
+    // queries never rely on a missing field meaning "en".
+    expect(englishResult.card.language).toBe('en');
+
+    const koreanCard = { ...card, language: 'ko', translationLanguage: 'vi' };
+    const koreanHarness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+    const koreanResult = await createCardForOwner(koreanHarness.database, 'owner', koreanCard, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    });
+    expect(koreanResult).toMatchObject({
+      created: true,
+      card: { language: 'ko', translationLanguage: 'vi' },
+    });
+    expect(koreanResult.card.id).not.toBe(englishResult.card.id);
+    expect(koreanResult.card.id).toMatch(/^word-ko-/);
+
+    const englishReservationWrite = englishHarness.writes.find(write => write.path.startsWith('users/owner/card_reservations/'));
+    const koreanReservationWrite = koreanHarness.writes.find(write => write.path.startsWith('users/owner/card_reservations/'));
+    expect(englishReservationWrite?.path).not.toBe(koreanReservationWrite?.path);
+    expect(englishReservationWrite?.data).not.toHaveProperty('targetLanguage');
+    expect(koreanReservationWrite?.data).toMatchObject({ targetLanguage: 'ko', normalizedWord: 'hello' });
   });
 
   it('does not seed server-owned review receipts from a forged create payload', async () => {
@@ -300,6 +475,136 @@ describe('card persistence', () => {
     expect(harness.writes).toEqual([]);
   });
 
+  it('creates a V2 receipt and verified create XP in the same transaction', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+
+    await expect(createCardV2ForOwner(harness.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello', timeZone: 'UTC',
+      receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    })).resolves.toMatchObject({
+      created: true,
+      gamification: { xp: 10, level: 1, events: [] },
+    });
+
+    expect(harness.events.slice(0, 2)).toEqual([
+      'get:users/owner/card_create_receipts/create-hello',
+      'get:users/owner/profile/library_migration_fence',
+    ]);
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ method: 'create', path: 'users/owner/card_create_receipts/create-hello' }),
+      expect.objectContaining({ method: 'set', path: 'users/owner/profile/stats' }),
+      expect.objectContaining({ method: 'set', path: 'users/owner/profile/xp_history' }),
+    ]));
+  });
+
+  it('replays a V2 receipt without re-reading mutable card or gamification state', async () => {
+    const first = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+    await createCardV2ForOwner(first.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello', timeZone: 'UTC',
+      receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    });
+    const receipt = first.writes.find(write => write.path === 'users/owner/card_create_receipts/create-hello')?.data;
+    const replay = transactionHarness(new Map([
+      ['users/owner/card_create_receipts/create-hello', snapshot(true, receipt)],
+    ]));
+
+    await expect(createCardV2ForOwner(replay.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello', timeZone: 'UTC',
+      receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    })).resolves.toMatchObject({ created: true, gamification: { xp: 10 } });
+    expect(replay.events).toEqual(['get:users/owner/card_create_receipts/create-hello']);
+    expect(replay.writes).toEqual([]);
+  });
+
+  it('rejects a V2 receipt when the operation ID is reused for different input', async () => {
+    const first = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+    await createCardV2ForOwner(first.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello', timeZone: 'UTC',
+      receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    });
+    const receipt = first.writes.find(write => write.path === 'users/owner/card_create_receipts/create-hello')?.data;
+    const replay = transactionHarness(new Map([
+      ['users/owner/card_create_receipts/create-hello', snapshot(true, receipt)],
+    ]));
+
+    await expect(createCardV2ForOwner(replay.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello', timeZone: 'Asia/Ho_Chi_Minh',
+    })).rejects.toThrow(/conflicts/i);
+    expect(replay.events).toEqual(['get:users/owner/card_create_receipts/create-hello']);
+  });
+
+  it('does not award verified XP when V2 resolves an existing card', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/cards/word-hello', snapshot(true, {
+        ...card, id: 'word-hello', word: 'hello', schemaVersion: 2, revision: 1, libraryEpoch: 2,
+      })],
+    ]));
+
+    await expect(createCardV2ForOwner(harness.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'duplicate-hello', timeZone: 'UTC',
+    })).resolves.toMatchObject({ created: false, gamification: null });
+    expect(harness.writes.map(write => write.path)).not.toContain('users/owner/profile/stats');
+    expect(harness.writes.map(write => write.path)).not.toContain('users/owner/profile/xp_history');
+  });
+
+  it('pays no capture XP when a deleted word is created again with a later creation time', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, {
+        cardId: 'word-hello', opId: 'delete-hello', libraryEpoch: 2, revision: 3,
+        deletedAt: '2026-09-01T00:00:00.000Z',
+      })],
+    ]));
+
+    await expect(createCardV2ForOwner(harness.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello-again', timeZone: 'UTC',
+      operationCreatedAt: '2026-09-27T12:00:00.000Z', receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    })).resolves.toMatchObject({ created: true, gamification: null, card: { revision: 4 } });
+    const paths = harness.writes.map(write => write.path);
+    expect(paths).not.toContain('users/owner/profile/stats');
+    expect(paths).not.toContain('users/owner/profile/xp_history');
+    expect(paths).toContain('users/owner/card_create_receipts/create-hello-again');
+    // The identity was already counted: the owner card total does not move.
+    expect(paths).not.toContain('users/owner/profile/resource_usage');
+  });
+
+  it('pays no capture XP when a word is created again after the library was cleared', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 3 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/cards/word-hello', snapshot(true, {
+        ...card, id: 'word-hello', word: 'hello', schemaVersion: 2, revision: 1, libraryEpoch: 2,
+      })],
+    ]));
+
+    await expect(createCardV2ForOwner(harness.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 3, opId: 'create-after-clear', timeZone: 'UTC',
+      receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    })).resolves.toMatchObject({ created: true, gamification: null });
+    expect(harness.writes.map(write => write.path)).not.toContain('users/owner/profile/stats');
+  });
+
   it('returns an existing canonical card on retry without treating its lexeme identity as a word', async () => {
     const lexemeId = canonicalLexemeId();
     const identity = `lexeme:${lexemeId}`;
@@ -328,6 +633,39 @@ describe('card persistence', () => {
       libraryEpoch: 2,
     })).resolves.toMatchObject({ created: false, card: { id: lexemeId, lexemeId } });
     expect(harness.writes).toEqual([]);
+    // Adding a word the learner already holds costs no catalog progress read.
+    expect(harness.events.filter(event => event.includes('/catalog_progress/'))).toEqual([]);
+  });
+
+  it('keeps catalog progress in step when an existing lexeme card is rewritten in its current shape', async () => {
+    const lexemeId = canonicalLexemeId();
+    const canonical = {
+      ...card, word: 'lead', normalizedWord: 'lead', partOfSpeech: 'noun', language: 'en', senseKey: 'metal', lexemeId,
+    };
+    // An existing card of the current generation that is not yet in the
+    // strict current shape is rewritten with a new revision.
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      [`users/owner/cards/${lexemeId}`, snapshot(true, {
+        ...canonical, id: undefined, libraryEpoch: 2, revision: 2, interval: 25,
+      })],
+      [`users/owner/catalog_progress/${lexemeId}`, snapshot(true, {
+        schemaVersion: 1, ownerId: 'owner', lexemeId, targetLanguage: 'en',
+        status: 'active', cardRevision: 2, libraryEpoch: 2,
+      })],
+    ]));
+
+    const result = await createCardForOwner(harness.database, 'owner', canonical, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    });
+    expect(result).toMatchObject({ created: false, card: { id: lexemeId, revision: 3 } });
+    expect(harness.writes).toContainEqual(expect.objectContaining({
+      method: 'set',
+      path: `users/owner/catalog_progress/${lexemeId}`,
+      data: expect.objectContaining({ status: 'mastered', cardRevision: 3, libraryEpoch: 2 }),
+    }));
   });
 
   it('returns an existing strict current card without rewriting its revision or leaking timestamps', async () => {
@@ -535,16 +873,185 @@ describe('card persistence', () => {
       })],
       ['users/owner/card_tombstones/word-hello', snapshot(true, tombstone)],
     ]));
-    await expect(createCardForOwner(explicit.database, 'owner', card, {
+    await expect(createCardForOwner(explicit.database, 'owner', {
+      ...card,
+      createdAt: '2026-08-10T10:00:00.000Z',
+    }, {
       maximumCards: 5,
       libraryEpoch: 2,
       baseRevision: 0,
       opId: 'recreate-hello',
       operationCreatedAt: '2026-08-11T11:00:00.000Z',
-    })).resolves.toMatchObject({ created: true, card: { revision: 4 } });
+    })).resolves.toMatchObject({ created: true, restored: true, card: { revision: 4 } });
     expect(explicit.writes).toEqual(expect.arrayContaining([
       expect.objectContaining({ method: 'set', path: 'users/owner/cards/word-hello' }),
     ]));
+
+    const recapture = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, tombstone)],
+    ]));
+    const result = await createCardForOwner(recapture.database, 'owner', {
+      ...card,
+      createdAt: '2026-08-11T11:00:00.000Z',
+    }, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+      baseRevision: 0,
+      opId: 'capture-hello-again',
+      operationCreatedAt: '2026-08-11T11:00:00.000Z',
+    });
+    expect(result).toMatchObject({ created: true, card: { revision: 4 } });
+    expect(result).not.toHaveProperty('restored');
+  });
+
+  it('accepts a fresh verified capture of a deleted word from a device whose clock runs behind the server', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, {
+        cardId: 'word-hello', opId: 'delete-hello', libraryEpoch: 2, revision: 3, deletedAt: '2026-08-11T10:00:00.000Z',
+      })],
+    ]));
+    // The device clock is four minutes behind: its capture time precedes the
+    // server's deletion time although the capture happened after the deletion.
+    const slowClock = '2026-08-11T09:56:30.000Z';
+
+    const result = await createCardV2ForOwner(harness.database, 'owner', { ...card, createdAt: slowClock }, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'capture-hello-again', timeZone: 'UTC',
+      operationCreatedAt: slowClock, receivedAt: new Date('2026-08-11T10:01:00.000Z'),
+    });
+
+    expect(result).toMatchObject({ created: true, card: { revision: 4 } });
+    expect(result).not.toHaveProperty('restored');
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ method: 'set', path: 'users/owner/cards/word-hello' }),
+    ]));
+  });
+
+  it('applies a queued restore facet delta once when create is retried', async () => {
+    const operationCreatedAt = new Date().toISOString();
+    const harness = concurrentAllocationHarness(new Map([
+      ['users/owner/profile/library_facets', snapshot(true, {
+        categories: { Basics: 2 }, complete: true, version: 1, updatedAt: operationCreatedAt,
+      })],
+    ]));
+    const options = {
+      maximumCards: 5,
+      libraryEpoch: 2,
+      baseRevision: 0,
+      opId: 'restore-hello',
+      operationCreatedAt,
+      restore: true as const,
+    };
+
+    await expect(createCardForOwner(harness.database, 'owner', card, options))
+      .resolves.toMatchObject({ created: true, restored: true });
+    await expect(createCardForOwner(harness.database, 'owner', card, options))
+      .resolves.toMatchObject({ created: false });
+
+    expect(harness.values.get('users/owner/profile/library_facets')?.data()).toMatchObject({
+      categories: { Basics: 3 }, complete: true, version: 1,
+    });
+    expect(harness.values.get(`users/owner/library_facet_receipts/${
+      libraryFacetRestoreOperationId('restore-hello', operationCreatedAt)
+    }`)?.exists).toBe(true);
+  });
+
+  it('accepts durable old restore operations while retaining future-skew rejection', async () => {
+    const operationCreatedAt = '2026-07-02T10:00:00.000Z';
+    const tombstone = {
+      cardId: 'word-hello', opId: 'delete-hello', libraryEpoch: 2,
+      revision: 3, deletedAt: '2026-07-01T10:00:00.000Z',
+    };
+    const oldRestore = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, tombstone)],
+      ['users/owner/profile/library_facets', snapshot(true, {
+        categories: { Basics: 2 }, complete: false, version: 1, updatedAt: '2026-07-02T10:00:00.000Z',
+      })],
+    ]));
+    await expect(createCardForOwner(oldRestore.database, 'owner', {
+      ...card, createdAt: '2026-06-20T10:00:00.000Z',
+    }, {
+      maximumCards: 5, libraryEpoch: 2, baseRevision: 0,
+      opId: 'restore-hello-offline', operationCreatedAt, restore: true,
+    })).resolves.toMatchObject({ created: true, restored: true });
+    expect(oldRestore.writes.find(write => write.path === 'users/owner/profile/library_facets')?.data)
+      .toMatchObject({ categories: { Basics: 3 }, complete: false });
+
+    const futureTime = Date.now() + 6 * 60 * 1000;
+    const futureRestore = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, tombstone)],
+    ]));
+    await expect(createCardForOwner(futureRestore.database, 'owner', {
+      ...card, createdAt: '2026-06-20T10:00:00.000Z',
+    }, {
+      maximumCards: 5, libraryEpoch: 2, baseRevision: 0,
+      opId: 'restore-hello-future', operationCreatedAt: new Date(futureTime).toISOString(), restore: true,
+    })).rejects.toThrow(/too far in the future/i);
+    expect(futureRestore.writes).toEqual([]);
+  });
+
+  describe('restoring a deleted mastered card', () => {
+    const deletedAt = '2026-07-01T10:00:00.000Z';
+    const restoreWith = async (changes: Record<string, unknown>, restore: boolean = true) => {
+      const harness = transactionHarness(new Map([
+        ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+        ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1 })],
+        ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+          schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+        })],
+        ['users/owner/card_tombstones/word-hello', snapshot(true, {
+          cardId: 'word-hello', opId: 'delete-hello', libraryEpoch: 2, revision: 3, deletedAt,
+        })],
+        ['users/owner/profile/library_facets', snapshot(true, {
+          categories: { Basics: 2 }, complete: false, version: 1, updatedAt: '2026-07-02T10:00:00.000Z',
+        })],
+      ]));
+      await createCardForOwner(harness.database, 'owner', {
+        ...card, createdAt: '2026-06-01T10:00:00.000Z', difficulty: 'easy', reviews: 4, interval: 30, ...changes,
+      }, {
+        maximumCards: 5, libraryEpoch: 2, baseRevision: 0, opId: 'restore-hello',
+        operationCreatedAt: '2026-07-01T10:00:05.000Z', ...(restore ? { restore: true as const } : {}),
+      });
+      return harness.writes.find(write => write.path === 'users/owner/cards/word-hello')?.data;
+    };
+
+    it('keeps the mastery date the card had when it was deleted', async () => {
+      expect(await restoreWith({ masteredAt: '2026-06-20T08:00:00.000Z' }))
+        .toMatchObject({ difficulty: 'easy', masteredAt: '2026-06-20T08:00:00.000Z' });
+      expect(await restoreWith({ difficulty: 'unrated', interval: 30, masteredAt: '2026-06-20T08:00:00.000Z' }))
+        .toMatchObject({ masteredAt: '2026-06-20T08:00:00.000Z' });
+    });
+
+    it('drops a mastery date that no earlier state of the card could have held', async () => {
+      expect(await restoreWith({ masteredAt: '2026-07-01T10:00:01.000Z' })).not.toHaveProperty('masteredAt');
+      expect(await restoreWith({ masteredAt: '2026-05-31T23:59:59.000Z' })).not.toHaveProperty('masteredAt');
+      expect(await restoreWith({ difficulty: 'unrated', interval: 3, masteredAt: '2026-06-20T08:00:00.000Z' }))
+        .not.toHaveProperty('masteredAt');
+    });
+
+    it('never takes a mastery date from a fresh capture', async () => {
+      const data = await restoreWith({ createdAt: '2026-07-01T10:00:05.000Z', masteredAt: '2026-06-20T08:00:00.000Z' }, false);
+      expect(data).not.toHaveProperty('masteredAt');
+    });
   });
 
   it('accepts maximum-safe counters but rejects a tombstone increment at the ceiling', async () => {
@@ -604,6 +1111,24 @@ describe('card persistence', () => {
     })).toThrow(/explanation/i);
   });
 
+  it('requires exact restore intent plus protocol metadata', () => {
+    const operationCreatedAt = new Date().toISOString();
+    expect(parseCreateCardRequest({
+      expectedOwnerId: 'owner', card, restore: true, opId: 'restore-hello', operationCreatedAt,
+    })).toMatchObject({ restore: true, opId: 'restore-hello', operationCreatedAt });
+    expect(() => parseCreateCardRequest({ expectedOwnerId: 'owner', card, restore: false })).toThrow(/restore/i);
+    expect(() => parseCreateCardRequest({ expectedOwnerId: 'owner', card, restore: true, operationCreatedAt })).toThrow(/metadata/i);
+    expect(() => parseCreateCardRequest({ expectedOwnerId: 'owner', card, restore: true, opId: 'invalid:restore', operationCreatedAt })).toThrow(/metadata/i);
+    expect(() => parseCreateCardRequest({ expectedOwnerId: 'owner', card, restore: true, opId: 'restore-hello' })).toThrow(/metadata/i);
+  });
+
+  it('requires a stable V2 operation ID and reward time zone', () => {
+    expect(parseCreateCardV2Request({ expectedOwnerId: 'owner', card, opId: 'create-hello', timeZone: 'UTC' }))
+      .toMatchObject({ opId: 'create-hello', timeZone: 'UTC' });
+    expect(() => parseCreateCardV2Request({ expectedOwnerId: 'owner', card, timeZone: 'UTC' })).toThrow(/metadata/i);
+    expect(() => parseCreateCardV2Request({ expectedOwnerId: 'owner', card, opId: 'create:hello', timeZone: 'UTC' })).toThrow(/metadata/i);
+  });
+
   it('rejects canonical output that expands beyond the existing identity and URL limits', () => {
     expect(() => parseCreateCardRequest({
       expectedOwnerId: 'owner',
@@ -620,6 +1145,43 @@ describe('card persistence', () => {
         imageUrl: `https://images.pexels.com/${'é'.repeat(1_000)}`,
       },
     })).toThrow(/imageUrl/i);
+  });
+
+  describe('photos from the learner files', () => {
+    const ownPhoto = (ownerId: string, bucket = 'encoded-hangout-433912-h2.firebasestorage.app') =>
+      `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/users%2F${ownerId}%2Ffiles%2FAbCdEfGhIjKlMnOpQrSt?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d`;
+
+    it('lists the same buckets as the app config targets', () => {
+      const config = JSON.parse(readFileSync(new URL('../../firebase-applet-config.json', import.meta.url), 'utf8')) as {
+        targets: Record<string, { storageBucket: string }>;
+      };
+      expect([...OWN_STORAGE_BUCKETS].sort()).toEqual(Object.values(config.targets).map(target => target.storageBucket).sort());
+    });
+
+    it('accepts an owner photo on create and keeps it on a stored card', () => {
+      expect(parseCreateCardRequest({ expectedOwnerId: 'owner', card: { ...card, imageUrl: ownPhoto('owner') } }).card.imageUrl)
+        .toBe(ownPhoto('owner'));
+      expect(canonicalCard({ ...card, imageUrl: ownPhoto('owner', 'sonflash-staging-20260906.firebasestorage.app') }).imageUrl)
+        .toBe(ownPhoto('owner', 'sonflash-staging-20260906.firebasestorage.app'));
+      expect(ownStorageImageOwner(ownPhoto('owner'))).toBe('owner');
+    });
+
+    it('rejects another learner photo, another bucket or folder, and the storage host at large', () => {
+      expect(() => parseCreateCardRequest({ expectedOwnerId: 'owner', card: { ...card, imageUrl: ownPhoto('someone-else') } }))
+        .toThrow(/imageUrl/i);
+      expect(() => canonicalCard({ ...card, imageUrl: ownPhoto('someone-else') }, { imageOwnerId: 'owner' })).toThrow(/imageUrl/i);
+      for (const imageUrl of [
+        ownPhoto('owner', 'other-project.appspot.com'),
+        ownPhoto('owner').replace('%2Ffiles%2F', '%2Fprivate%2F'),
+        ownPhoto('owner').replace('?alt=media&token=', '?token='),
+        `${ownPhoto('owner')}#x`,
+        ownPhoto('owner').replace('firebasestorage.googleapis.com', 'storage.googleapis.com'),
+        'https://firebasestorage.googleapis.com/v0/b/encoded-hangout-433912-h2.firebasestorage.app/o/anything',
+      ]) {
+        expect(ownStorageImageOwner(imageUrl), imageUrl).toBeNull();
+        expect(() => canonicalCard({ ...card, imageUrl }), imageUrl).toThrow(/imageUrl/i);
+      }
+    });
   });
 
   it('keeps direct client allocation denied after callable wiring', () => {
@@ -647,6 +1209,160 @@ describe('card persistence', () => {
     })).rejects.toBeInstanceOf(LegacyLibraryMigrationFenceError);
   });
 
+  it('accepts only supported immutable card origins', () => {
+    expect(canonicalCard({ ...card, origin: 'ai' }).origin).toBe('ai');
+    expect(canonicalCard({ ...card, origin: 'manual' }).origin).toBe('manual');
+    expect(() => canonicalCard({ ...card, origin: 'imported' })).toThrow(/origin/i);
+  });
+
+  it('accepts and emits bounded learner tags and difficulty, keeping stored empty values', () => {
+    const tagged = canonicalCard({ ...card, tags: ['news', 'B2', 'phrasal verb'], learnerDifficulty: 'medium' });
+    expect(tagged).toMatchObject({ tags: ['news', 'B2', 'phrasal verb'], learnerDifficulty: 'medium' });
+    expect(canonicalCard({ ...card, tags: [], learnerDifficulty: null })).toMatchObject({ tags: [], learnerDifficulty: null });
+    const plain = canonicalCard(card);
+    expect(plain).not.toHaveProperty('tags');
+    expect(plain).not.toHaveProperty('learnerDifficulty');
+    expect(canonicalCard({ ...card, tags: Array.from({ length: 8 }, (_, index) => `t${index}`) }).tags).toHaveLength(8);
+    expect(canonicalCard({ ...card, tags: ['x'.repeat(32)] }).tags).toEqual(['x'.repeat(32)]);
+    // Length is counted in code points, as the Rules regex engine counts it.
+    expect(canonicalCard({ ...card, tags: ['📚'.repeat(32)] }).tags).toEqual(['📚'.repeat(32)]);
+  });
+
+  it('rejects tags beyond the limits and difficulty outside the learner labels', () => {
+    for (const tags of [
+      Array.from({ length: 9 }, (_, index) => `t${index}`),
+      ['x'.repeat(33)],
+      ['📚'.repeat(33)],
+      ['a,b'],
+      ['line\nbreak'],
+      [' padded'],
+      ['padded\t'],
+      [''],
+      [7],
+      ['news', 'news'],
+      'news',
+    ]) {
+      expect(() => canonicalCard({ ...card, tags })).toThrow(/tags/);
+    }
+    for (const learnerDifficulty of ['good', 'unrated', 'Easy', 1]) {
+      expect(() => canonicalCard({ ...card, learnerDifficulty })).toThrow(/learnerDifficulty/);
+    }
+    // The scheduler's own field keeps its legacy values only.
+    expect(() => canonicalCard({ ...card, difficulty: 'medium' })).toThrow(/difficulty/i);
+  });
+
+  it('keeps AI meaning alternatives only on AI cards, bounded and distinct from the meaning', () => {
+    const aiCard = { ...card, origin: 'ai', translation: 'dẫn dắt' };
+    expect(canonicalCard({ ...aiCard, translationAlternatives: ['lãnh đạo', 'Dẫn dắt', 'lãnh đạo'] }).translationAlternatives)
+      .toEqual(['lãnh đạo']);
+    expect(canonicalCard({ ...aiCard, translationAlternatives: ['lãnh đạo', 'chỉ huy', 'chì'] }).translationAlternatives)
+      .toEqual(['lãnh đạo', 'chỉ huy', 'chì']);
+    expect(canonicalCard({ ...aiCard, translationAlternatives: [] }).translationAlternatives).toEqual([]);
+    expect(canonicalCard(aiCard)).not.toHaveProperty('translationAlternatives');
+    expect(() => canonicalCard({ ...card, origin: 'manual', translationAlternatives: ['lãnh đạo'] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...card, translationAlternatives: ['lãnh đạo'] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...aiCard, translationAlternatives: ['a', 'b', 'c', 'd'] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...aiCard, translationAlternatives: ['x'.repeat(257)] })).toThrow(/translationAlternatives/);
+    expect(() => canonicalCard({ ...aiCard, translationAlternatives: ['  '] })).toThrow(/translationAlternatives/);
+  });
+
+  it('carries the new card fields through a create request', () => {
+    const request = parseCreateCardRequest({
+      expectedOwnerId: 'owner',
+      card: { ...card, origin: 'ai', tags: ['news'], learnerDifficulty: 'hard', translationAlternatives: ['lãnh đạo'] },
+    });
+    expect(request.card).toMatchObject({ tags: ['news'], learnerDifficulty: 'hard', translationAlternatives: ['lãnh đạo'] });
+    expect(() => parseCreateCardRequest({
+      expectedOwnerId: 'owner',
+      card: { ...card, origin: 'manual', translationAlternatives: ['lãnh đạo'] },
+    })).toThrow(/translationAlternatives/);
+  });
+
+  it('strips a client supplied mastery timestamp from a create candidate', () => {
+    expect(canonicalCard({ ...card, masteredAt: '2020-01-01T00:00:00.000Z' })).not.toHaveProperty('masteredAt');
+    expect(canonicalCard({ ...card, masteredAt: '2020-01-01T00:00:00.000Z' }, { allowMasteredAt: true }))
+      .toMatchObject({ masteredAt: '2020-01-01T00:00:00.000Z' });
+  });
+
+  it('derives Japanese pitch only from the pinned source and rejects forged metadata', () => {
+    const japanese = { ...card, word: '日本', normalizedWord: '日本', language: 'ja', phonetic: 'にっぽん' };
+    const created = canonicalCard(japanese);
+    expect(created.japanesePitchAccent).toMatchObject({
+      readingKana: 'にっぽん', moraCount: 4, downstep: 3,
+      source: { row: '503828|日本|ニッポン|3|*|*' },
+    });
+    expect(canonicalCard(japanese, { deriveJapanesePitch: false })).not.toHaveProperty('japanesePitchAccent');
+    expect(() => canonicalCard({
+      ...japanese,
+      japanesePitchAccent: { ...(created.japanesePitchAccent as object), downstep: 0 },
+    })).toThrow(/pitch metadata/i);
+    expect(canonicalCard({
+      ...japanese,
+      phonetic: 'にほん',
+      japanesePitchAccent: created.japanesePitchAccent,
+    }, { deriveJapanesePitch: false })).not.toHaveProperty('japanesePitchAccent');
+    expect(canonicalCard({ ...japanese, word: '学校', normalizedWord: '学校' })).not.toHaveProperty('japanesePitchAccent');
+  });
+
+  it('keeps server pitch provenance equal to the reading UI subset', () => {
+    for (const [word, phonetic] of [
+      ['解析', 'かいせき'], ['空港', 'くーこー'], ['形態', 'けーたい'],
+      ['国際', 'こくさい'], ['日本', 'にっぽん'], ['面白い', 'おもしろい'],
+    ]) {
+      expect(resolveJapanesePitchAccent(word, phonetic, 'ja'))
+        .toEqual(resolveStaticJapanesePitchAccent({ word, phonetic }));
+    }
+  });
+
+  it('strips credentials, query and fragment from a captured source url and bounds its other fields', () => {
+    const result = canonicalCard({
+      ...card,
+      source: {
+        url: 'https://user:pass@example.com/article?utm=1&ref=share#section-2',
+        title: '  An Example Article  ',
+        context: 'The captured sentence around the word.',
+        capturedAt: '2026-09-27T00:00:00.000Z',
+      },
+    });
+    expect(result.source).toEqual({
+      url: 'https://example.com/article',
+      title: 'An Example Article',
+      context: 'The captured sentence around the word.',
+      capturedAt: '2026-09-27T00:00:00.000Z',
+    });
+  });
+
+  it('rejects a non-http(s) captured source url and an unsupported source field', () => {
+    expect(() => canonicalCard({ ...card, source: { url: 'javascript:alert(1)' } })).toThrow(/url/i);
+    expect(() => canonicalCard({ ...card, source: { url: 'ftp://example.com/file' } })).toThrow(/url/i);
+    expect(() => canonicalCard({ ...card, source: { forged: 'value' } })).toThrow(/unsupported/i);
+  });
+
+  it('rejects an oversized captured source title, context, or url', () => {
+    expect(() => canonicalCard({ ...card, source: { title: 'x'.repeat(257) } })).toThrow(/title/i);
+    expect(() => canonicalCard({ ...card, source: { context: 'x'.repeat(501) } })).toThrow(/context/i);
+    expect(() => canonicalCard({
+      ...card,
+      source: { url: `https://example.com/${'x'.repeat(2_048)}` },
+    })).toThrow(/url/i);
+  });
+
+  it('rejects a captured source object that is not a plain object', () => {
+    expect(() => canonicalCard({ ...card, source: 'https://example.com/' })).toThrow(/object/i);
+    expect(() => canonicalCard({ ...card, source: ['https://example.com/'] })).toThrow(/object/i);
+  });
+
+  it('rejects an invalid captured-at value and normalizes a valid one to ISO', () => {
+    expect(() => canonicalCard({ ...card, source: { capturedAt: 'not-a-date' } })).toThrow(/capturedAt/i);
+    const result = canonicalCard({ ...card, source: { capturedAt: '2026-09-27' } });
+    expect(result.source).toEqual({ capturedAt: '2026-09-27T00:00:00.000Z' });
+  });
+
+  it('collapses an all-empty captured source to undefined and leaves a legacy card without one', () => {
+    expect(canonicalCard({ ...card, source: { url: '', title: '' } }).source).toBeUndefined();
+    expect(canonicalCard(card).source).toBeUndefined();
+  });
+
   it('accepts only a complete canonical tuple whose lexeme id matches', () => {
     const valid = canonicalCard({
       ...card, word: 'lead', normalizedWord: 'lead', partOfSpeech: 'noun',
@@ -658,5 +1374,607 @@ describe('card persistence', () => {
       ...card, word: 'lead', normalizedWord: 'lead', partOfSpeech: 'noun',
       lexemeId: 'lexeme-forged', language: 'en', senseKey: 'metal',
     })).toThrow(/lexeme identity/i);
+  });
+});
+
+describe('card identity whose derived id is held by a renamed card', () => {
+  const colorHash = createHash('sha256').update('color').digest('hex');
+  const colourHash = createHash('sha256').update('colour').digest('hex');
+  const colorWord = { word: 'color', translation: 'màu', language: 'en', translationLanguage: 'vi', origin: 'manual' as const };
+  const colourWord = { ...colorWord, word: 'colour' };
+  const colorId = String(canonicalCard(colorWord).id);
+  const colourId = String(canonicalCard(colourWord).id);
+  const renamedCard = (id: string, word: string) => ({
+    ...canonicalCard({ ...colorWord, word }), id, schemaVersion: 2, revision: 2, libraryEpoch: 0,
+  });
+
+  it('creates the old word under a new id when its original id now holds the renamed card', async () => {
+    // "color" was renamed to "colour": the card keeps its id and the old reservation is gone.
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/cards/${colorId}`, snapshot(true, renamedCard(colorId, 'colour'))],
+      [`users/owner/card_reservations/${colourHash}`, snapshot(true, {
+        schemaVersion: 1, cardId: colorId, normalizedWord: 'colour',
+      })],
+    ]));
+
+    const result = await createCardForOwner(harness.database, 'owner', colorWord);
+
+    expect(result.created).toBe(true);
+    expect(result.card.id).toBe(`${colorId}-2`);
+    expect(result.card).toMatchObject({ normalizedWord: 'color', revision: 1 });
+    expect(harness.writes.filter(write => write.path === `users/owner/cards/${colorId}`)).toEqual([]);
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ method: 'create', path: `users/owner/cards/${colorId}-2` }),
+      {
+        method: 'create',
+        path: `users/owner/card_reservations/${colorHash}`,
+        data: { schemaVersion: 1, cardId: `${colorId}-2`, normalizedWord: 'color' },
+      },
+    ]));
+  });
+
+  it('follows the next free id again when the first relocated id is held too', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/cards/${colorId}`, snapshot(true, renamedCard(colorId, 'colour'))],
+      [`users/owner/cards/${colorId}-2`, snapshot(true, renamedCard(`${colorId}-2`, 'couleur'))],
+    ]));
+
+    const result = await createCardForOwner(harness.database, 'owner', colorWord);
+
+    expect(result.card.id).toBe(`${colorId}-3`);
+  });
+
+  it('moves a reservation that points to a card of another word onto the identity that owns it', async () => {
+    // "colour" was created under the id of "color" after the renamed card was deleted and "color" re-added.
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/cards/${colorId}`, snapshot(true, renamedCard(colorId, 'color'))],
+      [`users/owner/card_reservations/${colorHash}`, snapshot(true, {
+        schemaVersion: 1, cardId: colorId, normalizedWord: 'color',
+      })],
+      [`users/owner/card_reservations/${colourHash}`, snapshot(true, {
+        schemaVersion: 1, cardId: colorId, normalizedWord: 'colour',
+      })],
+    ]));
+
+    const result = await createCardForOwner(harness.database, 'owner', colourWord);
+
+    expect(result.created).toBe(true);
+    expect(result.card.id).toBe(colourId);
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      {
+        method: 'set',
+        path: `users/owner/card_reservations/${colourHash}`,
+        data: { schemaVersion: 1, cardId: colourId, normalizedWord: 'colour' },
+      },
+    ]));
+  });
+
+  it('still refuses a canonical (lexeme) card whose id holds another identity', async () => {
+    const lexemeId = canonicalLexemeId();
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/cards/${lexemeId}`, snapshot(true, {
+        id: lexemeId, word: 'other', normalizedWord: 'other', lexemeId: 'lexeme-someone-else',
+        schemaVersion: 2, revision: 1, libraryEpoch: 0,
+      })],
+    ]));
+
+    await expect(createCardForOwner(harness.database, 'owner', {
+      ...card, word: 'lead', normalizedWord: 'lead', partOfSpeech: 'noun', lexemeId, language: 'en', senseKey: 'metal',
+    })).rejects.toMatchObject({ reason: 'identity-conflict' });
+  });
+});
+
+describe('starter card allocation', () => {
+  const now = new Date('2026-09-27T04:00:00.000Z');
+  const config = PILOT_CONFIG_DEFAULTS;
+  const starterBatch = [
+    { word: 'hello', translation: 'xin chào', language: 'en', translationLanguage: 'vi', origin: 'manual' as const },
+    { word: 'thank you', translation: 'cảm ơn', language: 'en', translationLanguage: 'vi', origin: 'manual' as const },
+    { word: 'water', translation: 'nước', language: 'en', translationLanguage: 'vi', origin: 'manual' as const },
+    { word: 'friend', translation: 'bạn', language: 'en', translationLanguage: 'vi', origin: 'manual' as const },
+    { word: 'love', translation: 'yêu', language: 'en', translationLanguage: 'vi', origin: 'manual' as const },
+  ];
+  const requestHashFor = (batch: readonly unknown[]) => createHash('sha256')
+    .update(JSON.stringify(batch.map(item => canonicalCard(item).id)))
+    .digest('hex');
+  const reservationFor = (word: string) => createHash('sha256').update(word).digest('hex');
+  const ownedStarterCard = (item: unknown) => ({
+    ...canonicalCard(item), id: canonicalCard(item).id, schemaVersion: 2, revision: 1, libraryEpoch: 0,
+  });
+
+  it('reserves one quota unit per card and creates every card in a single transaction', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    expect(result.kind).toBe('created');
+    expect(result.cardIds).toHaveLength(5);
+    const usageWrite = harness.writes.find(write => write.path.startsWith('users/owner/ai_usage/'));
+    expect(usageWrite?.data).toMatchObject({ used: 5, tier: 'free' });
+    const usageResourceWrite = harness.writes.find(write => write.path === 'users/owner/profile/resource_usage');
+    expect(usageResourceWrite?.data).toMatchObject({ cardCount: 5 });
+    const operationWrite = harness.writes.find(write => write.path === 'users/owner/ai_operations/onboarding-op-1');
+    expect(operationWrite?.data).toMatchObject({ status: 'completed', result: result.cardIds });
+    const cardWrites = harness.writes.filter(write => write.path.startsWith('users/owner/cards/'));
+    expect(cardWrites).toHaveLength(5);
+    const reservationWrites = harness.writes.filter(write => write.path.startsWith('users/owner/card_reservations/'));
+    expect(reservationWrites).toHaveLength(5);
+  });
+
+  it('records when onboarding started on the usage document the batch already writes', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+    ]));
+
+    await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    const usageWrites = harness.writes.filter(write => write.path === 'users/owner/profile/resource_usage');
+    expect(usageWrites).toHaveLength(1);
+    expect(usageWrites[0].data).toMatchObject({ cardCount: 5, onboardingStartedAt: now });
+  });
+
+  it('keeps the first onboarding start time when a later batch creates more cards', async () => {
+    const first = new Date('2026-09-20T04:00:00.000Z');
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1, onboardingStartedAt: first })],
+    ]));
+
+    await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-2', starterBatch, now, config);
+
+    expect(harness.writes.find(write => write.path === 'users/owner/profile/resource_usage')?.data)
+      .toMatchObject({ onboardingStartedAt: first });
+  });
+
+  it('does not mark onboarding as started when every starter word was already claimed', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      ...starterBatch.flatMap(item => {
+        const id = canonicalCard(item).id;
+        return [
+          [`users/owner/card_reservations/${reservationFor(item.word)}`, snapshot(true, {
+            schemaVersion: 1, cardId: id, normalizedWord: item.word,
+          })],
+          [`users/owner/cards/${id}`, snapshot(true, ownedStarterCard(item))],
+        ] as const;
+      }),
+    ]));
+
+    await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-3', starterBatch, now, config);
+
+    expect(harness.writes.some(write => write.path === 'users/owner/profile/resource_usage')).toBe(false);
+  });
+
+  it('replays an already-completed operation without spending quota or writing cards again', async () => {
+    const cardIds = starterBatch.map(item => canonicalCard(item).id);
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/ai_operations/onboarding-op-1', snapshot(true, {
+        status: 'completed', requestHash: requestHashFor(starterBatch), result: cardIds,
+      })],
+      ...cardIds.map(id => [`users/owner/cards/${id}`, snapshot(true, ownedStarterCard(starterBatch[cardIds.indexOf(id)]))] as const),
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    expect(result).toEqual({ kind: 'completed', cardIds });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('replays only the starter cards that still exist after the learner deleted some', async () => {
+    const cardIds = starterBatch.map(item => canonicalCard(item).id);
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/ai_operations/onboarding-op-1', snapshot(true, {
+        status: 'completed', requestHash: requestHashFor(starterBatch), result: cardIds,
+      })],
+      [`users/owner/cards/${cardIds[1]}`, snapshot(true, ownedStarterCard(starterBatch[1]))],
+      [`users/owner/cards/${cardIds[3]}`, snapshot(true, ownedStarterCard(starterBatch[3]))],
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    expect(result).toEqual({ kind: 'completed', cardIds: [cardIds[1], cardIds[3]] });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('writes the other starter cards and charges only for them when a word is already claimed', async () => {
+    const [hello, thankYou, water, friend, love] = starterBatch;
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 2 })],
+      // A reservation left behind by a deleted card, with a tombstone and no live card.
+      [`users/owner/card_reservations/${reservationFor('hello')}`, snapshot(true, {
+        schemaVersion: 1, cardId: canonicalCard(hello).id, normalizedWord: 'hello',
+      })],
+      [`users/owner/card_tombstones/${canonicalCard(hello).id}`, snapshot(true, { revision: 2, libraryEpoch: 0, deletedAt: '2026-09-01T00:00:00.000Z' })],
+      // A word the learner still owns.
+      [`users/owner/card_reservations/${reservationFor('water')}`, snapshot(true, {
+        schemaVersion: 1, cardId: canonicalCard(water).id, normalizedWord: 'water',
+      })],
+      [`users/owner/cards/${canonicalCard(water).id}`, snapshot(true, ownedStarterCard(water))],
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    const ids = [thankYou, friend, love].map(item => canonicalCard(item).id);
+    expect(result).toEqual({
+      kind: 'created',
+      cardIds: [canonicalCard(thankYou).id, canonicalCard(water).id, canonicalCard(friend).id, canonicalCard(love).id],
+      createdCardIds: ids,
+    });
+    expect(harness.writes.filter(write => write.path.startsWith('users/owner/cards/')).map(write => write.path.split('/').pop()))
+      .toEqual(ids);
+    expect(harness.writes.filter(write => write.path.startsWith('users/owner/card_reservations/'))).toHaveLength(3);
+    expect(harness.writes.find(write => write.path.startsWith('users/owner/ai_usage/'))?.data).toMatchObject({ used: 3 });
+    expect(harness.writes.find(write => write.path === 'users/owner/profile/resource_usage')?.data).toMatchObject({ cardCount: 5 });
+    expect(harness.writes.find(write => write.path === 'users/owner/ai_operations/onboarding-op-1')?.data)
+      .toMatchObject({ status: 'completed', result: result.cardIds });
+  });
+
+  it('leaves out a starter word whose catalog id now holds another word, without failing the batch', async () => {
+    // "hello" was renamed to "hullo": its reservation is gone and its card id holds the new word.
+    const [hello, thankYou, water, friend, love] = starterBatch;
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/cards/${canonicalCard(hello).id}`, snapshot(true, {
+        ...ownedStarterCard(hello), word: 'hullo', normalizedWord: 'hullo',
+      })],
+      [`users/owner/card_reservations/${reservationFor('hullo')}`, snapshot(true, {
+        schemaVersion: 1, cardId: canonicalCard(hello).id, normalizedWord: 'hullo',
+      })],
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    const ids = [thankYou, water, friend, love].map(item => canonicalCard(item).id);
+    expect(result).toEqual({ kind: 'created', cardIds: ids, createdCardIds: ids });
+    expect(harness.writes.find(write => write.path === `users/owner/cards/${canonicalCard(hello).id}`)).toBeUndefined();
+  });
+
+  it('does not list a starter word the learner holds under a relocated card id', async () => {
+    // The answer only names catalog ids, which are the ids the client asked for.
+    const [hello, thankYou, water, friend, love] = starterBatch;
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/card_reservations/${reservationFor('hello')}`, snapshot(true, {
+        schemaVersion: 1, cardId: `${canonicalCard(hello).id}-2`, normalizedWord: 'hello',
+      })],
+      [`users/owner/cards/${canonicalCard(hello).id}`, snapshot(true, {
+        ...ownedStarterCard(hello), word: 'hullo', normalizedWord: 'hullo',
+      })],
+      [`users/owner/cards/${canonicalCard(hello).id}-2`, snapshot(true, {
+        ...ownedStarterCard(hello), id: `${canonicalCard(hello).id}-2`,
+      })],
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    const ids = [thankYou, water, friend, love].map(item => canonicalCard(item).id);
+    expect(result).toEqual({ kind: 'created', cardIds: ids, createdCardIds: ids });
+    expect(harness.writes.find(write => write.path.startsWith('users/owner/ai_usage/'))?.data).toMatchObject({ used: 4 });
+  });
+
+  it('spends no quota and writes no card when every starter word is already claimed', async () => {
+    const periodKey = `free-${now.toISOString().slice(0, 7)}`;
+    const claimed = starterBatch.flatMap(item => [
+      [`users/owner/card_reservations/${reservationFor(item.word)}`, snapshot(true, {
+        schemaVersion: 1, cardId: canonicalCard(item).id, normalizedWord: item.word,
+      })] as const,
+    ]);
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/ai_usage/${periodKey}`, snapshot(true, { used: 30, limit: 30, tier: 'free' })],
+      ...claimed,
+    ]));
+
+    const result = await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    expect(result).toEqual({ kind: 'created', cardIds: [], createdCardIds: [] });
+    expect(harness.writes.map(write => write.path)).toEqual(['users/owner/ai_operations/onboarding-op-1']);
+  });
+
+  it('rejects a retried operationId whose card batch no longer matches what it originally completed', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/ai_operations/onboarding-op-1', snapshot(true, {
+        status: 'completed', requestHash: 'stale-hash-from-a-different-batch', result: ['word-hello'],
+      })],
+    ]));
+
+    await expect(createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config))
+      .rejects.toBeInstanceOf(AiQuotaError);
+  });
+
+  it('refuses the batch once it would push monthly usage past the free-tier limit', async () => {
+    const periodKey = `free-${now.toISOString().slice(0, 7)}`;
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      [`users/owner/ai_usage/${periodKey}`, snapshot(true, { used: 27, limit: 30, tier: 'free' })],
+    ]));
+
+    await expect(createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config))
+      .rejects.toMatchObject({ reason: 'ai-card-quota' });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('refuses the batch once it would push the owner past the total card allocation limit', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+    ]), 4_998);
+
+    await expect(createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config))
+      .rejects.toBeInstanceOf(CardAllocationLimitError);
+    expect(harness.writes).toHaveLength(0);
+  });
+});
+
+describe('renameCardHeadwordForOwner', () => {
+  const oldIdentityHash = createHash('sha256').update('hello').digest('hex');
+  const newIdentityHash = createHash('sha256').update('goodbye').digest('hex');
+
+  const persistedLegacyCard = {
+    id: 'word-hello',
+    word: 'hello',
+    normalizedWord: 'hello',
+    translation: 'xin chào',
+    schemaVersion: 2,
+    revision: 5,
+    libraryEpoch: 0,
+  };
+
+  it('parses a valid rename request and rejects unsupported fields, an invalid cardId, and an oversized word', () => {
+    expect(parseRenameCardHeadwordRequest({
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).toEqual({ cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0 });
+    expect(parseRenameCardHeadwordRequest({
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0, expectedOwnerId: 'owner',
+    })).toEqual({ cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0, expectedOwnerId: 'owner' });
+    expect(() => parseRenameCardHeadwordRequest({
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0, expectedOwnerId: 'a/b',
+    })).toThrow(/expectedOwnerId/i);
+    expect(() => parseRenameCardHeadwordRequest({
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0, extra: true,
+    })).toThrow(/unsupported field/i);
+    expect(() => parseRenameCardHeadwordRequest({
+      cardId: 'not a valid id!', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).toThrow(/cardId/i);
+    expect(() => parseRenameCardHeadwordRequest({
+      cardId: 'word-hello', word: 'x'.repeat(257), baseRevision: 5, libraryEpoch: 0,
+    })).toThrow(/word/i);
+  });
+
+  it('renames a legacy card, swapping its identity reservation inside the same transaction', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+      [`users/owner/card_reservations/${oldIdentityHash}`, snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+    ]));
+
+    const result = await renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    });
+
+    expect(result.card).toMatchObject({ id: 'word-hello', word: 'Goodbye', normalizedWord: 'goodbye', revision: 6 });
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      {
+        method: 'create',
+        path: `users/owner/card_reservations/${newIdentityHash}`,
+        data: { schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'goodbye' },
+      },
+      { method: 'delete', path: `users/owner/card_reservations/${oldIdentityHash}` },
+    ]));
+    expect(harness.writes.some(write => write.method === 'set' && write.path === 'users/owner/cards/word-hello')).toBe(true);
+  });
+
+  it('skips the reservation swap entirely when the correction only changes case, not identity', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+    ]));
+
+    const result = await renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'HELLO', baseRevision: 5, libraryEpoch: 0,
+    });
+
+    expect(result.card).toMatchObject({ word: 'HELLO', normalizedWord: 'hello', revision: 6 });
+    expect(harness.writes).toHaveLength(1);
+    expect(harness.writes[0]).toMatchObject({ method: 'set', path: 'users/owner/cards/word-hello' });
+  });
+
+  it('removes a pitch claim when a headword correction no longer matches its source', async () => {
+    const japanese = canonicalCard({
+      ...card, word: '日本', normalizedWord: '日本', language: 'ja', phonetic: 'にっぽん',
+    });
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, {
+        ...japanese, id: 'word-hello', schemaVersion: 2, revision: 5, libraryEpoch: 0,
+      })],
+    ]));
+
+    const result = await renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: '学校', baseRevision: 5, libraryEpoch: 0,
+    });
+
+    expect(result.card).not.toHaveProperty('japanesePitchAccent');
+    expect(harness.writes.find(write => write.path === 'users/owner/cards/word-hello')?.data)
+      .not.toHaveProperty('japanesePitchAccent');
+  });
+
+  it('adds verified pitch when a headword correction matches the stored kana', async () => {
+    const japanese = canonicalCard({
+      ...card, word: '学校', normalizedWord: '学校', language: 'ja', phonetic: 'にっぽん',
+    });
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, {
+        ...japanese, id: 'word-hello', schemaVersion: 2, revision: 5, libraryEpoch: 0,
+      })],
+    ]));
+
+    const result = await renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: '日本', baseRevision: 5, libraryEpoch: 0,
+    });
+
+    expect(result.card.japanesePitchAccent).toMatchObject({ readingKana: 'にっぽん', downstep: 3 });
+    expect(harness.writes.find(write => write.path === 'users/owner/cards/word-hello')?.data)
+      .toMatchObject({ japanesePitchAccent: result.card.japanesePitchAccent });
+  });
+
+  it('rejects the rename as a duplicate when the new word is already reserved by a different card', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+      [`users/owner/card_reservations/${newIdentityHash}`, snapshot(true, {
+        schemaVersion: 1, cardId: 'word-goodbye-someone-else', normalizedWord: 'goodbye',
+      })],
+      ['users/owner/cards/word-goodbye-someone-else', snapshot(true, {
+        id: 'word-goodbye-someone-else', word: 'goodbye', normalizedWord: 'goodbye',
+        translation: 'tạm biệt', schemaVersion: 2, revision: 1, libraryEpoch: 0,
+      })],
+    ]));
+
+    await expect(renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).rejects.toMatchObject({ reason: 'duplicate-word' });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('takes over the reservation of a word whose card was deleted earlier', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+      [`users/owner/card_reservations/${newIdentityHash}`, snapshot(true, {
+        schemaVersion: 1, cardId: 'word-goodbye', normalizedWord: 'goodbye',
+      })],
+      ['users/owner/card_tombstones/word-goodbye', snapshot(true, {
+        revision: 2, libraryEpoch: 0, deletedAt: '2026-09-01T00:00:00.000Z',
+      })],
+    ]));
+
+    const result = await renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    });
+
+    expect(result.card).toMatchObject({ id: 'word-hello', word: 'Goodbye', normalizedWord: 'goodbye' });
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      {
+        method: 'set',
+        path: `users/owner/card_reservations/${newIdentityHash}`,
+        data: { schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'goodbye' },
+      },
+    ]));
+  });
+
+  it('takes over a reservation whose card now holds a different word', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+      [`users/owner/card_reservations/${newIdentityHash}`, snapshot(true, {
+        schemaVersion: 1, cardId: 'word-moved', normalizedWord: 'goodbye',
+      })],
+      ['users/owner/cards/word-moved', snapshot(true, {
+        id: 'word-moved', word: 'farewell', normalizedWord: 'farewell',
+        translation: 'tạm biệt', schemaVersion: 2, revision: 3, libraryEpoch: 0,
+      })],
+    ]));
+
+    await expect(renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).resolves.toMatchObject({ card: { normalizedWord: 'goodbye' } });
+  });
+
+  it('rejects a stale or future library epoch without writing anything', async () => {
+    const staleHarness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 3 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+    ]));
+    await expect(renameCardHeadwordForOwner(staleHarness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).rejects.toMatchObject({ reason: 'stale-library-epoch' });
+    expect(staleHarness.writes).toHaveLength(0);
+
+    const futureHarness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+    ]));
+    await expect(renameCardHeadwordForOwner(futureHarness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 3,
+    })).rejects.toMatchObject({ reason: 'future-library-epoch' });
+    expect(futureHarness.writes).toHaveLength(0);
+  });
+
+  it('rejects a stale baseRevision as a revision conflict', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, persistedLegacyCard)],
+    ]));
+    await expect(renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 4, libraryEpoch: 0,
+    })).rejects.toMatchObject({ reason: 'revision-conflict' });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('rejects renaming a card that does not exist', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+    ]));
+    await expect(renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).rejects.toMatchObject({ reason: 'missing' });
+  });
+
+  it('rejects renaming a card that still needs v1/v2 migration before it has a usable revision', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/word-hello', snapshot(true, { ...persistedLegacyCard, schemaVersion: undefined, revision: undefined })],
+    ]));
+    await expect(renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
+    })).rejects.toMatchObject({ reason: 'requires-migration' });
+    expect(harness.writes).toHaveLength(0);
+  });
+
+  it('never reads or writes a reservation for a canonical (lexemeId) card, whose word is display-only', async () => {
+    const canonicalCardDoc = {
+      id: 'canonical-1', word: 'lead', normalizedWord: 'lead', lexemeId: 'lexeme-lead-noun',
+      schemaVersion: 2, revision: 2,
+    };
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/cards/canonical-1', snapshot(true, canonicalCardDoc)],
+    ]));
+
+    const result = await renameCardHeadwordForOwner(harness.database, 'owner', {
+      cardId: 'canonical-1', word: 'Leads', baseRevision: 2, libraryEpoch: 0,
+    });
+
+    expect(result.card).toMatchObject({ word: 'Leads', normalizedWord: 'leads', lexemeId: 'lexeme-lead-noun', revision: 3 });
+    expect(harness.writes).toHaveLength(1);
+    expect(harness.writes[0]).toMatchObject({ method: 'set', path: 'users/owner/cards/canonical-1' });
+  });
+});
+
+describe('toCardHeadwordRenameHttpsError', () => {
+  it('maps each conflict reason to the matching HttpsError code', () => {
+    expect(toCardHeadwordRenameHttpsError(new CardHeadwordRenameConflictError('missing', 'x'))).toMatchObject({ code: 'not-found' });
+    expect(toCardHeadwordRenameHttpsError(new CardHeadwordRenameConflictError('duplicate-word', 'x'))).toMatchObject({ code: 'already-exists' });
+    for (const reason of ['stale-library-epoch', 'future-library-epoch', 'revision-conflict', 'requires-migration'] as const) {
+      expect(toCardHeadwordRenameHttpsError(new CardHeadwordRenameConflictError(reason, 'x'))).toMatchObject({ code: 'failed-precondition' });
+    }
+  });
+
+  it('returns null for any error that is not a headword rename conflict', () => {
+    expect(toCardHeadwordRenameHttpsError(new Error('unrelated'))).toBeNull();
   });
 });

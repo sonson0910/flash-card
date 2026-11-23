@@ -1,0 +1,1104 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-24 16:48+0700\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en-XA\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/components/stats/ProgressStudyFacts.tsx:55
+msgctxt "progress.studied-since"
+msgid "<0>{duration}</0> studied since {date}"
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:181
+msgctxt "weeklyRecap.action.share"
+msgid "Share"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:234
+msgid "achievements.badge.active-days-3"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:235
+msgid "achievements.badge.active-days-3.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:238
+msgid "achievements.badge.active-days-5"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:239
+msgid "achievements.badge.active-days-5.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:246
+msgid "achievements.badge.day-xp-100"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:247
+msgid "achievements.badge.day-xp-100.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:230
+msgid "achievements.badge.first-review"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:231
+msgid "achievements.badge.first-review.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:254
+msgid "achievements.badge.late-reviews-10"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:255
+msgid "achievements.badge.late-reviews-10.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:270
+msgid "achievements.badge.mastered-100"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:271
+msgid "achievements.badge.mastered-100.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:266
+msgid "achievements.badge.mastered-50"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:267
+msgid "achievements.badge.mastered-50.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:242
+msgid "achievements.badge.reviewed-10"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:243
+msgid "achievements.badge.reviewed-10.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:258
+msgid "achievements.badge.spelling-50"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:259
+msgid "achievements.badge.spelling-50.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:250
+msgid "achievements.badge.streak-7"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:251
+msgid "achievements.badge.streak-7.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:274
+msgid "achievements.badge.web-wanderer"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:275
+msgid "achievements.badge.web-wanderer.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:262
+msgid "achievements.badge.xp-500"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:263
+msgid "achievements.badge.xp-500.condition"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:63
+msgid "achievements.cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:70
+msgid "achievements.cards.share"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:69
+msgid "achievements.cards.total"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:62
+msgid "achievements.collection"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:95
+msgid "achievements.earned-by"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:96
+msgid "achievements.earned-by.long"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:94
+msgid "achievements.earned-on"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:71
+msgid "achievements.heading.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:91
+msgid "achievements.profile.level"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:83
+msgid "achievements.remaining-answers"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:81
+msgid "achievements.remaining-cards"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:82
+msgid "achievements.remaining-reviews"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:64
+msgid "achievements.tile.best-streak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:97
+msgid "achievements.tile.best-streak.value"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:64
+msgid "achievements.tile.study-pace"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:98
+msgid "achievements.tile.study-pace.value"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:64
+msgid "achievements.tile.total-xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:100
+msgid "achievements.title.level-progress"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:99
+msgid "achievements.title.reach-level"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:65
+msgid "achievements.title.shown"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:282
+msgid "achievements.title.word-collector"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/achievementsBoard.ts:281
+msgid "achievements.title.word-keeper"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:62
+msgid "achievements.titles"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:86
+msgid "achievements.unlocked-count"
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:178
+msgctxt "weeklyRecap.export-error"
+msgid "Could not create the image. Please try again."
+msgstr ""
+
+#: src/components/stats/ProgressStudyFacts.tsx:39
+msgctxt "progress.learning-since"
+msgid "Learning since {date}"
+msgstr ""
+
+#: src/components/stats/StatsCharts.tsx:173
+msgctxt "stats.review-activity-partial"
+msgid "Coverage begins {date}; this range is partial."
+msgstr ""
+
+#: src/components/stats/ProgressStudyFacts.tsx:56
+msgctxt "progress.studied"
+msgid "<0>{duration}</0> studied"
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:169
+msgctxt "weeklyRecap.caption.label"
+msgid "Caption"
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:176
+msgctxt "weeklyRecap.saved-warning"
+msgid "Showing saved recap. Recent reviews may not be included."
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:160
+msgctxt "weeklyRecap.selection.legend"
+msgid "Show on the card"
+msgstr ""
+
+#: src/components/stats/ReviewRangeToggle.tsx:80
+msgctxt "stats.review-range-all-time"
+msgid "All time"
+msgstr ""
+
+#: src/components/stats/ProgressStudyFacts.tsx:36
+msgctxt "progress.learning-since.kicker"
+msgid "since {date}"
+msgstr ""
+
+#: src/components/stats/ReviewRangeToggle.tsx:78
+msgctxt "stats.review-range-30-days"
+msgid "30 days"
+msgstr ""
+
+#: src/components/stats/ReviewRangeToggle.tsx:79
+msgctxt "stats.review-range-26-weeks"
+msgid "26 weeks"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:60
+msgid "stats.achievements"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:160
+msgid "stats.active-days"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.activity-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.activity-note-26-weeks"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.activity-note-30-days"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.activity-note-all-time"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.activity-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:147
+msgid "stats.activity-unavailable"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:61
+msgid "stats.all-badges-earned"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:60
+msgid "stats.back-to-progress"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:53
+msgid "stats.badge-state.in-progress"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:53
+msgid "stats.badge-state.locked"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:53
+msgid "stats.badge-state.locked-chip"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:51
+msgid "stats.badges"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.best-streak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.best-streak-days"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.best-streak-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:57
+msgid "stats.bloom-day"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:57
+msgid "stats.bloom-day-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:55
+msgid "stats.blooming-recall"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:55
+msgid "stats.blooming-recall-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:59
+msgid "stats.bud-night-study"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:59
+msgid "stats.bud-night-study-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:54
+msgid "stats.bud-routine"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:54
+msgid "stats.bud-routine-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:52
+msgid "stats.cards-by-bloom"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.category"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.category-chart"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.category-data"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.category-distribution"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.daily-xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.daily-xp-chart"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.daily-xp-data"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.date"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:74
+msgid "stats.days"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:20
+msgid "stats.duration.hours-minutes"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:21
+msgid "stats.duration.minutes"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:51
+msgid "stats.earned"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:85
+msgid "stats.earned-count"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:50
+#: src/components/stats/StatsCharts.tsx:58
+msgid "stats.grade-learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:50
+#: src/components/stats/StatsCharts.tsx:58
+msgid "stats.grade-mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:50
+#: src/components/stats/StatsCharts.tsx:58
+msgid "stats.grade-new"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:130
+msgid "stats.heatmap-legend"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ReviewRangeToggle.tsx:77
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.heatmap-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:61
+msgid "stats.inspect-day"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:49
+#: src/components/stats/StatsCharts.tsx:60
+msgid "stats.learning"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:53
+msgid "stats.legend.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:51
+msgid "stats.legend.star-tier"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:131
+msgid "stats.less"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:87
+msgid "stats.level"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:90
+msgid "stats.level-line"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:88
+msgid "stats.level-meter"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:89
+msgid "stats.level-sessions"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.library-breakdown"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:93
+msgid "stats.lumi-done"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:52
+msgid "stats.lumi-link"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:92
+msgid "stats.lumi-next"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:49
+#: src/components/stats/StatsCharts.tsx:60
+msgid "stats.mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.mastery-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.memory-chart"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.memory-data"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.memory-status"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:133
+msgid "stats.more"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:72
+msgid "stats.next-badge-meter"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:56
+msgid "stats.no-data"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:56
+msgid "stats.no-xp-history"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:49
+#: src/components/stats/StatsCharts.tsx:60
+msgid "stats.not-reviewed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:147
+msgid "stats.outside-selected-range"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.partial-categories"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:48
+msgid "stats.progress"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.recall-again"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.recall-easy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.recall-good"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.recall-hard"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.recall-rate"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.recall-rate-hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:78
+msgid "stats.remaining-days"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:79
+msgid "stats.remaining-words"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:80
+msgid "stats.remaining-xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.review-activity-unavailable"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:49
+msgid "stats.reviewed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:147
+#: src/components/stats/StatsCharts.tsx:61
+msgid "stats.reviews"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:57
+msgid "stats.ring-mastered"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.show-all-categories"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:61
+msgid "stats.show-range-totals"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.show-top-categories"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:58
+msgid "stats.star-collection"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:58
+msgid "stats.star-collection-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:56
+msgid "stats.star-keeper"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:56
+msgid "stats.star-keeper-description"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:138
+#: src/components/stats/ActivityHeatmap.tsx:139
+msgid "stats.study-activity"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:60
+msgid "stats.study-milestones"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:62
+msgid "stats.study-pace.hint"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:60
+msgid "stats.study-pace.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ProgressStudyFacts.tsx:61
+msgid "stats.study-pace.value"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:51
+msgid "stats.study-xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:47
+msgid "stats.tier-bloom"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:47
+msgid "stats.tier-bud"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:47
+msgid "stats.tier-star"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:161
+msgid "stats.total-reviews"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/ActivityHeatmap.tsx:161
+msgid "stats.total-xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:48
+msgid "stats.unlocked"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/StatsCharts.tsx:59
+msgid "stats.value"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:68
+msgid "stats.word-garden-title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/components/stats/AchievementsMatrix.tsx:75
+msgid "stats.words"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:42
+msgid "weeklyRecap.caption.suggested-quiet"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:40
+msgid "weeklyRecap.caption.suggested-streak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:39
+msgid "weeklyRecap.caption.suggested-words"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapSelection.ts:41
+msgid "weeklyRecap.caption.suggested-xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:54
+msgid "weeklyRecap.card.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:66
+msgid "weeklyRecap.chip.hours-minutes"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:67
+msgid "weeklyRecap.chip.minutes"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:62
+msgid "weeklyRecap.chip.recall"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:63
+msgid "weeklyRecap.chip.recall-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:61
+msgid "weeklyRecap.chip.streak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:60
+msgid "weeklyRecap.chip.streak-value"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:64
+msgid "weeklyRecap.chip.studied"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:65
+msgid "weeklyRecap.chip.studied-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:68
+msgid "weeklyRecap.chip.under-minute"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:152
+msgid "weeklyRecap.controls.ahead"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:127
+msgid "weeklyRecap.controls.best-week"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:128
+msgid "weeklyRecap.controls.best-week-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:149
+msgid "weeklyRecap.controls.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:126
+msgid "weeklyRecap.controls.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:156
+msgid "weeklyRecap.counted-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:173
+msgid "weeklyRecap.dialog.close"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapDialog.tsx:172
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:65
+msgid "weeklyRecap.dialog.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:55
+msgid "weeklyRecap.empty"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:74
+msgid "weeklyRecap.garden.bloom"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:73
+msgid "weeklyRecap.garden.bud"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:71
+msgid "weeklyRecap.garden.label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:72
+msgid "weeklyRecap.garden.label-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:75
+msgid "weeklyRecap.garden.star"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:76
+msgid "weeklyRecap.heatmap.day"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:77
+msgid "weeklyRecap.heatmap.future"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:66
+msgid "weeklyRecap.heatmap.week-label"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:58
+msgid "weeklyRecap.hero.no-words"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:59
+msgid "weeklyRecap.hero.total-xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:56
+msgid "weeklyRecap.hero.words"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:57
+msgid "weeklyRecap.hero.words-since"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:64
+msgid "weeklyRecap.kicker"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:58
+msgid "weeklyRecap.outcome.copied"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:59
+msgid "weeklyRecap.outcome.downloaded"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:60
+msgid "weeklyRecap.outcome.failed"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:57
+msgid "weeklyRecap.outcome.shared"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:67
+msgid "weeklyRecap.privacy"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:52
+msgid "weeklyRecap.toggle.heat"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:50
+msgid "weeklyRecap.toggle.recall"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:49
+msgid "weeklyRecap.toggle.streak"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:54
+msgid "weeklyRecap.toggle.total-xp"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:51
+msgid "weeklyRecap.toggle.word-of-week"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:48
+msgid "weeklyRecap.toggle.words"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:70
+msgid "weeklyRecap.word-of-week.detail"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/weeklyRecap/weeklyRecapCard.ts:69
+msgid "weeklyRecap.word-of-week.label"
+msgstr ""
+
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:182
+msgctxt "weeklyRecap.action.download"
+msgid "Download PNG"
+msgstr ""

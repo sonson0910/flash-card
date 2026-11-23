@@ -15,10 +15,24 @@ const option = (args: readonly string[], name: string): string => {
   return args[index + 1];
 };
 
-const assertExactOptions = (args: readonly string[], expected: readonly string[]): void => {
+const optionalOption = (args: readonly string[], name: string): string | undefined => (
+  args.includes(name) ? option(args, name) : undefined
+);
+
+const assertExactOptions = (
+  args: readonly string[],
+  expected: readonly string[],
+  flags: readonly string[] = [],
+): void => {
   const allowed = new Set(expected);
-  for (let index = 0; index < args.length; index += 2) {
+  const allowedFlags = new Set(flags);
+  for (let index = 0; index < args.length;) {
+    if (allowedFlags.has(args[index])) {
+      index += 1;
+      continue;
+    }
     if (!allowed.has(args[index]) || !args[index + 1]) throw new TypeError(`Unknown catalog option ${args[index] ?? ''}.`);
+    index += 2;
   }
 };
 
@@ -54,10 +68,11 @@ const run = async (mode: Mode, args: readonly string[]) => {
     );
   }
   if (mode === 'build') {
-    assertExactOptions(args, ['--input', '--out', '--rights']);
+    assertExactOptions(args, ['--input', '--out', '--previous-manifest', '--rights'], ['--initial-release']);
     return buildCatalogFiles(
-      option(args, '--input'), option(args, '--out'), option(args, '--rights'),
-      protectedReviewerAuthority(),
+      option(args, '--input'), option(args, '--out'), option(args, '--rights'), protectedReviewerAuthority(),
+      optionalOption(args, '--previous-manifest'),
+      args.includes('--initial-release'),
     );
   }
   assertExactOptions(args, ['--manifest']);

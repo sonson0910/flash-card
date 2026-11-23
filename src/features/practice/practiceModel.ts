@@ -1,11 +1,28 @@
 import { normalizeCardWord } from '../../lib/cardIdentity';
+import { effectiveCardLanguagePair } from '../../lib/cardNormalization';
 import type { CardData } from '../../types/card';
 
 export interface QuizQuestion {
   card: CardData;
-  type: 'en-to-vi' | 'vi-to-en';
+  type: 'target-to-native' | 'native-to-target';
   options: string[];
   correctAnswer: string;
+}
+
+/** Keeps challenge candidates within the active course's target/meaning pair. */
+export function cardsForLanguagePair(
+  cards: readonly CardData[],
+  targetLanguage: string,
+  translationLanguage: string,
+): CardData[] {
+  return cards.filter(card => {
+    try {
+      const pair = effectiveCardLanguagePair(card);
+      return pair.language === targetLanguage && pair.translationLanguage === translationLanguage;
+    } catch {
+      return false;
+    }
+  });
 }
 
 export function eligibleWordMatchCards(cards: readonly CardData[]): CardData[] {
@@ -36,6 +53,9 @@ export function eligibleWordMatchCards(cards: readonly CardData[]): CardData[] {
     .map(({ card, word, translation }) => ({ ...card, word, translation }));
 }
 
+/** How long one Word Match round runs; the game and the recap that offers it both read it. */
+export const WORD_MATCH_DURATION_SECONDS = 60;
+
 export function createWordMatchRound(
   cards: readonly CardData[],
   maximum = 6,
@@ -64,8 +84,8 @@ export function createQuizQuestions(
 ): QuizQuestion[] {
   const pool = shuffled(cards, random);
   return pool.slice(0, Math.min(maximum, pool.length)).map(card => {
-    const type = random() > 0.5 ? 'en-to-vi' as const : 'vi-to-en' as const;
-    const answerFor = (candidate: CardData) => type === 'en-to-vi' ? candidate.translation : candidate.word;
+    const type = random() > 0.5 ? 'target-to-native' as const : 'native-to-target' as const;
+    const answerFor = (candidate: CardData) => type === 'target-to-native' ? candidate.translation : candidate.word;
     const correctAnswer = answerFor(card);
     const answerKeys = new Set([normalizeAnswer(correctAnswer)]);
     const decoys = shuffled(cards.filter(candidate => candidate.id !== card.id), random)

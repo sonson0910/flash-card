@@ -15,6 +15,11 @@ on:
         description: Candidate SHA-256 shown in that workflow summary
         required: true
         type: string
+      hosting_only:
+        description: Prepare a retained shell baseline without runtime deployment or a full staging receipt
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   actions: read
@@ -108,16 +113,16 @@ jobs:
           STAGING_ORIGIN: ${{ vars.STAGING_ORIGIN }}
         run: |
           node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "$REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --candidate-sha256 "$CANDIDATE_SHA256" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID" --origin "$STAGING_ORIGIN"
-          node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
+          node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID" --hosting-environment staging
 
-      - name: Install and verify the sealed Firebase CLI
-        working-directory: candidate
+      - name: Install and verify the protected Firebase CLI
         shell: bash
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
-          test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+          test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - name: Materialize sealed Functions runtime dependencies
+        if: ${{ !inputs.hosting_only }}
         run: npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund
 
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
@@ -128,7 +133,19 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
 
+      - name: Check Cloud Storage setup on the target project
+        id: cloud_storage
+        if: ${{ !inputs.hosting_only }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          state="$(ACCESS_TOKEN="$(gcloud auth print-access-token)" node "$GITHUB_WORKSPACE/scripts/cloud-storage-state.mjs" --project "$FIREBASE_PROJECT_ID")"
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+
       - name: Deploy and verify candidate Firestore composite indexes
+        if: ${{ !inputs.hosting_only }}
         shell: bash
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
@@ -144,7 +161,7 @@ jobs:
             --project="$FIREBASE_PROJECT_ID" \
             --database="$FIRESTORE_DATABASE_ID" \
             --limit=1000 --format=json > artifacts/firestore-index-readiness/baseline-operations.json
-          (cd candidate && ./node_modules/.bin/firebase deploy --only firestore:indexes --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive)
+          (cd candidate && "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only firestore:indexes --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive)
           gcloud firestore databases describe \
             --project="$FIREBASE_PROJECT_ID" \
             --database="$FIRESTORE_DATABASE_ID" \
@@ -186,6 +203,7 @@ jobs:
           exit 1
 
       - name: Upload immutable Firestore index readiness report
+        if: ${{ !inputs.hosting_only }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-staging-index-readiness-${{ inputs.revision }}-${{ github.run_id }}
@@ -194,12 +212,33 @@ jobs:
           retention-days: 90
 
       - name: Deploy only sealed Firestore Rules
+        if: ${{ !inputs.hosting_only }}
         working-directory: candidate
-        run: ./node_modules/.bin/firebase deploy --only firestore:rules --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: >-
+          "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only firestore:rules --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
+      - name: Deploy only sealed Storage Rules when Cloud Storage is set up
+        if: ${{ !inputs.hosting_only }}
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$STORAGE_STATE" == "not-enabled" ]]; then
+            echo "::warning title=Storage Rules not deployed::Cloud Storage is not set up on $FIREBASE_PROJECT_ID, so the sealed Storage Rules were not deployed."
+            echo "Storage Rules: not deployed; Cloud Storage is not set up on $FIREBASE_PROJECT_ID." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          test "$STORAGE_STATE" = "enabled"
+          "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only storage --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+          echo "Storage Rules: deployed from the sealed candidate to $FIREBASE_PROJECT_ID." >> "$GITHUB_STEP_SUMMARY"
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          STORAGE_STATE: ${{ steps.cloud_storage.outputs.state }}
+
       - name: Deploy only sealed Functions
+        if: ${{ !inputs.hosting_only }}
         working-directory: candidate
         shell: bash
         run: |
@@ -218,13 +257,25 @@ jobs:
           test -f "$parameter_file"
           grep -qxF 'ENFORCE_APP_CHECK=true' "$parameter_file"
 
-          ./node_modules/.bin/firebase deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+          # A storage trigger cannot deploy without a default bucket and would fail every function
+          # with it, so the sealed Functions leave it out when the parameter file says so.
+          if [[ "$STORAGE_STATE" == "not-enabled" ]]; then
+            printf '%s\n' 'SONFLASH_CLOUD_STORAGE=not-enabled' >> "$parameter_file"
+            echo "::warning title=Storage trigger not deployed::Cloud Storage is not set up on $FIREBASE_PROJECT_ID, so finalizeFileUpload was left out of the Functions deploy."
+            echo "Functions: finalizeFileUpload not deployed; Cloud Storage is not set up on $FIREBASE_PROJECT_ID." >> "$GITHUB_STEP_SUMMARY"
+          else
+            test "$STORAGE_STATE" = "enabled"
+          fi
+
+          "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          STORAGE_STATE: ${{ steps.cloud_storage.outputs.state }}
 
       - name: Deploy only sealed Hosting bytes
         working-directory: candidate
-        run: ./node_modules/.bin/firebase deploy --only hosting --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: >-
+          "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only hosting --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
 
@@ -235,6 +286,7 @@ jobs:
           CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
           FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+          HOSTING_ONLY: ${{ inputs.hosting_only }}
           REVISION: ${{ inputs.revision }}
           STAGING_ORIGIN: ${{ vars.STAGING_ORIGIN }}
         run: |
@@ -245,6 +297,19 @@ jobs:
           test "$sw_status" = "200"
           jq -e --arg revision "$REVISION" '.revision == $revision and .status == "ok"' artifacts/live-staging/health.json
           test "$(sha256sum candidate/dist/sw.js | cut -d' ' -f1)" = "$(sha256sum artifacts/live-staging/sw.js | cut -d' ' -f1)"
+          # The staging host must stay out of search indexes: every response carries noindex and, when
+          # the candidate ships its crawl-blocking file, /robots.txt resolves to that file. A retained
+          # candidate sealed before that file existed is staged with the noindex header only.
+          curl --proto '=https' --tlsv1.2 --silent --show-error --fail --output /dev/null --dump-header artifacts/live-staging/root-headers.txt "$STAGING_ORIGIN/"
+          grep -qiE '^x-robots-tag:[[:space:]]*noindex, nofollow' artifacts/live-staging/root-headers.txt
+          if [[ -f candidate/dist/robots-disallow.txt ]]; then
+            curl --proto '=https' --proto-redir '=https' --tlsv1.2 --silent --show-error --fail --location --max-redirs 2 --output artifacts/live-staging/robots.txt "$STAGING_ORIGIN/robots.txt"
+            grep -qxE 'Disallow:[[:space:]]*/' artifacts/live-staging/robots.txt
+          fi
+          if [[ "$HOSTING_ONLY" == "true" ]]; then
+            echo "Verified Hosting-only shell baseline: revision=$REVISION candidate_run_id=$CANDIDATE_RUN_ID candidate_sha256=$CANDIDATE_SHA256. No complete staging receipt was issued." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           export MANIFEST_SHA256="$(sha256sum candidate/artifacts/release-candidate-manifest.json | cut -d' ' -f1)"
           export READINESS_SHA256="$(sha256sum candidate/artifacts/phase6-readiness.json | cut -d' ' -f1)"
           export HEALTH_SHA256="$(sha256sum artifacts/live-staging/health.json | cut -d' ' -f1)"
@@ -255,6 +320,7 @@ jobs:
           jq -e '.' artifacts/staging-deployment-receipt.json >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload immutable staging deployment receipt
+        if: ${{ !inputs.hosting_only }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-staging-receipt-${{ inputs.revision }}-${{ github.run_id }}

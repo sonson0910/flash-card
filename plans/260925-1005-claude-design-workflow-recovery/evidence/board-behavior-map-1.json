@@ -1,0 +1,357 @@
+[
+  {
+    "board": "AchievementsScreen",
+    "source": "docs/design/sonflash-redesign/canvas/src/AchievementsScreen.dc.html",
+    "product_entry": { "current": "Progress (`/?view=progress`) through primary navigation; there is no separate achievements route.", "target": "Keep this board in the Progress workspace and link it from Today/session milestones; badge detail is an in-workspace overlay or drilldown." },
+    "variants": ["Classic family: theme=dark and light (onToggleTheme).", "One static composition with earned, rare, in-progress, and locked badges; no state prop."],
+    "actions": [
+      { "trigger": "Select a badge tile (Canvas currently renders a non-interactive div).", "result": "Open its real eligibility/progress detail and any evidence-backed next step; preserve locked status.", "phase_task": "06.3" },
+      { "trigger": "Open Progress from primary navigation or a Today/session achievement entry.", "result": "Show this Progress/Achievements surface at `/?view=progress`.", "phase_task": "06.3" },
+      { "trigger": "Toggle theme in the shared navigation.", "result": "Switch the same data between dark and light presentation.", "phase_task": "06.3" }
+    ],
+    "fixture_needs": { "ready": "Test fixture with real-source-shaped XP, streak, and badge records spanning earned, rare, progress, and locked; keep fixture values out of production.", "empty": "New learner with zero XP and no earned badges; show truthful zero-progress/locked states rather than Canvas totals.", "failure": "Stats unavailable/offline must retain layout and explain unavailable metrics." },
+    "policy_exceptions": ["Canvas hardcodes level 7, 6/12 badges, XP 14,820, 12-day streak, Top 8%, dated badges and progress percentages; use account/course data and never award sample XP or eligibility."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/AchievementsScreen.dc.html:1-151", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:2,136", "src/features/navigation/useAppNavigation.ts:12-34", "src/app/AppViewStage.tsx:71"]
+  },
+  {
+    "board": "AnimeDlgLibrary",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeDlgLibrary.dc.html",
+    "product_entry": { "current": "Library deck action opens a dialog; no separate route.", "target": "Open the matching dialog from text extraction, deck share/import, or insights affordances in Library; return focus to the invoking control." },
+    "variants": ["Crystal family: theme=dark/light × kind=extract, share, sharein, insights (8 declared imports).", "Close control on every kind; Extract includes selection/deck/save/cancel; Share has revoke/done; Share-in has cancel/add; Insights has full-progress/close."],
+    "actions": [
+      { "trigger": "Paste/select source text, clear selection, choose a destination deck, then Save selected cards; or Cancel/close.", "result": "Create only confirmed cards and return to Library with success/failure/retry and focus return.", "phase_task": "04.2" },
+      { "trigger": "Share: revoke link or Done; Share-in: Cancel or Add cards.", "result": "Create/revoke a deck link or copy a shared deck into the matching library/course without sharing review history; cancel has no side effect.", "phase_task": "04.6" },
+      { "trigger": "Open full Progress or Close in Insights.", "result": "Navigate to `/?view=progress` or close and restore focus.", "phase_task": "04.6" },
+      { "trigger": "Dismiss any dialog with close/Escape.", "result": "Close without losing draft/selection and return to the originating deck action.", "phase_task": "04.6" }
+    ],
+    "fixture_needs": { "ready": "Text with found, selected, duplicate/already-owned terms; existing deck for extract/share; valid incoming deck for sharein; non-empty real 30-day stats for insights.", "empty": "No paste/selection, no new words, no shared deck, and no stats each need their own empty state.", "failure": "Generate/save/share/revoke/import failure and retry/cancel; preserve draft and avoid duplicate cards." },
+    "policy_exceptions": ["Canvas uses 48/9 word counts, 2 duplicates, IELTS/Business deck names, category totals and XP chart data as static examples; substitute actual records or empty states.", "Sharing is required; preserve privacy boundary and imported-copy semantics. Do not omit any kind because a downstream contract is gated."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/AnimeDlgLibrary.dc.html:1-243", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:7,87", "plans/260925-1005-claude-design-workflow-recovery/phase-04-flashcard-library-sheets.md:28-34", "src/app/AppRuntime.tsx:285-297"]
+  },
+  {
+    "board": "AnimeExtInPage",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeExtInPage.dc.html",
+    "product_entry": { "current": "Chrome extension in-page selection bubble; not an app route.", "target": "Show only after a user selects text and invokes the extension; save hands off to the app/library with capture context." },
+    "variants": ["Crystal family: theme=dark/light; 1200×760 composition.", "Lookup bubble with pronunciation, close, save and deck chooser; no state prop."],
+    "actions": [
+      { "trigger": "Select a supported word/phrase and invoke SonFlash lookup.", "result": "Show its lookup card with meaning, source sentence and selected course/deck; unsupported or missing selection gets an explicit state.", "phase_task": "07.1" },
+      { "trigger": "Play pronunciation, close, choose deck, or Save flashcard.", "result": "Use available speech; close without saving; choose a real destination; save once and hand the confirmed capture to the app.", "phase_task": "07.2" },
+      { "trigger": "Save a word whose target language differs from the active course.", "result": "Ask to choose/reopen/create a matching course before import; do not silently put it in the wrong queue.", "phase_task": "07.5" }
+    ],
+    "fixture_needs": { "ready": "User-initiated selection with bounded source URL/title/context, supported target/native pair, real deck list and speech available.", "empty": "No selection, duplicate, signed-out draft, unavailable course, and empty deck list.", "failure": "Permission denied, speech unsupported, AI/quota/network failure, cancel and retry with source context retained." },
+    "policy_exceptions": ["Static `immediate`/Vietnamese definition, IELTS deck, source sentence and `1 AI request` are illustrative, not user data or a guaranteed quota.", "Capture remains user initiated; no background page scraping. Keep source metadata and course pair through persistence."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/AnimeExtInPage.dc.html:1-64", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:12,139", "plans/260925-1005-claude-design-workflow-recovery/phase-07-extension-and-web-words.md:28-33", "extensions/lingoflash/popup.js:501-528", "src/features/browserExtension/useBrowserExtensionImport.ts:89-110"]
+  },
+  {
+    "board": "AnimeLandingSales",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeLandingSales.dc.html",
+    "product_entry": { "current": "Landing (`/` or `/landing`) via brand/public URL.", "target": "Integrate Crystal Sales sections into the canonical landing in phase 12; do not make a duplicate sales route." },
+    "variants": ["Crystal family: theme=dark/light.", "Demo card front/back/hover/flip state is declared by component handlers; hero, proof, testimonials, benefits, FAQ and footer are one landing composition."],
+    "actions": [
+      { "trigger": "Hover or activate demo card.", "result": "Show the reverse face and return face with accessible pressed state.", "phase_task": "12.1" },
+      { "trigger": "Start free, Pricing, Chrome extension, For teachers, or Privacy.", "result": "Continue the real sign-up/landing anchor or destination; keep locale and theme; any upgrade CTA records intent until plan policy permits checkout.", "phase_task": "12.2" },
+      { "trigger": "Open offer/upgrade from Sales content.", "result": "Show policy-backed plan details and pilot purchase intent; do not activate an automatic trial or charge.", "phase_task": "15.2" }
+    ],
+    "fixture_needs": { "ready": "Public landing content with working demo front/back and sourced claims; no learner account data is required.", "empty": "No learner data is an expected state; failed optional public content must have a stable fallback, not fabricated proof.", "failure": "Sign-in return, unavailable offer and external link fallback." },
+    "policy_exceptions": ["48k learners, 2.1M reviews, 4.8★, named testimonials, plan limits, Pro benefits, payment methods, student discount and seven-day trial are Canvas copy requiring real sources/approved policy before publication.", "Retain the landing and offer workflow; business gates condition activation/copy, not inclusion."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/AnimeLandingSales.dc.html:1-165", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:17,143", "plans/260925-1005-claude-design-workflow-recovery/phase-12-landing-account-plan-surfaces.md:28-32", "src/features/navigation/useAppNavigation.ts:14-19", "src/features/landing/LandingPage.tsx"]
+  },
+  {
+    "board": "AnimeLeague",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeLeague.dc.html",
+    "product_entry": { "current": "No League/Friends route or view mode exists.", "target": "Proposed Today/Progress community entry to the Friends League surface; keep route proposed until phase 15.5/15.7 integrates it." },
+    "variants": ["Crystal family: theme=dark/light; no state prop.", "Static podium, ranks, promotion/demotion lists, personal score, buddy card, sprint and invite actions."],
+    "actions": [
+      { "trigger": "Start a 5-minute sprint.", "result": "Start the real short practice/session using eligible cards, then settle only valid learning XP.", "phase_task": "15.5" },
+      { "trigger": "Nudge buddy or Invite a friend.", "result": "Show a consented, user-controlled nudge/share flow with delivery and privacy status; never send automatically.", "phase_task": "15.4" },
+      { "trigger": "Open League from Today/Progress.", "result": "Join/opt out, view server-backed standings, and handle empty/loading/offline/week rollover/ties.", "phase_task": "15.5" }
+    ],
+    "fixture_needs": { "ready": "Consent-backed real league membership, verified server XP and opted-in friend/buddy data.", "empty": "No league membership/friends or unavailable ranking data; offer join/invite without seeding names.", "failure": "Offline, stale ranking, rollover/tie and invite/nudge failure." },
+    "policy_exceptions": ["Canvas fabricates week 38, 20 players, XP, names, buddy streak and tier changes; use verified server data only.", "The board remains required but league/reward activation waits for decision 8. Rewrite promotion/demotion/game-like copy into supportive learning language per the accepted ban on game/MOBA wording; do not drop the board."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/AnimeLeague.dc.html:1-186", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:22,144", "plans/260925-1005-claude-design-workflow-recovery/phase-15-commercial-and-motivation-workflows.md:32-33", "src/features/navigation/useAppNavigation.ts:12-34"]
+  },
+  {
+    "board": "AnimeOnboarding",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeOnboarding.dc.html",
+    "product_entry": { "current": "No onboarding view mode exists; public landing/start flow is current entry.", "target": "Proposed first-use journey from landing/account/course setup, merged with multilingual onboarding branches; resume/skip/back for legacy users." },
+    "variants": ["Crystal family: theme=dark/light × step=goal/aha.", "Goal selection and first-card aha are separate declared states; additional native/target/level/pace/reminder journey steps are specified in phase 10.3, not in this component's step enum."],
+    "actions": [
+      { "trigger": "Select a goal/path then Continue.", "result": "Persist the selected course goal and advance to level/script/daily pace setup without conflating goal with course.", "phase_task": "10.3" },
+      { "trigger": "Skip or continue through onboarding.", "result": "Preserve completed choices, support resume/back and legacy users, and arrive at the first-use Today/session step.", "phase_task": "10.3" },
+      { "trigger": "Start Pro trial or Continue free on the aha state.", "result": "Continue free by default; an explicit trial choice may enter the policy-backed offer/intent flow only when eligible and approved.", "phase_task": "15.2" }
+    ],
+    "fixture_needs": { "ready": "Fresh user with selected and unselected IELTS/talk/work/abroad goals, target/native/UI locale branches, and a real starter-card result; test both goal and aha panels.", "empty": "No goal/course, unsupported pair, and no starter cards must offer a valid no-goal/availability path.", "failure": "Interrupted setup, retry, skip and resume without duplicate starter-card creation." },
+    "policy_exceptions": ["Seven-day trial CTA and perks are not automatic permission to enroll; source's 4/5 starter score and sample IELTS counts must not be represented as earned learner results.", "Goals/level/script options must come from real catalogs; onboarding remains required even if trial is not selected."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/AnimeOnboarding.dc.html:1-189", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:27,98", "plans/260925-1005-claude-design-workflow-recovery/phase-10-courses-goals-onboarding.md:28-33", "src/features/navigation/useAppNavigation.ts:12-19"]
+  },
+  {
+    "board": "AnimeProStates",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeProStates.dc.html",
+    "product_entry": { "current": "No plan/Pro route exists; account/settings and AI quota are current entry points.", "target": "Proposed account/plan states opened from quota, expiry, account menu and landing; preserve all states in one product flow." },
+    "variants": ["Crystal family: theme=dark/light; one composite board contains trial, trial end, active plan/account menu, downgrade, AI quota, locked story and referral-toast examples.", "No explicit state prop; each panel is a separately required runtime state."],
+    "actions": [
+      { "trigger": "See plans, Keep Pro, Get Pro back, or Pro/unlimited links.", "result": "Show the approved offer and record pilot purchase intent; connect checkout only when policy and gateway gates pass.", "phase_task": "15.2" },
+      { "trigger": "Continue on Free or dismiss trial/referral toast.", "result": "Keep cards and review access, apply only the real entitlement transition, and dismiss the message without changing plan.", "phase_task": "15.2" },
+      { "trigger": "Review due cards, Create with AI, select plan menu item, or open locked Story.", "result": "Route to Today review, real card creation with quota/error/manual alternative, account plan management, or Story with actual entitlement handling.", "phase_task": "15.7" },
+      { "trigger": "Referral reward toast appears.", "result": "Display only after referral eligibility/reward is server-verified; link to status, never send an invitation automatically.", "phase_task": "15.4" }
+    ],
+    "fixture_needs": { "ready": "Tests for eligible trial, active Pro, expired/downgraded Free, AI quota remaining/exhausted, due cards and verified referral reward.", "empty": "Signed-out/no-plan account, zero cards, no quota use and no eligible referral; keep Free capabilities visible.", "failure": "Offer load, entitlement sync, quota denial, payment intent failure and retry." },
+    "policy_exceptions": ["Prices 949,000đ/year, 5/day, 3/5 used, trial length/dates, 1,284 cards, account identity, renewal, referral +7 days and Pro benefit claims are sample/unapproved; resolve through 15.1/R5-R8 before activation.", "Trial, plan and referral screens are still required. A policy gate delays activation and real checkout; it does not prohibit the commerce surface."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/AnimeProStates.dc.html:1-156", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:32,151", "plans/260925-1005-claude-design-workflow-recovery/phase-15-commercial-and-motivation-workflows.md:28-33", "src/features/navigation/useAppNavigation.ts:12-34", "src/app/AppRuntime.tsx:285-297"]
+  },
+  {
+    "board": "AnimeReveal",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeReveal.dc.html",
+    "product_entry": { "current": "Review/session result on `study`; streak and level events belong to Today/Progress.", "target": "Show the matching reveal after the real card/session event, then return to the exact session/card position or selected next action." },
+    "variants": ["Crystal family: theme=dark/light × state=tierup/streak/levelup (6 declared imports).", "Each state has its own primary/secondary labels and reward chips."],
+    "actions": [
+      { "trigger": "Tierup primary Continue or secondary Share Card.", "result": "Return to next session card; share only a preview chosen by the learner.", "phase_task": "04.4" },
+      { "trigger": "Streak primary Keep Going or secondary Share.", "result": "Resume Today/session or open explicit share preview after verified streak event.", "phase_task": "05.6" },
+      { "trigger": "Levelup primary Use Frame or secondary Later.", "result": "Apply an eligible cosmetic once or dismiss while preserving session context.", "phase_task": "06.3" },
+      { "trigger": "Any reward chip would grant XP, freezes, hints or extra words.", "result": "Grant only after approved eligibility/idempotency rules; otherwise render truthful non-reward progress state.", "phase_task": "15.6" }
+    ],
+    "fixture_needs": { "ready": "Real card-tier transition, streak milestone, and level-up cases, each with policy-eligible rewards and session return position.", "empty": "No event/no eligibility must not open a reward reveal or invent a chip.", "failure": "Settlement retry/replay must not duplicate XP, freezes, hints or unlocks." },
+    "policy_exceptions": ["6 correct reviews, 21-day interval, +25/+100 XP, +1 freeze, badge, frame, +1 hint and +2 new words are static/unapproved rules; preserve the reveal UI but derive copy/rewards from FSRS and phase 15.6 policy."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/AnimeReveal.dc.html:1-110", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:37,100", "plans/260925-1005-claude-design-workflow-recovery/phase-04-flashcard-library-sheets.md:31", "plans/260925-1005-claude-design-workflow-recovery/phase-15-commercial-and-motivation-workflows.md:33", "src/features/navigation/useAppNavigation.ts:12-13"]
+  },
+  {
+    "board": "AnimeStory",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeStory.dc.html",
+    "product_entry": { "current": "Existing Story practice view (`AppViewMode='story'`) from practice mode/session.", "target": "Open from mode picker, recap or vocabulary selection; close/Review Now returns to the caller's session context." },
+    "variants": ["Crystal family: theme=dark/light; no state prop.", "Active inline vocabulary selection, playing/listening state, six word rows/grades, regenerate and review actions."],
+    "actions": [
+      { "trigger": "Tap a highlighted word or word row.", "result": "Update current word detail/translation/tier and its selected state.", "phase_task": "05.5" },
+      { "trigger": "Listen to story or selected-word pronunciation.", "result": "Play actual supported speech with playing/unsupported/error state.", "phase_task": "05.5" },
+      { "trigger": "Regenerate story, Review Now, or Review These words.", "result": "Regenerate from eligible real course cards with cancel/retry; open review for one or the six selected words; return to Story on back.", "phase_task": "05.5" },
+      { "trigger": "Close story.", "result": "Return to originating practice/session without losing progress.", "phase_task": "05.7" }
+    ],
+    "fixture_needs": { "ready": "Story generated from real eligible cards with source card IDs, locale pair, six-word detail, and actual review tiers.", "empty": "Insufficient cards/empty story queue with clear next step.", "failure": "AI unavailable/quota/cancel/regenerate failure and unsupported audio; keep existing story/session." },
+    "policy_exceptions": ["Story/person/words/tiers/due counts are hardcoded; generated text must be tied to real cards and output disclosure. Do not claim Pro entitlement or stream output until approved; no fake progress."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/AnimeStory.dc.html:1-149", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:42,160", "plans/260925-1005-claude-design-workflow-recovery/phase-05-daily-session-and-practice.md:32-34", "src/features/navigation/useAppNavigation.ts:12-13", "src/app/AppViewStage.tsx:69"]
+  },
+  {
+    "board": "AnimeWebWords",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeWebWords.dc.html",
+    "product_entry": { "current": "No dedicated Web Words view mode; extension captures are handed to Library.", "target": "Proposed web-capture inbox/tab under Library/Vocabulary, with add-to-today feeding the new-word stage." },
+    "variants": ["Crystal family: theme=dark/light; local tab state starts at index 0.", "Declared tabs/filter selection; article groups and per-word source/status rows; Add all 8 to today's lesson."],
+    "actions": [
+      { "trigger": "Select a tab/filter or open an article.", "result": "Filter captured words and open the recorded source URL with safe external-link behavior.", "phase_task": "07.4" },
+      { "trigger": "Add all selected web words to today's lesson or return to Vocabulary.", "result": "Add only eligible unqueued cards once and route to Today/new-word stage; preserve filters/source metadata.", "phase_task": "07.4" },
+      { "trigger": "Captured word target differs from active course.", "result": "Choose/reopen/create matching course before import.", "phase_task": "07.5" }
+    ],
+    "fixture_needs": { "ready": "Real extension captures grouped by article/site/date with bounded URL/title/context, course pair and states (tomorrow/learning/known).", "empty": "No saved captures, no results after filters, or nothing eligible to add.", "failure": "Malformed/missing URL, duplicate add, offline import and course mismatch/cancel." },
+    "policy_exceptions": ["The 8 words, BBC/Guardian examples, dates, status and streak are design data; show only persisted user captures and actual review state.", "Only user-initiated capture is allowed; no background scraping."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/AnimeWebWords.dc.html:1-117", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:47,164", "plans/260925-1005-claude-design-workflow-recovery/phase-07-extension-and-web-words.md:30-33", "src/features/browserExtension/useBrowserExtensionImport.ts:89-110"]
+  },
+  {
+    "board": "DlgDeckDelete",
+    "source": "docs/design/sonflash-redesign/canvas/src/DlgDeckDelete.dc.html",
+    "product_entry": { "current": "Library deck management action; modal, no route.", "target": "Open from the selected deck's management menu and return focus to that menu after cancel/delete." },
+    "variants": ["Classic family: theme=dark/light; no state prop.", "Close, Keep deck, Delete deck actions."],
+    "actions": [
+      { "trigger": "Close or Keep deck.", "result": "Dismiss with no mutation and return focus to the deck action.", "phase_task": "04.6" },
+      { "trigger": "Delete deck.", "result": "Confirm the actual deck/card count, delete through the library mutation contract, then show success/error/undo policy and refresh Library.", "phase_task": "04.6" }
+    ],
+    "fixture_needs": { "ready": "Existing non-empty deck with real title/count and successful delete.", "empty": "Empty deck and last-deck/empty library behavior.", "failure": "Cancel, permission/sync conflict, failure/retry and focus return." },
+    "policy_exceptions": ["Canvas's IELTS core name, 48 cards and destructive copy are sample; confirmation must name the selected real deck and consequence."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/DlgDeckDelete.dc.html:1-39", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:55,62", "plans/260925-1005-claude-design-workflow-recovery/phase-04-flashcard-library-sheets.md:33", "src/features/navigation/useAppNavigation.ts:12-13"]
+  },
+  {
+    "board": "DlgInsights",
+    "source": "docs/design/sonflash-redesign/canvas/src/DlgInsights.dc.html",
+    "product_entry": { "current": "Progress stats dialog from app stats/library affordance; Progress route also exists.", "target": "Open Insights from its Library action; Open full Progress navigates to `/?view=progress`; Close returns focus." },
+    "variants": ["Classic family: theme=dark/light; no state prop.", "Dialog presents totals, deck/category breakdown, rating distribution and XP chart."],
+    "actions": [
+      { "trigger": "Open full Progress.", "result": "Navigate to full Progress with the same actual metric scope.", "phase_task": "04.6" },
+      { "trigger": "Close button, header close or Escape.", "result": "Dismiss and restore focus to the opener.", "phase_task": "04.6" }
+    ],
+    "fixture_needs": { "ready": "Real user/course stats over the stated date range, with actual card category and rating buckets.", "empty": "No study history and zero counts; do not draw sample charts.", "failure": "Loading/offline/stats unavailable while keeping close and retry reachable." },
+    "policy_exceptions": ["1,228 total, 312 mastered, 304 learning, 12 due, deck totals, category counts and XP series are hardcoded examples; use scoped real metrics and do not mix courses/accounts."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/DlgInsights.dc.html:1-86", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:54,67", "plans/260925-1005-claude-design-workflow-recovery/phase-04-flashcard-library-sheets.md:33", "plans/260925-1005-claude-design-workflow-recovery/phase-06-paths-progress-weekly-recap.md:29-31", "src/app/AppViewStage.tsx:71"]
+  },
+  {
+    "board": "DlgStreak",
+    "source": "docs/design/sonflash-redesign/canvas/src/DlgStreak.dc.html",
+    "product_entry": { "current": "No dedicated streak-dialog route; streak is in shell/Today state.", "target": "Proposed modal from Today/progress streak summary; return to caller or continue Today session." },
+    "variants": ["Classic family: theme=dark/light × state=freeze/repair/milestone (6 imports).", "Each state has Close plus copy-driven primary and secondary actions."],
+    "actions": [
+      { "trigger": "Freeze state: Manage freezes or Keep it going.", "result": "Show actual freeze inventory/rules or return to Today/session without applying a second freeze.", "phase_task": "15.6" },
+      { "trigger": "Repair state: Start fresh or Start session 1 of 2.", "result": "Offer a policy-eligible repair with confirmation or begin a new session; preserve the old learning/review history.", "phase_task": "15.6" },
+      { "trigger": "Milestone: Continue or Share my streak.", "result": "Continue to session or open an explicit privacy-aware share preview after verified milestone settlement.", "phase_task": "15.6" },
+      { "trigger": "Close/Escape.", "result": "Dismiss and restore focus; no streak mutation.", "phase_task": "15.7" }
+    ],
+    "fixture_needs": { "ready": "Active freeze-covered streak, an ended streak inside/outside repair window, and a real milestone; vary timezone/day boundary.", "empty": "No streak/no milestone must not imply a repair or reward.", "failure": "Policy/entitlement unavailable and repair conflict/retry; no duplicate recovery." },
+    "policy_exceptions": ["12/23/30-day counts, freeze inventory, 35h/36h windows, Free/Pro repair allowance, 1,284 reviews, +300 XP and badge are static/unapproved; use real timezone-aware state and phase 15.6 rules.", "Streak screen remains required; buying/using freezes awaits policy, not prohibited from planning."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/DlgStreak.dc.html:1-150", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:58,72", "plans/260925-1005-claude-design-workflow-recovery/phase-15-commercial-and-motivation-workflows.md:33,35", "src/features/navigation/useAppNavigation.ts:12-34"]
+  },
+  {
+    "board": "ExtLoop",
+    "source": "docs/design/sonflash-redesign/canvas/src/ExtLoop.dc.html",
+    "product_entry": { "current": "Chrome extension popup on toolbar; not an app route.", "target": "Popup states loop/quota; settings opens extension options; review CTA opens SonFlash Today." },
+    "variants": ["Classic family: theme=dark/light × state=loop/quota (4 prop combinations); 380×640 popup.", "Loop success summary and quota/Pro offer are separate state blocks."],
+    "actions": [
+      { "trigger": "Settings icon.", "result": "Open extension options while preserving extension settings and supported origins.", "phase_task": "07.1" },
+      { "trigger": "Review now for 3 minutes.", "result": "Open real Today/review session with eligible due cards and badge count; return to extension safely.", "phase_task": "07.6" },
+      { "trigger": "Use Pro/trial CTA in quota state.", "result": "Open approved offer/purchase-intent flow; show real quota reset and alternatives.", "phase_task": "15.2" }
+    ],
+    "fixture_needs": { "ready": "Real extension capture saved once with actual due count/streak and real weekly source metadata.", "empty": "No saved capture, no due cards, zero quota used and no active streak.", "failure": "Signed-out, offline/reconnect, quota denied, unavailable origin and options handoff failure." },
+    "policy_exceptions": ["8 weekly words, site counts, 3 due cards, 12-day streak, 5/5 quota, offer prices/benefits and seven-day trial are sample copy; use actual persisted data and approved limits.", "The purchase/Pro CTA remains required, but checkout/trial activation waits for approved policy."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/ExtLoop.dc.html:1-113", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:77,81", "plans/260925-1005-claude-design-workflow-recovery/phase-07-extension-and-web-words.md:28-33", "plans/260925-1005-claude-design-workflow-recovery/phase-15-commercial-and-motivation-workflows.md:28-33", "extensions/lingoflash/popup.html", "extensions/lingoflash/options.html"]
+  },
+  {
+    "board": "LandingSales",
+    "source": "docs/design/sonflash-redesign/canvas/src/LandingSales.dc.html",
+    "product_entry": { "current": "Landing (`/` or `/landing`).", "target": "Integrate classic Sales sections into the same canonical landing as AnimeLandingSales/LangLanding; no duplicate route." },
+    "variants": ["Classic family: theme=dark/light.", "Demo card visual front/back content exists, but this component source has no flip state/handler; interactions still required."],
+    "actions": [
+      { "trigger": "Flip hero demo card.", "result": "Flip front/back via a real accessible interaction; add the missing state/handler (Canvas currently has a static button).", "phase_task": "12.1" },
+      { "trigger": "Start free, Pricing, Chrome extension, For teachers, Privacy or FAQ.", "result": "Navigate to same-page section or correct public destination and preserve locale; register/sign in with return target.", "phase_task": "12.2" },
+      { "trigger": "Open paid plan/offer.", "result": "Show approved policy and pilot intent; do not run checkout until enabled.", "phase_task": "15.2" }
+    ],
+    "fixture_needs": { "ready": "Public content with working card flip, section links and source-backed claims.", "empty": "No account/deck data is valid; optional social proof/plan content must not be filled with fake data.", "failure": "Sign-in return and unavailable offer/link fallback." },
+    "policy_exceptions": ["Testimonials/names, 48k/2.1M/4.8★ metrics, 7-day Pro, AI quotas/claims and payment assertions need verified sources and policy; do not publish the sample copy verbatim.", "Sales/plan UI remains in the full landing scope."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/LandingSales.dc.html:1-129", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:109,171", "plans/260925-1005-claude-design-workflow-recovery/phase-12-landing-account-plan-surfaces.md:28-32", "src/features/navigation/useAppNavigation.ts:14-19", "src/features/landing/LandingPage.tsx"]
+  },
+  {
+    "board": "LangExtInPage",
+    "source": "docs/design/sonflash-redesign/canvas/src/LangExtInPage.dc.html",
+    "product_entry": { "current": "Chrome extension in-page bubble on a user-selected passage; no app route.", "target": "After course setup, show Korean→Vietnamese lookup and require a Korean course/deck before save; hand capture into app/library." },
+    "variants": ["Classic family: theme=dark/light; 1200×760.", "Korean text, Vietnamese meaning, TOPIK II deck chooser; no prop state."],
+    "actions": [
+      { "trigger": "Select a Korean word/invoke lookup; play or close.", "result": "Show the exact selected word/context, locale-aware meaning/audio and dismiss safely.", "phase_task": "07.1" },
+      { "trigger": "Choose TOPIK II/another deck and Save to 한국어.", "result": "Save once with source metadata in a matching Korean course; request create/reopen course if needed.", "phase_task": "07.5" },
+      { "trigger": "Capture permission/audio/generation fails.", "result": "Show retry/unavailable state while retaining the user selection and avoiding silent discard.", "phase_task": "07.2" }
+    ],
+    "fixture_needs": { "ready": "User-selected Korean article text with bounded URL/title/sentence, Korean target/Vietnamese native pair, real Korean course/deck and audio availability.", "empty": "No selection, signed-out draft, no matching course/deck and duplicate term.", "failure": "Origin permission, unsupported TTS, AI/quota/network, cancellation and retry." },
+    "policy_exceptions": ["Sample Korean word/translation and TOPIK II deck are visual fixtures; preserve target/native pair and source metadata, not sample learner facts.", "Do not capture background page text; language mismatch flow is required after phase 10."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/LangExtInPage.dc.html:1-81", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:114,172", "plans/260925-1005-claude-design-workflow-recovery/phase-07-extension-and-web-words.md:28-33", "plans/260925-1005-claude-design-workflow-recovery/phase-10-courses-goals-onboarding.md:28-33"]
+  },
+  {
+    "board": "LangPractice",
+    "source": "docs/design/sonflash-redesign/canvas/src/LangPractice.dc.html",
+    "product_entry": { "current": "Existing practice modes launch through Today/session; no language-specific practice route is declared.", "target": "Add the selected course pack's drill mode to practice/session and return to the session's next item." },
+    "variants": ["Classic family: theme=dark/light × kind=hangul/kana/tone/article/segment (10 imports in GridLangPractice).", "Hangul blocks, Japanese kana reading, Chinese tones, German article choice, Japanese sentence segmentation; component prop state includes answer feedback per kind."],
+    "actions": [
+      { "trigger": "Hangul keyboard press/Check/Next word.", "result": "Compose a valid Hangul syllable, show correct/error explanation and advance without submitting during IME composition.", "phase_task": "09.4" },
+      { "trigger": "Kana reading entry/Check, tone pick/Check, article choice, or segmented sentence choice.", "result": "Record answer, reveal real feedback/hint, maintain language-aware graphemes/segments, then advance in the active course.", "phase_task": "09.4" },
+      { "trigger": "Hint, end practice, or next item.", "result": "Reveal the designed hint, exit to caller with state preserved, or commit answer once and move to the next real card.", "phase_task": "09.4" }
+    ],
+    "fixture_needs": { "ready": "Real pack data per kind: Korean syllable/jamo, Japanese kana and segmenter, Chinese tones, German article rules, correct/wrong/hint/checked answers.", "empty": "No supported pack/content for the active target language; report unavailable rather than mixing another course's items.", "failure": "IME composition, audio/voice missing, tokenizer fallback, answer retry and switching active course mid-drill." },
+    "policy_exceptions": ["Canvas only declares five kinds; ready all five. German `article` belongs to the later German pack wave and remains required but gated until that pack/quality gate opens; Japanese/Korean/Chinese use their corresponding packs.", "Hardcoded correct answers, streak/progress and cross-pack German/French/Spanish examples are teaching fixtures, not learner state. Current handlers cover limited local selections only; input, hint and completion still need real actions."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/LangPractice.dc.html:1-392", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:107,119", "plans/260925-1005-claude-design-workflow-recovery/phase-09-target-language-packs.md:28-33", "src/features/navigation/useAppNavigation.ts:12-13", "src/features/dailyLearning/DailyLearningWorkspace.tsx:241-310"]
+  },
+  {
+    "board": "MatchScreen",
+    "source": "docs/design/sonflash-redesign/canvas/src/MatchScreen.dc.html",
+    "product_entry": { "current": "Existing practice `match` view from Today/session or practice mode picker.", "target": "Word Match stage and standalone practice retain session context; end returns to caller." },
+    "variants": ["Classic family: theme=dark/light; no state prop.", "6×6 word/meaning tiles; source includes idle/selected/done/wrong visual styles but no tile click handlers."],
+    "actions": [
+      { "trigger": "Pick a word then its meaning.", "result": "Match correct pair and mark both done; wrong pair shows feedback and deducts only the real timer penalty; update count once.", "phase_task": "05.5" },
+      { "trigger": "End match.", "result": "Confirm/settle completed pairs and return to session/Today with actual results.", "phase_task": "05.7" },
+      { "trigger": "Timer finishes.", "result": "Show real completion recap/next action; no invented XP bonus.", "phase_task": "05.6" }
+    ],
+    "fixture_needs": { "ready": "Real course word/meaning pairs in idle, selected, correct and wrong states; timer and best score derived from actual session.", "empty": "Insufficient eligible pairs or no vocabulary; skip with explanation instead of sample cards.", "failure": "Pause/resume, duplicate match prevention, end/cancel and session settlement retry." },
+    "policy_exceptions": ["Canvas's 60-second countdown, 14-pair best, 11 pairs, 9 seconds, ×3 combo and +30 XP are sample values; combo bonus is not enabled without phase 15.6 policy."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/MatchScreen.dc.html:1-83", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:126,179", "plans/260925-1005-claude-design-workflow-recovery/phase-05-daily-session-and-practice.md:32-34", "src/features/navigation/useAppNavigation.ts:12-13"]
+  },
+  {
+    "board": "MobileSheet",
+    "source": "docs/design/sonflash-redesign/canvas/src/MobileSheet.dc.html",
+    "product_entry": { "current": "Mobile Today/practice mode picker in the app; sheet is an overlay, not a route.", "target": "Open from mobile Today's practice action; selecting a mode closes the sheet and starts that real mode for the current course." },
+    "variants": ["Classic family: theme=dark/light at 390×844.", "Five modes: Quiz, Spelling, Word Match, Shadowing and Story; Story is marked locked in the static sample; IELTS course chooser and dismiss gesture."],
+    "actions": [
+      { "trigger": "Choose course/deck or one of the five modes.", "result": "Apply active course scope and start the matching practice mode with the Today session context.", "phase_task": "05.5" },
+      { "trigger": "Choose Story while card/entitlement requirements are unmet.", "result": "Show reason and eligible next step; unlock only when real cards and plan permit.", "phase_task": "15.7" },
+      { "trigger": "Close, swipe down or press Escape.", "result": "Dismiss and return focus to the mobile opener without starting a mode.", "phase_task": "04.5" }
+    ],
+    "fixture_needs": { "ready": "390×844 viewport with available mode pool and real selected course; test sufficient story threshold and each mode destination.", "empty": "Zero eligible cards and each mode-specific insufficient state.", "failure": "Course switch/reload, unavailable microphone, and focus/safe-area dismissal." },
+    "policy_exceptions": ["Canvas's IELTS/120-card metadata and `Unlocks at 5 cards` are examples; read actual course count and approved feature entitlement. The modal itself is required."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/MobileSheet.dc.html:1-80", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:127,132", "plans/260925-1005-claude-design-workflow-recovery/phase-04-flashcard-library-sheets.md:32", "plans/260925-1005-claude-design-workflow-recovery/phase-05-daily-session-and-practice.md:32", "src/features/navigation/useAppNavigation.ts:12-13"]
+  },
+  {
+    "board": "PlacementScreen",
+    "source": "docs/design/sonflash-redesign/canvas/src/PlacementScreen.dc.html",
+    "product_entry": { "current": "Existing Today placement flow (`/?lesson=placement`); `DailyLearningWorkspace` handles intro/question/result/insufficient states.", "target": "Replace/align current composition to Canvas while retaining the existing non-mutating placement engine and Today return path." },
+    "variants": ["Classic family: theme=dark/light.", "Canvas shows question 3/8, one selected answer and an estimate; runtime states intro, question, result, insufficient, loading and error are required but not Canvas prop variants."],
+    "actions": [
+      { "trigger": "Choose answer/Listen/Next question or I'm not sure.", "result": "Persist this diagnostic answer, speak when supported, reveal/advance question, or explicitly skip; score only eligible real vocabulary evidence.", "phase_task": "05.3" },
+      { "trigger": "Skip placement, close, or finish.", "result": "Return to Today or show a recommendation and Open Paths; do not change FSRS, XP or path access.", "phase_task": "05.3" },
+      { "trigger": "Toggle theme.", "result": "Change theme without resetting the diagnostic.", "phase_task": "05.3" }
+    ],
+    "fixture_needs": { "ready": "6–12 distinct active-course words with CEFR evidence and answer choices; intro, question, selected/answered, result.", "empty": "Fewer than 6 eligible words yields insufficient evidence with no inferred path.", "failure": "Loading/offline, answer retry, cancel/resume and target-course switch." },
+    "policy_exceptions": ["Canvas's fixed word/answer, question 3/8, C-level ladder and 38% confidence are not a learner score. Keep the diagnostic non-mutating; never infer an official exam band."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/PlacementScreen.dc.html:1-102", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:182,203", "plans/260925-1005-claude-design-workflow-recovery/phase-05-daily-session-and-practice.md:30", "src/features/dailyLearning/DailyLearningWorkspace.tsx:267-310", "src/features/dailyLearning/placementEngine.ts"]
+  },
+  {
+    "board": "RecapNext",
+    "source": "docs/design/sonflash-redesign/canvas/src/RecapNext.dc.html",
+    "product_entry": { "current": "Current daily session recap is a practice/session modal; no standalone recap route.", "target": "Show after four-stage session settlement and preserve a visible next-action destination; Today, Weekly Recap and Story are destinations." },
+    "variants": ["Classic family: theme=dark/light.", "One static ready composition with result stats, progress forecast, leveled-up words, match CTA, reminder switch, share and Pro story CTA; no state prop."],
+    "actions": [
+      { "trigger": "Play Word Match.", "result": "Start the next real match using eligible cards and settled session context.", "phase_task": "05.6" },
+      { "trigger": "Reminder switch.", "result": "Change an explicit reminder preference only after opt-in and configured delivery contract; show saved/error state.", "phase_task": "11.1" },
+      { "trigger": "Share your week or Read story.", "result": "Open Weekly Recap share preview or eligible Story; keep privacy and Pro/offer checks real.", "phase_task": "06.5" },
+      { "trigger": "Dismiss recap.", "result": "Close and return to Today without losing settled results or repeating XP.", "phase_task": "05.6" }
+    ],
+    "fixture_needs": { "ready": "Settled session records with earned XP/accuracy/word transitions and real eligible next match/story; reminder opt-in known.", "empty": "No settled activity shows a no-activity recap without a fake success story.", "failure": "Reminder save/offline, share cancel/fallback and story quota/unavailable; settlement remains exactly once." },
+    "policy_exceptions": ["+156 XP, 36 combo, 92%/23 of 25, 78% coverage, projected IELTS band, streak 13, 43 words and automatic-on reminder are samples; never copy forecast/study metrics without model/data.", "Read with Pro trial does not activate a trial automatically; referral/rewards remain phase 15 policy gated."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/RecapNext.dc.html:1-123", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:188,208", "plans/260925-1005-claude-design-workflow-recovery/phase-05-daily-session-and-practice.md:33", "plans/260925-1005-claude-design-workflow-recovery/phase-06-paths-progress-weekly-recap.md:31-32", "plans/260925-1005-claude-design-workflow-recovery/phase-11-reminders-and-streaming.md", "src/features/practice/SessionRecapModal.tsx"]
+  },
+  {
+    "board": "ShadowingScreen",
+    "source": "docs/design/sonflash-redesign/canvas/src/ShadowingScreen.dc.html",
+    "product_entry": { "current": "Existing `shadowing` practice view in the practice/session flow.", "target": "Enter from mode picker/session and continue to next sentence or return to caller with recording permission/session context preserved." },
+    "variants": ["Classic family: theme=dark/light.", "Static recording result with sentence 3/8, model playback, take-2 recording, score feedback, Try again and Next; no prop state."],
+    "actions": [
+      { "trigger": "Play model sentence.", "result": "Play actual target-language audio and expose play/stop/error state.", "phase_task": "05.5" },
+      { "trigger": "Record/stop, Try again or Next.", "result": "Request mic permission, capture real speech, show supported transcript/score and feedback, allow retry, or save this sentence once and advance.", "phase_task": "05.5" },
+      { "trigger": "End shadowing.", "result": "Return to session/Today without losing already-settled answers.", "phase_task": "05.7" }
+    ],
+    "fixture_needs": { "ready": "Real sentence/audio plus permission-granted recording and supported recognition; record result from actual audio/transcript.", "empty": "No eligible sentence pool skips with reason.", "failure": "Permission denied, mic unavailable, no speech support/voice, silence, interrupted recording, retry and cancel." },
+    "policy_exceptions": ["The source invents 82% match, transcript coloring, recording waveforms and timing; never present fabricated pronunciation evidence. Phase 09.3 forbids calling plain text match acoustic pronunciation scoring."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/ShadowingScreen.dc.html:1-109", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:193,213", "plans/260925-1005-claude-design-workflow-recovery/phase-05-daily-session-and-practice.md:32", "plans/260925-1005-claude-design-workflow-recovery/phase-09-target-language-packs.md:30", "src/features/navigation/useAppNavigation.ts:12-13", "src/features/practice/ShadowingView.tsx"]
+  },
+  {
+    "board": "WebWords",
+    "source": "docs/design/sonflash-redesign/canvas/src/WebWords.dc.html",
+    "product_entry": { "current": "Extension imports currently open Library with capture draft; no Web Words route/view mode exists.", "target": "Proposed Web Words inbox/tab under Library with path to Today/new-word stage." },
+    "variants": ["Classic family: theme=dark/light; tabs All 8/This week/Not in a deck/Known are listed in source; no prop state.", "Grouped article/site captures, source sentence and word status."],
+    "actions": [
+      { "trigger": "Choose tab/filter or open source article.", "result": "Filter real captures and open the stored source URL safely.", "phase_task": "07.4" },
+      { "trigger": "Add all eligible words to today's session or Vocabulary back link.", "result": "Queue each card once in Today new-word stage or return to Library.", "phase_task": "07.4" },
+      { "trigger": "Course differs from captured word's target language.", "result": "Resolve active matching course before import and retain draft on cancel.", "phase_task": "07.5" }
+    ],
+    "fixture_needs": { "ready": "Captured source articles with URL/title/date/context, language pair and real statuses (tomorrow/learning/known).", "empty": "No captures, empty filter results and no eligible cards to add.", "failure": "Missing source metadata, duplicate import, offline and course mismatch/reopen/cancel." },
+    "policy_exceptions": ["All 8, BBC/Guardian titles, eight sample words, dates and streak are static; only persisted user-initiated captures and real review status may be shown.", "The placeholder links and tabs have no action handlers in Canvas; wire real route/filter behavior."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/src/WebWords.dc.html:1-113", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:200,219", "plans/260925-1005-claude-design-workflow-recovery/phase-07-extension-and-web-words.md:30-33", "src/features/browserExtension/useBrowserExtensionImport.ts:89-110", "src/features/navigation/useAppNavigation.ts:12-13"]
+  },
+  {
+    "board": "CardStatesLight",
+    "source": "docs/design/sonflash-redesign/canvas/seed/CardStatesLight.dc.html",
+    "product_entry": { "current": "Card front/back render in Library and `study` review; seed is a visual fixture, not a product route.", "target": "Use the chosen card component in library detail/full-card and review surfaces." },
+    "variants": ["Classic light theme only in this seed: FlashFront new; FlashBack learning with `immediate`; FlashFront mastered/hover with `instant`, foil coordinates.", "Related dark card coverage is a separate `seed/CardStatesDark.dc.html`, outside this assignment; full product must still render both themes."],
+    "actions": [
+      { "trigger": "Click/flip card front/back.", "result": "Toggle face with tilt/foil and preserve selected card.", "phase_task": "04.4" },
+      { "trigger": "Star/bookmark, hide image hint, listen, or pronounce.", "result": "Persist bookmark; toggle reversible blind; play supported speech; handle unavailable permission/voice.", "phase_task": "04.4" },
+      { "trigger": "Grade review card.", "result": "Commit Again/Hard/Good/Easy exactly once and advance to the next card.", "phase_task": "04.4" }
+    ],
+    "fixture_needs": { "ready": "Real card fixtures for new front, learning back with example/context, and mastered hover/foil; actual locale and review state.", "empty": "No card cannot render as this component; cover empty-first-use at the owning Library route, not with a fabricated card.", "failure": "Audio unavailable, bookmark/review mutation conflict and reduced-motion tilt/flip fallback." },
+    "policy_exceptions": ["This assigned seed is light-only; do not treat it as dark coverage. Use the separate selected dark seed/runtime variant as phase 04.4 evidence.", "Instant/Immediate, sample translations/definitions and image are sample card data; fixtures only, not learner cards."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/seed/CardStatesLight.dc.html:1-32", "docs/design/sonflash-redesign/canvas/seed/FlashFront.dc.html:1-110", "docs/design/sonflash-redesign/canvas/seed/FlashBack.dc.html:1-80", "docs/design/sonflash-redesign/canvas/seed/CardStatesDark.dc.html:1-40", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:52", "plans/260925-1005-claude-design-workflow-recovery/phase-04-flashcard-library-sheets.md:31"]
+  },
+  {
+    "board": "Review",
+    "source": "docs/design/sonflash-redesign/canvas/seed/Review.dc.html",
+    "product_entry": { "current": "Existing `study` review view from Today/session; seed composes the selected Aurora dark and Atelier light experiences.", "target": "Canonical review card/session entry; preserve card index and session state on overlay/back." },
+    "variants": ["Seed theme=dark imports Aurora; theme=light imports Atelier; PairReview artboard declares both selected variants.", "Both components declare card hover/tilt, flip/reveal, bookmark/star, blind hint, audio and four review ratings."],
+    "actions": [
+      { "trigger": "Flip/reveal card, toggle blind hint, star, listen or hover.", "result": "Show matching card face, hide/show image hint, persist bookmark, play supported pronunciation and reset tilt on pointer exit.", "phase_task": "04.4" },
+      { "trigger": "Rate Again/Hard/Good/Easy.", "result": "Apply FSRS review once, persist outcome and advance; retain current session on conflict/retry.", "phase_task": "05.1" },
+      { "trigger": "End session.", "result": "Settle/confirm exit and return to caller without losing already committed review state.", "phase_task": "05.7" },
+      { "trigger": "Toggle dark/light from Atelier/Aurora.", "result": "Switch chosen theme while preserving current card and answer state.", "phase_task": "04.4" }
+    ],
+    "fixture_needs": { "ready": "A real-shaped due card with front/back/context, tier, sound and all four grading paths; test both dark Aurora and light Atelier.", "empty": "No due cards returns to Today with truthful caught-up state; never seed a sample card.", "failure": "Offline queued review, server conflict recovery, audio unsupported and session resume/exit." },
+    "policy_exceptions": ["Source seed has static review card names, fixed 12-card queue, due/tier/XP examples; production uses current course review pool and FSRS data.", "Preserve Again base XP/review semantics; no invented combo bonus or sample values."],
+    "source_evidence": ["docs/design/sonflash-redesign/canvas/seed/Review.dc.html:1-89", "docs/design/sonflash-redesign/canvas/seed/Aurora.dc.html:56-357", "docs/design/sonflash-redesign/canvas/seed/Atelier.dc.html:41-324", "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv:191", "plans/260925-1005-claude-design-workflow-recovery/phase-04-flashcard-library-sheets.md:31", "src/features/navigation/useAppNavigation.ts:12-13", "src/lib/cardReviewRepository.ts:96-155"]
+  }
+]

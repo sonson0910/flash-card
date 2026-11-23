@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const libraryCards = Array.from({ length: 12 }, (_, index) => ({
   id: `library-remediation-${index}`,
@@ -17,15 +17,13 @@ const libraryCards = Array.from({ length: 12 }, (_, index) => ({
   customDeck: null,
 }));
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, seedCards, signIn, blockExternalNetwork }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(cards => {
-    localStorage.setItem('lingoflash_cards', JSON.stringify(cards));
-    localStorage.removeItem('lingoflash_cards_owner');
-    localStorage.setItem('lingoflash_theme', 'light');
-  }, libraryCards);
-  await page.goto('/?view=library');
-  await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+  await page.addInitScript(() => { localStorage.setItem('lingoflash_theme', 'light'); });
+  await seedCards(libraryCards);
+  await blockExternalNetwork(page);
+  await signIn(page, '/?view=library');
+  await expect(page.locator('#library-card-grid').getByRole('heading', { name: 'Your library' })).toBeVisible();
 });
 
 test('mobile prioritises the card grid before the secondary tools', async ({ page }) => {
@@ -38,10 +36,15 @@ test('mobile prioritises the card grid before the secondary tools', async ({ pag
 });
 
 test('mobile exposes one touch-sized library search', async ({ page }) => {
-  const visibleSearches = page.locator('input[placeholder="Search English words…"]:visible');
+  const visibleSearches = page.locator('input[placeholder="Search words or meanings…"]:visible');
   await expect(visibleSearches).toHaveCount(1);
 
-  const searchBox = await visibleSearches.first().boundingBox();
+  // The <input> itself only renders at its intrinsic text-line height
+  // (library-canvas.css's .library-canvas-search input has no explicit
+  // height); the actual tap target is the wrapping <label
+  // class="library-canvas-search"> (height: 3rem), which the input's own
+  // implicit label association extends focus/click to.
+  const searchBox = await visibleSearches.first().locator('xpath=ancestor::label[1]').boundingBox();
   expect(searchBox).not.toBeNull();
   expect(searchBox!.height).toBeGreaterThanOrEqual(44);
 });
@@ -51,6 +54,11 @@ test('mobile navigation does not expose a dead practice action', async ({ page }
 });
 
 test('category filters expose their selected state programmatically', async ({ page }) => {
+  // Category filter buttons (LibraryTools.tsx) render inside the collapsed
+  // "More library tools" <details> (LibraryScreen.tsx); native closed <details>
+  // content has no accessible box, so open the disclosure first.
+  await page.locator('summary').filter({ hasText: 'More library tools' }).click();
+
   const travelFilter = page.getByRole('button', { name: /^Travel/ });
   await travelFilter.scrollIntoViewIfNeeded();
   await travelFilter.click();
@@ -66,9 +74,15 @@ test('desktop gives the card collection the richest region and keeps tools secon
   await expect(page.locator('[data-library-tool="create"]')).toHaveAttribute('data-tool-priority', 'primary');
   await expect(page.locator('[data-library-tool="filters"]')).toHaveAttribute('data-tool-priority', 'secondary');
 
+  // LibraryScreen.tsx stacks "collection" and "tools" as full-width blocks at
+  // every breakpoint (library-canvas.css has no rule keyed on
+  // data-library-region, so there is no narrower secondary column to compare
+  // widths against). The redesign expresses "collection is the richest,
+  // primary region" through vertical order (collection first) plus the
+  // data-tool-priority markers asserted above, not through column width.
   const collectionBox = await page.locator('[data-library-region="collection"]').boundingBox();
   const toolsBox = await page.locator('[data-library-region="tools"]').boundingBox();
   expect(collectionBox).not.toBeNull();
   expect(toolsBox).not.toBeNull();
-  expect(collectionBox!.width).toBeGreaterThan(toolsBox!.width);
+  expect(collectionBox!.y).toBeLessThan(toolsBox!.y);
 });

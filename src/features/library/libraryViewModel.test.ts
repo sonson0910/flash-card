@@ -1,7 +1,17 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { i18n } from '@lingui/core';
 import type { CardData } from '../../types/card';
+import { buildLibraryViewModel, getLibraryCardTier, isLibraryCardDue, sortLibraryCards, type LibraryViewModelInput } from './libraryViewModel';
+
+i18n.load('en', {});
+i18n.load('vi', {
+  'shell.library-count.cards': '{count, plural, one {# thẻ} other {# thẻ}}',
+  'shell.library-count.cached-cloud': '{cached, number} đã lưu / {cloud, number} đám mây',
+  'shell.library-count.cloud-paused': 'Đám mây đang tạm dừng',
+});
+
+beforeEach(() => i18n.activate('en'));
 import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
-import { buildLibraryViewModel, type LibraryViewModelInput } from './libraryViewModel';
 
 const makeCard = (id: string, overrides: Partial<CardData> = {}): CardData => ({
   id,
@@ -56,6 +66,58 @@ const input = (overrides: Partial<LibraryViewModelInput> = {}): LibraryViewModel
 afterEach(() => vi.useRealTimers());
 
 describe('library view model', () => {
+  it('maps compatible review state to the Canvas New, Learning, and Mastered tiers', () => {
+    expect(getLibraryCardTier(makeCard('new'))).toBe('new');
+    expect(getLibraryCardTier(makeCard('learning', { reviews: 1, difficulty: 'good' }))).toBe('learning');
+    expect(getLibraryCardTier(makeCard('mastered', { reviews: 1, difficulty: 'easy' }))).toBe('mastered');
+  });
+
+  it('gives a long-interval card rated Good the same class on the badge, the mastered filter, the learning tab and the counts', () => {
+    const card = makeCard('long-interval-good', { difficulty: 'good', reviews: 5, interval: 30 });
+    const mastered = buildLibraryViewModel(input({
+      cards: [card],
+      query: { ...input().query, difficulty: 'mastered' },
+      pageSize: 10,
+    }));
+    const all = buildLibraryViewModel(input({ cards: [card], pageSize: 10 }));
+
+    expect(getLibraryCardTier(card)).toBe('learning');
+    expect(mastered.filteredCards).toEqual([]);
+    expect(all.difficultySummary.easy).toBe(0);
+    expect(all.difficultySummary.good).toBe(1);
+  });
+
+  it('uses the scheduled review date, including the FSRS fallback, for Canvas due labels', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-03T12:00:00+07:00'));
+    expect(isLibraryCardDue(makeCard('next', { nextReviewDate: '2026-08-03T01:00:00.000Z' }))).toBe(true);
+    expect(isLibraryCardDue(makeCard('fsrs', { fsrs: { due: '2026-08-03T01:00:00.000Z', stability: 1, difficulty: 1, elapsedDays: 0, scheduledDays: 1, learningSteps: 0, reps: 1, lapses: 0, state: 1 } }))).toBe(true);
+    expect(isLibraryCardDue(makeCard('future', { nextReviewDate: '2026-08-04T01:00:00.000Z' }))).toBe(false);
+  });
+
+  it('sorts only the loaded page while leaving the caller collection untouched', () => {
+    const cards = [
+      makeCard('zulu', { word: 'Zulu', createdAt: '2026-08-02T00:00:00.000Z' }),
+      makeCard('alpha', { word: 'alpha', createdAt: '2026-08-01T00:00:00.000Z' }),
+    ];
+
+    expect(sortLibraryCards(cards, 'alphabetical').map(card => card.id)).toEqual(['alpha', 'zulu']);
+    expect(sortLibraryCards(cards, 'recent').map(card => card.id)).toEqual(['zulu', 'alpha']);
+    expect(cards.map(card => card.id)).toEqual(['zulu', 'alpha']);
+  });
+
+  it('formats count labels from the active catalog without changing count values', () => {
+    i18n.activate('vi');
+
+    expect(buildLibraryViewModel(input({ cards: [makeCard('one')] })).countLabel).toBe('1 thẻ');
+    expect(buildLibraryViewModel(input({
+      cards: [],
+      isAuthenticated: true,
+      cloudReadUnavailable: true,
+      cloudTotal: 12_480,
+      cloudStats: { ...cloudStats, total: 12_480 },
+    })).countLabel).toBe('12.480 đã lưu / 12.480 đám mây');
+  });
   it('keeps an empty XP history empty instead of fabricating a zero-value day', () => {
     const model = buildLibraryViewModel(input({ xpHistory: {} }));
 
@@ -120,6 +182,21 @@ describe('library view model', () => {
     ]);
   });
 
+  it('filters the local mastered tier by the stored Easy rating, the rule the cloud count uses', () => {
+    const model = buildLibraryViewModel(input({
+      cards: [
+        makeCard('rated-easy', { difficulty: 'easy', reviews: 3 }),
+        makeCard('long-interval-good', { difficulty: 'good', reviews: 5, interval: 30 }),
+        makeCard('new-card'),
+      ],
+      query: { ...input().query, difficulty: 'mastered' },
+      pageSize: 10,
+    }));
+
+    expect(model.filteredCards.map(card => card.id)).toEqual(['rated-easy']);
+    expect(model.difficultySummary.easy).toBe(1);
+  });
+
   it('does not count a new unrated card as a scheduled review that is due', () => {
     const newCard = makeCard('new-card', { difficulty: 'unrated', nextReviewDate: undefined });
 
@@ -177,8 +254,8 @@ describe('library view model', () => {
       cloudFacetsComplete: false,
     }));
 
-    expect(model.categoryCounts).toEqual({ All: 40, IELTS: 1, Other: 1, TOEIC: 12 });
-    expect(model.sortedCategories).toEqual(['All', 'IELTS', 'Other', 'TOEIC']);
+    expect(model.categoryCounts).toEqual({ All: 40, IELTS: 1, Other: 1 });
+    expect(model.sortedCategories).toEqual(['All', 'IELTS', 'Other']);
     expect(model.stats.categoryChart).toEqual([
       { name: 'IELTS', value: 1 },
       { name: 'Uncategorized', value: 1 },
@@ -203,21 +280,95 @@ describe('library view model', () => {
       xpHistory: { 'Aug 2, 2026': 10, 'Aug 1, 2026': 5 },
     }));
 
-    expect(model.stats).toMatchObject({ total: 9, learned: 3, learning: 6, dueToday: 2 });
+    expect(model.stats).toMatchObject({ total: 9, learned: 3, learning: 3, dueToday: 2 });
     expect(model.stats.categoryChart).toEqual([
       { name: 'IELTS', value: 6 },
       { name: 'TOEIC', value: 3 },
     ]);
     expect(model.stats.categoryChartIsPartial).toBe(false);
     expect(model.stats.difficultyChart).toEqual([
-      { name: 'Mastered', value: 3, color: '#10b981' },
-      { name: 'Learning', value: 3, color: '#f59e0b' },
-      { name: 'Not reviewed', value: 3, color: '#94a3b8' },
+      { name: 'Mastered', value: 3 },
+      { name: 'Learning', value: 3 },
+      { name: 'Not reviewed', value: 3 },
     ]);
     expect(model.stats.xpChartData).toEqual([
       { date: 'Aug 1, 2026', XP: 5 },
       { date: 'Aug 2, 2026', XP: 10 },
     ]);
     expect(Object.keys(model.groupedCards)).toEqual(['Today', 'Jul 1, 2026']);
+  });
+
+  it('ignores owner-wide facets that include cards from other courses', () => {
+    const model = buildLibraryViewModel(input({
+      cards: [
+        makeCard('ja-1', { category: 'Food' }),
+        makeCard('ja-2', { category: 'Anime' }),
+      ],
+      isAuthenticated: true,
+      usesCloudPagination: true,
+      cloudTotal: 13,
+      // The active course holds 13 cards; the owner-wide facets also count 52 cards of another course.
+      cloudStats: { ...cloudStats, total: 13, unrated: 13 },
+      cloudCategoryCounts: { Food: 45, Travel: 12, Anime: 8 },
+      cloudFacetsComplete: true,
+    }));
+
+    expect(model.sortedCategories).toEqual(['All', 'Anime', 'Food']);
+    expect(model.categoryCounts).toEqual({ All: 13, Food: 1, Anime: 1 });
+    expect(model.cloudFacetsComplete).toBe(false);
+    expect(model.stats.categoryChart).toEqual([
+      { name: 'Food', value: 1 },
+      { name: 'Anime', value: 1 },
+    ]);
+    expect(model.stats.categoryChartIsPartial).toBe(true);
+  });
+
+  it('does not trust facets while the active course total is unknown', () => {
+    const model = buildLibraryViewModel(input({
+      cards: [makeCard('ja-1', { category: 'Food' })],
+      isAuthenticated: true,
+      usesCloudPagination: true,
+      cloudTotal: 0,
+      cloudStats: { ...cloudStats, total: 0 },
+      cloudCategoryCounts: { Food: 45, Travel: 12, Anime: 8 },
+      cloudFacetsComplete: true,
+    }));
+
+    expect(model.sortedCategories).toEqual(['All', 'Food']);
+    expect(model.cloudFacetsComplete).toBe(false);
+    expect(model.stats.categoryChart).toEqual([{ name: 'Food', value: 1 }]);
+    expect(model.stats.categoryChartIsPartial).toBe(true);
+  });
+
+  it('does not add categories from facets that are still incomplete', () => {
+    const model = buildLibraryViewModel(input({
+      cards: [makeCard('ja-1', { category: 'Anime' })],
+      isAuthenticated: true,
+      usesCloudPagination: true,
+      cloudTotal: 20,
+      // Only 17 of the 20 cards of the active course, so the sum fits, yet Travel belongs to another course.
+      cloudStats: { ...cloudStats, total: 20, unrated: 20 },
+      cloudCategoryCounts: { Travel: 12, Anime: 5 },
+      cloudFacetsComplete: false,
+    }));
+
+    expect(model.sortedCategories).toEqual(['All', 'Anime']);
+    expect(model.categoryCounts).toEqual({ All: 20, Anime: 1 });
+    expect(model.cloudFacetsComplete).toBe(false);
+  });
+
+  it('keeps complete facets that fit inside the active course total', () => {
+    const model = buildLibraryViewModel(input({
+      cards: [makeCard('one', { category: 'Food' })],
+      isAuthenticated: true,
+      usesCloudPagination: true,
+      cloudTotal: 13,
+      cloudStats: { ...cloudStats, total: 13, unrated: 13 },
+      cloudCategoryCounts: { Food: 8, Anime: 5 },
+      cloudFacetsComplete: true,
+    }));
+
+    expect(model.categoryCounts).toEqual({ All: 13, Food: 8, Anime: 5 });
+    expect(model.cloudFacetsComplete).toBe(true);
   });
 });

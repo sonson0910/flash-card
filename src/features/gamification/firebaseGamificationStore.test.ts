@@ -37,6 +37,7 @@ vi.mock('../../lib/firebase', () => ({
   db: null,
   isFirebaseConfigured: false,
   protectedFunctionsCapability: { available: true },
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => functions.getFunctions(app, region),
 }));
 
 import {

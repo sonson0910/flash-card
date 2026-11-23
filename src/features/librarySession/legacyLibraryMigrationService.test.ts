@@ -14,9 +14,11 @@ vi.mock('firebase/functions', () => ({
 
 vi.mock('../../lib/firebase', () => ({
   protectedFunctionsCapability: functions.capability,
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => functions.getFunctions(app, region),
 }));
 
 import { migrateLegacyLibraryWithAdmin } from './legacyLibraryMigrationService';
+import { getLegacyMigrationIssue } from './ownerLibrarySessionController';
 
 describe('legacyLibraryMigrationService', () => {
   beforeEach(() => {
@@ -25,6 +27,40 @@ describe('legacyLibraryMigrationService', () => {
     delete functions.capability.reason;
     functions.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
     functions.httpsCallable.mockReturnValue(functions.callable);
+  });
+
+  it('reports a blocked discovery as a repair that needs an administrator, not as a retryable network failure', async () => {
+    functions.callable.mockResolvedValueOnce({
+      data: { migrated: 0, merged: 0, scanned: 0, complete: false, remaining: 0, invalid: 1, phase: 'blocked' },
+    });
+
+    const failure = await migrateLegacyLibraryWithAdmin({} as never).then(() => null, (error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Error);
+    expect(getLegacyMigrationIssue(failure)).toMatchObject({ kind: 'trusted-migration', retryable: false });
+    expect(functions.callable).toHaveBeenCalledOnce();
+  });
+
+  it.each(['apply', 'rollback', 'rolled-back'])('reports the %s phase as administrator-handled, not as an invalid response', async phase => {
+    functions.callable.mockResolvedValueOnce({
+      data: { migrated: 0, merged: 0, scanned: 0, complete: false, remaining: 0, invalid: 0, phase, sourceCount: 3, groupCount: 3 },
+    });
+
+    const failure = await migrateLegacyLibraryWithAdmin({} as never).then(() => null, (error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).message).not.toContain('invalid response');
+    expect(getLegacyMigrationIssue(failure)).toMatchObject({ kind: 'trusted-migration', retryable: false });
+    expect(functions.callable).toHaveBeenCalledOnce();
+  });
+
+  it('treats the complete phase as a finished upgrade', async () => {
+    functions.callable.mockResolvedValueOnce({
+      data: { migrated: 0, merged: 0, scanned: 0, complete: false, remaining: 0, invalid: 0, phase: 'complete', sourceCount: 3, groupCount: 3 },
+    });
+
+    await expect(migrateLegacyLibraryWithAdmin({} as never)).resolves.toEqual({ migrated: 0, scanned: 0, complete: true });
+    expect(functions.callable).toHaveBeenCalledOnce();
   });
 
   it('continues bounded Admin chunks until final verification is complete', async () => {

@@ -1,6 +1,6 @@
-import type { CardData } from '../types/card';
+import type { CardData, CardLanguageCode } from '../types/card';
 import { isCardDue } from './srs';
-import { normalizeCardWord } from './cardIdentity';
+import { effectiveCardTargetLanguage, normalizeCardWord } from './cardIdentity';
 import {
   ALL_PRACTICE_DECK_SCOPE,
   practiceDeckScopeMatchesCard,
@@ -12,11 +12,13 @@ export const CLOUD_PAGE_SIZE = 9;
 export interface CardQueryState {
   category: string | null;
   customDeck: PracticeDeckScope;
-  difficulty: 'easy' | 'good' | 'hard' | 'unrated' | 'due' | null;
+  /** `learning` is the union of the good and hard ratings. */
+  difficulty: 'easy' | 'good' | 'hard' | 'learning' | 'unrated' | 'due' | null;
   partOfSpeech: string | null;
   bookmarkedOnly: boolean;
   createdDate: string | null;
   wordPrefix: string;
+  targetLanguage?: CardLanguageCode | null;
 }
 
 export const PART_OF_SPEECH_OPTIONS = [
@@ -92,17 +94,27 @@ export function prioritizePracticeCards<T extends { id: string }>(dueCards: T[],
   return prioritized;
 }
 
+function localDateKey(iso: string | undefined): string | null {
+  const date = new Date(iso ?? '');
+  if (Number.isNaN(date.getTime())) return null;
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+}
+
 export function cardMatchesQuery(card: CardData, filters: CardQueryState): boolean {
+  if (filters.targetLanguage && effectiveCardTargetLanguage(card) !== filters.targetLanguage) return false;
   if (filters.category && card.category !== filters.category) return false;
   if (filters.partOfSpeech && normalizePartOfSpeech(card.partOfSpeech) !== filters.partOfSpeech) return false;
   if (!practiceDeckScopeMatchesCard(filters.customDeck ?? ALL_PRACTICE_DECK_SCOPE, card.customDeck)) return false;
   if (filters.difficulty && filters.difficulty !== 'due') {
     const difficulty = card.difficulty || 'unrated';
-    if (difficulty !== filters.difficulty) return false;
+    const matches = filters.difficulty === 'learning'
+      ? difficulty === 'good' || difficulty === 'hard'
+      : difficulty === filters.difficulty;
+    if (!matches) return false;
   }
   if (filters.difficulty === 'due' && !isCardDue(card)) return false;
   if (filters.bookmarkedOnly && card.bookmarked !== true) return false;
-  if (filters.createdDate && card.createdAt?.slice(0, 10) !== filters.createdDate) return false;
+  if (filters.createdDate && localDateKey(card.createdAt) !== filters.createdDate) return false;
   if (filters.wordPrefix) {
     const normalizedWord = (card.normalizedWord || card.word).trim().toLocaleLowerCase('en-US');
     if (!normalizedWord.startsWith(filters.wordPrefix.trim().toLocaleLowerCase('en-US'))) return false;

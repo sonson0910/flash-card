@@ -6,6 +6,8 @@ import {
 
 export interface ExtractedWordItem {
   word: string;
+  /** The word or phrase exactly as it appears in the scanned text, when the server confirmed it. */
+  surface?: string;
   translation: string;
   partOfSpeech: string;
   cefrLevel: string;
@@ -73,7 +75,12 @@ export const parseExtractedWords = (value: unknown): ExtractedWordItem[] => {
     const cefrLevel = requiredText(source, 'cefrLevel', 8, 'Invalid AI extracted word.');
     if (!/^(A1|A2|B1|B2|C1|C2)$/.test(cefrLevel)) throw new Error('Invalid AI extracted word.');
     const example = requiredText(source, 'example', 500, 'Invalid AI extracted word.');
-    return { word, translation, partOfSpeech, cefrLevel, example };
+    const surface = typeof source.surface === 'string' ? source.surface.trim() : '';
+    return {
+      word,
+      ...(surface && surface.length <= 120 ? { surface } : {}),
+      translation, partOfSpeech, cefrLevel, example,
+    };
   });
 };
 

@@ -1,5 +1,49 @@
+import type { JapanesePitchAccent } from '../features/languagePacks/japanesePitch';
+
 export type LegacyDifficulty = 'easy' | 'good' | 'hard' | 'unrated';
+/** The learner's own label for a card. Scheduling never reads it. */
+export type LearnerDifficulty = 'easy' | 'medium' | 'hard';
 export type ReviewRatingValue = 'again' | 'hard' | 'good' | 'easy';
+
+/** BCP 47 language code retained as a string for forward-compatible packs. */
+export type CardLanguageCode = string;
+
+/**
+ * Language metadata is additive and independent from canonical lexeme
+ * identity. Missing fields are interpreted by the read helpers as the legacy
+ * English-to-Vietnamese pair without being written back to the card.
+ */
+export interface CardLanguageFields {
+  language?: CardLanguageCode;
+  /** Wave-1 meaning languages are English or Vietnamese. */
+  translationLanguage?: CardLanguageCode;
+}
+
+export interface CardLanguagePair {
+  language: CardLanguageCode;
+  translationLanguage: CardLanguageCode;
+}
+
+export const LEGACY_CARD_LANGUAGE = 'en' as const;
+export const LEGACY_CARD_TRANSLATION_LANGUAGE = 'vi' as const;
+
+/**
+ * Bounded, server-validated metadata for a card captured from a web page via
+ * the browser extension. Every field is optional and independent; a legacy
+ * card, or one created any other way, simply omits `source` and never has one
+ * guessed or backfilled. See `contract-card-source-metadata.md` in the
+ * `claude-design-workflow-recovery` plan for bounds and write ownership.
+ */
+export interface CardSourceMetadata {
+  /** Origin + pathname of the captured page. http/https only; credentials, query, and fragment are stripped before persistence. */
+  url?: string;
+  /** Page <title> at capture time. */
+  title?: string;
+  /** Sentence-level context around the captured selection. */
+  context?: string;
+  /** When the capture happened, as an ISO 8601 timestamp. */
+  capturedAt?: string;
+}
 
 export interface CardData {
   /**
@@ -14,14 +58,23 @@ export interface CardData {
   /** Server-assigned mutation time. `createdAt` remains immutable. */
   updatedAt?: string;
   id: string;
+  /** Identifies generated content for learner disclosure; immutable after creation. */
+  origin?: 'ai' | 'manual';
   /** Additive V3 identity. Omitted records retain legacy word identity. */
   lexemeId?: string;
-  language?: string;
+  language?: CardLanguageCode;
+  /** Language of stored meaning and translated examples; legacy cards use Vietnamese. */
+  translationLanguage?: CardLanguageCode;
   senseKey?: string;
   word: string;
   normalizedWord?: string;
   normalizedLemma?: string;
   translation: string;
+  /**
+   * Other meanings the AI offered when it created the card (0-3). Written only
+   * at creation of an AI card; clients cannot change them afterwards.
+   */
+  translationAlternatives?: string[];
   /** Renderers and recall prompts rely on these fields always being strings. */
   explanation: string;
   explanationTranslation?: string;
@@ -39,6 +92,10 @@ export interface CardData {
   bookmarked?: boolean;
   difficulty?: LegacyDifficulty;
   customDeck?: string | null;
+  /** Up to 8 distinct learner tags, each 1-32 characters. */
+  tags?: string[];
+  /** Learner-chosen label; null or missing means none. Never feeds scheduling. */
+  learnerDifficulty?: LearnerDifficulty | null;
   nextReviewDate?: string;
   reviews?: number;
   interval?: number;
@@ -80,4 +137,10 @@ export interface CardData {
   register?: string;
   commonMistake?: string;
   correctStreak?: number;
+  /** Server-authoritative time when this card most recently crossed the mastery threshold. */
+  masteredAt?: string;
+  /** Verified UniDic pitch metadata for an exact Japanese word and kana reading. */
+  japanesePitchAccent?: JapanesePitchAccent;
+  /** Immutable after creation; set only by the browser-extension capture path via `createCard`. */
+  source?: CardSourceMetadata;
 }

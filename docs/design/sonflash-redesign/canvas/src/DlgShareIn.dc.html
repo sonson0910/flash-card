@@ -1,0 +1,57 @@
+<!--#HEAD Shared deck-->
+<!--#DLGOPEN-->
+    <header style="flex-shrink: 0; padding: 22px 22px 18px 26px; display: flex; align-items: flex-start; gap: 14px; border-bottom: 1px solid {{t.line}};">
+      <span aria-hidden="true" style="width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; background: {{t.avatarBg}}; color: {{t.avatarText}}; border: 1px solid {{t.line}}; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center;">MT</span>
+      <div style="flex-grow: 1; min-width: 0;">
+      <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Shared with you</div>
+      <h2 id="dlg-title" style="margin: 6px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 28px; line-height: 1.12; letter-spacing: -0.02em; color: {{t.textStrong}};">Business English essentials</h2>
+      <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">Minh Tran shared this deck with you · 2 days ago</p>
+      </div>
+      <button aria-label="Close" style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </header>
+    <div style="flex-grow: 1; min-height: 0; padding: 20px 26px 22px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+        <div style="padding: 12px 16px; border-right: 1px solid {{t.line}};"><div style="font-size: 12px; color: {{t.text2}};">Cards</div><div style="margin-top: 2px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 28px; color: {{t.textStrong}};">48</div></div>
+        <div style="padding: 12px 16px; border-right: 1px solid {{t.line}};"><div style="font-size: 12px; color: {{t.text2}};">Category</div><div style="margin-top: 8px; font-size: 14px; font-weight: 600; color: {{t.textStrong}};">Business & law</div></div>
+        <div style="padding: 12px 16px;"><div style="font-size: 12px; color: {{t.text2}};">Level</div><div style="margin-top: 8px; font-size: 14px; font-weight: 600; color: {{t.textStrong}};">B2 – C1</div></div>
+      </div>
+      <div style="display: flex; align-items: baseline; justify-content: space-between;"><span style="font-size: 12px; font-weight: 600; color: {{t.text2}};">A few words inside</span><span style="font-size: 12.5px; color: {{t.text3}};">+ 43 more</span></div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+        <sc-for list="{{samples}}" as="s" hint-placeholder-count="5">
+          <div style="height: 104px; box-sizing: border-box; padding: 14px; border-radius: {{mini.radius}}px; border: {{mini.border}}; background: {{mini.bg}}; box-shadow: {{mini.shadow}}; transform: rotate({{s.rot}}deg); display: flex; flex-direction: column;">
+            <span style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 21px; line-height: 1; letter-spacing: -0.01em; color: {{t.textStrong}};">{{s.pre}}<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">{{s.stress}}</span>{{s.rest}}</span>
+            <span style="margin-top: auto; font-size: 12.5px; color: {{t.text2}};">{{s.vi}}</span>
+          </div>
+        </sc-for>
+        <div style="height: 104px; box-sizing: border-box; border-radius: {{mini.radius}}px; border: 1.5px dashed {{t.lineStrong}}; color: {{t.text3}}; display: flex; align-items: center; justify-content: center; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 22px;">+43</div>
+      </div>
+      <p style="margin: 0; display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid {{t.infoLine}}; background: {{t.infoBg}}; font-size: 13px; line-height: 1.45; color: {{t.body}};">Cards go into a new deck with the same name. Your existing cards and progress stay untouched.</p>
+    </div>
+    <footer style="flex-shrink: 0; padding: 16px 22px 20px 26px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 10px;">
+      <button style="margin-left: auto; height: 44px; padding: 0 18px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">Cancel</button>
+      <button class="sf-press" style="height: 44px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; cursor: pointer;">Add 48 cards</button>
+    </footer>
+<!--#DLGCLOSE-->
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), fr: dark ? 14 : 10 };
+    const samples = [
+      ['ne', 'go', 'tiate', 'đàm phán', -1.5], ['', 'lev', 'erage', 'đòn bẩy', 1], ['lia', 'bil', 'ity', 'trách nhiệm pháp lý', -0.5],
+      ['', 'stake', 'holder', 'bên liên quan', 1.2], ['', 'rev', 'enue', 'doanh thu', -1],
+    ].map(([pre, stress, rest, vi, rot]) => ({ pre, stress, rest, vi, rot }));
+    const mini = dark
+      ? { radius: 16, border: '1px solid transparent', bg: t.cardBg + ' padding-box, ' + t.rimNew + ' border-box', shadow: '0 14px 30px -18px rgb(0 0 0 / 0.9)' }
+      : { radius: 12, border: '0', bg: t.cardBg, shadow: 'inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.07), 0 10px 18px -14px rgb(60 40 20 / 0.5)' };
+    return {
+      t, dw: 580, grainId: 'shared-deck-grain-' + (dark ? 'd' : 'l'), amb: { ax: -180, ay: -220, bx: 380, by: 460 },
+      samples, mini,
+    };
+  }
+}
+</script>
+</body>
+</html>

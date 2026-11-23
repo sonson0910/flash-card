@@ -1,7 +1,7 @@
 const EMBEDDED_DESCRIPTOR = /* SONFLASH_OFFLINE_SHELL_DESCRIPTOR */ null;
 
 const SHELL_CACHE_PREFIX = 'sonflash-app-shell-v1-';
-const MAX_SHELL_BYTES = 4 * 1024 * 1024;
+const MAX_SHELL_BYTES = 6 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 10_000;
 const ACTIVE_MARKER_PATH = '/__sonflash_app_shell_active__';
 const SHELL_ASSET_PATTERN = /\.(?:css|eot|html?|js|otf|ttf|woff2?)$/i;
@@ -62,7 +62,7 @@ const assertDescriptor = descriptor => {
     totalBytes += asset.bytes;
   }
   if (!urls.has('/index.html')) throw fail('invalid-descriptor', 'index.html is required');
-  if (totalBytes > MAX_SHELL_BYTES) throw fail('invalid-descriptor', 'shell exceeds 4 MiB');
+  if (totalBytes > MAX_SHELL_BYTES) throw fail('invalid-descriptor', 'shell exceeds 6 MiB');
   return descriptor;
 };
 
@@ -152,6 +152,7 @@ const protectedPath = pathname => (
   || pathname === '/browser-extension-privacy.html'
   || pathname === ACTIVE_MARKER_PATH
   || pathname.startsWith('/privacy')
+  || pathname === '/terms'
   || PROTECTED_SHELL_PATH_PATTERN.test(pathname)
 );
 
@@ -253,11 +254,20 @@ const createServiceWorkerHandlers = options => {
     }
   };
 
+  // A locale landing path (/vi, /vi/) has its own prerendered page with that language's title and meta tags,
+  // which the network would return online; every other app route boots from the root shell.
+  const navigationShellUrl = pathname => {
+    const localePage = `${pathname.replace(/\/+$/, '')}/index.html`;
+    return allowedUrls.has(localePage) ? localePage : '/index.html';
+  };
+
   const shouldHandleFetch = request => {
     if (request?.method !== 'GET') return false;
     const url = requestUrl(request, origin);
     if (!url || url.origin !== origin || protectedPath(url.pathname)) return false;
-    if (request.mode === 'navigate') return url.pathname === '/';
+    // Every app route (locale landing paths, /library, ?view=...) boots from the one cached shell;
+    // a last segment with a dot is a static document (terms.html, robots.txt) that the shell must not stand in for.
+    if (request.mode === 'navigate') return !/\.[^/]*$/.test(url.pathname);
     return !url.search && !url.hash && allowedUrls.has(url.pathname);
   };
 
@@ -266,7 +276,7 @@ const createServiceWorkerHandlers = options => {
     const url = requestUrl(request, origin);
     if (!url) return undefined;
     const cache = await cacheStorage.open(currentCacheName);
-    const targetUrl = request.mode === 'navigate' ? '/index.html' : url.pathname;
+    const targetUrl = request.mode === 'navigate' ? navigationShellUrl(url.pathname) : url.pathname;
     const cached = await cache.match(requestFor(targetUrl, origin), { ignoreSearch: false });
     if (cached) return cached;
     throw fail('cache-miss', targetUrl);

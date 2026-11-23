@@ -5,11 +5,39 @@ import type {
   Firestore,
   Transaction,
 } from 'firebase-admin/firestore';
-import { InputValidationError } from './inputValidation.js';
+import {
+  canonicalLexemeId,
+  InputValidationError,
+  parseCardLanguagePair,
+  parseCardSourceMetadata,
+  parseExpectedOwnerId,
+} from './inputValidation.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
+import { ownStorageImageOwner } from './ownFileImageUrl.js';
+import { upsertCatalogProgressForCard } from './catalogProgressPersistence.js';
+import {
+  applyLibraryFacetMutationInTransaction,
+  libraryFacetRestoreOperationId,
+} from './libraryFacetPersistence.js';
+import { AiQuotaError, asAiQuotaCount, resolvePlan, type AiOperationRecord } from './aiQuota.js';
+import type { PilotConfig } from './pilotConfig.js';
+import { matchesJapanesePitchAccent, resolveJapanesePitchAccent } from './japanesePitch.js';
+import {
+  commitVerifiedGamification,
+  prepareVerifiedGamification,
+  type VerifiedGamificationOutcome,
+} from './verifiedGamification.js';
 
 export const MAX_CARD_ALLOCATION = 5_000;
+// Owner-reversible product rule: capture XP is paid once per card identity. Set
+// to false to pay it again each time a deleted word is created anew.
+const CAPTURE_XP_ONCE_PER_IDENTITY = true;
+// How many derived ids a word may try when the id of its word is held by a
+// card that was renamed to another word.
+const MAX_RELOCATED_CARD_ID_ATTEMPTS = 8;
 const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
+/** How far ahead of the server clock a learner's review time may be. */
+export const REVIEW_CLOCK_SKEW_MS = 5 * 60 * 1000;
 const RESOURCE_USAGE_SCHEMA_VERSION = 1 as const;
 
 export class CardAllocationLimitError extends Error {
@@ -37,9 +65,15 @@ export class CardAllocationConflictError extends Error {
 
 export type CardRecord = Record<string, unknown>;
 
+export const isMasteredCard = (card: CardRecord): boolean => card.difficulty === 'easy'
+  || Number(card.interval ?? (card.fsrs as Record<string, unknown> | undefined)?.scheduledDays ?? 0) >= 21;
+
 export type CardAllocationResult = {
   created: boolean;
   card: DocumentData;
+  restored?: true;
+  /** Set on a result answered from a stored receipt; callables keep it off the response. */
+  replayed?: true;
 };
 
 export type CardAllocationRequest = {
@@ -49,6 +83,12 @@ export type CardAllocationRequest = {
   baseRevision?: number;
   opId?: string;
   operationCreatedAt?: string;
+  restore?: true;
+};
+
+export type CreateCardV2Request = CardAllocationRequest & {
+  opId: string;
+  timeZone: string;
 };
 
 type CardAllocationOptions = {
@@ -57,19 +97,45 @@ type CardAllocationOptions = {
   baseRevision?: number;
   opId?: string;
   operationCreatedAt?: string;
+  restore?: true;
+  verifiedCreate?: {
+    fingerprint: string;
+    receivedAt: Date;
+    timeZone: string;
+  };
+};
+
+type CreateCardV2Options = CardAllocationOptions & {
+  opId: string;
+  timeZone: string;
+  receivedAt?: Date;
+};
+
+export type CardAllocationV2Result = CardAllocationResult & {
+  gamification: VerifiedGamificationOutcome | null;
 };
 
 const CARD_FIELDS = new Set([
-  'id', 'lexemeId', 'language', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation', 'explanationTranslation',
+  'id', 'origin', 'lexemeId', 'language', 'translationLanguage', 'senseKey', 'word', 'normalizedWord', 'normalizedLemma', 'translation', 'explanation', 'explanationTranslation',
   'phonetic', 'category', 'emoji', 'audioUrl', 'imageUrl', 'imageSearchQuery',
   'createdAt', 'updatedAt', 'lastOpenedAt', 'sortTouchedAt', 'schemaVersion', 'revision', 'libraryEpoch',
   'bookmarked', 'customDeck', 'difficulty', 'nextReviewDate', 'reviews', 'interval',
   'easeFactor', 'correctStreak', 'fsrs', 'reviewHistory', 'partOfSpeech', 'cefrLevel',
   'exampleSentence', 'exampleTranslation', 'collocations', 'synonyms', 'antonyms',
-  'register', 'commonMistake', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds',
+  'register', 'commonMistake', 'mnemonic', 'wordFamily', 'appliedReviewOperationIds', 'masteredAt', 'japanesePitchAccent', 'source',
+  'tags', 'learnerDifficulty', 'translationAlternatives',
 ]);
 
 const CARD_DIFFICULTIES = new Set(['easy', 'good', 'hard', 'unrated']);
+/** The learner's own label. Scheduling, plans and statistics never read it. */
+const LEARNER_DIFFICULTIES = new Set(['easy', 'medium', 'hard']);
+const MAX_CARD_TAGS = 8;
+// 1-32 code points with no surrounding whitespace, comma or line break, so a
+// tag survives a spreadsheet round trip. This is the Rules pattern for the
+// same field: Rules regexes are RE2, which counts code points and whose \s is
+// the ASCII set spelled out here, so a tag one side accepts the other does too.
+const CARD_TAG_PATTERN = /^[^\t\n\f\r ,](?:[^,\r\n]{0,30}[^\t\n\f\r ,])?$/u;
+const MAX_TRANSLATION_ALTERNATIVES = 3;
 const REVIEW_RATINGS = new Set(['again', 'hard', 'good', 'easy']);
 const AUDIO_HOSTS = new Set(['api.dictionaryapi.dev', 'ssl.gstatic.com']);
 const IMAGE_HOSTS = new Set(['images.pexels.com', 'images.unsplash.com', 'upload.wikimedia.org']);
@@ -125,12 +191,74 @@ const trustedUrl = (
   }
 };
 
+/**
+ * A stock photo, or a photo from the learner's own files. When the caller
+ * knows the card's owner, an own-file URL must name that owner; a stored card
+ * read back without one keeps its photo, because only the owner could have
+ * written it there.
+ */
+const trustedImageUrl = (value: unknown, imageOwnerId: string | undefined): string | null => {
+  if (value === undefined || value === null || value === '') return null;
+  const text = boundedText(value, 'imageUrl', 2_048);
+  const owner = ownStorageImageOwner(text);
+  if (owner === null) return trustedUrl(value, 'imageUrl', IMAGE_HOSTS);
+  if (imageOwnerId !== undefined && owner !== imageOwnerId) {
+    throw new InputValidationError('Card field "imageUrl" is invalid.');
+  }
+  return text;
+};
+
 const boundedStringList = (value: unknown, field: string): string[] => {
   if (value === undefined) return [];
   if (!Array.isArray(value) || value.length > 4) {
     throw new InputValidationError(`Card field "${field}" is invalid.`);
   }
   return value.map(item => requiredText(item, field, 100));
+};
+
+const parseCardTags = (value: unknown): string[] | undefined => {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.length > MAX_CARD_TAGS) {
+    throw new InputValidationError('Card field "tags" is invalid.');
+  }
+  if (value.some(tag => typeof tag !== 'string' || !CARD_TAG_PATTERN.test(tag))
+    || new Set(value).size !== value.length) {
+    throw new InputValidationError('Card field "tags" is invalid.');
+  }
+  return [...value] as string[];
+};
+
+const parseLearnerDifficulty = (value: unknown): string | null | undefined => {
+  if (value === undefined || value === null) return value;
+  if (typeof value !== 'string' || !LEARNER_DIFFICULTIES.has(value)) {
+    throw new InputValidationError('Card field "learnerDifficulty" is invalid.');
+  }
+  return value;
+};
+
+/**
+ * Other meanings the AI suggested when it wrote the card. Only an AI card
+ * can carry them; entries equal to the card's meaning or to each other are
+ * dropped so the editor never offers the meaning it already shows.
+ */
+const parseTranslationAlternatives = (
+  value: unknown,
+  origin: unknown,
+  translation: string,
+): string[] | undefined => {
+  if (value === undefined) return undefined;
+  if (origin !== 'ai' || !Array.isArray(value) || value.length > MAX_TRANSLATION_ALTERNATIVES) {
+    throw new InputValidationError('Card field "translationAlternatives" is invalid.');
+  }
+  const seen = new Set([translation.toLocaleLowerCase()]);
+  return value.flatMap(item => {
+    const text = requiredText(item, 'translationAlternatives', 256);
+    if (!text) throw new InputValidationError('Card field "translationAlternatives" is invalid.');
+    const key = text.toLocaleLowerCase();
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [text];
+  });
 };
 
 const boundedReviewOperationIds = (value: unknown): string[] => {
@@ -278,24 +406,34 @@ const stableCardId = (word: string): string => {
   return `word-${slug ? `${slug}-` : ''}${hash}`;
 };
 
-const reservationId = (word: string): string => createHash('sha256')
-  .update(normalizedWord(word))
-  .digest('hex');
+const targetIdentityValue = (word: string, targetLanguage: string): string =>
+  `${targetLanguage}\u0000${normalizedWord(word)}`;
 
-const canonicalLexemeId = (language: string, lemma: string, partOfSpeech: string, senseKey: string): string => {
-  const component = (value: string, lowercase = false) => {
-    const normalized = value.normalize('NFKC').trim().replace(/\s+/g, ' ');
-    if (!normalized) throw new InputValidationError('Card lexeme identity is incomplete.');
-    return lowercase ? normalized.toLowerCase() : normalized;
-  };
-  const tuple = JSON.stringify([
-    component(language, true), component(lemma), component(partOfSpeech, true), component(senseKey, true),
-  ]);
-  const bytes = Buffer.from(tuple, 'utf8').toString('hex');
-  return `lexeme-${stableCardId(`\u0000${bytes}`).replace(/^word-/, '')}`;
+export const targetAwareCardId = (word: string, targetLanguage: string): string => {
+  if (targetLanguage === 'en') return stableCardId(word);
+  const normalized = normalizedWord(word);
+  const slug = normalized
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+  const hash = createHash('sha256').update(targetIdentityValue(normalized, targetLanguage)).digest('hex').slice(0, 24);
+  return `word-${targetLanguage}-${slug ? `${slug}-` : ''}${hash}`;
 };
 
-export const canonicalCard = (value: unknown): CardRecord => {
+const reservationId = (identity: string, targetLanguage?: string): string => createHash('sha256')
+  .update(targetLanguage && targetLanguage !== 'en'
+    ? `${targetLanguage}\u0000${identity}`
+    : identity)
+  .digest('hex');
+
+export const canonicalCard = (value: unknown, { allowMasteredAt = false, deriveJapanesePitch = true, imageOwnerId }: {
+  allowMasteredAt?: boolean;
+  deriveJapanesePitch?: boolean;
+  /** The card owner's uid; an uploaded photo must then be one of their own files. */
+  imageOwnerId?: string;
+} = {}): CardRecord => {
   const source = asRecord(value, 'Card must be an object.');
   if (Object.keys(source).some(key => !CARD_FIELDS.has(key))) {
     throw new InputValidationError('Card contains an unsupported field.');
@@ -324,17 +462,27 @@ export const canonicalCard = (value: unknown): CardRecord => {
   if (source.revision !== undefined) nonNegativeInteger(source.revision, 'revision', 0);
   if (source.libraryEpoch !== undefined) nonNegativeInteger(source.libraryEpoch, 'libraryEpoch', 0);
   const lexemeId = source.lexemeId === undefined ? undefined : boundedText(source.lexemeId, 'lexemeId', 128);
-  const language = source.language === undefined ? undefined : boundedText(source.language, 'language', 64);
+  const languageFields = parseCardLanguagePair({
+    language: source.language,
+    translationLanguage: source.translationLanguage,
+  });
+  const language = languageFields.language;
+  const translationLanguage = languageFields.translationLanguage;
   const senseKey = source.senseKey === undefined ? undefined : boundedText(source.senseKey, 'senseKey', 128);
   const partOfSpeech = source.partOfSpeech === undefined ? undefined : boundedText(source.partOfSpeech, 'partOfSpeech', 64);
   const normalizedLemma = source.normalizedLemma === undefined ? undefined : boundedText(source.normalizedLemma, 'normalizedLemma', 256);
-  const hasCanonicalIdentity = lexemeId !== undefined || language !== undefined || senseKey !== undefined;
+  const hasCanonicalIdentity = lexemeId !== undefined || senseKey !== undefined || normalizedLemma !== undefined;
   if (hasCanonicalIdentity) {
     const lemma = normalizedLemma || suppliedIdentity;
     if (!lexemeId || !language || !senseKey || !partOfSpeech || !lemma || lexemeId !== canonicalLexemeId(language, lemma, partOfSpeech, senseKey)) {
       throw new InputValidationError('Card lexeme identity does not match its tuple.');
     }
   }
+  // Card creation always writes an explicit language (defaulting to the
+  // legacy English target) so course-scoped queries never depend on a
+  // missing field meaning "en". Canonical lexeme identity already requires
+  // an explicit language above.
+  const effectiveLanguage = hasCanonicalIdentity ? language : (language ?? 'en');
 
   const difficulty = source.difficulty === undefined ? 'unrated' : source.difficulty;
   if (typeof difficulty !== 'string' || !CARD_DIFFICULTIES.has(difficulty)) {
@@ -343,25 +491,52 @@ export const canonicalCard = (value: unknown): CardRecord => {
   const customDeck = source.customDeck === undefined || source.customDeck === null
     ? null
     : boundedText(source.customDeck, 'customDeck', 128);
+  if (source.origin !== undefined && source.origin !== 'ai' && source.origin !== 'manual') {
+    throw new InputValidationError('Card origin is invalid.');
+  }
   const now = new Date().toISOString();
   const createdAt = optionalDate(source.createdAt, 'createdAt') ?? now;
+  const masteredAt = allowMasteredAt ? optionalDate(source.masteredAt, 'masteredAt') : undefined;
+  const phonetic = boundedText(source.phonetic, 'phonetic', 256);
+  const verifiedPitch = resolveJapanesePitchAccent(word, phonetic, effectiveLanguage ?? 'en');
+  const suppliedPitchMatches = source.japanesePitchAccent !== undefined
+    && matchesJapanesePitchAccent(source.japanesePitchAccent, verifiedPitch);
+  if (deriveJapanesePitch && source.japanesePitchAccent !== undefined && !suppliedPitchMatches) {
+    throw new InputValidationError('Card Japanese pitch metadata is invalid.');
+  }
+  const japanesePitchAccent = deriveJapanesePitch || suppliedPitchMatches
+    ? verifiedPitch
+    : undefined;
+  const cardSource = parseCardSourceMetadata(source.source);
+  const translation = boundedText(source.translation, 'translation', 256);
+  const tags = parseCardTags(source.tags);
+  const learnerDifficulty = parseLearnerDifficulty(source.learnerDifficulty);
+  const translationAlternatives = parseTranslationAlternatives(source.translationAlternatives, source.origin, translation);
   const result: CardRecord = {
-    id: hasCanonicalIdentity ? lexemeId as string : stableCardId(identity),
+    id: hasCanonicalIdentity ? lexemeId as string : targetAwareCardId(identity, effectiveLanguage ?? 'en'),
+    ...(source.origin === undefined ? {} : { origin: source.origin }),
     word,
     normalizedWord: identity,
-    ...(hasCanonicalIdentity ? { lexemeId, language, senseKey, normalizedLemma: normalizedLemma || suppliedIdentity } : {}),
-    translation: boundedText(source.translation, 'translation', 256),
+    ...(effectiveLanguage === undefined ? {} : { language: effectiveLanguage }),
+    ...(translationLanguage === undefined ? {} : { translationLanguage }),
+    ...(hasCanonicalIdentity ? { lexemeId, senseKey, normalizedLemma: normalizedLemma || suppliedIdentity } : {}),
+    translation,
+    ...(translationAlternatives === undefined ? {} : { translationAlternatives }),
     explanation: boundedText(source.explanation, 'explanation', 2_048),
     explanationTranslation: boundedText(source.explanationTranslation, 'explanationTranslation', 2_048),
-    phonetic: boundedText(source.phonetic, 'phonetic', 256),
+    phonetic,
     category: boundedText(source.category, 'category', 128) || 'Other',
     emoji: boundedText(source.emoji, 'emoji', 64) || '📝',
     audioUrl: trustedUrl(source.audioUrl, 'audioUrl', AUDIO_HOSTS),
-    imageUrl: trustedUrl(source.imageUrl, 'imageUrl', IMAGE_HOSTS),
+    imageUrl: trustedImageUrl(source.imageUrl, imageOwnerId),
     imageSearchQuery: boundedText(source.imageSearchQuery, 'imageSearchQuery', 120),
     createdAt,
+    ...(masteredAt ? { masteredAt } : {}),
+    ...(japanesePitchAccent ? { japanesePitchAccent } : {}),
     bookmarked: source.bookmarked === undefined ? false : source.bookmarked,
     customDeck,
+    ...(tags === undefined ? {} : { tags }),
+    ...(learnerDifficulty === undefined ? {} : { learnerDifficulty }),
     difficulty,
     reviews: nonNegativeInteger(source.reviews, 'reviews', 0),
     interval: nonNegativeNumber(source.interval, 'interval', 0),
@@ -378,6 +553,7 @@ export const canonicalCard = (value: unknown): CardRecord => {
     commonMistake: boundedText(source.commonMistake, 'commonMistake', 2_048),
     reviewHistory: parseReviewHistory(source.reviewHistory),
     appliedReviewOperationIds: boundedReviewOperationIds(source.appliedReviewOperationIds),
+    ...(cardSource ? { source: cardSource } : {}),
     schemaVersion: 2,
     revision: 1,
   };
@@ -409,7 +585,7 @@ export const canonicalCard = (value: unknown): CardRecord => {
 export const parseCreateCardRequest = (value: unknown): CardAllocationRequest => {
   const source = asRecord(value, 'Card allocation request must be an object.');
   if (Object.keys(source).some(key => !new Set([
-    'expectedOwnerId', 'card', 'libraryEpoch', 'baseRevision', 'opId', 'operationCreatedAt',
+    'expectedOwnerId', 'card', 'libraryEpoch', 'baseRevision', 'opId', 'operationCreatedAt', 'restore',
   ]).has(key))) {
     throw new InputValidationError('Card allocation request contains an unsupported field.');
   }
@@ -424,14 +600,77 @@ export const parseCreateCardRequest = (value: unknown): CardAllocationRequest =>
   const opId = source.opId === undefined ? undefined : boundedText(source.opId, 'opId', 128);
   if (source.opId !== undefined && !opId) throw new InputValidationError('Card opId is invalid.');
   const operationCreatedAt = optionalDate(source.operationCreatedAt, 'operationCreatedAt');
+  if (source.restore !== undefined && source.restore !== true) {
+    throw new InputValidationError('Card restore intent is invalid.');
+  }
+  if (source.restore === true && (
+    !opId
+    || !/^[A-Za-z0-9_-]{1,128}$/.test(opId)
+    || !operationCreatedAt
+  )) throw new InputValidationError('Card restore operation metadata is required.');
   return {
     expectedOwnerId,
-    card: canonicalCard(source.card),
+    card: canonicalCard(source.card, { imageOwnerId: expectedOwnerId }),
     ...(libraryEpoch === undefined ? {} : { libraryEpoch }),
     ...(baseRevision === undefined ? {} : { baseRevision }),
     ...(opId === undefined ? {} : { opId }),
     ...(operationCreatedAt === undefined ? {} : { operationCreatedAt }),
+    ...(source.restore === true ? { restore: true } : {}),
   };
+};
+
+export const parseCreateCardV2Request = (value: unknown): CreateCardV2Request => {
+  const source = asRecord(value, 'Card allocation request must be an object.');
+  if (Object.keys(source).some(key => !new Set([
+    'expectedOwnerId', 'card', 'libraryEpoch', 'baseRevision', 'opId', 'operationCreatedAt', 'timeZone',
+  ]).has(key))) {
+    throw new InputValidationError('Card allocation request contains an unsupported field.');
+  }
+  const { timeZone: rawTimeZone, ...legacyRequest } = source;
+  const request = parseCreateCardRequest(legacyRequest);
+  if (!request.opId || !/^[A-Za-z0-9_-]{1,128}$/.test(request.opId)) {
+    throw new InputValidationError('Card create operation metadata is required.');
+  }
+  const timeZone = boundedText(rawTimeZone, 'timeZone', 128);
+  if (!timeZone) throw new InputValidationError('Reward time zone is invalid.');
+  return { ...request, opId: request.opId, timeZone };
+};
+
+const stableJson = (value: unknown): string => {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value).sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+};
+
+const createFingerprint = (value: unknown): string =>
+  createHash('sha256').update(stableJson(value)).digest('hex');
+
+export interface StarterCardsBatchRequest {
+  expectedOwnerId?: string;
+  operationId: string;
+  cards: readonly unknown[];
+}
+
+export const parseCreateStarterCardsRequest = (value: unknown): StarterCardsBatchRequest => {
+  const source = asRecord(value, 'Starter card request must be an object.');
+  if (Object.keys(source).some(key => !new Set(['operationId', 'cards', 'expectedOwnerId']).has(key))) {
+    throw new InputValidationError('Starter card request contains an unsupported field.');
+  }
+  const operationId = boundedText(source.operationId, 'operationId', 128);
+  if (!operationId || !/^[A-Za-z0-9_-]{1,128}$/.test(operationId)) {
+    throw new InputValidationError('Starter card operationId is invalid.');
+  }
+  if (!Array.isArray(source.cards) || source.cards.length === 0) {
+    throw new InputValidationError('Starter card batch must be a non-empty array.');
+  }
+  if (source.cards.length > MAX_STARTER_CARDS_PER_BATCH) {
+    throw new InputValidationError('Starter card batch is too large.');
+  }
+  const expectedOwnerId = parseExpectedOwnerId(source.expectedOwnerId);
+  return { ...(expectedOwnerId === undefined ? {} : { expectedOwnerId }), operationId, cards: source.cards };
 };
 
 const ownerDocument = (database: Firestore, ownerId: string) =>
@@ -457,15 +696,30 @@ const safeStoredCardCount = (snapshot: DocumentSnapshot): number | null => {
 
 const readEpoch = (snapshot: DocumentSnapshot): number => safeStoredCounter(snapshot, 'libraryEpoch');
 
-const isMatchingIdentity = (value: CardRecord, identity: string): boolean =>
+// A plain (non-lexeme) identity is scoped by its target language so that the
+// same spelling in different target languages (e.g. English and Korean)
+// never collides on the same reservation, card ID, or matching logic. The
+// English/omitted target keeps the legacy word-only shape.
+const isTargetScoped = (targetLanguage: string | undefined): targetLanguage is string =>
+  Boolean(targetLanguage) && targetLanguage !== 'en';
+
+const isMatchingIdentity = (value: CardRecord, identity: string, targetLanguage?: string): boolean =>
   typeof value.cardId === 'string'
   && value.cardId.length <= 128
   && /^[a-zA-Z0-9_-]+$/.test(value.cardId)
   && (identity.startsWith('lexeme:')
     ? value.lexemeId === identity.slice('lexeme:'.length) && value.schemaVersion === 2
-    : value.normalizedWord === identity && value.schemaVersion === 1);
+    : value.normalizedWord === identity && value.schemaVersion === 1
+      && (isTargetScoped(targetLanguage)
+        ? value.targetLanguage === targetLanguage
+        : !Object.prototype.hasOwnProperty.call(value, 'targetLanguage')));
 
-const cardMatchesIdentity = (value: CardRecord, identity: string, id: string): boolean =>
+const cardMatchesIdentity = (
+  value: CardRecord,
+  identity: string,
+  id: string,
+  targetLanguage?: string,
+): boolean =>
   (value.id === undefined || value.id === id)
   && (identity.startsWith('lexeme:')
     ? value.lexemeId === identity.slice('lexeme:'.length)
@@ -473,26 +727,33 @@ const cardMatchesIdentity = (value: CardRecord, identity: string, id: string): b
       && (
     value.normalizedWord === undefined
     || normalizedWord(typeof value.normalizedWord === 'string' ? value.normalizedWord : '') === identity
-      ));
+      )
+      && (isTargetScoped(targetLanguage)
+        ? typeof value.language === 'string' && value.language.toLowerCase() === targetLanguage
+        : value.language === undefined || value.language === 'en'));
 
 const isStrictCurrentCard = (
   value: CardRecord,
   id: string,
   identity: string,
   libraryEpoch: number,
+  targetLanguage?: string,
 ): boolean => value.id === id
-  && cardMatchesIdentity(value, identity, id)
+  && cardMatchesIdentity(value, identity, id, targetLanguage)
   && value.schemaVersion === 2
   && Number.isSafeInteger(value.revision)
   && Number(value.revision) >= 1
   && value.libraryEpoch === libraryEpoch;
 
-const createReservation = (identity: string, id: string): CardRecord => ({
+export const createReservation = (identity: string, id: string, targetLanguage?: string): CardRecord => ({
   schemaVersion: identity.startsWith('lexeme:') ? 2 : 1,
   cardId: id,
   ...(identity.startsWith('lexeme:')
     ? { lexemeId: identity.slice('lexeme:'.length) }
-    : { normalizedWord: identity }),
+    : {
+        normalizedWord: identity,
+        ...(isTargetScoped(targetLanguage) ? { targetLanguage } : {}),
+      }),
 });
 
 const asIsoDate = (value: unknown): unknown => {
@@ -556,7 +817,7 @@ const canonicalExistingCard = (
   try {
     // Validate the stored shape and trust its existing metadata. The upgrade
     // only adds protocol identity fields; it must not invent card content.
-    canonicalCard({ ...source, id, normalizedWord: canonicalNormalizedWord });
+    canonicalCard({ ...source, id, normalizedWord: canonicalNormalizedWord }, { allowMasteredAt: true, deriveJapanesePitch: false });
     const revision = Number.isSafeInteger(source.revision) && Number(source.revision) > 0
       ? nextProtocolCounter(Number(source.revision), 'revision')
       : 1;
@@ -584,6 +845,21 @@ const currentTombstoneRevision = (
   return Number(value.revision);
 };
 
+const assertNoFutureReviewTimes = (card: CardRecord, now: Date): void => {
+  const ceiling = now.getTime() + REVIEW_CLOCK_SKEW_MS;
+  const fsrs = card.fsrs as CardRecord | undefined;
+  const history = Array.isArray(card.reviewHistory) ? card.reviewHistory as Array<Record<string, unknown>> : [];
+  const times = [fsrs?.lastReview, ...history.map(entry => entry.reviewedAt)];
+  if (times.some(time => typeof time === 'string' && Date.parse(time) > ceiling)) {
+    throw new InputValidationError('Card review times must not be in the future.');
+  }
+};
+
+const withoutScheduling = (card: CardRecord): CardRecord => {
+  const { fsrs: _fsrs, nextReviewDate: _nextReviewDate, ...rest } = card;
+  return { ...rest, difficulty: 'unrated', reviews: 0, interval: 0, easeFactor: 2.5, correctStreak: 0, reviewHistory: [] };
+};
+
 export async function createCardForOwner(
   database: Firestore,
   ownerId: string,
@@ -593,6 +869,9 @@ export async function createCardForOwner(
     libraryEpoch,
     baseRevision,
     operationCreatedAt,
+    opId,
+    restore,
+    verifiedCreate,
   }: CardAllocationOptions = {},
 ): Promise<CardAllocationResult> {
   if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Card owner is invalid.');
@@ -600,18 +879,40 @@ export async function createCardForOwner(
     throw new Error('Card allocation maximum is invalid.');
   }
   const cardSource = asRecord(card, 'Card must be an object.');
-  const normalizedCard = canonicalCard(cardSource);
+  const normalizedCard = canonicalCard(cardSource, { imageOwnerId: ownerId });
+  // Any create, a restore included, would otherwise store a review time that blocks every later verified review.
+  assertNoFutureReviewTimes(normalizedCard, verifiedCreate?.receivedAt ?? new Date());
+  const restoreCreatedAt = restore && operationCreatedAt
+    ? optionalDate(operationCreatedAt, 'operationCreatedAt')
+    : undefined;
+  if (restore && (
+    !opId
+    || !/^[A-Za-z0-9_-]{1,128}$/.test(opId)
+    || !restoreCreatedAt
+  )) throw new InputValidationError('Card restore operation metadata is required.');
+  const restoreOperation = restore && opId && restoreCreatedAt
+    ? { opId, operationCreatedAt: restoreCreatedAt }
+    : null;
   // Review receipts are server-owned. A forged create payload may carry the
   // field for shape compatibility, but it must never seed a duplicate receipt.
   delete normalizedCard.appliedReviewOperationIds;
   const identity = typeof normalizedCard.lexemeId === 'string'
     ? `lexeme:${normalizedCard.lexemeId}`
     : normalizedCard.normalizedWord as string;
+  // Only a plain (non-lexeme) identity is target-scoped; canonical lexeme
+  // identity already encodes its language inside the lexeme tuple.
+  const plainTargetLanguage = identity.startsWith('lexeme:')
+    ? undefined
+    : (typeof normalizedCard.language === 'string' ? normalizedCard.language : undefined);
   const proposedId = normalizedCard.id as string;
   const owner = ownerDocument(database, ownerId);
   const libraryState = owner.collection('profile').doc('library_state');
   const resourceUsage = owner.collection('profile').doc('resource_usage');
-  const reservation = owner.collection('card_reservations').doc(reservationId(identity));
+  const verifiedReceipt = verifiedCreate && opId
+    ? owner.collection('card_create_receipts').doc(opId)
+    : undefined;
+  const reservation = owner.collection('card_reservations')
+    .doc(reservationId(identity, plainTargetLanguage));
   let existingCardCount: number;
   try {
     const countSnapshot = await owner.collection('cards').count().get();
@@ -626,19 +927,57 @@ export async function createCardForOwner(
   }
 
   return database.runTransaction(async (transaction: Transaction) => {
+    if (verifiedCreate && !verifiedReceipt) throw new InputValidationError('Card create operation metadata is required.');
+    const receiptSnapshot = verifiedReceipt ? await transaction.get(verifiedReceipt) : undefined;
+    if (receiptSnapshot?.exists) {
+      const receipt = receiptSnapshot.data();
+      if (!receipt || receipt.fingerprint !== verifiedCreate?.fingerprint) {
+        throw new InputValidationError('Card create operation conflicts with its original request.');
+      }
+      const result = receipt.result;
+      if (!result || typeof result !== 'object' || Array.isArray(result)
+        || typeof result.created !== 'boolean' || !result.card || typeof result.card !== 'object') {
+        throw new CardAllocationConflictError('identity-conflict', 'The card create receipt is invalid.');
+      }
+      return { ...(result as CardAllocationResult), replayed: true as const };
+    }
     await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
     const stateSnapshot = await transaction.get(libraryState);
     const reservationSnapshot = await transaction.get(reservation);
     const existingReservation = reservationSnapshot.exists
       ? reservationSnapshot.data() as CardRecord
       : null;
-    if (existingReservation && !isMatchingIdentity(existingReservation, identity)) {
+    if (existingReservation && !isMatchingIdentity(existingReservation, identity, plainTargetLanguage)) {
       throw new CardAllocationConflictError('identity-conflict', 'The card identity reservation conflicts with the request.');
     }
-    const id = existingReservation?.cardId as string | undefined ?? proposedId;
-    const canonical = owner.collection('cards').doc(id);
+    // A plain card id is derived from its word, but a headword correction keeps
+    // the id while it changes the word. The id a reservation points to, or the
+    // id of the word itself, can therefore hold a card that now belongs to
+    // another word. That card keeps its id; the identity being created takes
+    // the next derived id that is free instead of failing for good.
+    const reservedId = existingReservation?.cardId as string | undefined;
+    const candidateIds = identity.startsWith('lexeme:')
+      ? [reservedId ?? proposedId]
+      : [...new Set([
+        reservedId ?? proposedId,
+        proposedId,
+        ...Array.from({ length: MAX_RELOCATED_CARD_ID_ATTEMPTS }, (_, index) => `${proposedId}-${index + 2}`),
+      ])];
+    let candidateIndex = 0;
+    let id = candidateIds[0];
+    let canonical = owner.collection('cards').doc(id);
+    let cardSnapshot = await transaction.get(canonical);
+    while (
+      cardSnapshot.exists
+      && !cardMatchesIdentity(cardSnapshot.data() as CardRecord, identity, id, plainTargetLanguage)
+      && candidateIndex + 1 < candidateIds.length
+    ) {
+      candidateIndex += 1;
+      id = candidateIds[candidateIndex];
+      canonical = owner.collection('cards').doc(id);
+      cardSnapshot = await transaction.get(canonical);
+    }
     const tombstone = owner.collection('card_tombstones').doc(id);
-    const cardSnapshot = await transaction.get(canonical);
     const tombstoneSnapshot = await transaction.get(tombstone);
     const usageSnapshot = await transaction.get(resourceUsage);
     const currentEpoch = readEpoch(stateSnapshot);
@@ -655,9 +994,9 @@ export async function createCardForOwner(
       );
     }
 
-    const expectedReservation = createReservation(identity, id);
+    const expectedReservation = createReservation(identity, id, plainTargetLanguage);
     const existingCard = cardSnapshot.exists ? cardSnapshot.data() as CardRecord : null;
-    if (existingCard && !cardMatchesIdentity(existingCard, identity, id)) {
+    if (existingCard && !cardMatchesIdentity(existingCard, identity, id, plainTargetLanguage)) {
       throw new CardAllocationConflictError('identity-conflict', 'The canonical card identity conflicts with the request.');
     }
 
@@ -673,16 +1012,44 @@ export async function createCardForOwner(
         || (existingEpoch !== undefined && Number(existingEpoch) < currentEpoch)),
     );
     const hadIdentity = Boolean(existingReservation || existingCard);
+    // A reservation names the card that holds its identity. When that card id
+    // moved to a derived id above, the reservation follows it.
+    const repointReservation = () => {
+      if (existingReservation && existingReservation.cardId !== id) {
+        transaction.set(reservation, expectedReservation, { merge: false });
+      }
+    };
+    // The permanent reservation is the identity's lifetime record. Capture XP
+    // is paid for the first card of an identity only, so deleting a card and
+    // creating the same word again (or again after clearing the library) cannot
+    // pay it twice.
+    const awardsCaptureXp = !CAPTURE_XP_ONCE_PER_IDENTITY || !hadIdentity;
+    const complete = async (result: CardAllocationResult): Promise<CardAllocationResult> => {
+      const gamification = verifiedCreate && result.created && !result.restored && awardsCaptureXp
+        ? await prepareVerifiedGamification(database, transaction, ownerId, {
+          kind: 'create', receivedAt: verifiedCreate.receivedAt, timeZone: verifiedCreate.timeZone,
+        })
+        : undefined;
+      const completed = verifiedCreate ? { ...result, gamification: gamification?.outcome ?? null } : result;
+      if (verifiedReceipt && verifiedCreate) {
+        transaction.create(verifiedReceipt, { fingerprint: verifiedCreate.fingerprint, result: completed });
+      }
+      if (gamification) commitVerifiedGamification(transaction, gamification);
+      return completed;
+    };
     if (existingCard && !isOldGeneration) {
-      const isStrictCurrent = isStrictCurrentCard(existingCard, id, identity, currentEpoch);
+      const isStrictCurrent = isStrictCurrentCard(existingCard, id, identity, currentEpoch, plainTargetLanguage);
       const normalizedExisting = isStrictCurrent
         ? existingCard
         : canonicalExistingCard(existingCard, id, identity, currentEpoch);
+      const result = await complete({ created: false, card: serializeCardResponse(normalizedExisting) });
       if (!isStrictCurrent) {
         transaction.set(canonical, normalizedExisting, { merge: false });
+        upsertCatalogProgressForCard(database, transaction, ownerId, normalizedExisting);
       }
       if (!existingReservation) transaction.create(reservation, expectedReservation);
-      return { created: false, card: serializeCardResponse(normalizedExisting) };
+      else repointReservation();
+      return result;
     }
 
     const tombstoneRevision = currentTombstoneRevision(tombstoneSnapshot, currentEpoch);
@@ -692,7 +1059,12 @@ export async function createCardForOwner(
     // A generated canonical timestamp is not proof of a deliberate replay. Only
     // an explicit protocol timestamp or caller-supplied creation time may pass
     // the deletion barrier, matching the prior offline mutation semantics.
-    const operationTime = Date.parse(operationCreatedAt ?? String(cardSource.createdAt ?? ''));
+    // A verified create is a fresh capture: replaying the same operation is
+    // answered from its receipt, so its time is the server receive time. The
+    // device clock cannot be compared with the server's deletion time.
+    const operationTime = verifiedCreate
+      ? verifiedCreate.receivedAt.getTime()
+      : Date.parse(operationCreatedAt ?? String(cardSource.createdAt ?? ''));
     const deletionTime = tombstoneSnapshot.exists
       ? Date.parse(String((tombstoneSnapshot.data() as CardRecord).deletedAt ?? ''))
       : Number.NaN;
@@ -700,39 +1072,492 @@ export async function createCardForOwner(
       && Number.isFinite(operationTime)
       && Number.isFinite(deletionTime)
       && operationTime > deletionTime;
+    // Restoring retains the original creation time; a fresh capture starts a
+    // new card lifetime even when its word has a prior deletion tombstone.
+    const originalCreationTime = Date.parse(String(cardSource.createdAt ?? ''));
+    const restoresPriorCard = explicitlyRecreatesAfterDeletion
+      && !verifiedCreate
+      && Number.isFinite(originalCreationTime)
+      && originalCreationTime <= deletionTime;
     if (tombstoneRevision > requestedBaseRevision && !explicitlyRecreatesAfterDeletion) {
       throw new CardAllocationConflictError('deleted', 'The card was deleted by a newer operation.');
     }
+    // Mastery time is server-stamped, so a create never takes it from the
+    // client. Restoring a deleted card is the exception: the card keeps the
+    // date it was mastered when that date fits the card's own lifetime, so it
+    // stays in the recently mastered views and a later review does not restamp it.
+    const suppliedMasteredAt = restoresPriorCard ? optionalDate(cardSource.masteredAt, 'masteredAt') : undefined;
+    const restoredMasteredAt = suppliedMasteredAt
+      && isMasteredCard(normalizedCard)
+      && Date.parse(suppliedMasteredAt) >= originalCreationTime
+      && Date.parse(suppliedMasteredAt) <= deletionTime
+      ? suppliedMasteredAt
+      : undefined;
 
+    // Only a restore of a card this account held brings back the schedule it had: a
+    // delete leaves a tombstone, and every card ever created leaves a reservation. Every
+    // other create, a restore flag on a word the server never saw included, is a new
+    // word: a review is the only thing that may schedule or master it.
+    const bringsBackSchedule = (restore && (hadIdentity || tombstoneSnapshot.exists)) || restoresPriorCard;
     const createdCard = {
-      ...normalizedCard,
+      ...(bringsBackSchedule ? normalizedCard : withoutScheduling(normalizedCard)),
+      ...(restoredMasteredAt ? { masteredAt: restoredMasteredAt } : {}),
       id,
       schemaVersion: 2,
       revision: tombstoneRevision > 0 ? nextProtocolCounter(tombstoneRevision, 'revision') : 1,
       libraryEpoch: currentEpoch,
     };
+    const applyRestoreFacetDelta = async () => {
+      if (!restoreOperation) return;
+      await applyLibraryFacetMutationInTransaction(database, transaction, ownerId, {
+        op: 'delta',
+        ownerId,
+        opId: libraryFacetRestoreOperationId(restoreOperation.opId, restoreOperation.operationCreatedAt),
+        operationCreatedAt: restoreOperation.operationCreatedAt,
+        delta: { [String(normalizedCard.category || 'Other')]: 1 },
+      });
+    };
     if (!hadIdentity) {
       const currentCount = safeStoredCardCount(usageSnapshot) ?? existingCardCount;
       if (currentCount >= maximumCards) throw new CardAllocationLimitError();
+      const result = await complete({
+        created: true,
+        card: serializeCardResponse(createdCard),
+        ...(restore || restoresPriorCard ? { restored: true as const } : {}),
+      });
+      await applyRestoreFacetDelta();
       transaction.create(reservation, expectedReservation);
+      upsertCatalogProgressForCard(database, transaction, ownerId, createdCard);
       if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
       else transaction.create(canonical, createdCard);
       transaction.set(resourceUsage, {
         schemaVersion: RESOURCE_USAGE_SCHEMA_VERSION,
         cardCount: currentCount + 1,
       }, { merge: true });
-      return {
-        created: true,
-        card: serializeCardResponse(createdCard),
-      };
+      return result;
     }
 
-    if (existingCard && !existingReservation) transaction.create(reservation, expectedReservation);
-    if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
-    else transaction.create(canonical, createdCard);
-    return {
+    const result = await complete({
       created: true,
       card: serializeCardResponse(createdCard),
+      ...(restore || restoresPriorCard ? { restored: true as const } : {}),
+    });
+    await applyRestoreFacetDelta();
+    if (existingCard && !existingReservation) transaction.create(reservation, expectedReservation);
+    else repointReservation();
+    upsertCatalogProgressForCard(database, transaction, ownerId, createdCard);
+    if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
+    else transaction.create(canonical, createdCard);
+    return result;
+  });
+}
+
+export async function createCardV2ForOwner(
+  database: Firestore,
+  ownerId: string,
+  card: unknown,
+  options: CreateCardV2Options,
+): Promise<CardAllocationV2Result> {
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(options.opId) || options.restore) {
+    throw new InputValidationError('Card create operation metadata is required.');
+  }
+  const source = asRecord(card, 'Card must be an object.');
+  const normalized = canonicalCard(source, { imageOwnerId: ownerId });
+  if (source.createdAt === undefined) delete normalized.createdAt;
+  const fingerprint = createFingerprint({
+    card: normalized,
+    libraryEpoch: options.libraryEpoch,
+    baseRevision: options.baseRevision,
+    operationCreatedAt: options.operationCreatedAt,
+    timeZone: options.timeZone,
+  });
+  return createCardForOwner(database, ownerId, card, {
+    ...options,
+    verifiedCreate: {
+      fingerprint,
+      receivedAt: options.receivedAt ?? new Date(),
+      timeZone: options.timeZone,
+    },
+  }) as Promise<CardAllocationV2Result>;
+}
+
+export const MAX_STARTER_CARDS_PER_BATCH = 20;
+
+/**
+ * `cardIds` lists the starter cards the learner holds under their catalog id
+ * after the call, in catalog order: the ones this call wrote and the ones they
+ * already owned. The client only accepts ids it asked for, so a starter word
+ * the learner holds under another id (renamed, or relocated by a collision) is
+ * left out, and so is a word whose identity is claimed without a live card
+ * (the learner deleted it earlier) or whose catalog id holds another word. A
+ * replayed card that has since been deleted is left out too. `createdCardIds`
+ * is the subset this call wrote.
+ */
+export type StarterCardBatchResult =
+  | { kind: 'completed'; cardIds: readonly string[] }
+  | { kind: 'created'; cardIds: readonly string[]; createdCardIds: readonly string[] };
+
+const CARD_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+
+const isCurrentGenerationCard = (card: CardRecord, currentEpoch: number): boolean =>
+  (card.libraryEpoch === undefined ? 0 : Number(card.libraryEpoch)) === currentEpoch;
+
+/**
+ * Reserves one unit of the same monthly AI-card quota `reserveWordOperation`
+ * spends for each starter card it writes, and writes them in one Firestore
+ * transaction —
+ * unlike a real AI generation, a starter card's content is fully known
+ * upfront from the static catalog, so there is no external call to bridge
+ * between reserving and writing, and the two collapse into a single atomic
+ * step. Either the whole write (quota debit + every new card) commits, or
+ * none of it does: a client retry with the same `operationId` after a timeout
+ * or crash either replays the already-completed result or safely redoes the
+ * whole batch, and never spends quota twice for it. Pro users resolve
+ * through the same `resolvePlan` pro-period logic as any other AI spend.
+ *
+ * A starter word whose identity the learner already claimed (a live card, a
+ * permanent reservation left by a deleted card, or a tombstone) is never
+ * written again and costs no quota: the learner keeps the card they have, and
+ * a word they deleted stays deleted.
+ */
+export async function createStarterCardsForOwner(
+  database: Firestore,
+  ownerId: string,
+  operationId: string,
+  cards: readonly unknown[],
+  now: Date,
+  config: PilotConfig,
+): Promise<StarterCardBatchResult> {
+  if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Card owner is invalid.');
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(operationId)) {
+    throw new InputValidationError('Starter card operationId is invalid.');
+  }
+  if (cards.length === 0) throw new InputValidationError('Starter card batch must not be empty.');
+  if (cards.length > MAX_STARTER_CARDS_PER_BATCH) {
+    throw new InputValidationError('Starter card batch is too large.');
+  }
+
+  const normalizedCards = cards.map(card => canonicalCard(card, { imageOwnerId: ownerId }));
+  for (const card of normalizedCards) {
+    // The catalog only ever produces plain word identity; a lexeme-identified
+    // card would mean this path is being reused for something it was not
+    // built for, so it is rejected rather than silently accepted.
+    if (card.lexemeId !== undefined) {
+      throw new InputValidationError('Starter cards must use plain word identity, not a lexeme.');
+    }
+  }
+
+  const owner = ownerDocument(database, ownerId);
+  const operationRef = owner.collection('ai_operations').doc(operationId);
+  const planRef = owner.collection('profile').doc('plan');
+  const libraryState = owner.collection('profile').doc('library_state');
+  const resourceUsage = owner.collection('profile').doc('resource_usage');
+  const requestHash = createHash('sha256')
+    .update(JSON.stringify(normalizedCards.map(card => card.id)))
+    .digest('hex');
+
+  // Mirrors createCardForOwner's own baseline read: only used as a fallback
+  // when resource_usage has never been initialized for this owner yet.
+  let existingCardCount: number;
+  try {
+    const countSnapshot = await owner.collection('cards').count().get();
+    const value = countSnapshot.data().count;
+    if (!Number.isSafeInteger(value) || Number(value) < 0) throw new Error('invalid count');
+    existingCardCount = Number(value);
+  } catch {
+    throw new CardAllocationConflictError('identity-conflict', 'The owner card usage baseline is unavailable.');
+  }
+
+  return database.runTransaction(async (transaction: Transaction) => {
+    await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
+    const [operationSnapshot, planSnapshot, stateSnapshot, usageSnapshot] = await Promise.all([
+      transaction.get(operationRef),
+      transaction.get(planRef),
+      transaction.get(libraryState),
+      transaction.get(resourceUsage),
+    ]);
+    const operation = operationSnapshot.data() as AiOperationRecord | undefined;
+    // Only a live (completed) operation owns its request shape; this path
+    // never leaves an operation in a 'reserved' state (see class comment),
+    // so any existing doc for this id is necessarily already completed.
+    if (operation?.requestHash && operation.requestHash !== requestHash && operation.status === 'completed') {
+      throw new AiQuotaError('operation-request-mismatch', { reason: 'operation-request-mismatch' });
+    }
+    const currentEpoch = readEpoch(stateSnapshot);
+    if (operation?.status === 'completed') {
+      const storedIds = Array.isArray(operation.result)
+        ? operation.result.filter((id): id is string => typeof id === 'string' && CARD_ID_PATTERN.test(id))
+        : [];
+      // The replay answers with the cards that still exist, so a card the
+      // learner deleted since is not reported as created again.
+      const storedCards = await Promise.all(storedIds.map(id => transaction.get(owner.collection('cards').doc(id))));
+      const cardIds = storedIds.filter((_, index) => {
+        const stored = storedCards[index];
+        return stored.exists && isCurrentGenerationCard(stored.data() as CardRecord, currentEpoch);
+      });
+      return { kind: 'completed' as const, cardIds };
+    }
+
+    // Read every identity before the first write. The permanent reservation is
+    // the claim on a word; a live card, a tombstone or a reservation each mean
+    // the word is not new to this learner.
+    const probes = await Promise.all(normalizedCards.map(async card => {
+      const identity = card.normalizedWord as string;
+      const plainTargetLanguage = typeof card.language === 'string' ? card.language : undefined;
+      const id = card.id as string;
+      const reservationRef = owner.collection('card_reservations').doc(reservationId(identity, plainTargetLanguage));
+      const canonicalRef = owner.collection('cards').doc(id);
+      const [reservationSnapshot, cardSnapshot, tombstoneSnapshot] = await Promise.all([
+        transaction.get(reservationRef),
+        transaction.get(canonicalRef),
+        transaction.get(owner.collection('card_tombstones').doc(id)),
+      ]);
+      const existingCard = cardSnapshot.exists ? cardSnapshot.data() as CardRecord : null;
+      const owned = Boolean(
+        existingCard
+        && isCurrentGenerationCard(existingCard, currentEpoch)
+        && cardMatchesIdentity(existingCard, identity, id, plainTargetLanguage),
+      );
+      const claimed = reservationSnapshot.exists || cardSnapshot.exists || tombstoneSnapshot.exists;
+      return {
+        card, identity, plainTargetLanguage, id, reservationRef, canonicalRef,
+        status: owned ? 'owned' as const : claimed ? 'claimed' as const : 'new' as const,
+      };
+    }));
+    const toCreate = probes.filter(probe => probe.status === 'new');
+    const cardIds = probes.filter(probe => probe.status !== 'claimed').map(probe => probe.id);
+    const createdCardIds = toCreate.map(probe => probe.id);
+
+    const plan = resolvePlan(planSnapshot.data(), now, config);
+    const periodKey = plan.periodKey;
+    const usageRef = owner.collection('ai_usage').doc(periodKey);
+    const quotaUsageSnapshot = await transaction.get(usageRef);
+    const used = asAiQuotaCount(quotaUsageSnapshot.data()?.used);
+    const requestedUnits = toCreate.length;
+    if (requestedUnits > 0 && config.quotaEnforced && used + requestedUnits > plan.limit) {
+      throw new AiQuotaError('ai-card-quota', {
+        reason: 'ai-card-quota', used, limit: plan.limit, requested: requestedUnits,
+        periodEndsAt: plan.endsAt.toISOString(), tier: plan.tier,
+      });
+    }
+
+    const currentCount = safeStoredCardCount(usageSnapshot) ?? existingCardCount;
+    if (currentCount + requestedUnits > MAX_CARD_ALLOCATION) {
+      throw new CardAllocationLimitError();
+    }
+
+    for (const { card, identity, plainTargetLanguage, id, reservationRef, canonicalRef } of toCreate) {
+      // .create() (not .set()) so a collision that appeared after the reads
+      // above aborts the transaction instead of silently overwriting a card.
+      transaction.create(reservationRef, createReservation(identity, id, plainTargetLanguage));
+      transaction.create(canonicalRef, { ...card, id, schemaVersion: 2, revision: 1, libraryEpoch: currentEpoch });
+    }
+    if (requestedUnits > 0) {
+      transaction.set(usageRef, {
+        periodKey, tier: plan.tier, used: used + requestedUnits, limit: plan.limit,
+        periodStartsAt: plan.startsAt, periodEndsAt: plan.endsAt, updatedAt: now,
+      }, { merge: true });
+      // onboardingStartedAt lets another browser tell starter-only cards from an
+      // existing library; the first batch's time is kept on later batches.
+      transaction.set(resourceUsage, {
+        schemaVersion: RESOURCE_USAGE_SCHEMA_VERSION,
+        cardCount: currentCount + requestedUnits,
+        onboardingStartedAt: usageSnapshot.data()?.onboardingStartedAt ?? now,
+      }, { merge: true });
+    }
+    transaction.set(operationRef, {
+      status: 'completed', requestHash, periodKey, reservedAt: now, completedAt: now, result: cardIds,
+    }, { merge: true });
+    return { kind: 'created' as const, cardIds, createdCardIds };
+  });
+}
+
+export type RenameCardHeadwordRequest = {
+  cardId: string;
+  word: string;
+  baseRevision: number;
+  libraryEpoch: number;
+  /** The account the rename was prepared for; absent from a client one release old. */
+  expectedOwnerId?: string;
+};
+
+export const parseRenameCardHeadwordRequest = (value: unknown): RenameCardHeadwordRequest => {
+  const source = asRecord(value, 'Card headword rename request must be an object.');
+  if (Object.keys(source).some(key => !new Set(['cardId', 'word', 'baseRevision', 'libraryEpoch', 'expectedOwnerId']).has(key))) {
+    throw new InputValidationError('Card headword rename request contains an unsupported field.');
+  }
+  const expectedOwnerId = source.expectedOwnerId;
+  if (expectedOwnerId !== undefined && (typeof expectedOwnerId !== 'string' || expectedOwnerId.length < 1
+    || expectedOwnerId.length > 128 || expectedOwnerId.includes('/'))) {
+    throw new InputValidationError('Card headword rename expectedOwnerId is invalid.');
+  }
+  const cardId = requiredText(source.cardId, 'cardId', 128);
+  if (!/^[a-zA-Z0-9_-]+$/.test(cardId)) {
+    throw new InputValidationError('Card headword rename cardId is invalid.');
+  }
+  return {
+    cardId,
+    word: requiredText(source.word, 'word', 256),
+    baseRevision: nonNegativeInteger(source.baseRevision, 'baseRevision', 0),
+    libraryEpoch: nonNegativeInteger(source.libraryEpoch, 'libraryEpoch', 0),
+    ...(expectedOwnerId === undefined ? {} : { expectedOwnerId }),
+  };
+};
+
+export type CardHeadwordRenameConflictReason =
+  | 'missing'
+  | 'stale-library-epoch'
+  | 'future-library-epoch'
+  | 'revision-conflict'
+  | 'requires-migration'
+  | 'duplicate-word';
+
+export class CardHeadwordRenameConflictError extends Error {
+  constructor(
+    public readonly reason: CardHeadwordRenameConflictReason,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'CardHeadwordRenameConflictError';
+  }
+}
+
+export type RenameCardHeadwordResult = {
+  card: DocumentData;
+};
+
+/**
+ * Corrects a card's headword while keeping lexeme identity. The Rules
+ * client-update path locks `word`/`normalizedWord` on every card that already
+ * has an identity (`hasValidCardIdentityUpdate`), so a plain client `update`
+ * can never reach this field — only this trusted callable, via the Admin SDK,
+ * can change it.
+ *
+ * A legacy (non-lexeme) card's identity reservation is keyed on its
+ * normalizedWord, so renaming it swaps that reservation inside the same
+ * transaction as the card write (release the old one, claim the new one,
+ * reject if a live card of this library already holds the new word; a
+ * reservation whose card is gone or holds another word is taken over). A
+ * canonical (lexemeId) card's reservation is keyed on its lexemeId, which
+ * this callable never touches — its `word`/`normalizedWord` are display-only
+ * relative to its lexeme tuple (`normalizedLemma`, `partOfSpeech`,
+ * `senseKey`, `language`), so no reservation change is needed and the tuple
+ * that names its lexeme stays byte-identical, which is what "keep lexeme
+ * identity" means operationally.
+ */
+export async function renameCardHeadwordForOwner(
+  database: Firestore,
+  ownerId: string,
+  request: RenameCardHeadwordRequest,
+): Promise<RenameCardHeadwordResult> {
+  if (!ownerId || ownerId.includes('/')) throw new InputValidationError('Card owner is invalid.');
+  const newWord = boundedText(request.word, 'word', 256);
+  const newIdentity = normalizedWord(newWord);
+  if (!newIdentity) throw new InputValidationError('Card word is required.');
+  if (exceedsCanonicalLimit(newIdentity, 256)) {
+    throw new InputValidationError('Card normalizedWord is invalid.');
+  }
+
+  const owner = ownerDocument(database, ownerId);
+  const libraryState = owner.collection('profile').doc('library_state');
+  const canonical = owner.collection('cards').doc(request.cardId);
+
+  return database.runTransaction(async (transaction: Transaction) => {
+    await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
+    const [stateSnapshot, cardSnapshot] = await Promise.all([
+      transaction.get(libraryState),
+      transaction.get(canonical),
+    ]);
+    const currentEpoch = readEpoch(stateSnapshot);
+    if (request.libraryEpoch !== currentEpoch) {
+      throw new CardHeadwordRenameConflictError(
+        request.libraryEpoch < currentEpoch ? 'stale-library-epoch' : 'future-library-epoch',
+        request.libraryEpoch < currentEpoch
+          ? 'The card library generation is stale.'
+          : 'The card library generation is from the future.',
+      );
+    }
+    if (!cardSnapshot.exists) {
+      throw new CardHeadwordRenameConflictError('missing', 'The card could not be found.');
+    }
+    const card = cardSnapshot.data() as CardRecord;
+    if (
+      card.schemaVersion !== 2
+      || !Number.isSafeInteger(card.revision)
+      || Number(card.revision) < 1
+      || card.id !== request.cardId
+    ) {
+      throw new CardHeadwordRenameConflictError(
+        'requires-migration',
+        'The card requires migration before its headword can be corrected.',
+      );
+    }
+    if (Number(card.revision) !== request.baseRevision) {
+      throw new CardHeadwordRenameConflictError(
+        'revision-conflict',
+        'The card changed elsewhere. Reload and try again.',
+      );
+    }
+
+    const oldWord = typeof card.word === 'string' ? card.word : '';
+    const oldIdentity = typeof card.normalizedWord === 'string' && card.normalizedWord
+      ? card.normalizedWord
+      : normalizedWord(oldWord);
+    const isCanonical = typeof card.lexemeId === 'string' && card.lexemeId.length > 0;
+
+    if (!isCanonical && oldIdentity !== newIdentity) {
+      const language = typeof card.language === 'string' ? card.language : undefined;
+      const plainTargetLanguage = isTargetScoped(language) ? language : undefined;
+      const oldReservation = owner.collection('card_reservations')
+        .doc(reservationId(oldIdentity, plainTargetLanguage));
+      const newReservation = owner.collection('card_reservations')
+        .doc(reservationId(newIdentity, plainTargetLanguage));
+      const [oldReservationSnapshot, newReservationSnapshot] = await Promise.all([
+        transaction.get(oldReservation),
+        transaction.get(newReservation),
+      ]);
+      if (newReservationSnapshot.exists) {
+        const existing = newReservationSnapshot.data() as CardRecord;
+        if (existing.cardId !== request.cardId) {
+          // A reservation outlives its card, so it only blocks the rename while
+          // the card it names still holds this word in the current library.
+          const holderId = typeof existing.cardId === 'string' && CARD_ID_PATTERN.test(existing.cardId)
+            ? existing.cardId
+            : null;
+          const holder = holderId ? await transaction.get(owner.collection('cards').doc(holderId)) : null;
+          const holderData = holder?.exists ? holder.data() as CardRecord : null;
+          if (
+            !holderId
+            || (holderData
+              && isCurrentGenerationCard(holderData, currentEpoch)
+              && cardMatchesIdentity(holderData, newIdentity, holderId, plainTargetLanguage))
+          ) {
+            throw new CardHeadwordRenameConflictError('duplicate-word', 'Another card already uses this word.');
+          }
+          transaction.set(
+            newReservation,
+            createReservation(newIdentity, request.cardId, plainTargetLanguage),
+            { merge: false },
+          );
+        }
+      } else {
+        transaction.create(newReservation, createReservation(newIdentity, request.cardId, plainTargetLanguage));
+      }
+      if (oldReservationSnapshot.exists && (oldReservationSnapshot.data() as CardRecord).cardId === request.cardId) {
+        transaction.delete(oldReservation);
+      }
+    }
+
+    const { japanesePitchAccent: _previousPitch, ...cardWithoutPitch } = card;
+    const pitch = resolveJapanesePitchAccent(newWord, typeof card.phonetic === 'string' ? card.phonetic : '', typeof card.language === 'string' ? card.language : 'en');
+    const updated = {
+      ...cardWithoutPitch,
+      word: newWord,
+      normalizedWord: newIdentity,
+      ...(pitch ? { japanesePitchAccent: pitch } : {}),
+      revision: nextProtocolCounter(Number(card.revision), 'revision'),
     };
+    transaction.set(canonical, updated, { merge: false });
+    return { card: serializeCardResponse(updated) };
   });
 }

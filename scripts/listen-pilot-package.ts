@@ -29,7 +29,7 @@ import {
 export const LISTEN_MVP_PILOT_PACKAGE_PATH = 'media/listen-mvp/offline-pack.json';
 const DEFAULT_PUBLIC_DIRECTORY = path.resolve(fileURLToPath(new URL('../public/', import.meta.url)));
 const DEFAULT_SOURCE_DIRECTORY = DEFAULT_PUBLIC_DIRECTORY;
-const DEFAULT_DEPLOY_DIRECTORY = path.resolve('dist');
+const DEFAULT_DEPLOY_DIRECTORY = path.resolve(process.env.SONFLASH_BUILD_OUT_DIR || 'dist');
 const EXPECTED_CLIP_IDS = ['break-the-news', 'on-the-ball', 'fair-and-square'] as const;
 
 export const LISTEN_MVP_PILOT_UNAVAILABLE = Object.freeze({

@@ -356,7 +356,7 @@ describe('pronunciation callable boundary', () => {
 
     expect(callable).toContain('onCall({');
     expect(callable).toContain('enforceAppCheck');
-    expect(callable).toContain('requireUser(request.auth)');
+    expect(callable).toContain('requireProfiledUser(request.auth)');
     expect(callable).toContain('consumeBudget');
     expect(callable).toContain('pronunciation-assessment-service');
     expect(callable).toContain('pronunciationAssessmentProvider.available');

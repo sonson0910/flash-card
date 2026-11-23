@@ -1,35 +1,110 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createLibraryCloudProjectionController, type LibraryCloudProjectionInput } from './useLibraryCloudProjection';
+import type { CardData } from '../../types/card';
 import { EMPTY_LIBRARY_STATS } from './cloudLibraryPageController';
+import {
+  createLibraryCloudProjectionController,
+  type LibraryCloudProjectionInput,
+  type LibraryCloudProjectionPublication,
+} from './useLibraryCloudProjection';
 
-const card = { id: 'audit-card', word: 'audit', normalizedWord: 'audit', translation: 'kiểm tra', explanation: '', phonetic: '', emoji: '', category: 'Test', audioUrl: null, imageUrl: null, revision: 1, libraryEpoch: 1, bookmarked: false };
-const session: LibraryCloudProjectionInput['session'] = {
-  identity: { status: 'authenticated', owner: { id: 'audit-owner', displayName: null, email: null, photoUrl: null }, ownerEpoch: { ownerId: 'audit-owner', value: 1 }, canPublishMutations: true, isSigningIn: false, isSigningOut: false, error: null },
-  owner: { ownerId: 'audit-owner', cards: [card], decks: [], legacyPending: 0, legacyIssue: null, isMigratingLegacy: false, status: 'ready', error: null },
-  sync: { isSyncing: false, pendingCount: 0, error: null },
-  cloud: { ownerId: 'audit-owner', queryKey: 'all', page: 1, items: [card], total: 1, hasNext: false, isLoading: false, cloudUnavailable: false, canRetryAutomatically: false, error: null, stats: EMPTY_LIBRARY_STATS, isStatsLoading: false, facets: {}, facetsComplete: false },
+const card = (word: string): CardData => ({
+  id: `word-${word}`,
+  word,
+  normalizedWord: word,
+  translation: `${word}-vi`,
+  explanation: '',
+  phonetic: '',
+  emoji: '📝',
+  category: 'General',
+  audioUrl: null,
+  imageUrl: null,
+  createdAt: '2026-08-03T00:00:00.000Z',
+});
+
+const session = (ownerId: string | null, options: {
+  cloudCards?: CardData[];
+  cloudError?: string | null;
+  cloudLoading?: boolean;
+  hasNext?: boolean;
+  identityLoading?: boolean;
+} = {}): LibraryCloudProjectionInput['session'] => ({
+  identity: {
+    status: options.identityLoading ? 'loading' : ownerId ? 'authenticated' : 'anonymous',
+    owner: ownerId ? { id: ownerId, displayName: null, email: null, photoUrl: null } : null,
+    ownerEpoch: ownerId ? { ownerId, value: 1 } : null,
+    canPublishMutations: Boolean(ownerId),
+    isSigningIn: false,
+    isSigningOut: false,
+    authenticationRecovery: null,
+    error: null,
+  },
+  owner: {
+    ownerId,
+    decks: [],
+    coverPresets: {},
+    legacyPending: 0,
+    legacyIssue: null,
+    isMigratingLegacy: false,
+    status: ownerId ? 'ready' : 'idle',
+    error: null,
+  },
+  cloud: {
+    ownerId,
+    queryKey: 'all',
+    page: 1,
+    items: options.cloudCards ?? [],
+    total: options.cloudCards?.length ?? 0,
+    hasNext: options.hasNext ?? false,
+    isLoading: options.cloudLoading ?? false,
+    cloudUnavailable: false,
+    canRetryAutomatically: false,
+    error: options.cloudError ?? null,
+    stats: EMPTY_LIBRARY_STATS,
+    isStatsLoading: false,
+    facets: {},
+    facetsComplete: false,
+  },
+});
+
+const setup = () => {
+  const publication: LibraryCloudProjectionPublication = {
+    presentCards: vi.fn(),
+    presentCloud: vi.fn(),
+    resetCloud: vi.fn(),
+    resetPage: vi.fn(),
+    previousPage: vi.fn(),
+    reportError: vi.fn(),
+    clearError: vi.fn(),
+  };
+  return {
+    publication,
+    controller: createLibraryCloudProjectionController({ publication }),
+  };
 };
-function setup() {
-  const publication = { presentCards: vi.fn(), presentCloud: vi.fn(), resetCloud: vi.fn(), resetPage: vi.fn(), previousPage: vi.fn(), reportError: vi.fn(), clearError: vi.fn(), notify: vi.fn() };
-  const controller = createLibraryCloudProjectionController({ cache: { readAnonymous: () => ({ ownerId: null, cards: [] }), writeAnonymous: () => {}, loadDeviceBackup: async () => null }, publication });
-  return { controller, publication };
-}
-describe('audit: local mutation vs unchanged cloud projection', () => {
-  it('does not overwrite an acknowledged revision 2 edit with unchanged revision 1 cloud snapshot', async () => {
+
+describe('unchanged cloud projection after local mutation', () => {
+  it('does not republish a stale cloud page over a local acknowledged edit', () => {
     const { controller, publication } = setup();
-    await controller.update({ session, cards: [card], page: 1 });
-    const updated = { ...card, revision: 2, bookmarked: true };
-    publication.presentCards.mockClear();
-    await controller.update({ session: { ...session }, cards: [updated], page: 1 });
-    const republished = publication.presentCards.mock.calls.at(-1)?.[0] ?? [updated];
-    expect(republished[0]).toMatchObject({ revision: 2, bookmarked: true });
+    const cloud = session('owner-a', { cloudCards: [card('focus')] });
+    controller.update({ session: cloud, page: 1 });
+    const updated = { ...cloud.cloud.items[0], revision: 2, bookmarked: true };
+    publication.presentCards([updated]);
+    vi.mocked(publication.presentCards).mockClear();
+    controller.update({ session: { ...cloud }, page: 1 });
+    expect(publication.presentCards).not.toHaveBeenCalled();
+    const fresh = { ...cloud, cloud: { ...cloud.cloud, items: [updated] } };
+    controller.update({ session: fresh, page: 1 });
+    expect(publication.presentCards).toHaveBeenLastCalledWith([updated]);
   });
-  it('keeps an offline delete hidden until a newer cloud snapshot reconciles it', async () => {
+  it('does not resurrect a locally removed card until Firestore delivers a new snapshot', () => {
     const { controller, publication } = setup();
-    await controller.update({ session, cards: [card], page: 1 });
-    publication.presentCards.mockClear();
-    await controller.update({ session: { ...session, sync: { isSyncing: false, pendingCount: 1, error: null } }, cards: [], page: 1 });
-    const republished = publication.presentCards.mock.calls.at(-1)?.[0] ?? [];
-    expect(republished).toHaveLength(0);
+    const cloud = session('owner-a', { cloudCards: [card('focus')] });
+    controller.update({ session: cloud, page: 1 });
+    publication.presentCards([]);
+    vi.mocked(publication.presentCards).mockClear();
+    controller.update({ session: { ...cloud }, page: 1 });
+    expect(publication.presentCards).not.toHaveBeenCalled();
+    controller.update({ session: { ...cloud, cloud: { ...cloud.cloud, items: [] } }, page: 1 });
+    expect(publication.presentCards).toHaveBeenLastCalledWith([]);
   });
 });

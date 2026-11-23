@@ -1,0 +1,51 @@
+<!--#HEAD Extension context menu-->
+<div style="width: 380px; height: 640px; box-sizing: border-box; position: relative; overflow: hidden; font-family: Georgia, 'Times New Roman', serif; background: #ffffff; color: #222222;">
+  <div style="height: 44px; padding: 0 20px; display: flex; align-items: center; border-bottom: 1px solid #e8e8e8; font-family: system-ui, sans-serif; font-size: 13px; color: #555555; gap: 16px;">
+    <span style="font-weight: 700; color: #222222;">Field Notes</span><span>Economy</span><span>Cities</span>
+  </div>
+  <article style="padding: 22px 22px 0;">
+    <h1 style="margin: 0; font-size: 26px; line-height: 1.15; font-weight: 700; color: #111111;">Why small towns bounce back faster</h1>
+    <p style="margin: 14px 0 0; font-size: 16px; line-height: 1.65;">Economists now describe these places as <span style="background: #b4d5fe; color: #111111;">resilient</span>: they lose jobs quickly, but local networks help them recover within a few years.</p>
+    <p style="margin: 12px 0 0; font-size: 16px; line-height: 1.65; color: #444444;">The pattern holds across regions, even where incomes are well below the national average.</p>
+  </article>
+
+  <div role="menu" aria-label="Context menu" style="position: absolute; left: 70px; top: 214px; width: 284px; box-sizing: border-box; padding: 6px 0; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08), 0 8px 24px rgb(0 0 0 / 0.22); font-family: system-ui, 'Segoe UI', sans-serif; font-size: 13px; color: #1f1f1f;">
+    <div role="menuitem" style="{{item}}">Sao chép<span style="margin-left: auto; color: #6b6b6b; font-size: 12px;">Ctrl+C</span></div>
+    <div role="menuitem" style="{{item}}">Tìm kiếm Google cho “resilient”</div>
+    <div role="separator" style="height: 1px; margin: 5px 0; background: #e5e5e5;"></div>
+    <div role="menuitem" style="{{item}}; background: #e8f0fe;"><span style="{{icon}}">S</span>SonFlash: Dịch “resilient”</div>
+    <div role="menuitem" style="{{item}}"><span style="{{icon}}">S</span>SonFlash: Dịch + tạo flashcard</div>
+    <div role="separator" style="height: 1px; margin: 5px 0; background: #e5e5e5;"></div>
+    <div role="menuitem" aria-disabled="true" style="{{item}}; color: #9a9a9a;">In…<span style="margin-left: auto; font-size: 12px;">Ctrl+P</span></div>
+    <div role="menuitem" aria-disabled="true" style="{{item}}; color: #9a9a9a;">Kiểm tra</div>
+  </div>
+
+  <div role="status" class="sf-pop" style="position: absolute; left: 16px; right: 16px; bottom: 18px; box-sizing: border-box; padding: 12px 12px 12px 14px; border-radius: 16px; border: {{toast.border}}; background: {{toast.bg}}; box-shadow: {{toast.shadow}}; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; display: flex; align-items: center; gap: 12px;">
+    <span style="width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; background: {{t.okBg}}; color: {{t.ok}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+    <div style="min-width: 0;">
+      <div style="font-size: 13.5px; font-weight: 650; color: {{t.textStrong}};">Đã lưu vào IELTS</div>
+      <div style="margin-top: 1px; font-size: 12px; color: {{t.text2}};"><span style="font-family: Fraunces, Georgia, serif; font-style: {{t.emStyle}}; color: {{t.emColor}};">resilient</span> · kiên cường · ôn ngày mai</div>
+    </div>
+    <a href="#" style="margin-left: auto; font-size: 12.5px; font-weight: 650; color: {{t.accentText}}; text-decoration: none; flex-shrink: 0;">Mở thẻ</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":380,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    return {
+      t,
+      item: 'height: 30px; padding: 0 16px; display: flex; align-items: center; gap: 10px; white-space: nowrap; cursor: default',
+      icon: 'width: 16px; height: 16px; flex-shrink: 0; border-radius: 4px; background: ' + t.logoBg + '; color: ' + t.logoText + '; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 11px; display: flex; align-items: center; justify-content: center',
+      toast: dark
+        ? { border: '1.5px solid transparent', bg: 'linear-gradient(180deg, #102733, #0a1a22) padding-box, ' + t.rimLearning + ' border-box', shadow: '0 20px 40px -16px rgb(6 22 31 / 0.6), 0 0 30px -12px rgb(40 211 244 / 0.5)' }
+        : { border: '1px solid rgb(29 26 22 / 0.1)', bg: '#fffcf5', shadow: '0 2px 4px rgb(60 40 20 / 0.08), 0 20px 40px -20px rgb(60 40 20 / 0.5)' },
+    };
+  }
+}
+</script>
+</body>
+</html>

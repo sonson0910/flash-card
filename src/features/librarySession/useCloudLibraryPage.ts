@@ -1,19 +1,44 @@
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { CardQueryState } from '../../lib/cardQuery';
-import { loadDevicePending, mergePendingOperations } from '../../lib/deviceSync';
-import { overlayPendingCardsOnPage } from '../../lib/pendingCardOverlay';
-import { upsertMirroredCardBatch } from '../../lib/cardMirror';
 import type { CardData } from '../../types/card';
 import { overlayRecentlyPromotedCards } from '../library/libraryPresentation';
 import {
   cloudBackoffCacheKey, cloudFacetsCacheKey, cloudPageCacheKey, cloudStatsCacheKey,
-  getBoundedCloudFallback, isCloudBackoffActive, persistLocalCardBackup,
+  isCloudBackoffActive, normalizeLocalCards,
   readCachedCloudStats, readCachedCloudTotal, readLocalJson, writeLocalValue,
   type CachedCloudPage, type CachedCloudStats,
 } from '../library/libraryStorage';
-import { createCloudLibraryPageController, type CloudLibraryCachePort } from './cloudLibraryPageController';
+import {
+  createCloudLibraryPageController, EMPTY_LIBRARY_STATS,
+  type CloudLibraryCachePort, type CloudLibraryPageSnapshot,
+} from './cloudLibraryPageController';
 import { createCloudLibraryPageFirebaseAdapter } from './cloudLibraryPageFirebaseAdapter';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
+
+/** What a render sees until the controller has set up the owner it is asked for. */
+const NO_OWNER_SNAPSHOT: CloudLibraryPageSnapshot = {
+  ownerId: null,
+  queryKey: '',
+  page: 1,
+  items: [],
+  total: 0,
+  hasNext: false,
+  isLoading: false,
+  cloudUnavailable: false,
+  serverConfirmed: false,
+  cacheOnly: false,
+  canRetryAutomatically: false,
+  error: null,
+  stats: EMPTY_LIBRARY_STATS,
+  isStatsLoading: false,
+  facets: {},
+  facetsComplete: false,
+};
+
+const localDateKey = () => {
+  const now = new Date();
+  return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+};
 
 export function useCloudLibraryPage({
   ownerId,
@@ -23,8 +48,10 @@ export function useCloudLibraryPage({
   pageSize,
   refreshKey,
   statsOpen,
-  getDeviceFallback,
+  statsRefreshRequest,
+  progressEvidenceOpen,
   getPromotedCards,
+  releaseSavedPromotedCards,
 }: {
   ownerId: string | null;
   query: CardQueryState;
@@ -33,51 +60,69 @@ export function useCloudLibraryPage({
   pageSize: number;
   refreshKey: number;
   statsOpen: boolean;
-  getDeviceFallback: (query: CardQueryState, page: number) => Promise<{ items: CardData[]; total: number; hasNext: boolean } | null>;
+  statsRefreshRequest?: { ownerId: string; requestId: number } | null;
+  progressEvidenceOpen: boolean;
   getPromotedCards: () => readonly CardData[];
+  releaseSavedPromotedCards?: (pageCards: readonly CardData[]) => void;
 }) {
-  const fallbackRef = useRef(getDeviceFallback);
   const promotedRef = useRef(getPromotedCards);
+  const releaseRef = useRef(releaseSavedPromotedCards);
   const queryRef = useRef(query);
-  fallbackRef.current = getDeviceFallback;
+  const [localDay, setLocalDay] = useState(localDateKey);
   promotedRef.current = getPromotedCards;
+  releaseRef.current = releaseSavedPromotedCards;
   queryRef.current = query;
 
-  const transformPage = useCallback(async (request: { ownerId: string; query: CardQueryState; page: number; pageSize: number }, items: CardData[]) => {
-    const pending = mergePendingOperations(await loadDevicePending(request.ownerId))
-      .filter(operation => operation.ownerUserId === request.ownerId);
-    const promotedPage = overlayRecentlyPromotedCards({
-      pageCards: overlayPendingCardsOnPage({ cloudCards: items, pendingOperations: pending, filters: request.query, page: request.page, pageSize: request.pageSize }),
+  useEffect(() => {
+    if ((!statsOpen && !progressEvidenceOpen) || !ownerId) return;
+    const checkDay = () => setLocalDay(localDateKey());
+    const now = new Date();
+    const nextDay = new Date(now);
+    nextDay.setHours(24, 0, 0, 0);
+    const timer = window.setTimeout(checkDay, nextDay.getTime() - now.getTime() + 50);
+    window.addEventListener('focus', checkDay);
+    document.addEventListener('visibilitychange', checkDay);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('focus', checkDay);
+      document.removeEventListener('visibilitychange', checkDay);
+    };
+  }, [ownerId, statsOpen, progressEvidenceOpen, localDay]);
+
+  const transformPage = useCallback(async (request: { query: CardQueryState; page: number; pageSize: number }, items: CardData[]) =>
+    overlayRecentlyPromotedCards({
+      pageCards: items,
       promotedCards: [...promotedRef.current()],
       filters: request.query,
       page: request.page,
       pageSize: request.pageSize,
-    });
-    // Promotion controls ordering, but a later local mutation remains authoritative.
-    // In particular, a queued delete must not be resurrected by a stale promoted copy.
-    return overlayPendingCardsOnPage({
-      cloudCards: promotedPage,
-      pendingOperations: pending,
-      filters: request.query,
-      page: request.page,
-      pageSize: request.pageSize,
-    });
-  }, []);
+    }), []);
+  // Only a live page proves the server holds a card; the local page cache can
+  // be older than a delete or a re-creation.
+  const transformLivePage = useCallback((request: { query: CardQueryState; page: number; pageSize: number }, items: CardData[]) => {
+    releaseRef.current?.(items);
+    return transformPage(request, items);
+  }, [transformPage]);
 
   const controller = useMemo(() => {
-    const adapter = createCloudLibraryPageFirebaseAdapter({ database: db, configured: isFirebaseConfigured, transformPage });
+    const adapter = createCloudLibraryPageFirebaseAdapter({ database: db, configured: isFirebaseConfigured, transformPage: transformLivePage });
     const cache: CloudLibraryCachePort = {
       readPage: async request => {
-        const fallback = await fallbackRef.current(request.query, request.page)
-          ?? getBoundedCloudFallback(request.ownerId, request.queryKey, request.page, request.query, request.pageSize);
-        if (!fallback) return null;
+        const cachedValue = readLocalJson<unknown>(cloudPageCacheKey(request.ownerId), null);
+        const cachedPage = cachedValue && typeof cachedValue === 'object' && !Array.isArray(cachedValue)
+          ? cachedValue as Partial<CachedCloudPage>
+          : null;
+        if (!cachedPage || cachedPage.queryKey !== request.queryKey || cachedPage.page !== request.page
+          || !Array.isArray(cachedPage.items) || typeof cachedPage.total !== 'number') return null;
+        const items = normalizeLocalCards(cachedPage.items).slice(0, request.pageSize);
+        if (items.length === 0) return null;
         return {
-          ...fallback,
-          items: await transformPage(request, fallback.items),
+          items: await transformPage(request, items),
+          total: ((request.page - 1) * request.pageSize) + items.length,
+          hasNext: false,
         };
       },
-      writePage: async value => {
-        persistLocalCardBackup(value.items, pageSize, value.total, value.ownerId);
+      writePage: value => {
         writeLocalValue(cloudPageCacheKey(value.ownerId), JSON.stringify({
           queryKey: value.queryKey,
           page: value.page,
@@ -87,12 +132,10 @@ export function useCloudLibraryPage({
           updatedAt: new Date().toISOString(),
           countedAt: value.countedAt === null ? null : new Date(value.countedAt).toISOString(),
         } satisfies CachedCloudPage));
-        try { await upsertMirroredCardBatch(value.ownerId, value.items); }
-        catch (cause) { console.warn('The visible page could not be copied to the local IndexedDB mirror.', cause); }
       },
       readCount: readCachedCloudTotal,
-      readStats: readCachedCloudStats,
-      writeStats: (id, stats, updatedAt) => { writeLocalValue(cloudStatsCacheKey(id), JSON.stringify({ stats, updatedAt: new Date(updatedAt).toISOString() } satisfies CachedCloudStats)); },
+      readStats: (id, targetLanguage) => readCachedCloudStats(id, targetLanguage),
+      writeStats: (id, targetLanguage, stats, updatedAt) => { writeLocalValue(cloudStatsCacheKey(id, targetLanguage), JSON.stringify({ stats, updatedAt: new Date(updatedAt).toISOString() } satisfies CachedCloudStats)); },
       readFacets: id => {
         const value = readLocalJson<unknown>(cloudFacetsCacheKey(id), null);
         if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -106,9 +149,12 @@ export function useCloudLibraryPage({
       markBackoff: id => { writeLocalValue(cloudBackoffCacheKey(id), String(Date.now() + 5 * 60 * 1000)); },
     };
     return createCloudLibraryPageController({ adapter, cache, pageSize });
-  }, [pageSize, transformPage]);
+  }, [pageSize, transformLivePage, transformPage]);
 
-  const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  const controllerSnapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  // The controller keeps the last owner's data until it activates the next one, which happens after the
+  // render that first names that owner; those figures must never be read as the new owner's.
+  const snapshot = controllerSnapshot.ownerId === ownerId ? controllerSnapshot : NO_OWNER_SNAPSHOT;
 
   useEffect(() => {
     if (!ownerId) { controller.stop(); return; }
@@ -136,8 +182,21 @@ export function useCloudLibraryPage({
   }, [controller, ownerId, page, queryKey]);
 
   useEffect(() => {
-    if (statsOpen && ownerId) void controller.requestStats();
-  }, [controller, ownerId, statsOpen]);
+    // Depending on targetLanguage (not the whole query) means an unrelated
+    // catalog filter change never re-triggers a stats read; only opening the
+    // panel or switching the active course does.
+    if (statsOpen && ownerId && statsRefreshRequest?.ownerId !== ownerId) void controller.requestStats(query.targetLanguage ?? null);
+  }, [controller, ownerId, statsOpen, statsRefreshRequest?.ownerId, query.targetLanguage, localDay]);
+
+  useEffect(() => {
+    if (ownerId && statsRefreshRequest?.ownerId === ownerId) {
+      void controller.requestStats(query.targetLanguage ?? null, { requestId: statsRefreshRequest.requestId });
+    }
+  }, [controller, ownerId, statsRefreshRequest?.ownerId, statsRefreshRequest?.requestId, query.targetLanguage]);
+
+  useEffect(() => {
+    if (progressEvidenceOpen && ownerId) void controller.requestProgressEvidence(query.targetLanguage ?? null);
+  }, [controller, ownerId, progressEvidenceOpen, query.targetLanguage, localDay]);
 
   useEffect(() => () => controller.stop(), [controller]);
   return snapshot;

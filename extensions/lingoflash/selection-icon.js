@@ -16,9 +16,44 @@
     'addons.mozilla.org',
   ]);
   const extensionApi = globalThis.browser ?? globalThis.chrome;
+  // Self-contained: this file is registered directly as a content script (not
+  // serialized), so it keeps persistent access to chrome.i18n; falls back to
+  // the same literal SonFlash copy outside a real extension runtime.
+  const t = (name, substitutions, fallback) => {
+    try {
+      const resolved = extensionApi?.i18n?.getMessage(name, substitutions);
+      return typeof resolved === 'string' && resolved ? resolved : fallback;
+    } catch { return fallback; }
+  };
   let host = null;
   let selectedText = '';
   let timer = null;
+  // The icon follows the extension's saved look; it reads only SonFlash's own
+  // settings entry and keeps the Classic/system default when that is unavailable.
+  const SETTINGS_STORAGE_KEY = 'lingoflash_extension_settings';
+  let themeFamily = 'classic';
+  let colorScheme = 'system';
+  const applyStoredTheme = settings => {
+    if (!settings || typeof settings !== 'object') return;
+    themeFamily = settings.themeFamily === 'crystal' ? 'crystal' : 'classic';
+    colorScheme = settings.colorScheme === 'dark' || settings.colorScheme === 'light' ? settings.colorScheme : 'system';
+  };
+  const readStoredTheme = () => {
+    try {
+      const area = extensionApi?.storage?.sync ?? extensionApi?.storage?.local;
+      if (typeof area?.get !== 'function') return;
+      const done = values => applyStoredTheme(values?.[SETTINGS_STORAGE_KEY]);
+      if (globalThis.browser?.storage) void area.get(SETTINGS_STORAGE_KEY).then(done, () => {});
+      else area.get(SETTINGS_STORAGE_KEY, done);
+    } catch {}
+  };
+  const onStorageChanged = changes => {
+    if (changes?.[SETTINGS_STORAGE_KEY]) applyStoredTheme(changes[SETTINGS_STORAGE_KEY].newValue);
+  };
+  const resolvedScheme = () => {
+    if (colorScheme !== 'system') return colorScheme;
+    try { return globalThis.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light'; } catch { return 'light'; }
+  };
 
   const normalize = value => String(value ?? '').replace(/\s+/g, ' ').trim();
 
@@ -80,41 +115,72 @@
       hide();
       return;
     }
+    const family = themeFamily;
+    const scheme = resolvedScheme();
     const style = document.createElement('style');
     style.textContent = `
       :host { all: initial; }
       @keyframes sf-pop { 0% { opacity: 0; transform: scale(0.75); } 100% { opacity: 1; transform: scale(1); } }
       button {
-        align-items: center; background: radial-gradient(circle at 30% 30%, #0e2b3d 0%, #07111f 100%);
-        border: 1.5px solid #22d3ee; border-radius: 50%;
-        box-shadow: 0 8px 24px -4px rgba(2, 6, 23, 0.75), 0 0 14px rgba(34, 211, 238, 0.35);
-        color: #a5f3fc; cursor: pointer; display: flex; font: 16px/1 system-ui, sans-serif;
-        height: 36px; justify-content: center; padding: 0;
-        transition: transform .18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .18s ease, background .18s ease;
-        width: 36px; animation: sf-pop .18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        --icon-bg: linear-gradient(145deg, #7ee6fa, #28d3f4 45%, #966cd7);
+        --icon-text: #04141c;
+        --icon-shadow: 0 6px 16px -4px rgb(40 211 244 / 0.7);
+        --icon-focus: #7ee6fa;
+        align-items: center; background: var(--icon-bg); border: 0; border-radius: 50%;
+        box-shadow: var(--icon-shadow); color: var(--icon-text); cursor: pointer; display: flex;
+        height: 34px; justify-content: center; margin: 2px; padding: 0; width: 34px;
+        transition: transform .18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .18s ease;
+        animation: sf-pop .18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
-      button:hover {
-        background: radial-gradient(circle at 30% 30%, #164e63 0%, #0c2333 100%);
-        transform: translateY(-2px) scale(1.08);
-        box-shadow: 0 10px 28px -2px rgba(2, 6, 23, 0.85), 0 0 20px rgba(34, 211, 238, 0.55);
-        border-color: #67e8f9;
+      button[data-scheme="light"] { --icon-bg: #1d1a16; --icon-text: #fbf6ec; --icon-shadow: 0 6px 14px -6px rgb(29 26 22 / 0.7); --icon-focus: #b4461a; }
+      button[data-family="crystal"] {
+        --icon-bg: linear-gradient(145deg, #1a1f30, #07090f); --icon-focus: #5ef2ff;
+        border-radius: 0; box-shadow: none; height: 38px; margin: 0; padding: 7px; width: 38px;
+        clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+        filter: drop-shadow(0 6px 10px rgb(255 42 77 / 0.5));
       }
+      button[data-family="crystal"][data-scheme="light"] { --icon-bg: linear-gradient(145deg, #ffffff, #d6ecff); --icon-focus: #0a7d99; }
+      button:hover { transform: translateY(-2px) scale(1.06); }
       button:active { transform: scale(0.95); }
-      button:focus-visible { outline: 2px solid #f8fafc; outline-offset: 2px; }
-      button svg { width: 18px; height: 18px; fill: #22d3ee; filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.5)); }
+      button:focus-visible { outline: 2px solid var(--icon-focus); outline-offset: 2px; }
+      button svg { display: block; height: 100%; width: 100%; }
+      button text { fill: currentColor; font-family: Fraunces, Georgia, 'Times New Roman', serif; font-size: 17px; font-style: italic; }
       @media (prefers-reduced-motion: reduce) { button { animation: none; transition: none; } button:hover { transform: none; } }
     `;
     const button = document.createElement('button');
     button.type = 'button';
-    button.setAttribute('aria-label', 'Dịch và tạo flashcard bằng LingoFlash');
+    button.setAttribute('aria-label', t('selectionIconAriaLabel', undefined, 'Dịch và tạo flashcard bằng SonFlash'));
+    button.setAttribute('data-family', family);
+    button.setAttribute('data-scheme', scheme);
+    const svgNs = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('width', '18');
-    svg.setAttribute('height', '18');
     svg.setAttribute('aria-hidden', 'true');
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', 'M13 2L3 14h9l-1 8 10-12h-9l1-8z');
-    svg.append(path);
+    if (family === 'crystal') {
+      // Crystal Star's five-point faceted star, alternating light and deep facets.
+      svg.setAttribute('viewBox', '0 0 100 100');
+      const points = [
+        ['50.0,52.0 38.2,35.7 50.0,4.0', '#ff5470'], ['50.0,52.0 50.0,4.0 61.8,35.7', '#7a0820'],
+        ['50.0,52.0 61.8,35.7 95.7,37.2', '#ff5470'], ['50.0,52.0 95.7,37.2 69.2,58.2', '#7a0820'],
+        ['50.0,52.0 69.2,58.2 78.2,90.8', '#ff5470'], ['50.0,52.0 78.2,90.8 50.0,72.2', '#7a0820'],
+        ['50.0,52.0 50.0,72.2 21.8,90.8', '#ff5470'], ['50.0,52.0 21.8,90.8 30.8,58.2', '#7a0820'],
+        ['50.0,52.0 30.8,58.2 4.3,37.2', '#ff5470'], ['50.0,52.0 4.3,37.2 38.2,35.7', '#7a0820'],
+      ];
+      for (const [value, fill] of points) {
+        const polygon = document.createElementNS(svgNs, 'polygon');
+        polygon.setAttribute('points', value);
+        polygon.setAttribute('fill', fill);
+        svg.append(polygon);
+      }
+    } else {
+      // Classic shows the SonFlash "S" monogram.
+      svg.setAttribute('viewBox', '0 0 34 34');
+      const letter = document.createElementNS(svgNs, 'text');
+      letter.setAttribute('x', '17');
+      letter.setAttribute('y', '23');
+      letter.setAttribute('text-anchor', 'middle');
+      letter.textContent = 'S';
+      svg.append(letter);
+    }
     button.append(svg);
     const submit = event => {
       if (!event.isTrusted) return;
@@ -189,6 +255,7 @@
     globalThis.removeEventListener('scroll', hide, true);
     globalThis.removeEventListener('resize', hide, true);
     extensionApi?.runtime?.onMessage?.removeListener?.(onMessage);
+    extensionApi?.storage?.onChanged?.removeListener?.(onStorageChanged);
   };
 
   const onMessage = message => {
@@ -205,4 +272,6 @@
   globalThis.addEventListener('scroll', hide, true);
   globalThis.addEventListener('resize', hide, true);
   extensionApi?.runtime?.onMessage?.addListener?.(onMessage);
+  extensionApi?.storage?.onChanged?.addListener?.(onStorageChanged);
+  readStoredTheme();
 })();

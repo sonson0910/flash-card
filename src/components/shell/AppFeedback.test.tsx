@@ -1,10 +1,18 @@
 import { renderToStaticMarkup } from 'react-dom/server';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AppFeedback } from './AppFeedback';
 
+const renderFeedback = (feedback: React.ReactNode) => {
+  i18n.load('en', {});
+  i18n.activate('en');
+  return renderToStaticMarkup(<I18nProvider i18n={i18n}>{feedback}</I18nProvider>);
+};
+
 describe('AppFeedback', () => {
   it('renders feedback as a compact fixed popup stack instead of page-flow banners', () => {
-    const html = renderToStaticMarkup(
+    const html = renderFeedback(
       <AppFeedback
         authError="Sign-in failed."
         error="Import failed."
@@ -36,12 +44,10 @@ describe('AppFeedback', () => {
   });
 
   it('shows paused cloud sync as one actionable popup', () => {
-    const html = renderToStaticMarkup(
+    const html = renderFeedback(
       <AppFeedback
         syncStatus={{
           isOnline: true,
-          isSyncing: false,
-          pendingCount: 0,
           error: null,
           cloudUnavailable: true,
         }}
@@ -58,14 +64,41 @@ describe('AppFeedback', () => {
     expect(html.match(/data-notification-toast="true"/g)).toHaveLength(1);
   });
 
+  it('keeps an undo child in the same bottom-right stack after notifications', () => {
+    const html = renderFeedback(<AppFeedback><span data-undo-toast="true">Undo item</span></AppFeedback>);
+
+    expect(html).toContain('class="app-feedback-stack');
+    expect(html).toContain('bottom-[calc(5.5rem+env(safe-area-inset-bottom))]');
+    expect(html).toContain('lg:bottom-4');
+    expect(html.indexOf('data-undo-toast="true"')).toBeGreaterThan(html.indexOf('data-notification-viewport="true"'));
+  });
+
+  it('keeps observed session loss persistent and offers the real sign-in callback', () => {
+    const html = renderFeedback(<AppFeedback sessionLost onRetryAuth={vi.fn()} />);
+
+    expect(html).toContain('Session ended');
+    expect(html).toContain('Sign in again to restore cloud sync.');
+    expect(html).toContain('aria-label="Sign in again"');
+    expect(html).not.toContain('Dismiss sign-in message');
+    expect(html).toContain('role="alert"');
+  });
+
+  it('shows the actual auth retry busy state without clearing session recovery', () => {
+    const html = renderFeedback(<AppFeedback sessionLost isRetryingAuth onRetryAuth={vi.fn()} />);
+
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('aria-label="Connecting…"');
+    expect(html).toContain('Connecting…');
+    expect(html).toContain('disabled=""');
+    expect(html).toContain('Session ended');
+  });
+
   it('keeps initial cloud verification out of the notification stack', () => {
-    const html = renderToStaticMarkup(
+    const html = renderFeedback(
       <AppFeedback
         syncStatus={{
           isOnline: true,
-          isSyncing: false,
           isCheckingCloud: true,
-          pendingCount: 0,
           error: null,
           cloudUnavailable: true,
         }}
@@ -76,6 +109,6 @@ describe('AppFeedback', () => {
   });
 
   it('renders nothing when there is no feedback', () => {
-    expect(renderToStaticMarkup(<AppFeedback />)).toBe('');
+    expect(renderFeedback(<AppFeedback />)).toBe('');
   });
 });

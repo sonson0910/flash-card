@@ -3,6 +3,7 @@ import { webcrypto } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
+import { createI18nMock, loadMessages } from './i18n-test-helper.mjs';
 
 const sourceFiles = [
   '../shared.js',
@@ -38,6 +39,7 @@ const createWorkerContext = async ({
   executeScriptError = '',
   executeScriptRenderResult = { ok: true },
   executeScriptCaptureResult = { text: '', anchor: null, context: '' },
+  captureSelectionGate = null,
   fetchImpl = null,
   storageEntries = [],
   storageGetError = '',
@@ -50,11 +52,16 @@ const createWorkerContext = async ({
   timerCapMs = null,
   permissionOrigins = [],
   activeTabUrl = '',
+  activeTabTitle = '',
   permissionsRequestResult = true,
+  actionApiAvailable = true,
+  actionBadgeError = '',
+  actionBadgeGate = null,
   hasSessionStorage = true,
   registerContentScriptError = '',
   userAgent = 'Mozilla/5.0 Chrome/127.0.0.0 Safari/537.36',
   now = null,
+  uiLanguage = '',
 } = {}) => {
   const calls = [];
   const storageValues = new Map(storageEntries);
@@ -68,6 +75,7 @@ const createWorkerContext = async ({
     alarms: makeEvent(),
     tabsRemoved: makeEvent(),
     permissionsRemoved: makeEvent(),
+    connects: makeEvent(),
   };
   const grantedOrigins = new Set(permissionOrigins);
   const storage = {
@@ -122,9 +130,11 @@ const createWorkerContext = async ({
       onInstalled: events.installed,
       onStartup: events.startup,
       onMessage: events.messages,
+      onConnect: events.connects,
       getManifest() {
         return { version: '1.6.3' };
       },
+      ...(uiLanguage ? { getURL: path => `chrome-extension://test/${path}` } : {}),
       sendMessage: message => {
         calls.push({ type: 'runtime.sendMessage', message });
         return Promise.resolve();
@@ -136,7 +146,11 @@ const createWorkerContext = async ({
     },
     tabs: {
       query(_query, callback) {
-        callback([{ id: 7, ...(activeTabUrl ? { url: activeTabUrl } : {}) }]);
+        callback([{ id: 7, ...(activeTabUrl ? { url: activeTabUrl } : {}), ...(activeTabTitle ? { title: activeTabTitle } : {}) }]);
+      },
+      get(id, callback) {
+        calls.push({ type: 'tabs.get', id });
+        callback(id === 7 ? { id, ...(activeTabUrl ? { url: activeTabUrl } : {}), ...(activeTabTitle ? { title: activeTabTitle } : {}) } : { id });
       },
       create(details, callback) {
         calls.push({ type: 'tabs.create', details });
@@ -168,11 +182,16 @@ const createWorkerContext = async ({
         chrome.runtime.lastError = null;
         return;
       }
-      callback(details.func?.name === 'renderInlineBubble'
+      const result = details.func?.name === 'renderInlineBubble'
         ? [{ result: executeScriptRenderResult }]
         : details.func?.name === 'captureSelectionFromPage'
           ? [{ result: executeScriptCaptureResult }]
-          : []);
+          : [];
+      if (details.func?.name === 'captureSelectionFromPage' && captureSelectionGate) {
+        captureSelectionGate.then(() => callback(result));
+        return;
+      }
+      callback(result);
       },
       registerContentScripts(details, callback) {
         calls.push({ type: 'scripting.registerContentScripts', details });
@@ -225,6 +244,24 @@ const createWorkerContext = async ({
       },
       onCommand: events.commands,
     },
+    ...(actionApiAvailable ? {
+      action: {
+        setBadgeText(details, callback) {
+          calls.push({ type: 'action.setBadgeText', details });
+          const complete = () => {
+            if (actionBadgeError) {
+              chrome.runtime.lastError = { message: actionBadgeError };
+              callback?.();
+              chrome.runtime.lastError = null;
+              return;
+            }
+            callback?.();
+          };
+          if (actionBadgeGate) actionBadgeGate.then(complete);
+          else complete();
+        },
+      },
+    } : {}),
     permissions: {
       contains(details, callback) {
         callback(Boolean(details?.origins?.every(origin => grantedOrigins.has(origin))));
@@ -271,38 +308,127 @@ const createWorkerContext = async ({
     clearTimeout,
     console,
     crypto: webcrypto,
-    fetch: fetchImpl ?? (() => { throw new Error('fetch should not be called by this test'); }),
+    fetch: uiLanguage
+      ? async (url, ...rest) => {
+        const packaged = /\/_locales\/([a-z]+)\/messages\.json$/.exec(String(url));
+        if (packaged) return { ok: true, json: async () => loadMessages(packaged[1]) };
+        return (fetchImpl ?? (() => { throw new Error('fetch should not be called by this test'); }))(url, ...rest);
+      }
+      : fetchImpl ?? (() => { throw new Error('fetch should not be called by this test'); }),
     setTimeout: workerSetTimeout,
     navigator: { userAgent },
     chrome,
   };
   context.globalThis = context;
+  if (uiLanguage) {
+    // Chrome resolves getMessage() against the browser language and falls back to the default locale.
+    const resolved = uiLanguage === 'en' ? 'en' : 'vi';
+    chrome.i18n = { ...createI18nMock(resolved), getUILanguage: () => uiLanguage };
+  }
   vm.createContext(context);
   for (const relativePath of sourceFiles) {
     const source = await readFile(new URL(relativePath, import.meta.url), 'utf8');
     vm.runInContext(source, context, { filename: relativePath });
   }
+  const connectProvider = sender => {
+    const disconnect = makeEvent();
+    const messages = makeEvent();
+    const posted = [];
+    const port = {
+      name: 'sonflash-app-bridge',
+      sender,
+      onMessage: messages,
+      onDisconnect: disconnect,
+      postMessage(message) {
+        posted.push(message);
+        calls.push({ type: 'runtime.port.postMessage', message });
+      },
+      disconnect() {
+        for (const listener of disconnect.listeners) listener();
+      },
+      posted,
+    };
+    for (const listener of events.connects.listeners) listener(port);
+    return port;
+  };
+  const appPort = connectProvider({
+    url: context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 7 },
+    frameId: 0,
+  });
   await flushMicrotasks();
+  const startupCalls = [...calls];
   calls.length = 0;
 
   return {
     context,
     calls,
+    startupCalls,
     events,
     storageValues,
+    providerId: appPort.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId ?? '',
+    appPort,
+    connectProvider,
     failStorageReads(count) { storageGetError = 'storage unavailable'; storageGetFailures = count; },
   };
 };
 
-const sendRuntimeMessage = (worker, message, sender = {}) => new Promise(resolve => {
+const sendRuntimeMessageRaw = (worker, message, sender = {}) => new Promise(resolve => {
   const [listener] = worker.events.messages.listeners;
   assert.ok(listener, 'background worker did not register a runtime message listener');
-  assert.equal(listener(message, sender, resolve), true);
+  const metadataMessageTypes = new Set([
+    'GET_DECK_METADATA_GENERATION', 'SYNC_DECK_METADATA', 'CLEAR_DECK_METADATA',
+    'SYNC_DUE_COUNT', 'CLEAR_DUE_COUNT',
+    'SYNC_COURSE_LOCALE', 'CLEAR_COURSE_LOCALE',
+  ]);
+  const messageForWorker = metadataMessageTypes.has(message?.type) && message.providerId === undefined
+    ? { ...message, providerId: worker.providerId }
+    : message;
+  const senderForWorker = metadataMessageTypes.has(message?.type) && sender.frameId === undefined
+    ? { ...sender, frameId: 0 }
+    : sender;
+  assert.equal(listener(messageForWorker, senderForWorker, resolve), true);
 });
+
+const deckSessions = new WeakMap();
+const sendRuntimeMessage = async (worker, message, sender = {}) => {
+  if (['SYNC_DECK_METADATA', 'CLEAR_DECK_METADATA'].includes(message?.type)
+    && message.payload?.generation === undefined) {
+    const providerId = message.providerId ?? worker.providerId;
+    const sessions = deckSessions.get(worker) ?? new Map();
+    deckSessions.set(worker, sessions);
+    let session = sessions.get(providerId);
+    if (session?.scope !== message.payload.scope) {
+      const issued = await sendRuntimeMessageRaw(worker, { type: 'GET_DECK_METADATA_GENERATION', providerId }, sender);
+      if (!issued.ok) return issued;
+      session = { scope: message.payload.scope, generation: issued.generation };
+      sessions.set(providerId, session);
+    }
+    const response = await sendRuntimeMessageRaw(worker, {
+      ...message, payload: { ...message.payload, generation: session.generation },
+    }, sender);
+    if (message.type === 'CLEAR_DECK_METADATA' && response.ok) sessions.delete(providerId);
+    return response;
+  }
+  return sendRuntimeMessageRaw(worker, message, sender);
+};
 
 const startQuickAdd = worker => sendRuntimeMessage(worker, {
   type: 'ADD_SELECTION',
   text: 'resilient',
+});
+
+test('installs both Canvas context-menu actions with the localized SonFlash labels', async () => {
+  const worker = await createWorkerContext();
+
+  worker.events.installed.listeners.forEach(listener => listener());
+  await flushMicrotasks();
+
+  const menus = worker.calls.filter(call => call.type === 'contextMenus.create').map(call => call.details);
+  assert.deepEqual(menus.map(menu => menu.id), ['lingoflash-translate-only', 'lingoflash-translate-save']);
+  assert.equal(menus[0].title, 'SonFlash: Dịch “%s”');
+  assert.equal(menus[1].title, 'SonFlash: Dịch + tạo flashcard');
+  assert.deepEqual(menus.map(menu => [...menu.contexts]), [['selection'], ['selection']]);
 });
 
 test('opens the browser shortcut configuration on request', async () => {
@@ -313,6 +439,41 @@ test('opens the browser shortcut configuration on request', async () => {
   assert.equal(response.ok, true);
   assert.ok(worker.calls.some(call => call.type === 'tabs.create'
     && call.details.url === 'chrome://extensions/shortcuts'));
+});
+
+test('opens the plain app URL when OPEN_APP has no target', async () => {
+  const worker = await createWorkerContext();
+
+  const response = await sendRuntimeMessage(worker, { type: 'OPEN_APP' });
+
+  assert.equal(response.ok, true);
+  assert.equal(response.url, worker.context.LingoFlashExtension.DEFAULT_APP_URL);
+  assert.ok(worker.calls.some(call => call.type === 'tabs.create'
+    && call.details.url === worker.context.LingoFlashExtension.DEFAULT_APP_URL));
+});
+
+test('opens the app on the WebWords route when OPEN_APP carries target: webWords, reusing the same message type', async () => {
+  const worker = await createWorkerContext();
+
+  const response = await sendRuntimeMessage(worker, { type: 'OPEN_APP', target: 'webWords' });
+
+  const expectedUrl = new URL(worker.context.LingoFlashExtension.DEFAULT_APP_URL);
+  expectedUrl.searchParams.set('webWords', '1');
+  assert.equal(response.ok, true);
+  assert.equal(response.url, expectedUrl.toString());
+  assert.ok(worker.calls.some(call => call.type === 'tabs.create' && call.details.url === expectedUrl.toString()));
+});
+
+test('opens the app on the Today session route when OPEN_APP carries target: today (07.6 due-count badge)', async () => {
+  const worker = await createWorkerContext();
+
+  const response = await sendRuntimeMessage(worker, { type: 'OPEN_APP', target: 'today' });
+
+  const expectedUrl = new URL(worker.context.LingoFlashExtension.DEFAULT_APP_URL);
+  expectedUrl.searchParams.set('view', 'today');
+  assert.equal(response.ok, true);
+  assert.equal(response.url, expectedUrl.toString());
+  assert.ok(worker.calls.some(call => call.type === 'tabs.create' && call.details.url === expectedUrl.toString()));
 });
 
 test('does not expose a Chrome shortcut URL on Safari', async () => {
@@ -575,29 +736,32 @@ test('syncs bounded deck metadata only from the production app origin', async ()
   assert.equal(worker.storageValues.get('lingoflash_extension_deck_metadata').scope, 'opaque_scope_a_123456');
 });
 
-test('issues and accepts a persisted deck generation only for the app origin', async () => {
+test('binds persisted deck generations to the live app document and rejects missing proof', async () => {
   const worker = await createWorkerContext();
-  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  const sender = appSender(worker, 7);
   const generation = await issueDeckGeneration(worker, sender);
-  const secondTab = { ...sender, tab: { id: 8 } };
-  assert.equal(await issueDeckGeneration(worker, secondTab), generation);
   assert.equal(worker.storageValues.get('lingoflash_extension_deck_metadata_generation'), generation);
   const forged = await sendRuntimeMessage(worker, { type: 'GET_DECK_METADATA_GENERATION' }, {
     ...sender, url: 'https://example.com/',
   });
   assert.equal(forged.ok, false);
-  const missing = await sendRuntimeMessage(worker, {
+  const missing = await sendRuntimeMessageRaw(worker, {
     type: 'SYNC_DECK_METADATA', payload: { scope: 'opaque_scope_generation_123456', decks: ['Reading'] },
   }, sender);
   assert.equal(missing.ok, false);
-  const synced = await sendRuntimeMessage(worker, {
-    type: 'SYNC_DECK_METADATA', payload: { scope: 'opaque_scope_generation_123456', decks: ['Reading'], generation },
-  }, sender);
-  assert.equal(synced.ok, true);
-  const secondTabSync = await sendRuntimeMessage(worker, {
-    type: 'SYNC_DECK_METADATA', payload: { scope: 'opaque_scope_generation_123456', decks: ['Writing'], generation },
-  }, secondTab);
-  assert.equal(secondTabSync.ok, true);
+  const secondSender = appSender(worker, 8);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DECK_METADATA_GENERATION' }, secondSender)).ok, false);
+  const secondPort = worker.connectProvider(secondSender);
+  const providerId = secondPort.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER').providerId;
+  const issued = await sendRuntimeMessage(worker, { type: 'GET_DECK_METADATA_GENERATION', providerId }, secondSender);
+  assert.equal(issued.ok, true);
+  assert.equal((await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA', providerId,
+    payload: { scope: 'opaque_scope_generation_123456', decks: ['Writing'], generation: issued.generation },
+  }, secondSender)).ok, true);
+  assert.equal((await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA', payload: { scope: 'opaque_scope_generation_123456', decks: ['Stale'], generation },
+  }, sender)).ok, false);
 });
 
 test('does not let an evicted retired scope revive through a stale deck publisher generation', async () => {
@@ -698,10 +862,9 @@ test('replaces stale owner-scoped deck metadata and clears it on sign-out', asyn
 test('fails closed for popup deck reads after clear delivery fails and the worker restarts', async () => {
   const worker = await createWorkerContext();
   const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
-  const generation = await issueDeckGeneration(worker, sender);
   await sendRuntimeMessage(worker, {
     type: 'SYNC_DECK_METADATA',
-    payload: { scope: 'opaque_scope_a_123456', decks: ['Owner A'], generation },
+    payload: { scope: 'opaque_scope_a_123456', decks: ['Owner A'] },
   }, sender);
 
   // The clear delivery never reached the first worker. The replacement has
@@ -712,14 +875,724 @@ test('fails closed for popup deck reads after clear delivery fails and the worke
   assert.equal(decks.ok, false);
   assert.doesNotMatch(JSON.stringify(decks), /Owner A/);
 
-  const restartedSender = { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
-  const restartedGeneration = await issueDeckGeneration(restarted, restartedSender);
   const reproof = await sendRuntimeMessage(restarted, {
     type: 'SYNC_DECK_METADATA',
-    payload: { scope: 'opaque_scope_b_123456', decks: ['Owner B'], generation: restartedGeneration },
-  }, restartedSender);
+    payload: { scope: 'opaque_scope_b_123456', decks: ['Owner B'] },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
   assert.equal(reproof.ok, true);
   assert.deepEqual([...(await sendRuntimeMessage(restarted, { type: 'GET_DECKS' })).decks], ['Owner B']);
+});
+
+test('clears all document-scoped metadata and the badge when the app bridge disconnects', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 }, frameId: 0 };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    payload: { scope: 'opaque_scope_a_123456', decks: ['Owner A'] },
+  }, sender);
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_a_123456', count: 12 },
+  }, sender);
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_a_123456', nativeLanguage: 'en', targetLanguage: 'ko' },
+  }, sender);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, 12);
+
+  worker.appPort.disconnect();
+  await flushMicrotasks();
+
+  const invalidation = worker.calls
+    .filter(call => call.type === 'runtime.sendMessage'
+      && call.message?.type === 'LINGOFLASH_EXTENSION_METADATA_INVALIDATED')
+    .at(-1)?.message;
+  assert.equal(invalidation?.generation, 1);
+  assert.equal(JSON.stringify(invalidation?.scopes), JSON.stringify({
+    deck: 'opaque_scope_a_123456',
+    due: 'opaque_scope_a_123456',
+    locale: 'opaque_scope_a_123456',
+  }));
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DECKS' })).ok, false);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, null);
+  const locale = await sendRuntimeMessage(worker, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(locale.nativeLanguage, null);
+  assert.equal(locale.targetLanguage, null);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(worker.calls.filter(call => call.type === 'action.setBadgeText').at(-1)?.details?.text, '');
+  assert.equal(worker.storageValues.has('lingoflash_extension_deck_metadata'), false);
+  assert.equal(worker.storageValues.has('lingoflash_extension_due_count'), false);
+  assert.equal(worker.storageValues.has('lingoflash_extension_course_locale'), false);
+});
+
+test('retires the old provider on a new document connection before the new document is ready', async () => {
+  const worker = await createWorkerContext();
+  const senderA = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 }, frameId: 0 };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    payload: { scope: 'opaque_scope_a_123456', decks: ['Owner A'] },
+  }, senderA);
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_a_due_123456', count: 12 },
+  }, senderA);
+
+  const providerA = worker.providerId;
+  const portB = worker.connectProvider({
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 8 },
+    frameId: 0,
+  });
+  const providerB = portB.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
+  assert.ok(providerB);
+  assert.notEqual(providerB, providerA);
+
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DECKS' })).ok, false);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, null);
+  const beforeReady = await sendRuntimeMessage(worker, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(beforeReady.nativeLanguage, null);
+  assert.equal(beforeReady.targetLanguage, null);
+
+  const staleA = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    providerId: providerA,
+    payload: { scope: 'opaque_scope_a_stale_123456', decks: ['Stale A'] },
+  }, senderA);
+  assert.equal(staleA.ok, false);
+
+  const senderB = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 };
+  const fresh = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    providerId: providerB,
+    payload: { scope: 'opaque_scope_b_123456', decks: ['Owner B'] },
+  }, senderB);
+  assert.equal(fresh.ok, true);
+  const freshDue = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    providerId: providerB,
+    payload: { scope: 'opaque_scope_b_due_123456', count: 3 },
+  }, senderB);
+  assert.equal(freshDue.ok, true);
+  const freshLocale = await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    providerId: providerB,
+    payload: { scope: 'opaque_scope_b_locale_123456', nativeLanguage: 'en', targetLanguage: 'ja' },
+  }, senderB);
+  assert.equal(freshLocale.ok, true);
+  assert.deepEqual([...(await sendRuntimeMessage(worker, { type: 'GET_DECKS' })).decks], ['Owner B']);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, 3);
+  const currentLocale = await sendRuntimeMessage(worker, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(currentLocale.nativeLanguage, 'en');
+  assert.equal(currentLocale.targetLanguage, 'ja');
+
+  const lateClear = await sendRuntimeMessage(worker, {
+    type: 'CLEAR_DUE_COUNT',
+    providerId: providerA,
+    payload: { scope: 'opaque_scope_b_due_123456' },
+  }, senderA);
+  assert.equal(lateClear.ok, false);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, 3);
+});
+
+test('does not let a stale provider write after a newer provider claims the bridge', async () => {
+  const worker = await createWorkerContext();
+  const senderA = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 }, frameId: 0 };
+  const providerA = worker.providerId;
+  const stale = sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    providerId: providerA,
+    payload: { scope: 'opaque_scope_a_async_123456', decks: ['Stale A'] },
+  }, senderA);
+
+  const portB = worker.connectProvider({
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 8 },
+    frameId: 0,
+  });
+  const providerB = portB.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
+  assert.ok(providerB);
+  assert.equal((await stale).ok, false);
+  assert.equal(worker.storageValues.has('lingoflash_extension_deck_metadata'), false);
+
+  const fresh = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    providerId: providerB,
+    payload: { scope: 'opaque_scope_b_async_123456', count: 3 },
+  }, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 });
+  assert.equal(fresh.ok, true);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, 3);
+});
+
+test('rejects metadata writes from the wrong origin or frame without disturbing the live provider', async () => {
+  const worker = await createWorkerContext();
+  const validSender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 }, frameId: 0 };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_valid_123456', count: 4 },
+  }, validSender);
+
+  const wrongOrigin = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    providerId: worker.providerId,
+    payload: { scope: 'opaque_scope_evil_123456', count: 999 },
+  }, { url: 'https://example.com/?view=library', tab: { id: 7 }, frameId: 0 });
+  assert.equal(wrongOrigin.ok, false);
+
+  const wrongFrame = await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    providerId: worker.providerId,
+    payload: { scope: 'opaque_scope_frame_123456', nativeLanguage: 'en', targetLanguage: 'ja' },
+  }, { ...validSender, frameId: 2 });
+  assert.equal(wrongFrame.ok, false);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, 4);
+});
+
+test('does not register app bridge ports from the wrong origin or a child frame', async () => {
+  const worker = await createWorkerContext();
+  const wrongOrigin = worker.connectProvider({
+    url: 'https://example.com/?view=library',
+    tab: { id: 8 },
+    frameId: 0,
+  });
+  const wrongFrame = worker.connectProvider({
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 8 },
+    frameId: 1,
+  });
+
+  assert.equal(wrongOrigin.posted.length, 0);
+  assert.equal(wrongFrame.posted.length, 0);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, null);
+  const fresh = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_valid_after_reject_123456', count: 2 },
+  }, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 }, frameId: 0 });
+  assert.equal(fresh.ok, true);
+});
+
+test('keeps the visible Korean provider through a hidden import-tab handoff and its second capture', async () => {
+  const worker = await createWorkerContext();
+  const visibleSender = {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 7 },
+    frameId: 0,
+  };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_korean_123456', nativeLanguage: 'vi', targetLanguage: 'ko' },
+  }, visibleSender);
+
+  const first = await startQuickAdd(worker);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${first.id}`).sourceLanguage, 'ko');
+  const failed = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, first.id, { status: 'error', message: 'retry later' }),
+  }, appSender(worker));
+  assert.equal(failed.ok, true);
+
+  const handoffPort = worker.connectProvider({
+    url: `${worker.context.LingoFlashExtension.DEFAULT_APP_URL}#lf-import=handoff_123456789012345678`,
+    tab: { id: 99 },
+    frameId: 0,
+  });
+  handoffPort.disconnect();
+  assert.equal(handoffPort.posted.length, 0);
+
+  const second = await startQuickAdd(worker);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${second.id}`).sourceLanguage, 'ko');
+});
+
+test('rejects a provider-bound capture when a replacement provider claims the app before import verification', async () => {
+  const worker = await createWorkerContext();
+  const visibleSender = {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 7 },
+    frameId: 0,
+  };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    payload: { scope: 'opaque_scope_bound_a_123456', decks: ['Owner A'] },
+  }, visibleSender);
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(job.providerScope, 'opaque_scope_bound_a_123456');
+  const intent = readStartedIntent(worker, started.id);
+
+  const replacementPort = worker.connectProvider({
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 8 },
+    frameId: 0,
+  });
+  const replacementProvider = replacementPort.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DECK_METADATA',
+    providerId: replacementProvider,
+    payload: { scope: 'opaque_scope_bound_b_123456', decks: ['Owner B'] },
+  }, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 });
+
+  const verified = await verifyIntent(worker, intent, appSender(worker));
+  assert.equal(verified.verified, false);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).importClaimedAt, undefined);
+});
+
+test('binds a capture to the current provider before deck metadata is ready', async () => {
+  const worker = await createWorkerContext();
+  const senderA = {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 7 },
+    frameId: 0,
+  };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_capture_owner_a_123456', count: 4 },
+  }, senderA);
+
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(typeof job.providerId, 'string');
+  assert.equal(Number.isSafeInteger(job.providerGeneration), true);
+  assert.equal(job.providerScope, 'opaque_scope_capture_owner_a_123456');
+  assert.equal(job.providerScopeChannel, 'due');
+  const intent = readStartedIntent(worker, started.id);
+
+  const replacementPort = worker.connectProvider({
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 8 },
+    frameId: 0,
+  });
+  const replacementProvider = replacementPort.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    providerId: replacementProvider,
+    payload: { scope: 'opaque_scope_capture_owner_b_123456', count: 9 },
+  }, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 });
+
+  const verified = await verifyIntent(worker, intent, appSender(worker));
+  assert.equal(verified.verified, false);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).importClaimedAt, undefined);
+});
+
+test('leaves the language of an unbound capture unknown even when a provider appears during it', async () => {
+  let releaseCapture;
+  const captureSelectionGate = new Promise(resolve => { releaseCapture = resolve; });
+  const worker = await createWorkerContext({ captureSelectionGate });
+  const pendingCapture = startQuickAdd(worker);
+  await flushMicrotasks();
+
+  const providerPort = worker.connectProvider({
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 8 },
+    frameId: 0,
+  });
+  const providerId = providerPort.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
+  assert.ok(providerId);
+  const synced = await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    providerId,
+    payload: { scope: 'opaque_scope_mid_capture_123456', nativeLanguage: 'en', targetLanguage: 'ko' },
+  }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 8 },
+    frameId: 0,
+  });
+  assert.equal(synced.ok, true);
+
+  releaseCapture();
+  const started = await pendingCapture;
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(job.sourceLanguage, undefined);
+  assert.equal(job.providerId, undefined);
+  assert.equal(job.providerScope, undefined);
+
+  const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
+  assert.equal(verified.verified, true);
+  assert.equal('sourceLanguage' in verified.intent, false);
+});
+
+test('rejects a capture after the same app port rotates its confirmed owner scope', async () => {
+  const worker = await createWorkerContext();
+  const sender = {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 7 },
+    frameId: 0,
+  };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_same_port_owner_a_123456', count: 4 },
+  }, sender);
+
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(job.providerScope, 'opaque_scope_same_port_owner_a_123456');
+  assert.equal(job.providerScopeChannel, 'due');
+  const intent = readStartedIntent(worker, started.id);
+
+  const rotated = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_same_port_owner_b_123456', count: 8 },
+  }, sender);
+  assert.equal(rotated.ok, true);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, 8);
+
+  const verified = await verifyIntent(worker, intent, appSender(worker));
+  assert.equal(verified.verified, false);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).importClaimedAt, undefined);
+});
+
+test('syncs a real due count from the app origin and scopes it like deck metadata (07.6)', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+
+  const before = await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' });
+  assert.equal(before.ok, true);
+  assert.equal(before.count, null);
+
+  const synced = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_a_123456', count: 12 },
+  }, sender);
+  assert.equal(synced.ok, true);
+  assert.equal(synced.count, 12);
+
+  const after = await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' });
+  assert.equal(after.ok, true);
+  assert.equal(after.count, 12);
+
+  const wrongOrigin = await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'attacker_scope_123456', count: 999 },
+  }, { ...sender, url: 'https://example.com/?view=library' });
+  assert.equal(wrongOrigin.ok, false);
+  assert.match(wrongOrigin.error, /Nguồn due-count/);
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, 12);
+});
+
+test('mirrors only confirmed due counts to the browser action badge and clears it on scope retirement', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_a_123456', count: 12 },
+  }, sender);
+  assert.equal(worker.calls.filter(call => call.type === 'action.setBadgeText').at(-1)?.details?.text, '12');
+
+  await sendRuntimeMessage(worker, {
+    type: 'CLEAR_DUE_COUNT',
+    payload: { scope: 'opaque_scope_a_123456' },
+  }, sender);
+  assert.equal(worker.calls.filter(call => call.type === 'action.setBadgeText').at(-1)?.details?.text, '');
+
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_b_123456', count: 0 },
+  }, sender);
+  assert.equal(worker.calls.filter(call => call.type === 'action.setBadgeText').at(-1)?.details?.text, '');
+});
+
+test('ignores a stale clear after the next account has synchronized its badge', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_a_123456', count: 12 },
+  }, sender);
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_b_123456', count: 3 },
+  }, sender);
+  await sendRuntimeMessage(worker, {
+    type: 'CLEAR_DUE_COUNT',
+    payload: { scope: 'opaque_scope_a_123456' },
+  }, sender);
+
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, 3);
+  assert.equal(worker.calls.filter(call => call.type === 'action.setBadgeText').at(-1)?.details?.text, '3');
+});
+
+test('serializes the startup badge reset before the first due-count sync', async () => {
+  let releaseBadgeGate;
+  const actionBadgeGate = new Promise(resolve => { releaseBadgeGate = resolve; });
+  const worker = await createWorkerContext({ actionBadgeGate });
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  const synced = sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_a_123456', count: 12 },
+  }, sender);
+
+  await flushMicrotasks();
+  assert.equal(worker.calls.filter(call => call.type === 'action.setBadgeText').length, 0);
+  releaseBadgeGate();
+  assert.equal((await synced).ok, true);
+  assert.equal(worker.calls.filter(call => call.type === 'action.setBadgeText').at(-1)?.details?.text, '12');
+});
+
+test('keeps the scoped popup count when action badges are unsupported or fail', async () => {
+  const senderFor = worker => ({ url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  for (const worker of [
+    await createWorkerContext({ actionApiAvailable: false }),
+    await createWorkerContext({ actionBadgeError: 'Badge API failed' }),
+  ]) {
+    const synced = await sendRuntimeMessage(worker, {
+      type: 'SYNC_DUE_COUNT',
+      payload: { scope: 'opaque_scope_a_123456', count: 12 },
+    }, senderFor(worker));
+    assert.equal(synced.ok, true);
+    assert.equal((await sendRuntimeMessage(worker, { type: 'GET_DUE_COUNT' })).count, 12);
+  }
+});
+
+test('never leaks a previous account due count after reconnect/account switch (07.6)', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_a_123456', count: 12 },
+  }, sender);
+
+  // The clear delivery never reached the first worker. A restarted worker has
+  // the session metadata but no active-scope proof, so the popup gets no
+  // prior-owner count until the app re-syncs.
+  const restarted = await createWorkerContext({ storageEntries: [...worker.storageValues.entries()] });
+  const stale = await sendRuntimeMessage(restarted, { type: 'GET_DUE_COUNT' });
+  assert.equal(stale.ok, true);
+  assert.equal(stale.count, null);
+
+  const reproof = await sendRuntimeMessage(restarted, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_b_123456', count: 3 },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(reproof.ok, true);
+  assert.equal((await sendRuntimeMessage(restarted, { type: 'GET_DUE_COUNT' })).count, 3);
+
+  const cleared = await sendRuntimeMessage(restarted, {
+    type: 'CLEAR_DUE_COUNT',
+    payload: { scope: 'opaque_scope_b_123456' },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(cleared.ok, true);
+  assert.equal(cleared.cleared, true);
+  assert.equal((await sendRuntimeMessage(restarted, { type: 'GET_DUE_COUNT' })).count, null);
+
+  // A retired scope can never resurface a due count even if replayed.
+  const replay = await sendRuntimeMessage(restarted, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_b_123456', count: 3 },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(replay.ok, false);
+  assert.match(replay.error, /hết hiệu lực/);
+});
+
+test('syncs a real course locale from the app origin and scopes it like deck metadata/due count (07.5)', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+
+  const before = await sendRuntimeMessage(worker, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(before.ok, true);
+  assert.equal(before.nativeLanguage, null);
+  assert.equal(before.targetLanguage, null);
+
+  const synced = await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_a_123456', nativeLanguage: 'en', targetLanguage: 'ko' },
+  }, sender);
+  assert.equal(synced.ok, true);
+  assert.equal(synced.nativeLanguage, 'en');
+  assert.equal(synced.targetLanguage, 'ko');
+
+  const after = await sendRuntimeMessage(worker, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(after.ok, true);
+  assert.equal(after.nativeLanguage, 'en');
+  assert.equal(after.targetLanguage, 'ko');
+
+  const wrongOrigin = await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'attacker_scope_123456', nativeLanguage: 'vi', targetLanguage: 'en' },
+  }, { ...sender, url: 'https://example.com/?view=library' });
+  assert.equal(wrongOrigin.ok, false);
+  assert.match(wrongOrigin.error, /Nguồn course locale/);
+  const stillAfter = await sendRuntimeMessage(worker, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(stillAfter.nativeLanguage, 'en');
+  assert.equal(stillAfter.targetLanguage, 'ko');
+
+  const invalidPair = await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_c_123456', nativeLanguage: 'fr', targetLanguage: 'ko' },
+  }, sender);
+  assert.equal(invalidPair.ok, false);
+  assert.match(invalidPair.error, /Course locale/);
+});
+
+test('never leaks a previous account course locale after reconnect/account switch (07.5)', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_a_123456', nativeLanguage: 'vi', targetLanguage: 'en' },
+  }, sender);
+
+  // The clear delivery never reached the first worker. A restarted worker has
+  // the session metadata but no active-scope proof, so the popup/capture get
+  // no prior-owner course locale until the app re-syncs.
+  const restarted = await createWorkerContext({ storageEntries: [...worker.storageValues.entries()] });
+  const stale = await sendRuntimeMessage(restarted, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(stale.ok, true);
+  assert.equal(stale.nativeLanguage, null);
+  assert.equal(stale.targetLanguage, null);
+
+  const reproof = await sendRuntimeMessage(restarted, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_b_123456', nativeLanguage: 'en', targetLanguage: 'ja' },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(reproof.ok, true);
+  const afterReproof = await sendRuntimeMessage(restarted, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(afterReproof.nativeLanguage, 'en');
+  assert.equal(afterReproof.targetLanguage, 'ja');
+
+  const cleared = await sendRuntimeMessage(restarted, {
+    type: 'CLEAR_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_b_123456' },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(cleared.ok, true);
+  assert.equal(cleared.cleared, true);
+  const afterClear = await sendRuntimeMessage(restarted, { type: 'GET_COURSE_LOCALE' });
+  assert.equal(afterClear.nativeLanguage, null);
+  assert.equal(afterClear.targetLanguage, null);
+  const notReadyCapture = await startQuickAdd(restarted);
+  assert.equal(notReadyCapture.ok, false);
+  assert.match(notReadyCapture.error, /chưa xác nhận metadata/);
+  restarted.appPort.disconnect();
+  await flushMicrotasks();
+  const freshCapture = await startQuickAdd(restarted);
+  assert.equal(restarted.storageValues.get(`lingoflash_quick_add_job_${freshCapture.id}`).sourceLanguage, undefined);
+
+  // A retired scope can never resurface a course locale even if replayed.
+  const replay = await sendRuntimeMessage(restarted, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_b_123456', nativeLanguage: 'en', targetLanguage: 'ja' },
+  }, { url: restarted.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(replay.ok, false);
+  assert.match(replay.error, /hết hiệu lực/);
+});
+
+test('a fresh capture assumes the synced course target language instead of the fixed English default (07.5)', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_a_123456', nativeLanguage: 'en', targetLanguage: 'ko' },
+  }, sender);
+
+  const started = await startQuickAdd(worker);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).sourceLanguage, 'ko');
+
+  const intent = readStartedIntent(worker, started.id);
+  const verified = await verifyIntent(worker, intent, { url: sender.url, tab: { id: 99 }, frameId: 0 });
+  assert.equal(verified.verified, true);
+  assert.equal(verified.intent.sourceLanguage, 'ko');
+
+  const valid = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: '회복력' }),
+  }, appSender(worker));
+  assert.equal(valid.ignored, false);
+  const statusCall = worker.calls.find(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'created');
+  assert.equal(statusCall?.message.payload?.sourceLanguage, 'ko');
+  assert.equal(statusCall?.message.payload?.speechLocale, 'ko-KR');
+});
+
+test('relays a known failure reason to the bubble and popup and drops an unknown one', async () => {
+  for (const [reason, expected] of [['quota-daily', 'quota-daily'], ['not-in-the-list', undefined]]) {
+    const worker = await createWorkerContext();
+    const started = await startQuickAdd(worker);
+    const result = await sendRuntimeMessage(worker, {
+      type: 'APP_IMPORT_RESULT',
+      bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+      payload: appResultPayload(worker, started.id, { status: 'error', message: 'Anything', reason }),
+    }, appSender(worker));
+    assert.equal(result.ignored, false);
+    const popupStatus = worker.calls.find(call => call.type === 'runtime.sendMessage'
+      && call.message.payload?.status === 'error');
+    assert.equal(popupStatus?.message.payload?.reason, expected);
+    assert.equal(popupStatus?.message.payload?.message, 'Anything');
+    const bubble = worker.calls.filter(call => call.type === 'scripting.executeScript')
+      .map(call => call.details.args?.[0]).find(args => args?.status === 'error');
+    assert.equal(bubble?.reason, expected);
+  }
+});
+
+test('a fresh capture reports no language when no course locale has ever been synced', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).sourceLanguage, undefined);
+
+  const intent = readStartedIntent(worker, started.id);
+  const verified = await verifyIntent(worker, intent, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+    frameId: 0,
+  });
+  assert.equal(verified.verified, true);
+  assert.equal('sourceLanguage' in verified.intent, false);
+});
+
+test('a context-menu save with no app tab open reports no language instead of English', async () => {
+  const worker = await createWorkerContext({
+    executeScriptCaptureResult: { text: '회복력', anchor: null, context: '회복력이 중요하다.' },
+  });
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_korean_learner_123456', nativeLanguage: 'vi', targetLanguage: 'ko' },
+  }, sender);
+  worker.appPort.disconnect();
+  await flushMicrotasks();
+
+  for (const listener of worker.events.menuClicks.listeners) {
+    listener({ menuItemId: 'lingoflash-translate-save', selectionText: '회복력' }, { id: 12 });
+  }
+  for (let round = 0; round < 20; round += 1) await flushMicrotasks();
+  const jobs = [...worker.storageValues.entries()]
+    .filter(([key]) => key.startsWith('lingoflash_quick_add_job_'))
+    .map(([, value]) => value);
+  assert.equal(jobs.length, 1);
+  assert.equal(jobs[0].sourceLanguage, undefined);
+
+  const verified = await verifyIntent(worker, {
+    v: jobs[0].v, id: jobs[0].id, nonce: jobs[0].nonce, text: jobs[0].text, createdAt: jobs[0].createdAt, mode: 'silent',
+  }, appSender(worker));
+  assert.equal(verified.verified, true);
+  assert.equal('sourceLanguage' in verified.intent, false);
+});
+
+test('a capture bound only through the due-count channel reports no language', async () => {
+  const worker = await createWorkerContext();
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_due_only_owner_123456', count: 3 },
+  }, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 }, frameId: 0 });
+
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(job.providerScopeChannel, 'due');
+  assert.equal(job.sourceLanguage, undefined);
+
+  const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
+  assert.equal(verified.verified, true);
+  assert.equal('sourceLanguage' in verified.intent, false);
+});
+
+test('still delivers the language a job queued by the previous extension version was stored with', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const key = `lingoflash_quick_add_job_${started.id}`;
+  worker.storageValues.set(key, { ...worker.storageValues.get(key), sourceLanguage: 'en' });
+
+  const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
+  assert.equal(verified.verified, true);
+  assert.equal(verified.intent.sourceLanguage, 'en');
 });
 
 test('owns settings mutations in the background and preserves concurrent site opt-ins', async () => {
@@ -784,6 +1657,64 @@ test('captures sentence context even when a context menu supplies the selected t
 
   assert.equal(response.ok, true);
   assert.equal(job.context, 'The resilient team recovered quickly.');
+});
+
+test('captures the source tab URL and title, delivers them through the verified intent, and ignores a forged override', async () => {
+  const worker = await createWorkerContext({
+    activeTabUrl: 'https://example.com/article?utm=1#frag',
+    activeTabTitle: 'An Example Article',
+  });
+
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(job.sourceUrl, 'https://example.com/article');
+  assert.equal(job.pageTitle, 'An Example Article');
+  assert.ok(worker.calls.some(call => call.type === 'tabs.get' && call.id === 7));
+
+  const intent = readStartedIntent(worker, started.id);
+  const verified = await verifyIntent(worker, {
+    ...intent,
+    sourceUrl: 'https://forged.example/',
+    pageTitle: 'Forged title',
+  }, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+    frameId: 0,
+  });
+  assert.equal(verified.verified, true);
+  assert.equal(verified.intent.sourceUrl, 'https://example.com/article');
+  assert.equal(verified.intent.pageTitle, 'An Example Article');
+});
+
+test('never captures a non-http(s) source URL and bounds an oversized page title', async () => {
+  const worker = await createWorkerContext({
+    activeTabUrl: 'chrome://extensions/',
+    activeTabTitle: `Extensions ${'x'.repeat(400)}`,
+  });
+
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(job.sourceUrl, '');
+  assert.equal(job.pageTitle.length, 256);
+});
+
+test('omits source metadata entirely when the active tab exposes neither a URL nor a title', async () => {
+  const worker = await createWorkerContext();
+
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(job.sourceUrl, '');
+  assert.equal(job.pageTitle, '');
+
+  const intent = readStartedIntent(worker, started.id);
+  const verified = await verifyIntent(worker, intent, {
+    url: worker.context.LingoFlashExtension.DEFAULT_APP_URL,
+    tab: { id: 99 },
+    frameId: 0,
+  });
+  assert.equal(verified.verified, true);
+  assert.equal('sourceUrl' in verified.intent, false);
+  assert.equal('pageTitle' in verified.intent, false);
 });
 
 test('rejects an app result from the wrong worker tab and cleans up a valid result', async () => {
@@ -858,6 +1789,8 @@ test('forwards AI result details and source locale to the popup status', async (
       explanation: 'Có khả năng phục hồi.',
       exampleSentence: 'She is resilient.',
       exampleTranslation: 'Cô ấy kiên cường.',
+      aiGenerated: true,
+      language: 'en',
     },
   }, appSender(worker));
 
@@ -868,8 +1801,391 @@ test('forwards AI result details and source locale to the popup status', async (
   assert.equal(statusCall?.message.payload?.explanation, 'Có khả năng phục hồi.');
   assert.equal(statusCall?.message.payload?.exampleSentence, 'She is resilient.');
   assert.equal(statusCall?.message.payload?.exampleTranslation, 'Cô ấy kiên cường.');
+  assert.equal(statusCall?.message.payload?.aiGenerated, true);
   assert.equal(statusCall?.message.payload?.sourceLanguage, 'en');
   assert.equal(statusCall?.message.payload?.speechLocale, 'en-US');
+});
+
+test('labels a capture of unknown language with the language of the card the app saved', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).sourceLanguage, undefined);
+
+  const valid = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'khả năng phục hồi', language: 'ko' }),
+  }, appSender(worker));
+
+  assert.equal(valid.ignored, false);
+  const statusCall = worker.calls.find(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'created');
+  assert.equal(statusCall?.message.payload?.sourceLanguage, 'ko');
+  assert.equal(statusCall?.message.payload?.speechLocale, 'ko-KR');
+  const renderCall = worker.calls.find(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'created');
+  assert.equal(renderCall?.details.args[0].sourceLanguage, 'ko');
+  assert.equal(renderCall?.details.args[0].speechLocale, 'ko-KR');
+  const recent = worker.storageValues.get('lingoflash_recent_lookups');
+  assert.equal(recent?.[0]?.kind, 'create');
+  assert.equal(recent?.[0]?.sourceLanguage, 'ko');
+});
+
+test('does not label a capture as English when neither the capture nor the app reported a language', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+
+  const valid = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'khả năng phục hồi', language: 'not a language' }),
+  }, appSender(worker));
+
+  assert.equal(valid.ignored, false);
+  const statusCall = worker.calls.find(call => call.type === 'runtime.sendMessage'
+    && call.message.payload?.status === 'created');
+  assert.equal(statusCall?.message.payload?.sourceLanguage, '');
+  const recent = worker.storageValues.get('lingoflash_recent_lookups');
+  // 'auto' is how the lookup history records a language it does not know.
+  assert.equal(recent?.[0]?.sourceLanguage, 'auto');
+});
+
+test('retries a failed capture with its original word, context, and operation ID', async () => {
+  const worker = await createWorkerContext({
+    executeScriptCaptureResult: { text: 'resilient', context: 'Original passage sentence.', anchor: { left: 42, top: 60 } },
+  });
+  const started = await startQuickAdd(worker);
+  const firstJob = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  const failed = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'error', message: 'Dịch vụ AI đang bận.' }),
+  }, appSender(worker));
+  assert.equal(failed.ok, true);
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
+  assert.equal(worker.storageValues.get('lingoflash_quick_add_retry_7')?.id, started.id);
+
+  const retried = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: started.id }, { tab: { id: 7 } });
+  assert.equal(retried.ok, true);
+  assert.equal(retried.id, started.id);
+  const retryJob = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(retryJob.text, 'resilient');
+  assert.equal(retryJob.context, 'Original passage sentence.');
+  assert.notEqual(retryJob.nonce, firstJob.nonce);
+
+  const done = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'kiên cường' }),
+  }, appSender(worker));
+  assert.equal(done.ok, true);
+  assert.equal(worker.storageValues.has('lingoflash_quick_add_retry_7'), false);
+});
+
+test('retries a failed capture with its original source language after the active course changes', async () => {
+  const worker = await createWorkerContext();
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_ko_123456', nativeLanguage: 'en', targetLanguage: 'ko' },
+  }, sender);
+  const started = await startQuickAdd(worker);
+  const failed = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'error', message: 'Dịch vụ AI đang bận.' }),
+  }, appSender(worker));
+  assert.equal(failed.ok, true);
+  assert.equal(worker.storageValues.get('lingoflash_quick_add_retry_7')?.sourceLanguage, 'ko');
+
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_ko_123456', nativeLanguage: 'vi', targetLanguage: 'en' },
+  }, sender);
+  const retried = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: started.id }, { tab: { id: 7 } });
+  assert.equal(retried.ok, true);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`)?.sourceLanguage, 'ko');
+
+  const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
+  assert.equal(verified.verified, true);
+  assert.equal(verified.intent.sourceLanguage, 'ko');
+});
+
+test('retries a failed capture whose language was unknown without inventing one', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const failed = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'error', message: 'Dịch vụ AI đang bận.' }),
+  }, appSender(worker));
+  assert.equal(failed.ok, true);
+  assert.equal(worker.storageValues.get('lingoflash_quick_add_retry_7')?.id, started.id);
+
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_ko_123456', nativeLanguage: 'vi', targetLanguage: 'ko' },
+  }, sender);
+  const retried = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: started.id }, { tab: { id: 7 } });
+  assert.equal(retried.ok, true);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`)?.sourceLanguage, undefined);
+
+  const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
+  assert.equal(verified.verified, true);
+  assert.equal('sourceLanguage' in verified.intent, false);
+});
+
+test('rejects retry receipts without a captured source language', async () => {
+  const worker = await createWorkerContext({
+    storageEntries: [['lingoflash_quick_add_retry_7', {
+      id: 'legacy_123', text: 'resilient', context: '', expiresAt: Date.now() + 86_400_000,
+    }]],
+  });
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_ko_123456', nativeLanguage: 'en', targetLanguage: 'ko' },
+  }, sender);
+
+  const retried = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: 'legacy_123' }, { tab: { id: 7 } });
+  assert.equal(retried.ok, false);
+  assert.match(retried.error, /Không thể xác minh ngôn ngữ/);
+  assert.equal(worker.storageValues.has('lingoflash_quick_add_job_legacy_123'), false);
+});
+
+test('rejects retry receipts with a malformed captured source language', async () => {
+  const worker = await createWorkerContext({
+    storageEntries: [['lingoflash_quick_add_retry_7', {
+      id: 'malformed_123', text: 'resilient', context: '', sourceLanguage: 'xx', expiresAt: Date.now() + 86_400_000,
+    }]],
+  });
+
+  const retried = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: 'malformed_123' }, { tab: { id: 7 } });
+  assert.equal(retried.ok, false);
+  assert.match(retried.error, /Không thể xác minh ngôn ngữ/);
+  assert.equal(worker.storageValues.has('lingoflash_quick_add_job_malformed_123'), false);
+});
+
+test('retries a failed capture from the popup, which has no sender.tab, by falling back to the active tab', async () => {
+  const worker = await createWorkerContext({
+    executeScriptCaptureResult: { text: 'resilient', context: 'Original passage sentence.', anchor: { left: 42, top: 60 } },
+  });
+  const started = await startQuickAdd(worker);
+  const failed = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'error', message: 'Dịch vụ AI đang bận.' }),
+  }, appSender(worker));
+  assert.equal(failed.ok, true);
+  assert.equal(worker.storageValues.get('lingoflash_quick_add_retry_7')?.id, started.id);
+
+  // The popup is not a content script, so it has no sender.tab at all — unlike
+  // the in-page bubble's retry above, which always supplies { tab: { id: 7 } }.
+  // sendRuntimeMessage defaults its sender to {}, exercising the RETRY_QUICK_ADD
+  // fallback that resolves the source tab via activeTab() instead.
+  const retried = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: started.id });
+  assert.equal(retried.ok, true);
+  assert.equal(retried.id, started.id);
+  const retryJob = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(retryJob.text, 'resilient');
+  assert.equal(retryJob.context, 'Original passage sentence.');
+});
+
+test('rejects a popup retry when there is no active tab to resolve as the fallback source', async () => {
+  const worker = await createWorkerContext();
+  const originalQuery = worker.context.chrome.tabs.query;
+  worker.context.chrome.tabs.query = (_query, callback) => callback([]);
+
+  const rejected = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: 'job_missing' });
+  assert.equal(rejected.ok, false);
+  assert.match(rejected.error, /Không tìm thấy tab nguồn/);
+
+  worker.context.chrome.tabs.query = originalQuery;
+});
+
+const syncCourseLocale = (worker, scope, { providerId, tabId = 7, targetLanguage = 'ko', owner } = {}) => sendRuntimeMessage(worker, {
+  type: 'SYNC_COURSE_LOCALE',
+  ...(providerId ? { providerId } : {}),
+  payload: { scope, nativeLanguage: 'vi', targetLanguage, ...(owner ? { owner } : {}) },
+}, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: tabId }, frameId: 0 });
+
+const failBoundCapture = async (worker, scope, owner) => {
+  assert.equal((await syncCourseLocale(worker, scope, { owner })).ok, true);
+  const started = await startQuickAdd(worker);
+  const failed = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'error', message: 'AI busy' }),
+  }, appSender(worker));
+  assert.equal(failed.ok, true);
+  assert.equal(worker.storageValues.get('lingoflash_quick_add_retry_7')?.providerId, worker.providerId);
+  return started.id;
+};
+
+test('retries a failed capture after the worker restarted when the same app document re-publishes its scope', async () => {
+  const first = await createWorkerContext();
+  const id = await failBoundCapture(first, 'opaque_scope_retry_restart_123456');
+
+  const second = await createWorkerContext({ storageEntries: [...first.storageValues] });
+  assert.notEqual(second.providerId, first.providerId);
+  assert.equal((await syncCourseLocale(second, 'opaque_scope_retry_restart_123456')).ok, true);
+
+  const retried = await sendRuntimeMessage(second, { type: 'RETRY_QUICK_ADD', id }, { tab: { id: 7 } });
+  assert.equal(retried.ok, true);
+  const retryJob = second.storageValues.get(`lingoflash_quick_add_job_${id}`);
+  assert.equal(retryJob.providerId, second.providerId);
+  assert.equal(retryJob.providerScope, 'opaque_scope_retry_restart_123456');
+  const verified = await verifyIntent(second, readStartedIntent(second, id), appSender(second));
+  assert.equal(verified.verified, true);
+});
+
+test('refuses a retry at once when its app session can no longer be verified', async () => {
+  const first = await createWorkerContext();
+  const id = await failBoundCapture(first, 'opaque_scope_retry_before_123456');
+
+  const second = await createWorkerContext({ storageEntries: [...first.storageValues] });
+  assert.equal((await syncCourseLocale(second, 'opaque_scope_retry_after_1234567')).ok, true);
+
+  const retried = await sendRuntimeMessage(second, { type: 'RETRY_QUICK_ADD', id }, { tab: { id: 7 } });
+  assert.equal(retried.ok, false);
+  assert.match(retried.error, /Hãy chọn lại văn bản/);
+  assert.equal(second.storageValues.has(`lingoflash_quick_add_job_${id}`), false);
+  assert.equal(second.storageValues.has('lingoflash_quick_add_retry_7'), false);
+  assert.equal(second.calls.some(call => call.type === 'tabs.create' || call.type === 'alarms.create'), false);
+});
+
+test('reports the card the app saved when another app tab connects during generation', async () => {
+  const worker = await createWorkerContext();
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_saved_first_123456', { owner: 'owner_marker_same_123456' })).ok, true);
+  const started = await startQuickAdd(worker);
+  const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
+  assert.equal(verified.verified, true);
+
+  const secondPort = worker.connectProvider({ url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 });
+  const secondProviderId = secondPort.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_saved_second_12345', { providerId: secondProviderId, tabId: 8, owner: 'owner_marker_same_123456' })).ok, true);
+
+  const delivered = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'kiên cường' }),
+  }, appSender(worker));
+  assert.equal(delivered.ok, true);
+  assert.equal(delivered.ignored, false);
+  assert.equal(worker.storageValues.has(`lingoflash_quick_add_job_${started.id}`), false);
+  assert.equal(worker.storageValues.has('lingoflash_quick_add_retry_7'), false);
+  assert.ok(worker.calls.some(call => call.type === 'runtime.sendMessage'
+    && call.message.type === 'QUICK_ADD_STATUS' && call.message.payload.status === 'created'));
+  assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99));
+  // Another tab of the same account is not a new owner: the saved word stays in the history.
+  const history = (await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items;
+  assert.deepEqual(Array.from(history, item => [item.kind, item.status]), [['create', 'created']]);
+});
+
+test('keeps the saved words and retry receipts when the same account reconnects, opens another tab or switches course', async () => {
+  const worker = await createWorkerContext();
+  const owner = 'owner_marker_same_123456';
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_same_owner_a_12345', { owner })).ok, true);
+  const saved = await startQuickAdd(worker);
+  await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, saved.id, { status: 'created', translation: 'bền bỉ' }),
+  }, appSender(worker));
+  await failBoundCapture(worker, 'opaque_scope_same_owner_a_12345', owner);
+
+  const portB = worker.connectProvider({ url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 });
+  const providerB = portB.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_same_owner_b_12345', { providerId: providerB, tabId: 8, owner })).ok, true);
+  await sendRuntimeMessageRaw(worker, { type: 'CLEAR_DUE_COUNT', providerId: providerB, payload: { scope: 'opaque_scope_same_owner_b_12345' } }, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 });
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_same_owner_c_12345', { providerId: providerB, tabId: 8, owner })).ok, true);
+  await flushMicrotasks();
+
+  const history = (await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items;
+  assert.deepEqual(Array.from(history, item => item.kind), ['create']);
+  assert.ok(worker.storageValues.has('lingoflash_quick_add_retry_7'));
+});
+
+test('does not record a card finished after another account took over the browser', async () => {
+  const worker = await createWorkerContext();
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_takeover_a_12345', { owner: 'owner_marker_first_123456' })).ok, true);
+  const started = await startQuickAdd(worker);
+
+  const portB = worker.connectProvider({ url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 });
+  const providerB = portB.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_takeover_b_12345', { providerId: providerB, tabId: 8, owner: 'owner_marker_second_12345' })).ok, true);
+
+  const delivered = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'kiên cường' }),
+  }, appSender(worker));
+  assert.equal(delivered.ok, true);
+  assert.deepEqual([...(await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items], []);
+});
+
+test('hides the saved words and retry receipts of a signed-out account from the next account', async () => {
+  const worker = await createWorkerContext();
+  const appTab = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 }, frameId: 0 };
+  await sendRuntimeMessage(worker, { type: 'SYNC_DUE_COUNT', payload: { scope: 'opaque_scope_owner_a_123456', count: 3, owner: 'owner_marker_first_123456' } }, appTab);
+  await sendRuntimeMessage(worker, { type: 'SYNC_DECK_METADATA', payload: { scope: 'opaque_scope_owner_a_123456', decks: ['A deck'] } }, appTab);
+
+  const saved = await startQuickAdd(worker);
+  await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, saved.id, { status: 'created', translation: 'bền bỉ' }),
+  }, appSender(worker));
+  await sendRuntimeMessage(worker, { type: 'ADD_SELECTION', text: 'persistent' });
+  const failedJob = [...worker.storageValues.entries()].find(([name, value]) => name.startsWith('lingoflash_quick_add_job_') && value.text === 'persistent')[1];
+  await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: { id: failedJob.id, nonce: failedJob.nonce, status: 'error', message: 'AI busy' },
+  }, appSender(worker));
+  assert.equal((await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items.length, 1);
+  assert.ok(worker.storageValues.has('lingoflash_quick_add_retry_7'));
+
+  await sendRuntimeMessage(worker, { type: 'CLEAR_DECK_METADATA', payload: { scope: 'opaque_scope_owner_a_123456' } }, appTab);
+  await sendRuntimeMessage(worker, { type: 'CLEAR_DUE_COUNT', payload: { scope: 'opaque_scope_owner_a_123456' } }, appTab);
+  worker.appPort.disconnect();
+  await flushMicrotasks();
+
+  const portB = worker.connectProvider(appTab);
+  const providerB = portB.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
+  const synced = await sendRuntimeMessageRaw(worker, { type: 'SYNC_DUE_COUNT', providerId: providerB, payload: { scope: 'opaque_scope_owner_b_123456', count: 0, owner: 'owner_marker_second_12345' } }, appTab);
+  assert.equal(synced.ok, true);
+  await flushMicrotasks();
+
+  const history = await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' });
+  assert.deepEqual([...history.items], []);
+  assert.equal([...worker.storageValues.keys()].some(name => name.startsWith('lingoflash_quick_add_retry_')), false);
+});
+
+test('drops saved-word history only when another account is confirmed, and keeps translate-only lookups', async () => {
+  const worker = await createWorkerContext({ fetchImpl: async () => ({ ok: true, json: async () => [[['xin chào', 'hello']], null, 'en'] }) });
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_replaced_a_123456', { targetLanguage: 'en', owner: 'owner_marker_first_123456' })).ok, true);
+  const translated = await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: 'hello' });
+  assert.equal(translated.ok, true);
+  const started = await startQuickAdd(worker);
+  await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'bền bỉ' }),
+  }, appSender(worker));
+  const before = (await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items;
+  assert.deepEqual(Array.from(before, item => item.kind).sort(), ['create', 'translate']);
+
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_replaced_b_123456', { targetLanguage: 'en', owner: 'owner_marker_first_123456' })).ok, true);
+  await flushMicrotasks();
+  const sameOwner = (await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items;
+  assert.deepEqual(Array.from(sameOwner, item => item.kind).sort(), ['create', 'translate']);
+
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_replaced_c_123456', { targetLanguage: 'en', owner: 'owner_marker_second_12345' })).ok, true);
+  await flushMicrotasks();
+  const after = (await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items;
+  assert.deepEqual(Array.from(after, item => item.kind), ['translate']);
 });
 
 test('does not report a false error when successful cleanup closes the worker tab first', async () => {
@@ -1147,6 +2463,137 @@ test('propagates detected language and autoSpeak to the injected renderer', asyn
   assert.equal(history?.[0]?.sourceLanguage, 'fr');
 });
 
+const koreanTranslateWorker = (options = {}) => createWorkerContext({
+  storageEntries: [['lingoflash_extension_settings', {
+    autoSpeak: false,
+    bubbleDurationMs: 12_000,
+    recentLookupsEnabled: true,
+    quickTranslateSource: 'auto',
+    quickTranslateTarget: 'vi',
+  }]],
+  executeScriptCaptureResult: {
+    text: '결정', anchor: { left: 10, bottom: 20 }, context: '중앙은행이 기준금리를 동결하기로 결정하면서', pageLanguage: 'ko',
+  },
+  fetchImpl: async url => {
+    options.requests?.push(String(url));
+    return { ok: true, json: async () => [[['quyết định', '결정', null, null, 10], [null, null, 'quyết định', 'gyeoljeong']], null, 'ko'] };
+  },
+});
+const syncKoreanCourse = (worker, targetLanguage = 'ko') => sendRuntimeMessage(worker, {
+  type: 'SYNC_COURSE_LOCALE',
+  payload: { scope: 'opaque_scope_ko_123456', nativeLanguage: 'vi', targetLanguage },
+}, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+const translatedRender = worker => worker.calls.find(call => call.type === 'scripting.executeScript'
+  && call.details.args?.[0]?.status === 'translated')?.details.args[0];
+
+test('gives the in-page translation its reading, page context and detected language', async () => {
+  const requests = [];
+  const worker = await koreanTranslateWorker({ requests });
+
+  const response = await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  const payload = translatedRender(worker);
+  const query = new URL(requests[0]).searchParams;
+
+  assert.equal(response.ok, true);
+  assert.equal(response.romanization, 'gyeoljeong');
+  assert.equal(response.sourceLanguage, 'ko');
+  assert.deepEqual(query.getAll('dt'), ['t', 'rm']);
+  assert.equal(payload.translation, 'quyết định');
+  assert.equal(payload.romanization, 'gyeoljeong');
+  assert.equal(payload.sourceLanguage, 'ko');
+  assert.equal(payload.translationLanguage, 'vi');
+  assert.equal(payload.pageLanguage, 'ko');
+  assert.equal(payload.context, '중앙은행이 기준금리를 동결하기로 결정하면서');
+  // No confirmed course: the bubble names none and offers no save.
+  assert.equal(payload.courseLanguage, undefined);
+  assert.equal(payload.saveId, undefined);
+});
+
+test('offers an in-page save only when the selection is in the confirmed course language', async () => {
+  const matching = await koreanTranslateWorker();
+  await syncKoreanCourse(matching);
+  await sendRuntimeMessage(matching, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  const offered = translatedRender(matching);
+  assert.equal(offered.courseLanguage, 'ko');
+  assert.equal(offered.nativeLanguage, 'vi');
+  assert.match(offered.saveId, /\S/);
+  const receipt = matching.storageValues.get('lingoflash_inline_save_7');
+  assert.equal(receipt?.id, offered.saveId);
+  assert.equal(receipt?.text, '결정');
+  assert.equal(receipt?.courseLanguage, 'ko');
+
+  const otherCourse = await koreanTranslateWorker();
+  await syncKoreanCourse(otherCourse, 'ja');
+  await sendRuntimeMessage(otherCourse, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  const notOffered = translatedRender(otherCourse);
+  assert.equal(notOffered.courseLanguage, 'ja');
+  assert.equal(notOffered.saveId, undefined);
+  assert.equal(otherCourse.storageValues.has('lingoflash_inline_save_7'), false);
+});
+
+test('saves from the in-page bubble only with its one-time id, from its own tab, into the same course', async () => {
+  const worker = await koreanTranslateWorker();
+  await syncKoreanCourse(worker);
+  await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  const { saveId } = translatedRender(worker);
+
+  const noTab = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: saveId });
+  assert.equal(noTab.ok, false);
+  const wrongId = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: 'forged' }, { tab: { id: 7 } });
+  assert.equal(wrongId.ok, false);
+  assert.match(wrongId.error, /hết hạn/);
+  const otherTab = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: saveId }, { tab: { id: 8 } });
+  assert.equal(otherTab.ok, false);
+
+  const saved = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: saveId, text: 'ignored' }, { tab: { id: 7 } });
+  assert.equal(saved.ok, true);
+  const job = [...worker.storageValues.entries()].find(([key]) => key.startsWith('lingoflash_quick_add_job_'))?.[1];
+  assert.equal(job?.text, '결정');
+  assert.equal(job?.sourceLanguage, 'ko');
+  assert.equal(worker.storageValues.has('lingoflash_inline_save_7'), false);
+
+  const replay = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: saveId }, { tab: { id: 7 } });
+  assert.equal(replay.ok, false);
+});
+
+test('refuses an in-page save after the active course changed', async () => {
+  const worker = await koreanTranslateWorker();
+  await syncKoreanCourse(worker);
+  await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  const { saveId } = translatedRender(worker);
+  await syncKoreanCourse(worker, 'ja');
+
+  const refused = await sendRuntimeMessage(worker, { type: 'INLINE_SELECTION_ADD', id: saveId }, { tab: { id: 7 } });
+  assert.equal(refused.ok, false);
+  assert.match(refused.error, /Khóa học đang dùng đã thay đổi/);
+  assert.equal([...worker.storageValues.keys()].some(key => key.startsWith('lingoflash_quick_add_job_')), false);
+});
+
+test('passes the saved theme family and colour scheme to the injected renderer', async () => {
+  const worker = await createWorkerContext({
+    storageEntries: [['lingoflash_extension_settings', {
+      autoSpeak: false,
+      bubbleDurationMs: 12_000,
+      recentLookupsEnabled: true,
+      quickTranslateSource: 'auto',
+      quickTranslateTarget: 'vi',
+      themeFamily: 'crystal',
+      colorScheme: 'light',
+    }]],
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => [[['kiên cường']], null, 'en'],
+    }),
+  });
+
+  await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: 'resilient' });
+  const renderCall = worker.calls.find(call => call.type === 'scripting.executeScript'
+    && call.details.args?.[0]?.status === 'translated');
+
+  assert.equal(renderCall?.details.args[0].themeFamily, 'crystal');
+  assert.equal(renderCall?.details.args[0].colorScheme, 'light');
+});
+
 test('treats a renderer acknowledgement failure as an inline fallback', async () => {
   const worker = await createWorkerContext({
     executeScriptRenderResult: { ok: false, error: 'Inline result host has no shadow root.' },
@@ -1198,6 +2645,22 @@ test('bounds the response body parsing phase as well as the network request', as
 
   assert.equal(response.ok, false);
   assert.match(response.error, /hết thời gian/i);
+});
+
+test('reports worker errors in the browser UI language', async () => {
+  const hung = await createWorkerContext({
+    timerCapMs: 1,
+    fetchImpl: async () => ({ ok: true, json: () => new Promise(() => {}) }),
+  });
+  hung.context.chrome.i18n = createI18nMock('en');
+  const timedOut = await sendRuntimeMessage(hung, { type: 'TRANSLATE_SELECTION', text: 'resilient' });
+  assert.equal(timedOut.error, 'Google Translate timed out after 9 seconds.');
+
+  const busy = await createWorkerContext();
+  busy.context.chrome.i18n = createI18nMock('en');
+  await startQuickAdd(busy);
+  const second = await startQuickAdd(busy);
+  assert.equal(second.error, 'A quick-add job is already running on this tab.');
 });
 
 test('allows at most one quick-add job for a source tab', async () => {
@@ -1593,4 +3056,139 @@ test('permission revocation removes the allowlist, unregisters the script and di
   assert.deepEqual(Array.from(worker.storageValues.get('lingoflash_extension_settings').selectionIconSites), []);
   assert.ok(worker.calls.some(call => call.type === 'tabs.sendMessage' && call.message.type === 'FLOATING_SELECTION_DISABLED'));
   assert.ok(worker.calls.some(call => call.type === 'scripting.unregisterContentScripts'));
+});
+
+test('without session storage a restart removes expired retry and in-page save receipts and keeps live ones', async () => {
+  const live = Date.now() + 60_000;
+  const gone = Date.now() - 1_000;
+  const worker = await createWorkerContext({
+    hasSessionStorage: false,
+    storageEntries: [
+      ['lingoflash_quick_add_retry_7', { id: 'retry_expired_1', text: 'resilient', context: 'private', expiresAt: gone }],
+      ['lingoflash_quick_add_retry_8', { id: 'retry_live_123456', text: 'resilient', context: '', expiresAt: live }],
+      ['lingoflash_quick_add_retry_9', { id: 'retry_malformed_1', text: 'resilient' }],
+      ['lingoflash_inline_save_7', { id: 'inline_expired_1', text: 'resilient', courseLanguage: 'en', expiresAt: gone }],
+      ['lingoflash_inline_save_8', { id: 'inline_live_12345', text: 'resilient', courseLanguage: 'en', expiresAt: live }],
+    ],
+  });
+  for (const listener of worker.events.startup.listeners) listener();
+  await flushMicrotasks();
+
+  assert.deepEqual(
+    [...worker.storageValues.keys()].filter(name => /retry_|inline_save_/.test(name)).sort(),
+    ['lingoflash_inline_save_8', 'lingoflash_quick_add_retry_8'],
+  );
+});
+
+test('bubble payloads name the capture mode with a token instead of Vietnamese label text', async () => {
+  const worker = await createWorkerContext({
+    executeScriptCaptureResult: { text: 'resilient', anchor: null, context: 'Resilient people recover.' },
+  });
+  for (const menuItemId of ['lingoflash-translate-only', 'lingoflash-translate-save']) {
+    for (const listener of worker.events.menuClicks.listeners) {
+      listener({ menuItemId, selectionText: 'resilient' }, { id: 7 });
+    }
+    for (let round = 0; round < 20; round += 1) await flushMicrotasks();
+  }
+  const payloads = worker.calls
+    .filter(call => call.type === 'scripting.executeScript' && call.details.func?.name === 'renderInlineBubble')
+    .map(call => call.details.args[0]);
+  const modes = new Set(payloads.map(payload => payload.mode));
+
+  assert.ok(modes.has('translate-free'));
+  assert.ok(modes.has('save-ai'));
+  for (const payload of payloads) {
+    assert.equal(payload.modeLabel, undefined);
+    assert.match(String(payload.mode ?? 'save'), /^(translate-free|translate-google|save|save-ai)$/);
+  }
+});
+
+const menuTitles = calls => calls.filter(call => call.type === 'contextMenus.create').map(call => call.details.title);
+const settle = async () => { for (let round = 0; round < 20; round += 1) await flushMicrotasks(); };
+const syncCourseWithNative = (worker, nativeLanguage, scope = 'opaque_scope_native_123456') => sendRuntimeMessage(worker, {
+  type: 'SYNC_COURSE_LOCALE',
+  payload: { scope, nativeLanguage, targetLanguage: 'ko' },
+}, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+const translateRender = async worker => {
+  worker.calls.length = 0;
+  const response = await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  assert.equal(response.ok, true);
+  return translatedRender(worker);
+};
+const enCatalog = loadMessages('en');
+const viCatalog = loadMessages('vi');
+const localizedWorker = uiLanguage => createWorkerContext({
+  uiLanguage,
+  executeScriptCaptureResult: { text: '결정', anchor: { left: 10, bottom: 20 }, context: '결정했다', pageLanguage: 'ko' },
+  fetchImpl: async () => ({ ok: true, json: async () => [[['quyết định', '결정']], null, 'ko'] }),
+});
+
+test('bubble strings follow the course native language after a sync, not the browser language', async () => {
+  const worker = await localizedWorker('vi');
+
+  assert.equal((await translateRender(worker)).messages, undefined);
+
+  assert.equal((await syncCourseWithNative(worker, 'en')).ok, true);
+  const payload = await translateRender(worker);
+  assert.equal(payload.messages.bubbleRetry.message, enCatalog.bubbleRetry.message);
+  assert.equal(payload.messages.bubbleSaveFlashcard.message, enCatalog.bubbleSaveFlashcard.message);
+  assert.equal(payload.messages.bubbleBrand.message, enCatalog.bubbleBrand.message);
+  assert.deepEqual(payload.messages.bubbleBrand.placeholders, enCatalog.bubbleBrand.placeholders);
+  assert.ok(Object.keys(payload.messages).every(name => /^bubble|^recentSpeakLabel$|^captureReason_/.test(name)));
+});
+
+test('bubble sends every key the bubble reads, and nothing from other surfaces', async () => {
+  const worker = await localizedWorker('vi');
+  assert.equal((await syncCourseWithNative(worker, 'en')).ok, true);
+  const payload = await translateRender(worker);
+  const uiSource = await readFile(new URL('../background-ui.js', import.meta.url), 'utf8');
+  const read = [...uiSource.matchAll(/\bbt\('([A-Za-z_]+)'/g)].map(match => match[1]);
+  assert.ok(read.length > 30);
+  assert.deepEqual(read.filter(name => !payload.messages[name]), []);
+  assert.ok(Object.keys(payload.messages).length < 70);
+});
+
+test('menus and worker messages are rebuilt in the course language after a sync and restored on retire', async () => {
+  const worker = await localizedWorker('vi');
+  assert.deepEqual(menuTitles(worker.startupCalls), [viCatalog.contextMenuTranslateOnly.message, viCatalog.contextMenuTranslateSave.message]);
+
+  worker.calls.length = 0;
+  assert.equal((await syncCourseWithNative(worker, 'en')).ok, true);
+  await settle();
+  assert.deepEqual(menuTitles(worker.calls), [enCatalog.contextMenuTranslateOnly.message, enCatalog.contextMenuTranslateSave.message]);
+  const missingTab = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: 'job_missing' });
+  assert.equal(missingTab.error, enCatalog.errorRetryExpired.message);
+
+  worker.calls.length = 0;
+  const cleared = await sendRuntimeMessage(worker, {
+    type: 'CLEAR_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_native_123456' },
+  }, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(cleared.cleared, true);
+  await settle();
+  assert.deepEqual(menuTitles(worker.calls), [viCatalog.contextMenuTranslateOnly.message, viCatalog.contextMenuTranslateSave.message]);
+
+  assert.equal((await syncCourseWithNative(worker, 'en', 'opaque_scope_native_654321')).ok, true);
+  await settle();
+  worker.calls.length = 0;
+  worker.appPort.disconnect();
+  await settle();
+  assert.deepEqual(menuTitles(worker.calls), [viCatalog.contextMenuTranslateOnly.message, viCatalog.contextMenuTranslateSave.message]);
+});
+
+test('a browser language that is neither Vietnamese nor English gets English bubbles and menus until a course is confirmed', async () => {
+  const worker = await localizedWorker('fr');
+  assert.deepEqual(menuTitles(worker.startupCalls).slice(-2), [enCatalog.contextMenuTranslateOnly.message, enCatalog.contextMenuTranslateSave.message]);
+  assert.equal((await translateRender(worker)).messages.bubbleRetry.message, enCatalog.bubbleRetry.message);
+
+  assert.equal((await syncCourseWithNative(worker, 'vi')).ok, true);
+  const payload = await translateRender(worker);
+  assert.equal(payload.messages.bubbleRetry.message, viCatalog.bubbleRetry.message);
+});
+
+test('keeps the browser language for the bubble when no course is confirmed and the browser speaks Vietnamese or English', async () => {
+  for (const language of ['vi', 'en-GB']) {
+    const worker = await localizedWorker(language);
+    assert.equal((await translateRender(worker)).messages, undefined, language);
+  }
 });

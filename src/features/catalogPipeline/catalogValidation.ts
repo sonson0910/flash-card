@@ -24,10 +24,15 @@ import {
   type CatalogMembershipCandidateV1,
   type CatalogReleaseCountsV1,
   type CatalogReleaseManifestV1,
+  type CatalogReleaseManifestV2,
   type CatalogReviewEvidenceV1,
   type CatalogSourceAssetRegistryV1,
   type CatalogSourceAssetRightsV1,
   type CatalogSourceManifestV1,
+  type CatalogSourceManifest,
+  type CatalogSourceManifestV2,
+  type CatalogUnitDescriptorV1,
+  type CatalogUnitTitleV1,
   type CatalogTranscriptCueV1,
   type CatalogValidationResult,
 } from './catalogContracts';
@@ -527,6 +532,31 @@ export function parseCatalogSourceManifestV1(value: unknown): CatalogSourceManif
   return parsed;
 }
 
+export function parseCatalogSourceManifestV2(value: unknown): CatalogSourceManifestV2 {
+  const record = recordAt(value, 'sourceManifest', [
+    'manifestVersion', 'catalogId', 'contentLanguage', 'supportLanguages',
+    'lexemeFiles', 'membershipFiles', 'unitDescriptorFile',
+  ]);
+  if (record.manifestVersion !== 2) fail('sourceManifest.manifestVersion', 'expected version 2');
+  const { unitDescriptorFile, ...base } = record;
+  const parsedBase = parseCatalogSourceManifestV1({ ...base, manifestVersion: 1 });
+  const descriptorFile = relativePathAt(unitDescriptorFile, 'sourceManifest.unitDescriptorFile');
+  if ([...parsedBase.lexemeFiles, ...parsedBase.membershipFiles].includes(descriptorFile)) {
+    fail('sourceManifest.unitDescriptorFile', 'must not duplicate a lexeme or membership file');
+  }
+  return { ...parsedBase, manifestVersion: 2, unitDescriptorFile: descriptorFile };
+}
+
+export function parseCatalogSourceManifest(value: unknown): CatalogSourceManifest {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    fail('sourceManifest', 'expected object');
+  }
+  const manifestVersion = (value as UnknownRecord).manifestVersion;
+  if (manifestVersion === 1) return parseCatalogSourceManifestV1(value);
+  if (manifestVersion === 2) return parseCatalogSourceManifestV2(value);
+  return fail('sourceManifest.manifestVersion', 'expected version 1 or 2');
+}
+
 export function parseCatalogCandidateProvenanceV1(value: unknown): CatalogCandidateProvenanceV1 {
   const record = recordAt(value, 'provenance', [
     'schemaVersion', 'sourceRef', 'sourceUrl', 'licenseId', 'rightsEvidenceId', 'attribution',
@@ -662,6 +692,46 @@ const chunkDescriptorAt = (value: unknown, path: string): CatalogChunkDescriptor
   };
 };
 
+const unitTitleAt = (value: unknown, path: string): CatalogUnitTitleV1 => {
+  const record = recordAt(value, path, ['language', 'text']);
+  return {
+    language: languageAt(record.language, `${path}.language`),
+    text: stringAt(record.text, `${path}.text`, SCHEMA_V3_LIMITS.shortText),
+  };
+};
+
+const unitDescriptorAt = (value: unknown, path: string): CatalogUnitDescriptorV1 => {
+  const record = recordAt(value, path, ['unitId', 'trackId', 'tier', 'ordinal', 'titles']);
+  const titles = arrayAt(
+    record.titles,
+    `${path}.titles`,
+    CATALOG_PIPELINE_LIMITS.maximumSupportLanguages + 1,
+    unitTitleAt,
+  );
+  if (titles.length === 0) fail(`${path}.titles`, 'requires at least one localized title');
+  const languages = titles.map(title => title.language);
+  if (new Set(languages).size !== languages.length) fail(`${path}.titles`, 'contains duplicate languages');
+  if (languages.some((language, index) => index > 0 && language < languages[index - 1])) {
+    fail(`${path}.titles`, 'must be ordered by language');
+  }
+  return {
+    unitId: stableIdentityAt(record.unitId, `${path}.unitId`),
+    trackId: canonicalIdAt(record.trackId, `${path}.trackId`),
+    tier: stringAt(record.tier, `${path}.tier`, SCHEMA_V3_LIMITS.shortText),
+    ordinal: integerAt(record.ordinal, `${path}.ordinal`, CATALOG_PIPELINE_LIMITS.maximumReleaseMemberships, 1),
+    titles,
+  };
+};
+
+export function parseCatalogUnitDescriptorsV1(value: unknown): readonly CatalogUnitDescriptorV1[] {
+  return arrayAt(
+    value,
+    'unitDescriptors',
+    CATALOG_PIPELINE_LIMITS.maximumReleaseMemberships,
+    unitDescriptorAt,
+  );
+}
+
 export function parseCatalogReleaseManifestV1(value: unknown): CatalogReleaseManifestV1 {
   const record = recordAt(value, 'releaseManifest', [
     'manifestVersion', 'catalogId', 'releaseId', 'sequence', 'contentLanguage', 'supportLanguages',
@@ -713,6 +783,40 @@ export function parseCatalogReleaseManifestV1(value: unknown): CatalogReleaseMan
     counts,
     chunks,
   };
+}
+
+export function parseCatalogReleaseManifestV2(value: unknown): CatalogReleaseManifestV2 {
+  const record = recordAt(value, 'releaseManifest', [
+    'manifestVersion', 'catalogId', 'releaseId', 'sequence', 'contentLanguage', 'supportLanguages',
+    'createdAt', 'previousReleaseId', 'counts', 'chunks', 'unitDescriptors',
+  ]);
+  if (record.manifestVersion !== 2) fail('releaseManifest.manifestVersion', 'expected version 2');
+  const { unitDescriptors, ...base } = record;
+  const parsedBase = parseCatalogReleaseManifestV1({ ...base, manifestVersion: 1 });
+  const descriptors = parseCatalogUnitDescriptorsV1(unitDescriptors);
+  if (descriptors.length === 0) fail('releaseManifest.unitDescriptors', 'requires at least one descriptor');
+  const expectedTitleLanguages = [parsedBase.contentLanguage, ...parsedBase.supportLanguages].sort();
+  const descriptorKeys = new Set<string>();
+  const nextOrdinalByTrack = new Map<string, number>();
+  let previousTrackId: string | null = null;
+  descriptors.forEach((descriptor, index) => {
+    const path = `releaseManifest.unitDescriptors[${index}]`;
+    const key = `${descriptor.trackId}\u0000${descriptor.unitId}`;
+    if (descriptorKeys.has(key)) fail(path, 'contains a duplicate track and unit id');
+    descriptorKeys.add(key);
+    if (previousTrackId !== null && descriptor.trackId < previousTrackId) {
+      fail(path, 'must be ordered by track id');
+    }
+    previousTrackId = descriptor.trackId;
+    const expectedOrdinal = nextOrdinalByTrack.get(descriptor.trackId) ?? 1;
+    if (descriptor.ordinal !== expectedOrdinal) fail(`${path}.ordinal`, 'must be contiguous within its track');
+    nextOrdinalByTrack.set(descriptor.trackId, expectedOrdinal + 1);
+    const titleLanguages = descriptor.titles.map(title => title.language).sort();
+    if (titleLanguages.join('\u0000') !== expectedTitleLanguages.join('\u0000')) {
+      fail(`${path}.titles`, 'must cover exactly the content and support languages');
+    }
+  });
+  return { ...parsedBase, manifestVersion: 2, unitDescriptors: descriptors };
 }
 
 export interface ParseCatalogChunkV1Options {
@@ -849,14 +953,14 @@ export function validateCatalogSourceBundle(
   const issues: CatalogIssue[] = [];
   let root: UnknownRecord;
   try {
-    root = recordAt(value, 'catalog', ['manifest', 'lexemes', 'memberships']);
+    root = recordAt(value, 'catalog', ['manifest', 'lexemes', 'memberships', 'unitDescriptors']);
   } catch (error) {
     return { status: 'quarantined', issues: [issueFrom('invalid-manifest', 'catalog', error)] };
   }
 
-  let manifest: CatalogSourceManifestV1 | null = null;
+  let manifest: CatalogSourceManifest | null = null;
   try {
-    manifest = parseCatalogSourceManifestV1(root.manifest);
+    manifest = parseCatalogSourceManifest(root.manifest);
   } catch (error) {
     issues.push(issueFrom('invalid-manifest', 'manifest', error));
   }
@@ -891,6 +995,29 @@ export function validateCatalogSourceBundle(
       } catch (error) {
         issues.push(issueFrom('invalid-membership', `memberships[${index}]`, error));
       }
+    });
+  }
+
+  let unitDescriptors: readonly CatalogUnitDescriptorV1[] | undefined;
+  if (root.unitDescriptors !== undefined) {
+    try {
+      unitDescriptors = parseCatalogUnitDescriptorsV1(root.unitDescriptors);
+    } catch (error) {
+      issues.push(issueFrom('invalid-manifest', 'unitDescriptors', error));
+    }
+  }
+  if (manifest?.manifestVersion === 2 && unitDescriptors === undefined) {
+    issues.push({
+      code: 'invalid-manifest',
+      path: 'unitDescriptors',
+      message: 'Catalog source manifest version 2 requires unit descriptors',
+    });
+  }
+  if (manifest?.manifestVersion === 1 && unitDescriptors !== undefined) {
+    issues.push({
+      code: 'invalid-manifest',
+      path: 'unitDescriptors',
+      message: 'Catalog source manifest version 1 does not permit unit descriptors',
     });
   }
 
@@ -950,5 +1077,13 @@ export function validateCatalogSourceBundle(
   }
 
   if (issues.length > 0 || manifest === null) return { status: 'quarantined', issues };
-  return { status: 'accepted', catalog: { manifest, lexemes, memberships } };
+  return {
+    status: 'accepted',
+    catalog: {
+      manifest,
+      lexemes,
+      memberships,
+      ...(unitDescriptors === undefined ? {} : { unitDescriptors }),
+    },
+  };
 }

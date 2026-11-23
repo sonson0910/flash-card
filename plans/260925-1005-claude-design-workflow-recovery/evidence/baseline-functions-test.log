@@ -1,0 +1,110 @@
+command=npm --prefix functions test
+start_utc=2026-09-25T04:59:53.757024+00:00
+
+
+> test
+> vitest run
+
+
+ RUN  v3.2.7 /mnt/Projects/startup/flash-card/functions
+
+ ✓ test/analyticsEvents.test.ts (5 tests) 26ms
+ ✓ test/libraryFacetPersistence.test.ts (15 tests) 22ms
+ ↓ test/aiQuotaFirestore.integration.test.ts (7 tests | 7 skipped)
+ ↓ test/libraryFacetPersistenceFirestore.integration.test.ts (1 test | 1 skipped)
+ ↓ test/purchaseIntentFirestore.integration.test.ts (1 test | 1 skipped)
+ ↓ test/sharedDeckPersistenceFirestore.integration.test.ts (2 tests | 2 skipped)
+ ↓ test/entitlementsFirestore.integration.test.ts (2 tests | 2 skipped)
+ ✓ test/reviewPersistence.test.ts (29 tests) 45ms
+ ↓ test/legacyLibraryMigrationFirestore.integration.test.ts (18 tests | 18 skipped)
+ ↓ test/aiCostLedgerFirestore.integration.test.ts (1 test | 1 skipped)
+ ✓ test/legacyLibraryMigration.test.ts (9 tests) 123ms
+stderr | test/aiCostLedger.test.ts > AI cost ledger and reservations > does not fail the learner on a ledger failure, but fails closed before a reservation
+ledger-write-failed { errorName: 'Error' }
+
+ ✓ test/aiCostLedger.test.ts (6 tests) 27ms
+ ✓ test/aiQuota.test.ts (2 tests) 15ms
+ ❯ test/inputValidation.test.ts (27 tests | 1 failed) 23ms
+   ✓ parsePurchaseIntentRequest > accepts only one of the two purchase triggers 2ms
+   ✓ parseVocabularyRequest > parses and trims a supported word request 0ms
+   ✓ parseVocabularyRequest > accepts a word operation UUID and keeps old requests valid 1ms
+   ✓ parseVocabularyRequest > parses bounded structured word context and language 1ms
+   ✓ parseVocabularyRequest > rejects malformed or unexpected structured word input 0ms
+   ✓ parseVocabularyRequest > rejects a story array before mapping when it exceeds five items 0ms
+   ✓ parseVocabularyRequest > normalizes no more than five non-empty story words 0ms
+   ✓ parseVocabularyRequest > rejects an unsupported action 0ms
+   ✓ parseVocabularyRequest > bounds translated text to 2048 characters 0ms
+   ✓ parseImageRequest > uses the word as a fallback when the query is empty 0ms
+   ✓ parseImageRequest > rejects a missing word 0ms
+   ✓ shared deck validation > accepts an optional complete normalized deck language pair 1ms
+   ✓ shared deck validation > rejects incomplete or invalid deck language metadata: { targetLanguage: 'en' } 0ms
+   ✓ shared deck validation > rejects incomplete or invalid deck language metadata: { nativeLanguage: 'vi' } 0ms
+   × shared deck validation > rejects incomplete or invalid deck language metadata: { targetLanguage: 'english', nativeLanguage: 'vi' } 9ms
+     → expected [Function] to throw an error
+   ✓ shared deck validation > retains a complete canonical identity and rejects an incomplete tuple 1ms
+   ✓ shared deck validation > requires the exact authenticated owner for V2 creation 0ms
+   ✓ shared deck validation > calculates payload bytes from normalized UTF-8 JSON 0ms
+   ✓ shared deck validation > retains a valid shared-deck operation contract and rejects malformed IDs or timestamps 1ms
+   ✓ shared deck validation > requires strict V2 operation IDs to bind their timestamp exactly 1ms
+   ✓ shared deck validation > keeps only the bounded public card projection 0ms
+   ✓ shared deck validation > rejects empty, oversized and untrusted shared-deck input 0ms
+   ✓ shared deck validation > accepts only a bounded share id for revocation 0ms
+   ✓ duplicate cleanup request validation > defaults new jobs to dry-run and bounds chunk size 0ms
+   ✓ duplicate cleanup request validation > rejects unsafe job identifiers and actions 0ms
+   ✓ legacy library migration request validation > defaults to a bounded dry-run and requires apply to be explicit 0ms
+   ✓ legacy library migration request validation > rejects caller owner IDs and malformed control fields 0ms
+ ✓ test/cardReports.test.ts (4 tests) 7ms
+ ✓ test/aiGeneration.test.ts (5 tests) 8ms
+ ✓ test/sharedDeckCallable.test.ts (5 tests) 1791ms
+   ✓ shared deck callable rollout > denies a V2 request for a missing or mismatched expected owner: undefined  1785ms
+ ✓ test/imageSelection.test.ts (6 tests) 6ms
+ ✓ test/generateVocabularyCallable.test.ts (5 tests) 1868ms
+   ✓ generateVocabulary callable > replays a completed operation without spending the Gemini budget or calling the model again  1860ms
+ ✓ test/legacyLibraryMigrationOwnerScope.test.ts (5 tests) 5ms
+ ↓ test/accountDataFirestore.integration.test.ts (6 tests | 6 skipped)
+ ✓ test/aiRequestBudget.test.ts (4 tests) 4ms
+ ✓ test/pilotConfig.test.ts (2 tests) 4ms
+ ✓ test/cardPersistence.test.ts (24 tests) 23ms
+ ✓ test/legacySharedDeckMigration.test.ts (42 tests) 2644ms
+   ✓ legacy shared-deck exact inventory > splits a valid multi-megabyte inventory into bounded apply transactions  1350ms
+ ✓ test/duplicateCleanup.test.ts (13 tests) 16ms
+ ✓ test/rateLimiter.test.ts (14 tests) 11ms
+ ✓ test/legacySharedDeckMigrationOperator.test.ts (6 tests) 6ms
+ ✓ test/pilotMetricsOperator.test.ts (2 tests) 19ms
+ ✓ test/aiCostReportOperator.test.ts (2 tests) 6ms
+ ✓ test/sharedDeckPersistence.test.ts (22 tests) 16ms
+ ✓ test/gamificationPersistence.test.ts (10 tests) 20ms
+ ✓ test/pilotOperator.test.ts (4 tests) 8ms
+ ✓ test/serviceBudget.test.ts (5 tests) 5ms
+ ✓ test/reviewCallable.test.ts (1 test) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/inputValidation.test.ts > shared deck validation > rejects incomplete or invalid deck language metadata: { targetLanguage: 'english', nativeLanguage: 'vi' }
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ test/inputValidation.test.ts:132:9
+    130|     expect(() => parseCreateSharedDeckRequest({
+    131|       category: 'Shared', ...language, cards: [{ word: 'hello', transl…
+    132|     })).toThrow(/language/i);
+       |         ^
+    133|   });
+    134|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 26 passed | 8 skipped (35)
+      Tests  1 failed | 273 passed | 38 skipped (312)
+   Start at  11:59:54
+   Duration  8.62s (transform 1.97s, setup 0ms, collect 77.56s, tests 6.75s, environment 6ms, prepare 16.48s)
+
+
+exit_code=1
+end_utc=2026-09-25T05:00:02.965102+00:00

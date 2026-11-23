@@ -1,0 +1,123 @@
+<!--#HEAD Extension popup states-->
+<div style="width: 380px; height: 640px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 2; height: 56px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; gap: 9px; border-bottom: 1px solid {{t.navLine}};">
+    <span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 8px; background: {{t.logoBg}}; box-shadow: {{t.logoShadow}}; display: flex; align-items: center; justify-content: center; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 15px;">S</span>
+    <span style="font-family: Fraunces, Georgia, serif; font-size: 18px;">Son<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Flash</span></span>
+    <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{t.text3}};">v1.6.3</span>
+    <a href="#" aria-label="Cài đặt" style="margin-left: auto; width: 36px; height: 36px; border-radius: 50%; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></a>
+  </header>
+
+  <div style="position: relative; z-index: 2; flex-grow: 1; padding: 14px 16px 0; display: flex; flex-direction: column; gap: 12px;">
+    <label style="display: block;">
+      <span style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: {{t.text2}};">Từ hoặc cụm từ<span style="font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 400; color: {{t.text3}};">{{count}}/80</span></span>
+      <span style="margin-top: 6px; height: 46px; box-sizing: border-box; padding: 0 6px 0 14px; border-radius: 14px; border: 1px solid {{t.accentLine}}; background: {{t.inputBg}}; box-shadow: {{focusRing}}; display: flex; align-items: center; gap: 8px;">
+        <input value="{{word}}" placeholder="Nhập hoặc dán một từ…" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.textStrong}}; font-family: Fraunces, Georgia, serif; font-size: 19px;">
+        <button aria-label="Nghe phát âm" style="width: 36px; height: 36px; border-radius: 10px; border: 0; background: {{t.accentSoft}}; color: {{t.accentText}}; opacity: {{speakOpacity}}; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+      </span>
+    </label>
+
+    <sc-if value="{{isIdle}}" hint-placeholder-val="{{true}}">
+      <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px;">
+        <div>
+          <div style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Lưu vào deck</div>
+          <span aria-disabled="true" style="margin-top: 6px; height: 40px; box-sizing: border-box; padding: 0 12px; border-radius: 12px; border: 1px dashed {{t.lineStrong}}; background: {{t.chipBg}}; color: {{t.text3}}; font-size: 13px; display: flex; align-items: center; gap: 8px;"><span class="sf-spin" style="width: 12px; height: 12px; border-radius: 50%; border: 2px solid {{t.line}}; border-top-color: {{t.accentText}};"></span>Đang đồng bộ deck…</span>
+        </div>
+        <div>
+          <div style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Biểu tượng nổi</div>
+          <span style="margin-top: 6px; height: 40px; box-sizing: border-box; padding: 0 10px 0 12px; border-radius: 12px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; font-size: 13px; font-weight: 600; color: {{t.text}}; display: flex; align-items: center; gap: 9px;">Bật<span role="switch" aria-checked="true" style="position: relative; width: 34px; height: 20px; border-radius: 999px; background: {{swBg}};"><span style="position: absolute; top: 2px; left: 16px; width: 16px; height: 16px; border-radius: 50%; background: {{swKnob}};"></span></span></span>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; opacity: {{actionsOpacity}};">
+      <button style="height: 58px; border-radius: 14px; border: 1px solid {{quickLine}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 0 12px; text-align: left;"><span style="font-size: 13.5px; font-weight: 650;">Dịch nhanh</span><span style="font-size: 11px; color: {{t.text3}};">Miễn phí · không lưu</span></button>
+      <button style="height: 58px; border-radius: 14px; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 0 14px; text-align: left;"><span style="font-size: 13.5px; font-weight: 650;">Dịch + tạo flashcard</span><span style="font-size: 11px; opacity: 0.72;">1 AI request · tự lưu</span></button>
+    </div>
+
+    <sc-if value="{{isQuick}}" hint-placeholder-val="{{false}}">
+      <div class="sf-pop" style="position: relative; box-sizing: border-box; border-radius: {{t.miniR}}px; border: {{card.border}}; background: {{card.bg}}; box-shadow: {{card.shadow}}; padding: 16px 18px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="height: 24px; padding: 0 9px; border-radius: 999px; background: {{t.chipBg}}; border: 1px solid {{t.line}}; color: {{t.text2}}; font-size: 11.5px; font-weight: 650; display: flex; align-items: center;">Dịch nhanh · chưa lưu</span>
+          <button aria-label="Đóng" style="margin-left: auto; width: 26px; height: 26px; border-radius: 50%; border: 0; background: transparent; color: {{t.text3}}; display: flex; align-items: center; justify-content: center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        </div>
+        <div style="margin-top: 10px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 36px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};">re<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">sil</span>ient</div>
+        <div style="margin-top: 6px; font-size: 12.5px; color: {{t.text2}};"><span style="font-family: 'Geist Mono', ui-monospace, monospace;">/rɪˈzɪliənt/</span> · adjective</div>
+        <div style="margin-top: 10px; font-family: Fraunces, Georgia, serif; font-size: 23px; color: {{t.accentText}};">kiên cường, mau phục hồi</div>
+        <p style="margin: 6px 0 0; font-size: 12.5px; line-height: 1.5; color: {{t.body}}; font-style: italic;">“Children are often more resilient than adults.”</p>
+        <div style="margin-top: 12px; display: flex; gap: 6px;">
+          <button class="sf-press" style="height: 36px; padding: 0 14px; border-radius: 10px; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Lưu flashcard</button>
+          <button style="height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid {{t.line}}; background: transparent; color: {{t.text}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 6px;">Deck: IELTS <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg></button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isError}}" hint-placeholder-val="{{false}}">
+      <div role="alert" class="sf-pop" style="box-sizing: border-box; border-radius: {{t.miniR}}px; border: 1px solid {{t.dangerLine}}; background: {{errBg}}; padding: 16px 18px;">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <span style="width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; background: {{t.dangerBg}}; color: {{t.danger}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg></span>
+          <div>
+            <div style="font-family: Fraunces, Georgia, serif; font-size: 20px; line-height: 1.15; color: {{t.textStrong}};">Chưa đăng nhập SonFlash</div>
+            <p style="margin: 5px 0 0; font-size: 12.5px; line-height: 1.5; color: {{t.body}};">Đăng nhập để tạo flashcard và đồng bộ deck. Dịch nhanh vẫn dùng được.</p>
+          </div>
+        </div>
+        <button class="sf-press" style="margin-top: 14px; width: 100%; height: 42px; border-radius: 12px; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 13.5px; font-weight: 650; display: flex; align-items: center; justify-content: center; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"></path></svg>Đăng nhập SonFlash</button>
+      </div>
+      <div role="status" style="padding: 11px 12px; border-radius: 14px; background: {{t.warnBg}}; border: 1px solid {{t.warnLine}}; display: flex; align-items: center; gap: 10px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{t.warn}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 3 2 20h20zM12 10v4M12 17h.01"></path></svg>
+        <div style="font-size: 12.5px; line-height: 1.4; color: {{t.warn}};"><span style="font-weight: 650;">AI đang bận.</span> Thử lại sau 30 giây.</div>
+        <button style="margin-left: auto; height: 30px; padding: 0 11px; border-radius: 9px; border: 1px solid {{t.warnLine}}; background: transparent; color: {{t.warn}}; font-size: 12px; font-weight: 650; flex-shrink: 0;">Thử lại</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showRecent}}" hint-placeholder-val="{{true}}">
+      <div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: {{t.text2}};">Tra cứu gần đây<button style="border: 0; background: none; padding: 0; font-size: 12px; color: {{t.text3}};">Xóa</button></div>
+        <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+          <sc-for list="{{recent}}" as="r" hint-placeholder-count="4">
+            <button style="height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text}}; font-family: Fraunces, Georgia, serif; font-size: 14px;">{{r}}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <footer style="position: relative; z-index: 2; flex-shrink: 0; padding: 12px 16px 14px; border-top: 1px solid {{t.navLine}}; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: {{t.text2}};">
+      <span><span style="font-family: 'Geist Mono', ui-monospace, monospace; padding: 2px 6px; border-radius: 5px; border: 1px solid {{t.line}};">Ctrl Shift L</span> dịch + thêm</span>
+      <span><span style="font-family: 'Geist Mono', ui-monospace, monospace; padding: 2px 6px; border-radius: 5px; border: 1px solid {{t.line}};">Alt Shift L</span> chỉ dịch</span>
+    </div>
+    <a href="#" style="height: 42px; border-radius: 12px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; font-size: 13.5px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">Mở thư viện SonFlash <span style="color: {{t.accentText}};">· 12 thẻ đến hạn</span></a>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"state":{"editor":"enum","options":["idle","quick","error"],"default":"idle"},"$preview":{"width":380,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const state = this.props.state ?? 'idle';
+    const t = { ...sfTokens(dark), miniR: dark ? 20 : 14 };
+    const word = { idle: '', quick: 'resilient', error: 'immediate' }[state] ?? '';
+    const card = dark
+      ? { border: '1.5px solid transparent', bg: t.cardBg + ' padding-box, ' + t.rimNew + ' border-box', shadow: '0 20px 40px -20px rgb(0 0 0 / 0.9)' }
+      : { border: '0', bg: t.cardBg, shadow: 'inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.06), 0 12px 24px -16px rgb(60 40 20 / 0.4)' };
+    return {
+      t, card, word, count: word.length,
+      grainId: 'popst-grain-' + state + (dark ? 'd' : 'l'),
+      amb: { ax: -260, ay: -300, bx: 120, by: 380 },
+      isIdle: state === 'idle', isQuick: state === 'quick', isError: state === 'error',
+      showRecent: state !== 'error',
+      focusRing: state === 'idle' ? (dark ? '0 0 0 4px rgb(40 211 244 / 0.16)' : '0 0 0 4px rgb(180 70 26 / 0.12)') : 'none',
+      speakOpacity: state === 'idle' ? 0.4 : 1,
+      actionsOpacity: state === 'idle' ? 0.55 : 1,
+      quickLine: state === 'quick' ? t.accentLine : t.line,
+      swBg: dark ? '#28d3f4' : '#337344', swKnob: dark ? '#04141c' : '#fffcf5',
+      errBg: dark ? 'linear-gradient(180deg, rgb(237 83 80 / 0.08), rgb(237 83 80 / 0.02)), #0c1f28' : '#fffcf5',
+      recent: ['immediate', 'permanent', 'recharge', 'warden'],
+    };
+  }
+}
+</script>
+</body>
+</html>

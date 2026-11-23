@@ -1,0 +1,14 @@
+command=npm run verify:bundle
+start_utc=2026-09-25T04:58:20.424139+00:00
+
+
+> lingoflash@1.0.0 verify:bundle
+> node scripts/bundle-budget.mjs
+
+Initial JavaScript: 220,300 B raw / 70,086 B gzip
+Initial CSS: 193,970 B raw / 28,741 B gzip
+Total JavaScript: 2,522,705 B raw / 793,656 B gzip
+Bundle budget passed for 100 JavaScript chunks.
+
+exit_code=0
+end_utc=2026-09-25T04:58:20.616857+00:00

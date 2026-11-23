@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const firestore = vi.hoisted(() => ({
@@ -314,5 +315,99 @@ describe('fetchPracticeCards new-card reservation', () => {
     ]);
 
     expect(firestore.limit).toHaveBeenNthCalledWith(2, 3);
+  });
+});
+
+describe('fetchPracticeCards course scope', () => {
+  type Constraint = { type: string; args: unknown[] };
+  const whereClauses = (constraints: Constraint[]) => constraints.filter(item => item.type === 'where');
+
+  // Evaluates the equality, membership and range filters each query carries,
+  // so a query without a language filter returns cards from other courses.
+  const serveFrom = (documents: Array<{ id: string; data: Record<string, unknown> }>) => async (queryResult: unknown) => {
+    const constraints = constraintsFor(queryResult);
+    const queryLimit = Number(constraints.find(item => item.type === 'limit')?.args[0] ?? documents.length);
+    const matching = documents.filter(document => whereClauses(constraints).every(({ args: [field, op, value] }) => {
+      const actual = document.data[field as string];
+      if (op === '==') return actual === value;
+      if (op === 'in') return (value as unknown[]).includes(actual);
+      if (op === '<=') return typeof actual === 'string' && actual <= String(value);
+      throw new Error(`unsupported operator ${String(op)}`);
+    }));
+    return snapshot(matching.slice(0, queryLimit));
+  };
+
+  const mixedCourseCards = [
+    ...['hard', 'good', 'easy', 'unrated'].flatMap(difficulty => Array.from({ length: 6 }, (_, index) => ({
+      id: `en-${difficulty}-${index}`,
+      data: rawCard(`en-${difficulty}-${index}`, {
+        language: 'en', difficulty, nextReviewDate: '2026-03-01T00:00:00.000Z',
+      }),
+    }))),
+    { id: 'ko-due', data: rawCard('ko-due', { language: 'ko', difficulty: 'good', nextReviewDate: '2025-12-31T00:00:00.000Z' }) },
+    { id: 'ko-hard', data: rawCard('ko-hard', { language: 'ko', difficulty: 'hard', nextReviewDate: '2026-03-01T00:00:00.000Z' }) },
+    { id: 'ko-easy', data: rawCard('ko-easy', { language: 'ko', difficulty: 'easy', nextReviewDate: '2026-03-01T00:00:00.000Z' }) },
+    { id: 'ko-new', data: rawCard('ko-new', { language: 'ko', difficulty: 'unrated' }) },
+  ];
+
+  it.each([true, false])('keeps the pool inside the course language when includeFuture is %s', async includeFuture => {
+    firestore.getDocs.mockImplementation(serveFrom(mixedCourseCards));
+
+    const pool = await fetchPracticeCards({} as never, 'owner-1', 50, {
+      includeFuture,
+      targetLanguage: 'ko',
+      now: new Date('2026-01-01T00:00:00.000Z'),
+    });
+
+    expect(pool.length).toBeGreaterThan(0);
+    expect(pool.map(card => card.language)).toEqual(pool.map(() => 'ko'));
+    expect(firestore.query.mock.results.length).toBeGreaterThan(1);
+    for (const queryResult of firestore.query.mock.results) {
+      const constraints = constraintsFor(queryResult.value);
+      expect(constraints[0]).toEqual({ type: 'where', args: ['language', '==', 'ko'] });
+    }
+  });
+
+  it('issues only course-scoped query shapes that the index manifest covers', async () => {
+    const manifest = JSON.parse(readFileSync(new URL('../../firestore.indexes.json', import.meta.url), 'utf8')) as {
+      indexes: Array<{ collectionGroup: string; queryScope: string; fields: unknown[] }>;
+    };
+    // Equality and membership filters, then explicit orders, then the
+    // implicit document-id tie breaker in the direction of the last order.
+    const indexFields = (constraints: Constraint[]) => {
+      const fields: Array<{ fieldPath: string; order: string }> = whereClauses(constraints)
+        .filter(({ args: [, op] }) => op === '==' || op === 'in')
+        .map(({ args: [field] }) => ({ fieldPath: String(field), order: 'ASCENDING' }));
+      for (const { args: [field, direction = 'asc'] } of constraints.filter(item => item.type === 'orderBy')) {
+        fields.push({ fieldPath: field === 'documentId' ? '__name__' : String(field), order: direction === 'desc' ? 'DESCENDING' : 'ASCENDING' });
+      }
+      if (fields.at(-1)?.fieldPath !== '__name__') fields.push({ fieldPath: '__name__', order: fields.at(-1)?.order ?? 'ASCENDING' });
+      return fields;
+    };
+    // Equality filters ordered only by document id are served by merging
+    // single-field indexes; every other shape needs a manifest composite.
+    const servedByMergedSingleFieldIndexes = (constraints: Constraint[]) =>
+      whereClauses(constraints).every(({ args: [, op] }) => op === '==')
+      && constraints.filter(item => item.type === 'orderBy').every(({ args: [field] }) => field === 'documentId');
+    const covered = (constraints: Constraint[]) => servedByMergedSingleFieldIndexes(constraints)
+      || manifest.indexes.some(index => (
+        index.collectionGroup === 'cards' && index.queryScope === 'COLLECTION'
+          && JSON.stringify(index.fields) === JSON.stringify(indexFields(constraints))
+      ));
+
+    firestore.getDocs.mockResolvedValue(snapshot([]));
+    for (const customDeck of [{ kind: 'all' }, { kind: 'deck', name: 'IELTS' }, { kind: 'unassigned' }] as const) {
+      for (const includeFuture of [true, false]) {
+        await fetchPracticeCards({} as never, 'owner-1', 50, {
+          customDeck, includeFuture, targetLanguage: 'ko', now: new Date('2026-01-01T00:00:00.000Z'),
+        });
+      }
+    }
+
+    const uncovered = firestore.query.mock.results
+      .map(queryResult => constraintsFor(queryResult.value))
+      .filter(constraints => !covered(constraints))
+      .map(indexFields);
+    expect(uncovered).toEqual([]);
   });
 });

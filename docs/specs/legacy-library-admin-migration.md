@@ -12,9 +12,28 @@ card searchable/pageable under schema v2 without losing the strongest learning s
 - Functions verification: `npm --prefix functions run lint && npm --prefix functions test && npm --prefix functions run build`
 - Repository verification: `npm run verify`
 - Operator dry-run: dispatched only by the protected GitHub migration workflow; emits
-  12-character SHA-256 owner keys and aggregate counts only
+  12-character SHA-256 owner keys and aggregate counts only. Every owner gets a row with
+  its job phase: an owner already applied, rolled back, blocked (with its reason code) or
+  fenced does not stop the run. A row carries a source revision only for a phase that
+  apply (`discovered`) or rollback (`verify`, `apply`, `complete`, `rollback`) accepts
 - Operator apply/rollback: dispatched only after selecting exactly one owner key from
   a clean dry-run for the same revision and target
+- Operator catalog-progress repair (`MIGRATION_CONFIRMATION=REPAIR_CATALOG_PROGRESS`):
+  writes the missing or outdated `catalog_progress` projection of every lexeme card in
+  each owner's current library, which cards written before the projection existed lack.
+  Idempotent; a fenced owner is reported as `skipped: migration-fence` and left for a
+  later run. Reports owner keys with scanned and repaired counts only
+- Operator restart (`MIGRATION_CONFIRMATION=RESTART_QUERY_V3`, owner key only): after the
+  cause a dry-run reported for a `blocked` owner is repaired, or after a `rolled-back`
+  owner's cause is fixed and a fixed release is deployed, starts that owner's job over
+  with a new scan. A blocked job never applied a group, so its manifest and backup root
+  are retired with it. A rolled-back job's rollback backup is kept: its root, plans and
+  source backups move to the backup id `<job id>:rolled-back:<retired scan id>`, which
+  no later apply or rollback reads. Any other phase is refused. Dispatch dry-run again
+  and approve the revision it reports
+- Library changed after the dry-run: apply fails without migrating anything, releases
+  the fence and reopens discovery for that owner; dispatch dry-run again and approve
+  the new revision it reports. The earlier revision is never applied
 
 ## Project structure
 
@@ -68,6 +87,7 @@ type MigrationResult = {
 ## Rollback
 
 Disable the callable/deploy the previous Functions artifact, then dispatch protected
-`rollback` with the selected owner key and `ROLLBACK_QUERY_V2`. Restoration proceeds
+`rollback` with the selected owner key, job `query-v3` and
+`MIGRATION_CONFIRMATION=ROLLBACK_QUERY_V3` (apply needs `APPLY_QUERY_V3`). Restoration proceeds
 only when owner epoch, final card count and migrated revisions still match the recorded
 job, and none of the removed source IDs has been recreated.

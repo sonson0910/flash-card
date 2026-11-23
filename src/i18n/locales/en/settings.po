@@ -1,0 +1,697 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-24 16:48+0700\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/features/settings/settings-screen.tsx:182
+msgctxt "settings.data.open"
+msgid "Open data & export"
+msgstr "Open data & export"
+
+#: src/features/settings/settings-screen.tsx:249
+msgctxt "settings.reminders.page-title"
+msgid "A nudge, <0>not a nag.</0>"
+msgstr "A nudge, <0>not a nag.</0>"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:216
+msgctxt "settings.reminders.badge.read-only"
+msgid "Read only"
+msgstr "Read only"
+
+#: src/features/settings/CourseSettingsSection.tsx:180
+msgctxt "settings.voice"
+msgid "Voice"
+msgstr "Voice"
+
+#: src/features/settings/settings-screen.tsx:164
+msgctxt "settings.sounds.title"
+msgid "Sounds & <0>haptics</0>"
+msgstr "Sounds & <0>haptics</0>"
+
+#: src/features/settings/settings-screen.tsx:142
+msgctxt "settings.theme.crystal.description"
+msgid "A sparkling study space with Lumi."
+msgstr "A sparkling study space with Lumi."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:163
+msgctxt "settings.reminders.daily"
+msgid "Daily reminder"
+msgstr "Daily reminder"
+
+#: src/features/settings/settings-screen.tsx:140
+msgctxt "settings.theme.midnight.description"
+msgid "A deep, calm night palette."
+msgstr "A deep, calm night palette."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:225
+msgctxt "settings.reminders.skip"
+msgid "Skip for now"
+msgstr "Skip for now"
+
+#: src/features/settings/CourseSettingsSection.tsx:247
+msgctxt "settings.course.meaning-language.scope"
+msgid "Applies to new cards. Existing card meanings do not change."
+msgstr "Applies to new cards. Existing card meanings do not change."
+
+#: src/features/settings/settings-screen.tsx:210
+msgctxt "settings.menu.reminders"
+msgid "Reminders"
+msgstr "Reminders"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:259
+msgctxt "settings.reminders.preview.body"
+msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
+msgstr "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:187
+msgctxt "settings.reminders.only-if-not-studied.description"
+msgid "Remind me only if I haven’t studied yet today"
+msgstr "Remind me only if I haven’t studied yet today"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:217
+msgctxt "settings.reminders.badge.title"
+msgid "Extension badge"
+msgstr "Extension badge"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:187
+msgctxt "settings.reminders.smart"
+msgid "Smart reminder"
+msgstr "Smart reminder"
+
+#: src/features/settings/CourseSettingsSection.tsx:264
+msgctxt "settings.course.note.body"
+msgid "Meanings stay in the language they were written in."
+msgstr "Meanings stay in the language they were written in."
+
+#: src/features/settings/CourseSettingsSection.tsx:163
+msgctxt "settings.course.add"
+msgid "Add a language"
+msgstr "Add a language"
+
+#: src/features/settings/CourseSettingsSection.tsx:87
+msgctxt "settings.course.ui-language"
+msgid "App language"
+msgstr "App language"
+
+#: src/features/settings/settings-screen.tsx:249
+msgctxt "settings.reminders.description"
+msgid "We remind you once a day, only when cards are waiting."
+msgstr "We remind you once a day, only when cards are waiting."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:218
+msgctxt "settings.reminders.badge.description"
+msgid "Due count on the SonFlash icon"
+msgstr "Due count on the SonFlash icon"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:277
+msgctxt "settings.reminders.lumi.text"
+msgid "I only call you once a day, when cards are due."
+msgstr "I only call you once a day, when cards are due."
+
+#: src/features/settings/settings-screen.tsx:144
+msgctxt "settings.crystal-mode.label"
+msgid "Crystal Star mode"
+msgstr "Crystal Star mode"
+
+#: src/features/settings/settings-screen.tsx:139
+msgctxt "settings.theme.label"
+msgid "Theme"
+msgstr "Theme"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:256
+msgctxt "settings.reminders.preview.body-unknown"
+msgid "Your due cards are ready for review."
+msgstr "Your due cards are ready for review."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:235
+msgctxt "settings.reminders.unavailable"
+msgid "Reminders are unavailable right now. Try again later."
+msgstr "Reminders are unavailable right now. Try again later."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:177
+msgctxt "settings.reminders.days"
+msgid "Review days"
+msgstr "Review days"
+
+#: src/features/settings/settings-screen.tsx:213
+msgctxt "settings.menu.data"
+msgid "Data & export"
+msgstr "Data & export"
+
+#: src/features/settings/settings-screen.tsx:92
+msgctxt "settings.sound.label"
+msgid "Study sounds"
+msgstr "Study sounds"
+
+#: src/features/settings/CourseSettingsSection.tsx:222
+msgctxt "settings.course.archived"
+msgid "Archived courses"
+msgstr "Archived courses"
+
+#: src/features/settings/CourseSettingsSection.tsx:188
+msgctxt "settings.voice.automatic"
+msgid "Automatic"
+msgstr "Automatic"
+
+#: src/features/settings/settings-screen.tsx:151
+msgctxt "settings.follow-system.label"
+msgid "Follow system"
+msgstr "Follow system"
+
+#: src/features/settings/CourseSettingsSection.tsx:88
+msgctxt "settings.course.ui-language.scope"
+msgid "Menus, buttons, emails and notifications"
+msgstr "Menus, buttons, emails and notifications"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:251
+msgctxt "settings.reminders.preview.title"
+msgid "Live preview"
+msgstr "Live preview"
+
+#: src/features/settings/settings-screen.tsx:192
+msgctxt "settings.files.title"
+msgid "Storage & <0>files</0>"
+msgstr "Storage & <0>files</0>"
+
+#: src/features/settings/settings-screen.tsx:141
+msgctxt "settings.theme.paper"
+msgid "Ink & Paper"
+msgstr "Ink & Paper"
+
+#: src/features/settings/CourseSettingsSection.tsx:194
+msgctxt "settings.course.keyboard.ko-help"
+msgid "Korean 2-set (두벌식): add Korean in your device keyboard settings, or use the on-screen keys in Korean practice."
+msgstr "Korean 2-set (두벌식): add Korean in your device keyboard settings, or use the on-screen keys in Korean practice."
+
+#: src/features/settings/settings-screen.tsx:154
+msgctxt "settings.focus-mode.description"
+msgid "Hide combo banners while studying."
+msgstr "Hide combo banners while studying."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:262
+msgctxt "settings.reminders.preview.mail-subject"
+msgid "Your SonFlash weekly recap"
+msgstr "Your SonFlash weekly recap"
+
+#: src/features/settings/CourseSettingsSection.tsx:204
+msgctxt "settings.course.pace.description"
+msgid "Cards you aim to study each day"
+msgstr "Cards you aim to study each day"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:226
+msgctxt "settings.reminders.saved"
+msgid "Reminder settings saved."
+msgstr "Reminder settings saved."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:266
+msgctxt "settings.reminders.preview.mail-unknown"
+msgid "cards ready for review"
+msgstr "cards ready for review"
+
+#: src/features/settings/settings-screen.tsx:175
+msgctxt "settings.data.title"
+msgid "Data & <0>export</0>"
+msgstr "Data & <0>export</0>"
+
+#: src/features/settings/settings-screen.tsx:191
+msgctxt "settings.files.description"
+msgid "Your uploads and the storage they use."
+msgstr "Your uploads and the storage they use."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:168
+msgctxt "settings.reminders.timezone"
+msgid "Time zone"
+msgstr "Time zone"
+
+#: src/features/settings/CourseSettingsSection.tsx:194
+msgctxt "settings.course.keyboard"
+msgid "Keyboard"
+msgstr "Keyboard"
+
+#: src/features/settings/settings-screen.tsx:177
+msgctxt "settings.data.eyebrow"
+msgid "Your account data"
+msgstr "Your account data"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:172
+msgctxt "settings.reminders.timezone.use-device"
+msgid "Use this device’s time zone"
+msgstr "Use this device’s time zone"
+
+#: src/features/settings/CourseSettingsSection.tsx:189
+msgctxt "settings.voice.unavailable"
+msgid "Saved voice unavailable · Automatic"
+msgstr "Saved voice unavailable · Automatic"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:193
+msgctxt "settings.reminders.quiet.description"
+msgid "Nothing is sent at night, even if cards are due"
+msgstr "Nothing is sent at night, even if cards are due"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:273
+msgctxt "settings.reminders.preview.badge"
+msgid "Extension badge shows cards due, right in your toolbar."
+msgstr "Extension badge shows cards due, right in your toolbar."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:264
+msgctxt "settings.reminders.preview.mail-eyebrow"
+msgid "Weekly recap"
+msgstr "Weekly recap"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:211
+msgctxt "settings.reminders.email.title"
+msgid "Weekly digest"
+msgstr "Weekly digest"
+
+#: src/features/settings/settings-screen.tsx:153
+msgctxt "settings.lumi.label"
+msgid "Lumi"
+msgstr "Lumi"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:213
+msgctxt "settings.reminders.email-unavailable"
+msgid "Weekly email delivery is not available yet. You can turn off an existing recap, but new recaps cannot be enabled."
+msgstr "Weekly email delivery is not available yet. You can turn off an existing recap, but new recaps cannot be enabled."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:277
+msgctxt "settings.reminders.lumi.tag"
+msgid "Lumi · Link"
+msgstr "Lumi · Link"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:199
+msgctxt "settings.reminders.channels"
+msgid "Channels"
+msgstr "Channels"
+
+#: src/features/settings/settings-screen.tsx:208
+msgctxt "settings.menu.appearance"
+msgid "Appearance"
+msgstr "Appearance"
+
+#: src/features/settings/settings-screen.tsx:209
+msgctxt "settings.menu.language"
+msgid "Language & courses"
+msgstr "Language & courses"
+
+#: src/features/settings/settings-screen.tsx:96
+msgctxt "settings.haptics.label"
+msgid "Haptics"
+msgstr "Haptics"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:233
+msgctxt "settings.reminders.loading"
+msgid "Loading reminders…"
+msgstr "Loading reminders…"
+
+#: src/features/settings/settings-screen.tsx:248
+msgctxt "settings.language.description"
+msgid "The app speaks one language. Each course teaches another."
+msgstr "The app speaks one language. Each course teaches another."
+
+#: src/features/settings/settings-screen.tsx:146
+msgctxt "settings.crystal-mode.day"
+msgid "Prism Day"
+msgstr "Prism Day"
+
+#: src/features/settings/CourseSettingsSection.tsx:176
+msgctxt "settings.course.romanization"
+msgid "Show romanization"
+msgstr "Show romanization"
+
+#: src/features/settings/CourseSettingsSection.tsx:176
+msgctxt "settings.course.romanization.description"
+msgid "Your saved choice for this course. Each card has its own reading switch."
+msgstr "Your saved choice for this course. Each card has its own reading switch."
+
+#: src/features/settings/CourseSettingsSection.tsx:268
+msgctxt "settings.course.pace.error"
+msgid "Daily pace could not be saved. Please try again."
+msgstr "Daily pace could not be saved. Please try again."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:203
+msgctxt "settings.reminders.push"
+msgid "Browser push"
+msgstr "Browser push"
+
+#: src/features/settings/settings-screen.tsx:135
+msgctxt "settings.title"
+msgid "Make your study space <0>yours</0>"
+msgstr "Make your study space <0>yours</0>"
+
+#: src/features/settings/settings-screen.tsx:142
+msgctxt "settings.theme.crystal"
+msgid "Crystal Star"
+msgstr "Crystal Star"
+
+#: src/features/settings/settings-screen.tsx:149
+msgctxt "settings.display.title"
+msgid "Display"
+msgstr "Display"
+
+#: src/features/settings/settings-screen.tsx:174
+msgctxt "settings.data.description"
+msgid "Download what you have saved, or delete your account."
+msgstr "Download what you have saved, or delete your account."
+
+#: src/features/settings/settings-screen.tsx:153
+msgctxt "settings.lumi.description"
+msgid "Show your Crystal Star study companion."
+msgstr "Show your Crystal Star study companion."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:262
+msgctxt "settings.reminders.preview.mail-day"
+msgid "Sun"
+msgstr "Sun"
+
+#: src/features/settings/CourseSettingsSection.tsx:197
+msgctxt "settings.course.script"
+msgid "Chinese script"
+msgstr "Chinese script"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:204
+msgctxt "settings.reminders.push.description"
+msgid "One notification with the due count"
+msgstr "One notification with the due count"
+
+#: src/features/settings/settings-screen.tsx:181
+msgctxt "settings.data.row.description"
+msgid "Download your account data as a file, or permanently delete your account."
+msgstr "Download your account data as a file, or permanently delete your account."
+
+#: src/features/settings/settings-screen.tsx:154
+msgctxt "settings.focus-mode.label"
+msgid "Focus mode"
+msgstr "Focus mode"
+
+#: src/features/settings/settings-screen.tsx:137
+msgctxt "settings.appearance.title"
+msgid "Appearance"
+msgstr "Appearance"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:231
+msgctxt "settings.reminders.sign-in"
+msgid "Sign in to set reminders."
+msgstr "Sign in to set reminders."
+
+#: src/features/settings/settings-screen.tsx:237
+msgctxt "settings.kicker"
+msgid "Settings"
+msgstr "Settings"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:258
+msgctxt "settings.reminders.preview.body-none"
+msgid "Nothing is due right now, so no reminder is sent."
+msgstr "Nothing is due right now, so no reminder is sent."
+
+#: src/features/settings/settings-screen.tsx:145
+msgctxt "settings.crystal-mode.night"
+msgid "Starry Night"
+msgstr "Starry Night"
+
+#: src/features/settings/CourseSettingsSection.tsx:200
+msgctxt "settings.course.script.traditional"
+msgid "Traditional"
+msgstr "Traditional"
+
+#: src/features/settings/settings-screen.tsx:152
+msgctxt "settings.reduced-motion.label"
+msgid "Reduced motion"
+msgstr "Reduced motion"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:224
+msgctxt "settings.reminders.save"
+msgid "Save reminders"
+msgstr "Save reminders"
+
+#: src/features/settings/settings-screen.tsx:248
+msgctxt "settings.language.title"
+msgid "Language & <0>courses</0>"
+msgstr "Language & <0>courses</0>"
+
+#: src/features/settings/settings-screen.tsx:211
+msgctxt "settings.menu.sounds"
+msgid "Sounds & haptics"
+msgstr "Sounds & haptics"
+
+#: src/features/settings/CourseSettingsSection.tsx:170
+msgctxt "settings.course.active-badge"
+msgid "Active"
+msgstr "Active"
+
+#: src/features/settings/settings-screen.tsx:212
+msgctxt "settings.menu.files"
+msgid "Storage & files"
+msgstr "Storage & files"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:235
+msgctxt "common.retry"
+msgid "Retry"
+msgstr "Retry"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:212
+msgctxt "settings.reminders.email.description"
+msgid "Sunday email with your recap"
+msgstr "Sunday email with your recap"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:269
+msgctxt "settings.reminders.preview.mail-link"
+msgid "Continue on SonFlash →"
+msgstr "Continue on SonFlash →"
+
+#: src/features/settings/CourseSettingsSection.tsx:232
+msgctxt "settings.course.add.title"
+msgid "Start another language"
+msgstr "Start another language"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:192
+msgctxt "settings.reminders.quiet"
+msgid "Quiet hours"
+msgstr "Quiet hours"
+
+#: src/features/settings/CourseSettingsSection.tsx:204
+msgctxt "settings.course.pace"
+msgid "Daily pace"
+msgstr "Daily pace"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:184
+msgctxt "settings.reminders.days.count"
+msgid "{count, plural, one {# day a week} other {# days a week}}"
+msgstr "{count, plural, one {# day a week} other {# days a week}}"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:173
+msgctxt "settings.reminders.timezone.note"
+msgid "Reminders follow this clock."
+msgstr "Reminders follow this clock."
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:160
+msgid "settings.course.list.label"
+msgstr "Your courses"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:205
+msgid "settings.course.pace.label"
+msgstr "Daily pace"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:206
+msgid "settings.course.pace.option"
+msgstr "{count} cards / day"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:102
+#: src/features/settings/CourseSettingsSection.tsx:158
+msgid "settings.course.region"
+msgstr "Language & courses"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:198
+msgid "settings.course.script.label"
+msgstr "Chinese script"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:84
+msgid "settings.course.ui-language.label"
+msgstr "App language"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:95
+msgid "settings.haptics.preview"
+msgstr "Try a haptic pulse"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:236
+msgid "settings.menu.label"
+msgstr "Settings sections"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:250
+msgid "settings.reminders.preview.label"
+msgstr "Live preview"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:192
+msgid "settings.reminders.quiet-end.label"
+msgstr "Until"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:192
+msgid "settings.reminders.quiet-start.label"
+msgstr "From"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:195
+msgid "settings.reminders.quiet.label"
+msgstr "Quiet hours"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:164
+msgid "settings.reminders.time.label"
+msgstr "Send at"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:157
+msgid "settings.reminders.title"
+msgstr "Study reminders"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:91
+msgid "settings.sound.preview"
+msgstr "Play a sample study sound"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:128
+msgid "settings.voice.empty"
+msgstr "No installed {language} voices. Automatic selection is available."
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:122
+msgid "settings.voice.label"
+msgstr "Voice"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:126
+msgid "settings.voice.missing"
+msgstr "Saved voice unavailable. Using automatic selection."
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:124
+msgid "settings.voice.unsupported"
+msgstr "Device voices unavailable."
+
+#: src/features/settings/settings-screen.tsx:152
+msgctxt "settings.reduced-motion.description"
+msgid "Limit movement and animated effects."
+msgstr "Limit movement and animated effects."
+
+#: src/features/settings/settings-screen.tsx:163
+msgctxt "settings.sounds.description"
+msgid "Feedback while you study, on this device."
+msgstr "Feedback while you study, on this device."
+
+#: src/features/settings/CourseSettingsSection.tsx:211
+msgctxt "settings.course.archive"
+msgid "Archive course"
+msgstr "Archive course"
+
+#: src/features/settings/CourseSettingsSection.tsx:180
+msgctxt "settings.voice.description"
+msgid "Read words aloud with a voice on this device"
+msgstr "Read words aloud with a voice on this device"
+
+#: src/features/settings/settings-screen.tsx:134
+msgctxt "settings.description"
+msgid "Choose a look and tune the details that help you focus."
+msgstr "Choose a look and tune the details that help you focus."
+
+#: src/features/settings/CourseSettingsSection.tsx:199
+msgctxt "settings.course.script.simplified"
+msgid "Simplified"
+msgstr "Simplified"
+
+#: src/features/settings/CourseSettingsSection.tsx:260
+msgctxt "settings.course.meaning-language.preview"
+msgid "preview on a card"
+msgstr "preview on a card"
+
+#: src/features/settings/CourseSettingsSection.tsx:162
+msgctxt "settings.course.list.title"
+msgid "Your courses · {count}"
+msgstr "Your courses · {count}"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:206
+msgctxt "settings.reminders.push-denied"
+msgid "Browser notifications are blocked. Allow them in your browser settings to turn on push."
+msgstr "Browser notifications are blocked. Allow them in your browser settings to turn on push."
+
+#: src/features/settings/CourseSettingsSection.tsx:246
+msgctxt "settings.course.meaning-language.title"
+msgid "Meanings and explanations in"
+msgstr "Meanings and explanations in"
+
+#: src/features/settings/settings-screen.tsx:151
+msgctxt "settings.follow-system.description"
+msgid "Match your device’s light or dark setting."
+msgstr "Match your device’s light or dark setting."
+
+#: src/features/settings/CourseSettingsSection.tsx:176
+msgctxt "settings.course.romanization.description-en"
+msgid "Your saved choice for this course."
+msgstr "Your saved choice for this course."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:207
+msgctxt "settings.reminders.push-unavailable"
+msgid "Push needs a supported browser and configured web push key."
+msgstr "Push needs a supported browser and configured web push key."
+
+#: src/features/settings/settings-screen.tsx:140
+msgctxt "settings.theme.midnight"
+msgid "Midnight Aurora"
+msgstr "Midnight Aurora"
+
+#: src/features/settings/settings-screen.tsx:181
+msgctxt "settings.data.row.title"
+msgid "Export or delete"
+msgstr "Export or delete"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:267
+msgctxt "settings.reminders.preview.mail-count"
+msgid "{count, plural, one {card ready for review} other {cards ready for review}}"
+msgstr "{count, plural, one {card ready for review} other {cards ready for review}}"
+
+#: src/features/settings/settings-screen.tsx:156
+#: src/features/settings/settings-screen.tsx:166
+#: src/features/settings/settings-screen.tsx:231
+msgctxt "settings.sounds.eyebrow"
+msgid "Sounds & haptics"
+msgstr "Sounds & haptics"
+
+#: src/features/settings/CourseSettingsSection.tsx:226
+msgctxt "settings.course.reopen"
+msgid "Reopen"
+msgstr "Reopen"
+
+#: src/features/settings/CourseSettingsSection.tsx:264
+msgctxt "settings.course.note.title"
+msgid "Switching the app language never changes your cards."
+msgstr "Switching the app language never changes your cards."
+
+#: src/features/settings/CourseSettingsSection.tsx:267
+msgctxt "course.error.generic"
+msgid "That course action did not go through. Please try again."
+msgstr "That course action did not go through. Please try again."
+
+#: src/features/settings/settings-screen.tsx:141
+msgctxt "settings.theme.paper.description"
+msgid "A warm, bright reading surface."
+msgstr "A warm, bright reading surface."

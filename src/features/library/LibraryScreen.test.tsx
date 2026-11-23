@@ -1,10 +1,31 @@
+import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
-import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
-import { LibraryScreen, type LibraryScreenActions, type LibraryScreenModel } from './LibraryScreen';
+import {
+  applyLibraryFilter, cardIsDue, deriveActiveLearningFilter, LibraryScreen,
+  shouldShowFirstUseLibraryPanel, type LibraryScreenActions, type LibraryScreenModel,
+} from './LibraryScreen';
+import { setFormatLocale } from '../../lib/format';
+import { i18n } from '@lingui/core';
+
+beforeEach(() => {
+  i18n.load('en', {});
+  i18n.activate('en');
+});
+
+vi.mock('@lingui/react', () => ({
+  Trans: ({ message }: { message: string }) => message,
+  useLingui: () => ({ i18n }),
+}));
+
+const publishedUpdateOutcome: LearningStateOutcome = {
+  status: 'published',
+  result: { ownerKey: 'owner-1', operationId: 'op-1', publication: { kind: 'patch', cardId: 'word-focus', fields: {} } },
+};
 
 const card: CardData = {
   id: 'word-focus',
@@ -46,11 +67,12 @@ const actions: LibraryScreenActions = {
   grid: {
     changeSearch: vi.fn(), migrateLegacyCards: vi.fn(async () => undefined), shareCategory: vi.fn(async () => undefined),
     deleteCard: vi.fn(async () => undefined), toggleBookmark: vi.fn(async () => undefined),
-    assignDeck: vi.fn(async () => undefined), updateCard: vi.fn(async () => undefined),
+    assignDeck: vi.fn(async () => undefined), bulkPatchCards: vi.fn(async () => undefined),
+    updateCard: vi.fn(async () => publishedUpdateOutcome),
     changePage: vi.fn(), clearFilters: vi.fn(),
   },
   tools: {
-    importCards: vi.fn(), importFile: vi.fn(), generateCard: vi.fn(async () => undefined), changeWordInput: vi.fn(),
+    openPaths: vi.fn(), importCards: vi.fn(), importFile: vi.fn(), generateCard: vi.fn(async () => undefined), changeWordInput: vi.fn(),
     changeSearch: vi.fn(), changeStarredOnly: vi.fn(), changeDifficulty: vi.fn(),
     changePartOfSpeech: vi.fn(), changeDate: vi.fn(), changeNewDeckInput: vi.fn(),
     createCustomDeck: vi.fn(async () => undefined), changeCustomDeck: vi.fn(),
@@ -58,33 +80,154 @@ const actions: LibraryScreenActions = {
   },
 };
 
-describe('LibraryScreen', () => {
-  it('keeps the hero slogan subordinate to the canonical app view heading', () => {
-    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+function renderLibrary(currentModel = model) {
+  return renderToStaticMarkup(<LibraryScreen model={currentModel} actions={actions} />);
+}
 
-    expect(html).toMatch(/<h2[^>]*id="learning-home-heading"[^>]*>\s*Make every word unforgettable\.\s*<\/h2>/);
-    expect(html).not.toContain('<h1');
+describe('LibraryScreen', () => {
+  it('shows the first-use panel only for a known empty library without loading, search, or migration state', () => {
+    const empty: LibraryScreenModel = {
+      ...model,
+      overview: { ...model.overview, total: 0 },
+      grid: { ...model.grid, searchQuery: '', filteredCards: [], paginatedCards: [], libraryCount: 0 },
+      tools: { ...model.tools, libraryCount: 0, cards: [] },
+    };
+
+    expect(shouldShowFirstUseLibraryPanel(empty)).toBe(true);
+    expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, searchQuery: 'focus' } })).toBe(false);
+    expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, isPageLoading: true } })).toBe(false);
+    expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, cloudReadUnavailable: true } })).toBe(false);
+    expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, legacyCardsPending: 1 } })).toBe(false);
+    expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, legacyIssue: { kind: 'cloud-access', message: 'Retry sync', retryable: true } } })).toBe(false);
+  });
+
+  it('shows deck rail counts for a signed-in learner only for the selected deck, marked as a lower bound', () => {
+    const deckCard = (id: string, customDeck: string): CardData => ({ ...card, id, customDeck });
+    const page = [deckCard('a', 'A'), deckCard('b', 'A'), deckCard('c', 'A')];
+    const railCounts = (activeCustomDeck: LibraryScreenModel['tools']['activeCustomDeck']) => {
+      const html = renderLibrary({
+        ...model,
+        isAuthenticated: true,
+        overview: { ...model.overview, total: 40 },
+        grid: { ...model.grid, filteredCards: page, paginatedCards: page, libraryCount: 40, customDecks: ['A', 'B'], activeCustomDeck },
+        tools: { ...model.tools, libraryCount: 40, cards: page, customDecks: ['A', 'B'], activeCustomDeck },
+      });
+      const rail = html.match(/<div class="library-canvas-decks"[\s\S]*?<\/div>/)?.[0] ?? '';
+      return [...rail.matchAll(/<span>([^<]*)<\/span>(?:<small>([^<]*)<\/small>)?/g)].map(match => [match[1], match[2] ?? null]);
+    };
+
+    expect(railCounts(ALL_PRACTICE_DECK_SCOPE)).toEqual([['All decks', '40'], ['A', null], ['B', null]]);
+    expect(railCounts({ kind: 'deck', name: 'A' })).toEqual([['All decks', '40'], ['A', '3+'], ['B', null]]);
+  });
+
+  it('replaces generic empty CTAs with the Canvas first-use actions and one real import input', () => {
+    const empty: LibraryScreenModel = {
+      ...model,
+      overview: { ...model.overview, total: 0 },
+      grid: { ...model.grid, searchQuery: '', filteredCards: [], paginatedCards: [], libraryCount: 0 },
+      tools: { ...model.tools, libraryCount: 0, cards: [] },
+    };
+    const html = renderLibrary(empty);
+
+    expect(html).toContain('data-empty-library-panel="true"');
+    expect(html).toContain('Start with your');
+    expect(html).toContain('Generate card');
+    expect(html).toContain('Scan a text');
+    expect(html).toContain('Import CSV / Excel');
+    expect(html).toContain('Browse paths');
+    expect(html.match(/type="file"/g)).toHaveLength(1);
+    expect(html).not.toContain('Your first word starts here');
+    expect(html).not.toContain('library-canvas-tools');
+    expect(html).not.toContain('library-canvas-rail');
+  });
+
+  it('leaves the current search-empty flow in place instead of presenting first-use onboarding', () => {
+    const emptySearch: LibraryScreenModel = {
+      ...model,
+      overview: { ...model.overview, total: 0 },
+      grid: { ...model.grid, searchQuery: 'focus', filteredCards: [], paginatedCards: [], libraryCount: 0 },
+      tools: { ...model.tools, searchQuery: 'focus', libraryCount: 0, cards: [] },
+    };
+    const html = renderLibrary(emptySearch);
+
+    expect(html).not.toContain('data-empty-library-panel="true"');
+    expect(html).toContain('library-canvas-rail');
+    expect(html).toContain('library-canvas-tools');
+  });
+
+  it('highlights the Learning tab for the learning, good and hard memory-status queries', () => {
+    for (const activeDifficulty of ['learning', 'good', 'hard']) {
+      const learningModel: LibraryScreenModel = { ...model, tools: { ...model.tools, activeDifficulty } };
+      expect(deriveActiveLearningFilter(learningModel, null)).toBe('learning');
+    }
+  });
+
+  it('serves the Learning tab with the learning query so pages and totals follow it', () => {
+    const changeDifficulty = vi.fn();
+    const changeStarredOnly = vi.fn();
+    const bridgeless: LibraryScreenActions = { ...actions, tools: { ...actions.tools, changeDifficulty, changeStarredOnly } };
+
+    applyLibraryFilter(bridgeless, 'learning');
+
+    expect(changeDifficulty).toHaveBeenCalledWith('learning');
+    expect(changeDifficulty).not.toHaveBeenCalledWith('All');
+  });
+
+  it('uses scheduled review dates, including FSRS due dates, for the Due filter', () => {
+    const now = Date.parse('2026-09-25T12:00:00Z');
+    expect(cardIsDue({ ...card, nextReviewDate: '2026-09-25T11:59:59Z' }, now)).toBe(true);
+    expect(cardIsDue({ ...card, fsrs: { due: '2026-09-25T11:59:59Z', stability: 1, difficulty: 1, elapsedDays: 0, scheduledDays: 0, learningSteps: 0, reps: 0, lapses: 0, state: 0 } }, now)).toBe(true);
+    expect(cardIsDue({ ...card, nextReviewDate: '2026-09-26T00:00:00Z' }, now)).toBe(false);
+  });
+  it('keeps a compact vocabulary heading and real library actions above the collection', () => {
+    const html = renderLibrary();
+
+    // The page's one canonical <h1> is AppRuntime's sr-only, focus-managed
+    // "Vocabulary library" heading (src/app/AppRuntime.tsx); this canvas
+    // kicker is a visual sub-heading, so it must not also be an <h1> (see
+    // e2e/app-shell-remediation.spec.ts's "library exposes one canonical
+    // heading" test).
+    expect(html).toMatch(/<h2[^>]*id="learning-home-heading"[^>]*>\s*Vocabulary\s*<\/h2>/);
+    expect(html).toContain('library-canvas-heading');
+    expect(html).toContain('data-library-create-action="true"');
+    expect(html).toContain('data-library-evidence="true"');
+    expect(html).not.toContain('min-h-[260px]');
   });
 
   it('makes the collection region wider than the supporting tools', () => {
-    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+    const html = renderLibrary();
 
     expect(html).toContain('data-library-region="collection"');
-    expect(html).toContain('lg:col-span-9');
+    expect(html).toContain('library-canvas-rail');
     expect(html).toContain('data-library-region="tools"');
-    expect(html).toContain('lg:col-span-3');
+    expect(html).toContain('library-canvas-tools');
   });
 
-  it('treats overview metrics as supporting evidence instead of equal cards', () => {
-    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
+  it('keeps real total and due evidence in one compact strip', () => {
+    const html = renderLibrary();
 
     expect(html).toContain('data-library-evidence="true"');
-    expect(html).not.toContain('featured-learning-metric');
+    expect(html).toContain('words');
+    expect(html).toContain('due today');
+    expect(html).toContain('library-canvas-summary');
+  });
+
+  it('formats library evidence with the active Vietnamese locale', () => {
+    const previousTotal = model.overview.total;
+    setFormatLocale('vi');
+    model.overview.total = 1_000;
+
+    try {
+      expect(renderLibrary()).toContain('1.000');
+    } finally {
+      model.overview.total = previousTotal;
+      setFormatLocale('en');
+    }
   });
 
   it('keeps status popups out of the library content flow and preserves accessible lazy fallbacks', () => {
-    const html = renderToStaticMarkup(<LibraryScreen model={model} actions={actions} />);
-    const overviewIndex = html.indexOf('Make every word unforgettable.');
+    const html = renderLibrary();
+    const overviewIndex = html.indexOf('Vocabulary');
     const cardsFallbackIndex = html.indexOf('Loading library cards');
     const toolsFallbackIndex = html.indexOf('Loading library tools');
 
@@ -94,7 +237,7 @@ describe('LibraryScreen', () => {
     expect(html).toContain('role="status"');
     expect(html).not.toContain('max-w-xl sm:ml-auto');
     expect(html).not.toContain('Syncing your library');
-    expect(html).toContain('grid grid-cols-1 gap-6 lg:grid-cols-12 xl:gap-8');
+    expect(html).toContain('library-canvas-rail');
   });
 
   it('keeps library presentation sources vendor- and setter-type-free', () => {

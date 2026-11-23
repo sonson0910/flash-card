@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
+import { canonicalCard, createReservation, targetAwareCardId } from './cardPersistence.js';
+import { isCanonicalLanguageCode } from './inputValidation.js';
 import { LegacyLibraryInvalidCardsError } from './legacyLibraryMigration.js';
+import { ownStorageImageOwner } from './ownFileImageUrl.js';
 
 export type CleanupCard = Record<string, unknown> & {
   id: string;
@@ -11,7 +14,30 @@ export type CleanupIdentity = {
   readonly key: string;
   readonly normalizedWord: string;
   readonly lexemeId?: string;
+  /** Set for a plain word of a non-English target; English keeps the word-only shape. */
+  readonly targetLanguage?: string;
 };
+
+// A plain word is one identity per target language, exactly as a card create
+// scopes it: `word:<normalized>` for English (and for a card with no valid
+// language), `word-<language>:<normalized>` for every other target. A language
+// code holds no colon, so the two shapes and `lexeme:<id>` never overlap.
+const TARGET_WORD_KEY = /^word-([a-z]{2,3}(?:-[a-z0-9]{2,8})*):/;
+const CLEANUP_IDENTITY_KEY = /^(?:word(?:-[a-z]{2,3}(?:-[a-z0-9]{2,8})*)?|lexeme):/;
+const MAX_LANGUAGE_CODE_LENGTH = 16;
+
+export const MAX_CLEANUP_IDENTITY_KEY_LENGTH = 'word-'.length + MAX_LANGUAGE_CODE_LENGTH + ':'.length + 256;
+
+export const isCleanupIdentityKey = (value: unknown): value is string => (
+  typeof value === 'string'
+  && CLEANUP_IDENTITY_KEY.test(value)
+  && value.length <= MAX_CLEANUP_IDENTITY_KEY_LENGTH
+);
+
+/** The target language a migrated plain card is written with: its own valid code, else English. */
+export const legacyCardLanguage = (card: Record<string, unknown>): string => (
+  isCanonicalLanguageCode(card.language) ? card.language : 'en'
+);
 
 export type DuplicateCleanupPlan = {
   normalizedWord: string;
@@ -73,15 +99,42 @@ export const cleanupCardIdentity = (card: Record<string, unknown>): CleanupIdent
   const senseKey = typeof card.senseKey === 'string' ? card.senseKey.trim() : '';
   const partOfSpeech = typeof card.partOfSpeech === 'string' ? card.partOfSpeech.trim() : '';
   const normalizedLemma = typeof card.normalizedLemma === 'string' ? card.normalizedLemma.trim() : normalizedWord;
-  const hasTuple = Boolean(lexemeId || language || senseKey || card.normalizedLemma !== undefined);
-  if (!hasTuple) return { key: `word:${normalizedWord}`, normalizedWord };
+  const hasTuple = Boolean(lexemeId || senseKey || card.normalizedLemma !== undefined);
+  if (!hasTuple) {
+    const targetLanguage = legacyCardLanguage(card);
+    return targetLanguage === 'en'
+      ? { key: `word:${normalizedWord}`, normalizedWord }
+      : { key: `word-${targetLanguage}:${normalizedWord}`, normalizedWord, targetLanguage };
+  }
   if (!lexemeId || !language || !senseKey || !partOfSpeech || !normalizedLemma
     || lexemeId !== canonicalLexemeId(language, normalizedLemma, partOfSpeech, senseKey)) return null;
   return { key: `lexeme:${lexemeId}`, normalizedWord, lexemeId };
 };
 
+/** Rebuilds the identity a manifest group or a rollback plan was stored under. */
+export const cleanupIdentityFromKey = (key: string, normalizedWord: string): CleanupIdentity => {
+  if (key.startsWith('lexeme:')) return { key, normalizedWord, lexemeId: key.slice('lexeme:'.length) };
+  const targetLanguage = TARGET_WORD_KEY.exec(key)?.[1];
+  return targetLanguage ? { key, normalizedWord, targetLanguage } : { key, normalizedWord };
+};
+
 export const canonicalCleanupCardId = (identity: CleanupIdentity): string => (
-  identity.lexemeId ?? createCanonicalCleanupCardId(identity.normalizedWord)
+  identity.lexemeId ?? (identity.targetLanguage
+    ? targetAwareCardId(identity.normalizedWord, identity.targetLanguage)
+    : createCanonicalCleanupCardId(identity.normalizedWord))
+);
+
+/** The string whose SHA-256 names the identity's reservation, as a card create derives it. */
+export const cleanupIdentityStorageKey = (identity: CleanupIdentity): string => {
+  if (identity.lexemeId) return identity.key;
+  return identity.targetLanguage
+    ? `${identity.targetLanguage}\u0000${identity.normalizedWord}`
+    : identity.normalizedWord;
+};
+
+/** The reservation document a card create writes for this identity. */
+export const cleanupIdentityReservation = (identity: CleanupIdentity, cardId: string): Record<string, unknown> => (
+  createReservation(identity.lexemeId ? identity.key : identity.normalizedWord, cardId, identity.targetLanguage)
 );
 
 const nonNegative = (value: unknown): number =>
@@ -165,6 +218,20 @@ const firstTrustedUrl = (
 ): string | null => {
   for (const card of cards) {
     const url = trustedUrl(card[field], hosts);
+    if (url) return url;
+  }
+  return null;
+};
+
+/**
+ * A stock photo, or a photo from the learner's own files. A stored own-file
+ * address is kept as it is, the way a card create keeps one it reads back.
+ */
+const firstCardImageUrl = (cards: CleanupCard[]): string | null => {
+  for (const card of cards) {
+    const value = card.imageUrl;
+    if (typeof value === 'string' && ownStorageImageOwner(value) !== null) return value;
+    const url = trustedUrl(value, trustedImageHosts);
     if (url) return url;
   }
   return null;
@@ -280,6 +347,48 @@ const firstText = (cards: CleanupCard[], field: string): string | null => {
   return null;
 };
 
+const MAX_REVIEW_RECEIPTS = 100;
+
+/**
+ * Validates one optional stored field with the rules a card create applies to
+ * it. A value those rules reject is left out instead of blocking the whole
+ * migration; the untouched source card stays in the rollback backup.
+ */
+const validCardField = (field: string, value: unknown, context: Record<string, unknown> = {}): unknown => {
+  if (value === undefined) return undefined;
+  try {
+    return canonicalCard(
+      { word: 'card', ...context, [field]: value },
+      { allowMasteredAt: true, deriveJapanesePitch: false },
+    )[field];
+  } catch {
+    return undefined;
+  }
+};
+
+const firstValidCardField = (cards: CleanupCard[], field: string): unknown => {
+  for (const card of cards) {
+    const value = validCardField(field, card[field] ?? undefined);
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
+};
+
+/**
+ * Review receipts stop a replayed review from being applied twice, so the
+ * surviving card needs the receipts of every copy it replaces. The strongest
+ * card's receipts come last, where the bounded window keeps them.
+ */
+const mergedReviewReceipts = (ranked: CleanupCard[]): string[] => {
+  const receiptsOf = (card: CleanupCard): string[] => {
+    const valid = validCardField('appliedReviewOperationIds', card.appliedReviewOperationIds);
+    return Array.isArray(valid) ? valid as string[] : [];
+  };
+  const strongest = receiptsOf(ranked[0]);
+  const weaker = ranked.slice(1).reverse().flatMap(receiptsOf).filter(receipt => !strongest.includes(receipt));
+  return [...new Set([...weaker, ...strongest])].slice(-MAX_REVIEW_RECEIPTS);
+};
+
 const cleanupOperationId = (jobId: string, cardId: string): string => {
   const candidate = `duplicate-cleanup-${jobId}-${cardId}`;
   if (candidate.length <= 128 && /^[a-zA-Z0-9_-]+$/.test(candidate)) return candidate;
@@ -336,9 +445,33 @@ export function planLegacyIdentityGroup(
   const lastOpenedAt = validIsoText(strongest.lastOpenedAt);
   const sortTouchedAt = validIsoText(strongest.sortTouchedAt);
   const fsrs = sanitizedFsrs(strongest.fsrs);
+  // The headword stays as the learner wrote it. Only a stored headword that
+  // spells a different word than the card's identity is replaced, because a
+  // card whose word and identity disagree cannot be matched again later.
+  const storedWord = boundedText(strongest.word, 256);
+  const word = normalizeCleanupWord(storedWord) === identity.normalizedWord
+    ? storedWord
+    : identity.normalizedWord;
+  const translation = boundedText(strongest.translation, 256);
+  const phonetic = boundedText(strongest.phonetic, 256);
+  const origin = strongest.origin === 'ai' || strongest.origin === 'manual' ? strongest.origin : undefined;
+  const masteredAt = validIsoText(strongest.masteredAt);
+  const mnemonic = boundedText(firstText(ranked, 'mnemonic'), 2_048);
+  const wordFamily = firstValidCardField(ranked, 'wordFamily');
+  const tags = firstValidCardField(ranked, 'tags');
+  const learnerDifficulty = firstValidCardField(ranked, 'learnerDifficulty');
+  const translationAlternatives = validCardField(
+    'translationAlternatives', strongest.translationAlternatives, { origin, translation },
+  );
+  const japanesePitchAccent = validCardField(
+    'japanesePitchAccent', strongest.japanesePitchAccent,
+    { word, phonetic, language: legacyCardLanguage(strongest) },
+  );
+  const appliedReviewOperationIds = mergedReviewReceipts(ranked);
   const merged: CleanupCard = {
     id: canonicalId,
-    word: identity.normalizedWord,
+    ...(origin ? { origin } : {}),
+    word,
     normalizedWord: identity.normalizedWord,
     ...(identity.lexemeId ? {
       lexemeId: identity.lexemeId,
@@ -346,20 +479,25 @@ export function planLegacyIdentityGroup(
       senseKey: boundedText(strongest.senseKey, 128),
       normalizedLemma: boundedText(strongest.normalizedLemma, 256) || identity.normalizedWord,
     } : {}),
-    translation: boundedText(strongest.translation, 256),
+    translation,
+    ...(translationAlternatives === undefined ? {} : { translationAlternatives }),
     explanation: boundedText(strongest.explanation, 2_048),
     explanationTranslation: boundedText(strongest.explanationTranslation, 2_048),
-    phonetic: boundedText(strongest.phonetic, 256),
+    phonetic,
     category: boundedText(strongest.category, 128, 'Other') || 'Other',
     emoji: boundedText(strongest.emoji, 64, '📝') || '📝',
     audioUrl: firstTrustedUrl(ranked, 'audioUrl', trustedAudioHosts),
-    imageUrl: firstTrustedUrl(ranked, 'imageUrl', trustedImageHosts),
+    imageUrl: firstCardImageUrl(ranked),
     imageSearchQuery: boundedText(firstText(ranked, 'imageSearchQuery'), 120),
     createdAt: earliestCreatedAt,
+    ...(masteredAt ? { masteredAt } : {}),
+    ...(japanesePitchAccent === undefined ? {} : { japanesePitchAccent }),
     ...(lastOpenedAt ? { lastOpenedAt } : {}),
     ...(sortTouchedAt ? { sortTouchedAt } : {}),
     bookmarked: cards.some(card => card.bookmarked === true),
     customDeck,
+    ...(tags === undefined ? {} : { tags }),
+    ...(learnerDifficulty === undefined ? {} : { learnerDifficulty }),
     difficulty: validDifficulty,
     ...(nextReviewDate ? { nextReviewDate } : {}),
     reviews: Math.floor(nonNegative(strongest.reviews)),
@@ -375,7 +513,10 @@ export function planLegacyIdentityGroup(
     antonyms: boundedList(strongest.antonyms),
     register: boundedText(strongest.register, 64),
     commonMistake: boundedText(strongest.commonMistake, 2_048),
+    ...(mnemonic ? { mnemonic } : {}),
+    ...(wordFamily === undefined ? {} : { wordFamily }),
     reviewHistory: sanitizedReviewHistory(strongest.reviewHistory),
+    ...(appliedReviewOperationIds.length > 0 ? { appliedReviewOperationIds } : {}),
     ...(fsrs ? { fsrs } : {}),
     schemaVersion: 2,
     revision,

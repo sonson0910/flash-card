@@ -1,0 +1,90 @@
+<!--#HEAD Spelling-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column; padding-bottom: 56px;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 3; height: 80px; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
+    <a href="#" aria-label="End spelling practice" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+    </a>
+    <span style="font-size: 14px; font-weight: 600; color: {{t.text2}};">Spelling <span style="color: {{t.text3}};">· listen and type</span></span>
+    <div style="margin: 0 auto; display: flex; gap: 5px;" aria-label="Word 5 of 12">
+      <sc-for list="{{segments}}" as="s" hint-placeholder-count="12">
+        <span style="width: 30px; height: 4px; border-radius: 4px; background: {{s.bg}}; box-shadow: {{s.glow}};"></span>
+      </sc-for>
+    </div>
+    <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; color: {{t.text}};">92<span style="color: {{t.text3}};">% accuracy</span></span>
+    <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+      <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+    </button>
+  </header>
+
+  <main style="position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; margin: auto 0;">
+    <div style="position: relative; width: 190px; height: 190px; display: flex; align-items: center; justify-content: center;">
+      <span aria-hidden="true" style="position: absolute; inset: 0; border-radius: 50%; border: 1px solid {{t.accentLine}};"></span>
+      <span aria-hidden="true" style="position: absolute; inset: 18px; border-radius: 50%; border: 1px solid {{t.line}};"></span>
+      <button class="sf-press sf-pulse" aria-label="Play the word again" style="--sf-pulse: {{t.pulse}}; position: relative; width: 116px; height: 116px; border-radius: 50%; border: 0; background: {{t.playBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;">
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="7">
+          <span class="sf-wave" style="width: 5px; height: {{b.h}}px; border-radius: 4px; background: currentColor; animation-delay: {{b.d}}ms;"></span>
+        </sc-for>
+      </button>
+    </div>
+    <div style="margin-top: 14px; display: flex; gap: 8px;">
+      <button style="height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px;">1× normal</button>
+      <button style="height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2M9 2h6"></path></svg>0.6× slow
+      </button>
+    </div>
+    <p style="margin: 24px 0 0; font-size: 15px; color: {{t.text2}};">Gợi ý nghĩa: <span style="font-family: Fraunces, Georgia, serif; font-size: 22px; color: {{t.textStrong}};">cần thiết, không thể thiếu</span> <span style="color: {{t.text3}};">· adjective · 9 letters</span></p>
+
+    <div class="sf-shake" style="margin-top: 30px; display: flex; gap: 8px;" aria-label="Your answer: necesary. Missing one s.">
+      <sc-for list="{{letters}}" as="l" hint-placeholder-count="9">
+        <span style="position: relative; width: 62px; height: 78px; box-sizing: border-box; border-radius: {{t.tileR}}px; border: {{l.border}}; background: {{l.bg}}; color: {{l.color}}; box-shadow: {{l.shadow}}; font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: {{t.displayWeight}}; display: flex; align-items: center; justify-content: center;">{{l.ch}}
+          <span style="position: absolute; bottom: 8px; left: 18px; right: 18px; height: 3px; border-radius: 3px; background: {{l.bar}};"></span>
+        </span>
+      </sc-for>
+    </div>
+    <div style="margin-top: 16px; display: flex; gap: 18px; font-size: 13px; color: {{t.text2}};">
+      <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 3px; border-radius: 3px; background: {{t.good}};"></span>Correct</span>
+      <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 3px; border-radius: 3px; background: {{t.again}};"></span>Wrong letter</span>
+      <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 3px; border-radius: 3px; background: {{t.hard}};"></span>Missing letter</span>
+    </div>
+    <p style="margin: 18px 0 0; font-size: 15px; color: {{t.body}};">Almost — <b style="color: {{t.textStrong}};">nece<span style="color: {{t.hard}};">ss</span>ary</b> has one c and two s. <span style="color: {{t.text3}};">2 attempts left</span></p>
+
+    <div style="margin-top: 30px; display: flex; align-items: center; gap: 12px;">
+      <button class="sf-press" style="height: 56px; padding: 0 30px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 16px; font-weight: 650; display: flex; align-items: center; gap: 12px; cursor: pointer;">Check <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; padding: 3px 7px; border-radius: 6px; background: {{t.primaryKbdBg}};">Enter</span></button>
+      <button class="sf-press" style="height: 56px; padding: 0 22px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 15px; font-weight: 600; cursor: pointer;">Reveal</button>
+      <a href="#" style="height: 56px; padding: 0 12px; display: flex; align-items: center; font-size: 15px; font-weight: 600; color: {{t.text2}}; text-decoration: none;">Skip</a>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), tileR: dark ? 16 : 10,
+      pulse: dark ? 'rgb(40 211 244 / 0.45)' : 'rgb(29 26 22 / 0.25)',
+      playBg: dark ? 'radial-gradient(circle at 35% 30%, #9ef0ff, #28d3f4 55%, #1a9fbd)' : '#1d1a16' };
+    const tile = (ch, state) => {
+      const map = {
+        ok: { border: '1px solid ' + t.line, bg: t.surface, color: t.textStrong, bar: t.good, shadow: t.surfaceShadow },
+        bad: { border: '1.5px solid ' + t.again, bg: t.dangerBg, color: t.danger, bar: t.again, shadow: 'none' },
+        miss: { border: '1.5px dashed ' + t.hard, bg: 'transparent', color: t.hard, bar: t.hard, shadow: 'none' },
+      };
+      return { ch, ...map[state] };
+    };
+    const word = [['n', 'ok'], ['e', 'ok'], ['c', 'ok'], ['e', 'ok'], ['s', 'ok'], ['s', 'miss'], ['a', 'ok'], ['r', 'ok'], ['y', 'ok']];
+    return {
+      t, grainId: 'spell-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: 420, ay: -260, bx: 900, by: 460 },
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      bars: [14, 26, 38, 30, 42, 24, 16].map((h, i) => ({ h, d: i * 110 })),
+      letters: word.map(([c, s]) => tile(c, s)),
+      segments: Array.from({ length: 12 }, (_, i) => ({ bg: i < 4 ? t.accent : i === 4 ? t.accentLine : t.track, glow: dark && i < 4 ? '0 0 8px rgb(40 211 244 / 0.55)' : 'none' })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import type { CardData } from '../types/card';
 import type { LibraryFacets } from '../lib/cardRepository';
-import type { PracticeDeckScope } from '../lib/practiceScope';
+import { ALL_PRACTICE_DECK_SCOPE, type PracticeDeckScope } from '../lib/practiceScope';
 import {
   applyCategoryDeltas,
   countCards,
@@ -9,7 +9,7 @@ import {
   fetchPracticeCards,
 } from '../lib/cardRepository';
 import { withTimeout } from '../lib/async';
-import { app, db, isFirebaseConfigured } from '../lib/firebase';
+import { app, db, ensureAppCheck, ensureAppCheckForSignIn, isFirebaseConfigured } from '../lib/firebase';
 import {
   createOwnerDeckMutationFirebaseAdapter,
   createOwnerLibrarySessionFirebaseAdapter,
@@ -22,7 +22,6 @@ import type {
   SharedDeckCardBatch,
 } from '../features/sharing/sharedDeckSessionController';
 import type { ShareCategorySelection } from '../features/intake/useIntakeSharingSession';
-import { firebaseGamificationStore } from '../features/gamification/firebaseGamificationStore';
 import { isQuotaError } from '../features/library/libraryStorage';
 import { defaultLearningPersistenceHook } from '../features/learning/learningWorkspacePersistenceAdapter';
 import { useCardIntakePort } from '../features/intake/useCardIntakePort';
@@ -31,7 +30,7 @@ const cloudAvailable = isFirebaseConfigured && db !== null;
 const SHARE_CATEGORY_QUERY_TIMEOUT_MS = 20_000;
 
 const libraryHooks = createLibrarySessionHookDependencies(
-  () => useIdentitySession({ app, database: db, configured: isFirebaseConfigured }),
+  () => useIdentitySession({ app, database: db, configured: isFirebaseConfigured, beforeSignIn: ensureAppCheckForSignIn }),
 );
 
 const ownerLibrary = createOwnerLibrarySessionFirebaseAdapter({
@@ -46,14 +45,17 @@ const sharedDeck = createSharedDeckFirebaseAdapter({
   app,
   database: db,
   configured: isFirebaseConfigured,
+  beforeRead: ensureAppCheck,
 });
 
 const updateCategoryFacets = async (
   ownerId: string | null,
   deltas: Record<string, number>,
   operationId?: string,
+  libraryEpoch?: number,
 ): Promise<LibraryFacets | null> => {
   if (!cloudAvailable || !db || !ownerId || Object.keys(deltas).length === 0) return null;
+  if (libraryEpoch !== undefined) return applyCategoryDeltas(db, ownerId, deltas, operationId, undefined, libraryEpoch);
   return operationId === undefined
     ? applyCategoryDeltas(db, ownerId, deltas)
     : applyCategoryDeltas(db, ownerId, deltas, operationId);
@@ -64,11 +66,8 @@ const practicePool = practiceDatabase ? {
   load: async (
     ownerId: string,
     maximum: number,
-    options: { includeFuture: boolean; customDeck: PracticeDeckScope },
-  ) => fetchPracticeCards(practiceDatabase, ownerId, maximum, {
-    includeFuture: options.includeFuture,
-    customDeck: options.customDeck,
-  }),
+    options: { includeFuture: boolean; targetLanguage?: string; customDeck: PracticeDeckScope },
+  ) => fetchPracticeCards(practiceDatabase, ownerId, maximum, options),
   classifyFailure: (error: unknown) => isQuotaError(error) ? 'quota' as const : 'unavailable' as const,
 } : null;
 
@@ -80,6 +79,8 @@ const loadAllCards = async (ownerId: string | null): Promise<CardData[] | null> 
 const loadCategoryCards = async (
   ownerId: string | null,
   selection: ShareCategorySelection,
+  targetLanguage?: string,
+  nativeLanguage?: string,
 ): Promise<SharedDeckCardBatch> => {
   if (!cloudAvailable || !db || !ownerId) {
     return { cards: [], total: 0, hasNext: false };
@@ -92,6 +93,10 @@ const loadCategoryCards = async (
     bookmarkedOnly: false,
     createdDate: null,
     wordPrefix: '',
+    // Scopes outgoing shares to the active course: without this, sharing
+    // from the "All" category could leak cards from another course's
+    // target language into the recipient's import.
+    targetLanguage,
   };
   const page = await withTimeout(fetchCardPage({
     db,
@@ -106,7 +111,15 @@ const loadCategoryCards = async (
     )
     : page.items.length;
   return {
-    cards: page.items,
+    // Cards saved before both languages were stored belong to the active course; naming its pair
+    // lets the share carry one, so the recipient is not left to guess the language.
+    cards: targetLanguage && nativeLanguage
+      ? page.items.map(card => ({
+        ...card,
+        language: card.language || targetLanguage,
+        translationLanguage: card.translationLanguage || nativeLanguage,
+      }))
+      : page.items,
     total: Math.max(total, page.items.length),
     hasNext: page.hasNext,
   };
@@ -130,6 +143,14 @@ export const appDependencies = {
   library: {
     updateCategoryFacets,
     loadAllCards,
+    // Every card the owner holds, across courses: what clearing the library deletes.
+    countOwnerCards: async (ownerId: string): Promise<number> => {
+      if (!cloudAvailable || !db) throw new Error('Card storage is unavailable.');
+      return countCards(db, ownerId, {
+        category: null, customDeck: ALL_PRACTICE_DECK_SCOPE, difficulty: null, partOfSpeech: null,
+        bookmarkedOnly: false, createdDate: null, wordPrefix: '',
+      });
+    },
     loadMultilingualCards: async (ownerId: string | null, maximum = 100) => {
       if (!cloudAvailable || !db || !ownerId) return null;
       const { createMultilingualFirebaseReader } = await import(
@@ -159,15 +180,14 @@ export const appDependencies = {
   },
   practice: {
     pool: practicePool,
-    gamification: firebaseGamificationStore,
   },
   intake: {
-    forOwner: (ownerId: string | null): {
+    forOwner: (ownerId: string | null, targetLanguage?: string, nativeLanguage?: string): {
       adapter: SharedDeckAdapter;
       loadCards(selection: ShareCategorySelection): Promise<SharedDeckCardBatch>;
     } => ({
       adapter: sharedDeck,
-      loadCards: selection => loadCategoryCards(ownerId, selection),
+      loadCards: selection => loadCategoryCards(ownerId, selection, targetLanguage, nativeLanguage),
     }),
   },
 };

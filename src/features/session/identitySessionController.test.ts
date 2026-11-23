@@ -150,6 +150,7 @@ describe('identity session controller', () => {
       status: 'authenticated',
       owner: { id: 'b' },
       ownerEpoch: { ownerId: 'b', value: 7 },
+      authenticationRecovery: null,
     });
 
     ownerAEpoch.resolve(3);
@@ -240,14 +241,30 @@ describe('identity session controller', () => {
     session.start();
     session.start();
     await observers[1](owner('current'));
-    await observers[0](owner('stale'));
+    await observers[0](null);
 
     expect(session.getSnapshot()).toMatchObject({
       owner: { id: 'current' },
       ownerEpoch: { ownerId: 'current', value: 0 },
       canPublishMutations: true,
+      authenticationRecovery: null,
     });
-    expect(adapter.loadOwnerEpoch).not.toHaveBeenCalledWith('stale');
+    expect(adapter.loadOwnerEpoch).toHaveBeenCalledOnce();
+  });
+
+  it('keeps an initial Firebase signed-out observation anonymous without recovery', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+
+    await emitOwner(null);
+
+    expect(session.getSnapshot()).toMatchObject({
+      status: 'anonymous',
+      owner: null,
+      canPublishMutations: false,
+      authenticationRecovery: null,
+    });
   });
 
   it('publishes the signed-in owner immediately while epoch verification continues', async () => {
@@ -312,7 +329,218 @@ describe('identity session controller', () => {
       owner: { id: 'cached' },
       ownerEpoch: null,
       canPublishMutations: false,
-      error: 'Cloud offline. Changes stay local.',
+      error: 'Cloud connection is unavailable. Saving is paused until it is back.',
+      authenticationRecovery: null,
+    });
+  });
+
+  describe('after the owner epoch read fails', () => {
+    const unavailable = () => Object.assign(new Error('offline'), { code: 'unavailable' });
+    const withReconnect = () => {
+      let reconnect: (() => void) | null = null;
+      const unsubscribe = vi.fn();
+      const subscribeReconnect = vi.fn((onReconnect: () => void) => {
+        reconnect = onReconnect;
+        return unsubscribe;
+      });
+      return { subscribeReconnect, unsubscribe, fire: () => reconnect?.() };
+    };
+
+    it('retries the read with backoff and resumes saving without a reload', async () => {
+      vi.useFakeTimers();
+      const { adapter, emitOwner } = createFakeAdapter();
+      vi.mocked(adapter.loadOwnerEpoch).mockRejectedValueOnce(unavailable()).mockResolvedValue(4);
+      const session = createIdentitySessionController({ adapter, subscribeReconnect: withReconnect().subscribeReconnect });
+      session.start();
+
+      await emitOwner(owner('retry-owner'));
+      expect(session.getSnapshot()).toMatchObject({ canPublishMutations: false, ownerEpoch: null });
+
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(adapter.loadOwnerEpoch).toHaveBeenCalledTimes(2);
+      expect(session.getSnapshot()).toMatchObject({
+        ownerEpoch: { ownerId: 'retry-owner', value: 4 },
+        canPublishMutations: true,
+        error: null,
+      });
+    });
+
+    it('reads the epoch again at once when the learner retries a failed read', async () => {
+      vi.useFakeTimers();
+      const { adapter, emitOwner } = createFakeAdapter();
+      vi.mocked(adapter.loadOwnerEpoch).mockRejectedValueOnce(unavailable()).mockResolvedValue(6);
+      const session = createIdentitySessionController({ adapter, subscribeReconnect: withReconnect().subscribeReconnect });
+      session.start();
+      await emitOwner(owner('manual-retry'));
+      expect(session.getSnapshot()).toMatchObject({ canPublishMutations: false });
+      expect(session.getSnapshot().error).not.toBeNull();
+
+      session.retry();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(adapter.loadOwnerEpoch).toHaveBeenCalledTimes(2);
+      expect(session.getSnapshot()).toMatchObject({ ownerEpoch: { ownerId: 'manual-retry', value: 6 }, canPublishMutations: true, error: null });
+    });
+
+    it('clears an error that has nothing to read again', async () => {
+      const { adapter, emitOwner, emitError } = createFakeAdapter();
+      const session = createIdentitySessionController({ adapter });
+      session.start();
+      await emitOwner(owner('observer-owner'));
+      emitError(new Error('observer failed'));
+      expect(session.getSnapshot().error).toBe('observer failed');
+
+      session.retry();
+
+      expect(session.getSnapshot().error).toBeNull();
+      expect(adapter.loadOwnerEpoch).toHaveBeenCalledTimes(1);
+    });
+
+    it('retries when the connection returns after the timed retries are used up', async () => {
+      vi.useFakeTimers();
+      const { adapter, emitOwner } = createFakeAdapter();
+      const reconnect = withReconnect();
+      vi.mocked(adapter.loadOwnerEpoch).mockRejectedValue(unavailable());
+      const session = createIdentitySessionController({ adapter, subscribeReconnect: reconnect.subscribeReconnect });
+      session.start();
+
+      await emitOwner(owner('reconnect-owner'));
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+      const attempts = vi.mocked(adapter.loadOwnerEpoch).mock.calls.length;
+      expect(attempts).toBeGreaterThan(1);
+      expect(attempts).toBeLessThan(10);
+      expect(session.getSnapshot().canPublishMutations).toBe(false);
+
+      vi.mocked(adapter.loadOwnerEpoch).mockResolvedValue(7);
+      reconnect.fire();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(session.getSnapshot()).toMatchObject({
+        ownerEpoch: { ownerId: 'reconnect-owner', value: 7 },
+        canPublishMutations: true,
+        error: null,
+      });
+      expect(reconnect.unsubscribe).toHaveBeenCalled();
+    });
+
+    it('stops retrying when the session stops or the owner changes', async () => {
+      vi.useFakeTimers();
+      const { adapter, emitOwner } = createFakeAdapter();
+      const reconnect = withReconnect();
+      vi.mocked(adapter.loadOwnerEpoch).mockRejectedValue(unavailable());
+      const session = createIdentitySessionController({ adapter, subscribeReconnect: reconnect.subscribeReconnect });
+      const stop = session.start();
+
+      await emitOwner(owner('first-owner'));
+      stop();
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+
+      expect(adapter.loadOwnerEpoch).toHaveBeenCalledTimes(1);
+      expect(reconnect.unsubscribe).toHaveBeenCalled();
+    });
+
+    it('does not spend reads on timed retries while the daily quota is exhausted', async () => {
+      vi.useFakeTimers();
+      const { adapter, emitOwner } = createFakeAdapter();
+      vi.mocked(adapter.loadOwnerEpoch).mockRejectedValue(Object.assign(
+        new Error('Quota limit exceeded.'),
+        { code: 'firestore/resource-exhausted' },
+      ));
+      const session = createIdentitySessionController({ adapter, subscribeReconnect: withReconnect().subscribeReconnect });
+      session.start();
+
+      await emitOwner(owner('quota-owner'));
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+
+      expect(adapter.loadOwnerEpoch).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('keeps the owner context and blocks writes when Firebase loses the signed-in session', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    const epoch = deferred<number>();
+    vi.mocked(adapter.loadOwnerEpoch).mockReturnValue(epoch.promise);
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+
+    const ownerTask = emitOwner(owner('session-owner'));
+    expect(session.getSnapshot()).toMatchObject({
+      owner: { id: 'session-owner' },
+      canPublishMutations: false,
+      authenticationRecovery: null,
+    });
+
+    await emitOwner(null);
+    expect(session.getSnapshot()).toMatchObject({
+      status: 'authenticated',
+      owner: { id: 'session-owner' },
+      ownerEpoch: null,
+      canPublishMutations: false,
+      authenticationRecovery: 'session-lost',
+    });
+
+    epoch.resolve(7);
+    await ownerTask;
+    expect(session.getSnapshot()).toMatchObject({
+      owner: { id: 'session-owner' },
+      ownerEpoch: null,
+      canPublishMutations: false,
+      authenticationRecovery: 'session-lost',
+    });
+    expect(session.acceptVerifiedOwnerEpoch('session-owner', 8)).toBe(false);
+    expect(session.getSnapshot().canPublishMutations).toBe(false);
+  });
+
+  it('clears recovery only after Auth confirms an owner again and dismissing errors preserves recovery', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+    await emitOwner(owner('session-owner'));
+    await emitOwner(null);
+
+    vi.mocked(adapter.signInWithPopup).mockRejectedValue(Object.assign(
+      new Error('The network request failed.'),
+      { code: 'auth/network-request-failed' },
+    ));
+    await session.signIn();
+    expect(session.getSnapshot()).toMatchObject({ authenticationRecovery: 'session-lost' });
+
+    session.clearError();
+    expect(session.getSnapshot()).toMatchObject({
+      error: null,
+      authenticationRecovery: 'session-lost',
+      owner: { id: 'session-owner' },
+      canPublishMutations: false,
+    });
+
+    await emitOwner(owner('session-owner'));
+    expect(session.getSnapshot()).toMatchObject({
+      authenticationRecovery: null,
+      owner: { id: 'session-owner' },
+      ownerEpoch: { ownerId: 'session-owner', value: 0 },
+      canPublishMutations: true,
+    });
+  });
+
+  it('does not label Firestore permission failures as a lost authentication session', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    vi.mocked(adapter.readCachedOwnerEpoch).mockReturnValue(4);
+    vi.mocked(adapter.loadOwnerEpoch).mockRejectedValue(Object.assign(
+      new Error('Missing or insufficient permissions.'),
+      { code: 'permission-denied' },
+    ));
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+
+    await emitOwner(owner('permission-owner'));
+
+    expect(session.getSnapshot()).toMatchObject({
+      owner: { id: 'permission-owner' },
+      ownerEpoch: null,
+      canPublishMutations: false,
+      authenticationRecovery: null,
+      error: 'Cloud connection is unavailable. Saving is paused until it is back.',
     });
   });
 
@@ -331,7 +559,7 @@ describe('identity session controller', () => {
       owner: { id: 'quota-owner' },
       ownerEpoch: null,
       canPublishMutations: false,
-      error: "Firebase's daily read limit has been reached. Changes stay safe on this device until the quota resets.",
+      error: "Firebase's daily read limit has been reached. Please try again after it resets.",
     });
   });
 
@@ -354,6 +582,27 @@ describe('identity session controller', () => {
     epoch.resolve(9);
     await ownerTask;
     expect(session.getSnapshot().owner).toBeNull();
+  });
+
+  it('resets an existing recovery on an intentional sign-out without re-raising it', async () => {
+    const { adapter, emitOwner } = createFakeAdapter();
+    const session = createIdentitySessionController({ adapter });
+    session.start();
+    await emitOwner(owner('session-owner'));
+    await emitOwner(null);
+    expect(session.getSnapshot().authenticationRecovery).toBe('session-lost');
+    vi.mocked(adapter.signOut).mockImplementation(async () => {
+      await emitOwner(null);
+    });
+
+    await expect(session.signOut()).resolves.toEqual({ status: 'completed' });
+
+    expect(session.getSnapshot()).toMatchObject({
+      status: 'anonymous',
+      owner: null,
+      canPublishMutations: false,
+      authenticationRecovery: null,
+    });
   });
 
   it('maps popup-close and unauthorized-domain errors without leaking adapter values', async () => {

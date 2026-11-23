@@ -1,0 +1,377 @@
+@layer components {
+  .flashcard-panel {
+    position: relative;
+    border: 1px solid color-mix(in srgb, var(--sf-surface) 75%, transparent);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sf-surface) 80%, transparent) 0%,
+      color-mix(in srgb, var(--sf-surface) 60%, transparent) 100%
+    );
+    box-shadow:
+      0 20px 50px -15px color-mix(in srgb, var(--sf-shadow) 35%, transparent),
+      inset 0 1px 1px 0 color-mix(in srgb, var(--sf-surface) 90%, transparent);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    backdrop-filter: blur(28px) saturate(160%);
+  }
+  .dark .flashcard-panel {
+    border: 1px solid var(--sf-border);
+    background: var(--sf-card-front);
+    box-shadow:
+      0 25px 60px -15px rgba(0, 0, 0, 0.85),
+      0 0 35px -8px color-mix(in srgb, var(--sf-brand) 8%, transparent),
+      inset 0 1px 1px 0 var(--sf-edge-highlight);
+  }
+  .dark .flashcard-panel::after {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+    content: "";
+  }
+  .flashcard-face,
+  .flashcard-back {
+    background: transparent;
+    transition:
+      box-shadow 250ms ease,
+      border-color 250ms ease;
+  }
+  .flashcard-face:hover,
+  .flashcard-back:hover {
+    border-color: color-mix(in srgb, var(--sf-brand) 45%, transparent);
+    box-shadow:
+      0 0 30px -5px color-mix(in srgb, var(--sf-brand) 22%, transparent),
+      0 30px 80px -20px rgba(0, 0, 0, 0.85),
+      inset 0 1.5px 1px 0 var(--sf-edge-highlight);
+  }
+  .zen-editorial-serif {
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+    letter-spacing: -0.015em;
+  }
+  .zen-glass-slab {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.45);
+    background:
+      radial-gradient(
+        ellipse 65% 45% at 18% 18%,
+        rgba(20, 184, 166, 0.18) 0%,
+        transparent 65%
+      ),
+      radial-gradient(
+        ellipse 55% 40% at 82% 18%,
+        rgba(245, 158, 11, 0.12) 0%,
+        transparent 60%
+      ),
+      linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.11) 0%,
+        rgba(255, 255, 255, 0.02) 40%,
+        rgba(255, 255, 255, 0.04) 100%
+      ),
+      /* Keep underlying text out when backdrop blur is unavailable. */
+      rgb(8, 20, 26);
+    box-shadow:
+      0 35px 90px -20px rgba(0, 0, 0, 0.72),
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    backdrop-filter: blur(32px) saturate(180%);
+  }
+  /* Zen is a fixed dark focus surface in every theme, not a theme token. */
+  .dark .zen-glass-slab {
+    background: #081318;
+    -webkit-backdrop-filter: blur(36px) saturate(190%);
+    backdrop-filter: blur(36px) saturate(190%);
+  }
+  .flashcard-details-dialog {
+    background-color: color-mix(in srgb, var(--sf-surface) 95%, transparent);
+  }
+  .flashcard-word-gradient {
+    color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+    font-family: var(--sf-font-display);
+    font-weight: 650;
+    background-image: linear-gradient(
+      to bottom right,
+      var(--sf-text),
+      var(--sf-text) 50%,
+      color-mix(in srgb, var(--sf-text) 70%, var(--sf-text-muted))
+    );
+  }
+  :root[data-theme-family="crystal"] .flashcard-word-gradient {
+    font-style: italic;
+    font-weight: 900;
+    background-image: linear-gradient(105deg, var(--sf-brand-text), var(--sf-text) 42%, var(--sf-text));
+  }
+  :root[data-theme-family="crystal"].dark .flashcard-word-gradient {
+    background-image: linear-gradient(105deg, var(--sf-brand), var(--sf-text) 48%, var(--sf-text));
+  }
+  .flashcard-translation-reveal {
+    animation: flashcard-translation-reveal 220ms var(--ease-out-expo) 80ms both;
+  }
+  .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab) {
+    border: 3px solid transparent;
+    background:
+      var(--flashcard-surface) padding-box,
+      var(--flashcard-tier-rim) border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: var(--flashcard-tier-shadow), var(--sf-panel-shadow);
+  }
+  .flashcard-shell[data-card-tier] .flashcard-face:not(.zen-glass-slab) {
+    --flashcard-surface: var(--sf-card-bg);
+  }
+  .flashcard-shell[data-card-tier] .flashcard-back:not(.zen-glass-slab) {
+    --flashcard-surface: var(--sf-dialog-bg);
+  }
+  :root:not([data-theme-family]):not(.dark) .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab),
+  :root[data-theme-family="classic"]:not(.dark) .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab) {
+    /* A color cannot occupy the first layer of a multi-background surface. */
+    --flashcard-surface: linear-gradient(var(--sf-surface), var(--sf-surface));
+  }
+  .flashcard-shell[data-card-tier="new"] {
+    --flashcard-tier-rim: var(--sf-rim-new);
+    --flashcard-tier-shadow: 0 18px 40px -30px var(--sf-shadow);
+  }
+  .flashcard-shell[data-card-tier="learning"] {
+    --flashcard-tier-rim: var(--sf-rim-learning);
+    --flashcard-tier-shadow: 0 20px 44px -30px var(--sf-second);
+  }
+  .flashcard-shell[data-card-tier="mastered"] {
+    --flashcard-tier-rim: var(--sf-gold-rim);
+    --flashcard-tier-shadow: 0 22px 48px -30px var(--sf-reward);
+  }
+  :root:not([data-theme-family]) .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab),
+  :root[data-theme-family="classic"] .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab) {
+    border-color: var(--sf-border);
+  }
+  :root.dark:not([data-theme-family]) .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab),
+  :root[data-theme-family="classic"].dark .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back):not(.zen-glass-slab) {
+    border-color: transparent;
+  }
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-tier] :is(.flashcard-face, .flashcard-back, .flashcard-tier-rim) {
+    border-radius: 0;
+    clip-path: var(--nk-chamfer);
+  }
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-tier="new"] {
+    --flashcard-tier-shadow: 0 20px 46px -28px var(--sf-second);
+  }
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-tier="learning"] {
+    --flashcard-tier-shadow: 0 20px 46px -28px var(--sf-brand);
+  }
+  :root[data-theme-family="crystal"] .flashcard-shell[data-card-tier="mastered"] {
+    --flashcard-tier-shadow: 0 22px 52px -28px var(--sf-reward);
+  }
+  .flashcard-shell::before {
+    position: absolute;
+    inset: -4px;
+    z-index: 40;
+    border-radius: 34px;
+    pointer-events: none;
+    content: "";
+    opacity: 0;
+    box-shadow: 0 20px 48px -38px transparent;
+    transition:
+      opacity var(--motion-standard) var(--ease-out-expo),
+      box-shadow var(--motion-standard) var(--ease-out-expo),
+      transform var(--motion-emphasis) var(--ease-out-expo);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .flashcard-shell:hover::before {
+      opacity: 0.64;
+      box-shadow: 0 22px 46px -34px var(--sf-shadow);
+      transform: scale(1.002);
+    }
+    .dark .flashcard-shell:hover::before {
+      opacity: 0.58;
+      box-shadow: 0 24px 48px -34px var(--sf-shadow);
+    }
+    .flashcard-shell:hover :is(.flashcard-face, .flashcard-back) {
+      filter: brightness(1.01) saturate(1.015);
+    }
+    .flashcard-holo {
+      position: absolute;
+      inset: 0;
+      z-index: 23;
+      pointer-events: none;
+      opacity: 0;
+      background: repeating-linear-gradient(
+        115deg,
+        color-mix(in srgb, var(--sf-brand) 45%, transparent) 0%,
+        color-mix(in srgb, var(--sf-reward) 45%, transparent) 6%,
+        color-mix(in srgb, var(--sf-second) 45%, transparent) 12%,
+        color-mix(in srgb, var(--sf-brand) 45%, transparent) 18%,
+        color-mix(in srgb, var(--sf-brand) 45%, transparent) 24%,
+        color-mix(in srgb, var(--sf-brand) 45%, transparent) 30%
+      );
+      background-position: var(--spotlight-x, 50%) var(--spotlight-y, 50%);
+      background-size: 300% 300%;
+      mix-blend-mode: soft-light;
+      transition: opacity 300ms ease;
+    }
+    :root[data-theme-family="crystal"] .flashcard-holo {
+      mix-blend-mode: color-dodge;
+    }
+    .flashcard-shell:hover .flashcard-holo {
+      opacity: 0.35;
+    }
+    :root[data-theme-family="crystal"] .flashcard-shell:hover .flashcard-holo {
+      opacity: 0.55;
+    }
+  }
+}
+@keyframes flashcard-star-selected {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  45% {
+    transform: scale(1.16) rotate(7deg);
+  }
+}
+@keyframes flashcard-translation-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+.flashcard-star-selected {
+  display: inline-flex;
+  animation: flashcard-star-selected var(--motion-standard) var(--ease-out-expo);
+}
+@media (hover: hover) and (pointer: fine) {
+  .flashcard-reward-button:hover {
+    transform: scale(1.05) rotate(6deg);
+  }
+}
+/* Constrained devices drop the glass blur. Plain glass panels fall back to the surface token;
+   card looks ([data-card-look]) keep their own opaque surface and tier rim. The card-look filter
+   sits in :where() so it adds no specificity and the Zen slab's fixed dark surface still wins. */
+@media (max-width: 1180px), (hover: none), (pointer: coarse) {
+  .flashcard-panel:where(:not([data-card-look])),
+  .zen-glass-slab,
+  .dark .flashcard-panel:where(:not([data-card-look])),
+  .dark .zen-glass-slab {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--sf-surface);
+  }
+  .flashcard-panel[data-card-look] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .zen-glass-slab,
+  .dark .zen-glass-slab {
+    background: #081418;
+  }
+}
+html[data-save-data="true"] :is(.flashcard-panel:where(:not([data-card-look])), .zen-glass-slab) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--sf-surface);
+}
+html[data-save-data="true"] .flashcard-panel[data-card-look] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html[data-save-data="true"] .zen-glass-slab {
+  background: #081418;
+}
+@supports not (
+  (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))
+) {
+  .flashcard-panel:where(:not([data-card-look])),
+  .zen-glass-slab {
+    background: var(--sf-surface);
+  }
+  .zen-glass-slab {
+    background: #081418;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .flashcard-panel:where(:not([data-card-look])),
+  .zen-glass-slab,
+  .dark .flashcard-panel:where(:not([data-card-look])),
+  .dark .zen-glass-slab {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--sf-surface);
+  }
+  .flashcard-panel[data-card-look] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .zen-glass-slab,
+  .dark .zen-glass-slab {
+    background: #081418;
+  }
+}
+@media (forced-colors: active) {
+  :is(.flashcard-face, .flashcard-back) {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flashcard-face,
+  .flashcard-back {
+    transform: none !important;
+  }
+  .flashcard-holo {
+    display: none;
+  }
+  .flashcard-reward-button:hover {
+    transform: none;
+  }
+}
+
+html[data-motion="reduced"] .flashcard-reward-button:hover {
+  transform: none;
+}
+
+html[data-motion="reduced"] :is(.flashcard-face, .flashcard-back) {
+  transform: none !important;
+}
+
+html[data-motion="reduced"] .flashcard-holo,
+html[data-save-data="true"] .flashcard-holo {
+  display: none;
+}
+
+/* Crystal label and reveal button. They sit outside the components layer because the utilities on these
+   elements (text, border and background) would otherwise win and leave grey text on the neon fill. */
+:root[data-theme-family="crystal"] .flashcard-shell [data-card-tier-label] {
+  clip-path: var(--nk-chamfer-sm);
+  border-color: transparent;
+  background: var(--sf-second);
+  color: var(--sf-on-brand);
+  font-family: var(--sf-font-display);
+  font-style: italic;
+}
+/* Brand text nested in the label sits on the holo fill: darken it for AA. */
+:root[data-theme-family="crystal"]:not(.dark) .flashcard-shell [data-card-tier-label] {
+  --sf-brand-text: color-mix(in srgb, var(--sf-brand-hover) 88%, var(--sf-umbra));
+}
+:root[data-theme-family="crystal"] .flashcard-shell [data-reveal-meaning] {
+  clip-path: var(--nk-chamfer-sm);
+  border: 0;
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--sf-brand) 50%, var(--sf-flare)),
+    var(--sf-brand) 35%,
+    color-mix(in srgb, var(--sf-brand) 80%, var(--sf-flare))
+  );
+  color: var(--sf-on-brand);
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-size: 0.875rem;
+}

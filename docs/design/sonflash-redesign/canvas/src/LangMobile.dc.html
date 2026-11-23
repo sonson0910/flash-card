@@ -1,0 +1,164 @@
+<!--#HEAD Mobile courses-->
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 3; height: 64px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; gap: 10px;">
+    <sc-if value="{{isReview}}" hint-placeholder-val="{{false}}">
+      <button aria-label="End review" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </sc-if>
+    <button aria-label="Active course: 한국어. Switch course" style="height: 40px; padding: 0 11px 0 4px; border-radius: 999px; border: {{chipBorder}}; background: {{t.surfaceSolid}}; color: {{t.textStrong}}; display: flex; align-items: center; gap: 8px; font-family: inherit;">
+      <span style="width: 32px; height: 32px; border-radius: 50%; background: {{ko.tileBg}}; color: {{ko.tileFg}}; font-family: 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center;">한</span>
+      <span style="font-family: 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 700;">한국어</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{t.text2}}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{chevron}}deg);"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>
+    <sc-if value="{{isReview}}" hint-placeholder-val="{{false}}">
+      <span style="margin-left: auto; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: {{t.text2}};">7 / 24</span>
+    </sc-if>
+    <sc-if value="{{isCourses}}" hint-placeholder-val="{{true}}">
+      <span style="margin-left: auto; height: 34px; padding: 0 12px 0 10px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>12</span>
+    </sc-if>
+  </header>
+
+  <sc-if value="{{isCourses}}" hint-placeholder-val="{{true}}">
+    <main aria-hidden="true" style="position: relative; z-index: 2; flex-grow: 1; padding: 14px 20px 0;">
+      <p style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: {{t.text2}};">Wednesday · 23 Sep</p>
+      <h1 style="margin: 10px 0 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 40px; line-height: 1.04; letter-spacing: -0.03em; color: {{t.textStrong}};">24 words ready in <span style="white-space: nowrap; font-family: 'Noto Serif KR', serif; font-weight: 700; letter-spacing: 0; color: {{t.emColor}};">한국어</span>.</h1>
+      <div style="margin-top: 22px; height: 150px; border-radius: 20px; border: 1px solid {{t.line}}; background: {{t.surface}};"></div>
+    </main>
+    <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 4; background: {{t.scrim}};"></div>
+    <section role="dialog" aria-modal="true" aria-labelledby="sheet-title" class="sf-rise" style="position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; box-sizing: border-box; border-radius: 28px 28px 0 0; border: {{t.dlgBorder}}; border-bottom: 0; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}}; padding: 10px 16px 26px;">
+      <div aria-hidden="true" style="width: 40px; height: 5px; margin: 0 auto 14px; border-radius: 5px; background: {{t.lineStrong}};"></div>
+      <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px;">
+        <h2 id="sheet-title" style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 26px; color: {{t.textStrong}};">Your <span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">courses</span></h2>
+        <span style="font-size: 12px; color: {{t.text3}};">streaks are per course</span>
+      </div>
+      <div role="listbox" aria-label="Courses" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;">
+        <sc-for list="{{courses}}" as="k" hint-placeholder-count="3">
+          <div role="option" aria-selected="{{k.selected}}" style="padding: 12px; border-radius: 16px; background: {{k.rowBg}}; border: {{k.rowBorder}}; display: flex; align-items: center; gap: 12px;">
+            <span style="width: 46px; height: 46px; flex-shrink: 0; border-radius: 13px; background: {{k.tileBg}}; color: {{k.tileFg}}; font-family: {{k.font}}; font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{k.glyph}}</span>
+            <div style="flex-grow: 1; min-width: 0;">
+              <div style="font-family: {{k.font}}; font-size: 17px; font-weight: 700; color: {{t.textStrong}};">{{k.name}}</div>
+              <div style="margin-top: 2px; font-size: 12.5px; color: {{t.text2}};">{{k.goal}} · <span style="color: {{t.warm}};">{{k.streakLabel}}</span></div>
+            </div>
+            <span style="height: 28px; padding: 0 10px; border-radius: 999px; background: {{k.dueBg}}; color: {{k.dueFg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; white-space: nowrap;">{{k.dueLabel}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <button style="margin-top: 10px; width: 100%; height: 52px; border-radius: 16px; border: 1px dashed {{t.lineStrong}}; background: transparent; color: {{t.textStrong}}; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add a language</button>
+      <div style="margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: {{t.chipBg}}; border: 1px solid {{t.line}}; display: flex; align-items: center; gap: 12px;">
+        <div style="flex-grow: 1;">
+          <div style="font-size: 12px; color: {{t.text2}};">App language</div>
+          <div style="margin-top: 1px; font-size: 14.5px; font-weight: 600; color: {{t.textStrong}};">Tiếng Việt</div>
+        </div>
+        <div style="flex-grow: 1;">
+          <div style="font-size: 12px; color: {{t.text2}};">Meanings in</div>
+          <div style="margin-top: 1px; font-size: 14.5px; font-weight: 600; color: {{t.textStrong}};">Tiếng Việt</div>
+        </div>
+        <span style="font-size: 13px; font-weight: 600; color: {{t.accentText}};">Change</span>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isReview}}" hint-placeholder-val="{{false}}">
+    <div style="position: relative; z-index: 2; margin: 0 16px; height: 4px; border-radius: 4px; background: {{t.track}}; overflow: hidden;"><div style="width: 29%; height: 100%; background: {{bar}};"></div></div>
+    <main style="position: relative; z-index: 2; flex-grow: 1; padding: 18px 16px 0; display: flex; flex-direction: column;">
+      <article aria-label="Card: 약속" style="position: relative; flex-grow: 1; box-sizing: border-box; border-radius: {{t.miniR}}px; border: {{back.border}}; background: {{back.bg}}; box-shadow: {{back.shadow}}; padding: 22px 22px 20px; display: flex; flex-direction: column; color: {{back.text}};">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid {{back.chipLine}}; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: {{back.muted}}; display: flex; align-items: center;">TOPIK I · noun</span>
+          <span title="Sino-Vietnamese reading" style="margin-left: auto; height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid {{back.chipLine}}; font-size: 11.5px; color: {{back.muted}}; display: flex; align-items: center; gap: 5px;"><span style="font-family: 'Noto Serif KR', serif; color: {{back.hl}};">約束</span>Hán Việt · ước thúc</span>
+        </div>
+        <div lang="ko" style="margin-top: 26px; font-family: 'Noto Serif KR', serif; font-weight: 700; font-size: 64px; line-height: 1; color: {{back.title}};">약<span style="color: {{back.hl}};">속</span></div>
+        <div style="margin-top: 12px; display: flex; align-items: center; gap: 10px;">
+          <button aria-label="Play pronunciation" style="width: 42px; height: 42px; flex-shrink: 0; border-radius: 50%; border: 0; background: {{back.play}}; color: {{back.playFg}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9z"></path><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></button>
+          <div>
+            <div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; color: {{back.text}};">yak-sok <span style="color: {{back.muted}};">·</span> <span lang="ko" style="font-family: 'Noto Sans KR', sans-serif;">[약쏙]</span></div>
+            <div style="margin-top: 2px; font-size: 12px; color: {{back.muted}};">ㄱ + ㅅ → the ㅅ tenses to ㅆ</div>
+          </div>
+          <span aria-hidden="true" style="margin-left: auto; display: flex; align-items: center; gap: 3px; height: 26px;">
+            <sc-for list="{{waves}}" as="v" hint-placeholder-count="7"><span class="sf-wave" style="width: 3px; height: {{v.h}}px; border-radius: 3px; background: {{back.rule}}; animation-delay: {{v.d}}ms;"></span></sc-for>
+          </span>
+        </div>
+        <div style="margin-top: 22px; height: 1px; background: {{back.chipLine}};"></div>
+        <div style="margin-top: 18px; font-family: Fraunces, Georgia, serif; font-size: 27px; line-height: 1.15; color: {{back.title}};">lời hứa; cuộc hẹn</div>
+        <div style="margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: {{back.body}};">Điều đã hẹn trước với ai đó — gặp mặt, hoặc làm một việc gì.</div>
+        <div style="margin-top: 16px; padding: 12px 14px; border-radius: 14px; border-left: 3px solid {{back.rule}}; background: {{back.exBg}};">
+          <div lang="ko" style="font-family: 'Noto Sans KR', sans-serif; font-size: 17px; font-weight: 500; line-height: 1.4; color: {{back.title}};">친구와 <strong style="color: {{back.hl}};">약속</strong>이 있어요.</div>
+          <div style="margin-top: 3px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; color: {{back.muted}};">chinguwa yaksogi isseoyo</div>
+          <div style="margin-top: 4px; font-size: 13px; color: {{back.body}};">Mình có hẹn với bạn.</div>
+        </div>
+        <div style="margin-top: auto; padding-top: 16px;">
+          <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{back.muted}};">Word family</div>
+          <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+            <sc-for list="{{family}}" as="f" hint-placeholder-count="3">
+              <span style="height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid {{back.chipLine}}; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: {{back.body}};"><span lang="ko" style="font-family: 'Noto Sans KR', sans-serif; font-weight: 700; color: {{back.title}};">{{f.ko}}</span>{{f.vi}}</span>
+            </sc-for>
+          </div>
+        </div>
+      </article>
+    </main>
+    <div style="position: relative; z-index: 3; flex-shrink: 0; padding: 14px 16px 24px;">
+      <div role="group" aria-label="How well did you remember?" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+        <sc-for list="{{grades}}" as="g" hint-placeholder-count="4">
+          <button style="height: 64px; border-radius: 16px; border: 1px solid {{g.border}}; background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-family: inherit; font-size: 14px; font-weight: 650;">
+            <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{g.dot}};"></span>{{g.label}}</span>
+            <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; opacity: 0.75;">{{g.next}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"screen":{"editor":"enum","options":["courses","review"],"default":"courses"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), miniR: dark ? 24 : 18 };
+    const screen = this.props.screen ?? 'courses';
+    const tile = {
+      ko: dark ? ['linear-gradient(145deg, #7ee6fa, #28d3f4)', '#04141c'] : ['#1d1a16', '#fbf6ec'],
+      ja: dark ? ['linear-gradient(145deg, #d8c4ff, #966cd7)', '#140a26'] : ['#b4461a', '#fff8f0'],
+      en: dark ? ['linear-gradient(145deg, #ffe0a3, #f5ae39)', '#1f1302'] : ['#337344', '#f4fbf2'],
+    };
+    const C = [
+      ['ko', '한', '한국어', 'TOPIK II · Level 3', 24, 12, "'Noto Sans KR', sans-serif"],
+      ['ja', 'あ', '日本語', 'JLPT N3', 18, 5, "'Noto Sans JP', sans-serif"],
+      ['en', 'A', 'English', 'IELTS 7.0', 14, 31, 'Geist, system-ui, sans-serif'],
+    ];
+    const back = dark
+      ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 90% 55% at 50% 8%, rgb(40 211 244 / 0.2), transparent 70%) padding-box, ' + t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', shadow: '0 30px 60px -24px rgb(0 0 0 / 0.9), 0 0 40px -12px rgb(40 211 244 / 0.5)', text: '#e5ecf1', title: '#f1f6f9', muted: '#99a7b0', body: '#b5c2ca', rule: '#28d3f4', hl: '#7ee6fa', chipLine: 'rgb(255 255 255 / 0.12)', exBg: 'rgb(255 255 255 / 0.04)', play: '#28d3f4', playFg: '#04141c' }
+      : { border: '0', bg: 'radial-gradient(ellipse 80% 50% at 50% 8%, rgb(180 70 26 / 0.22), transparent 70%), #1c2a21', shadow: t.cardShadow, text: '#efe8da', title: '#fbf6ec', muted: '#b7ad9b', body: '#cfc6b5', rule: '#e8a075', hl: '#f0b48f', chipLine: 'rgb(239 232 218 / 0.2)', exBg: 'rgb(239 232 218 / 0.06)', play: '#efe8da', playFg: '#1c2a21' };
+    const g = dark ? [
+      ['Again', '1m', t.again, '#f3b3b2', 'rgb(237 83 80 / 0.3)', 'rgb(237 83 80 / 0.08)', 'none'],
+      ['Hard', '6m', t.hard, '#e5ecf1', 'rgb(255 255 255 / 0.08)', 'rgb(255 255 255 / 0.04)', 'none'],
+      ['Good', '2d', '#04141c', '#04141c', '#7ee6fa', '#28d3f4', '0 10px 24px -10px rgb(40 211 244 / 0.7)'],
+      ['Easy', '5d', t.good, '#e5ecf1', 'rgb(255 255 255 / 0.08)', 'rgb(255 255 255 / 0.04)', 'none'],
+    ] : [
+      ['Again', '1m', t.again, '#8f2324', 'rgb(197 54 55 / 0.3)', '#fbf1ec', 'none'],
+      ['Hard', '6m', t.hard, '#1d1a16', 'rgb(29 26 22 / 0.12)', '#fffcf5', 'none'],
+      ['Good', '2d', '#e8a075', '#fbf6ec', '#1d1a16', '#1d1a16', '0 10px 20px -10px rgb(29 26 22 / 0.8)'],
+      ['Easy', '5d', t.good, '#1d1a16', 'rgb(29 26 22 / 0.12)', '#fffcf5', 'none'],
+    ];
+    return {
+      t, back, grainId: 'mlang-grain-' + (dark ? 'd' : 'l') + screen,
+      amb: { ax: -180, ay: -160, bx: 80, by: 300 },
+      isCourses: screen === 'courses', isReview: screen === 'review',
+      chevron: screen === 'courses' ? 180 : 0,
+      chipBorder: screen === 'courses' ? (dark ? '1.5px solid #28d3f4' : '1.5px solid #1d1a16') : '1px solid ' + t.line,
+      ko: { tileBg: tile.ko[0], tileFg: tile.ko[1] },
+      bar: dark ? 'linear-gradient(90deg, #28d3f4, #966cd7)' : '#b4461a',
+      courses: C.map(([k, glyph, name, goal, due, streak, font], i) => ({ glyph, name, goal, font,
+        tileBg: tile[k][0], tileFg: tile[k][1], selected: i === 0 ? 'true' : 'false',
+        streakLabel: streak + '-day streak', dueLabel: due + ' due',
+        rowBg: i === 0 ? (dark ? 'rgb(40 211 244 / 0.08)' : '#f3ecdf') : 'transparent',
+        rowBorder: i === 0 ? (dark ? '1px solid rgb(40 211 244 / 0.35)' : '1px solid rgb(29 26 22 / 0.14)') : '1px solid ' + t.line,
+        dueBg: i === 0 ? t.primaryBg : t.chipBg, dueFg: i === 0 ? t.primaryText : t.text2 })),
+      family: [['약속하다', 'hứa'], ['약속 장소', 'nơi hẹn'], ['약속을 지키다', 'giữ lời hứa']].map(([ko, vi]) => ({ ko, vi })),
+      waves: [10, 18, 24, 14, 22, 12, 8].map((h, i) => ({ h, d: i * 110 })),
+      grades: g.map(([label, next, dot, color, border, bg, shadow]) => ({ label, next, dot, color, border, bg, shadow })),
+    };
+  }
+}
+</script>
+</body>
+</html>

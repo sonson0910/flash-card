@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { withTimeout } from '../../lib/async';
 import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type {
@@ -10,16 +10,37 @@ import type {
   SharedDeckAdapter,
   SharedDeckBrowser,
   SharedDeckCardBatch,
+  SharedDeckEarlierShare,
 } from '../sharing/sharedDeckSessionController';
+import type { SharedDeckCoursePort } from '../sharing/shareCourseMatching';
 import { useSharedDeckSession } from '../sharing/useSharedDeckSession';
 import type { CardIntakeControllerPort, CardIntakeDraftPort } from './cardIntakeController';
+import type { CardData } from '../../types/card';
 import { useCardIntake, type CardIntakeActions } from './useCardIntake';
+import type { CardCreatorActions, CardCreatorModel } from './card-creator-model';
 import {
   spreadsheetRequestFromFile,
 } from './spreadsheetFileRequest';
+import type { SpreadsheetImportSettings } from '../importExport/spreadsheetWorkbook';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 
 const SHARE_CATEGORY_LOAD_TIMEOUT_MS = 20_000;
+const NO_EARLIER_SHARES: readonly SharedDeckEarlierShare[] = [];
+const captureAnalytics = {
+  captureStarted: (event: { requestId: string; surface: 'app' | 'extension' }) => {
+    void import('../../lib/analytics').then(({ recordPilotClientEvent, PILOT_APP_VERSION }) => {
+      recordPilotClientEvent({ name: 'capture_started', props: { ...event, appVersion: PILOT_APP_VERSION } });
+    }).catch(() => undefined);
+  },
+  captureFailed: (event: { requestId: string; surface: 'app' | 'extension'; latencyMs: number; error: unknown }) => {
+    void import('../../lib/analytics').then(({ recordPilotClientEvent, captureAnalyticsErrorCode, PILOT_APP_VERSION }) => {
+      recordPilotClientEvent({ name: 'capture_failed', props: {
+        requestId: event.requestId, surface: event.surface, latencyMs: event.latencyMs,
+        errorCode: captureAnalyticsErrorCode(event.error), appVersion: PILOT_APP_VERSION,
+      } });
+    }).catch(() => undefined);
+  },
+};
 
 export interface IntakeSharingFeedbackPort {
   reportError(message: string): void;
@@ -34,6 +55,14 @@ export interface IntakeSharingSessionOptions {
     loadCards(selection: ShareCategorySelection): Promise<SharedDeckCardBatch>;
     browser?: SharedDeckBrowser;
   };
+  /**
+   * Steers an incoming share to the matching course before its cards import.
+   * Built from the live `useCourseSession()` value by a caller that is a
+   * genuine descendant of `CourseProvider` — calling `useCourseSession()`
+   * from this hook directly would only ever see the context's idle default,
+   * since this hook is not itself rendered under that provider.
+   */
+  coursePort?: SharedDeckCoursePort | null;
   draft?: CardIntakeDraftPort;
   language?: LanguageProfile;
   resetSpreadsheetSource?: () => void;
@@ -60,12 +89,16 @@ export interface IntakeSharingSessionModel {
   isSubmitting: boolean;
   isImporting: boolean;
   isAdoptingSharedDeck: boolean;
+  cardCreator: CardCreatorModel;
   share: {
+    error: string | null;
     isLoading: boolean;
     isShareDialogOpen: boolean;
     activeShareId: string | null;
+    earlierShares?: readonly SharedDeckEarlierShare[];
     shareLink: string | null;
-    shareWarning: string | null;
+    shareWarning: ReturnType<typeof useSharedDeckSession>['model']['shareWarning'];
+    outgoingPreview?: ReturnType<typeof useSharedDeckSession>['model']['outgoingPreview'];
     incomingPreview: ReturnType<typeof useSharedDeckSession>['model']['incomingPreview'];
     expiresAt: string | null;
   };
@@ -77,20 +110,23 @@ export interface IntakeSharingSessionActions {
   changeDraft(value: string): void;
   clearDraft(): void;
   generate(options?: Parameters<CardIntakeActions['generate']>[0]): ReturnType<CardIntakeActions['generate']>;
-  importFile(file: File | null): Promise<
+  importFile(file: File | null, settings?: SpreadsheetImportSettings): Promise<
     | { status: 'missing' }
     | Awaited<ReturnType<CardIntakeActions['importSpreadsheet']>>
   >;
   adoptCards?(cards: readonly unknown[]): ReturnType<CardIntakeActions['adoptShared']>;
+  createConfirmedCatalogCards(cards: readonly CardData[]): ReturnType<CardIntakeActions['createConfirmedCatalogCards']>;
   shareCategory(selection: ShareCategorySelection): Promise<ShareCategoryResult>;
   acceptShared(): ReturnType<ReturnType<typeof useSharedDeckSession>['actions']['acceptShared']>;
   cancelShared(): void;
-  revokeShare(): ReturnType<ReturnType<typeof useSharedDeckSession>['actions']['revokeShare']>;
+  revokeShare(shareId?: string): ReturnType<ReturnType<typeof useSharedDeckSession>['actions']['revokeShare']>;
   dismissShareLink(): void;
   showShareDialog(): void;
+  clearShareError(): void;
   clearError(): void;
   clearNotice(): void;
   invalidateCard(cardId: string): void;
+  cardCreator: CardCreatorActions;
 }
 
 const browserDraft: CardIntakeDraftPort = {
@@ -103,12 +139,42 @@ const browserDraft: CardIntakeDraftPort = {
   clear: () => {
     try { globalThis.sessionStorage?.removeItem('lingoflash_word_draft'); } catch { /* storage is optional */ }
   },
+  readOperation: () => {
+    try {
+      const raw = globalThis.sessionStorage?.getItem('lingoflash_word_operation');
+      if (!raw) return null;
+      const value = JSON.parse(raw) as {
+        word?: unknown;
+        context?: unknown;
+        languageId?: unknown;
+        id?: unknown;
+        partOfSpeech?: unknown;
+      };
+      return typeof value.word === 'string' && typeof value.context === 'string'
+        && typeof value.languageId === 'string' && typeof value.id === 'string'
+        ? {
+          word: value.word,
+          context: value.context,
+          languageId: value.languageId,
+          id: value.id,
+          ...(typeof value.partOfSpeech === 'string' ? { partOfSpeech: value.partOfSpeech } : {}),
+        }
+        : null;
+    } catch { return null; }
+  },
+  writeOperation: operation => {
+    try { globalThis.sessionStorage?.setItem('lingoflash_word_operation', JSON.stringify(operation)); } catch { /* storage is optional */ }
+  },
+  clearOperation: () => {
+    try { globalThis.sessionStorage?.removeItem('lingoflash_word_operation'); } catch { /* storage is optional */ }
+  },
 };
 
 export function useIntakeSharingSession({
   ownerKey,
   intake,
   sharing,
+  coursePort,
   draft = browserDraft,
   language,
   resetSpreadsheetSource,
@@ -132,11 +198,23 @@ dependencies: IntakeSharingSessionDependencies,
   } | null>(null);
   const [preparingShareGeneration, setPreparingShareGeneration] = useState<number | null>(null);
   const isPreparingShare = preparingShareGeneration === ownerSessionGeneration;
+  // The typed word and its stored request belong to the learner who typed them: when the signed-in
+  // owner leaves or changes, they go before the next owner's controller reads them. A reload only
+  // moves from no owner to the same owner, so it keeps them.
+  const previousOwnerKeyRef = useRef(ownerKey);
+  useLayoutEffect(() => {
+    const previous = previousOwnerKeyRef.current;
+    previousOwnerKeyRef.current = ownerKey;
+    if (previous === null || previous === ownerKey) return;
+    try { draft.clear(); } catch { /* storage is optional */ }
+    try { draft.clearOperation?.(); } catch { /* storage is optional */ }
+  }, [draft, ownerKey]);
   const cardPort = dependencies.useIntakePort(intake);
   const cardIntake = useCardIntake({
     ownerKey,
     ports: { cards: cardPort, draft, resetSpreadsheetSource },
     language,
+    analytics: captureAnalytics,
   });
   const sharedIntake = useMemo(
     () => ({ adoptShared: cardIntake.actions.adoptShared }),
@@ -147,6 +225,7 @@ dependencies: IntakeSharingSessionDependencies,
     adapter: sharing.adapter,
     intake: sharedIntake,
     browser: sharing.browser,
+    coursePort,
   });
   const [facadeFailure, setFacadeFailure] = useState<{
     ownerSessionGeneration: number;
@@ -168,10 +247,10 @@ dependencies: IntakeSharingSessionDependencies,
     if (notice) feedbackRef.current?.notify(notice);
   }, [notice]);
 
-  const importFile = useCallback(async (file: File | null) => {
+  const importFile = useCallback(async (file: File | null, settings?: SpreadsheetImportSettings) => {
     if (!file) return { status: 'missing' } as const;
     setFacadeFailure(null);
-    return cardIntake.actions.importSpreadsheet(spreadsheetRequestFromFile(file));
+    return cardIntake.actions.importSpreadsheet(spreadsheetRequestFromFile(file, settings));
   }, [cardIntake.actions]);
 
   const shareCategory = useCallback(async (selection: ShareCategorySelection): Promise<ShareCategoryResult> => {
@@ -222,12 +301,18 @@ dependencies: IntakeSharingSessionDependencies,
     generate: cardIntake.actions.generate,
     importFile,
     adoptCards: cards => cardIntake.actions.adoptShared({ cards }),
+    createConfirmedCatalogCards: cards => cardIntake.actions.createConfirmedCatalogCards(cards),
     shareCategory,
     acceptShared: sharedDeck.actions.acceptShared,
     cancelShared: sharedDeck.actions.cancelShared,
     revokeShare: sharedDeck.actions.revokeShare,
     dismissShareLink: sharedDeck.actions.dismissShareLink,
     showShareDialog: sharedDeck.actions.showShareDialog,
+    clearShareError: () => {
+      setFacadeFailure(null);
+      sharedDeck.actions.clearError();
+      cardIntake.actions.clearSharedAdoptionError();
+    },
     clearError: () => {
       setFacadeFailure(null);
       cardIntake.actions.clearError();
@@ -235,6 +320,7 @@ dependencies: IntakeSharingSessionDependencies,
     },
     clearNotice: sharedDeck.actions.clearNotice,
     invalidateCard: cardIntake.actions.invalidateCard,
+    cardCreator: cardIntake.actions.cardCreator,
   }), [cardIntake.actions, importFile, shareCategory, sharedDeck.actions]);
 
   const model = useMemo<IntakeSharingSessionModel>(() => ({
@@ -252,16 +338,20 @@ dependencies: IntakeSharingSessionDependencies,
     isSubmitting: cardIntake.model.isSubmitting,
     isImporting: cardIntake.model.isImporting,
     isAdoptingSharedDeck: cardIntake.model.isAdoptingSharedDeck,
+    cardCreator: cardIntake.model.cardCreator,
     share: {
+      error: facadeError ?? sharedDeck.model.error,
       isLoading: isPreparingShare || sharedDeck.model.isLoading,
       isShareDialogOpen: sharedDeck.model.isShareDialogOpen,
       activeShareId: sharedDeck.model.activeShareId,
+      earlierShares: sharedDeck.model.earlierShares ?? NO_EARLIER_SHARES,
       shareLink: sharedDeck.model.shareLink,
       shareWarning: sharedDeck.model.shareWarning,
+      outgoingPreview: sharedDeck.model.outgoingPreview,
       incomingPreview: sharedDeck.model.incomingPreview,
       expiresAt: sharedDeck.model.expiresAt,
     },
-  }), [cardIntake.model, error, externalBusy, isPreparingShare, notice, sharedDeck.model]);
+  }), [cardIntake.model, error, externalBusy, facadeError, isPreparingShare, notice, sharedDeck.model]);
 
   return { model, actions };
 }

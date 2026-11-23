@@ -1,0 +1,361 @@
+/* Directly ported from the Canvas practice boards.  Component markup keeps the
+   real session state/actions; these board rules supply their paper and Crystal
+   presentation without changing interaction selectors. */
+.practice-board {
+  --practice-line: color-mix(in srgb, var(--sf-border) 86%, transparent);
+}
+.practice-board:not(.practice-stage) {
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 960px);
+  min-height: min(720px, 100dvh);
+  padding-inline: clamp(12px, 3vw, 32px);
+}
+.practice-board:not(.practice-stage)::before {
+  position: absolute;
+  z-index: -1;
+  inset: 72px 0 auto;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--sf-brand) 10%, transparent), transparent 68%);
+  content: '';
+  filter: blur(12px);
+  pointer-events: none;
+}
+.practice-board > div:first-child > button:first-child,
+.practice-board--study > div:first-child > button {
+  border-color: var(--practice-line);
+  box-shadow: inset 0 1px rgb(255 255 255 / .12);
+}
+.practice-board :is(article, aside, [role='status']) {
+  border-color: var(--practice-line);
+}
+.practice-board--study [data-study-header] { max-width: 960px; min-height: 44px; }
+.practice-board--study [data-study-progress] { max-width: 460px; }
+.practice-board--study [data-study-progress-segments] > span { height: 6px; min-width: 0; flex: 1; transform: skewX(-24deg); background: color-mix(in srgb, var(--sf-border) 82%, transparent); }
+.practice-board--study [data-study-progress-segment='complete'] { background: linear-gradient(90deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 55%, #5ef2ff)); box-shadow: 0 0 8px color-mix(in srgb, var(--sf-brand) 45%, transparent); }
+.practice-board--study [data-study-recall-mode] select { max-width: min(100%, 23rem); }
+.practice-board--study [data-study-card] { max-width: 460px; }
+.practice-board--study [data-active-recall] { height: min(clamp(300px, 60dvh, 480px), max(300px, calc(100dvh - 340px))); }
+.practice-board--study [data-study-card] h2 { max-width: 100%; overflow-wrap: anywhere; }
+.practice-board--study [data-study-rating] { max-width: 460px; scroll-margin-bottom: 8px; }
+/* Session recap: a full-screen page built to the classic RecapScreen board and the Crystal AnimeRecap
+   board. Values come from canvas/src/tokens.js and anime-tokens.js. Small text uses the nearest tone
+   that keeps AA on the page where the board's own tone falls just short. */
+.practice-recap-overlay { position: fixed; inset: 0; z-index: 50; background: var(--sf-dialog-veil); }
+.practice-recap-frame { position: fixed; inset: 0; z-index: 50; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; outline: 0; }
+.practice-recap-board {
+  --rc-strong: #1d1a16; --rc-body: #3d372f; --rc-text2: #6b6255; --rc-text3: #756b5e;
+  --rc-line: rgb(29 26 22 / .1); --rc-chip: #fbf8f2; --rc-track: rgb(29 26 22 / .08);
+  --rc-accent: #b4461a; --rc-accent-text: #97400d; --rc-accent-soft: rgb(180 70 26 / .08); --rc-accent-line: rgb(151 64 13 / .25);
+  --rc-em: #b4461a; --rc-em-style: italic; --rc-em-glow: none; --rc-weight: 380; --rc-segment-glow: none;
+  --rc-surface: #fffcf5; --rc-surface-shadow: inset 0 1px 0 #fff, 0 1px 2px rgb(60 40 20 / .06), 0 14px 28px -18px rgb(60 40 20 / .3); --rc-blur: none; --rc-radius: 18px;
+  --rc-again: #c53637; --rc-warm: #97400d; --rc-warm-bg: #fbf8f2; --rc-warm-line: rgb(151 64 13 / .22);
+  --rc-primary-bg: #1d1a16; --rc-primary-text: #fbf6ec; --rc-primary-shadow: 0 14px 28px -14px rgb(29 26 22 / .9); --rc-btn-radius: 999px;
+  --rc-secondary-bg: #fffcf5; --rc-secondary-shadow: 0 1px 2px rgb(60 40 20 / .08);
+  --rc-card-radius: 16px; --rc-card-border: 0; --rc-card-bg: #fffcf5;
+  --rc-card-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgb(29 26 22 / .06), 0 10px 20px -10px rgb(60 40 20 / .18), 0 50px 70px -40px rgb(60 40 20 / .45);
+  --rc-card-ring-learning: 0 0 0 2px rgb(51 115 68 / .5); --rc-card-ring-mastered: 0 0 0 2px #d9b76a;
+  --rc-img-margin: 12px 12px 0; --rc-img-radius: 10px; --rc-img-mask: none;
+  --rc-gold: #b8862b; --rc-gold-text: #7d5a12; --rc-learning-text: #2c6a3d; --rc-foil-blend: multiply;
+  --rc-confetti-1: #b4461a; --rc-confetti-2: #337344; --rc-confetti-3: #b8862b; --rc-confetti-4: #1d1a16; --rc-confetti-5: #e8a075; --rc-confetti-radius: 2px;
+  --rc-ambient: radial-gradient(rgb(29 26 22 / .07) 1px, transparent 1.2px) 0 0 / 28px 28px;
+  position: relative; isolation: isolate; display: flex; width: 100%; min-height: 100%; flex-direction: column; overflow-x: clip;
+  background: var(--sf-canvas); color: var(--rc-strong); outline: 0;
+}
+:root.dark:not([data-theme-family="crystal"]) .practice-recap-board {
+  --rc-strong: var(--sf-text-strong); --rc-body: var(--sf-text-body); --rc-text2: var(--sf-text-muted); --rc-text3: #8494a0;
+  --rc-line: var(--sf-border); --rc-chip: var(--sf-surface-raised); --rc-track: var(--sf-border);
+  --rc-accent: var(--sf-brand); --rc-accent-text: var(--sf-brand-text); --rc-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent); --rc-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
+  --rc-em: var(--sf-brand); --rc-em-style: normal; --rc-em-glow: 0 0 36px color-mix(in srgb, var(--sf-brand) 50%, transparent); --rc-weight: 440; --rc-segment-glow: 0 0 8px color-mix(in srgb, var(--sf-brand) 55%, transparent);
+  --rc-surface: var(--sf-surface-glass); --rc-surface-shadow: var(--sf-panel-shadow); --rc-blur: blur(18px); --rc-radius: 22px;
+  --rc-again: var(--sf-rating-again); --rc-warm: var(--sf-warm); --rc-warm-bg: var(--sf-warm-bg); --rc-warm-line: var(--sf-warm-line);
+  --rc-primary-bg: var(--sf-primary-bg); --rc-primary-text: var(--sf-on-primary); --rc-primary-shadow: var(--sf-primary-shadow); --rc-btn-radius: 16px;
+  --rc-secondary-bg: var(--sf-surface-raised); --rc-secondary-shadow: none;
+  --rc-card-radius: 22px; --rc-card-border: 1.5px solid transparent; --rc-card-bg: var(--sf-solid-card, var(--sf-card-bg));
+  --rc-card-shadow: 0 30px 70px -30px rgb(0 0 0 / .9);
+  --rc-img-margin: 0; --rc-img-radius: 0; --rc-img-mask: linear-gradient(to bottom, #000 42%, transparent 100%);
+  --rc-gold: var(--sf-reward); --rc-gold-text: var(--sf-reward); --rc-learning-text: var(--sf-brand-text); --rc-foil-blend: screen;
+  --rc-confetti-1: var(--sf-brand); --rc-confetti-2: var(--sf-brand-text); --rc-confetti-3: var(--sf-second); --rc-confetti-4: var(--sf-reward); --rc-confetti-5: #fff; --rc-confetti-radius: 50%;
+  --rc-ambient: radial-gradient(circle 520px at 30% -60px, color-mix(in srgb, var(--sf-second) 30%, transparent), transparent), radial-gradient(circle 760px at 50% 110%, color-mix(in srgb, var(--sf-brand) 22%, transparent), transparent);
+}
+.practice-recap-board::before { position: absolute; z-index: -1; inset: 0; background: var(--rc-ambient); content: ''; pointer-events: none; }
+.practice-recap-board :is(button, a):focus-visible { outline: 2px solid var(--rc-accent); outline-offset: 3px; }
+.practice-recap-board button:disabled { cursor: not-allowed; opacity: .6; }
+
+.practice-recap-confetti { position: absolute; z-index: 0; inset: 0; overflow: hidden; pointer-events: none; }
+.practice-recap-confetti > span {
+  position: absolute; top: -20px; border-radius: var(--rc-confetti-radius); background: var(--rc-confetti-1); opacity: .85;
+  transform: rotate(var(--recap-confetti-rotate)); animation: practice-recap-fall linear infinite;
+}
+.practice-recap-confetti > span[data-tone="1"] { background: var(--rc-confetti-2); }
+.practice-recap-confetti > span[data-tone="2"] { background: var(--rc-confetti-3); }
+.practice-recap-confetti > span[data-tone="3"] { background: var(--rc-confetti-4); }
+.practice-recap-confetti > span[data-tone="4"] { background: var(--rc-confetti-5); }
+@keyframes practice-recap-fall { to { transform: translateY(calc(100dvh + 40px)) rotate(calc(var(--recap-confetti-rotate) + 360deg)); } }
+
+/* Header: close, the finished session's segments, the theme switch. */
+.practice-recap-header { position: relative; z-index: 3; display: flex; height: 80px; flex-shrink: 0; align-items: center; gap: 16px; padding: 0 40px; }
+.practice-recap-icon-button { display: grid; flex: none; width: 44px; height: 44px; place-items: center; padding: 0; border: 1px solid var(--rc-line); border-radius: 50%; background: var(--rc-chip); color: var(--rc-text2); cursor: pointer; transition: color .15s ease; }
+.practice-recap-icon-button:hover { color: var(--rc-strong); }
+.practice-recap-segments { display: flex; min-width: 0; margin: 0 auto; gap: 5px; overflow: hidden; }
+.practice-recap-segments > span { width: 30px; height: 4px; flex: 0 1 30px; border-radius: 4px; background: var(--rc-accent); box-shadow: var(--rc-segment-glow); }
+
+/* Classic body: pill, count headline, promoted cards, the result strip and three actions. */
+.practice-recap-main { position: relative; z-index: 2; display: flex; flex: 1; flex-direction: column; align-items: center; padding: 6px 24px 48px; text-align: center; }
+.practice-recap-pill { display: inline-flex; height: 32px; align-items: center; gap: 8px; margin: 0; padding: 0 14px; border: 1px solid var(--rc-accent-line); border-radius: 999px; background: var(--rc-accent-soft); color: var(--rc-accent-text); font-size: 13px; font-weight: 600; line-height: 1; }
+.practice-recap-headline { max-width: 100%; margin: 20px 0 0; color: var(--rc-strong); font-family: var(--sf-font-display); font-optical-sizing: auto; font-size: 76px; font-weight: var(--rc-weight); line-height: 1; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.practice-recap-headline em { color: var(--rc-em); font-style: var(--rc-em-style); text-shadow: var(--rc-em-glow); }
+.practice-recap-sub { max-width: 640px; margin: 16px 0 0; color: var(--rc-body); font-size: 17px; line-height: 1.55; }
+.practice-recap-cards { display: flex; align-items: flex-end; justify-content: center; gap: 28px; margin: 34px 0 0; padding: 0; list-style: none; }
+.practice-recap-card { --rc-rot: 0deg; --rc-lift: 0px; --rc-to: var(--rc-learning-text); display: flex; min-width: 0; flex-direction: column; align-items: center; gap: 14px; }
+.practice-recap-card:nth-child(1):not(:last-child) { --rc-rot: -5deg; }
+.practice-recap-card:nth-child(2):not(:last-child) { --rc-lift: -16px; }
+.practice-recap-card:nth-child(2):last-child, .practice-recap-card:nth-child(3) { --rc-rot: 5deg; }
+.practice-recap-card[data-tier="mastered"] { --rc-to: var(--rc-gold-text); }
+.practice-recap-card-face {
+  position: relative; display: flex; width: 208px; height: 250px; box-sizing: border-box; flex-direction: column; overflow: hidden;
+  border: var(--rc-card-border); border-radius: var(--rc-card-radius); background: var(--rc-card-bg); box-shadow: var(--rc-card-shadow), var(--rc-card-ring-learning);
+  text-align: left; transform: rotate(var(--rc-rot)) translateY(var(--rc-lift));
+}
+.practice-recap-card[data-tier="mastered"] .practice-recap-card-face { box-shadow: var(--rc-card-shadow), var(--rc-card-ring-mastered); }
+:root.dark:not([data-theme-family="crystal"]) .practice-recap-card-face {
+  background: var(--rc-card-bg) padding-box, linear-gradient(155deg, var(--sf-brand-text), color-mix(in srgb, var(--sf-brand) 20%, transparent) 40%, color-mix(in srgb, var(--sf-second) 35%, transparent) 75%, #b395ea) border-box;
+  box-shadow: var(--rc-card-shadow), 0 0 44px -14px color-mix(in srgb, var(--sf-brand) 50%, transparent);
+}
+:root.dark:not([data-theme-family="crystal"]) .practice-recap-card[data-tier="mastered"] .practice-recap-card-face {
+  background: var(--rc-card-bg) padding-box, conic-gradient(from 200deg, #ffe6a8, var(--sf-reward), #fff6dc, var(--sf-brand-text), #c9a3ff, var(--sf-reward), #ffe6a8) border-box;
+  box-shadow: var(--rc-card-shadow), 0 0 60px -12px color-mix(in srgb, var(--sf-reward) 60%, transparent);
+}
+.practice-recap-card-art { display: grid; height: 112px; flex-shrink: 0; place-items: center; margin: var(--rc-img-margin); overflow: hidden; border-radius: var(--rc-img-radius); background: linear-gradient(150deg, var(--rc-accent-soft), transparent 80%), var(--rc-track); }
+.practice-recap-card-art img { display: block; width: 100%; height: 100%; object-fit: cover; -webkit-mask-image: var(--rc-img-mask); mask-image: var(--rc-img-mask); }
+.practice-recap-card-art > span { color: var(--rc-accent-line); font-family: var(--sf-font-display); font-size: 72px; font-weight: var(--rc-weight); line-height: 1; text-transform: uppercase; }
+.practice-recap-card-body { display: flex; min-height: 0; flex: 1; flex-direction: column; padding: 10px 18px 0; }
+.practice-recap-card-word { overflow: hidden; color: var(--rc-strong); font-family: var(--sf-font-display); font-optical-sizing: auto; font-size: 30px; font-weight: var(--rc-weight); line-height: 1.05; letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; }
+.practice-recap-card[data-tier="mastered"] .practice-recap-card-word { color: var(--rc-strong); }
+.practice-recap-card-meaning { margin-top: 6px; overflow: hidden; color: var(--rc-text2); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.practice-recap-card-move { display: flex; align-items: center; gap: 6px; margin-top: auto; padding-bottom: 14px; color: var(--rc-text3); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.practice-recap-card-from { text-decoration: line-through; }
+.practice-recap-card-to { color: var(--rc-to); }
+.practice-recap-card-foil {
+  position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgb(255 226 150 / .35) 45%, rgb(150 240 255 / .25) 52%, rgb(255 170 230 / .2) 58%, transparent 72%) 0 0 / 260% 100%;
+  mix-blend-mode: var(--rc-foil-blend); pointer-events: none; animation: practice-recap-sheen 4.5s ease-in-out infinite;
+}
+@keyframes practice-recap-sheen { 0%, 20% { background-position: 100% 0; } 70%, 100% { background-position: 0 0; } }
+.practice-recap-card-level { color: var(--rc-to); font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; }
+
+.practice-recap-stats {
+  display: grid; width: min(980px, 100%); grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; margin: 30px 0 0;
+  border: 1px solid var(--rc-line); border-radius: var(--rc-radius); background: var(--rc-surface); box-shadow: var(--rc-surface-shadow);
+  -webkit-backdrop-filter: var(--rc-blur); backdrop-filter: var(--rc-blur); text-align: left;
+}
+.practice-recap-stat { min-width: 0; padding: 18px 22px; border-right: 1px solid var(--rc-line); }
+.practice-recap-stat:last-child { border-right: 0; }
+.practice-recap-stat dt { color: var(--rc-text2); font-size: 12.5px; }
+.practice-recap-stat-value { display: flex; align-items: center; gap: 4px; margin: 4px 0 0; color: var(--rc-strong); font-family: var(--sf-font-display); font-size: 34px; font-weight: var(--rc-weight); line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.practice-recap-pct { align-self: flex-end; margin: 0 0 4px -2px; font-size: 20px; }
+.practice-recap-unit { align-self: flex-end; margin: 0 0 7px 4px; color: var(--rc-text2); font-family: var(--font-sans); font-size: 13px; font-weight: 600; }
+.practice-recap-chip-today { display: inline-flex; height: 24px; align-items: center; margin-left: 6px; padding: 0 9px; border: 1px solid var(--rc-warm-line); border-radius: 999px; background: var(--rc-warm-bg); color: var(--rc-warm); font-family: var(--font-sans); font-size: 12px; font-weight: 650; }
+.practice-recap-bar { display: flex; height: 6px; gap: 2px; margin-top: 10px; overflow: hidden; border-radius: 6px; background: var(--rc-track); }
+.practice-recap-bar > [data-part="again"] { background: var(--rc-again); }
+.practice-recap-bar > [data-part="good"] { background: var(--rc-accent); }
+.practice-recap-stat-sub { margin: 12px 0 0; color: var(--rc-text3); font-size: 12.5px; line-height: 1.4; }
+.practice-recap-progress { max-width: 980px; margin: 14px 0 0; color: var(--rc-text2); font-size: 13px; }
+.practice-recap-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; margin-top: 28px; }
+.practice-recap-primary, .practice-recap-secondary, .practice-recap-link { display: inline-flex; min-height: 56px; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: transform .15s ease, filter .15s ease; }
+.practice-recap-primary { padding: 0 26px; border: 0; border-radius: var(--rc-btn-radius); background: var(--rc-primary-bg); color: var(--rc-primary-text); box-shadow: var(--rc-primary-shadow); font-size: 16px; font-weight: 650; }
+.practice-recap-secondary { padding: 0 22px; border: 1px solid var(--rc-line); border-radius: var(--rc-btn-radius); background: var(--rc-secondary-bg); color: var(--rc-strong); box-shadow: var(--rc-secondary-shadow); font-size: 15px; font-weight: 600; }
+.practice-recap-link { padding: 0 12px; border: 0; background: none; color: var(--rc-accent-text); font-size: 15px; font-weight: 600; }
+.practice-recap-primary:hover, .practice-recap-secondary:hover { filter: brightness(1.05); }
+.practice-recap-primary:active, .practice-recap-secondary:active { transform: scale(.98); }
+
+/* Crystal Star (AnimeRecap). */
+[data-family="crystal"] {
+  --rk-text: #f3f5fa; --rk-strong: #fff; --rk-text2: #aab3c5; --rk-text3: #7a8397; --rk-crimson: #ff6b85; --rk-holo: var(--sf-second); --rk-gold: var(--sf-reward); --rk-violet: #ff9ec0;
+  --rk-chip: rgb(255 255 255 / .06); --rk-line-strong: rgb(255 255 255 / .22); --rk-track: rgb(255 255 255 / .1);
+  --rk-panel: linear-gradient(160deg, rgb(22 26 40 / .9), rgb(8 10 18 / .94)); --rk-edge: rgb(255 84 112 / .55); --rk-edge2: color-mix(in srgb, var(--sf-second) 40%, transparent);
+  --rk-card-front: linear-gradient(180deg, #121624 0%, #080a12 100%); --rk-beam: rgb(255 255 255 / .08);
+  --rk-primary: linear-gradient(180deg, #ff5470 0%, var(--sf-brand) 45%, #b30f33 100%); --rk-primary-glow: drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 70%, transparent));
+  --rk-cheer: var(--sf-metal); --rk-cheer-shadow: drop-shadow(0 5px 0 var(--sf-star-shade)) drop-shadow(0 0 26px color-mix(in srgb, var(--sf-brand) 85%, transparent));
+  --rc-accent: var(--sf-second);
+  background: radial-gradient(ellipse 55% 45% at 18% 18%, rgb(16 42 92 / .55), transparent 70%), radial-gradient(ellipse 50% 45% at 85% 72%, rgb(10 50 110 / .5), transparent 70%), radial-gradient(ellipse 45% 35% at 62% 8%, rgb(179 15 51 / .3), transparent 70%), radial-gradient(ellipse 40% 30% at 30% 95%, rgb(122 8 32 / .35), transparent 70%), var(--sf-canvas);
+  color: var(--rk-text); font-family: var(--sf-font-body);
+}
+:root[data-theme-family="crystal"]:not(.dark) [data-family="crystal"] {
+  --rk-text: var(--sf-text); --rk-strong: var(--sf-text-strong); --rk-text2: var(--sf-text-muted); --rk-text3: var(--sf-text-muted); --rk-crimson: var(--sf-brand-text); --rk-holo: #065a6e; --rk-gold: #8a5a00; --rk-violet: #b3265a;
+  --rk-chip: var(--sf-surface-raised); --rk-line-strong: var(--sf-edge-highlight); --rk-track: var(--sf-border);
+  --rk-panel: var(--sf-surface-glass); --rk-edge: var(--sf-panel-edge); --rk-edge2: var(--sf-panel-edge-2);
+  --rk-card-front: var(--sf-card-front); --rk-beam: rgb(255 255 255 / .5);
+  --rk-primary: var(--sf-primary-bg); --rk-primary-glow: drop-shadow(0 12px 20px rgb(224 23 63 / .45));
+  /* The white cheer metal disappears on Prism Day; the theme metal is a navy-to-crimson ink there. */
+  --rk-cheer: var(--sf-metal);
+  --rc-accent: #a30c2d;
+  /* The canvas colour under the painted backdrop keeps the board opaque while the art is still loading. */
+  background: var(--sf-space), var(--sf-canvas);
+}
+.practice-recap-board[data-family="crystal"]::before {
+  inset: -10% auto auto 50%; width: 380px; height: 120%; margin-left: -190px;
+  background: linear-gradient(90deg, transparent, var(--rk-beam), rgb(255 255 255 / .12), var(--rk-beam), transparent); filter: blur(6px);
+}
+.practice-recap-board[data-family="crystal"]::after { position: absolute; z-index: -1; inset: 0; background: var(--nk-stars, none); content: ''; pointer-events: none; }
+[data-family="crystal"] :is(button, a):focus-visible { outline-color: var(--rk-holo); }
+[data-family="crystal"] .practice-recap-header { height: 70px; gap: 10px; padding: 0 44px; }
+.practice-recap-kicker { margin: 0; color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.practice-recap-kicker i { color: var(--rk-crimson); font-style: inherit; }
+[data-family="crystal"] .practice-recap-theme { margin-left: auto; }
+[data-family="crystal"] .practice-recap-icon-button { width: 42px; height: 42px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--rk-chip); box-shadow: inset 0 0 0 1px var(--rk-line-strong); color: var(--rk-text); }
+[data-family="crystal"] .practice-recap-main { padding: 0 56px 30px; }
+.practice-recap-hero { position: relative; display: flex; width: min(1000px, 100%); height: 300px; flex-shrink: 0; justify-content: center; }
+.practice-recap-burst { position: absolute; inset: 0; pointer-events: none; }
+.practice-recap-wing { position: absolute; top: -20px; left: 50px; width: 460px; height: 310px; overflow: visible; filter: drop-shadow(0 0 26px rgb(255 42 77 / .75)); }
+.practice-recap-wing[data-mirrored] { right: 50px; left: auto; transform: scaleX(-1); }
+.practice-recap-star { position: absolute; top: 0; left: 50%; width: 230px; height: 230px; margin-left: -115px; filter: drop-shadow(0 0 30px rgb(255 42 77 / .9)); }
+.practice-recap-star svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.practice-recap-star-text {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-top: 18px;
+  background: linear-gradient(180deg, #fff 0%, #fff3c4 45%, #ffd166 55%, #fff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-family: var(--sf-font-display); font-size: 66px; font-style: italic; font-weight: 900; letter-spacing: -.02em; text-transform: uppercase; filter: drop-shadow(0 4px 0 #7a0820);
+}
+.practice-recap-flare { position: absolute; top: 20px; left: 50%; width: 360px; height: 200px; margin-left: -180px; }
+.practice-recap-flare::before { position: absolute; top: 50%; right: 0; left: 0; height: 3px; margin-top: -1.5px; background: linear-gradient(90deg, transparent, #fff, transparent); content: ''; }
+.practice-recap-cheer {
+  position: absolute; right: 0; bottom: 0; left: 0; margin: 0; background: var(--rk-cheer); -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-family: var(--sf-font-display); font-size: 92px; font-style: italic; font-weight: 900; line-height: 1; letter-spacing: .02em; text-transform: uppercase; filter: var(--rk-cheer-shadow);
+}
+[data-family="crystal"] .practice-recap-stats {
+  width: 100%; grid-auto-columns: auto; grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 14px; margin-top: 22px;
+  border: 0; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+[data-family="crystal"] .practice-recap-stat {
+  --rk-bar: var(--rk-holo); position: relative; padding: 14px 20px 16px; border: 0; clip-path: var(--nk-chamfer); background: var(--rk-panel); box-shadow: inset 0 0 0 1px var(--rk-edge2);
+}
+[data-family="crystal"] .practice-recap-stat::before { position: absolute; top: 0; bottom: 0; left: 0; width: 4px; background: var(--rk-bar); content: ''; }
+[data-family="crystal"] .practice-recap-stat[data-tone="crimson"] { --rk-bar: var(--sf-brand); box-shadow: inset 0 0 0 1px var(--rk-edge); }
+[data-family="crystal"] .practice-recap-stat[data-tone="gold"] { --rk-bar: var(--sf-reward); box-shadow: inset 0 0 0 1px var(--rk-edge); }
+[data-family="crystal"] .practice-recap-stat dt { color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+[data-family="crystal"] .practice-recap-stat-value { margin-top: 2px; gap: 0; color: var(--rk-strong); font-size: 44px; font-style: italic; font-weight: 900; line-height: 1.05; }
+[data-family="crystal"] .practice-recap-stat[data-tone="crimson"] .practice-recap-stat-value { color: var(--rk-crimson); }
+[data-family="crystal"] .practice-recap-stat[data-tone="gold"] .practice-recap-stat-value { color: var(--rk-gold); }
+[data-family="crystal"] .practice-recap-pct { align-self: auto; margin: 0; font-size: inherit; }
+[data-family="crystal"] .practice-recap-stat-sub { margin: 0; color: var(--rk-text2); font-size: 12.5px; }
+[data-family="crystal"] .practice-recap-progress { color: var(--rk-text2); }
+.practice-recap-panels { display: grid; width: 100%; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; margin-top: 16px; text-align: left; }
+.practice-recap-panels:has(> :nth-child(2)) { grid-template-columns: 1.3fr 1fr; }
+.practice-recap-panel { min-width: 0; padding: 16px 22px 18px; clip-path: var(--nk-chamfer); background: var(--rk-panel); box-shadow: inset 0 0 0 1px var(--rk-edge); }
+.practice-recap-panel--revisit { box-shadow: inset 0 0 0 1px var(--rk-edge2); }
+.practice-recap-panel-heading { margin: 0; color: var(--rk-crimson); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.practice-recap-panel--revisit .practice-recap-panel-heading { color: var(--rk-holo); }
+.practice-recap-panel-heading span { color: var(--rk-text3); }
+/* "Cards glowed up" fills the row the goal panel sets: the card grid grows and the cards stretch with it. */
+[data-family="crystal"] .practice-recap-panel--up { display: flex; flex-direction: column; }
+[data-family="crystal"] .practice-recap-cards { display: grid; flex-grow: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 12px; margin: 12px 0 0; }
+[data-family="crystal"] .practice-recap-card { --rk-rim: linear-gradient(150deg, #ffe3f1, #ff8fb6 35%, #ff5470 65%, var(--sf-second)); --rk-to: var(--rk-violet); display: block; filter: drop-shadow(0 0 14px rgb(155 107 255 / .55)); }
+[data-family="crystal"] .practice-recap-card[data-tier="mastered"] { --rk-rim: conic-gradient(from 200deg, #fff3c4, var(--sf-reward), var(--sf-brand), var(--sf-star-shade), #ff5470, #fff, var(--sf-reward), #fff3c4); --rk-to: var(--rk-crimson); filter: drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 80%, transparent)); }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-face {
+  width: auto; height: 100%; min-height: 92px; padding: 2px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--rk-rim); box-shadow: none; transform: none;
+}
+[data-family="crystal"] .practice-recap-card-body { height: 100%; box-sizing: border-box; padding: 10px 12px; clip-path: var(--nk-chamfer-sm); background: var(--rk-card-front); }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-word { color: var(--rk-strong); font-size: 20px; font-style: italic; font-weight: 900; line-height: 1.15; letter-spacing: 0; }
+[data-family="crystal"] .practice-recap-card-meaning { margin-top: 0; color: var(--rk-text2); font-size: 12.5px; }
+[data-family="crystal"] .practice-recap-card-move { padding: 0; color: var(--rk-text3); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 900; letter-spacing: 0; text-transform: none; }
+[data-family="crystal"] .practice-recap-card-move svg { color: var(--rk-text2); }
+[data-family="crystal"] .practice-recap-card-from { text-decoration: none; }
+[data-family="crystal"] .practice-recap-card-to { color: var(--rk-to); }
+[data-family="crystal"] .practice-recap-card-foil { display: none; }
+.practice-recap-weak { display: flex; flex-wrap: wrap; gap: 8px; max-height: 92px; margin: 12px 0 0; padding: 0; overflow-y: auto; list-style: none; }
+.practice-recap-weak li { padding: 6px 12px; clip-path: var(--nk-chamfer-sm); background: var(--rk-chip); box-shadow: inset 0 0 0 1px var(--rk-line-strong); color: var(--rk-strong); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; }
+.practice-recap-next { display: flex; width: 100%; align-items: center; gap: 12px; margin-top: auto; padding-top: 20px; text-align: left; }
+.practice-recap-lumi { width: 112px; height: 108px; flex-shrink: 0; object-fit: contain; }
+.practice-recap-next-label { margin: 0 6px 0 0; color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+.practice-recap-next-chips { display: flex; min-width: 0; flex-wrap: wrap; gap: 12px; }
+.practice-recap-chip { display: flex; min-height: 52px; align-items: center; padding: 0 22px; border: 0; background: var(--rk-chip); box-shadow: inset 0 0 0 1px var(--rk-line-strong); color: var(--rk-strong); transform: skewX(-14deg); }
+button.practice-recap-chip { cursor: pointer; transition: transform .15s ease, filter .15s ease; }
+button.practice-recap-chip:hover { filter: brightness(1.08); }
+.practice-recap-chip > span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; transform: skewX(14deg); }
+.practice-recap-chip strong { font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.practice-recap-chip small { color: var(--rk-text2); font-size: 12px; }
+[data-family="crystal"] .practice-recap-primary {
+  min-height: 60px; margin-left: auto; padding: 0 34px; border-radius: 0; clip-path: var(--nk-chamfer); background: var(--rk-primary); box-shadow: none; color: #fff;
+  font-family: var(--sf-font-display); font-size: 20px; font-style: italic; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+}
+[data-family="crystal"] .practice-recap-next > .practice-recap-primary { filter: var(--rk-primary-glow); }
+
+@media (max-width: 760px) {
+  .practice-recap-header { height: 64px; gap: 12px; padding: 0 16px; }
+  .practice-recap-main { padding: 4px 16px 28px; }
+  .practice-recap-headline { margin-top: 16px; font-size: 44px; }
+  .practice-recap-sub { margin-top: 10px; font-size: 15px; }
+  .practice-recap-cards { gap: 10px; margin-top: 22px; }
+  .practice-recap-card { gap: 8px; }
+  .practice-recap-card-face { width: 104px; height: 150px; }
+  .practice-recap-card-art { height: 60px; margin: 0; }
+  .practice-recap-card-art > span { font-size: 40px; }
+  .practice-recap-card-body { padding: 6px 9px 0; }
+  .practice-recap-card-word { font-size: 18px; }
+  .practice-recap-card-meaning { margin-top: 3px; font-size: 11px; }
+  .practice-recap-card-move { gap: 3px; padding-bottom: 8px; font-size: 9px; letter-spacing: .03em; }
+  .practice-recap-card-level { font-size: 11px; }
+  .practice-recap-stats { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 22px; }
+  .practice-recap-stat { padding: 14px 16px; border-right: 0; border-bottom: 1px solid var(--rc-line); }
+  .practice-recap-stat:nth-child(odd):not(:last-child) { border-right: 1px solid var(--rc-line); }
+  .practice-recap-stat:nth-last-child(-n + 2):nth-child(odd), .practice-recap-stat:last-child { border-bottom: 0; }
+  .practice-recap-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .practice-recap-stat-value { font-size: 28px; }
+  .practice-recap-chip-today { height: 22px; padding: 0 7px; font-size: 11px; }
+  .practice-recap-actions { width: 100%; flex-direction: column; align-items: stretch; gap: 10px; margin-top: 22px; }
+  .practice-recap-primary, .practice-recap-secondary { min-height: 52px; }
+
+  [data-family="crystal"] .practice-recap-header { height: 60px; padding: 0 16px; }
+  .practice-recap-kicker { font-size: 12px; letter-spacing: .12em; }
+  [data-family="crystal"] .practice-recap-main { padding: 0 16px 20px; }
+  .practice-recap-hero { width: 100%; height: 220px; }
+  .practice-recap-wing { top: 10px; left: calc(50% - 215px); width: 230px; height: 155px; opacity: .85; }
+  .practice-recap-wing[data-mirrored] { right: calc(50% - 215px); left: auto; }
+  .practice-recap-star { width: 150px; height: 150px; margin-left: -75px; }
+  .practice-recap-star-text { padding-top: 12px; font-size: 40px; }
+  .practice-recap-flare { width: 240px; margin-left: -120px; }
+  .practice-recap-cheer { font-size: 54px; }
+  [data-family="crystal"] .practice-recap-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+  [data-family="crystal"] .practice-recap-stat { padding: 12px 14px; clip-path: var(--nk-chamfer-sm); }
+  [data-family="crystal"] .practice-recap-stat dt { font-size: 11px; letter-spacing: .12em; }
+  [data-family="crystal"] .practice-recap-stat-value { font-size: 30px; }
+  .practice-recap-panels, .practice-recap-panels:has(> :nth-child(2)) { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 12px; }
+  .practice-recap-panel { padding: 12px 14px 14px; clip-path: var(--nk-chamfer-sm); }
+  [data-family="crystal"] .practice-recap-cards { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-card-face { height: auto; min-height: 0; }
+  [data-family="crystal"] .practice-recap-card-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; padding: 8px 12px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-card-word { font-size: 17px; }
+  [data-family="crystal"] .practice-recap-card-meaning { grid-row: 2; }
+  [data-family="crystal"] .practice-recap-card-move { grid-row: 1 / span 2; grid-column: 2; margin: 0; font-size: 13px; }
+  .practice-recap-next { flex-wrap: wrap; gap: 10px; padding-top: 16px; }
+  .practice-recap-lumi { display: none; }
+  .practice-recap-next-label { width: 100%; }
+  .practice-recap-next-chips { width: 100%; flex-direction: column; gap: 8px; }
+  .practice-recap-chip { min-height: 48px; justify-content: flex-start; padding: 0 18px; clip-path: var(--nk-chamfer-sm); transform: none; }
+  .practice-recap-chip > span { transform: none; }
+  [data-family="crystal"] .practice-recap-primary { width: 100%; min-height: 56px; margin-left: 0; font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .practice-recap-confetti { display: none; }
+  .practice-recap-card-foil { animation: none; }
+  .practice-recap-board :is(button, .practice-recap-icon-button) { transition: none; }
+}
+:root[data-motion="reduced"] .practice-recap-confetti { display: none; }
+:root[data-motion="reduced"] .practice-recap-card-foil { animation: none; }
+:root[data-theme-family='crystal'] .practice-board:not(.practice-stage)::before {
+  background: radial-gradient(ellipse at 50% 10%, color-mix(in srgb, var(--sf-brand) 17%, transparent), transparent 64%), radial-gradient(ellipse at 72% 48%, rgb(68 141 255 / .13), transparent 70%);
+}
+:root[data-theme-family='crystal'] .practice-board :is(h1, h2, h3) { font-family: var(--sf-font-display, Kanit, sans-serif); font-style: italic; }
+/* The story page is an unframed reading column that hosts the word meaning sheet; clipping it cuts the sheet off. */
+:root[data-theme-family='crystal'] .practice-board:not(.practice-stage) :is(article:not(.practice-story__article), aside, [aria-labelledby$='question-heading']),
+:root[data-theme-family='crystal'] .practice-board :is(article:not(.practice-story__article), aside, [aria-labelledby$='question-heading']) { clip-path: var(--sf-chamfer, none); }
+@media (max-width: 640px) {
+  .practice-board:not(.practice-stage) { min-height: auto; padding-inline: 12px; }
+  .practice-board:not(.practice-stage)::before { inset-inline: 0; top: 36px; height: 230px; }
+  .practice-board--study [data-study-header] { gap: 10px; }
+  .practice-board--study [data-study-progress-segments] > span { height: 4px; }
+  .practice-board--study [data-study-recall-mode] { margin-bottom: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .practice-board *, .practice-board *::before, .practice-board *::after { transition-duration: 0s !important; animation-duration: .01ms !important; }
+}

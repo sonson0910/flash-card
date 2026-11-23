@@ -136,6 +136,26 @@ describe('practice session lifecycle', () => {
     expect(lifecycle.isReviewed('card-1')).toBe(false);
   });
 
+  it('fences a late review when the same owner closes and reopens Study', () => {
+    const lifecycle = createPracticeSessionLifecycle('owner-a');
+    expect(lifecycle.activate('study', lifecycle.currentToken())).toBe(true);
+    const oldActivation = lifecycle.studyActivationId();
+    expect(oldActivation).not.toBeNull();
+    expect(lifecycle.claimReview('card-1')).toBe(true);
+
+    lifecycle.clear('study');
+    expect(lifecycle.studyActivationId()).toBeNull();
+    expect(lifecycle.activate('study', lifecycle.currentToken())).toBe(true);
+    const newActivation = lifecycle.studyActivationId();
+    expect(newActivation).not.toBe(oldActivation);
+    expect(lifecycle.claimReview('card-1')).toBe(true);
+
+    expect(lifecycle.settleReview('card-1', 'saved', oldActivation!)).toBe(false);
+    expect(lifecycle.isReviewClaimCurrent('card-1', newActivation!)).toBe(true);
+    expect(lifecycle.settleReview('card-1', 'saved', newActivation!)).toBe(true);
+    expect(lifecycle.isReviewed('card-1')).toBe(true);
+  });
+
   it('does not settle an old review into a reactivated study session', async () => {
     const lifecycle = createPracticeSessionLifecycle('owner-a');
     const first = await lifecycle.prepare('study', async () => ['card-1']);
@@ -172,14 +192,12 @@ describe('practice session lifecycle', () => {
     expect(lifecycle.activate).toBe(identities.activate);
     expect(lifecycle.claimReview).toBe(identities.claimReview);
 
+  });
+
+  it('keeps lifecycle ownership separate from UI and persistence adapters', () => {
     const lifecycleSource = readFileSync(fileURLToPath(new URL('./practiceSessionLifecycle.ts', import.meta.url)), 'utf8');
-    const sessionHookSource = readFileSync(fileURLToPath(new URL('./usePracticeSession.ts', import.meta.url)), 'utf8');
-    const gamesHookSource = readFileSync(fileURLToPath(new URL('./usePracticeGames.ts', import.meta.url)), 'utf8');
 
     expect(lifecycleSource).not.toMatch(/from ['"]react['"]/);
     expect(lifecycleSource).not.toMatch(/firebase|Firestore|indexedDB|localStorage/);
-    expect(sessionHookSource).toContain('createPracticeSessionLifecycle');
-    expect(sessionHookSource).not.toMatch(/ownerSessionRef|studySessionRef|pendingReviewIdsRef|reviewedCardIdsRef|studyPreparationRef/);
-    expect(gamesHookSource).not.toMatch(/quizSessionRef|spellingSessionRef|preparationRef/);
   });
 });

@@ -7,7 +7,7 @@ const manifest = JSON.parse(
 );
 
 test('keeps Chrome manifest description within the published limit', () => {
-  assert.equal(manifest.version, '1.6.4');
+  assert.equal(manifest.version, '1.6.5');
   assert.equal(manifest.background?.service_worker, 'background.js');
   assert.equal(manifest.options_ui?.page, 'options.html');
   assert.deepEqual(manifest.host_permissions, [
@@ -25,4 +25,8 @@ test('keeps Chrome manifest description within the published limit', () => {
       && manifest.description.length <= 132,
     `manifest description is ${manifest.description?.length ?? 0} characters; Chrome allows at most 132`,
   );
+});
+
+test('exposes no extension files to web pages; the in-page bubble inlines its own art', () => {
+  assert.equal(manifest.web_accessible_resources, undefined);
 });

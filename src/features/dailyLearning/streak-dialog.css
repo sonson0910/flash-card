@@ -1,0 +1,329 @@
+/* Streak details: classic DlgStreak and Crystal AnimeStreak boards. Colours come from the --sf-* theme
+   tokens; board tones without a token are mixed from them. Text tones that fall under AA on the dialog
+   surface are darkened or lightened. */
+
+.today-streak-flame { color: var(--sf-reward); }
+/* Classic light has no ice token; this is the board's ice blue, and the rest of the ice set mixes from it. */
+:is(.streak-dialog, .today-streak-freeze) { --sd-ice: #2f6f8f; }
+:root.dark:not([data-theme-family="crystal"]) :is(.streak-dialog, .today-streak-freeze) { --sd-ice: color-mix(in srgb, var(--sf-holo-text) 60%, var(--sf-text-strong)); }
+.today-streak-freeze { color: var(--sd-ice); }
+:root[data-theme-family="crystal"] .today-streak-freeze { color: var(--sf-holo-text); }
+
+.streak-dialog-overlay { position: fixed; inset: 0; z-index: 50; background: var(--sf-dialog-veil); }
+
+.streak-dialog {
+  --sd-ice-flame: var(--sd-ice);
+  --sd-ice-chip: color-mix(in srgb, var(--sd-ice) 11%, var(--sf-surface));
+  --sd-ice-ring: color-mix(in srgb, var(--sd-ice) 45%, transparent);
+  --sd-ice-soft: color-mix(in srgb, var(--sd-ice) 6%, transparent);
+  --sd-ice-line: color-mix(in srgb, var(--sd-ice) 22%, transparent);
+  --sd-ice-glow: none; --sd-done-glow: none; --sd-ice-day-glow: none;
+  --sd-gold: color-mix(in srgb, var(--sf-reward) 70%, var(--sf-text-strong));
+  --sd-accent-soft: color-mix(in srgb, var(--sf-brand) 8%, transparent);
+  --sd-radius: 18px; --sd-btn-radius: 999px; --sd-display-weight: 380; --sd-em-style: italic;
+  --sd-hero-border: 1px solid color-mix(in srgb, var(--sd-ice) 25%, transparent);
+  --sd-hero-bg: radial-gradient(circle, color-mix(in srgb, var(--sd-ice) 5%, var(--sf-surface)) 58%, color-mix(in srgb, var(--sd-ice) 13%, var(--sf-surface)) 100%);
+  --sd-hero-shadow: inset 0 0 0 6px var(--sf-surface), 0 14px 26px -16px color-mix(in srgb, var(--sd-ice) 60%, transparent);
+  --sd-hero-fg: var(--sd-ice); --sd-hero-glow: none;
+  --sd-eyebrow: var(--sd-ice); --sd-em: var(--sd-ice-flame); --sd-em-glow: none;
+  position: fixed; left: 50%; top: 50%; z-index: 51; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; box-sizing: border-box;
+  width: min(560px, calc(100% - 32px)); max-height: min(740px, calc(100dvh - 32px)); overflow: auto;
+  border: 1px solid var(--sf-border); border-radius: var(--sd-radius); background: var(--sf-dialog-bg); box-shadow: var(--sf-dialog-shadow);
+  color: var(--sf-text);
+}
+:root.dark:not([data-theme-family="crystal"]) .streak-dialog {
+  --sd-ice-flame: color-mix(in srgb, var(--sf-holo-text) 80%, var(--sf-text-strong));
+  --sd-ice-chip: linear-gradient(160deg, color-mix(in srgb, var(--sf-holo-text) 25%, var(--sf-surface)), color-mix(in srgb, var(--sf-holo-text) 8%, var(--sf-surface)));
+  --sd-ice-ring: color-mix(in srgb, var(--sd-ice-flame) 55%, transparent);
+  --sd-ice-soft: color-mix(in srgb, var(--sd-ice-flame) 7%, transparent);
+  --sd-ice-line: color-mix(in srgb, var(--sd-ice-flame) 25%, transparent);
+  --sd-ice-glow: drop-shadow(0 0 10px color-mix(in srgb, var(--sd-ice-flame) 70%, transparent));
+  --sd-done-glow: 0 0 18px -6px color-mix(in srgb, var(--sf-warm) 60%, transparent);
+  --sd-ice-day-glow: 0 0 18px -6px color-mix(in srgb, var(--sd-ice-flame) 70%, transparent);
+  --sd-gold: var(--sf-reward);
+  --sd-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent);
+  --sd-radius: 26px; --sd-btn-radius: 16px; --sd-display-weight: 440; --sd-em-style: normal;
+  --sd-hero-border: 1.5px solid color-mix(in srgb, var(--sd-ice-flame) 40%, transparent);
+  --sd-hero-bg: radial-gradient(circle at 40% 30%, color-mix(in srgb, var(--sf-holo-text) 22%, var(--sf-surface)), var(--sf-surface) 70%);
+  --sd-hero-shadow: 0 0 60px -12px color-mix(in srgb, var(--sd-ice-flame) 55%, transparent);
+  --sd-hero-glow: var(--sd-ice-glow);
+  --sd-em-glow: 0 0 30px color-mix(in srgb, var(--sd-ice-flame) 50%, transparent);
+}
+.streak-dialog:is([data-streak-state="repair"], [data-streak-state="ended"]) {
+  --sd-hero-border: 1.5px dashed var(--sf-edge-highlight); --sd-hero-bg: var(--sf-surface-muted); --sd-hero-shadow: none;
+  --sd-hero-fg: var(--sf-text-tertiary); --sd-hero-glow: none;
+  --sd-eyebrow: var(--sf-danger); --sd-em: var(--sf-danger); --sd-em-glow: none;
+}
+.streak-dialog[data-streak-state="milestone"] {
+  --sd-hero-border: 3px solid transparent;
+  --sd-hero-bg: radial-gradient(circle, color-mix(in srgb, var(--sf-reward) 14%, var(--sf-surface)) 56%, color-mix(in srgb, var(--sf-reward) 38%, var(--sf-surface)) 60%, color-mix(in srgb, var(--sf-reward) 14%, var(--sf-surface)) 64%) padding-box, var(--sf-gold-rim) border-box;
+  --sd-hero-shadow: 0 0 0 5px var(--sf-surface), 0 0 0 6px color-mix(in srgb, var(--sf-reward) 40%, transparent), 0 16px 26px -14px color-mix(in srgb, var(--sf-reward) 70%, transparent);
+  --sd-hero-fg: var(--sd-gold); --sd-hero-glow: none;
+  --sd-eyebrow: var(--sd-gold); --sd-em: var(--sd-gold); --sd-em-glow: none;
+}
+:root.dark:not([data-theme-family="crystal"]) .streak-dialog[data-streak-state="milestone"] {
+  --sd-hero-border: 2.5px solid transparent;
+  --sd-hero-bg: radial-gradient(circle at 40% 30%, color-mix(in srgb, var(--sf-reward) 24%, black), color-mix(in srgb, var(--sf-reward) 10%, black) 70%) padding-box, var(--sf-gold-rim) border-box;
+  --sd-hero-shadow: 0 0 80px -10px color-mix(in srgb, var(--sf-reward) 70%, transparent);
+  --sd-hero-glow: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-reward) 80%, transparent));
+  --sd-em-glow: 0 0 36px color-mix(in srgb, var(--sf-reward) 55%, transparent);
+}
+.streak-dialog:focus { outline: none; }
+.streak-dialog:focus-visible { outline: 2px solid var(--sf-brand-text); outline-offset: 3px; }
+.streak-dialog-rim { display: none; }
+
+.streak-dialog-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.streak-dialog-confetti span { position: absolute; border-radius: 2px; opacity: .85; }
+
+.streak-dialog-close {
+  position: absolute; top: 18px; right: 18px; z-index: 3; display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; padding: 0; border: 1px solid var(--sf-border); border-radius: 50%; background: var(--sf-surface-muted); color: var(--sf-text-muted); cursor: pointer;
+}
+.streak-dialog-close::after { content: ''; position: absolute; inset: -4px; }
+.streak-dialog-close:hover { color: var(--sf-text-strong); }
+.streak-dialog :is(.streak-dialog-close, .streak-dialog-primary, .streak-dialog-secondary):focus-visible { outline: 2px solid var(--sf-brand-text); outline-offset: 2px; }
+
+.streak-dialog-head { position: relative; display: flex; flex-direction: column; align-items: center; padding: 36px 36px 8px; text-align: center; }
+.streak-dialog-hero { position: relative; display: flex; justify-content: center; }
+.streak-dialog-emblem {
+  position: relative; display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 116px; height: 116px;
+  border: var(--sd-hero-border); border-radius: 50%; background: var(--sd-hero-bg); box-shadow: var(--sd-hero-shadow); color: var(--sd-hero-fg);
+}
+.streak-dialog-emblem-face { display: contents; }
+.streak-dialog-emblem-flame { filter: var(--sd-hero-glow); }
+.streak-dialog-badge {
+  position: absolute; right: -4px; bottom: 2px; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+  width: 40px; height: 40px; border: 2px solid var(--sd-ice-ring); border-radius: 50%; background: var(--sd-ice-chip); color: var(--sd-ice);
+}
+.streak-dialog-gold-chip {
+  position: absolute; left: 50%; bottom: -12px; display: flex; align-items: center; height: 26px; padding: 0 11px; transform: translateX(-50%);
+  border-radius: 999px; background: var(--sf-text-strong); box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--sf-text-strong) 80%, transparent);
+  color: color-mix(in srgb, var(--sf-reward) 45%, var(--sf-surface)); font-family: var(--sf-font-mono); font-size: 13px; font-weight: 600;
+}
+:root.dark:not([data-theme-family="crystal"]) .streak-dialog-gold-chip {
+  background: var(--sf-gold-rim); box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--sf-reward) 80%, transparent); color: color-mix(in srgb, var(--sf-reward) 15%, black);
+}
+.streak-dialog-eyebrow { margin: 22px 0 0; color: var(--sd-eyebrow); font-size: 11.5px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; }
+.streak-dialog-title {
+  margin: 8px 0 0; color: var(--sf-text-strong); font-family: var(--sf-font-display); font-optical-sizing: auto;
+  font-weight: var(--sd-display-weight); font-size: 36px; line-height: 1.08; letter-spacing: -.02em; text-wrap: balance;
+}
+.streak-dialog-title em { color: var(--sd-em); font-style: var(--sd-em-style); text-shadow: var(--sd-em-glow); }
+.streak-dialog-sub { max-width: 420px; margin: 10px 0 0; color: var(--sf-text-muted); font-size: 14px; line-height: 1.55; text-wrap: pretty; }
+
+.streak-dialog-body { position: relative; display: flex; flex-direction: column; gap: 16px; padding: 18px 36px 24px; }
+.streak-dialog-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.streak-dialog-week li { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.streak-dialog-day-label { color: var(--sf-text-tertiary); font-size: 11.5px; font-weight: 600; }
+.streak-dialog-week li[data-today] .streak-dialog-day-label { color: var(--sf-text-strong); }
+.streak-dialog-day-mark {
+  display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 44px; height: 44px; border-radius: 50%;
+  border: 1.5px dashed var(--sf-edge-highlight); color: var(--sf-text-tertiary);
+}
+.streak-dialog-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+[data-state="done"] > .streak-dialog-day-mark {
+  border: 1px solid var(--sf-warm-line); background: var(--sf-warm-bg); box-shadow: var(--sd-done-glow); color: var(--sf-warm);
+}
+[data-streak-state="milestone"] [data-state="done"] > .streak-dialog-day-mark { color: var(--sd-gold); }
+:is([data-state="frozen"], [data-state="repaired"]) > .streak-dialog-day-mark {
+  border: 1.5px solid var(--sd-ice-ring); background: var(--sd-ice-chip); box-shadow: var(--sd-ice-day-glow); color: var(--sd-ice);
+}
+[data-state="missed"] > .streak-dialog-day-mark { border: 1px solid var(--sf-danger-line); background: var(--sf-danger-soft); color: var(--sf-danger); }
+[data-state="today"] > .streak-dialog-day-mark { border: 2px solid var(--sf-brand); background: var(--sd-accent-soft); box-shadow: 0 0 0 4px var(--sd-accent-soft); color: var(--sf-brand-text); }
+
+.streak-dialog-freezes { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--sd-ice-line); border-radius: 16px; background: var(--sd-ice-soft); text-align: left; }
+.streak-dialog-freeze-slots { display: flex; gap: 6px; }
+.streak-dialog-freeze-slot { box-sizing: border-box; width: 34px; height: 40px; border: 1.5px dashed var(--sf-edge-highlight); border-radius: 10px; opacity: .6; }
+.streak-dialog-freeze-slot[data-held] { display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--sd-ice-ring); background: var(--sd-ice-chip); color: var(--sd-ice); opacity: 1; }
+.streak-dialog-freeze-copy { display: flex; flex-direction: column; flex-grow: 1; gap: 2px; min-width: 0; }
+.streak-dialog-freeze-copy strong { color: var(--sf-text-strong); font-size: 14px; font-weight: 650; }
+.streak-dialog-freeze-copy span { color: var(--sf-text-muted); font-size: 12.5px; }
+
+.streak-dialog-repair { padding: 14px 16px; border: 1.5px solid color-mix(in srgb, var(--sf-brand) 35%, transparent); border-radius: 16px; background: var(--sd-accent-soft); text-align: left; }
+.streak-dialog-repair p { margin: 0; }
+.streak-dialog-repair-kicker { color: var(--sf-brand-text); font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
+.streak-dialog-repair > .streak-dialog-repair-title { margin-top: 4px; color: var(--sf-text-strong); font-size: 14.5px; font-weight: 650; }
+.streak-dialog-repair-track { display: flex; gap: 5px; margin-top: 10px; }
+.streak-dialog-repair-track > span { flex-grow: 1; height: 6px; overflow: hidden; border-radius: 6px; background: var(--sf-border); }
+.streak-dialog-repair-track > span > span { display: block; height: 100%; background: var(--sf-brand); transform-origin: left; }
+.streak-dialog-repair > .streak-dialog-repair-meta { margin-top: 6px; color: var(--sf-text-muted); font-family: var(--sf-font-mono); font-size: 11.5px; }
+.streak-dialog-window { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; color: var(--sf-text-muted); font-size: 12.5px; text-align: left; }
+.streak-dialog-window-left { display: flex; align-items: center; gap: 7px; }
+.streak-dialog-window-time { margin-left: 4px; color: var(--sf-text-strong); font-family: var(--sf-font-mono); }
+
+.streak-dialog-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.streak-dialog-stats[data-count="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.streak-dialog-stats[data-count="1"] { grid-template-columns: minmax(0, 1fr); }
+.streak-dialog-stats > div { padding: 12px 14px; border: 1px solid var(--sf-border); border-radius: 14px; background: var(--sf-surface-glass); box-shadow: var(--sf-panel-shadow); text-align: left; }
+.streak-dialog-stats dt { color: var(--sf-text-muted); font-size: 12px; }
+.streak-dialog-stats dd { margin: 2px 0 0; color: var(--sf-text-strong); font-family: var(--sf-font-display); font-weight: var(--sd-display-weight); font-size: 26px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.streak-dialog-footer { position: relative; display: flex; flex-shrink: 0; align-items: center; gap: 10px; margin-top: auto; padding: 16px 22px 20px 26px; border-top: 1px solid var(--sf-border); }
+.streak-dialog-footer p { margin: 0 auto 0 0; color: var(--sf-text-tertiary); font-size: 12.5px; }
+.streak-dialog-primary, .streak-dialog-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: var(--sd-btn-radius);
+  font: inherit; font-size: 14px; white-space: nowrap; cursor: pointer; transition: transform 160ms ease, filter 160ms ease;
+}
+.streak-dialog-primary { padding: 0 20px; border: 0; background: var(--sf-primary-bg); box-shadow: var(--sf-primary-shadow); color: var(--sf-on-primary); font-weight: 650; }
+.streak-dialog-secondary { padding: 0 18px; border: 1px solid var(--sf-border); background: var(--sf-surface-control); box-shadow: var(--sf-panel-shadow); color: var(--sf-text); font-weight: 600; }
+.streak-dialog-primary:hover, .streak-dialog-secondary:hover { filter: brightness(1.05); }
+.streak-dialog-primary:active, .streak-dialog-secondary:active { transform: scale(.98); }
+
+/* Crystal Star (AnimeStreak). */
+.streak-dialog[data-family="crystal"] {
+  --cs-rim: var(--sf-rim-new); --cs-rim-glow: color-mix(in srgb, var(--sf-tier-bud) 50%, transparent);
+  --cs-emblem-rim: var(--sf-rim-new); --cs-emblem-fg: var(--sf-holo-text); --cs-emblem-glow: drop-shadow(0 0 24px color-mix(in srgb, var(--sf-second) 70%, transparent));
+  --cs-emblem-bg: radial-gradient(circle at 40% 30%, color-mix(in srgb, var(--sf-second) 20%, var(--sf-surface)), var(--sf-surface) 70%);
+  --cs-eyebrow: var(--sf-holo-text); --cs-em-glow: color-mix(in srgb, var(--sf-second) 50%, transparent);
+  --cs-em: linear-gradient(180deg, color-mix(in srgb, var(--sf-second) 15%, var(--sf-text-strong)) 0%, var(--sf-second) 60%, color-mix(in srgb, var(--sf-second) 70%, var(--sf-surface)) 100%);
+  --cs-hot: var(--sf-metal-em);
+  --cs-gold-text: var(--sf-reward);
+  width: min(600px, calc(100% - 24px)); max-height: calc(100dvh - 32px);
+  padding: 26px 34px 30px; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible;
+  color: var(--sf-text); font-family: var(--sf-font-body);
+  filter: drop-shadow(0 0 22px var(--cs-rim-glow)) drop-shadow(0 30px 40px color-mix(in srgb, var(--sf-shadow) 45%, transparent));
+}
+:root[data-theme-family="crystal"]:not(.dark) .streak-dialog {
+  --cs-emblem-bg: radial-gradient(circle at 40% 30%, var(--sf-surface), color-mix(in srgb, var(--sf-second) 16%, var(--sf-surface)) 80%);
+  --cs-em: linear-gradient(180deg, color-mix(in srgb, var(--sf-holo-text) 70%, var(--sf-second)) 0%, var(--sf-holo-text) 60%, color-mix(in srgb, var(--sf-holo-text) 70%, var(--sf-text-strong)) 100%);
+  --cs-gold-text: color-mix(in srgb, var(--sf-reward) 45%, var(--sf-text-strong));
+}
+.streak-dialog[data-family="crystal"]:is([data-streak-state="repair"], [data-streak-state="ended"]) {
+  --cs-rim: var(--sf-rim-learning); --cs-rim-glow: color-mix(in srgb, var(--sf-tier-bloom) 55%, transparent);
+  --cs-emblem-rim: var(--sf-edge-highlight); --cs-emblem-bg: var(--sf-surface); --cs-emblem-fg: var(--sf-text-tertiary); --cs-emblem-glow: none;
+  --cs-eyebrow: var(--sf-brand-text); --cs-em: var(--cs-hot); --cs-em-glow: color-mix(in srgb, var(--sf-brand) 40%, transparent);
+}
+.streak-dialog[data-family="crystal"][data-streak-state="milestone"] {
+  --cs-rim: var(--sf-gold-rim); --cs-rim-glow: color-mix(in srgb, var(--sf-tier-star) 60%, transparent);
+  --cs-emblem-glow: drop-shadow(0 0 30px color-mix(in srgb, var(--sf-tier-star) 90%, transparent));
+  --cs-eyebrow: var(--cs-gold-text); --cs-em: var(--cs-hot); --cs-em-glow: color-mix(in srgb, var(--sf-reward) 50%, transparent);
+}
+/* The repair and milestone words stay in the emphasis metal on Prism Day too, past the light page's ice emphasis. */
+:root[data-theme-family="crystal"] .streak-dialog[data-family="crystal"]:is([data-streak-state="repair"], [data-streak-state="ended"], [data-streak-state="milestone"]) { --cs-em: var(--cs-hot); }
+[data-family="crystal"] .streak-dialog-rim { position: absolute; inset: 0; z-index: 0; display: block; clip-path: var(--nk-chamfer); background: var(--cs-rim); }
+[data-family="crystal"] .streak-dialog-rim::after { content: ''; position: absolute; inset: 3px; clip-path: inherit; background: var(--sf-card-front); }
+[data-family="crystal"] .streak-dialog-confetti { clip-path: var(--nk-chamfer); }
+.streak-dialog[data-family="crystal"] > :not(.streak-dialog-rim, .streak-dialog-confetti) { position: relative; z-index: 1; }
+.streak-dialog[data-family="crystal"] > .streak-dialog-close {
+  position: absolute; z-index: 3; top: 18px; right: 18px; width: 38px; height: 38px; border: 0; border-radius: 0;
+  clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text);
+}
+[data-family="crystal"] .streak-dialog-head { padding: 0; }
+[data-family="crystal"] .streak-dialog-hero { align-self: stretch; align-items: center; height: 156px; }
+[data-family="crystal"] .streak-dialog-lumi { position: absolute; left: -14px; bottom: -6px; width: 140px; height: 158px; object-fit: contain; }
+[data-family="crystal"] .streak-dialog-emblem {
+  width: 132px; height: 148px; border: 0; border-radius: 0; background: none; box-shadow: none; color: var(--cs-emblem-fg); filter: var(--cs-emblem-glow);
+}
+[data-family="crystal"]:not([data-streak-state="milestone"]) .streak-dialog-emblem::before {
+  content: ''; position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--cs-emblem-rim);
+}
+[data-family="crystal"] .streak-dialog-emblem-face {
+  position: absolute; inset: 4px; display: flex; align-items: center; justify-content: center;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--cs-emblem-bg);
+}
+[data-family="crystal"] .streak-dialog-emblem-flame { width: 58px; height: 58px; filter: none; }
+[data-family="crystal"]:is([data-streak-state="repair"], [data-streak-state="ended"]) .streak-dialog-emblem-flame { opacity: .55; }
+[data-family="crystal"] .streak-dialog-badge {
+  right: -8px; bottom: 14px; width: 46px; height: 52px; border: 0; border-radius: 0;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--sf-rim-new); color: var(--sf-on-brand);
+}
+.streak-dialog-crack { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.streak-dialog-crack path { fill: none; stroke: var(--sf-brand-text); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.streak-dialog-star { position: absolute; inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px); fill: var(--sf-star-face); stroke: var(--sf-reward); stroke-width: 2; stroke-linejoin: round; }
+.streak-dialog-star-count {
+  position: relative; padding-top: 22px; color: var(--sf-on-primary); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 46px;
+  text-shadow: 0 3px 0 var(--sf-star-shade);
+}
+[data-family="crystal"] .streak-dialog-eyebrow { margin-top: 10px; color: var(--cs-eyebrow); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: .16em; }
+[data-family="crystal"] .streak-dialog-title { margin-top: 6px; color: var(--sf-text-strong); font-style: italic; font-weight: 900; font-size: 32px; line-height: 1.05; letter-spacing: 0; }
+[data-family="crystal"] .streak-dialog-title em {
+  background: var(--cs-em); -webkit-background-clip: text; background-clip: text; color: transparent; font-style: italic; text-shadow: none;
+  filter: drop-shadow(0 0 12px var(--cs-em-glow));
+}
+[data-family="crystal"] .streak-dialog-sub { max-width: 440px; margin-top: 8px; color: var(--sf-text-body); font-size: 14.5px; }
+[data-family="crystal"] .streak-dialog-body { gap: 20px; padding: 18px 0 0; }
+[data-family="crystal"] .streak-dialog-week { display: flex; justify-content: center; gap: 10px; }
+[data-family="crystal"] .streak-dialog-week li { gap: 6px; }
+[data-family="crystal"] .streak-dialog-day-label { color: var(--sf-text-tertiary); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+[data-family="crystal"] .streak-dialog-week li[data-today] .streak-dialog-day-label { color: var(--sf-text-strong); }
+[data-family="crystal"] .streak-dialog-day-mark {
+  width: 48px; height: 54px; border: 0; border-radius: 0; background: var(--sf-border); box-shadow: none; color: var(--sf-text-tertiary);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+[data-family="crystal"] .streak-dialog-day-mark svg { width: 20px; height: 20px; }
+[data-family="crystal"] .streak-dialog-dot { width: 8px; height: 8px; border-radius: 0; transform: rotate(45deg); }
+[data-family="crystal"] [data-state="done"] > .streak-dialog-day-mark { border: 0; background: var(--sf-primary-bg); box-shadow: none; color: var(--sf-reward); }
+[data-family="crystal"][data-streak-state="milestone"] [data-state="done"] > .streak-dialog-day-mark { background: var(--sf-gold-rim); color: var(--sf-on-primary); }
+[data-family="crystal"] :is([data-state="frozen"], [data-state="repaired"]) > .streak-dialog-day-mark { border: 0; background: var(--sf-rim-new); box-shadow: none; color: var(--sf-on-brand); }
+[data-family="crystal"] [data-state="missed"] > .streak-dialog-day-mark { border: 0; background: color-mix(in srgb, var(--sf-brand) 16%, transparent); color: var(--sf-brand-text); }
+[data-family="crystal"] [data-state="today"] > .streak-dialog-day-mark { border: 0; background: color-mix(in srgb, var(--sf-holo-text) 20%, transparent); box-shadow: none; color: var(--sf-holo-text); }
+
+[data-family="crystal"] .streak-dialog-freezes {
+  height: 76px; box-sizing: border-box; padding: 0 18px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer);
+  background: var(--sf-surface-control); box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge-2);
+}
+[data-family="crystal"] .streak-dialog-freeze-slot { width: 32px; height: 36px; border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--sf-border); opacity: 1; }
+[data-family="crystal"] .streak-dialog-freeze-slot[data-held] { border: 0; background: var(--sf-rim-new); color: var(--sf-on-brand); }
+[data-family="crystal"] .streak-dialog-freeze-copy strong { font-weight: 900; font-size: 15px; }
+[data-family="crystal"] .streak-dialog-freeze-copy span { font-size: 13px; }
+[data-family="crystal"] .streak-dialog-repair { border: 0; border-radius: 0; clip-path: var(--nk-chamfer); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge-2); }
+[data-family="crystal"] .streak-dialog-repair-kicker { color: var(--sf-holo-text); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .14em; }
+[data-family="crystal"] .streak-dialog-repair-title { font-weight: 900; font-size: 15px; }
+[data-family="crystal"] .streak-dialog-repair-track { gap: 6px; }
+[data-family="crystal"] .streak-dialog-repair-track > span { height: 8px; border-radius: 0; transform: skewX(-30deg); }
+[data-family="crystal"] .streak-dialog-repair-track > span > span { background: var(--sf-second); }
+[data-family="crystal"] .streak-dialog-repair > .streak-dialog-repair-meta { margin-top: 8px; font-size: 12.5px; }
+[data-family="crystal"] .streak-dialog-window { margin-top: -8px; font-size: 13px; }
+[data-family="crystal"] .streak-dialog-window-left { gap: 6px; font-weight: 700; }
+[data-family="crystal"] .streak-dialog-window-time { color: var(--sf-brand-text); font-weight: 700; }
+[data-family="crystal"] .streak-dialog-window > span:last-child { color: var(--sf-text-tertiary); }
+[data-family="crystal"] .streak-dialog-stats > div {
+  border: 0; border-radius: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm);
+}
+[data-family="crystal"] .streak-dialog-stats dt { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; }
+[data-family="crystal"] .streak-dialog-stats dd { margin-top: 4px; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1; }
+[data-family="crystal"] .streak-dialog-stats > div:nth-child(2) dd { color: var(--sf-brand-text); }
+[data-family="crystal"] .streak-dialog-stats > div:nth-child(3) dd { color: var(--sf-holo-text); }
+/* The dialog is as tall as its content: the actions follow the last block at a fixed gap, never pushed down. */
+[data-family="crystal"] .streak-dialog-footer { gap: 12px; margin-top: 30px; padding: 0; border-top: 0; }
+[data-family="crystal"] .streak-dialog-footer p { flex-grow: 1; font-weight: 700; }
+[data-family="crystal"] :is(.streak-dialog-primary, .streak-dialog-secondary) { height: 50px; border: 0; border-radius: 0; transform: skewX(-12deg); }
+[data-family="crystal"] :is(.streak-dialog-primary, .streak-dialog-secondary) > span { display: block; transform: skewX(12deg); font-family: var(--sf-font-display); font-style: italic; text-transform: uppercase; }
+[data-family="crystal"] .streak-dialog-primary { padding: 0 24px; color: var(--sf-on-primary); }
+[data-family="crystal"] .streak-dialog-primary > span { font-weight: 900; font-size: 15.5px; letter-spacing: .04em; }
+[data-family="crystal"] .streak-dialog-secondary { padding: 0 20px; box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-strong); }
+[data-family="crystal"] .streak-dialog-secondary > span { font-weight: 800; font-size: 14.5px; }
+[data-family="crystal"] :is(.streak-dialog-primary, .streak-dialog-secondary):active { transform: skewX(-12deg) scale(.97); }
+
+@media (max-width: 560px) {
+  .streak-dialog-head { padding: 32px 20px 6px; }
+  .streak-dialog-title { font-size: 30px; }
+  .streak-dialog-body { padding: 16px 20px 20px; }
+  .streak-dialog-week { gap: 4px; }
+  .streak-dialog-day-mark { width: 40px; height: 40px; }
+  .streak-dialog-stats[data-count="3"] { gap: 8px; }
+  .streak-dialog-stats[data-count="3"] > div { padding: 10px; }
+  .streak-dialog-stats[data-count="3"] dd { font-size: 22px; }
+  .streak-dialog-footer { flex-wrap: wrap; padding: 14px 20px 18px; }
+  .streak-dialog-footer p { flex-basis: 100%; }
+  .streak-dialog-primary, .streak-dialog-secondary { flex: 1; }
+  .streak-dialog[data-family="crystal"] { padding: 22px 18px; }
+  [data-family="crystal"] .streak-dialog-head { padding: 0; }
+  [data-family="crystal"] .streak-dialog-hero { height: 132px; }
+  [data-family="crystal"] .streak-dialog-lumi { left: -6px; bottom: -4px; width: 96px; height: 108px; }
+  [data-family="crystal"] .streak-dialog-emblem { width: 110px; height: 124px; }
+  [data-family="crystal"] .streak-dialog-star-count { font-size: 38px; }
+  [data-family="crystal"] .streak-dialog-title { font-size: 27px; }
+  [data-family="crystal"] .streak-dialog-body { padding: 16px 0 0; }
+  [data-family="crystal"] .streak-dialog-week { gap: 5px; }
+  [data-family="crystal"] .streak-dialog-day-mark { width: 40px; height: 45px; }
+  [data-family="crystal"] .streak-dialog-freezes { height: auto; min-height: 76px; padding: 12px 14px; }
+  [data-family="crystal"] .streak-dialog-stats[data-count="3"] dd { font-size: 23px; }
+  [data-family="crystal"] .streak-dialog-footer { margin-top: 22px; padding: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-dialog-primary, .streak-dialog-secondary { transition: none; }
+}
+html[data-motion="reduced"] :is(.streak-dialog-primary, .streak-dialog-secondary) { transition: none; }

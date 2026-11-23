@@ -1,0 +1,244 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { createServer, type ViteDevServer } from 'vite';
+
+const fixturePath = '/e2e/fixtures/daily-recap.html';
+// Base port for this spec's own Vite fixture server, offset per-worker below.
+// See practice-visual.spec.ts for why: `fullyParallel: false` still lets
+// different spec files run concurrently on separate workers, and four
+// unrelated -visual specs each bound a strictPort Vite server to this exact
+// literal port, so two running on different workers at once raced for the
+// same socket.
+const FIXTURE_PORT_BASE = 4375;
+let fixturePort = FIXTURE_PORT_BASE;
+let fixtureOrigin = `http://127.0.0.1:${fixturePort}`;
+const themes = [
+  { family: 'classic', mode: 'light' },
+  { family: 'classic', mode: 'dark' },
+  { family: 'crystal', mode: 'light' },
+  { family: 'crystal', mode: 'dark' },
+] as const;
+const viewports = [
+  { name: 'desktop', width: 1440, height: 900 },
+  { name: '390px', width: 390, height: 844 },
+] as const;
+const locales = [
+  { code: 'en', title: 'Session complete' },
+  { code: 'vi', title: 'Hoàn thành phiên học' },
+] as const;
+
+let fixtureServer: ViteDevServer | undefined;
+
+async function expectAccessibleAndContained(page: Page, label: string) {
+  const recap = page.locator('[data-session-recap]');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `${label} has horizontal overflow`).toBe(true);
+
+  const clippedControls = await recap.locator('button:visible').evaluateAll(elements => elements
+    .map(element => {
+      const box = element.getBoundingClientRect();
+      return { name: element.getAttribute('aria-label') || element.textContent?.trim(), left: box.left, right: box.right, width: box.width, height: box.height };
+    })
+    .filter(control => control.width > 0 && control.height > 0 && (control.left < -1 || control.right > window.innerWidth + 1)));
+  expect(clippedControls, `${label} has clipped controls`).toEqual([]);
+
+  const results = await new AxeBuilder({ page })
+    .include('[data-session-recap]')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
+  expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
+}
+
+async function attachRecap(page: Page, testInfo: TestInfo, name: string) {
+  const screenshot = testInfo.outputPath(`${name}.png`);
+  await page.locator('[data-session-recap]').screenshot({ path: screenshot });
+  await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+}
+
+test.beforeAll(async ({}, testInfo) => {
+  fixturePort = FIXTURE_PORT_BASE + testInfo.parallelIndex;
+  fixtureOrigin = `http://127.0.0.1:${fixturePort}`;
+  fixtureServer = await createServer({
+    configFile: 'vite.config.ts', cacheDir: `node_modules/.vite-e2e/daily-recap-visual-${testInfo.parallelIndex}`,
+    appType: 'mpa',
+    server: { host: '127.0.0.1', port: fixturePort, strictPort: true },
+    optimizeDeps: { entries: ['e2e/fixtures/daily-recap.html'] },
+  });
+  await fixtureServer.listen();
+});
+
+test.afterAll(async () => {
+  await fixtureServer?.close();
+});
+
+test('Crystal recap retains its enabled mascot when theme assets load after the dialog', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'crystal');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_reduced_motion', 'true');
+  });
+  await page.route('**/theme-crystal.css', async route => {
+    await new Promise(resolve => setTimeout(resolve, 1_000));
+    await route.continue();
+  });
+  await page.goto(`${fixtureOrigin}${fixturePath}?locale=en`);
+  const recap = page.locator('[data-session-recap]');
+  await expect(recap).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-theme-family', 'crystal');
+  const mascot = recap.locator('img[data-lumi-pose="proud"]');
+  await expect(mascot).toBeVisible();
+  await expect.poll(() => mascot.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+});
+
+for (const theme of themes) {
+  for (const viewport of viewports) {
+    test(`${theme.family} ${theme.mode} recap is visually accessible at ${viewport.name}`, async ({ page }, testInfo) => {
+      page.on('pageerror', error => { throw error; });
+      await page.setViewportSize(viewport);
+      await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+      await page.addInitScript(({ family, mode }) => {
+        localStorage.setItem('sonflash_theme_family', family);
+        localStorage.setItem('lingoflash_theme', mode);
+        localStorage.setItem('sonflash_theme_follow_system', 'false');
+        localStorage.setItem('sonflash_reduced_motion', 'true');
+      }, theme);
+
+      for (const locale of locales) {
+        await page.goto(`${fixtureOrigin}${fixturePath}?locale=${locale.code}`);
+        const root = page.locator('html');
+        const recap = page.locator('[data-session-recap]');
+        await expect(recap).toBeVisible({ timeout: 15_000 });
+        await expect(root).toHaveAttribute('data-theme-family', theme.family);
+        if (theme.mode === 'dark') await expect(root).toHaveClass(/\bdark\b/);
+        else await expect(root).not.toHaveClass(/\bdark\b/);
+        if (theme.family === 'crystal') await expect(page.locator('#sonflash-crystal-theme')).toHaveAttribute('href', '/theme-crystal.css');
+        if (theme.family === 'crystal' && theme.mode === 'light') {
+          // The board stays opaque under its painted backdrop, so a late image never shows what is behind it.
+          await expect(recap).toHaveCSS('background-image', /crystal-nebula-light/);
+          await expect(recap).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+        }
+        await expect(recap.getByRole('heading', { name: locale.title })).toBeVisible();
+        await expect(recap.locator('[data-count-up]')).toHaveText(theme.family === 'crystal' ? ['83', '175', '12'] : ['12', '83', '175']);
+        await expect(recap.getByText(locale.code === 'vi' ? '8 thẻ đến hạn' : '8 cards due', { exact: true })).toBeVisible();
+        await expect(recap.locator('[data-ielts-goal-panel]')).toHaveCount(0);
+        await expectAccessibleAndContained(page, `${theme.family} ${theme.mode} ${viewport.name} ${locale.code}`);
+        await attachRecap(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-${locale.code}-recap`);
+        if (locale.code === 'en') await expect(recap).toHaveScreenshot(`daily-recap-${theme.family}-${theme.mode}-${viewport.name}.png`);
+      }
+    });
+  }
+}
+
+const ieltsGoals = [
+  { id: 'ready', state: 'in-progress', percent: '78%' },
+  { id: 'little', state: 'started', percent: '0%' },
+] as const;
+
+for (const theme of themes) {
+  for (const viewport of viewports) {
+    test(`${theme.family} ${theme.mode} recap shows the IELTS goal at ${viewport.name}`, async ({ page }, testInfo) => {
+      page.on('pageerror', error => { throw error; });
+      await page.setViewportSize(viewport);
+      await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+      await page.addInitScript(({ family, mode }) => {
+        localStorage.setItem('sonflash_theme_family', family);
+        localStorage.setItem('lingoflash_theme', mode);
+        localStorage.setItem('sonflash_theme_follow_system', 'false');
+        localStorage.setItem('sonflash_reduced_motion', 'true');
+      }, theme);
+
+      for (const goal of ieltsGoals) {
+        await page.goto(`${fixtureOrigin}${fixturePath}?locale=en&goal=${goal.id}`);
+        const recap = page.locator('[data-session-recap]');
+        await expect(recap).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
+        const panel = recap.locator(`[data-ielts-goal-panel="${goal.state}"]`);
+        await expect(panel).toBeVisible();
+        await expect(panel.getByRole('heading', { name: theme.family === 'crystal' ? 'IELTS goal' : 'Toward your IELTS goal' })).toBeVisible();
+        if (theme.family === 'classic' && goal.id === 'ready') await expect(panel.getByText(goal.percent, { exact: true })).toBeVisible();
+        // The band pair is the learner's own score and target; the panel never projects one and says so.
+        await expect(panel).toContainText(theme.family === 'crystal' ? 'Vocabulary progress, not an IELTS score.' : 'Not an IELTS score or a prediction.');
+        await expect(panel).not.toContainText(/projected|predicted|you will (?:score|reach)|typical IELTS Reading passage/i);
+        await expectAccessibleAndContained(page, `${theme.family} ${theme.mode} ${viewport.name} IELTS ${goal.id}`);
+        await attachRecap(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-ielts-${goal.id}-recap`);
+        await expect(recap).toHaveScreenshot(`daily-recap-ielts-${goal.id}-${theme.family}-${theme.mode}-${viewport.name}.png`);
+      }
+    });
+  }
+}
+
+const nextLocales = [
+  { code: 'en', match: /Word Match/, share: /Share your week/, reminder: 'Daily reminder', remindAt: 'Remind me at 08:00' },
+  { code: 'vi', match: /Ghép từ/, share: /Chia sẻ tuần của bạn/, reminder: 'Nhắc hằng ngày', remindAt: 'Nhắc mình lúc 08:00' },
+] as const;
+
+for (const theme of themes) {
+  for (const viewport of viewports) {
+    test(`${theme.family} ${theme.mode} recap offers what comes next at ${viewport.name}`, async ({ page }, testInfo) => {
+      page.on('pageerror', error => { throw error; });
+      await page.setViewportSize(viewport);
+      await page.emulateMedia({ colorScheme: theme.mode, reducedMotion: 'reduce' });
+      await page.addInitScript(({ family, mode }) => {
+        localStorage.setItem('sonflash_theme_family', family);
+        localStorage.setItem('lingoflash_theme', mode);
+        localStorage.setItem('sonflash_theme_follow_system', 'false');
+        localStorage.setItem('sonflash_reduced_motion', 'true');
+      }, theme);
+
+      for (const locale of nextLocales) {
+        await page.goto(`${fixtureOrigin}${fixturePath}?locale=${locale.code}&variant=next`);
+        const recap = page.locator('[data-session-recap]');
+        await expect(recap).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('html')).toHaveAttribute('data-theme-family', theme.family);
+        const wordMatch = recap.getByRole('button', { name: locale.match });
+        const share = recap.getByRole('button', { name: locale.share });
+        const reminder = recap.getByRole('switch', { name: locale.reminder });
+        await expect(wordMatch).toBeVisible();
+        await expect(share).toBeVisible();
+        await expect(reminder).toHaveAttribute('aria-checked', 'true');
+        await expect(recap.locator('[data-recap-next="reminder"]')).toContainText(locale.remindAt);
+        // The weekly share replaces the plain weekly link, and Next review moves into the reminder card.
+        if (theme.family === 'classic') await expect(recap.locator('.practice-recap-link')).toHaveCount(0);
+        await expectAccessibleAndContained(page, `${theme.family} ${theme.mode} ${viewport.name} ${locale.code} what next`);
+        await attachRecap(page, testInfo, `${theme.family}-${theme.mode}-${viewport.name}-${locale.code}-next-recap`);
+        const row = recap.locator(theme.family === 'crystal' ? '.practice-recap-next' : '.practice-recap-whatnext');
+        await row.scrollIntoViewIfNeeded();
+        const rowShot = testInfo.outputPath(`${theme.family}-${theme.mode}-${viewport.name}-${locale.code}-next-row.png`);
+        await row.screenshot({ path: rowShot });
+        await testInfo.attach(`${theme.family}-${theme.mode}-${viewport.name}-${locale.code}-next-row`, { path: rowShot, contentType: 'image/png' });
+
+        if (locale.code === 'en') {
+          await wordMatch.click();
+          await reminder.click();
+          await expect(reminder).toHaveAttribute('aria-checked', 'false');
+          await share.click();
+          await expect(page.locator('body')).toHaveAttribute('data-recap-actions', 'match reminder-off weekly');
+        }
+      }
+    });
+  }
+}
+
+test('classic recap keeps what comes next under the IELTS goal column at desktop width', async ({ page }, testInfo) => {
+  page.on('pageerror', error => { throw error; });
+  await page.setViewportSize(viewports[0]);
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    localStorage.setItem('sonflash_theme_family', 'classic');
+    localStorage.setItem('lingoflash_theme', 'light');
+    localStorage.setItem('sonflash_theme_follow_system', 'false');
+    localStorage.setItem('sonflash_reduced_motion', 'true');
+  });
+  await page.goto(`${fixtureOrigin}${fixturePath}?locale=en&goal=ready&variant=next&reminder=off`);
+  const recap = page.locator('[data-session-recap]');
+  await expect(recap).toBeVisible({ timeout: 15_000 });
+  await expect(recap.getByRole('heading', { name: 'What next?' })).toBeVisible();
+  await expect(recap.getByRole('switch', { name: 'Daily reminder' })).toHaveAttribute('aria-checked', 'false');
+  const row = await recap.locator('.practice-recap-whatnext').boundingBox();
+  const goal = await recap.locator('[data-ielts-goal-panel]').boundingBox();
+  expect(row && goal && row.y >= goal.y + goal.height - 1, 'the row starts below the goal panel').toBe(true);
+  await expectAccessibleAndContained(page, 'classic light desktop IELTS what next');
+  await attachRecap(page, testInfo, 'classic-light-desktop-ielts-next-recap');
+});

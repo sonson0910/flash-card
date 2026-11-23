@@ -5,16 +5,19 @@ persistence, tests, and future refactors.
 
 ## Library Session
 
-The signed-in or anonymous lifetime of a learner's card library. A Library
-Session owns which user may see cached cards, how anonymous cards are adopted
-after sign-in, pagination state, realtime refresh, offline fallbacks, and queued
-writes. Data from one signed-in user must never become visible to another user.
+The signed-in lifetime of a learner's card library. A Library Session owns
+which user may see cards, pagination state, and realtime refresh. Card writes,
+including reviews, are online-only callables: nothing is queued offline, and a
+write that cannot reach the server fails and is retried by the learner. Data
+from one signed-in user must never become visible to another user.
 
 ## Library Replica
 
-The owner-scoped convergence of a learner's cloud cards, complete local mirror,
-and queued offline mutations. A Library Replica preserves identity, epoch,
-revision and tombstone ordering while keeping one owner's data isolated.
+The owner-scoped view of a learner's cloud cards, read from Firestore (which
+keeps its own `persistentLocalCache`) as the single source of truth. A Library
+Replica preserves identity, epoch, revision and tombstone ordering while keeping
+one owner's data isolated. The IndexedDB mirror, device pending queue and
+offline learning were removed; see the superseded `docs/specs/library-replica.md`.
 _Avoid_: Device sync, card cache, offline copy
 
 ## Card Intake
@@ -39,6 +42,6 @@ before it can be synchronized to Firestore.
 
 ## Shared Device Store
 
-The development-only local store exposed through the Vite dev-server endpoints.
-It is an offline and multi-browser adapter for development, not a production
-source of truth.
+Removed. The development-only local store and its dev-server endpoints no longer
+exist; Firestore is the only source of truth. Only the card version
+comparison helper in `src/lib/deviceStore.ts` remains.

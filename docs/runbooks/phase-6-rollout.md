@@ -44,6 +44,16 @@ The manifest and readiness files are the exact sealed files retained with that
 tuple. The LKG has its own independent tuple and must remain retrievable before
 promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
 
+Deployment tooling comes from the immutable protected-default-branch workflow
+checkout (`github.sha`), independently of the selected candidate revision. Staging,
+production and Rules deployment jobs install that checkout's locked root dependencies without
+lifecycle scripts, verify the approved Firebase CLI version before authentication,
+and invoke its absolute binary path while operating in the verified candidate
+directory. They never install the candidate's historical root development tooling
+or rebuild its files. This keeps retained artifacts deployable after a CLI upgrade;
+the candidate's sealed root manifests remain unchanged as provenance. Functions
+runtime dependencies still come from the candidate's sealed Functions lockfile.
+
 ## 1. Build, seal and retain one candidate
 
 1. Dispatch `Build release candidate` for the reviewed full commit revision. The
@@ -53,7 +63,7 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    Verified readiness evidence is emitted only when that revision exactly matches
    a clean Git HEAD; a missing/mismatched revision or dirty worktree aborts before
    the evidence file is written. Ignore legacy schema-1 or `"local"` artifacts.
-2. The final step seals `dist`, compiled Functions, Firestore Rules/indexes,
+2. The final step seals `dist`, compiled Functions, Firestore Rules/indexes, Storage Rules,
    `firebase.json` and readiness evidence. Retain together:
    - candidate workflow run ID;
    - full 40/64-character revision;
@@ -108,7 +118,9 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    SHA-256, and reruns the canonical candidate verifier. A successful retrieval
    receipt is required before the tuple becomes an eligible retained LKG. The same
    run uploads `retrieved-candidate-<revision>-<run>` for two days. Production consumes
-   those exact bytes and re-verifies their sealed digest. If that temporary artifact
+   those exact bytes and re-verifies their sealed digest, accepts a retrieval or staging
+   run only when it ran on the default branch at a commit that main contains, and
+   rejects a candidate that holds any file outside the sealed components. If that temporary artifact
    expires, rerun WORM verification and approve the new receipt; the original Actions
    candidate is not needed for retrieval.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
@@ -128,8 +140,9 @@ promotion; a copied digest, mutable URL or rebuilt equivalent is not an LKG.
    ```
 
    The build accepts only the exact combined protected `approvalDigest` from
-   that rights-aware validation (binding the validated source and referenced
-   trusted asset rights), the singular protected reviewer identity, and an
+   that rights-aware validation (binding the validated source, a V2 source's
+   unit titles and unit order, and the referenced trusted asset rights), the
+   singular protected reviewer identity, and an
    approval timestamp no more than 24 hours old (with only a small bounded future
    skew). Never accept reviewer authority from
    candidate files, `CATALOG_TRUSTED_REVIEWER_IDS`, or caller-provided flags.
@@ -151,11 +164,74 @@ retired. Rules promotion now accepts only a sealed release candidate produced by
 `Build release candidate` workflow. Provide that run ID, full revision, candidate
 SHA-256, operation and approval reference. The workflow verifies the source run,
 revision and artifact digest before approval, then verifies the protected project and
-database binding again before deploying only Firestore Rules (never indexes).
+database binding again before deploying only Firestore Rules (never indexes). Storage
+Rules do not ship here; see the next subsection.
 
 For rollback, select a retained last-known-good release candidate and use `operation:
 rollback`. Do not rebuild the revision or upload database snapshots to Actions. Data
 repair is a separate incident procedure and must not be coupled to a Rules deployment.
+
+### Storage Rules and enabling Cloud Storage
+
+`storage.rules` is sealed in every candidate and ships with the client it belongs to:
+`deploy-staging.yml` deploys it right after Firestore Rules (before Functions and
+Hosting), and `deploy-production.yml` deploys it in the `deploy_storage_rules` job on
+both promotion and rollback. Production Hosting is promoted only after that job
+succeeds, so a promoted candidate never runs against an older candidate's Storage Rules.
+The Firestore Rules workflow above never deploys Storage Rules.
+
+Both workflows read the target project's Firebase default bucket with
+`scripts/cloud-storage-state.mjs` (billed to the target project through
+`x-goog-user-project`). Staging does this before its first mutation, so a denied lookup
+leaves the project untouched. Only two answers skip the Storage Rules: no default bucket
+(HTTP 404), or the Cloud Storage for Firebase API disabled on the target project. A skip
+raises a `Storage Rules not deployed` warning with a step-summary line and the release
+continues. Any other answer, such as a denied lookup, fails the job before Hosting: the
+workflow cannot tell a missing permission from a live bucket, so it does not guess.
+
+**Before the next staging or production release that carries this check**, the owner
+grants each deployment identity, on its target project: `firebasestorage.defaultBucket.get`,
+`serviceusage.services.use` (Service Usage Consumer) and Firebase Rules release permissions
+(Firebase Rules Admin). The identities are the staging Workload Identity service account
+(`GCP_SERVICE_ACCOUNT` in the staging environment) and `GCP_SERVICE_ACCOUNT_JSON` in
+`production-hosting`. Without the grant, the staging deploy and the production Hosting
+promotion fail closed, whether or not Cloud Storage is set up.
+
+The Functions deploy reads the same state, in the staging workflow and in the
+`deploy_functions` job of `deploy-production.yml`. The upload trigger `finalizeFileUpload`
+listens on the default bucket, and the pinned Firebase CLI refuses to deploy any function
+while one storage trigger has no bucket to resolve. When the state is `not-enabled`, the
+workflow adds `SONFLASH_CLOUD_STORAGE=not-enabled` to the Functions parameter file, the
+trigger is left out of that deploy, and the run raises a `Storage trigger not deployed`
+warning with a step-summary line. Any other answer than `enabled` fails the job. The
+identity in `production-functions` therefore needs the same
+`firebasestorage.defaultBucket.get` and `serviceusage.services.use` grants.
+
+The scheduled functions (`sweepAiOperations`, `finalizeAccountDeletions`,
+`sweepPushReminders`, `sweepWeeklyDigests`) need the Cloud Scheduler API enabled on the
+target project and Cloud Scheduler job permissions (Cloud Scheduler Admin) on the identity
+that deploys Functions. A secret newly bound to a function needs
+`roles/secretmanager.secretAccessor` for the Functions runtime service account on that
+secret; the deployment identities cannot grant it, so the owner binds it before the
+release.
+
+Cloud Storage is not yet enabled in production, so uploads (My files) cannot work there
+yet. To enable it, the owner:
+
+1. Confirms the grants above on the production identities.
+2. Sets up Cloud Storage in the Firebase console in **production mode** (deny all), never
+   test mode, which would let any client read or overwrite any learner's files.
+3. Promotes the next candidate (or re-promotes the current one with a fresh approval)
+   through `deploy-production.yml` with `promote_functions=true`, and confirms the step
+   summary shows Storage Rules deployed and no `finalizeFileUpload not deployed` line.
+   Until both are deployed every upload fails closed: without the trigger a stored file
+   is never settled.
+4. Smoke-tests that a learner can upload and open their own file, and that another
+   account and a signed-out client cannot read it.
+
+Staging follows the same order: set up Cloud Storage on the staging project in production
+mode, then run `deploy-staging.yml` (or `npm run staging:deploy:storage` for the local
+staging route) and check the Storage step did not skip.
 
 ## 3. Candidate-bound staging deploy and smoke
 
@@ -174,7 +250,18 @@ Firebase/Hosting deploy is not evidence. The protected staging workflow must:
 4. emit an immutable deployment receipt binding the candidate run ID, revision,
    candidate SHA-256, manifest/readiness, protected target and HTTPS origin.
 
-Until a successful receipt exists for the selected tuple, do not run or accept the
+To prepare a retained A shell before the native update rehearsal, or restore its
+Hosting shell as R afterward, dispatch this same protected staging workflow with
+`hosting_only=true` and that retained candidate's exact tuple. It verifies the
+candidate, deploys only its sealed Hosting bytes and checks live health/worker bytes.
+It leaves the current Functions, Rules and indexes in place, avoiding deletion of
+newer backend endpoints when the retained shell predates them. Record the workflow
+run, tuple and Hosting-only scope with the A/R observations. This mode issues no
+complete staging deployment receipt and cannot satisfy production's receipt gate.
+Deploy the actual B candidate with `hosting_only=false` (the default); all runtime,
+index, Rules and immutable-receipt gates above remain required for promotion.
+
+Until a successful full deployment receipt exists for the selected B tuple, do not run or accept the
 smoke below, do not promote the candidate, and do not record staging evidence. The browser/manual evidence
 must bind to the immutable deployment receipt as well as the candidate tuple; an
 origin-only or manually deployed result is not evidence.
@@ -185,18 +272,21 @@ receipt's HTTPS origin:
 ```sh
 STAGING_ORIGIN=https://staging.example.test \
 EXPECTED_REVISION=<full-immutable-commit-sha> \
-CATALOG_MANIFEST_PATH=/catalog/english-core/release-manifest.json npm run phase6:smoke
+CATALOG_MANIFEST_PATH=/catalog/english-core/<releaseId>/release-manifest.json npm run phase6:smoke
 ```
 
 The operator rejects redirects, a non-2xx application document, revision mismatch,
 unhealthy metadata, missing CSP/nosniff/referrer headers, a failed manifest probe and
 a release manifest whose `Cache-Control` lacks `no-cache`, `no-store` or
-`must-revalidate`. Mutable manifest pointers must never be `immutable`; reserve
+`must-revalidate`. `CATALOG_MANIFEST_PATH` is required and names the release the
+candidate ships under `public/catalog/`; the manifest probe passes only when that path
+returns a JSON release manifest for the same catalog and release, so the SPA fallback
+that Hosting serves for a missing file fails it. Mutable manifest pointers must never be `immutable`; reserve
 `public, max-age=31536000, immutable` for hashed content assets.
 
 `npm run phase6:smoke` is only an automated HTTPS/network probe. It checks the
 application document, `/health.json` revision and status, required page security
-headers, and the selected release-manifest status/cache policy. It does not inspect
+headers, and the selected release manifest's body, status and cache policy. It does not inspect
 `/sw.js`, install or update a worker, close/reopen a browser, download a real pack,
 or run the Listen journey. A passing JSON result is necessary but never sufficient
 staging evidence.
@@ -279,8 +369,10 @@ and production; deployment credentials never enter the browser artifact.
    compare required export/import document counters, delete the disposable database,
    and read back both receipt TTL policies as `ACTIVE`. Record its successful run ID
    and the SHA-256 of `receipt.json`. The hourly scheduled cleanup reconciles only
-   databases matching `release-restore-<run-id>-<attempt>` and shares the Firestore
-   mutation concurrency lock; alert on any failed or approval-waiting cleanup run.
+   databases matching `release-restore-<run-id>-<attempt>`. It runs in its own
+   concurrency group, so it never cancels a pending deploy or index preparation, and it
+   leaves any database whose owning run has not completed; alert on any failed or
+   approval-waiting cleanup run.
 2. Decide target order from the recorded compatibility review. If Hosting calls a new,
    backward-compatible Function, dispatch `Deploy production artifact` with
    `promote_functions=true` so the protected Functions job completes before Hosting.
@@ -307,7 +399,8 @@ and production; deployment credentials never enter the browser artifact.
    Hosting artifact is then promoted idempotently. `ENFORCE_APP_CHECK` defaults to
    true. Never deploy incompatible Functions enforcement before its Hosting client.
 5. Do not select or infer an all-target deploy. Firestore Rules use only the protected
-   candidate-bound workflow in section 2.
+   candidate-bound workflow in section 2; Storage Rules ship only in the candidate's own
+   `deploy_storage_rules` job, before its Hosting.
 
 ## 5. Canary decision (advisory only)
 
@@ -381,9 +474,10 @@ Never unregister the service worker, clear site data, delete IndexedDB, discard 
 pending queue, or delete learner/card/media-pack storage to make this rehearsal pass.
 Only the versioned shell namespace may be replaced by the normal worker lifecycle.
 
-1. **Hosting:** stop promotion, dispatch `Deploy production artifact` with the retained
+1. **Hosting and Storage Rules:** stop promotion, dispatch `Deploy production artifact` with the retained
    last-known-good candidate, `operation=rollback`, a bounded `rollback_evidence_ref`,
-   and `promote_functions=false`, then verify `/health.json`,
+   and `promote_functions=false`; it restores that candidate's Storage Rules before its
+   Hosting. Then verify `/health.json`,
    the valid `/sw.js` headers, app-shell revision, security headers and critical
    browser flows against the restored tuple revision.
 2. **Functions:** only if the last-known-good Functions are compatible with current data

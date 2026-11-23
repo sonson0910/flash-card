@@ -1,101 +1,82 @@
 import { useLayoutEffect } from 'react';
-import { Sparkles } from 'lucide-react';
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
+import { Trans } from '@lingui/react';
 import { CountUp } from '../../components/motion/CountUp';
+import { Lumi } from '../../components/lumi/Lumi';
+import { useTheme } from '../theme/ThemeProvider';
+import { readLumiEnabled } from '../settings/lumi-preference';
+import { ReviewRangeToggle } from '../../components/stats/ReviewRangeToggle';
+import { ProgressLearningSince, ProgressStudiedTime } from '../../components/stats/ProgressStudyFacts';
+import './daily-learning-canvas.css';
+import '../../components/stats/stats-board.css';
+import './progress-screen.css';
 import type { ProgressScreenProps } from './dailyLearningPresentation';
 
-const primaryClass = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-md shadow-sky-600/20 transition-all duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const primaryClass = 'progress-board-cta brand-action crystal-chamfer min-h-11 px-6 py-3 font-extrabold transition duration-200 active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 
-export function ProgressScreen({ model, actions, children }: ProgressScreenProps) {
+function ProgressHeading({ model }: Pick<ProgressScreenProps, 'model'>) {
   const assignHeading = (heading: HTMLHeadingElement | null) => {
     if (model.headingRef) model.headingRef.current = heading;
   };
+  return <h1 id="daily-progress-heading" ref={assignHeading} tabIndex={-1} className="progress-board-title text-balance focus-visible:outline-2"><Trans {...msg({ context: 'progress.title', message: 'Progress' })} /></h1>;
+}
 
+function Metric({ label, value, tone }: { readonly label: React.ReactNode; readonly value: number | null; readonly tone: string }) {
+  return <div className="progress-metric crystal-chamfer-sm min-w-0 p-4"><dt className="progress-metric-label">{label}</dt><dd className={`progress-metric-value mt-2 tabular-nums ${tone}`}>{value === null ? '—' : <CountUp to={value} />}</dd></div>;
+}
+
+function LumiLink({ model }: Pick<ProgressScreenProps, 'model'>) {
+  const message = model.status === 'ready' && model.dueToday !== null && model.dueToday > 0
+    ? <Trans {...msg({ context: 'progress.lumi.due', message: '{count, plural, one {# word is} other {# words are}} due today. Let’s keep them blooming!' })} values={{ count: model.dueToday }} />
+    : model.status === 'ready' && model.dueToday === 0
+      ? <Trans {...msg({ context: 'progress.lumi.clear', message: 'Nothing due right now. Your words are blooming!' })} />
+      : <Trans {...msg({ context: 'progress.lumi.start', message: 'Every review helps your words bloom.' })} />;
+  return <div className="progress-board-lumi">
+    <Lumi pose="proud" className="progress-board-lumi-figure motion-reduce:animate-none" />
+    <p className="progress-board-lumi-bubble"><span className="progress-board-lumi-name"><Trans {...msg({ context: 'progress.lumi.link', message: 'Lumi · Link' })} /></span><span className="progress-board-lumi-message">{message}</span></p>
+  </div>;
+}
+
+function Summary({ model, actions }: Omit<ProgressScreenProps, 'children'>) {
+  const title = model.status === 'empty' ? <Trans {...msg({ context: 'progress.empty.title', message: 'Your learning story starts here' })} /> : model.status === 'loading' || model.dueToday === null ? <Trans {...msg({ context: 'progress.loading.title', message: 'Your saved progress' })} /> : model.dueToday > 0 ? <Trans {...msg({ context: 'progress.due.title', message: 'Keep today’s memory work moving' })} /> : <Trans {...msg({ context: 'progress.clear.title', message: 'Your scheduled review is clear' })} />;
+  return <section aria-labelledby="progress-summary-heading" className="progress-summary stats-panel crystal-chamfer relative overflow-hidden p-6 sm:p-7">
+    <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end"><div className="min-w-0"><h2 id="progress-summary-heading" className="stats-panel-title text-balance">{title}</h2><p className="progress-summary-copy mt-2 max-w-2xl text-pretty" role={model.status === 'loading' ? 'status' : undefined} aria-live={model.status === 'loading' ? 'polite' : undefined}>{model.status === 'empty' ? <Trans {...msg({ context: 'progress.empty.description', message: 'Complete a review to begin your progress history.' })} /> : model.message}</p></div>
+      {model.status === 'ready' && model.dueToday !== null && model.dueToday > 0 && <button type="button" data-primary-learning-action="true" disabled={model.isOffline} onClick={actions.startReview} className={`${primaryClass} w-full sm:w-auto`}><span className="progress-board-cta-label"><Trans {...msg({ context: 'progress.review-due', message: 'Review {count, plural, one {# due word} other {# due words}}' })} values={{ count: model.dueToday }} /></span></button>}
+      {model.status === 'empty' && <button type="button" data-primary-learning-action="true" disabled={model.isOffline && model.hasVocabulary} onClick={model.hasVocabulary ? actions.startReview : actions.openVocabulary} className={`${primaryClass} w-full sm:w-auto`}><span className="progress-board-cta-label">{model.hasVocabulary ? <Trans {...msg({ context: 'progress.start-review', message: 'Start your first review' })} /> : <Trans {...msg({ context: 'progress.add-vocabulary', message: 'Add vocabulary' })} />}</span></button>}</div>
+    <div className="progress-summary-evidence relative mt-6 pt-5"><p className="progress-summary-kicker"><Trans {...msg({ context: 'progress.evidence', message: 'Supporting evidence' })} /></p><dl data-progress-evidence="true" className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3"><Metric label={<Trans {...msg({ context: 'progress.metric.reviewed', message: 'Reviewed' })} />} value={model.reviewed} tone="progress-metric-value--plain" /><Metric label={<Trans {...msg({ context: 'progress.metric.mastered', message: 'Mastered' })} />} value={model.mastered} tone="progress-metric-value--reward" /><Metric label={<Trans {...msg({ context: 'progress.metric.due', message: 'Due today' })} />} value={model.dueToday} tone="progress-metric-value--brand" /></dl></div>
+  </section>;
+}
+
+function Subtitle({ model, isCrystal }: Pick<ProgressScreenProps, 'model'> & { readonly isCrystal: boolean }) {
+  if (model.status !== 'ready' || model.reviewed === null) return null;
+  return <p className="progress-board-subtitle">
+    {!isCrystal && <ProgressLearningSince variant="subtitle" />}
+    <span className="progress-board-stat"><Trans {...msg({ context: 'progress.subtitle.reviewed', message: '{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards reviewed}}' })} values={{ count: model.reviewed }} components={{ 0: <strong /> }} /></span>
+    {model.mastered !== null && <><span className="progress-board-dot"> · </span><span className="progress-board-stat"><Trans {...msg({ context: 'progress.subtitle.mastered', message: '<0>{count}</0> mastered' })} values={{ count: model.mastered }} components={{ 0: <strong /> }} /></span></>}
+    <ProgressStudiedTime />
+  </p>;
+}
+
+export function ProgressScreen({ model, actions, children }: ProgressScreenProps) {
+  const { family } = useTheme();
+  const isCrystal = family === 'crystal';
+  const showLumi = isCrystal && readLumiEnabled();
   useLayoutEffect(() => {
     if ((model.focusIntent ?? 0) > 0) model.headingRef?.current?.focus({ preventScroll: true });
   }, [model.focusIntent, model.headingRef]);
-
-  const heading = <h1 id="daily-progress-heading" ref={assignHeading} tabIndex={-1} className="text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl">Learning progress</h1>;
-
-  return (
-    <section aria-labelledby="daily-progress-heading" className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
-      <header>
-        <p className="premium-kicker uppercase tracking-[0.16em]">Learning history</p>
-        {heading}
-        <p className="mt-2 max-w-2xl text-pretty text-[var(--sf-text-muted)]" role={model.status === 'loading' ? 'status' : undefined} aria-live={model.status === 'loading' ? 'polite' : undefined}>{model.message}</p>
-      </header>
-
-      {model.isOffline && <p className="rounded-xl border border-sky-500/70 bg-sky-500/10 p-3 font-semibold" role="status" aria-live="polite">Available offline · showing saved progress</p>}
-
-      {model.status === 'error' ? (
-        <div className="max-w-3xl rounded-[28px] border border-rose-500/70 bg-rose-500/5 p-6 sm:p-8" role="alert">
-          <p className="premium-kicker uppercase tracking-[0.16em]">Progress unavailable</p>
-          <h2 className="mt-3 text-2xl font-black tracking-tight">Progress needs attention</h2>
-          <p className="mt-2 text-[var(--sf-text-muted)]">{model.message}</p>
-        </div>
-      ) : (
-        <section
-          aria-labelledby="progress-summary-heading"
-          className="liquid-glass relative overflow-hidden rounded-[28px] border border-slate-200/90 bg-white/95 p-6 shadow-[0_28px_70px_-52px_var(--sf-shadow)] backdrop-blur-xl dark:border-white/10 dark:bg-[#071318]/90 sm:p-7"
-        >
-          {/* Ambient Aurora Glow */}
-          <div className="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-cyan-500/15 blur-3xl dark:bg-cyan-400/15" aria-hidden="true" />
-          <div className="pointer-events-none absolute -left-24 -bottom-24 size-80 rounded-full bg-emerald-500/15 blur-3xl dark:bg-emerald-400/15" aria-hidden="true" />
-
-          <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-300">
-                <Sparkles size={13} className="text-cyan-600 dark:text-cyan-400" />
-                Next useful step
-              </span>
-              <h2 id="progress-summary-heading" className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">
-                {model.status === 'empty' ? 'Begin your learning history' : model.dueToday > 0 ? 'Keep today’s memory work moving' : 'Your scheduled review is clear'}
-              </h2>
-              <p className="mt-2 max-w-2xl text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">
-                {model.status === 'empty' ? 'Complete a review to begin your progress history.' : model.dueToday > 0 ? `${model.dueToday} words are ready for review now.` : 'New review activity will appear here as you learn.'}
-              </p>
-            </div>
-            {model.status === 'ready' && model.dueToday > 0 && <button type="button" data-primary-learning-action="true" onClick={actions.startReview} className={`${primaryClass} w-full sm:w-auto`}>Review {model.dueToday} due words</button>}
-            {model.status === 'empty' && <button type="button" data-primary-learning-action="true" onClick={model.hasVocabulary ? actions.startReview : actions.openVocabulary} className={`${primaryClass} w-full sm:w-auto`}>{model.hasVocabulary ? 'Start your first review' : 'Add vocabulary'}</button>}
-          </div>
-
-          <div data-progress-evidence="true" className="relative mt-6 border-t border-[var(--sf-border)] pt-5">
-            <p className="premium-kicker uppercase tracking-[0.14em]">Supporting evidence</p>
-            <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-3">
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-300 hover:border-sky-400/50 hover:shadow-md hover:shadow-sky-500/5 dark:border-white/10 dark:bg-white/[0.04]">
-                <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
-                  <span className="size-2 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.6)]" aria-hidden="true" />
-                  Reviewed
-                </dt>
-                <dd className="mt-2 text-2xl font-black tabular-nums tracking-tight text-[var(--sf-text)]">
-                  <CountUp to={model.reviewed} suffix=" reviewed" /> <span aria-hidden="true" className="text-xs font-semibold text-[var(--sf-text-muted)]">reviewed</span>
-                </dd>
-              </div>
-
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-300 hover:border-emerald-400/50 hover:shadow-md hover:shadow-emerald-500/5 dark:border-white/10 dark:bg-white/[0.04]">
-                <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
-                  <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" aria-hidden="true" />
-                  Mastered
-                </dt>
-                <dd className="mt-2 text-2xl font-black tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
-                  <CountUp to={model.mastered} suffix=" mastered" /> <span aria-hidden="true" className="text-xs font-semibold text-[var(--sf-text-muted)]">mastered</span>
-                </dd>
-              </div>
-
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-300 hover:border-amber-400/50 hover:shadow-md hover:shadow-amber-500/5 dark:border-white/10 dark:bg-white/[0.04]">
-                <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
-                  <span className="size-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" aria-hidden="true" />
-                  Due today
-                </dt>
-                <dd className="mt-2 text-2xl font-black tabular-nums tracking-tight text-amber-600 dark:text-amber-400">
-                  <CountUp to={model.dueToday} suffix=" due today" /> <span aria-hidden="true" className="text-xs font-semibold text-[var(--sf-text-muted)]">due today</span>
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </section>
-      )}
-
-      {children && <section aria-label="Detailed learning insights" className="min-w-0 motion-reduce:transition-none">{children}</section>}
-    </section>
-  );
+  const insights = children && <section aria-label={i18n._(msg({ id: 'progress.insights.label', message: 'Detailed learning insights' }))} className="progress-board-insights min-w-0 motion-reduce:transition-none">{children}</section>;
+  return <section aria-labelledby="daily-progress-heading" aria-busy={model.status === 'loading' || undefined} className="progress-board mx-auto max-w-6xl space-y-5 sm:space-y-6">
+    <header className="progress-board-header">
+      <div className="progress-board-titles">
+        {isCrystal && <p className="progress-board-kicker"><Trans {...msg({ context: 'progress.kicker', message: 'Study diary' })} /><ProgressLearningSince variant="kicker" /></p>}
+        <ProgressHeading model={model} />
+      </div>
+      <Subtitle model={model} isCrystal={isCrystal} />
+      {showLumi && <LumiLink model={model} />}
+      {model.status !== 'error' && model.reviewRangeDays && actions.changeReviewRange && <ReviewRangeToggle value={model.reviewRangeDays} onChange={actions.changeReviewRange} className="progress-board-range" />}
+      {model.isOffline && <p className="progress-board-offline" role="status" aria-live="polite"><Trans {...msg({ context: 'progress.offline.reconnect', message: 'You’re offline. Reconnect to review and save your progress.' })} /></p>}
+    </header>
+    {model.status === 'error' ? <div className="progress-board-error stats-panel crystal-chamfer max-w-3xl p-6 sm:p-8" role="alert"><p className="progress-summary-kicker"><Trans {...msg({ context: 'progress.error.kicker', message: 'Progress unavailable' })} /></p><h2 className="stats-panel-title mt-3"><Trans {...msg({ context: 'progress.error.title', message: 'Progress needs attention' })} /></h2><p className="progress-summary-copy mt-2">{model.message}</p></div> : <>{model.status === 'ready' && insights}<Summary model={model} actions={actions} />{model.status !== 'ready' && insights}</>}
+  </section>;
 }

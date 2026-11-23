@@ -66,8 +66,20 @@ for (const override of candidate.fieldOverrides) {
   const reverting = indexConfig?.reverting;
   const flagsValid = (usesAncestorConfig === undefined || usesAncestorConfig === false)
     && (reverting === undefined || reverting === false);
+  // The readback lists a single-field index as { queryScope, fields: [{ fieldPath, order }], state },
+  // while the candidate file writes it as { order, queryScope }.
+  const upper = value => typeof value === 'string' ? value.toUpperCase() : value;
+  const activeSingleFieldIndex = expected => indexes.some(index => index && typeof index === 'object'
+    && index.state === 'READY'
+    && upper(index.queryScope) === upper(expected.queryScope)
+    && Array.isArray(index.fields) && index.fields.length === 1
+    && index.fields[0]?.fieldPath === override.fieldPath
+    && upper(index.fields[0].order) === upper(expected.order)
+    && upper(index.fields[0].arrayConfig) === upper(expected.arrayConfig));
   const indexesMatch = Array.isArray(indexes)
-    ? JSON.stringify(indexes) === JSON.stringify(override.indexes)
+    ? indexes.length === override.indexes.length && override.indexes.every(expected => (
+      expected && typeof expected === 'object' && typeof expected.queryScope === 'string'
+        && activeSingleFieldIndex(expected)))
     : indexes === undefined && override.indexes.length === 0
       && typeof targetAncestorField === 'string' && indexConfig?.ancestorField === targetAncestorField;
   if (!flagsValid || !indexesMatch) {
@@ -90,10 +102,18 @@ if (composites !== undefined) {
     if (field.vectorConfig !== undefined) normalized.vectorConfig = field.vectorConfig;
     return normalized;
   };
+  // A Standard database orders every composite by document name last, in the direction of the last
+  // explicit order, and its readback lists that field even when the manifest leaves it implicit.
+  const withImplicitName = fields => {
+    if (databaseMetadata.databaseEdition !== 'STANDARD' || fields.at(-1)?.fieldPath === '__name__') return fields;
+    const order = fields.findLast(field => field.order !== undefined)?.order ?? 'ASCENDING';
+    return [...fields, { fieldPath: '__name__', order: normalizeScope(order) }];
+  };
   const sameFields = (expected, actual) => Array.isArray(actual)
     && expected.every(field => normalizeField(field))
     && actual.every(field => normalizeField(field))
-    && JSON.stringify(expected.map(normalizeField)) === JSON.stringify(actual.map(normalizeField));
+    && JSON.stringify(withImplicitName(expected.map(normalizeField)))
+      === JSON.stringify(withImplicitName(actual.map(normalizeField)));
   const activeComposite = (expected) => composites.find(index => {
     if (!index || typeof index !== 'object' || typeof index.name !== 'string') return false;
     if (!index.name.startsWith(targetPrefix)) return false;

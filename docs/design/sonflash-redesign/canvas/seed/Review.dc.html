@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Review session — dark and light</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font-family:inherit}
+.au-grain{background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+@keyframes au-drift-a{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(60px,40px,0) scale(1.12)}}
+@keyframes au-drift-b{0%,100%{transform:translate3d(0,0,0) scale(1.05)}50%{transform:translate3d(-70px,-30px,0) scale(.94)}}
+@keyframes au-drift-c{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(30px,-50px,0)}}
+@keyframes au-wave{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+@keyframes au-star{0%,100%{transform:scale(1) rotate(0)}45%{transform:scale(1.25) rotate(10deg)}}
+@keyframes au-reveal{from{opacity:0;transform:translate3d(0,10px,0);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes au-deal-a{from{opacity:0;transform:translate3d(70px,18px,0) rotate(4deg) scale(.95)}to{opacity:1;transform:none}}
+@keyframes au-deal-b{from{opacity:0;transform:translate3d(70px,18px,0) rotate(4deg) scale(.95)}to{opacity:1;transform:none}}
+@keyframes au-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes au-laser{0%,100%{opacity:.75;transform:scaleX(.92)}50%{opacity:1;transform:scaleX(1)}}
+.au-star-pop{animation:au-star 280ms cubic-bezier(.16,1,.3,1)}
+.au-reveal{animation:au-reveal 420ms cubic-bezier(.16,1,.3,1) 80ms both}
+.au-reveal-2{animation:au-reveal 420ms cubic-bezier(.16,1,.3,1) 180ms both}
+.au-reveal-3{animation:au-reveal 420ms cubic-bezier(.16,1,.3,1) 280ms both}
+.au-deal-a{animation:au-deal-a 560ms cubic-bezier(.16,1,.3,1) both}
+.au-deal-b{animation:au-deal-b 560ms cubic-bezier(.16,1,.3,1) both}
+.au-blob-a{animation:au-drift-a 22s ease-in-out infinite}
+.au-blob-b{animation:au-drift-b 26s ease-in-out infinite}
+.au-blob-c{animation:au-drift-c 30s ease-in-out infinite}
+.au-seg-now{animation:au-pulse 1.6s ease-in-out infinite}
+.au-laser{animation:au-laser 2.4s ease-in-out infinite}
+.au-grade{transition:transform 180ms cubic-bezier(.16,1,.3,1), background-color 180ms ease}
+.au-grade:hover{transform:translateY(-3px)}
+.au-grade:active{transform:translateY(0) scale(.97)}
+.au-icon-btn{transition:transform 180ms cubic-bezier(.16,1,.3,1), background-color 180ms ease}
+.au-icon-btn:hover{transform:scale(1.06)}
+@media (prefers-reduced-motion: reduce){.au-star-pop,.au-reveal,.au-reveal-2,.au-reveal-3,.au-deal-a,.au-deal-b,.au-blob-a,.au-blob-b,.au-blob-c,.au-seg-now,.au-laser{animation:none}}
+.ip-grain{background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.28 0 0 0 0 0.2 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+@keyframes ip-wave{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+@keyframes ip-star{0%,100%{transform:scale(1) rotate(0)}45%{transform:scale(1.25) rotate(-10deg)}}
+@keyframes ip-reveal{from{opacity:0;transform:translate3d(0,8px,0);letter-spacing:.02em}to{opacity:1;transform:none}}
+@keyframes ip-ink{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes ip-deal-a{from{opacity:0;transform:translate3d(-60px,-20px,0) rotate(-5deg)}to{opacity:1;transform:none}}
+@keyframes ip-deal-b{from{opacity:0;transform:translate3d(-60px,-20px,0) rotate(-5deg)}to{opacity:1;transform:none}}
+@keyframes ip-rule{0%,100%{transform:scaleX(.6)}50%{transform:scaleX(1)}}
+.ip-star-pop{animation:ip-star 300ms cubic-bezier(.16,1,.3,1)}
+.ip-reveal{animation:ip-reveal 480ms cubic-bezier(.16,1,.3,1) 60ms both}
+.ip-ink{animation:ip-ink 700ms cubic-bezier(.65,0,.35,1) 260ms both}
+.ip-reveal-3{animation:ip-reveal 480ms cubic-bezier(.16,1,.3,1) 340ms both}
+.ip-deal-a{animation:ip-deal-a 600ms cubic-bezier(.16,1,.3,1) both}
+.ip-deal-b{animation:ip-deal-b 600ms cubic-bezier(.16,1,.3,1) both}
+.ip-rule{animation:ip-rule 2.6s ease-in-out infinite;transform-origin:center}
+.ip-tab{transition:transform 180ms cubic-bezier(.16,1,.3,1), box-shadow 180ms ease}
+.ip-tab:hover{transform:translateY(-3px);box-shadow:0 10px 20px -12px rgb(60 40 20 / .45)}
+.ip-tab:active{transform:translateY(0) scale(.97)}
+@media (prefers-reduced-motion: reduce){.ip-star-pop,.ip-reveal,.ip-ink,.ip-reveal-3,.ip-deal-a,.ip-deal-b,.ip-rule{animation:none}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden;">
+  <sc-if value="{{dark}}" hint-placeholder-val="{{true}}">
+    <dc-import name="Aurora" on-toggle-theme="{{toggle}}" hint-size="1440px,900px"></dc-import>
+  </sc-if>
+  <sc-if value="{{light}}" hint-placeholder-val="{{false}}">
+    <dc-import name="Atelier" on-toggle-theme="{{toggle}}" hint-size="1440px,900px"></dc-import>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { theme: null };
+  }
+  renderVals() {
+    const theme = this.state.theme ?? this.props.theme ?? 'dark';
+    return {
+      dark: theme === 'dark', light: theme === 'light',
+      toggle: () => this.setState({ theme: theme === 'dark' ? 'light' : 'dark' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

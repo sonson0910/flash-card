@@ -1,0 +1,58 @@
+import type {
+  Course,
+  CourseError,
+  CourseGoal,
+  CourseProfile,
+  CreateCourseInput,
+  CreateGoalInput,
+  UpdateCourseInput,
+  UpdateGoalInput,
+} from './courseModel';
+
+export type CourseProfileSource = 'cloud' | 'absent';
+
+export interface CourseProfileRead {
+  readonly source: CourseProfileSource;
+  readonly profile: CourseProfile;
+}
+
+/** The ids a create produced; goal ids follow the requested goals' order, keyed by goal kind. */
+export interface CreatedCourseIds {
+  readonly courseId: string;
+  readonly goals: readonly { readonly kind: string; readonly id: string }[];
+}
+
+export interface CreateCourseResult {
+  readonly profile: CourseProfile;
+  /** Null only when the returned profile does not hold the requested course. */
+  readonly created: CreatedCourseIds | null;
+}
+
+export type CourseProfileListener = (read: CourseProfileRead) => void;
+export type CourseProfileErrorListener = (error: CourseError) => void;
+
+/**
+ * The course boundary is intentionally independent of Firebase and React.
+ * Sign-in is required to study, so every caller supplies a real owner id;
+ * the Firebase adapter rejects null rather than quietly switching to local
+ * state.
+ */
+export interface CoursePort {
+  readonly available: boolean;
+  load(ownerId: string | null): Promise<CourseProfileRead>;
+  subscribe?(
+    ownerId: string | null,
+    onProfile: CourseProfileListener,
+    onError: CourseProfileErrorListener,
+  ): () => void;
+  createCourse(ownerId: string | null, input: CreateCourseInput): Promise<CreateCourseResult>;
+  updateCourse(ownerId: string | null, courseId: string, input: UpdateCourseInput): Promise<CourseProfile>;
+  archiveCourse(ownerId: string | null, courseId: string): Promise<CourseProfile>;
+  reopenCourse(ownerId: string | null, courseId: string): Promise<CourseProfile>;
+  setActiveCourse(ownerId: string | null, courseId: string): Promise<CourseProfile>;
+  addGoal(ownerId: string | null, courseId: string, input: CreateGoalInput): Promise<CourseProfile>;
+  updateGoal(ownerId: string | null, courseId: string, goalId: string, input: UpdateGoalInput): Promise<CourseProfile>;
+  removeGoal(ownerId: string | null, courseId: string, goalId: string): Promise<CourseProfile>;
+}
+
+export type { Course, CourseGoal, CourseProfile };

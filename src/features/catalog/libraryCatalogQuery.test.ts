@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  cardQueryDifficulty,
   createLibraryLocation,
   normalizeLibraryQuery,
   readLibraryQuery,
@@ -15,6 +16,25 @@ describe('libraryCatalogQuery', () => {
     expect(query.difficulty).toBe('All');
     expect(query.page).toBe(1);
     expect(query.starred).toBe(true);
+  });
+
+  it('reads the mastered tier from the URL and serves it with the stored Easy rating', () => {
+    const query = readLibraryQuery('?difficulty=mastered');
+
+    expect(query.difficulty).toBe('mastered');
+    expect(createLibraryLocation('/app', query)).toBe('/app?difficulty=mastered');
+    expect(cardQueryDifficulty('mastered')).toBe('easy');
+    expect(cardQueryDifficulty('All')).toBeNull();
+    expect(cardQueryDifficulty('due')).toBe('due');
+    expect(cardQueryDifficulty('unrated')).toBe('unrated');
+  });
+
+  it('reads the learning tier from the URL and serves it with the good and hard ratings together', () => {
+    const query = readLibraryQuery('?difficulty=learning');
+
+    expect(query.difficulty).toBe('learning');
+    expect(createLibraryLocation('/app', query)).toBe('/app?difficulty=learning');
+    expect(cardQueryDifficulty('learning')).toBe('learning');
   });
 
   it('keeps search and due mutually compatible with other filters', () => {

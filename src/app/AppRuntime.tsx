@@ -1,24 +1,113 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import type { useAppNavigation } from '../features/navigation/useAppNavigation';
 import { AppFeedback } from '../components/shell/AppFeedback';
 import { AppFooter } from '../components/shell/AppFooter';
 import { DesktopNavigation } from '../components/shell/DesktopNavigation';
 import { FloatingMobileNav } from '../components/shell/FloatingMobileNav';
-import { UndoToast } from '../components/ui/UndoToast';
+import { UndoToast, type UndoToastItem } from '../components/ui/UndoToast';
 import { LEARNING_WORKSPACE_ID, SkipToContentLink } from '../components/shell/SkipToContentLink';
-import { useOverlayState } from '../features/overlays/useOverlayState';
+import { scheduleNoticeDismissal, useOverlayState } from '../features/overlays/useOverlayState';
 import { appDependencies } from './appDependencies';
-import { AppDeferredLibraryView, AppDeferredPracticeView } from './AppDeferredViews';
+import { db, isFirebaseConfigured } from '../lib/firebase';
+import { AppDeferredCreateCardDialog, AppDeferredLibraryView, AppDeferredPracticeView } from './AppDeferredViews';
 import { AppViewStage, capListenPracticeCards, listenPracticeUnavailableMessage } from './AppViewStage';
+import { WorkspaceLoadingPanel } from '../components/WorkspaceLoadingPanel';
 import { useAppLibraryRuntime } from './useAppLibraryRuntime';
 import { useAppLearningCoordination } from './useAppLearningCoordination';
 import { consumeLandingSignInRequest } from './landingSignInRequest';
+import { publishLandingSignInState } from '../features/landing/landingSignInState';
+import { accountDeletionNoticePath, withoutAccountDeletionNotices } from '../features/account/account-deletion-notice';
 import { AppShellMotion } from '../components/motion/AppShellMotion';
 import { useBrowserExtensionImport } from '../features/browserExtension/useBrowserExtensionImport';
+import { useExtensionDueCountBridge } from '../features/extensionBridge/useExtensionDueCountBridge';
+import { extensionDueCountFor, localDayKey } from '../features/extensionBridge/extensionDueCountBridge';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
+import { APP_VIEW_HEADINGS } from '../features/navigation/app-view-headings';
+import { buildStreakView } from '../features/gamification/streakView';
+import { CourseProvider, readyCourseSessionForOwner, useCourseSession, type CourseGateValue } from '../features/courses/CourseGate';
+import { activeCourseNativeLanguage, activeCourseTargetLanguage, languageProfileForCourse } from '../features/courses/courseLanguageProfile';
+import type { CourseTargetLanguage } from '../features/courses/courseModel';
+import { goalKindLabel } from '../features/courses/courseGoalCatalog';
+import { createSharedDeckCoursePort } from '../features/sharing/shareCourseMatching';
+import { createFirebaseFilePort } from '../features/files/firebaseFileAdapter';
+import { OnboardingGate } from '../features/onboarding/OnboardingGate';
+import { AccountProfileProvider } from '../features/profileCompletion/AccountProfileContext';
+import { CardEditorServicesProvider } from '../features/cardEdit/cardEditorServices';
+import { VerifiedStatsProvider, type VerifiedStatsSource } from '../components/stats/VerifiedStatsContext';
+import { findCardById } from '../lib/cardRepository';
+import { MASTERED_CARD_DIFFICULTY } from '../features/catalog/libraryCatalogQuery';
+import { createFileCardPhotos } from '../features/files/fileCardPhotos';
+import { firestoreCardPhotoStore } from '../features/files/firestoreCardPhotoStore';
+import { createDeferredCardImageUploader } from './cardImageUpload';
+import { ProfileCompletionGate } from '../features/profileCompletion/ProfileCompletionGate';
+import { useAccountProfileGate } from '../features/profileCompletion/useAccountProfileGate';
+import { useOnboardingLibraryState } from '../features/onboarding/useOnboardingLibraryState';
+import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
+import type { LearningCeremony } from './useAppLearningCoordination';
+import {
+  createCeremonyQueueState,
+  desktopCourseProps,
+  desktopNavigationActions,
+  dismissQueuedCeremony,
+  equipCeremonyFrame,
+  silentCaptureCourseDecision,
+  fileCourseOptions,
+  latestStatsRefresh,
+  libraryInsightsPhase,
+  overlayLearningProps,
+  overlayShareProps,
+  overlayUiProps,
+  queueCeremonies,
+  queueLearningCeremonies,
+  shouldShowViewHeading,
+  statsRefreshForTarget,
+  syncIdentityForShell,
+  type CeremonyQueueState,
+  viewStageLearningProps,
+  viewStageNavigationActions,
+  viewStageStatsProps,
+  weeklyRecapRequestSettled,
+} from './app-runtime-shared';
+export {
+  createCeremonyQueueState,
+  dismissQueuedCeremony,
+  equipCeremonyFrame,
+  latestStatsRefresh,
+  libraryInsightsPhase,
+  orderCeremonyEvents,
+  queueCeremonies,
+  statsRefreshForTarget,
+  streakCeremonyRewardLabels,
+  type CeremonyQueueState,
+  type QueuedCeremony,
+} from './app-runtime-shared';
+import '../styles/shell.css';
 import { OfflineReadiness } from '../features/offlineApp/OfflineReadiness';
 import type { ListenPracticeHandoff, ListenPracticeScope } from './AppViewStage';
 
+const moveLegacyPushWorkerBeforePrepare = () => import('../features/reminders/reminderService').then(service => service.moveLegacyPushWorker());
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
+const AnimeReveal = lazy(() => Promise.all([
+  import('../features/rewards/AnimeReveal'), loadCatalog(getActiveUiLocale(), 'rewards'),
+]).then(([module]) => ({ default: module.AnimeReveal })));
+const dialogFallback = <span className="sr-only" role="status"><Trans {...msg({ context: 'shell.opening-dialog', message: 'Opening dialog' })} /></span>;
+
+/**
+ * Surfaces the live `useCourseSession()` value up to AppRuntime as plain
+ * data. It has to be a real descendant of `CourseProvider` to see its value;
+ * AppRuntime's own hooks (useAppLibraryRuntime, useAppLearningCoordination)
+ * run in AppRuntime's own function body, above where CourseProvider mounts,
+ * so they cannot call useCourseSession() themselves and instead consume this
+ * bridge's reported snapshot as a plain parameter.
+ */
+function CourseSessionBridge({ onSnapshot }: { readonly onSnapshot: (value: CourseGateValue) => void }) {
+  const courseSession = useCourseSession();
+  useEffect(() => {
+    onSnapshot(courseSession);
+  }, [courseSession, onSnapshot]);
+  return null;
+}
 
 export const getSafeListenPracticeHandoff = (
   handoff: ListenPracticeHandoff | null,
@@ -49,6 +138,29 @@ export interface AppRuntimeProps {
   readonly onLandingUserChange: (user: LandingUser | null) => void;
 }
 
+export function useOwnerScopedMessage(
+  ownerId: string | null,
+  activeOwnerRef: RefObject<string | null>,
+  storedMessage: string | null,
+  setStoredMessage: Dispatch<SetStateAction<string | null>>,
+): readonly [string | null, Dispatch<SetStateAction<string | null>>] {
+  const [publishedGeneration, setPublishedGeneration] = useState<number | null>(null);
+  const scopeRef = useRef({ ownerId, generation: 0, published: false });
+  if (scopeRef.current.ownerId !== ownerId) {
+    scopeRef.current = { ownerId, generation: scopeRef.current.generation + 1, published: false };
+  }
+  const generation = scopeRef.current.generation;
+  const message = publishedGeneration === generation ? storedMessage : null;
+  const setMessage = useCallback<Dispatch<SetStateAction<string | null>>>(value => {
+    if (activeOwnerRef.current !== ownerId || scopeRef.current.generation !== generation) return;
+    const sameOwner = scopeRef.current.published;
+    scopeRef.current.published = true;
+    setStoredMessage(previous => typeof value === 'function' ? value(sameOwner ? previous : null) : value);
+    setPublishedGeneration(generation);
+  }, [activeOwnerRef, generation, ownerId, setStoredMessage]);
+  return [message, setMessage];
+}
+
 export default function AppRuntime({
   navigation,
   practiceOpenerRef,
@@ -57,15 +169,26 @@ export default function AppRuntime({
   onSignInRequestHandled,
   onLandingUserChange,
 }: AppRuntimeProps) {
-  const [error, setError] = useState<string | null>(null);
+  const { _ } = useLingui();
+  const identitySession = appDependencies.sessions.libraryHooks.useIdentitySession();
+  const identityOwnerId = identitySession.owner?.id ?? null;
+  const identityOwnerRef = useRef(identityOwnerId);
+  identityOwnerRef.current = identityOwnerId;
+  // A signed-in owner reaches the app only after the server holds a completed account profile.
+  const accountProfile = useAccountProfileGate(identityOwnerId, {
+    sessionLost: identitySession.authenticationRecovery === 'session-lost',
+  });
+  const [storedError, setStoredError] = useState<string | null>(null);
+  const [error, setError] = useOwnerScopedMessage(identityOwnerId, identityOwnerRef, storedError, setStoredError);
+  const [isRetryingSync, setIsRetryingSync] = useState(false);
   const [listenPracticeHandoff, setListenPracticeHandoff] = useState<ListenPracticeHandoff | null>(null);
   const listenPracticeScopeRef = useRef<ListenPracticeScope>({ ownerId: null, clipId: null, generation: -1 });
   const clearError = useCallback((message: string) => {
     setError(current => current === message ? null : current);
-  }, []);
+  }, [setError]);
   const {
-    notice,
-    setNotice,
+    notice: storedNotice,
+    setNotice: setStoredNotice,
     isPracticeMenuOpen,
     setIsPracticeMenuOpen,
     isStatsOpen,
@@ -79,79 +202,259 @@ export default function AppRuntime({
     clearOpenerRef,
     rememberOpener,
     openPractice,
+    openStats,
     openClearConfirm: openClearOverlay,
     undoToast,
     setUndoToast,
-  } = useOverlayState({ practiceOpenerRef });
-  const dismissUndoToast = useCallback(() => {
-    setUndoToast(null);
-  }, []);
+  } = useOverlayState({ ownerId: identityOwnerId, practiceOpenerRef, autoDismissNotice: false });
+  const [notice, setNotice] = useOwnerScopedMessage(identityOwnerId, identityOwnerRef, storedNotice, setStoredNotice);
+  useEffect(() => scheduleNoticeDismissal(notice, () => setNotice(null)), [notice, setNotice]);
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const navigationRef = useRef<HTMLElement | null>(null);
   const viewStageRef = useRef<HTMLDivElement | null>(null);
   const {
     viewMode,
     setViewMode,
-    viewHeading,
+    openSettings,
+    openCourseGoals,
+    settingsSection,
+    goalsCourseId,
+    webWordsReturnView,
     viewHeadingRef,
     viewFocusIntent,
     isDarkMode,
-    toggleTheme,
   } = navigation;
+  const preSignInLocationRef = useRef<{ href: string; ownerId: string | null } | null>(null);
+  const lastAuthenticatedOwnerIdRef = useRef(identityOwnerId);
+  useLayoutEffect(() => {
+    const previousOwnerId = lastAuthenticatedOwnerIdRef.current;
+    if (identityOwnerId) {
+      lastAuthenticatedOwnerIdRef.current = identityOwnerId;
+      if (previousOwnerId && previousOwnerId !== identityOwnerId) {
+        preSignInLocationRef.current = null;
+        window.history.replaceState(window.history.state, '', accountDeletionNoticePath(window.location.href));
+        return;
+      }
+      const returnLocation = preSignInLocationRef.current;
+      if (!returnLocation) return;
+      preSignInLocationRef.current = null;
+      if (returnLocation.ownerId && returnLocation.ownerId !== identityOwnerId) return;
+      // Replay only this owner's saved location after the signed-out bounce.
+      window.history.pushState(window.history.state, '', returnLocation.href);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      return;
+    }
+    if (identitySession.status === 'loading') return;
+    if (viewMode === 'landing') {
+      lastAuthenticatedOwnerIdRef.current = null;
+      return;
+    }
+    preSignInLocationRef.current = { href: withoutAccountDeletionNotices(window.location.href), ownerId: previousOwnerId };
+    lastAuthenticatedOwnerIdRef.current = null;
+    if (previousOwnerId) window.history.replaceState(window.history.state, '', accountDeletionNoticePath(window.location.href));
+    setViewMode('landing');
+  }, [identityOwnerId, identitySession.status, setViewMode, viewMode]);
+  // null until CourseSessionBridge reports the live CourseProvider value;
+  // languageProfileForCourse(null) already matches the no-active-course
+  // default, so the very first render before that report lands is correct.
+  const [courseSession, setCourseSession] = useState<CourseGateValue | null>(null);
+  const currentCourseSession = readyCourseSessionForOwner(courseSession, identityOwnerId);
+  const courseScopeReady = identitySession.status === 'anonymous'
+    || !!(identityOwnerId && currentCourseSession && accountProfile.status === 'complete');
+  const activeCourse = currentCourseSession?.model.activeCourse ?? null;
+  const languageProfile = languageProfileForCourse(activeCourse);
+  const targetLanguage = languageProfile.source.code;
+  const coursePort = useMemo(
+    () => currentCourseSession ? createSharedDeckCoursePort(currentCourseSession) : null,
+    [currentCourseSession],
+  );
+  // Gate for the extension's silent (one-click, no-review) capture path
+  // only. The worker tab that runs it is never in front of the learner, so
+  // nothing may be asked there: a word captured for another course is
+  // cancelled and the source tab reports it, instead of switching or creating
+  // a course on a dialog nobody can see. Nothing is generated when cancelled.
+  const ensureExtensionCaptureCourse = useCallback(async (targetLanguage: CourseTargetLanguage): Promise<'proceed' | 'cancel'> => {
+    if (!identityOwnerId || !currentCourseSession) return 'cancel';
+    return silentCaptureCourseDecision(
+      targetLanguage,
+      activeCourseNativeLanguage(currentCourseSession.model.activeCourse),
+      currentCourseSession.model.profile,
+    );
+  }, [identityOwnerId, currentCourseSession]);
+  const [weeklyRecapRequest, setWeeklyRecapRequest] = useState<{ ownerId: string; requestId: number; targetLanguage: string } | null>(null);
+  const [insightsRefreshRequest, setInsightsRefreshRequest] = useState<{ ownerId: string; requestId: number; targetLanguage: string } | null>(null);
+  const nextStatsRefreshRequestId = useRef(0);
+  const activeWeeklyRecapRequest = statsRefreshForTarget(weeklyRecapRequest, targetLanguage);
+  const activeInsightsRefreshRequest = statsRefreshForTarget(insightsRefreshRequest, targetLanguage);
+  const statsRefreshRequest = latestStatsRefresh(activeInsightsRefreshRequest, activeWeeklyRecapRequest);
   const library = useAppLibraryRuntime({
+    identity: identitySession,
+    courseScopeReady,
     viewMode,
     isStatsOpen,
+    statsRefreshRequest,
+    targetLanguage,
     reportError: setError,
     clearError,
     notify: setNotice,
   });
+  const undoOwnerRef = useRef<string | null | undefined>(undefined);
+  const currentOwnerId = library.model.user?.uid ?? null;
+  const loadOwnerCardCount = useMemo(
+    () => currentOwnerId && appDependencies.configuration.cloudAvailable ? () => appDependencies.library.countOwnerCards(currentOwnerId) : undefined,
+    [currentOwnerId],
+  );
+  // One file service per signed-in owner, so the settings section and the My files page each list once per open.
+  const filePort = useMemo(
+    () => (currentOwnerId && isFirebaseConfigured ? createFirebaseFilePort({ ownerId: currentOwnerId }) : null),
+    [currentOwnerId],
+  );
+  const fileCourses = useMemo(
+    () => fileCourseOptions(currentCourseSession?.model.profile?.courses ?? [], _),
+    [currentCourseSession, _],
+  );
+  const openWeeklyRecap = useCallback(() => {
+    if (!currentOwnerId) return;
+    setWeeklyRecapRequest({ ownerId: currentOwnerId, requestId: ++nextStatsRefreshRequestId.current, targetLanguage });
+    setViewMode('progress');
+  }, [currentOwnerId, targetLanguage, setViewMode]);
+  const retryInsights = useCallback(() => {
+    if (!currentOwnerId) return;
+    setInsightsRefreshRequest({ ownerId: currentOwnerId, requestId: ++nextStatsRefreshRequestId.current, targetLanguage });
+  }, [currentOwnerId, targetLanguage]);
+  useEffect(() => {
+    setWeeklyRecapRequest(request => request && (request.ownerId !== currentOwnerId || request.targetLanguage !== targetLanguage) ? null : request);
+    setInsightsRefreshRequest(request => request && (request.ownerId !== currentOwnerId || request.targetLanguage !== targetLanguage) ? null : request);
+  }, [currentOwnerId, targetLanguage]);
+  const currentOwnerRef = useRef(currentOwnerId);
+  currentOwnerRef.current = currentOwnerId;
+  const [ceremonyState, setCeremonyState] = useState<CeremonyQueueState>(createCeremonyQueueState);
+  const enqueueCeremony = useCallback((ceremony: LearningCeremony) => {
+    if (ceremony.ownerId !== currentOwnerRef.current) return;
+    const focusReturnTarget = globalThis.document?.activeElement instanceof HTMLElement
+      ? globalThis.document.activeElement
+      : null;
+    const queued = queueLearningCeremonies(ceremony, focusReturnTarget, _);
+    if (queued.length) setCeremonyState(current => queueCeremonies(current, queued));
+  }, [_]);
+  const dismissCeremony = useCallback(() => {
+    setCeremonyState(current => {
+      const dismissal = dismissQueuedCeremony(current);
+      if (current.queue.length === 1) {
+        globalThis.requestAnimationFrame?.(() => {
+          const recapButton = globalThis.document?.querySelector<HTMLButtonElement>('[data-session-recap] button');
+          if (recapButton?.isConnected) recapButton.focus();
+          else if (dismissal.focusReturnTarget?.isConnected) dismissal.focusReturnTarget.focus();
+        });
+      }
+      return dismissal.state;
+    });
+  }, []);
+  const offerUndo = useCallback((ownerId: string | null, toast: UndoToastItem | null) => {
+    if (ownerId !== currentOwnerRef.current) return;
+    undoOwnerRef.current = toast ? ownerId : undefined;
+    setUndoToast(toast);
+  }, [setUndoToast]);
+  useEffect(() => {
+    if (undoOwnerRef.current !== currentOwnerId) {
+      undoOwnerRef.current = undefined;
+      setUndoToast(null);
+    }
+  }, [currentOwnerId, setUndoToast]);
+  useEffect(() => {
+    setCeremonyState(createCeremonyQueueState());
+  }, [currentOwnerId]);
   const learning = useAppLearningCoordination({
     library,
+    courseScopeReady,
     viewMode,
+    languageProfile,
+    coursePort,
     setViewMode,
     setPracticeMenuOpen: setIsPracticeMenuOpen,
-    setClearConfirm: setShowClearConfirm,
     rememberOpener,
     shareOpenerRef,
     reportError: setError,
     notify: setNotice,
+    offerUndo,
+    onCeremony: enqueueCeremony,
   });
   const {
-    cards,
     user,
+    libraryEpochState,
     librarySession,
     shellSyncStatus: librarySyncStatus,
     isBrowserOnline,
     isExporting,
+    cloudStats,
   } = library.model;
+  const libraryActions = library.actions;
+  const { cloud, identity, owner: libraryOwner } = librarySession;
+  useEffect(() => {
+    if (cloud.ownerId !== currentOwnerId || cloud.statsSettledRequestId == null) return;
+    const settledRequestId = cloud.statsSettledRequestId;
+    setInsightsRefreshRequest(request => request?.ownerId === currentOwnerId && request.targetLanguage === targetLanguage && request.requestId <= settledRequestId ? null : request);
+    setWeeklyRecapRequest(request => request?.ownerId === currentOwnerId && request.targetLanguage === targetLanguage && request.requestId < settledRequestId ? null : request);
+  }, [cloud.ownerId, cloud.statsSettledRequestId, currentOwnerId, targetLanguage]);
+  const shellSyncStatus = librarySyncStatus;
+  const onboardingLibrary = useOnboardingLibraryState({
+    ownerId: currentOwnerId,
+    cloud,
+    needsOnboarding: currentCourseSession?.model.source === 'absent',
+    canClassify: courseScopeReady && visible && viewMode !== 'landing' && !shellSyncStatus.isCheckingCloud,
+  });
   const {
     libraryScreen,
     practiceSession,
-    practiceAddXp,
+
     customDecks,
     intakeSharing,
     isLibraryBusy,
     canClearLibrary,
+    equipFrame,
+    equippedFrameId,
+    ownedTitleIds,
+    verifiedGamification,
   } = learning.model;
-  const practiceActions = learning.actions.practice;
-  const intakeActions = learning.actions.intakeSharing;
-  const identity = librarySession.identity;
+  const { intakeSharing: intakeActions, practice: practiceActions, deleteCard, updateCard } = learning.actions;
+  // The card editor opens from review cards and the vocabulary grid; both get the photo uploader and the deck list here.
+  const cardEditorServices = useMemo(() => ({
+    imageUpload: filePort ? createDeferredCardImageUploader(filePort) : undefined,
+    customDecks,
+  }), [filePort, customDecks]);
+  const libraryCards = library.model.cards;
+  // Deleting a photo finds its cards in every course; the open library saves the ones it holds.
+  const fileCardPhotos = useMemo(() => (currentOwnerId && db ? createFileCardPhotos(firestoreCardPhotoStore(db, currentOwnerId), {
+    has: cardId => libraryCards.some(card => card.id === cardId),
+    removePhoto: async cardId => {
+      const outcome = await updateCard(cardId, { imageUrl: null, imageSearchQuery: '' });
+      return outcome.status === 'published' || outcome.status === 'noop';
+    },
+  }) : undefined), [currentOwnerId, libraryCards, updateCard]);
+  const { share } = intakeSharing;
+  const isShareModalOpen = share.isShareDialogOpen || share.isLoading;
+  const libraryReady = !!(
+    courseScopeReady
+    && user
+    && libraryOwner.ownerId === user.uid
+    && libraryOwner.status === 'ready'
+  );
   useBrowserExtensionImport({
-    ownerId: user?.uid ?? null,
+    ownerId: currentOwnerId,
     identityLoading: identity.status === 'loading',
     customDecks,
-    libraryReady: Boolean(
-      user
-      && librarySession.owner.ownerId === user.uid
-      && librarySession.owner.status === 'ready'
-    ),
+    libraryReady,
     isBusy: isLibraryBusy,
     changeDraft: intakeActions.changeDraft,
     generate: intakeActions.generate,
     openLibrary: () => setViewMode('library'),
-    notify: message => setNotice(message),
-    reportError: message => setError(message),
+    notify: setNotice,
+    reportError: setError,
+    ensureCaptureCourse: ensureExtensionCaptureCourse,
+    courseNativeLanguage: activeCourse ? activeCourseNativeLanguage(activeCourse) : null,
+    courseTargetLanguage: activeCourse ? activeCourseTargetLanguage(activeCourse) : null,
   });
+  useExtensionDueCountBridge({ ownerId: currentOwnerId, ready: libraryReady, dueCount: extensionDueCountFor(cloud, currentOwnerId, targetLanguage, localDayKey()) });
   const handledSignInRequestRef = useRef(0);
   useEffect(() => {
     onLandingUserChange(user ? {
@@ -161,17 +464,33 @@ export default function AppRuntime({
     } : null);
   }, [onLandingUserChange, user?.displayName, user?.email, user?.photoURL]);
   useEffect(() => {
+    publishLandingSignInState({ busy: identity.isSigningIn, error: user ? null : identity.error });
+  }, [identity.error, identity.isSigningIn, user]);
+  useEffect(() => {
     void consumeLandingSignInRequest(
       signInRequest,
       handledSignInRequestRef,
       onSignInRequestHandled,
-      library.actions.signIn,
+      libraryActions.signIn,
     );
-  }, [library.actions.signIn, onSignInRequestHandled, signInRequest]);
+  }, [libraryActions.signIn, onSignInRequestHandled, signInRequest]);
   const openClearConfirm = (focusReturnTarget: HTMLButtonElement) =>
     openClearOverlay(focusReturnTarget, canClearLibrary);
-  const handleSignIn = async () => { await library.actions.signIn(); };
-  const handleSignOut = async () => { await library.actions.signOut(); };
+  const handleSignIn = async () => { await libraryActions.signIn(); };
+  const handleSignOut = async () => { await libraryActions.signOut(); };
+  const handleGateSignOut = () => libraryActions.signOut();
+  const handleRetrySync = async () => {
+    if (isRetryingSync) return;
+    setIsRetryingSync(true);
+    setError(current => current === cloud.error ? null : current);
+    try {
+      await libraryActions.retrySync();
+    } catch {
+      setError(_(msg({ id: 'shell.sync.retry-failed', message: 'Sync could not finish. Your changes remain on this device. Try again.' })));
+    } finally {
+      setIsRetryingSync(false);
+    }
+  };
   const handleListenScopeChange = useCallback((scope: ListenPracticeScope) => {
     listenPracticeScopeRef.current = scope;
     setListenPracticeHandoff(current => current
@@ -185,7 +504,7 @@ export default function AppRuntime({
     const activeOwnerId = user?.uid ?? null;
     const unavailableMessage = listenPracticeUnavailableMessage(activeOwnerId, !isBrowserOnline);
     if (unavailableMessage) {
-      setNotice(unavailableMessage);
+      setNotice(_(unavailableMessage));
       return;
     }
     if (!getSafeListenPracticeHandoff(handoff, listenPracticeScopeRef.current, activeOwnerId)
@@ -198,7 +517,7 @@ export default function AppRuntime({
       ownerId: activeOwnerId,
       cards: capListenPracticeCards(handoff.cards),
     });
-  }, [isBrowserOnline, overlayPracticeOpenerRef, rememberOpener, setIsPracticeMenuOpen, setNotice, user?.uid]);
+  }, [_, isBrowserOnline, overlayPracticeOpenerRef, rememberOpener, setIsPracticeMenuOpen, setNotice, user?.uid]);
   const dismissListenPractice = useCallback(() => {
     setListenPracticeHandoff(null);
   }, []);
@@ -208,161 +527,241 @@ export default function AppRuntime({
     user?.uid ?? null,
   );
 
-  const xpSync = learning.model.xpSync;
-  const shellSyncStatus = {
-    ...librarySyncStatus,
-    pendingCount: librarySyncStatus.pendingCount + (user ? xpSync.pendingCount : 0),
-    error: librarySyncStatus.error ?? (user ? xpSync.error : null),
-  };
-
+  // Progress, the weekly recap and the session recap read study time, streak and word counts from
+  // the verified state the app already listens to. The word of the week is one card read, made only
+  // when the learner turns it on.
+  const verifiedStatsSource = useMemo<VerifiedStatsSource | null>(() => (courseScopeReady && currentOwnerId ? {
+    state: verifiedGamification,
+    language: targetLanguage,
+    ...(isFirebaseConfigured && db ? {
+      loadCard: async (cardId: string) => {
+        const card = await findCardById(db!, currentOwnerId, cardId);
+        return card ? { id: card.id, word: card.word } : null;
+      },
+    } : {}),
+  } : null), [courseScopeReady, currentOwnerId, verifiedGamification, targetLanguage]);
+  const openMasteredVocabulary = useCallback(() => {
+    // The stored Easy rating is the mastered tier Progress counts; Vocabulary shows it as "Mastered".
+    library.actions.catalog.chooseDifficulty(MASTERED_CARD_DIFFICULTY);
+    setViewMode('library');
+  }, [library.actions.catalog, setViewMode]);
   if (!visible) return null;
+  if (identity.status !== 'loading' && !user && viewMode !== 'landing') return null;
+  const shellViewMode = viewMode === 'language-drill' ? 'spelling' : viewMode;
+  const activeCeremony = ceremonyState.queue[0];
+  const stats = libraryScreen.overlays.stats;
+  const insightsPhase = currentOwnerId ? libraryInsightsPhase({
+    ownerMatches: cloud.ownerId === currentOwnerId,
+    isLoading: cloud.isStatsLoading,
+    statsTargetMatches: cloud.statsTargetLanguage === targetLanguage,
+    error: cloud.error,
+  }) : 'ready';
+  const overview = libraryScreen.model.overview;
+  // The same run the Today chip shows: it still counts while today's review is open, and is 0 once it ended.
+  const headerStreak = buildStreakView(verifiedGamification, new Date()).length;
+  const shellIdentity = syncIdentityForShell(identity, user, appDependencies.configuration.cloudConfigured);
+  const activeGoal = activeCourse?.goals.find(goal => goal.status === 'active') ?? null;
+  const activeGoalLabel = activeGoal && activeCourse ? goalKindLabel(activeCourse.targetLanguage, activeGoal.kind) : null;
+  const learnerName = user?.displayName?.trim();
+  const todayLearner = {
+    ...(learnerName ? { name: learnerName } : {}),
+    ...(courseScopeReady && user ? { xp: overview.xp } : {}),
+    ...(activeGoal ? { goal: { label: activeGoalLabel ? _(activeGoalLabel) : activeGoal.kind, level: activeGoal.level, targetDate: activeGoal.targetDate } } : {}),
+  };
+  const libraryNavigation = libraryScreen.navigation;
+  const libraryCountLabel = courseScopeReady ? libraryNavigation.libraryCountLabel : '';
 
   return (
-    <div ref={appShellRef} className={`app-canvas min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden selection:bg-cyan-500/20 transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
-      <div className="ambient-orb ambient-orb-a" aria-hidden="true" />
-      <div className="ambient-orb ambient-orb-b" aria-hidden="true" />
-      <div className="ambient-orb ambient-orb-c" aria-hidden="true" />
+    <CourseProvider ownerId={currentOwnerId}>
+    <CourseSessionBridge onSnapshot={setCourseSession} />
+    {identityOwnerId && (accountProfile.status === 'required' || accountProfile.status === 'restricted' || accountProfile.status === 'error') ? (
+      <ProfileCompletionGate
+        key={identityOwnerId}
+        screen={accountProfile.status}
+        submit={accountProfile.submit}
+        retry={accountProfile.retry}
+        returnLabel={_(APP_VIEW_HEADINGS[viewMode])}
+        onSignOut={handleGateSignOut}
+      />
+    ) : (
+    <AccountProfileProvider profile={accountProfile.profile} saveUiLocale={accountProfile.saveUiLocale}>
+    <CardEditorServicesProvider value={cardEditorServices}>
+    <VerifiedStatsProvider source={verifiedStatsSource}>
+    <div ref={appShellRef} data-view={viewMode} className={`app-canvas claude-app-shell min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
       <SkipToContentLink />
+      <OnboardingGate ownerId={currentOwnerId} suppress={!courseScopeReady || viewMode === 'landing' || shellSyncStatus.isCheckingCloud}
+        {...onboardingLibrary} />
 
       <DesktopNavigation
+        {...desktopNavigationActions(setViewMode, openSettings)}
+        {...desktopCourseProps(
+          courseScopeReady,
+          libraryCountLabel,
+          overview,
+          headerStreak,
+          equippedFrameId,
+          ownedTitleIds,
+        )}
         navigationRef={navigationRef}
-        viewMode={viewMode}
-        syncIdentity={identity.status === 'loading'
-          ? { status: 'loading' }
-          : user
-            ? {
-                status: 'authenticated',
-                displayName: user.displayName,
-                email: user.email,
-                photoUrl: user.photoURL,
-              }
-            : {
-                status: 'signed-out',
-                isConfigured: appDependencies.configuration.cloudConfigured,
-                isSigningIn: identity.isSigningIn,
-              }}
+        viewMode={shellViewMode}
+        syncIdentity={shellIdentity}
         syncStatus={shellSyncStatus}
         isDarkMode={isDarkMode}
         isExporting={isExporting}
         isLibraryMutationPending={isLibraryBusy}
-        libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
-        onOpenLanding={() => setViewMode('landing')}
-        onOpenToday={() => setViewMode('today')}
-        onOpenLibrary={() => setViewMode('library')}
-        onOpenCatalog={() => setViewMode('catalog')}
-        onOpenProgress={() => setViewMode('progress')}
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
-        onToggleTheme={toggleTheme}
-        onExportLibrary={library.actions.exportLibrary}
-        onClearLibrary={openClearConfirm}
+        onRetrySync={handleRetrySync}
+        isRetryingSync={isRetryingSync}
+        sessionLost={!!identity.authenticationRecovery}
+        canSyncNow={identity.status === 'authenticated' && !identity.authenticationRecovery && isBrowserOnline && !!user}
+        onExportLibrary={courseScopeReady ? libraryActions.exportLibrary : undefined}
+        onClearLibrary={courseScopeReady ? openClearConfirm : undefined}
+        onOpenInsights={courseScopeReady ? openStats : undefined}
       />
 
       <AppFeedback
-        authError={user ? null : identity.error}
-        error={error}
+        authError={user && !identity.authenticationRecovery ? null : identity.error}
+        sessionLost={identity.authenticationRecovery === 'session-lost'}
+        isRetryingAuth={identity.isSigningIn}
+        onRetryAuth={handleSignIn}
+        error={isShareModalOpen && error === share.error ? null : error}
         notice={notice}
         syncStatus={shellSyncStatus}
-        onDismissAuthError={library.actions.clearAuthError}
+        onDismissAuthError={libraryActions.clearAuthError}
         onDismissError={() => setError(null)}
         onDismissNotice={() => setNotice(null)}
-        onRetrySync={() => {
-          setError(current => current === librarySession.cloud.error ? null : current);
-          xpSync.retry();
-          return library.actions.retrySync();
-        }}
-      />
+        onRetrySync={handleRetrySync}
+      >
+        {undoToast && undoOwnerRef.current === currentOwnerId && !identity.authenticationRecovery ? (
+          <UndoToast stacked toast={undoToast} onDismiss={() => setUndoToast(null)} />
+        ) : null}
+      </AppFeedback>
       <main
         id={LEARNING_WORKSPACE_ID}
-        tabIndex={-1}
-        aria-label="Learning workspace"
-        className="flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin"
+        tabIndex={0}
+        aria-label={_(msg({ id: 'shell.learning-workspace', message: 'Learning workspace' }))}
+        className="claude-workspace flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
       >
-        <div className="relative w-full max-w-[1560px] mx-auto p-4 sm:px-6 sm:py-6 lg:px-8 pb-24 lg:pb-8">
-          {viewMode !== 'landing' && <OfflineReadiness />}
-          {viewMode !== 'catalog' && viewMode !== 'today' && viewMode !== 'progress' && (
-            <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{viewHeading}</h1>
+        <div className="claude-workspace-inner relative w-full max-w-[1440px] mx-auto px-5 pt-5 pb-28 sm:px-8 lg:px-11 lg:pt-3 lg:pb-8">
+          {viewMode !== 'landing' && <OfflineReadiness beforePrepare={moveLegacyPushWorkerBeforePrepare} />}
+          {shouldShowViewHeading(viewMode) && (
+            <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{_(APP_VIEW_HEADINGS[viewMode])}</h1>
           )}
           <div ref={viewStageRef} data-app-view-stage className="min-h-full">
-            <AppViewStage
+            {!courseScopeReady && user ? (courseSession?.model.ownerId === user.uid && courseSession.model.status === 'error'
+              ? <div role="alert" className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)]">
+                  <p><Trans {...msg({ context: 'course.error.read', message: 'Courses could not be loaded.' })} /></p>
+                  <button type="button" onClick={() => void courseSession.actions.retry()} className="liquid-control mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 font-bold"><Trans {...msg({ context: 'course.action.retry', message: 'Retry' })} /></button>
+                </div>
+              : <WorkspaceLoadingPanel><Trans {...msg({ context: 'course.loading', message: 'Preparing your courses…' })} /></WorkspaceLoadingPanel>) : <AppViewStage
+              {...viewStageNavigationActions(setViewMode)}
+              openMasteredVocabulary={openMasteredVocabulary}
+              {...viewStageLearningProps(library, learning, setNotice)}
+              {...viewStageStatsProps(stats, cloud)}
+              rewardTimeZone={stats.rewardTimeZone}
+              learner={todayLearner}
+              {...(courseScopeReady && user ? { learnerLevel: { level: overview.level, xp: overview.xp, gamification: verifiedGamification, identity: shellIdentity } } : {})}
               viewMode={viewMode}
-              ownerId={user?.uid ?? null}
+              ownerId={currentOwnerId}
+              database={isFirebaseConfigured ? db : null}
+              verifiedLibraryEpoch={user && libraryEpochState?.userId === user.uid ? libraryEpochState.value : null}
+              languageProfile={languageProfile}
               isOffline={!isBrowserOnline}
               isDarkMode={isDarkMode}
               headingRef={viewHeadingRef}
               focusIntent={viewFocusIntent}
-              stats={libraryScreen.overlays.stats}
-              isStatsLoading={librarySession.cloud.isStatsLoading}
-              statsError={librarySession.cloud.error}
-              loadPracticePool={learning.actions.loadPracticePool}
-              reviewCard={learning.actions.reviewCard}
-              catalogCards={cards}
-              adoptCatalogCards={intakeActions.adoptCards}
-              notifyCatalog={setNotice}
-              openVocabulary={() => setViewMode('library')}
-              openPaths={() => setViewMode('catalog')}
-              continueReview={practiceActions.startStudy}
+              settingsSection={settingsSection}
+              openSettings={openSettings}
+              goalsCourseId={goalsCourseId}
+              openCourseGoals={openCourseGoals}
+              webWordsReturnView={webWordsReturnView}
+              returnFromWebWords={() => setViewMode(webWordsReturnView)}
+              filePort={filePort}
+              fileCourses={fileCourses}
+              fileCardPhotos={fileCardPhotos}
+              activeCourseId={activeCourse?.id ?? null}
               openMorePractice={openPractice}
               onPracticePhrase={handlePracticePhrase}
               onListenScopeChange={handleListenScopeChange}
+              openWeeklyRecap={openWeeklyRecap}
+              weeklyRecapRequestOwnerId={activeWeeklyRecapRequest?.ownerId ?? null}
+              weeklyRecapRequestSettled={weeklyRecapRequestSettled(activeWeeklyRecapRequest, cloud, targetLanguage, cloudStats)}
+              onWeeklyRecapRequestConsumed={() => setWeeklyRecapRequest(null)}
               libraryContent={<AppDeferredLibraryView model={libraryScreen.model} actions={libraryScreen.actions} />}
-              practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} addXp={practiceAddXp} />}
-            />
+              practiceContent={<AppDeferredPracticeView session={practiceSession} actions={practiceActions} customDecks={customDecks} openWeeklyRecap={openWeeklyRecap} onDeleteCard={deleteCard} />}
+            />}
           </div>
         </div>
       </main>
 
       <AppFooter
-        viewMode={viewMode}
-        libraryCountLabel={libraryScreen.navigation.libraryCountLabel}
+        viewMode={shellViewMode}
+        libraryCountLabel={libraryCountLabel}
         syncStatus={shellSyncStatus}
       />
 
-      {(hasMountedOverlays || intakeSharing.share.isShareDialogOpen || Boolean(intakeSharing.share.activeShareId)) && (
-        <Suspense fallback={<span className="sr-only" role="status">Opening dialog</span>}>
-          <AppOverlays
-            shareDialogOpen={intakeSharing.share.isShareDialogOpen}
-            shareLink={intakeSharing.share.shareLink}
-            shareWarning={intakeSharing.share.shareWarning}
-            incomingSharePreview={intakeSharing.share.incomingPreview}
-            dismissShareDialog={intakeActions.dismissShareLink}
-            showShareDialog={intakeActions.showShareDialog}
-            acceptSharedDeck={async () => { await intakeActions.acceptShared(); }}
-            cancelSharedDeck={intakeActions.cancelShared}
-            canRevokeShare={Boolean(intakeSharing.share.activeShareId)}
-            revokeShare={async () => { await intakeActions.revokeShare(); }}
-            isSharing={intakeSharing.share.isLoading}
-            isPracticeMenuOpen={isPracticeMenuOpen}
-            setIsPracticeMenuOpen={setIsPracticeMenuOpen}
-            startQuiz={practiceActions.startQuiz}
-            startSpelling={practiceActions.startSpelling}
-            startMatch={practiceActions.startMatch}
-            startShadowing={practiceActions.startShadowing}
-            practiceCards={libraryScreen.model.grid.filteredCards}
-            visibleLibraryCount={libraryScreen.navigation.practiceLibraryCount}
-            cards={cards}
-            ownerId={user?.uid ?? null}
-            isOffline={!isBrowserOnline}
-            generateStory={practiceActions.generateStory}
-            isStatsOpen={isStatsOpen}
-            setIsStatsOpen={setIsStatsOpen}
-            statsData={libraryScreen.overlays.stats}
-            isDarkMode={isDarkMode}
-            showClearConfirm={showClearConfirm}
-            setShowClearConfirm={setShowClearConfirm}
-            clearAll={learning.actions.clearAll}
-            isLoading={isLibraryBusy}
-            shareOpenerRef={shareOpenerRef}
-            practiceOpenerRef={overlayPracticeOpenerRef}
-            statsOpenerRef={statsOpenerRef}
-            clearOpenerRef={clearOpenerRef}
-            listenPracticeHandoff={activeListenPracticeHandoff}
-            onDismissListenPractice={dismissListenPractice}
+      {courseScopeReady && <AppDeferredCreateCardDialog
+        model={intakeSharing.cardCreator}
+        actions={intakeActions.cardCreator}
+        deckOptions={customDecks}
+      />}
+
+      {activeCeremony?.ownerId === currentOwnerId && (
+        <Suspense fallback={dialogFallback}>
+          <AnimeReveal
+            open
+            event={activeCeremony.event}
+            payload={activeCeremony.payload}
+            onContinue={dismissCeremony}
+            onLater={dismissCeremony}
+            onEquip={() => equipCeremonyFrame(equipFrame, dismissCeremony)}
           />
         </Suspense>
       )}
 
-      <UndoToast toast={undoToast} onDismiss={dismissUndoToast} />
+      {courseScopeReady && (hasMountedOverlays || isShareModalOpen || !!share.activeShareId) && (
+        <Suspense fallback={dialogFallback}>
+          <AppOverlays
+            {...overlayLearningProps(learning)}
+            {...overlayShareProps(learning)}
+            {...overlayUiProps(
+              isPracticeMenuOpen,
+              setIsPracticeMenuOpen,
+              isStatsOpen,
+              setIsStatsOpen,
+              stats,
+              insightsPhase,
+              cloud.error,
+              retryInsights,
+              isDarkMode,
+              showClearConfirm,
+              setShowClearConfirm,
+            )}
+            cards={library.model.cards}
+            practiceLanguage={targetLanguage}
+            ownerId={currentOwnerId}
+            isOffline={!isBrowserOnline}
+            listenPracticeHandoff={activeListenPracticeHandoff}
+            onDismissListenPractice={dismissListenPractice}
+            shareDialogOpen={isShareModalOpen}
+            onDismissShareError={() => {
+              intakeActions.clearShareError();
+              setError(current => current === share.error ? null : current);
+            }}
+            acceptSharedDeck={async () => { await intakeActions.acceptShared(); }}
+            canRevokeShare={!!share.activeShareId}
+            revokeShare={async () => { await intakeActions.revokeShare(); }}
+            shareOpenerRef={shareOpenerRef}
+            practiceOpenerRef={overlayPracticeOpenerRef}
+            statsOpenerRef={statsOpenerRef}
+            clearOpenerRef={clearOpenerRef}
+            loadOwnerCardCount={loadOwnerCardCount}
+            onExportLibrary={libraryActions.exportLibrary}
+            onOpenProgress={() => setViewMode('progress')}
+          />
+        </Suspense>
+      )}
 
       {/* Floating Mobile Bottom Navigation */}
       <FloatingMobileNav
@@ -377,5 +776,10 @@ export default function AppRuntime({
         viewStageRef={viewStageRef}
       />
     </div>
+    </VerifiedStatsProvider>
+    </CardEditorServicesProvider>
+    </AccountProfileProvider>
+    )}
+    </CourseProvider>
   );
 }

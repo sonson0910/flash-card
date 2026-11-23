@@ -23,7 +23,7 @@ export function RecoverableActionFeedback({
       role="alert"
       aria-atomic="true"
       className={cn(
-        'mt-3 flex items-center gap-2 rounded-xl border border-rose-300 bg-rose-50 p-2 text-left text-xs font-semibold text-rose-800 dark:border-rose-800 dark:bg-rose-950/80 dark:text-rose-100',
+        'crystal-chamfer-sm mt-3 flex items-center gap-2 border border-[var(--sf-danger)] bg-[color-mix(in_srgb,var(--sf-danger)_10%,var(--sf-surface))] p-2 text-left text-xs font-semibold text-[var(--sf-text)] [--sf-chamfer-edge:var(--sf-danger)]',
         className,
       )}
     >
@@ -37,7 +37,7 @@ export function RecoverableActionFeedback({
             event.stopPropagation();
             onRetry();
           }}
-          className="min-h-11 shrink-0 rounded-lg border border-current px-3 font-bold transition-colors hover:bg-rose-100 dark:hover:bg-rose-900"
+          className="min-h-11 shrink-0 rounded-lg border border-current px-3 font-bold transition-colors hover:bg-[color-mix(in_srgb,var(--sf-danger)_14%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-danger)] motion-reduce:transition-none"
         >
           {retryLabel}
         </button>
@@ -50,7 +50,7 @@ export function RecoverableActionFeedback({
           event.stopPropagation();
           onDismiss();
         }}
-        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-rose-100 dark:hover:bg-rose-900"
+        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-[color-mix(in_srgb,var(--sf-danger)_14%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-danger)] motion-reduce:transition-none"
         aria-label={dismissLabel}
       >
         <X size={16} aria-hidden="true" />

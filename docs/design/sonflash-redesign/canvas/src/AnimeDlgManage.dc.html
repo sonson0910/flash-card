@@ -1,0 +1,205 @@
+<!--#AHEAD Crystal Star manage dialogs-->
+<div style="width: 720px; height: 780px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}};">
+<!--#ABG-->
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: {{scrim}};"></div>
+
+  <div style="position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; padding: 24px;">
+    <div class="nk-unfold" style="position: relative; width: {{dw}}px; filter: {{m.glow}};">
+      <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{m.frame}};"></div>
+      <div role="dialog" aria-modal="true" aria-labelledby="dlg-title" style="position: relative; margin: 2px; clip-path: {{t.chamfer}}; background: {{m.body}}; display: flex; flex-direction: column; overflow: hidden;">
+        <span aria-hidden="true" style="position: absolute; left: 26px; top: 0; width: 120px; height: 3px; background: {{t.crimsonGrad}}; box-shadow: 0 0 12px rgb(255 42 77 / 0.8);"></span>
+        <span aria-hidden="true" style="position: absolute; right: 30px; bottom: 0; width: 70px; height: 3px; background: {{m.tail}}; box-shadow: 0 0 10px {{m.tail}};"></span>
+        <sc-if value="{{danger}}" hint-placeholder-val="{{false}}">
+          <svg aria-hidden="true" width="210" height="80" viewBox="0 0 210 80" style="position: absolute; left: 0; bottom: 0; pointer-events: none; filter: drop-shadow(0 0 6px rgb(255 42 77 / 0.9));">
+            <path d="M0 66 L52 50 L44 38 L104 30 L96 18 L172 10 L206 16" fill="none" stroke="{{t.crimson}}" stroke-width="2.2" stroke-linejoin="miter"></path>
+            <path d="M52 50 L70 70 M104 30 L118 48 M172 10 L166 0" fill="none" stroke="{{t.crimson}}" stroke-width="1.4" opacity="0.8"></path>
+            <path d="M0 66 L52 50 L44 38 L104 30" fill="none" stroke="#ffffff" stroke-width="0.8" opacity="0.7"></path>
+          </svg>
+        </sc-if>
+
+        <header style="position: relative; padding: 22px 24px 14px 26px; display: flex; align-items: flex-start; gap: 14px;">
+          <sc-if value="{{hasIcon}}" hint-placeholder-val="{{false}}">
+            <span aria-hidden="true" style="flex-shrink: 0; width: 56px; height: 56px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(170deg, #ff5470, #b30f33 60%, #7a0820); color: #ffffff; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{icon}}"></path></svg></span>
+          </sc-if>
+          <div style="flex-grow: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.16em; color: {{t.crimsonText}};"><span style="width: 7px; height: 7px; transform: rotate(45deg); background: {{t.crimson}}; box-shadow: 0 0 8px {{t.crimson}};"></span>{{kicker}}</div>
+            <h2 id="dlg-title" style="margin: 6px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1.05; letter-spacing: 0.01em; color: {{t.textStrong}};">{{title}}</h2>
+            <sc-if value="{{hasSub}}" hint-placeholder-val="{{true}}">
+              <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">{{sub}}</p>
+            </sc-if>
+            <sc-if value="{{isImport}}" hint-placeholder-val="{{false}}">
+              <p style="margin: 6px 0 0; font-size: 13.5px; color: {{t.text2}};"><span style="font-family: {{t.fMono}}; color: {{t.textStrong}};">vocab-ielts-week-6.xlsx</span> · 120 rows</p>
+            </sc-if>
+          </div>
+          <button aria-label="Close" style="flex-shrink: 0; width: 38px; height: 38px; border: 0; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        </header>
+
+        <!-- New deck -->
+        <sc-if value="{{isNew}}" hint-placeholder-val="{{true}}">
+          <div style="padding: 4px 26px 20px; display: flex; flex-direction: column; gap: 16px;">
+            <label style="display: flex; flex-direction: column; gap: 6px;"><span style="{{cap}}">Deck name</span>
+              <span style="height: 48px; box-sizing: border-box; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{errBg}}; box-shadow: inset 0 0 0 1.5px {{t.crimson}}; display: flex; align-items: center; gap: 8px;"><input aria-invalid="true" aria-describedby="deck-err" value="IELTS" placeholder="IELTS, Travel…" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.textStrong}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 19px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{t.crimsonText}}" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"></path></svg></span>
+              <span id="deck-err" style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: {{t.crimsonText}};"><span style="width: 6px; height: 6px; transform: rotate(45deg); background: {{t.crimson}};"></span>A deck with this name already exists</span>
+            </label>
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="{{cap}} margin-right: 4px;">Try</span>
+              <sc-for list="{{suggest}}" as="s" hint-placeholder-count="3"><button style="height: 32px; padding: 0 14px; border: 0; transform: skewX(-12deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; cursor: pointer;"><span style="display: inline-block; transform: skewX(12deg);">{{s}}</span></button></sc-for>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;"><span style="{{cap}}">Cover</span>
+              <div role="radiogroup" aria-label="Deck cover" style="display: flex; gap: 12px;">
+                <sc-for list="{{covers}}" as="c" hint-placeholder-count="5">
+                  <button role="radio" aria-checked="{{c.on}}" aria-label="{{c.name}}" style="padding: 3px; border: 0; clip-path: {{t.chamferSm}}; background: {{c.ring}}; cursor: pointer; filter: {{c.glow}};"><span style="width: 62px; height: 80px; clip-path: {{t.chamferSm}}; background: {{c.bg}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; color: {{c.text}};">I</span></button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Delete deck -->
+        <sc-if value="{{isDelete}}" hint-placeholder-val="{{false}}">
+          <div style="padding: 4px 26px 20px; display: flex; flex-direction: column; gap: 16px;">
+            <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: {{t.body}};">The deck goes away, but its <strong style="color: {{t.textStrong}};">170</strong> cards stay in your library and move to <strong style="color: {{t.holoText}};">Unassigned</strong>. Nothing you have learned is lost.</p>
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr); align-items: center;">
+              <div style="position: relative; padding: 14px 16px; clip-path: {{t.chamfer}}; background: {{errBg}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; overflow: hidden;">
+                <svg aria-hidden="true" width="100%" height="100%" viewBox="0 0 200 100" preserveAspectRatio="none" style="position: absolute; inset: 0;"><path d="M0 30 L60 46 L52 58 L118 62 L108 76 L200 88" fill="none" stroke="{{t.crimson}}" stroke-width="1.6" vector-effect="non-scaling-stroke" opacity="0.8"></path></svg>
+                <div style="position: relative; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; color: {{t.text2}};">TACN</div>
+                <div style="position: relative; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 34px; line-height: 1.1; color: {{t.text3}}; text-decoration: line-through; text-decoration-color: {{t.crimson}};">170</div>
+                <div style="position: relative; font-size: 12px; font-weight: 700; color: {{t.crimsonText}};">deck removed</div>
+              </div>
+              <div aria-hidden="true" style="display: flex; justify-content: center; gap: 2px;"><span style="width: 10px; height: 18px; clip-path: polygon(0 0, 100% 50%, 0 100%, 40% 50%); background: {{t.crimson}};"></span><span style="width: 10px; height: 18px; clip-path: polygon(0 0, 100% 50%, 0 100%, 40% 50%); background: {{t.holo}};"></span></div>
+              <div style="padding: 14px 16px; clip-path: {{t.chamfer}}; background: {{holoBg}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+                <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 16px; color: {{t.textStrong}};">Unassigned</div>
+                <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 34px; line-height: 1.1; color: {{t.holoText}};">1,012</div>
+                <div style="font-size: 12px; font-weight: 700; color: {{t.text2}};">842 + 170 cards</div>
+              </div>
+            </div>
+            <p style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{t.text2}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: {{t.holo}}; box-shadow: 0 0 8px rgb(94 242 255 / 0.8);"></span>Review schedules and mastery are kept for every card.</p>
+          </div>
+        </sc-if>
+
+        <!-- Clear library -->
+        <sc-if value="{{isClear}}" hint-placeholder-val="{{false}}">
+          <div style="padding: 4px 26px 20px; display: flex; flex-direction: column; gap: 14px;">
+            <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: {{t.body}};">This permanently deletes every card, deck and review history on all your synced devices. <strong style="color: {{t.crimsonText}};">It can’t be undone.</strong></p>
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+              <sc-for list="{{wipe}}" as="w" hint-placeholder-count="3">
+                <div style="padding: 10px 14px; clip-path: {{t.chamferSm}}; background: {{errBg}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};"><div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1.1; color: {{t.textStrong}};">{{w.n}}</div><div style="font-size: 12px; font-weight: 700; color: {{t.text2}};">{{w.label}}</div></div>
+              </sc-for>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 14px; clip-path: {{t.chamferSm}}; background: {{holoBg}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+              <span style="flex-grow: 1; font-size: 13px; font-weight: 700; color: {{t.body}};">Keep a copy first — export everything as CSV.</span>
+              <button style="height: 36px; padding: 0 14px; border: 0; clip-path: {{t.chamferSm}}; background: {{holoBtn}}; color: {{holoBtnText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13.5px; display: flex; align-items: center; gap: 6px; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Export CSV</button>
+            </div>
+            <label style="display: flex; flex-direction: column; gap: 6px;"><span style="{{cap}}">Type <span style="font-family: {{t.fMono}}; font-style: normal; letter-spacing: 0; color: {{t.crimsonText}};">DELETE</span> to confirm</span>
+              <span style="height: 48px; box-sizing: border-box; padding: 0 8px 0 14px; clip-path: {{t.chamferSm}}; background: {{errBg}}; box-shadow: inset 0 0 0 1.5px {{t.crimson}}; display: flex; align-items: center; gap: 8px;"><input value="DELETE" aria-label="Type DELETE to confirm" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.crimsonText}}; font-family: {{t.fMono}}; font-size: 17px; letter-spacing: 0.12em;"><span style="width: 28px; height: 28px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.crimson}}; color: #ffffff; display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span></span>
+            </label>
+          </div>
+        </sc-if>
+
+        <!-- Import -->
+        <sc-if value="{{isImport}}" hint-placeholder-val="{{false}}">
+          <div style="padding: 4px 26px 18px; display: flex; flex-direction: column; gap: 12px;">
+            <div role="status" style="padding: 14px 16px; clip-path: {{t.chamfer}}; background: {{m.inner}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="sf-spin" style="width: 16px; height: 16px; box-sizing: border-box; border-radius: 50%; border: 2.5px solid {{t.track}}; border-top-color: {{t.crimson}};"></span>
+                <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 17px; color: {{t.textStrong}};">Importing <span style="color: {{t.crimsonText}};">38</span> of <span>120</span></span>
+                <span style="margin-left: auto; font-size: 12.5px; color: {{t.text2}};">current: <span style="font-family: {{t.fMono}}; color: {{t.textStrong}};">resilient</span></span>
+              </div>
+              <div role="progressbar" aria-valuenow="38" aria-valuemin="0" aria-valuemax="120" style="margin-top: 10px; height: 10px; background: {{t.track}}; transform: skewX(-24deg); overflow: hidden;"><div class="sf-grow" style="height: 100%; width: 31.7%; background: linear-gradient(90deg, #ff2a4d, #ff5470 70%, #ffd166); box-shadow: 0 0 10px rgb(255 42 77 / 0.7);"></div></div>
+              <div style="margin-top: 8px; font-size: 12.5px; color: {{t.text3}};">You can close this — the import keeps running in the background.</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;"><span style="height: 22px; padding: 0 8px; transform: skewX(-12deg); background: {{goldBg}}; box-shadow: inset 0 0 0 1px {{goldLine}}; color: {{t.goldText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.1em; display: flex; align-items: center;">PARTIAL</span><span style="font-size: 12.5px; color: {{t.text2}};">When it finishes</span><span style="margin-left: auto; {{cap}}">Result preview</span></div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+                <div style="height: 40px; box-sizing: border-box; padding: 0 14px; clip-path: {{t.chamferSm}}; background: {{r.bg}}; box-shadow: inset 0 0 0 1px {{r.line}}; display: flex; align-items: center; gap: 10px;">
+                  <span style="width: 8px; height: 8px; transform: rotate(45deg); background: {{r.dot}};"></span>
+                  <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; color: {{r.color}};">{{r.label}}</span><span style="font-size: 12.5px; color: {{t.text3}};">{{r.hint}}</span>
+                  <span style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 18px; color: {{r.color}};">{{r.n}}</span>
+                </div>
+              </sc-for>
+              <ul style="margin: 2px 0 0; padding: 10px 14px; list-style: none; clip-path: {{t.chamferSm}}; background: {{errBg}}; display: flex; flex-direction: column; gap: 6px;">
+                <sc-for list="{{errors}}" as="e" hint-placeholder-count="2">
+                  <li style="font-size: 12.5px; line-height: 1.45; color: {{t.body}};"><span style="font-family: {{t.fMono}}; font-weight: 500; color: {{t.crimsonText}};">{{e.row}}</span> · {{e.msg}}</li>
+                </sc-for>
+              </ul>
+            </div>
+          </div>
+        </sc-if>
+
+        <footer style="position: relative; padding: 14px 26px 18px; background: {{m.foot}}; box-shadow: inset 0 1px 0 {{t.line}}; display: flex; align-items: center; gap: 10px;">
+          <sc-for list="{{lefts}}" as="b" hint-placeholder-count="0">
+            <button class="nk-lift" style="{{b.css}}">{{b.icon}}{{b.label}}</button>
+          </sc-for>
+          <span style="flex-grow: 1;"></span>
+          <sc-for list="{{rights}}" as="b" hint-placeholder-count="2">
+            <button class="nk-lift" aria-disabled="{{b.dis}}" style="{{b.css}}">{{b.label}}</button>
+          </sc-for>
+        </footer>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"kind":{"editor":"enum","options":["decknew","deckdelete","clear","import"],"default":"decknew"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#ATOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = nkTokens(dark);
+    const kind = this.props.kind ?? 'decknew';
+    const danger = kind === 'deckdelete' || kind === 'clear';
+    const m = {
+      frame: danger
+        ? (dark ? 'linear-gradient(155deg, #ff5470, #b30f33 38%, rgb(255 42 77 / 0.35) 70%, #ff2a4d)' : 'linear-gradient(155deg, #ff5470, #c40f35 38%, rgb(224 23 63 / 0.4) 70%, #e0173f)')
+        : (dark ? 'linear-gradient(155deg, #ff5470, rgb(255 42 77 / 0.25) 28%, rgb(94 242 255 / 0.2) 72%, #5ef2ff)' : 'linear-gradient(155deg, #ff5470, rgb(224 23 63 / 0.3) 28%, rgb(26 167 201 / 0.35) 72%, #1aa7c9)'),
+      body: danger
+        ? (dark ? 'radial-gradient(ellipse 70% 50% at 90% 0%, rgb(179 15 51 / 0.35), transparent 70%), linear-gradient(170deg, #1a1020 0%, #0b0a14 100%)' : 'radial-gradient(ellipse 70% 50% at 90% 0%, rgb(255 84 112 / 0.18), transparent 70%), linear-gradient(170deg, #fff5f8 0%, #e3efff 100%)')
+        : (dark ? 'linear-gradient(170deg, #141a2b 0%, #0a0d17 100%)' : 'linear-gradient(170deg, #f5fbff 0%, #dbeeff 100%)'),
+      foot: dark ? 'rgb(0 0 0 / 0.25)' : 'rgb(190 222 250 / 0.45)',
+      inner: dark ? 'rgb(255 255 255 / 0.04)' : 'rgb(255 255 255 / 0.7)',
+      tail: danger ? t.crimson : t.holo,
+      glow: danger
+        ? (dark ? 'drop-shadow(0 0 44px rgb(255 42 77 / 0.5)) drop-shadow(0 30px 40px rgb(0 0 0 / 0.7))' : 'drop-shadow(0 0 30px rgb(224 23 63 / 0.3)) drop-shadow(0 26px 40px rgb(20 70 130 / 0.3))')
+        : (dark ? 'drop-shadow(0 0 36px rgb(255 42 77 / 0.3)) drop-shadow(0 30px 40px rgb(0 0 0 / 0.7))' : 'drop-shadow(0 26px 40px rgb(20 70 130 / 0.35))'),
+    };
+    const cap = 'font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: ' + t.text2 + ';';
+    const btnBase = 'height: 46px; border: 0; cursor: pointer; font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 7px;';
+    const B = {
+      p: (label) => ({ label, icon: '', dis: 'false', css: btnBase + ' padding: 0 26px; clip-path: ' + t.chamfer + '; background: ' + t.primaryBg + '; color: #ffffff; font-weight: 900; filter: drop-shadow(0 0 14px rgb(255 42 77 / 0.6));' }),
+      d: (label) => ({ label, icon: '', dis: 'false', css: btnBase + ' padding: 0 26px; clip-path: ' + t.chamfer + '; background: linear-gradient(180deg, #d1123a 0%, #8a0a26 100%); box-shadow: inset 0 0 0 1px rgb(255 143 163 / 0.6); color: #ffffff; font-weight: 900; filter: drop-shadow(0 0 18px rgb(255 42 77 / 0.75));' }),
+      s: (label, icon) => ({ label, icon: icon || '', dis: 'false', css: btnBase + ' padding: 0 20px; clip-path: ' + t.chamferSm + '; background: ' + t.secondaryBg + '; box-shadow: inset 0 0 0 1px ' + t.lineStrong + '; color: ' + t.secondaryText + ';' }),
+      off: (label) => ({ label, icon: '', dis: 'true', css: btnBase + ' padding: 0 24px; clip-path: ' + t.chamfer + '; background: ' + t.track + '; color: ' + t.text3 + '; cursor: not-allowed;' }),
+    };
+    const C = dark
+      ? [['Crimson', 'linear-gradient(160deg, #ff5470, #b30f33 60%, #7a0820)', '#ffffff'], ['Holo', 'linear-gradient(160deg, #9ff9ff, #1aa7c9 60%, #0b3a4f)', '#031820'], ['Gold', 'linear-gradient(160deg, #fff0b8, #ffd166 50%, #8a5a00)', '#4a2a00'], ['Night', 'linear-gradient(160deg, #1d2a4a, #0b1020)', '#cfe0ff'], ['Sakura', 'linear-gradient(160deg, #ffe3f1, #ff8fb6 60%, #b3265a)', '#4a0a20']]
+      : [['Crimson', 'linear-gradient(160deg, #ff5470, #e0173f 60%, #a30c2d)', '#ffffff'], ['Holo', 'linear-gradient(160deg, #bff6ff, #2bc4e0 60%, #0a8fb0)', '#ffffff'], ['Gold', 'linear-gradient(160deg, #fff4cc, #ffd166 60%, #c98a00)', '#4a2a00'], ['Night', 'linear-gradient(160deg, #3a4f7a, #0d1a33)', '#ffffff'], ['Sakura', 'linear-gradient(160deg, #fff0f6, #ffb3cf 60%, #e0578a)', '#5a0a28']];
+    const covers = C.map(([name, bg, text], i) => ({ name, bg, text, on: String(i === 0),
+      ring: i === 0 ? 'linear-gradient(160deg, #ffffff, ' + t.holo + ')' : 'transparent', glow: i === 0 ? 'drop-shadow(0 0 10px rgb(94 242 255 / 0.8))' : 'none' }));
+    const rows = [
+      ['Created', 'new cards', 96, t.good, t.textStrong], ['Reused', 'already in library', 18, t.easy, t.textStrong],
+      ['Skipped', 'duplicate rows', 4, t.text3, t.text2], ['Failed', 'see below', 2, t.crimson, t.crimsonText],
+    ].map(([label, hint, n, dot, color]) => ({ label, hint, n, dot, color, bg: label === 'Failed' ? (dark ? 'rgb(255 42 77 / 0.12)' : 'rgb(255 84 112 / 0.12)') : m.inner, line: label === 'Failed' ? t.panelEdge : t.line }));
+    const K = {
+      decknew: { kicker: 'DECK STUDIO', title: 'New deck', sub: 'Group words by exam, trip, book — anything you like.', dw: 560, lefts: [], rights: [B.s('Cancel'), B.off('Create deck')] },
+      deckdelete: { kicker: 'DELETE DECK', title: 'Delete “TACN”?', dw: 580, icon: 'M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3', lefts: [], rights: [B.s('Keep deck'), B.d('Delete deck')] },
+      clear: { kicker: 'DANGER ZONE', title: 'Clear the entire library?', dw: 600, icon: 'M12 3 2 20h20zM12 10v4M12 17h.01', lefts: [], rights: [B.s('Keep library'), B.d('Delete everything')] },
+      import: { kicker: 'IMPORT', title: 'Import from spreadsheet', dw: 620, lefts: [B.s('Download error report', '↓ ')], rights: [B.p('Done')] },
+    }[kind];
+    return {
+      t, m, cap, bg: { wings: true }, danger,
+      scrim: danger ? (dark ? 'rgb(20 2 8 / 0.78)' : 'rgb(60 10 30 / 0.3)') : t.scrim,
+      dw: K.dw, kicker: K.kicker, title: K.title, sub: K.sub || '', hasSub: !!K.sub, hasIcon: !!K.icon, icon: K.icon || '',
+      lefts: K.lefts, rights: K.rights,
+      isNew: kind === 'decknew', isDelete: kind === 'deckdelete', isClear: kind === 'clear', isImport: kind === 'import',
+      suggest: ['IELTS Writing', 'Travel', 'TOEIC 600'], covers, rows,
+      wipe: [{ n: '1,228', label: 'cards' }, { n: '5', label: 'decks' }, { n: '312', label: 'mastered words' }],
+      errors: [{ row: 'Row 47', msg: '“colleage” has no dictionary match — check the spelling.' }, { row: 'Row 88', msg: 'Meaning column is empty.' }],
+      errBg: dark ? 'rgb(255 42 77 / 0.1)' : 'rgb(255 84 112 / 0.1)',
+      holoBg: dark ? 'rgb(94 242 255 / 0.08)' : 'rgb(26 167 201 / 0.1)',
+      holoBtn: dark ? 'linear-gradient(180deg, #9ff9ff, #1aa7c9)' : 'linear-gradient(180deg, #2bc4e0, #0a8fb0)', holoBtnText: dark ? '#031820' : '#ffffff',
+      goldBg: dark ? 'rgb(255 209 102 / 0.12)' : 'rgb(255 236 180 / 0.8)', goldLine: dark ? 'rgb(255 209 102 / 0.5)' : 'rgb(180 120 0 / 0.45)',
+    };
+  }
+}
+</script>
+</body>
+</html>

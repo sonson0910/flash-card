@@ -47,7 +47,7 @@ on:
         required: false
         type: string
       source_revision:
-        description: Immutable revision that owns the completed migration required by verify
+        description: Immutable revision that owns the migration; required by verify, and by apply to resume a migration sealed at an earlier revision
         required: false
         type: string
 
@@ -95,8 +95,9 @@ jobs:
           test "$INVENTORY_REVISION" = "$GITHUB_SHA"
           [[ "$MIGRATION_MODE" = inventory || "$MIGRATION_MODE" = verify || "$MIGRATION_MODE" = apply || "$MIGRATION_MODE" = supersede || "$MIGRATION_MODE" = prepare-indexes ]]
           if [[ "$MIGRATION_MODE" = verify ]]; then
+            # The owning revision may be this release: verify is the only mode
+            # that can issue its report again once sharing has reopened.
             [[ "$MIGRATION_SOURCE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
-            test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"
           fi
           if [[ "$MIGRATION_MODE" = apply ]]; then
             test "$APPLY_CONFIRMATION" = "APPLY_SHARED_DECK_V2"
@@ -104,6 +105,12 @@ jobs:
             test -n "$BACKUP_PUBLIC_KEY"
             [[ "$INDEXES_RUN_ID" =~ ^[1-9][0-9]{0,19}$ ]]
             [[ "$INDEXES_REPORT_SHA256" =~ ^[a-f0-9]{64}$ ]]
+            # An apply that stopped after the default branch moved on is
+            # finished from the new head by naming the revision that sealed it.
+            if [[ -n "$MIGRATION_SOURCE_REVISION" ]]; then
+              [[ "$MIGRATION_SOURCE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]
+              test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"
+            fi
           fi
           if [[ "$MIGRATION_MODE" = supersede ]]; then
             test "$SUPERSEDE_CONFIRMATION" = "SUPERSEDE_SHARED_DECK_V2"
@@ -257,7 +264,7 @@ jobs:
       - name: Verify the trusted root Firebase CLI version
         if: inputs.mode == 'prepare-indexes'
         shell: bash
-        run: test "$(./node_modules/.bin/firebase --version)" = "15.29.0"
+        run: test "$(./node_modules/.bin/firebase --version)" = "15.34.0"
 
       - name: Set persisted scan start
         shell: bash

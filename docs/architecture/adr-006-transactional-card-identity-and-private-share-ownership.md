@@ -92,15 +92,30 @@ contains at most 100 cards, is additionally bounded to 750,000 encoded bytes, an
 gets an `expiresAt` timestamp 30 days after creation. The callable returns that
 timestamp with the share ID.
 
-Revocation reads both documents before writing. Private ownership metadata is
-authoritative for current shares; `authorUid` in a legacy public document is used
-only when private metadata is absent. The transaction deletes every document that
-exists, rejects a different requester, and treats an already-absent pair as an
-idempotent no-op.
+Each owner is also bounded in aggregate by a server-only usage ledger
+(`shared_deck_usage`) that the same transaction updates: at most 100 active
+(unexpired) shares and at most 25,000,000 bytes of active share payload. A new share
+that would exceed either limit is refused with a quota error (`resource-exhausted`)
+until the owner revokes a share or one expires. The limits are the
+`MAX_SHARED_DECKS` and `MAX_SHARED_DECK_BYTES` constants in
+[`sharedDeckPersistence.ts`](../../functions/src/sharedDeckPersistence.ts); a test
+keeps these numbers in step with the constants.
+
+Revocation reads both documents before writing. Private ownership metadata is the
+only authority to revoke: when it is absent or is not a valid current record, the
+transaction refuses with a migration-required error and deletes nothing, even if a
+legacy public document carries `authorUid`. That share stays until the operator
+migration gives it private metadata or its TTL removes it. Account deletion is the
+one path that still removes a legacy share by `authorUid`, because it acts for the
+owner's whole account. Otherwise the transaction deletes every document that exists,
+rejects a different requester, and treats an already-absent pair as an idempotent
+no-op.
 
 Firestore Rules deny list and all client writes for public shares, permit only a
-schema-valid unexpired current share (or the tightly shaped legacy format) to be
-read by ID, and deny all reads and writes to ownership metadata. Firestore TTL must
+schema-valid unexpired current share to be read by ID, and deny all reads and
+writes to ownership metadata. After the Rules cutover only schema 2 is readable:
+a legacy owner-free share, a transitional schema-1 share, and a blocked or
+quarantined share are all denied, so an unmigrated legacy link stops working. Firestore TTL must
 be enabled on `expiresAt` for both collection groups. Rules deny an expired current
 share even if asynchronous TTL deletion has not run yet.
 
@@ -114,7 +129,8 @@ share even if asynchronous TTL deletion has not run yet.
 - Public share payloads no longer reveal an owner UID.
 - Share create/revoke cannot leave a one-sided current pair under normal Firestore
   transaction semantics.
-- Links have a documented storage/cost boundary: 100 cards and 30 days.
+- Links have a documented storage/cost boundary: 100 cards and 30 days per share,
+  and 100 active shares and 25,000,000 active bytes per owner.
 
 ### Costs and limitations
 
@@ -135,8 +151,9 @@ share even if asynchronous TTL deletion has not run yet.
   long UTF-8/multi-block inputs and malicious alternate IDs, but production
   acceptance still requires the Java-backed emulator suite. Static source matching
   is not a Rules compiler/runtime result.
-- Legacy shares retain their old public `authorUid` shape until they expire or are
-  revoked; the fallback must not be extended to new shares.
+- Legacy shares retain their old public `authorUid` shape in storage until they
+  expire or the operator migration rewrites them, but Rules no longer serve them;
+  the account-deletion fallback must not be extended to new shares or to revocation.
 - Operators must configure TTL for both collections. TTL is cleanup, not the access
   control; the Rules expiry comparison remains mandatory.
 

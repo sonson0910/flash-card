@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/firebase-emulator';
 
 const cards = [
   'resemblance', 'serendipity', 'eloquent', 'resilient',
@@ -22,21 +22,13 @@ const cards = [
   customDeck: null,
 }));
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(initialCards => {
-    localStorage.setItem('lingoflash_cards_scoped_v1', JSON.stringify({
-      version: 1,
-      ownerId: null,
-      cards: initialCards,
-    }));
-    localStorage.removeItem('lingoflash_cards');
-    localStorage.removeItem('lingoflash_cards_owner');
-    localStorage.setItem('lingoflash_theme', 'light');
-  }, cards);
+test.beforeEach(async ({ page, seedCards }) => {
+  await page.addInitScript(() => { localStorage.setItem('lingoflash_theme', 'light'); });
+  await seedCards(cards);
 });
 
-test('motion tokens expose one compact timing language', async ({ page }) => {
-  await page.goto('/');
+test('motion tokens expose one compact timing language', async ({ page, signIn }) => {
+  await signIn(page, '/?view=today');
   const tokens = await page.evaluate(() => {
     const styles = getComputedStyle(document.documentElement);
     return Object.fromEntries([
@@ -58,13 +50,28 @@ test('motion tokens expose one compact timing language', async ({ page }) => {
   expect(normalizeDecimals(tokens['--ease-out-expo'])).toBe('cubic-bezier(0.16, 1, 0.3, 1)');
 });
 
-test('ambient glow stays static on mobile to avoid continuous blurred animation', async ({ page }) => {
+// `.ambient-orb`/`.ambient-orb-a/b/c` are orphaned CSS (index.css) with zero
+// JSX renders anywhere in src/ and no @keyframes animation of their own —
+// the live noise-texture layer is `.app-canvas::before` (index.css:109,
+// rendered via the `.app-canvas` root div in AppRuntime.tsx), which shares
+// every media query `.ambient-orb` used to share (max-width/hover/pointer,
+// data-save-data). `::before` is a pseudo-element, not a real DOM node, so
+// it can't go through `page.locator()` — read it with getComputedStyle.
+async function ambientLayerStyle(page: import('@playwright/test').Page, property: 'animationName' | 'display') {
+  return page.evaluate(prop => {
+    const canvas = document.querySelector('.app-canvas');
+    if (!canvas) return null;
+    return getComputedStyle(canvas, '::before')[prop as 'animationName' | 'display'];
+  }, property);
+}
+
+test('ambient glow stays static on mobile to avoid continuous blurred animation', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
-  await expect(page.locator('.ambient-orb').first()).toHaveCSS('animation-name', 'none');
+  await signIn(page, '/?view=today');
+  await expect.poll(() => ambientLayerStyle(page, 'display')).toBe('none');
 });
 
-test('data saver disables ambient motion at desktop sizes', async ({ page }) => {
+test('data saver disables ambient motion at desktop sizes', async ({ page, signIn }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'connection', {
       configurable: true,
@@ -76,16 +83,17 @@ test('data saver disables ambient motion at desktop sizes', async ({ page }) => 
     });
   });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await signIn(page, '/?view=today');
 
   await expect(page.locator('html')).toHaveAttribute('data-save-data', 'true');
-  await expect(page.locator('.ambient-orb').first()).toHaveCSS('display', 'none');
+  await expect.poll(() => ambientLayerStyle(page, 'display')).toBe('none');
 });
 
-test('dialog overlay and content use coordinated entrance animations', async ({ page }) => {
+test('dialog overlay and content use coordinated entrance animations', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
   await page.getByRole('button', { name: 'Manage library' }).click();
+  await expect(page.getByRole('menuitem', { name: 'See Pro plan' })).toBeVisible();
   await page.getByRole('menuitem', { name: 'Clear the entire library' }).click();
 
   const overlay = page.locator('[data-motion-overlay]');
@@ -96,11 +104,16 @@ test('dialog overlay and content use coordinated entrance animations', async ({ 
   await expect(dialog).toHaveAttribute('data-gsap-entrance', 'result');
 });
 
-test('utility hover physics stay restrained while reward remains expressive', async ({ page }) => {
+test('utility hover physics stay restrained while reward remains expressive', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/?view=library');
+  await signIn(page, '/?view=library');
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(700);
+  // The full <Flashcard> (role="group") only renders inside the "Open card"
+  // detail dialog now — LibraryCardGrid.tsx's grid rows are a compact
+  // summary with their own "Open card" button (see flashcard-effects.spec.ts
+  // and flashcard-locale.spec.ts for the same pattern).
+  await page.locator('[data-library-card-row][data-library-card-id="motion-7"]').getByRole('button', { name: 'Open card' }).click();
   const star = page
     .getByRole('group', { name: /insight flashcard/i })
     .getByRole('button', { name: 'Star this word' });
@@ -121,12 +134,14 @@ test('utility hover physics stay restrained while reward remains expressive', as
   expect(await hoveredScale()).toBeLessThanOrEqual(1.07);
 });
 
-test('only the first six library cards are marked for the initial stagger', async ({ page }) => {
+test('library rows render fully visible without an entrance stagger', async ({ page, signIn }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/?view=library');
-  const introducedCards = page.locator('[data-library-intro-index]');
-
-  await expect(introducedCards).toHaveCount(6);
-  await expect(introducedCards.nth(0)).toHaveAttribute('data-library-intro-index', '0');
-  await expect(introducedCards.nth(5)).toHaveAttribute('data-library-intro-index', '5');
+  await signIn(page, '/?view=library');
+  // The row-based library dropped the card entrance stagger, so every seeded
+  // row must be on screen at full opacity instead of waiting on an animation.
+  const rows = page.locator('[data-library-card-row]');
+  await expect(rows).toHaveCount(cards.length);
+  await expect(page.locator('[data-library-intro-index]')).toHaveCount(0);
+  const opacities = await rows.evaluateAll(elements => elements.map(element => getComputedStyle(element).opacity));
+  expect(opacities).toEqual(cards.map(() => '1'));
 });

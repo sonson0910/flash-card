@@ -1,0 +1,67 @@
+/* Daily goals: a classic card and the Crystal Star chamfered panel (AnimeToday "DAILY GOALS"). */
+.daily-goals-panel {
+  --dg-track: color-mix(in srgb, var(--sf-text) 10%, transparent);
+  --dg-fill: var(--sf-brand);
+  --dg-accent: var(--sf-brand-text);
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 18px 22px 20px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-card-radius, 20px);
+  box-shadow: var(--sf-panel-shadow);
+  color: var(--sf-text);
+}
+/* The chamfer utility draws the Crystal fill, so the plain card fill stays out of that family. */
+:root:not([data-theme-family="crystal"]) .daily-goals-panel { background: var(--sf-surface); }
+.daily-goals-panel__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; color: var(--sf-text-muted); font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.daily-goals-panel__title { display: flex; align-items: center; gap: 8px; margin: 0; color: inherit; font: inherit; letter-spacing: inherit; }
+.daily-goals-panel__mark { display: none; }
+.daily-goals-panel__reset { font-variant-numeric: tabular-nums; letter-spacing: .06em; }
+.daily-goals-panel__list { display: flex; flex-direction: column; gap: 14px; margin: 14px 0 0; padding: 0; list-style: none; }
+.daily-goal { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 14px; }
+.daily-goal__label { min-width: 0; color: var(--sf-text); font-size: 14.5px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.daily-goal--keep-streak .daily-goal__label { grid-column: 1 / -1; }
+.daily-goal__xp { display: inline-flex; min-height: 24px; align-items: center; padding: 0 10px; border-radius: 999px; background: var(--sf-surface-muted); color: var(--dg-accent); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.daily-goal__bar { position: relative; display: block; height: 8px; overflow: hidden; border-radius: 999px; background: var(--dg-track); }
+.daily-goal__fill { display: block; height: 100%; border-radius: inherit; background: var(--dg-fill); }
+.daily-goal__count { color: var(--sf-text-muted); font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+:root[data-theme-family="classic"] .daily-goal--win-match { --dg-fill: var(--sf-second); }
+:root[data-theme-family="classic"] .daily-goal--keep-streak { --dg-fill: var(--sf-reward); }
+:root[data-theme-family="classic"]:not(.dark) .daily-goal--win-match { --dg-fill: var(--sf-success); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .daily-goal__fill { transition: width 420ms cubic-bezier(.2, .8, .2, 1); }
+}
+
+/* Crystal Star: the chamfer utility (on the element) cuts the corners and redraws their edges in
+   --sf-chamfer-edge; the glass fill goes through --sf-chamfer-fill. */
+:root[data-theme-family="crystal"] .daily-goals-panel {
+  --dg-holo: color-mix(in srgb, var(--sf-success) 70%, var(--sf-text));
+  --dg-strong: var(--sf-text);
+  --dg-muted: var(--sf-text-muted);
+  --dg-edge: color-mix(in srgb, var(--sf-success) 42%, transparent);
+  --dg-track: var(--sf-border);
+  --sf-chamfer-edge: var(--dg-edge);
+  --sf-chamfer-fill: var(--sf-surface-glass);
+  border-color: var(--dg-edge);
+  border-radius: 0;
+  box-shadow: none;
+  font-family: var(--sf-font-display);
+}
+:root[data-theme-family="crystal"].dark .daily-goals-panel { --dg-holo: var(--sf-second); }
+:root[data-theme-family="crystal"] .daily-goals-panel__head { color: var(--dg-holo); font-size: 14px; font-style: italic; font-weight: 800; letter-spacing: .14em; }
+:root[data-theme-family="crystal"] .daily-goals-panel__mark { display: inline-block; width: 8px; height: 8px; transform: rotate(45deg); background: var(--sf-second); box-shadow: 0 0 8px var(--sf-second); }
+:root[data-theme-family="crystal"] .daily-goals-panel__separator { display: none; }
+:root[data-theme-family="crystal"] .daily-goals-panel__reset { margin-left: auto; color: var(--dg-muted); font-size: 12.5px; letter-spacing: .08em; }
+:root[data-theme-family="crystal"] .daily-goal__label { color: var(--dg-strong); font-family: var(--font-sans); font-size: 15.5px; font-weight: 900; }
+:root[data-theme-family="crystal"] .daily-goal__xp { min-height: 26px; padding: 0 12px; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: linear-gradient(180deg, #fff0b8, #ffd166); color: #4a2a00; font-size: 13px; font-style: italic; font-weight: 800; }
+:root[data-theme-family="crystal"] .daily-goal--study-cards .daily-goal__xp { background: linear-gradient(180deg, #e0173f, #a30c2d); color: #fff; }
+:root[data-theme-family="crystal"] .daily-goal__bar { height: 9px; border-radius: 0; transform: skewX(-24deg); background: var(--dg-track); }
+:root[data-theme-family="crystal"] .daily-goal__fill { border-radius: 0; background: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%); box-shadow: 0 0 10px rgb(255 42 77 / .5); }
+:root[data-theme-family="crystal"] .daily-goal--win-match .daily-goal__fill { background: linear-gradient(90deg, var(--sf-second), color-mix(in srgb, var(--sf-second) 60%, white)); }
+:root[data-theme-family="crystal"] .daily-goal--keep-streak .daily-goal__fill { background: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) 55%, white), var(--sf-brand)); }
+:root[data-theme-family="crystal"] .daily-goal__count { color: var(--dg-muted); font-size: 13px; font-style: italic; font-weight: 700; }
+
+@media (max-width: 420px) {
+  .daily-goals-panel { padding: 16px; }
+}

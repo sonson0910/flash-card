@@ -1,0 +1,239 @@
+/* The add-a-language dialog. Unlayered, like course-surfaces.css: Crystal rules reset the radius
+   and leave background-image to the chamfer utilities, passing fills through --sf-chamfer-fill. */
+
+.course-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--sf-dialog-veil);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.course-add {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  z-index: 101;
+  width: min(720px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translate(-50%, -50%);
+  padding: 28px 30px 26px;
+  border: 1px solid var(--sf-border);
+  border-radius: 18px;
+  background-color: var(--sf-surface);
+  color: var(--sf-text);
+  box-shadow: inset 0 1px 0 var(--sf-surface), 0 2px 6px color-mix(in srgb, var(--sf-text) 8%, transparent), 0 50px 90px -40px color-mix(in srgb, var(--sf-text) 55%, transparent);
+}
+html:not([data-theme-family=crystal]) .course-add { background: var(--sf-dialog-bg, var(--sf-surface)); }
+.dark .course-add {
+  border-radius: 26px;
+  box-shadow: 0 40px 90px -30px rgb(0 0 0 / .9), 0 0 70px -34px color-mix(in srgb, var(--sf-brand) 50%, transparent), inset 0 1px 0 var(--sf-edge-highlight);
+}
+html[data-theme-family=crystal] .course-add {
+  --sf-chamfer-fill: var(--sf-dialog-bg);
+  --sf-chamfer-edge: var(--sf-edge-highlight);
+  border-color: var(--sf-edge-highlight);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.course-add__head { display: flex; align-items: flex-start; gap: 14px; }
+.course-add__head > div { min-width: 0; flex: 1; }
+.course-add__title { margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 32px; font-weight: 400; letter-spacing: -.02em; line-height: 1.1; }
+.course-add__title em { color: var(--sf-brand); font-style: italic; }
+.dark .course-add__title em { font-style: normal; }
+.course-add__subtitle { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 14px; line-height: 1.5; }
+.course-add__close {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--sf-border);
+  border-radius: 999px;
+  background-color: var(--sf-surface-raised);
+  color: var(--sf-text-muted);
+  cursor: pointer;
+}
+.course-add__close:hover { color: var(--sf-text); }
+
+html[data-theme-family=crystal] .course-add__title { font-size: 34px; font-style: italic; font-weight: 900; letter-spacing: 0; text-transform: uppercase; }
+html[data-theme-family=crystal] .course-add__title em { color: var(--sf-brand-text); }
+html[data-theme-family=crystal] .course-add__close { border-radius: 0; }
+html[data-theme-family=crystal] .course-add__close:focus-visible { outline-offset: -4px; }
+
+.course-add__form { margin-top: 20px; }
+.course-add__languages { min-width: 0; margin: 0; padding: 0; border: 0; }
+.course-add__label { color: var(--sf-text-muted); font-size: 12.5px; font-weight: 600; }
+.course-add__label--caps { padding: 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+html[data-theme-family=crystal] .course-add__label--caps { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .16em; }
+
+.course-add__grid { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 10px; }
+.course-target-card {
+  position: relative;
+  display: flex;
+  height: 118px;
+  min-width: 0;
+  flex-direction: column;
+  padding: 12px 14px;
+  border: 1px solid var(--sf-border);
+  border-radius: 16px;
+  background-color: var(--sf-surface-raised);
+  color: var(--sf-text);
+  cursor: pointer;
+}
+.course-target-card__input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+.course-target-card:has(.course-target-card__input:focus-visible) { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+.course-target-card__glyph { color: var(--sf-text); font-size: 30px; font-weight: 700; line-height: 1; }
+.course-target-card[data-course-language='en'] .course-target-card__glyph,
+.course-target-card[data-course-language='en'] .course-target-card__name { font-family: var(--sf-font-display); }
+.course-target-card__name { margin-top: auto; font-size: 16px; font-weight: 700; }
+.course-target-card__sample { overflow: hidden; margin-top: 2px; color: var(--sf-text-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.course-target-card__tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  height: 20px;
+  align-items: center;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--sf-surface-control);
+  color: var(--sf-text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.course-target-card[data-state='selected'] {
+  border: 1.5px solid var(--sf-text);
+  box-shadow: 0 10px 20px -14px var(--sf-shadow);
+}
+.course-target-card[data-state='selected'] .course-target-card__glyph { color: var(--sf-brand); }
+.course-target-card[data-state='selected'] .course-target-card__tag { background: var(--sf-text); color: var(--sf-surface); }
+.dark .course-target-card[data-state='selected'] {
+  border-color: var(--sf-brand);
+  background-color: color-mix(in srgb, var(--sf-brand) 10%, transparent);
+  box-shadow: 0 0 30px -10px color-mix(in srgb, var(--sf-brand) 70%, transparent);
+}
+.dark .course-target-card[data-state='selected'] .course-target-card__tag { background: var(--sf-brand); color: var(--sf-on-brand); }
+.course-target-card[data-state='added'] { cursor: not-allowed; opacity: .5; }
+
+/* The chamfer paints its fill as a background image, so a Crystal fill must be a gradient: a bare colour invalidates
+   the whole background image and leaves the card see-through. Every card sits on the opaque panel colour. */
+html[data-theme-family=crystal] .course-target-card { --sf-chamfer-fill: linear-gradient(var(--sf-surface), var(--sf-surface)); border-radius: 0; background-color: transparent; }
+html[data-theme-family=crystal] .course-target-card[data-state='selected'] {
+  --sf-chamfer-edge: var(--sf-brand);
+  --sf-chamfer-fill: linear-gradient(color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)), color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)));
+  border-color: var(--sf-brand);
+  box-shadow: none;
+}
+html[data-theme-family=crystal] .course-target-card:has(.course-target-card__input:focus-visible) { outline-offset: -4px; }
+/* A language that already has a course stays opaque and is muted by colour, not opacity. */
+html[data-theme-family=crystal] .course-target-card[data-state='added'] { opacity: 1; }
+html[data-theme-family=crystal] .course-target-card[data-state='added'] .course-target-card__name { color: var(--sf-text-muted); }
+html[data-theme-family=crystal] .course-target-card[data-state='added'] .course-target-card__glyph { color: var(--sf-text-subtle); }
+html[data-theme-family=crystal] .course-target-card__glyph { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
+html[data-theme-family=crystal] .course-target-card[data-state='selected'] .course-target-card__glyph { color: var(--sf-brand-text); }
+html[data-theme-family=crystal] .course-target-card__name { font-style: italic; font-weight: 800; }
+html[data-theme-family=crystal] .course-target-card__tag { border-radius: 0; font-family: var(--sf-font-display); font-style: italic; transform: skewX(-14deg); }
+html[data-theme-family=crystal] .course-target-card[data-state='selected'] .course-target-card__tag {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover));
+  color: var(--sf-on-brand);
+}
+
+.course-add__note { margin: 12px 0 0; color: var(--sf-text-muted); font-size: 13px; }
+
+.course-add__fields { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; }
+.course-add__field { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.course-add__select {
+  position: relative;
+  display: flex;
+  height: 46px;
+  align-items: center;
+  border: 1px solid var(--sf-edge-highlight);
+  border-radius: 12px;
+  background-color: var(--sf-surface-control);
+  color: var(--sf-text);
+}
+.course-add__select select {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0 40px 0 14px;
+  border: 0;
+  border-radius: inherit;
+  appearance: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.course-add__select select:disabled { cursor: default; opacity: .6; }
+.course-add__select select option { background: var(--sf-surface); color: var(--sf-text); }
+.course-add__select-hint { position: absolute; right: 38px; color: var(--sf-text-muted); font-size: 12px; font-weight: 500; pointer-events: none; }
+.course-add__select-icon { position: absolute; right: 14px; color: var(--sf-text-muted); pointer-events: none; }
+html[data-theme-family=crystal] .course-add__select { --sf-chamfer-edge: var(--sf-edge-highlight); border-radius: 0; }
+html[data-theme-family=crystal] .course-add__select select:focus-visible { outline-offset: -4px; }
+
+.course-add__error { margin: 14px 0 0; color: var(--sf-danger); font-size: 13px; font-weight: 600; }
+
+.course-add__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; }
+.course-add__primary,
+.course-add__secondary {
+  display: inline-flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 26px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.course-add__primary { border: 0; background-color: var(--sf-text); color: var(--sf-surface); }
+.dark .course-add__primary { border-radius: 16px; background-color: var(--sf-brand); color: var(--sf-on-brand); box-shadow: 0 0 26px -6px color-mix(in srgb, var(--sf-brand) 60%, transparent); }
+.course-add__secondary { padding: 0 20px; border: 1px solid var(--sf-border); background-color: var(--sf-surface-control); color: var(--sf-text); font-size: 15px; font-weight: 600; }
+.dark .course-add__secondary { border-radius: 16px; }
+:is(.course-add__primary, .course-add__secondary):disabled { cursor: default; opacity: .55; }
+
+html[data-theme-family=crystal] :is(.course-add__primary, .course-add__secondary) { border-radius: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+html[data-theme-family=crystal] .course-add__primary {
+  --sf-chamfer-fill: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover));
+  --sf-chamfer-edge: transparent;
+  color: var(--sf-on-brand);
+  box-shadow: none;
+}
+html[data-theme-family=crystal] .course-add__secondary { --sf-chamfer-edge: var(--sf-edge-highlight); border-color: var(--sf-edge-highlight); background-color: var(--sf-surface-control); }
+html[data-theme-family=crystal] :is(.course-add__primary, .course-add__secondary):focus-visible { outline-offset: -4px; }
+
+@media (max-width: 767px) {
+  .course-add {
+    inset: auto 0 0;
+    width: 100%;
+    max-height: calc(100dvh - 2.5rem);
+    transform: none;
+    padding: 22px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+    border-width: 1px 0 0;
+    border-radius: 28px 28px 0 0;
+  }
+  .dark .course-add { border-radius: 28px 28px 0 0; }
+  html[data-theme-family=crystal] .course-add { border-radius: 0; }
+  .course-add__title { font-size: 26px; }
+  html[data-theme-family=crystal] .course-add__title { font-size: 26px; }
+  .course-add__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .course-target-card { height: 104px; }
+  .course-add__fields { grid-template-columns: minmax(0, 1fr); }
+  .course-add__actions > * { flex: 1 1 100%; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .course-target-card { transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease; }
+}

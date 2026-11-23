@@ -12,10 +12,17 @@ const runtime = vi.hoisted(() => ({
   callable: vi.fn(),
 }));
 
+const deferred = <T,>() => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(resolvePromise => { resolve = resolvePromise; });
+  return { promise, resolve };
+};
+
 vi.mock('./firebase', () => ({
   app: runtime.app,
   auth: runtime.auth,
   protectedFunctionsCapability: runtime.capability,
+  getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => runtime.getFunctions(app, region),
 }));
 
 vi.mock('firebase/functions', () => ({
@@ -24,6 +31,8 @@ vi.mock('firebase/functions', () => ({
 }));
 
 import {
+  askCardTutor,
+  cancelWordInfoGeneration,
   askVocabularyTutor,
   extractVocabulary,
   generateDialogue,
@@ -34,6 +43,8 @@ import {
   translateText,
   withNetworkRetry,
 } from './gemini';
+import { ProtectedFunctionError } from './protectedFunctionsCapability';
+import { parseCardTutorRequest } from '../../functions/src/cardTutor';
 import type {
   TextConversationMissionV1,
   TextConversationRequestV1,
@@ -69,6 +80,7 @@ beforeEach(() => {
   delete runtime.capability.reason;
   runtime.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
   runtime.httpsCallable.mockReturnValue(runtime.callable);
+  Reflect.deleteProperty(runtime.callable, 'stream');
 });
 
 afterEach(() => {
@@ -77,6 +89,18 @@ afterEach(() => {
 });
 
 describe('Gemini retry budget', () => {
+  it('does not retry a cancelled generation', async () => {
+    const controller = new AbortController();
+    const operation = vi.fn(async () => {
+      controller.abort();
+      throw new ProtectedFunctionError({
+        message: 'cancelled', kind: 'network', code: 'cancelled', retryable: true,
+      });
+    });
+    await expect(withNetworkRetry(operation, controller.signal)).rejects.toThrow('cancelled');
+    expect(operation).toHaveBeenCalledOnce();
+  });
+
   it('waits for one slow callable without duplicating the request', async () => {
     vi.useFakeTimers();
     const operation = vi.fn(() => new Promise<string>(resolve => {
@@ -102,9 +126,384 @@ describe('Gemini retry budget', () => {
     await rejection;
     expect(operation).toHaveBeenCalledOnce();
   });
+
+  it('stops polling in-flight work before the extension bridge deadline', async () => {
+    vi.useFakeTimers();
+    const operation = vi.fn(() => new Promise<string>((_, reject) => {
+      setTimeout(() => reject(new ProtectedFunctionError({
+        message: 'Still running', kind: 'network', code: 'unavailable',
+        retryable: true, retryAfterMs: 5_000,
+      })), 20_000);
+    }));
+    const result = withNetworkRetry(operation);
+    const rejection = expect(result).rejects.toThrow('The AI service took too long to respond');
+
+    await vi.advanceTimersByTimeAsync(130_500);
+    await rejection;
+    const callsAtDeadline = operation.mock.calls.length;
+    await vi.runAllTimersAsync();
+    expect(callsAtDeadline).toBeGreaterThan(1);
+    expect(operation).toHaveBeenCalledTimes(callsAtDeadline);
+  });
 });
 
 describe('production AI protected-service capability', () => {
+  it('sends a bounded tutor conversation to its own callable once', async () => {
+    const streamCall = vi.fn(async () => ({
+      stream: (async function* () {})(),
+      data: Promise.resolve({ answer: 'Một ví dụ ngắn.' }),
+    }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const history = Array.from({ length: 5 }, (_, index) => ({ question: `q${index}`, answer: `a${index}` }));
+    await expect(askCardTutor('word-123', 'Give an example', history)).resolves.toBe('Một ví dụ ngắn.');
+    expect(runtime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'askCardTutor');
+    expect(streamCall).toHaveBeenCalledExactlyOnceWith({
+      cardId: 'word-123', question: 'Give an example', history: history.slice(-3), expectedOwnerId: 'owner-1',
+    });
+    expect(runtime.callable).not.toHaveBeenCalled();
+  });
+
+  it('sends follow-up history that the tutor callable accepts, without display-only turn fields', async () => {
+    const streamCall = vi.fn(async (_request: unknown) => ({
+      stream: (async function* () {})(),
+      data: Promise.resolve({ answer: 'Một ví dụ khác.' }),
+    }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const history = [
+      { question: 'Give me three realistic work examples for this word.', answer: 'One. Two. Three.', label: 'Work examples' },
+      { question: 'How formal is it?', answer: 'Fairly formal.', label: undefined },
+    ];
+
+    await expect(askCardTutor('word-123', 'And in a meeting?', history)).resolves.toBe('Một ví dụ khác.');
+
+    const request = streamCall.mock.calls[0]![0] as { history: Array<Record<string, unknown>> };
+    expect(request.history.map(turn => Object.keys(turn).sort())).toEqual([['answer', 'question'], ['answer', 'question']]);
+    expect(parseCardTutorRequest(request).history).toEqual(history.map(({ question, answer }) => ({ question, answer })));
+  });
+
+  it('passes a cancellation signal to the tutor transport', async () => {
+    const controller = new AbortController();
+    const streamCall = vi.fn(async (_request: unknown, options?: { signal?: AbortSignal }) => ({
+      stream: (async function* () {})(),
+      data: new Promise<never>((_, reject) => options?.signal?.addEventListener('abort', () => reject(options.signal?.reason), { once: true })),
+    }));
+    Object.assign(runtime.callable, { stream: streamCall });
+
+    const pending = askCardTutor('word-123', 'Give an example', [], controller.signal);
+    await vi.waitFor(() => expect(streamCall).toHaveBeenCalledOnce());
+    controller.abort(Object.assign(new Error('Request was cancelled.'), { code: 'cancelled' }));
+
+    await expect(pending).rejects.toMatchObject({ code: 'cancelled' });
+    expect(streamCall).toHaveBeenCalledWith(expect.anything(), { signal: controller.signal });
+  });
+
+  it('rejects a missing or blank tutor answer instead of completing an empty turn', async () => {
+    for (const answer of [undefined, null, 12, '  ']) {
+      Object.assign(runtime.callable, {
+        stream: vi.fn(async () => ({ stream: (async function* () {})(), data: Promise.resolve({ answer }) })),
+      });
+      await expect(askCardTutor('word-123', 'Give an example', []))
+        .rejects.toThrow('AI tutor failed safely.');
+    }
+  });
+
+  it('calls the owner-scoped cancellation endpoint', async () => {
+    runtime.callable.mockResolvedValue({ data: { cancelled: true } });
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    await expect(cancelWordInfoGeneration(operationId, 'owner-1')).resolves.toBe(true);
+    expect(runtime.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'cancelCardGeneration');
+    expect(runtime.callable).toHaveBeenCalledWith({ operationId, expectedOwnerId: 'owner-1' });
+  });
+
+  it.each([
+    [{ cancelled: true, counted: false }, true],
+    [{ cancelled: false, counted: false }, true],
+    [{ cancelled: false, counted: true }, false],
+    [{ cancelled: true }, true],
+    [{ cancelled: false }, null],
+    [null, null],
+  ] as const)('reads cancellation result %j as refunded %s', async (data, refunded) => {
+    runtime.callable.mockResolvedValue({ data });
+    await expect(cancelWordInfoGeneration('123e4567-e89b-42d3-a456-426614174000', 'owner-1')).resolves.toBe(refunded);
+  });
+
+  it('does not cancel under a replacement account after its functions import resolves', async () => {
+    const functions = deferred<unknown>();
+    runtime.getFunctions.mockReturnValueOnce(functions.promise);
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    const pending = cancelWordInfoGeneration(operationId, 'owner-1');
+
+    await vi.waitFor(() => expect(runtime.getFunctions).toHaveBeenCalledOnce());
+    runtime.auth.currentUser = { uid: 'owner-2' };
+    functions.resolve({ region: 'asia-southeast1' });
+
+    await expect(pending).rejects.toThrow('AI generation failed safely.');
+    expect(runtime.callable).not.toHaveBeenCalled();
+  });
+
+  it('forwards real callable stream fields for the current operation before the final card', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    const streamCall = vi.fn(async () => ({
+      stream: (async function* () {
+        yield { operationId, stage: 'drafting' };
+        yield { operationId: 'another-operation', stage: 'field', field: 'translation', value: 'wrong' };
+        yield { operationId, stage: 'field', field: 'translation', value: 'táo' };
+      })(),
+      data: Promise.resolve({ result: {
+        translation: 'táo', explanation: 'A fruit.', explanationTranslation: 'Một loại quả.',
+        phonetic: '/ˈæpəl/', emoji: '🍎', category: 'Food',
+      } }),
+    }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const progress: unknown[] = [];
+    const controller = new AbortController();
+
+    await expect(generateWordInfo('apple', { operationId, signal: controller.signal, onProgress: value => progress.push(value) }))
+      .resolves.toMatchObject({ translation: 'táo' });
+    expect(progress).toEqual([
+      { operationId, stage: 'drafting' },
+      { operationId, stage: 'field', field: 'translation', value: 'táo' },
+    ]);
+    expect(streamCall).toHaveBeenCalledWith({
+      action: 'word', input: 'apple', operationId, expectedOwnerId: 'owner-1',
+    }, { signal: controller.signal });
+    expect(runtime.callable).not.toHaveBeenCalled();
+  });
+
+  it('does not start a progressive request after its account changes during setup', async () => {
+    const functions = deferred<unknown>();
+    const streamCall = vi.fn(async () => ({
+      stream: (async function* () {})(),
+      data: Promise.resolve({ result: {
+        translation: 'táo', explanation: 'A fruit.', explanationTranslation: 'Một loại quả.',
+        phonetic: '/ˈæpəl/', emoji: '🍎', category: 'Food',
+      } }),
+    }));
+    runtime.getFunctions.mockReturnValueOnce(functions.promise);
+    Object.assign(runtime.callable, { stream: streamCall });
+
+    const pending = generateWordInfo('apple', {
+      operationId: '123e4567-e89b-42d3-a456-426614174000', onProgress: () => undefined,
+    });
+    await vi.waitFor(() => expect(runtime.getFunctions).toHaveBeenCalledOnce());
+    runtime.auth.currentUser = { uid: 'owner-2' };
+    functions.resolve({ region: 'asia-southeast1' });
+
+    await expect(pending).rejects.toMatchObject({ kind: 'authentication', code: 'owner-mismatch' });
+    expect(streamCall).not.toHaveBeenCalled();
+  });
+
+  it('reuses the operation ID when an in-flight word request is retried', async () => {
+    const inFlight = Object.assign(new Error('still running'), {
+      code: 'functions/unavailable', details: { reason: 'operation-in-flight', retryAfterMs: 100 },
+    });
+    runtime.callable.mockRejectedValueOnce(inFlight).mockRejectedValueOnce(inFlight).mockResolvedValueOnce({ data: { result: {
+      translation: 'táo', explanation: 'A fruit.', explanationTranslation: 'Một loại quả.',
+      phonetic: '/ˈæp.əl/', emoji: '🍎', category: 'Food', partOfSpeech: 'noun', cefrLevel: 'A1',
+      exampleSentence: 'An apple.', exampleTranslation: 'Một quả táo.', collocations: [], synonyms: [],
+      antonyms: [], register: '', commonMistake: '', imageSearchQuery: 'red apple fruit',
+    } } });
+    const pending = generateWordInfo('apple', { operationId: '123e4567-e89b-42d3-a456-426614174000' });
+    await expect(pending).resolves.toMatchObject({ translation: 'táo' });
+    expect(runtime.callable.mock.calls.map(([payload]) => payload.operationId)).toEqual([
+      '123e4567-e89b-42d3-a456-426614174000', '123e4567-e89b-42d3-a456-426614174000',
+      '123e4567-e89b-42d3-a456-426614174000',
+    ]);
+    expect(runtime.callable.mock.calls[0]?.[0].input).toBe('apple');
+  });
+
+  it('reports an automatic retry of a streamed word request under the same operation ID', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    const dropped = Object.assign(new Error('network dropped'), { code: 'functions/unavailable' });
+    const streamCall = vi.fn()
+      .mockImplementationOnce(async () => ({
+        stream: (async function* () {
+          yield { operationId, stage: 'field', field: 'phonetic', value: '/ˈæpəl/' };
+        })(),
+        data: Promise.reject(dropped),
+      }))
+      .mockImplementationOnce(async () => ({
+        stream: (async function* () {
+          yield { operationId, stage: 'drafting' };
+        })(),
+        data: Promise.resolve({ result: {
+          translation: 'táo', explanation: 'A fruit.', explanationTranslation: 'Một loại quả.',
+          phonetic: '/ˈæpəl/', emoji: '🍎', category: 'Food',
+        } }),
+      }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const progress: Array<{ stage: string }> = [];
+
+    await expect(generateWordInfo('apple', { operationId, onProgress: value => progress.push(value) }))
+      .resolves.toMatchObject({ translation: 'táo' });
+
+    expect(progress.map(item => item.stage)).toEqual(['field', 'retrying', 'drafting']);
+    expect(progress[1]).toEqual({ operationId, stage: 'retrying' });
+    expect(streamCall.mock.calls.map(([request]) => (request as { operationId: string }).operationId))
+      .toEqual([operationId, operationId]);
+  });
+
+  it('does not forward a client-only stage sent by the server', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    Object.assign(runtime.callable, { stream: vi.fn(async () => ({
+      stream: (async function* () {
+        yield { operationId, stage: 'retrying' };
+        yield { operationId, stage: 'finding-image' };
+        yield { operationId, stage: 'drafting' };
+      })(),
+      data: Promise.resolve({ result: {
+        translation: 'táo', explanation: 'A fruit.', explanationTranslation: 'Một loại quả.',
+        phonetic: '/ˈæpəl/', emoji: '🍎', category: 'Food',
+      } }),
+    })) });
+    const progress: Array<{ stage: string }> = [];
+    await generateWordInfo('apple', { operationId, onProgress: value => progress.push(value) });
+    expect(progress.map(item => item.stage)).toEqual(['drafting']);
+  });
+
+  it('keeps the fields a failed stream already sent and fails with the code of its final packet', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    const streamCall = vi.fn(async () => ({
+      stream: (async function* () {
+        yield { operationId, stage: 'field', field: 'translation', value: 'táo' };
+        yield { operationId, stage: 'field', field: 'explanation', value: 'A fruit.' };
+        yield { operationId, stage: 'error', errorReason: 'internal' };
+      })(),
+      data: Promise.resolve({ failure: { code: 'internal', message: 'AI returned incomplete card data.' } }),
+    }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const progress: Array<{ stage: string; field?: string }> = [];
+
+    await expect(generateWordInfo('apple', { operationId, onProgress: value => progress.push(value) }))
+      .rejects.toMatchObject({ name: 'ProtectedFunctionError', code: 'internal', retryable: false });
+    expect(progress).toEqual([
+      { operationId, stage: 'field', field: 'translation', value: 'táo' },
+      { operationId, stage: 'field', field: 'explanation', value: 'A fruit.' },
+      { operationId, stage: 'error', errorReason: 'internal' },
+    ]);
+    expect(streamCall).toHaveBeenCalledOnce();
+  });
+
+  it('retries a retryable final failure packet under the same operation ID', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    const streamCall = vi.fn()
+      .mockImplementationOnce(async () => ({
+        stream: (async function* () {
+          yield { operationId, stage: 'field', field: 'phonetic', value: '/ˈæpəl/' };
+        })(),
+        data: Promise.resolve({ failure: { code: 'deadline-exceeded', message: 'AI request timed out. Try again later.' } }),
+      }))
+      .mockImplementationOnce(async () => ({
+        stream: (async function* () {})(),
+        data: Promise.resolve({ result: {
+          translation: 'táo', explanation: 'A fruit.', explanationTranslation: 'Một loại quả.',
+          phonetic: '/ˈæpəl/', emoji: '🍎', category: 'Food',
+        } }),
+      }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const progress: Array<{ stage: string }> = [];
+
+    await expect(generateWordInfo('apple', { operationId, onProgress: value => progress.push(value) }))
+      .resolves.toMatchObject({ translation: 'táo' });
+    expect(progress.map(item => item.stage)).toEqual(['field', 'retrying']);
+    expect(streamCall.mock.calls.map(([request]) => (request as { operationId: string }).operationId))
+      .toEqual([operationId, operationId]);
+  });
+
+  it('maps an exhausted operation named by a final failure packet to the same final error', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    Object.assign(runtime.callable, { stream: vi.fn(async () => ({
+      stream: (async function* () {
+        yield { operationId, stage: 'field', field: 'phonetic', value: '/ˈæpəl/' };
+      })(),
+      data: Promise.resolve({ failure: {
+        code: 'failed-precondition', message: 'attempts used', details: { reason: 'operation-attempts-exhausted' },
+      } }),
+    })) });
+    await expect(generateWordInfo('apple', { operationId, onProgress: () => undefined }))
+      .rejects.toMatchObject({ code: 'failed-precondition', retryable: false, reason: 'operation-attempts-exhausted' });
+  });
+
+  it('calls the retry observer once per retry and never on the first attempt', async () => {
+    vi.useFakeTimers();
+    const onRetry = vi.fn();
+    const operation = vi.fn()
+      .mockRejectedValueOnce(new ProtectedFunctionError({ message: 'dropped', kind: 'network', code: 'unavailable', retryable: true }))
+      .mockResolvedValueOnce('ready');
+    const result = withNetworkRetry(operation, undefined, onRetry);
+    await vi.runAllTimersAsync();
+    await expect(result).resolves.toBe('ready');
+    expect(onRetry).toHaveBeenCalledOnce();
+    expect(operation).toHaveBeenCalledTimes(2);
+  });
+
+  it('maps an exhausted operation to a final error without retrying it', async () => {
+    const operationId = '123e4567-e89b-42d3-a456-426614174000';
+    const exhausted = Object.assign(new Error('attempts used'), {
+      code: 'functions/failed-precondition',
+      details: { reason: 'operation-attempts-exhausted', attempts: 3, maxAttempts: 3 },
+    });
+    const streamCall = vi.fn(async () => ({
+      stream: (async function* () {
+        yield { operationId, stage: 'reserving' };
+        yield { operationId, stage: 'error', errorReason: 'operation-attempts-exhausted' };
+      })(),
+      data: Promise.reject(exhausted),
+    }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const progress: Array<{ stage: string }> = [];
+
+    await expect(generateWordInfo('apple', { operationId, onProgress: value => progress.push(value) }))
+      .rejects.toMatchObject({
+        name: 'ProtectedFunctionError', code: 'failed-precondition', retryable: false,
+        reason: 'operation-attempts-exhausted',
+      });
+    expect(streamCall).toHaveBeenCalledOnce();
+    expect(progress.map(item => item.stage)).toEqual(['reserving', 'error']);
+  });
+
+  it('keeps other failed-precondition errors on the configuration message', async () => {
+    runtime.callable.mockRejectedValue(Object.assign(new Error('mismatch'), {
+      code: 'functions/failed-precondition', details: { reason: 'operation-request-mismatch' },
+    }));
+    await expect(generateWordInfo('apple')).rejects.toMatchObject({ kind: 'configuration', retryable: false });
+  });
+
+  it('keeps legacy string requests bare and adds a POS hint only to structured input', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: {
+      translation: 'dẫn đầu', explanation: 'To guide.', explanationTranslation: 'Dẫn dắt.', phonetic: '/liːd/',
+      emoji: '🎭', category: 'General', partOfSpeech: 'verb', cefrLevel: 'B1',
+      exampleSentence: 'She leads the team.', exampleTranslation: 'Cô ấy dẫn dắt đội.',
+      collocations: [], synonyms: [], antonyms: [], register: 'neutral', commonMistake: '', imageSearchQuery: 'lead actor',
+    } } });
+
+    await generateWordInfo('lead', { operationId: '123e4567-e89b-42d3-a456-426614174000' });
+    await generateWordInfo('lead', {
+      operationId: '123e4567-e89b-42d3-a456-426614174001',
+      partOfSpeech: 'verb',
+    });
+    await generateWordInfo('lead', {
+      operationId: '123e4567-e89b-42d3-a456-426614174002',
+      partOfSpeech: 'noun',
+    });
+
+    expect(runtime.callable.mock.calls[0]?.[0].input).toBe('lead');
+    expect(runtime.callable.mock.calls[1]?.[0].input).toEqual({
+      term: 'lead',
+      language: { source: 'en', target: 'vi' },
+      partOfSpeech: 'verb',
+    });
+    expect(runtime.callable.mock.calls[2]?.[0].input).toEqual({
+      term: 'lead',
+      language: { source: 'en', target: 'vi' },
+      partOfSpeech: 'noun',
+    });
+    expect(runtime.callable.mock.calls[0]?.[0].input)
+      .not.toEqual(runtime.callable.mock.calls[1]?.[0].input);
+    expect(runtime.callable.mock.calls[1]?.[0].input)
+      .not.toEqual(runtime.callable.mock.calls[2]?.[0].input);
+  });
+
   it('sends bounded structured word context to the protected callable', async () => {
     runtime.callable.mockResolvedValue({ data: { result: {
       translation: 'dẫn đầu', explanation: 'To guide.', explanationTranslation: 'Dẫn dắt.', phonetic: '/liːd/',
@@ -122,6 +521,8 @@ describe('production AI protected-service capability', () => {
 
     expect(runtime.callable).toHaveBeenCalledWith({
       action: 'word',
+      expectedOwnerId: 'owner-1',
+      operationId: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/),
       input: {
         term: 'lead',
         language: { source: 'en', target: 'vi' },
@@ -179,6 +580,20 @@ describe('production AI protected-service capability', () => {
     ]);
   });
 
+  it('sends the selected target and translation languages for structured story generation', async () => {
+    runtime.callable.mockResolvedValue({
+      data: { result: { story: '안녕하세요.', translation: 'Xin chào.' } },
+    });
+
+    await expect(generateStoryContext(['안녕'], { targetLanguage: 'ko', translationLanguage: 'vi' }))
+      .resolves.toEqual({ story: '안녕하세요.', translation: 'Xin chào.' });
+
+    expect(runtime.callable).toHaveBeenCalledWith({
+      action: 'story',
+      expectedOwnerId: 'owner-1',
+      input: { words: ['안녕'], targetLanguage: 'ko', translationLanguage: 'vi' },
+    });
+  });
   it('uses dedicated bounded tutor and mnemonic actions', async () => {
     runtime.callable.mockImplementation(async ({ action }: { action: string }) => ({
       data: { result: action === 'tutor' ? '  Ask a question.  ' : '  Greet sounds like great.  ' },
@@ -198,7 +613,7 @@ describe('production AI protected-service capability', () => {
 
     expect(runtime.callable.mock.calls.map(([payload]) => payload)).toEqual([
       {
-        action: 'tutor',
+        action: 'tutor', expectedOwnerId: 'owner-1',
         input: {
           word: 'lead',
           translation: 'lãnh đạo',
@@ -207,9 +622,27 @@ describe('production AI protected-service capability', () => {
         },
       },
       {
-        action: 'mnemonic',
+        action: 'mnemonic', expectedOwnerId: 'owner-1',
         input: { word: 'greet', translation: 'chào', partOfSpeech: 'verb' },
       },
+    ]);
+  });
+
+  it('sends the card language pair with a translation and a mnemonic request', async () => {
+    runtime.callable.mockResolvedValue({ data: { result: 'out' } });
+
+    await translateText('사과는 빨간 과일입니다.', { targetLanguage: 'ko', translationLanguage: 'en' });
+    await generateMnemonic({ word: '사과', translation: 'apple', targetLanguage: 'ko', translationLanguage: 'en' });
+    await translateText('Hello.', { targetLanguage: 'xx', translationLanguage: undefined });
+    await generateMnemonic({ word: 'greet', translation: 'chào', targetLanguage: 'fr' });
+
+    expect(runtime.callable.mock.calls.map(([payload]) => payload)).toEqual([
+      { action: 'translate', expectedOwnerId: 'owner-1',
+        input: { text: '사과는 빨간 과일입니다.', targetLanguage: 'ko', translationLanguage: 'en' } },
+      { action: 'mnemonic', expectedOwnerId: 'owner-1',
+        input: { word: '사과', translation: 'apple', targetLanguage: 'ko', translationLanguage: 'en' } },
+      { action: 'translate', expectedOwnerId: 'owner-1', input: 'Hello.' },
+      { action: 'mnemonic', expectedOwnerId: 'owner-1', input: { word: 'greet', translation: 'chào' } },
     ]);
   });
 
@@ -257,9 +690,9 @@ describe('production AI protected-service capability', () => {
     ).resolves.toMatchObject({ title: 'At café', turns: expect.any(Array) });
 
     expect(runtime.callable.mock.calls.map(([payload]) => payload)).toEqual([
-      { action: 'extract', input: expect.stringMatching(/^text text/) },
+      { action: 'extract', expectedOwnerId: 'owner-1', input: expect.stringMatching(/^text text/) },
       {
-        action: 'dialogue',
+        action: 'dialogue', expectedOwnerId: 'owner-1',
         input: [
           { word: 'lead', translation: 'lãnh đạo' },
           { word: 'resilient', translation: 'bền bỉ' },
@@ -267,6 +700,21 @@ describe('production AI protected-service capability', () => {
       },
     ]);
     expect((runtime.callable.mock.calls[0][0] as { input: string }).input.length).toBe(2_000);
+  });
+
+  it('bounds multilingual extraction and fences its captured owner', async () => {
+    const extracted = [{ word: '문장', translation: 'câu', partOfSpeech: 'noun', cefrLevel: 'A1', example: '문장을 읽어요.' }];
+    runtime.callable.mockResolvedValue({ data: { result: extracted } });
+    const text = ' 문장 '.repeat(1000);
+    await expect(extractVocabulary(text, { targetLanguage: 'ko', translationLanguage: 'vi' }, 'owner-1')).resolves.toEqual(extracted);
+    expect(runtime.callable).toHaveBeenCalledWith({
+      action: 'extract', expectedOwnerId: 'owner-1',
+      input: { text: text.trim().slice(0, 2000), targetLanguage: 'ko', translationLanguage: 'vi' },
+    });
+    runtime.auth.currentUser = { uid: 'owner-2' };
+    await expect(extractVocabulary(text, { targetLanguage: 'ko', translationLanguage: 'vi' }, 'owner-1'))
+      .rejects.toMatchObject({ kind: 'authentication', code: 'owner-mismatch' });
+    expect(runtime.callable).toHaveBeenCalledOnce();
   });
 
   it('rejects malformed structured AI responses', async () => {
@@ -309,7 +757,7 @@ describe('production AI protected-service capability', () => {
       sessionComplete: false,
     });
     expect(runtime.callable).toHaveBeenCalledWith({
-      action: 'conversation',
+      action: 'conversation', expectedOwnerId: 'owner-1',
       input: request,
     });
   });
@@ -467,5 +915,39 @@ describe('production AI protected-service capability', () => {
     await rejection.toThrow('App Check or access rules need administrator attention.');
     await rejection.not.toThrow('backend secret');
     expect(runtime.callable).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('AI retry keeps the owner the request was queued for', () => {
+  const unavailable = () => Object.assign(new Error('unavailable'), { code: 'functions/unavailable' });
+  const switchAccountThenFail = () => async () => {
+    runtime.auth.currentUser = { uid: 'owner-2' };
+    throw unavailable();
+  };
+  const cards = [{ word: 'hello', translation: 'xin chao' }];
+  const conversation = {
+    sessionId: 'session-1',
+    mission: { schemaVersion: 1, id: 'm1', title: 'Cafe', goal: 'Order a coffee', cards: [{ id: 'c1', word: 'coffee', translation: 'ca phe' }] },
+    turn: 1, history: [], userMessage: 'Hello',
+  } as unknown as Parameters<typeof sendTextConversationTurn>[0];
+  const attempts: Array<[string, () => Promise<unknown>]> = [
+    ['mnemonic', () => generateMnemonic(cards[0]!)],
+    ['tutor', () => askVocabularyTutor({ ...cards[0]!, question: 'How is it used?' })],
+    ['extract', () => extractVocabulary('Some text to read')],
+    ['dialogue', () => generateDialogue(cards)],
+    ['conversation', () => sendTextConversationTurn(conversation)],
+  ];
+
+  it.each(attempts)('does not re-dispatch a %s request under the account that switched in during its retry', async (_name, run) => {
+    vi.useFakeTimers();
+    runtime.callable.mockImplementationOnce(switchAccountThenFail()).mockResolvedValue({ data: { result: 'late' } });
+
+    const settled = expect(run()).rejects.toMatchObject({ code: 'owner-mismatch' });
+    await vi.runAllTimersAsync();
+    await settled;
+
+    expect(runtime.callable).toHaveBeenCalledOnce();
+    const owners = runtime.callable.mock.calls.map(([request]) => (request as { expectedOwnerId: string }).expectedOwnerId);
+    expect(owners).toEqual(['owner-1']);
   });
 });

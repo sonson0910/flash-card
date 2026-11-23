@@ -1,0 +1,361 @@
+[
+  {
+    "board": "AiStreaming",
+    "source": "docs/design/sonflash-redesign/canvas/src/AiStreaming.dc.html",
+    "product_entry": {"status": "existing-route; required modal behavior proposed", "entry": "Library create-card flow at /?view=library", "destination": "Generation progress → editable preview → explicit save into selected deck/course"},
+    "variants": ["theme=dark|light", "DialogsCheckout pairs both themes; DlgCheckout pay/success are sibling states, not AiStreaming props"],
+    "actions": [
+      {"trigger": "Generate after prompt/context/deck selection", "result": "Stream real partial fields into preview; later chunks must preserve user edits", "phase_task": "11.4"},
+      {"trigger": "Cancel, retry, regenerate, edit, then Save", "result": "Cancel operation, retain draft, retry without duplicate operation, preview/edit/regenerate selected fields, persist only on explicit Save", "phase_task": "04.2"},
+      {"trigger": "Quota, timeout, offline, malformed partial", "result": "Show recoverable failure and server-owned quota state; no partial invalid card persists", "phase_task": "11.1"}
+    ],
+    "fixture_needs": {"ready": "Test-only prompt/context, selected deck and real-shaped partial field events through editable preview.", "empty": "No generated fields; cover cancel, quota exhausted, timeout and invalid partial without creating a card."},
+    "policy_exceptions": ["The displayed 3-of-5 progress/sample fields are fixtures; never simulate completion with a timer or use a made-up quota."],
+    "source_evidence": ["AiStreaming.dc.html:62 props; static progress/Cancel/disabled Save in component body.", "artboard-inventory.csv:3 AiStreaming; 56 DialogsCheckout; assignment routes to phase 11."]
+  },
+  {
+    "board": "AnimeDlgManage",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeDlgManage.dc.html",
+    "product_entry": {"status": "existing route; Canvas dialogs required", "entry": "Deck/library management from /?view=library", "destination": "Create/delete/clear/import result returns to the same library with focus restored"},
+    "variants": ["theme=dark|light", "kind=decknew|deckdelete|clear|import; GridAnimeDlgManage contains all 8 kind×theme combinations"],
+    "actions": [
+      {"trigger": "Create deck; enter name or select suggestion", "result": "Validate duplicate/empty names, create deck on success, close and return focus", "phase_task": "04.6"},
+      {"trigger": "Delete deck or type DELETE to clear library", "result": "Confirm the exact destructive scope, then show success/failure; cancel is side-effect free", "phase_task": "04.6"},
+      {"trigger": "Select/import file and resolve duplicates/errors", "result": "Map, validate, report created/reused/rejected rows, and allow retry/cancel", "phase_task": "04.6"}
+    ],
+    "fixture_needs": {"ready": "Test-only populated library, duplicate and valid deck names, plus valid/duplicate/malformed import files.", "empty": "Empty library for clear/import/create; no-data result differs from failed import."},
+    "policy_exceptions": ["The sample card/deck/import counts and duplicate examples are fixtures, not live user data or success claims."],
+    "source_evidence": ["AnimeDlgManage.dc.html:142 props and four kind branches/actions.", "artboard-inventory.csv:8 source; 88 GridAnimeDlgManage dark/light×four kinds."]
+  },
+  {
+    "board": "AnimeExtOptions",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeExtOptions.dc.html",
+    "product_entry": {"status": "existing extension options page; Canvas redesign required", "entry": "Chrome extension Options page", "destination": "Persisted capture, language, deck, audio and account preferences; sync status reflects result"},
+    "variants": ["theme=dark|light", "PairAnimeExtOptions dark/light; permission, save/sync and signed-in display states are represented by controls, not props"],
+    "actions": [
+      {"trigger": "Change language pair, voice, auto-play, duration or default deck", "result": "Validate and persist option; report saved/error state", "phase_task": "07.1"},
+      {"trigger": "Grant/revoke capture or audio permission; retry unavailable audio", "result": "Request only the needed browser permission and show denied/unsupported recovery", "phase_task": "07.2"},
+      {"trigger": "Sign in/out, sync, reconnect or switch account", "result": "Show owner-scoped real sync status and counts without leaking prior account data", "phase_task": "07.6"},
+      {"trigger": "Choose a target language/course for capture", "result": "Keep extension intake aligned with the active course and route a mismatch to course selection", "phase_task": "07.5"}
+    ],
+    "fixture_needs": {"ready": "Installed test extension, signed-in owner, active pair/deck, granted permissions and successful sync receipt.", "empty": "Signed-out/no-deck and denied/unsupported permission states; no broad host permission fixture."},
+    "policy_exceptions": ["Capture stays user initiated; preserve least-permission host access and owner isolation."],
+    "source_evidence": ["AnimeExtOptions.dc.html:113 theme prop; controls and # links in component body.", "artboard-inventory.csv:13 source; 140 PairAnimeExtOptions.", "Existing extension files: extensions/lingoflash/options.html and options.js."]
+  },
+  {
+    "board": "AnimeLangCard",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeLangCard.dc.html",
+    "product_entry": {"status": "existing card/library/review route; multilingual variants required", "entry": "Full card in library or review; target-language card demo from landing", "destination": "Flip/reveal, bookmark, audio, readings, tutor and saved memory return to the same card/course"},
+    "variants": ["theme=dark|light", "lang=en|ko|ja|zh|fr|de|es", "internal: front/back, flipped/flipping/dealing/revealed, hover/tilt/spotlight, starred/starPulse, blind, playing, pronunciation variant and romaji toggle", "GridAnimeLangCard samples ko/ja/zh/de in both themes"],
+    "actions": [
+      {"trigger": "Flip/reveal, bookmark, blind or hover card", "result": "Show the appropriate face, persist bookmark, hide requested reading and honor reduced motion", "phase_task": "04.4"},
+      {"trigger": "Choose language, reading or romanization", "result": "Render course-native script and correct Hangul/Kanji/Hanzi reading without cross-pair content", "phase_task": "09.2"},
+      {"trigger": "Play pronunciation or select a reading variant", "result": "Use supported pack voice with permission/unsupported/error recovery", "phase_task": "09.3"},
+      {"trigger": "Ask tutor or save memory hook", "result": "Open bounded card-context tutor or save/edit the user-owned hook", "phase_task": "11.5"}
+    ],
+    "fixture_needs": {"ready": "Reviewed language-pack card fixtures with correct headword, script, reading, example, native meaning and available audio for each enabled pair.", "empty": "No card/unsupported pack or voice; show unavailable state without substituting English or invented readings."},
+    "policy_exceptions": ["The source contains demo card content and more language labels than the enabled quality gates; only approved packs/claims may appear as available."],
+    "source_evidence": ["AnimeLangCard.dc.html:283 props; language data, card controls and internal states in component body.", "artboard-inventory.csv:18 source; 92 GridAnimeLangCard (ko/ja/zh/de × dark/light)."]
+  },
+  {
+    "board": "AnimeLesson",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeLesson.dc.html",
+    "product_entry": {"status": "existing daily/practice route; Canvas exercise behavior required", "entry": "Today session lesson or practice mode", "destination": "Answer → feedback → retry/rating/commit → next stage or recap"},
+    "variants": ["theme=dark|light", "state=typing|correct|wrong; GridAnimeLesson only snapshots typing/correct", "onToggleTheme callback"],
+    "actions": [
+      {"trigger": "Type answer and Check", "result": "Compare with current card, expose correct/wrong feedback and preserve retry state", "phase_task": "05.3"},
+      {"trigger": "Hint, listen, Give up, Try again or continue", "result": "Reveal only allowed hint/answer, use real audio, and settle/retry the current exercise once", "phase_task": "05.3"},
+      {"trigger": "Exit/back or navigate during answer", "result": "Pause/resume the session and return to the same card without duplicate settlement", "phase_task": "05.7"},
+      {"trigger": "Toggle theme", "result": "Apply persisted dark/light theme without losing answer state", "phase_task": "03.4"}
+    ],
+    "fixture_needs": {"ready": "Active-course cloze item with answer, hint, supported audio and typing/correct/wrong fixtures.", "empty": "No eligible card or unsupported mode with explanation; never render the sample answer as learner data."},
+    "policy_exceptions": ["Static XP, count and answer text are fixtures; derive rewards only from accepted session settlement and R3 rules."],
+    "source_evidence": ["AnimeLesson.dc.html:118 props/state; check/hint/listen/give-up controls in source.", "artboard-inventory.csv:23 source; 96 GridAnimeLesson typing/correct.", "AppViewStage.tsx:58-69 Today session entry; useAppLearningCoordination.ts:63-76 practice modes."]
+  },
+  {
+    "board": "AnimePaths",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimePaths.dc.html",
+    "product_entry": {"status": "existing catalog route; Canvas personal-path composition required", "entry": "Paths/catalog from app navigation or Today path card", "destination": "Personal course/path or approved catalog preview → activate/download → continue unit"},
+    "variants": ["theme=dark|light", "onToggleTheme callback", "personal route/catalog and unavailable catalog are required behavior states, not source props"],
+    "actions": [
+      {"trigger": "Browse, choose a path/unit or inspect provenance", "result": "Open course-scoped preview with source/provenance and availability", "phase_task": "06.1"},
+      {"trigger": "Download/activate or Continue", "result": "Adopt the approved path into the active course and open the selected unit", "phase_task": "06.1"},
+      {"trigger": "Create, switch, archive or reopen a course", "result": "Keep each target language in one persistent course and scope its path/progress", "phase_task": "10.1"}
+    ],
+    "fixture_needs": {"ready": "Approved catalog entries with provenance plus one active course and distinct unit progress.", "empty": "No approved catalog/offline unavailable state and new course with no path; ready fixture remains required for visual acceptance."},
+    "policy_exceptions": ["Sample IELTS progress/content is illustrative; do not present an unapproved catalog or synthetic completion as real."],
+    "source_evidence": ["AnimePaths.dc.html:92 props and path/catalog controls.", "artboard-inventory.csv:28 source; 148 PairAnimePaths.", "AppViewStage.tsx:57 catalog route; useAppNavigation.ts:11-22 view names."]
+  },
+  {
+    "board": "AnimeProgress",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeProgress.dc.html",
+    "product_entry": {"status": "existing progress route; Canvas dashboard required", "entry": "/?view=progress", "destination": "Range-filtered course metrics and actionable drilldown to cards, paths or review"},
+    "variants": ["theme=dark|light", "range=30 days|26 weeks|all time (internal selection); source range tabs change selection but sample measures are static", "onToggleTheme callback"],
+    "actions": [
+      {"trigger": "Choose 30-day, 26-week or all-time range", "result": "Recompute heatmap, chart, recall/weak/new/due and forecast from that range's real events", "phase_task": "06.2"},
+      {"trigger": "Open a heatmap day, weak/new/due group or metric", "result": "Drill down to matching active-course cards/session; do not route to a generic screen", "phase_task": "06.2"},
+      {"trigger": "Toggle theme or switch active course", "result": "Apply selected theme and load only the selected course's progress", "phase_task": "10.5"}
+    ],
+    "fixture_needs": {"ready": "Test-only dated review/session history where all three ranges produce visibly different real-derived summaries.", "empty": "No history/XP and offline/error state; zero activity stays zero."},
+    "policy_exceptions": ["Source totals, streak, recall, study time and forecasts are synthetic examples; do not infer study time from cards or mix account XP into course progress."],
+    "source_evidence": ["AnimeProgress.dc.html:116 props; range tabs and chart/summary controls in source.", "artboard-inventory.csv:33 source; 152 PairAnimeProgress.", "AppViewStage.tsx:71 ProgressWorkspace route."]
+  },
+  {
+    "board": "AnimeReview",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeReview.dc.html",
+    "product_entry": {"status": "existing practice route; Canvas review interaction required", "entry": "Today due-review stage or /?view=study practice route", "destination": "Commit a grade once, then next due card → Bridge/new-word stage → recap"},
+    "variants": ["theme=dark|light", "internal queue tiers=new|learning|mastered; front/back, hover/wings/tilt/spotlight, sealed/blind hint, star, playing and combo feedback", "onToggleTheme callback"],
+    "actions": [
+      {"trigger": "Reveal/flip, hover, star or blind hint", "result": "Render card state and persist bookmark; effects have reduced-motion fallback", "phase_task": "04.4"},
+      {"trigger": "Again/Hard/Good/Easy grade", "result": "Submit the selected FSRS rating once and advance using committed session state", "phase_task": "05.1"},
+      {"trigger": "Queue boundary, continue, skip, navigate or resume", "result": "Carry card IDs/progress through Bridge and restore the same uncommitted card", "phase_task": "05.2"},
+      {"trigger": "Listen, ask tutor or save memory hook", "result": "Play supported audio, open bounded card tutor or save/edit hook", "phase_task": "11.5"}
+    ],
+    "fixture_needs": {"ready": "Course-scoped due queue with new/learning/mastered cards, supported voice and one committed grade transition.", "empty": "Zero due cards skip the stage with an explanation; no fabricated card/XP; offline commit can retry once."},
+    "policy_exceptions": ["Sample queue/combo XP is not learner truth; preserve FSRS grade/base-XP rules and never grant repeated XP for replay."],
+    "source_evidence": ["AnimeReview.dc.html:219 props; card, rating and session controls in source.", "artboard-inventory.csv:38 source; 156 PairAnimeReview interaction description.", "useAppLearningCoordination.ts:63-77 practice route/workspace."]
+  },
+  {
+    "board": "AnimeStreak",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeStreak.dc.html",
+    "product_entry": {"status": "proposed dialog on existing Today/recap surfaces", "entry": "Verified missed-day, repair eligibility or milestone event", "destination": "Apply eligible action once, or dismiss; return to Today/recap"},
+    "variants": ["theme=dark|light", "state=freeze|repair|milestone; GridAnimeStreak covers all state×theme pairs"],
+    "actions": [
+      {"trigger": "Missed-day freeze option or repair CTA", "result": "Check timezone, entitlement and eligibility before applying freeze/repair", "phase_task": "15.6"},
+      {"trigger": "Milestone claim/share or dismiss", "result": "Record only an earned milestone; explicit share; close restores opener focus", "phase_task": "15.7"},
+      {"trigger": "Show paid repair/freeze option", "result": "Use only approved entitlement and offer state", "phase_task": "15.1"}
+    ],
+    "fixture_needs": {"ready": "Test-only date/timezone history for freeze, eligible/ineligible repair and genuine milestone states.", "empty": "No streak/no missed day/no eligible repair; no claim, charge or bonus appears."},
+    "policy_exceptions": ["Sample Pro freeze count, monthly repair, 36-hour window, +300 XP and 30-day badge are unapproved claims until rules/entitlement are verified; no invented reward."],
+    "source_evidence": ["AnimeStreak.dc.html:123 enum props and three action branches.", "artboard-inventory.csv:43 source; 101 GridAnimeStreak dark/light×freeze/repair/milestone."]
+  },
+  {
+    "board": "AnimeWeeklyRecap",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeWeeklyRecap.dc.html",
+    "product_entry": {"status": "proposed share surface from weekly recap/progress", "entry": "Weekly summary after sufficient activity or from progress", "destination": "Preview selected recap fields, then explicit share/download/copy"},
+    "variants": ["theme=dark|light", "include toggles for learned/streak/recall/word-of-week/heatmap/name; caption and share-target controls", "onToggleTheme callback"],
+    "actions": [
+      {"trigger": "Toggle included fields or edit caption", "result": "Update preview from actual weekly data; keep private fields excluded by default", "phase_task": "06.4"},
+      {"trigger": "Choose social/story/copy-link/PNG target", "result": "Use explicit Web Share/copy/download fallback; never auto-post", "phase_task": "06.5"},
+      {"trigger": "Create referral/invite link", "result": "Show verified eligibility and reward ledger only after policy approval", "phase_task": "15.4"}
+    ],
+    "fixture_needs": {"ready": "Real-shaped dated activity and word-of-week data; selected fields/caption rendered without a personal name by default.", "empty": "Insufficient weekly activity: no best-week claim or fabricated study time; sharing disabled or truthful empty recap."},
+    "policy_exceptions": ["Source metrics and +7-day Pro referral promise are examples; reward is unapproved, name/words stay private unless selected, and no auto-share."],
+    "source_evidence": ["AnimeWeeklyRecap.dc.html:112 props; toggle/caption/share controls in source.", "artboard-inventory.csv:48 source; 165 PairAnimeWeeklyRecap."]
+  },
+  {
+    "board": "DlgDeckNew",
+    "source": "docs/design/sonflash-redesign/canvas/src/DlgDeckNew.dc.html",
+    "product_entry": {"status": "existing library route; Canvas create-deck dialog required", "entry": "Create deck from /?view=library", "destination": "Validate/create, return to library with new deck selected and opener focus restored"},
+    "variants": ["theme=dark|light", "Dialogs3 shows DlgDeckNew in both themes beside sibling deck-delete/clear/import dialogs"],
+    "actions": [
+      {"trigger": "Enter name or choose suggestion/cover", "result": "Validate name, expose duplicate/invalid error and enable Create only for valid input", "phase_task": "04.6"},
+      {"trigger": "Create or Cancel/Escape", "result": "Create once and refresh library, or discard with no side effect and restore focus", "phase_task": "04.6"}
+    ],
+    "fixture_needs": {"ready": "Existing deck names plus valid/duplicate input and a cover suggestion.", "empty": "No decks and blank form; do not insert the sample IELTS deck."},
+    "policy_exceptions": ["IELTS/default deck name and example covers are suggestions only, not pre-created learner content."],
+    "source_evidence": ["DlgDeckNew.dc.html:32 theme prop; input, suggestion chips and disabled Create in source.", "artboard-inventory.csv:55 Dialogs3; 63 source."]
+  },
+  {
+    "board": "DlgPaywall",
+    "source": "docs/design/sonflash-redesign/canvas/src/DlgPaywall.dc.html",
+    "product_entry": {"status": "proposed modal; no paywall route in current app navigation", "entry": "Verified recap, AI quota, streak or goal/band moment", "destination": "Policy-valid upgrade intent or configured checkout; close returns to triggering surface"},
+    "variants": ["theme=dark|light", "moment=recap|ai|streak|band; DialogsPaywall covers all 8 moment×theme pairs"],
+    "actions": [
+      {"trigger": "View moment-specific offer or dismiss", "result": "Load eligibility/entitlement state and return focus on dismissal", "phase_task": "15.2"},
+      {"trigger": "Upgrade CTA", "result": "Record pilot purchase intent; only open checkout when owner/business/gateway configuration permits", "phase_task": "15.3"},
+      {"trigger": "AI-quota moment", "result": "Read real account/card quota and explain exhausted/unavailable state", "phase_task": "11.1"},
+      {"trigger": "Show price, trial, refund or perk", "result": "Render only approved market rules/entitlement", "phase_task": "15.1"}
+    ],
+    "fixture_needs": {"ready": "Approved-offer fixtures for eligible, ineligible, already-Pro and exhausted quota across all four moments.", "empty": "No offer/configuration or failed offer load; pilot CTA remains intent only."},
+    "policy_exceptions": ["Sample price, 5/5 quota, streak, band forecast, trial/refund and Pro perks are not live claims; checkout is gated pending business/gateway approval."],
+    "source_evidence": ["DlgPaywall.dc.html:78 moment/theme props and modal CTAs.", "artboard-inventory.csv:57 DialogsPaywall; 68 source.", "useAppNavigation.ts:11-22 has no paywall/pricing route."]
+  },
+  {
+    "board": "DlgTutor",
+    "source": "docs/design/sonflash-redesign/canvas/src/DlgTutor.dc.html",
+    "product_entry": {"status": "proposed contextual modal", "entry": "Ask AI tutor from current flashcard/review context", "destination": "Bounded response/example or recoverable error; return to same card/session"},
+    "variants": ["theme=dark|light", "Dialogs1 shows both themes with Practice/Create/Edit sibling components; tutor itself has no other prop state"],
+    "actions": [
+      {"trigger": "Choose a suggested question or submit prompt", "result": "Send bounded card/course context and show thinking, answer or error", "phase_task": "11.5"},
+      {"trigger": "Quota, cancel, retry or close", "result": "Honor server limit/cancellation and return to card without stale response", "phase_task": "11.1"},
+      {"trigger": "Save Memory Hook", "result": "Persist/edit the learner-owned hook for this card", "phase_task": "04.5"}
+    ],
+    "fixture_needs": {"ready": "Active card/course and test-only conversation/answer with suggestion and saved-hook state.", "empty": "Blank conversation, missing card context, quota/error and offline states; no generated response fixture presented as live."},
+    "policy_exceptions": ["The source's one-request-per-question claim and example answers need a verified server contract; do not send an unbounded raw prompt."],
+    "source_evidence": ["DlgTutor.dc.html:44 props; question chips, input, send and Save Memory Hook in source.", "artboard-inventory.csv:53 Dialogs1; 73 source."]
+  },
+  {
+    "board": "ExtOptions",
+    "source": "docs/design/sonflash-redesign/canvas/src/ExtOptions.dc.html",
+    "product_entry": {"status": "existing legacy extension Options page; Canvas rebrand/behavior required", "entry": "Chrome extension Options page", "destination": "Save preferences and return to capture workflow"},
+    "variants": ["theme=dark|light", "PairExtOptions dark/light; control states are in-page, not component props"],
+    "actions": [
+      {"trigger": "Change source/target language, voice, popup duration or save", "result": "Persist validated preference and announce success/error", "phase_task": "07.1"},
+      {"trigger": "Grant/revoke permission or choose capture destination", "result": "Request only needed browser permission and retain safe capture/handoff behavior", "phase_task": "07.2"},
+      {"trigger": "Sign in/out, sync or inspect saved source", "result": "Owner-scoped real status/count; source URL/title/context survives round-trip", "phase_task": "07.3"},
+      {"trigger": "Use a language pair different from active course", "result": "Select/reopen/create matching course before import", "phase_task": "07.5"}
+    ],
+    "fixture_needs": {"ready": "Installed extension with signed-in user, granted permission, selected deck/pair and source metadata.", "empty": "No account/deck, permission denied and unsupported source; do not display saved/synced success."},
+    "policy_exceptions": ["Preserve nonce/origin/owner isolation and user-initiated capture; do not expand host permissions during rebrand."],
+    "source_evidence": ["ExtOptions.dc.html:93 theme prop; options, save and # actions in source.", "artboard-inventory.csv:78 source; 168 PairExtOptions.", "Existing legacy files under extensions/lingoflash/options.html and options.js."]
+  },
+  {
+    "board": "LandingScreen",
+    "source": "docs/design/sonflash-redesign/canvas/src/LandingScreen.dc.html",
+    "product_entry": {"status": "existing canonical landing route; Canvas redesign/integration required", "entry": "/ or /landing (LandingPage)", "destination": "Start free → onboarding/app; sign in → auth return; product links to page sections/store"},
+    "variants": ["theme=dark|light", "onToggleTheme callback", "hover/tilt/flip live card; PairLanding dark/light; PairLandingSales is a separate sibling board"],
+    "actions": [
+      {"trigger": "Flip/hover language sample card", "result": "Run accessible live demo without affecting account data", "phase_task": "12.1"},
+      {"trigger": "Start free, sign in, navigate sections or install extension", "result": "Use canonical landing/auth return and real section/store destinations", "phase_task": "12.4"},
+      {"trigger": "Show language, testimonial or pricing claims", "result": "Publish only verified language coverage, sourced claims and approved offers", "phase_task": "12.2"},
+      {"trigger": "Toggle theme", "result": "Change theme without losing locale/CTA state", "phase_task": "03.4"}
+    ],
+    "fixture_needs": {"ready": "Anonymous public page with approved demo card, real enabled language set and valid EN/VI locale/auth routes.", "empty": "No signed-in learner/testimonial/pricing data; unsupported capability is honestly unavailable."},
+    "policy_exceptions": ["Source language counts, 'reviews free forever' and sample monthly price need validation; no fabricated social proof or unapproved price."],
+    "source_evidence": ["LandingScreen.dc.html:86 props; href='#' marketing actions and live card in source.", "artboard-inventory.csv:110 source; 170 PairLanding; 171 PairLandingSales is separate LandingSales board.", "App.tsx:10-64 current LandingPage and app entry/sign-in callbacks."]
+  },
+  {
+    "board": "LangLanding",
+    "source": "docs/design/sonflash-redesign/canvas/src/LangLanding.dc.html",
+    "product_entry": {"status": "existing landing route; language demo to merge into canonical sections", "entry": "/ or /landing, not a separate locale-course route", "destination": "Select target/UI locale and continue into onboarding with chosen locale preserved"},
+    "variants": ["theme=dark|light", "lang=ko|ja|zh|es|fr|de|en; side=front|back", "onToggleTheme callback", "UI locale picker=en|vi|es|pt|id|de|ja|ko; internal flip/hover/picker open/closed", "PairLangLanding dark/light"],
+    "actions": [
+      {"trigger": "Choose target language or flip demo card", "result": "Show only supported reviewed sample and carry target into onboarding", "phase_task": "09.1"},
+      {"trigger": "Choose interface locale", "result": "Update canonical locale URL/strings without changing target course", "phase_task": "12.4"},
+      {"trigger": "Start free/sign in", "result": "Enter onboarding/auth and restore requested route/locale after return", "phase_task": "10.3"},
+      {"trigger": "Show testimonials, country count or local price", "result": "Use only sourced claims and approved localized offer", "phase_task": "12.2"}
+    ],
+    "fixture_needs": {"ready": "Per-enabled-language reviewed card and locale route fixtures; UI picker selections survive navigation.", "empty": "Unsupported/wave-later target shown unavailable, anonymous state has no user proof or invented price."},
+    "policy_exceptions": ["Source testimonials/country-count and currency pricing are illustrative; do not claim unsupported languages or synthetic social proof."],
+    "source_evidence": ["LangLanding.dc.html:126 props; language, UI-locale and card-side states in source.", "artboard-inventory.csv:115 source; 173 PairLangLanding."]
+  },
+  {
+    "board": "LangReview",
+    "source": "docs/design/sonflash-redesign/canvas/src/LangReview.dc.html",
+    "product_entry": {"status": "existing review route; Korean/native-pair adaptation required", "entry": "Today review or /?view=study for active target/native course", "destination": "Review current pair's card, commit once, advance or return to session"},
+    "variants": ["theme=dark|light", "onToggleTheme callback", "board hardcodes ko→vi, position 7/24; internal front/back, romanization, IPA variant, blind, star and listening states", "LANGS data includes en/ko/ja/zh/fr/de/es; PairLangReview only dark/light"],
+    "actions": [
+      {"trigger": "Reveal/flip, toggle romanization or blind, star", "result": "Render the active target script/readings and persist bookmark", "phase_task": "09.2"},
+      {"trigger": "Grade and continue/exit", "result": "Commit active-course review once and preserve session position on resume", "phase_task": "05.1"},
+      {"trigger": "Switch course/language pair or play audio", "result": "Use pair-specific reading/voice and course-scoped queue", "phase_task": "10.5"},
+      {"trigger": "Ask tutor", "result": "Open card-context bounded tutor", "phase_task": "11.5"}
+    ],
+    "fixture_needs": {"ready": "Korean→Vietnamese card and active queue with real readings/audio; distinct packs must not reuse Korean fixture.", "empty": "No due cards, missing voice/pack or stale pair switch; no hardcoded Korean fallback in another course."},
+    "policy_exceptions": ["Displayed position/counts/streak are sample; current runtime pair is English→Vietnamese, so board language must come from active course."],
+    "source_evidence": ["LangReview.dc.html:341 theme props; Korean card data, reading/audio toggles and grade controls in source.", "artboard-inventory.csv:120 source; 175 PairLangReview.", "useAppLearningCoordination.ts:63-76 currently wires ENGLISH_TO_VIETNAMESE_PROFILE."]
+  },
+  {
+    "board": "MobileOnboard",
+    "source": "docs/design/sonflash-redesign/canvas/src/MobileOnboard.dc.html",
+    "product_entry": {"status": "proposed onboarding step; no onboarding view in current navigation", "entry": "Landing Start free or first account setup", "destination": "Goal selection → course/target setup → next onboarding step; back/skip/resume stay coherent"},
+    "variants": ["theme=dark|light", "390×844; first of five steps; five goal choices; exam choice selected; IELTS bands 6|6.5|7|7.5; no callbacks in source"],
+    "actions": [
+      {"trigger": "Choose goal and exam target/date/band", "result": "Save optional goal inside selected course and enable relevant target catalog", "phase_task": "10.2"},
+      {"trigger": "Back, skip or Continue", "result": "Advance/resume the correct onboarding branch without forcing a goal or losing legacy user data", "phase_task": "10.3"},
+      {"trigger": "Reach reminder choice later in journey", "result": "Request explicit opt-in and preserve quiet-hours/timezone settings", "phase_task": "11.1"}
+    ],
+    "fixture_needs": {"ready": "Fresh mobile account with chosen goal/band and current step persisted across back/continue.", "empty": "No goal selected, optional-none path and returning/legacy account; no prechecked fabricated goal."},
+    "policy_exceptions": [],
+    "source_evidence": ["MobileOnboard.dc.html:45 theme prop; visible first-step options/buttons in source.", "artboard-inventory.csv:127 Mobile.dc.html dark/light; 128 standalone source."]
+  },
+  {
+    "board": "MobileToday",
+    "source": "docs/design/sonflash-redesign/canvas/src/MobileToday.dc.html",
+    "product_entry": {"status": "existing Today route at mobile viewport; responsive Canvas composition required", "entry": "/?view=today", "destination": "Start/continue the same course-scoped Today session; bottom tabs route to app views"},
+    "variants": ["theme=dark|light", "390×844; mobile due-review, path/progress and tab layout; no component callbacks", "Mobile.dc.html declares dark/light imports"],
+    "actions": [
+      {"trigger": "Start review/continue session", "result": "Enter the real review→new→match→recap timeline; skip zero-pool stages explicitly", "phase_task": "05.1"},
+      {"trigger": "Choose Today/Paths/Words/Progress tab", "result": "Navigate to current Today/catalog/library/progress routes without losing session", "phase_task": "05.7"},
+      {"trigger": "Open path or vocabulary item", "result": "Continue path or open course-scoped library state", "phase_task": "06.1"}
+    ],
+    "fixture_needs": {"ready": "390px mobile course with real-shaped due/new/path/history values and visible primary CTA.", "empty": "Separate zero due/new/match Today state with honest add-vocabulary/path actions; no synthetic streak or counts."},
+    "policy_exceptions": ["Sample 12-day streak, due count, recall, IELTS completion and minutes are test data only."],
+    "source_evidence": ["MobileToday.dc.html:56 theme prop; source is 390×844.", "artboard-inventory.csv:127 Mobile.dc.html; 133 standalone source.", "AppViewStage.tsx:58-69 Today route; 57/71/73 catalog/progress/library destinations."]
+  },
+  {
+    "board": "PricingScreen",
+    "source": "docs/design/sonflash-redesign/canvas/src/PricingScreen.dc.html",
+    "product_entry": {"status": "proposed landing pricing section; no pricing route in current navigation", "entry": "Landing pricing link or approved upgrade intent", "destination": "Compare valid offers; CTA records intent in pilot or starts approved checkout"},
+    "variants": ["theme=dark|light", "onToggleTheme callback", "annual selected and monthly/annual plan cards are static source markup; no billing-period prop", "PairPricing dark/light"],
+    "actions": [
+      {"trigger": "Switch billing period or compare Free/Pro/Exam Sprint", "result": "Render policy-approved plan terms, price, currency and eligibility", "phase_task": "15.1"},
+      {"trigger": "Select CTA", "result": "Record purchase intent in pilot; configured checkout only after approval", "phase_task": "15.2"},
+      {"trigger": "Proceed to payment/cancel/refund", "result": "Use full configured checkout and receipt/refund contract", "phase_task": "15.3"}
+    ],
+    "fixture_needs": {"ready": "Approved local plan catalog with annual/monthly selection and eligibility states.", "empty": "No approved offer/market or billing period; explain unavailable and do not present a live price."},
+    "policy_exceptions": ["Sample prices, student discount, trial/refund, Popular label and testimonials are unapproved; don't publish them as policy."],
+    "source_evidence": ["PricingScreen.dc.html:90 props; annual/monthly controls and three plans in source.", "artboard-inventory.csv:183 PairPricing; 204 source.", "useAppNavigation.ts:11-22 has no pricing route."]
+  },
+  {
+    "board": "RecapScreen",
+    "source": "docs/design/sonflash-redesign/canvas/src/RecapScreen.dc.html",
+    "product_entry": {"status": "existing practice/session flow; Canvas settlement recap required", "entry": "End of Today or practice session after committed results", "destination": "Today, missed-word retry, new words, weekly recap or reminder with session context"},
+    "variants": ["theme=dark|light", "onToggleTheme callback", "PairRecap dark/light; PairRecapNext is a separate RecapNext sibling artboard, not a RecapScreen prop"],
+    "actions": [
+      {"trigger": "Close/continue to Today", "result": "Settle once and return to next valid session stage", "phase_task": "05.6"},
+      {"trigger": "Retry missed words or learn new words", "result": "Open the corresponding course-scoped next stage from actual results", "phase_task": "05.6"},
+      {"trigger": "Open weekly recap/share or choose reminder", "result": "Use real eligible weekly data and explicit reminder consent", "phase_task": "06.4"}
+    ],
+    "fixture_needs": {"ready": "Settled session with correct/wrong cards, actual rating/reward and next-step availability.", "empty": "No committed session/partial or failed session; no recap totals or XP invented."},
+    "policy_exceptions": ["Displayed XP, recall, level-ups, streak and next-review counts are sample; all recap values must come from one settlement."],
+    "source_evidence": ["RecapScreen.dc.html:94 props; results and next-action controls in source.", "artboard-inventory.csv:187 PairRecap dark/light; 188 PairRecapNext is separate component."]
+  },
+  {
+    "board": "SpellingScreen",
+    "source": "docs/design/sonflash-redesign/canvas/src/SpellingScreen.dc.html",
+    "product_entry": {"status": "existing spelling practice mode; Canvas rebuild required", "entry": "Today More practice or /?view=spelling", "destination": "Listen/type → feedback/retry → commit or next exercise → session/recap"},
+    "variants": ["theme=dark|light", "onToggleTheme callback", "one static wrong/missing-letter example and two-tries display; no answer-state prop", "PairSpelling dark/light"],
+    "actions": [
+      {"trigger": "Play/replay/slow audio and enter spelling", "result": "Play supported voice and accept grapheme-aware target-language input", "phase_task": "09.3"},
+      {"trigger": "Check, reveal, skip, retry or continue", "result": "Show wrong/correct/empty/finished feedback and a real retry path", "phase_task": "05.4"},
+      {"trigger": "Type with IME or exit mid-answer", "result": "Do not submit during composition; preserve answer/session on pause/back", "phase_task": "09.4"}
+    ],
+    "fixture_needs": {"ready": "Course card with real spelling/audio and correct, wrong, retry and finished states.", "empty": "No eligible card, no voice/permission or unsupported script; no fake waveform or pronunciation score."},
+    "policy_exceptions": ["Static misspelling, tries and waveform are demonstration data; do not claim acoustic scoring without a supported scorer."],
+    "source_evidence": ["SpellingScreen.dc.html:61 props; answer tiles/check/audio actions in source.", "artboard-inventory.csv:194 PairSpelling; 214 source.", "useAppLearningCoordination.ts:63-76 routes spelling into practice workspace."]
+  },
+  {
+    "board": "WeeklyRecap",
+    "source": "docs/design/sonflash-redesign/canvas/src/WeeklyRecap.dc.html",
+    "product_entry": {"status": "proposed weekly recap/share surface from progress/session recap", "entry": "Progress or completed session when sufficient weekly activity exists", "destination": "Preview selected weekly facts, then explicitly copy/download/share"},
+    "variants": ["theme=dark|light", "include/share controls are static in this simpler family; onToggleTheme callback", "PairWeeklyRecap dark/light"],
+    "actions": [
+      {"trigger": "Select recap fields or caption", "result": "Update selected weekly facts from source events and keep private data excluded", "phase_task": "06.4"},
+      {"trigger": "Story/Facebook/Zalo/copy-link/PNG share", "result": "Use explicit share/copy/download fallback and accurate preview", "phase_task": "06.5"},
+      {"trigger": "Invite/referral action", "result": "Only show eligible link/reward after approved rules and record ledger state", "phase_task": "15.4"}
+    ],
+    "fixture_needs": {"ready": "Real-shaped dated activity, earned words and correct selection; export renders chosen fields only.", "empty": "Insufficient data/no best week; no fabricated study duration or referral reward."},
+    "policy_exceptions": ["Sample weekly totals and +7-day Pro reward are not policy; no automatic post/share and no unapproved reward promise."],
+    "source_evidence": ["WeeklyRecap.dc.html:82 props; static share targets/include list in source.", "artboard-inventory.csv:201 PairWeeklyRecap; 220 source."]
+  },
+  {
+    "board": "FlashBack",
+    "source": "docs/design/sonflash-redesign/canvas/seed/FlashBack.dc.html",
+    "product_entry": {"status": "existing full-card surface; seeded Canvas back-face behavior required", "entry": "Back face from library card or review card", "destination": "Flip to front, update bookmark, play audio or return to current review/card owner"},
+    "variants": ["theme=dark|light", "tier=new|learning|mastered; starred, hover, revealed, mx/my, starPulse, card and callbacks onFlip/onStar/onListen", "CardStatesDark new-starred back; CardStatesLight learning back; Main passes live props"],
+    "actions": [
+      {"trigger": "Back to English/flip", "result": "Return to front while preserving review position", "phase_task": "04.4"},
+      {"trigger": "Star or play pronunciation", "result": "Persist bookmark or play supported card audio", "phase_task": "04.4"},
+      {"trigger": "Memory hook or Ask AI tutor", "result": "Open hook edit or bounded contextual tutor; source buttons currently have no callbacks", "phase_task": "11.5"}
+    ],
+    "fixture_needs": {"ready": "New/learning/mastered card fixtures with real front/back, due state, locale, audio and saved bookmark.", "empty": "No card/unsupported audio and no revealed personal data; empty library remains separate from ready card."},
+    "policy_exceptions": ["Default 'Spelling' example card is a fixture; do not show as learner data or claim unavailable audio is playing."],
+    "source_evidence": ["FlashBack.dc.html:69 full props/callbacks and card-back controls.", "artboard-inventory.csv:51-52 CardStatesDark/Light; 83 source; 125 Main live prop wiring."]
+  },
+  {
+    "board": "TodayScreen",
+    "source": "docs/design/sonflash-redesign/canvas/seed/TodayScreen.dc.html",
+    "product_entry": {"status": "existing Today route; seeded Canvas home behavior required", "entry": "/?view=today", "destination": "One primary review/new-word session CTA; path, vocabulary and progress links open their current views"},
+    "variants": ["theme=dark|light", "internal fan=false|true on card-stack hover; theme callback", "PairToday dark/light; PairTodaySession/TodaySession is a separate board, not a TodayScreen variant"],
+    "actions": [
+      {"trigger": "Start review or Enter; Learn 5 new words", "result": "Start/continue the real ordered session and skip empty pools with explanation", "phase_task": "05.1"},
+      {"trigger": "Continue path card", "result": "Open the selected active-course path/unit", "phase_task": "06.1"},
+      {"trigger": "Today/Paths/Vocabulary/Progress nav", "result": "Open Today/catalog/library/progress routes; source hrefs are placeholders and need wiring", "phase_task": "05.7"},
+      {"trigger": "Toggle theme or hover card stack", "result": "Apply persisted theme or reveal fan hover effect", "phase_task": "03.4"}
+    ],
+    "fixture_needs": {"ready": "Active course with due/review/new pools, current path and real streak/recall/history for reference comparison.", "empty": "Separate no-due/no-new/no-match state with truthful actions; never fill the card stack or counts with samples."},
+    "policy_exceptions": ["Date, 12 due words, 6 minutes, streak, recall and 34/120 path progress are sample data; use actual course/session values."],
+    "source_evidence": ["TodayScreen.dc.html:128 theme props; CTAs/nav/card fan in source.", "artboard-inventory.csv:197 PairToday dark/light; 217 source; 198 PairTodaySession separately declares TodaySession.", "AppViewStage.tsx:58-69 current Today entry; 57/71/73 catalog/progress/library views."]
+  }
+]

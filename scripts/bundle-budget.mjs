@@ -5,9 +5,15 @@ import { pathToFileURL } from 'node:url';
 
 export const DEFAULT_BUNDLE_BUDGETS = {
   // Optimized baseline: 204,028 B raw / 64,716 B gzip JS. Keep about 10%
-  // initial headroom.
+  // initial headroom (71,188 B gzip). Startup correctness fixes (theme
+  // fallback when a theme family fails to load, one activation of the first
+  // catalogs, catalog reload on a language switch, a readable recovery panel
+  // with no active locale) measured 222,633 B raw / 71,056 B gzip. Later
+  // fixes reached 222,747 B raw / 71,101 B gzip; warming the Today workspace
+  // from the deferred startup chunk and dropping the modulepreload polyfill
+  // measured 221,454 B raw / 70,482 B gzip.
   initialJavaScriptRaw: 224_000,
-  initialJavaScriptGzip: 71_000,
+  initialJavaScriptGzip: 71_200,
   // Refreshed learning UI baseline: 196,193 B raw / 28,008 B gzip. Keep
   // about 5% reviewed headroom.
   initialCssRaw: 206_000,
@@ -21,8 +27,21 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   // Study recap and opt-in pronunciation pilot: Linux measured 2,880,013 B
   // raw / 917,804 B gzip. Adjust only total JS; initial-load, per-chunk,
   // CSS and media caps stay unchanged.
-  totalJavaScriptRaw: 2_885_000,
-  totalJavaScriptGzip: 920_000,
+  // Design-parity build-out (profile, badges, streak freeze and repair,
+  // storage and card photos, course goals, share cards, IELTS goal panel,
+  // board-accurate recap and practice surfaces): Linux measured 3,352,880 B
+  // raw / 1,060,412 B gzip. Every addition is a lazily loaded chunk; the
+  // initial-load caps above are unchanged and still pass (70,886 B gzip).
+  // Correctness fixes across the product (owner binding, course-scoped
+  // queries, migration and session states, honest error reasons): Linux
+  // measured 3,383,091 B raw / 1,071,126 B gzip, all in lazily loaded
+  // chunks. The initial-load caps above are unchanged.
+  // Second round of correctness fixes (durable library clear, review and
+  // capture failure copy, streak ended state, export of every course,
+  // lazily started App Check): Linux measured 3,422,002 B raw /
+  // 1,083,544 B gzip, again in lazily loaded chunks.
+  totalJavaScriptRaw: 3_460_000,
+  totalJavaScriptGzip: 1_095_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
   // Reviewed media baseline includes all supported media copied into dist.

@@ -12,12 +12,14 @@ on:
           - dry-run
           - apply
           - rollback
+          - restart
+          - catalog-progress
       confirmation:
-        description: Apply/rollback require APPLY_QUERY_V3 or ROLLBACK_QUERY_V3
+        description: Apply/rollback/restart/catalog-progress require APPLY_QUERY_V3, ROLLBACK_QUERY_V3, RESTART_QUERY_V3 or REPAIR_CATALOG_PROGRESS
         required: false
         type: string
       owner_key:
-        description: Required for apply/rollback; copy the 12-character key from dry-run
+        description: Required for apply/rollback/restart; copy the 12-character key from dry-run
         required: false
         type: string
       source_revision:
@@ -178,7 +180,14 @@ jobs:
           if [[ "$MIGRATION_MODE" == "rollback" ]]; then
             test "$MIGRATION_CONFIRMATION" = "ROLLBACK_QUERY_V3"
           fi
-          if [[ "$MIGRATION_MODE" != "dry-run" ]]; then
+          if [[ "$MIGRATION_MODE" == "restart" ]]; then
+            test "$MIGRATION_CONFIRMATION" = "RESTART_QUERY_V3"
+            [[ "$MIGRATION_OWNER_KEY" =~ ^[a-f0-9]{12}$ ]]
+          fi
+          if [[ "$MIGRATION_MODE" == "catalog-progress" ]]; then
+            test "$MIGRATION_CONFIRMATION" = "REPAIR_CATALOG_PROGRESS"
+          fi
+          if [[ "$MIGRATION_MODE" == "apply" || "$MIGRATION_MODE" == "rollback" ]]; then
             [[ "$MIGRATION_OWNER_KEY" =~ ^[a-f0-9]{12}$ ]]
             [[ "$MIGRATION_SOURCE_REVISION" =~ ^[a-f0-9]{64}$ ]]
           fi

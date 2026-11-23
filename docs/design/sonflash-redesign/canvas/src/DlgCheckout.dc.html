@@ -1,0 +1,132 @@
+<!--#HEAD Checkout-->
+<!--#DLGOPEN-->
+    <sc-if value="{{isPay}}" hint-placeholder-val="{{true}}">
+    <header style="flex-shrink: 0; padding: 22px 22px 18px 26px; display: flex; align-items: flex-start; gap: 14px; border-bottom: 1px solid {{t.line}};">
+      <div style="flex-grow: 1; min-width: 0;">
+        <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">Checkout · step 1 of 2</div>
+        <h2 id="dlg-title" style="margin: 6px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 28px; line-height: 1.12; letter-spacing: -0.02em; color: {{t.textStrong}};">Upgrade to <span style="font-style: {{t.emStyle}}; color: {{pro.text}}; text-shadow: {{pro.textGlow}};">Pro</span></h2>
+      </div>
+      <button aria-label="Close" style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </header>
+    <div style="flex-grow: 1; min-height: 0; padding: 18px 26px 0; display: flex; flex-direction: column; gap: 16px;">
+      <div style="padding: 14px 16px; border-radius: 16px; border: {{summary.border}}; background: {{summary.bg}}; display: flex; align-items: center; gap: 14px;">
+        <span aria-hidden="true" style="width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; border: 2px solid transparent; background: {{seal.bg}}; box-shadow: {{seal.shadow}}; color: {{seal.fg}}; display: flex; align-items: center; justify-content: center; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 13px;">Pro</span>
+        <div style="flex-grow: 1;">
+          <div style="font-size: 15px; font-weight: 650; color: {{t.textStrong}};">SonFlash Pro · annual</div>
+          <div style="margin-top: 2px; font-size: 12.5px; color: {{t.text2}};">Renews 23 Sep 2027 · cancel anytime</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 15px; color: {{t.textStrong}};">949.000 ₫</div>
+          <a href="#" style="font-size: 12px; font-weight: 600; color: {{pro.text}}; text-decoration: none;">Change plan</a>
+        </div>
+      </div>
+
+      <fieldset style="margin: 0; padding: 0; border: 0;">
+        <legend style="padding: 0; font-size: 12px; font-weight: 600; color: {{t.text2}};">Payment method</legend>
+        <div role="radiogroup" aria-label="Payment method" style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <sc-for list="{{methods}}" as="m" hint-placeholder-count="4">
+            <button role="radio" aria-checked="{{m.on}}" style="height: 60px; box-sizing: border-box; padding: 0 14px; border-radius: 14px; border: {{m.border}}; background: {{m.bg}}; box-shadow: {{m.ring}}; color: {{t.text}}; display: flex; align-items: center; gap: 11px; text-align: left; cursor: pointer;">
+              <span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 9px; background: {{m.color}}; color: #ffffff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center;">{{m.mark}}</span>
+              <span style="flex-grow: 1; min-width: 0;"><span style="display: block; font-size: 14px; font-weight: 650;">{{m.name}}</span><span style="display: block; font-size: 11.5px; color: {{t.text3}};">{{m.hint}}</span></span>
+              <span style="width: 18px; height: 18px; box-sizing: border-box; flex-shrink: 0; border-radius: 50%; border: {{m.dot}};"></span>
+            </button>
+          </sc-for>
+        </div>
+      </fieldset>
+
+      <label style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 12px; font-weight: 600; color: {{t.text2}};">Student or promo code <span style="font-weight: 400; color: {{t.text3}};">· optional</span></span>
+        <span style="display: flex; gap: 8px;">
+          <span style="flex-grow: 1; box-sizing: border-box; height: 44px; padding: 0 14px; border-radius: {{t.fr}}px; border: 1px solid {{t.line}}; background: {{t.inputBg}}; display: flex; align-items: center;"><input placeholder="you@st.hcmus.edu.vn or code" style="width: 100%; border: 0; outline: none; background: transparent; color: {{t.textStrong}}; font-family: Geist, system-ui, sans-serif; font-size: 14px;"></span>
+          <button style="height: 44px; padding: 0 16px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 13.5px; font-weight: 600; cursor: pointer;">Apply</button>
+        </span>
+        <span style="font-size: 12px; color: {{t.text3}};">A .edu.vn email takes 50% off Pro.</span>
+      </label>
+
+      <dl style="margin: 0; padding-top: 12px; border-top: 1px solid {{t.line}}; display: grid; grid-template-columns: 1fr auto; row-gap: 6px; font-size: 13.5px;">
+        <dt style="color: {{t.text2}};">Pro · 12 months</dt><dd style="margin: 0; font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.text}};">949.000 ₫</dd>
+        <dt style="color: {{t.text2}};">Discount</dt><dd style="margin: 0; font-family: 'Geist Mono', ui-monospace, monospace; color: {{t.text3}};">0 ₫</dd>
+        <dt style="font-weight: 650; color: {{t.textStrong}};">Total today</dt><dd style="margin: 0; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 16px; font-weight: 500; color: {{t.textStrong}};">949.000 ₫</dd>
+      </dl>
+    </div>
+    <footer style="flex-shrink: 0; padding: 16px 26px 20px; display: flex; flex-direction: column; gap: 10px;">
+      <button class="sf-press" style="height: 52px; border-radius: {{t.btnRadius}}; border: 0; background: #a50064; color: #ffffff; box-shadow: 0 16px 36px -16px rgb(165 0 100 / 0.8); font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;"><span style="height: 22px; padding: 0 6px; border-radius: 6px; background: #ffffff; color: #a50064; font-size: 11px; font-weight: 800; display: flex; align-items: center;">MoMo</span>Pay 949.000 ₫</button>
+      <p style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11.5px; color: {{t.text3}};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg>Handled by MoMo · SonFlash never sees your card or wallet details · 7-day refund</p>
+    </footer>
+    </sc-if>
+
+    <sc-if value="{{isSuccess}}" hint-placeholder-val="{{false}}">
+    <div aria-hidden="true" style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
+      <sc-for list="{{confetti}}" as="p" hint-placeholder-count="30">
+        <span class="sf-fall" style="position: absolute; top: -20px; left: {{p.left}}%; width: {{p.w}}px; height: {{p.h}}px; border-radius: {{p.r}}; background: {{p.color}}; opacity: {{p.o}}; animation-delay: {{p.delay}}ms; animation-duration: {{p.dur}}ms; transform: rotate({{p.rot}}deg);"></span>
+      </sc-for>
+    </div>
+    <button aria-label="Close" style="position: absolute; right: 16px; top: 16px; z-index: 3; width: 36px; height: 36px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    <div style="position: relative; padding: 44px 40px 0; display: flex; flex-direction: column; align-items: center; text-align: center;">
+      <span aria-hidden="true" class="sf-pop" style="width: 112px; height: 112px; box-sizing: border-box; border-radius: 50%; border: 3px solid transparent; background: {{seal.bg}}; box-shadow: {{seal.bigShadow}}; color: {{seal.fg}}; transform: rotate(-10deg); display: flex; align-items: center; justify-content: center; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 32px;">Pro</span>
+      <h2 id="dlg-title" class="sf-rise" style="margin: 24px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 38px; line-height: 1.05; letter-spacing: -0.03em; color: {{t.textStrong}};">Welcome to <span style="font-style: {{t.emStyle}}; color: {{pro.text}}; text-shadow: {{pro.textGlow}};">Pro.</span></h2>
+      <p class="sf-rise-2" style="margin: 10px 0 0; max-width: 400px; font-size: 14px; line-height: 1.55; color: {{t.body}};">Your plan is active until 23 Sep 2027. We sent the receipt to your email.</p>
+    </div>
+    <ul class="sf-rise-2" style="position: relative; margin: 24px 40px 0; padding: 6px 18px; list-style: none; border-radius: 18px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
+      <sc-for list="{{unlocked}}" as="u" hint-placeholder-count="4">
+        <li style="height: 50px; display: flex; align-items: center; gap: 12px; border-top: {{u.top}}; font-size: 14px; color: {{t.text}};">
+          <span style="width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; background: {{pro.soft}}; color: {{pro.check}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{u.icon}}"></path></svg></span>
+          <span style="flex-grow: 1; text-align: left;">{{u.label}}</span>
+          <span style="font-size: 12px; font-weight: 650; color: {{t.ok}};">Unlocked</span>
+        </li>
+      </sc-for>
+    </ul>
+    <footer style="position: relative; margin-top: auto; padding: 22px 40px 26px; display: flex; gap: 10px;">
+      <button style="height: 50px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; cursor: pointer;">View receipt</button>
+      <button class="sf-press" style="flex-grow: 1; height: 50px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">Continue my session<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+    </footer>
+    </sc-if>
+<!--#DLGCLOSE-->
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"step":{"editor":"enum","options":["pay","success"],"default":"pay"},"$preview":{"width":720,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const step = this.props.step ?? 'pay';
+    const t = { ...sfTokens(dark), fr: dark ? 14 : 10 };
+    const pro = dark
+      ? { text: '#ffd98a', textGlow: '0 0 32px rgb(245 174 57 / 0.45)', soft: 'rgb(245 174 57 / 0.1)', line: 'rgb(245 174 57 / 0.38)', check: '#f5ae39' }
+      : { text: '#8a5a0c', textGlow: 'none', soft: 'rgb(184 134 43 / 0.1)', line: 'rgb(184 134 43 / 0.35)', check: '#8a5a0c' };
+    const seal = dark
+      ? { bg: 'radial-gradient(circle at 35% 30%, #1d3440, #0c1d26 70%) padding-box, ' + t.goldRim + ' border-box', shadow: '0 0 24px -6px rgb(245 174 57 / 0.6)', bigShadow: '0 0 60px -8px rgb(245 174 57 / 0.7)', fg: '#ffe6a8' }
+      : { bg: 'radial-gradient(circle, #fbf3df 56%, #f1dfae 57%, #fbf3df 60%) padding-box, ' + t.goldRim + ' border-box', shadow: '0 0 0 3px #fffcf5, 0 0 0 4px rgb(184 134 43 / 0.4)', bigShadow: '0 0 0 6px #fffcf5, 0 0 0 7px rgb(184 134 43 / 0.4), 0 14px 24px -12px rgb(120 80 10 / 0.6)', fg: '#7a5410' };
+    const M = [
+      ['MoMo', 'Mo', 'Wallet · instant', '#a50064'],
+      ['ZaloPay', 'Z', 'Wallet · instant', '#0068ff'],
+      ['VNPay QR', 'QR', 'Any banking app', '#e3262d'],
+      ['Card', 'VISA', 'Visa · Mastercard · JCB', dark ? '#1d3a48' : '#1d1a16'],
+    ];
+    return {
+      t, pro, seal, dw: 580, grainId: 'chk-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -160, ay: -180, bx: 360, by: 420 },
+      isPay: step === 'pay', isSuccess: step === 'success',
+      summary: { border: '1px solid ' + pro.line, bg: pro.soft },
+      methods: M.map(([name, mark, hint, color], i) => ({
+        name, mark, hint, color, on: i === 0 ? 'true' : 'false',
+        border: i === 0 ? '1.5px solid ' + t.accentLine : '1px solid ' + t.line,
+        bg: i === 0 ? t.accentSoft : t.secondaryBg,
+        ring: i === 0 && dark ? '0 0 0 4px rgb(40 211 244 / 0.08)' : 'none',
+        dot: i === 0 ? '5px solid ' + t.accent : '1.5px solid ' + t.lineStrong,
+      })),
+      unlocked: [
+        ['Unlimited AI flashcards', 'M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z'],
+        ['AI tutor & a story after every session', 'M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z'],
+        ['Shadowing pronunciation score', 'M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3'],
+        ['2 streak freezes this month', 'M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11'],
+      ].map(([label, icon], i) => ({ label, icon, top: i ? '1px solid ' + t.line : '0' })),
+      confetti: Array.from({ length: 30 }, (_, i) => ({
+        left: (i * 37) % 100, w: 6 + (i % 3) * 2, h: dark ? 6 + (i % 3) * 2 : 10 + (i % 4) * 2,
+        r: dark ? '50%' : '2px', color: t.confetti[i % t.confetti.length], o: dark ? 0.85 : 0.9,
+        delay: (i * 173) % 2400, dur: 3200 + (i * 211) % 2200, rot: (i * 47) % 180,
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,697 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-24 16:48+0700\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: vi\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/features/settings/settings-screen.tsx:182
+msgctxt "settings.data.open"
+msgid "Open data & export"
+msgstr "Mở dữ liệu & xuất"
+
+#: src/features/settings/settings-screen.tsx:249
+msgctxt "settings.reminders.page-title"
+msgid "A nudge, <0>not a nag.</0>"
+msgstr "Nhắc khẽ, <0>không làm phiền.</0>"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:216
+msgctxt "settings.reminders.badge.read-only"
+msgid "Read only"
+msgstr "Chỉ xem"
+
+#: src/features/settings/CourseSettingsSection.tsx:180
+msgctxt "settings.voice"
+msgid "Voice"
+msgstr "Giọng nói"
+
+#: src/features/settings/settings-screen.tsx:164
+msgctxt "settings.sounds.title"
+msgid "Sounds & <0>haptics</0>"
+msgstr "Âm thanh & <0>rung</0>"
+
+#: src/features/settings/settings-screen.tsx:142
+msgctxt "settings.theme.crystal.description"
+msgid "A sparkling study space with Lumi."
+msgstr "Không gian học lấp lánh cùng Lumi."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:163
+msgctxt "settings.reminders.daily"
+msgid "Daily reminder"
+msgstr "Nhắc hằng ngày"
+
+#: src/features/settings/settings-screen.tsx:140
+msgctxt "settings.theme.midnight.description"
+msgid "A deep, calm night palette."
+msgstr "Bảng màu đêm sâu lắng, êm dịu."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:225
+msgctxt "settings.reminders.skip"
+msgid "Skip for now"
+msgstr "Bỏ qua lúc này"
+
+#: src/features/settings/CourseSettingsSection.tsx:247
+msgctxt "settings.course.meaning-language.scope"
+msgid "Applies to new cards. Existing card meanings do not change."
+msgstr "Chỉ áp dụng cho thẻ mới. Nghĩa của thẻ hiện có không thay đổi."
+
+#: src/features/settings/settings-screen.tsx:210
+msgctxt "settings.menu.reminders"
+msgid "Reminders"
+msgstr "Nhắc nhở"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:259
+msgctxt "settings.reminders.preview.body"
+msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
+msgstr "{count, plural, other {# thẻ đến hạn ôn tập.}}"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:187
+msgctxt "settings.reminders.only-if-not-studied.description"
+msgid "Remind me only if I haven’t studied yet today"
+msgstr "Chỉ nhắc nếu hôm nay mình chưa học"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:217
+msgctxt "settings.reminders.badge.title"
+msgid "Extension badge"
+msgstr "Huy hiệu tiện ích"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:187
+msgctxt "settings.reminders.smart"
+msgid "Smart reminder"
+msgstr "Nhắc thông minh"
+
+#: src/features/settings/CourseSettingsSection.tsx:264
+msgctxt "settings.course.note.body"
+msgid "Meanings stay in the language they were written in."
+msgstr "Nghĩa vẫn giữ ở ngôn ngữ đã được viết."
+
+#: src/features/settings/CourseSettingsSection.tsx:163
+msgctxt "settings.course.add"
+msgid "Add a language"
+msgstr "Thêm ngôn ngữ"
+
+#: src/features/settings/CourseSettingsSection.tsx:87
+msgctxt "settings.course.ui-language"
+msgid "App language"
+msgstr "Ngôn ngữ ứng dụng"
+
+#: src/features/settings/settings-screen.tsx:249
+msgctxt "settings.reminders.description"
+msgid "We remind you once a day, only when cards are waiting."
+msgstr "Mỗi ngày nhắc một lần, chỉ khi có thẻ đang chờ."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:218
+msgctxt "settings.reminders.badge.description"
+msgid "Due count on the SonFlash icon"
+msgstr "Số thẻ đến hạn trên biểu tượng SonFlash"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:277
+msgctxt "settings.reminders.lumi.text"
+msgid "I only call you once a day, when cards are due."
+msgstr "Mình chỉ gọi bạn một lần mỗi ngày, khi có thẻ đến hạn."
+
+#: src/features/settings/settings-screen.tsx:144
+msgctxt "settings.crystal-mode.label"
+msgid "Crystal Star mode"
+msgstr "Chế độ Crystal Star"
+
+#: src/features/settings/settings-screen.tsx:139
+msgctxt "settings.theme.label"
+msgid "Theme"
+msgstr "Chủ đề"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:256
+msgctxt "settings.reminders.preview.body-unknown"
+msgid "Your due cards are ready for review."
+msgstr "Các thẻ đến hạn đang chờ bạn ôn tập."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:235
+msgctxt "settings.reminders.unavailable"
+msgid "Reminders are unavailable right now. Try again later."
+msgstr "Lời nhắc hiện chưa khả dụng. Hãy thử lại sau."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:177
+msgctxt "settings.reminders.days"
+msgid "Review days"
+msgstr "Ngày ôn tập"
+
+#: src/features/settings/settings-screen.tsx:213
+msgctxt "settings.menu.data"
+msgid "Data & export"
+msgstr "Dữ liệu & xuất"
+
+#: src/features/settings/settings-screen.tsx:92
+msgctxt "settings.sound.label"
+msgid "Study sounds"
+msgstr "Âm thanh học tập"
+
+#: src/features/settings/CourseSettingsSection.tsx:222
+msgctxt "settings.course.archived"
+msgid "Archived courses"
+msgstr "Khóa học đã lưu trữ"
+
+#: src/features/settings/CourseSettingsSection.tsx:188
+msgctxt "settings.voice.automatic"
+msgid "Automatic"
+msgstr "Tự động"
+
+#: src/features/settings/settings-screen.tsx:151
+msgctxt "settings.follow-system.label"
+msgid "Follow system"
+msgstr "Theo hệ thống"
+
+#: src/features/settings/CourseSettingsSection.tsx:88
+msgctxt "settings.course.ui-language.scope"
+msgid "Menus, buttons, emails and notifications"
+msgstr "Menu, nút bấm, email và thông báo"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:251
+msgctxt "settings.reminders.preview.title"
+msgid "Live preview"
+msgstr "Xem trước"
+
+#: src/features/settings/settings-screen.tsx:192
+msgctxt "settings.files.title"
+msgid "Storage & <0>files</0>"
+msgstr "Lưu trữ & <0>tệp</0>"
+
+#: src/features/settings/settings-screen.tsx:141
+msgctxt "settings.theme.paper"
+msgid "Ink & Paper"
+msgstr "Ink & Paper"
+
+#: src/features/settings/CourseSettingsSection.tsx:194
+msgctxt "settings.course.keyboard.ko-help"
+msgid "Korean 2-set (두벌식): add Korean in your device keyboard settings, or use the on-screen keys in Korean practice."
+msgstr "Bàn phím tiếng Hàn 2-set (두벌식): hãy thêm tiếng Hàn trong cài đặt bàn phím của thiết bị, hoặc dùng các phím trên màn hình khi luyện tiếng Hàn."
+
+#: src/features/settings/settings-screen.tsx:154
+msgctxt "settings.focus-mode.description"
+msgid "Hide combo banners while studying."
+msgstr "Ẩn biểu ngữ chuỗi khi học."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:262
+msgctxt "settings.reminders.preview.mail-subject"
+msgid "Your SonFlash weekly recap"
+msgstr "Tổng kết tuần học SonFlash"
+
+#: src/features/settings/CourseSettingsSection.tsx:204
+msgctxt "settings.course.pace.description"
+msgid "Cards you aim to study each day"
+msgstr "Số thẻ bạn đặt mục tiêu học mỗi ngày"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:226
+msgctxt "settings.reminders.saved"
+msgid "Reminder settings saved."
+msgstr "Đã lưu cài đặt lời nhắc."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:266
+msgctxt "settings.reminders.preview.mail-unknown"
+msgid "cards ready for review"
+msgstr "thẻ đến hạn ôn tập"
+
+#: src/features/settings/settings-screen.tsx:175
+msgctxt "settings.data.title"
+msgid "Data & <0>export</0>"
+msgstr "Dữ liệu & <0>xuất</0>"
+
+#: src/features/settings/settings-screen.tsx:191
+msgctxt "settings.files.description"
+msgid "Your uploads and the storage they use."
+msgstr "Tệp bạn tải lên và dung lượng chúng dùng."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:168
+msgctxt "settings.reminders.timezone"
+msgid "Time zone"
+msgstr "Múi giờ"
+
+#: src/features/settings/CourseSettingsSection.tsx:194
+msgctxt "settings.course.keyboard"
+msgid "Keyboard"
+msgstr "Bàn phím"
+
+#: src/features/settings/settings-screen.tsx:177
+msgctxt "settings.data.eyebrow"
+msgid "Your account data"
+msgstr "Dữ liệu tài khoản"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:172
+msgctxt "settings.reminders.timezone.use-device"
+msgid "Use this device’s time zone"
+msgstr "Dùng múi giờ của thiết bị này"
+
+#: src/features/settings/CourseSettingsSection.tsx:189
+msgctxt "settings.voice.unavailable"
+msgid "Saved voice unavailable · Automatic"
+msgstr "Giọng đã lưu không khả dụng · Tự động"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:193
+msgctxt "settings.reminders.quiet.description"
+msgid "Nothing is sent at night, even if cards are due"
+msgstr "Không gửi gì vào ban đêm, kể cả khi có thẻ đến hạn"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:273
+msgctxt "settings.reminders.preview.badge"
+msgid "Extension badge shows cards due, right in your toolbar."
+msgstr "Huy hiệu tiện ích hiện số thẻ đến hạn ngay trên thanh công cụ."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:264
+msgctxt "settings.reminders.preview.mail-eyebrow"
+msgid "Weekly recap"
+msgstr "Tổng kết tuần"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:211
+msgctxt "settings.reminders.email.title"
+msgid "Weekly digest"
+msgstr "Bản tin hằng tuần"
+
+#: src/features/settings/settings-screen.tsx:153
+msgctxt "settings.lumi.label"
+msgid "Lumi"
+msgstr "Lumi"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:213
+msgctxt "settings.reminders.email-unavailable"
+msgid "Weekly email delivery is not available yet. You can turn off an existing recap, but new recaps cannot be enabled."
+msgstr "Chưa thể gửi email tổng kết hằng tuần. Bạn có thể tắt bản tổng kết hiện có, nhưng chưa thể bật bản mới."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:277
+msgctxt "settings.reminders.lumi.tag"
+msgid "Lumi · Link"
+msgstr "Lumi · Link"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:199
+msgctxt "settings.reminders.channels"
+msgid "Channels"
+msgstr "Kênh nhắc"
+
+#: src/features/settings/settings-screen.tsx:208
+msgctxt "settings.menu.appearance"
+msgid "Appearance"
+msgstr "Giao diện"
+
+#: src/features/settings/settings-screen.tsx:209
+msgctxt "settings.menu.language"
+msgid "Language & courses"
+msgstr "Ngôn ngữ & khóa học"
+
+#: src/features/settings/settings-screen.tsx:96
+msgctxt "settings.haptics.label"
+msgid "Haptics"
+msgstr "Rung phản hồi"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:233
+msgctxt "settings.reminders.loading"
+msgid "Loading reminders…"
+msgstr "Đang tải lời nhắc…"
+
+#: src/features/settings/settings-screen.tsx:248
+msgctxt "settings.language.description"
+msgid "The app speaks one language. Each course teaches another."
+msgstr "Ứng dụng dùng một ngôn ngữ. Mỗi khóa học dạy một ngôn ngữ khác."
+
+#: src/features/settings/settings-screen.tsx:146
+msgctxt "settings.crystal-mode.day"
+msgid "Prism Day"
+msgstr "Prism Day"
+
+#: src/features/settings/CourseSettingsSection.tsx:176
+msgctxt "settings.course.romanization"
+msgid "Show romanization"
+msgstr "Hiện phiên âm Latin"
+
+#: src/features/settings/CourseSettingsSection.tsx:176
+msgctxt "settings.course.romanization.description"
+msgid "Your saved choice for this course. Each card has its own reading switch."
+msgstr "Lựa chọn đã lưu cho khóa học này. Mỗi thẻ có công tắc cách đọc riêng."
+
+#: src/features/settings/CourseSettingsSection.tsx:268
+msgctxt "settings.course.pace.error"
+msgid "Daily pace could not be saved. Please try again."
+msgstr "Không thể lưu nhịp học hằng ngày. Hãy thử lại."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:203
+msgctxt "settings.reminders.push"
+msgid "Browser push"
+msgstr "Thông báo đẩy trên trình duyệt"
+
+#: src/features/settings/settings-screen.tsx:135
+msgctxt "settings.title"
+msgid "Make your study space <0>yours</0>"
+msgstr "Tạo không gian học của <0>riêng bạn</0>"
+
+#: src/features/settings/settings-screen.tsx:142
+msgctxt "settings.theme.crystal"
+msgid "Crystal Star"
+msgstr "Crystal Star"
+
+#: src/features/settings/settings-screen.tsx:149
+msgctxt "settings.display.title"
+msgid "Display"
+msgstr "Hiển thị"
+
+#: src/features/settings/settings-screen.tsx:174
+msgctxt "settings.data.description"
+msgid "Download what you have saved, or delete your account."
+msgstr "Tải xuống những gì bạn đã lưu, hoặc xóa tài khoản."
+
+#: src/features/settings/settings-screen.tsx:153
+msgctxt "settings.lumi.description"
+msgid "Show your Crystal Star study companion."
+msgstr "Hiển thị bạn đồng hành Lumi trong Crystal Star."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:262
+msgctxt "settings.reminders.preview.mail-day"
+msgid "Sun"
+msgstr "CN"
+
+#: src/features/settings/CourseSettingsSection.tsx:197
+msgctxt "settings.course.script"
+msgid "Chinese script"
+msgstr "Chữ Hán"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:204
+msgctxt "settings.reminders.push.description"
+msgid "One notification with the due count"
+msgstr "Một thông báo kèm số thẻ đến hạn"
+
+#: src/features/settings/settings-screen.tsx:181
+msgctxt "settings.data.row.description"
+msgid "Download your account data as a file, or permanently delete your account."
+msgstr "Tải dữ liệu tài khoản về dưới dạng tệp, hoặc xóa vĩnh viễn tài khoản."
+
+#: src/features/settings/settings-screen.tsx:154
+msgctxt "settings.focus-mode.label"
+msgid "Focus mode"
+msgstr "Chế độ tập trung"
+
+#: src/features/settings/settings-screen.tsx:137
+msgctxt "settings.appearance.title"
+msgid "Appearance"
+msgstr "Giao diện"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:231
+msgctxt "settings.reminders.sign-in"
+msgid "Sign in to set reminders."
+msgstr "Đăng nhập để đặt lời nhắc."
+
+#: src/features/settings/settings-screen.tsx:237
+msgctxt "settings.kicker"
+msgid "Settings"
+msgstr "Cài đặt"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:258
+msgctxt "settings.reminders.preview.body-none"
+msgid "Nothing is due right now, so no reminder is sent."
+msgstr "Hiện chưa có thẻ đến hạn nên sẽ không gửi lời nhắc."
+
+#: src/features/settings/settings-screen.tsx:145
+msgctxt "settings.crystal-mode.night"
+msgid "Starry Night"
+msgstr "Starry Night"
+
+#: src/features/settings/CourseSettingsSection.tsx:200
+msgctxt "settings.course.script.traditional"
+msgid "Traditional"
+msgstr "Phồn thể"
+
+#: src/features/settings/settings-screen.tsx:152
+msgctxt "settings.reduced-motion.label"
+msgid "Reduced motion"
+msgstr "Giảm chuyển động"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:224
+msgctxt "settings.reminders.save"
+msgid "Save reminders"
+msgstr "Lưu lời nhắc"
+
+#: src/features/settings/settings-screen.tsx:248
+msgctxt "settings.language.title"
+msgid "Language & <0>courses</0>"
+msgstr "Ngôn ngữ & <0>khóa học</0>"
+
+#: src/features/settings/settings-screen.tsx:211
+msgctxt "settings.menu.sounds"
+msgid "Sounds & haptics"
+msgstr "Âm thanh & rung"
+
+#: src/features/settings/CourseSettingsSection.tsx:170
+msgctxt "settings.course.active-badge"
+msgid "Active"
+msgstr "Đang học"
+
+#: src/features/settings/settings-screen.tsx:212
+msgctxt "settings.menu.files"
+msgid "Storage & files"
+msgstr "Lưu trữ & tệp"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:235
+msgctxt "common.retry"
+msgid "Retry"
+msgstr "Thử lại"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:212
+msgctxt "settings.reminders.email.description"
+msgid "Sunday email with your recap"
+msgstr "Email tổng kết vào Chủ nhật"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:269
+msgctxt "settings.reminders.preview.mail-link"
+msgid "Continue on SonFlash →"
+msgstr "Tiếp tục trên SonFlash →"
+
+#: src/features/settings/CourseSettingsSection.tsx:232
+msgctxt "settings.course.add.title"
+msgid "Start another language"
+msgstr "Học thêm ngôn ngữ khác"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:192
+msgctxt "settings.reminders.quiet"
+msgid "Quiet hours"
+msgstr "Giờ yên lặng"
+
+#: src/features/settings/CourseSettingsSection.tsx:204
+msgctxt "settings.course.pace"
+msgid "Daily pace"
+msgstr "Nhịp học mỗi ngày"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:184
+msgctxt "settings.reminders.days.count"
+msgid "{count, plural, one {# day a week} other {# days a week}}"
+msgstr "{count, plural, other {# ngày mỗi tuần}}"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:173
+msgctxt "settings.reminders.timezone.note"
+msgid "Reminders follow this clock."
+msgstr "Lời nhắc chạy theo giờ này."
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:160
+msgid "settings.course.list.label"
+msgstr "Khóa học của bạn"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:205
+msgid "settings.course.pace.label"
+msgstr "Nhịp học mỗi ngày"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:206
+msgid "settings.course.pace.option"
+msgstr "{count} thẻ / ngày"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:102
+#: src/features/settings/CourseSettingsSection.tsx:158
+msgid "settings.course.region"
+msgstr "Ngôn ngữ & khóa học"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:198
+msgid "settings.course.script.label"
+msgstr "Chữ Hán"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:84
+msgid "settings.course.ui-language.label"
+msgstr "Ngôn ngữ ứng dụng"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:95
+msgid "settings.haptics.preview"
+msgstr "Thử rung phản hồi"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:236
+msgid "settings.menu.label"
+msgstr "Các mục cài đặt"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:250
+msgid "settings.reminders.preview.label"
+msgstr "Xem trước"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:192
+msgid "settings.reminders.quiet-end.label"
+msgstr "Đến"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:192
+msgid "settings.reminders.quiet-start.label"
+msgstr "Từ"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:195
+msgid "settings.reminders.quiet.label"
+msgstr "Giờ yên lặng"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:164
+msgid "settings.reminders.time.label"
+msgstr "Gửi lúc"
+
+#. js-lingui-explicit-id
+#: src/features/reminders/ReminderSettingsSection.tsx:157
+msgid "settings.reminders.title"
+msgstr "Lời nhắc học"
+
+#. js-lingui-explicit-id
+#: src/features/settings/settings-screen.tsx:91
+msgid "settings.sound.preview"
+msgstr "Phát thử âm thanh học tập"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:128
+msgid "settings.voice.empty"
+msgstr "Không có giọng {language} nào được cài đặt. Có thể chọn tự động."
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:122
+msgid "settings.voice.label"
+msgstr "Giọng nói"
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:126
+msgid "settings.voice.missing"
+msgstr "Giọng đã lưu không khả dụng. Đang dùng lựa chọn tự động."
+
+#. js-lingui-explicit-id
+#: src/features/settings/CourseSettingsSection.tsx:124
+msgid "settings.voice.unsupported"
+msgstr "Giọng nói trên thiết bị không khả dụng."
+
+#: src/features/settings/settings-screen.tsx:152
+msgctxt "settings.reduced-motion.description"
+msgid "Limit movement and animated effects."
+msgstr "Giảm chuyển động và hiệu ứng động."
+
+#: src/features/settings/settings-screen.tsx:163
+msgctxt "settings.sounds.description"
+msgid "Feedback while you study, on this device."
+msgstr "Phản hồi khi học, trên thiết bị này."
+
+#: src/features/settings/CourseSettingsSection.tsx:211
+msgctxt "settings.course.archive"
+msgid "Archive course"
+msgstr "Lưu trữ khóa học"
+
+#: src/features/settings/CourseSettingsSection.tsx:180
+msgctxt "settings.voice.description"
+msgid "Read words aloud with a voice on this device"
+msgstr "Đọc to từ bằng giọng có trên thiết bị này"
+
+#: src/features/settings/settings-screen.tsx:134
+msgctxt "settings.description"
+msgid "Choose a look and tune the details that help you focus."
+msgstr "Chọn phong cách và điều chỉnh chi tiết giúp bạn tập trung."
+
+#: src/features/settings/CourseSettingsSection.tsx:199
+msgctxt "settings.course.script.simplified"
+msgid "Simplified"
+msgstr "Giản thể"
+
+#: src/features/settings/CourseSettingsSection.tsx:260
+msgctxt "settings.course.meaning-language.preview"
+msgid "preview on a card"
+msgstr "xem trước trên thẻ"
+
+#: src/features/settings/CourseSettingsSection.tsx:162
+msgctxt "settings.course.list.title"
+msgid "Your courses · {count}"
+msgstr "Khóa học của bạn · {count}"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:206
+msgctxt "settings.reminders.push-denied"
+msgid "Browser notifications are blocked. Allow them in your browser settings to turn on push."
+msgstr "Thông báo trình duyệt đang bị chặn. Hãy cho phép trong cài đặt trình duyệt để bật thông báo đẩy."
+
+#: src/features/settings/CourseSettingsSection.tsx:246
+msgctxt "settings.course.meaning-language.title"
+msgid "Meanings and explanations in"
+msgstr "Nghĩa và giải thích bằng"
+
+#: src/features/settings/settings-screen.tsx:151
+msgctxt "settings.follow-system.description"
+msgid "Match your device’s light or dark setting."
+msgstr "Theo chế độ sáng hoặc tối của thiết bị."
+
+#: src/features/settings/CourseSettingsSection.tsx:176
+msgctxt "settings.course.romanization.description-en"
+msgid "Your saved choice for this course."
+msgstr "Lựa chọn đã lưu cho khóa học này."
+
+#: src/features/reminders/ReminderSettingsSection.tsx:207
+msgctxt "settings.reminders.push-unavailable"
+msgid "Push needs a supported browser and configured web push key."
+msgstr "Thông báo đẩy cần trình duyệt được hỗ trợ và khóa web push đã cấu hình."
+
+#: src/features/settings/settings-screen.tsx:140
+msgctxt "settings.theme.midnight"
+msgid "Midnight Aurora"
+msgstr "Midnight Aurora"
+
+#: src/features/settings/settings-screen.tsx:181
+msgctxt "settings.data.row.title"
+msgid "Export or delete"
+msgstr "Xuất hoặc xóa"
+
+#: src/features/reminders/ReminderSettingsSection.tsx:267
+msgctxt "settings.reminders.preview.mail-count"
+msgid "{count, plural, one {card ready for review} other {cards ready for review}}"
+msgstr "{count, plural, other {thẻ đến hạn ôn tập}}"
+
+#: src/features/settings/settings-screen.tsx:156
+#: src/features/settings/settings-screen.tsx:166
+#: src/features/settings/settings-screen.tsx:231
+msgctxt "settings.sounds.eyebrow"
+msgid "Sounds & haptics"
+msgstr "Âm thanh & rung"
+
+#: src/features/settings/CourseSettingsSection.tsx:226
+msgctxt "settings.course.reopen"
+msgid "Reopen"
+msgstr "Mở lại"
+
+#: src/features/settings/CourseSettingsSection.tsx:264
+msgctxt "settings.course.note.title"
+msgid "Switching the app language never changes your cards."
+msgstr "Đổi ngôn ngữ ứng dụng không bao giờ thay đổi thẻ của bạn."
+
+#: src/features/settings/CourseSettingsSection.tsx:267
+msgctxt "course.error.generic"
+msgid "That course action did not go through. Please try again."
+msgstr "Thao tác với khóa học không thành công. Hãy thử lại."
+
+#: src/features/settings/settings-screen.tsx:141
+msgctxt "settings.theme.paper.description"
+msgid "A warm, bright reading surface."
+msgstr "Trang đọc sáng và ấm áp."

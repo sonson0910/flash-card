@@ -1,15 +1,24 @@
-import { ChevronLeft, ChevronRight, Keyboard, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Focus, Keyboard, ListChecks, Moon, Sun, X } from 'lucide-react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Flashcard } from '../../components/Flashcard';
 import { ActiveRecallPrompt } from '../../components/flashcard/ActiveRecallPrompt';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
+import { Lumi, type LumiPose } from '../../components/lumi/Lumi';
+import { useVerifiedStats } from '../../components/stats/VerifiedStatsContext';
 import { ReviewControls } from '../../components/study/ReviewControls';
 import { isSupportedImageUrl } from '../../lib/mediaUrlPolicy';
 import { triggerHaptic } from '../../lib/haptics';
 import { triggerConfetti } from '../../lib/confetti';
-import { playFlipSound, playRewardSound } from '../../lib/interactionSounds';
 import { getReducedMotionScrollBehavior } from '../../lib/motion';
+import { playFlipSound, playRewardSound } from '../../lib/interactionSounds';
+import { buildStreakView } from '../gamification/streakView';
+import { readLumiEnabled } from '../settings/lumi-preference';
+import { readFocusModeEnabled, useFocusModePreference } from '../settings/focus-mode-preference';
+import { useTheme } from '../theme/ThemeProvider';
 import { SessionRecapModal } from './SessionRecapModal';
+import './study-shell.css';
 import type { RecallMode } from '../../lib/recall';
 import type { ReviewRating } from '../../lib/reviewScheduler';
 import type { CardData } from '../../types/card';
@@ -23,40 +32,71 @@ interface StudyViewProps {
   revealed: boolean;
   needsIntroduction?: boolean;
   reviewedCardId: string | null;
-  reviewStatus?: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
+  reviewStatus?: 'idle' | 'saving' | 'saved' | 'error';
   reviewError?: string | null;
+  paused?: boolean;
   goodCount?: number;
   againCount?: number;
   weakCards?: CardData[];
   showRecap?: boolean;
   summary?: StudyReviewSummary;
   xpEarned?: number;
+  /** Study time the server credited to this session's saved reviews. */
+  studyTimeMs?: number;
   onRetryWeak?: () => void;
   onDismissRecap?: () => void;
   onLearnFirst?: () => void;
   customDecks: string[];
   onClose: () => void;
+  onViewWeeklyRecap?: () => void;
   onRecallMode: (mode: RecallMode) => void;
   onReveal: () => void;
   onBeginStudyRecall?: () => void;
   onBookmark: (cardId: string) => void;
   onAssignDeck: (cardId: string, deckName: string | null) => void;
   onUpdateCard: (cardId: string, fields: Partial<CardData>) => void;
+  onDeleteCard?: (cardId: string) => Promise<boolean>;
   onRate: (rating: ReviewRating) => Promise<StudyRatingSettlement>;
   onIndex: (index: number) => void;
+  onEditorOpenChange?: (cardId: string, open: boolean) => void;
 }
 
-interface StudyShortcutEvent {
-  readonly altKey: boolean;
-  readonly ctrlKey: boolean;
-  readonly defaultPrevented: boolean;
-  readonly isComposing: boolean;
-  readonly key: string;
-  readonly metaKey: boolean;
-  readonly shiftKey: boolean;
-  readonly target: EventTarget | null;
-  preventDefault: () => void;
+type StudyKeyboardEvent = Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'defaultPrevented' | 'key' | 'metaKey' | 'preventDefault' | 'shiftKey' | 'target'> & {
+  readonly code?: string;
+  readonly isComposing?: boolean;
+  readonly nativeEvent?: { readonly isComposing: boolean };
+};
+
+const ALT_SHORTCUT_KEYS = new Set(['1', '2', '3', '4', 's', 'p', 'r']);
+
+/**
+ * The shortcut character of an Alt chord. Option on macOS turns the typed character into a symbol (Option+3 types a
+ * pound sign), so fall back to the physical key, but only when the typed character is not a plain ASCII one: on a
+ * Dvorak or Colemak layout the key at the S position types another ASCII character and must not fire the shortcut.
+ */
+const altShortcutKey = (event: Pick<StudyKeyboardEvent, 'key' | 'code'>): string => {
+  const typed = event.key.toLocaleLowerCase();
+  if (ALT_SHORTCUT_KEYS.has(typed) || /^[\x20-\x7e]$/.test(typed)) return typed;
+  const physical = /^(?:Digit([1-4])|Key([SPR]))$/.exec(event.code ?? '');
+  return physical ? (physical[1] ?? physical[2]).toLowerCase() : typed;
+};
+
+// Radix dialogs (Edit card, Report card, delete confirmation) render their content through a portal, so in the
+// real DOM they are not descendants of the swipeable study card even though React's synthetic events still bubble
+// through them as if they were. Ignore a touch that starts outside the card element in the real DOM, or that
+// starts on an interactive/dialog surface that may share the card's React subtree without sharing its DOM subtree.
+const STUDY_TOUCH_BLOCKING_SELECTOR =
+  'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="alertdialog"]';
+
+export function shouldIgnoreStudyCardTouch(
+  target: unknown,
+  cardElement: { contains?(node: unknown): boolean } | null | undefined,
+): boolean {
+  if (!cardElement?.contains?.(target)) return true;
+  const element = target as { closest?: (selectors: string) => Element | null } | null | undefined;
+  return Boolean(element?.closest?.(STUDY_TOUCH_BLOCKING_SELECTOR));
 }
+
 
 export function resolveStudyRecallMode(
   card: Pick<CardData, 'imageUrl'> | null | undefined,
@@ -68,11 +108,17 @@ export function resolveStudyRecallMode(
     && card
     && (imageUnavailable || !isSupportedImageUrl(card.imageUrl))
   ) {
-    // Keep the same English-answer direction without asking the learner to
+    // Keep the target-language answer direction without asking the learner to
     // identify media that is no longer available.
-    return 'vi-to-en';
+    return 'native-to-target';
   }
   return requestedMode;
+}
+
+function formatStudyElapsedTime(elapsedSeconds: number): string {
+  const minutes = Math.floor(elapsedSeconds / 60);
+  const seconds = elapsedSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 export function StudyView({
@@ -84,41 +130,63 @@ export function StudyView({
   reviewedCardId,
   reviewStatus = 'idle',
   reviewError = null,
+  paused = false,
   goodCount: externalGoodCount,
   againCount: externalAgainCount,
   weakCards: externalWeakCards,
   showRecap: externalShowRecap,
   summary,
   xpEarned: externalXpEarned,
+  studyTimeMs: externalStudyTimeMs,
   onRetryWeak,
   onDismissRecap,
   onLearnFirst,
   customDecks,
   onClose,
+  onViewWeeklyRecap,
   onRecallMode,
   onReveal,
   onBeginStudyRecall,
   onBookmark,
   onAssignDeck,
   onUpdateCard,
+  onDeleteCard,
   onRate,
   onIndex,
+  onEditorOpenChange,
 }: StudyViewProps) {
-  const studySessionRef = useRef<HTMLDivElement | null>(null);
-  const previousIndexRef = useRef(index);
+  const { _, i18n } = useLingui();
+  const { focusModeEnabled, setFocusModeEnabled } = useFocusModePreference();
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [sessionGoodCount, setSessionGoodCount] = useState(0);
-  const [sessionAgainCount, setSessionAgainCount] = useState(0);
-  const [sessionWeakCards, setSessionWeakCards] = useState<CardData[]>([]);
-  const [sessionRecapOpen, setSessionRecapOpen] = useState(false);
-  const [provisionalReviewPending, setProvisionalReviewPending] = useState(false);
+  const previousIndexRef = useRef(index);
+  const elapsedTimeRef = useRef(0);
+  const elapsedStartedAtRef = useRef<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const elapsedTime = formatStudyElapsedTime(elapsedSeconds);
   const direction: 1 | -1 = index < previousIndexRef.current ? -1 : 1;
 
   useEffect(() => {
     previousIndexRef.current = index;
   }, [index]);
 
+  useEffect(() => {
+    if (paused) return;
+    elapsedStartedAtRef.current = performance.now();
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((elapsedTimeRef.current + performance.now() - elapsedStartedAtRef.current!) / 1_000));
+    }, 1_000);
+    return () => {
+      window.clearInterval(timer);
+      if (elapsedStartedAtRef.current === null) return;
+      elapsedTimeRef.current += performance.now() - elapsedStartedAtRef.current;
+      elapsedStartedAtRef.current = null;
+    };
+  }, [paused]);
+
   const card = cards[index];
+  const languageNames = new Intl.DisplayNames([i18n?.locale || 'en'], { type: 'language' });
+  const targetLanguage = languageNames.of(card?.language || 'en') || card?.language || 'en';
+  const nativeLanguage = languageNames.of(card?.translationLanguage || 'vi') || card?.translationLanguage || 'vi';
   const imageKey = card && isSupportedImageUrl(card.imageUrl)
     ? `${card.id}:${card.imageUrl}`
     : null;
@@ -127,7 +195,26 @@ export function StudyView({
   const activeRecallMode = resolveStudyRecallMode(card, recallMode, imageUnavailable);
   const imageRecallAvailable = Boolean(imageKey && !imageUnavailable);
   const ratingRef = useRef<HTMLDivElement | null>(null);
-  const ratingInFlightRef = useRef(false);
+  const studySurfaceRef = useRef<HTMLDivElement | null>(null);
+  const recallTransitionPendingRef = useRef(false);
+
+  useEffect(() => {
+    if (needsIntroduction || !recallTransitionPendingRef.current) return;
+    recallTransitionPendingRef.current = false;
+    const surface = studySurfaceRef.current;
+    const workspace = surface?.closest<HTMLElement>('.claude-workspace');
+    if (surface && workspace) {
+      const top = workspace.scrollTop + surface.getBoundingClientRect().top - workspace.getBoundingClientRect().top - workspace.clientTop;
+      workspace.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
+    }
+    surface?.focus({ preventScroll: true });
+  }, [needsIntroduction]);
+
+  const handleDeleteCard = useCallback(async (cardId: string) => {
+    const deleted = await onDeleteCard?.(cardId) ?? false;
+    if (deleted) globalThis.requestAnimationFrame?.(() => studySurfaceRef.current?.focus({ preventScroll: true }));
+    return deleted;
+  }, [onDeleteCard]);
   const handleImageUnavailable = useCallback(() => {
     if (imageKey) setFailedImageKey(imageKey);
   }, [imageKey]);
@@ -147,187 +234,234 @@ export function StudyView({
     return () => window.clearTimeout(scrollTimer);
   }, [card?.id, revealed]);
 
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [dragOffset, setDragOffset] = useState(0);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchDeltaRef = useRef(0);
+  const studyCardRef = useRef<HTMLDivElement | null>(null);
+  const swipeBadgeRef = useRef<'good' | 'again' | null>(null);
+  const [swipeBadge, setSwipeBadge] = useState<'good' | 'again' | null>(null);
+  const [sessionGoodCount, setSessionGoodCount] = useState(0);
+  const [sessionAgainCount, setSessionAgainCount] = useState(0);
+  const [sessionXpEarned, setSessionXpEarned] = useState(0);
+  const [sessionStudyTimeMs, setSessionStudyTimeMs] = useState(0);
+  const answeredCount = summary?.saved ?? (externalGoodCount ?? sessionGoodCount) + (externalAgainCount ?? sessionAgainCount);
+  const progressRatio = answeredCount / Math.max(cards.length, 1);
+  const [weakCards, setWeakCards] = useState<CardData[]>([]);
+  const [showRecap, setShowRecap] = useState(false);
+  const [lumiReaction, setLumiReaction] = useState<LumiPose | null>(null);
+  const ratingInFlightRef = useRef(false);
+
+  useEffect(() => {
+    if (!lumiReaction) return;
+    const timer = window.setTimeout(() => setLumiReaction(null), 1200);
+    return () => window.clearTimeout(timer);
+  }, [lumiReaction]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (needsIntroduction) return;
-    setTouchStartX(e.touches[0].clientX);
+    if (paused) return;
+    if (shouldIgnoreStudyCardTouch(e.target, e.currentTarget)) return;
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    touchDeltaRef.current = 0;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (needsIntroduction || touchStartX === null) return;
-    const deltaX = e.touches[0].clientX - touchStartX;
-    // Dampen drag effect
-    setDragOffset(deltaX * 0.75);
+    const start = touchStartRef.current;
+    if (!start || !revealed) return;
+    const deltaX = e.touches[0].clientX - start.x;
+    const deltaY = e.touches[0].clientY - start.y;
+    if (Math.abs(deltaX) < Math.abs(deltaY) * 1.5) {
+      touchDeltaRef.current = 0;
+      studyCardRef.current?.style.removeProperty('transform');
+      if (swipeBadgeRef.current !== null) {
+        swipeBadgeRef.current = null;
+        setSwipeBadge(null);
+      }
+      return;
+    }
+    touchDeltaRef.current = deltaX;
+    const offset = Math.max(-120, Math.min(120, deltaX * 0.75));
+    if (studyCardRef.current) studyCardRef.current.style.transform = `translateX(${offset}px) rotate(${offset * 0.04}deg)`;
+    const badge = offset > 40 ? 'good' : offset < -40 ? 'again' : null;
+    if (swipeBadgeRef.current !== badge) {
+      swipeBadgeRef.current = badge;
+      setSwipeBadge(badge);
+    }
+  };
+
+  const resetTouch = () => {
+    touchStartRef.current = null;
+    touchDeltaRef.current = 0;
+    studyCardRef.current?.style.removeProperty('transform');
+    swipeBadgeRef.current = null;
+    setSwipeBadge(null);
   };
 
   const handleTouchEnd = () => {
-    if (needsIntroduction || touchStartX === null || !revealed) {
-      setTouchStartX(null);
-      setDragOffset(0);
-      return;
-    }
-    if (dragOffset > 90) {
+    if (!touchStartRef.current) return;
+    const deltaX = touchDeltaRef.current;
+    resetTouch();
+    if (revealed && deltaX > 120) {
       // Swiped Right -> Good
-      triggerHaptic('success');
-      handleRating('good');
-    } else if (dragOffset < -90) {
+      void handleRating('good');
+    } else if (revealed && deltaX < -120) {
       // Swiped Left -> Again
-      triggerHaptic('medium');
-      handleRating('again');
+      void handleRating('again');
     }
-    setTouchStartX(null);
-    setDragOffset(0);
   };
 
   const handleRating = async (rating: ReviewRating) => {
-    if (needsIntroduction) return;
-    if (ratingInFlightRef.current) return;
+    if (needsIntroduction || paused || !card || ratingInFlightRef.current) return;
     ratingInFlightRef.current = true;
     try {
       const settlement = await onRate(rating);
-      if (settlement === 'sync-pending') {
-        setProvisionalReviewPending(true);
-        if (index < cards.length - 1) onIndex(index + 1);
-        return;
+      if (settlement === 'retryable-error' || settlement === 'ignored') return;
+      const effectiveRating = settlement.rating ?? rating;
+      if (!readFocusModeEnabled() && (answeredCount + 1) % 3 === 0) {
+        playRewardSound();
+        triggerHaptic('heavy');
+      } else {
+        triggerHaptic(effectiveRating === 'again' || effectiveRating === 'hard' ? 'medium' : 'success');
       }
-      if (settlement !== 'committed') return;
-      if (externalGoodCount === undefined || externalAgainCount === undefined) {
-        if (rating === 'good' || rating === 'easy') setSessionGoodCount(previous => previous + 1);
-        else {
-          setSessionAgainCount(previous => previous + 1);
-          if (card) setSessionWeakCards(previous => [...previous.filter(item => item.id !== card.id), card]);
-        }
+
+      if (
+        globalThis.document?.documentElement.dataset.themeFamily === 'crystal'
+        && readLumiEnabled()
+      ) {
+        setLumiReaction(effectiveRating === 'again' ? 'oops' : effectiveRating === 'hard' ? 'focus' : 'happy');
       }
-      if (index < cards.length - 1) {
-        onIndex(index + 1);
-      } else if (externalShowRecap === undefined) {
-        if (rating === 'good' || rating === 'easy') triggerConfetti(0.5, 0.5);
-        setSessionRecapOpen(true);
+
+      const isPositive = effectiveRating === 'good' || effectiveRating === 'easy';
+      setSessionXpEarned(previous => previous + settlement.xpAwarded);
+      if (settlement.studyTimeMs) setSessionStudyTimeMs(previous => previous + (settlement.studyTimeMs ?? 0));
+      if (isPositive) {
+        setSessionGoodCount(prev => prev + 1);
+      } else {
+        setSessionAgainCount(prev => prev + 1);
+        setWeakCards(prev => [...prev.filter(c => c.id !== card.id), card]);
       }
+
+      if (index === cards.length - 1) {
+        if (isPositive && answeredCount + 1 === cards.length) triggerConfetti(0.5, 0.5);
+        setShowRecap(true);
+      } else onIndex(index + 1);
     } finally {
       ratingInFlightRef.current = false;
     }
   };
 
-  const runStudyShortcut = useCallback((
-    event: StudyShortcutEvent,
-    root: Pick<HTMLElement, 'querySelector'> | null,
-  ) => {
-    if (event.defaultPrevented || event.isComposing || needsIntroduction) return;
-    const target = event.target as { closest?: (selector: string) => Element | null } | null;
-    if (target?.closest?.('button, a, input, select, textarea, summary, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [data-radix-popper-content-wrapper], [data-card-control]')) return;
+  const handleStudyShortcut = useCallback((event: StudyKeyboardEvent, surface: HTMLDivElement) => {
+    if (needsIntroduction || paused || !card) return;
+    if (event.defaultPrevented || event.nativeEvent?.isComposing || event.isComposing) return;
+    const target = event.target as { closest?: (selectors: string) => Element | null } | null;
+    if (target?.closest?.('button, a, input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [data-radix-popper-content-wrapper]')) return;
+
     const noModifiers = !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
     const altShortcut = event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
+    const altKey = altShortcut ? altShortcutKey(event) : '';
     if (noModifiers && (event.key === ' ' || event.key === 'Space' || event.key === 'Spacebar' || event.key === 'Enter')) {
       event.preventDefault();
-      playFlipSound();
-      if (!revealed) onReveal();
-      else root?.querySelector<HTMLButtonElement>('[data-study-card] [data-flip-card]')?.click();
+      if (!revealed) {
+        playFlipSound();
+        onReveal();
+      } else surface.querySelector<HTMLButtonElement>('[data-study-card] [data-flip-card]')?.click();
     } else if (noModifiers && event.key === 'ArrowRight') {
       event.preventDefault();
       onIndex(Math.min(cards.length - 1, index + 1));
     } else if (noModifiers && event.key === 'ArrowLeft') {
       event.preventDefault();
       onIndex(Math.max(0, index - 1));
-    } else if (altShortcut && ['1', '2', '3', '4'].includes(event.key)) {
+    } else if (altShortcut && ['1', '2', '3', '4'].includes(altKey)) {
       event.preventDefault();
       const ratings: Record<string, ReviewRating> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
-      void handleRating(ratings[event.key]);
-    } else if (altShortcut && event.key.toLocaleLowerCase() === 's') {
+      void handleRating(ratings[altKey]);
+    } else if (altShortcut && altKey === 's') {
       event.preventDefault();
-      if (!card?.bookmarked) playRewardSound();
-      if (card) void onBookmark(card.id);
-    } else if (altShortcut && event.key.toLocaleLowerCase() === 'p') {
+      if (!card.bookmarked) playRewardSound();
+      void onBookmark(card.id);
+    } else if (altShortcut && altKey === 'p') {
       event.preventDefault();
-      root?.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Play pronunciation"]')?.click();
-    } else if (altShortcut && event.key.toLocaleLowerCase() === 'r') {
+      surface.querySelector<HTMLButtonElement>(`[data-study-card] [aria-label="${_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}"]`)?.click();
+    } else if (altShortcut && altKey === 'r') {
       event.preventDefault();
-      root?.querySelector<HTMLButtonElement>('[data-study-card] [aria-label="Check word match"]')?.click();
+      surface.querySelector<HTMLButtonElement>(`[data-study-card] [aria-label="${_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}"]`)?.click();
     }
-  }, [cards.length, card, handleRating, index, needsIntroduction, onBookmark, onIndex, onReveal, revealed]);
-
-  const handleStudyShortcut = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-    runStudyShortcut({
-      altKey: event.altKey,
-      ctrlKey: event.ctrlKey,
-      defaultPrevented: event.defaultPrevented,
-      isComposing: event.nativeEvent.isComposing,
-      key: event.key,
-      metaKey: event.metaKey,
-      shiftKey: event.shiftKey,
-      target: event.target,
-      preventDefault: () => event.preventDefault(),
-    }, event.currentTarget);
-  }, [runStudyShortcut]);
-
-  useEffect(() => {
-    const handleWindowKeyDown = (event: KeyboardEvent) => {
-      runStudyShortcut(event, studySessionRef.current);
-    };
-    window.addEventListener('keydown', handleWindowKeyDown);
-    return () => window.removeEventListener('keydown', handleWindowKeyDown);
-  }, [runStudyShortcut]);
+  }, [needsIntroduction, _, card?.bookmarked, cards.length, handleRating, index, onBookmark, onIndex, onReveal, paused, revealed]);
 
   if (!card) return null;
-  const goodCount = externalGoodCount ?? sessionGoodCount;
-  const againCount = externalAgainCount ?? sessionAgainCount;
-  const weakCards = externalWeakCards ?? sessionWeakCards;
-  const showRecap = externalShowRecap ?? sessionRecapOpen;
-  const xpEarned = externalXpEarned ?? (sessionGoodCount * 5 + sessionAgainCount * 2);
-  const completedCount = Math.min(cards.length, goodCount + againCount);
+
 
   return (
-    <div ref={studySessionRef} data-study-session tabIndex={-1} onKeyDown={handleStudyShortcut} className="mx-auto flex h-full max-w-4xl flex-col items-center py-3 sm:py-6">
-      <div className="mb-4 flex w-full items-center justify-between gap-3 px-2">
-        <button type="button" onClick={onClose} className="min-h-11 min-w-11 rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 motion-reduce:transition-none" aria-label="Close study mode">
-          <X size={24} aria-hidden="true" />
-        </button>
-        <div data-study-progress role="progressbar" aria-label="Study progress" aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={completedCount} className="min-w-0 flex-1 max-w-sm rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2.5 text-center shadow-xs">
-          <div className="flex items-center justify-between gap-3 text-xs font-bold text-[var(--sf-text-muted)]">
-            <span>Study progress</span>
-            <span className="tabular-nums">{completedCount} / {cards.length} saved</span>
-          </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--sf-surface-raised)]" aria-hidden="true">
-            <div className="h-full rounded-full bg-[var(--sf-brand)] transition-[width] duration-200 motion-reduce:transition-none" style={{ width: `${(completedCount / Math.max(cards.length, 1)) * 100}%` }} />
-          </div>
+    <div ref={studySurfaceRef} tabIndex={-1} data-study-session data-study-state={revealed ? 'revealed' : 'prompt'} data-study-paused={paused ? 'true' : 'false'} onKeyDown={event => handleStudyShortcut(event, event.currentTarget)} className="practice-board practice-board--study study-shell mx-auto flex h-full max-w-5xl flex-col items-center px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-5 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <div data-study-header className="study-shell-header mb-3 flex w-full items-center gap-3">
+        <div className="study-shell-start">
+          <button type="button" onClick={onClose} disabled={paused} className="study-shell-close crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" aria-label={_(msg({ id: 'study.close', message: 'Close study mode' }))}>
+            <X size={18} strokeWidth={1.9} aria-hidden="true" />
+          </button>
+          <p data-study-title className="study-shell-title"><Trans {...msg({ context: 'study.title', message: 'Review' })} /></p>
         </div>
-        <button type="button" onClick={() => setSummaryOpen(true)} className="min-h-11 rounded-xl px-3 text-sm font-bold focus-visible:outline-2">Summary</button>
+        <div data-study-progress role="progressbar" aria-label={_(msg({ id: 'study.progress', message: 'Study progress' }))} aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={answeredCount} className="study-shell-progress">
+          <div data-study-progress-segments aria-hidden="true">
+            {Array.from({ length: 12 }, (_, segment) => (
+              <span key={segment} data-study-progress-segment={(segment + 1) / 12 <= progressRatio ? 'complete' : 'pending'} />
+            ))}
+          </div>
+          <span data-study-count className="study-shell-count">
+            <span aria-hidden="true"><span className="study-shell-count__current">{answeredCount}</span> / {cards.length}</span>
+            <span className="sr-only"><Trans {...msg({ context: 'study.card-count', message: '{current} / {total} saved' })} values={{ current: answeredCount, total: cards.length }} /></span>
+          </span>
+        </div>
+        <div className="study-shell-end">
+          <span data-study-timer aria-label={_(msg({ id: 'study.elapsed-time', message: 'Elapsed study time: {time}' }).id, { time: elapsedTime })} className="study-shell-timer">
+            {elapsedTime}
+          </span>
+          <button type="button" data-study-focus-mode aria-label={_(msg({ id: 'study.focus-mode', message: 'Focus mode' }))} aria-pressed={focusModeEnabled} onClick={() => setFocusModeEnabled(!focusModeEnabled)} className={`study-shell-tool grid min-h-11 min-w-11 place-items-center rounded-xl border bg-[var(--sf-surface-control)] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusModeEnabled ? 'border-[var(--sf-brand)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text-muted)]'}`}>
+            <Focus size={18} aria-hidden="true" />
+          </button>
+          <button type="button" data-study-summary onClick={() => setSummaryOpen(true)} className="study-shell-summary min-h-11 min-w-11 rounded-xl px-3 text-sm font-bold focus-visible:outline-2">
+            <ListChecks size={18} aria-hidden="true" className="study-shell-summary__icon" />
+            <span className="study-shell-summary__label"><Trans {...msg({ context: 'study-view.summary', message: 'Summary' })} /></span>
+          </button>
+          <StudyShellPreferences />
+        </div>
       </div>
 
-      <label className="mb-4 flex flex-wrap items-center justify-center gap-3 text-xs font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
-        Recall mode
+      <div className="study-shell-combo mb-2 flex min-h-7 w-full justify-end" aria-live="polite">
+        {!focusModeEnabled && answeredCount >= 2 && <span data-study-combo={answeredCount} className="rounded-xl border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1 font-display text-xs font-black uppercase tracking-wider text-[var(--sf-brand-text)]"><Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} /></span>}
+      </div>
+
+      <label data-study-recall-mode className="mb-4 flex flex-wrap items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
+        <Trans {...msg({ context: 'study.recall-mode', message: 'Recall mode' })} />
         <select name="study-recall-mode" value={activeRecallMode} onChange={event => onRecallMode(resolveStudyRecallMode(card, event.target.value as RecallMode))} className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2">
-          <option value="en-to-vi">English → Vietnamese</option>
-          <option value="adaptive">Adaptive difficulty</option>
-          <option value="vi-to-en">Vietnamese → English</option>
-          <option value="image-to-word" disabled={!imageRecallAvailable}>Image → Word</option>
-          <option value="listen-to-word">Listen → Word</option>
-          <option value="cloze">Fill the sentence</option>
+          <option value="target-to-native"><Trans {...msg({ context: 'study.recall-mode.target-to-native', message: '{targetLanguage} → {nativeLanguage}' })} values={{ targetLanguage, nativeLanguage }} /></option>
+          <option value="adaptive"><Trans {...msg({ context: 'study.recall-mode.adaptive', message: 'Adaptive difficulty' })} /></option>
+          <option value="native-to-target"><Trans {...msg({ context: 'study.recall-mode.native-to-target', message: '{nativeLanguage} → {targetLanguage}' })} values={{ targetLanguage, nativeLanguage }} /></option>
+          <option value="image-to-word" disabled={!imageRecallAvailable}><Trans {...msg({ context: 'study.recall-mode.image-to-word', message: 'Image → Word' })} /></option>
+          <option value="listen-to-word"><Trans {...msg({ context: 'study.recall-mode.listen-to-word', message: 'Listen → Word' })} /></option>
+          <option value="cloze"><Trans {...msg({ context: 'study.recall-mode.cloze', message: 'Fill the sentence' })} /></option>
         </select>
       </label>
 
       {/* Swipeable Flashcard Container */}
-      <div data-study-card className="relative mb-5 w-full touch-pan-y select-none transition-transform duration-100 ease-out" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: dragOffset !== 0 ? `translateX(${dragOffset}px) rotate(${dragOffset * 0.04}deg)` : undefined }}>
+      <div ref={studyCardRef} data-study-card className="relative mb-5 w-full max-w-3xl touch-pan-y select-none transition-transform duration-100 ease-out motion-reduce:transition-none" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={resetTouch}>
         {/* Swipe Feedback Badges */}
-        {dragOffset > 40 && (
+        {swipeBadge === 'good' && (
           <div className="absolute left-6 top-6 z-50 rounded-2xl border-2 border-emerald-400 bg-emerald-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
-            GOOD 👍
+            <Trans {...msg({ context: 'study.swipe.good', message: 'GOOD 👍' })} />
           </div>
         )}
-        {dragOffset < -40 && (
+        {swipeBadge === 'again' && (
           <div className="absolute right-6 top-6 z-50 rounded-2xl border-2 border-rose-400 bg-rose-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
-            AGAIN 👎
+            <Trans {...msg({ context: 'study.swipe.again', message: 'AGAIN 👎' })} />
           </div>
         )}
 
+        {!needsIntroduction && onLearnFirst && <button type="button" onClick={onLearnFirst} className="study-shell-learn-first my-4 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 font-bold"><Trans {...msg({ context: 'practice.learn-first', message: 'I don\'t know this — learn first' })} /></button>}
         <GsapEntrance animationKey={index} direction={direction} variant="step">
           {needsIntroduction ? (
             <section data-study-introduction className="mx-auto w-full max-w-2xl rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 shadow-xl sm:p-5" aria-labelledby="study-introduction-heading">
               <div className="mb-4 text-center">
-                <h2 id="study-introduction-heading" className="text-lg font-black text-[var(--sf-text)]">Meet this word</h2>
-                <p className="mt-1 text-sm text-[var(--sf-text-muted)]">Take a moment to review the card before recall practice.</p>
+                <h2 id="study-introduction-heading" className="text-lg font-black text-[var(--sf-text)]"><Trans {...msg({ context: 'study-view.meet-this-word', message: 'Meet this word' })} /></h2>
+                <p className="mt-1 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'study-view.take-a-moment-to-review-the-card-before-recall-practice', message: 'Take a moment to review the card before recall practice.' })} /></p>
               </div>
               <Flashcard
                 data={card}
@@ -340,21 +474,25 @@ export function StudyView({
               />
               <button
                 type="button"
-                onClick={() => onBeginStudyRecall?.()}
+                onClick={() => {
+                  recallTransitionPendingRef.current = true;
+                  onBeginStudyRecall?.();
+                }}
                 className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-[var(--sf-brand)] px-4 py-3 text-sm font-black text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none"
-              >
-                I’ve reviewed it — start recall
-              </button>
+              ><Trans {...msg({ context: 'study-view.i-ve-reviewed-it-start-recall', message: 'I’ve reviewed it — start recall' })} /></button>
             </section>
           ) : revealed ? (
             <Flashcard
               data={card}
-              initialSide={activeRecallMode === 'en-to-vi' || (activeRecallMode === 'adaptive' && (card.correctStreak || 0) === 0) ? 'back' : 'front'}
+              initialSide={activeRecallMode === 'target-to-native' || (activeRecallMode === 'adaptive' && (card.correctStreak || 0) === 0) ? 'back' : 'front'}
               imagePriority
               onToggleBookmark={onBookmark}
               customDecks={customDecks}
               onAssignDeck={onAssignDeck}
               onUpdateCard={onUpdateCard}
+              onEditDelete={handleDeleteCard}
+              onEditOpenChange={open => onEditorOpenChange?.(card.id, open)}
+              editorContext={{ kind: 'review', current: index + 1, total: cards.length }}
             />
           ) : (
             <ActiveRecallPrompt
@@ -365,56 +503,84 @@ export function StudyView({
             />
           )}
         </GsapEntrance>
+        {lumiReaction && (
+          <div className="pointer-events-none absolute -bottom-5 -right-1 z-20 hidden sm:block" aria-hidden="true">
+            <Lumi pose={lumiReaction} size={72} className="crystal-ornament drop-shadow-[0_8px_16px_var(--sf-shadow)]" />
+          </div>
+        )}
       </div>
 
-      {!needsIntroduction && (
-        <div ref={ratingRef} data-study-rating className="w-full max-w-md scroll-mt-4">
-          {onLearnFirst && reviewedCardId !== card.id && reviewStatus === 'idle' && <button type="button" onClick={onLearnFirst} className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold focus-visible:outline-2">I don't know this — learn first</button>}
-          <ReviewControls
-            revealed={revealed}
-            reviewed={reviewedCardId === card.id}
-            saving={reviewStatus === 'saving' || reviewStatus === 'sync-pending'}
-            error={reviewError}
-            lastRating={card.reviewHistory?.at(-1)?.rating}
-            onRate={handleRating}
-          />
-          {(reviewStatus === 'sync-pending' || provisionalReviewPending) && <p data-study-provisional className="mt-2 text-center text-sm font-semibold text-[var(--sf-text-muted)]" role="status">Review saved on this device and waiting to sync.</p>}
-        </div>
-      )}
+      {!needsIntroduction && !revealed && <p data-study-hint className="study-shell-hint">
+        <Trans {...msg({ context: 'study.hint', message: 'Say it out loud first, then reveal <0>Space</0>' })} components={{ 0: <kbd className="study-shell-kbd crystal-chamfer-sm" /> }} />
+      </p>}
+
+      {!needsIntroduction && <div ref={ratingRef} inert={paused || undefined} data-study-rating className="w-full max-w-xl scroll-mt-4">
+        <ReviewControls
+          revealed={revealed}
+          reviewed={reviewedCardId === card.id}
+          saving={reviewStatus === 'saving'}
+          error={reviewError}
+          lastRating={card.reviewHistory?.at(-1)?.rating}
+          onRate={handleRating}
+        />
+      </div>}
 
       <div className="flex items-center gap-4 sm:gap-6">
-        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={index === 0} className="min-h-14 min-w-14 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] p-4 text-[var(--sf-text)] shadow-md transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label="Previous card">
+        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={paused || index === 0} className="crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-3 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label={_(msg({ id: 'study.previous-card', message: 'Previous card' }))}>
           <ChevronLeft size={24} aria-hidden="true" />
         </button>
-        <div className="rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-3 font-mono font-bold tabular-nums text-[var(--sf-brand-text)]">{index + 1} / {cards.length}</div>
-        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={index === cards.length - 1} className="min-h-14 min-w-14 rounded-full bg-[var(--sf-brand)] p-4 text-[var(--sf-on-brand)] shadow-md transition hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-95 focus-visible:outline-2 motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-50" aria-label="Next card">
+        <div className="crystal-chamfer-sm border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-3 font-mono font-bold tabular-nums text-[var(--sf-brand-text)]">{index + 1} / {cards.length}</div>
+        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={paused || index === cards.length - 1} className="crystal-chamfer-sm min-h-11 min-w-11 bg-[var(--sf-brand)] p-3 text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-50" aria-label={_(msg({ id: 'study.next-card', message: 'Next card' }))}>
           <ChevronRight size={24} aria-hidden="true" />
         </button>
       </div>
 
       <SessionRecapModal
-        open={showRecap || summaryOpen}
-        onClose={() => { setSummaryOpen(false); setSessionRecapOpen(false); if (externalShowRecap) (onDismissRecap ?? onClose)(); }}
+        open={showRecap || externalShowRecap || summaryOpen}
+        onClose={() => { setShowRecap(false); setSummaryOpen(false); (onDismissRecap ?? onClose)(); }}
         summary={summary}
-        onRetryWeak={onRetryWeak ? () => { setSummaryOpen(false); onRetryWeak(); } : undefined}
+        onRetryWeak={onRetryWeak}
+        onViewWeeklyRecap={onViewWeeklyRecap}
         totalCards={cards.length}
-        goodCount={goodCount}
-        againCount={againCount}
-        xpEarned={xpEarned}
-        weakCards={weakCards}
+        goodCount={externalGoodCount ?? sessionGoodCount}
+        againCount={externalAgainCount ?? sessionAgainCount}
+        xpEarned={externalXpEarned ?? sessionXpEarned}
+        studyTimeMs={externalStudyTimeMs ?? sessionStudyTimeMs}
+        weakCards={externalWeakCards ?? weakCards}
+        targetLanguage={cards[0]?.language ?? 'en'}
       />
 
       <div className="mx-auto mt-8 hidden w-full max-w-sm rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-center shadow-xs md:block">
-        <div className="mb-3 flex items-center justify-center gap-1.5 text-xs font-black text-[var(--sf-text-muted)]"><Keyboard size={13} className="text-[var(--sf-brand-text)]" aria-hidden="true" /><span>Study shortcuts</span></div>
+        <div className="mb-3 flex items-center justify-center gap-1.5 text-xs font-black text-[var(--sf-text-muted)]"><Keyboard size={13} className="text-[var(--sf-brand-text)]" aria-hidden="true" /><span><Trans {...msg({ context: 'study.shortcuts', message: 'Study shortcuts' })} /></span></div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[10px] text-[var(--sf-text-muted)] font-medium text-left">
-          <Shortcut keys="Space" label="Flip card" />
-          <Shortcut keys="← / →" label="Previous / next" />
-          <div className="col-span-2 border-t border-[var(--sf-border)] pt-2.5"><Shortcut keys="Alt+1…4" label="Rate memory" /></div>
-          <div className="col-span-2 border-t border-[var(--sf-border)] pt-2.5"><Shortcut keys="Alt+S / Alt+P / Alt+R" label="Star / play / speak" /></div>
+          <Shortcut keys="Space" label={_(msg({ id: 'study.shortcut.flip-card', message: 'Flip card' }))} />
+          <Shortcut keys="← / →" label={_(msg({ id: 'study.shortcut.previous-next', message: 'Previous / next' }))} />
+          <div className="col-span-2 border-t border-[var(--sf-border)] pt-2.5"><Shortcut keys="Alt+1…4" label={_(msg({ id: 'study.shortcut.rate-memory', message: 'Rate memory' }))} /></div>
+          <div className="col-span-2 border-t border-[var(--sf-border)] pt-2.5"><Shortcut keys="Alt+S / Alt+P / Alt+R" label={_(msg({ id: 'study.shortcut.star-play-speak', message: 'Star / play / speak' }))} /></div>
         </div>
       </div>
     </div>
   );
+}
+
+/**
+ * The app bar steps aside while the learner reviews, so the shell carries its light and dark switch
+ * and the same streak the app bar shows: the verified run the app already holds, with no read of its own.
+ */
+function StudyShellPreferences() {
+  const { _ } = useLingui();
+  const { mode: themeMode, setMode: setThemeMode } = useTheme();
+  const verifiedState = useVerifiedStats()?.state ?? null;
+  const streak = useMemo(() => (verifiedState ? buildStreakView(verifiedState, new Date()).length : 0), [verifiedState]);
+  return <>
+    <button type="button" data-study-theme onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')} aria-pressed={themeMode === 'dark'} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))} className="study-shell-theme claude-theme-quick-toggle flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] text-[var(--sf-text-muted)] transition-colors hover:text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none">
+      {themeMode === 'dark' ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+    </button>
+    {streak > 0 && <span data-study-streak role="img" className="study-shell-streak claude-streak" aria-label={_(msg({ id: 'shell.streak', message: '{count} day streak' }).id, { count: streak })}>
+      <svg className="claude-streak-flame" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z" /></svg>
+      <span aria-hidden="true">{streak}<span className="study-shell-streak__unit"> <Trans {...msg({ context: 'study.streak-unit', message: '{count, plural, one {day} other {days}}' })} values={{ count: streak }} /></span></span>
+    </span>}
+  </>;
 }
 
 function Shortcut({ keys, label }: { keys: string; label: string }) {

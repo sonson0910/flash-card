@@ -53,6 +53,9 @@ const VOCABULARY_AI_SCOPES = new Set(
   Object.values(VOCABULARY_AI_BUDGETS).map(budget => budget.scope),
 );
 
+/** Every per-owner budget scope the vocabulary AI callables consume. */
+export const VOCABULARY_AI_BUDGET_SCOPES: readonly VocabularyAiBudget['scope'][] = [...VOCABULARY_AI_SCOPES];
+
 export const getVocabularyAiBudget = (action: VocabularyAiAction): VocabularyAiBudget =>
   VOCABULARY_AI_BUDGETS[action];
 

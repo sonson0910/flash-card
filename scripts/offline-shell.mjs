@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const OFFLINE_SHELL_MAX_BYTES = 4 * 1024 * 1024;
+export const OFFLINE_SHELL_MAX_BYTES = 6 * 1024 * 1024;
 export const OFFLINE_SHELL_DESCRIPTOR_MARKER = '/* SONFLASH_OFFLINE_SHELL_DESCRIPTOR */ null';
 const OFFLINE_SHELL_TEST_API_PATTERN = /\/\* SONFLASH_TEST_API_START \*\/[\s\S]*?\/\* SONFLASH_TEST_API_END \*\//;
 
@@ -73,7 +73,11 @@ const isAllowedShellAsset = url => (
   && !PROTECTED_SHELL_PATH_PATTERN.test(url)
 );
 
-const shouldInclude = relativePath => isAllowedShellAsset(`/${relativePath}`);
+// Optional CJK web fonts load with their course; the offline shell uses native
+// system glyphs instead of precaching every language's multi-megabyte font.
+const LAZY_CJK_FONT_PATTERN = /^assets\/noto-sans-(?:jp|kr|sc)-[^/]+\.woff2$/i;
+const shouldInclude = relativePath => isAllowedShellAsset(`/${relativePath}`)
+  && !LAZY_CJK_FONT_PATTERN.test(relativePath);
 
 const collectFiles = (directory, rootDirectory, output) => {
   let entries;

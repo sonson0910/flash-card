@@ -34,7 +34,7 @@ const queryStates = function* (): Generator<CardQueryState> {
       practiceDeckScopeForLibraryDeck('Deck'),
       practiceDeckScopeForLibraryDeck('Unassigned'),
     ])) {
-      for (const difficulty of values<CardQueryState['difficulty']>([null, 'easy', 'good', 'hard', 'unrated', 'due'])) {
+      for (const difficulty of values<CardQueryState['difficulty']>([null, 'easy', 'good', 'hard', 'learning', 'unrated', 'due'])) {
         for (const partOfSpeech of values([null, 'noun'])) {
           for (const bookmarkedOnly of [false, true]) {
             for (const createdDate of values([null, '2026-09-21'])) {
@@ -73,7 +73,7 @@ describe('library Firestore query index contract', () => {
         accepted += 1;
       }
     }
-    expect({ accepted, rejected }).toEqual({ accepted: 384, rejected: 192 });
+    expect({ accepted, rejected }).toEqual({ accepted: 456, rejected: 216 });
   });
 
   it('keeps deterministic document-id tie breakers in every accepted signature', () => {
@@ -85,6 +85,18 @@ describe('library Firestore query index contract', () => {
         order: state.wordPrefix || state.difficulty === 'due' ? 'ASCENDING' : 'DESCENDING',
       });
     }
+  });
+
+  it('covers every course filter with the target predicate before range and ordering fields', () => {
+    const signatures = new Set<string>();
+    for (const state of queryStates()) {
+      if (isMixedRangeFamily(state)) continue;
+      const fields = cardQueryIndexFields({ ...state, targetLanguage: 'ko' });
+      expect(fields[0]).toEqual({ fieldPath: 'language', order: 'ASCENDING' });
+      expect(isManifestCovered(fields)).toBe(true);
+      signatures.add(JSON.stringify(fields));
+    }
+    expect(signatures.size).toBe(80);
   });
 
   it('retains the multilingual membership composite', () => {

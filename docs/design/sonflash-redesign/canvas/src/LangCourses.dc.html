@@ -1,0 +1,269 @@
+<!--#HEAD Language courses-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}};">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 6; height: 76px; padding: 0 56px; display: flex; align-items: center; gap: 22px; border-bottom: 1px solid {{t.navLine}};">
+    <a href="#" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: {{t.text}};">
+      <span aria-hidden="true" style="width: 30px; height: 30px; border-radius: 9px; background: {{t.logoBg}}; box-shadow: {{t.logoShadow}}; display: flex; align-items: center; justify-content: center; color: {{t.logoText}}; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 18px; font-weight: 500;">S</span>
+      <span style="font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 450; letter-spacing: -0.01em;">Son<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">Flash</span></span>
+    </a>
+    <button aria-haspopup="listbox" aria-expanded="{{isOpen}}" aria-label="Active course: {{c.name}}. Switch course" style="height: 42px; padding: 0 12px 0 5px; border-radius: 999px; border: {{chip.border}}; background: {{chip.bg}}; box-shadow: {{chip.shadow}}; color: {{t.textStrong}}; display: flex; align-items: center; gap: 9px; cursor: pointer; font-family: inherit;">
+      <span style="width: 32px; height: 32px; border-radius: 50%; background: {{c.tileBg}}; color: {{c.tileFg}}; font-family: {{c.glyphFont}}; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{c.glyph}}</span>
+      <span style="font-family: {{c.nameFont}}; font-size: 15px; font-weight: 700;">{{c.name}}</span>
+      <span style="font-size: 12px; color: {{t.text3}};">from Tiếng Việt</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{t.text2}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{chevron}}deg);"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>
+    <nav aria-label="Main" style="margin-left: 10px; display: flex; gap: 4px;">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
+        <a href="#" aria-current="{{n.current}}" style="height: 38px; padding: 0 16px; border-radius: 999px; display: flex; align-items: center; text-decoration: none; font-size: 14px; font-weight: 550; color: {{n.color}}; background: {{n.bg}};">{{n.label}}</a>
+      </sc-for>
+    </nav>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+      <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+        <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+      </button>
+      <span title="Streak in this course" style="height: 38px; padding: 0 14px 0 11px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>
+        {{c.streak}}
+      </span>
+      <span style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;"><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text2}};">Lv</span>7</span>
+      <button aria-label="Account" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.avatarBg}}; color: {{t.avatarText}}; font-size: 13px; font-weight: 700; cursor: pointer;">KB</button>
+    </div>
+  </header>
+
+  <main style="position: relative; z-index: 2; padding: 34px 56px 0; display: grid; grid-template-columns: 1fr 440px; gap: 32px;">
+    <section>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 7px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>{{c.exam}}</span>
+        <span style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 6px;">{{c.path}}</span>
+      </div>
+      <h1 class="sf-rise" style="margin: 18px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 62px; line-height: 1.04; letter-spacing: -0.035em; color: {{t.textStrong}};">Good morning, Khanh.<br>Twelve minutes of <span style="font-family: {{c.emFont}}; font-style: normal; font-weight: {{c.emWeight}}; letter-spacing: 0; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">{{c.name}}</span>.</h1>
+
+      <div class="sf-rise-2" style="margin-top: 30px; position: relative; box-sizing: border-box; border-radius: {{t.cardRadius}}px; border: {{plan.border}}; background: {{plan.bg}}; box-shadow: {{plan.shadow}}; padding: 26px 28px 28px; overflow: hidden;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Today's session · {{c.english}}</span>
+          <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text3}};">{{c.tuned}}</span>
+        </div>
+        <ol aria-label="Session plan" style="list-style: none; margin: 22px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;">
+          <sc-for list="{{parts}}" as="p" hint-placeholder-count="4">
+            <li style="position: relative; padding-right: 14px;">
+              <div style="display: flex; align-items: center;">
+                <span style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; border: {{p.ring}}; background: {{p.dotBg}}; color: {{p.dotFg}}; box-shadow: {{p.glow}}; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{p.icon}}"></path></svg></span>
+                <span style="flex-grow: 1; height: 2px; margin-left: 10px; background: {{p.link}};"></span>
+              </div>
+              <div style="margin-top: 14px; font-family: Fraunces, Georgia, serif; font-size: 22px; line-height: 1.1; color: {{t.textStrong}};">{{p.title}}</div>
+              <div style="margin-top: 4px; font-size: 13px; color: {{t.text2}};">{{p.sub}}</div>
+              <div style="margin-top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; color: {{t.text3}};">{{p.time}}</div>
+            </li>
+          </sc-for>
+        </ol>
+        <div style="margin-top: 26px; display: flex; align-items: center; gap: 18px;">
+          <button class="sf-press" style="height: 60px; padding: 0 30px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 17px; font-weight: 650; display: flex; align-items: center; gap: 12px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg>Start today's session · 12 min</button>
+          <span style="font-size: 13.5px; line-height: 1.45; color: {{t.text2}};">{{c.due}} due in {{c.name}}<br><span style="color: {{t.warm}}; font-weight: 600;">keeps your {{c.streak}}-day streak</span></span>
+        </div>
+      </div>
+
+      <div style="margin-top: 22px; display: flex; align-items: center; gap: 16px;">
+        <div style="flex-grow: 1;">
+          <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: {{t.text2}};"><span>{{c.levelLine}}</span><span>{{c.levelNext}}</span></div>
+          <div style="margin-top: 7px; height: 7px; border-radius: 7px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: {{c.levelPct}}%; height: 100%; border-radius: 7px; background: {{bar}}; box-shadow: {{barGlow}};"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="sf-rise-2" aria-labelledby="words-title" style="box-sizing: border-box; height: 700px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; padding: 22px 22px 18px; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="width: 34px; height: 34px; border-radius: 10px; background: {{c.tileBg}}; color: {{c.tileFg}}; font-family: {{c.glyphFont}}; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{c.glyph}}</span>
+        <div style="flex-grow: 1;">
+          <h2 id="words-title" style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 22px; color: {{t.textStrong}};">New words today</h2>
+          <div style="font-size: 12.5px; color: {{t.text2}};">{{c.wordsSub}}</div>
+        </div>
+      </div>
+      <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; min-height: 0; overflow: hidden;">
+        <sc-for list="{{words}}" as="w" hint-placeholder-count="5">
+          <div style="padding: 11px 14px; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: end;">
+            <span lang="{{c.lang}}" style="font-family: {{c.wordFont}}; font-size: 26px; font-weight: 700; line-height: 1.25; color: {{t.textStrong}};"><ruby>{{w.word}}<rt style="font-family: {{c.wordFont}}; font-size: 11px; font-weight: 500; color: {{t.accentText}};">{{w.rt}}</rt></ruby></span>
+            <span style="font-size: 13.5px; font-weight: 600; color: {{t.accentText}}; text-align: right; padding-bottom: 5px;">{{w.vi}}</span>
+            <span style="font-family: Geist, system-ui, sans-serif; font-size: 12px; color: {{t.text2}};">{{w.roman}}</span>
+            <span title="Sino-Vietnamese reading" style="justify-self: end; height: 22px; padding: 0 8px; border-radius: 999px; border: 1px solid {{t.line}}; font-size: 11.5px; color: {{t.text2}}; display: flex; align-items: center; gap: 5px;"><span style="font-family: {{c.hanFont}}; color: {{t.text3}};">{{w.han}}</span>Hán Việt · {{w.hv}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top: 14px; padding: 11px 14px; border-radius: 12px; background: {{t.accentSoft}}; color: {{t.text2}}; font-size: 12.5px; line-height: 1.45;"><strong style="color: {{t.textStrong}};">Tip for Vietnamese speakers:</strong> {{c.tip}}</div>
+    </aside>
+  </main>
+
+  <sc-if value="{{isOpen}}" hint-placeholder-val="{{true}}">
+    <div aria-hidden="true" style="position: absolute; inset: 76px 0 0; z-index: 4; background: {{t.scrim}};"></div>
+    <div role="listbox" aria-label="Your courses" class="sf-pop" style="position: absolute; z-index: 7; left: 196px; top: 84px; width: 480px; box-sizing: border-box; border-radius: {{t.dlgRadius}}px; border: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}}; padding: 10px;">
+      <div style="padding: 8px 10px 10px; display: flex; align-items: baseline; justify-content: space-between;">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">Your courses</span>
+        <span style="font-size: 12px; color: {{t.text3}};">Level and XP are shared · streaks are per course</span>
+      </div>
+      <sc-for list="{{courses}}" as="k" hint-placeholder-count="3">
+        <div role="option" aria-selected="{{k.selected}}" style="padding: 12px; border-radius: 14px; background: {{k.rowBg}}; border: {{k.rowBorder}}; display: flex; align-items: center; gap: 14px; margin-bottom: 4px;">
+          <span style="width: 46px; height: 46px; flex-shrink: 0; border-radius: 13px; background: {{k.tileBg}}; color: {{k.tileFg}}; font-family: {{k.glyphFont}}; font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{k.glyph}}</span>
+          <div style="flex-grow: 1; min-width: 0;">
+            <div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-family: {{k.nameFont}}; font-size: 18px; font-weight: 700; color: {{t.textStrong}};">{{k.name}}</span><span style="font-size: 12.5px; color: {{t.text3}};">{{k.english}}</span></div>
+            <div style="margin-top: 2px; font-size: 12.5px; color: {{t.text2}};">from Tiếng Việt · {{k.goal}}</div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+            <span style="height: 24px; padding: 0 9px; border-radius: 999px; background: {{k.dueBg}}; color: {{k.dueFg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 600; display: flex; align-items: center; white-space: nowrap;">{{k.dueLabel}}</span>
+            <span style="font-size: 12px; color: {{t.warm}}; display: flex; align-items: center; gap: 4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>{{k.streak}} days</span>
+          </div>
+          <span style="width: 22px; display: flex; justify-content: center; color: {{t.accentText}};"><sc-if value="{{k.active}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></span>
+        </div>
+      </sc-for>
+      <div style="margin: 6px 2px 0; padding-top: 8px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 8px;">
+        <button style="flex-grow: 1; height: 46px; border-radius: 12px; border: 1px dashed {{t.lineStrong}}; background: transparent; color: {{t.textStrong}}; font-family: inherit; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; padding: 0 14px; cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add a language</button>
+        <button style="height: 46px; padding: 0 16px; border-radius: 12px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;">Manage courses</button>
+      </div>
+      <div style="margin: 10px 4px 4px; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: {{t.text2}};"><svg style="flex-shrink: 0;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H8l-4 4z"></path></svg><span style="flex-grow: 1;">The extension saves to the course that matches the page language.</span><kbd style="flex-shrink: 0; white-space: nowrap; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; padding: 2px 7px; border-radius: 5px; border: 1px solid {{t.line}};">Alt 1–3</kbd></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isAdd}}" hint-placeholder-val="{{false}}">
+    <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 8; background: {{t.scrim}}; backdrop-filter: blur(2px);"></div>
+    <div role="dialog" aria-modal="true" aria-labelledby="add-title" class="sf-pop" style="position: absolute; z-index: 9; left: 360px; top: 70px; width: 720px; box-sizing: border-box; border-radius: {{t.dlgRadius}}px; border: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}}; padding: 28px 30px 26px;">
+      <div style="display: flex; align-items: flex-start; gap: 14px;">
+        <div style="flex-grow: 1;">
+          <h2 id="add-title" style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 32px; letter-spacing: -0.02em; color: {{t.textStrong}};">Add a <span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">language</span></h2>
+          <p style="margin: 6px 0 0; font-size: 14px; line-height: 1.5; color: {{t.text2}};">Your 한국어 and English progress stays where it is. Each language gets its own decks, daily queue and streak.</p>
+        </div>
+        <button aria-label="Close" style="width: 36px; height: 36px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+      </div>
+      <div style="margin-top: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text2}};">I want to learn</div>
+      <div role="radiogroup" aria-label="Language to learn" style="margin-top: 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+        <sc-for list="{{targets}}" as="g" hint-placeholder-count="8">
+          <div role="radio" aria-checked="{{g.checked}}" aria-disabled="{{g.added}}" style="position: relative; height: 118px; box-sizing: border-box; border-radius: 16px; border: {{g.border}}; background: {{g.bg}}; box-shadow: {{g.shadow}}; padding: 12px 14px; display: flex; flex-direction: column; opacity: {{g.op}};">
+            <span lang="{{g.lang}}" style="font-family: {{g.font}}; font-size: 30px; font-weight: 700; line-height: 1; color: {{g.glyphColor}};">{{g.glyph}}</span>
+            <span style="margin-top: auto; font-family: {{g.font}}; font-size: 16px; font-weight: 700; color: {{t.textStrong}};">{{g.name}}</span>
+            <span lang="{{g.lang}}" style="margin-top: 2px; font-size: 12px; color: {{t.text2}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{g.sample}}</span>
+            <span style="position: absolute; right: 10px; top: 10px; height: 20px; padding: 0 7px; border-radius: 999px; background: {{g.tagBg}}; color: {{g.tagFg}}; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; display: flex; align-items: center;">{{g.tag}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 600; color: {{t.text2}};">Explain meanings in
+          <span style="height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid {{t.lineStrong}}; background: {{t.inputBg}}; color: {{t.textStrong}}; font-size: 14.5px; font-weight: 600; display: flex; align-items: center; gap: 10px;">Tiếng Việt<span style="font-size: 12px; font-weight: 500; color: {{t.text3}};">your native language</span><svg style="margin-left: auto;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{t.text2}}" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 600; color: {{t.text2}};">Goal
+          <span style="height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid {{t.lineStrong}}; background: {{t.inputBg}}; color: {{t.textStrong}}; font-size: 14.5px; font-weight: 600; display: flex; align-items: center; gap: 10px;">HSK 3<span style="font-size: 12px; font-weight: 500; color: {{t.text3}};">≈ 600 words · pinyin on</span><svg style="margin-left: auto;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{t.text2}}" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+        </label>
+      </div>
+      <div style="margin-top: 16px; padding: 12px 14px; border-radius: 12px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; font-size: 13px; line-height: 1.45; color: {{t.text2}}; display: flex; gap: 10px;"><svg style="flex-shrink: 0; margin-top: 1px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{t.warm}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z"></path></svg><span><strong style="color: {{t.textStrong}};">Pro trial · unlimited languages.</strong> Free keeps 2 languages; after the trial you choose which 2 stay active. Nothing is deleted.</span></div>
+      <div style="margin-top: 20px; display: flex; align-items: center; gap: 12px;">
+        <button class="sf-press" style="height: 54px; padding: 0 26px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-family: inherit; font-size: 16px; font-weight: 650; white-space: nowrap; cursor: pointer;">Start <span lang="zh" style="font-family: 'Noto Sans SC', sans-serif;">&nbsp;中文&nbsp;</span> · 3-min placement</button>
+        <button style="height: 54px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; box-shadow: {{t.secondaryShadow}}; color: {{t.text}}; font-family: inherit; font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer;">Start from zero</button>
+        <span style="margin-left: auto; font-size: 12.5px; color: {{t.text3}};">More languages soon: Italiano, Português…</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isSwitched}}" hint-placeholder-val="{{false}}">
+    <div role="status" class="sf-pop" style="position: absolute; z-index: 7; left: 56px; bottom: 34px; height: 52px; box-sizing: border-box; padding: 0 8px 0 8px; border-radius: 999px; border: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}}; display: flex; align-items: center; gap: 12px; white-space: nowrap;">
+      <span style="display: flex; align-items: center;"><span style="width: 34px; height: 34px; border-radius: 50%; background: {{prevTileBg}}; color: {{prevTileFg}}; font-family: 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; opacity: 0.55;">한</span><svg width="22" height="14" viewBox="0 0 22 14" style="margin: 0 4px;"><path d="M1 7h18M14 2l5 5-5 5" fill="none" stroke="{{t.text3}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="width: 34px; height: 34px; border-radius: 50%; background: {{c.tileBg}}; color: {{c.tileFg}}; font-family: 'Noto Sans JP', sans-serif; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center;">あ</span></span>
+      <span style="font-size: 14px; color: {{t.text}};">Switched to <strong lang="ja" style="font-family: 'Noto Sans JP', sans-serif;">日本語</strong> · 18 due · extension now saves Japanese pages here</span>
+      <button style="height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.accentText}}; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">Back to 한국어</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"state":{"editor":"enum","options":["open","add","switched"],"default":"open"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const state = this.props.state ?? 'open';
+    const KR = "'Noto Sans KR', sans-serif", JP = "'Noto Sans JP', sans-serif", SC = "'Noto Sans SC', sans-serif";
+    const serif = { ko: "'Noto Serif KR', serif", ja: "'Noto Serif JP', serif" };
+    // Script tiles: one hue per course so the switcher reads at a glance in both themes.
+    const tile = {
+      ko: dark ? ['linear-gradient(145deg, #7ee6fa, #28d3f4)', '#04141c'] : ['#1d1a16', '#fbf6ec'],
+      ja: dark ? ['linear-gradient(145deg, #d8c4ff, #966cd7)', '#140a26'] : ['#b4461a', '#fff8f0'],
+      en: dark ? ['linear-gradient(145deg, #ffe0a3, #f5ae39)', '#1f1302'] : ['#337344', '#f4fbf2'],
+    };
+    const COURSES = {
+      ko: { lang: 'ko', glyph: '한', name: '한국어', english: 'Korean', glyphFont: KR, nameFont: KR, emFont: serif.ko, emWeight: 700, wordFont: serif.ko, hanFont: "'Noto Serif KR', serif",
+        goal: 'TOPIK II · Level 3', exam: 'TOPIK II in 64 days · target Level 4', path: 'Path: Everyday Korean 2 · unit 5', tuned: 'tuned for TOPIK Level 4',
+        due: 24, streak: 12, levelLine: 'Korean · 1,184 words known', levelNext: 'TOPIK Level 4 ≈ 3,000 words', levelPct: 40,
+        wordsSub: '5 new · meanings in Tiếng Việt · romanization on',
+        tip: '3 of these words share Hán Việt roots — 약속 is ước thúc (約束). Spot the root and the meaning often follows.' },
+      ja: { lang: 'ja', glyph: 'あ', name: '日本語', english: 'Japanese', glyphFont: JP, nameFont: JP, emFont: serif.ja, emWeight: 700, wordFont: serif.ja, hanFont: "'Noto Serif JP', serif",
+        goal: 'JLPT N3', exam: 'JLPT N3 · 6 Dec · 74 days', path: 'Path: JLPT N3 vocabulary · unit 8', tuned: 'tuned for JLPT N3',
+        due: 18, streak: 5, levelLine: 'Japanese · 1,420 words known', levelNext: 'N3 ≈ 3,700 words', levelPct: 38,
+        wordsSub: '5 new · furigana on · meanings in Tiếng Việt',
+        tip: 'most N3 kanji words have a Hán Việt reading — 経験 is kinh nghiệm. Furigana fades once you know a word.' },
+      en: { lang: 'en', glyph: 'A', name: 'English', english: 'IELTS', glyphFont: "Fraunces, Georgia, serif", nameFont: 'Geist, system-ui, sans-serif',
+        goal: 'IELTS 7.0', due: 14, streak: 31 },
+    };
+    const active = state === 'switched' ? 'ja' : 'ko';
+    const c = { ...COURSES[active], tileBg: tile[active][0], tileFg: tile[active][1] };
+    const WORDS = {
+      ko: [['약속', 'yaksok', '約束', 'ước thúc', 'lời hứa, cuộc hẹn'], ['준비하다', 'junbihada', '準備', 'chuẩn bị', 'chuẩn bị'], ['경험', 'gyeongheom', '經驗', 'kinh nghiệm', 'kinh nghiệm'], ['시간', 'sigan', '時間', 'thời gian', 'thời gian'], ['도서관', 'doseogwan', '圖書館', 'đồ thư quán', 'thư viện']],
+      ja: [['約束', 'yakusoku', '約束', 'ước thúc', 'lời hứa', 'やくそく'], ['準備', 'junbi', '準備', 'chuẩn bị', 'sự chuẩn bị', 'じゅんび'], ['経験', 'keiken', '經驗', 'kinh nghiệm', 'kinh nghiệm', 'けいけん'], ['天気', 'tenki', '天氣', 'thiên khí', 'thời tiết', 'てんき'], ['図書館', 'toshokan', '圖書館', 'đồ thư quán', 'thư viện', 'としょかん']],
+    };
+    const PARTS = {
+      ko: [['Review', '24 cards due', '≈ 6 min'], ['New words', '5 · 2 from the web', '≈ 3 min'], ['Listening', '받침 sounds · 8 clips', '2 min'], ['Recap', 'XP, streak, tomorrow', '≈ 1 min']],
+      ja: [['Review', '18 cards due', '≈ 5 min'], ['New words', '5 · furigana on', '≈ 3 min'], ['Kanji reading', 'type the kana · 10', '3 min'], ['Recap', 'XP, streak, tomorrow', '≈ 1 min']],
+    };
+    const ICONS = ['M4 4v6h6M20 20v-6h-6M5.5 15a7.5 7.5 0 0 0 13 2.5M18.5 9a7.5 7.5 0 0 0-13-2.5', 'M12 5v14M5 12h14', 'M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2', 'M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 21l1.6-7L2 9.2l7.1-.6z'];
+    const T = [
+      ['en', 'A', 'English', 'Hello · IELTS, TOEIC', "Fraunces, Georgia, serif", 'added'],
+      ['ko', '한', '한국어', '안녕하세요 · TOPIK', KR, 'added'],
+      ['ja', 'あ', '日本語', 'こんにちは · JLPT', JP, ''],
+      ['zh', '中', '中文', '你好 nǐ hǎo · HSK', SC, 'checked'],
+      ['es', 'Ñ', 'Español', '¡Hola! · DELE', "Fraunces, Georgia, serif", ''],
+      ['fr', 'Ç', 'Français', 'Bonjour · DELF', "Fraunces, Georgia, serif", ''],
+      ['de', 'ß', 'Deutsch', 'Hallo · Goethe', "Fraunces, Georgia, serif", ''],
+      ['it', 'È', 'Italiano', 'Ciao · CILS', "Fraunces, Georgia, serif", 'soon'],
+    ];
+    const accentRing = dark ? '1.5px solid #28d3f4' : '1.5px solid #1d1a16';
+    return {
+      t, grainId: 'langc-grain-' + (dark ? 'd' : 'l') + state,
+      amb: { ax: -220, ay: -240, bx: 900, by: 440 },
+      nav: sfNav(t, 0), toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      isOpen: state === 'open', isAdd: state === 'add', isSwitched: state === 'switched',
+      chevron: state === 'open' ? 180 : 0,
+      chip: state === 'open'
+        ? { border: accentRing, bg: t.surfaceSolid, shadow: dark ? '0 0 24px -6px rgb(40 211 244 / 0.6)' : '0 6px 16px -10px rgb(60 40 20 / 0.5)' }
+        : state === 'switched'
+          ? { border: dark ? '1.5px solid #966cd7' : '1.5px solid #b4461a', bg: t.surfaceSolid, shadow: dark ? '0 0 26px -4px rgb(150 108 215 / 0.8)' : '0 0 0 4px rgb(180 70 26 / 0.14)' }
+          : { border: '1px solid ' + t.line, bg: t.chipBg, shadow: 'none' },
+      c,
+      prevTileBg: tile.ko[0], prevTileFg: tile.ko[1],
+      plan: dark
+        ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 70% 80% at 100% 0%, rgb(150 108 215 / 0.24), transparent 70%) padding-box, linear-gradient(180deg, #0f2430, #0a1a22) padding-box, ' + t.rimLearning + ' border-box', shadow: '0 0 60px -24px rgb(40 211 244 / 0.6), 0 40px 80px -40px rgb(0 0 0 / 0.9)' }
+        : { border: '0', bg: '#fffcf5', shadow: t.cardShadow },
+      parts: PARTS[active].map(([title, sub, time], i) => ({ title, sub, time, icon: ICONS[i],
+        ring: i === 0 ? '0' : '1.5px solid ' + t.lineStrong,
+        dotBg: i === 0 ? t.primaryBg : 'transparent', dotFg: i === 0 ? t.primaryText : t.text2,
+        glow: i === 0 && dark ? '0 0 20px rgb(40 211 244 / 0.6)' : 'none',
+        link: i === 3 ? 'transparent' : (dark ? 'linear-gradient(90deg, rgb(40 211 244 / 0.4), rgb(255 255 255 / 0.08))' : 'repeating-linear-gradient(90deg, rgb(29 26 22 / 0.3) 0 5px, transparent 5px 10px)') })),
+      bar: dark ? 'linear-gradient(90deg, #28d3f4, #966cd7)' : '#b4461a',
+      barGlow: dark ? '0 0 14px rgb(40 211 244 / 0.6)' : 'none',
+      words: WORDS[active].map(([word, roman, han, hv, vi, rt]) => ({ word, roman, han, hv, vi, rt: rt || '' })),
+      courses: ['ko', 'ja', 'en'].map(k => {
+        const K = COURSES[k], on = k === active;
+        return { ...K, tileBg: tile[k][0], tileFg: tile[k][1], active: on, selected: on ? 'true' : 'false',
+          rowBg: on ? (dark ? 'rgb(40 211 244 / 0.08)' : '#f3ecdf') : 'transparent',
+          rowBorder: on ? (dark ? '1px solid rgb(40 211 244 / 0.35)' : '1px solid rgb(29 26 22 / 0.14)') : '1px solid transparent',
+          dueLabel: K.due + ' due', dueBg: on ? t.primaryBg : t.chipBg, dueFg: on ? t.primaryText : t.text2 };
+      }),
+      targets: T.map(([lang, glyph, name, sample, font, st]) => ({ lang, glyph, name, sample, font,
+        checked: st === 'checked' ? 'true' : 'false', added: st === 'added' ? 'true' : 'false',
+        tag: st === 'added' ? 'ADDED' : st === 'soon' ? 'SOON' : st === 'checked' ? 'SELECTED' : '',
+        tagBg: st === 'checked' ? t.primaryBg : st === '' ? 'transparent' : t.chipBg,
+        tagFg: st === 'checked' ? t.primaryText : t.text3,
+        border: st === 'checked' ? accentRing : '1px solid ' + t.line,
+        bg: st === 'checked' ? (dark ? 'rgb(40 211 244 / 0.1)' : '#fbf8f2') : t.chipBg,
+        shadow: st === 'checked' ? (dark ? '0 0 30px -10px rgb(40 211 244 / 0.7)' : '0 10px 20px -14px rgb(60 40 20 / 0.6)') : 'none',
+        glyphColor: st === 'checked' ? t.emColor : t.textStrong,
+        op: st === 'added' || st === 'soon' ? 0.5 : 1 })),
+    };
+  }
+}
+</script>
+</body>
+</html>

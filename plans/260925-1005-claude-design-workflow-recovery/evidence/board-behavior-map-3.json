@@ -1,0 +1,3090 @@
+[
+  {
+    "board": "AnimeAchievements",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeAchievements.dc.html",
+    "product_entry": {
+      "existing": "The existing progress route renders an AchievementsMatrix only after learning activity exists; it is not this full collection screen.",
+      "target": "Progress route, with collection tabs reachable from progress and recap; implement the full collection composition there."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "onToggleTheme": "optional theme callback"
+      },
+      "paired_artboards": [
+        {
+          "board": "PairAnimeAchievements",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairAnimeAchievements-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "Badges/Cards/Titles tabs",
+        "Bud/Bloom/Star groupings",
+        "locked and unlocked badges",
+        "per-badge progress and threshold",
+        "master collection progress"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Choose BADGES, CARDS, or TITLES",
+        "result": "Show the selected collection section and preserve selection when returning from a detail; the current badge-only markup uses href=# and has no panel switch.",
+        "phase_task": "06.3"
+      },
+      {
+        "trigger": "Open a badge or milestone",
+        "result": "Show its real eligibility, progress, and next requirement; award/unlock only after verified criteria are met.",
+        "phase_task": "06.3"
+      },
+      {
+        "trigger": "Reach an achievement or streak reward",
+        "result": "Record the eligible milestone once and expose it in recap/Today without inventing bonus XP.",
+        "phase_task": "15.6"
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Test-only learner stats with representative Bud, Bloom, Star, locked, partially progressed, and unlocked badges; use comparable content to the nine sample badge cards.",
+      "empty": "No study history: all achievements locked with zero progress, plus the ProgressWorkspace empty state; do not synthesize counts or a learner identity.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/AnimeAchievements-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/AnimeAchievements-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairAnimeAchievements-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Profile, XP, card counts, unlock count, progress bars, streak/story/web/match/band achievements",
+        "discrepancy": "Canvas hard-codes Khánh, 2,340/3,600 XP, counts, unlocks and sample requirements. Reward/eligibility policy remains open; projected IELTS band lacks an approved model.",
+        "required_treatment": "Render verified learner/course data; keep unapproved bonus rewards gated and projected-band badge unavailable until modeled.",
+        "phase_task": "06.2 / 06.3 / 15.6"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/AnimeAchievements.dc.html",
+        "lines": [
+          1,
+          55,
+          120,
+          137,
+          145
+        ],
+        "basis": "Crystal collection title, tab links, theme props, sample badges and locked states."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          4,
+          137
+        ],
+        "basis": "Standalone dark/light references and paired dark/light imports."
+      },
+      {
+        "path": "src/features/dailyLearning/ProgressWorkspace.tsx",
+        "lines": [
+          29,
+          32,
+          33
+        ],
+        "basis": "Current progress route and existing conditional AchievementsMatrix entry."
+      }
+    ]
+  },
+  {
+    "board": "AnimeDlgStudy",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeDlgStudy.dc.html",
+    "product_entry": {
+      "existing": "The practice menu is an existing AppOverlays dialog; quiz, spelling, match, shadowing, story, and card edit/tutor entry points are wired in the current app.",
+      "target": "Keep practice in the current modal entry; open tutor/create/edit/stream states from their corresponding card actions and return focus/context to the opener."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "kind": [
+          "practice",
+          "tutor",
+          "create",
+          "edit",
+          "stream"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "GridAnimeDlgStudy",
+          "variants": [
+            "practice/tutor/create/edit × dark/light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/GridAnimeDlgStudy-comparison.png"
+        },
+        {
+          "board": "GridAnimeDlgStream",
+          "variants": [
+            "stream × dark/light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/GridAnimeDlgStream-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "mode ready/loading/locked",
+        "tutor prompt and answer/error/quota",
+        "create draft/preview/regenerate/save/cancel",
+        "edit dirty/save/delete/cancel",
+        "stream partial fields/cancel/save-disabled"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Select Quiz, Spelling, Word Match, Shadowing, or Story; use keys 1–5",
+        "result": "Start that real mode with its current course/session context; locked modes explain their pool requirement and do not start.",
+        "phase_task": "05.5"
+      },
+      {
+        "trigger": "Cancel or close the practice dialog",
+        "result": "Return to the originating card/session and restore opener focus without losing its index or answer.",
+        "phase_task": "05.7"
+      },
+      {
+        "trigger": "Ask Lumi, choose a prompt, send a question, save a memory hook",
+        "result": "Run a bounded tutor exchange against the selected card and active language pair; show thinking, answer, quota, error, retry, and cancellation.",
+        "phase_task": "11.5"
+      },
+      {
+        "trigger": "Add a word, generate or regenerate, edit generated fields, then Save card",
+        "result": "Keep a user-reviewed draft until save; stream partial structured fields, allow cancel, and do not let later chunks overwrite edits.",
+        "phase_task": [
+          "04.2",
+          "11.4"
+        ]
+      },
+      {
+        "trigger": "Edit fields, change difficulty/bookmark, delete, Cancel, or Save changes",
+        "result": "Persist only the selected edit/delete; preserve the review schedule and return to the same card.",
+        "phase_task": [
+          "04.5",
+          "04.6",
+          "04.7"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "For practice, a test course with enough eligible cards for every unlocked mode; for tutor/create/edit, a real-shaped immediate card with IPA, Vietnamese meaning, example, deck, and editable fields; stream fixture must use deterministic test transport.",
+      "empty": "No cards, and separate insufficient-pool states (Match needs four, Story five in the sample); blank create form, empty tutor thread, and no generated result.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/AnimeDlgStudy-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/AnimeDlgStudy-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/GridAnimeDlgStudy-comparison.png",
+        "docs/design/sonflash-redesign/canvas/reference/GridAnimeDlgStream-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Mode availability and sample card/deck",
+        "discrepancy": "The menu's three-card sample locks Match/Story and the sample IELTS card is not learner data.",
+        "required_treatment": "Derive eligibility and card data from the active course; show real empty/locked states, never add sample cards.",
+        "phase_task": "05.5 / 10.5"
+      },
+      {
+        "region": "AI request labels and stream/create",
+        "discrepancy": "Card creation uses the monthly card quota; tutor/mnemonic actions use the separate non-card AI allowance (Free 20, Pro 200 daily). Canvas does not show the full account usage/error contract.",
+        "required_treatment": "Use R5/R7 entitlement counters and the server operation contract; no fake timed streaming or automatic Pro trial.",
+        "phase_task": "04.2 / 11.4 / 11.5"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/AnimeDlgStudy.dc.html",
+        "lines": [
+          1,
+          35,
+          42,
+          68,
+          88,
+          102,
+          126,
+          155,
+          223,
+          255,
+          258,
+          291,
+          294
+        ],
+        "basis": "Close, mode choices, tutor/create/edit controls, all five kind props and seeded availability/stream states."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          9,
+          89,
+          90
+        ],
+        "basis": "Dark/light standalone plus all practice/tutor/create/edit/stream paired imports."
+      },
+      {
+        "path": "src/components/AppOverlays.tsx",
+        "lines": [
+          89,
+          95,
+          479,
+          484
+        ],
+        "basis": "Existing practice-mode actions and real availability calculation."
+      },
+      {
+        "path": "src/app/AppRuntime.tsx",
+        "lines": [
+          303,
+          311
+        ],
+        "basis": "Current overlay wiring for practice and story generation."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          18,
+          20
+        ],
+        "basis": "R5 card quotas/prices and R7 non-card AI allowance."
+      }
+    ]
+  },
+  {
+    "board": "AnimeExtPopup",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeExtPopup.dc.html",
+    "product_entry": {
+      "existing": "The Chrome extension has a popup and runtime capture/translation/save actions; this is its Crystal Star popup design.",
+      "target": "Extension toolbar popup for selected text, with settings, app handoff, card/deck save, due-session link, and state recovery."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "state": [
+          "idle",
+          "quick",
+          "saved",
+          "error",
+          "quota",
+          "loop"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "GridAnimeExtAll",
+          "variants": [
+            "idle/quick/saved/error/loop/quota × dark/light",
+            "context menu × dark/light is a neighboring board"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/GridAnimeExtAll-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "selected text/input",
+        "translation result",
+        "saved card",
+        "signed-out/error with retry",
+        "quota exhausted",
+        "saved word added to tomorrow's session",
+        "recent lookup list and clear"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Select text and choose Dịch nhanh",
+        "result": "Translate without saving; preserve selected text/source context and expose speech only when supported.",
+        "phase_task": [
+          "07.1",
+          "07.2",
+          "07.3"
+        ]
+      },
+      {
+        "trigger": "Choose Dịch + tạo thẻ or Lưu flashcard",
+        "result": "Create/save to the selected active-course deck; show loading, duplicate, saved, sign-in, quota and failure/retry results.",
+        "phase_task": [
+          "07.1",
+          "07.2",
+          "07.5"
+        ]
+      },
+      {
+        "trigger": "Choose Deck, inspect/delete a recent lookup, or open settings",
+        "result": "Change only the selected save destination, clear the user's own lookup history with confirmation, or open extension options.",
+        "phase_task": [
+          "07.1",
+          "07.2"
+        ]
+      },
+      {
+        "trigger": "Open SonFlash or the due-session CTA after save",
+        "result": "Handoff to the correct course/card or Today session; saved web-word source metadata survives the handoff.",
+        "phase_task": [
+          "07.3",
+          "07.4",
+          "07.6"
+        ]
+      },
+      {
+        "trigger": "Retry an error or continue after quota",
+        "result": "Retry the same operation safely, or offer the allowed manual/next-reset path without pretending a card was saved.",
+        "phase_task": [
+          "07.1",
+          "07.2"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Selected word with bounded URL/title/context/capture time, a real-shaped active-course deck, successful translation and saved-card states; include a due-count link backed by test data.",
+      "empty": "Idle popup with no selection, no recent lookups, no eligible course/deck, and separate signed-out, quota, and network-error fixtures.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/AnimeExtPopup-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/AnimeExtPopup-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/GridAnimeExtAll-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "AI quota and Pro copy",
+        "discrepancy": "The sample says 20/20 AI used and offers a seven-day trial; card creation uses monthly R5 limits while translation is part of the separate daily R7 allowance. A trial has not been approved.",
+        "required_treatment": "Read real per-account entitlements, use separate counters, and remove trial or unlimited claims unless policy is later approved.",
+        "phase_task": "07.1 / 07.2 / 15.1 / 15.2"
+      },
+      {
+        "region": "Sample course, card, and due count",
+        "discrepancy": "IELTS, the example word, and 12 due cards are presentation data.",
+        "required_treatment": "Use the active course and real counts; do not leak a prior account/course after switching.",
+        "phase_task": "07.5 / 07.6 / 10.5"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/AnimeExtPopup.dc.html",
+        "lines": [
+          1,
+          19,
+          46,
+          47,
+          66,
+          90,
+          91,
+          121,
+          143,
+          204,
+          221,
+          226,
+          236,
+          242
+        ],
+        "basis": "Six state values, quick/save/error/quota/loop actions, deck/history and app handoff."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          14,
+          91
+        ],
+        "basis": "Popup dark/light references and all paired state imports."
+      },
+      {
+        "path": "extensions/lingoflash/popup.js",
+        "lines": [
+          11,
+          15,
+          16,
+          56,
+          85,
+          100
+        ],
+        "basis": "Existing popup selection, translate, add, result save and pronunciation wiring."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          18,
+          20
+        ],
+        "basis": "R5 monthly card limits and R7 non-card daily AI limits."
+      }
+    ]
+  },
+  {
+    "board": "AnimeLangCourses",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeLangCourses.dc.html",
+    "product_entry": {
+      "existing": "The app has Today, Library, Progress and Settings routes but no implemented course selector/provider.",
+      "target": "Course-selection surface from the active-course shell switcher or Settings; switching also updates capture destination and course-scoped workspaces."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "state": [
+          "open",
+          "switched"
+        ],
+        "onToggleTheme": "optional theme callback"
+      },
+      "paired_artboards": [
+        {
+          "board": "GridAnimeLangCourses",
+          "variants": [
+            "open/switched × dark/light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/GridAnimeLangCourses-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "active Korean course",
+        "switched Japanese course",
+        "other existing courses",
+        "new-language/create affordance",
+        "lesson CTA and course loadout"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Select an existing language/course card",
+        "result": "Switch active course and refresh Today, Library, practice, progress, meanings, and extension save target without merging course data.",
+        "phase_task": [
+          "10.1",
+          "10.5",
+          "10.7"
+        ]
+      },
+      {
+        "trigger": "Choose New Language",
+        "result": "Create or reopen the single course for that target language after entitlement checks; then collect Goals separately from course identity.",
+        "phase_task": [
+          "10.1",
+          "10.2"
+        ]
+      },
+      {
+        "trigger": "Choose Start [language] Lesson",
+        "result": "Open the active course's Today session with its real due count and lesson plan.",
+        "phase_task": [
+          "10.1",
+          "10.5"
+        ]
+      },
+      {
+        "trigger": "Change active course while an extension capture is pending",
+        "result": "Keep the save bound to its chosen course; prompt for mismatch/reopen/create when target language differs.",
+        "phase_task": [
+          "10.5",
+          "10.6"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Test account with one English, Korean, and Japanese course and one or more Goals; distinct due/new counts, native language, reading preference, and extension target per course.",
+      "empty": "First-use account with no course, plus archived/reopen and zero-due course states; avoid fake progress or XP.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/AnimeLangCourses-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/AnimeLangCourses-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/GridAnimeLangCourses-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Course counts, Goals, active-language limits and locked languages",
+        "discrepancy": "The sample's three course counts, IELTS/TOPIK/JLPT progress, due/streak/XP and Free=2/Pro=unlimited copy are illustrative. Decision 1 defines IELTS/TOPIK/JLPT as Goals; Decision 2 allows one course per target language; active-course entitlement limits are not finalized.",
+        "required_treatment": "Use real course/Goal data and entitlement configuration; never create duplicate courses for the same target. R10 wave 1 is en/ko/ja/zh; later language enablement remains gated.",
+        "phase_task": "10.1 / 10.2 / 10.7 / 14.6"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/AnimeLangCourses.dc.html",
+        "lines": [
+          1,
+          14,
+          55,
+          71,
+          110,
+          118,
+          119,
+          120,
+          121
+        ],
+        "basis": "Course cards, new language, lesson CTA, open/switched states and sample course data."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          19,
+          93
+        ],
+        "basis": "Standalone theme references and open/switched pair imports."
+      },
+      {
+        "path": "src/features/navigation/useAppNavigation.ts",
+        "lines": [
+          11,
+          12,
+          16,
+          21
+        ],
+        "basis": "Existing view routes do not include course selection."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          38,
+          39,
+          48
+        ],
+        "basis": "Course/Goal distinction, one course per target, and R10 wave-1 boundary."
+      }
+    ]
+  },
+  {
+    "board": "AnimeMatch",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeMatch.dc.html",
+    "product_entry": {
+      "existing": "Word Match is an existing practice mode opened through the practice overlay/Today session.",
+      "target": "Run as one stage of the daily session or as a standalone practice mode; close returns to the origin with session context intact."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "onToggleTheme": "optional theme callback"
+      },
+      "paired_artboards": [
+        {
+          "board": "PairAnimeMatch",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairAnimeMatch-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "idle",
+        "selected-left",
+        "matched/fresh",
+        "completed/dimmed",
+        "wrong/shake/time penalty",
+        "combo and timer",
+        "timeout/finished/retry (required runtime states not separately declared in Canvas props)"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Pick a left word, then a meaning",
+        "result": "Correct pairs lock both tiles and update pair/combo state; wrong pairs show feedback, reset combo, and apply the stated two-second penalty.",
+        "phase_task": "05.5"
+      },
+      {
+        "trigger": "Finish all pairs or reach zero time",
+        "result": "Show completed/timeout result with a real session settlement, retry, and next-stage option; never leave the timer at a static sample value.",
+        "phase_task": [
+          "05.5",
+          "05.7"
+        ]
+      },
+      {
+        "trigger": "End word match",
+        "result": "Return to Today/practice origin with the same session stage and already committed reviews preserved.",
+        "phase_task": "05.7"
+      },
+      {
+        "trigger": "Build combo reward",
+        "result": "Use only an approved reward rule and idempotent settlement; matching correctness remains independent from FSRS review ratings.",
+        "phase_task": "15.6"
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Six eligible card pairs with deterministic word/meaning mapping, seeded matched/selected/wrong state variants, and controlled test clock.",
+      "empty": "No eligible pair pool and fewer than four eligible cards; show the real unavailable reason and skip the session stage rather than inventing pairs.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/AnimeMatch-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/AnimeMatch-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairAnimeMatch-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Pairs, time, combo XP and visible result",
+        "discrepancy": "The board starts with example pairs, 9 seconds, 11 pairs and combo ×10 XP. Reward policy is open; R3 only defines review XP and R8 has no match reward rule.",
+        "required_treatment": "Use test fixtures for sample data and phase-15.6-approved reward rules; never credit combo XP from presentation state.",
+        "phase_task": "05.5 / 15.6"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/AnimeMatch.dc.html",
+        "lines": [
+          1,
+          5,
+          19,
+          76,
+          89,
+          92,
+          96,
+          116,
+          117,
+          119,
+          121
+        ],
+        "basis": "Exit, selectable tiles, initial match states and correct/wrong pair transitions."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          24,
+          146
+        ],
+        "basis": "Dark/light standalone and paired imports."
+      },
+      {
+        "path": "src/components/AppOverlays.tsx",
+        "lines": [
+          89,
+          94,
+          479,
+          484
+        ],
+        "basis": "Existing practice mode entry and eligibility calculation."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          16,
+          32
+        ],
+        "basis": "R3 applies to review XP; match reward/gamification remains open under Decision 8."
+      }
+    ]
+  },
+  {
+    "board": "AnimePaywall",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimePaywall.dc.html",
+    "product_entry": {
+      "existing": "There is no live checkout route; plan/upgrade surfaces are planned from Settings, quota moments, recap and story entry points.",
+      "target": "Contextual paywall for recap, AI quota, streak, or band; close/not-now returns to the exact originating action."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "moment": [
+          "recap",
+          "ai",
+          "streak",
+          "band"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "GridAnimePaywall",
+          "variants": [
+            "recap/ai/streak/band × dark/light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/GridAnimePaywall-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "eligible offer",
+        "not eligible/already Pro",
+        "AI quota exhausted",
+        "close/not now",
+        "upgrade intent",
+        "loading/error/unavailable offer"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Open from recap, AI quota, streak, or projected-band prompt",
+        "result": "Show the matching benefit and the actual learner's eligibility; unavailable benefits remain explicitly unavailable.",
+        "phase_task": [
+          "15.1",
+          "15.2"
+        ]
+      },
+      {
+        "trigger": "Choose the primary CTA",
+        "result": "Pilot records purchase intent only and returns confirmation; a real checkout opens only after approved business/gateway configuration.",
+        "phase_task": [
+          "15.2",
+          "15.3"
+        ]
+      },
+      {
+        "trigger": "Choose NOT NOW or close",
+        "result": "Dismiss and return to the source session/action without dropping unsaved progress.",
+        "phase_task": [
+          "15.2",
+          "05.7"
+        ]
+      },
+      {
+        "trigger": "Choose streak protection or projected band",
+        "result": "Show only policy-approved streak options and a validated band model; keep unsupported options gated but represented in the UI plan.",
+        "phase_task": [
+          "15.6",
+          "06.2"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Separate tests for each of four moments using true-shaped entitlements and session/progress data; band fixture must carry model/version and confidence provenance.",
+      "empty": "No eligible offer, already-Pro account, zero AI quota usage/remaining, no at-risk streak, and insufficient history for band projection.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/AnimePaywall-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/AnimePaywall-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/GridAnimePaywall-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Price, Free/Pro quota and trial",
+        "discrepancy": "The sample uses five Free AI cards/day, an annual 949,000 VND offer, and implied Pro benefits. R5/R8 set Free card creation to 30/month in the pilot and Pro to 1,000/month; R6 permits purchase-intent only before business registration. No trial is approved.",
+        "required_treatment": "Read versioned offers and quota config; show the approved 79,000 VND/month pilot price only as intent, with VAT disclosure pending accountant decision; do not promise checkout/trial.",
+        "phase_task": "15.1 / 15.2 / 15.3"
+      },
+      {
+        "region": "Story, streak repair/freeze, and band claims",
+        "discrepancy": "Story/tutor use the separate R7 daily non-card AI allowance; two monthly freezes/48-hour repair are unapproved and the band estimate has no model yet.",
+        "required_treatment": "Use R7 counters, keep streak rewards gated, and do not claim projected outcomes without the approved model.",
+        "phase_task": "11.6 / 15.6 / 06.2"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/AnimePaywall.dc.html",
+        "lines": [
+          1,
+          77,
+          102,
+          103,
+          111,
+          118
+        ],
+        "basis": "Close/not-now/CTA, moment prop, and all four seeded offer messages."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          29,
+          99
+        ],
+        "basis": "Standalone and all eight moment/theme imports."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          18,
+          19,
+          20,
+          32
+        ],
+        "basis": "R5/R6/R7/R8 quota, pilot purchase intent and open gamification policy."
+      }
+    ]
+  },
+  {
+    "board": "AnimeQuiz",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeQuiz.dc.html",
+    "product_entry": {
+      "existing": "Quiz is an existing practice mode reachable through the practice overlay and internal study view.",
+      "target": "Use the quiz view inside the daily learning session or standalone practice and return to its origin on exit."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "state": [
+          "answered",
+          "asking"
+        ],
+        "onToggleTheme": "optional theme callback"
+      },
+      "paired_artboards": [
+        {
+          "board": "PairAnimeQuiz",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairAnimeQuiz-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "asking/unanswered",
+        "correct answer",
+        "wrong answer",
+        "starred/bookmarked",
+        "combo",
+        "next question",
+        "finished/retry (required runtime states not supplied as props)"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Choose one of four answers",
+        "result": "Lock the answer, mark correct/wrong, show Lumi explanation and update real session feedback; a wrong answer remains retryable where the session contract allows.",
+        "phase_task": "05.4"
+      },
+      {
+        "trigger": "Continue or press Enter",
+        "result": "Load the next question from eligible course cards or move to the completed state without reusing a committed item.",
+        "phase_task": [
+          "05.4",
+          "05.7"
+        ]
+      },
+      {
+        "trigger": "Star this word",
+        "result": "Toggle the card's persisted bookmark through the learning state controller.",
+        "phase_task": [
+          "04.4",
+          "05.4"
+        ]
+      },
+      {
+        "trigger": "End quiz",
+        "result": "Return to the source stage with progress and focus restored.",
+        "phase_task": "05.7"
+      }
+    ],
+    "fixture_needs": {
+      "ready": "One valid target-language question with four same-course choices and distinct correct/wrong fixtures; include the current card, reading, explanation, and bookmark state.",
+      "empty": "No eligible quiz cards, plus unanswered, wrong, correct, completed and retry test fixtures; no fabricated score or combo.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/AnimeQuiz-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/AnimeQuiz-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairAnimeQuiz-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Question, score, combo and rewards",
+        "discrepancy": "The example question, score 7/8, four-card choice set and combo are static; bonus policy remains open. R3 governs Again/Good review XP only.",
+        "required_treatment": "Build questions from the active course and record real answers; do not award sample score/XP or replace review scheduling.",
+        "phase_task": "05.4 / 15.6"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/AnimeQuiz.dc.html",
+        "lines": [
+          1,
+          5,
+          7,
+          14,
+          45,
+          66,
+          85,
+          100,
+          104,
+          116,
+          127,
+          149,
+          158
+        ],
+        "basis": "Exit/theme/star/answer controls, asking/answered props and correct/wrong/next logic."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          34,
+          153
+        ],
+        "basis": "Dark/light references and paired theme imports."
+      },
+      {
+        "path": "src/app/AppRuntime.tsx",
+        "lines": [
+          303,
+          306
+        ],
+        "basis": "Existing quiz practice action wiring."
+      },
+      {
+        "path": "src/features/navigation/useAppNavigation.ts",
+        "lines": [
+          11,
+          12,
+          33
+        ],
+        "basis": "Internal quiz mode exists; URL persistence only covers base app routes."
+      }
+    ]
+  },
+  {
+    "board": "AnimeSettings",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeSettings.dc.html",
+    "product_entry": {
+      "existing": "Settings route exists but currently implements Appearance, Lumi, reduced motion and sound only.",
+      "target": "Extend the existing Settings surface to account/plan, reminders, sounds/haptics and data/export sections; Appearance links to the existing controls."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "onToggleTheme": "optional theme callback"
+      },
+      "paired_artboards": [
+        {
+          "board": "PairAnimeSettings",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairAnimeSettings-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "Account/Plan/Reminders/Sounds & haptics/Data & export sections",
+        "weekday schedule",
+        "smart reminder and quiet hours switches",
+        "push/email/extension channel switches",
+        "sound/haptics switches",
+        "suggested-time prompt"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Select a Settings section",
+        "result": "Open that section in Settings without losing unsaved state; account and plan destinations use real status.",
+        "phase_task": [
+          "10.4",
+          "12.3",
+          "14.2",
+          "15.2"
+        ]
+      },
+      {
+        "trigger": "Change days/time, Smart reminder, Quiet hours, or a delivery channel",
+        "result": "Persist explicit consent and schedule; expose permission-denied/unsupported/error and delivery state per channel.",
+        "phase_task": [
+          "11.1",
+          "11.2"
+        ]
+      },
+      {
+        "trigger": "Use suggested time",
+        "result": "Apply the suggestion only after the learner chooses it; do not infer or display study habits without evidence.",
+        "phase_task": [
+          "11.1",
+          "11.2"
+        ]
+      },
+      {
+        "trigger": "Toggle card/correct/combo sound or mobile haptics",
+        "result": "Apply preferences only where supported and respect reduced motion, device capability, and user interaction rules.",
+        "phase_task": [
+          "03.4",
+          "11.3"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Consented test learner with due cards, a chosen schedule/timezone and supported channels; test toggles persist and return to their selected values.",
+      "empty": "First-use defaults with no reminder consent, no schedule, and no due cards; separate permission-denied/unsupported channel fixtures.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/AnimeSettings-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/AnimeSettings-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairAnimeSettings-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Reminder defaults, channels and suggested study time",
+        "discrepancy": "All days/channels are pre-enabled in the source, and 20:30 is inferred from a fictional routine; actual delivery contract is not finalized.",
+        "required_treatment": "Require explicit opt-in, real timezone/quiet-hour handling and working delivery receipts; show unavailable channels honestly.",
+        "phase_task": "11.1 / 11.2"
+      },
+      {
+        "region": "Streak, plan and account metrics",
+        "discrepancy": "The visible 12-day streak and plan badge are sample data.",
+        "required_treatment": "Use verified learning history and real entitlement; keep account/checkout actions behind their proper contracts.",
+        "phase_task": "06.2 / 12.3 / 14.2 / 15.2"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/AnimeSettings.dc.html",
+        "lines": [
+          1,
+          10,
+          25,
+          28,
+          30,
+          38,
+          50,
+          62,
+          64,
+          117,
+          134
+        ],
+        "basis": "Settings section menu, suggested reminder, controls, props, static schedule and toggles."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          39,
+          157
+        ],
+        "basis": "Dark/light standalone and paired imports."
+      },
+      {
+        "path": "src/features/settings/settings-screen.tsx",
+        "lines": [
+          46,
+          47,
+          68,
+          81,
+          89
+        ],
+        "basis": "Current settings route covers appearance, theme, Lumi, reduced motion and sound."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/phase-11-reminders-and-ai-progress.md",
+        "lines": [
+          28,
+          29,
+          30
+        ],
+        "basis": "Reminder consent/channel contract and sound/haptics tasks."
+      }
+    ]
+  },
+  {
+    "board": "AnimeSystem",
+    "source": "docs/design/sonflash-redesign/canvas/src/AnimeSystem.dc.html",
+    "product_entry": {
+      "existing": "System feedback is distributed across AppFeedback, error boundary, Today, empty screens and recovery actions; this board is a state reference, not a route.",
+      "target": "Render the relevant state in its originating shell/workspace and return each action to its specific recovery destination."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "PairAnimeSystem",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairAnimeSystem-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "reload/error boundary",
+        "report issue",
+        "offline/sync pending/retry",
+        "expired session/return home",
+        "resume review",
+        "empty library/create/import",
+        "empty Today/learn new or browse paths",
+        "loading workspace"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Reload or Report issue from a fatal error",
+        "result": "Reload safely or open an actual report/support path while saved data remains intact.",
+        "phase_task": "03.3"
+      },
+      {
+        "trigger": "Retry sync while offline/pending/error",
+        "result": "Retry the owned sync operation and show pending/success/failure; never toast success before persistence.",
+        "phase_task": "03.3"
+      },
+      {
+        "trigger": "Keep reviewing or Return home after session expiry",
+        "result": "Resume the same uncommitted session when identity permits, or return to Today with the correct signed-out state.",
+        "phase_task": [
+          "03.3",
+          "05.7"
+        ]
+      },
+      {
+        "trigger": "Generate card, Learn 5 new, or Browse paths from an empty state",
+        "result": "Open the real create dialog, start only from available new cards, or navigate to Paths; empty pools skip with explanation.",
+        "phase_task": [
+          "04.1",
+          "04.2",
+          "05.1",
+          "06.1"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Ready session/library with real-shaped cards and no error; separate recoverable sync failure, offline, expired identity, loading and empty-library fixtures.",
+      "empty": "Signed-in account with no cards and no due/new/match pool; show the board's empty/create/import/path routes without creating sample data.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/AnimeSystem-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/AnimeSystem-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairAnimeSystem-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Offline sample cards and empty-state counts",
+        "discrepancy": "The system art uses permanent/resilient cards and a Learn 5 new CTA as illustrative content.",
+        "required_treatment": "Use locally saved user data only; learn the real available count, skip a zero pool, and do not seed fallback cards.",
+        "phase_task": "03.3 / 05.1"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/AnimeSystem.dc.html",
+        "lines": [
+          1,
+          27,
+          28,
+          48,
+          49,
+          61,
+          79,
+          103,
+          131,
+          132,
+          152,
+          163
+        ],
+        "basis": "Error, offline, retry, resume, empty library/Today, paths and loading states."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          44,
+          161
+        ],
+        "basis": "System dark/light and paired theme imports."
+      },
+      {
+        "path": "src/app/AppRuntime.tsx",
+        "lines": [
+          188,
+          191,
+          195
+        ],
+        "basis": "Current shell routes feedback and sync retry through AppFeedback."
+      }
+    ]
+  },
+  {
+    "board": "DlgCheckout",
+    "source": "docs/design/sonflash-redesign/canvas/src/DlgCheckout.dc.html",
+    "product_entry": {
+      "existing": "No production checkout route or gateway is enabled; contextual paywall/plan entry is planned.",
+      "target": "Checkout dialog opened from a valid offer; close returns to the prior paywall/session and success returns to the calling action with a receipt."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "step": [
+          "pay",
+          "success"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "DialogsCheckout",
+          "variants": [
+            "step=pay/success × dark/light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/DialogsCheckout-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "offer summary",
+        "payment method selection (MoMo/ZaloPay/VNPay QR/card)",
+        "discount code/apply",
+        "pay",
+        "success/receipt/continue",
+        "pending/failure/retry/cancel (required states absent from Canvas prop) "
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Change plan or choose a payment method",
+        "result": "Update a verified offer/method and show the exact price/tax/terms before payment.",
+        "phase_task": [
+          "15.1",
+          "15.3"
+        ]
+      },
+      {
+        "trigger": "Apply a discount code",
+        "result": "Validate eligibility server-side and show a clear success/failure without changing the offer on failure.",
+        "phase_task": "15.3"
+      },
+      {
+        "trigger": "Pay",
+        "result": "Only send a real payment after business registration and gateway approval; show pending, success, failure, retry, cancellation and idempotent settlement.",
+        "phase_task": "15.3"
+      },
+      {
+        "trigger": "View receipt, Continue my session, or Close",
+        "result": "Open the persisted receipt, return to the source session after entitlement refresh, or close without a false purchase.",
+        "phase_task": "15.3"
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Sandbox-only valid offer, one method selected, tax/consent summary and success receipt; deterministic webhook idempotency test data.",
+      "empty": "No eligible offer/gateway, blank discount, no selected method, and distinct pending/failure/cancel/retry states; do not render a fabricated success.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/DlgCheckout-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/DlgCheckout-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/DialogsCheckout-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Price, tax, benefits, payment methods and success",
+        "discrepancy": "Canvas shows 949,000 VND/year, MoMo as selected, trial/freezes and immediate success. R5/R6 instead set pilot Pro to 79,000 VND/month through a local gateway, no auto-renewal, purchase intent only before registration, VAT undecided; no gateway is authorized yet.",
+        "required_treatment": "Keep checkout disabled behind the policy/business gate; pilot CTA records intent only. Use approved amount, accountant-confirmed VAT, sandbox evidence and real server entitlement settlement when unlocked.",
+        "phase_task": "15.1 / 15.2 / 15.3"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/DlgCheckout.dc.html",
+        "lines": [
+          1,
+          9,
+          20,
+          28,
+          40,
+          52,
+          79,
+          80,
+          85
+        ],
+        "basis": "Pay/success steps, method/discount/pay/receipt/continue actions and step prop."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          56,
+          59
+        ],
+        "basis": "Pay/success paired imports and standalone theme references."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          18,
+          19
+        ],
+        "basis": "R5 pricing and R6 no-live-payment-gateway pilot policy."
+      }
+    ]
+  },
+  {
+    "board": "DlgEdit",
+    "source": "docs/design/sonflash-redesign/canvas/src/DlgEdit.dc.html",
+    "product_entry": {
+      "existing": "Card edit already opens from Flashcard front/back controls; the current entry is EditCardDialog.",
+      "target": "Open an edit dialog from the selected card and return to that card after save/cancel/delete."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "Dialogs1",
+          "variants": [
+            "DlgEdit × dark/light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/Dialogs1-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "existing card fields",
+        "difficulty Easy/Medium/Hard with Medium selected",
+        "Starred on",
+        "dirty/cancel/save",
+        "delete confirmation/error"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Change editable card fields, difficulty, or Starred",
+        "result": "Update the draft; bookmark persists through the learning controller while content edits remain unsaved until Save changes.",
+        "phase_task": [
+          "04.5",
+          "04.7"
+        ]
+      },
+      {
+        "trigger": "Save changes",
+        "result": "Persist valid edits and resume the same card/session index without resetting review history or schedule.",
+        "phase_task": "04.5"
+      },
+      {
+        "trigger": "Cancel/Close with a dirty draft",
+        "result": "Ask whether to discard, then return focus to the original card control.",
+        "phase_task": "04.5"
+      },
+      {
+        "trigger": "Delete card",
+        "result": "Require a real confirmation and remove/archive only the selected owned card; keep undo/sync outcome honest.",
+        "phase_task": "04.6"
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Existing persisted card with all supported fields, a real deck, review metadata, bookmark state and a valid edited draft.",
+      "empty": "Blank/missing required fields, validation errors, dirty cancel, sync conflict and delete confirmation; do not use the sample immediate word as account data.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/DlgEdit-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/DlgEdit-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/Dialogs1-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Headword, POS, image, upload and sample card metadata",
+        "discrepancy": "The sample card may use fields whose data contract or upload path is not currently supported; sample card text/date/review counts are not production values.",
+        "required_treatment": "Preserve each requested Canvas field in the task plan and add contract work for unsupported fields rather than rendering inert controls; use a real card for screenshots.",
+        "phase_task": "04.5 / 04.7 / 08.2 / 14.3"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/DlgEdit.dc.html",
+        "lines": [
+          1,
+          8,
+          26,
+          28,
+          31,
+          35,
+          36,
+          37,
+          41
+        ],
+        "basis": "Card edit form, difficulty/star controls, delete/cancel/save and theme prop."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          53,
+          64
+        ],
+        "basis": "Dialog grid plus standalone dark/light references."
+      },
+      {
+        "path": "src/components/Flashcard.tsx",
+        "lines": [
+          662,
+          666
+        ],
+        "basis": "Existing edit entry from the card front."
+      },
+      {
+        "path": "src/components/flashcard/CardBack.tsx",
+        "lines": [
+          92,
+          95
+        ],
+        "basis": "Existing report/edit entries from card back."
+      }
+    ]
+  },
+  {
+    "board": "DlgPractice",
+    "source": "docs/design/sonflash-redesign/canvas/src/DlgPractice.dc.html",
+    "product_entry": {
+      "existing": "This is the current practice-menu overlay entry used from Today and Library.",
+      "target": "Mode picker that starts the selected practice action and returns to the originating route on cancel/exit."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "Dialogs1",
+          "variants": [
+            "DlgPractice × dark/light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/Dialogs1-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "Quiz loading",
+        "Spelling ready",
+        "Word Match locked at 3/4 cards",
+        "Shadowing ready",
+        "Story locked at 3/5 cards",
+        "mode preparation/error/unavailable"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Choose Quiz, Spelling, Word Match, Shadowing, or Story",
+        "result": "Start the real mode when eligible; show why it is disabled otherwise, and expose current preparation state.",
+        "phase_task": "05.5"
+      },
+      {
+        "trigger": "Use the displayed 1–5 keyboard choice",
+        "result": "Start the matching mode only when focus/context allows and preserve keyboard accessibility.",
+        "phase_task": "05.5"
+      },
+      {
+        "trigger": "Cancel or Close",
+        "result": "Dismiss without committing an answer and return focus/session context to the opener.",
+        "phase_task": "05.7"
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Course fixtures with enough distinct eligible cards for each mode, plus deterministic loading-to-ready transitions.",
+      "empty": "Zero cards and exact insufficient-pool conditions for Match and Story; verify no sample card is created and the session skips unavailable stages.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/DlgPractice-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/DlgPractice-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/Dialogs1-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Fixed 3-card pool and mode lock labels",
+        "discrepancy": "The board hard-codes three available cards, a four-card Match minimum and five-card Story minimum.",
+        "required_treatment": "Compute from active-course eligible cards and explain real shortages; do not copy fixture counts.",
+        "phase_task": "05.1 / 05.5 / 10.5"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/DlgPractice.dc.html",
+        "lines": [
+          1,
+          9,
+          13,
+          20,
+          33,
+          37,
+          50
+        ],
+        "basis": "Modal close/cancel, mode rows and loading/ready/locked values."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          53,
+          69
+        ],
+        "basis": "Both-theme dialog grid and standalone references."
+      },
+      {
+        "path": "src/components/AppOverlays.tsx",
+        "lines": [
+          89,
+          95,
+          479,
+          484
+        ],
+        "basis": "Existing practice action resolution and pool-based availability."
+      }
+    ]
+  },
+  {
+    "board": "EditSheet",
+    "source": "docs/design/sonflash-redesign/canvas/src/EditSheet.dc.html",
+    "product_entry": {
+      "existing": "Cards can open a centered edit dialog; a side sheet that preserves the review card/timer is a required planned surface.",
+      "target": "Desktop side sheet from an active review card; MobileSheet is the corresponding 390px adaptation; preserve the underlying card and session."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "PairEditSheet",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairEditSheet-comparison.png"
+        },
+        {
+          "board": "Mobile",
+          "variants": [
+            "MobileSheet × dark/light, related small-screen flow"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/Mobile-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "editing while card remains visible",
+        "dirty draft",
+        "Discard",
+        "Save & resume",
+        "End session",
+        "AI image/upload/remove",
+        "Again/Hard/Good/Easy review controls",
+        "saving/error/dirty-exit (required runtime states not separately declared)"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Open sheet while reviewing",
+        "result": "Pause timer/input at the current card; keep underlying card context visible and restore the exact index/state on close.",
+        "phase_task": "04.5"
+      },
+      {
+        "trigger": "Discard or close with a dirty draft",
+        "result": "Confirm discard when needed, then resume the same card without losing answer/timer state.",
+        "phase_task": "04.5"
+      },
+      {
+        "trigger": "Save & resume",
+        "result": "Persist only edited fields, resolve sync conflicts field-wise, and continue the same session.",
+        "phase_task": [
+          "04.5",
+          "04.7"
+        ]
+      },
+      {
+        "trigger": "Generate/upload/remove image",
+        "result": "Use the approved AI/image/upload contract with permission, quota, progress, cancel, retry and ownership validation.",
+        "phase_task": [
+          "04.7",
+          "14.3"
+        ]
+      },
+      {
+        "trigger": "End session or choose Again/Hard/Good/Easy",
+        "result": "Abandon/settle the session clearly or submit the selected rating once; preserve FSRS history and exact card index.",
+        "phase_task": [
+          "04.5",
+          "05.7"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Active review session with a visible card, remaining timer, saved card fields, and an edited draft; compare desktop and 390×844 sheet fixtures.",
+      "empty": "No active card and no writable image/upload entitlement; also test empty fields, cancel, save failure and dirty-exit recovery.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/EditSheet-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/EditSheet-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairEditSheet-comparison.png",
+        "docs/design/sonflash-redesign/canvas/reference/MobileSheet-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/MobileSheet-light.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Sample word/image and review intervals",
+        "discrepancy": "Canvas uses an example card and preset interval labels; actual next review is determined by the current scheduler, not those sample intervals.",
+        "required_treatment": "Use user card data and FSRS result; do not reset review state when editing.",
+        "phase_task": "04.5"
+      },
+      {
+        "region": "AI image and file upload",
+        "discrepancy": "Canvas exposes New image with AI and Upload without a complete image/storage entitlement contract.",
+        "required_treatment": "Keep requested actions represented but gate them on the approved AI/storage/upload contracts and real ownership checks.",
+        "phase_task": "04.7 / 14.3"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/EditSheet.dc.html",
+        "lines": [
+          1,
+          5,
+          27,
+          33,
+          49,
+          50,
+          62,
+          63,
+          68
+        ],
+        "basis": "Session context, AI image/upload controls, discard/save and theme prop."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          74,
+          127,
+          166
+        ],
+        "basis": "Desktop standalone/pair references and mobile sheet inclusion."
+      }
+    ]
+  },
+  {
+    "board": "ExtPopup",
+    "source": "docs/design/sonflash-redesign/canvas/src/ExtPopup.dc.html",
+    "product_entry": {
+      "existing": "The current Chrome extension toolbar popup provides selected-text translation, add-to-deck, speech, recents, options and app links.",
+      "target": "Classic light/dark popup surface connected to the same capture/session contracts as the AnimeExtPopup states."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "ExtPopups",
+          "variants": [
+            "ExtPopup × dark/light; neighboring ExtPopupState/ExtLoop imports show related popup states"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/ExtPopups-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "selected text",
+        "quick translate",
+        "create/save card",
+        "saved card/open card",
+        "deck choice",
+        "recent lookup list/clear",
+        "due-count app handoff"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Choose Dịch nhanh or Dịch + tạo flashcard",
+        "result": "Translate without save or create a card through the selected course/deck; expose real loading/error/duplicate/quota states.",
+        "phase_task": [
+          "07.1",
+          "07.2",
+          "07.5"
+        ]
+      },
+      {
+        "trigger": "Choose Deck or Open thẻ",
+        "result": "Save to the selected active-course deck or open that persisted card in SonFlash.",
+        "phase_task": [
+          "07.2",
+          "07.5"
+        ]
+      },
+      {
+        "trigger": "Delete recent lookup or open library/due-session link",
+        "result": "Clear only user-owned history with confirmation or open Library/Today with the real due count.",
+        "phase_task": [
+          "07.1",
+          "07.6"
+        ]
+      },
+      {
+        "trigger": "Open Cài đặt",
+        "result": "Open extension Options and retain existing protocol/storage identifiers.",
+        "phase_task": [
+          "07.1",
+          "07.2"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Selected web word with source URL/title/context/capturedAt, a populated test deck, successful save and accurate due count.",
+      "empty": "No selected text, no recent lookups, no active deck and no due cards; add signed-out/permission/error states from the paired popup-state board.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/ExtPopup-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/ExtPopup-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/ExtPopups-comparison.png",
+        "docs/design/sonflash-redesign/canvas/reference/ExtPopupState-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/ExtPopupState-light.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "IELTS deck, selected word and 12 due count",
+        "discrepancy": "These values are illustrative and source provenance is not represented in this classic popup board.",
+        "required_treatment": "Use active-course data and persist bounded capture provenance per phase 07 contract; never reuse another account/course's count.",
+        "phase_task": "07.3 / 07.5 / 07.6 / 10.5"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/ExtPopup.dc.html",
+        "lines": [
+          1,
+          8,
+          16,
+          21,
+          22,
+          35,
+          36,
+          41,
+          44,
+          55,
+          59
+        ],
+        "basis": "Popup capture, quick/create, open card, deck/history/due links and theme prop."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          79,
+          81
+        ],
+        "basis": "Standalone theme references and popup/state comparison imports."
+      },
+      {
+        "path": "extensions/lingoflash/popup.js",
+        "lines": [
+          11,
+          15,
+          16,
+          56,
+          85,
+          100
+        ],
+        "basis": "Existing selected-text, translate, save and speech behavior."
+      }
+    ]
+  },
+  {
+    "board": "LangCard",
+    "source": "docs/design/sonflash-redesign/canvas/src/LangCard.dc.html",
+    "product_entry": {
+      "existing": "Flashcard/review components are existing; this language-aware card is the target card surface used within Library and study routes, not a separate route.",
+      "target": "Render the active card with its target/native pair and language-pack capabilities; open from Library, Today/review, or practice."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "lang": [
+          "en",
+          "ko",
+          "ja",
+          "zh",
+          "fr",
+          "de",
+          "es"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "GridLangCardCJK",
+          "variants": [
+            "ko/ja/zh × dark/light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/GridLangCardCJK-comparison.png"
+        },
+        {
+          "board": "GridLangCardLatin",
+          "variants": [
+            "en/fr/de/es × dark/light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/GridLangCardLatin-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "front/back flip, flipping/revealed/dealing",
+        "new/learning/mastered tiers",
+        "hover tilt/spotlight",
+        "starred/star animation",
+        "blind reading hint",
+        "audio playing",
+        "IPA variant",
+        "romaji/romanization toggle",
+        "course/native-language meaning"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Flip/reveal card or return to front",
+        "result": "Animate front/back state and preserve course/card identity; keyboard reveal remains available.",
+        "phase_task": [
+          "04.4",
+          "09.2"
+        ]
+      },
+      {
+        "trigger": "Toggle blind reading, bookmark, or listen",
+        "result": "Persist bookmark, hide/reveal reading hints, and use supported language voice with permission/error feedback.",
+        "phase_task": [
+          "04.4",
+          "09.2",
+          "09.3"
+        ]
+      },
+      {
+        "trigger": "Choose IPA variant, romaji/romanization/pinyin, Han Viet, or language-specific reading aid",
+        "result": "Show the selected pack's accurate reading/tone/stress metadata and persist the appropriate course preference.",
+        "phase_task": [
+          "09.2",
+          "10.4"
+        ]
+      },
+      {
+        "trigger": "Ask tutor, use memory hook, or Back to English",
+        "result": "Open contextual tutor/save a real memory hook or return to the card's target-language front without changing course data.",
+        "phase_task": [
+          "11.5",
+          "09.2",
+          "10.5"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Distinct sourced test cards for en/ko/ja/zh and gated fr/de/es, with target/native pair, reading metadata, example translation, tier, bookmark and audio capability; render both front and back.",
+      "empty": "No selected card and no course/card pair, plus missing-reading/no-voice/unsupported-speech fixtures; do not infer English/Vietnamese for an unknown pair.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/LangCard-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/LangCard-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/GridLangCardCJK-comparison.png",
+        "docs/design/sonflash-redesign/canvas/reference/GridLangCardLatin-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Language list and sample content",
+        "discrepancy": "The component offers en/ko/ja/zh/fr/de/es; R10 opens en/ko/ja/zh on Firebase, while later languages wait for migration and quality gates. Example words/readings/native languages are fixture content.",
+        "required_treatment": "Keep every variant accounted for, gate later packs until phase 14.6, and use the actual course's target/native pair and reviewed pack metadata.",
+        "phase_task": "09.1 / 09.2 / 09.3 / 09.4 / 14.6"
+      },
+      {
+        "region": "Audio/readings and persistence",
+        "discrepancy": "Some packs may not have TTS/ASR, a pronunciation variant, or all reading metadata; Canvas previews all capabilities as ready.",
+        "required_treatment": "Use capability-aware fallbacks and explicit unsupported/unavailable states; do not label text matching as acoustic pronunciation scoring.",
+        "phase_task": "09.2 / 09.3"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/LangCard.dc.html",
+        "lines": [
+          1,
+          28,
+          31,
+          61,
+          77,
+          268,
+          468,
+          471,
+          484,
+          490,
+          518,
+          520
+        ],
+        "basis": "Language-pack samples, theme/lang props, flip, IPA/romaji controls, bookmark/blind/audio handlers."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          102,
+          103,
+          111
+        ],
+        "basis": "CJK and Latin language/theme grids plus standalone card references."
+      },
+      {
+        "path": "src/components/Flashcard.tsx",
+        "lines": [
+          91,
+          318,
+          666
+        ],
+        "basis": "Existing card interaction and edit entry points."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          48
+        ],
+        "basis": "R10 wave-1 language boundary."
+      }
+    ]
+  },
+  {
+    "board": "LangLocales",
+    "source": "docs/design/sonflash-redesign/canvas/src/LangLocales.dc.html",
+    "product_entry": {
+      "existing": "No locale showcase route exists; locale choice belongs in Settings and the columns/pseudo-locale are a rendering/QA specimen.",
+      "target": "Settings UI-locale control drives the app catalog; automated/manual locale comparison renders this same screen in supported locales."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "onToggleTheme": "optional theme callback"
+      },
+      "paired_artboards": [
+        {
+          "board": "PairLangLocales",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairLangLocales-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "en/vi/de/ja/ko/es/en-XA sample columns",
+        "long labels and wrapped CTA",
+        "plural/date/number/currency formatting",
+        "CJK typography and Latin-only casing"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Choose CTA in a locale-rendered sample",
+        "result": "Perform the same destination action regardless of UI language, retaining course/target language.",
+        "phase_task": "10.4"
+      },
+      {
+        "trigger": "Change UI locale in Settings",
+        "result": "Reload the supported message catalog and format plurals/dates/numbers with locale rules; do not alter card pairs or target course.",
+        "phase_task": [
+          "10.4",
+          "14.6"
+        ]
+      },
+      {
+        "trigger": "Render pseudo-locale",
+        "result": "Exercise longer translated strings and layout wrapping in QA only; never expose en-XA as a learner locale.",
+        "phase_task": [
+          "10.4",
+          "13.3"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Same due-card/button/date/number meaning rendered in every enabled UI locale, including long text; use fixed test clock and currency formatting.",
+      "empty": "No active course/cards while locale controls and fallback copy remain usable; pseudo-locale test remains available to QA.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/LangLocales-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/LangLocales-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairLangLocales-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Locale list, date, prices and sample copy",
+        "discrepancy": "Canvas statically shows seven locale columns, a fixed Sep 23 2026 date and sample amounts/currencies; runtime UI locale availability is separately gated.",
+        "required_treatment": "Use only enabled catalogs and Intl/ICU formatting with current fixture clock and configured currency; en-XA is test-only.",
+        "phase_task": "10.4 / 14.6"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/LangLocales.dc.html",
+        "lines": [
+          1,
+          25,
+          55,
+          70,
+          75
+        ],
+        "basis": "Locale CTA, sample locale columns and format/type rules."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          116,
+          174
+        ],
+        "basis": "Standalone references and dark/light locale pair."
+      },
+      {
+        "path": "src/features/settings/settings-screen.tsx",
+        "lines": [
+          46,
+          74,
+          81
+        ],
+        "basis": "Existing Settings route currently hosts appearance rather than locale showcase."
+      }
+    ]
+  },
+  {
+    "board": "LangSettings",
+    "source": "docs/design/sonflash-redesign/canvas/src/LangSettings.dc.html",
+    "product_entry": {
+      "existing": "Settings route exists, but current SettingsScreen is appearance-only; language/course configuration is a required extension.",
+      "target": "Settings → Language & courses; active-course picker also serves capture destination and card language preferences."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "onToggleTheme": "optional theme callback"
+      },
+      "paired_artboards": [
+        {
+          "board": "PairLangSettings",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairLangSettings-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "11 UI locale options",
+        "meaning language: My language/Target only/Both",
+        "current Korean course",
+        "suggested Japanese/Chinese/German courses",
+        "Add language",
+        "archive/remove",
+        "per-language furigana/voice/nouns",
+        "Korean romanization/hanja/voice/speed/keyboard/new-word pace"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Choose app language",
+        "result": "Change interface locale only; keep target course and existing card meanings unchanged.",
+        "phase_task": [
+          "10.4",
+          "14.6"
+        ]
+      },
+      {
+        "trigger": "Choose meaning language or target/combined meanings",
+        "result": "Set the course meaning preference for newly generated/edited cards with a clear effect; do not rewrite existing cards silently.",
+        "phase_task": [
+          "10.4",
+          "10.5"
+        ]
+      },
+      {
+        "trigger": "Add/select language, archive, reopen, or remove course",
+        "result": "Enforce one course per target; archive/reopen preserves data and remove has explicit confirmation and recovery semantics.",
+        "phase_task": [
+          "10.1",
+          "10.7"
+        ]
+      },
+      {
+        "trigger": "Change reading, voice, speed, keyboard or new-words-a-day preference",
+        "result": "Save the selected course preference and use a supported voice/IME fallback; new-word pace never caps reviews.",
+        "phase_task": [
+          "09.2",
+          "09.3",
+          "09.4",
+          "10.4"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Existing Korean course with Vietnamese meanings and per-course settings, plus suggested-language fixtures with correct catalogs/voice capabilities.",
+      "empty": "No course and no selected locale preference, plus unavailable voice, no IME guidance, archive/reopen and destructive-remove confirmation states.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/LangSettings-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/LangSettings-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairLangSettings-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Locale/course catalog and sample learner counts",
+        "discrepancy": "The board lists locales and target packs beyond current launch gates and includes learner counts, a current Korean course and preference selections as fixed samples.",
+        "required_treatment": "Drive availability from enabled catalog and R10 wave; no fake learner counts, duplicate course creation, or silent card-language rewrite.",
+        "phase_task": "10.1 / 10.4 / 10.7 / 14.6"
+      },
+      {
+        "region": "New words/day",
+        "discrepancy": "Canvas says 12 words/day; this is a learner preference, not a cap on due reviews.",
+        "required_treatment": "Limit only new-card introduction; leave review queue uncapped as the design states.",
+        "phase_task": "10.4 / 10.5"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/LangSettings.dc.html",
+        "lines": [
+          1,
+          10,
+          40,
+          42,
+          57,
+          79,
+          95,
+          111,
+          112,
+          127,
+          135,
+          155,
+          181,
+          192
+        ],
+        "basis": "Locale/meaning controls, course/add/archive/remove, language preference variants and props."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          121,
+          176
+        ],
+        "basis": "Standalone language settings and paired themes."
+      },
+      {
+        "path": "src/features/settings/settings-screen.tsx",
+        "lines": [
+          46,
+          74,
+          81
+        ],
+        "basis": "Current settings route is appearance-only."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          38,
+          39,
+          48
+        ],
+        "basis": "Course versus Goal, one course per target and R10 wave 1."
+      }
+    ]
+  },
+  {
+    "board": "MobilePaywall",
+    "source": "docs/design/sonflash-redesign/canvas/src/MobilePaywall.dc.html",
+    "product_entry": {
+      "existing": "No mobile checkout route/gateway exists; responsive paywall is planned from mobile quota and upgrade entry points.",
+      "target": "390×844 mobile version of the same policy-aware offer flow; selecting it must preserve the calling screen and safe-area layout."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "Mobile",
+          "variants": [
+            "MobilePaywall × dark/light at 390×844"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/Mobile-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "annual selected/monthly unselected radio options",
+        "MoMo and alternate payment methods",
+        "restore purchase",
+        "offer loading/error/not eligible",
+        "pending/success/failure/cancel"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Choose annual/monthly offer",
+        "result": "Update the eligible offer summary, price, tax and terms in the same paywall session.",
+        "phase_task": [
+          "15.1",
+          "15.2"
+        ]
+      },
+      {
+        "trigger": "Choose MoMo or alternate method",
+        "result": "Select an available method and proceed only to pilot intent or approved checkout.",
+        "phase_task": [
+          "15.2",
+          "15.3"
+        ]
+      },
+      {
+        "trigger": "Restore purchase",
+        "result": "Refresh the real entitlement and show restored/not found/error states; do not show a static success.",
+        "phase_task": [
+          "15.2",
+          "15.3"
+        ]
+      },
+      {
+        "trigger": "Close",
+        "result": "Return to originating mobile view with safe-area/focus context and no lost session.",
+        "phase_task": [
+          "15.2",
+          "05.7"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Policy-valid offer and consent for a 390×844 viewport in both themes; compare scroll, CTA and safe area with the mobile reference.",
+      "empty": "No eligible offer/gateway, restore not-found, and blank/unselected method states with CTA disabled; include payment failure/cancel paths.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/MobilePaywall-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/MobilePaywall-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/Mobile-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Amounts, annual discount and payment methods",
+        "discrepancy": "Canvas shows 949,000 VND/year, 129,000 VND/month, savings and MoMo/ZaloPay/VNPay/card; R5/R6 set the pilot at 79,000 VND/month via local gateway, no auto-renewal, intent-only until registration, and VAT remains open.",
+        "required_treatment": "Keep mobile checkout in policy gate; show only approved pilot intent/amount and accountant-approved VAT; do not create fake payment success.",
+        "phase_task": "15.1 / 15.2 / 15.3"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/MobilePaywall.dc.html",
+        "lines": [
+          1,
+          2,
+          5,
+          6,
+          24,
+          25,
+          31,
+          40,
+          41,
+          46
+        ],
+        "basis": "Mobile plan choices, restore, payment buttons and theme prop."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          127,
+          129
+        ],
+        "basis": "Mobile composite imports and standalone 390×844 reference paths."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          18,
+          19
+        ],
+        "basis": "R5 pricing and R6 pilot purchase-intent gate."
+      }
+    ]
+  },
+  {
+    "board": "MotionStoryboard",
+    "source": "docs/design/sonflash-redesign/canvas/src/MotionStoryboard.dc.html",
+    "product_entry": {
+      "existing": "This is a cross-route transition specification, not a product route; transitions apply to Today, Review, Recap and EditSheet.",
+      "target": "Apply its timing, shared-card continuity, focus transfer and staged feedback to the corresponding real flows."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ]
+      },
+      "paired_artboards": [
+        {
+          "board": "PairMotion",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairMotion-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "Today→Review start/lift/fly/ready",
+        "Recap stats→next action",
+        "dialog→side sheet preserving card",
+        "reduced-motion immediate/fallback behavior"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Start a review from Today",
+        "result": "Card stack lifts, selected card transitions into Review, surrounding shell recedes and focus lands on the card; honor reduced motion.",
+        "phase_task": [
+          "03.5",
+          "05.2"
+        ]
+      },
+      {
+        "trigger": "Complete a session and choose next action",
+        "result": "Settle verified session stats, then expose the correct next mode/reminder destination; do not animate placeholder XP as real.",
+        "phase_task": "05.6"
+      },
+      {
+        "trigger": "Open Edit from a card",
+        "result": "Move the side sheet in while keeping the card visible; close returns focus and state to that card.",
+        "phase_task": "04.5"
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Source and destination routes with the same test card/session, ready focus target and deterministic animation clock for each of the three transitions.",
+      "empty": "Reduced-motion and empty-session variants must still reach the same destinations with focus; no transition may require waiting for an animation to complete.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/MotionStoryboard-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/MotionStoryboard-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairMotion-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Sample recap stats and animation timing",
+        "discrepancy": "The storyboard shows 12 cards, 92%, +120 XP, 78% progress and fixed animation durations; these stats are illustrative, while accessibility/reduced motion must remain functional.",
+        "required_treatment": "Use verified session settlement values; preserve the transition's semantic sequence, but skip/shorten motion when reduced motion is enabled.",
+        "phase_task": "03.4 / 03.5 / 05.2 / 05.6"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/MotionStoryboard.dc.html",
+        "lines": [
+          1,
+          27,
+          82,
+          138
+        ],
+        "basis": "Transition storyboard and dark/light theme prop."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          134,
+          180
+        ],
+        "basis": "Standalone and paired theme imports."
+      },
+      {
+        "path": "src/features/navigation/useAppNavigation.ts",
+        "lines": [
+          11,
+          16,
+          33
+        ],
+        "basis": "Transitions connect existing views/internal learning modes; there is no motion route."
+      }
+    ]
+  },
+  {
+    "board": "ProStates",
+    "source": "docs/design/sonflash-redesign/canvas/src/ProStates.dc.html",
+    "product_entry": {
+      "existing": "Plan UI is not a complete current route; Settings and contextual quota/story actions are existing/planned entry points.",
+      "target": "Policy-aware plan/entitlement sections and in-context trial/quota/downgrade messages; menu actions lead to plan, referral, settings, review, create and sign-out flows."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "onToggleTheme": "optional theme callback"
+      },
+      "paired_artboards": [
+        {
+          "board": "PairProStates",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairProStates-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "trial/offer toast",
+        "quota meter",
+        "Pro-to-Free downgrade",
+        "manage plan/account menu",
+        "review CTA",
+        "AI create/story CTA",
+        "dismissed/already-Pro/unavailable/error states"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "See plans, Manage plan, Keep Pro, or Get Pro back",
+        "result": "Show current entitlement and approved offer; in the pilot record purchase intent rather than opening an unauthorized gateway.",
+        "phase_task": [
+          "15.1",
+          "15.2"
+        ]
+      },
+      {
+        "trigger": "Continue on Free or downgrade",
+        "result": "Update entitlement while keeping all cards, decks and unlimited FSRS reviews; show actual feature access after refresh.",
+        "phase_task": "15.2"
+      },
+      {
+        "trigger": "Review due or Create with AI",
+        "result": "Open Today/review or card creation; enforce course-scoped due state and separate card quota from non-card AI quota.",
+        "phase_task": [
+          "05.1",
+          "04.2",
+          "15.2"
+        ]
+      },
+      {
+        "trigger": "Invite friends, Settings, or Sign out",
+        "result": "Open referral flow without sending messages automatically, open Settings, or complete the existing auth sign-out flow.",
+        "phase_task": [
+          "15.4",
+          "10.4",
+          "14.2"
+        ]
+      },
+      {
+        "trigger": "Generate/read Story",
+        "result": "Use the R7 non-card AI allowance and return to story reader with real content/error/quota state.",
+        "phase_task": [
+          "05.5",
+          "11.6"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Test users for Free quota remaining, quota exhausted, eligible Pro, already-Pro, and downgrade states; usage and review counts are course/account scoped.",
+      "empty": "No offer/entitlement result, no due cards and no AI allowance; manual card add and existing reviews remain reachable.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/ProStates-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/ProStates-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairProStates-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Pro price, trial, unlimited wording, Free cap and quota meter",
+        "discrepancy": "The board claims 949,000 VND/year, seven-day trial, unlimited Pro and 5 AI cards/day; R5/R8 specify 79,000 VND/month pilot and 1,000 Pro card generations/month; R6 permits intent only before registration; R7 gives separate Free 20/Pro 200 daily non-card AI actions.",
+        "required_treatment": "Use actual configured entitlements and approved pilot intent; remove trial/unlimited claims and separate AI-card/non-card meters.",
+        "phase_task": "15.1 / 15.2"
+      },
+      {
+        "region": "Referral menu reward and sample identity/streak/cards",
+        "discrepancy": "The menu promises +7 days and hard-codes 1,284 cards, 23-day streak and due/quota samples; Decision 8 leaves rewards open.",
+        "required_treatment": "Link to referral without promising reward, and use real owned account/course data; retain the task even when reward is gated.",
+        "phase_task": "15.4 / 15.6"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/ProStates.dc.html",
+        "lines": [
+          1,
+          10,
+          37,
+          38,
+          58,
+          69,
+          71,
+          72,
+          82,
+          85,
+          90,
+          97,
+          112
+        ],
+        "basis": "Plans/upgrade/downgrade/menu/review/AI/story and sample quota content."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          184,
+          205
+        ],
+        "basis": "Paired and standalone Pro state references."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          18,
+          19,
+          20,
+          32
+        ],
+        "basis": "R5/R6/R7 quotas/payment gates and open rewards policy."
+      }
+    ]
+  },
+  {
+    "board": "ReferralScreen",
+    "source": "docs/design/sonflash-redesign/canvas/src/ReferralScreen.dc.html",
+    "product_entry": {
+      "existing": "There is no current referral route; planned entry is Invite friends from the account/plan menu.",
+      "target": "Dedicated referral page with user's link/code, milestone eligibility, invite statuses and user-initiated share options."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "onToggleTheme": "optional theme callback"
+      },
+      "paired_artboards": [
+        {
+          "board": "PairReferral",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairReferral-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "milestones 1/3/10",
+        "earned/unearned",
+        "Studying/Joined/Pending friend rows",
+        "Copy link",
+        "Zalo/Messenger/Facebook/Email share",
+        "pending friend nudge"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Copy referral link",
+        "result": "Copy the current user's server-issued link and show copy success/failure.",
+        "phase_task": "15.4"
+      },
+      {
+        "trigger": "Choose a share target",
+        "result": "Open an explicit platform share composer with the approved message; do not send a message automatically.",
+        "phase_task": "15.4"
+      },
+      {
+        "trigger": "Nudge pending friends",
+        "result": "Show pending invite status and require explicit per-recipient action/consent before any send; otherwise offer copy/share.",
+        "phase_task": "15.4"
+      },
+      {
+        "trigger": "Reach a milestone or open friend status",
+        "result": "Display only server-validated eligibility and reward ledger/privacy-safe invite status.",
+        "phase_task": [
+          "15.4",
+          "15.1"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Deterministic referral test account with issued link, one earned/one pending milestone and privacy-safe invited/accepted/studying statuses.",
+      "empty": "No issued link, no eligible friends, no reward eligibility and no share capability; show unavailable and error states without fabricated names/email.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/ReferralScreen-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/ReferralScreen-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairReferral-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Milestone reward promises",
+        "discrepancy": "Canvas promises 7 days/1 month/1 year of Pro after 1/3/10 referrals; Decision 8 leaves Pro/gamification rewards open and R6 disallows live checkout in the pilot.",
+        "required_treatment": "Keep link/status/share surface required, but do not promise or grant rewards until eligibility, anti-abuse and entitlement rules are approved.",
+        "phase_task": "15.1 / 15.4 / 15.6"
+      },
+      {
+        "region": "Sample invitees and Nudge button",
+        "discrepancy": "Friend names, email fragment and invite statuses are fictional; automated messaging is not authorized.",
+        "required_treatment": "Use the current user's privacy-safe server ledger; require deliberate share/send confirmation and never send automatically.",
+        "phase_task": "15.4"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/ReferralScreen.dc.html",
+        "lines": [
+          1,
+          16,
+          21,
+          55,
+          67,
+          74,
+          90,
+          94
+        ],
+        "basis": "Copy/share/nudge controls, milestone data, friend rows and theme prop."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          189,
+          210
+        ],
+        "basis": "Paired and standalone dark/light references."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          19,
+          32
+        ],
+        "basis": "R6 pilot commercial gate and open Decision 8 reward policy."
+      }
+    ]
+  },
+  {
+    "board": "StoryScreen",
+    "source": "docs/design/sonflash-redesign/canvas/src/StoryScreen.dc.html",
+    "product_entry": {
+      "existing": "Story is an existing practice action/view opened from the practice menu, with generation coordinated by AppRuntime.",
+      "target": "Open after selecting Story or from recap/paywall; return to the source session or review the story's vocabulary."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "onToggleTheme": "optional theme callback"
+      },
+      "paired_artboards": [
+        {
+          "board": "PairStory",
+          "variants": [
+            "theme=dark",
+            "theme=light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairStory-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "story ready",
+        "listen story/word",
+        "regenerate",
+        "highlighted word gloss",
+        "Review now",
+        "Review these six words",
+        "loading/quota/error/cancel (required states not supplied as props)"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Open or regenerate story",
+        "result": "Request contextual story with active-course words and R7 quota; expose loading, quota, error/retry and cancel without fake streaming.",
+        "phase_task": [
+          "05.5",
+          "11.6"
+        ]
+      },
+      {
+        "trigger": "Tap a highlighted word or Review now",
+        "result": "Open that word's real card/gloss or start review on eligible story words in the same course.",
+        "phase_task": [
+          "05.5",
+          "05.7"
+        ]
+      },
+      {
+        "trigger": "Listen to the story or a word",
+        "result": "Play supported speech with permission/unsupported/loading states and no invented pronunciation score.",
+        "phase_task": [
+          "05.5",
+          "09.3"
+        ]
+      },
+      {
+        "trigger": "Review these words or Close story",
+        "result": "Start a six-word review only if those cards exist, or return to originating session with context intact.",
+        "phase_task": [
+          "05.5",
+          "05.7"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Approved deterministic story result linked to six existing test cards with word glosses, source pair and working speech fixture; do not call live Gemini in UI tests.",
+      "empty": "No eligible story words, exhausted non-card AI quota, unsupported speech and generation failure; preserve an empty vocabulary result without fake words.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/StoryScreen-dark.png",
+        "docs/design/sonflash-redesign/canvas/reference/StoryScreen-light.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairStory-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Story copy, word list and Pro benefits",
+        "discrepancy": "The six words and generated narrative are illustrative; story/tutor actions are non-card AI under R7, not unlimited by the card-creation quota.",
+        "required_treatment": "Use active-course cards and daily Free 20/Pro 200 non-card allowance; retain real loading/error/quota/cancel handling and policy-aware Pro copy.",
+        "phase_task": "05.5 / 11.6 / 15.2"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/src/StoryScreen.dc.html",
+        "lines": [
+          1,
+          5,
+          10,
+          13,
+          16,
+          37,
+          43,
+          68,
+          69,
+          75,
+          90
+        ],
+        "basis": "Story close/listen/regenerate/theme/gloss/review actions and word fixture."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          195,
+          215
+        ],
+        "basis": "Paired and standalone theme references."
+      },
+      {
+        "path": "src/components/AppOverlays.tsx",
+        "lines": [
+          89,
+          94
+        ],
+        "basis": "Existing story practice action entry."
+      },
+      {
+        "path": "src/app/AppRuntime.tsx",
+        "lines": [
+          309,
+          311
+        ],
+        "basis": "Existing story generation wiring."
+      },
+      {
+        "path": "plans/260923-1831-global-multilingual-launch/decisions.md",
+        "lines": [
+          20
+        ],
+        "basis": "R7 non-card AI daily allowance applies to story generation."
+      }
+    ]
+  },
+  {
+    "board": "Atelier",
+    "source": "docs/design/sonflash-redesign/canvas/seed/Atelier.dc.html",
+    "product_entry": {
+      "existing": "A study/review view with Flashcard front/back and grade actions exists; this is the chosen Ink & Paper light seed reference.",
+      "target": "Use as the classic-light review card/session surface; PairReview pairs this light seed with Aurora dark."
+    },
+    "variants": {
+      "props": {
+        "onToggleTheme": "optional theme callback; no theme prop (seed is light)"
+      },
+      "paired_artboards": [
+        {
+          "board": "PairReview",
+          "variants": [
+            "Aurora dark + Atelier light"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/PairReview-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "index 0/1/2 and New/Learning/Mastered tiers",
+        "front/back/flipping/revealed",
+        "hover/tilt/spotlight",
+        "starred/star pulse",
+        "blind hint",
+        "audio playing",
+        "Again/Hard/Good/Easy grades and advance"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "End session or switch to dark theme",
+        "result": "Return to the prior route with clear session status, or apply the paired dark theme without losing card state.",
+        "phase_task": [
+          "05.7",
+          "03.4"
+        ]
+      },
+      {
+        "trigger": "Flip/reveal, toggle picture hint, star, listen, or say it",
+        "result": "Use the current card's stored data/audio and persist bookmark; preserve reduced-motion and unsupported speech behavior.",
+        "phase_task": [
+          "04.4",
+          "09.3"
+        ]
+      },
+      {
+        "trigger": "Quiz me, Memory hook, Ask AI tutor, More actions",
+        "result": "Open real quiz/memory/tutor/edit actions for the selected card, with quota and return-to-card context.",
+        "phase_task": [
+          "04.4",
+          "05.4",
+          "11.5"
+        ]
+      },
+      {
+        "trigger": "Choose Again/Hard/Good/Easy",
+        "result": "Submit exactly one rating through current scheduler and advance only after settlement.",
+        "phase_task": [
+          "04.4",
+          "05.7"
+        ]
+      }
+    ],
+    "fixture_needs": {
+      "ready": "Three deterministic front/back test cards representing new, learning and mastered, including word, meaning, IPA, example and image; use directly against Atelier light reference.",
+      "empty": "No due cards: show the session-empty/Today next-stage behavior instead of starting on the seed Spelling card; include unsupported audio and blind hint state.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/Atelier-comparison.png",
+        "docs/design/sonflash-redesign/canvas/reference/PairReview-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Seed deck, progress position and review intervals",
+        "discrepancy": "Spelling/Immediate/Instant and position 5 of 12 are static examples; interval labels 1m/6m/1d/3d are seed presentation values rather than authoritative scheduling outcomes.",
+        "required_treatment": "Render real card data and scheduler-provided next due time; keep visual review grade actions but do not copy seed schedule/data into production.",
+        "phase_task": "04.4 / 05.7"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/seed/Atelier.dc.html",
+        "lines": [
+          1,
+          41,
+          55,
+          90,
+          126,
+          133,
+          134,
+          141,
+          160,
+          171,
+          200,
+          230,
+          238,
+          267,
+          273,
+          279,
+          312
+        ],
+        "basis": "Light seed controls, three card tiers, flip/reveal, grade choices and advance handlers."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          49,
+          191
+        ],
+        "basis": "Chosen light seed and Aurora-dark/Atelier-light pair."
+      },
+      {
+        "path": "src/features/navigation/useAppNavigation.ts",
+        "lines": [
+          11,
+          12,
+          33
+        ],
+        "basis": "Review is an internal study mode, not a standalone URL route."
+      }
+    ]
+  },
+  {
+    "board": "FlashFront",
+    "source": "docs/design/sonflash-redesign/canvas/seed/FlashFront.dc.html",
+    "product_entry": {
+      "existing": "Flashcard front/back appears in Library and study; this seed is a reusable card component, not a route.",
+      "target": "Render as the front-side card inside Library/review and wire callbacks to the existing persisted card controls."
+    },
+    "variants": {
+      "props": {
+        "theme": [
+          "dark",
+          "light"
+        ],
+        "tier": [
+          "new",
+          "learning",
+          "mastered"
+        ],
+        "blind": [
+          false,
+          true
+        ],
+        "starred": [
+          false,
+          true
+        ],
+        "playing": [
+          false,
+          true
+        ],
+        "hover": [
+          false,
+          true
+        ],
+        "mx": "spot/foil position",
+        "my": "spot position",
+        "starPulse": "animation state",
+        "card": "card content object",
+        "onFlip": "callback",
+        "onStar": "callback",
+        "onBlind": "callback",
+        "onListen": "callback"
+      },
+      "paired_artboards": [
+        {
+          "board": "CardStatesDark",
+          "variants": [
+            "new+hover+spot",
+            "FlashBack new+starred",
+            "learning+blind+starred+playing",
+            "mastered+hover+foil"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/CardStatesDark-comparison.png"
+        },
+        {
+          "board": "CardStatesLight",
+          "variants": [
+            "new front",
+            "FlashBack learning back",
+            "mastered+hover+foil"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/CardStatesLight-comparison.png"
+        },
+        {
+          "board": "Main",
+          "variants": [
+            "dynamic tier/card/front/back/hover/spot/blind/star/play/reveal callbacks"
+          ],
+          "reference": "docs/design/sonflash-redesign/canvas/reference/Main-comparison.png"
+        }
+      ],
+      "internal_states": [
+        "new/learning/mastered rims",
+        "front/back flip",
+        "blind image hint",
+        "bookmark/star animation",
+        "audio playing",
+        "hover spotlight/foil",
+        "pronunciation check",
+        "quick quiz and more actions"
+      ]
+    },
+    "actions": [
+      {
+        "trigger": "Flip or Reveal meaning",
+        "result": "Show the card back through parent state and preserve card identity/animation and keyboard operation.",
+        "phase_task": "04.4"
+      },
+      {
+        "trigger": "Star, blind/hide hint, listen, or pronunciation check",
+        "result": "Persist bookmark, toggle visual hint and play supported speech/recognition; announce permission and unsupported errors.",
+        "phase_task": [
+          "04.4",
+          "09.3"
+        ]
+      },
+      {
+        "trigger": "Quiz me or More actions",
+        "result": "Open the related quiz/card action menu for this card and return to the same front/back state.",
+        "phase_task": [
+          "04.4",
+          "05.4"
+        ]
+      },
+      {
+        "trigger": "Hover/spot/foil interaction",
+        "result": "Update spotlight/tilt/foil position without hiding controls or breaking reduced-motion behavior.",
+        "phase_task": "04.4"
+      }
+    ],
+    "fixture_needs": {
+      "ready": "One real-shaped card per tier with image, word, POS, category, IPA and definition; render the exact dark/light CardStates combinations and a dynamic Main card.",
+      "empty": "No card content/image, blind on, no audio capability and no callback state; controls must present unavailable state or be omitted accessibly, not no-op.",
+      "canvas_reference": [
+        "docs/design/sonflash-redesign/canvas/reference/FlashFront-comparison.png",
+        "docs/design/sonflash-redesign/canvas/reference/CardStatesDark-comparison.png",
+        "docs/design/sonflash-redesign/canvas/reference/CardStatesLight-comparison.png",
+        "docs/design/sonflash-redesign/canvas/reference/Main-comparison.png"
+      ]
+    },
+    "policy_exceptions": [
+      {
+        "region": "Card content, image, tier and callback defaults",
+        "discrepancy": "The fallback spelling/image and tier are a visual default; absent callbacks currently degrade to no-op in the Canvas component.",
+        "required_treatment": "Pass a real persisted card and real callback for every visible action; provide a designed no-image/unavailable state rather than fake card content or an inert control.",
+        "phase_task": "04.3 / 04.4 / 04.7"
+      },
+      {
+        "region": "Effects and voice capability",
+        "discrepancy": "Canvas assumes image, hover/foil and speech are available.",
+        "required_treatment": "Respect reduced motion, touch, audio permission/support and empty image metadata while keeping all essential controls reachable.",
+        "phase_task": "03.4 / 04.4 / 09.3"
+      }
+    ],
+    "source_evidence": [
+      {
+        "path": "docs/design/sonflash-redesign/canvas/seed/FlashFront.dc.html",
+        "lines": [
+          1,
+          32,
+          35,
+          58,
+          60,
+          75,
+          79,
+          83,
+          89,
+          97,
+          160,
+          163
+        ],
+        "basis": "Card controls, tier/theme/state/data/callback props and real callback wiring surface."
+      },
+      {
+        "path": "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv",
+        "rows": [
+          51,
+          52,
+          84,
+          125
+        ],
+        "basis": "All declared dark/light card-state and dynamic Main prop variants."
+      },
+      {
+        "path": "src/components/Flashcard.tsx",
+        "lines": [
+          662,
+          666,
+          669,
+          672
+        ],
+        "basis": "Existing library/study card edit and bookmark entry points."
+      }
+    ]
+  }
+]

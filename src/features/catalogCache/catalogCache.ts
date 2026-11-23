@@ -1,9 +1,10 @@
 import { parseLexemeV3 } from '../multilingual/schemaV3Validation';
 import type { LexemeV3 } from '../multilingual/schemaV3';
+import type { CatalogUnitDescriptorV1 } from '../catalogPipeline/catalogContracts';
 import { observeCatalogTransaction } from './catalogTransaction';
 
 export const CATALOG_CACHE_DATABASE_NAME = 'sonflash-catalog-cache';
-const DATABASE_VERSION = 3;
+const DATABASE_VERSION = 4;
 const DEFAULT_DATABASE_OPEN_TIMEOUT_MS = 8_000;
 const MAX_DATABASE_OPEN_TIMEOUT_MS = 60_000;
 export const CATALOG_STORE = 'catalogs';
@@ -33,6 +34,8 @@ export interface CatalogReleaseDescriptor {
   readonly lexemeCount?: number;
   readonly membershipCount: number;
   readonly encodedBytes: number;
+  /** Present only for Catalog V2 releases; kept in the existing release record. */
+  readonly unitDescriptors?: readonly CatalogUnitDescriptorV1[];
 }
 
 export interface CatalogChunkReceipt {
@@ -55,6 +58,8 @@ export interface CatalogCacheEntry {
   readonly partOfSpeech: string;
   readonly skills: readonly string[];
   readonly rank: number;
+  /** Stable Catalog V2 unit identity, copied from membership.lessonGroup. */
+  readonly lessonGroup?: string;
   readonly normalizedLemma: string;
   readonly lemma: string;
 }
@@ -102,7 +107,12 @@ interface StoredReceipt extends CatalogChunkReceipt {
 export interface StoredCatalogEntry extends CatalogCacheEntry {
   readonly entryKey: string;
   readonly releaseKey: string;
+  /** Lowercased normalizedLemma: the key the lemma-prefix index and filter compare against. */
+  readonly searchLemma: string;
 }
+
+/** Lemma identity keeps its case, so prefix search compares a lowercased copy. */
+export const catalogSearchLemma = (normalizedLemma: string): string => normalizedLemma.toLowerCase();
 
 interface StoredSkillPosting {
   readonly postingKey: string;
@@ -195,12 +205,22 @@ const boundedInteger = (
 const normalizeDescriptor = (value: CatalogReleaseDescriptor): CatalogReleaseDescriptor => {
   const source = recordAt(value, 'release', [
     'catalogId', 'releaseId', 'schemaVersion', 'contentLanguage', 'chunkCount', 'lexemeCount',
-    'membershipCount', 'encodedBytes',
+    'membershipCount', 'encodedBytes', 'unitDescriptors',
   ]);
+  const schemaVersion = boundedInteger(source.schemaVersion, 'release.schemaVersion', 1, Number.MAX_SAFE_INTEGER);
+  const unitDescriptors = source.unitDescriptors === undefined
+    ? undefined
+    : normalizeUnitDescriptors(source.unitDescriptors);
+  if (schemaVersion === 2 && unitDescriptors === undefined) {
+    throw new TypeError('Catalog V2 releases require unit descriptors.');
+  }
+  if (schemaVersion !== 2 && unitDescriptors !== undefined) {
+    throw new TypeError('Only Catalog V2 releases may include unit descriptors.');
+  }
   return {
     catalogId: boundedString(source.catalogId, 'release.catalogId', 128),
     releaseId: boundedString(source.releaseId, 'release.releaseId', 128),
-    schemaVersion: boundedInteger(source.schemaVersion, 'release.schemaVersion', 1, Number.MAX_SAFE_INTEGER),
+    schemaVersion,
     contentLanguage: boundedString(source.contentLanguage, 'release.contentLanguage', 35),
     chunkCount: boundedInteger(source.chunkCount, 'release.chunkCount', 1, MAX_RELEASE_CHUNKS),
     lexemeCount: source.lexemeCount === undefined
@@ -208,7 +228,48 @@ const normalizeDescriptor = (value: CatalogReleaseDescriptor): CatalogReleaseDes
       : boundedInteger(source.lexemeCount, 'release.lexemeCount', 0, MAX_RELEASE_LEXEMES),
     membershipCount: boundedInteger(source.membershipCount, 'release.membershipCount', 1, MAX_RELEASE_MEMBERSHIPS),
     encodedBytes: boundedInteger(source.encodedBytes, 'release.encodedBytes', 1, MAX_RELEASE_BYTES),
+    ...(unitDescriptors === undefined ? {} : { unitDescriptors }),
   };
+};
+
+const normalizeUnitDescriptors = (value: unknown): readonly CatalogUnitDescriptorV1[] => {
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_RELEASE_MEMBERSHIPS) {
+    throw new TypeError('release.unitDescriptors must contain between 1 and 10,000 items.');
+  }
+  const seen = new Set<string>();
+  const ordinalByTrack = new Map<string, number>();
+  return value.map((item, index) => {
+    const source = recordAt(item, `release.unitDescriptors[${index}]`, [
+      'unitId', 'trackId', 'tier', 'ordinal', 'titles',
+    ]);
+    const unitId = boundedString(source.unitId, `release.unitDescriptors[${index}].unitId`, 128);
+    const trackId = boundedString(source.trackId, `release.unitDescriptors[${index}].trackId`, 128);
+    const key = `${trackId}\u0000${unitId}`;
+    if (seen.has(key)) throw new TypeError('release.unitDescriptors contains a duplicate track and unit id.');
+    seen.add(key);
+    const ordinal = boundedInteger(source.ordinal, `release.unitDescriptors[${index}].ordinal`, 1, MAX_RELEASE_MEMBERSHIPS);
+    const expectedOrdinal = ordinalByTrack.get(trackId) ?? 1;
+    if (ordinal !== expectedOrdinal) throw new TypeError('release.unitDescriptors must use contiguous ordinals within each track.');
+    ordinalByTrack.set(trackId, ordinal + 1);
+    if (!Array.isArray(source.titles) || source.titles.length === 0 || source.titles.length > 9) {
+      throw new TypeError('release.unitDescriptors titles must contain between 1 and 9 items.');
+    }
+    const languages = new Set<string>();
+    const titles = source.titles.map((title, titleIndex) => {
+      const titleSource = recordAt(title, `release.unitDescriptors[${index}].titles[${titleIndex}]`, ['language', 'text']);
+      const language = boundedString(titleSource.language, `release.unitDescriptors[${index}].titles[${titleIndex}].language`, 35);
+      if (languages.has(language)) throw new TypeError('release.unitDescriptors titles contains a duplicate language.');
+      languages.add(language);
+      return { language, text: boundedString(titleSource.text, `release.unitDescriptors[${index}].titles[${titleIndex}].text`) };
+    });
+    return {
+      unitId,
+      trackId,
+      tier: boundedString(source.tier, `release.unitDescriptors[${index}].tier`),
+      ordinal,
+      titles,
+    };
+  });
 };
 
 const normalizeReceipt = (value: CatalogChunkReceipt): CatalogChunkReceipt => {
@@ -231,7 +292,7 @@ const normalizeReceipt = (value: CatalogChunkReceipt): CatalogChunkReceipt => {
 const normalizeEntry = (value: CatalogCacheEntry): CatalogCacheEntry => {
   const source = recordAt(value, 'entry', [
     'membershipId', 'lexemeId', 'language', 'trackId', 'tier', 'cefrLevel', 'topic', 'partOfSpeech',
-    'skills', 'rank', 'normalizedLemma', 'lemma',
+    'skills', 'rank', 'lessonGroup', 'normalizedLemma', 'lemma',
   ]);
   if (!Array.isArray(source.skills) || source.skills.length > MAX_SKILLS) {
     throw new TypeError(`entry.skills must contain at most ${MAX_SKILLS} items.`);
@@ -252,6 +313,9 @@ const normalizeEntry = (value: CatalogCacheEntry): CatalogCacheEntry => {
     partOfSpeech: boundedString(source.partOfSpeech, 'entry.partOfSpeech', 64),
     skills,
     rank: boundedInteger(source.rank, 'entry.rank', 0, Number.MAX_SAFE_INTEGER),
+    ...(source.lessonGroup === undefined ? {} : {
+      lessonGroup: boundedString(source.lessonGroup, 'entry.lessonGroup', 128),
+    }),
     normalizedLemma: boundedString(source.normalizedLemma, 'entry.normalizedLemma'),
     lemma: boundedString(source.lemma, 'entry.lemma'),
   };
@@ -279,7 +343,7 @@ const createStores = (database: IDBDatabase): void => {
   entries.createIndex('releaseLanguageTrackCefrRank', ['releaseKey', 'language', 'trackId', 'cefrLevel', 'rank', 'membershipId']);
   entries.createIndex('releaseLanguageTrackTopicRank', ['releaseKey', 'language', 'trackId', 'topic', 'rank', 'membershipId']);
   entries.createIndex('releaseLanguageTrackPosRank', ['releaseKey', 'language', 'trackId', 'partOfSpeech', 'rank', 'membershipId']);
-  entries.createIndex('releaseLanguageTrackLemma', ['releaseKey', 'language', 'trackId', 'normalizedLemma', 'rank', 'membershipId']);
+  entries.createIndex('releaseLanguageTrackLemma', ['releaseKey', 'language', 'trackId', 'searchLemma', 'rank', 'membershipId']);
   const skills = database.createObjectStore(SKILL_STORE, { keyPath: 'postingKey' });
   skills.createIndex('releaseKey', 'releaseKey');
   skills.createIndex('releaseLanguageTrackSkillRank', ['releaseKey', 'language', 'trackId', 'skill', 'rank', 'membershipId']);
@@ -306,6 +370,54 @@ const upgradeReleaseIndexes = (transaction: IDBTransaction): void => {
   if (!entries.indexNames.contains('releaseKey')) entries.createIndex('releaseKey', 'releaseKey');
   const skills = transaction.objectStore(SKILL_STORE);
   if (!skills.indexNames.contains('releaseKey')) skills.createIndex('releaseKey', 'releaseKey');
+};
+
+const rebuildLemmaIndex = (transaction: IDBTransaction): void => {
+  const entries = transaction.objectStore(ENTRY_STORE);
+  if (entries.indexNames.contains('releaseLanguageTrackLemma')) entries.deleteIndex('releaseLanguageTrackLemma');
+  entries.createIndex('releaseLanguageTrackLemma', ['releaseKey', 'language', 'trackId', 'searchLemma', 'rank', 'membershipId']);
+  const cursorRequest = entries.openCursor();
+  cursorRequest.onsuccess = () => {
+    const cursor = cursorRequest.result;
+    if (!cursor) return;
+    const stored = cursor.value as StoredCatalogEntry;
+    cursor.update({ ...stored, searchLemma: catalogSearchLemma(stored.normalizedLemma) });
+    cursor.continue();
+  };
+};
+
+/**
+ * A tab still running an older release can stage entries without a search key after the
+ * upgrade. Those entries are absent from the lemma index, so a count mismatch triggers a
+ * one-off backfill. The two counts are cheap; the scan runs only when they differ.
+ */
+const repairUnindexedLemmas = async (database: IDBDatabase): Promise<void> => {
+  const countOf = (request: IDBRequest<number>) => new Promise<number>((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const probe = database.transaction(ENTRY_STORE, 'readonly').objectStore(ENTRY_STORE);
+  const [stored, indexed] = await Promise.all([
+    countOf(probe.count()),
+    countOf(probe.index('releaseLanguageTrackLemma').count()),
+  ]);
+  if (stored === indexed) return;
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(ENTRY_STORE, 'readwrite');
+    const cursorRequest = transaction.objectStore(ENTRY_STORE).openCursor();
+    cursorRequest.onsuccess = () => {
+      const cursor = cursorRequest.result;
+      if (!cursor) return;
+      const value = cursor.value as StoredCatalogEntry;
+      if (typeof value.searchLemma !== 'string') {
+        cursor.update({ ...value, searchLemma: catalogSearchLemma(value.normalizedLemma) });
+      }
+      cursor.continue();
+    };
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
 };
 
 const createLexemeStore = (database: IDBDatabase): void => {
@@ -413,6 +525,7 @@ export function openCatalogCacheDatabase(
     else {
       if (oldVersion < 2 && request.transaction) upgradeReleaseIndexes(request.transaction);
       if (oldVersion < 3) createLexemeStore(request.result);
+      if (oldVersion < 4 && request.transaction) rebuildLemmaIndex(request.transaction);
     }
   };
   const opening = observeOpenRequest(
@@ -420,7 +533,10 @@ export function openCatalogCacheDatabase(
     safeTimeout,
     registerDatabase,
     () => openForwardCompatibleDatabase(safeTimeout),
-  );
+  ).then(async database => {
+    await repairUnindexedLemmas(database).catch(() => undefined);
+    return database;
+  });
   databasePromise = opening;
   void opening.catch(() => {
     if (databasePromise === opening) databasePromise = null;
@@ -450,6 +566,7 @@ const sameDescriptor = (left: StoredRelease, right: CatalogReleaseDescriptor): b
   && (left.lexemeCount ?? 0) === (right.lexemeCount ?? 0)
   && left.membershipCount === right.membershipCount
   && left.encodedBytes === right.encodedBytes
+  && JSON.stringify(left.unitDescriptors ?? []) === JSON.stringify(right.unitDescriptors ?? [])
 );
 
 const deleteIndexMatches = (
@@ -633,6 +750,7 @@ export async function stageCatalogChunk(
         ...value,
         entryKey: entryKeys[index],
         releaseKey: handle.releaseKey,
+        searchLemma: catalogSearchLemma(value.normalizedLemma),
       } satisfies StoredCatalogEntry;
       entryStore.put(stored);
       value.skills.forEach(skill => skillStore.put({
@@ -760,6 +878,7 @@ const publicDescriptor = (release: StoredRelease): CatalogReleaseDescriptor => (
   lexemeCount: release.lexemeCount ?? 0,
   membershipCount: release.membershipCount,
   encodedBytes: release.encodedBytes,
+  ...(release.unitDescriptors === undefined ? {} : { unitDescriptors: release.unitDescriptors }),
 });
 
 export async function getActiveCatalogReleaseSnapshot(
@@ -826,6 +945,7 @@ export function publicCatalogEntry(value: StoredCatalogEntry): CatalogCacheEntry
     partOfSpeech: value.partOfSpeech,
     skills: [...value.skills],
     rank: value.rank,
+    ...(value.lessonGroup === undefined ? {} : { lessonGroup: value.lessonGroup }),
     normalizedLemma: value.normalizedLemma,
     lemma: value.lemma,
   };

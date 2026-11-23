@@ -1,0 +1,123 @@
+/* Loaded only for Crystal Star. Components opt in with these decorative classes. */
+.crystal-ornament { pointer-events: none; }
+.crystal-starfield { background-image: var(--nk-stars); animation: crystal-starfield-drift 36s linear infinite; }
+/* A dialog veil can be a gradient, which must not drift with the stars: the stars sit on their own layer above it. */
+.dialog-veil.crystal-starfield { background: var(--sf-dialog-veil); animation: none; isolation: isolate; }
+.dialog-veil.crystal-starfield::before { content: ''; position: absolute; inset: 0; z-index: -1; background-image: var(--nk-stars); animation: crystal-starfield-drift 36s linear infinite; pointer-events: none; }
+.crystal-wing { opacity: var(--nk-wing-opacity, .5); animation: crystal-wing-shimmer 2.8s ease-in-out infinite; }
+.crystal-flare { background: radial-gradient(circle, var(--nk-flare, #fff), transparent 62%); animation: crystal-flare-pulse 1.8s ease-in-out infinite; }
+/* The boards' WINGS and STAR5 art, for components that place a shard themselves. Never animated. */
+.crystal-wing-art { background: url('./crystal-wing.svg') center / contain no-repeat; pointer-events: none; }
+.crystal-star-art { background: url('./crystal-star.svg') center / contain no-repeat; pointer-events: none; }
+
+@keyframes crystal-starfield-drift { to { background-position: 240px 180px; } }
+@keyframes crystal-wing-shimmer { 50% { filter: brightness(1.22) saturate(1.12); } }
+@keyframes crystal-flare-pulse { 50% { opacity: .48; transform: scale(1.14); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .crystal-ornament, .crystal-starfield, .dialog-veil.crystal-starfield::before, .crystal-wing, .crystal-flare { animation: none !important; }
+}
+
+html[data-motion="reduced"] .crystal-ornament,
+html[data-motion="reduced"] .crystal-starfield,
+html[data-motion="reduced"] .dialog-veil.crystal-starfield::before,
+html[data-motion="reduced"] .crystal-wing,
+html[data-motion="reduced"] .crystal-flare { animation: none !important; }
+
+/* Practice stages: crimson wing shards and an ambient glow behind the stage, after the AnimeQuiz,
+   AnimeSpelling and AnimeMatch boards. Purely decorative: painted behind the stage content, never
+   hit-tested and never animated, so reduced motion needs no override. Scoped to the family because
+   this sheet stays loaded after switching back to Classic. Wide screens place the wings where the
+   boards do (flanking the listen button and the match clock); narrower ones
+   keep a faint pair behind the top of the stage, as AnimeMobile does. */
+html[data-theme-family=crystal] .claude-app-shell:is([data-view=quiz], [data-view=spelling], [data-view=match], [data-view=shadowing], [data-view=story]) [data-app-view-stage] {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  background: radial-gradient(ellipse 34% 36% at 50% 42%, color-mix(in srgb, var(--sf-brand) 16%, transparent), transparent 72%) no-repeat;
+}
+html[data-theme-family=crystal] .claude-app-shell:is([data-view=quiz], [data-view=spelling], [data-view=match]) [data-app-view-stage]::before,
+html[data-theme-family=crystal] .claude-app-shell:is([data-view=quiz], [data-view=spelling], [data-view=match]) [data-app-view-stage]::after {
+  position: absolute;
+  z-index: -1;
+  top: 40px;
+  width: 260px;
+  height: 180px;
+  background: url('./crystal-wing.svg') center / contain no-repeat;
+  content: '';
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-brand) 60%, transparent));
+  opacity: .16;
+  pointer-events: none;
+}
+html[data-theme-family=crystal] .claude-app-shell:is([data-view=quiz], [data-view=spelling], [data-view=match]) [data-app-view-stage]::before { left: calc(50% - 250px); }
+html[data-theme-family=crystal] .claude-app-shell:is([data-view=quiz], [data-view=spelling], [data-view=match]) [data-app-view-stage]::after { right: calc(50% - 250px); transform: scaleX(-1); }
+
+@media (min-width: 1024px) {
+  html[data-theme-family=crystal] .claude-app-shell:is([data-view=quiz], [data-view=spelling], [data-view=match]) [data-app-view-stage]::before,
+  html[data-theme-family=crystal] .claude-app-shell:is([data-view=quiz], [data-view=spelling], [data-view=match]) [data-app-view-stage]::after {
+    filter: drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 70%, transparent));
+    opacity: var(--nk-wing-opacity, .5);
+  }
+  /* AnimeQuiz: no wing at rest; the quiz card raises its own on hover. */
+  html[data-theme-family=crystal] .claude-app-shell[data-view=quiz] [data-app-view-stage]::before,
+  html[data-theme-family=crystal] .claude-app-shell[data-view=quiz] [data-app-view-stage]::after { content: none; }
+  /* AnimeSpelling: a mirrored pair flanking the listen button. */
+  html[data-theme-family=crystal] .claude-app-shell[data-view=spelling] [data-app-view-stage]::before { top: 97px; left: calc(50% - 270px); width: 300px; height: 210px; }
+  html[data-theme-family=crystal] .claude-app-shell[data-view=spelling] [data-app-view-stage]::after { top: 97px; right: calc(50% - 270px); width: 300px; height: 210px; }
+  /* AnimeMatch: a softer pair behind the clock column. */
+  html[data-theme-family=crystal] .claude-app-shell[data-view=match] [data-app-view-stage]::before { top: 209px; left: calc(50% - 215px); width: 250px; height: 190px; opacity: .5; }
+  html[data-theme-family=crystal] .claude-app-shell[data-view=match] [data-app-view-stage]::after { top: 209px; right: calc(50% - 215px); width: 250px; height: 190px; opacity: .5; }
+}
+
+/* Review session, after the AnimeReview board: a wing in each bottom corner of the screen on wide
+   viewports, so the top-right corner stays clear for the session tools. The session scrolls inside
+   the workspace, so the wings are fixed to the viewport rather than to the end of the content.
+   Decorative only, behind the session content. */
+@media (min-width: 1024px) {
+  html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage] {
+    position: relative;
+    isolation: isolate;
+  }
+  html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage]::before,
+  html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage]::after {
+    position: fixed;
+    z-index: -1;
+    bottom: -110px;
+    width: 560px;
+    height: 380px;
+    background: url('./crystal-wing.svg') center / contain no-repeat;
+    content: '';
+    filter: drop-shadow(0 0 30px color-mix(in srgb, var(--sf-brand) 55%, transparent));
+    opacity: var(--nk-wing-opacity, .5);
+    pointer-events: none;
+  }
+  html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage]::before { left: -150px; transform: rotate(-12deg); }
+  html[data-theme-family=crystal] .claude-app-shell:has([data-study-session]) [data-app-view-stage]::after { right: -150px; transform: scaleX(-1) rotate(-12deg); }
+}
+
+/* Text that sits directly on the painted backdrop, with no panel behind it. The backdrop has bright and
+   dark regions, so one text colour cannot hold contrast everywhere; a soft halo in the canvas colour gives
+   each glyph its own backing and leaves the painting untouched. Add a selector here whenever a page puts
+   secondary text or a text-only control straight on the backdrop. Filled chips are left out: the halo
+   would wash out light text on a dark fill. */
+html[data-theme-family=crystal] :is(
+  .paths-browse, .paths-shelf-count, .paths-shelf-title, .paths-header-kicker, .paths-subtitle, .paths-hero-copy,
+  .library-canvas-collection-caption, .library-canvas-summary, .library-canvas-rail button:not(.is-active), .library-canvas-view-toggle button:not(.is-active),
+  .ss-courses__add, .ss-subtitle, .ss-eyebrow, .ss-lang-note, .ss-course-add__sub, .course-manage__kicker,
+  .lesson-link, .lesson-footer-count, .placement-field-label, .placement-card-kicker, .placement-question-note,
+  .review-grades-message, .study-shell-hint,
+  .ach-back, .ach-unlocked-count, .progress-board-kicker, .progress-board-subtitle,
+  .today-crystal-lede, .profile-gate__link, .practice-story__text, .ach-profile-level
+) { text-shadow: var(--sf-on-art-halo); }
+/* Dark mode keeps the active rail chip as a faint tint over the backdrop, so its label needs the halo too. */
+html.dark[data-theme-family=crystal] :is(.library-canvas-rail, .library-canvas-view-toggle) button.is-active { text-shadow: var(--sf-on-art-halo); }
+/* Dark control tints are a few percent of white, which is no backing at all on the backdrop: these two take the glass fill. */
+html.dark[data-theme-family=crystal] :is(.library-canvas-search, .study-shell-kbd) { background: var(--sf-glass-surface); }
+/* An outline-only button on the backdrop takes the glass fill in both modes. */
+html[data-theme-family=crystal] .study-shell-learn-first { background: var(--sf-glass-surface); }
+/* The speech bubble sits next to the shards, where the light glass panel is too thin for its small accent kicker. */
+html:not(.dark)[data-theme-family=crystal] .today-crystal-bubble { --tc-panel: var(--sf-glass-card-front); }
+/* Light course cards carry small accent labels that the glass fill cannot back over the rose shards. */
+html:not(.dark)[data-theme-family=crystal] .course-card { --sf-chamfer-fill: var(--sf-solid-card); }
+/* The shelf count sits over the brightest part of the dark backdrop, where the subtle text colour falls short even with the halo. */
+html.dark[data-theme-family=crystal] .paths-shelf-count { color: var(--sf-text-muted); }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CLOUD_PAGE_SIZE,
   calculateTotalPages,
+  cardMatchesQuery,
   createLocalCardPage,
   createDailyPracticePivot,
   createPage,
@@ -245,5 +246,70 @@ describe('queryStateKey', () => {
     expect(queryStateKey(base)).not.toBe(queryStateKey({ ...base, bookmarkedOnly: true }));
     expect(queryStateKey(base)).not.toBe(queryStateKey({ ...base, wordPrefix: 'hello' }));
     expect(queryStateKey(base)).not.toBe(queryStateKey({ ...base, partOfSpeech: 'verb' }));
+    expect(queryStateKey(base)).not.toBe(queryStateKey({
+      ...base,
+      targetLanguage: 'en',
+    }));
+    expect(queryStateKey({ ...base, targetLanguage: 'en' }))
+      .not.toBe(queryStateKey({ ...base, targetLanguage: 'ko' }));
+  });
+});
+
+describe('course target filtering', () => {
+  const base = {
+    word: 'lead',
+    translation: '',
+    explanation: '',
+    phonetic: '',
+    emoji: '📘',
+    category: 'Other',
+    audioUrl: null,
+    imageUrl: null,
+  } satisfies Partial<CardData>;
+
+  it('uses English for legacy cards and ignores translation language for membership', () => {
+    const english = { ...base, id: 'english-card', translationLanguage: 'vi' } as CardData;
+    const korean = { ...base, id: 'korean-card', language: 'ko', translationLanguage: 'en' } as CardData;
+
+    expect(cardMatchesQuery(english, { ...emptyFilters(), targetLanguage: 'en' })).toBe(true);
+    expect(cardMatchesQuery(korean, { ...emptyFilters(), targetLanguage: 'en' })).toBe(false);
+    expect(cardMatchesQuery(korean, { ...emptyFilters(), targetLanguage: 'ko' })).toBe(true);
+    expect(cardMatchesQuery(english, { ...emptyFilters(), targetLanguage: 'ko' })).toBe(false);
+  });
+
+  function emptyFilters(): CardQueryState {
+    return {
+      category: null,
+      customDeck: { kind: 'all' },
+      difficulty: null,
+      partOfSpeech: null,
+      bookmarkedOnly: false,
+      createdDate: null,
+      wordPrefix: '',
+    };
+  }
+});
+
+describe('createdDate filter', () => {
+  const emptyFilters = (): CardQueryState => ({
+    category: null,
+    customDeck: ALL_PRACTICE_DECK_SCOPE,
+    difficulty: null,
+    partOfSpeech: null,
+    bookmarkedOnly: false,
+    createdDate: null,
+    wordPrefix: '',
+  });
+
+  it('matches the learner local calendar day, not the UTC date', () => {
+    const previous = process.env.TZ;
+    process.env.TZ = 'Asia/Ho_Chi_Minh';
+    try {
+      const card = { createdAt: '2026-11-18T20:00:00.000Z' } as CardData;
+      expect(cardMatchesQuery(card, { ...emptyFilters(), createdDate: '2026-11-19' })).toBe(true);
+      expect(cardMatchesQuery(card, { ...emptyFilters(), createdDate: '2026-11-18' })).toBe(false);
+    } finally {
+      if (previous === undefined) delete process.env.TZ; else process.env.TZ = previous;
+    }
   });
 });

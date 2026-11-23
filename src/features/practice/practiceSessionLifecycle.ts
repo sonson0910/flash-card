@@ -31,9 +31,12 @@ export interface PracticeSessionLifecycle {
   isActive(activity: PracticeActivity): boolean;
   clear(activity?: PracticeActivity): void;
   reset(): void;
+  studyActivationId(): number | null;
+  isStudyActivationCurrent(activationId: number): boolean;
+  isReviewClaimCurrent(cardId: string, activationId: number): boolean;
+  claimReview(cardId: string, activationId?: number): boolean;
+  settleReview(cardId: string, outcome: 'saved' | 'retry', activationId?: number): boolean;
   currentReviewToken(): number;
-  claimReview(cardId: string, reviewToken?: number): boolean;
-  settleReview(cardId: string, outcome: 'saved' | 'retry', reviewToken?: number): boolean;
   reviewedCount(): number;
   isReviewed(cardId: string): boolean;
   skipReview(cardId: string): void;
@@ -46,24 +49,34 @@ interface Preparation {
   sessionToken: number;
 }
 
+interface ActivePractice {
+  activity: PracticeActivity;
+  sessionToken: number;
+  studyActivationId?: number;
+}
+
 export function createPracticeSessionLifecycle(
   initialOwnerId: string | null,
 ): PracticeSessionLifecycle {
   let ownerId = initialOwnerId;
   let generation = 0;
   let preparation: Preparation | null = null;
-  let active: { activity: PracticeActivity; sessionToken: number } | null = null;
-  const pendingReviewIds = new Set<string>();
-  const reviewedCardIds = new Set<string>();
+  let active: ActivePractice | null = null;
+  let studyActivationSequence = 0;
+  const pendingReviewIds = new Map<string, number>();
+  const reviewedCardIds = new Map<string, number>();
   const skippedCardIds = new Set<string>();
   const failedCardIds = new Set<string>();
-  let reviewToken = 0;
 
   const currentToken = () => generation;
   const isCurrent = (sessionToken: number) => sessionToken === generation;
 
+  const currentStudyActivationId = () => active?.activity === 'study'
+    && isCurrent(active.sessionToken)
+    ? active.studyActivationId ?? null
+    : null;
+
   const resetReviewAuthority = () => {
-    reviewToken += 1;
     pendingReviewIds.clear();
     reviewedCardIds.clear();
     skippedCardIds.clear();
@@ -120,7 +133,11 @@ export function createPracticeSessionLifecycle(
 
   const activate = (activity: PracticeActivity, sessionToken: number) => {
     if (!isCurrent(sessionToken)) return false;
-    active = { activity, sessionToken };
+    active = {
+      activity,
+      sessionToken,
+      ...(activity === 'study' ? { studyActivationId: ++studyActivationSequence } : {}),
+    };
     if (activity === 'study') resetReviewAuthority();
     return true;
   };
@@ -140,25 +157,35 @@ export function createPracticeSessionLifecycle(
     if (activity === 'study') resetReviewAuthority();
   };
 
-  const claimReview = (cardId: string, expectedReviewToken = reviewToken) => {
-    if (expectedReviewToken !== reviewToken) return false;
-    if (!isActive('study')) return false;
+  const claimReview = (cardId: string, activationId = currentStudyActivationId()) => {
+    if (activationId === null || !isStudyActivationCurrent(activationId)) return false;
     if (pendingReviewIds.has(cardId) || reviewedCardIds.has(cardId)) return false;
-    pendingReviewIds.add(cardId);
+    pendingReviewIds.set(cardId, activationId);
     failedCardIds.delete(cardId);
     return true;
   };
 
-  const settleReview = (cardId: string, outcome: 'saved' | 'retry', expectedReviewToken = reviewToken) => {
-    if (expectedReviewToken !== reviewToken) return false;
-    const wasPending = pendingReviewIds.delete(cardId);
-    if (!isActive('study') || !wasPending) return false;
-    if (outcome === 'saved') reviewedCardIds.add(cardId);
+  const isStudyActivationCurrent = (activationId: number) => currentStudyActivationId() === activationId;
+
+  const isReviewClaimCurrent = (cardId: string, activationId: number) => {
+    if (!isStudyActivationCurrent(activationId)) return false;
+    return pendingReviewIds.get(cardId) === activationId || reviewedCardIds.get(cardId) === activationId;
+  };
+
+  const settleReview = (cardId: string, outcome: 'saved' | 'retry', activationId = currentStudyActivationId()) => {
+    if (activationId === null || !isStudyActivationCurrent(activationId)) return false;
+    if (pendingReviewIds.get(cardId) !== activationId) return false;
+    pendingReviewIds.delete(cardId);
+    if (outcome === 'saved') reviewedCardIds.set(cardId, activationId);
     else failedCardIds.add(cardId);
     return true;
   };
 
-  const isReviewed = (cardId: string) => isActive('study') && reviewedCardIds.has(cardId);
+  const isReviewed = (cardId: string) => {
+    const activationId = currentStudyActivationId();
+    return activationId !== null && reviewedCardIds.get(cardId) === activationId;
+  };
+
   const reviewedCount = () => reviewedCardIds.size;
   const skipReview = (cardId: string) => {
     if (isActive('study') && !reviewedCardIds.has(cardId)) skippedCardIds.add(cardId);
@@ -185,7 +212,10 @@ export function createPracticeSessionLifecycle(
     isActive,
     clear,
     reset,
-    currentReviewToken: () => reviewToken,
+    studyActivationId: currentStudyActivationId,
+    isStudyActivationCurrent,
+    isReviewClaimCurrent,
+    currentReviewToken: () => currentStudyActivationId() ?? studyActivationSequence,
     claimReview,
     settleReview,
     reviewedCount,

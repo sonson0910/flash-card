@@ -17,10 +17,13 @@ const COMPONENT_PATHS = Object.freeze({
   rootLock: { path: 'package-lock.json', type: 'file' },
   firestoreRules: { path: 'firestore.rules', type: 'file' },
   firestoreIndexes: { path: 'firestore.indexes.json', type: 'file' },
+  storageRules: { path: 'storage.rules', type: 'file' },
   firebaseConfig: { path: 'firebase.json', type: 'file' },
   firebaseAppletConfig: { path: 'firebase-applet-config.json', type: 'file' },
   readiness: { path: 'artifacts/phase6-readiness.json', type: 'file' },
 });
+
+const RELEASE_MANIFEST_PATH = 'artifacts/release-candidate-manifest.json';
 
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 
@@ -123,6 +126,11 @@ export function validateFirebaseDeploymentConfig(config, {
   }
   if (!FIRESTORE_DATABASE_ID.test(firestoreTarget.database)) {
     throw new Error('Firebase deployment config requires one valid explicit Firestore database ID.');
+  }
+  // The sealed Storage Rules are deployed by the Rules workflows, so the config must carry them.
+  const storageTarget = requireSingleDeploymentTarget(config.storage, 'Storage');
+  if (storageTarget.rules !== COMPONENT_PATHS.storageRules.path) {
+    throw new Error('Firebase deployment config Storage Rules path must be the sealed rules file.');
   }
   if (expectedFirestoreDatabaseId !== undefined) {
     if (!FIRESTORE_DATABASE_ID.test(expectedFirestoreDatabaseId)) {
@@ -280,6 +288,48 @@ const validateReleaseTargets = (root, {
   })) };
 };
 
+export function validateStagingReleaseTarget(root = process.cwd()) {
+  const relativePath = 'firebase-targets/staging.json';
+  const file = path.resolve(root, relativePath);
+  requireFile(root, relativePath, 'stagingTarget');
+  const bytes = fs.readFileSync(file);
+  if (bytes.byteLength > 65_536) throw new Error('Staging target config exceeds 64 KiB.');
+  let target;
+  try {
+    target = JSON.parse(bytes.toString('utf8'));
+  } catch {
+    throw new Error('Staging target config is not valid JSON.');
+  }
+  if (
+    target?.projectId !== 'sonflash-staging-20260906'
+    || target?.appId !== '1:890120640842:web:f8a858029dc582fc7e49b3'
+    || target?.authDomain !== 'sonflash-staging-20260906.firebaseapp.com'
+    || target?.firestoreDatabaseId !== 'ai-studio-945b4052-4462-4668-8936-277f09f07a37'
+    || target?.region !== 'asia-southeast1'
+    || typeof target.apiKey !== 'string' || !target.apiKey.trim()
+    || typeof target.appCheckSiteKey !== 'string' || !target.appCheckSiteKey.trim()
+  ) {
+    throw new Error('Staging target does not match the sealed project, app, database, region, and App Check identity.');
+  }
+  const deploymentConfig = readFirebaseDeploymentConfig(root);
+  validateFirebaseDeploymentConfig(deploymentConfig, {
+    expectedFirestoreDatabaseId: target.firestoreDatabaseId,
+  });
+  const appletDatabaseId = readSingleStagingDatabaseId(target);
+  const runtimeTarget = readFunctionsRuntimeTarget(root);
+  if (appletDatabaseId !== runtimeTarget.firestoreDatabaseId) {
+    throw new Error('Staging client and Functions runtime databases do not match.');
+  }
+  return {
+    projectId: target.projectId,
+    databaseId: target.firestoreDatabaseId,
+    appId: target.appId,
+    region: target.region,
+  };
+}
+
+const readSingleStagingDatabaseId = target => target.firestoreDatabaseId;
+
 const readReadinessEvidence = root => {
   const relativePath = COMPONENT_PATHS.readiness.path;
   const file = path.resolve(root, relativePath);
@@ -352,6 +402,27 @@ export function sealReleaseArtifact({ root = process.cwd(), revision, workflowRu
   return { ...manifest, candidateSha256: candidateDigest(manifest) };
 }
 
+// Deploy steps read more than the sealed paths (npm prefers functions/npm-shrinkwrap.json over the
+// sealed lock, and a Functions source directory loads any file it names), so the candidate root
+// must hold nothing but the sealed files and their manifest.
+const requireOnlySealedFiles = (root, components) => {
+  const sealed = new Set([RELEASE_MANIFEST_PATH]);
+  for (const component of Object.values(components)) {
+    for (const file of component.files ?? [component]) sealed.add(file.path);
+  }
+  const visit = relativeDirectory => {
+    for (const entry of fs.readdirSync(path.join(root, relativeDirectory), { withFileTypes: true })) {
+      const child = relativeDirectory ? `${relativeDirectory}/${entry.name}` : entry.name;
+      if (entry.isSymbolicLink()) throw new Error(`Release candidate contains a symbolic link at ${child}.`);
+      if (entry.isDirectory()) visit(child);
+      else if (!entry.isFile() || !sealed.has(child)) {
+        throw new Error(`Release candidate holds ${child} outside the sealed components.`);
+      }
+    }
+  };
+  visit('');
+};
+
 const exactKeys = (value, expected) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const actual = Object.keys(value).sort();
@@ -369,6 +440,9 @@ export function verifyReleaseArtifact({
     throw new Error('Release artifact manifest schema is invalid.');
   }
   if (manifest.schemaVersion !== 1) throw new Error('Unsupported release artifact schemaVersion.');
+  if (!exactKeys(manifest.components, Object.keys(COMPONENT_PATHS))) {
+    throw new Error('Release artifact manifest components must be exactly the sealed component set.');
+  }
   validateSealInputs(manifest);
   const revision = expectedRevision.trim().toLowerCase();
   if (manifest.revision !== revision) throw new Error('Release artifact revision does not match the approved revision.');
@@ -393,12 +467,13 @@ export function verifyReleaseArtifact({
       throw new Error(`Release artifact component ${name} does not match its sealed digest.`);
     }
   }
+  requireOnlySealedFiles(candidateRoot, currentComponents);
   return manifest;
 }
 
 const stripHooks = value => {
   const copy = structuredClone(value);
-  const targets = [copy.functions, copy.firestore, copy.hosting].flat().filter(Boolean);
+  const targets = [copy.functions, copy.firestore, copy.hosting, copy.storage].flat().filter(Boolean);
   for (const target of targets) {
     if (target && typeof target === 'object' && !Array.isArray(target)) {
       delete target.predeploy;
@@ -408,10 +483,52 @@ const stripHooks = value => {
   return copy;
 };
 
-export function createPromotedFirebaseConfig(config, options) {
+const STAGING_ROBOTS_PATH = 'robots-disallow.txt';
+
+// The sealed build carries production robots and no noindex meta, because one artifact serves both
+// targets. A staging promotion therefore adds the search directives to its Hosting config: the
+// noindex header always, and the robots redirect only when the candidate ships the file it targets.
+export function createPromotedFirebaseConfig(
+  config,
+  { hostingEnvironment = 'production', stagingRobotsRedirect = true, ...options } = {},
+) {
+  if (!['production', 'staging'].includes(hostingEnvironment)) {
+    throw new Error('Promoted Hosting environment must be production or staging.');
+  }
   validateFirebaseDeploymentConfig(config, options);
-  return stripHooks(config);
+  const promoted = stripHooks(config);
+  if (hostingEnvironment === 'staging') {
+    const hosting = Array.isArray(promoted.hosting) ? promoted.hosting[0] : promoted.hosting;
+    hosting.headers = [
+      ...(hosting.headers ?? []),
+      { source: '**', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+    ];
+    if (stagingRobotsRedirect) {
+      hosting.redirects = [
+        { source: '/robots.txt', destination: `/${STAGING_ROBOTS_PATH}`, type: 302 },
+        ...(hosting.redirects ?? []),
+      ];
+    }
+  }
+  return promoted;
 }
+
+// A candidate sealed before the build shipped robots-disallow.txt cannot gain it without re-sealing, and a
+// retained candidate (the A/R shell) must still stage, so a missing file only drops the robots redirect.
+const stagingRobotsFileShipped = root => {
+  const relativePath = `${COMPONENT_PATHS.dist.path}/${STAGING_ROBOTS_PATH}`;
+  try {
+    fs.lstatSync(path.resolve(root, relativePath));
+  } catch (error) {
+    if (error?.code === 'ENOENT') return false;
+    throw error;
+  }
+  requireFile(root, relativePath, 'stagingRobots');
+  if (!/^Disallow:\s*\/\s*$/m.test(fs.readFileSync(path.resolve(root, relativePath), 'utf8'))) {
+    throw new Error('The candidate robots-disallow.txt must disallow all crawling.');
+  }
+  return true;
+};
 
 const parseOptions = args => {
   const options = new Map();
@@ -471,8 +588,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const root = path.resolve(options.get('--root') || '.');
     const source = path.resolve(root, options.get('--source') || 'firebase.json');
     const output = path.resolve(root, options.get('--output') || 'firebase.promoted.json');
+    const hostingEnvironment = options.get('--hosting-environment') || 'production';
+    const stagingRobotsRedirect = hostingEnvironment === 'staging' && stagingRobotsFileShipped(root);
+    if (hostingEnvironment === 'staging' && !stagingRobotsRedirect) {
+      console.log('Candidate ships no robots-disallow.txt; staging Hosting gets the noindex header without the robots redirect.');
+    }
     writeJson(output, createPromotedFirebaseConfig(JSON.parse(fs.readFileSync(source, 'utf8')), {
       expectedFirestoreDatabaseId: options.get('--database-id'),
+      hostingEnvironment,
+      stagingRobotsRedirect,
     }));
     console.log(`Wrote hook-free promoted Firebase config to ${path.relative(root, output)}.`);
   } else {

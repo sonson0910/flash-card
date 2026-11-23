@@ -3,13 +3,11 @@ export const canStartLibraryClear = (isLibraryMutationInFlight: boolean) => !isL
 export async function runEpochProtectedLibraryClear({
   incrementEpoch,
   onEpochAdvanced,
-  clearPending,
   deleteCards,
   assertActive = () => undefined,
 }: {
   incrementEpoch: () => Promise<number>;
   onEpochAdvanced: (epoch: number) => void;
-  clearPending: () => Promise<void>;
   deleteCards: (epoch: number) => Promise<void>;
   assertActive?: () => void;
 }): Promise<number> {
@@ -18,18 +16,19 @@ export async function runEpochProtectedLibraryClear({
   assertActive();
   onEpochAdvanced(nextEpoch);
   assertActive();
-  await clearPending();
-  assertActive();
   await deleteCards(nextEpoch);
   assertActive();
   return nextEpoch;
 }
 
-export const planClearFailureRecovery = (cardDeletionCompleted: boolean) => ({
+/** Once the epoch has advanced, the clear is recorded as pending and the next app load finishes it. */
+export const planClearFailureRecovery = (cardDeletionCompleted: boolean, epochAdvanced = false) => ({
   clearLocalView: cardDeletionCompleted,
   message: cardDeletionCompleted
     ? 'Cards were deleted, but library metadata could not be fully reset. Refreshing the cloud view now.'
-    : 'The clear operation stopped before it could be verified. Some cards may already have been deleted; refreshing the cloud view now.',
+    : epochAdvanced
+      ? 'The clear stopped part way. Some cards may already have been deleted; the rest are deleted the next time the app opens, or clear the library again now.'
+      : 'The clear operation stopped before it could be verified. Some cards may already have been deleted; refreshing the cloud view now.',
 });
 
 export const planDeckDeletionFailureRecovery = (

@@ -1,0 +1,95 @@
+<!--#HEAD Lesson-->
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column; padding-bottom: 56px;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 3; height: 80px; padding: 0 40px; display: flex; align-items: center; gap: 16px;">
+    <a href="#" aria-label="Leave lesson" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+    </a>
+    <span style="font-size: 14px; font-weight: 600; color: {{t.text2}};">Today’s lesson <span style="color: {{t.text3}};">· Unit 4 · Work and ambition</span></span>
+    <div style="margin: 0 auto; display: flex; gap: 5px;" aria-label="Exercise 4 of 9">
+      <sc-for list="{{segments}}" as="s" hint-placeholder-count="9">
+        <span style="width: 40px; height: 4px; border-radius: 4px; background: {{s.bg}}; box-shadow: {{s.glow}};"></span>
+      </sc-for>
+    </div>
+    <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: {{t.text2}};">4 / 9</span>
+    <button onClick="{{toggleTheme}}" aria-label="{{t.toggleLabel}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <sc-if value="{{t.dark}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+      <sc-if value="{{t.light}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"></path></svg></sc-if>
+    </button>
+  </header>
+
+  <nav aria-label="Exercise types in this lesson" style="position: relative; z-index: 2; margin-top: 6px; display: flex; justify-content: center; gap: 6px;">
+    <sc-for list="{{types}}" as="x" hint-placeholder-count="6">
+      <span aria-current="{{x.current}}" style="height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid {{x.line}}; background: {{x.bg}}; color: {{x.color}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 6px; opacity: {{x.opacity}};">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: {{x.dot}};"></span>{{x.label}}
+      </span>
+    </sc-for>
+  </nav>
+
+  <main style="position: relative; z-index: 2; width: 960px; margin: auto;">
+    <div class="sf-rise" style="position: relative; box-sizing: border-box; border-radius: {{t.cardRadius}}px; border: {{card.border}}; background: {{card.bg}}; box-shadow: {{card.shadow}}; padding: 40px 48px 36px; overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="height: 28px; padding: 0 11px; border-radius: 999px; background: {{t.accentSoft}}; border: 1px solid {{t.accentLine}}; color: {{t.accentText}}; font-size: 12px; font-weight: 650; letter-spacing: 0.04em; display: flex; align-items: center;">ACTIVE RECALL · CLOZE</span>
+        <span style="font-size: 13px; color: {{t.text3}};">Type the missing word</span>
+      </div>
+      <p style="margin: 30px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 44px; line-height: 1.3; letter-spacing: -0.02em; color: {{t.textStrong}};">
+        The council promised an
+        <span style="display: inline-flex; align-items: baseline; min-width: 250px; padding: 0 8px 4px; border-bottom: 3px solid {{t.accent}}; box-shadow: {{t.blankGlow}}; color: {{t.emColor}}; font-style: {{t.emStyle}};">imme<span aria-hidden="true" style="width: 3px; height: 40px; margin-left: 3px; align-self: center; background: {{t.accent}}; border-radius: 2px;"></span></span>
+        response to the flood.
+      </p>
+      <p style="margin: 18px 0 0; font-size: 17px; color: {{t.text2}};">Gợi ý: <span style="color: {{t.body}};">Hội đồng hứa sẽ có phản hồi <b style="color: {{t.textStrong}}; font-weight: 650;">ngay lập tức</b> với trận lũ.</span></p>
+
+      <div style="margin-top: 34px; display: flex; align-items: center; gap: 12px;">
+        <span style="flex-grow: 1; height: 60px; box-sizing: border-box; padding: 0 8px 0 20px; border-radius: {{t.inputR}}px; border: 1.5px solid {{t.accentLine}}; background: {{t.inputBg}}; box-shadow: {{t.focusRing}}; display: flex; align-items: center; gap: 10px;">
+          <input value="imme" aria-label="Your answer" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: {{t.textStrong}}; font-family: Fraunces, Georgia, serif; font-size: 24px;">
+          <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: {{t.text3}};">4 / 9 letters</span>
+          <button class="sf-press" style="height: 44px; padding: 0 18px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14.5px; font-weight: 650; display: flex; align-items: center; gap: 10px; cursor: pointer;">Check <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; padding: 2px 6px; border-radius: 5px; background: {{t.primaryKbdBg}};">Enter</span></button>
+        </span>
+      </div>
+      <div style="margin-top: 16px; display: flex; align-items: center; gap: 10px;">
+        <button class="sf-press" style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; cursor: pointer;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"></path></svg>Hint · first letters used
+        </button>
+        <button class="sf-press" style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; cursor: pointer;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg>Hear the sentence
+        </button>
+        <a href="#" style="margin-left: auto; font-size: 13.5px; font-weight: 600; color: {{t.text3}}; text-decoration: none;">I don’t know — show me</a>
+      </div>
+    </div>
+    <div style="margin-top: 22px; display: flex; justify-content: space-between; font-size: 13px; color: {{t.text3}};">
+      <span>Next: <span style="color: {{t.text2}};">Spelling · “recharge”</span></span>
+      <span>About 3 min left · +40 XP on finish</span>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"onToggleTheme":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), inputR: dark ? 18 : 12,
+      focusRing: dark ? '0 0 0 4px rgb(40 211 244 / 0.12)' : '0 0 0 4px rgb(180 70 26 / 0.1)',
+      blankGlow: dark ? '0 10px 20px -14px rgb(40 211 244 / 0.9)' : 'none' };
+    const card = dark
+      ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 70% 60% at 100% 0%, rgb(150 108 215 / 0.22), transparent 70%) padding-box, ' + t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', shadow: t.cardShadow + ', 0 0 60px -20px rgb(40 211 244 / 0.45)' }
+      : { border: '0', bg: t.cardBg, shadow: t.cardShadow };
+    const labels = ['Recognition', 'Active recall', 'Listening', 'Cloze', 'Spelling', 'Sentence building'];
+    const state = ['done', 'done', 'done', 'current', 'upcoming', 'upcoming'];
+    return {
+      t, card, grainId: 'lesson-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: 100, ay: -300, bx: 900, by: 420 },
+      toggleTheme: this.props.onToggleTheme ?? (() => {}),
+      types: labels.map((label, i) => {
+        const s = state[i];
+        if (s === 'current') return { label, current: 'step', line: t.accentLine, bg: t.accentSoft, color: t.accentText, dot: t.accent, opacity: 1 };
+        if (s === 'done') return { label, current: 'false', line: t.line, bg: 'transparent', color: t.text2, dot: t.good, opacity: 1 };
+        return { label, current: 'false', line: t.line, bg: 'transparent', color: t.text3, dot: t.track, opacity: 0.8 };
+      }),
+      segments: Array.from({ length: 9 }, (_, i) => ({ bg: i < 3 ? t.accent : i === 3 ? t.accentLine : t.track, glow: dark && i < 3 ? '0 0 8px rgb(40 211 244 / 0.55)' : 'none' })),
+    };
+  }
+}
+</script>
+</body>
+</html>

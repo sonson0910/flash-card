@@ -1,16 +1,13 @@
-import { getSyncHealth, type SyncHealthInput } from '../../features/sync/syncHealthModel';
-
-export interface ShellSyncStatusInput extends SyncHealthInput {
+export interface ShellSyncStatusInput {
+  isOnline: boolean;
   cloudUnavailable: boolean;
   isCheckingCloud?: boolean;
+  /** The shown library page came from the device cache and the server has not confirmed it yet. */
+  awaitingCloudConfirmation?: boolean;
+  error?: string | null;
 }
 
-export type ShellSyncStatusKind =
-  | 'synced'
-  | 'checking'
-  | 'offline'
-  | 'cloud-paused'
-  | Exclude<ReturnType<typeof getSyncHealth>['kind'], 'saved'>;
+export type ShellSyncStatusKind = 'synced' | 'checking' | 'offline' | 'cloud-paused' | 'awaiting-cloud' | 'needs-attention';
 
 export interface ShellSyncStatus {
   kind: ShellSyncStatusKind;
@@ -23,16 +20,16 @@ export interface ShellSyncStatus {
 }
 
 export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus {
-  const health = getSyncHealth(input);
-  if (health.kind !== 'saved') {
+  const errorMessage = input.error?.trim();
+  if (errorMessage) {
     return {
-      kind: health.kind,
-      headerLabel: health.label,
-      footerLabel: health.label,
-      detail: health.message,
+      kind: 'needs-attention',
+      headerLabel: 'Needs attention',
+      footerLabel: 'Needs attention',
+      detail: errorMessage,
       healthy: false,
-      busy: health.busy,
-      canRetry: health.canRetry,
+      busy: false,
+      canRetry: true,
     };
   }
   if (input.isCheckingCloud) {
@@ -50,8 +47,8 @@ export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus
     return {
       kind: 'offline',
       headerLabel: 'Offline',
-      footerLabel: 'Offline, using cache',
-      detail: health.message,
+      footerLabel: 'Offline',
+      detail: 'You are offline. Reconnect to keep studying.',
       healthy: false,
       busy: false,
       canRetry: false,
@@ -61,18 +58,29 @@ export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus
     return {
       kind: 'cloud-paused',
       headerLabel: 'Cloud paused',
-      footerLabel: 'Cloud paused, using cache',
-      detail: 'Live cloud updates are unavailable. Showing the last successful local copy.',
+      footerLabel: 'Cloud paused',
+      detail: 'Live cloud updates are unavailable. Retry when your connection improves.',
       healthy: false,
       busy: false,
       canRetry: true,
+    };
+  }
+  if (input.awaitingCloudConfirmation) {
+    return {
+      kind: 'awaiting-cloud',
+      headerLabel: 'Waiting for cloud',
+      footerLabel: 'Waiting for cloud',
+      detail: 'Showing the copy saved on this device until the cloud confirms it.',
+      healthy: false,
+      busy: true,
+      canRetry: false,
     };
   }
   return {
     kind: 'synced',
     headerLabel: 'Synced',
     footerLabel: 'Online',
-    detail: health.message,
+    detail: 'All changes are saved.',
     healthy: true,
     busy: false,
     canRetry: false,

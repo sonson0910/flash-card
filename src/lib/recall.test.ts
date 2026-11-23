@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CardData } from '../types/card';
-import { buildRecallPrompt, isRecallAnswerCorrect, resolveRecallMode, type RecallMode } from './recall';
+import { buildRecallPrompt, isRecallAnswerCorrect, resolveRecallMode, type RecallMode, type RecallPromptCopy } from './recall';
 
 const card: CardData = {
   id: 'card-1',
@@ -15,7 +15,7 @@ const card: CardData = {
 };
 
 describe('buildRecallPrompt', () => {
-  it.each<RecallMode>(['adaptive', 'en-to-vi', 'vi-to-en', 'image-to-word', 'listen-to-word', 'cloze'])('keeps the answer separate in %s mode', mode => {
+  it.each<RecallMode>(['adaptive', 'target-to-native', 'native-to-target', 'image-to-word', 'listen-to-word', 'cloze'])('keeps the answer separate in %s mode', mode => {
     const prompt = buildRecallPrompt(card, mode);
 
     expect(prompt.answer).toBeTruthy();
@@ -28,9 +28,20 @@ describe('buildRecallPrompt', () => {
   });
 
   it('raises adaptive difficulty as the correct streak grows', () => {
-    expect(resolveRecallMode({ ...card, correctStreak: 0 }, 'adaptive')).toBe('en-to-vi');
-    expect(resolveRecallMode({ ...card, correctStreak: 1 }, 'adaptive')).toBe('vi-to-en');
+    expect(resolveRecallMode({ ...card, correctStreak: 0 }, 'adaptive')).toBe('target-to-native');
+    expect(resolveRecallMode({ ...card, correctStreak: 1 }, 'adaptive')).toBe('native-to-target');
     expect(resolveRecallMode({ ...card, correctStreak: 3 }, 'adaptive')).toBe('cloze');
+  });
+
+  it('uses language-neutral direction copy', () => {
+    const copy: RecallPromptCopy = {
+      missingVocabularyWord: '', completeMissingWord: '', recallTargetWord: 'Recall the English word',
+      translateMeaning: '', nameWhatYouSee: '', visualRecall: '', listenAndRecallSpelling: '', audioRecall: '',
+      recallNativeMeaning: 'Recall the meaning in Vietnamese',
+    };
+
+    expect(buildRecallPrompt(card, 'native-to-target', copy).instruction).toBe('Recall the English word');
+    expect(buildRecallPrompt(card, 'target-to-native', copy).instruction).toBe('Recall the meaning in Vietnamese');
   });
 
   it('builds a cloze without leaking the answer', () => {

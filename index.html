@@ -7,11 +7,52 @@
     <meta name="theme-color" content="#0e7490" />
     <meta name="description" content="SonFlash — smart vocabulary learning with active recall and FSRS." />
     <script>
+      const root = document.documentElement;
+      let savedLocale = null;
+      let savedMode = null;
+      let followSystem = false;
       try {
-        document.documentElement.classList.toggle('dark', localStorage.getItem('lingoflash_theme') !== 'light');
+        savedMode = localStorage.getItem('lingoflash_theme');
+        followSystem = localStorage.getItem('sonflash_theme_follow_system') === 'true';
+        root.dataset.themeFamily = localStorage.getItem('sonflash_theme_family') === 'crystal' ? 'crystal' : 'classic';
+        root.dataset.lumi = localStorage.getItem('sonflash_lumi_enabled') === 'false' ? 'off' : 'on';
+        root.dataset.motion = localStorage.getItem('sonflash_reduced_motion') === 'true' ? 'reduced' : 'system';
+        savedLocale = localStorage.getItem('sonflash_ui_locale');
       } catch {
-        document.documentElement.classList.add('dark');
+        root.dataset.themeFamily = 'classic';
+        root.dataset.lumi = 'on';
+        root.dataset.motion = 'system';
       }
+      if (root.dataset.themeFamily === 'crystal') {
+        const crystalStylesheet = document.createElement('link');
+        crystalStylesheet.id = 'sonflash-crystal-theme';
+        crystalStylesheet.rel = 'stylesheet';
+        crystalStylesheet.href = '/theme-crystal.css';
+        document.head.append(crystalStylesheet);
+      }
+      let dark = savedMode === 'dark';
+      if (followSystem || (savedMode !== 'dark' && savedMode !== 'light')) {
+        try { dark = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)').matches : true; }
+        catch { dark = true; }
+      }
+      root.classList.toggle('dark', dark);
+      const qa = ['localhost', '127.0.0.1'].includes(location.hostname) || location.hostname.includes('--');
+      const queryLocale = qa ? new URLSearchParams(location.search).get('locale') : null;
+      const allowed = value => {
+        const normalized = typeof value === 'string' ? value.trim().replaceAll('_', '-').toLowerCase() : '';
+        return normalized === 'en' || normalized === 'vi' || (qa && normalized === 'pseudo') ? normalized : null;
+      };
+      const pathLocale = location.pathname === '/' ? 'en' : /^\/vi\/?$/i.test(location.pathname) ? 'vi' : null;
+      let locale = allowed(queryLocale) || allowed(savedLocale) || pathLocale;
+      if (!locale) {
+        for (const value of navigator.languages || []) {
+          if (/^vi(?:-|$)/i.test(value)) { locale = 'vi'; break; }
+          if (/^en(?:-|$)/i.test(value)) { locale = 'en'; break; }
+        }
+      }
+      if (!locale) locale = 'en';
+      root.lang = locale === 'pseudo' ? 'en-XA' : locale;
+      root.dir = 'ltr';
     </script>
     <link rel="icon" href="/favicon-32.png?v=3e7aaa58" type="image/png" sizes="32x32" />
     <link rel="icon" href="/favicon-192.png?v=3e7aaa58" type="image/png" sizes="192x192" />

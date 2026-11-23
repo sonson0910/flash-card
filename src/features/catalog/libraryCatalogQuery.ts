@@ -1,3 +1,4 @@
+import type { CardQueryState } from '../../lib/cardQuery';
 import {
   ALL_PRACTICE_DECK_SCOPE,
   practiceDeckScopeForLibraryDeck,
@@ -16,7 +17,7 @@ export const LIBRARY_QUERY_KEYS = [
   'page',
 ] as const;
 
-export type LibraryDifficulty = 'All' | 'due' | 'easy' | 'good' | 'hard' | 'unrated';
+export type LibraryDifficulty = 'All' | 'due' | 'easy' | 'good' | 'hard' | 'learning' | 'unrated' | 'mastered';
 
 export interface LibraryCatalogQuery {
   search: string;
@@ -35,8 +36,30 @@ const allowedDifficulties = new Set<LibraryDifficulty>([
   'easy',
   'good',
   'hard',
+  'learning',
   'unrated',
+  'mastered',
 ]);
+
+/**
+ * The "mastered" tier (the Star tier on Progress and in Vocabulary) is the stored rating Easy:
+ * `difficulty == 'easy'`. That is the field the cloud count behind Progress "All N" counts and the
+ * one equality filter Firestore can serve from the existing `difficulty` index, so a mastered page
+ * costs exactly what an Easy page costs and its total matches N. The grid's Star badge, the Learning
+ * tab and the overview counts use the same rule, so one card never lands in two classes.
+ */
+export const MASTERED_CARD_DIFFICULTY = 'easy' as const;
+
+/**
+ * The card query difficulty that serves a Vocabulary filter value, `null` for no filter. The "learning" tier
+ * is the stored ratings Good and Hard together, served by one `in` filter over the same `difficulty` index,
+ * so the page, its total and the page count all follow it instead of narrowing a loaded page.
+ */
+export function cardQueryDifficulty(difficulty: LibraryDifficulty): CardQueryState['difficulty'] {
+  if (difficulty === 'All') return null;
+  if (difficulty === 'mastered') return MASTERED_CARD_DIFFICULTY;
+  return difficulty;
+}
 
 function boundedParam(params: URLSearchParams, key: string, fallback: string, limit: number): string {
   return (params.get(key) ?? fallback).slice(0, limit);

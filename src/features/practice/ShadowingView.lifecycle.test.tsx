@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { i18n } from '@lingui/core';
+i18n.load('en', {}); i18n.activate('en');
 
 const runtime = vi.hoisted(() => ({
   cursor: 0,
@@ -8,7 +10,8 @@ const runtime = vi.hoisted(() => ({
   cleanups: [] as Array<() => void>,
 }));
 
-vi.mock('react', () => ({
+vi.mock('react', async importOriginal => ({
+  ...await importOriginal<typeof import('react')>(),
   useState: <T,>(initial: T) => {
     const index = runtime.cursor++;
     if (!(index in runtime.states)) runtime.states[index] = initial;
@@ -26,11 +29,17 @@ vi.mock('react', () => ({
   useCallback: <T,>(callback: T) => callback,
 }));
 
-const addXp = vi.hoisted(() => vi.fn());
+vi.mock('@lingui/react', () => ({
+  Trans: ({ message }: { message: string }) => message,
+  useLingui: () => ({ _: (value: { message: string }) => value.message }),
+}));
+
 vi.mock('../../lib/audio', () => ({ playWordAudio: vi.fn(() => ({ cancel: vi.fn() })) }));
+vi.mock('../courses/CourseGate', () => ({ useCourseSession: () => ({ model: { activeCourse: null } }) }));
 vi.mock('../../lib/confetti', () => ({ triggerConfetti: vi.fn() }));
 vi.mock('../../lib/haptics', () => ({ triggerHaptic: vi.fn() }));
-vi.mock('../../lib/interactionSounds', () => ({ playRewardSound: vi.fn() }));
+const playRewardSound = vi.hoisted(() => vi.fn());
+vi.mock('../../lib/interactionSounds', () => ({ playRewardSound }));
 vi.mock('../../lib/speechMatch', () => ({ scoreSpeechMatch: vi.fn(() => ({ score: 100, matchedWords: [] })) }));
 
 import { ShadowingView } from './ShadowingView';
@@ -66,9 +75,7 @@ describe('ShadowingView recognition lifecycle', () => {
     runtime.states = [];
     runtime.refs = [];
     runtime.cleanups = [];
-    addXp.mockClear();
-
-    const tree = ShadowingView({ cards: [card], onClose: vi.fn(), onAddXp: addXp });
+    const tree = ShadowingView({ cards: [card], onClose: vi.fn() });
     button(tree, 'Start reading').props.onClick();
     button(tree, 'Start reading').props.onClick();
 
@@ -79,7 +86,7 @@ describe('ShadowingView recognition lifecycle', () => {
     recognitions[1].onresult(final);
     recognitions[1].onresult(final);
 
-    expect(addXp).toHaveBeenCalledTimes(1);
+    expect(playRewardSound).toHaveBeenCalledOnce();
     runtime.cleanups.forEach(cleanup => cleanup());
     expect(recognitions[1].abort).toHaveBeenCalledOnce();
     vi.unstubAllGlobals();

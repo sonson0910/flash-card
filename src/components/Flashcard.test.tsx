@@ -1,188 +1,104 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { Flashcard } from './Flashcard';
 
-const zenMode = vi.hoisted(() => ({ enabled: false }));
-
-vi.mock('../lib/useZenGlassMode', () => ({
-  useZenGlassMode: () => [zenMode.enabled, vi.fn()],
+const accountSession = vi.hoisted(() => ({ signedIn: false }));
+vi.mock('../features/account/accountDataService', () => ({
+  isAccountSignedIn: () => accountSession.signedIn,
 }));
 
-afterEach(() => {
-  zenMode.enabled = false;
-});
+const cardSurfaceSource = ['./Flashcard.tsx', './flashcard/CardFront.tsx', './flashcard/CardBack.tsx']
+  .map(path => readFileSync(fileURLToPath(new URL(path, import.meta.url)), 'utf8'))
+  .join('\n');
+i18n.load('en', {});
+i18n.activate('en');
+const renderCard = (node: ReactNode) => renderToStaticMarkup(<I18nProvider i18n={i18n}>{node}</I18nProvider>);
+
+const effectCard = {
+  id: 'canvas-effects-contract',
+  word: 'luminous',
+  translation: 'phát sáng',
+  explanation: 'Giving off light.',
+  phonetic: '/ˈluːmɪnəs/',
+  emoji: '✨',
+  category: 'Science',
+  audioUrl: null,
+  imageUrl: null,
+  origin: 'ai' as const,
+  difficulty: 'easy' as const,
+};
 
 describe('Flashcard mobile controls', () => {
-  it('cancels a queued learning-details focus restore when the dialog reopens or unmounts', () => {
-    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+  it('keeps the Canvas effect hooks on the live card and preserves edit lifecycle callbacks', () => {
+    const html = renderCard(
+      <Flashcard
+        data={effectCard}
+        onToggleBookmark={vi.fn()}
+        onUpdateCard={vi.fn()}
+        onEditOpenChange={vi.fn()}
+      />,
+    );
+    const source = cardSurfaceSource;
 
-    expect(source).toContain('cancelLearningDetailsFocusRestore');
-    expect(source).toContain('globalThis.clearTimeout(learningDetailsFocusTimerRef.current)');
-    expect(source).toContain('globalThis.cancelAnimationFrame(learningDetailsFocusFrameRef.current)');
-    expect(source).toContain('if (open) cancelLearningDetailsFocusRestore()');
-    expect(source).toContain('useEffect(() => cancelLearningDetailsFocusRestore, [])');
+    expect(html).toContain('data-card-effects="tilt spotlight aura flip star blind audio tier-rim hover-wings"');
+    expect(html).toContain('data-card-effect="hover-wings"');
+    expect(html).toContain('data-card-effect="star-pop"');
+    expect(html).toContain('data-card-effect="blind-image"');
+    expect(html).toContain('data-card-effect="audio"');
+    expect(source).toContain('onEditOpenChange?: (open: boolean) => void;');
+    expect(source).toContain('onOpenChange={setEditDialogOpen}');
   });
 
-  it('links a trimmed card word to its YouGlish pronunciation examples', () => {
-    const html = renderToStaticMarkup(
+  it('renders the revealed face with Canvas effect layers and disclosure actions', () => {
+    const html = renderCard(
       <Flashcard
-        data={{
-          id: 'youglish-link',
-          word: '  café au lait  ',
-          translation: 'cà phê sữa',
-          explanation: 'Coffee with milk.',
-          phonetic: '/kæfeɪ əʊ leɪ/',
-          emoji: '☕',
-          category: 'Study',
-          audioUrl: null,
-          imageUrl: null,
-        }}
+        data={effectCard}
         initialSide="back"
+        onUpdateCard={vi.fn()}
       />,
     );
 
-    expect(html).toContain('href="https://youglish.com/pronounce/caf%C3%A9%20au%20lait/english"');
-    expect(html).toContain('target="_blank"');
-    expect(html).toContain('rel="noopener noreferrer"');
-    expect(html).toContain('aria-label="Hear café au lait pronounced in context on YouGlish"');
-    expect(html).toContain('title="Hear café au lait pronounced in context on YouGlish"');
+    expect(html).toContain('data-card-face="back"');
+    expect(html).toContain('data-card-effect="spotlight"');
+    expect(html).toContain('data-card-effect="holo"');
+    expect(html).toContain('data-card-effect="specular"');
+    expect(html).toContain('data-card-effect="tier-rim"');
+    expect(html).toContain('data-ai-disclosure="true"');
   });
 
-  it('does not render a YouGlish link when the card word is blank', () => {
-    const html = renderToStaticMarkup(
-      <Flashcard
-        data={{
-          id: 'blank-youglish-link',
-          word: '   ',
-          translation: 'trống',
-          explanation: 'A blank word.',
-          phonetic: '/.../',
-          emoji: '🫥',
-          category: 'Study',
-          audioUrl: null,
-          imageUrl: null,
-        }}
-        initialSide="back"
-      />,
-    );
+  it('keeps Crystal wings and reduced motion as local card-only styles', () => {
+    const canvasStyles = readFileSync(fileURLToPath(new URL('./flashcard/flashcard-canvas.css', import.meta.url)), 'utf8');
 
-    expect(html).not.toContain('youglish.com');
+    expect(canvasStyles).toContain(':root[data-theme-family="crystal"]');
+    expect(canvasStyles).toContain('.flashcard-hover-wings');
+    expect(canvasStyles).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(canvasStyles).toContain('html[data-motion="reduced"] .flashcard-hover-wings');
   });
 
-  it('keeps the audio controls accessible names while using the extracted lifecycle', () => {
-    const html = renderToStaticMarkup(
-      <Flashcard
-        data={{
-          id: 'audio-labels',
-          word: 'focus',
-          translation: 'tập trung',
-          explanation: 'A clear explanation.',
-          phonetic: '/ˈfəʊkəs/',
-          emoji: '🎯',
-          category: 'Study',
-          audioUrl: null,
-          imageUrl: null,
-        }}
-      />,
-    );
+  it('groups pronunciation controls with the front action dock', () => {
+    const source = cardSurfaceSource;
 
-    expect(html).toContain('aria-label="Toggle speed"');
-    expect(html).toContain('aria-label="Play pronunciation"');
-    expect(html).toContain('title="Listen to the definition"');
+    expect(source).toContain('data-card-actions className="flashcard-actions mt-auto flex flex-wrap items-center gap-1.5"');
+    expect(source).toContain('flashcard-action flashcard-action-speed touch-manipulation');
+    expect(source).toContain("msg({ context: 'flashcard.say-it', message: 'Say it' })");
+    expect(source).toContain("msg({ context: 'flashcard.quiz-me', message: 'Quiz me' })");
   });
 
-  it('renders the card CEFR level in Zen mode instead of a difficulty label', () => {
-    zenMode.enabled = true;
-
-    const html = renderToStaticMarkup(
-      <Flashcard
-        data={{
-          id: 'zen-cefr',
-          word: 'focus',
-          translation: 'tập trung',
-          explanation: 'A clear explanation.',
-          phonetic: '/ˈfəʊkəs/',
-          emoji: '🎯',
-          category: 'Study',
-          audioUrl: null,
-          imageUrl: null,
-          difficulty: 'hard',
-          cefrLevel: 'A2',
-        }}
-      />,
-    );
-
-    expect(html).toContain('CEFR A2');
-    expect(html).not.toContain('B2 UPPER-INT');
-
+  it('uses the active course voice for synchronous fallback speech', () => {
+    expect(cardSurfaceSource).toContain('voiceForActiveCourseCard(data, courseModel.activeCourse)');
+    expect(cardSurfaceSource).toContain('speechLocaleFor(data)');
+    const playback = readFileSync(fileURLToPath(new URL('./flashcard/useFlashcardAudio.ts', import.meta.url)), 'utf8');
+    expect(playback).toContain('voice');
+    expect(playback).toContain('speechLocale');
   });
 
-  it('does not invent a Zen CEFR level when the card has none', () => {
-    zenMode.enabled = true;
-
-    const html = renderToStaticMarkup(
-      <Flashcard
-        data={{
-          id: 'zen-no-cefr',
-          word: 'focus',
-          translation: 'tập trung',
-          explanation: 'A clear explanation.',
-          phonetic: '/ˈfəʊkəs/',
-          emoji: '🎯',
-          category: 'Study',
-          audioUrl: null,
-          imageUrl: null,
-          difficulty: 'hard',
-        }}
-      />,
-    );
-
-    expect(html).not.toContain('CEFR ');
-    expect(html).not.toMatch(/C[12] (?:MASTERY|ADVANCED)|B2 UPPER-INT/);
-  });
-
-  it('uses contrast-safe light-theme colors for Zen badges and pronunciation', () => {
-    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
-
-    expect(source.match(/bg-emerald-800/g)).toHaveLength(2);
-    expect(source).not.toContain('dark:bg-gradient-to-b');
-    expect(source.match(/dark:bg-emerald-700/g)).toHaveLength(2);
-    expect(source).toContain('text-cyan-800 dark:text-cyan-400');
-    expect(source).toContain('bg-cyan-700 dark:bg-cyan-400');
-  });
-
-  it('keeps pronunciation controls left-aligned on mobile and right-aligned from sm upward', () => {
-    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
-
-    expect(source).toContain('w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:pt-4');
-  });
-
-  it('labels browser speech recognition as a word match and keeps the keyboard selector aligned', () => {
-    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
-    const sessionSource = readFileSync(fileURLToPath(new URL('../features/practice/StudyView.tsx', import.meta.url)), 'utf8');
-
-    expect(source).toContain('aria-label="Check word match"');
-    expect(source).toContain('title="Check word match"');
-    expect(source).toContain('aria-label="Check sentence match"');
-    expect(source).not.toContain('aria-label="Check pronunciation"');
-    expect(source).not.toContain('title="Check pronunciation"');
-    expect(sessionSource).toContain('[aria-label="Check word match"]');
-    expect(sessionSource).not.toContain('[aria-label="Check pronunciation"]');
-  });
-
-  it('does not expose unsupported pronunciation claims in speech-match feedback copy', () => {
-    const source = readFileSync(fileURLToPath(new URL('./flashcard/SpeechMatchFeedback.tsx', import.meta.url)), 'utf8');
-
-    expect(source).toContain('does not assess individual sounds, phonemes, or accent');
-    expect(source).not.toContain('Natural and accurate pronunciation');
-    expect(source).not.toContain('stress and ending consonants');
-    expect(source).not.toContain('each syllable');
-  });
-
-  it('keeps explanation and memory hook visible while only secondary tools are disclosed', () => {
-    const html = renderToStaticMarkup(
+  it('keeps back-side meaning, bilingual context and compact learning CTAs visible', () => {
+    const html = renderCard(
       <Flashcard
         data={{
           id: 'order-check',
@@ -191,6 +107,9 @@ describe('Flashcard mobile controls', () => {
           explanation: 'A clear explanation.',
           explanationTranslation: 'Một lời giải thích rõ ràng.',
           phonetic: '/ˈfəʊkəs/',
+          partOfSpeech: 'noun',
+          exampleSentence: 'Keep your focus on the task.',
+          exampleTranslation: 'Hãy giữ sự tập trung vào nhiệm vụ.',
           emoji: '🎯',
           category: 'Study',
           audioUrl: null,
@@ -202,24 +121,53 @@ describe('Flashcard mobile controls', () => {
     );
 
     const meaning = html.indexOf('data-card-section="meaning"');
+    const example = html.indexOf('data-card-section="example"');
     const explanation = html.indexOf('data-card-section="explanation"');
     const memoryHook = html.indexOf('data-card-section="memory-hook"');
     const learningTools = html.indexOf('data-card-disclosure="learning-tools"');
 
     expect(meaning).toBeGreaterThanOrEqual(0);
-    expect(explanation).toBeGreaterThan(meaning);
+    expect(example).toBeGreaterThan(meaning);
+    expect(explanation).toBeGreaterThan(example);
     expect(memoryHook).toBeGreaterThan(explanation);
     expect(learningTools).toBeGreaterThan(memoryHook);
     expect(html).not.toContain('data-card-disclosure="explanation"');
     expect(html).not.toContain('data-card-disclosure="memory-hook"');
-    expect(html).toContain('mnemonic-card mt-3.5 w-full p-4 text-left');
-    expect(html).toContain('AI Mnemonic · Memory Hook');
+    expect(html).toContain('Keep your <span data-example-word="true" class="flashcard-back-example-word">focus</span> on the task.');
+    expect(html).toContain('Hãy giữ sự tập trung vào nhiệm vụ.');
+    expect(html).toContain('noun');
+    expect(html).toContain('/ˈfəʊkəs/');
+    expect(html).toContain('Memory hook');
+    expect(html).toContain('Ask AI Tutor');
     expect(html).not.toContain('<details open=""');
     expect(html).toContain('data-translation-reveal="true"');
   });
 
+  it('discloses AI-generated content on the revealed side only', () => {
+    const html = renderCard(
+      <Flashcard
+        data={{
+          id: 'ai-disclosure',
+          word: 'focus',
+          translation: 'tập trung',
+          explanation: 'Concentrate attention.',
+          phonetic: '/ˈfəʊkəs/',
+          emoji: '🎯',
+          category: 'Study',
+          audioUrl: null,
+          imageUrl: null,
+          origin: 'ai',
+        }}
+        initialSide="back"
+      />,
+    );
+
+    expect(html).toContain('data-ai-disclosure="true"');
+    expect(html).toContain('AI-generated content may be incorrect. Please check the meaning.');
+  });
+
   it('renders markdown emphasis in the memory hook', () => {
-    const html = renderToStaticMarkup(
+    const html = renderCard(
       <Flashcard
         data={{
           id: 'mnemonic-format',
@@ -243,7 +191,7 @@ describe('Flashcard mobile controls', () => {
   });
 
   it('uses the same centered minimal action for returning to English', () => {
-    const html = renderToStaticMarkup(
+    const html = renderCard(
       <Flashcard
         data={{
           id: 'return-action',
@@ -261,17 +209,14 @@ describe('Flashcard mobile controls', () => {
     );
 
     expect(html).toContain('data-return-to-english="true"');
-    expect(html).toContain('group/back relative z-20 flex min-h-[60px] w-full');
-    expect(html).toContain('items-center justify-center gap-2');
-    expect(html).toContain('bg-transparent');
+    expect(html).toContain('flashcard-back-return group/back relative z-20 flex w-full shrink-0');
     expect(html).toContain('data-return-hover-edge="true"');
-    expect(html).toContain('border-t border-cyan-500/20');
-    expect(html).toContain('from-cyan-500/10 via-cyan-400/55 to-cyan-500/10 opacity-75');
+    expect(html).toContain('<span>Back to English</span>');
     expect(html).not.toContain('Return to “focus”');
   });
 
   it('renders meaning reveal as a centered unframed secondary action', () => {
-    const html = renderToStaticMarkup(
+    const html = renderCard(
       <Flashcard
         data={{
           id: 'reveal-action',
@@ -289,24 +234,19 @@ describe('Flashcard mobile controls', () => {
 
     expect(html).not.toContain('data-color-role="primary"');
     expect(html).toContain('data-reveal-meaning="true"');
-    expect(html).toContain('group/flip relative z-20 flex min-h-[60px] w-full');
-    expect(html).toContain('items-center justify-center gap-2');
-    expect(html).toContain('bg-transparent');
-    expect(html).toContain('border-t border-cyan-500/20');
+    expect(html).toContain('flashcard-reveal group/flip relative z-20 flex min-h-[58px] w-full');
     expect(html).toContain('data-reveal-hover-edge="true"');
-    expect(html).toContain('from-cyan-500/10 via-cyan-400/55 to-cyan-500/10 opacity-75');
-    expect(html).toContain('transition-opacity duration-200 group-hover/flip:opacity-100');
-    expect(html).toContain('data-reveal-translate-icon="true"');
+    expect(html).toContain('>Reveal meaning</span>');
+    expect(html).toContain('<kbd class="flashcard-kbd relative font-mono" aria-hidden="true">Space</kbd>');
     expect(html).not.toContain('group-hover/flip:translate-x-0.5');
     expect(html).not.toContain('flashcard-reveal-button');
-    expect(html).toContain('text-[10px] font-black uppercase tracking-[0.14em]');
     expect(html).not.toContain('box-border flex-shrink-0 overflow-hidden rounded-b-[31px]');
     expect(html).not.toContain('Flip to the Vietnamese side');
-    expect(html).toContain('Reveal the Vietnamese meaning of focus');
+    expect(html).toContain('aria-label="Reveal the Vietnamese meaning of focus"');
   });
 
   it('keeps the yellow mnemonic hover free of scale and all-property transitions', () => {
-    const html = renderToStaticMarkup(
+    const html = renderCard(
       <Flashcard
         data={{
           id: 'mnemonic-hover',
@@ -329,7 +269,7 @@ describe('Flashcard mobile controls', () => {
   });
 
   it('uses restrained metadata and spotlight styling', () => {
-    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+    const source = cardSurfaceSource;
 
     expect(source).toContain('data-card-metadata');
     expect(source).toContain('rgba(2, 132, 199, 0.11)');
@@ -338,19 +278,166 @@ describe('Flashcard mobile controls', () => {
   });
 
   it('keeps the refreshed card controls at least 44px on each touch dimension', () => {
-    const source = readFileSync(fileURLToPath(new URL('./Flashcard.tsx', import.meta.url)), 'utf8');
+    const source = cardSurfaceSource;
 
     expect(source).not.toMatch(/touch-manipulation flex (?:h-8|size-8|min-h-9)/);
     expect(source).toContain('flex min-h-11 min-w-11 items-center justify-center gap-[3px]');
     expect(source).toContain('relative group inline-flex min-h-11 items-center justify-center');
-    expect(source.match(/flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-1\.5/g)).toHaveLength(2);
+    expect(source).toContain('touch-manipulation flex min-h-11 min-w-11 shrink-0 items-center justify-center');
     expect(source).toContain('liquid-control flex size-11 shrink-0 items-center justify-center rounded-full');
   });
 
   it('keeps mnemonic regeneration controls at least 44px on each touch dimension', () => {
     const source = readFileSync(fileURLToPath(new URL('./flashcard/CardMnemonicSection.tsx', import.meta.url)), 'utf8');
 
-    expect(source).toContain('flex size-11 cursor-pointer items-center justify-center');
-    expect(source).toContain('mnemonic-generate-button flex min-h-11 w-full');
+    expect(source).toContain('flex min-h-11 min-w-11 items-center justify-center');
+    expect(source).toContain('flex min-h-11 w-full cursor-pointer items-center justify-center');
+  });
+
+  const cardFixture = {
+    id: 'report-visibility',
+    word: 'focus',
+    translation: 'tập trung',
+    explanation: 'A clear explanation.',
+    phonetic: '/ˈfəʊkəs/',
+    emoji: '🎯',
+    category: 'Study',
+    audioUrl: null,
+    imageUrl: null,
+  } as const;
+
+  it('hides the "Báo thẻ sai" report action from a guest on the revealed (Vietnamese meaning) side', () => {
+    accountSession.signedIn = false;
+
+    const back = renderCard(<Flashcard data={cardFixture} initialSide="back" />);
+
+    expect(back).not.toContain('Báo thẻ sai');
+  });
+
+  it('shows the "Báo thẻ sai" report action for a signed-in learner on the revealed (Vietnamese meaning) side', () => {
+    accountSession.signedIn = true;
+    try {
+      const back = renderCard(<Flashcard data={cardFixture} initialSide="back" />);
+
+      expect(back).toContain('Report incorrect card');
+    } finally {
+      accountSession.signedIn = false;
+    }
+  });
+});
+
+describe('Flashcard language presentation', () => {
+  const koreanCard = {
+    id: 'pack-ko',
+    word: '결심하다',
+    translation: 'quyết tâm',
+    explanation: 'To make a firm decision to do something.',
+    phonetic: '',
+    emoji: '',
+    category: 'TOPIK II',
+    partOfSpeech: 'verb',
+    audioUrl: null,
+    imageUrl: null,
+    language: 'ko',
+    translationLanguage: 'vi',
+    exampleSentence: '올해는 한국어를 꼭 배우기로 결심했어요.',
+    collocations: ['결심을 하다', '굳게 결심하다'],
+  };
+
+  it('shows a language-pack card\'s example and phrases on its front in place of the definition', () => {
+    const front = renderCard(<Flashcard data={koreanCard} />);
+
+    expect(front).toContain('data-card-kind="language"');
+    expect(front).toContain('data-card-section="example"');
+    expect(front).toContain('data-example-word="true" class="flashcard-lang-example-word">결심했어요</span>');
+    expect(front).toContain('data-card-section="phrases"');
+    expect(front).toContain('<span>굳게 결심하다</span>');
+    expect(front).not.toContain('To make a firm decision to do something.');
+    expect(front).toContain('data-reading-toggle="true"');
+    expect(front).toContain('aria-label="Reveal the Vietnamese meaning of 결심하다"');
+    expect(front).toContain('aria-label="결심하다 flashcard. Showing the Korean word."');
+  });
+
+  it('leaves out the example and phrases a language-pack card does not carry', () => {
+    const front = renderCard(<Flashcard data={{ ...koreanCard, exampleSentence: '  ', collocations: [] }} />);
+
+    expect(front).toContain('data-card-kind="language"');
+    expect(front).not.toContain('data-card-section="example"');
+    expect(front).not.toContain('data-card-section="phrases"');
+    expect(front).not.toContain('To make a firm decision to do something.');
+  });
+
+  it('names the card\'s own languages on the back of a language-pack card', () => {
+    const back = renderCard(<Flashcard data={{ ...koreanCard, translationLanguage: 'en', translation: 'to decide' }} initialSide="back" />);
+
+    expect(back).toContain('aria-label="결심하다 flashcard. Showing the English meaning."');
+    expect(back).toContain('aria-label="Return to the Korean side of 결심하다"');
+    expect(back).toContain('>In English<');
+  });
+
+  it('keeps the definition and English names on an English card', () => {
+    const front = renderCard(<Flashcard data={{ ...koreanCard, id: 'english', word: 'decide', language: 'en', exampleSentence: 'We decide today.' }} />);
+
+    expect(front).not.toContain('data-card-kind="language"');
+    expect(front).not.toContain('data-card-section="example"');
+    expect(front).toContain('To make a firm decision to do something.');
+    expect(front).toContain('aria-label="decide flashcard. Showing the English word."');
+  });
+
+  it.each(['en', 'ja', 'zh'])('does not add the Korean Hangul breakdown to %s cards', language => {
+    const markup = renderCard(<Flashcard data={{
+      id: `no-hangul-panel-${language}`,
+      word: 'word',
+      translation: 'meaning',
+      explanation: '',
+      phonetic: '',
+      emoji: '',
+      category: 'General',
+      audioUrl: null,
+      imageUrl: null,
+      language,
+    }} initialSide="back" />);
+
+    expect(markup).not.toContain('data-hangul-breakdown');
+  });
+
+  it('keeps the Hangul breakdown available beside an unflipped Korean review card, including ko-KR', () => {
+    const source = cardSurfaceSource;
+
+    expect(source).toContain("/^ko(?:-|$)/i.test(data.language ?? '')");
+    expect(source).toContain("editorContext?.kind === 'review'");
+    expect(source).toContain('hangul-breakdown-slot');
+    const styles = readFileSync(fileURLToPath(new URL('./flashcard/hangul-breakdown.css', import.meta.url)), 'utf8');
+    expect(styles).toContain('left: calc(50% + 354px)');
+  });
+
+  it.each(['en', 'vi', 'en-XA', 'ja'])('renders the stored word and language spans with %s UI locale', locale => {
+    i18n.load(locale, {});
+    i18n.activate(locale);
+    try {
+      const card = {
+        id: `locale-${locale}`,
+        word: 'der Apfel',
+        translation: 'quả táo',
+        explanation: 'A fruit.',
+        phonetic: '/ˈapfəl/',
+        emoji: '🍎',
+        category: 'Food',
+        audioUrl: null,
+        imageUrl: null,
+        language: 'de',
+        translationLanguage: 'vi',
+      } as const;
+      const back = renderCard(<Flashcard data={card} initialSide="back" />);
+      const front = renderCard(<Flashcard data={card} initialSide="front" />);
+
+      expect(front).toContain('lang="de"');
+      expect(back).toContain('lang="vi"');
+      expect(front).toContain('>der Apfel</h2>');
+      expect(front).not.toContain('>Der Apfel</h2>');
+      expect(back).toContain('>quả táo</h2>');
+    } finally {
+      i18n.activate('en');
+    }
   });
 });

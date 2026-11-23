@@ -1,0 +1,740 @@
+command=npm run verify:core
+start_utc=2026-09-25T04:55:07.402878+00:00
+
+
+> lingoflash@1.0.0 verify:core
+> npm run lint && vitest run --maxWorkers=1 --pool=forks && npm --prefix functions run lint && npm --prefix functions test && npm --prefix functions run build && npm run test:rules
+
+
+> lingoflash@1.0.0 lint
+> tsc --noEmit
+
+
+ RUN  v3.2.7 /mnt/Projects/startup/flash-card
+
+ ❯ src/features/sharing/sharedDeckSessionController.test.ts (20 tests | 2 failed) 44ms
+   ✓ shared deck session controller > is vendor-free and has a React binding without public setters 3ms
+   ✓ shared deck session controller > loads a bounded preview without writing, then adopts only after explicit acceptance 4ms
+   ✓ shared deck session controller > keeps a shared deck pending when intake reports no valid candidates 1ms
+   ✓ shared deck session controller > cancels an incoming preview without writing and removes only the share parameter 0ms
+   ✓ shared deck session controller > rejects invalid IDs and payloads before Card Intake 1ms
+   ✓ shared deck session controller > rejects a malformed card batch atomically before preview or adoption 0ms
+   ✓ shared deck session controller > leaves the busy state with a safe error when loading a shared deck times out 3ms
+   ✓ shared deck session controller > cancels a loaded deck when the active owner changes 1ms
+   ✓ shared deck session controller > creates and revokes a bounded share through the adapter 4ms
+   × shared deck session controller > preserves every unique language pair in incoming and outgoing previews 7ms
+     → expected [ { targetLanguage: null, …(1) } ] to deeply equal [ Array(2) ]
+   ✓ shared deck session controller > uses a stored deck language pair and leaves mixed or old shares unspecified 0ms
+   × shared deck session controller > keeps missing incoming translation metadata unknown after a Korean-to-English share 2ms
+     → expected { shareId: 'deck-1', …(4) } to match object { languagePairs: [ { …(2) } ], …(1) }
+(3 matching properties omitted from actual)
+   ✓ shared deck session controller > does not expose an old owner share to the next owner 0ms
+   ✓ shared deck session controller > ignores create completion from a stale owner and exposes safe errors 6ms
+   ✓ shared deck session controller > reuses one operation after an ambiguous timeout and after reload, then clears it on success 2ms
+   ✓ shared deck session controller > separates pending operations by owner and canonical request, and expires old records 2ms
+   ✓ shared deck session controller > keeps owner operations isolated across A→B→A reloads and terminal responses 1ms
+   ✓ shared deck session controller > keeps changed request operations isolated across reloads 2ms
+   ✓ shared deck session controller > fails closed at the pending-operation cap without evicting unresolved retries 4ms
+   ✓ shared deck session controller > discards corrupt persisted operations without blocking a new share 1ms
+ ✓ src/features/sharing/sharedDeckService.test.ts (13 tests) 18ms
+ ✓ firestoreRulesSource.test.ts (16 tests) 12ms
+ ✓ scripts/catalog-operator.test.ts (10 tests) 7770ms
+   ✓ catalog filesystem operator > runs the real validate CLI against explicit bounded JSONL files  1637ms
+   ✓ catalog filesystem operator > fails the CLI build closed when protected reviewer authority is absent  1557ms
+   ✓ catalog filesystem operator > rejects non-canonical protected authority values at the CLI boundary  1450ms
+   ✓ catalog filesystem operator > builds deterministically and verifies every artifact without writes  2921ms
+ ✓ src/features/catalogCache/catalogIndex.test.ts (8 tests) 2673ms
+   ✓ catalog cache indexed query > bounds sparse combined-filter scans across the 10,000-record release limit  2468ms
+ ✓ scripts/generate-starter-catalog.test.ts (3 tests) 1396ms
+   ✓ starter catalog generator safety > successfully validates and summarizes the draft without writing public artifacts  1392ms
+ ✓ scripts/release-artifact.test.mjs (17 tests) 750ms
+   ✓ sealed release artifact > refuses an unrelated 200 server on the configured E2E port instead of hopping ports  667ms
+ ✓ src/features/librarySession/ownerLibrarySessionController.test.ts (14 tests) 577ms
+ ✓ scripts/architectureAnalyzer.test.ts (12 tests) 497ms
+   ✓ architecture analyzer > keeps production acyclic and enforces the final App presentation boundary  481ms
+ ✓ src/features/importExport/spreadsheetWorkbook.test.ts (30 tests) 489ms
+ ✓ src/features/catalogPipeline/catalogOperator.test.ts (2 tests) 273ms
+ ✓ devEndpointSecurity.test.ts (23 tests) 261ms
+ ✓ src/features/catalogPipeline/pilotCatalog.test.ts (4 tests) 258ms
+ ✓ src/lib/gemini.test.ts (12 tests) 233ms
+ ✓ deviceBackupReconciliation.test.ts (76 tests) 193ms
+ ✓ src/components/stats/StatsCharts.test.tsx (7 tests) 158ms
+ ❯ src/i18n/stringScanner.test.ts (61 tests | 5 failed) 192ms
+   ✓ migrated UI string guard > detects visible JSX and accessibility literals while allowing noncopy values 7ms
+   ✓ migrated UI string guard > src/App.tsx has no hardcoded user-visible strings 10ms
+   ✓ migrated UI string guard > src/app/AppDeferredViews.tsx has no hardcoded user-visible strings 3ms
+   ✓ migrated UI string guard > src/app/AppRuntime.tsx has no hardcoded user-visible strings 10ms
+   ✓ migrated UI string guard > src/app/AppRuntimeBoundary.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/app/app-runtime-error.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/app/AppViewStage.tsx has no hardcoded user-visible strings 3ms
+   ✓ migrated UI string guard > src/components/AppErrorBoundary.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/components/AppOverlays.tsx has no hardcoded user-visible strings 11ms
+   ✓ migrated UI string guard > src/components/Flashcard.tsx has no hardcoded user-visible strings 11ms
+   ✓ migrated UI string guard > src/components/RecoverableActionFeedback.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/components/shell/AppFeedback.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/components/shell/AppFooter.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/components/shell/CourseSwitcherSlot.tsx has no hardcoded user-visible strings 1ms
+   × migrated UI string guard > src/components/shell/DesktopNavigation.tsx has no hardcoded user-visible strings 8ms
+     → expected [ 'JSX text: S', 'JSX text: Lv' ] to deeply equal []
+   ✓ migrated UI string guard > src/components/shell/FloatingMobileNav.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/components/shell/LanguageMenu.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/components/shell/LibraryManagementMenu.tsx has no hardcoded user-visible strings 4ms
+   ✓ migrated UI string guard > src/components/shell/SkipToContentLink.tsx has no hardcoded user-visible strings 0ms
+   ✓ migrated UI string guard > src/components/shell/ThemeMenu.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/components/ui/UndoToast.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/components/motion/CountUp.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/components/flashcard/ActiveRecallPrompt.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/components/flashcard/ActiveRecallQuiz.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/components/flashcard/CardBack.tsx has no hardcoded user-visible strings 4ms
+   ✓ migrated UI string guard > src/components/flashcard/CardAiAssistantModal.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/components/flashcard/CardFront.tsx has no hardcoded user-visible strings 4ms
+   ✓ migrated UI string guard > src/components/flashcard/CardHeadword.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/components/flashcard/CardImage.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/components/flashcard/CardMnemonicSection.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/components/flashcard/SyllableStressBadge.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/components/stats/ActivityHeatmap.tsx has no hardcoded user-visible strings 3ms
+   ✓ migrated UI string guard > src/components/stats/AchievementsMatrix.tsx has no hardcoded user-visible strings 3ms
+   ✓ migrated UI string guard > src/components/stats/StatsCharts.tsx has no hardcoded user-visible strings 4ms
+   ✓ migrated UI string guard > src/components/study/ReviewControls.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/features/catalogWorkspace/CatalogScreen.tsx has no hardcoded user-visible strings 6ms
+   ✓ migrated UI string guard > src/features/catalogWorkspace/CatalogWorkspace.tsx has no hardcoded user-visible strings 5ms
+   ✓ migrated UI string guard > src/features/dailyLearning/DailyLearningWorkspace.tsx has no hardcoded user-visible strings 6ms
+   ✓ migrated UI string guard > src/features/dailyLearning/LessonScreen.tsx has no hardcoded user-visible strings 3ms
+   ✓ migrated UI string guard > src/features/dailyLearning/PlacementScreen.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/features/dailyLearning/ProgressScreen.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/features/dailyLearning/ProgressWorkspace.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/features/dailyLearning/TodayScreen.tsx has no hardcoded user-visible strings 3ms
+   ✓ migrated UI string guard > src/features/practice/SessionRecapModal.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/features/practice/PracticeScreen.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/features/practice/QuizView.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/features/practice/SpellingView.tsx has no hardcoded user-visible strings 3ms
+   ✓ migrated UI string guard > src/features/practice/StoryView.tsx has no hardcoded user-visible strings 1ms
+   ✓ migrated UI string guard > src/features/practice/StudyView.tsx has no hardcoded user-visible strings 4ms
+   ✓ migrated UI string guard > src/features/practice/WordMatchView.tsx has no hardcoded user-visible strings 4ms
+   ✓ migrated UI string guard > src/features/practice/ShadowingView.tsx has no hardcoded user-visible strings 3ms
+   × migrated UI string guard > src/features/landing/LandingPage.tsx has no hardcoded user-visible strings 6ms
+     → expected [ 'JSX text: Crystal Star', …(22) ] to deeply equal []
+   ✓ migrated UI string guard > src/features/cardEdit/EditCardDialog.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/features/library/AiDialogueModal.tsx has no hardcoded user-visible strings 2ms
+   × migrated UI string guard > src/features/library/LibraryCardGrid.tsx has no hardcoded user-visible strings 3ms
+     → expected [ 'aria-label: Library pages' ] to deeply equal []
+   × migrated UI string guard > src/features/library/LibraryOverview.tsx has no hardcoded user-visible strings 1ms
+     → expected [ 'JSX text: LUMI · LINK' ] to deeply equal []
+   × migrated UI string guard > src/features/library/LibraryScreen.tsx has no hardcoded user-visible strings 3ms
+     → expected [ 'aria-label: Decks' ] to deeply equal []
+   ✓ migrated UI string guard > src/features/library/LibraryTools.tsx has no hardcoded user-visible strings 6ms
+   ✓ migrated UI string guard > src/features/library/WordExtractorModal.tsx has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/features/library/libraryPresentation.ts has no hardcoded user-visible strings 2ms
+   ✓ migrated UI string guard > src/features/settings/settings-screen.tsx has no hardcoded user-visible strings 2ms
+ ✓ scripts/release-workflows.test.mjs (15 tests) 158ms
+ ✓ src/app/AppDeferredViews.test.tsx (2 tests) 169ms
+ ✓ src/lib/cardMirror.test.ts (26 tests) 159ms
+ ✓ src/features/catalogPipeline/catalogBuilder.test.ts (25 tests) 142ms
+ ✓ src/features/catalogPipeline/starterCatalog.test.ts (1 test) 129ms
+ ✓ src/features/librarySession/cloudLibraryPageController.test.ts (13 tests) 126ms
+ ✓ scripts/verify-build-secrets.test.mjs (6 tests) 138ms
+ ✓ src/components/shell/brandAssets.test.ts (8 tests) 126ms
+ ✓ src/features/catalogPipeline/catalogValidation.test.ts (24 tests) 127ms
+ ✓ src/components/Flashcard.test.tsx (16 tests) 123ms
+ ✓ src/features/catalogCache/catalogDelivery.test.ts (10 tests) 116ms
+ ✓ src/lib/cardRepositoryUniqueness.test.ts (81 tests) 119ms
+stderr | src/features/practice/practiceViews.test.tsx > practice view accessibility contracts > groups quiz answers with a legend and lets long choices wrap
+Each child in a list should have a unique "key" prop.
+
+Check the render method of `QuizView`. See https://react.dev/link/warning-keys for more information.
+
+stderr | src/features/practice/practiceViews.test.tsx > practice view accessibility contracts > renders quiz feedback as an atomic live-region announcement
+Each child in a list should have a unique "key" prop.
+
+Check the render method of `QuizView`. See https://react.dev/link/warning-keys for more information.
+
+stderr | src/features/practice/practiceViews.test.tsx > practice view accessibility contracts > marks Vietnamese quiz prompts and feedback according to the question direction
+Each child in a list should have a unique "key" prop.
+
+Check the render method of `QuizView`. See https://react.dev/link/warning-keys for more information.
+Each child in a list should have a unique "key" prop.
+
+Check the render method of `QuizView`. See https://react.dev/link/warning-keys for more information.
+Each child in a list should have a unique "key" prop.
+
+Check the render method of `QuizView`. See https://react.dev/link/warning-keys for more information.
+
+ ✓ src/features/practice/practiceViews.test.tsx (16 tests) 88ms
+ ✓ src/features/catalogWorkspace/CatalogScreen.test.tsx (19 tests) 93ms
+ ✓ src/features/catalogWorkspace/catalogWorkspaceService.test.ts (20 tests) 94ms
+stderr | src/features/librarySession/libraryReplica.test.ts > Library Replica contract > does not acknowledge a committed review when settlement fails
+Pending local changes could not be synced to Firebase yet. Error: XP queue full
+    at Object.<anonymous> (/mnt/Projects/startup/flash-card/src/features/librarySession/libraryReplica.test.ts:435:58)
+    at Object.mockCall (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/spy/dist/index.js:96:15)
+    at Object.settleReview (file:///mnt/Projects/startup/flash-card/node_modules/tinyspy/dist/index.js:47:80)
+    at /mnt/Projects/startup/flash-card/src/features/librarySession/libraryReplica.ts:706:22
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at /mnt/Projects/startup/flash-card/src/features/librarySession/libraryReplica.test.ts:11:97
+
+stderr | src/features/librarySession/libraryReplica.test.ts > Library Replica contract > checkpoints each review before the receipt window can evict an acknowledged operation
+Pending local changes could not be synced to Firebase yet. Error: simulated crash after durable checkpoint
+    at Object.<anonymous> (/mnt/Projects/startup/flash-card/src/features/librarySession/libraryReplica.test.ts:547:15)
+    at Object.mockCall (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/spy/dist/index.js:96:15)
+    at Object.acknowledgeDevicePending (file:///mnt/Projects/startup/flash-card/node_modules/tinyspy/dist/index.js:47:80)
+    at acknowledgeDevicePending (/mnt/Projects/startup/flash-card/src/features/librarySession/libraryReplica.test.ts:39:64)
+    at acknowledge (/mnt/Projects/startup/flash-card/src/features/librarySession/libraryReplica.ts:286:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at /mnt/Projects/startup/flash-card/src/features/librarySession/libraryReplica.ts:709:13
+    at /mnt/Projects/startup/flash-card/src/features/librarySession/libraryReplica.test.ts:11:97
+
+ ✓ src/features/librarySession/libraryReplica.test.ts (18 tests) 97ms
+ ✓ src/features/dailyLearning/DailyLearningScreens.test.tsx (23 tests) 90ms
+ ✓ src/features/intake/cardIntakePipeline.test.ts (7 tests) 69ms
+ ✓ src/features/library/LibraryTools.test.tsx (18 tests) 68ms
+ ✓ src/features/importExport/spreadsheetImportService.test.ts (12 tests) 62ms
+ ✓ src/features/library/useCustomDeckWorkspace.ownerRace.test.ts (8 tests) 68ms
+ ✓ src/features/gamification/gamificationStorage.test.ts (19 tests) 64ms
+ ✓ src/features/library/LibraryScreen.test.tsx (7 tests) 35ms
+ ✓ scripts/prepare-staging-target.test.mjs (2 tests) 67ms
+stderr | src/features/librarySession/useLibraryDeviceSync.test.tsx > useLibraryDeviceSync mirror cleanup > keeps a cloud-confirmed delete queued when mirror deletion fails
+Pending local changes could not be synced to Firebase yet. Error: IndexedDB delete failed
+    at /mnt/Projects/startup/flash-card/src/features/librarySession/useLibraryDeviceSync.test.tsx:302:62
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+stderr | src/features/librarySession/useLibraryDeviceSync.test.tsx > useLibraryDeviceSync mirror cleanup > keeps stale-generation cleanup queued when mirror deletion fails
+Pending local changes could not be synced to Firebase yet. Error: IndexedDB delete failed
+    at /mnt/Projects/startup/flash-card/src/features/librarySession/useLibraryDeviceSync.test.tsx:351:59
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+stderr | src/features/librarySession/useLibraryDeviceSync.test.tsx > useLibraryDeviceSync mirror cleanup > keeps a duplicate operation queued when strict authoritative backup merge fails
+Pending local changes could not be synced to Firebase yet. Error: Device merge failed
+    at /mnt/Projects/startup/flash-card/src/features/librarySession/useLibraryDeviceSync.test.tsx:491:52
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+stderr | src/features/librarySession/useLibraryDeviceSync.test.tsx > useLibraryDeviceSync mirror cleanup > publishes the current cloud epoch after a stale create and never rebinds the old operation
+Pending local changes could not be synced to Firebase yet. CardMutationPreconditionError: Card mutation rejected: stale-library-epoch.
+    at /mnt/Projects/startup/flash-card/src/features/librarySession/useLibraryDeviceSync.test.tsx:568:7
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8) {
+  reason: 'stale-library-epoch'
+}
+
+stderr | src/features/librarySession/useLibraryDeviceSync.test.tsx > useLibraryDeviceSync mirror cleanup > shows a recoverable error when the device sync coordinator cannot acquire a lease
+The device sync coordinator could not acquire a flush lease. Error: coordinator offline
+    at /mnt/Projects/startup/flash-card/src/features/librarySession/useLibraryDeviceSync.test.tsx:795:52
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runFiles (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1787:3)
+
+stderr | src/features/librarySession/useLibraryDeviceSync.test.tsx > useLibraryDeviceSync mirror cleanup > keeps a word-duplicate operation queued when device cleanup fails
+Pending local changes could not be synced to Firebase yet. Error: Device cleanup failed
+    at /mnt/Projects/startup/flash-card/src/features/librarySession/useLibraryDeviceSync.test.tsx:850:7
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runFiles (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1787:3)
+
+stderr | src/features/librarySession/useLibraryDeviceSync.test.tsx > useLibraryDeviceSync mirror cleanup > clears a stale sync error after a later cloud mirror succeeds
+Device sync could not finish. Error: App Check was not ready
+    at /mnt/Projects/startup/flash-card/src/features/librarySession/useLibraryDeviceSync.test.tsx:952:51
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+ ✓ src/features/librarySession/useLibraryDeviceSync.test.tsx (29 tests) 61ms
+ ✓ src/features/session/identitySessionFirebaseAdapter.test.ts (1 test) 56ms
+ ✓ src/features/dailyLearning/ProgressWorkspace.test.tsx (7 tests) 39ms
+ ✓ src/components/stats/ActivityHeatmap.test.tsx (4 tests) 44ms
+ ✓ src/features/multilingual/v2Migration.test.ts (13 tests) 50ms
+ ✓ src/lib/deviceSync.test.ts (38 tests) 46ms
+ ✓ src/features/catalogCache/catalogCache.test.ts (15 tests) 46ms
+ ✓ src/features/practice/WordMatchView.test.tsx (5 tests) 29ms
+ ✓ src/components/AppOverlays.test.tsx (10 tests) 40ms
+ ✓ src/features/gamification/firebaseGamificationStore.test.ts (31 tests) 42ms
+ ✓ src/features/practice/StudyView.finality.test.tsx (8 tests) 28ms
+ ✓ src/features/multilingual/schemaV3Validation.test.ts (35 tests) 33ms
+ ✓ src/features/practice/practice-locale.test.tsx (4 tests) 37ms
+ ✓ src/features/intake/useIntakeSharingSession.test.tsx (6 tests) 31ms
+ ✓ src/lib/card-repository-query-indexes.test.ts (3 tests) 30ms
+ ✓ src/features/library/useLibraryScreenContract.test.ts (7 tests) 28ms
+stderr | src/features/learning/useLearningStatePersistence.test.tsx > useLearningStatePersistence patch reconciliation > keeps a committed review queued when XP settlement fails before acknowledgement
+Card update stayed local because cloud sync failed. Error: settlement unavailable
+    at Object.<anonymous> (/mnt/Projects/startup/flash-card/src/features/learning/useLearningStatePersistence.test.tsx:308:52)
+    at Object.mockCall (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/spy/dist/index.js:96:15)
+    at Object.addXp (file:///mnt/Projects/startup/flash-card/node_modules/tinyspy/dist/index.js:47:80)
+    at /mnt/Projects/startup/flash-card/src/features/learning/useLearningStatePersistence.ts:222:60
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at /mnt/Projects/startup/flash-card/src/features/learning/useLearningStatePersistence.test.tsx:31:97
+
+stderr | src/features/learning/useLearningStatePersistence.test.tsx > useLearningStatePersistence patch reconciliation > keeps a stale patch queued when conditional mirror cleanup fails
+Card update stayed local because cloud sync failed. Error: IndexedDB delete failed
+    at /mnt/Projects/startup/flash-card/src/features/learning/useLearningStatePersistence.test.tsx:374:59
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+stderr | src/features/learning/useLearningStatePersistence.test.tsx > useLearningStatePersistence patch reconciliation > keeps a missing-card cleanup queued when mirror deletion fails
+Card update stayed local because cloud sync failed. Error: IndexedDB delete failed
+    at /mnt/Projects/startup/flash-card/src/features/learning/useLearningStatePersistence.test.tsx:389:62
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+stderr | src/features/learning/useLearningStatePersistence.test.tsx > useLearningStatePersistence patch reconciliation > keeps a cloud-confirmed delete queued when mirror deletion fails
+The local mirror will catch up with the cloud delete on the next sync. Error: IndexedDB delete failed
+    at /mnt/Projects/startup/flash-card/src/features/learning/useLearningStatePersistence.test.tsx:416:62
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+ ✓ src/features/learning/useLearningStatePersistence.test.tsx (13 tests) 27ms
+ ✓ src/features/catalogCache/catalogSummary.test.ts (3 tests) 25ms
+ ✓ src/lib/firebase.test.ts (9 tests) 34ms
+ ✓ src/features/gamification/gamificationModel.test.ts (9 tests) 22ms
+ ✓ src/features/plan/PlanUsageMeter.test.tsx (1 test) 17ms
+stderr | src/features/practice/usePracticeSession.ownerRace.test.ts > usePracticeSession owner isolation > leaves a final conflict retryable without marking it committed
+Could not save the review result. Error: This card was reviewed on another device.
+    at Object.submitStudyRating (/mnt/Projects/startup/flash-card/src/features/practice/usePracticeSession.ts:216:56)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+stderr | src/features/practice/usePracticeSession.ownerRace.test.ts > usePracticeSession owner isolation > leaves a final persistence error retryable without marking it committed
+Could not save the review result. Error: permanent failure
+    at /mnt/Projects/startup/flash-card/src/features/practice/usePracticeSession.ownerRace.test.ts:510:30
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///mnt/Projects/startup/flash-card/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+ ✓ src/features/practice/usePracticeSession.ownerRace.test.ts (14 tests) 24ms
+ ✓ src/features/practice/usePracticeGames.test.ts (24 tests) 26ms
+ ✓ src/features/intake/useCardIntakePort.test.ts (26 tests) 19ms
+ ✓ src/features/library/libraryViewModel.test.ts (9 tests) 24ms
+ ✓ src/features/gamification/useGamification.test.tsx (4 tests) 23ms
+ ✓ src/lib/cardRepositoryLibraryFacets.test.ts (8 tests) 23ms
+ ✓ src/features/multilingual/dualRead.test.ts (4 tests) 23ms
+ ✓ src/features/library/AiDialogueModal.test.tsx (5 tests) 21ms
+ ✓ src/features/librarySession/useCloudLibraryPage.test.tsx (3 tests) 20ms
+ ✓ src/features/library/useCardMediaHydration.test.ts (9 tests) 22ms
+ ✓ src/features/intake/cardIntakeController.test.ts (23 tests) 26ms
+ ✓ src/lib/format.test.ts (3 tests) 21ms
+ ✓ src/app/catalogRuntime.test.ts (16 tests) 17ms
+ ✓ src/features/theme/ThemeProvider.test.tsx (2 tests) 14ms
+ ✓ src/lib/pendingOperationStore.test.ts (8 tests) 19ms
+ ✓ src/components/shell/AppNavigation.test.tsx (2 tests) 17ms
+ ✓ src/features/dailyLearning/exerciseEngine.test.ts (8 tests) 16ms
+ ✓ src/features/library/libraryPresentation.test.ts (9 tests) 16ms
+ ✓ src/features/multilingual/lexemeIdentity.test.ts (7 tests) 16ms
+ ✓ src/components/shell/AppFeedback.test.tsx (4 tests) 15ms
+ ✓ src/features/learning/useLearningWorkspace.test.tsx (8 tests) 16ms
+ ✓ src/components/motion/CountUp.test.tsx (3 tests) 17ms
+ ✓ src/features/library/LibraryCardGrid.test.tsx (7 tests) 16ms
+ ✓ src/features/learning/useLearningState.test.tsx (4 tests) 14ms
+ ✓ src/features/practice/ShadowingView.test.tsx (1 test) 11ms
+ ✓ src/features/dailyLearning/placementEngine.test.ts (5 tests) 15ms
+ ✓ src/features/settings/settings-screen.test.tsx (1 test) 15ms
+ ✓ src/features/theme/bannedWords.test.ts (4 tests) 15ms
+ ✓ src/features/session/identitySessionController.test.ts (16 tests) 14ms
+ ✓ src/features/dailyLearning/dailyPlan.test.ts (5 tests) 17ms
+ ✓ src/features/catalogWorkspace/catalogProgress.test.ts (5 tests) 15ms
+ ✓ src/lib/cardUniqueness.test.ts (4 tests) 14ms
+ ✓ src/features/multilingual/multilingualCardReader.test.ts (3 tests) 14ms
+ ✓ src/features/browserExtension/useBrowserExtensionImport.test.tsx (1 test) 12ms
+ ✓ src/features/practice/StudyView.touchGuard.test.tsx (6 tests) 14ms
+ ✓ scripts/bundle-budget.test.mjs (5 tests) 16ms
+ ✓ src/features/library/WordExtractorModal.test.tsx (4 tests) 13ms
+ ✓ src/features/plan/usePlanUsage.test.ts (5 tests) 13ms
+ ✓ src/components/RecoverableActionFeedback.test.tsx (2 tests) 12ms
+ ✓ src/components/shell/AppFooter.test.tsx (4 tests) 11ms
+ ✓ src/features/library/useCustomDeckWorkspace.test.tsx (7 tests) 14ms
+ ✓ src/features/cardEdit/EditCardDialog.test.tsx (5 tests) 10ms
+ ✓ src/app/AppRuntimeBoundary.test.tsx (1 test) 12ms
+ ✓ src/features/dailyLearning/dailySessionController.test.ts (11 tests) 9ms
+ ✓ src/components/shell/ThemeMenu.test.tsx (2 tests) 10ms
+ ✓ src/features/intake/useCardIntake.test.ts (7 tests) 11ms
+ ✓ src/features/multilingual/catalogLearningStateFirebaseReader.test.ts (5 tests) 7ms
+ ✓ src/features/learning/learningStateController.test.ts (6 tests) 10ms
+ ✓ src/features/account/accountDataService.test.ts (5 tests) 9ms
+ ✓ src/components/motion/AppShellMotion.test.ts (6 tests) 7ms
+ ✓ src/features/librarySession/useLibraryCloudProjection.test.ts (7 tests) 10ms
+ ✓ src/lib/cardCreation.test.ts (15 tests) 7ms
+ ✓ src/features/library/libraryStorage.test.ts (8 tests) 9ms
+ ✓ src/lib/deviceStore.test.ts (5 tests) 10ms
+ ✓ src/components/shell/LibraryManagementMenu.test.tsx (1 test) 9ms
+ ✓ src/lib/pendingCardOverlay.test.ts (4 tests) 10ms
+ ✓ src/components/shell/FloatingMobileNav.test.tsx (1 test) 10ms
+ ✓ src/features/multilingual/compatibilityProjection.test.ts (6 tests) 10ms
+ ✓ src/app/appDependencies.test.ts (12 tests) 10ms
+ ✓ src/components/shell/CourseSwitcherSlot.test.tsx (1 test) 8ms
+ ✓ src/features/gamification/gamificationStore.test.ts (13 tests) 10ms
+ ✓ src/components/lumi/Lumi.test.tsx (3 tests) 9ms
+ ✓ src/features/catalogWorkspace/catalogWorkspaceOrchestration.test.ts (5 tests) 7ms
+ ✓ src/components/AppErrorBoundary.test.tsx (2 tests) 9ms
+ ✓ src/components/shell/LanguageMenu.test.tsx (1 test) 8ms
+ ✓ src/features/dailyLearning/dailyPracticePoolRuntime.test.ts (5 tests) 6ms
+stdout | scripts/locale-pages.test.mjs > localized landing pages > generates catalog-owned metadata without changing the inline boot script
+Generated 2 localized landing pages and sitemap.xml.
+Validated 2 localized landing pages.
+
+stdout | scripts/locale-pages.test.mjs > localized landing pages > rejects a page missing reciprocal hreflang
+Generated 2 localized landing pages and sitemap.xml.
+
+stdout | scripts/locale-pages.test.mjs > localized landing pages > rejects incorrect canonical URLs and document languages
+Generated 2 localized landing pages and sitemap.xml.
+
+stdout | scripts/locale-pages.test.mjs > localized landing pages > rejects malformed sitemap alternates
+Generated 2 localized landing pages and sitemap.xml.
+
+ ✓ scripts/locale-pages.test.mjs (4 tests) 9ms
+ ✓ src/lib/cardNormalization.test.ts (11 tests) 6ms
+ ✓ src/features/navigation/useAppNavigation.test.ts (8 tests) 13ms
+ ✓ src/lib/cardIdentity.test.ts (10 tests) 8ms
+ ✓ src/features/practice/usePracticeWorkspace.test.ts (7 tests) 8ms
+ ✓ src/features/librarySession/useLibrarySession.test.ts (4 tests) 7ms
+ ✓ src/features/librarySession/useLibrarySessionPorts.test.ts (5 tests) 8ms
+ ✓ src/features/browser/useBrowserCapabilities.test.ts (6 tests) 7ms
+ ✓ src/lib/recoverableActions.test.ts (5 tests) 4ms
+ ✓ src/features/browserExtension/browserExtensionImport.test.ts (15 tests) 6ms
+ ✓ src/components/lumi/LumiBubble.test.tsx (1 test) 5ms
+ ✓ src/lib/audio.test.ts (7 tests) 7ms
+ ✓ src/features/browserExtension/browserExtensionImportRuntime.test.ts (11 tests) 7ms
+ ✓ staging-build-target.test.ts (3 tests) 6ms
+ ✓ src/features/multilingual/multilingualFirebaseReader.test.ts (5 tests) 6ms
+ ✓ src/features/librarySession/legacyLibraryMigrationService.test.ts (5 tests) 10ms
+ ✓ src/features/overlays/useOverlayState.test.ts (8 tests) 7ms
+ ✓ src/lib/cardQuery.test.ts (13 tests) 6ms
+ ✓ src/lib/protectedFunctionsCapability.test.ts (18 tests) 7ms
+ ✓ src/lib/cardReviewRepository.test.ts (4 tests) 7ms
+ ✓ src/features/importExport/libraryExport.test.ts (5 tests) 7ms
+ ✓ src/features/releaseReadiness/operationalReadiness.test.ts (23 tests) 9ms
+ ✓ src/components/shell/SkipToContentLink.test.tsx (1 test) 7ms
+ ✓ src/features/catalogPipeline/catalogEditorial.test.ts (39 tests) 6ms
+ ✓ src/features/practice/practiceSessionLifecycle.test.ts (9 tests) 6ms
+ ✓ src/lib/images.test.ts (13 tests) 6ms
+ ✓ src/lib/reviewScheduler.test.ts (8 tests) 7ms
+ ✓ src/features/theme/loadThemeAssets.test.ts (3 tests) 4ms
+ ✓ src/features/catalogWorkspace/catalogLearningFlow.test.ts (9 tests) 10ms
+ ✓ src/lib/recall.test.ts (12 tests) 6ms
+ ✓ src/features/importExport/spreadsheetModel.test.ts (5 tests) 6ms
+ ✓ src/features/catalog/useLibraryCatalogQuery.test.ts (8 tests) 6ms
+ ✓ src/features/librarySession/useOwnerLibrarySession.test.ts (7 tests) 7ms
+ ✓ deployGateSource.test.ts (5 tests) 7ms
+ ✓ src/lib/asyncPool.test.ts (3 tests) 5ms
+ ✓ src/features/theme/tokenParity.test.ts (9 tests) 6ms
+ ✓ src/features/cardReport/cardReportService.test.ts (7 tests) 7ms
+ ✓ src/features/library/customDecks.test.ts (6 tests) 4ms
+ ✓ src/features/practice/practiceModel.test.ts (5 tests) 5ms
+ ✓ src/features/sync/syncHealthModel.test.ts (12 tests) 5ms
+ ✓ src/app/appCompositionRoot.test.ts (3 tests) 5ms
+ ✓ scripts/release-config.test.mjs (12 tests) 5ms
+ ✓ src/features/releaseReadiness/catalogPerformanceGate.test.ts (6 tests) 5ms
+ ✓ src/features/catalogWorkspace/catalogSearchDebouncer.test.ts (2 tests) 3ms
+ ✓ src/components/shell/shellSyncStatus.test.ts (5 tests) 3ms
+ ✓ src/lib/motion.test.ts (9 tests) 4ms
+ ✓ src/lib/cardConflictRecovery.test.ts (4 tests) 4ms
+ ✓ src/lib/async.test.ts (3 tests) 5ms
+ ✓ src/features/dailyLearning/lessonReducer.test.ts (5 tests) 4ms
+ ✓ src/features/settings/lumi-preference.test.ts (2 tests) 3ms
+ ✓ src/lib/cardMutationProtocol.test.ts (9 tests) 5ms
+ ✓ src/components/ui/UndoToast.test.tsx (3 tests) 4ms
+ ✓ src/features/catalogWorkspace/catalogWorkspacePresenter.test.ts (3 tests) 4ms
+ ✓ scripts/releaseEvidence.test.ts (10 tests) 5ms
+ ✓ src/features/dailyLearning/scriptScoring.test.ts (6 tests) 5ms
+ ✓ src/features/language/languageProfile.test.ts (4 tests) 4ms
+ ✓ src/features/theme/themePreference.test.ts (5 tests) 5ms
+ ✓ src/features/library/libraryMutationRecovery.test.ts (5 tests) 4ms
+ ✓ src/lib/analytics.test.ts (3 tests) 4ms
+ ✓ src/features/catalogWorkspace/catalogWorkspaceQuery.test.ts (6 tests) 5ms
+ ✓ src/features/practice/practiceAccessibility.test.ts (3 tests) 3ms
+ ✓ src/components/shell/shellBoundaries.test.ts (5 tests) 5ms
+ ✓ src/lib/sessionCards.test.ts (8 tests) 4ms
+ ✓ src/features/catalogWorkspace/catalogWorkspaceRegistry.test.ts (5 tests) 4ms
+ ✓ src/features/cardEdit/editCardModel.test.ts (7 tests) 3ms
+ ✓ src/features/landing/LandingAssets.test.ts (4 tests) 4ms
+ ✓ src/features/practice/ShadowingView.lifecycle.test.tsx (1 test) 6ms
+ ✓ src/features/practice/SessionRecapModal.test.tsx (3 tests) 3ms
+ ✓ src/features/sync/cloudSyncAttemptPolicy.test.ts (5 tests) 3ms
+ ✓ src/i18n/resolveLocale.test.ts (5 tests) 3ms
+ ✓ src/features/catalog/libraryCatalogQuery.test.ts (3 tests) 3ms
+ ✓ src/themeTokens.test.ts (5 tests) 3ms
+ ✓ src/lib/wordInfo.test.ts (3 tests) 3ms
+ ✓ src/lib/useZenGlassMode.test.ts (1 test) 3ms
+ ✓ scripts/node-runtime.test.mjs (3 tests) 3ms
+ ✓ src/lib/syllableParser.test.ts (4 tests) 3ms
+ ✓ src/lib/captureFailureMessage.test.ts (9 tests) 3ms
+ ✓ src/features/catalogWorkspace/personalLibraryPaths.test.ts (2 tests) 2ms
+ ✓ src/components/stats/AchievementsMatrix.test.ts (2 tests) 2ms
+ ✓ src/features/dailyLearning/dailyLearningUrl.test.ts (3 tests) 3ms
+ ✓ src/lib/interactionSounds.test.ts (1 test) 3ms
+ ✓ src/lib/cloudReadPolicy.test.ts (3 tests) 2ms
+ ✓ firebaseHostingAuthConfig.test.ts (1 test) 2ms
+ ✓ src/lib/motionPreference.test.ts (2 tests) 3ms
+ ✓ src/features/importExport/spreadsheetMutation.test.ts (2 tests) 9ms
+ ✓ src/lib/speechMatch.test.ts (3 tests) 3ms
+ ✓ src/app/landingSignInRequest.test.ts (1 test) 3ms
+ ✓ src/features/multilingual/schemaV3.test.ts (2 tests) 2ms
+ ✓ src/features/library/aiGenerationAccess.test.ts (3 tests) 3ms
+ ✓ src/features/catalogCache/catalogTransaction.test.ts (1 test) 2ms
+ ✓ src/features/library/libraryLoading.test.ts (2 tests) 2ms
+ ✓ src/i18n/pseudo.test.ts (1 test) 2ms
+ ✓ src/features/catalogWorkspace/useCatalogLibraryActions.test.ts (1 test) 2ms
+ ✓ appOwnerSafetySource.test.ts (1 test) 2ms
+ ✓ src/lib/mediaUrlPolicy.test.ts (2 tests) 2ms
+ ✓ src/lib/practiceAvailability.test.ts (2 tests) 2ms
+ ✓ src/lib/realtimeSync.test.ts (3 tests) 2ms
+ ✓ src/features/catalogWorkspace/catalogPagingGuard.test.ts (1 test) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/i18n/stringScanner.test.ts > migrated UI string guard > src/components/shell/DesktopNavigation.tsx has no hardcoded user-visible strings
+AssertionError: expected [ 'JSX text: S', 'JSX text: Lv' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "JSX text: S",
++   "JSX text: Lv",
++ ]
+
+ ❯ src/i18n/stringScanner.test.ts:46:61
+     44|
+     45|   it.each(migratedFiles)('%s has no hardcoded user-visible strings', f…
+     46|     expect(scan(readFileSync(resolve(file), 'utf8'), file)).toEqual([]…
+       |                                                             ^
+     47|   });
+     48| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/i18n/stringScanner.test.ts > migrated UI string guard > src/features/landing/LandingPage.tsx has no hardcoded user-visible strings
+AssertionError: expected [ 'JSX text: Crystal Star', …(22) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "JSX text: Crystal Star",
++   "aria-label: Sample English vocabulary card",
++   "JSX text: Bud",
++   "JSX text: New",
++   "JSX text: Spelling",
++   "JSX text: /ˈspelɪŋ/",
++   "JSX text: chính tả",
++   "JSX text: Bloom",
++   "JSX text: Learning",
++   "JSX text: Immediate",
++   "JSX text: /ɪˈmiːdiət/",
++   "JSX text: ngay lập tức",
++   "JSX text: Star",
++   "JSX text: Mastered",
++   "JSX text: Instant",
++   "JSX text: /ˈɪnstənt/",
++   "JSX text: khoảnh khắc",
++   "JSX text: Spaced review",
++   "JSX text: Context first",
++   "JSX text: Learn at your pace",
++   "JSX text: Chrome extension",
++   "JSX text: SON",
++   "JSX text: FLASH",
++ ]
+
+ ❯ src/i18n/stringScanner.test.ts:46:61
+     44|
+     45|   it.each(migratedFiles)('%s has no hardcoded user-visible strings', f…
+     46|     expect(scan(readFileSync(resolve(file), 'utf8'), file)).toEqual([]…
+       |                                                             ^
+     47|   });
+     48| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/i18n/stringScanner.test.ts > migrated UI string guard > src/features/library/LibraryCardGrid.tsx has no hardcoded user-visible strings
+AssertionError: expected [ 'aria-label: Library pages' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "aria-label: Library pages",
++ ]
+
+ ❯ src/i18n/stringScanner.test.ts:46:61
+     44|
+     45|   it.each(migratedFiles)('%s has no hardcoded user-visible strings', f…
+     46|     expect(scan(readFileSync(resolve(file), 'utf8'), file)).toEqual([]…
+       |                                                             ^
+     47|   });
+     48| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/i18n/stringScanner.test.ts > migrated UI string guard > src/features/library/LibraryOverview.tsx has no hardcoded user-visible strings
+AssertionError: expected [ 'JSX text: LUMI · LINK' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "JSX text: LUMI · LINK",
++ ]
+
+ ❯ src/i18n/stringScanner.test.ts:46:61
+     44|
+     45|   it.each(migratedFiles)('%s has no hardcoded user-visible strings', f…
+     46|     expect(scan(readFileSync(resolve(file), 'utf8'), file)).toEqual([]…
+       |                                                             ^
+     47|   });
+     48| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  src/i18n/stringScanner.test.ts > migrated UI string guard > src/features/library/LibraryScreen.tsx has no hardcoded user-visible strings
+AssertionError: expected [ 'aria-label: Decks' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "aria-label: Decks",
++ ]
+
+ ❯ src/i18n/stringScanner.test.ts:46:61
+     44|
+     45|   it.each(migratedFiles)('%s has no hardcoded user-visible strings', f…
+     46|     expect(scan(readFileSync(resolve(file), 'utf8'), file)).toEqual([]…
+       |                                                             ^
+     47|   });
+     48| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  src/features/sharing/sharedDeckSessionController.test.ts > shared deck session controller > preserves every unique language pair in incoming and outgoing previews
+AssertionError: expected [ { targetLanguage: null, …(1) } ] to deeply equal [ Array(2) ]
+
+- Expected
++ Received
+
+  [
+    {
+-     "targetLanguage": "en",
+-     "translationLanguage": "vi",
+-   },
+-   {
+-     "targetLanguage": "ko",
+-     "translationLanguage": "vi",
++     "targetLanguage": null,
++     "translationLanguage": null,
+    },
+  ]
+
+ ❯ src/features/sharing/sharedDeckSessionController.test.ts:335:69
+    333|
+    334|     await controller.activate('owner-1');
+    335|     expect(controller.getSnapshot().incomingPreview?.languagePairs).to…
+       |                                                                     ^
+    336|       { targetLanguage: 'en', translationLanguage: 'vi' },
+    337|       { targetLanguage: 'ko', translationLanguage: 'vi' },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  src/features/sharing/sharedDeckSessionController.test.ts > shared deck session controller > keeps missing incoming translation metadata unknown after a Korean-to-English share
+AssertionError: expected { shareId: 'deck-1', …(4) } to match object { languagePairs: [ { …(2) } ], …(1) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  {
+    "languagePairs": [
+      {
+-       "targetLanguage": "ko",
++       "targetLanguage": null,
+        "translationLanguage": null,
+      },
+    ],
+    "sampleWords": [
+      {
+
+ ❯ src/features/sharing/sharedDeckSessionController.test.ts:399:63
+    397|     });
+    398|     await incoming.controller.activate('owner-1');
+    399|     expect(incoming.controller.getSnapshot().incomingPreview).toMatchO…
+       |                                                               ^
+    400|       languagePairs: [{ targetLanguage: 'ko', translationLanguage: nul…
+    401|       sampleWords: [{ value: '사과', language: 'ko' }],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+
+ Test Files  2 failed | 224 passed (226)
+      Tests  7 failed | 1950 passed (1957)
+   Start at  11:55:17
+   Duration  88.48s (transform 6.40s, setup 0ms, collect 21.22s, tests 20.48s, environment 29ms, prepare 20.42s)
+
+
+exit_code=1
+end_utc=2026-09-25T04:56:46.262563+00:00

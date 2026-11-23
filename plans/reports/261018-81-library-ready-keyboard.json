@@ -1,0 +1,1501 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-18T07:33:30.225452+00:00",
+  "parentRevision": "f1a3fe910e8c08bc5760098a0ce06ae3b014b169",
+  "ciFailure": {
+    "runId": "39094592070",
+    "headRevision": "f1a3fe910e8c08bc5760098a0ce06ae3b014b169",
+    "verify": "failure",
+    "audit_root": "success",
+    "audit_functions": "success",
+    "passed": 1871,
+    "flaky": 1,
+    "skipped": 8,
+    "failure": "Chromium Library Vocabulary h2 assertion starts while the course loading gate remains visible. Retry success does not satisfy failOnFlakyTests.",
+    "evidenceSha256": {
+      "error-context.md": "554a063e3dab36c473d982a2cce0b3a70a885cfb5ee9f39b60a4a7668ab5e384",
+      "test-failed-1.png": "1b04f945d7e3de415140d46d26bc3260aefb96b4dfca8d5e9ce4af0f13a746b3",
+      "trace.zip": "c67e1405345d377f6fd27bd786f5cb1be95a24ae713b04dea492c39df18f32b4"
+    }
+  },
+  "diagnosis": "signIn resolves Auth identity, not initial course readiness. The shell h1 and skip link render outside the course gate; LibraryOverview and its h2 render after course readiness. The accessibility case lacks that loaded-Library precondition.",
+  "repair": "Wait for the existing visible Library overview before setting keyboard focus. No product, golden, global fixture, assertion, retry or configured timeout changes.",
+  "timeoutBoundary": "The native readiness wait uses the existing whole-test 30-second budget; it is not a claim of identical startup deadline or a product startup performance test. Existing semantic/focus assertions retain their original deadlines.",
+  "sourceSha256": {
+    "e2e/app-shell-remediation.spec.ts": "868c49501be4fbb49650bd90b7f76c92d44020084bc58b9be322cecfb5cb019b",
+    "e2e/fixtures/firebase-emulator.ts": "ef9da85c01bd74bf55ff937d6245a141459559d5592514e5f3a49279f4f731df",
+    "src/app/AppRuntime.tsx": "9ca0109dc15c48c82ad3531f5c8cf9096b7deb5946bdf4a2b9c744d4dbbd504a",
+    "src/features/library/LibraryOverview.tsx": "f2d7fa93721e6763305a3d8d2614dab3cfdefc307d77ace895dc7e3f482a75d6",
+    "playwright.config.ts": "6e74b186a9b3f3f57de6586672fbb16ef4362e2709afd5b72f69453462293c27"
+  },
+  "preRepairTestSha256": "907f7e7b74039029b411c3d9ffb82b396aae1cb8cdb329e67d7ee2810df1b987",
+  "environment": {
+    "playwright": "1.64.1",
+    "rendererImage": "mcr.microsoft.com/playwright@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf",
+    "services": "Real Auth/Firestore/Functions emulators, one worker, project Linux fontconfig; no real Chrome fixture data."
+  },
+  "controlledProbe": {
+    "scope": "Delay only the first real local Firestore Listen POST for the Library by 6500 ms, then forward its original request. No substituted data/response. Instrumentation is restored; these are diagnostic runs, separate from ordinary acceptance.",
+    "limitation": "Reproduces the missing-readiness assertion; does not establish the exact CI network-delay cause.",
+    "helperSha256": "a7d176e7f82b4ab5ad937f0852e4ffd123639df6d8cd6c3d4f47e37c7e38a71c",
+    "red": {
+      "stats": {
+        "startTime": "2026-10-18T07:24:38.438Z",
+        "duration": 9305.375,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "rawReportSha256": "c86e7546a00dc25d30bb4bce53d80a5ec295e8edd5ca1f9176467fab25a8adae",
+      "cases": [
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "unexpected",
+          "attempts": [
+            {
+              "status": "failed",
+              "retry": 0,
+              "durationMs": 6810
+            }
+          ]
+        }
+      ],
+      "delayMarkerObserved": true
+    },
+    "green": {
+      "stats": {
+        "startTime": "2026-10-18T07:25:29.494Z",
+        "duration": 11266.663,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "rawReportSha256": "5da47d60b61e8b687a83c5f9a06624ae4c5cdef59e95a57aaf726dcd4c2df4d4",
+      "cases": [
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 8845
+            }
+          ]
+        }
+      ],
+      "delayMarkerObserved": true
+    }
+  },
+  "ordinaryRuns": {
+    "unchangedChromium10": {
+      "stats": {
+        "startTime": "2026-10-18T07:23:31.988Z",
+        "duration": 22114.661,
+        "expected": 10,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "rawReportSha256": "b28b1cda85088239712ec765a2bf840e63e353497f73fbe92302f1b4ab875085",
+      "cases": [
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2581
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 879
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 910
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1015
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 952
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 968
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 937
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 959
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 957
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 956
+            }
+          ]
+        }
+      ]
+    },
+    "repairedThreeEngines30": {
+      "stats": {
+        "startTime": "2026-10-18T07:26:25.751Z",
+        "duration": 78452.992,
+        "expected": 30,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "rawReportSha256": "bc540f8c0396775a41fac897861343b64ac6602bc0cd1f024c6846723addd934",
+      "cases": [
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2111
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1348
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1306
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1344
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1319
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1004
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1308
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1333
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1322
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1355
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1929
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1728
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1761
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1722
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1871
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1804
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1739
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1705
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1758
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1757
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2729
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1298
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1332
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1482
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1461
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1450
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1592
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1570
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1507
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1417
+            }
+          ]
+        }
+      ]
+    },
+    "repairedWholeSpecThreeEngines72": {
+      "stats": {
+        "startTime": "2026-10-18T07:28:18.353Z",
+        "duration": 274049.46900000004,
+        "expected": 72,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "rawReportSha256": "dd56e8b851a94919077dbb8445ee40a01627796ea7dd59b967b51e619db77f77",
+      "cases": [
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2200
+            }
+          ]
+        },
+        {
+          "title": "shell settles when WebKit animation signals and the timer fallback both stall",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1731
+            }
+          ]
+        },
+        {
+          "title": "tablet shell keeps every visible header control in bounds and nav targets at least 44px tall",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 6372
+            }
+          ]
+        },
+        {
+          "title": "classic light empty course chooser keeps its mobile arrow and accessible name",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2504
+            }
+          ]
+        },
+        {
+          "title": "classic dark empty course chooser keeps its mobile arrow and accessible name",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2520
+            }
+          ]
+        },
+        {
+          "title": "crystal light empty course chooser keeps its mobile arrow and accessible name",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2495
+            }
+          ]
+        },
+        {
+          "title": "crystal dark empty course chooser keeps its mobile arrow and accessible name",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2519
+            }
+          ]
+        },
+        {
+          "title": "mobile library settings menu stays in bounds and restores trigger focus",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1563
+            }
+          ]
+        },
+        {
+          "title": "bookmarking a card preserves the current library page",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1310
+            }
+          ]
+        },
+        {
+          "title": "Today practice choices reflow in short portrait and landscape viewports",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2156
+            }
+          ]
+        },
+        {
+          "title": "the destructive library dialog restores focus to its stable opener",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2834
+            }
+          ]
+        },
+        {
+          "title": "learning insights open from the library menu and lead to Progress",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2453
+            }
+          ]
+        },
+        {
+          "title": "a deck can be created, reloaded, and deleted from Library",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3911
+            }
+          ]
+        },
+        {
+          "title": "a structured CSV imports a card from Library and persists after reload",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 4525
+            }
+          ]
+        },
+        {
+          "title": "Library Scan Text opens its production dialog and clears the draft on close",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1634
+            }
+          ]
+        },
+        {
+          "title": "empty Library Scan a text restores focus after close",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2038
+            }
+          ]
+        },
+        {
+          "title": "Library Share creates and revokes a real deck link",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 6771
+            }
+          ]
+        },
+        {
+          "title": "a recipient accepts a shared deck batch into a separate Library",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 6591
+            }
+          ]
+        },
+        {
+          "title": "a recipient accepts a shared deck at the 100-card limit",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 14010
+            }
+          ]
+        },
+        {
+          "title": "a shared Korean-Vietnamese deck stays retryable when the recipient course uses English meanings",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 7259
+            }
+          ]
+        },
+        {
+          "title": "Today and Progress empty states expose concrete next actions without initial autofocus",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1291
+            }
+          ]
+        },
+        {
+          "title": "library query state deep-links and responds to browser history without dropping unrelated params",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2160
+            }
+          ]
+        },
+        {
+          "title": "mobile library presents the card grid before tools and the filter shortcut reaches tools",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1217
+            }
+          ]
+        },
+        {
+          "title": "study shortcuts require modifiers for single-character commands and views expose a focused heading",
+          "project": "chromium",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 4522
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1752
+            }
+          ]
+        },
+        {
+          "title": "shell settles when WebKit animation signals and the timer fallback both stall",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2202
+            }
+          ]
+        },
+        {
+          "title": "tablet shell keeps every visible header control in bounds and nav targets at least 44px tall",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 5132
+            }
+          ]
+        },
+        {
+          "title": "classic light empty course chooser keeps its mobile arrow and accessible name",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3443
+            }
+          ]
+        },
+        {
+          "title": "classic dark empty course chooser keeps its mobile arrow and accessible name",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2925
+            }
+          ]
+        },
+        {
+          "title": "crystal light empty course chooser keeps its mobile arrow and accessible name",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3051
+            }
+          ]
+        },
+        {
+          "title": "crystal dark empty course chooser keeps its mobile arrow and accessible name",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2669
+            }
+          ]
+        },
+        {
+          "title": "mobile library settings menu stays in bounds and restores trigger focus",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1379
+            }
+          ]
+        },
+        {
+          "title": "bookmarking a card preserves the current library page",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1519
+            }
+          ]
+        },
+        {
+          "title": "Today practice choices reflow in short portrait and landscape viewports",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3499
+            }
+          ]
+        },
+        {
+          "title": "the destructive library dialog restores focus to its stable opener",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2456
+            }
+          ]
+        },
+        {
+          "title": "learning insights open from the library menu and lead to Progress",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2405
+            }
+          ]
+        },
+        {
+          "title": "a deck can be created, reloaded, and deleted from Library",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 4634
+            }
+          ]
+        },
+        {
+          "title": "a structured CSV imports a card from Library and persists after reload",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2644
+            }
+          ]
+        },
+        {
+          "title": "Library Scan Text opens its production dialog and clears the draft on close",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1910
+            }
+          ]
+        },
+        {
+          "title": "empty Library Scan a text restores focus after close",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1996
+            }
+          ]
+        },
+        {
+          "title": "Library Share creates and revokes a real deck link",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2463
+            }
+          ]
+        },
+        {
+          "title": "a recipient accepts a shared deck batch into a separate Library",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 7273
+            }
+          ]
+        },
+        {
+          "title": "a recipient accepts a shared deck at the 100-card limit",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 15965
+            }
+          ]
+        },
+        {
+          "title": "a shared Korean-Vietnamese deck stays retryable when the recipient course uses English meanings",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 5425
+            }
+          ]
+        },
+        {
+          "title": "Today and Progress empty states expose concrete next actions without initial autofocus",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1990
+            }
+          ]
+        },
+        {
+          "title": "library query state deep-links and responds to browser history without dropping unrelated params",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3333
+            }
+          ]
+        },
+        {
+          "title": "mobile library presents the card grid before tools and the filter shortcut reaches tools",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2021
+            }
+          ]
+        },
+        {
+          "title": "study shortcuts require modifiers for single-character commands and views expose a focused heading",
+          "project": "firefox",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3113
+            }
+          ]
+        },
+        {
+          "title": "library exposes one canonical heading and a keyboard-operable skip link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2192
+            }
+          ]
+        },
+        {
+          "title": "shell settles when WebKit animation signals and the timer fallback both stall",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2296
+            }
+          ]
+        },
+        {
+          "title": "tablet shell keeps every visible header control in bounds and nav targets at least 44px tall",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 7079
+            }
+          ]
+        },
+        {
+          "title": "classic light empty course chooser keeps its mobile arrow and accessible name",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3530
+            }
+          ]
+        },
+        {
+          "title": "classic dark empty course chooser keeps its mobile arrow and accessible name",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2956
+            }
+          ]
+        },
+        {
+          "title": "crystal light empty course chooser keeps its mobile arrow and accessible name",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3685
+            }
+          ]
+        },
+        {
+          "title": "crystal dark empty course chooser keeps its mobile arrow and accessible name",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3432
+            }
+          ]
+        },
+        {
+          "title": "mobile library settings menu stays in bounds and restores trigger focus",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1472
+            }
+          ]
+        },
+        {
+          "title": "bookmarking a card preserves the current library page",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1818
+            }
+          ]
+        },
+        {
+          "title": "Today practice choices reflow in short portrait and landscape viewports",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2372
+            }
+          ]
+        },
+        {
+          "title": "the destructive library dialog restores focus to its stable opener",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3482
+            }
+          ]
+        },
+        {
+          "title": "learning insights open from the library menu and lead to Progress",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3119
+            }
+          ]
+        },
+        {
+          "title": "a deck can be created, reloaded, and deleted from Library",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 5495
+            }
+          ]
+        },
+        {
+          "title": "a structured CSV imports a card from Library and persists after reload",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 3264
+            }
+          ]
+        },
+        {
+          "title": "Library Scan Text opens its production dialog and clears the draft on close",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2689
+            }
+          ]
+        },
+        {
+          "title": "empty Library Scan a text restores focus after close",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2482
+            }
+          ]
+        },
+        {
+          "title": "Library Share creates and revokes a real deck link",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2386
+            }
+          ]
+        },
+        {
+          "title": "a recipient accepts a shared deck batch into a separate Library",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 8118
+            }
+          ]
+        },
+        {
+          "title": "a recipient accepts a shared deck at the 100-card limit",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 16593
+            }
+          ]
+        },
+        {
+          "title": "a shared Korean-Vietnamese deck stays retryable when the recipient course uses English meanings",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 5525
+            }
+          ]
+        },
+        {
+          "title": "Today and Progress empty states expose concrete next actions without initial autofocus",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1784
+            }
+          ]
+        },
+        {
+          "title": "library query state deep-links and responds to browser history without dropping unrelated params",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 2771
+            }
+          ]
+        },
+        {
+          "title": "mobile library presents the card grid before tools and the filter shortcut reaches tools",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 1447
+            }
+          ]
+        },
+        {
+          "title": "study shortcuts require modifiers for single-character commands and views expose a focused heading",
+          "project": "webkit",
+          "status": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "durationMs": 6679
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "setupFailures": [
+    "Initial anchored grep selected zero tests; not PASS.",
+    "Host lacked the required Chromium headless binary; ten browser-launch setup failures, not application evidence. Cached immutable Noble renderer then used."
+  ],
+  "checks": {
+    "lintTypecheck": {
+      "status": "passed",
+      "command": "npm run lint",
+      "exitCode": 0,
+      "logSha256": "2d3d3c793d5b1c23a11ba05281c36e10f103cd5c98457b531b49fe906adfb667"
+    },
+    "diffCheck": "passed"
+  },
+  "review": "Main-agent scoped specification and quality review: existing loaded overview is the correct precondition; keyboard focus starts afterward, all original heading/skip/main-focus checks remain. No blocking finding; no independent review claimed.",
+  "releaseState": {
+    "newHeadRequiredCI": "pending",
+    "merged": false,
+    "candidateDispatched": false,
+    "deployed": false,
+    "existingProGrant": "preserved without regrant or extension"
+  },
+  "privacy": "Only safe test titles, timings, counts and hashes are published. No raw trace, identity or credential is included."
+}

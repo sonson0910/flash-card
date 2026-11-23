@@ -1,5 +1,13 @@
-import type { CardData } from '../types/card';
+import {
+  LEGACY_CARD_LANGUAGE,
+  LEGACY_CARD_TRANSLATION_LANGUAGE,
+  type CardData,
+  type CardLanguageFields,
+  type CardLanguagePair,
+  type LearnerDifficulty,
+} from '../types/card';
 import { normalizePartOfSpeech, normalizePrefixSearch } from './cardQuery';
+import { normalizeCardLanguage } from './cardIdentity';
 import { isSupportedAudioUrl, isSupportedImageUrl } from './mediaUrlPolicy';
 
 const asText = (value: unknown, fallback = '') =>
@@ -7,6 +15,50 @@ const asText = (value: unknown, fallback = '') =>
 
 const boundedText = (value: unknown, maximum: number, fallback = '') =>
   asText(value, fallback).trim().slice(0, maximum);
+
+/** Explicit non-string language metadata must remain distinguishable from omission. */
+export const INVALID_CARD_LANGUAGE_MARKER = '__invalid__';
+
+const normalizeStoredLanguage = (value: unknown): string | undefined => {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') return INVALID_CARD_LANGUAGE_MARKER;
+  return normalizeCardLanguage(value) || boundedText(value, 64) || INVALID_CARD_LANGUAGE_MARKER;
+};
+
+export const isSupportedCardTranslationLanguage = (value: unknown): boolean => {
+  const normalized = normalizeCardLanguage(value);
+  return normalized === 'en' || normalized === 'vi';
+};
+
+export const isValidCardLanguageFields = (value: CardLanguageFields): boolean => (
+  (value.language === undefined || Boolean(normalizeCardLanguage(value.language)))
+  && (value.translationLanguage === undefined || isSupportedCardTranslationLanguage(value.translationLanguage))
+);
+
+/** Resolve legacy omissions for reads without adding defaults to the stored card. */
+export function effectiveCardLanguagePair(value: CardLanguageFields): CardLanguagePair {
+  const language = value.language === undefined
+    ? LEGACY_CARD_LANGUAGE
+    : normalizeCardLanguage(value.language);
+  const translationLanguage = value.translationLanguage === undefined
+    ? LEGACY_CARD_TRANSLATION_LANGUAGE
+    : isSupportedCardTranslationLanguage(value.translationLanguage)
+      ? normalizeCardLanguage(value.translationLanguage)
+      : '';
+  if (!language || !translationLanguage) throw new TypeError('Card language fields are invalid.');
+  return {
+    language,
+    translationLanguage,
+  };
+}
+
+export function effectiveCardLanguage(value: CardLanguageFields): string {
+  return effectiveCardLanguagePair(value).language;
+}
+
+export function effectiveCardTranslationLanguage(value: CardLanguageFields): string {
+  return effectiveCardLanguagePair(value).translationLanguage;
+}
 
 const validIsoDate = (value: unknown): string | undefined => {
   if (
@@ -35,6 +87,62 @@ const validCounter = (value: unknown): number | undefined =>
 const asTextList = (value: unknown) =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).slice(0, 4).map(item => item.trim().slice(0, 100)) : [];
 
+export const MAX_CARD_TAGS = 8;
+/** Counted in code points, as the server and Rules count it. */
+export const MAX_CARD_TAG_LENGTH = 32;
+export const LEARNER_DIFFICULTIES: readonly LearnerDifficulty[] = ['easy', 'medium', 'hard'];
+const MAX_TRANSLATION_ALTERNATIVES = 3;
+
+export const cardTagLength = (tag: string): number => Array.from(tag).length;
+
+/**
+ * One learner tag in its stored form: inner whitespace collapsed to single
+ * spaces and the ends trimmed. Returns null for a tag the server would
+ * refuse: empty, longer than 32 characters, or containing a comma (the
+ * spreadsheet and tag-input separator).
+ */
+export function normalizeCardTag(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const tag = value.replace(/\s+/gu, ' ').trim();
+  if (!tag || tag.includes(',') || cardTagLength(tag) > MAX_CARD_TAG_LENGTH) return null;
+  return tag;
+}
+
+/** Same tag regardless of letter case; a card keeps the first spelling. */
+export const sameCardTag = (left: string, right: string): boolean =>
+  left.toLocaleLowerCase() === right.toLocaleLowerCase();
+
+/**
+ * Stored-form tag list: invalid entries dropped, case-insensitive duplicates
+ * removed keeping the first, at most 8. Every result passes the server and
+ * Rules checks.
+ */
+export function normalizeCardTags(values: unknown): string[] {
+  if (!Array.isArray(values)) return [];
+  const tags: string[] = [];
+  for (const value of values) {
+    const tag = normalizeCardTag(value);
+    if (tag && !tags.some(existing => sameCardTag(existing, tag))) tags.push(tag);
+    if (tags.length === MAX_CARD_TAGS) break;
+  }
+  return tags;
+}
+
+export const isLearnerDifficulty = (value: unknown): value is LearnerDifficulty =>
+  typeof value === 'string' && (LEARNER_DIFFICULTIES as readonly string[]).includes(value);
+
+const normalizeTranslationAlternatives = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  const alternatives: string[] = [];
+  for (const item of value) {
+    const text = boundedText(item, 256);
+    if (text && !alternatives.some(existing => existing.toLocaleLowerCase() === text.toLocaleLowerCase())) {
+      alternatives.push(text);
+    }
+  }
+  return alternatives.slice(0, MAX_TRANSLATION_ALTERNATIVES);
+};
+
 const normalizeWordFamily = (value: unknown): CardData['wordFamily'] => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
   const source = value as Record<string, unknown>;
@@ -48,6 +156,46 @@ const normalizeWordFamily = (value: unknown): CardData['wordFamily'] => {
   return Object.fromEntries(
     Object.entries(family).filter(([, item]) => item !== undefined),
   ) as CardData['wordFamily'];
+};
+
+/**
+ * Defense in depth on the read side: the server already strips credentials,
+ * query, and fragment and rejects non-http(s) schemes before persistence
+ * (`parseCardSourceMetadata` in `functions/src/inputValidation.ts`), but a
+ * read path never trusts stored data blindly either.
+ */
+const trustedSourceUrl = (value: unknown): string => {
+  const text = boundedText(value, 2048);
+  if (!text) return '';
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    return '';
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+  url.username = '';
+  url.password = '';
+  url.search = '';
+  url.hash = '';
+  const serialized = url.toString();
+  return serialized.length <= 2048 ? serialized : '';
+};
+
+const normalizeCardSource = (value: unknown): CardData['source'] => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const source = value as Record<string, unknown>;
+  const url = trustedSourceUrl(source.url);
+  const title = boundedText(source.title, 256);
+  const context = boundedText(source.context, 500);
+  const capturedAt = validIsoDate(source.capturedAt);
+  if (!url && !title && !context && !capturedAt) return undefined;
+  return {
+    ...(url ? { url } : {}),
+    ...(title ? { title } : {}),
+    ...(context ? { context } : {}),
+    ...(capturedAt ? { capturedAt } : {}),
+  };
 };
 
 const validDifficulties = new Set(['easy', 'good', 'hard', 'unrated']);
@@ -117,19 +265,31 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
   const lastOpenedAt = validIsoDate(raw.lastOpenedAt);
   const sortTouchedAt = validIsoDate(raw.sortTouchedAt);
   const nextReviewDate = validIsoDate(raw.nextReviewDate);
+  const masteredAt = validIsoDate(raw.masteredAt);
+  const japanesePitchAccent = raw.japanesePitchAccent && typeof raw.japanesePitchAccent === 'object' && !Array.isArray(raw.japanesePitchAccent)
+    ? raw.japanesePitchAccent
+    : undefined;
   const customDeck = typeof raw.customDeck === 'string' ? boundedText(raw.customDeck, 128) || null : null;
+  const language = normalizeStoredLanguage(raw.language);
+  const translationLanguage = normalizeStoredLanguage(raw.translationLanguage);
+  // The server accepts meaning alternatives only on AI cards, so a create
+  // that carried them on any other card would be refused as a whole.
+  const translationAlternatives = raw.origin === 'ai' ? normalizeTranslationAlternatives(raw.translationAlternatives) : [];
 
   return {
     id,
+    ...(raw.origin === 'ai' || raw.origin === 'manual' ? { origin: raw.origin } : {}),
     // Canonical identity is optional for legacy cards but must survive every
     // read/normalization path when a V3-compatible card supplies it.
     ...(boundedText(raw.lexemeId, 128) ? { lexemeId: boundedText(raw.lexemeId, 128) } : {}),
-    ...(boundedText(raw.language, 64) ? { language: boundedText(raw.language, 64) } : {}),
+    ...(language !== undefined ? { language } : {}),
+    ...(translationLanguage !== undefined ? { translationLanguage } : {}),
     ...(boundedText(raw.senseKey, 128) ? { senseKey: boundedText(raw.senseKey, 128) } : {}),
     ...(boundedText(raw.normalizedLemma, 256) ? { normalizedLemma: boundedText(raw.normalizedLemma, 256) } : {}),
     word,
     normalizedWord: boundedText(raw.normalizedWord, 256) || normalizePrefixSearch(word),
     translation: boundedText(raw.translation, 256),
+    ...(translationAlternatives.length > 0 ? { translationAlternatives } : {}),
     explanation: boundedText(raw.explanation, 2048),
     explanationTranslation: boundedText(raw.explanationTranslation, 2048) || undefined,
     phonetic: boundedText(raw.phonetic, 256),
@@ -148,7 +308,12 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     bookmarked: raw.bookmarked === true,
     difficulty: typeof raw.difficulty === 'string' && validDifficulties.has(raw.difficulty) ? raw.difficulty : 'unrated',
     customDeck,
+    ...(Array.isArray(raw.tags) ? { tags: normalizeCardTags(raw.tags) } : {}),
+    ...(isLearnerDifficulty(raw.learnerDifficulty) ? { learnerDifficulty: raw.learnerDifficulty } : {}),
+    ...(raw.learnerDifficulty === null ? { learnerDifficulty: null } : {}),
     ...(nextReviewDate ? { nextReviewDate } : {}),
+    ...(masteredAt ? { masteredAt } : {}),
+    ...(japanesePitchAccent ? { japanesePitchAccent } : {}),
     reviews: Number.isFinite(raw.reviews) && Number(raw.reviews) >= 0 ? Math.floor(Number(raw.reviews)) : 0,
     interval: Number.isFinite(raw.interval) && Number(raw.interval) >= 0 ? Number(raw.interval) : 0,
     easeFactor: Number.isFinite(raw.easeFactor) && Number(raw.easeFactor) >= 0 && Number(raw.easeFactor) <= 5 ? Number(raw.easeFactor) : 2.5,
@@ -167,5 +332,6 @@ export function normalizeCardData(raw: Partial<CardData>, documentId: string): C
     reviewHistory: normalizeReviewHistory(raw.reviewHistory),
     appliedReviewOperationIds: normalizeReviewOperationIds(raw.appliedReviewOperationIds),
     fsrs: normalizeFsrs(raw.fsrs),
+    source: normalizeCardSource(raw.source),
   };
 }

@@ -1,0 +1,327 @@
+{
+  "contractVersion": 1,
+  "status": "proposed; test fixtures and test code were not changed",
+  "sourceLock": {
+    "canvasRoot": "docs/design/sonflash-redesign/canvas/",
+    "referenceManifest": "plans/260925-1005-claude-design-workflow-recovery/evidence/canvas-reference-hashes.json",
+    "referenceCount": 331,
+    "referenceManifestIsReadOnly": true,
+    "inventories": [
+      "plans/260925-1005-claude-design-workflow-recovery/board-inventory.csv",
+      "plans/260925-1005-claude-design-workflow-recovery/artboard-inventory.csv"
+    ]
+  },
+  "comparisonRules": {
+    "authority": "Compare the app capture directly with the matching Canvas board and PNG reference. An app-owned Playwright snapshot proves only that the app did not change from its own baseline.",
+    "themeMatrix": ["classic-light", "classic-dark", "crystal-light", "crystal-dark"],
+    "themeBoardMapping": {
+      "classic": "Use the classic source/seed boards and their dark/light references.",
+      "crystal": "Use the Anime/Crystal source boards and their dark/light references."
+    },
+    "webViewports": [
+      { "name": "desktop", "width": 1440, "height": 900 },
+      { "name": "mobile", "width": 390, "height": 844 }
+    ],
+    "longTextCheck": { "uiLocale": "en-XA", "width": 360, "height": 844 },
+    "uiLocales": ["en", "vi"],
+    "fixtureIsolation": "All values below are test-only. Do not write them to user storage, production data, app runtime defaults, or marketing claims.",
+    "clock": { "default": "2026-09-24T12:00:00+07:00", "timeZone": "Asia/Ho_Chi_Minh", "freezePerCaseOverride": true },
+    "network": "Block external requests; serve required images from checked-in Canvas assets or deterministic local responses.",
+    "motion": "Disable animation while capturing stills; exercise reduced-motion behavior separately."
+  },
+  "existingFixtureAudit": [
+    {
+      "id": "today-and-placement-existing",
+      "status": "existing candidate; not Canvas-matched",
+      "files": ["e2e/daily-learning-visual.spec.ts", "e2e/phase5-learning.spec.ts"],
+      "appRoutes": ["/?view=today&locale=en", "/?lesson=placement&locale=en"],
+      "canvasBoards": ["TodaySession", "AnimeToday", "MobileToday", "PlacementScreen", "AnimePlacement"],
+      "data": "12 cards in the visual spec; the phase-05 test also checks an empty-card Today action, but does not capture that state.",
+      "clock": "Not fixed in daily-learning-visual.spec.ts; it reads Date() when creating streak history.",
+      "themes": ["classic-light", "classic-dark", "crystal-light", "crystal-dark"],
+      "viewports": ["1440x900", "390x844"],
+      "imageEvidence": "Playwright app snapshots/attachments; no direct comparison with the Canvas references."
+    },
+    {
+      "id": "library-existing",
+      "status": "existing candidate; not Canvas-matched",
+      "files": ["e2e/fixtures/library-visual.tsx", "e2e/library-visual.spec.ts"],
+      "harnessRoute": "/e2e/fixtures/library-visual.html?locale=en[&dialog=...]",
+      "appRoute": "/?view=library&locale=en",
+      "canvasBoards": ["LibraryScreen", "AnimeVocabulary", "DlgCreate", "DlgEdit", "DlgImport", "DlgShare", "DlgShareIn"],
+      "data": "Four cards: adapt, benefit, context, develop; both desktop and mobile dialog/inline states. No empty-library fixture.",
+      "clock": "No frozen browser clock; card dates and a grouped-date label are static fixture values.",
+      "themes": ["classic-light", "classic-dark", "crystal-light", "crystal-dark"],
+      "viewports": ["1440x900", "390x844"],
+      "imageEvidence": "App-owned snapshots/attachments; current four-card content does not match the 10-card Canvas vocabulary example."
+    },
+    {
+      "id": "card-front-back-existing",
+      "status": "existing candidate; content differs from Canvas seed",
+      "files": ["e2e/flashcard-visual.spec.ts"],
+      "appRoute": "/?view=library&locale=en",
+      "canvasBoards": ["FlashFront", "FlashBack", "CardStatesDark", "CardStatesLight"],
+      "data": "One local image-backed card, luminous / phát sáng; front and back captured. Canvas FlashFront/FlashBack sample is Spelling / Cách đánh vần.",
+      "clock": "createdAt is fixed; browser clock is not installed.",
+      "themes": ["classic-light", "classic-dark", "crystal-light", "crystal-dark"],
+      "viewports": ["1440x900", "390x844"],
+      "imageEvidence": "Screenshots are attachments and are not compared with Canvas references."
+    },
+    {
+      "id": "practice-existing",
+      "status": "existing candidate; not Canvas-matched",
+      "files": ["e2e/fixtures/practice-visual.tsx", "e2e/practice-visual.spec.ts"],
+      "harnessRoute": "/e2e/fixtures/practice-visual.html?view={quiz,quiz-answered,spelling,spelling-checked,story,match,shadowing,dialog}&locale=en",
+      "appFlow": "Today → More practice → select a mode; standalone harness is not the product route.",
+      "canvasBoards": ["QuizScreen", "AnimeQuiz", "SpellingScreen", "StoryScreen", "MatchScreen", "ShadowingScreen", "DlgPractice"],
+      "data": "Six cards beginning adapt, benefit, context, develop; it does not use the Canvas ambition question.",
+      "clock": "Not fixed; screenshot states are static except real component timers/animation.",
+      "themes": ["classic-light", "classic-dark", "crystal-light", "crystal-dark"],
+      "viewports": ["1440x900", "390x844"],
+      "imageEvidence": "App-owned snapshots/attachments; no empty-practice capture."
+    },
+    {
+      "id": "session-recap-existing",
+      "status": "existing candidate; Canvas values differ",
+      "files": ["e2e/fixtures/daily-recap.tsx", "e2e/daily-recap-visual.spec.ts"],
+      "harnessRoute": "/e2e/fixtures/daily-recap.html?locale={en,vi}",
+      "canvasBoards": ["RecapScreen", "AnimeRecap", "RecapNext"],
+      "data": "12 total, 10 good, 2 again, 175 XP; weak words meticulous, resilient, nuance.",
+      "clock": "No frozen browser clock; numeric props are fixed.",
+      "themes": ["classic-light", "classic-dark", "crystal-light", "crystal-dark"],
+      "viewports": ["1440x900", "390x844"],
+      "imageEvidence": "Locale en has app-owned snapshot comparison; both locales produce attachments. No weekly-recap fixture."
+    },
+    {
+      "id": "paths-progress-existing",
+      "status": "existing candidate; ready data is synthetic and not Canvas-matched",
+      "files": ["e2e/paths-progress-visual.spec.ts"],
+      "appRoutes": ["/?view=catalog&locale=en", "/?view=progress&locale=en"],
+      "harnessRoute": "A Vite virtual ready-catalog fixture on 127.0.0.1:4175",
+      "canvasBoards": ["PathsScreen", "AnimePaths", "ProgressScreen", "AnimeProgress"],
+      "data": "Catalog has 9 memberships/3 tracks; progress has 12 cards and XP history.",
+      "clock": "Fixed at 2026-09-24T12:00:00Z.",
+      "themes": ["classic-light", "classic-dark", "crystal-light", "crystal-dark"],
+      "viewports": ["1440x900", "390x844"],
+      "imageEvidence": "App-owned snapshots/attachments. Empty progress is exercised in phase5-learning.spec.ts but not captured visually."
+    },
+    {
+      "id": "landing-existing",
+      "status": "existing candidate; not Canvas-matched",
+      "files": ["e2e/landing-visual.spec.ts"],
+      "appRoutes": ["/", "/vi/"],
+      "canvasBoards": ["LandingScreen", "AnimeLanding", "LandingSales", "LangLanding"],
+      "data": "Static landing copy; no user-study fixture.",
+      "clock": "No frozen browser clock.",
+      "themes": ["classic-light", "classic-dark", "crystal-light", "crystal-dark"],
+      "viewports": ["1440x900", "390x844"],
+      "imageEvidence": "App-owned snapshots; pricing/claim guards run, but there is no direct Canvas comparison."
+    }
+  ],
+  "proposedCases": [
+    {
+      "id": "today-ready",
+      "state": "ready",
+      "appRoute": "/?view=today&locale=en",
+      "canvasByThemeFamily": {
+        "classic": {
+          "boards": ["TodaySession", "TodayScreen"],
+          "references": ["docs/design/sonflash-redesign/canvas/reference/TodaySession-dark.png", "docs/design/sonflash-redesign/canvas/reference/TodaySession-light.png", "docs/design/sonflash-redesign/canvas/reference/TodayScreen-comparison.png"],
+          "fixedAt": "2026-09-23T12:00:00+07:00"
+        },
+        "crystal": {
+          "boards": ["AnimeToday", "MobileToday"],
+          "references": ["docs/design/sonflash-redesign/canvas/reference/AnimeToday-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimeToday-light.png", "docs/design/sonflash-redesign/canvas/reference/MobileToday-dark.png", "docs/design/sonflash-redesign/canvas/reference/MobileToday-light.png"],
+          "fixedAt": "2026-09-22T12:00:00+07:00"
+        }
+      },
+      "dataProfile": {
+        "testOnly": true,
+        "languagePair": { "target": "en", "native": "vi" },
+        "classicSample": { "course": "IELTS", "targetBand": "7.0", "daysToTarget": 86, "due": 14, "new": 6, "newFromWeb": 4, "wordMatchSeconds": 60, "plannedMinutes": 12, "sampleXp": 120, "sampleStreakDays": 12, "webWords": ["resilient", "unprecedented", "alleviate", "scrutiny", "ubiquitous"] },
+        "crystalSample": { "weekday": "Tuesday", "week": 38, "cardsWaiting": 18, "due": 12, "newFromWeb": 5, "wordMatchSeconds": 60, "plannedMinutes": 12, "sampleXp": 160, "sampleStreakDays": 12, "webWords": ["resilient", "subsidy", "drought", "embankment", "overdue"] }
+      },
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "today-all-caught-up",
+      "state": "empty-current-queue; library still has cards",
+      "appRoute": "/?view=today&locale=en",
+      "canvasByThemeFamily": {
+        "classic": { "boards": ["SystemStates"], "reference": "docs/design/sonflash-redesign/canvas/reference/SystemStates-dark.png;docs/design/sonflash-redesign/canvas/reference/SystemStates-light.png;docs/design/sonflash-redesign/canvas/reference/PairSystem-comparison.png" },
+        "crystal": { "boards": ["AnimeSystem"], "references": ["docs/design/sonflash-redesign/canvas/reference/AnimeSystem-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimeSystem-light.png", "docs/design/sonflash-redesign/canvas/reference/PairAnimeSystem-comparison.png"] }
+      },
+      "dataProfile": { "testOnly": true, "libraryCards": 8, "dueNow": 0, "newToday": 0, "nextReviewAt": "2026-09-24T08:00:00+07:00", "nextReviewCount": 8 },
+      "clock": { "fixedAt": "2026-09-23T12:00:00+07:00", "timeZone": "Asia/Ho_Chi_Minh" },
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "library-ready",
+      "state": "ready; ten visible cards and representative deck counts",
+      "appRoute": "/?view=library&locale=en",
+      "canvasByThemeFamily": {
+        "classic": { "boards": ["LibraryScreen", "FlashFront", "FlashBack"], "references": ["docs/design/sonflash-redesign/canvas/reference/LibraryScreen-comparison.png", "docs/design/sonflash-redesign/canvas/reference/FlashFront-comparison.png", "docs/design/sonflash-redesign/canvas/reference/FlashBack-comparison.png"] },
+        "crystal": { "boards": ["AnimeVocabulary"], "references": ["docs/design/sonflash-redesign/canvas/reference/AnimeVocabulary-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimeVocabulary-light.png"] }
+      },
+      "dataProfile": {
+        "testOnly": true,
+        "languagePair": { "target": "en", "native": "vi" },
+        "deckCounts": { "allDecks": 1228, "unassigned": 842, "deepLearning": 96, "TACN": 170, "IELTS": 120 },
+        "cards": [
+          { "word": "Spelling", "translation": "Cách đánh vần", "tier": "new", "due": false },
+          { "word": "Immediate", "translation": "Ngay lập tức", "tier": "learning", "due": true, "starred": true },
+          { "word": "Instant", "translation": "Khoảnh khắc", "tier": "mastered", "dueInDays": 34 },
+          { "word": "Permanent", "translation": "Vĩnh viễn", "tier": "learning", "dueInDays": 2 },
+          { "word": "Nurse", "translation": "Y tá", "tier": "mastered", "starred": true },
+          { "word": "Exact", "translation": "Chính xác", "tier": "new", "due": false },
+          { "word": "Recharge", "translation": "Sạc lại; lấy lại sức", "tier": "learning", "due": true },
+          { "word": "Centre", "translation": "Trung tâm", "tier": "learning", "dueInDays": 5 },
+          { "word": "Warden", "translation": "Người quản lý", "tier": "new", "due": false },
+          { "word": "Ambition", "translation": "Hoài bão", "tier": "mastered", "dueInDays": 48 }
+        ],
+        "fixedAt": "2026-09-24T12:00:00+07:00",
+        "imagePolicy": "Use checked-in Canvas assets; do not fetch remote card images."
+      },
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "library-empty-first-use",
+      "state": "empty-first-use",
+      "appRoute": "/?view=library&locale=en",
+      "canvasByThemeFamily": {
+        "classic": { "boards": ["SystemStates"], "references": ["docs/design/sonflash-redesign/canvas/reference/SystemStates-dark.png", "docs/design/sonflash-redesign/canvas/reference/SystemStates-light.png"] },
+        "crystal": { "boards": ["AnimeSystem"], "references": ["docs/design/sonflash-redesign/canvas/reference/AnimeSystem-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimeSystem-light.png"] }
+      },
+      "dataProfile": { "testOnly": true, "libraryCards": 0, "decks": 0, "initialInput": "empty", "actions": ["Generate card", "Scan a text", "Import CSV / Excel", "Browse paths"] },
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "library-empty-filter",
+      "state": "empty-filter; library is not empty",
+      "appRoute": "/?view=library&locale=en",
+      "entryAction": "Search the ready library fixture for zzzzzzz.",
+      "canvasReference": { "boards": ["LibraryScreen", "AnimeVocabulary"], "exception": "Canvas has first-run empty-library art, but no distinct empty-filter artboard. Compare shell, search, filters, and preserved library context; mark the no-results panel as a region-specific visual exception until a Canvas state is supplied." },
+      "dataProfile": { "testOnly": true, "libraryCards": 10, "searchQuery": "zzzzzzz", "filteredCards": 0 },
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "flashcard-front-back",
+      "state": "ready; front and back",
+      "appRoute": "/?view=library&locale=en (open the Spelling card)",
+      "canvasBoards": ["FlashFront", "FlashBack"],
+      "references": ["docs/design/sonflash-redesign/canvas/reference/FlashFront-comparison.png", "docs/design/sonflash-redesign/canvas/reference/FlashBack-comparison.png"],
+      "dataProfile": { "testOnly": true, "word": "Spelling", "translation": "Cách đánh vần", "partOfSpeech": "Noun", "ipa": "/ˈspelɪŋ/", "example": "Check the spelling before you send it.", "exampleTranslation": "Kiểm tra chính tả trước khi gửi nhé.", "sides": ["front", "back"] },
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "placement-ready",
+      "state": "ready; diagnostic question and feedback",
+      "appRoute": "/?lesson=placement&locale=en",
+      "canvasByThemeFamily": {
+        "classic": { "boards": ["PlacementScreen"], "reference": ["docs/design/sonflash-redesign/canvas/reference/PlacementScreen-dark.png", "docs/design/sonflash-redesign/canvas/reference/PlacementScreen-light.png"] },
+        "crystal": { "boards": ["AnimePlacement"], "reference": ["docs/design/sonflash-redesign/canvas/reference/AnimePlacement-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimePlacement-light.png"] }
+      },
+      "dataProfile": { "testOnly": true, "targetLanguage": "en", "nativeLanguage": "vi", "questionCount": 12, "levelBands": ["A2", "B2", "C1"], "fixedAt": "2026-09-24T12:00:00+07:00" },
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "practice-quiz-answered",
+      "state": "ready; answered-wrong question",
+      "appFlow": "Today → More practice → Multiple-choice quiz; the direct harness route remains only a rendering aid.",
+      "harnessRoute": "/e2e/fixtures/practice-visual.html?view=quiz-answered&locale=en",
+      "canvasByThemeFamily": {
+        "classic": { "boards": ["QuizScreen"], "reference": ["docs/design/sonflash-redesign/canvas/reference/QuizScreen-dark.png", "docs/design/sonflash-redesign/canvas/reference/QuizScreen-light.png"] },
+        "crystal": { "boards": ["AnimeQuiz"], "reference": ["docs/design/sonflash-redesign/canvas/reference/AnimeQuiz-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimeQuiz-light.png"] }
+      },
+      "dataProfile": { "testOnly": true, "prompt": "Her ____ was to lead the lab before thirty.", "selectedAnswer": "ambitious", "correctAnswer": "ambition", "choices": ["ambitious", "ambition", "ammunition", "admission"], "questionNumber": 8, "questionCount": 10, "fixedAt": "2026-09-24T12:00:00+07:00" },
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "paths-ready",
+      "state": "ready; reviewed catalog and word detail",
+      "appRoute": "/?view=catalog&locale=en",
+      "canvasByThemeFamily": {
+        "classic": { "boards": ["PathsScreen"], "reference": ["docs/design/sonflash-redesign/canvas/reference/PathsScreen-dark.png", "docs/design/sonflash-redesign/canvas/reference/PathsScreen-light.png"] },
+        "crystal": { "boards": ["AnimePaths"], "reference": ["docs/design/sonflash-redesign/canvas/reference/AnimePaths-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimePaths-light.png"] }
+      },
+      "dataProfile": { "testOnly": true, "language": "en", "track": "IELTS Core", "unit": "Time & change", "trackWordCount": 120, "unitCount": 12, "sampleWords": ["immediate", "instant", "permanent", "temporary", "frequent", "gradual", "sudden", "eventual"], "provenance": "Reviewed editorial catalog; include source/license/reviewer labels" },
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "progress-ready",
+      "state": "ready; populated history",
+      "appRoute": "/?view=progress&locale=en",
+      "canvasByThemeFamily": {
+        "classic": { "boards": ["ProgressScreen", "AchievementsScreen"], "reference": ["docs/design/sonflash-redesign/canvas/reference/ProgressScreen-dark.png", "docs/design/sonflash-redesign/canvas/reference/ProgressScreen-light.png", "docs/design/sonflash-redesign/canvas/reference/AchievementsScreen-dark.png", "docs/design/sonflash-redesign/canvas/reference/AchievementsScreen-light.png"] },
+        "crystal": { "boards": ["AnimeProgress", "AnimeAchievements"], "reference": ["docs/design/sonflash-redesign/canvas/reference/AnimeProgress-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimeProgress-light.png", "docs/design/sonflash-redesign/canvas/reference/AnimeAchievements-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimeAchievements-light.png"] }
+      },
+      "dataProfile": { "testOnly": true, "asOf": "2026-09-24", "reviews": 2418, "studied": "14 h 20 m", "heatmapDays": 182, "streakDays": 12, "xpHistory": "Fixed dates; deterministic values only" },
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "progress-empty",
+      "state": "empty-history",
+      "appRoute": "/?view=progress&locale=en",
+      "canvasReference": { "boards": ["SystemStates", "AnimeSystem"], "exception": "There is no Progress-specific empty artboard. Compare the shared shell and the SystemStates empty-state visual language; record the progress-specific message/chart region as a scoped exception." },
+      "dataProfile": { "testOnly": true, "libraryCards": 0, "completedReviews": 0, "xpEvents": 0 },
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "session-recap-ready",
+      "state": "ready; completed session",
+      "appFlow": "Complete the four-part Today session; recap is a session state, not a stable standalone product URL.",
+      "harnessRoute": "/e2e/fixtures/daily-recap.html?locale={en,vi}",
+      "canvasByThemeFamily": {
+        "classic": { "boards": ["RecapScreen", "RecapNext"], "reference": ["docs/design/sonflash-redesign/canvas/reference/RecapScreen-dark.png", "docs/design/sonflash-redesign/canvas/reference/RecapScreen-light.png", "docs/design/sonflash-redesign/canvas/reference/RecapNext-dark.png", "docs/design/sonflash-redesign/canvas/reference/RecapNext-light.png"] },
+        "crystal": { "boards": ["AnimeRecap"], "reference": ["docs/design/sonflash-redesign/canvas/reference/AnimeRecap-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimeRecap-light.png"] }
+      },
+      "dataProfile": { "testOnly": true, "classicSample": { "total": 12, "firstTryCorrect": 10, "missed": 2, "levelUps": 3, "sampleXp": 120, "nextNewCards": 5 }, "crystalSample": { "accuracy": "92%", "firstTryCorrect": "11 of 12", "sampleXp": 146, "studyTime": "11:40", "level": 12, "levelProgress": "64%" }, "fixedAt": "2026-09-24T12:00:00+07:00" },
+      "policyException": "XP, streak, band projection, combo and time are static reference data for screenshot tests only. Product state must use settled session data and the approved policy; capture unavailable/empty regions where no real value exists.",
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "weekly-recap-ready",
+      "state": "ready; populated weekly history and selected share fields",
+      "appFlow": "Open weekly recap from Progress/Today; no stable direct product URL exists yet.",
+      "canvasByThemeFamily": {
+        "classic": { "boards": ["WeeklyRecap"], "reference": ["docs/design/sonflash-redesign/canvas/reference/WeeklyRecap-dark.png", "docs/design/sonflash-redesign/canvas/reference/WeeklyRecap-light.png"] },
+        "crystal": { "boards": ["AnimeWeeklyRecap"], "reference": ["docs/design/sonflash-redesign/canvas/reference/AnimeWeeklyRecap-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimeWeeklyRecap-light.png"] }
+      },
+      "dataProfile": { "testOnly": true, "week": "2026-09-16 through 2026-09-22", "wordsLearned": 146, "changeFromPreviousWeek": 38, "streakDays": 12, "recall": "91%", "studyTime": "2 h 40 m", "wordOfWeek": "Immediate", "defaultInclude": ["words", "streak", "recall", "wordOfWeek", "heatmap"], "nameIncluded": false },
+      "policyException": "Canvas referral copy promises 7 days of Pro. Keep that region out of production unless the reward policy is approved; do not count the sample referral claim as an accepted product capability.",
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    },
+    {
+      "id": "landing-ready",
+      "state": "ready; static public content",
+      "appRoutes": ["/", "/vi/"],
+      "canvasByThemeFamily": {
+        "classic": { "boards": ["LandingScreen", "LangLanding"], "reference": ["docs/design/sonflash-redesign/canvas/reference/LandingScreen-dark.png", "docs/design/sonflash-redesign/canvas/reference/LandingScreen-light.png", "docs/design/sonflash-redesign/canvas/reference/LangLanding-dark.png", "docs/design/sonflash-redesign/canvas/reference/LangLanding-light.png"] },
+        "crystal": { "boards": ["AnimeLanding", "AnimeLandingSales"], "reference": ["docs/design/sonflash-redesign/canvas/reference/AnimeLanding-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimeLanding-light.png", "docs/design/sonflash-redesign/canvas/reference/AnimeLandingSales-dark.png", "docs/design/sonflash-redesign/canvas/reference/AnimeLandingSales-light.png"] }
+      },
+      "dataProfile": { "testOnly": true, "locales": ["en", "vi"], "noLearnerData": true },
+      "policyException": "Gate prices, trial/reward offers, testimonials and unreleased capability claims by their owning decisions; record any changed text region rather than changing the Canvas reference.",
+      "themes": "comparisonRules.themeMatrix",
+      "viewports": "comparisonRules.webViewports"
+    }
+  ],
+  "coverageGaps": [
+    "No existing test captures empty-first-use Library, Today all-caught-up, or empty Progress against Canvas, although SystemStates/AnimeSystem contain first-run Library and all-caught-up Today reference states.",
+    "Empty-filter Library and empty Progress have no exact Canvas artboard; compare only named shared regions and keep their data/message regions as documented exceptions until a source state is approved.",
+    "The existing tests mostly compare app screenshots with app-owned snapshots or attach images; none of the inspected suites establishes direct Canvas pixel/layout acceptance.",
+    "Per-phase fixture records are still needed for onboarding/courses/language packs, extension/WebWords, account/billing, reminders/AI/tutor, sharing lifecycle states, and gated commerce/rewards. Their Canvas references are locked, but this contract does not claim their fixture coverage."
+  ]
+}

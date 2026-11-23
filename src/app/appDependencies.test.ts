@@ -30,12 +30,16 @@ const mocks = vi.hoisted(() => {
     installCatalog: vi.fn(),
     readCatalogPage: vi.fn(),
     useIdentitySession: vi.fn(() => ({ kind: 'identity-session' })),
+    ensureAppCheck: vi.fn(),
+    ensureAppCheckForSignIn: vi.fn(),
   };
 });
 
 vi.mock('../lib/firebase', () => ({
   app: mocks.firebaseApp,
   db: mocks.database,
+  ensureAppCheck: mocks.ensureAppCheck,
+  ensureAppCheckForSignIn: mocks.ensureAppCheckForSignIn,
   isFirebaseConfigured: true,
 }));
 
@@ -83,6 +87,9 @@ vi.mock('./catalogRuntime', () => ({
 
 import { appDependencies } from './appDependencies';
 
+// Adapters are built when the module loads, before each test clears the recorded calls.
+const sharedDeckAdapterOptions = (mocks.createSharedDeck.mock.calls as unknown[][])[0]?.[0];
+
 describe('app dependency composition', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -124,6 +131,8 @@ describe('app dependency composition', () => {
       .resolves.toEqual(facets);
     await expect(appDependencies.library.updateCategoryFacets('owner-1', { IELTS: 2 }, 'facet-operation'))
       .resolves.toEqual(facets);
+    await expect(appDependencies.library.updateCategoryFacets('owner-1', { IELTS: 2 }, 'tagged-operation', 4))
+      .resolves.toEqual(facets);
     await expect(appDependencies.library.loadAllCards('owner-1'))
       .resolves.toEqual([{ id: 'export' }]);
 
@@ -137,6 +146,14 @@ describe('app dependency composition', () => {
       'owner-1',
       { IELTS: 2 },
       'facet-operation',
+    );
+    expect(mocks.applyCategoryDeltas).toHaveBeenCalledWith(
+      mocks.database,
+      'owner-1',
+      { IELTS: 2 },
+      'tagged-operation',
+      undefined,
+      4,
     );
     expect(mocks.fetchAllCardsOnDemand).toHaveBeenCalledWith(mocks.database, 'owner-1');
     expect(appDependencies.library).not.toHaveProperty('loadPracticeCards');
@@ -152,6 +169,13 @@ describe('app dependency composition', () => {
       app: mocks.firebaseApp,
       database: mocks.database,
       configured: true,
+      beforeSignIn: mocks.ensureAppCheckForSignIn,
+    });
+    expect(sharedDeckAdapterOptions).toEqual({
+      app: mocks.firebaseApp,
+      database: mocks.database,
+      configured: true,
+      beforeRead: mocks.ensureAppCheck,
     });
   });
 
@@ -249,6 +273,31 @@ describe('app dependency composition', () => {
       pageSize: 100,
     });
     expect(mocks.countCards).not.toHaveBeenCalled();
+  });
+
+  it('names the active course pair on cards saved without one so the share carries a language pair', async () => {
+    mocks.fetchCardPage.mockResolvedValue({
+      items: [{ id: 'old', word: 'apple', language: 'en' }, { id: 'newer', word: 'pear', language: 'en', translationLanguage: 'fr' }],
+      hasNext: false,
+    });
+
+    await expect(appDependencies.intake.forOwner('owner-2', 'en', 'vi').loadCards({ category: 'IELTS', customDeck: { kind: 'deck', name: 'Reading' } }))
+      .resolves.toMatchObject({
+        cards: [
+          { id: 'old', language: 'en', translationLanguage: 'vi' },
+          { id: 'newer', language: 'en', translationLanguage: 'fr' },
+        ],
+      });
+  });
+
+  it('counts every card the owner holds, with no course or deck scope, for the clear-library confirmation', async () => {
+    mocks.countCards.mockResolvedValue(250);
+
+    await expect(appDependencies.library.countOwnerCards('owner-2')).resolves.toBe(250);
+
+    const filters = mocks.countCards.mock.calls.at(-1)?.[2];
+    expect(filters).toMatchObject({ category: null, difficulty: null, wordPrefix: '' });
+    expect(filters).not.toHaveProperty('targetLanguage');
   });
 
   it('preserves exact truncation metadata for share batches larger than 100 cards', async () => {

@@ -1,42 +1,77 @@
-import { ChevronLeft, ChevronRight, Mic, MicOff, Sparkles, Volume2, X } from 'lucide-react';
+import { i18n } from '@lingui/core';
+import { ChevronLeft, ChevronRight, Mic, Play, RotateCcw } from 'lucide-react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
+import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
 import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
+import { speechLocaleFor } from '../../lib/speechLocale';
 import { scoreSpeechMatch, type SpeechMatchResult } from '../../lib/speechMatch';
 import type { CardData } from '../../types/card';
-import { PronunciationVideo, mediaButtonClass } from '../../components/flashcard/PronunciationVideo';
+import { useCourseSession } from '../courses/CourseGate';
+import { PronunciationVideo } from '../../components/flashcard/PronunciationVideo';
 import { WordContextVideo, contextForWord } from '../../components/flashcard/WordContextVideo';
+import { LumiCoach, PracticeCount, PracticeTopBar, useCrystalLumi, type PracticeSegmentState } from './practice-board-parts';
+import { MIC_LEVEL_INTERVAL_MS, captureMicLevels, formatTakeClock, loadAudioPeaks, type AudioPeaks, type MicLevelCapture, type MicLevelStatus } from './shadowing-audio';
+import { markSentence, type ShadowingWord } from './shadowing-words';
+import './practice-board.css';
 
 interface ShadowingViewProps {
   cards: CardData[];
   onClose: () => void;
-  onAddXp?: (amount: number) => void;
 }
 
-const navigationClass = 'flex size-12 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:opacity-50';
+/** Bars in each waveform: the model's whole clip, and the latest stretch of the take. */
+const WAVE_BARS = 48;
+const CLEAR_SCORE = 80;
 
-const cancelPlayback = (playback: WordAudioPlayback | null) => {
-  playback?.();
-};
+type Descriptor = ReturnType<typeof msg>;
 
-export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
+export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
+  const { _ } = useLingui();
+  const t = (descriptor: Descriptor, values?: Record<string, unknown>) => _({ ...descriptor, values });
+  const { model: courseModel } = useCourseSession();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [matchResult, setMatchResult] = useState<SpeechMatchResult | null>(null);
   const [speechError, setSpeechError] = useState<string | null>(null);
+  const recognitionRef = useRef<{ stop: () => void; abort?: () => void } | null>(null);
   const [practiceWord, setPracticeWord] = useState(false);
   const [practiceContext, setPracticeContext] = useState(false);
-  const recognitionRef = useRef<{ stop: () => void; abort?: () => void } | null>(null);
   const finalizedRecognitionRef = useRef<unknown>(null);
+  const [takeNumber, setTakeNumber] = useState(0);
+  const [takeLevels, setTakeLevels] = useState<number[]>([]);
+  const [takeSamples, setTakeSamples] = useState(0);
+  const [micStatus, setMicStatus] = useState<MicLevelStatus | null>(null);
+  const micRef = useRef<MicLevelCapture | null>(null);
+  const [modelAudio, setModelAudio] = useState<{ url: string; peaks: AudioPeaks | null } | null>(null);
 
   const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
   const card = cards[currentIndex];
-  useEffect(() => () => { cancelPlayback(audioPlaybackRef.current); }, [card?.id]);
+  useEffect(() => () => { audioPlaybackRef.current?.cancel(); }, [card?.id]);
   const contextCue = card && contextForWord(card.word);
   const targetSentence = (practiceContext && contextCue?.text) || (!practiceWord && card?.exampleSentence) || card?.word || '';
+  const position = currentIndex + 1;
+  const audioUrl = card?.audioUrl ?? null;
+
+  // The model waveform is the card's own recording when the browser can decode it.
+  useEffect(() => {
+    if (!audioUrl) return;
+    const controller = new AbortController();
+    void loadAudioPeaks(audioUrl, WAVE_BARS, controller.signal).then(peaks => {
+      if (!controller.signal.aborted) setModelAudio({ url: audioUrl, peaks });
+    });
+    return () => controller.abort();
+  }, [audioUrl]);
+
+  const stopMic = useCallback(() => {
+    micRef.current?.stop();
+    micRef.current = null;
+  }, []);
 
   const stopListening = useCallback(() => {
     const recognition = recognitionRef.current;
@@ -50,8 +85,9 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
         recognition.abort?.();
       } catch {}
     }
+    stopMic();
     setIsListening(false);
-  }, []);
+  }, [stopMic]);
 
   const startListening = useCallback(() => {
     stopListening();
@@ -63,14 +99,14 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setSpeechError('This browser does not support Web Speech recognition.');
+      setSpeechError(_(msg({ id: 'practice.shadowing.unsupported', message: 'This browser does not support speech recognition.' })));
       return;
     }
 
     try {
       const recognition = new SpeechRecognition();
       finalizedRecognitionRef.current = null;
-      recognition.lang = 'en-US';
+      recognition.lang = speechLocaleFor(card);
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
@@ -93,11 +129,10 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
           const evaluated = scoreSpeechMatch(targetSentence, currentTranscript, confidence);
           setMatchResult(evaluated);
 
-          if (evaluated.score >= 80) {
+          if (evaluated.score >= CLEAR_SCORE) {
             playRewardSound();
             triggerConfetti(0.5, 0.5);
             triggerHaptic('success');
-            onAddXp?.(10);
           } else {
             triggerHaptic('warning');
           }
@@ -106,221 +141,341 @@ export function ShadowingView({ cards, onClose, onAddXp }: ShadowingViewProps) {
 
       recognition.onerror = (e: any) => {
         if (recognitionRef.current !== recognition) return;
-        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-          setSpeechError('Microphone unavailable. Please grant microphone access in your browser.');
-        } else if (e.error !== 'no-speech') {
-          setSpeechError(`Speech recognition error: ${e.error}`);
+        if (e.error !== 'no-speech') {
+          setSpeechError(t(msg({ id: 'practice.shadowing.error', message: 'Speech recognition error: {error}' }), { error: e.error }));
         }
+        stopMic();
         setIsListening(false);
       };
 
       recognition.onend = () => {
         if (recognitionRef.current !== recognition) return;
         recognitionRef.current = null;
+        stopMic();
         setIsListening(false);
       };
 
       recognitionRef.current = recognition;
+      setTakeNumber(takeNumber + 1);
+      setTakeLevels([]);
+      setTakeSamples(0);
+      // The waveform listens to the same microphone; refusing it leaves recognition running.
+      micRef.current = captureMicLevels({
+        onStatus: setMicStatus,
+        onLevel: level => {
+          setTakeLevels(levels => [...levels, level].slice(-WAVE_BARS));
+          setTakeSamples(samples => samples + 1);
+        },
+      });
       recognition.start();
     } catch {
       recognitionRef.current = null;
-      setSpeechError('Unable to open the microphone. Please grant microphone access in your browser.');
+      stopMic();
+      setSpeechError(_(msg({ id: 'practice.shadowing.microphone-error', message: 'Unable to open the microphone. Please grant microphone access in your browser.' })));
       setIsListening(false);
     }
-  }, [stopListening, targetSentence, onAddXp]);
+  }, [_, card, targetSentence, stopListening, stopMic, takeNumber]);
 
-  useEffect(() => () => {
-    stopListening();
-    cancelPlayback(audioPlaybackRef.current);
+  useEffect(() => {
+    return () => {
+      stopListening();
+      audioPlaybackRef.current?.cancel();
+    };
   }, [stopListening]);
 
   const playPronunciation = () => {
-    cancelPlayback(audioPlaybackRef.current);
-    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl);
+    audioPlaybackRef.current?.cancel();
+    const voice = voiceForActiveCourseCard(card, courseModel.activeCourse);
+    audioPlaybackRef.current = playWordAudio(card.word, card.audioUrl, speechLocaleFor(card), voice);
   };
 
   const close = () => {
     stopListening();
-    cancelPlayback(audioPlaybackRef.current);
+    audioPlaybackRef.current?.cancel();
     onClose();
+  };
+
+  const resetTake = () => {
+    setTranscript('');
+    setMatchResult(null);
+    setSpeechError(null);
+    setTakeLevels([]);
+    setTakeSamples(0);
+    setMicStatus(null);
   };
 
   const move = (nextIndex: number) => {
     stopListening();
-    cancelPlayback(audioPlaybackRef.current);
-    setMatchResult(null);
-    setTranscript('');
-    setSpeechError(null);
+    audioPlaybackRef.current?.cancel();
+    resetTake();
+    setTakeNumber(0);
     setCurrentIndex(nextIndex);
     setPracticeContext(false);
   };
 
+  const chooseTarget = (wordOnly: boolean | 'context') => {
+    stopListening();
+    resetTake();
+    setTakeNumber(0);
+    setPracticeContext(wordOnly === 'context');
+    if (wordOnly !== 'context') setPracticeWord(wordOnly);
+  };
+
   if (!card) return null;
 
-  const targetWords = targetSentence.split(' ');
+  const targetLanguage = card.language || 'en';
+  const nativeLanguage = card.translationLanguage || 'vi';
+  const words = markSentence(targetSentence, matchResult ? transcript : null, card.word, targetLanguage);
+  const clearWords = words.filter(word => word.mark === 'clear').length;
+  const segments: PracticeSegmentState[] = cards.map((_item, index) => (index < currentIndex ? 'done' : index === currentIndex ? 'current' : 'pending'));
+  const model = modelAudio && modelAudio.url === audioUrl ? modelAudio.peaks : null;
+  const hasTake = takeNumber > 0 && (isListening || takeSamples > 0 || Boolean(transcript) || Boolean(matchResult));
+  const isLast = currentIndex === cards.length - 1;
 
   return (
-    <div className="mx-auto flex h-full max-w-2xl flex-col items-center py-4 sm:py-6">
-      {/* Top Bar */}
-      <div className="mb-6 flex w-full items-center justify-between px-2">
-        <button
-          type="button"
-          onClick={close}
-          className="flex size-11 items-center justify-center rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)]"
-          aria-label="Close pronunciation practice"
-        >
-          <X size={24} />
-        </button>
-        <span className="text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)]">
-          Shadowing Arena · {currentIndex + 1} / {cards.length}
-        </span>
-        <div className="size-11" />
-      </div>
+    <div className="practice-board practice-board--shadowing practice-stage" data-practice-mode="shadowing">
+      <PracticeTopBar
+        closeLabel={<Trans {...msg({ context: 'practice.shadowing.close', message: 'Close shadowing practice' })} />}
+        closeAriaLabel={_(msg({ id: 'practice.shadowing.close', message: 'Close shadowing practice' }))}
+        onClose={close}
+        mode={<Trans {...msg({ context: 'practice.shadowing.mode', message: 'Shadowing' })} />}
+        detail={<Trans {...msg({ context: 'practice.shadowing.mode-detail', message: 'say it after me' })} />}
+        progressLabel={t(msg({ id: 'practice.shadowing.progress', message: 'Sentence {current} of {total}' }), { current: position, total: cards.length })}
+        segments={segments}
+        progressValue={position}
+        count={<PracticeCount current={position} total={cards.length} />}
+      />
 
-      {/* Target Card Display */}
-      <div className="w-full rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-center shadow-xl sm:p-8">
-        <div className="flex items-center justify-center gap-2">
-          <h2 className="text-3xl font-black text-[var(--sf-text)] tracking-tight sm:text-4xl">
-            {card.word}
-          </h2>
-          <button
-            type="button"
-            onClick={playPronunciation}
-            className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-brand-text)] hover:scale-105 active:scale-95 transition-all"
-            aria-label={`Play pronunciation for ${card.word}`}
-          >
-            <Volume2 size={16} />
-          </button>
-        </div>
-
-        {card.phonetic && (
-          <p className="mt-1 font-mono text-sm font-semibold text-[var(--sf-text-muted)]">
-            {card.phonetic}
+      <section className="practice-shadowing" aria-labelledby="shadowing-sentence">
+        <p className="practice-shadowing__focus crystal-chamfer-sm">
+          <span><Trans {...msg({ context: 'practice.shadowing.focus-word', message: 'Focus word' })} /></span>{' '}
+          <span lang={targetLanguage} className="practice-shadowing__focus-word">{card.word}</span>
+          {card.phonetic && <span lang={targetLanguage} className="practice-shadowing__ipa">{card.phonetic}</span>}
+        </p>
+        <h2 id="shadowing-sentence" lang={targetLanguage} className="practice-shadowing__sentence">
+          {words.map((word, index) => (
+            <SentenceWord key={index} word={word} space={index > 0 && !/^(ja|zh|th)/.test(targetLanguage)} />
+          ))}
+        </h2>
+        {!practiceWord && !practiceContext && card.exampleTranslation && (
+          <p lang={nativeLanguage} className="practice-shadowing__translation">
+            {card.exampleTranslation}
           </p>
         )}
 
-        <div className="mt-4 flex flex-wrap justify-center gap-2" role="group" aria-label="Practice target">
-          {[true, false].map(wordOnly => <button key={String(wordOnly)} type="button" aria-pressed={!practiceContext && practiceWord === wordOnly}
-            disabled={!wordOnly && !card.exampleSentence}
-            className={mediaButtonClass}
-            onClick={() => { stopListening(); setTranscript(''); setMatchResult(null); setSpeechError(null); setPracticeContext(false); setPracticeWord(wordOnly); }}>
-            {wordOnly ? 'Practice target word' : 'Practice card sentence'}
-          </button>)}
-          {contextCue && <button type="button" aria-pressed={practiceContext} className={mediaButtonClass}
-            onClick={() => { stopListening(); setTranscript(''); setMatchResult(null); setSpeechError(null); setPracticeContext(true); }}>Practice clip sentence</button>}
-        </div>
-        {/* Example Sentence with Colored Breakdown */}
-        <div className="mt-6 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-5">
-          <p className="text-xs font-black uppercase tracking-wider text-[var(--sf-text-muted)] mb-3">
-            {practiceContext && contextCue ? 'Clip sentence' : practiceWord || !card.exampleSentence ? 'Target word' : 'Shadowing sentence'}
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 text-base sm:text-lg font-semibold leading-relaxed">
-            {targetWords.map((w, i) => {
-              const cleanWord = w.toLowerCase().replace(/[^a-z0-9]/g, '');
-              const isMatched = matchResult?.matchedWords.includes(cleanWord);
-              return (
-                <span
-                  key={i}
-                  className={`rounded-md px-1.5 py-0.5 transition-colors ${
-                    matchResult
-                      ? isMatched
-                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 font-bold'
-                        : 'bg-rose-500/20 text-rose-600 dark:text-rose-300'
-                      : cleanWord === card.word.toLowerCase() ? 'bg-amber-500/15 font-bold text-[var(--sf-text)]' : 'text-[var(--sf-text)]'
-                  }`}
-                >
-                  {w}
-                </span>
-              );
-            })}
-          </div>
-          {!practiceWord && !practiceContext && card.exampleTranslation && (
-            <p className="mt-3 text-xs text-[var(--sf-text-muted)]">
-              {card.exampleTranslation}
-            </p>
+        <div className="practice-shadowing__targets" role="group" aria-label={i18n._(msg({ id: "shadowing-view.practice-target", message: "Practice target" }))}>
+          {[true, false].map(wordOnly => (
+            <button
+              key={String(wordOnly)}
+              type="button"
+              aria-pressed={!practiceContext && practiceWord === wordOnly}
+              disabled={!wordOnly && !card.exampleSentence}
+              className="practice-shadowing__target min-h-11 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              onClick={() => chooseTarget(wordOnly)}
+            >
+              {wordOnly
+                ? <Trans {...msg({ context: 'shadowing-view.practice-target-word', message: 'Practice target word' })} />
+                : <Trans {...msg({ context: 'shadowing-view.practice-card-sentence', message: 'Practice card sentence' })} />}
+            </button>
+          ))}
+          {contextCue && (
+            <button type="button" aria-pressed={practiceContext} className="practice-shadowing__target min-h-11 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none" onClick={() => chooseTarget('context')}>
+              <Trans {...msg({ context: 'shadowing-view.practice-clip-sentence', message: 'Practice clip sentence' })} />
+            </button>
           )}
         </div>
 
-        <PronunciationVideo key={card.id} word={card.word} />
-        <WordContextVideo key={`context-${card.id}`} word={card.word} />
-        {/* Live Transcript / Score Gauge */}
-        {transcript && (
-          <div className="mt-4 rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-3 text-xs text-cyan-700 dark:text-cyan-300">
-            <span className="font-bold">You said: </span>"{transcript}"
-          </div>
-        )}
-
-        {matchResult && (
-          <div className="mt-4 flex items-center justify-center gap-3">
-            <div className="flex items-center gap-1.5 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm font-black text-emerald-600 dark:text-emerald-300">
-              <Sparkles size={16} />
-              <span>Sentence match: {matchResult.score}%</span>
+        <section className="practice-shadowing__waves crystal-chamfer surface-glass" aria-label={_(msg({ id: 'practice.shadowing.waves', message: 'Model and your take' }))}>
+          <div className="practice-shadowing__track">
+            <div className="practice-shadowing__track-head">
+              <button
+                type="button"
+                onClick={playPronunciation}
+                className="practice-shadowing__play focus-visible:outline-2 focus-visible:outline-offset-2"
+                aria-label={t(msg({ id: 'practice.shadowing.play-pronunciation', message: 'Play pronunciation for {word}' }), { word: card.word })}
+              >
+                <span className="crystal-chamfer-sm"><Play size={13} fill="currentColor" aria-hidden="true" /></span>
+              </button>
+              <span className="practice-shadowing__track-label"><Trans {...msg({ context: 'practice.shadowing.model', message: 'Model' })} /></span>
+              {model && <span className="practice-shadowing__clock">{formatTakeClock(model.duration)}</span>}
             </div>
-            {matchResult.score >= 80 && (
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                Excellent speech match! 🎉
-              </span>
+            <Waveform levels={model?.peaks ?? []} kind="model" />
+            {!model && (
+              <p className="practice-shadowing__wave-note">
+                <Trans {...msg({ context: 'practice.shadowing.model-voice', message: 'Spoken by your browser voice. Tap play to hear it.' })} />
+              </p>
             )}
           </div>
-        )}
+          <div className="practice-shadowing__track">
+            <div className="practice-shadowing__track-head">
+              <span className="practice-shadowing__rec" data-live={isListening || undefined} aria-hidden="true" />
+              <span className="practice-shadowing__track-label">
+                {takeNumber === 0
+                  ? <Trans {...msg({ context: 'practice.shadowing.your-take', message: 'Your take' })} />
+                  : isListening
+                    ? <Trans {...msg({ context: 'practice.shadowing.take-recording', message: 'Take {take} · recording' })} values={{ take: takeNumber }} />
+                    : <Trans {...msg({ context: 'practice.shadowing.take', message: 'Take {take}' })} values={{ take: takeNumber }} />}
+              </span>
+              {takeSamples > 0 && <span className="practice-shadowing__clock">{formatTakeClock((takeSamples * MIC_LEVEL_INTERVAL_MS) / 1000)}</span>}
+            </div>
+            <Waveform levels={takeLevels} kind="take" live={isListening} />
+            {hasTake && (micStatus === 'denied' || micStatus === 'unavailable') && (
+              <p className="practice-shadowing__wave-note" data-mic-status={micStatus}>
+                {micStatus === 'denied'
+                  ? <Trans {...msg({ context: 'practice.shadowing.levels-denied', message: 'Microphone levels are off because access was not allowed. Your words are still checked.' })} />
+                  : <Trans {...msg({ context: 'practice.shadowing.levels-unavailable', message: 'This browser cannot show microphone levels. Your words are still checked.' })} />}
+              </p>
+            )}
+          </div>
+        </section>
 
-        <p className="mt-4 max-w-md text-[11px] font-medium leading-relaxed text-[var(--sf-text-muted)]">
-          The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent.
-        </p>
-        <p className="mt-2 max-w-md text-[11px] font-medium leading-relaxed text-[var(--sf-text-muted)]">
-          Pronunciation assessment is unavailable in this build; browser transcript matching remains available.
-        </p>
+        <div className="practice-shadowing__controls">
+          <div className="practice-shadowing__score">
+            {matchResult ? (
+              <>
+                <p className="practice-shadowing__score-line">
+                  <span className="practice-shadowing__score-value">{matchResult.score}</span>
+                  <span>
+                    <Trans {...msg({ context: 'practice.shadowing.match-take', message: '% match · take {take}' })} values={{ take: takeNumber }} />
+                  </span>
+                </p>
+                <div
+                  className="practice-shadowing__meter"
+                  role="meter"
+                  aria-label={_(msg({ id: 'practice.shadowing.match-meter', message: 'Sentence match' }))}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={matchResult.score}
+                >
+                  <span style={{ width: `${Math.max(0, Math.min(100, matchResult.score))}%` }} />
+                </div>
+              </>
+            ) : (
+              <p className="practice-shadowing__prompt">
+                {isListening
+                  ? <Trans {...msg({ context: 'practice.shadowing.listening', message: 'Listening…' })} />
+                  : <Trans {...msg({ context: 'practice.shadowing.start-copy', message: 'Tap the microphone and read the sentence.' })} />}
+              </p>
+            )}
+            <ul className="practice-shadowing__legend">
+              <li data-mark="clear"><Trans {...msg({ context: 'practice.shadowing.legend-clear', message: 'Clear' })} /></li>
+              <li data-mark="close"><Trans {...msg({ context: 'practice.shadowing.legend-close', message: 'Close' })} /></li>
+              <li data-mark="missed"><Trans {...msg({ context: 'practice.shadowing.legend-missed', message: 'Missed' })} /></li>
+            </ul>
+          </div>
 
-        {speechError && (
-          <p className="mt-4 rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-600 dark:text-rose-300">
-            {speechError}
-          </p>
-        )}
-
-        {/* Big Mic Button */}
-        <div className="mt-8 flex justify-center">
           <button
             type="button"
             onClick={isListening ? stopListening : startListening}
-            className={`group relative flex size-20 items-center justify-center rounded-full text-white shadow-2xl transition-all active:scale-95 ${
-              isListening
-                ? 'bg-rose-600 ring-8 ring-rose-500/30 animate-pulse'
-                : 'bg-gradient-to-tr from-cyan-500 to-blue-600 hover:scale-105 shadow-cyan-500/30'
-            }`}
-            aria-label={isListening ? 'Stop recording' : 'Start reading'}
+            data-listening={isListening || undefined}
+            className="practice-shadowing__mic focus-visible:outline-2 focus-visible:outline-offset-4"
+            aria-label={isListening ? _(msg({ id: 'practice.shadowing.stop-recording', message: 'Stop recording' })) : _(msg({ id: 'practice.shadowing.start-reading', message: 'Start reading' }))}
           >
-            {isListening ? <MicOff size={32} /> : <Mic size={32} />}
+            <span className="practice-shadowing__mic-face">
+              {isListening ? <span className="practice-shadowing__stop" aria-hidden="true" /> : <Mic size={34} aria-hidden="true" />}
+            </span>
           </button>
-        </div>
-        <p className="mt-3 text-xs font-bold text-[var(--sf-text-muted)]">
-          {isListening ? 'Listening…' : 'Tap the mic to start reading'}
-        </p>
-      </div>
 
-      {/* Navigation Arrows */}
-      <div className="mt-6 flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => move(Math.max(0, currentIndex - 1))}
-          disabled={currentIndex === 0}
-          className={navigationClass}
-          aria-label="Previous word"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <span className="font-mono text-xs font-bold tabular-nums text-[var(--sf-text-muted)]">
-          {currentIndex + 1} / {cards.length}
-        </span>
-        <button
-          type="button"
-          onClick={() => move(Math.min(cards.length - 1, currentIndex + 1))}
-          disabled={currentIndex === cards.length - 1}
-          className={navigationClass}
-          aria-label="Next word"
-        >
-          <ChevronRight size={20} />
-        </button>
-      </div>
+          <div className="practice-shadowing__actions">
+            <button
+              type="button"
+              onClick={() => move(Math.max(0, currentIndex - 1))}
+              disabled={currentIndex === 0}
+              className="practice-shadowing__prev practice-secondary crystal-chamfer-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+              aria-label={_(msg({ id: 'practice.shadowing.previous', message: 'Previous word' }))}
+            >
+              <ChevronLeft size={20} aria-hidden="true" />
+            </button>
+            {(matchResult || transcript) && !isListening && (
+              <button type="button" onClick={startListening} className="practice-secondary crystal-chamfer-sm focus-visible:outline-2 focus-visible:outline-offset-2">
+                <RotateCcw size={16} aria-hidden="true" />
+                <Trans {...msg({ context: 'practice.shadowing.try-again', message: 'Try again' })} />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => move(Math.min(cards.length - 1, currentIndex + 1))}
+              disabled={isLast}
+              className="practice-primary crystal-chamfer-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+              aria-label={_(msg({ id: 'practice.shadowing.next', message: 'Next word' }))}
+            >
+              <Trans {...msg({ context: 'practice.shadowing.next-short', message: 'Next' })} />
+              <ChevronRight size={18} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+
+        <div className="practice-shadowing__feedback" aria-live="polite">
+          {transcript && (
+            <p lang={targetLanguage} className="practice-shadowing__heard">
+              <b><Trans {...msg({ context: 'practice.shadowing.you-said', message: 'You said:' })} /></b> “{transcript}”
+            </p>
+          )}
+          {matchResult && matchResult.score >= CLEAR_SCORE && (
+            <p className="practice-shadowing__success">
+              <Trans {...msg({ context: 'practice.shadowing.success', message: 'Nice pronunciation' })} />
+            </p>
+          )}
+        </div>
+        {speechError && <p role="alert" className="practice-shadowing__error">{speechError}</p>}
+
+        <div className="practice-shadowing__notes">
+          <p><Trans {...msg({ context: 'shadowing-view.the-browser-checks-whether-the-intended-words-were-recognised-it-', message: 'The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent.' })} /></p>
+          <p data-assessment="unavailable"><Trans {...msg({ context: 'shadowing-view.pronunciation-assessment-is-unavailable-in-this-build-browser-tra', message: 'Pronunciation assessment is unavailable in this build; browser transcript matching remains available.' })} /></p>
+        </div>
+
+        {targetLanguage === 'en' && <PronunciationVideo key={card.id} word={card.word} />}
+        {targetLanguage === 'en' && <WordContextVideo key={`context-${card.id}`} word={card.word} />}
+
+        <ShadowingCoach
+          heading={matchResult
+            ? t(msg({ id: 'practice.shadowing.coach-result', message: '{clear} of {total} words came through clearly.' }), { clear: clearWords, total: words.length })
+            : _(msg({ id: 'practice.shadowing.coach-start', message: 'Say it after me!' }))}
+          body={_(msg({ id: 'practice.shadowing.coach-body', message: 'Listen to the model first, then read the whole sentence in one go.' }))}
+        />
+      </section>
     </div>
+  );
+}
+
+function SentenceWord({ word, space }: { word: ShadowingWord; space: boolean }) {
+  return (
+    <>
+      {space && ' '}
+      <span className="practice-shadowing__word" data-mark={word.mark} data-focus={word.focus || undefined}>
+        {word.text}
+        <span aria-hidden="true" className="practice-shadowing__bar" />
+      </span>
+    </>
+  );
+}
+
+interface WaveformProps {
+  levels: readonly number[];
+  kind: 'model' | 'take';
+  live?: boolean;
+}
+
+/** A row of bars from real loudness samples; unrecorded room is drawn as a dotted rest line. */
+function Waveform({ levels, kind, live = false }: WaveformProps) {
+  const rest = Math.max(0, WAVE_BARS - levels.length);
+  return (
+    <div className="practice-shadowing__wave" data-kind={kind} data-live={live || undefined} aria-hidden="true">
+      {levels.map((level, index) => (
+        <span key={index} className="practice-shadowing__wave-bar" style={{ height: `${Math.round(8 + Math.min(1, level) * 92)}%` }} />
+      ))}
+      {rest > 0 && <span className="practice-shadowing__wave-rest" style={{ flexGrow: rest }} />}
+    </div>
+  );
+}
+
+/** Crystal-only: Lumi coaching the take, from the learner's own result when there is one. */
+function ShadowingCoach({ heading, body }: { heading: string; body: string }) {
+  const showLumi = useCrystalLumi();
+  if (!showLumi) return null;
+  return (
+    <LumiCoach pose="happy" heading={heading} className="practice-shadowing__lumi">
+      {body}
+    </LumiCoach>
   );
 }

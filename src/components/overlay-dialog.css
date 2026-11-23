@@ -1,0 +1,289 @@
+/* Dialog chrome shared by the practice picker and the card tutor.
+   Classic themes draw a rounded panel with a hairline border; Crystal draws a gradient frame two
+   pixels outside a chamfered body, with a crimson ornament on the top edge and a holo one on the
+   bottom edge. The drop shadow sits on the outer element, which is not clipped, so the glow stays
+   visible around the cut corners. Values without a theme token (shadows, the Crystal frame and the
+   Crystal body gradients) follow the board literals and are scoped to these classes. */
+
+html[data-theme-family="classic"] .overlay-dialog-frame {
+  --od-subtle: var(--sf-text-subtle);
+  --od-accent-soft: color-mix(in srgb, var(--sf-brand) 8%, transparent);
+  --od-accent-line: color-mix(in srgb, var(--sf-brand-text) 25%, transparent);
+  --od-row-bg: var(--sf-surface-raised);
+  --od-radius: 18px;
+  --od-fr: 10px;
+  --od-btn-radius: 999px;
+  --od-primary-bg: var(--sf-text);
+  --od-display-weight: 380;
+  --od-shadow: var(--sf-dialog-shadow);
+  --od-secondary-shadow: 0 1px 2px rgb(60 40 20 / .08);
+}
+html[data-theme-family="classic"].dark .overlay-dialog-frame {
+  --od-subtle: var(--sf-text-subtle);
+  --od-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent);
+  --od-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
+  --od-row-bg: color-mix(in srgb, var(--sf-text) 2.5%, transparent);
+  --od-radius: 26px;
+  --od-fr: 14px;
+  --od-btn-radius: 16px;
+  --od-primary-bg: var(--sf-brand);
+  --od-display-weight: 440;
+  --od-shadow: var(--sf-dialog-shadow);
+  --od-secondary-shadow: none;
+}
+html[data-theme-family="crystal"] .overlay-dialog-frame {
+  --od-subtle: var(--sf-text-subtle);
+  --od-holo-text: var(--sf-holo-text);
+  --od-holo: var(--sf-second);
+  --od-crimson: var(--sf-primary-bg);
+  --od-primary-glow: var(--sf-primary-shadow);
+  --od-secondary-bg: var(--sf-surface);
+  --od-frame: linear-gradient(155deg, #ff5470, rgb(224 23 63 / .3) 28%, rgb(26 167 201 / .35) 72%, #1aa7c9);
+  --od-body: linear-gradient(170deg, #f5fbff 0%, #dbeeff 100%);
+  --od-foot: rgb(190 222 250 / .45);
+  --od-inner: rgb(255 255 255 / .7);
+  --od-holo-fill: linear-gradient(180deg, #2bc4e0, var(--sf-success));
+  --od-holo-ink: var(--sf-on-primary);
+  --od-loading-bg: rgb(255 255 255 / .85);
+  --od-glow: drop-shadow(0 26px 40px rgb(20 70 130 / .35));
+}
+html[data-theme-family="crystal"].dark .overlay-dialog-frame {
+  --od-subtle: var(--sf-text-subtle);
+  --od-holo-text: var(--sf-holo-text);
+  --od-crimson: var(--sf-primary-bg);
+  --od-primary-glow: var(--sf-primary-shadow);
+  --od-secondary-bg: var(--sf-surface-control);
+  --od-frame: linear-gradient(155deg, #ff5470, color-mix(in srgb, var(--sf-brand) 25%, transparent) 28%, color-mix(in srgb, var(--sf-second) 20%, transparent) 72%, var(--sf-second));
+  --od-body: linear-gradient(170deg, #141a2b 0%, #0a0d17 100%);
+  --od-foot: rgb(0 0 0 / .25);
+  --od-inner: rgb(255 255 255 / .04);
+  --od-holo-fill: linear-gradient(180deg, #9ff9ff, #1aa7c9);
+  --od-holo-ink: #031820;
+  --od-loading-bg: color-mix(in srgb, var(--od-holo) 10%, transparent);
+  --od-glow: drop-shadow(0 0 36px color-mix(in srgb, var(--sf-brand) 30%, transparent)) drop-shadow(0 30px 40px rgb(0 0 0 / .7));
+}
+
+.overlay-dialog-frame {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 2rem);
+  height: fit-content;
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  color: var(--sf-text);
+}
+.overlay-dialog-body {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+html[data-theme-family="classic"] .overlay-dialog-frame {
+  overflow: hidden;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--od-radius);
+  background-color: var(--sf-surface);
+  background-image: var(--sf-dialog-bg);
+  box-shadow: var(--od-shadow);
+}
+html[data-theme-family="crystal"] .overlay-dialog-frame { filter: var(--od-glow); }
+html[data-theme-family="crystal"] .overlay-dialog-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: var(--nk-chamfer);
+  background: var(--od-frame);
+}
+html[data-theme-family="crystal"] .overlay-dialog-body {
+  margin: 2px;
+  background: var(--od-body);
+  clip-path: var(--nk-chamfer);
+}
+
+.overlay-dialog-ornament { display: none; }
+html[data-theme-family="crystal"] .overlay-dialog-ornament {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  height: 3px;
+  pointer-events: none;
+}
+html[data-theme-family="crystal"] .overlay-dialog-ornament-top { top: 0; left: 26px; width: 120px; background: var(--od-crimson); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 80%, transparent); }
+html[data-theme-family="crystal"] .overlay-dialog-ornament-bottom { right: 30px; bottom: 0; width: 70px; background: var(--od-holo); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 80%, transparent); }
+
+.overlay-dialog-header {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px 22px 18px 26px;
+  border-bottom: 1px solid var(--sf-border);
+}
+html[data-theme-family="crystal"] .overlay-dialog-header { padding: 22px 24px 14px 26px; border-bottom: 0; }
+
+.overlay-dialog-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--od-subtle);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.overlay-dialog-kicker-diamond { display: none; }
+html[data-theme-family="crystal"] .overlay-dialog-kicker {
+  color: var(--sf-brand-text);
+  font-family: var(--sf-font-display);
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+html[data-theme-family="crystal"] .overlay-dialog-kicker-diamond {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: none;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  transform: rotate(45deg);
+}
+
+.overlay-dialog-title {
+  margin: 6px 0 0;
+  color: var(--sf-text);
+  font-family: var(--sf-font-display);
+  font-size: 28px;
+  font-weight: var(--od-display-weight, 400);
+  letter-spacing: -.02em;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+html[data-theme-family="crystal"] .overlay-dialog-title {
+  font-size: 30px;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: .01em;
+  line-height: 1.05;
+}
+.overlay-dialog-sub {
+  margin: 6px 0 0;
+  color: var(--sf-text-muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* The close button keeps a 44px target around the drawn surface. Its focus ring is drawn on the
+   button itself, so the ring takes the surface's shape: round in classic, square-cut in Crystal. */
+.overlay-dialog-close {
+  display: flex;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin: -4px -4px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sf-text-muted);
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.overlay-dialog-close:hover { color: var(--sf-text); }
+.overlay-dialog-close:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: -2px; }
+.overlay-dialog-close-surface {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sf-border);
+  border-radius: 50%;
+  background: var(--sf-surface-raised);
+}
+.overlay-dialog-close-surface svg { width: 15px; height: 15px; }
+html[data-theme-family="crystal"] .overlay-dialog-close { border-radius: 0; }
+html[data-theme-family="crystal"] .overlay-dialog-close-surface {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  clip-path: var(--nk-chamfer-sm);
+}
+html[data-theme-family="crystal"] .overlay-dialog-close-surface svg { width: 14px; height: 14px; stroke-width: 2.6px; }
+
+.overlay-dialog-footer {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 22px 20px 26px;
+  border-top: 1px solid var(--sf-border);
+}
+html[data-theme-family="crystal"] .overlay-dialog-footer {
+  padding: 14px 26px 18px;
+  border-top: 0;
+  background: var(--od-foot);
+  box-shadow: inset 0 1px 0 var(--sf-border);
+}
+.overlay-dialog-note {
+  margin: 0;
+  color: var(--od-subtle);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+html[data-theme-family="crystal"] .overlay-dialog-note { font-size: 12px; }
+
+.overlay-dialog-secondary {
+  display: flex;
+  min-height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 0 18px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--od-btn-radius, 999px);
+  background: var(--sf-surface-control);
+  box-shadow: var(--od-secondary-shadow, none);
+  color: var(--sf-text);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: border-color 150ms ease;
+}
+.overlay-dialog-secondary:hover { border-color: var(--sf-brand); }
+.overlay-dialog-secondary:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+html[data-theme-family="crystal"] .overlay-dialog-secondary {
+  min-height: 46px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 0;
+  background: var(--od-secondary-bg);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  clip-path: var(--nk-chamfer-sm);
+  font-family: var(--sf-font-display);
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay-dialog-close, .overlay-dialog-secondary { transition: none; }
+}

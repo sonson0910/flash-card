@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { Timestamp } from 'firebase-admin/firestore';
-import { calculateSharedDeckPayloadBytes } from '../src/inputValidation.js';
+import { calculateSharedDeckPayloadBytes, type CreateSharedDeckRequest } from '../src/inputValidation.js';
 import { createFirestoreLegacySharedDeckInventoryStore } from '../src/legacySharedDeckInventoryFirestore.js';
 import {
   buildInventoryReport,
@@ -261,6 +261,12 @@ describe('legacy shared-deck exact inventory', () => {
   });
 
   it('keeps exact current records and upgrades matching private v1 metadata', () => {
+    expect(classifyLegacyShare({ ...current('current-with-languages', {
+      targetLanguage: 'en', nativeLanguage: 'vi',
+    }), privateData: privateV1() }, ownerUid)).toMatchObject({
+      disposition: 'upgrade-private-v1',
+      reasonCode: 'private-v1-upgrade',
+    });
     expect(classifyLegacyShare({ ...current(), privateData: {
       ...privateV1(),
       createdAt: timestamp,
@@ -293,6 +299,42 @@ describe('legacy shared-deck exact inventory', () => {
     });
   });
 
+  it('binds safe origin and the complete deck language pair into current payload validation', () => {
+    const languagePair = { targetLanguage: 'en', nativeLanguage: 'vi' };
+    const payload: CreateSharedDeckRequest = {
+      category: 'Basics', cards: [{ ...card, origin: 'ai' }], ...languagePair,
+    };
+    const { cards } = payload;
+    const privateV2 = {
+      ownerUid,
+      createdAt: timestamp,
+      expiresAt: { seconds: 1_900_000_000, nanoseconds: 0 },
+      payloadBytes: calculateSharedDeckPayloadBytes(payload),
+      schemaVersion: 2,
+    };
+    const valid = classifyLegacyShare({
+      ...current('current-attribution', { cards, ...languagePair }),
+      privateData: privateV2,
+    }, ownerUid);
+    expect(valid).toMatchObject({
+      disposition: 'keep-current',
+      reasonCode: 'current',
+      payloadBytes: calculateSharedDeckPayloadBytes(payload),
+    });
+
+    for (const invalid of [
+      current('partial-pair', { cards, targetLanguage: 'en' }),
+      current('non-canonical-pair', { cards, targetLanguage: 'english', nativeLanguage: 'vi' }),
+      current('unsafe-origin', { cards: [{ ...card, origin: 'provider' }], ...languagePair }),
+      current('per-card-native-language', { cards: [{ ...card, translationLanguage: 'vi' }], ...languagePair }),
+    ]) {
+      expect(classifyLegacyShare(invalid, ownerUid)).toMatchObject({
+        disposition: 'quarantine-candidate',
+        reasonCode: 'malformed-public',
+      });
+    }
+  });
+
   it('keeps matching schema-v2 public and private fixtures with a lexeme tuple', () => {
     const bytes = Buffer.from(JSON.stringify(['en', 'lead', 'noun', 'metal'])).toString('hex');
     const value = `\u0000${bytes}`;
@@ -319,6 +361,27 @@ describe('legacy shared-deck exact inventory', () => {
     }, ownerUid)).toMatchObject({ disposition: 'keep-current', reasonCode: 'current' });
   });
 
+  it('keeps a current share whose longest text field ends in a space an older callable stored', () => {
+    const longWord = `${'a'.repeat(255)} `;
+    const storedCard = { ...card, word: longWord };
+    const payloadBytes = calculateSharedDeckPayloadBytes({ category: 'Basics', cards: [storedCard] });
+    const share = {
+      ...current('current-trailing-space', { cards: [storedCard] }),
+      privateData: {
+        ownerUid,
+        createdAt: timestamp,
+        expiresAt: { seconds: 1_900_000_000, nanoseconds: 0 },
+        payloadBytes,
+        schemaVersion: 2,
+      },
+    };
+    expect(classifyLegacyShare(share, ownerUid)).toMatchObject({ disposition: 'keep-current', reasonCode: 'current' });
+    expect(classifyLegacyShare({
+      ...current('current-padded', { cards: [{ ...card, word: ` ${'a'.repeat(10)} ` }] }),
+      privateData: share.privateData,
+    }, ownerUid)).toMatchObject({ reasonCode: 'malformed-public' });
+  });
+
   it('blocks owner and timestamp conflicts and quarantines private orphans', () => {
     expect(classifyLegacyShare({ ...current(), privateData: privateV1('other-owner') }, ownerUid)).toMatchObject({
       disposition: 'block',
@@ -339,6 +402,21 @@ describe('legacy shared-deck exact inventory', () => {
     }) }, ownerUid, { scanStartedAt: '2026-08-24T00:00:00.000Z' })).toMatchObject({
       disposition: 'quarantine-candidate',
       reasonCode: 'orphan-private',
+    });
+  });
+
+  it('leaves an expired current share whose owner record is already gone to the TTL policy', () => {
+    const scan = { scanStartedAt: '2026-08-24T00:00:00.000Z' };
+    const expired = current('expired-half-removed', { expiresAt: { seconds: 1_700_000_100, nanoseconds: 0 } });
+    expect(classifyLegacyShare(expired, ownerUid, scan)).toMatchObject({
+      action: 'keep',
+      disposition: 'keep-current',
+      expired: true,
+    });
+    // Without its owner record a share that is still live belongs to nobody the scan can name.
+    expect(classifyLegacyShare(current('live-half-removed'), ownerUid, scan)).toMatchObject({
+      disposition: 'block',
+      reasonCode: 'private-missing',
     });
   });
 
@@ -1192,11 +1270,17 @@ describe('legacy shared-deck exact inventory', () => {
     )).toThrow(/backup/i);
   });
 
-  it('applies a frozen owner atomically, preserves IDs and payload digest, and retries as a no-op', async () => {
+  it('applies a frozen owner atomically while preserving card origin and deck languages', async () => {
+    const publicSource = current('apply-me', {
+      cards: [{ ...card, origin: 'ai' }],
+      targetLanguage: 'en',
+      nativeLanguage: 'vi',
+    }).publicData as Record<string, unknown>;
+    const privateSource = privateV1();
     const inventory = await createFrozenLegacySharedDeckInventory({
       store: pageStore([{
-        publicDocuments: [publicDocument(legacy('apply-me'))],
-        privateDocuments: [],
+        publicDocuments: [{ id: 'apply-me', data: publicSource }],
+        privateDocuments: [{ id: 'apply-me', data: privateSource }],
         publicTerminal: true,
         privateTerminal: true,
       }]),
@@ -1216,7 +1300,8 @@ describe('legacy shared-deck exact inventory', () => {
         ledgerReady: false,
         manifest: inventory.sealedManifest,
       }],
-      ['shared_decks/apply-me', inventory.entries[0] ? (legacy('apply-me').publicData as Record<string, unknown>) : {}],
+      ['shared_decks/apply-me', publicSource],
+      ['shared_deck_owners/apply-me', privateSource],
     ]);
     expect(digestCanonicalValue(data.get('admin_shared_deck_migration_jobs/shared_deck_v2')!.manifest))
       .toBe(digestCanonicalValue(inventory.sealedManifest));
@@ -1255,7 +1340,12 @@ describe('legacy shared-deck exact inventory', () => {
       indexPreparation: preparedIndexes(inventory),
     });
     expect(first.migratedShareIds).toEqual(['apply-me']);
-    expect(data.get('shared_decks/apply-me')).toMatchObject({ schemaVersion: 2 });
+    expect(data.get('shared_decks/apply-me')).toMatchObject({
+      schemaVersion: 2,
+      targetLanguage: 'en',
+      nativeLanguage: 'vi',
+      cards: [{ origin: 'ai' }],
+    });
     expect(data.get('shared_decks/apply-me')).not.toHaveProperty('authorUid');
     expect(data.get('shared_deck_owners/apply-me')).toMatchObject({ ownerUid, schemaVersion: 2 });
     expect((data.get('shared_deck_owners/apply-me')?.expiresAt as Timestamp).toMillis())
@@ -1562,7 +1652,11 @@ describe('legacy shared-deck exact inventory', () => {
     const verification = await verifyLegacySharedDeckCutover(database, duplicate);
     expect(verification).toMatchObject({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 2 });
     const firstReport = buildLegacySharedDeckMigrationOperatorReport(duplicate, verification);
-    const rerunVerification = await verifyLegacySharedDeckCutover(database, duplicate);
+    // A verified migration is re-checked against the live ledger, so the
+    // second pass is pinned to a moment at which these shares are still live.
+    const rerunVerification = await verifyLegacySharedDeckCutover(database, duplicate, {
+      now: Timestamp.fromMillis(Date.parse(duplicate.scanStartedAt) + 60_000),
+    });
     expect(rerunVerification).toEqual(verification);
     expect(buildLegacySharedDeckMigrationOperatorReport(duplicate, rerunVerification)).toBe(firstReport);
     expect(JSON.parse(firstReport)).toMatchObject({
@@ -1571,6 +1665,48 @@ describe('legacy shared-deck exact inventory', () => {
       sealedManifestRootDigest: duplicate.sealedManifest?.rootDigest,
     });
     expect(map.get('admin_shared_deck_migration_jobs/shared_deck_v2')).toMatchObject({ phase: 'verified' });
+  });
+
+  it('refuses to verify while a legacy public share remains and keeps no legacy counter once it verifies', async () => {
+    const shareId = 'legacy-left-behind';
+    const inventory = await createFrozenLegacySharedDeckInventory({
+      store: pageStore([{
+        publicDocuments: [publicDocument(legacy(shareId))], privateDocuments: [],
+        publicTerminal: true, privateTerminal: true,
+      }]),
+      ownerUid,
+      runId: 'legacy-left-behind-run',
+      revision: '9'.repeat(40),
+      target: 'test',
+      scanStartedAt: '2026-08-24T00:00:00.000Z',
+    });
+    const legacySource = legacy(shareId).publicData as Record<string, unknown>;
+    const stateKey = 'admin_shared_deck_migration_jobs/shared_deck_v2';
+    const map = new Map<string, Record<string, unknown>>([
+      [stateKey, {
+        schemaVersion: 2, ownerUid, phase: 'sealed', revision: inventory.revision,
+        target: inventory.target, inventoryDigest: inventory.inventoryDigest, ledgerReady: false,
+        manifest: inventory.sealedManifest,
+      }],
+      [`shared_decks/${shareId}`, legacySource],
+    ]);
+    const { database } = firestoreMapDatabase(map);
+    await applyLegacySharedDeckMigration(database, inventory, {
+      ownerUid, revision: inventory.revision, target: inventory.target,
+      confirmation: 'APPLY_SHARED_DECK_V2', backupManifest: signedBackupManifest(inventory),
+      backupPublicKey: backupVerificationKey, indexPreparation: preparedIndexes(inventory),
+    });
+
+    const migrated = map.get(`shared_decks/${shareId}`)!;
+    map.set(`shared_decks/${shareId}`, legacySource);
+    await expect(verifyLegacySharedDeckCutover(database, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+    expect(map.get(stateKey)).toMatchObject({ phase: 'applied' });
+
+    map.set(`shared_decks/${shareId}`, migrated);
+    await expect(verifyLegacySharedDeckCutover(database, inventory)).resolves.toMatchObject({ verified: true });
+    const verified = map.get(stateKey)!;
+    expect(verified).toMatchObject({ phase: 'verified', verificationProgress: { active: false } });
+    expect(verified.verificationProgress).not.toHaveProperty('validLegacyPublicCount');
   });
 
   it('quarantines digestable malformed public records without deleting their source', async () => {
@@ -1649,8 +1785,14 @@ describe('legacy shared-deck exact inventory', () => {
         },
       });
       map.delete(missing === 'public' ? `shared_decks/${shareId}` : `shared_deck_owners/${shareId}`);
-      await expect(verifyLegacySharedDeckCutover(harness.database, inventory))
+      // The share has not expired, so the TTL policy cannot have removed the missing side.
+      const beforeExpiry = { now: Timestamp.fromMillis(Date.parse(inventory.scanStartedAt) + 60_000) };
+      await expect(verifyLegacySharedDeckCutover(harness.database, inventory, beforeExpiry))
         .rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+      // Once it has, the remaining half is what the policy has yet to remove.
+      const afterExpiry = { now: Timestamp.fromMillis(Date.parse(inventory.scanStartedAt) + 31 * 24 * 60 * 60 * 1_000) };
+      await expect(verifyLegacySharedDeckCutover(harness.database, inventory, afterExpiry))
+        .resolves.toMatchObject({ verified: true });
     }
   });
 
@@ -1745,7 +1887,11 @@ describe('legacy shared-deck exact inventory', () => {
     const resumedVerification = await verifyLegacySharedDeckCutover(verifyHarness.database, inventory);
     const resumedReport = buildLegacySharedDeckMigrationOperatorReport(inventory, resumedVerification);
     expect(resumedVerification).toMatchObject({ verified: true });
-    const resumedAgain = await verifyLegacySharedDeckCutover(verifyHarness.database, inventory);
+    // A verified migration is re-checked against the live ledger, so the
+    // second pass is pinned to a moment at which these shares are still live.
+    const resumedAgain = await verifyLegacySharedDeckCutover(verifyHarness.database, inventory, {
+      now: Timestamp.fromMillis(Date.parse(inventory.scanStartedAt) + 60_000),
+    });
     expect(buildLegacySharedDeckMigrationOperatorReport(inventory, resumedAgain)).toBe(resumedReport);
     expect(map.get('admin_shared_deck_migration_jobs/shared_deck_v2')).toMatchObject({
       phase: 'verified', verificationProgress: { active: false },

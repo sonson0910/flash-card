@@ -1,10 +1,33 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
+import { captureFailureMessage } from '../../lib/captureFailureMessage';
+import type { CardData } from '../../types/card';
+import { CourseError } from '../courses/courseModel';
+import { createSharedDeckCoursePort } from '../sharing/shareCourseMatching';
 import {
   BROWSER_EXTENSION_IMPORT_STORAGE_KEY,
+  BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY,
+  readPendingBrowserExtensionImportOwner,
   type BrowserExtensionImportBrowser,
   type BrowserExtensionImportStorage,
 } from './browserExtensionImport';
-import { startBrowserExtensionImportRuntime } from './browserExtensionImportRuntime';
+import {
+  startBrowserExtensionImportRuntime,
+  type BrowserExtensionImportOptions,
+} from './browserExtensionImportRuntime';
+
+describe('capture error guidance', () => {
+  it('keeps quota and spend refusals actionable in Vietnamese', () => {
+    for (const reason of ['ai-card-quota', 'ai-daily-allowance', 'account-daily-spend', 'service-daily-cap']) {
+      const error = classifyProtectedFunctionError({ code: 'functions/resource-exhausted', details: { reason } }, 'AI generation');
+      expect(captureFailureMessage(error)).toMatch(/hạn mức|lượt|thẻ AI/);
+    }
+    expect(captureFailureMessage(classifyProtectedFunctionError({ code: 'functions/unauthenticated' }, 'AI generation')))
+      .toContain('đăng nhập Google');
+    expect(captureFailureMessage(classifyProtectedFunctionError({ code: 'functions/deadline-exceeded' }, 'AI generation')))
+      .toContain('thử lại');
+  });
+});
 
 class MemoryStorage implements BrowserExtensionImportStorage {
   private readonly values = new Map<string, string>();
@@ -19,6 +42,13 @@ class MemoryStorage implements BrowserExtensionImportStorage {
 
   removeItem(key: string): void {
     this.values.delete(key);
+  }
+}
+
+class OwnerBindingWriteFailureStorage extends MemoryStorage {
+  setItem(key: string, value: string): void {
+    if (key === BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY) throw new Error('quota exceeded');
+    super.setItem(key, value);
   }
 }
 
@@ -56,7 +86,7 @@ const createBrowser = (url: string, storage = new MemoryStorage(), topFrame = tr
 const nonce = 'nonce_123456789012345678';
 
 const optionsFor = (
-  generate: (options?: unknown) => Promise<{ status: 'failed'; error: Error }>,
+  generate: BrowserExtensionImportOptions['generate'],
   overrides: { changeDraft?: (value: string) => void; openLibrary?: () => void } = {},
 ) => ({
   ownerId: 'user-1',
@@ -79,6 +109,10 @@ const encodePayload = (value: unknown): string => {
 };
 
 describe('browser extension import runtime', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('does not process verified storage from a subframe', async () => {
     const now = Date.now();
     const storage = new MemoryStorage();
@@ -221,9 +255,117 @@ describe('browser extension import runtime', () => {
 
     expect(generationOptions).toMatchObject({
       context: 'The lead actor arrived.',
+      surface: 'extension',
       requestedDeck: 'Reading',
       requestedDeckAvailable: expect.any(Function),
     });
+  });
+
+  it('passes verified captured source url and page title to card generation', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_source_123',
+      nonce,
+      text: 'lead',
+      sourceUrl: 'https://example.com/article',
+      pageTitle: 'An Example Article',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    let generationOptions: unknown;
+
+    const runtime = startBrowserExtensionImportRuntime(optionsFor(async options => {
+      generationOptions = options;
+      return { status: 'failed', error: new Error('expected test failure') };
+    }), browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generationOptions).toMatchObject({
+      surface: 'extension',
+      sourceUrl: 'https://example.com/article',
+      pageTitle: 'An Example Article',
+    });
+  });
+
+  it('does not claim a ready message whose sourceUrl does not match what was actually written to storage', async () => {
+    const now = Date.now();
+    const { browser, storage, dispatchMessage } = createBrowser('https://app.example.test/?view=library');
+    let generated = 0;
+    const runtime = startBrowserExtensionImportRuntime(optionsFor(async () => {
+      generated += 1;
+      return { status: 'failed', error: new Error('should not run') };
+    }), browser);
+
+    // The storage write happens only after the runtime has already started
+    // (and found nothing pending), so the later ready message is the first
+    // and only claim attempt for this id — exercising `isBackedByVerifiedStorage`
+    // for real rather than the bootstrap `capturePending()` path.
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_source_tamper_123',
+      nonce,
+      text: 'lead',
+      sourceUrl: 'https://example.com/article',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    dispatchMessage({
+      source: 'lingoflash-extension-bridge',
+      type: 'LINGOFLASH_EXTENSION_IMPORT_READY',
+      payload: {
+        v: 3,
+        id: 'intent_source_tamper_123',
+        nonce,
+        text: 'lead',
+        sourceUrl: 'https://forged.example/',
+        createdAt: now,
+        mode: 'silent',
+      },
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generated).toBe(0);
+  });
+
+  it('does not claim a ready message whose sourceLanguage does not match what was actually written to storage', async () => {
+    const now = Date.now();
+    const { browser, storage, dispatchMessage } = createBrowser('https://app.example.test/?view=library');
+    let generated = 0;
+    const runtime = startBrowserExtensionImportRuntime(optionsFor(async () => {
+      generated += 1;
+      return { status: 'failed', error: new Error('should not run') };
+    }), browser);
+
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_language_tamper_123',
+      nonce,
+      text: 'lead',
+      sourceLanguage: 'ko',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    dispatchMessage({
+      source: 'lingoflash-extension-bridge',
+      type: 'LINGOFLASH_EXTENSION_IMPORT_READY',
+      payload: {
+        v: 3,
+        id: 'intent_language_tamper_123',
+        nonce,
+        text: 'lead',
+        sourceLanguage: 'en',
+        createdAt: now,
+        mode: 'silent',
+      },
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generated).toBe(0);
   });
 
   it('ignores a ready message whose nonce is not backed by verified storage', async () => {
@@ -334,6 +476,331 @@ describe('browser extension import runtime', () => {
     expect(generated).toBe(0);
   });
 
+  it('drops a silent capture with no side effects when ensureCaptureCourse resolves cancel', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_course_mismatch_cancel_123',
+      nonce,
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+      sourceLanguage: 'en',
+    }));
+    const posted: unknown[] = [];
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    let generated = 0;
+    const options = {
+      ...optionsFor(async () => {
+        generated += 1;
+        return { status: 'failed' as const, error: new Error('should not run') };
+      }),
+      ensureCaptureCourse: async () => 'cancel' as const,
+    };
+
+    const runtime = startBrowserExtensionImportRuntime(options, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generated).toBe(0);
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY)).toBeNull();
+    expect(posted).toContainEqual(expect.objectContaining({
+      payload: expect.objectContaining({
+        id: 'intent_course_mismatch_cancel_123',
+        status: 'error',
+        message: 'Import cancelled: switch to a matching course, then capture the word again.',
+      }),
+    }));
+
+    const secondRuntime = startBrowserExtensionImportRuntime(options, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    secondRuntime.dispose();
+    expect(generated).toBe(0);
+  });
+
+  it('returns the created card with its part of speech, and a reading only where the card has one', async () => {
+    const created = async (text: string, card: Partial<CardData>) => {
+      const posted: unknown[] = [];
+      vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+      const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+      storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+        v: 3, id: `intent_created_${text.length}_123`, nonce, text, createdAt: Date.now(), mode: 'silent',
+      }));
+      const runtime = startBrowserExtensionImportRuntime(optionsFor(async () => ({
+        status: 'created' as const,
+        card: {
+          id: 'card-1', word: text, translation: 'nghĩa', explanation: '', phonetic: '', emoji: '', category: '',
+          audioUrl: null, imageUrl: null, origin: 'ai' as const, ...card,
+        },
+        mediaTask: Promise.resolve(),
+      })), browser);
+      await new Promise(resolve => setImmediate(resolve));
+      runtime.dispose();
+      vi.unstubAllGlobals();
+      const result = posted.find(message => (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_RESULT') as
+        { payload: Record<string, unknown> } | undefined;
+      return result?.payload;
+    };
+
+    expect(await created('resilient', { language: 'en', phonetic: '/rɪˈzɪliənt/', partOfSpeech: 'adjective' }))
+      .toMatchObject({ status: 'created', partOfSpeech: 'adjective', reading: '', phonetic: '/rɪˈzɪliənt/', aiGenerated: true });
+    expect(await created('食べる', { language: 'ja', phonetic: 'たべる', partOfSpeech: 'verb' }))
+      .toMatchObject({ partOfSpeech: 'verb', reading: 'たべる', phonetic: 'たべる' });
+    expect(await created('你好', { language: 'zh-CN', phonetic: 'nǐ hǎo' }))
+      .toMatchObject({ partOfSpeech: '', reading: 'nǐ hǎo' });
+    expect(await created('stretch', { language: 'en', phonetic: '', partOfSpeech: `${'x'.repeat(60)}` }))
+      .toMatchObject({ partOfSpeech: 'x'.repeat(40), reading: '' });
+  });
+
+  it('returns the language of the saved card so the extension can label a capture it sent without one', async () => {
+    const languageOf = async (card: Partial<CardData>) => {
+      const posted: unknown[] = [];
+      vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+      const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+      storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+        v: 3, id: 'intent_language_123', nonce, text: '회복력', createdAt: Date.now(), mode: 'silent',
+      }));
+      const runtime = startBrowserExtensionImportRuntime(optionsFor(async () => ({
+        status: 'created' as const,
+        card: {
+          id: 'card-1', word: '회복력', translation: 'khả năng phục hồi', explanation: '', phonetic: '', emoji: '',
+          category: '', audioUrl: null, imageUrl: null, origin: 'ai' as const, ...card,
+        },
+        mediaTask: Promise.resolve(),
+      })), browser);
+      await new Promise(resolve => setImmediate(resolve));
+      runtime.dispose();
+      vi.unstubAllGlobals();
+      const result = posted.find(message => (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_RESULT') as
+        { payload: Record<string, unknown> } | undefined;
+      return result?.payload.language;
+    };
+
+    expect(await languageOf({ language: 'ko' })).toBe('ko');
+    expect(await languageOf({ language: 'zh-CN' })).toBe('zh');
+    expect(await languageOf({})).toBe('');
+  });
+
+  it('generates once ensureCaptureCourse resolves proceed', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_course_mismatch_proceed_123',
+      nonce,
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+      sourceLanguage: 'en',
+    }));
+    let generated = 0;
+    let gateCalls = 0;
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => {
+        generated += 1;
+        return { status: 'failed' as const, error: new Error('expected test failure') };
+      }),
+      ensureCaptureCourse: async () => {
+        gateCalls += 1;
+        return 'proceed' as const;
+      },
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(gateCalls).toBe(1);
+    expect(generated).toBe(1);
+  });
+
+  it('waits for the accepted course to reach card intake, then generates once without asking again', async () => {
+    const posted: unknown[] = [];
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_course_handoff_wait_123',
+      nonce,
+      text: '회복력',
+      createdAt: Date.now(),
+      mode: 'silent',
+      sourceLanguage: 'ko',
+    }));
+    const expectedLanguages: Array<string | undefined> = [];
+    const drafts: string[] = [];
+    let gateCalls = 0;
+    const generate: BrowserExtensionImportOptions['generate'] = async generationOptions => {
+      expectedLanguages.push(generationOptions?.expectedTargetLanguage);
+      return expectedLanguages.length < 3
+        ? { status: 'pair-mismatch' as const }
+        : { status: 'failed' as const, error: new Error('expected test failure') };
+    };
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(generate, { changeDraft: value => { drafts.push(value); } }),
+      ensureCaptureCourse: async () => {
+        gateCalls += 1;
+        return 'proceed' as const;
+      },
+    }, browser);
+    await vi.waitFor(() => expect(expectedLanguages).toHaveLength(3));
+    runtime.dispose();
+
+    expect(expectedLanguages).toEqual(['ko', 'ko', 'ko']);
+    expect(gateCalls).toBe(1);
+    expect(drafts.filter(value => value === '회복력').length).toBeGreaterThanOrEqual(3);
+    // Only the final generation outcome is reported; waiting posts nothing.
+    expect(posted).toHaveLength(1);
+  });
+
+  it('ends a capture with a terminal error when the accepted course never reaches card intake', async () => {
+    vi.useFakeTimers();
+    try {
+      const posted: Array<{ payload?: { id?: string; status?: string } }> = [];
+      vi.stubGlobal('postMessage', (message: { payload?: { id?: string; status?: string } }) => posted.push(message));
+      const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+      storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+        v: 3,
+        id: 'intent_course_handoff_timeout_123',
+        nonce,
+        text: '회복력',
+        createdAt: Date.now(),
+        mode: 'silent',
+        sourceLanguage: 'ko',
+      }));
+      const generate = vi.fn(async () => ({ status: 'pair-mismatch' as const }));
+      const runtime = startBrowserExtensionImportRuntime({
+        ...optionsFor(generate),
+        ensureCaptureCourse: async () => 'proceed' as const,
+      }, browser);
+      await vi.advanceTimersByTimeAsync(6_000);
+      runtime.dispose();
+
+      const results = posted.filter(message => message.payload?.id === 'intent_course_handoff_timeout_123');
+      expect(results).toHaveLength(1);
+      expect(results[0]?.payload?.status).toBe('error');
+      const calls = generate.mock.calls.length;
+      expect(calls).toBeGreaterThan(1);
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(generate.mock.calls.length).toBe(calls);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('generates in the active course without a course prompt when the extension reported no language', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_no_source_language_123',
+      nonce,
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+    }));
+    const seenTargetLanguages: string[] = [];
+    let generated = 0;
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => {
+        generated += 1;
+        return { status: 'failed' as const, error: new Error('expected test failure') };
+      }),
+      ensureCaptureCourse: async targetLanguage => {
+        seenTargetLanguages.push(targetLanguage);
+        return 'cancel' as const;
+      },
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(seenTargetLanguages).toEqual([]);
+    expect(generated).toBe(1);
+  });
+
+  it('passes the extension\'s synced course target language to ensureCaptureCourse when the extension reported one', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_korean_source_language_123',
+      nonce,
+      text: '회복력',
+      createdAt: now,
+      mode: 'silent',
+      sourceLanguage: 'ko',
+    }));
+    const seenTargetLanguages: string[] = [];
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => ({ status: 'failed' as const, error: new Error('expected test failure') })),
+      ensureCaptureCourse: async targetLanguage => {
+        seenTargetLanguages.push(targetLanguage);
+        return 'proceed' as const;
+      },
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(seenTargetLanguages).toEqual(['ko']);
+  });
+
+  it('drops a silent capture when ensureCaptureCourse rejects', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3,
+      id: 'intent_course_mismatch_error_123',
+      nonce,
+      text: 'resilient',
+      createdAt: now,
+      mode: 'silent',
+      sourceLanguage: 'en',
+    }));
+    const posted: unknown[] = [];
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    let generated = 0;
+    const actions = {
+      createCourse: vi.fn().mockResolvedValue({
+        ok: false,
+        error: new CourseError('cloud-write-failed', 'course lookup failed'),
+      }),
+      reopenCourse: vi.fn(), switchCourse: vi.fn(), updateCourse: vi.fn(), archiveCourse: vi.fn(),
+      addGoal: vi.fn(), updateGoal: vi.fn(), removeGoal: vi.fn(), clearError: vi.fn(),
+    };
+    const coursePort = createSharedDeckCoursePort({
+      model: { status: 'ready', source: 'cloud', profile: null, activeCourse: null, pending: false, errorCode: null },
+      actions: actions as never,
+    });
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => {
+        generated += 1;
+        return { status: 'failed' as const, error: new Error('expected test failure') };
+      }),
+      ensureCaptureCourse: async () => {
+        await coursePort.ensureCourseForIncomingShare({
+          shareId: '', category: '', cardCount: 0, sampleWords: [],
+          languagePairs: [{ targetLanguage: 'en', translationLanguage: 'vi' }],
+          createdAt: null, expiresAt: null, containsAiGeneratedCards: false,
+        });
+        return 'proceed';
+      },
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generated).toBe(0);
+    expect(actions.createCourse).toHaveBeenCalledWith({
+      targetLanguage: 'en', nativeLanguage: 'vi', activateOnCreate: true,
+    });
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY)).toBeNull();
+    expect(posted).toContainEqual(expect.objectContaining({
+      payload: expect.objectContaining({
+        id: 'intent_course_mismatch_error_123',
+        status: 'error',
+        message: 'Could not prepare the matching course. The word was not saved.',
+      }),
+    }));
+  });
+
   it('does not generate the same verified operation again after an app reload', async () => {
     const now = Date.now();
     const { browser, storage } = createBrowser('https://app.example.test/?view=library');
@@ -359,5 +826,268 @@ describe('browser extension import runtime', () => {
     reloadedRuntime.dispose();
 
     expect(generated).toBe(1);
+  });
+
+  it('drops an anonymous pending capture when its first owner changes, including a switch back', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3, id: 'intent_owner_switch_123', nonce, text: 'first owner', createdAt: now, mode: 'silent',
+    }));
+    const drafts: string[] = [];
+    let generated = 0;
+    const initial = {
+      ...optionsFor(async () => {
+        generated += 1;
+        return { status: 'failed' as const, error: new Error('should not run') };
+      }, { changeDraft: value => { drafts.push(value); } }),
+      ownerId: null,
+      identityLoading: true,
+    };
+    const runtime = startBrowserExtensionImportRuntime(initial, browser);
+    runtime.update({ ...initial, ownerId: 'owner-a', identityLoading: false, libraryReady: false });
+    runtime.update({ ...initial, ownerId: 'owner-b', identityLoading: false, libraryReady: true });
+    runtime.update({ ...initial, ownerId: 'owner-a', identityLoading: false, libraryReady: true });
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(drafts).toEqual(['first owner']);
+    expect(generated).toBe(0);
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY)).toBeNull();
+  });
+
+  it('rejects an A-owned replay after a reload starts under B', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    const intent = {
+      v: 3 as const, id: 'intent_reload_owner_123', nonce, text: 'bound', createdAt: now, mode: 'silent' as const,
+    };
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify(intent));
+    const posted: unknown[] = [];
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const aRuntime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => ({ status: 'failed' as const, error: new Error('should not run') })),
+      ownerId: 'owner-a',
+      libraryReady: false,
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    aRuntime.dispose();
+    expect(readPendingBrowserExtensionImportOwner(storage, intent)).toBe('owner-a');
+
+    let bDrafts = 0;
+    let bGenerated = 0;
+    const bRuntime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => {
+        bGenerated += 1;
+        return { status: 'failed' as const, error: new Error('should not run') };
+      }, { changeDraft: () => { bDrafts += 1; } }),
+      ownerId: 'owner-b',
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    bRuntime.dispose();
+
+    expect(bDrafts).toBe(0);
+    expect(bGenerated).toBe(0);
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY)).toBeNull();
+    expect(posted.filter(message => (
+      typeof message === 'object' && message !== null
+      && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_RESULT'
+    ))).toHaveLength(1);
+  });
+
+  it('fails closed when the owner binding cannot persist before a reload', async () => {
+    const now = Date.now();
+    const storage = new OwnerBindingWriteFailureStorage();
+    const { browser } = createBrowser('https://app.example.test/?view=library', storage);
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3, id: 'intent_binding_write_123', nonce, text: 'bound', createdAt: now, mode: 'silent',
+    }));
+    const aRuntime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => ({ status: 'failed' as const, error: new Error('should not run') })),
+      ownerId: 'owner-a',
+      libraryReady: false,
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    aRuntime.dispose();
+
+    let bGenerated = 0;
+    const bRuntime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => {
+        bGenerated += 1;
+        return { status: 'failed' as const, error: new Error('should not run') };
+      }),
+      ownerId: 'owner-b',
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    bRuntime.dispose();
+
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY)).toBeNull();
+    expect(bGenerated).toBe(0);
+  });
+
+  it('reports a single terminal result when a claimed capture is invalidated by an owner switch', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3, id: 'intent_owner_result_123', nonce, text: 'bound', createdAt: now, mode: 'silent',
+    }));
+    const posted: unknown[] = [];
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => ({ status: 'failed' as const, error: new Error('should not run') })),
+      ownerId: 'owner-a',
+      libraryReady: false,
+    }, browser);
+    runtime.update({ ...optionsFor(async () => ({ status: 'failed' as const, error: new Error('should not run') })), ownerId: 'owner-b' });
+    runtime.update({ ...optionsFor(async () => ({ status: 'failed' as const, error: new Error('should not run') })), ownerId: 'owner-a' });
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    const results = posted.filter(message => (
+      typeof message === 'object' && message !== null
+      && (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_RESULT'
+    ));
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ payload: { id: 'intent_owner_result_123', status: 'error' } });
+  });
+
+  it('stops a busy retry after the owner changes, while allowing a fresh capture for that owner', async () => {
+    vi.useFakeTimers();
+    try {
+      const now = Date.now();
+      const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+      storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+        v: 3, id: 'intent_owner_retry_123', nonce, text: 'old owner', createdAt: now, mode: 'silent',
+      }));
+      const drafts: string[] = [];
+      let generated = 0;
+      let freshGenerated = 0;
+      const runtime = startBrowserExtensionImportRuntime({
+        ...optionsFor(async () => {
+          generated += 1;
+          return { status: 'busy' as const };
+        }, { changeDraft: value => { drafts.push(value); } }),
+      }, browser);
+      await vi.runAllTicks();
+      runtime.update({
+        ...optionsFor(async () => {
+          freshGenerated += 1;
+          return { status: 'failed' as const, error: new Error('expected test failure') };
+        }, { changeDraft: value => { drafts.push(value); } }),
+        ownerId: 'owner-b',
+      });
+      await vi.advanceTimersByTimeAsync(250);
+
+      storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+        v: 3, id: 'intent_owner_fresh_123', nonce, text: 'new owner', createdAt: now, mode: 'silent',
+      }));
+      runtime.acceptVerifiedIntent({ v: 3, id: 'intent_owner_fresh_123', nonce, text: 'new owner', createdAt: now, mode: 'silent' });
+      await vi.runAllTicks();
+      runtime.dispose();
+
+      expect(generated).toBe(1);
+      expect(freshGenerated).toBe(1);
+      expect(drafts).toEqual(['old owner', 'new owner']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not generate after an owner change while ensureCaptureCourse is still pending', async () => {
+    const now = Date.now();
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3, id: 'intent_owner_course_123', nonce, text: 'deferred', createdAt: now, mode: 'silent', sourceLanguage: 'en',
+    }));
+    let release: ((decision: 'proceed') => void) | undefined;
+    let generated = 0;
+    const runtime = startBrowserExtensionImportRuntime({
+      ...optionsFor(async () => {
+        generated += 1;
+        return { status: 'failed' as const, error: new Error('should not run') };
+      }),
+      ensureCaptureCourse: () => new Promise(resolve => { release = resolve; }),
+    }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.update({ ...optionsFor(async () => ({ status: 'failed' as const, error: new Error('should not run') })), ownerId: 'owner-b' });
+    release?.('proceed');
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+
+    expect(generated).toBe(0);
+    expect(storage.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY)).toBeNull();
+  });
+});
+
+describe('a failed silent capture tells the extension why, independent of the message language', () => {
+  const resultFor = async (
+    intentExtras: Record<string, unknown>,
+    overrides: Partial<BrowserExtensionImportOptions>,
+    generate: BrowserExtensionImportOptions['generate'],
+  ) => {
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3, id: 'intent_reason_123456', nonce, text: 'resilient', createdAt: Date.now(), mode: 'silent', ...intentExtras,
+    }));
+    const posted: unknown[] = [];
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const runtime = startBrowserExtensionImportRuntime({ ...optionsFor(generate), ...overrides }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+    return (posted[0] as { payload: { status: string; reason?: string; message: string } }).payload;
+  };
+  const unreachable: BrowserExtensionImportOptions['generate'] = async () => ({ status: 'failed', error: new Error('unreachable') });
+
+  it.each([
+    ['ai-card-quota', 'quota-ai-cards'],
+    ['ai-daily-allowance', 'quota-daily'],
+    ['account-daily-spend', 'quota-daily'],
+    ['service-daily-cap', 'quota-service'],
+    [undefined, 'quota'],
+  ])('reports quota reason %s as %s and keeps the legacy quota wording', async (detail, reason) => {
+    const error = classifyProtectedFunctionError(
+      { code: 'functions/resource-exhausted', details: detail ? { reason: detail } : undefined },
+      'AI generation',
+    );
+    const payload = await resultFor({}, {}, async () => ({ status: 'failed', error }));
+    expect(payload).toMatchObject({ status: 'error', reason });
+    expect(payload.message).toMatch(/hạn mức|số thẻ|lượt AI/);
+  });
+
+  it.each([
+    ['functions/unauthenticated', 'auth'],
+    ['functions/permission-denied', 'permission'],
+    ['functions/unavailable', 'network'],
+    ['functions/not-found', 'configuration'],
+    ['functions/internal', 'failed'],
+  ])('reports %s as %s', async (code, reason) => {
+    const error = classifyProtectedFunctionError({ code }, 'AI generation');
+    expect((await resultFor({}, {}, async () => ({ status: 'failed', error }))).reason).toBe(reason);
+  });
+
+  it('reports a generation that is still running as its own reason so the extension shows its own text', async () => {
+    const error = classifyProtectedFunctionError(
+      { code: 'functions/unavailable', details: { reason: 'operation-in-flight', retryAfterMs: 2_000 } },
+      'AI generation',
+    );
+    expect(await resultFor({}, {}, async () => ({ status: 'failed', error })))
+      .toMatchObject({ status: 'error', reason: 'in-flight' });
+  });
+
+  it('reports an unclassified thrown error as a generic failure', async () => {
+    expect((await resultFor({}, {}, async () => { throw new Error('boom'); })).reason).toBe('failed');
+  });
+
+  it('reports a deleted requested deck, an invalid selection and a course cancel', async () => {
+    expect(await resultFor({ requestedDeck: 'Gone' }, {}, unreachable))
+      .toMatchObject({ status: 'error', reason: 'deck-missing' });
+    expect(await resultFor({}, {}, async () => ({ status: 'invalid', reason: 'empty' as const })))
+      .toMatchObject({ status: 'error', reason: 'invalid-selection' });
+    expect(await resultFor({}, {}, async () => ({ status: 'invalid', reason: 'empty' as const })))
+      .toMatchObject({ message: expect.not.stringMatching(/English/) });
+    expect(await resultFor({ sourceLanguage: 'en' }, { ensureCaptureCourse: async () => 'cancel' }, unreachable))
+      .toMatchObject({ status: 'error', reason: 'course-cancelled' });
+    expect(await resultFor({ sourceLanguage: 'en' }, { ensureCaptureCourse: async () => { throw new Error('x'); } }, unreachable))
+      .toMatchObject({ status: 'error', reason: 'course-unavailable' });
   });
 });

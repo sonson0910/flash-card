@@ -19,6 +19,7 @@ export const CATALOG_WORKSPACE_QUERY_KEYS = [
 
 export interface CatalogWorkspaceQuery {
   readonly view: 'catalog';
+  readonly mode: 'personal' | 'reviewed';
   readonly catalogId: string | null;
   /** Registry-approved immutable identity; deliberately never accepted from URL input. */
   readonly releaseId: string | null;
@@ -36,7 +37,8 @@ export interface CatalogWorkspaceQuery {
 
 export type CatalogWorkspaceQueryPatch = Partial<Omit<CatalogWorkspaceQuery, 'view' | 'catalogId'>>;
 
-const CEFR_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
+/** A CEFR level or a level range such as B2-C1, the shapes a catalog release can carry. */
+const CEFR_LABEL = /^(?:A1|A2|B1|B2|C1|C2)(?:-(?:A1|A2|B1|B2|C1|C2))?$/;
 const MAXIMUM_CURSOR_LENGTH = 4_096;
 
 const bounded = (value: string | null | undefined, maximum: number): string | null => {
@@ -67,21 +69,23 @@ const normalizeQuery = ({
   skill,
   term,
   cursor,
-}: Omit<CatalogWorkspaceQuery, 'view' | 'catalogId' | 'releaseId'>): CatalogWorkspaceQuery => {
+}: Omit<CatalogWorkspaceQuery, 'view' | 'mode' | 'catalogId' | 'releaseId'>, mode: 'personal' | 'reviewed' = 'reviewed'): CatalogWorkspaceQuery => {
   const selection = resolveCatalogWorkspaceSelection(
     bounded(languageCode, 35),
     bounded(trackId, 64),
     bounded(tier, 32),
   );
+  const personal = mode === 'personal';
   const safeCefr = bounded(cefrLevel, 8);
   return {
     view: 'catalog',
-    catalogId: selection.catalogId,
-    releaseId: selection.releaseId,
+    mode,
+    catalogId: personal ? null : selection.catalogId,
+    releaseId: personal ? null : selection.releaseId,
     languageCode: selection.languageCode,
-    trackId: selection.trackId,
-    tier: selection.tierId,
-    cefrLevel: safeCefr && CEFR_LEVELS.has(safeCefr) ? safeCefr : null,
+    trackId: personal ? null : selection.trackId,
+    tier: personal ? null : selection.tierId,
+    cefrLevel: safeCefr && CEFR_LABEL.test(safeCefr) ? safeCefr : null,
     topic: bounded(topic, 128),
     partOfSpeech: bounded(partOfSpeech, 64),
     skill: bounded(skill, 64),
@@ -102,7 +106,7 @@ export function readCatalogWorkspaceQuery(location: string): CatalogWorkspaceQue
     skill: params.get('skill'),
     term: params.get('term') ?? '',
     cursor: null,
-  });
+  }, params.get('catalog') === 'personal' ? 'personal' : 'reviewed');
 }
 
 const setOptional = (params: URLSearchParams, key: string, value: string | null): void => {
@@ -113,11 +117,11 @@ export function createCatalogWorkspaceLocation(
   currentLocation: string,
   input: CatalogWorkspaceQuery,
 ): string {
-  const query = normalizeQuery(input);
+  const query = normalizeQuery(input, input.mode);
   const url = new URL(currentLocation, 'https://sonflash.invalid');
   CATALOG_WORKSPACE_QUERY_KEYS.forEach(key => url.searchParams.delete(key));
   url.searchParams.set('view', 'catalog');
-  setOptional(url.searchParams, 'catalog', query.catalogId);
+  setOptional(url.searchParams, 'catalog', query.mode === 'personal' ? 'personal' : query.catalogId);
   url.searchParams.set('lang', query.languageCode);
   setOptional(url.searchParams, 'track', query.trackId);
   setOptional(url.searchParams, 'tier', query.tier);
@@ -134,6 +138,7 @@ export function patchCatalogWorkspaceQuery(
   patch: CatalogWorkspaceQueryPatch,
 ): CatalogWorkspaceQuery {
   const changesPagingOnly = Object.keys(patch).every(key => key === 'cursor');
+  const mode = patch.mode ?? current.mode;
   return normalizeQuery({
     languageCode: patch.languageCode ?? current.languageCode,
     trackId: patch.trackId === undefined ? current.trackId : patch.trackId,
@@ -144,5 +149,5 @@ export function patchCatalogWorkspaceQuery(
     skill: patch.skill === undefined ? current.skill : patch.skill,
     term: patch.term === undefined ? current.term : patch.term,
     cursor: changesPagingOnly ? patch.cursor ?? null : null,
-  });
+  }, mode);
 }

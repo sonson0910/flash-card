@@ -122,4 +122,24 @@ describe('scheduleReview', () => {
     expect(result.fsrs?.reps).toBe(2);
     expect(result.fsrs?.state).not.toBe(State.New);
   });
+
+  it('schedules a card whose last review is ahead of the clock instead of rejecting the interval', () => {
+    const now = new Date('2026-11-23T00:00:00.000Z');
+    const ahead = '2026-11-24T00:00:00.000Z';
+    const stored: CardData = {
+      ...legacyCard,
+      reviewHistory: [{ rating: 'good', reviewedAt: ahead, scheduledDays: 1, elapsedDays: 0 }],
+      fsrs: {
+        due: ahead, stability: 2, difficulty: 5, elapsedDays: 0, scheduledDays: 1, learningSteps: 0,
+        reps: 1, lapses: 0, state: State.Review, lastReview: ahead,
+      },
+    };
+    const { fsrs: _fsrs, ...withoutFsrs } = stored;
+
+    for (const card of [stored, withoutFsrs]) {
+      const result = scheduleReview(card, 'good', now);
+      expect(result.reviewHistory?.at(-1)).toMatchObject({ rating: 'good', reviewedAt: now.toISOString() });
+      expect(new Date(result.nextReviewDate).getTime()).toBeGreaterThan(now.getTime());
+    }
+  });
 });

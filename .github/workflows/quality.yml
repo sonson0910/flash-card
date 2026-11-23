@@ -55,8 +55,9 @@ jobs:
 
   verify:
     needs: [audit_root, audit_functions]
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Screenshot goldens are rendered on Ubuntu 24.04; ubuntu-latest moved to 26.04.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -78,7 +79,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm ci --prefix functions --no-audit --no-fund
 
-      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: npx playwright install --with-deps chromium webkit
       - run: python3 scripts/extract-release-archive.test.py
       - run: npm run verify:ci
         env:

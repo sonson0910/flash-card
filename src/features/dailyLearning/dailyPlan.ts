@@ -27,6 +27,7 @@ export interface DailyPlanOptions {
   readonly maximum?: number;
   readonly maximumNew?: number;
   readonly targetMinimum?: number;
+  readonly freshPriorityLogicalIds?: readonly string[];
 }
 
 /** Keep introduction/guidance local to new cards; reviewed cards retain the existing lesson path. */
@@ -47,7 +48,14 @@ export function buildDailyLessonSteps(
 }
 
 const DEFAULT_MAXIMUM = 15;
-const DEFAULT_MAXIMUM_NEW = 5;
+/** The most new words Today introduces in a day; the daily pace setting is a study goal and does not raise it. */
+export const MAXIMUM_NEW_WORDS_PER_DAY = 5;
+const DEFAULT_MAXIMUM_NEW = MAXIMUM_NEW_WORDS_PER_DAY;
+
+/** Days to introduce the remaining words of a unit at the rate Today introduces them. */
+export const daysToIntroduceWords = (remainingWords: number, pace: number): number => (
+  Math.ceil(Math.max(0, remainingWords) / Math.min(pace, MAXIMUM_NEW_WORDS_PER_DAY))
+);
 const DEFAULT_TARGET_MINIMUM = 10;
 
 const boundedInteger = (value: number, minimum: number, maximum: number, label: string): number => {
@@ -57,7 +65,8 @@ const boundedInteger = (value: number, minimum: number, maximum: number, label: 
   return value;
 };
 
-const logicalIdentity = (card: CardData): string => cardLogicalKey(card) || card.id;
+/** The deduplication key `buildDailyPlan` groups cards by; reused wherever a retry or resume needs the same identity. */
+export const logicalIdentity = (card: CardData): string => cardLogicalKey(card) || card.id;
 
 const reviewCount = (card: CardData): number => Math.max(
   Number.isFinite(card.reviews) ? Math.max(0, card.reviews ?? 0) : 0,
@@ -106,7 +115,7 @@ export function buildDailyPlan(cards: readonly CardData[], options: DailyPlanOpt
   if (!Number.isFinite(now)) throw new TypeError('now must be a valid date.');
   const maximum = boundedInteger(options.maximum ?? DEFAULT_MAXIMUM, 1, DEFAULT_MAXIMUM, 'maximum');
   const maximumNew = Math.min(
-    boundedInteger(options.maximumNew ?? DEFAULT_MAXIMUM_NEW, 1, DEFAULT_MAXIMUM_NEW, 'maximumNew'),
+    boundedInteger(options.maximumNew ?? DEFAULT_MAXIMUM_NEW, 1, MAXIMUM_NEW_WORDS_PER_DAY, 'maximumNew'),
     maximum,
   );
   const targetMinimum = boundedInteger(options.targetMinimum ?? DEFAULT_TARGET_MINIMUM, 1, maximum, 'targetMinimum');
@@ -123,7 +132,15 @@ export function buildDailyPlan(cards: readonly CardData[], options: DailyPlanOpt
     const reason = reasonFor(card, now);
     if (reason) buckets[reason].push({ card, logicalId, reason });
   }
-  for (const bucket of Object.values(buckets)) bucket.sort(compareItems);
+  buckets.due.sort(compareItems);
+  buckets.weak.sort(compareItems);
+  const freshPriority = options.freshPriorityLogicalIds ?? [];
+  buckets.new.sort((left, right) => {
+    const leftIndex = freshPriority.indexOf(left.logicalId);
+    const rightIndex = freshPriority.indexOf(right.logicalId);
+    return (leftIndex === -1 ? freshPriority.length : leftIndex) - (rightIndex === -1 ? freshPriority.length : rightIndex)
+      || compareItems(left, right);
+  });
 
   const items = [...buckets.due, ...buckets.weak, ...buckets.new.slice(0, maximumNew)].slice(0, maximum);
   const counts = {

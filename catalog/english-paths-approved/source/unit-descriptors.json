@@ -1,0 +1,722 @@
+[
+  {
+    "unitId": "general-foundation-1",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 1,
+    "titles": [
+      {
+        "language": "en",
+        "text": "People and Personal Stories"
+      },
+      {
+        "language": "vi",
+        "text": "Con người và câu chuyện cá nhân"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-2",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 2,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Everyday Time and Places"
+      },
+      {
+        "language": "vi",
+        "text": "Thời gian và địa điểm hằng ngày"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-3",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 3,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Learning and Skills"
+      },
+      {
+        "language": "vi",
+        "text": "Học tập và kỹ năng"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-4",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 4,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Questions and Conversations"
+      },
+      {
+        "language": "vi",
+        "text": "Câu hỏi và hội thoại"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-5",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 5,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Choices and Plans"
+      },
+      {
+        "language": "vi",
+        "text": "Lựa chọn và kế hoạch"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-6",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 6,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Work and Services"
+      },
+      {
+        "language": "vi",
+        "text": "Công việc và dịch vụ"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-7",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 7,
+    "titles": [
+      {
+        "language": "en",
+        "text": "People and Community"
+      },
+      {
+        "language": "vi",
+        "text": "Con người và cộng đồng"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-8",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 8,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Health and Daily Life"
+      },
+      {
+        "language": "vi",
+        "text": "Sức khỏe và đời sống hằng ngày"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-9",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 9,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Getting Things Done"
+      },
+      {
+        "language": "vi",
+        "text": "Hoàn thành công việc"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-10",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 10,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Making Progress"
+      },
+      {
+        "language": "vi",
+        "text": "Tiến bộ từng bước"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-11",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 11,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Learning Through Language"
+      },
+      {
+        "language": "vi",
+        "text": "Học qua ngôn ngữ"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-12",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 12,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Planning and Problem Solving"
+      },
+      {
+        "language": "vi",
+        "text": "Lập kế hoạch và giải quyết vấn đề"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-13",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 13,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Working With Others"
+      },
+      {
+        "language": "vi",
+        "text": "Làm việc cùng người khác"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-14",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 14,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Describing Things"
+      },
+      {
+        "language": "vi",
+        "text": "Miêu tả sự vật"
+      }
+    ]
+  },
+  {
+    "unitId": "general-foundation-15",
+    "trackId": "general",
+    "tier": "foundation",
+    "ordinal": 15,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Safe and Important Decisions"
+      },
+      {
+        "language": "vi",
+        "text": "Quyết định an toàn và quan trọng"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-1",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 1,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Academic Arguments"
+      },
+      {
+        "language": "vi",
+        "text": "Lập luận học thuật"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-2",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 2,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Research Evidence"
+      },
+      {
+        "language": "vi",
+        "text": "Bằng chứng nghiên cứu"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-3",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 3,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Research Design"
+      },
+      {
+        "language": "vi",
+        "text": "Thiết kế nghiên cứu"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-4",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 4,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Academic Integrity"
+      },
+      {
+        "language": "vi",
+        "text": "Tính chính trực học thuật"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-5",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 5,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Inclusive Education"
+      },
+      {
+        "language": "vi",
+        "text": "Giáo dục hòa nhập"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-6",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 6,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Innovation and Change"
+      },
+      {
+        "language": "vi",
+        "text": "Đổi mới và thay đổi"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-7",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 7,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Policy and Impact"
+      },
+      {
+        "language": "vi",
+        "text": "Chính sách và tác động"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-8",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 8,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Presenting a Position"
+      },
+      {
+        "language": "vi",
+        "text": "Trình bày quan điểm"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-9",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 9,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Evaluating Claims"
+      },
+      {
+        "language": "vi",
+        "text": "Đánh giá nhận định"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-10",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 10,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Developing Ideas"
+      },
+      {
+        "language": "vi",
+        "text": "Phát triển ý tưởng"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-11",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 11,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Managing Information"
+      },
+      {
+        "language": "vi",
+        "text": "Quản lý thông tin"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-12",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 12,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Improving Systems"
+      },
+      {
+        "language": "vi",
+        "text": "Cải thiện hệ thống"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-13",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 13,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Precision in Academic Language"
+      },
+      {
+        "language": "vi",
+        "text": "Tính chính xác trong ngôn ngữ học thuật"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-14",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 14,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Evidence and Scale"
+      },
+      {
+        "language": "vi",
+        "text": "Bằng chứng và quy mô"
+      }
+    ]
+  },
+  {
+    "unitId": "ielts-advanced-15",
+    "trackId": "ielts",
+    "tier": "advanced",
+    "ordinal": 15,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Describing Complex Ideas"
+      },
+      {
+        "language": "vi",
+        "text": "Diễn đạt ý tưởng phức tạp"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-1",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 1,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Office Access and Accounts"
+      },
+      {
+        "language": "vi",
+        "text": "Quyền truy cập và tài khoản văn phòng"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-2",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 2,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Teams and Responsibilities"
+      },
+      {
+        "language": "vi",
+        "text": "Nhóm và trách nhiệm"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-3",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 3,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Meetings and Communication"
+      },
+      {
+        "language": "vi",
+        "text": "Họp và giao tiếp"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-4",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 4,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Projects and Schedules"
+      },
+      {
+        "language": "vi",
+        "text": "Dự án và lịch trình"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-5",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 5,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Planning and Resources"
+      },
+      {
+        "language": "vi",
+        "text": "Lập kế hoạch và nguồn lực"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-6",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 6,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Products and Quality"
+      },
+      {
+        "language": "vi",
+        "text": "Sản phẩm và chất lượng"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-7",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 7,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Customers and Service Issues"
+      },
+      {
+        "language": "vi",
+        "text": "Khách hàng và vấn đề dịch vụ"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-8",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 8,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Contracts and Negotiation"
+      },
+      {
+        "language": "vi",
+        "text": "Hợp đồng và đàm phán"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-9",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 9,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Finance and the Market"
+      },
+      {
+        "language": "vi",
+        "text": "Tài chính và thị trường"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-10",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 10,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Research and Analysis"
+      },
+      {
+        "language": "vi",
+        "text": "Nghiên cứu và phân tích"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-11",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 11,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Assessment and Improvement"
+      },
+      {
+        "language": "vi",
+        "text": "Đánh giá và cải tiến"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-12",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 12,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Training and Employment"
+      },
+      {
+        "language": "vi",
+        "text": "Đào tạo và việc làm"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-13",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 13,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Operations and Delivery"
+      },
+      {
+        "language": "vi",
+        "text": "Vận hành và bàn giao"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-14",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 14,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Review and Decision Making"
+      },
+      {
+        "language": "vi",
+        "text": "Rà soát và ra quyết định"
+      }
+    ]
+  },
+  {
+    "unitId": "toeic-core-15",
+    "trackId": "toeic",
+    "tier": "core",
+    "ordinal": 15,
+    "titles": [
+      {
+        "language": "en",
+        "text": "Successful Workplace Practices"
+      },
+      {
+        "language": "vi",
+        "text": "Thực hành làm việc thành công"
+      }
+    ]
+  }
+]

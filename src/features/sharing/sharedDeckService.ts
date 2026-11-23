@@ -1,6 +1,7 @@
 import type { FirebaseApp } from 'firebase/app';
 import type { CardData } from '../../types/card';
-import { protectedFunctionsCapability } from '../../lib/firebase';
+import { getSonFlashFunctions, protectedFunctionsCapability } from '../../lib/firebase';
+import { ownStorageImageOwner } from '../../lib/mediaUrlPolicy';
 import { runProtectedFunction } from '../../lib/protectedFunctionsCapability';
 
 const REGION = 'asia-southeast1';
@@ -13,6 +14,10 @@ type SharedDeckResult = {
 const unauthenticated = () => Object.assign(
   new Error('The active Firebase user does not match the sharing session.'),
   { code: 'functions/unauthenticated' },
+);
+
+const isCanonicalLanguageCode = (value: unknown): value is string => (
+  typeof value === 'string' && value.length <= 16 && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(value)
 );
 
 const callAsCurrentOwner = async <T>(
@@ -46,6 +51,7 @@ const publicCardProjection = (card: CardData) => ({
   ...(card.lexemeId ? { lexemeId: card.lexemeId, language: card.language || '', senseKey: card.senseKey || '', normalizedLemma: card.normalizedLemma || card.normalizedWord || card.word } : {}),
   word: card.word,
   translation: card.translation,
+  ...(card.origin === 'ai' || card.origin === 'manual' ? { origin: card.origin } : {}),
   explanation: card.explanation || '',
   explanationTranslation: card.explanationTranslation || '',
   phonetic: card.phonetic || '',
@@ -62,10 +68,28 @@ const publicCardProjection = (card: CardData) => ({
   imageSearchQuery: card.imageSearchQuery || '',
   emoji: card.emoji || '',
   audioUrl: card.audioUrl || null,
-  imageUrl: card.imageUrl || null,
+  // A photo the learner uploaded is a bearer link to their private files; the
+  // public copy carries no image, as the share callable also enforces.
+  imageUrl: ownStorageImageOwner(card.imageUrl) === null ? card.imageUrl || null : null,
   ...(card.mnemonic?.trim() ? { mnemonic: card.mnemonic.trim().slice(0, 2_048) } : {}),
   ...(card.wordFamily ? { wordFamily: card.wordFamily } : {}),
 });
+
+const deckLanguagePair = (cards: readonly CardData[]): { targetLanguage: string; nativeLanguage: string } | null => {
+  if (cards.length === 0) return null;
+  const pairs = new Set(cards.map(card => {
+    const target = card.language;
+    const native = card.translationLanguage;
+    return isCanonicalLanguageCode(target) && isCanonicalLanguageCode(native)
+      ? `${target}\u0000${native}`
+      : '';
+  }));
+  if (pairs.size !== 1) return null;
+  const pair = [...pairs][0]!;
+  if (!pair) return null;
+  const [targetLanguage, nativeLanguage] = pair.split('\u0000');
+  return { targetLanguage, nativeLanguage };
+};
 
 export async function createSharedDeckShare(
   app: FirebaseApp,
@@ -76,7 +100,7 @@ export async function createSharedDeckShare(
   operationCreatedAt = '',
 ): Promise<SharedDeckResult> {
   const response = await runProtectedFunction(protectedFunctionsCapability, 'Deck sharing', async () => {
-    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const { httpsCallable } = await import('firebase/functions');
     const callable = httpsCallable<
       {
         expectedOwnerId: string;
@@ -84,15 +108,19 @@ export async function createSharedDeckShare(
         cards: ReturnType<typeof publicCardProjection>[];
         opId: string;
         operationCreatedAt: string;
+        targetLanguage?: string;
+        nativeLanguage?: string;
       },
       SharedDeckResult
-    >(getFunctions(app, REGION), 'createSharedDeckV2');
+    >(await getSonFlashFunctions(app, REGION), 'createSharedDeckV2');
+    const languagePair = deckLanguagePair(cards);
     return callAsCurrentOwner(app, ownerId, () => callable({
       expectedOwnerId: ownerId,
       category,
       cards: cards.map(publicCardProjection),
       opId,
       operationCreatedAt,
+      ...(languagePair ?? {}),
     }));
   });
   if (
@@ -112,9 +140,9 @@ export async function revokeSharedDeckShare(
   ownerId: string,
 ): Promise<void> {
   const response = await runProtectedFunction(protectedFunctionsCapability, 'Share revocation', async () => {
-    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const { httpsCallable } = await import('firebase/functions');
     const callable = httpsCallable<{ shareId: string }, { revoked: boolean }>(
-      getFunctions(app, REGION),
+      await getSonFlashFunctions(app, REGION),
       'revokeSharedDeck',
     );
     return callAsCurrentOwner(app, ownerId, () => callable({ shareId }));

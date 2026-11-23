@@ -1,4 +1,7 @@
-import { cardLogicalKey, cardWordKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
+import {
+  cardLogicalKey, cardWordKey, createTargetAwareCardId, createWordCardId, normalizeCardLanguage, normalizeCardWord,
+} from '../../lib/cardIdentity';
+import { LEGACY_CARD_LANGUAGE } from '../../types/card';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import type { CardData } from '../../types/card';
 import type { CatalogVocabularyPresentation } from './catalogPresentation';
@@ -82,13 +85,31 @@ export function settleCatalogLibraryAdd(
   return { ...scoped, addingCardIds, addedCardIds, failedCardIds };
 }
 
+/**
+ * The course language a catalog entry without a lexeme is identified under, or null for English,
+ * whose cards keep the word-only id and carry no language tag.
+ */
+const entryTargetLanguage = (entry: { language?: string }): string | null => {
+  const language = normalizeCardLanguage(entry.language);
+  return language && language !== LEGACY_CARD_LANGUAGE ? language : null;
+};
+
+/** The key `cardLogicalKey` gives the card an entry without a lexeme becomes. */
+const wordIdentityKey = (entry: { lemma: string; language?: string }): string => {
+  const word = normalizeCardWord(entry.lemma);
+  const language = entryTargetLanguage(entry);
+  return language ? `target:${language}:${word}` : word;
+};
+
 export function catalogEntryToLibraryCard(
   entry: CatalogVocabularyPresentation,
   createdAt = new Date().toISOString(),
 ): CardData {
   const word = normalizeCardWord(entry.lemma);
+  const wordLanguage = entry.lexemeId ? null : entryTargetLanguage(entry);
   return {
-    id: entry.lexemeId || createWordCardId(word),
+    id: entry.lexemeId || (wordLanguage ? createTargetAwareCardId(word, wordLanguage) : createWordCardId(word)),
+    ...(wordLanguage ? { language: wordLanguage } : {}),
     ...(entry.lexemeId ? { lexemeId: entry.lexemeId, language: entry.language, senseKey: entry.senseKey, normalizedLemma: entry.normalizedLemma || entry.lemma.normalize('NFKC').trim().replace(/\s+/g, ' ') } : {}),
     word,
     normalizedWord: word,
@@ -119,7 +140,7 @@ export function mergeCatalogEntryIntoLibrary(
   createdAt = new Date().toISOString(),
 ): CatalogLibraryAddResult {
   const normalizedWord = normalizeCardWord(entry.lemma);
-  const logicalKey = entry.lexemeId ? `lexeme:${entry.lexemeId}` : normalizedWord;
+  const logicalKey = entry.lexemeId ? `lexeme:${entry.lexemeId}` : wordIdentityKey(entry);
   const existing = cards.find(card => cardLogicalKey(card) === logicalKey)
     ?? (entry.lexemeId && entry.language.toLowerCase() === 'en'
       ? cards.find(card => !card.lexemeId && cardWordKey(card) === normalizedWord)
@@ -145,4 +166,4 @@ export const catalogEntryIsInLibrary = (
 ): boolean => entry.lexemeId
   ? libraryIdentityIndex.has(`lexeme:${entry.lexemeId}`)
     || (entry.language?.toLowerCase() === 'en' && libraryIdentityIndex.has(`legacy-en:${normalizeCardWord(entry.lemma)}`))
-  : libraryIdentityIndex.has(normalizeCardWord(entry.lemma));
+  : libraryIdentityIndex.has(wordIdentityKey({ lemma: entry.lemma, language: entry.language }));

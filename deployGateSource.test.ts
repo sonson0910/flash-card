@@ -23,7 +23,12 @@ describe('Firebase deploy gate configuration', () => {
     expect(packageJson.scripts?.['predeploy:functions']).toBe('npm run verify:deploy');
     expect(packageJson.scripts?.['predeploy:firestore']).toBe('npm run verify:deploy');
     expect(packageJson.scripts?.['predeploy:hosting']).toBe(
-      'npm run verify:deploy && npm run build:release && npm run verify:secrets && npm run verify:bundle',
+      'npm run verify:deploy && npm run build:release && node scripts/check-locale-pages.mjs'
+        + ' && npm run verify:secrets && npm run verify:bundle'
+        + ' && npm run verify:dist-target -- production',
+    );
+    expect(packageJson.scripts?.['staging:deploy:hosting']).toMatch(
+      /^npm run build:staging && SONFLASH_TARGET=staging node scripts\/check-locale-pages\.mjs && npm run verify:secrets:staging && npm run verify:bundle && npm run verify:dist-target -- staging && .*firebase deploy /,
     );
 
     expect(firebaseJson.functions?.predeploy).toEqual(['npm run predeploy:functions']);
@@ -72,7 +77,7 @@ describe('Firebase deploy gate configuration', () => {
       ))
     )).map(rule => rule.source));
 
-    expect([...noCacheSources]).toEqual(expect.arrayContaining(['/index.html', '/']));
+    expect([...noCacheSources]).toEqual(expect.arrayContaining(['/index.html', '/', '/vi/index.html', '/vi/']));
   });
 
   it('derives the exact production script hash-set from executable inline scripts', () => {

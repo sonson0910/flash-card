@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
+import { createI18nMock, loadMessages } from './i18n-test-helper.mjs';
 
 const uiSource = await readFile(new URL('../background-ui.js', import.meta.url), 'utf8');
 const coreSource = await readFile(new URL('../background-core.js', import.meta.url), 'utf8');
@@ -11,6 +12,8 @@ test('keeps complete card example fields in the inline result path', () => {
   assert.match(coreSource, /exampleTranslation/);
   assert.match(uiSource, /exampleSentence/);
   assert.match(uiSource, /exampleTranslation/);
+  assert.match(uiSource, /payload\.aiGenerated/);
+  assert.match(uiSource, /Nội dung do AI tạo, có thể sai\. Hãy kiểm tra nghĩa\./);
 });
 
 test('provides an accessible live status and auth link in the inline bubble', () => {
@@ -236,6 +239,165 @@ test('renders SVG controls in the serialized inline bubble', () => {
 
   assert.equal(result?.ok, true);
   assert.ok(nodes.some(node => node.tagName === 'SVG'));
+});
+
+const renderBubbleForToneAssertions = (payload, locale) => {
+  class FakeElement {
+    constructor(tagName = '') {
+      this.tagName = tagName.toUpperCase();
+      this.children = [];
+      this.style = {};
+      this.dataset = {};
+      this.attributes = {};
+      this.isConnected = true;
+      this.textContent = '';
+      this.disabled = false;
+    }
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    attachShadow() { this.shadowRoot = new FakeElement(); return this.shadowRoot; }
+    remove() { this.isConnected = false; }
+  }
+  const isolated = {
+    Array, Math, Number, Object, String, URL,
+    document: {
+      documentElement: new FakeElement('html'),
+      getElementById: () => null,
+      createElement: tagName => new FakeElement(tagName),
+      createElementNS: (_namespace, tagName) => new FakeElement(tagName),
+    },
+    innerWidth: 1280,
+    innerHeight: 720,
+    speechSynthesis: { speak() {}, cancel() {} },
+    SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } },
+  };
+  if (locale) isolated.chrome = { i18n: createI18nMock(locale) };
+  isolated.globalThis = isolated;
+  vm.createContext(isolated);
+  const sourceContext = { globalThis: {} };
+  vm.createContext(sourceContext);
+  vm.runInContext(uiSource, sourceContext, { filename: 'background-ui.js' });
+  const renderer = vm.runInContext(`(${sourceContext.globalThis.LingoFlashExtensionUi.renderInlineBubble.toString()})`, isolated);
+
+  const result = renderer({ bubbleDurationMs: 0, ...payload });
+  const collect = node => [node, ...(node.children ?? []).flatMap(collect), ...(node.shadowRoot ? collect(node.shadowRoot) : [])];
+  const nodes = collect(isolated.document.documentElement);
+  return { result, nodes };
+};
+
+test('themes the bubble from the saved family and scheme, resolving system to the page preference', () => {
+  const crystal = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ', themeFamily: 'crystal', colorScheme: 'dark' });
+  const crystalFrame = crystal.nodes.find(node => node.className === 'frame');
+  assert.equal(crystal.result?.ok, true);
+  assert.equal(crystalFrame?.dataset?.family, 'crystal');
+  assert.equal(crystalFrame?.dataset?.scheme, 'dark');
+
+  const system = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ', colorScheme: 'system' });
+  const systemFrame = system.nodes.find(node => node.className === 'frame');
+  assert.equal(systemFrame?.dataset?.family, 'classic');
+  assert.equal(systemFrame?.dataset?.scheme, 'light');
+});
+
+test('draws the Crystal Star wings and footer Lumi from inlined art, never from an extension file', () => {
+  const crystal = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ', themeFamily: 'crystal', colorScheme: 'dark' });
+  const wings = crystal.nodes.find(node => node.className === 'wings');
+  const lumi = crystal.nodes.find(node => node.className === 'lumi');
+  const lumiImage = lumi?.children.find(node => node.tagName === 'IMG');
+  assert.equal(crystal.result?.ok, true);
+  assert.equal(wings?.attributes['aria-hidden'], 'true');
+  assert.ok(wings?.children[0]?.tagName === 'SVG' && wings.children[0].children.some(node => node.tagName === 'POLYGON'));
+  assert.equal(lumi?.attributes['aria-hidden'], 'true');
+  assert.match(lumiImage?.src ?? '', /^data:image\/webp;base64,/);
+  assert.equal(lumiImage?.alt, '');
+  assert.equal(typeof lumiImage?.onerror, 'function');
+  assert.doesNotMatch(uiSource, /chrome-extension:|runtime\.getURL|assets\/lumi/);
+
+  const classic = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ', themeFamily: 'classic', colorScheme: 'dark' });
+  assert.equal(classic.nodes.some(node => node.className === 'wings' || node.className === 'lumi'), false);
+});
+
+test('gives a duplicate (existing) card a distinct amber badge tone, never the created tone', () => {
+  const { result, nodes } = renderBubbleForToneAssertions({ status: 'existing', text: 'resilient', translation: 'bền bỉ' });
+  const badge = nodes.find(node => node.className === 'ok');
+
+  assert.equal(result?.ok, true);
+  assert.equal(badge?.dataset?.tone, 'existing');
+  assert.match(badge?.textContent ?? '', /Đã có trong thư viện/);
+});
+
+test('does not tag a freshly created card with the duplicate tone', () => {
+  const { result, nodes } = renderBubbleForToneAssertions({ status: 'created', text: 'resilient', translation: 'bền bỉ' });
+  const badge = nodes.find(node => node.className === 'ok');
+
+  assert.equal(result?.ok, true);
+  assert.equal(badge?.dataset?.tone, undefined);
+  assert.match(badge?.textContent ?? '', /Đã thêm vào thư viện/);
+});
+
+test('classifies an AI-quota error message as a quota tone with an upgrade action, not a retry button', () => {
+  const { result, nodes } = renderBubbleForToneAssertions({
+    status: 'error',
+    text: 'resilient',
+    message: 'Dịch vụ AI đã hết hạn mức. Từ đã chọn vẫn được giữ lại; hãy thử lại sau.',
+    retryId: 'job_quota_1',
+  });
+  const errorNode = nodes.find(node => node.className === 'err');
+  const note = nodes.find(node => node.className === 'quota-note');
+  const buttons = nodes.filter(node => node.tagName === 'BUTTON' && node.className === 'speak');
+
+  assert.equal(result?.ok, true);
+  assert.equal(errorNode?.dataset?.tone, 'quota');
+  assert.match(note?.textContent ?? '', /Dịch nhanh vẫn miễn phí/);
+  assert.ok(buttons.some(button => /Nâng cấp Pro/.test(button.textContent ?? '')));
+  assert.equal(buttons.some(button => /Thử lại từ này/.test(button.textContent ?? '')), false);
+});
+
+test('shows the quota state and catalog text for a quota reason, whatever language the message is in', () => {
+  for (const locale of ['en', 'vi']) {
+    const { nodes } = renderBubbleForToneAssertions({
+      status: 'error', text: 'resilient', reason: 'quota-ai-cards', message: 'any english text', retryId: 'job_quota_2',
+    }, locale);
+    const errorNode = nodes.find(node => node.className === 'err');
+    const note = nodes.find(node => node.className === 'quota-note');
+    const catalog = createI18nMock(locale);
+    assert.equal(errorNode?.dataset?.tone, 'quota');
+    assert.equal(errorNode?.textContent, catalog.getMessage('captureReason_quota_ai_cards'));
+    assert.equal(note?.textContent, catalog.getMessage('bubbleQuotaNote'));
+    assert.notEqual(errorNode?.textContent, 'any english text');
+  }
+});
+
+test('shows catalog text for a non-quota reason and keeps the message for an unknown or missing reason', () => {
+  const english = createI18nMock('en');
+  const byReason = renderBubbleForToneAssertions({
+    status: 'error', text: 'resilient', reason: 'deck-missing', message: 'Deck “X” không còn tồn tại.', retryId: 'job_reason_1',
+  }, 'en');
+  const reasonNode = byReason.nodes.find(node => node.className === 'err');
+  assert.equal(reasonNode?.textContent, english.getMessage('captureReason_deck_missing'));
+  assert.equal(reasonNode?.dataset?.tone, undefined);
+
+  const unknown = renderBubbleForToneAssertions({
+    status: 'error', text: 'resilient', reason: 'brand-new-reason', message: 'Fallback message', retryId: 'job_reason_2',
+  }, 'en');
+  assert.equal(unknown.nodes.find(node => node.className === 'err')?.textContent, 'Fallback message');
+  const legacy = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', message: 'Đã hết hạn mức AI.' }, 'en');
+  assert.equal(legacy.nodes.find(node => node.className === 'err')?.dataset?.tone, 'quota');
+});
+
+test('keeps the retry button, and no quota tone, for a non-quota error even with a retryId', () => {
+  const { result, nodes } = renderBubbleForToneAssertions({
+    status: 'error',
+    text: 'resilient',
+    message: 'Dịch vụ AI đang bận. Thử lại sau.',
+    retryId: 'job_generic_1',
+  });
+  const errorNode = nodes.find(node => node.className === 'err');
+  const buttons = nodes.filter(node => node.tagName === 'BUTTON' && node.className === 'speak');
+
+  assert.equal(result?.ok, true);
+  assert.equal(errorNode?.dataset?.tone, undefined);
+  assert.ok(buttons.some(button => /Thử lại từ này/.test(button.textContent ?? '')));
 });
 
 const createSelectionCaptureContext = ({
@@ -493,4 +655,224 @@ test('caps context scanning and never returns more than 500 characters', () => {
 
   assert.equal(result.text, 'resilient');
   assert.ok(result.context.length <= 500);
+});
+
+const renderLanguageBubble = payload => {
+  class FakeNode {
+    constructor(tagName = '') {
+      this.tagName = tagName.toUpperCase();
+      this.children = [];
+      this.style = {};
+      this.dataset = {};
+      this.attributes = {};
+      this.isConnected = true;
+      this.textContent = '';
+      this.disabled = false;
+    }
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    attachShadow() { this.shadowRoot = new FakeNode(); return this.shadowRoot; }
+    remove() { this.isConnected = false; }
+  }
+  const sent = [];
+  const isolated = {
+    Array, Intl, Math, Number, Object, String, URL,
+    document: {
+      documentElement: new FakeNode('html'),
+      getElementById: () => null,
+      createElement: tagName => new FakeNode(tagName),
+      createElementNS: (_namespace, tagName) => new FakeNode(tagName),
+      createTextNode: text => Object.assign(new FakeNode('#text'), { textContent: String(text) }),
+    },
+    chrome: { runtime: { sendMessage: (message, callback) => { sent.push(message); callback?.({ ok: true }); } } },
+    innerWidth: 1280,
+    innerHeight: 720,
+    speechSynthesis: { speak() {}, cancel() {} },
+    SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } },
+  };
+  isolated.globalThis = isolated;
+  vm.createContext(isolated);
+  const sourceContext = { globalThis: {} };
+  vm.createContext(sourceContext);
+  vm.runInContext(uiSource, sourceContext, { filename: 'background-ui.js' });
+  const renderer = vm.runInContext(`(${sourceContext.globalThis.LingoFlashExtensionUi.renderInlineBubble.toString()})`, isolated);
+  const result = renderer({ bubbleDurationMs: 0, ...payload });
+  const collect = node => [node, ...(node.children ?? []).flatMap(collect), ...(node.shadowRoot ? collect(node.shadowRoot) : [])];
+  const nodes = collect(isolated.document.documentElement);
+  const text = node => node.children.length ? node.children.map(text).join('') : node.textContent;
+  return { result, nodes, sent, text };
+};
+
+const koreanTranslation = {
+  status: 'translated', text: '결정', translation: 'quyết định', courseLanguage: 'ko', nativeLanguage: 'vi',
+  sourceLanguage: 'ko', translationLanguage: 'vi', pageLanguage: 'ko', romanization: 'gyeoljeong',
+  context: '중앙은행이 기준금리를 동결하기로 결정하면서 금융시장은 일단 안도하는 분위기다.',
+};
+
+test('shows a language-course translation with its language, reading, page context and course', () => {
+  const { result, nodes, text } = renderLanguageBubble({ ...koreanTranslation, saveId: 'save_1' });
+  const word = nodes.find(node => node.className === 's');
+  const languageLine = nodes.find(node => node.className === 'lang-line');
+  const reading = nodes.find(node => node.className === 'p');
+  const context = nodes.find(node => node.className === 'q');
+  const save = nodes.find(node => node.dataset?.role === 'save');
+  const meanings = nodes.find(node => node.className === 'n');
+
+  assert.equal(result?.ok, true);
+  assert.equal(word?.attributes.lang, 'ko');
+  assert.equal(text(languageLine), 'Trang bằng 한국어 · tự nhận diện');
+  assert.equal(reading?.textContent, 'gyeoljeong');
+  assert.equal(context?.children.find(node => node.tagName === 'STRONG')?.textContent, '결정');
+  assert.equal(text(context), koreanTranslation.context);
+  assert.equal(text(save), 'Lưu vào 한국어');
+  assert.equal(text(meanings), 'Nghĩa bằngTiếng Việt');
+  assert.equal(nodes.some(node => node.className === 'ok'), false);
+});
+
+test('sends the in-page save only for a real click, with the one-time id and never the word', () => {
+  const { nodes, sent } = renderLanguageBubble({ ...koreanTranslation, saveId: 'save_1' });
+  const save = nodes.find(node => node.dataset?.role === 'save');
+
+  save.onclick({ isTrusted: false });
+  assert.deepEqual(sent, []);
+  save.onclick({ isTrusted: true });
+  assert.equal(sent.length, 1);
+  assert.equal(JSON.stringify(sent[0]), JSON.stringify({ type: 'INLINE_SELECTION_ADD', id: 'save_1' }));
+});
+
+test('keeps the plain translated badge when the background offers no save', () => {
+  const { nodes, text } = renderLanguageBubble({ ...koreanTranslation, sourceLanguage: 'fr', pageLanguage: '' });
+  assert.equal(nodes.some(node => node.dataset?.role === 'save'), false);
+  assert.equal(nodes.find(node => node.className === 'ok')?.textContent, 'Chỉ dịch • không lưu • không dùng quota AI');
+  assert.equal(text(nodes.find(node => node.className === 'lang-line')), 'Đoạn chọn bằng Français · tự nhận diện');
+
+  const english = renderLanguageBubble({ status: 'translated', text: 'immediate', translation: 'ngay lập tức', courseLanguage: 'en', nativeLanguage: 'vi', sourceLanguage: 'en', saveId: 'save_2' });
+  assert.equal(english.text(english.nodes.find(node => node.dataset?.role === 'save')), 'Lưu flashcard');
+  assert.equal(english.nodes.find(node => node.className === 'meta')?.children[0]?.textContent, '1 lượt AI');
+  assert.equal(english.nodes.some(node => node.className === 'lang-line'), false);
+
+  const quoted = renderLanguageBubble({
+    status: 'translated', text: 'immediate', translation: 'ngay lập tức',
+    context: 'Residents and neighbourhood groups demanded an immediate response from the council, and the mayor promised a plan.',
+  });
+  assert.equal(quoted.text(quoted.nodes.find(node => node.className === 'q')), '…groups demanded an immediate response from the…');
+});
+
+test('writes the bubble mode chip from the locale catalog, not from worker text', () => {
+  for (const [locale, mode, key] of [
+    ['en', 'translate-free', 'bubbleModeTranslateFree'],
+    ['en', 'translate-google', 'bubbleModeTranslateGoogle'],
+    ['en', 'save', 'bubbleModeSave'],
+    ['vi', 'save-ai', 'bubbleModeSaveAi'],
+  ]) {
+    const { nodes } = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode }, locale);
+    const chip = nodes.find(node => node.className === 'm');
+    assert.equal(chip?.textContent, createI18nMock(locale).getMessage(key), `${locale} ${mode}`);
+    assert.ok(chip?.textContent);
+  }
+  const english = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode: 'save-ai' }, 'en').nodes.find(node => node.className === 'm');
+  assert.doesNotMatch(english?.textContent ?? '', /[À-ỹ]/);
+});
+
+test('writes the bubble from the strings the worker sends before the browser language', () => {
+  const en = loadMessages('en');
+  const messages = Object.fromEntries(Object.entries(en).filter(([name]) => /^bubble/.test(name)));
+  const sent = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode: 'save-ai', version: '1.6.5', messages }, 'vi').nodes;
+  const chip = sent.find(node => node.className === 'm');
+  const brand = sent.find(node => node.className === 'b' && /v1\.6\.5/i.test(node.textContent));
+  assert.equal(chip?.textContent, createI18nMock('en').getMessage('bubbleModeSaveAi'));
+  assert.equal(brand?.textContent, createI18nMock('en').getMessage('bubbleBrand', ['1.6.5']));
+
+  const browser = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode: 'save-ai', version: '1.6.5' }, 'vi').nodes;
+  assert.equal(browser.find(node => node.className === 'm')?.textContent, createI18nMock('vi').getMessage('bubbleModeSaveAi'));
+});
+
+test('sends retry and open-app requests only for a real click', () => {
+  const retryBubble = renderLanguageBubble({ status: 'error', text: 'resilient', message: 'AI busy', retryId: 'job_retry_1' });
+  const retry = retryBubble.nodes.find(node => node.dataset?.kind === 'action');
+  retry.onclick({ isTrusted: false });
+  assert.deepEqual(retryBubble.sent, []);
+  assert.equal(retry.disabled, false);
+  retry.onclick({ isTrusted: true });
+  assert.equal(JSON.stringify(retryBubble.sent), JSON.stringify([{ type: 'RETRY_QUICK_ADD', id: 'job_retry_1' }]));
+
+  const quotaBubble = renderLanguageBubble({ status: 'error', text: 'resilient', reason: 'quota-ai-cards', message: 'quota', retryId: 'job_quota_9' });
+  const openApp = quotaBubble.nodes.find(node => node.dataset?.kind === 'action');
+  openApp.onclick({ isTrusted: false });
+  openApp.onclick();
+  assert.deepEqual(quotaBubble.sent, []);
+  openApp.onclick({ isTrusted: true });
+  assert.equal(JSON.stringify(quotaBubble.sent), JSON.stringify([{ type: 'OPEN_APP' }]));
+});
+
+test('an earlier bubble timer never removes a newer bubble in the reused host', () => {
+  class FakeNode {
+    constructor(tagName = '') {
+      this.tagName = tagName.toUpperCase();
+      this.children = [];
+      this.style = {};
+      this.dataset = {};
+      this.attributes = {};
+      this.isConnected = true;
+      this.textContent = '';
+    }
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    attachShadow() { this.shadowRoot = new FakeNode(); return this.shadowRoot; }
+    remove() { this.isConnected = false; }
+  }
+  let clock = 0;
+  const timers = [];
+  let host = null;
+  const isolated = {
+    Array, Intl, Math, Number, Object, String, URL,
+    document: {
+      documentElement: new FakeNode('html'),
+      getElementById: () => (host?.isConnected ? host : null),
+      createElement: tagName => {
+        const node = new FakeNode(tagName);
+        if (tagName === 'div' && !host) host = node;
+        return node;
+      },
+      createElementNS: (_namespace, tagName) => new FakeNode(tagName),
+      createTextNode: text => Object.assign(new FakeNode('#text'), { textContent: String(text) }),
+    },
+    setTimeout: (callback, delay) => { timers.push({ at: clock + delay, callback }); return timers.length; },
+    clearTimeout: id => { if (timers[id - 1]) timers[id - 1].callback = () => {}; },
+    chrome: { runtime: { sendMessage() {} } },
+    innerWidth: 1280,
+    innerHeight: 720,
+    speechSynthesis: { speak() {}, cancel() {} },
+    SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } },
+  };
+  isolated.globalThis = isolated;
+  vm.createContext(isolated);
+  const sourceContext = { globalThis: {} };
+  vm.createContext(sourceContext);
+  vm.runInContext(uiSource, sourceContext, { filename: 'background-ui.js' });
+  const renderer = vm.runInContext(`(${sourceContext.globalThis.LingoFlashExtensionUi.renderInlineBubble.toString()})`, isolated);
+  const advance = ms => {
+    clock += ms;
+    for (const timer of timers.filter(entry => entry.at <= clock)) { timers.splice(timers.indexOf(timer), 1, { at: Infinity, callback: () => {} }); timer.callback(); }
+  };
+
+  renderer({ status: 'translated', text: 'resilient', translation: 'bền bỉ', bubbleDurationMs: 12_000 });
+  const firstHost = host;
+  advance(3_000);
+  renderer({ status: 'error', text: 'resilient', message: 'AI busy', retryId: 'job_retry_2' });
+  advance(9_000);
+
+  assert.equal(firstHost.isConnected, true);
+
+  renderer({ status: 'created', text: 'resilient', translation: 'bền bỉ', bubbleDurationMs: 5_000 });
+  advance(5_000);
+  assert.equal(firstHost.isConnected, false);
+});
+
+test('labels the auto-spoken source speaker in the active UI language', () => {
+  const { nodes } = renderBubbleForToneAssertions({ status: 'translated', text: 'apple', translation: 'quả táo', autoSpeak: true, speechLocale: 'en' }, 'en');
+  const speaker = nodes.find(node => node.dataset?.speechState === 'playing');
+  assert.equal(speaker?.attributes['aria-label'], 'Pronounce apple (playing)');
 });

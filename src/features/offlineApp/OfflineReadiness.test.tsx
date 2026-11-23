@@ -2,12 +2,21 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { i18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react';
 import {
   installOfflineAppShell,
-  OfflineReadiness,
+  OfflineReadiness as OfflineReadinessBanner,
+  type OfflineReadinessProps,
 } from './OfflineReadiness';
 
-const activatedWorker = { state: 'activated' } as ServiceWorker;
+i18n.load('en', {});
+i18n.activate('en');
+const OfflineReadiness = (props: OfflineReadinessProps) => (
+  <I18nProvider i18n={i18n}><OfflineReadinessBanner {...props} /></I18nProvider>
+);
+
+const activatedWorker = { state: 'activated', scriptURL: 'https://sonflash.app/sw.js' } as ServiceWorker;
 
 const registration = {
   active: activatedWorker,
@@ -140,9 +149,22 @@ describe('OfflineReadiness', () => {
     const html = renderToStaticMarkup(<OfflineReadiness production serviceWorker={undefined} />);
 
     expect(html).toContain('Prepare offline');
-    expect(html).toContain('app files, up to 4 MiB');
+    expect(html).toContain('app files, up to 6 MiB');
     expect(html).toContain('aria-live="polite"');
     expect(html).toContain('aria-busy="false"');
+  });
+
+  it('keeps the preparation action disabled and explains why while the browser is offline', () => {
+    vi.stubGlobal('navigator', { onLine: false });
+    try {
+      const html = renderToStaticMarkup(<OfflineReadiness production serviceWorker={{} as ServiceWorkerContainer} />);
+
+      expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Prepare offline<\/button>/);
+      expect(html).toContain('You are offline. Reconnect to prepare the app files.');
+      expect(html).not.toContain('sr-only');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('does not offer registration from a development build', () => {
@@ -393,6 +415,42 @@ describe('OfflineReadiness', () => {
     }
   });
 
+  it('runs the before-prepare step ahead of the shell registration and still prepares when it fails', async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    const order: string[] = [];
+    const shellRegistration = {
+      active: activatedWorker, installing: null, waiting: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+    } as unknown as ServiceWorkerRegistration;
+    const serviceWorker = {
+      register: vi.fn(async () => { order.push('register'); return shellRegistration; }),
+      getRegistration: vi.fn(async () => null),
+      ready: Promise.resolve(shellRegistration),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as ServiceWorkerContainer;
+    const beforePrepare = vi.fn(async () => { order.push('before'); throw new Error('push move failed'); });
+
+    try {
+      await act(async () => {
+        root.render(createElement(OfflineReadiness, { production: true, serviceWorker, beforePrepare }));
+        await flushReact();
+      });
+      const button = findElement(container, candidate => (
+        candidate.tagName === 'button' && textContent(candidate) === 'Prepare offline'
+      ));
+      if (!button) throw new Error('Prepare offline button was not rendered.');
+      await act(async () => {
+        invokeClick(button);
+        await flushReact();
+      });
+      expect(order).toEqual(['before', 'register']);
+    } finally {
+      await act(async () => root.unmount());
+    }
+  });
+
   it('surfaces registration failures as retryable errors', async () => {
     const serviceWorker = {
       register: vi.fn(async () => { throw new Error('storage denied'); }),
@@ -410,7 +468,18 @@ describe('OfflineReadiness', () => {
     />);
 
     expect(html).toContain('Available offline');
-    expect(html).not.toContain('app files, up to 4 MiB');
+    expect(html).not.toContain('app files, up to 6 MiB');
+  });
+
+  it('does not report the shell as available when another worker owns the root scope', () => {
+    const pushWorker = { state: 'activated', scriptURL: 'https://sonflash.app/firebase-messaging-sw.js' } as ServiceWorker;
+    const html = renderToStaticMarkup(<OfflineReadiness
+      production
+      registration={{ active: pushWorker, installing: null, waiting: null } as unknown as ServiceWorkerRegistration}
+      serviceWorker={undefined}
+    />);
+
+    expect(html).not.toContain('Available offline');
   });
 
   it('advises reopening after a waiting update instead of forcing activation', () => {

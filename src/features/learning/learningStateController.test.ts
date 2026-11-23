@@ -32,6 +32,7 @@ const resultFor = (mutation: LearningStateMutation): LearningStateMutationResult
   ownerKey: mutation.ownerKey,
   operationId: mutation.operationId,
   publication: mutation.publication,
+  ...(mutation.operation === 'review' ? { xpAwarded: 0 } : {}),
 });
 
 const createFake = () => {
@@ -55,7 +56,64 @@ const createFake = () => {
     snapshots: { library: { apply: apply('library') }, practice: { apply: apply('practice') } },
     now: () => new Date('2026-08-03T00:00:00.000Z'),
   });
-  return { controller, events, persisted, port, setOwner: (owner: string | null) => { ownerKey = owner; } };
+  return {
+    controller, events, persisted, port,
+    setOwner: (owner: string | null) => {
+      ownerKey = owner;
+      controller.invalidateUndoTokens();
+    },
+  };
+};
+
+const createUndoFake = (restoreConflict = false, deletedCard?: CardData) => {
+  let ownerKey: string | null = 'user:a';
+  let ownerId: string | null = 'user-a';
+  let currentCard: CardData | undefined = card;
+  const persisted: LearningStateMutation[] = [];
+  const publications: LearningStatePublication[] = [];
+  const port: LearningStatePort = {
+    activeOwner: () => ownerKey,
+    activeOwnerId: () => ownerId,
+    findCard: cardId => currentCard?.id === cardId ? currentCard : undefined,
+    persist: async mutation => {
+      persisted.push(mutation);
+      if (mutation.operation === 'delete') {
+        return {
+          ...resultFor(mutation),
+          deleteReceipt: {
+            finality: 'committed', ownerId,
+            operationId: 'device-delete-1',
+            libraryEpoch: mutation.libraryEpoch, deletedAt: '2026-08-09T00:00:01.000Z',
+            ...(deletedCard ? { card: deletedCard } : {}),
+          },
+        };
+      }
+      if (mutation.operation === 'restore') {
+        return restoreConflict
+          ? { ...resultFor(mutation), restoreFinality: 'conflict', restoreConflictReason: 'deleted-again' }
+          : { ...resultFor(mutation), restoreFinality: 'restored' };
+      }
+      return resultFor(mutation);
+    },
+  };
+  const apply = (publication: LearningStatePublication) => {
+    publications.push(publication);
+    if (publication.kind === 'delete') currentCard = undefined;
+    else if (publication.kind === 'restore') currentCard = publication.card;
+    else if (publication.kind === 'clear') currentCard = undefined;
+  };
+  const controller = createLearningStateController({
+    port,
+    snapshots: { library: { apply }, practice: { apply } },
+  });
+  return {
+    controller, port, persisted, publications,
+    changeOwner(nextKey: string | null, nextId: string | null = nextKey?.replace('user:', 'user-') ?? null) {
+      ownerKey = nextKey;
+      ownerId = nextId;
+      controller.invalidateUndoTokens();
+    },
+  };
 };
 
 describe('learning state controller', () => {
@@ -82,6 +140,158 @@ describe('learning state controller', () => {
     expect(persisted[1].publication).toEqual({ kind: 'patch', cardId: card.id, fields: { customDeck: 'IELTS' } });
     expect(persisted[2].publication).toMatchObject({ kind: 'patch', cardId: card.id, fields: { difficulty: 'good' } });
     expect(persisted[3].publication).toEqual({ kind: 'patch', cardId: card.id, fields: { translation: 'sự tập trung' } });
+  });
+
+  it('publishes the authoritative review XP unchanged', async () => {
+    const { controller, port } = createFake();
+    port.persist = async mutation => ({ ...resultFor(mutation), xpAwarded: 2 });
+
+    await expect(controller.review(card.id, 'good', 'review-xp')).resolves.toMatchObject({
+      status: 'published', result: { xpAwarded: 2 },
+    });
+  });
+
+  it('retries a review with the original scheduled payload after persistence fails', async () => {
+    let now = new Date('2026-08-03T00:00:00.000Z');
+    let attempts = 0;
+    const persisted: LearningStateMutation[] = [];
+    const port: LearningStatePort = {
+      activeOwner: () => 'user:a',
+      findCard: cardId => cardId === card.id ? card : undefined,
+      persist: async mutation => {
+        persisted.push(mutation);
+        attempts += 1;
+        if (attempts === 1) throw new Error('lost response');
+        return resultFor(mutation);
+      },
+    };
+    const controller = createLearningStateController({
+      port,
+      snapshots: { library: { apply: () => undefined }, practice: { apply: () => undefined } },
+      now: () => now,
+    });
+
+    await expect(controller.review(card.id, 'good', 'review-stable')).rejects.toThrow('lost response');
+    now = new Date('2026-08-04T00:00:00.000Z');
+    await expect(controller.review(card.id, 'good', 'review-stable')).resolves.toMatchObject({ status: 'published' });
+
+    expect(persisted).toHaveLength(2);
+    expect(persisted[1]).toEqual(persisted[0]);
+  });
+
+  it('retires a terminal review conflict so a later retry can build a fresh plan', async () => {
+    let terminal = true;
+    const persisted: LearningStateMutation[] = [];
+    const port: LearningStatePort = {
+      activeOwner: () => 'user:a',
+      findCard: cardId => cardId === card.id ? card : undefined,
+      persist: async mutation => {
+        persisted.push(mutation);
+        return terminal
+          ? (terminal = false, {
+              ...resultFor(mutation),
+              reviewFinality: 'conflict' as const,
+              reviewConflictTerminal: true,
+            })
+          : resultFor(mutation);
+      },
+    };
+    const controller = createLearningStateController({
+      port,
+      snapshots: { library: { apply: () => undefined }, practice: { apply: () => undefined } },
+      now: () => new Date('2026-08-03T00:00:00.000Z'),
+    });
+
+    await expect(controller.review(card.id, 'good', 'review-terminal')).resolves.toMatchObject({
+      status: 'review-conflict',
+    });
+    await expect(controller.review(card.id, 'good', 'review-terminal')).resolves.toMatchObject({
+      status: 'published',
+    });
+    expect(persisted).toHaveLength(2);
+  });
+
+  it('applies the delete of a card that a terminal review conflict found removed to both snapshots', async () => {
+    const applied: string[] = [];
+    const persisted: LearningStateMutation[] = [];
+    const port: LearningStatePort = {
+      activeOwner: () => 'user:a',
+      findCard: cardId => cardId === card.id ? card : undefined,
+      // What the persistence layer returns for a review of a card another device deleted.
+      persist: async mutation => {
+        persisted.push(mutation);
+        return {
+          ownerKey: mutation.ownerKey,
+          operationId: mutation.operationId,
+          publication: { kind: 'delete', cardId: card.id },
+          reviewFinality: 'conflict',
+          reviewConflictTerminal: true,
+        };
+      },
+    };
+    const record = (snapshot: string) => (publication: LearningStatePublication) => {
+      applied.push(`${snapshot}:${publication.kind}`);
+    };
+    const controller = createLearningStateController({
+      port,
+      snapshots: { library: { apply: record('library') }, practice: { apply: record('practice') } },
+      now: () => new Date('2026-08-03T00:00:00.000Z'),
+    });
+
+    await expect(controller.review(card.id, 'good', 'review-deleted')).resolves.toMatchObject({
+      status: 'review-conflict',
+      result: { publication: { kind: 'delete', cardId: card.id } },
+    });
+    expect(applied).toEqual(['library:delete', 'practice:delete']);
+  });
+
+  it('does not apply a non-delete publication carried by a review conflict', async () => {
+    const applied: string[] = [];
+    const port: LearningStatePort = {
+      activeOwner: () => 'user:a',
+      findCard: cardId => cardId === card.id ? card : undefined,
+      persist: async mutation => ({ ...resultFor(mutation), reviewFinality: 'conflict', reviewConflictTerminal: true }),
+    };
+    const record = (publication: LearningStatePublication) => { applied.push(publication.kind); };
+    const controller = createLearningStateController({
+      port,
+      snapshots: { library: { apply: record }, practice: { apply: record } },
+      now: () => new Date('2026-08-03T00:00:00.000Z'),
+    });
+
+    await expect(controller.review(card.id, 'good', 'review-other')).resolves.toMatchObject({ status: 'review-conflict' });
+    expect(applied).toEqual([]);
+  });
+
+  it('fails closed instead of evicting an unresolved review plan', async () => {
+    let shouldFail = true;
+    const persisted: LearningStateMutation[] = [];
+    const port: LearningStatePort = {
+      activeOwner: () => 'user:a',
+      findCard: cardId => cardId === card.id ? card : undefined,
+      persist: async mutation => {
+        persisted.push(mutation);
+        if (mutation.operationId === 'review-1' && shouldFail) {
+          shouldFail = false;
+          throw new Error('lost response');
+        }
+        return resultFor(mutation);
+      },
+    };
+    const controller = createLearningStateController({
+      port,
+      snapshots: { library: { apply: () => undefined }, practice: { apply: () => undefined } },
+      completedOperationLimit: 1,
+      now: () => new Date('2026-08-03T00:00:00.000Z'),
+    });
+
+    await expect(controller.review(card.id, 'good', 'review-1')).rejects.toThrow('lost response');
+    await expect(controller.review(card.id, 'easy', 'review-2')).rejects.toThrow('retry capacity is full');
+    expect(persisted).toHaveLength(1);
+
+    await expect(controller.review(card.id, 'again', 'review-1')).resolves.toMatchObject({ status: 'published' });
+    expect(persisted).toHaveLength(2);
+    expect(persisted[1]).toEqual(persisted[0]);
   });
 
   it('drops a successful result when the active owner changes while persistence is in flight', async () => {
@@ -129,6 +339,7 @@ describe('learning state controller', () => {
 
     expect(first).toEqual(duplicate);
     expect(repeated).toEqual(first);
+    expect('result' in first && first.result.undoToken).toBeUndefined();
     expect(attempts).toBe(2);
     expect(events).toEqual(['persist:1', 'persist:2', 'library:delete', 'practice:delete']);
   });
@@ -139,6 +350,88 @@ describe('learning state controller', () => {
     await expect(controller.patch(card.id, { translation: card.translation }, ['translation'], 'same')).resolves.toEqual({ status: 'noop' });
     await expect(controller.toggleBookmark('missing', 'missing')).resolves.toEqual({ status: 'missing-card' });
     expect(events).toEqual([]);
+  });
+
+  it('names the card a patch replaced, so a caller can tell what changed from', async () => {
+    const { controller } = createFake();
+
+    await expect(controller.patch(card.id, { category: 'Science' }, ['category'], 'patch-replaced')).resolves.toMatchObject({
+      status: 'published',
+      replaced: { id: card.id, category: card.category },
+    });
+    await expect(controller.toggleBookmark(card.id, 'bookmark-replaced')).resolves.not.toHaveProperty('replaced');
+  });
+
+  it('undoes a delete once with the original card and stable operation request', async () => {
+    const { controller, persisted, publications } = createUndoFake();
+    const deleted = await controller.delete(card.id, 'delete-offline');
+    const token = ('result' in deleted ? deleted.result.undoToken : undefined)!;
+    const request = {
+      operationId: 'restore-offline',
+      operationCreatedAt: '2026-08-09T00:00:02.000Z',
+    };
+
+    const [first, duplicate] = await Promise.all([
+      controller.restore(token, request),
+      controller.restore(token, request),
+    ]);
+
+    expect(deleted.status).toBe('published');
+    expect(token.card).toEqual(card);
+    expect(first).toEqual(duplicate);
+    expect(first).toMatchObject({ status: 'published', result: { restoreFinality: 'restored' } });
+    expect(persisted.filter(mutation => mutation.operation === 'restore')).toHaveLength(1);
+    expect(publications.filter(publication => publication.kind === 'restore')).toEqual([
+      { kind: 'restore', card }, { kind: 'restore', card },
+    ]);
+  });
+
+  it('undoes a delete with the card the cloud actually deleted when it differs from the local copy', async () => {
+    const deletedCard = { ...card, category: 'Travel', revision: (card.revision ?? 0) + 1 };
+    const { controller, persisted } = createUndoFake(false, deletedCard);
+    const deleted = await controller.delete(card.id, 'delete-rebased');
+    const token = ('result' in deleted ? deleted.result.undoToken : undefined)!;
+
+    expect(token.card).toEqual(deletedCard);
+    await controller.restore(token, { operationId: 'restore-rebased', operationCreatedAt: '2026-08-09T00:00:02.000Z' });
+    expect(persisted.find(mutation => mutation.operation === 'restore')).toMatchObject({ card: deletedCard });
+  });
+
+  it('does not publish a cloud tombstone or re-delete conflict', async () => {
+    const { controller, persisted, publications } = createUndoFake(true);
+    const deleted = await controller.delete(card.id, 'delete-cloud');
+    const token = ('result' in deleted ? deleted.result.undoToken : undefined)!;
+
+    await expect(controller.restore(token, {
+      operationId: 'restore-after-redelete',
+      operationCreatedAt: '2026-08-09T00:00:02.000Z',
+    })).resolves.toMatchObject({
+      status: 'undo-conflict',
+      result: { restoreFinality: 'conflict', restoreConflictReason: 'deleted-again' },
+    });
+    expect(persisted.filter(mutation => mutation.operation === 'restore')).toHaveLength(1);
+    expect(publications.some(publication => publication.kind === 'restore')).toBe(false);
+  });
+
+  it('invalidates undo tokens after clear and an owner transition', async () => {
+    const clearCase = createUndoFake();
+    const deleted = await clearCase.controller.delete(card.id, 'delete-before-clear');
+    const token = ('result' in deleted ? deleted.result.undoToken : undefined)!;
+    await clearCase.controller.clear('clear-after-delete');
+    await expect(clearCase.controller.restore(token, {
+      operationId: 'restore-after-clear', operationCreatedAt: '2026-08-09T00:00:02.000Z',
+    })).resolves.toMatchObject({ status: 'undo-conflict' });
+    expect(clearCase.persisted.some(mutation => mutation.operation === 'restore')).toBe(false);
+
+    const ownerCase = createUndoFake();
+    const ownerDeleted = await ownerCase.controller.delete(card.id, 'delete-before-owner-change');
+    const ownerToken = ('result' in ownerDeleted ? ownerDeleted.result.undoToken : undefined)!;
+    ownerCase.changeOwner('user:b', 'user-b');
+    ownerCase.changeOwner('user:a', 'user-a');
+    await expect(ownerCase.controller.restore(ownerToken, {
+      operationId: 'restore-after-owner-change', operationCreatedAt: '2026-08-09T00:00:02.000Z',
+    })).resolves.toMatchObject({ status: 'undo-conflict' });
+    expect(ownerCase.persisted.some(mutation => mutation.operation === 'restore')).toBe(false);
   });
 
   it('keeps the controller source vendor-free', () => {

@@ -8,6 +8,7 @@ import {
   collectExtensionFiles,
   readExtensionManifest,
 } from './browser-extension-package.mjs';
+import { findProtocolDrift } from './extension-protocol-parity.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const extensionRoot = process.env.LINGOFLASH_EXTENSION_ROOT
@@ -16,7 +17,7 @@ const extensionRoot = process.env.LINGOFLASH_EXTENSION_ROOT
 const productionPattern = 'https://encoded-hangout-433912-h2.web.app/*';
 const translatePattern = 'https://translate.googleapis.com/*';
 const optionalHostPermissions = ['http://*/*', 'https://*/*'];
-const fail = message => { console.error(`Extension check failed: ${message}`); process.exit(1); };
+const fail = message => { throw new Error(`Extension check failed: ${message}`); };
 const manifest = await readExtensionManifest(extensionRoot);
 const packageFiles = await collectExtensionFiles(extensionRoot, manifest);
 if (manifest.manifest_version !== 3) fail('manifest_version must be 3.');
@@ -38,7 +39,7 @@ for (const permission of manifest.permissions ?? []) if (!allowedPermissions.has
 for (const permission of allowedPermissions) if (!(manifest.permissions ?? []).includes(permission)) fail(`missing permission: ${permission}`);
 const command = manifest.commands?.['translate-selection'];
 if (!command?.suggested_key?.default || !command.suggested_key.mac) fail('keyboard shortcut suggestions must cover default and macOS.');
-if (manifest.version !== '1.6.4') fail('manifest must publish the current v1.6 extension as v1.6.4.');
+if (manifest.version !== '1.6.5') fail('manifest must publish the current v1.6 extension as v1.6.5.');
 if (JSON.stringify([...(manifest.optional_host_permissions ?? [])].sort()) !== JSON.stringify(optionalHostPermissions)) {
   fail('optional_host_permissions must contain only the explicit http(s) site opt-in patterns.');
 }
@@ -69,8 +70,15 @@ const requiredFiles = [
   'background.js','background-ui.js','background-core.js',
   'app-bridge.js','shared.js','popup.html','popup.css','popup.js',
   'options.html','options.css','options.js','selection-icon.js',
+  'design-tokens.css','design-fonts.css',
 ];
 for (const file of requiredFiles) await readFile(path.join(extensionRoot, file), 'utf8');
+if (manifest.default_locale) {
+  for (const locale of ['vi', 'en']) {
+    const catalog = JSON.parse(await readFile(path.join(extensionRoot, '_locales', locale, 'messages.json'), 'utf8'));
+    if (!Object.keys(catalog).length) fail(`_locales/${locale}/messages.json is empty.`);
+  }
+}
 const signature = Buffer.from([0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]);
 for (const size of [16,32,48,128]) {
   const icon = await readFile(path.join(extensionRoot, 'icons', `icon-${size}.png`));
@@ -118,6 +126,67 @@ if (appRuntimeSource.includes('captureBrowserExtensionImport')) fail('web app ru
 if (!appRuntimeSource.includes('BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE')) fail('web app must claim verified imports before processing.');
 if (!appRuntimeSource.includes('acceptUnverifiedIntent')) fail('web app runtime must support draft-only unverified imports.');
 if (!appHookSource.includes('readPendingBrowserExtensionImport') || !appHookSource.includes('BROWSER_EXTENSION_IMPORT_UNVERIFIED_MESSAGE') || !appHookSource.includes('BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY') || appHookSource.includes("hash.includes('lf-import='")) fail('web app hook must load verified pending imports and keep unverified imports draft-only.');
+const protocolSources = {
+  'shared.js': sharedSource,
+  'app-bridge.js': bridgeSource,
+  'background-core.js': await readFile(path.join(extensionRoot, 'background-core.js'), 'utf8'),
+  'browserExtensionImport.ts': appProtocolSource,
+  'browserExtensionImportRuntime.ts': appRuntimeSource,
+  'useBrowserExtensionImport.ts': appHookSource,
+  'extensionDueCountBridge.ts': await readFile(path.join(root, 'src/features/extensionBridge/extensionDueCountBridge.ts'), 'utf8'),
+  'course-profile-contract.ts': await readFile(path.join(root, 'functions/src/course-profile-contract.ts'), 'utf8'),
+  'index.html': await readFile(path.join(root, 'index.html'), 'utf8'),
+  'background-ui.js': await readFile(path.join(extensionRoot, 'background-ui.js'), 'utf8'),
+};
+const declared = (file, name) => ({ file, name });
+const idPattern = /(\/\^\[A-Za-z0-9_-\]\{\d+,\d+\}\$\/)\.test\(/g;
+const protocolGroups = [
+  { label: 'import hash key', entries: [declared('shared.js', 'IMPORT_HASH_KEY'), declared('app-bridge.js', 'IMPORT_HASH_KEY'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_HASH_KEY')] },
+  { label: 'import protocol version', entries: [declared('shared.js', 'IMPORT_PROTOCOL_VERSION'), declared('app-bridge.js', 'IMPORT_PROTOCOL_VERSION'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION'), { file: 'index.html', pattern: /<meta\s+name="sonflash-import-runtime"\s+content="([^"]*)"/ }] },
+  { label: 'import nonce pattern', entries: [declared('shared.js', 'IMPORT_NONCE_PATTERN'), declared('app-bridge.js', 'IMPORT_NONCE_PATTERN'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_NONCE_PATTERN')] },
+  { label: 'verified import storage key', entries: [declared('app-bridge.js', 'IMPORT_STORAGE_KEY'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_STORAGE_KEY')] },
+  { label: 'draft import storage key', entries: [declared('app-bridge.js', 'UNVERIFIED_STORAGE_KEY'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY')] },
+  { label: 'web app message source', entries: [declared('app-bridge.js', 'APP_SOURCE'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_APP_SOURCE'), declared('browserExtensionImportRuntime.ts', 'EXTENSION_RESULT_SOURCE'), declared('extensionDueCountBridge.ts', 'APP_SOURCE')] },
+  { label: 'bridge message source', entries: [declared('app-bridge.js', 'BRIDGE_SOURCE'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE')] },
+  { label: 'import ready message', entries: [declared('app-bridge.js', 'IMPORT_READY_TYPE'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_READY_MESSAGE')] },
+  { label: 'import unverified message', entries: [declared('app-bridge.js', 'IMPORT_UNVERIFIED_TYPE'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_UNVERIFIED_MESSAGE')] },
+  { label: 'import claimed message', entries: [declared('app-bridge.js', 'IMPORT_CLAIMED_TYPE'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_CLAIMED_MESSAGE')] },
+  { label: 'import result message', entries: [declared('app-bridge.js', 'APP_RESULT_TYPE'), declared('background-core.js', 'APP_RESULT_MESSAGE'), declared('browserExtensionImportRuntime.ts', 'EXTENSION_RESULT_TYPE'), declared('useBrowserExtensionImport.ts', 'EXTENSION_RESULT_TYPE')] },
+  { label: 'provider ready message', entries: [declared('app-bridge.js', 'APP_BRIDGE_PROVIDER_READY_TYPE'), declared('useBrowserExtensionImport.ts', 'EXTENSION_PROVIDER_READY_MESSAGE')] },
+  { label: 'provider message', entries: [declared('app-bridge.js', 'APP_BRIDGE_PROVIDER_TYPE'), declared('background-core.js', 'APP_BRIDGE_PROVIDER_MESSAGE')] },
+  { label: 'deck metadata message', entries: [declared('app-bridge.js', 'DECK_METADATA_TYPE'), declared('useBrowserExtensionImport.ts', 'DECK_METADATA_MESSAGE')] },
+  { label: 'deck metadata clear message', entries: [declared('app-bridge.js', 'DECK_METADATA_CLEAR_TYPE'), declared('useBrowserExtensionImport.ts', 'DECK_METADATA_CLEAR_MESSAGE')] },
+  { label: 'course locale message', entries: [declared('app-bridge.js', 'COURSE_LOCALE_TYPE'), declared('useBrowserExtensionImport.ts', 'COURSE_LOCALE_MESSAGE')] },
+  { label: 'course locale clear message', entries: [declared('app-bridge.js', 'COURSE_LOCALE_CLEAR_TYPE'), declared('useBrowserExtensionImport.ts', 'COURSE_LOCALE_CLEAR_MESSAGE')] },
+  { label: 'due count message', entries: [declared('app-bridge.js', 'DUE_COUNT_TYPE'), declared('extensionDueCountBridge.ts', 'EXTENSION_DUE_COUNT_MESSAGE')] },
+  { label: 'due count clear message', entries: [declared('app-bridge.js', 'DUE_COUNT_CLEAR_TYPE'), declared('extensionDueCountBridge.ts', 'EXTENSION_DUE_COUNT_CLEAR_MESSAGE')] },
+  { label: 'due count bound', entries: [declared('shared.js', 'MAX_DUE_COUNT'), declared('extensionDueCountBridge.ts', 'MAX_DUE_COUNT')] },
+  { label: 'app bridge port name', entries: [declared('app-bridge.js', 'APP_BRIDGE_PORT_NAME'), declared('background-core.js', 'APP_BRIDGE_PORT_NAME')] },
+  {
+    label: 'import id pattern',
+    entries: ['shared.js', 'app-bridge.js', 'background-core.js', 'browserExtensionImport.ts'].map(file => ({ file, pattern: idPattern, literal: true })),
+  },
+  {
+    label: 'requested deck bound',
+    entries: [
+      declared('shared.js', 'MAX_DECK_NAME_LENGTH'),
+      declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_DECK_LENGTH'),
+      declared('useBrowserExtensionImport.ts', 'MAX_DECK_NAME_LENGTH'),
+      { file: 'app-bridge.js', pattern: /requestedDeck\)\.slice\(0,\s*(\d+)\)/g },
+      { file: 'background-core.js', pattern: /requestedDeck\.trim\(\)\.slice\(0,\s*(\d+)\)/g },
+      { file: 'background-core.js', pattern: /requestedDeck\.slice\(0,\s*(\d+)\)/g },
+    ],
+  },
+  { label: 'selected text bound', entries: [declared('shared.js', 'MAX_TEXT_LENGTH'), declared('app-bridge.js', 'MAX_TEXT_LENGTH'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH')] },
+  { label: 'context bound', entries: [declared('shared.js', 'MAX_CONTEXT_LENGTH'), declared('app-bridge.js', 'MAX_CONTEXT_LENGTH'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_CONTEXT_LENGTH')] },
+  { label: 'page title bound', entries: [declared('shared.js', 'MAX_PAGE_TITLE_LENGTH'), declared('app-bridge.js', 'MAX_PAGE_TITLE_LENGTH'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_PAGE_TITLE_LENGTH')] },
+  { label: 'source URL bound', entries: [declared('shared.js', 'MAX_SOURCE_URL_LENGTH'), declared('app-bridge.js', 'MAX_SOURCE_URL_LENGTH'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_SOURCE_URL_LENGTH')] },
+  { label: 'encoded import bound', entries: [declared('shared.js', 'MAX_ENCODED_IMPORT_LENGTH'), declared('app-bridge.js', 'MAX_ENCODED_IMPORT_LENGTH'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_ENCODED_LENGTH')] },
+  { label: 'course target languages', entries: [declared('shared.js', 'COURSE_TARGET_LANGUAGES'), declared('app-bridge.js', 'CAPTURE_SOURCE_LANGUAGES'), declared('course-profile-contract.ts', 'COURSE_TARGET_LANGUAGES'), { file: 'background-ui.js', pattern: /(\[[^\]]*\])\.includes\(payload\.courseLanguage\)/, literal: true }] },
+];
+if (/source:\s*['"`]/.test(appHookSource)) fail('the web app hook must post with the declared message source constant, not an inline literal.');
+const protocolDrift = findProtocolDrift(protocolSources, protocolGroups);
+if (protocolDrift.length) fail(`app and extension protocol constants must match:\n${protocolDrift.join('\n')}`);
 if (/\beval\s*\(|new\s+Function\s*\(/.test(sharedSource + workerSource + bridgeSource)) fail('dynamic code execution is forbidden.');
 if (!workerSource.includes("contexts:['selection']")) fail('selection-only context menu is missing.');
 if (process.argv.includes('--zip') || process.env.LINGOFLASH_CHECK_ZIP === '1') {

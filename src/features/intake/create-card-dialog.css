@@ -1,0 +1,578 @@
+.create-card-dialog__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+.create-card-dialog {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  z-index: 101;
+  display: flex;
+  width: min(620px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--sf-border);
+  border-radius: 18px;
+  background: var(--sf-dialog-bg, var(--sf-surface));
+  color: var(--sf-text);
+  box-shadow: inset 0 1px 0 var(--sf-surface), 0 2px 6px color-mix(in srgb, var(--sf-text) 8%, transparent), 0 50px 90px -40px color-mix(in srgb, var(--sf-text) 55%, transparent);
+  outline: none;
+}
+
+:root.dark .create-card-dialog {
+  border-radius: 26px;
+  box-shadow: 0 50px 100px -30px rgb(0 0 0 / .85);
+}
+
+.create-card-dialog__ornament {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  height: 3px;
+}
+
+.create-card-dialog__ornament--top,
+.create-card-dialog__ornament--bottom { display: none; }
+
+.create-card-dialog__header {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 22px 22px 18px 26px;
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.create-card-dialog__heading { min-width: 0; }
+.create-card-dialog__kicker {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin: 0;
+  color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface));
+  font-size: .71875rem;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.create-card-dialog__kicker span { display: none; color: var(--sf-brand-text); font-size: .55rem; }
+.create-card-dialog__title {
+  margin: 4px 0 0;
+  color: var(--sf-text);
+  font-family: var(--sf-font-display);
+  font-size: 1.75rem;
+  font-weight: 380;
+  letter-spacing: -.02em;
+  line-height: 1.12;
+}
+:root.dark .create-card-dialog__title { font-weight: 440; }
+.create-card-dialog__description { margin: 6px 0 0; color: var(--sf-text-muted); font-size: .875rem; line-height: 1.5; }
+.create-card-dialog__close {
+  display: inline-flex;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sf-border);
+  border-radius: 50%;
+  background: var(--sf-surface);
+  color: var(--sf-text-muted);
+}
+:root.dark .create-card-dialog__close { background: var(--sf-surface-control); }
+.create-card-dialog__close:hover:not(:disabled) { border-color: var(--sf-brand); color: var(--sf-text); }
+.create-card-dialog__close:disabled { cursor: wait; opacity: .55; }
+
+.create-card-dialog__form { display: flex; min-height: 0; flex: 1; flex-direction: column; }
+.create-card-dialog__body { min-height: 0; flex: 1; overflow-y: auto; padding: 20px 26px 22px; }
+.create-card-dialog__input-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: .75rem; }
+.create-card-dialog__input-grid label,
+.create-card-dialog__manual-grid label,
+.create-card-dialog__save-row label { display: flex; min-width: 0; flex-direction: column; gap: .4rem; }
+.create-card-dialog__label {
+  color: color-mix(in srgb, var(--sf-text) 70%, var(--sf-text-muted));
+  font-size: .8125rem;
+  font-weight: 600;
+}
+.create-card-dialog__label em { color: var(--sf-text-muted); font-size: .68rem; font-style: normal; font-weight: 500; }
+.create-card-dialog__field {
+  display: flex;
+  min-height: 2.75rem;
+  box-sizing: border-box;
+  align-items: center;
+  gap: .5rem;
+  padding: 0 .85rem;
+  border: 1px solid color-mix(in srgb, var(--sf-text) 14%, transparent);
+  border-radius: 10px;
+  background: var(--sf-surface);
+  color: var(--sf-text);
+}
+:root.dark .create-card-dialog__field { border-color: var(--sf-border); background: var(--sf-surface-control); }
+/* One focus ring on the field box; the bare input inside draws none. */
+.create-card-dialog__field:focus-within { border-color: var(--sf-text); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-text) 12%, transparent); }
+:root.dark .create-card-dialog__field:focus-within { border-color: var(--sf-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-brand) 18%, transparent); }
+.create-card-dialog input,
+.create-card-dialog textarea,
+.create-card-dialog select { box-sizing: border-box; border: 1px solid var(--sf-border); background: var(--sf-surface-control); color: var(--sf-text); font: inherit; outline: none; }
+.create-card-dialog__field input { width: 100%; border: 0; background: transparent; }
+.create-card-dialog .create-card-dialog__field input:focus-visible { outline: 0; }
+.create-card-dialog__field--active input { font-family: var(--sf-font-display); font-size: 1.1875rem; }
+.create-card-dialog input::placeholder,
+.create-card-dialog textarea::placeholder { color: var(--sf-text-muted); opacity: .85; }
+.create-card-dialog input:focus-visible,
+.create-card-dialog textarea:focus-visible,
+.create-card-dialog select:focus-visible,
+.create-card-dialog button:focus-visible { outline: 2px solid var(--sf-brand-text); outline-offset: 3px; }
+.create-card-dialog input:disabled,
+.create-card-dialog textarea:disabled,
+.create-card-dialog select:disabled { cursor: wait; opacity: .65; }
+
+.create-card-dialog__pos { margin: 1rem 0 0; padding: 0; border: 0; }
+.create-card-dialog__pos legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.create-card-dialog__pos > div { display: flex; gap: .3rem; padding: .25rem; border: 1px solid var(--sf-border); border-radius: .8rem; background: var(--sf-surface-control); }
+.create-card-dialog__pos button {
+  min-width: 0;
+  min-height: 2.75rem;
+  flex: 1;
+  border: 0;
+  border-radius: .55rem;
+  background: transparent;
+  color: var(--sf-text-muted);
+  font-size: .78rem;
+  font-weight: 700;
+}
+.create-card-dialog__pos button:hover { color: var(--sf-text); background: var(--sf-surface-raised); }
+.create-card-dialog__pos button.is-selected { background: var(--sf-text); color: var(--sf-on-brand); box-shadow: none; }
+:root.dark .create-card-dialog__pos button.is-selected { background: color-mix(in srgb, var(--sf-text) 12%, transparent); color: var(--sf-text); }
+.create-card-dialog__pos button > span { display: inline-block; }
+
+.create-card-dialog__preview {
+  position: relative;
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--sf-text) 8%, transparent);
+  border-radius: 14px;
+  background: var(--sf-card-bg, var(--sf-surface));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--sf-text) 6%, transparent), 0 16px 30px -22px color-mix(in srgb, var(--sf-text) 40%, transparent);
+}
+:root.dark:not([data-theme-family="crystal"]) .create-card-dialog__preview {
+  border: 1px solid transparent;
+  background: var(--sf-solid-card, var(--sf-card-bg)) padding-box, var(--sf-rim-learning) border-box;
+  box-shadow: 0 0 36px -14px color-mix(in srgb, var(--sf-brand) 45%, transparent);
+}
+.create-card-dialog__cover {
+  position: relative;
+  display: flex;
+  width: 8rem;
+  height: 11rem;
+  flex: 0 0 8rem;
+  align-self: flex-start;
+  align-items: flex-end;
+  justify-content: flex-start;
+  overflow: hidden;
+  border-radius: .75rem;
+  background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--sf-second) 55%, transparent), transparent 60%), linear-gradient(160deg, color-mix(in srgb, var(--sf-second) 30%, var(--sf-surface)), color-mix(in srgb, var(--sf-brand) 30%, var(--sf-surface)));
+}
+.create-card-dialog__cover img { width: 100%; height: 100%; object-fit: cover; }
+.create-card-dialog__cover span { padding: 0 .8rem .1rem; color: color-mix(in srgb, var(--sf-text) 88%, transparent); font-family: var(--sf-font-display); font-size: 6.5rem; font-style: italic; line-height: .8; }
+:root:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog__cover { background: linear-gradient(160deg, color-mix(in srgb, var(--sf-reward) 18%, var(--sf-surface)), color-mix(in srgb, var(--sf-reward) 34%, var(--sf-surface))); }
+:root:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog__cover span { color: var(--sf-brand); }
+.create-card-dialog__preview-content { min-width: 0; flex: 1; }
+.create-card-dialog__preview-heading { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.create-card-dialog__ai-badge { display: inline-flex; align-items: center; gap: .3rem; color: var(--sf-brand-text); font-size: .7rem; font-weight: 800; }
+.create-card-dialog__edit-note { color: var(--sf-text-muted); font-size: .7rem; }
+.create-card-dialog__headword-row { display: flex; align-items: center; gap: .6rem; margin-top: .35rem; }
+.create-card-dialog__headword-row h3 { min-width: 0; overflow: hidden; margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 2.25rem; font-weight: 380; letter-spacing: -.02em; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.create-card-dialog__stress { color: var(--sf-brand); font-style: italic; }
+:root.dark .create-card-dialog__stress { color: var(--sf-brand); font-style: normal; }
+html[data-theme-family="crystal"] .create-card-dialog__stress { font-style: inherit; }
+.create-card-dialog__audio { display: inline-grid; width: 2.75rem; height: 2.75rem; flex: none; place-items: center; border: 1px solid color-mix(in srgb, var(--sf-brand) 55%, var(--sf-border)); border-radius: 50%; background: color-mix(in srgb, var(--sf-brand) 12%, transparent); color: var(--sf-brand-text); }
+.create-card-dialog__meta { display: flex; align-items: center; gap: .45rem; margin-top: .2rem; color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: .72rem; }
+.create-card-dialog__meta > span::before { content: '·'; margin-right: .45rem; }
+.create-card-dialog__meta > span + label::before { content: '·'; margin-right: .45rem; }
+.create-card-dialog__meta > label { display: flex; align-items: center; }
+.create-card-dialog__meta input { width: 8.5rem; min-width: 0; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: .72rem; }
+.create-card-dialog__meta input.create-card-dialog__cefr-input { width: 3.25rem; }
+.create-card-dialog__preview-meaning { display: block; margin-top: .45rem; }
+.create-card-dialog__preview-meaning input { width: 100%; min-height: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 1.5rem; font-weight: 400; }
+.create-card-dialog__preview-explanation { display: block; margin-top: .35rem; }
+.create-card-dialog__preview-explanation textarea { width: 100%; min-height: 2.75rem; resize: vertical; padding: 0; border: 0; background: transparent; color: var(--sf-text); font-size: .8rem; font-style: italic; line-height: 1.45; }
+.create-card-dialog__examples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin-top: .55rem; }
+.create-card-dialog__examples label,
+.create-card-dialog__family label { display: flex; min-width: 0; flex-direction: column; gap: .2rem; }
+.create-card-dialog__examples label > span,
+.create-card-dialog__family legend,
+.create-card-dialog__family label > span { color: var(--sf-text-muted); font-size: .67rem; font-weight: 750; }
+.create-card-dialog__examples textarea { width: 100%; min-height: 2.75rem; resize: vertical; padding: .3rem .45rem; border-radius: .45rem; font-size: .73rem; line-height: 1.4; }
+.create-card-dialog__family { min-width: 0; margin: .55rem 0 0; padding: 0; border: 0; }
+.create-card-dialog__family legend { padding: 0; }
+.create-card-dialog__family-fields { display: flex; flex-wrap: wrap; gap: .45rem .65rem; margin-top: .2rem; }
+.create-card-dialog__family-fields label { flex: 1 1 8rem; }
+.create-card-dialog__family-fields input { width: 100%; min-height: 2.75rem; padding: .25rem .45rem; border-radius: .45rem; font-size: .74rem; }
+
+.create-card-dialog__manual { margin-top: 1rem; padding: 1rem; border: 1px solid var(--sf-border); border-radius: 1rem; background: var(--sf-surface-raised); }
+.create-card-dialog__section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.create-card-dialog__section-kicker { margin: 0; color: var(--sf-brand-text); font-size: .68rem; font-weight: 800; letter-spacing: .14em; }
+.create-card-dialog__section-heading h3 { margin: .2rem 0 0; font-family: var(--sf-font-display); font-size: 1.4rem; font-weight: 400; }
+.create-card-dialog__text-button,
+.create-card-dialog__manual-link { min-height: 2.75rem; border: 0; background: transparent; color: var(--sf-brand-text); font-size: .78rem; font-weight: 800; text-decoration: underline; text-underline-offset: .16rem; }
+.create-card-dialog__manual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: .9rem; }
+.create-card-dialog__manual-grid .is-wide { grid-column: 1 / -1; }
+.create-card-dialog__manual-grid input,
+.create-card-dialog__manual-grid textarea { width: 100%; min-height: 2.75rem; padding: .65rem .75rem; border-radius: .65rem; font-size: .82rem; line-height: 1.4; }
+.create-card-dialog__manual-grid textarea { resize: vertical; }
+
+.create-card-dialog__regeneration { margin-top: .85rem; padding-top: .8rem; border-top: 1px solid var(--sf-border); }
+.create-card-dialog__regeneration-heading { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; color: var(--sf-text); font-size: .78rem; font-weight: 750; }
+.create-card-dialog__regeneration-heading small { color: var(--sf-text-muted); font-size: .68rem; font-weight: 500; }
+.create-card-dialog__regeneration-options { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+.create-card-dialog__regeneration-options button { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .3rem; padding: 0 .65rem; border: 1px solid var(--sf-border); border-radius: .6rem; background: var(--sf-surface-control); color: var(--sf-text-muted); font-size: .72rem; font-weight: 750; }
+.create-card-dialog__regeneration-options button svg { opacity: 0; }
+.create-card-dialog__regeneration-options button.is-selected { border-color: color-mix(in srgb, var(--sf-brand) 65%, var(--sf-border)); background: color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface-control)); color: var(--sf-brand-text); }
+.create-card-dialog__regeneration-options button.is-selected svg { opacity: 1; }
+.create-card-dialog__regeneration-options button:disabled { cursor: wait; opacity: .55; }
+
+.create-card-dialog__empty-preview { display: flex; min-height: 8rem; align-items: center; justify-content: center; gap: .55rem; margin-top: 1rem; padding: 1rem; border: 1px dashed var(--sf-border); border-radius: 1rem; color: var(--sf-text-muted); font-size: .8rem; text-align: center; }
+.create-card-dialog__empty-preview svg { flex: none; color: var(--sf-brand-text); }
+.create-card-dialog__save-row { display: flex; align-items: center; gap: .65rem; margin-top: 1rem; }
+.create-card-dialog__save-row label { align-items: center; flex-direction: row; gap: 10px; }
+.create-card-dialog__save-row select { min-width: 6.5rem; min-height: 2.75rem; padding: 0 2rem 0 .8rem; border-radius: 10px; appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 11px) 52%; background-repeat: no-repeat; background-size: 4px 4px; font-size: .8125rem; font-weight: 550; }
+.create-card-dialog__save-row p { margin: 0 0 0 auto; color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); font-size: .78rem; }
+.create-card-dialog__save-row strong { color: var(--sf-brand-text); }
+.create-card-dialog__notice { display: flex; align-items: flex-start; gap: .5rem; margin-top: .9rem; padding: .7rem .8rem; border: 1px solid var(--sf-danger); border-radius: .65rem; background: color-mix(in srgb, var(--sf-danger) 10%, var(--sf-surface)); color: var(--sf-danger); font-size: .78rem; line-height: 1.45; }
+.create-card-dialog__notice svg { flex: none; margin-top: .08rem; }
+.create-card-dialog__notice--duplicate { border-color: color-mix(in srgb, var(--sf-reward) 60%, var(--sf-border)); background: color-mix(in srgb, var(--sf-reward) 10%, var(--sf-surface)); color: var(--sf-text); }
+.create-card-dialog__notice--duplicate svg { color: var(--sf-reward); }
+.create-card-dialog__notice--quota { border-color: color-mix(in srgb, var(--sf-reward) 60%, var(--sf-border)); background: color-mix(in srgb, var(--sf-reward) 10%, var(--sf-surface)); color: var(--sf-text); }
+.create-card-dialog__notice button { min-height: 2.75rem; margin-left: .4rem; border: 0; background: transparent; color: var(--sf-brand-text); font-weight: 800; text-decoration: underline; text-underline-offset: .14rem; }
+
+.create-card-dialog__footer { display: flex; flex: none; align-items: center; gap: .6rem; padding: 1rem 1.4rem 1.15rem 1.65rem; border-top: 1px solid var(--sf-border); }
+.create-card-dialog__request-count { display: inline-flex; align-items: center; gap: .35rem; color: var(--sf-text-muted); font-size: .75rem; }
+.create-card-dialog__request-count svg { color: var(--sf-brand-text); }
+.create-card-dialog__manual-link { margin-left: auto; text-decoration: none; }
+.create-card-dialog__secondary,
+.create-card-dialog__primary { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; gap: .45rem; padding: 0 1.25rem; border-radius: 999px; font-size: .9375rem; font-weight: 600; }
+.create-card-dialog__secondary { margin-left: auto; border: 1px solid var(--sf-border); background: var(--sf-surface); color: var(--sf-text); }
+:root.dark .create-card-dialog__secondary { background: var(--sf-surface-control); }
+/* Ink & Paper's primary action is ink; Midnight Aurora's is the brand cyan. */
+.create-card-dialog__primary { border: 0; background: var(--sf-text); color: var(--sf-on-brand); font-weight: 650; box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--sf-text) 80%, transparent); }
+:root.dark .create-card-dialog__primary { background: var(--sf-brand); box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
+.create-card-dialog__secondary:disabled,
+.create-card-dialog__primary:disabled { cursor: not-allowed; opacity: .55; }
+.create-card-dialog__spinner-label { display: inline-flex; align-items: center; gap: .4rem; }
+.create-card-dialog__spinner-label svg { animation: create-card-dialog-spin .8s linear infinite; }
+@keyframes create-card-dialog-spin { to { transform: rotate(360deg); } }
+
+html[data-theme-family="crystal"] .create-card-dialog {
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(155deg, color-mix(in srgb, var(--sf-brand) 78%, white), color-mix(in srgb, var(--sf-brand) 30%, transparent) 28%, color-mix(in srgb, var(--sf-second) 30%, transparent) 72%, var(--sf-second));
+  filter: drop-shadow(0 0 34px color-mix(in srgb, var(--sf-brand) 28%, transparent)) drop-shadow(0 28px 42px rgb(0 0 0 / .65));
+  padding: 2px;
+}
+html[data-theme-family="crystal"] .create-card-dialog__form { background: var(--sf-dialog-bg); clip-path: var(--nk-chamfer); }
+html[data-theme-family="crystal"] .create-card-dialog__header { border-bottom: 0; background: var(--sf-dialog-bg); padding: 1.2rem 1.25rem .9rem 1.45rem; }
+html[data-theme-family="crystal"] .create-card-dialog__ornament { display: block; background: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) 78%, white), var(--sf-brand) 58%, var(--sf-second)); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 75%, transparent); }
+html[data-theme-family="crystal"] .create-card-dialog__ornament--top { top: 0; left: 1.6rem; width: 7.5rem; }
+html[data-theme-family="crystal"] .create-card-dialog__ornament--bottom { right: 1.6rem; bottom: 0; width: 4.5rem; background: var(--sf-second); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 80%, transparent); }
+html[data-theme-family="crystal"] .create-card-dialog__kicker,
+html[data-theme-family="crystal"] .create-card-dialog__title,
+html[data-theme-family="crystal"] .create-card-dialog__section-kicker { font-family: var(--sf-font-display); font-style: italic; }
+html[data-theme-family="crystal"] .create-card-dialog__kicker { color: var(--sf-brand-text); font-size: .76rem; font-weight: 800; letter-spacing: .16em; }
+html[data-theme-family="crystal"] .create-card-dialog__kicker span { display: inline; color: var(--sf-brand-text); }
+html[data-theme-family="crystal"] .create-card-dialog__title { font-size: 2rem; font-weight: 900; letter-spacing: .01em; }
+html[data-theme-family="crystal"] .create-card-dialog__field,
+html[data-theme-family="crystal"] .create-card-dialog__pos > div,
+html[data-theme-family="crystal"] .create-card-dialog__preview,
+html[data-theme-family="crystal"] .create-card-dialog__manual,
+html[data-theme-family="crystal"] .create-card-dialog__empty-preview { border-radius: 0; clip-path: var(--nk-chamfer-sm); }
+html[data-theme-family="crystal"] .create-card-dialog__field--active input,
+html[data-theme-family="crystal"] .create-card-dialog__headword-row h3,
+html[data-theme-family="crystal"] .create-card-dialog__preview-meaning input,
+html[data-theme-family="crystal"] .create-card-dialog__section-heading h3 { font-family: var(--sf-font-display); font-style: italic; font-weight: 900; }
+html[data-theme-family="crystal"] .create-card-dialog__pos button.is-selected { background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 78%, white), var(--sf-brand) 45%, color-mix(in srgb, var(--sf-brand) 62%, black)); color: white; }
+html[data-theme-family="crystal"] .create-card-dialog__pos button,
+html[data-theme-family="crystal"] .create-card-dialog__secondary,
+html[data-theme-family="crystal"] .create-card-dialog__primary { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; letter-spacing: .04em; }
+html[data-theme-family="crystal"] .create-card-dialog__pos button { transform: skewX(-12deg); }
+html[data-theme-family="crystal"] .create-card-dialog__pos button > span { transform: skewX(12deg); }
+html[data-theme-family="crystal"] .create-card-dialog__preview { border: 0; box-shadow: inset 0 0 0 1px var(--sf-brand), 0 18px 36px -28px var(--sf-shadow); }
+html[data-theme-family="crystal"] .create-card-dialog__preview-heading,
+html[data-theme-family="crystal"] .create-card-dialog__regeneration-heading { font-family: var(--sf-font-display); font-style: italic; }
+html[data-theme-family="crystal"] .create-card-dialog__ai-badge { text-transform: uppercase; letter-spacing: .12em; }
+html[data-theme-family="crystal"] .create-card-dialog__cover { border-radius: 0; clip-path: var(--nk-chamfer-sm); }
+html[data-theme-family="crystal"] .create-card-dialog__close,
+html[data-theme-family="crystal"] .create-card-dialog__audio { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); }
+html[data-theme-family="crystal"] .create-card-dialog__primary { background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 78%, white), var(--sf-brand) 45%, color-mix(in srgb, var(--sf-brand) 62%, black)); color: white; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
+html[data-theme-family="crystal"] .create-card-dialog__footer { border-top-color: var(--sf-border); }
+
+@media (max-width: 620px) {
+  .create-card-dialog { width: calc(100vw - 1rem); max-height: calc(100dvh - 1rem); }
+  .create-card-dialog__header { padding: 1rem 1rem .85rem; }
+  .create-card-dialog__body { padding: 1rem; }
+  .create-card-dialog__footer { flex-wrap: wrap; padding: .85rem 1rem 1rem; }
+  .create-card-dialog__request-count { order: 3; width: 100%; }
+  .create-card-dialog__input-grid,
+  .create-card-dialog__manual-grid,
+  .create-card-dialog__examples { grid-template-columns: 1fr; }
+  .create-card-dialog__manual-grid .is-wide { grid-column: auto; }
+  .create-card-dialog__preview { flex-direction: column; }
+  .create-card-dialog__cover { width: 100%; min-height: 5rem; flex-basis: 5rem; align-items: center; justify-content: center; }
+  .create-card-dialog__cover span { padding: 0; font-size: 5rem; }
+  .create-card-dialog__footer > .create-card-dialog__secondary,
+  .create-card-dialog__footer > .create-card-dialog__primary { flex: 1 1 0; }
+  .create-card-dialog__save-row { align-items: stretch; flex-direction: column; }
+  .create-card-dialog__save-row p { margin: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-card-dialog__overlay,
+  .create-card-dialog__spinner-label svg { animation: none !important; transition: none !important; }
+}
+
+html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: none; }
+
+/* The draft reads as a card: its fields stay editable but draw no box until hovered or focused. */
+.create-card-dialog__preview :is(.create-card-dialog__examples, .create-card-dialog__family-fields) :is(input, textarea) { border: 1px solid transparent; border-radius: 6px; background: transparent; padding: .2rem .35rem; margin-left: -.35rem; }
+.create-card-dialog__preview :is(.create-card-dialog__examples, .create-card-dialog__family-fields) :is(input, textarea):hover:not(:disabled) { border-color: var(--sf-border); }
+.create-card-dialog__preview :is(.create-card-dialog__examples, .create-card-dialog__family-fields) :is(input, textarea):focus-visible { border-color: var(--sf-border); background: var(--sf-surface); outline-offset: 1px; }
+.create-card-dialog__examples { grid-template-columns: 1fr; gap: 0; margin-top: .35rem; }
+.create-card-dialog__examples label > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.create-card-dialog__examples label:first-child textarea { color: var(--sf-text); font-size: .875rem; font-style: italic; }
+.create-card-dialog__examples label + label textarea { color: var(--sf-text-muted); font-size: .78rem; }
+.create-card-dialog__examples textarea { resize: none; field-sizing: content; min-height: 2.75rem; }
+.create-card-dialog__family { display: flex; align-items: center; flex-wrap: wrap; gap: 0 .5rem; margin-top: .2rem; }
+.create-card-dialog__family legend { float: left; margin-right: .25rem; color: var(--sf-text-muted); font-size: .8125rem; font-weight: 500; }
+.create-card-dialog__family legend::after { content: ':'; }
+.create-card-dialog__family-fields { margin-top: 0; gap: 0 .25rem; }
+.create-card-dialog__family-fields label { flex: 0 1 8rem; }
+.create-card-dialog__family-fields label > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.create-card-dialog__family-fields input { color: var(--sf-text-muted); font-size: .8125rem; }
+.create-card-dialog__preview-explanation textarea { color: var(--sf-text-muted); font-style: normal; resize: none; field-sizing: content; }
+.create-card-dialog__preview-meaning { margin-top: .1rem; }
+.create-card-dialog__meta { margin-top: 0; }
+.create-card-dialog__meta input { width: 8rem; }
+
+/* Streaming layout of a first AI generation: steps beside the card as it is written. */
+.create-card-dialog__portrait,
+.create-card-dialog__kicker-spin,
+.create-card-dialog__note-pencil,
+.create-card-dialog__progress-segment { display: none; }
+.create-card-dialog--stream { width: min(660px, calc(100vw - 2rem)); }
+.create-card-dialog--stream .create-card-dialog__title { margin-top: 6px; }
+.create-card-dialog__kicker--stream { gap: 6px; color: var(--sf-brand-text); }
+.create-card-dialog__kicker-sparkle { flex: none; }
+.create-card-dialog--stream .create-card-dialog__body { padding: 18px 26px 20px; }
+.create-card-dialog__stream { display: flex; flex-direction: column; gap: 16px; }
+.create-card-dialog__stream-word {
+  display: flex;
+  min-height: 48px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 0 14px;
+  border: 1px solid var(--sf-border);
+  border-radius: 10px;
+  background: var(--sf-surface-control);
+}
+:root.dark .create-card-dialog__stream-word { border-radius: 14px; }
+.create-card-dialog__stream-word > span:first-child { min-width: 0; flex: 1; overflow: hidden; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 1.1875rem; text-overflow: ellipsis; white-space: nowrap; }
+.create-card-dialog__stream-deck { display: inline-flex; height: 30px; flex: none; align-items: center; padding: 0 10px; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--sf-surface-raised); color: var(--sf-text-muted); font-size: .75rem; white-space: nowrap; }
+.create-card-dialog__stream-grid { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 18px; align-items: start; }
+.create-card-dialog__steps { display: flex; margin: 0; padding: 0; flex-direction: column; gap: 4px; list-style: none; }
+.create-card-dialog__step { display: flex; min-height: 38px; box-sizing: border-box; align-items: center; gap: 10px; padding: 0 10px; border-radius: 10px; color: var(--sf-text-muted); font-size: .8125rem; font-weight: 500; }
+.create-card-dialog__step.is-active { background: color-mix(in srgb, var(--sf-brand) 12%, transparent); color: var(--sf-text); font-weight: 650; }
+:root:not(.dark) .create-card-dialog__step.is-active { background: color-mix(in srgb, var(--sf-brand) 8%, transparent); }
+.create-card-dialog__step.is-done { color: color-mix(in srgb, var(--sf-text-muted) 60%, var(--sf-text)); }
+/* Waiting steps keep the muted token itself: a lighter mix falls below AA for 13px text in light themes. */
+.create-card-dialog__step-icon { display: inline-flex; width: 20px; height: 20px; box-sizing: border-box; flex: none; align-items: center; justify-content: center; border-radius: 50%; }
+.is-done > .create-card-dialog__step-icon { background: color-mix(in srgb, var(--sf-success) 12%, transparent); color: var(--sf-success); }
+.is-active > .create-card-dialog__step-icon { width: 16px; height: 16px; margin: 2px; border: 2px solid color-mix(in srgb, var(--sf-text) 8%, transparent); border-top-color: var(--sf-brand); animation: create-card-dialog-spin .8s linear infinite; }
+.is-waiting > .create-card-dialog__step-icon { border: 1.5px dashed color-mix(in srgb, var(--sf-text) 16%, transparent); }
+.is-stopped > .create-card-dialog__step-icon { border: 1.5px solid color-mix(in srgb, var(--sf-text) 16%, transparent); background: linear-gradient(color-mix(in srgb, var(--sf-text) 30%, transparent), color-mix(in srgb, var(--sf-text) 30%, transparent)) center / 8px 1.5px no-repeat; }
+
+.create-card-dialog__preview--stream { margin-top: 0; gap: 16px; padding: 16px 18px; }
+:root:not(.dark) .create-card-dialog__preview--stream { background: var(--sf-surface-raised); }
+:root.dark:not([data-theme-family="crystal"]) .create-card-dialog__preview--stream { border-width: 1.5px; border-radius: 20px; }
+.create-card-dialog__preview--stream .create-card-dialog__headword-row { margin-top: 0; }
+.create-card-dialog__preview--stream .create-card-dialog__headword-row h3 { font-size: 2.375rem; }
+.create-card-dialog__preview--stream .create-card-dialog__meta { margin-top: 4px; color: var(--sf-text-muted); font-size: .78125rem; }
+.create-card-dialog__preview--stream .create-card-dialog__preview-meaning { margin-top: 4px; }
+.create-card-dialog__preview--stream .create-card-dialog__preview-meaning input { font-size: 1.375rem; }
+.create-card-dialog__preview--stream .create-card-dialog__preview-explanation textarea { color: var(--sf-text); font-size: .8125rem; line-height: 1.5; opacity: .86; }
+.create-card-dialog__example-label { margin: 10px 0 0; color: var(--sf-text-muted); font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.create-card-dialog__preview--stream .create-card-dialog__meta > span:not(.create-card-dialog__skeleton) { font-family: inherit; }
+.create-card-dialog__preview--stream .create-card-dialog__meta { font-family: inherit; }
+.create-card-dialog__preview--stream .create-card-dialog__meta input:not(.create-card-dialog__cefr-input) { font-family: var(--font-mono, ui-monospace, monospace); }
+.create-card-dialog__preview--stream .create-card-dialog__meta input.create-card-dialog__cefr-input { font-family: inherit; }
+.create-card-dialog__preview--stream .create-card-dialog__preview-explanation textarea { font-style: normal; }
+.create-card-dialog__preview--stream .create-card-dialog__examples { grid-template-columns: minmax(0, 1fr); gap: 2px; margin-top: 2px; }
+.create-card-dialog__preview--stream .create-card-dialog__examples label > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.create-card-dialog__preview--stream .create-card-dialog__examples textarea { min-height: 2.75rem; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--sf-text-muted); font-size: .8125rem; line-height: 1.45; }
+.create-card-dialog__preview--stream .create-card-dialog__examples label:first-child textarea { color: var(--sf-text); font-size: .875rem; font-style: italic; line-height: 1.55; }
+.create-card-dialog__preview--stream .create-card-dialog__preview-heading { justify-content: flex-start; margin-bottom: 6px; }
+.create-card-dialog__not-checked { display: inline-flex; align-items: center; padding: 2px 8px; border: 1px dashed color-mix(in srgb, var(--sf-text) 30%, transparent); border-radius: 999px; color: var(--sf-text-muted); font-size: .6875rem; font-weight: 700; letter-spacing: .02em; }
+
+.create-card-dialog__skeleton { display: block; height: 9px; border-radius: 5px; background: linear-gradient(90deg, color-mix(in srgb, var(--sf-text) 5%, transparent), color-mix(in srgb, var(--sf-text) 10%, transparent), color-mix(in srgb, var(--sf-text) 5%, transparent)) 0 0 / 200% 100%; animation: create-card-dialog-shimmer 1.4s ease-in-out infinite; }
+.create-card-dialog__skeleton--meta { width: 9rem; margin: 6px 0; }
+.create-card-dialog__skeleton--short { width: 2rem; margin: 6px 0; }
+.create-card-dialog__skeleton--meaning { width: 62%; height: 16px; margin: 14px 0 6px; border-radius: 6px; }
+.create-card-dialog__skeleton--line-wide { width: 72%; }
+.create-card-dialog__skeleton--line { width: 58%; }
+.create-card-dialog__skeleton--line-short { width: 46%; }
+.create-card-dialog__examples > .create-card-dialog__skeleton { margin: 8px 0 4px; }
+.create-card-dialog__skeleton-lines { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.create-card-dialog__meta > .create-card-dialog__skeleton + .create-card-dialog__skeleton,
+.create-card-dialog__meta > span + .create-card-dialog__skeleton { margin-left: .45rem; }
+
+.create-card-dialog__stream-image { width: 130px; flex: none; }
+.create-card-dialog__stream-image-slot { display: flex; height: 150px; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; background: color-mix(in srgb, var(--sf-text) 6%, transparent); color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); }
+.create-card-dialog__stream-image-slot.is-loading { background: linear-gradient(90deg, color-mix(in srgb, var(--sf-text) 5%, transparent), color-mix(in srgb, var(--sf-text) 10%, transparent), color-mix(in srgb, var(--sf-text) 5%, transparent)) 0 0 / 200% 100%; animation: create-card-dialog-shimmer 1.4s ease-in-out infinite; }
+.create-card-dialog__stream-image-slot img { width: 100%; height: 100%; object-fit: cover; }
+.create-card-dialog__stream-image p { margin: 8px 0 0; color: var(--sf-text-muted); font-size: .71875rem; text-align: center; }
+
+.create-card-dialog__stream-status { display: flex; align-items: center; gap: 8px; margin: -4px 0 0; color: var(--sf-text-muted); font-size: .78125rem; }
+.create-card-dialog__stream-status svg { flex: none; animation: create-card-dialog-spin .8s linear infinite; }
+.create-card-dialog__stream-note { display: flex; align-items: center; gap: 10px; margin: 0; padding: 11px 14px; border: 1px solid color-mix(in srgb, var(--sf-brand) 30%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--sf-brand) 10%, transparent); color: var(--sf-text); font-size: .78125rem; line-height: 1.5; }
+:root:not(.dark) .create-card-dialog__stream-note { border-color: color-mix(in srgb, var(--sf-text) 14%, transparent); background: color-mix(in srgb, var(--sf-text) 5%, transparent); }
+.create-card-dialog__stream-note svg { flex: none; }
+.create-card-dialog__notice--stopped { border-color: var(--sf-border); background: var(--sf-surface-raised); color: var(--sf-text); }
+.create-card-dialog__notice--stopped svg { color: var(--sf-text-muted); }
+
+.create-card-dialog__footer--stream { padding: 16px 22px 20px 26px; gap: 10px; }
+.create-card-dialog__progress { min-width: 0; max-width: 200px; flex: 1 1 auto; }
+.create-card-dialog__progress-label { display: block; color: var(--sf-text-muted); font-size: .75rem; }
+.create-card-dialog__progress-label strong { font-weight: inherit; }
+.create-card-dialog__progress-track { display: flex; height: 4px; margin-top: 6px; overflow: hidden; border-radius: 4px; background: color-mix(in srgb, var(--sf-text) 8%, transparent); }
+.create-card-dialog__progress-fill { display: block; height: 100%; background: var(--sf-brand); transition: width .3s ease; }
+.create-card-dialog__footer--stream .create-card-dialog__secondary { margin-left: auto; padding: 0 18px; font-size: .875rem; }
+.create-card-dialog__footer--stream .create-card-dialog__primary { padding: 0 20px; font-size: .875rem; }
+.create-card-dialog__footer--stream .create-card-dialog__primary:disabled { opacity: .4; }
+.create-card-dialog__footer--stream .create-card-dialog__manual-link { margin-left: auto; }
+.create-card-dialog__footer--stream .create-card-dialog__manual-link + .create-card-dialog__secondary { margin-left: 0; }
+:root.dark:not([data-theme-family="crystal"]) .create-card-dialog__footer--stream :is(.create-card-dialog__secondary, .create-card-dialog__primary) { border-radius: 16px; }
+
+@keyframes create-card-dialog-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@keyframes create-card-dialog-rise { from { opacity: 0; transform: translateY(4px); } }
+.create-card-dialog__preview--stream :is(.create-card-dialog__meta > label, .create-card-dialog__preview-meaning, .create-card-dialog__preview-explanation, .create-card-dialog__examples > label) { animation: create-card-dialog-rise .32s ease-out both; }
+
+html[data-theme-family="crystal"] .create-card-dialog__portrait {
+  position: relative;
+  display: block;
+  width: 74px;
+  height: 74px;
+  flex: none;
+  overflow: hidden;
+  clip-path: var(--nk-chamfer-sm);
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--sf-second) 35%, transparent), transparent 70%), linear-gradient(180deg, color-mix(in srgb, var(--sf-second) 14%, var(--sf-surface)), var(--sf-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-success) 42%, transparent);
+}
+html[data-theme-family="crystal"] .create-card-dialog__portrait img { display: block; width: calc(100% + 8px); height: calc(100% - 2px); margin: 2px 0 0 -4px; object-fit: cover; object-position: top center; }
+html[data-theme-family="crystal"] .create-card-dialog__kicker--stream { gap: 8px; color: var(--sf-success); font-size: .75rem; }
+html[data-theme-family="crystal"] .create-card-dialog__kicker-sparkle { display: none; }
+html[data-theme-family="crystal"] .create-card-dialog__kicker-spin { display: inline-block; width: 12px; height: 12px; box-sizing: border-box; flex: none; border: 2px solid color-mix(in srgb, var(--sf-text) 10%, transparent); border-top-color: var(--sf-second); border-radius: 50%; animation: create-card-dialog-spin .8s linear infinite; }
+html[data-theme-family="crystal"] .create-card-dialog--stream .create-card-dialog__title { font-size: 1.875rem; line-height: 1.05; }
+html[data-theme-family="crystal"] .create-card-dialog--stream .create-card-dialog__body { padding: 4px 26px 16px; }
+html[data-theme-family="crystal"] .create-card-dialog__stream { gap: 12px; }
+html[data-theme-family="crystal"] .create-card-dialog__stream-word { min-height: 44px; padding: 0 8px 0 16px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 22%, transparent); }
+html[data-theme-family="crystal"] .create-card-dialog__stream-word > span:first-child { font-size: 1.125rem; font-style: italic; font-weight: 800; }
+html[data-theme-family="crystal"] .create-card-dialog__stream-deck { height: 28px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: color-mix(in srgb, var(--sf-success) 12%, transparent); color: var(--sf-success); font-weight: 800; }
+html[data-theme-family="crystal"] .create-card-dialog__stream-grid { grid-template-columns: 196px minmax(0, 1fr); gap: 14px; }
+html[data-theme-family="crystal"] .create-card-dialog__steps { gap: 6px; }
+html[data-theme-family="crystal"] .create-card-dialog__step { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-weight: 600; }
+html[data-theme-family="crystal"] .create-card-dialog__step.is-active { background: color-mix(in srgb, var(--sf-brand) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-brand) 55%, transparent); font-weight: 800; }
+html[data-theme-family="crystal"]:not(.dark) .create-card-dialog__step.is-active { background: color-mix(in srgb, white 85%, transparent); }
+html[data-theme-family="crystal"] .create-card-dialog__step-icon { width: 18px; height: 18px; border-radius: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+html[data-theme-family="crystal"] .is-done > .create-card-dialog__step-icon { background: var(--sf-second); color: var(--sf-on-brand); }
+html[data-theme-family="crystal"] .is-active > .create-card-dialog__step-icon { margin: 0; clip-path: none; border: 2.5px solid color-mix(in srgb, var(--sf-text) 10%, transparent); border-top-color: var(--sf-brand); border-radius: 50%; }
+html[data-theme-family="crystal"] :is(.is-waiting, .is-stopped) > .create-card-dialog__step-icon { border: 0; background: color-mix(in srgb, var(--sf-text) 10%, transparent); }
+html[data-theme-family="crystal"] .is-stopped > .create-card-dialog__step-icon { background: linear-gradient(color-mix(in srgb, var(--sf-text) 34%, transparent), color-mix(in srgb, var(--sf-text) 34%, transparent)) center / 8px 2px no-repeat, color-mix(in srgb, var(--sf-text) 10%, transparent); }
+
+html[data-theme-family="crystal"] .create-card-dialog__preview--stream {
+  min-height: 206px;
+  box-sizing: border-box;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 2px solid transparent;
+  clip-path: var(--nk-chamfer);
+  background: var(--sf-solid-card, var(--sf-card-bg)) padding-box, var(--sf-rim-learning) border-box;
+  box-shadow: none;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 28%, transparent));
+}
+html[data-theme-family="crystal"] .create-card-dialog__preview--stream .create-card-dialog__headword-row h3 { font-size: 1.75rem; line-height: 1.05; }
+html[data-theme-family="crystal"] .create-card-dialog__preview--stream .create-card-dialog__meta { margin-top: 0; font-size: .75rem; }
+html[data-theme-family="crystal"] .create-card-dialog__preview--stream .create-card-dialog__preview-meaning input { font-size: 1.0625rem; font-weight: 800; }
+html[data-theme-family="crystal"] .create-card-dialog__preview--stream .create-card-dialog__preview-explanation textarea { font-size: .78125rem; line-height: 1.4; }
+html[data-theme-family="crystal"] .create-card-dialog__example-label { margin-top: 6px; color: var(--sf-reward); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .14em; }
+html[data-theme-family="crystal"]:not(.dark) .create-card-dialog__example-label { color: color-mix(in srgb, var(--sf-reward) 45%, black); }
+html[data-theme-family="crystal"] .create-card-dialog__preview--stream .create-card-dialog__examples label:first-child textarea { font-size: .78125rem; font-style: normal; line-height: 1.4; }
+html[data-theme-family="crystal"] .create-card-dialog__skeleton { height: 8px; border-radius: 0; background-color: color-mix(in srgb, var(--sf-text) 10%, transparent); background-image: linear-gradient(90deg, transparent, color-mix(in srgb, var(--sf-text) 8%, transparent), transparent); }
+html[data-theme-family="crystal"] .create-card-dialog__skeleton--line-wide { width: 90%; }
+html[data-theme-family="crystal"] .create-card-dialog__skeleton--line-short { width: 60%; }
+html[data-theme-family="crystal"] .create-card-dialog__skeleton-lines { gap: 5px; margin-top: 6px; }
+html[data-theme-family="crystal"] .create-card-dialog__stream-image { display: flex; width: 92px; flex-direction: column; align-items: center; gap: 6px; }
+html[data-theme-family="crystal"] .create-card-dialog__stream-image-slot { width: 92px; height: 110px; border-radius: 0; clip-path: var(--nk-chamfer-sm); background-color: color-mix(in srgb, var(--sf-text) 10%, transparent); }
+html[data-theme-family="crystal"] .create-card-dialog__stream-image p { margin: 0; font-size: .6875rem; }
+html[data-theme-family="crystal"] .create-card-dialog__stream-note { padding: 10px 14px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: color-mix(in srgb, var(--sf-success) 11%, transparent); color: var(--sf-text); font-size: .78125rem; line-height: 1.45; }
+html[data-theme-family="crystal"] .create-card-dialog__note-info { display: none; }
+html[data-theme-family="crystal"] .create-card-dialog__note-pencil { display: block; color: var(--sf-success); }
+html[data-theme-family="crystal"] .create-card-dialog__not-checked { border-radius: 0; clip-path: var(--nk-chamfer-sm); border-style: solid; font-family: var(--sf-font-display); font-style: italic; text-transform: uppercase; letter-spacing: .1em; }
+
+html[data-theme-family="crystal"] .create-card-dialog__footer--stream { padding: 14px 26px 18px; }
+html[data-theme-family="crystal"] .create-card-dialog__progress { max-width: 250px; }
+html[data-theme-family="crystal"] .create-card-dialog__progress-label strong { color: var(--sf-text); font-weight: 700; }
+html[data-theme-family="crystal"] .create-card-dialog__progress-track { height: 8px; gap: 3px; overflow: visible; border-radius: 0; background: none; }
+html[data-theme-family="crystal"] .create-card-dialog__progress-fill { display: none; }
+html[data-theme-family="crystal"] .create-card-dialog__progress-segment { display: block; height: 100%; flex: 1 1 0; transform: skewX(-30deg); background: color-mix(in srgb, var(--sf-text) 10%, transparent); }
+html[data-theme-family="crystal"] .create-card-dialog__progress-segment.is-on { background: var(--sf-brand); box-shadow: 0 0 6px color-mix(in srgb, var(--sf-brand) 60%, transparent); }
+html[data-theme-family="crystal"] .create-card-dialog__footer--stream .create-card-dialog__secondary { min-height: 46px; padding: 0 20px; border: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 22%, transparent); font-size: .9375rem; font-weight: 800; }
+html[data-theme-family="crystal"] .create-card-dialog__footer--stream .create-card-dialog__primary { min-height: 46px; padding: 0 24px; clip-path: var(--nk-chamfer); font-size: .9375rem; font-weight: 800; }
+html[data-theme-family="crystal"] .create-card-dialog__footer--stream .create-card-dialog__primary:disabled { background: color-mix(in srgb, var(--sf-text) 10%, transparent); color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); filter: none; opacity: 1; }
+
+@media (max-width: 620px) {
+  .create-card-dialog--stream .create-card-dialog__body,
+  html[data-theme-family="crystal"] .create-card-dialog--stream .create-card-dialog__body { padding: 12px 16px 16px; }
+  .create-card-dialog__stream-grid,
+  html[data-theme-family="crystal"] .create-card-dialog__stream-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .create-card-dialog__steps,
+  html[data-theme-family="crystal"] .create-card-dialog__steps { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+  .create-card-dialog__step { min-height: 32px; gap: 6px; padding: 0 8px; font-size: .75rem; }
+  .create-card-dialog__preview--stream { flex-direction: row; padding: 14px; }
+  .create-card-dialog__preview--stream .create-card-dialog__headword-row h3 { font-size: 1.875rem; }
+  .create-card-dialog__stream-image,
+  html[data-theme-family="crystal"] .create-card-dialog__stream-image { width: 84px; }
+  .create-card-dialog__stream-image-slot,
+  html[data-theme-family="crystal"] .create-card-dialog__stream-image-slot { width: 84px; height: 100px; }
+  .create-card-dialog__footer--stream,
+  html[data-theme-family="crystal"] .create-card-dialog__footer--stream { flex-wrap: wrap; padding: 12px 16px 16px; }
+  .create-card-dialog__progress,
+  html[data-theme-family="crystal"] .create-card-dialog__progress { max-width: none; flex-basis: 100%; }
+  .create-card-dialog__footer--stream .create-card-dialog__manual-link { margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-card-dialog--stream :is(.create-card-dialog__step-icon, .create-card-dialog__kicker-spin, .create-card-dialog__skeleton, .create-card-dialog__stream-image-slot, .create-card-dialog__stream-status svg, .create-card-dialog__progress-fill),
+  .create-card-dialog__preview--stream :is(.create-card-dialog__meta > label, .create-card-dialog__preview-meaning, .create-card-dialog__preview-explanation, .create-card-dialog__examples > label),
+  .create-card-dialog__skeleton { animation: none !important; transition: none !important; }
+}
+html[data-motion="reduced"] .create-card-dialog--stream :is(.create-card-dialog__step-icon, .create-card-dialog__kicker-spin, .create-card-dialog__skeleton, .create-card-dialog__stream-image-slot, .create-card-dialog__stream-status svg, .create-card-dialog__progress-fill),
+html[data-motion="reduced"] .create-card-dialog__preview--stream :is(.create-card-dialog__meta > label, .create-card-dialog__preview-meaning, .create-card-dialog__preview-explanation, .create-card-dialog__examples > label),
+html[data-motion="reduced"] .create-card-dialog__skeleton { animation: none; transition: none; }

@@ -23,6 +23,24 @@ test('options page exposes the bounded settings controls and shared persistence'
   assert.match(source, /selectionIconSitePatternFromUrl/);
 });
 
+test('options offers the source language as a two-way radio choice and shows the fixed target language', () => {
+  assert.doesNotMatch(html, /<select/);
+  assert.match(html, /id="quick-translate-source" role="radiogroup" aria-labelledby="quick-translate-source-label"/);
+  assert.deepEqual([...html.matchAll(/<input type="radio" name="quick-translate-source" value="([a-z]+)">/g)].map(match => match[1]), ['auto', 'en']);
+  assert.match(html, /class="locked-value" id="quick-translate-target"/);
+  // The stored source is what gets checked, the checked one is what gets saved, and the target is never sent.
+  assert.match(source, /input\.checked = input\.value === settings\.quickTranslateSource/);
+  assert.match(source, /quickTranslateSource: checkedSource/);
+  assert.doesNotMatch(source, /quickTranslateTarget/);
+  assert.match(css, /\.segment input:focus-visible \+ span/);
+});
+
+test('options follows the active course native language and only loads its settings after that resolves (07.5)', () => {
+  assert.match(source, /applyCourseUiLocale/);
+  assert.match(source, /const courseUiLocaleReady = applyCourseUiLocale\(\)/);
+  assert.match(source, /courseUiLocaleReady\.then\(\(\) => load\(\)\)/);
+});
+
 test('options exposes pending feedback and explicit empty permission state without forcing a minimum width', () => {
   assert.match(html, /id="save-settings"/);
   assert.match(html, /id="selection-icon-empty"/);
@@ -30,4 +48,39 @@ test('options exposes pending feedback and explicit empty permission state witho
   assert.match(source, /Đang lưu/);
   assert.match(source, /selectionIconEmpty\.hidden/);
   assert.doesNotMatch(css, /min-width:\s*360px/);
+});
+
+test('options uses the Canvas-sized branded shell and save footer without fabricated account data', () => {
+  assert.match(html, /class="options-nav"/);
+  assert.match(html, /class="brand-name">Son<span>Flash<\/span>/);
+  assert.match(html, /class="settings-footer"/);
+  assert.match(css, /\.settings-shell \{ width: min\(960px, 100%\); min-height: 900px;/);
+  assert.doesNotMatch(html, /Đã đăng nhập|Đồng bộ lại|Deck mặc định/);
+});
+
+test('options exposes a Classic/Crystal Star theme family choice that persists through the shared settings flow', () => {
+  assert.match(html, /name="theme-family"[^>]*value="classic"/);
+  assert.match(html, /name="theme-family"[^>]*value="crystal"/);
+  assert.match(source, /themeFamilyInputs/);
+  assert.match(source, /applyThemeFamily/);
+  assert.match(source, /checkedThemeFamily/);
+  assert.match(source, /themeFamily:\s*checkedThemeFamily/);
+});
+
+test('ports Crystal Star chamfered corners onto the card shell, inputs and buttons, but not the base rules', () => {
+  assert.match(css, /:root\[data-theme-family="crystal"\] fieldset\s*\{[^}]*clip-path:\s*var\(--sf-chamfer\)/);
+  assert.match(css, /:root\[data-theme-family="crystal"\][^{]*\.save-button[^{]*\{[^}]*clip-path:\s*var\(--sf-chamfer(?:-sm)?\)/);
+  assert.match(css, /:root\[data-theme-family="crystal"\][^{]*\.secondary-button[^{]*\{[^}]*clip-path:\s*var\(--sf-chamfer-sm\)/);
+  assert.doesNotMatch(css, /^fieldset\s*\{[^}]*clip-path/m);
+});
+
+test('options footer keeps the privacy link and adds a shortcuts link that opens the browser shortcuts page', () => {
+  assert.match(html, /browser-extension-privacy\.html[^>]*data-i18n="optionsPrivacyLink"/);
+  assert.match(html, /<button id="open-shortcuts" class="footer-link" type="button" data-i18n="optionsShortcutsLink">/);
+  assert.ok(html.indexOf('optionsPrivacyLink') < html.indexOf('optionsShortcutsLink'));
+  assert.ok(html.indexOf('optionsShortcutsLink') < html.indexOf('id="save-settings"'));
+  assert.match(source, /type: 'OPEN_SHORTCUTS'/);
+  assert.match(source, /type: 'GET_SHORTCUTS'/);
+  assert.match(source, /shortcutSettingsAvailable === false/);
+  assert.match(css, /\.footer-link\[hidden\] \{ display: none; \}/);
 });

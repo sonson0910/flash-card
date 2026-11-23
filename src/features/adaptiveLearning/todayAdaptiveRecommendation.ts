@@ -20,6 +20,9 @@ export interface TodayAdaptiveRecommendationInput {
   readonly skillStatesByLexeme?: ReadonlyMap<string, SkillStateV4>;
   readonly isOffline: boolean;
   readonly now: Date;
+  /** The language pair of `cards`; defaults to English with Vietnamese support. */
+  readonly contentLanguage?: string;
+  readonly supportLanguage?: string;
 }
 
 export interface TodayAdaptiveLessonLaunch {
@@ -127,8 +130,8 @@ export function buildTodayAdaptiveRecommendation(
     if (cards.length === 0) return null;
     const projection = projectPersonalLibraryToCourse({
       ownerId: input.ownerId,
-      contentLanguage: 'en',
-      supportLanguage: 'vi',
+      contentLanguage: input.contentLanguage ?? 'en',
+      supportLanguage: input.supportLanguage ?? 'vi',
       cards,
       migratedAt: input.now.toISOString(),
     });

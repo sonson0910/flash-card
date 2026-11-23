@@ -18,6 +18,11 @@ describe('daily learning URL seam', () => {
     });
   });
 
+  it('round-trips the sequenced session marker like any other lesson mode', () => {
+    expect(readDailyLearningUrlState('?lesson=session')).toEqual({ view: 'today', lesson: 'session' });
+    expect(createDailyLearningLocation('/', { view: 'today', lesson: 'session' })).toBe('/?lesson=session');
+  });
+
   it('writes and closes a lesson while preserving unrelated parameters and hash', () => {
     expect(createDailyLearningLocation(
       '/?utm_source=phase5&share=deck-1#today-heading',

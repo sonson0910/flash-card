@@ -44,6 +44,8 @@ export interface LibraryCatalogQueryController {
   subscribe(listener: () => void): () => void;
   start(): void;
   stop(): void;
+  /** Returns to the default query and drops pending search and URL writes; history is left alone. */
+  reset(): void;
   readonly actions: LibraryCatalogActions;
 }
 
@@ -241,6 +243,12 @@ export function createLibraryCatalogQueryController(
       started = true;
       removePopStateListener = browser.listenPopState(restoreFromHistory);
     },
+    reset() {
+      clearDebounce();
+      clearUrlSync();
+      const defaults = normalizeLibraryQuery(readLibraryQuery(''));
+      publish({ ...defaults, debouncedSearch: defaults.search });
+    },
     stop() {
       if (!started) return;
       started = false;
@@ -258,8 +266,13 @@ export interface UseLibraryCatalogQueryResult {
   actions: LibraryCatalogActions;
 }
 
+export interface UseLibraryCatalogQueryOptions extends LibraryCatalogQueryOptions {
+  /** The signed-in owner; the query is reset when this owner is replaced or signs out. */
+  ownerId?: string | null;
+}
+
 export function useLibraryCatalogQuery(
-  options: LibraryCatalogQueryOptions = {},
+  { ownerId = null, ...options }: UseLibraryCatalogQueryOptions = {},
 ): UseLibraryCatalogQueryResult {
   const controllerRef = useRef<LibraryCatalogQueryController | null>(null);
   if (controllerRef.current === null) {
@@ -276,6 +289,14 @@ export function useLibraryCatalogQuery(
     controller.start();
     return () => controller.stop();
   }, [controller]);
+
+  // The search, deck, filters and page belong to the owner who set them and never carry to the next owner.
+  const previousOwnerId = useRef(ownerId);
+  useEffect(() => {
+    const previous = previousOwnerId.current;
+    previousOwnerId.current = ownerId;
+    if (previous !== null && previous !== ownerId) controller.reset();
+  }, [controller, ownerId]);
 
   return { model, actions: controller.actions };
 }

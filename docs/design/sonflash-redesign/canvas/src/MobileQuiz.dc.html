@@ -1,0 +1,76 @@
+<!--#HEAD Mobile quiz-->
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <header style="position: relative; z-index: 3; height: 64px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; gap: 12px;">
+    <button aria-label="Close quiz" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    <div role="progressbar" aria-valuenow="4" aria-valuemin="0" aria-valuemax="10" style="flex-grow: 1; height: 6px; border-radius: 6px; background: {{t.track}}; overflow: hidden;"><div style="width: 40%; height: 100%; border-radius: 6px; background: {{bar}}; box-shadow: {{barGlow}};"></div></div>
+    <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; color: {{t.text2}};">4/10</span>
+    <span style="height: 32px; padding: 0 10px; border-radius: 999px; border: 1px solid {{t.okLine}}; background: {{t.okBg}}; color: {{t.ok}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>3</span>
+  </header>
+
+  <main style="position: relative; z-index: 2; flex-grow: 1; padding: 10px 20px 0; display: flex; flex-direction: column;">
+    <div style="box-sizing: border-box; padding: 22px 22px 20px; border-radius: {{t.miniR}}px; border: {{prompt.border}}; background: {{prompt.bg}}; box-shadow: {{prompt.shadow}};">
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Choose the meaning</div>
+      <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+        <span style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 46px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">re<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">sil</span>ient</span>
+        <button aria-label="Play pronunciation" style="margin-left: auto; width: 42px; height: 42px; border-radius: 50%; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+      </div>
+      <div style="margin-top: 8px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; color: {{t.text2}};">/rɪˈzɪliənt/ · adjective</div>
+    </div>
+
+    <div role="radiogroup" style="margin-top: 18px; display: flex; flex-direction: column; gap: 10px;">
+      <sc-for list="{{options}}" as="o" hint-placeholder-count="4">
+        <button role="radio" aria-checked="{{o.checked}}" class="{{o.cls}}" style="height: 60px; box-sizing: border-box; padding: 0 16px 0 12px; border-radius: 16px; border: 1.5px solid {{o.line}}; background: {{o.bg}}; color: {{o.fg}}; box-shadow: {{o.shadow}}; display: flex; align-items: center; gap: 12px; text-align: left; font-size: 15.5px; font-weight: 550;">
+          <span style="width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; background: {{o.keyBg}}; color: {{o.keyFg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; display: flex; align-items: center; justify-content: center;">{{o.key}}</span>
+          {{o.text}}
+          <sc-if value="{{o.right}}" hint-placeholder-val="{{false}}"><svg style="margin-left: auto;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+          <sc-if value="{{o.wrong}}" hint-placeholder-val="{{false}}"><svg style="margin-left: auto;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></sc-if>
+        </button>
+      </sc-for>
+    </div>
+  </main>
+
+  <div role="status" class="sf-rise" style="position: relative; z-index: 3; flex-shrink: 0; margin: 0 12px 16px; padding: 16px 16px 14px; border-radius: 24px; border: 1px solid {{t.dangerLine}}; background: {{sheetBg}}; box-shadow: {{sheetShadow}};">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="width: 30px; height: 30px; border-radius: 50%; background: {{t.dangerBg}}; color: {{t.danger}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></span>
+      <span style="font-family: Fraunces, Georgia, serif; font-size: 20px; color: {{t.textStrong}};">Not quite.</span>
+    </div>
+    <p style="margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.body}};"><span style="font-style: italic;">resilient</span> = <span style="color: {{t.ok}}; font-weight: 600;">kiên cường, mau phục hồi</span>. It comes back after this round.</p>
+    <button class="sf-press" style="margin-top: 12px; width: 100%; height: 52px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15.5px; font-weight: 650;">Continue</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = { ...sfTokens(dark), miniR: dark ? 22 : 16 };
+    const opt = (key, text, kind) => {
+      const base = { key, text, checked: kind === 'wrong' ? 'true' : 'false', right: kind === 'right', wrong: kind === 'wrong', cls: kind === 'wrong' ? 'sf-shake' : '' };
+      if (kind === 'right') return { ...base, line: t.okLine, bg: t.okBg, fg: t.ok, shadow: dark ? '0 0 24px -10px rgb(117 208 121 / 0.6)' : 'none', keyBg: t.good, keyFg: dark ? '#06161f' : '#fffcf5' };
+      if (kind === 'wrong') return { ...base, line: t.dangerLine, bg: t.dangerBg, fg: t.danger, shadow: 'none', keyBg: t.dangerSolid, keyFg: t.dangerSolidText };
+      return { ...base, line: t.line, bg: t.secondaryBg, fg: t.text2, shadow: t.secondaryShadow, keyBg: t.chipBg, keyFg: t.text3 };
+    };
+    return {
+      t, grainId: 'mquiz-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -200, ay: -200, bx: 120, by: 420 },
+      bar: dark ? 'linear-gradient(90deg, #28d3f4, #966cd7)' : '#1d1a16',
+      barGlow: dark ? '0 0 10px rgb(40 211 244 / 0.6)' : 'none',
+      prompt: dark
+        ? { border: '1.5px solid transparent', bg: t.cardBg + ' padding-box, ' + t.rimLearning + ' border-box', shadow: '0 24px 50px -24px rgb(0 0 0 / 0.9), 0 0 36px -14px rgb(40 211 244 / 0.5)' }
+        : { border: '0', bg: t.cardBg, shadow: t.cardShadow },
+      options: [
+        opt('1', 'kiên cường, mau phục hồi', 'right'),
+        opt('2', 'mong manh, dễ vỡ', 'wrong'),
+        opt('3', 'kín đáo, thầm lặng', ''),
+        opt('4', 'thuộc về nông thôn', ''),
+      ],
+      sheetBg: dark ? 'linear-gradient(180deg, #13222b, #0c1a22)' : '#fffcf5',
+      sheetShadow: dark ? '0 -10px 40px -20px rgb(0 0 0 / 0.9), 0 0 40px -20px rgb(237 83 80 / 0.5)' : '0 -6px 30px -18px rgb(60 40 20 / 0.5)',
+    };
+  }
+}
+</script>
+</body>
+</html>

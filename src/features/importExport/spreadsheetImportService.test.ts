@@ -2,12 +2,15 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
+import { createTargetAwareCardId } from '../../lib/cardIdentity';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 import {
   createSpreadsheetImportService,
   SpreadsheetImportStaleError,
+  SpreadsheetUnsupportedFormatError,
   type CardIntakePort,
   type SpreadsheetImportFeedbackPort,
+  type StructuredIntakePlan,
 } from './spreadsheetImportService';
 
 const existingCard = (word: string): CardData => ({
@@ -41,7 +44,7 @@ const createFakePorts = () => {
   };
   const cards: CardIntakePort = {
     findExisting: async words => {
-      events.push(`find:${words.join(',')}`);
+      events.push(`find:${words.map(word => typeof word === 'string' ? word : word.word).join(',')}`);
       return new Map();
     },
     persistStructured: async plan => {
@@ -69,7 +72,7 @@ describe('spreadsheet import service', () => {
       ...existingCard('lead'), id: lexemeId, lexemeId, language: 'en', senseKey, partOfSpeech: 'noun', normalizedLemma: 'lead',
     }));
     cards.findExisting = async () => new Map(existing.map(card => [`lexeme:${card.lexemeId}`, card]));
-    const persist = vi.fn(async plan => ({ createdCount: plan.creates.length }));
+    const persist = vi.fn(async (plan: StructuredIntakePlan) => ({ createdCount: plan.creates.length }));
     cards.persistStructured = persist;
     const importer = createSpreadsheetImportService({ cards, feedback });
     const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
@@ -77,9 +80,72 @@ describe('spreadsheet import service', () => {
       flatRows: [],
     }) });
     expect(result.summary).toMatchObject({ created: 2, reused: 2 });
-    expect(persist).toHaveBeenCalledWith(expect.objectContaining({ creates: expect.any(Array), patches: expect.any(Array) }));
+    expect(persist).toHaveBeenCalledWith(expect.objectContaining({ creates: expect.any(Array), patches: expect.any(Array) }), expect.any(Function));
     expect(persist.mock.calls[0][0].creates).toHaveLength(2);
     expect(persist.mock.calls[0][0].patches).toHaveLength(2);
+  });
+
+  it('keeps ordinary same-spelling cards separate by target language', async () => {
+    const { feedback, cards } = createFakePorts();
+    const persist = vi.fn(async (plan: StructuredIntakePlan) => ({ createdCount: plan.creates.length }));
+    cards.persistStructured = persist;
+    const importer = createSpreadsheetImportService({ cards, feedback });
+
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      structuredRows: [
+        { Word: 'bank', Translation: 'ngân hàng', Language: 'ko', 'Translation Language': 'vi' },
+        { Word: 'bank', Translation: 'ngân hàng', Language: 'ja', 'Translation Language': 'vi' },
+      ],
+      flatRows: [],
+    }) });
+
+    expect(result.summary).toMatchObject({ created: 2, reused: 0 });
+    expect(persist.mock.calls[0][0].creates).toMatchObject([
+      { language: 'ko', translationLanguage: 'vi' },
+      { language: 'ja', translationLanguage: 'vi' },
+    ]);
+    expect(persist.mock.calls[0][0].creates.map(card => card.id)).not.toEqual([
+      persist.mock.calls[0][0].creates[0].id,
+      persist.mock.calls[0][0].creates[0].id,
+    ]);
+  });
+
+  it('creates a row without language cells in the active course and does not patch an English card with the same spelling', async () => {
+    const { feedback, cards } = createFakePorts();
+    const english = { ...existingCard('猫'), id: 'word-猫', translationLanguage: 'vi' };
+    const persist = vi.fn(async (plan: StructuredIntakePlan) => ({ createdCount: plan.creates.length }));
+    cards.findExisting = vi.fn(async () => new Map([['猫', english]]));
+    cards.persistStructured = persist;
+    const importer = createSpreadsheetImportService({ cards, feedback, languageDefaults: { language: 'ja', translationLanguage: 'vi' } });
+
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      structuredRows: [{ Word: '猫', Translation: 'mèo' }],
+      flatRows: [],
+    }) });
+
+    expect(result.summary).toMatchObject({ created: 1, reused: 0 });
+    expect(cards.findExisting).toHaveBeenCalledWith([expect.objectContaining({ language: 'ja' })]);
+    expect(persist.mock.calls[0][0]).toMatchObject({
+      creates: [{ language: 'ja', translationLanguage: 'vi', id: createTargetAwareCardId('猫', 'ja') }],
+      patches: [],
+    });
+  });
+
+  it('does not patch a same-spelling card from another target language', async () => {
+    const { feedback, cards } = createFakePorts();
+    const japanese = { ...existingCard('bank'), id: 'word-ja-bank', language: 'ja', translationLanguage: 'vi' };
+    const persist = vi.fn(async plan => ({ createdCount: plan.creates.length }));
+    cards.findExisting = vi.fn(async () => new Map([['target:ja:bank', japanese]]));
+    cards.persistStructured = persist;
+    const importer = createSpreadsheetImportService({ cards, feedback });
+
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      structuredRows: [{ Word: 'bank', Translation: 'ngân hàng', Language: 'ko', 'Translation Language': 'vi' }],
+      flatRows: [],
+    }) });
+
+    expect(result.summary).toMatchObject({ created: 1, reused: 0 });
+    expect(persist.mock.calls[0][0]).toMatchObject({ creates: [{ language: 'ko' }], patches: [] });
   });
 
   it('keeps the core contract independent from React and Firebase vendor types', () => {
@@ -125,9 +191,10 @@ describe('spreadsheet import service', () => {
     expect(findEvent.split(',')).toHaveLength(4_999);
     expect(findEvent).toContain('word-0');
     expect(result).toEqual({
-      status: 'completed',
-      summary: { total: 4_999, created: 4_999, reused: 0, failed: 0, skipped: 0 },
-      message: 'Import complete: 4,999 created, 0 already in your library.',
+      status: 'partial',
+      summary: { total: 5_000, created: 4_999, reused: 0, failed: 0, skipped: 1, pending: 0 },
+      message: 'Import partly finished: 4,999 created, 0 already present, 0 failed, and 1 skipped. Retry the failed or skipped words later.',
+      issues: [{ kind: 'duplicate', sourceRow: 3, word: 'word-0', message: 'This row duplicates an earlier row.' }],
     });
     expect(events.at(-3)).toBe('progress:clear');
     expect(events.slice(-2)).toEqual(['finish', 'reset-source']);
@@ -154,16 +221,20 @@ describe('spreadsheet import service', () => {
     });
 
     expect(events).toEqual([
-      'start', 'clear-error', 'find:Apple,banana,cherry',
-      'progress:Apple', 'touch:apple',
-      'progress:banana', 'generate:banana', 'delay',
-      'progress:cherry', 'generate:cherry',
-      'complete:2', 'progress:clear', 'finish', 'reset-source',
+      'start', 'clear-error', 'progress:Apple', 'progress:banana', 'progress:BANANA', 'progress:cherry',
+      'find:Apple,banana,cherry',
+      'touch:apple', 'progress:Apple',
+      'generate:banana', 'progress:banana', 'delay',
+      'generate:cherry', 'progress:cherry',
+      'complete:2',
+      'error:Import partly finished: 2 created, 1 already present, 0 failed, and 1 skipped. Retry the failed or skipped words later.',
+      'progress:clear', 'finish', 'reset-source',
     ]);
     expect(result).toEqual({
-      status: 'completed',
-      summary: { total: 3, created: 2, reused: 1, failed: 0, skipped: 0 },
-      message: 'Import complete: 2 created, 1 already in your library.',
+      status: 'partial',
+      summary: { total: 4, created: 2, reused: 1, failed: 0, skipped: 1, pending: 0 },
+      message: 'Import partly finished: 2 created, 1 already present, 0 failed, and 1 skipped. Retry the failed or skipped words later.',
+      issues: [{ sourceRow: 1, sourceColumn: 3, word: 'BANANA', kind: 'duplicate', message: 'This word appears earlier in the file.' }],
     });
   });
 
@@ -190,13 +261,63 @@ describe('spreadsheet import service', () => {
     expect(events).toContain('generate:broken');
     expect(events).toContain('generate:two');
     expect(events).not.toContain('generate:three');
-    expect(events).toContain('error:Import partly finished: 2 created, 0 already present, 1 failed, and 1 skipped by the AI safety limit. Retry the failed or skipped words later.');
+    expect(events).toContain('error:Import partly finished: 2 created, 0 already present, 1 failed, and 1 skipped. Retry the failed or skipped words later.');
     expect(events.slice(-3)).toEqual(['progress:clear', 'finish', 'reset-source']);
     expect(result).toEqual({
       status: 'partial',
-      summary: { total: 4, created: 2, reused: 0, failed: 1, skipped: 1 },
-      message: 'Import partly finished: 2 created, 0 already present, 1 failed, and 1 skipped by the AI safety limit. Retry the failed or skipped words later.',
+      summary: { total: 4, created: 2, reused: 0, failed: 1, skipped: 1, pending: 0 },
+      message: 'Import partly finished: 2 created, 0 already present, 1 failed, and 1 skipped. Retry the failed or skipped words later.',
+      issues: [
+        { sourceRow: 1, sourceColumn: 2, word: 'broken', kind: 'generation', message: 'The card could not be generated.' },
+        { sourceRow: 1, sourceColumn: 4, word: 'three', kind: 'generation', message: 'This word is beyond the AI generation limit.' },
+      ],
     });
+  });
+
+  it.each([
+    ['a cloud usage limit', { code: 'functions/resource-exhausted' }],
+    ['a protected-call quota failure', { kind: 'quota', code: 'resource-exhausted' }],
+    ['a refused account', { kind: 'permission', code: 'permission-denied' }],
+  ])('stops generating after %s rejects a word, and skips the rest without waiting between them', async (_name, failure) => {
+    const { events, feedback, cards } = createFakePorts();
+    cards.generate = async word => {
+      events.push(`generate:${word}`);
+      throw Object.assign(new Error('rejected'), failure);
+    };
+    const delay = vi.fn(async () => undefined);
+    const importer = createSpreadsheetImportService({ cards, feedback, delay });
+
+    const result = await importer.import({
+      sizeBytes: 1024,
+      loadWorkbook: async () => ({ structuredRows: [], flatRows: [['one', 'two', 'three', 'four']] }),
+    });
+
+    expect(events.filter(event => event.startsWith('generate:'))).toEqual(['generate:one']);
+    expect(delay).not.toHaveBeenCalled();
+    expect(result.summary).toMatchObject({ total: 4, created: 0, failed: 1, skipped: 3, pending: 0 });
+    expect(result.issues).toEqual([
+      { sourceRow: 1, sourceColumn: 1, word: 'one', kind: 'generation', message: 'The card could not be generated.' },
+      ...[['two', 2], ['three', 3], ['four', 4]].map(([word, column]) => ({
+        sourceRow: 1, sourceColumn: column, word, kind: 'generation', message: 'This word was not generated because the AI limit or plan does not allow more.',
+      })),
+    ]);
+    expect(result.message).not.toMatch(/sign-in and connection/);
+    expect(result).toMatchObject({ status: 'failed', reason: 'items', generationLimited: true });
+    expect(events).toContain('complete:0');
+  });
+
+  it('keeps generating after a failure that is not a limit, since the next word may succeed', async () => {
+    const { events, feedback, cards } = createFakePorts();
+    cards.generate = async word => {
+      events.push(`generate:${word}`);
+      if (word === 'one') throw Object.assign(new Error('unavailable'), { code: 'functions/unavailable' });
+      return { created: true, category: 'Imported' };
+    };
+    const importer = createSpreadsheetImportService({ cards, feedback, delay: async () => undefined });
+
+    await importer.import({ sizeBytes: 1024, loadWorkbook: async () => ({ structuredRows: [], flatRows: [['one', 'two']] }) });
+
+    expect(events.filter(event => event.startsWith('generate:'))).toEqual(['generate:one', 'generate:two']);
   });
 
   it('returns a retryable failure instead of silently completing a null workbook', async () => {
@@ -257,6 +378,52 @@ describe('spreadsheet import service', () => {
     expect(result).toMatchObject({ status: 'partial', summary: { created: 1, reused: 1, failed: 1 } });
   });
 
+  it('saves new cards that name an unknown deck as Unassigned and counts only the created ones', async () => {
+    const { feedback, cards } = createFakePorts();
+    cards.findExisting = async () => new Map([['apple', existingCard('apple')]]);
+    const persist = vi.fn(async (...[, settle]: Parameters<CardIntakePort['persistStructured']>) => {
+      settle?.(0, 'created');
+      settle?.(1, 'created');
+      settle?.(2, 'reused');
+      settle?.(3, 'created');
+      settle?.(4, 'reused');
+      return { createdCount: 3 };
+    });
+    cards.persistStructured = persist;
+    const importer = createSpreadsheetImportService({ cards, feedback });
+
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      deckNames: ['IELTS'],
+      structuredRows: [
+        { Word: 'levee', Translation: 'đê', Deck: 'IELTS', Tags: 'flood; Unit 4', Starred: 'Yes', Difficulty: 'Hard' },
+        { Word: 'crest', Translation: 'đỉnh', Deck: 'Travel' },
+        { Word: 'dyke', Translation: 'đê', Deck: 'Travel' },
+        { Word: 'silt', Translation: 'phù sa', Deck: 'Unassigned' },
+        { Word: 'apple', Translation: 'táo', Deck: 'Travel' },
+      ],
+      flatRows: [],
+    }) });
+
+    const plan = persist.mock.calls[0][0];
+    expect(plan.creates.map(card => [card.word, card.customDeck])).toEqual([
+      ['levee', 'IELTS'], ['crest', null], ['dyke', null], ['silt', null],
+    ]);
+    expect(plan.creates[0]).toMatchObject({ tags: ['flood', 'Unit 4'], bookmarked: true, learnerDifficulty: 'hard' });
+    expect(plan.patches.map(patch => patch.card)).toEqual([expect.not.objectContaining({ customDeck: expect.anything() })]);
+    expect(result.summary).toMatchObject({ created: 3, reused: 2, deckUnassigned: 1 });
+  });
+
+  it('leaves the deck count out of the summary when every deck is known', async () => {
+    const { feedback, cards } = createFakePorts();
+    const importer = createSpreadsheetImportService({ cards, feedback });
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      structuredRows: [{ Word: 'levee', Translation: 'đê' }, { Word: 'crest', Translation: 'đỉnh', Deck: '' }],
+      flatRows: [],
+    }) });
+
+    expect(result.summary).not.toHaveProperty('deckUnassigned');
+  });
+
   it('reports an all-item failure as failed rather than completed', async () => {
     const { events, feedback, cards } = createFakePorts();
     cards.generate = async word => {
@@ -277,10 +444,123 @@ describe('spreadsheet import service', () => {
     expect(result).toEqual({
       status: 'failed',
       reason: 'items',
-      summary: { total: 2, created: 0, reused: 0, failed: 2, skipped: 0 },
+      summary: { total: 2, created: 0, reused: 0, failed: 2, skipped: 0, pending: 0 },
       message: 'No cards were imported: 2 items failed. Check your sign-in and connection, then try again.',
+      issues: [
+        { sourceRow: 1, sourceColumn: 1, word: 'one', kind: 'generation', message: 'The card could not be generated.' },
+        { sourceRow: 1, sourceColumn: 2, word: 'two', kind: 'generation', message: 'The card could not be generated.' },
+      ],
     });
     expect(events).toContain(`error:${result.message}`);
+  });
+
+  it('keeps structured rows in structured mode when every row is invalid', async () => {
+    const { feedback, cards } = createFakePorts();
+    const findExisting = vi.spyOn(cards, 'findExisting');
+    const importer = createSpreadsheetImportService({ cards, feedback });
+
+    const result = await importer.import({
+      sizeBytes: 100,
+      loadWorkbook: async () => ({
+        hasStructuredHeader: true,
+        structuredRows: [{ Word: '', Translation: 'táo' }, { Word: 'pear', Translation: '' }],
+        structuredSourceRows: [
+          { row: { Word: '', Translation: 'táo' }, sourceRow: 4 },
+          { row: { Word: 'pear', Translation: '' }, sourceRow: 6 },
+        ],
+        flatRows: [['Word', 'Translation'], ['pear', '']],
+      }),
+    });
+
+    expect(findExisting).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      status: 'failed', reason: 'items',
+      summary: { total: 2, created: 0, reused: 0, failed: 2, skipped: 0, pending: 0 },
+      message: 'No cards were imported: 2 items failed. Check your sign-in and connection, then try again.',
+      issues: [
+        { sourceRow: 4, kind: 'invalid', message: 'A required field or identity is invalid.' },
+        { sourceRow: 6, word: 'pear', kind: 'invalid', message: 'A required field or identity is invalid.' },
+      ],
+    });
+  });
+
+  it('leaves an unconfirmed save pending and never counts it as created', async () => {
+    const { feedback, cards } = createFakePorts();
+    const cloud = deferred<'pending'>();
+    const generate = vi.fn(async () => ({ created: true, category: 'Imported', settlement: cloud.promise }));
+    cards.generate = generate;
+    const snapshots: Array<{ current: number; created: number; pending?: number }> = [];
+    feedback.progress = value => {
+      if (value?.summary) snapshots.push({ current: value.current, created: value.summary.created, pending: value.summary.pending });
+    };
+    const importer = createSpreadsheetImportService({ cards, feedback });
+    const importing = importer.import({
+      sizeBytes: 100,
+      loadWorkbook: async () => ({
+        structuredRows: [], flatRows: [['apple']],
+        flatSourceCells: [{ value: 'apple', sourceRow: 7, sourceColumn: 3 }],
+      }),
+    });
+    await vi.waitFor(() => expect(generate).toHaveBeenCalledOnce());
+    expect(snapshots.at(-1)).toEqual({ current: 0, created: 0, pending: 1 });
+    cloud.resolve('pending');
+    const result = await importing;
+
+    expect(result).toEqual({
+      status: 'partial',
+      summary: { total: 1, created: 0, reused: 0, failed: 0, skipped: 0, pending: 1 },
+      message: 'Import partly finished: 0 created, 0 already present, 0 failed, 0 skipped, and 1 not confirmed. Review the pending rows before retrying.',
+      issues: [{ sourceRow: 7, sourceColumn: 3, word: 'apple', kind: 'pending', message: 'The save was not confirmed.' }],
+    });
+    expect(snapshots.at(-1)).toEqual({ current: 1, created: 0, pending: 1 });
+  });
+
+  it('keeps earlier progress issues immutable as later candidates are classified', async () => {
+    const { feedback, cards } = createFakePorts();
+    const snapshots: Array<NonNullable<Parameters<SpreadsheetImportFeedbackPort['progress']>[0]>> = [];
+    feedback.progress = value => { if (value) snapshots.push(value); };
+    const importer = createSpreadsheetImportService({ cards, feedback, delay: async () => undefined });
+
+    await importer.import({
+      sizeBytes: 100,
+      loadWorkbook: async () => ({ structuredRows: [], flatRows: [['apple', 'apple']] }),
+    });
+
+    const checking = snapshots.filter(snapshot => snapshot.phase === 'checking');
+    expect(checking[0].issues).toEqual([]);
+    expect(checking[1].issues).toHaveLength(1);
+  });
+
+  it('caps evidence while classifying a large flat sheet', async () => {
+    const { feedback, cards } = createFakePorts();
+    const importer = createSpreadsheetImportService({ cards, feedback, maxAiCards: 0 });
+    const cells = Array.from({ length: 5_002 }, (_, index) => ({
+      value: `word-${index}`, sourceRow: index + 1, sourceColumn: 1,
+    }));
+
+    const result = await importer.import({
+      sizeBytes: 100,
+      loadWorkbook: async () => ({ structuredRows: [], flatRows: [], flatSourceCells: cells }),
+    });
+
+    expect(result.summary).toEqual({ total: 5_002, created: 0, reused: 0, failed: 0, skipped: 5_002, pending: 0 });
+    expect(result.issues).toHaveLength(5_000);
+    expect(result.omittedIssues).toBe(2);
+  });
+
+  it('surfaces the specific .xls re-save message instead of the generic read failure', async () => {
+    const { events, feedback, cards } = createFakePorts();
+    const importer = createSpreadsheetImportService({ cards, feedback });
+    const specificMessage = "Legacy .xls files aren't supported. Re-save the file as .xlsx or .csv, then try again.";
+
+    const result = await importer.import({
+      sizeBytes: 1024,
+      loadWorkbook: async () => { throw new SpreadsheetUnsupportedFormatError(specificMessage); },
+    });
+
+    expect(result).toMatchObject({ status: 'failed', reason: 'read', message: specificMessage });
+    expect(events).toContain(`error:${specificMessage}`);
+    expect(events).not.toContain('error:Could not read this spreadsheet. Make sure it is a valid Excel or CSV file, then try again.');
   });
 
   it('reports workbook failures and runs cleanup in deterministic order', async () => {
@@ -326,7 +606,7 @@ describe('spreadsheet import service', () => {
     existing.resolve(new Map());
 
     await expect(pending).rejects.toBeInstanceOf(SpreadsheetImportStaleError);
-    expect(events).toEqual(['start', 'clear-error', 'find:apple']);
+    expect(events).toEqual(['start', 'clear-error', 'progress:apple', 'find:apple']);
     expect(events).not.toContain('generate:apple');
     expect(events).not.toContain('complete:1');
   });
@@ -352,7 +632,7 @@ describe('spreadsheet import service', () => {
 
     await expect(pending).rejects.toBeInstanceOf(SpreadsheetImportStaleError);
     expect(events).toEqual([
-      'start', 'clear-error', 'find:apple', 'progress:apple', 'generate:apple', 'complete:1',
+      'start', 'clear-error', 'progress:apple', 'find:apple', 'generate:apple', 'progress:apple', 'complete:1',
     ]);
     expect(events.some(event => event.startsWith('error:'))).toBe(false);
     expect(events).not.toContain('reset-source');

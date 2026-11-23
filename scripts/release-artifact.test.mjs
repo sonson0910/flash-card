@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { afterEach as nodeAfterEach, describe as nodeDescribe, it as nodeIt } from 'node:test';
@@ -8,6 +9,7 @@ import path from 'node:path';
 import {
   createPromotedFirebaseConfig,
   sealReleaseArtifact,
+  validateStagingReleaseTarget,
   verifyReleaseArtifact,
 } from './release-artifact.mjs';
 
@@ -42,6 +44,7 @@ const firebaseConfig = (overrides = {}) => ({
     predeploy: ['npm run mutate'],
   }],
   hosting: { public: 'dist', predeploy: ['npm run rebuild'] },
+  storage: { rules: 'storage.rules', predeploy: ['npm run mutate'] },
   ...overrides,
 });
 
@@ -58,10 +61,11 @@ const createCandidate = (revision = 'a'.repeat(40)) => {
   }));
   fs.writeFileSync(path.join(root, 'functions/package.json'), '{"main":"lib/index.js"}\n');
   fs.writeFileSync(path.join(root, 'functions/package-lock.json'), '{"lockfileVersion":3}\n');
-    fs.writeFileSync(path.join(root, 'package.json'), '{"devDependencies":{"firebase-tools":"15.29.0"}}\n');
+    fs.writeFileSync(path.join(root, 'package.json'), '{"devDependencies":{"firebase-tools":"15.34.0"}}\n');
   fs.writeFileSync(path.join(root, 'package-lock.json'), '{"lockfileVersion":3}\n');
   fs.writeFileSync(path.join(root, 'firestore.rules'), 'rules_version = "2";');
   fs.writeFileSync(path.join(root, 'firestore.indexes.json'), '{"indexes":[]}\n');
+  fs.writeFileSync(path.join(root, 'storage.rules'), 'rules_version = "2";');
   fs.writeFileSync(path.join(root, 'firebase.json'), `${JSON.stringify(firebaseConfig())}\n`);
   fs.writeFileSync(path.join(root, 'firebase-applet-config.json'), JSON.stringify({
     targets: {
@@ -92,6 +96,21 @@ afterEach(() => {
 });
 
 describe('sealed release artifact', () => {
+  it('accepts the sealed staging project, database, app and Functions runtime target', () => {
+    const root = createCandidate();
+    fs.mkdirSync(path.join(root, 'firebase-targets'), { recursive: true });
+    for (const file of ['firebase.json', 'firebase-targets/staging.json']) {
+      fs.copyFileSync(path.resolve(file), path.join(root, file));
+    }
+    fs.copyFileSync(path.resolve('functions/src/runtime-target.json'), path.join(root, 'functions/lib/runtime-target.json'));
+    expect(validateStagingReleaseTarget(root)).toMatchObject({
+      projectId: 'sonflash-staging-20260906',
+      databaseId: 'ai-studio-945b4052-4462-4668-8936-277f09f07a37',
+      appId: '1:890120640842:web:f8a858029dc582fc7e49b3',
+      region: 'asia-southeast1',
+    });
+  });
+
   it('refuses an unrelated 200 server on the configured E2E port instead of hopping ports', async () => {
     const staleServer = createServer((_request, response) => {
       response.writeHead(200, { 'content-type': 'application/json' });
@@ -162,6 +181,7 @@ describe('sealed release artifact', () => {
 
     expect(manifest.components.rootPackage).toMatchObject({ path: 'package.json' });
     expect(manifest.components.rootLock).toMatchObject({ path: 'package-lock.json' });
+    expect(manifest.components.storageRules).toMatchObject({ path: 'storage.rules' });
     fs.writeFileSync(path.join(root, 'package.json'), '{"tampered":true}\n');
     expect(() => verifyReleaseArtifact({
       root,
@@ -170,6 +190,25 @@ describe('sealed release artifact', () => {
       expectedWorkflowRunId: '12345',
       expectedCandidateSha256: manifest.candidateSha256,
     })).toThrow(/rootPackage/);
+  });
+
+  it('seals the Storage rules with the deployable candidate', () => {
+    const root = createCandidate('a'.repeat(40));
+    const manifest = sealReleaseArtifact({
+      root,
+      revision: 'a'.repeat(40),
+      workflowRunId: '12345',
+      generatedAt: '2026-08-10T00:00:00.000Z',
+    });
+
+    fs.writeFileSync(path.join(root, 'storage.rules'), 'rules_version = "2"; // tampered');
+    expect(() => verifyReleaseArtifact({
+      root,
+      manifest,
+      expectedRevision: 'a'.repeat(40),
+      expectedWorkflowRunId: '12345',
+      expectedCandidateSha256: manifest.candidateSha256,
+    })).toThrow(/storageRules/);
   });
 
   it('binds deployable files and readiness evidence to one revision and digest', () => {
@@ -195,6 +234,49 @@ describe('sealed release artifact', () => {
       expectedWorkflowRunId: '12345',
       expectedCandidateSha256: manifest.candidateSha256,
     });
+  });
+
+  it('rejects a candidate root that holds a file outside the sealed components', () => {
+    const root = createCandidate('a'.repeat(40));
+    const manifest = sealReleaseArtifact({
+      root,
+      revision: 'a'.repeat(40),
+      workflowRunId: '12345',
+      generatedAt: '2026-08-10T00:00:00.000Z',
+    });
+    fs.writeFileSync(path.join(root, 'artifacts/release-candidate-manifest.json'), JSON.stringify(manifest));
+    const verify = (candidateManifest = manifest) => () => verifyReleaseArtifact({
+      root,
+      manifest: candidateManifest,
+      expectedRevision: 'a'.repeat(40),
+      expectedWorkflowRunId: '12345',
+      expectedCandidateSha256: candidateManifest.candidateSha256,
+    });
+    verify()();
+    for (const extra of [
+      'functions/npm-shrinkwrap.json',
+      'functions/index.js',
+      'functions/extra/x.js',
+      'firebase.promoted.json',
+      'artifacts/other.json',
+    ]) {
+      fs.mkdirSync(path.dirname(path.join(root, extra)), { recursive: true });
+      fs.writeFileSync(path.join(root, extra), '{}\n');
+      expect(verify()).toThrow(/outside the sealed components/);
+      fs.rmSync(path.join(root, extra));
+    }
+    verify()();
+
+    const components = { ...manifest.components, extra: manifest.components.rootPackage };
+    const payload = {
+      schemaVersion: manifest.schemaVersion,
+      revision: manifest.revision,
+      workflowRunId: manifest.workflowRunId,
+      generatedAt: manifest.generatedAt,
+      components,
+    };
+    const candidateSha256 = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+    expect(verify({ ...payload, candidateSha256 })).toThrow(/components/);
   });
 
   it('rejects a candidate sealed by a different workflow run', () => {
@@ -324,6 +406,7 @@ describe('sealed release artifact', () => {
         indexes: '../firestore.indexes.json',
       }],
     }],
+    ['Storage Rules path', { storage: { rules: '../storage.rules' } }],
   ])('rejects a firebase config that redirects the %s outside sealed components', (_label, overrides) => {
     const root = createCandidate('e'.repeat(40));
     fs.writeFileSync(path.join(root, 'firebase.json'), JSON.stringify(firebaseConfig(overrides)));
@@ -334,6 +417,20 @@ describe('sealed release artifact', () => {
       workflowRunId: '45678',
       generatedAt: '2026-08-10T00:00:00.000Z',
     })).toThrow(/Firebase deployment config/);
+  });
+
+  it('rejects a firebase config that would leave the sealed Storage Rules undeployable', () => {
+    const root = createCandidate('f'.repeat(40));
+    const { storage: _storage, ...withoutStorage } = firebaseConfig();
+    fs.writeFileSync(path.join(root, 'firebase.json'), JSON.stringify(withoutStorage));
+
+    expect(() => sealReleaseArtifact({
+      root,
+      revision: 'f'.repeat(40),
+      workflowRunId: '56789',
+      generatedAt: '2026-08-10T00:00:00.000Z',
+    })).toThrow(/Storage target/);
+    expect(() => createPromotedFirebaseConfig(withoutStorage)).toThrow(/Storage target/);
   });
 
   it('binds the promoted Firestore config to the protected evidence database', () => {
@@ -351,6 +448,45 @@ describe('sealed release artifact', () => {
         indexes: 'firestore.indexes.json',
       }],
       hosting: { public: 'dist' },
+      storage: { rules: 'storage.rules' },
     });
+  });
+
+  it('promotes a staging Hosting config that blocks indexing and crawling, and leaves production unchanged', () => {
+    const staging = createPromotedFirebaseConfig(firebaseConfig(), { hostingEnvironment: 'staging' });
+    expect(staging.hosting).toEqual({
+      public: 'dist',
+      headers: [{ source: '**', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }],
+      redirects: [{ source: '/robots.txt', destination: '/robots-disallow.txt', type: 302 }],
+    });
+    const production = createPromotedFirebaseConfig(firebaseConfig(), { hostingEnvironment: 'production' });
+    expect(production).toEqual(createPromotedFirebaseConfig(firebaseConfig()));
+    assert.doesNotMatch(JSON.stringify(production), /X-Robots-Tag|robots/);
+    expect(() => createPromotedFirebaseConfig(firebaseConfig(), { hostingEnvironment: 'preview' }))
+      .toThrow(/Hosting environment/);
+  });
+
+  it('promotes a staging config with the noindex header for every candidate and the robots redirect only when the candidate ships a crawl-blocking file', () => {
+    const root = createCandidate();
+    const noindexHeader = [{ source: '**', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }];
+    const promote = () => {
+      execFileSync(process.execPath, [
+        path.resolve('scripts/release-artifact.mjs'), 'promote-config', '--root', root,
+        '--source', 'firebase.json', '--output', 'firebase.promoted.json', '--hosting-environment', 'staging',
+      ], { stdio: 'pipe' });
+      return JSON.parse(fs.readFileSync(path.join(root, 'firebase.promoted.json'), 'utf8'));
+    };
+    // A retained candidate sealed before the build shipped robots-disallow.txt must still stage.
+    const legacy = promote();
+    expect(legacy.hosting.headers).toEqual(noindexHeader);
+    assert.equal(legacy.hosting.redirects, undefined);
+    fs.writeFileSync(path.join(root, 'dist/robots-disallow.txt'), 'User-agent: *\nAllow: /\n');
+    expect(promote).toThrow();
+    fs.writeFileSync(path.join(root, 'dist/robots-disallow.txt'), 'User-agent: *\nDisallow: /\n');
+    const current = promote();
+    expect(current.hosting.headers).toEqual(noindexHeader);
+    expect(current.hosting.redirects).toEqual([
+      { source: '/robots.txt', destination: '/robots-disallow.txt', type: 302 },
+    ]);
   });
 });

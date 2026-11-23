@@ -1,8 +1,11 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setFormatLocale } from '../../lib/format';
 import { CountUp } from './CountUp';
 
 describe('CountUp', () => {
+  afterEach(() => setFormatLocale('en'));
+
   it('keeps the final value readable while marking only the visual number as animated', () => {
     const html = renderToStaticMarkup(<CountUp to={1_250} suffix=" reviewed" />);
 
@@ -17,5 +20,12 @@ describe('CountUp', () => {
 
     expect(html).toContain('data-count-up="true" aria-hidden="true">0</span>');
     expect(html).toContain('<span class="sr-only">200</span>');
+  });
+
+  it('uses the active UI locale for the final count', () => {
+    setFormatLocale('de');
+    const html = renderToStaticMarkup(<CountUp to={1_250} />);
+
+    expect(html).toContain('1.250');
   });
 });

@@ -78,6 +78,95 @@ describe('protected Firebase Functions capability', () => {
 });
 
 describe('protected Firebase Functions failure classification', () => {
+  it('preserves the safe already-Pro business reason', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), {
+        code: 'functions/failed-precondition', details: { reason: 'already-pro' },
+      }), 'Pilot offer',
+    );
+    expect(failure).toMatchObject({ kind: 'permission', reason: 'already-pro', retryable: false });
+    expect(failure.message).toBe('Pro is already active on your account.');
+  });
+  it('preserves the unavailable purchase-intent business reason', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), {
+        code: 'functions/failed-precondition', details: { reason: 'intent-unavailable' },
+      }), 'Pilot offer',
+    );
+    expect(failure).toMatchObject({ kind: 'configuration', reason: 'intent-unavailable', retryable: false });
+    expect(failure.message).toBe('Purchase registration is temporarily unavailable.');
+  });
+  it.each([
+    ['operation-expired', 'unknown', /date and time/],
+    ['migration-frozen', 'network', /maintenance/],
+    ['operation-conflict', 'unknown', /clashed/],
+    ['usage-state', 'unknown', /temporarily unavailable/],
+  ])('keeps the %s share state out of the deployment-mismatch message', (reason, kind, wording) => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), { code: 'functions/failed-precondition', details: { reason } }), 'Deck sharing',
+    );
+    expect(failure).toMatchObject({ kind, reason });
+    expect(failure.message).toMatch(wording);
+    expect(failure.message).not.toMatch(/out of sync/);
+  });
+  it('preserves the changed-offer reason so the learner can review new terms', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), {
+        code: 'functions/failed-precondition', details: { reason: 'offer-changed' },
+      }), 'Pilot offer',
+    );
+    expect(failure).toMatchObject({ kind: 'configuration', reason: 'offer-changed', retryable: false });
+  });
+  it('reports the migration fence as a temporary, retryable failure instead of a deployment mismatch', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), {
+        code: 'functions/failed-precondition', details: { reason: 'library-migration-fenced' },
+      }), 'Card review',
+    );
+    expect(failure).toMatchObject({ kind: 'network', reason: 'library-migration-fenced', retryable: true });
+    expect(failure.message).not.toMatch(/out of sync/);
+    expect(failure.message).toMatch(/upgrad/i);
+  });
+  it('reports an expired practice session as final instead of a deployment mismatch', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), {
+        code: 'functions/failed-precondition', details: { reason: 'practice-session-expired' },
+      }), 'Practice session',
+    );
+    expect(failure).toMatchObject({ reason: 'practice-session-expired', retryable: false });
+    expect(failure.message).not.toMatch(/out of sync/);
+    expect(failure.message).toMatch(/expired/i);
+  });
+  it.each([
+    ['service-daily-cap', 'hạn mức chung'],
+    ['account-daily-spend', 'hạn mức chi phí AI'],
+  ])('explains %s without retrying', (reason, text) => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), { code: 'functions/resource-exhausted', details: { reason } }),
+      'AI generation',
+    );
+    expect(failure).toMatchObject({ kind: 'quota', reason, retryable: false });
+    expect(failure.message).toContain(text);
+    expect(failure.message).toContain('00:00');
+  });
+
+  it('tells the learner how long an hourly limit lasts instead of saying a quota ran out', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), { code: 'functions/resource-exhausted', details: { retryAfterSeconds: 1_200 } }),
+      'AI generation',
+    );
+    expect(failure).toMatchObject({ kind: 'quota', reason: 'rate-limit', retryable: false });
+    expect(failure.retryAfterMs).toBeUndefined();
+    expect(failure.message).toContain('20 phút');
+    expect(failure.message).not.toContain('hạn mức');
+    // The shared service budget raises the same error, so the wording must not blame the learner.
+    expect(failure.message).not.toMatch(/Bạn đã/);
+    const brief = classifyProtectedFunctionError(
+      Object.assign(new Error('x'), { code: 'functions/resource-exhausted', details: { retryAfterSeconds: 5 } }), 'AI generation',
+    );
+    expect(brief.message).toContain('1 phút');
+  });
+
   it.each([
     ['functions/unauthenticated', 'authentication', false, 'Sign in again'],
     ['permission-denied', 'permission', false, 'App Check or access rules'],

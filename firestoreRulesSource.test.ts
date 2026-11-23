@@ -89,7 +89,7 @@ describe('Firestore rules source invariants', () => {
     expect(new Set(stringListAfter(currentSchema, 'data.keys().hasAll(')))
       .toEqual(new Set(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion']));
     expect(new Set(stringListAfter(currentSchema, 'data.keys().hasOnly(')))
-      .toEqual(new Set(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion']));
+      .toEqual(new Set(['category', 'cards', 'createdAt', 'expiresAt', 'schemaVersion', 'targetLanguage', 'nativeLanguage']));
     expect(currentSchema).toContain('data.schemaVersion == 2');
     expect(currentSchema).not.toContain('authorUid');
   });
@@ -138,12 +138,34 @@ describe('Firestore rules source invariants', () => {
       /match \/users\/\{userId\}\/cards\/\{cardId\} \{([\s\S]*?)\n\s*\}/,
     )?.[1] ?? '';
 
+    const patchOwnedCard = extractRulesBlock(rules, 'function canPatchOwnedCard(userId, cardId, data)');
+
     expect(rules).toContain('function isValidProtocolCounter(value)');
     expect(rules).toContain('/profile/library_state');
     expect(rules).toMatch(/data\.libraryEpoch == currentLibraryEpoch\(userId\)/);
     expect(cardMatch).toMatch(/allow create: if false/);
-    expect(cardMatch).toMatch(/canUpdateCurrentCard\(userId, request\.resource\.data\)/);
+    // canUpdateCurrentCard is reached through canPatchOwnedCard, which reads
+    // profile/library_state once and threads its epoch through instead of
+    // every callee recomputing it. The binding is currentLibraryEpoch(userId)
+    // written out: the stored epoch when the document exists, otherwise 0.
+    const flatten = (text: string) => text.replace(/\s+/g, ' ').trim();
+    expect(cardMatch).toMatch(/canPatchOwnedCard\(userId, cardId, request\.resource\.data\)/);
+    expect(flatten(patchOwnedCard)).toContain(
+      "let libraryState = hasLibraryEpochState(userId) "
+      + "? get(/databases/$(database)/documents/users/$(userId)/profile/library_state).data "
+      + ": {'libraryEpoch': 0}; let epoch = libraryState.libraryEpoch;",
+    );
+    expect(patchOwnedCard).toMatch(/return libraryState\.get\('libraryMigrationFenceActive', false\) != true\s*&& data\.id == cardId/);
+    expect(patchOwnedCard).toMatch(/canUpdateCurrentCard\(data, epoch\)/);
     expect(rules).toMatch(/profileDocId != 'library_state'/);
+    expect(rules).toMatch(/profileDocId != 'plan'/);
+  });
+
+  it('routes catalog-card deletes through trusted code so progress stays atomic', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const cardMatch = extractRulesBlock(rules, 'match /users/{userId}/cards/{cardId}');
+
+    expect(cardMatch).toContain("!resource.data.keys().hasAny(['lexemeId'])");
   });
 
   it('schema-locks bounded gamification documents without a generic-profile bypass', () => {
@@ -172,7 +194,10 @@ describe('Firestore rules source invariants', () => {
       'appliedXpOperationIds',
       'xpStreamSchemaVersion',
     ]));
-    expect(new Set(allowedStatsFields)).toEqual(new Set(requiredStatsFields));
+    expect(new Set(allowedStatsFields)).toEqual(new Set([
+      ...requiredStatsFields,
+      'reviewActivityV1',
+    ]));
     expect(statsSchema).toMatch(/data\.streak is int/);
     expect(statsSchema).toMatch(/data\.streak >= 0/);
     expect(statsSchema).toMatch(/data\.streak <= 9007199254740991/);
@@ -215,6 +240,19 @@ describe('Firestore rules source invariants', () => {
     expect(genericProfileMatch).toContain("profileDocId != 'xp_history'");
   });
 
+  it('keeps the account profile and the age-restriction marker server-written', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    for (const name of ['account', 'age_restriction']) {
+      const match = extractRulesBlock(rules, `match /users/{userId}/profile/${name}`);
+      expect(match).toMatch(/allow read: if isOwner\(userId\);/);
+      expect(match).toMatch(/allow create, update, delete: if false;/);
+      expect(match).not.toMatch(/allow (write|create|update|delete): if (?!false)/);
+    }
+    const genericProfileMatch = extractRulesBlock(rules, 'match /users/{userId}/profile/{profileDocId}');
+    expect(genericProfileMatch).toContain("profileDocId != 'account'");
+    expect(genericProfileMatch).toContain("profileDocId != 'age_restriction'");
+  });
+
   it('enforces revisioned creates, monotonic updates and tombstone-backed deletes', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const cardMatch = rules.match(
@@ -222,7 +260,7 @@ describe('Firestore rules source invariants', () => {
     )?.[1] ?? '';
 
     expect(rules).toContain('function isNextCardRevision(previous, nextRevision)');
-    expect(rules).toContain('function canUpdateCurrentCard(userId, data)');
+    expect(rules).toContain('function canUpdateCurrentCard(data, epoch)');
     expect(rules).toContain('function hasValidDeletionBarrier(userId, cardId, data)');
     expect(rules).toContain('function isNewerTombstone(previous, next)');
     expect(rules).toMatch(/next\.libraryEpoch > previous\.libraryEpoch/);
@@ -251,7 +289,10 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toMatch(
       /!data\.keys\(\)\.hasAny\(\['libraryEpoch'\]\)[\s\S]*data\.libraryEpoch == currentLibraryEpoch\(userId\)/,
     );
-    expect(rules).toMatch(/currentLibraryEpoch\(userId\) == 0/);
+    // canUpdateCurrentCard receives the one shared library_state epoch as
+    // `epoch` from canPatchOwnedCard instead of recomputing it.
+    expect(rules).toContain('let epoch = libraryState.libraryEpoch;');
+    expect(rules).toMatch(/resource\.data\.keys\(\)\.hasAny\(\['libraryEpoch'\]\)[\s\S]*epoch == 0/);
     expect(rules).toMatch(/nextRevision == previous\.revision \+ 1/);
     expect(rules).toMatch(/nextRevision == 1/);
     expect(rules).toMatch(
@@ -306,12 +347,24 @@ describe('Firestore rules source invariants', () => {
     expect(rules).not.toContain('function isValidLearningStateV3');
   });
 
+  it('keeps catalog progress owner-readable and server-only', () => {
+    const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
+    const progressMatch = extractRulesBlock(
+      rules,
+      'match /users/{userId}/catalog_progress/{lexemeId}',
+    );
+
+    expect(progressMatch).toContain('allow read: if isOwner(userId);');
+    expect(progressMatch).toContain('allow create, update, delete: if false;');
+  });
+
   it('requires immutable matching reservations for legacy and canonical identity repair', () => {
     const rules = readFileSync(new URL('./firestore.rules', import.meta.url), 'utf8');
     const cardMatch = extractRulesBlock(rules, 'match /users/{userId}/cards/{cardId}');
+    const patchOwnedCard = extractRulesBlock(rules, 'function canPatchOwnedCard(userId, cardId, data)');
     const identityUpdate = extractRulesBlock(
       rules,
-      'function hasValidCardIdentityUpdate(userId, cardId, data)',
+      'function hasValidCardIdentityUpdate(userId, cardId, data, epoch)',
     );
     const reservationMatch = extractRulesBlock(
       rules,
@@ -326,7 +379,20 @@ describe('Firestore rules source invariants', () => {
     expect(rules).toMatch(/isValidId\(data\.cardId\)/);
     expect(rules).toMatch(/data\.normalizedWord\.size\(\) <= 256/);
     expect(rules).toContain('function hasMatchingCardReservation(userId, cardId, data)');
-    expect(rules).toContain("let canonical = data.keys().hasAll(['lexemeId']) ? 'lexeme:' + data.lexemeId : data.normalizedWord;");
+    const matchingReservationBody = extractRulesBlock(
+      rules,
+      'function hasMatchingCardReservation(userId, cardId, data)',
+    );
+    const flatten = (text: string) => text.replace(/\s+/g, ' ').trim();
+    // Non-English plain-target identity keeps the legacy/lexeme canonical
+    // branches immutable and only adds a target-scoped branch (R10); this
+    // is the same NUL-delimited shape as targetCardReservationId.
+    const expectedCanonicalAssignment = "let canonical = data.keys().hasAll(['lexemeId']) "
+      + "? 'lexeme:' + data.lexemeId "
+      + ": (hasLanguage && language != 'en' "
+      + "? language + '\\u0000' + data.normalizedWord "
+      + ": data.normalizedWord);";
+    expect(flatten(matchingReservationBody)).toContain(flatten(expectedCanonicalAssignment));
     expect(rules).toContain('let reservationId = cardReservationId(canonical);');
     expect(rules).toContain('/card_reservations/$(reservationId)');
     expect(rules).toContain('let reservationData = getAfter(reservation).data;');
@@ -342,18 +408,21 @@ describe('Firestore rules source invariants', () => {
     expect(identityUpdate).toMatch(
       /hasMatchingCardReservation\(userId, cardId, data\)/,
     );
-    expect(rules).toContain('function hasValidCardIdentityUpdate(userId, cardId, data)');
+    expect(rules).toContain('function hasValidCardIdentityUpdate(userId, cardId, data, epoch)');
     expect(rules).toMatch(
       /resource\.data\.normalizedWord == data\.normalizedWord/,
     );
     expect(identityUpdate).toMatch(
       /hasCardIdentity\(resource\.data\)[\s\S]*resource\.data\.normalizedWord == data\.normalizedWord\s*&& resource\.data\.word == data\.word\s*&& \(/,
     );
+    // A stored card without an identity (the else branch) keeps its word and
+    // may only claim the identity that word gives, with a matching reservation.
     expect(identityUpdate).toMatch(
-      /!hasCardIdentity\(resource\.data\)[\s\S]*resource\.data\.word is string[\s\S]*data\.word == resource\.data\.word[\s\S]*data\.normalizedWord == resource\.data\.word\.lower\(\)/,
+      /return hasCardIdentity\(resource\.data\)\s*\?[\s\S]*\n\s*: \(\s*resource\.data\.word is string\s*&& data\.word == resource\.data\.word\s*&& \(\s*\(\s*data\.get\('normalizedWord', null\) == resource\.data\.word\.lower\(\)\s*&& hasMatchingCardReservation\(userId, cardId, data\)\s*\)\s*\|\| !hasCardIdentity\(data\)\s*\)\s*\);/,
     );
-    expect(cardMatch).toMatch(
-      /hasValidCardIdentityUpdate\(userId, cardId, request\.resource\.data\)/,
+    expect(cardMatch).toMatch(/canPatchOwnedCard\(userId, cardId, request\.resource\.data\)/);
+    expect(patchOwnedCard).toMatch(
+      /hasValidCardIdentityUpdate\(userId, cardId, data, epoch\)/,
     );
     expect(reservationMatch).toMatch(/allow get: if isOwner\(userId\)/);
     expect(reservationMatch).toMatch(/allow list: if false/);

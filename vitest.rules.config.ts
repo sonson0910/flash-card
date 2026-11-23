@@ -7,6 +7,8 @@ export default defineConfig({
     include: [
       'firestore.rules.test.ts',
       'firestore.gamification-diagnostic.rules.test.ts',
+      'firestore.library-paging.rules.test.ts',
+      'storage.rules.test.ts',
     ],
     testTimeout: 15_000,
   },

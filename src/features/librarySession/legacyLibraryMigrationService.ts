@@ -1,6 +1,7 @@
 import type { FirebaseApp } from 'firebase/app';
-import { protectedFunctionsCapability } from '../../lib/firebase';
+import { getSonFlashFunctions, protectedFunctionsCapability } from '../../lib/firebase';
 import { runProtectedFunction } from '../../lib/protectedFunctionsCapability';
+import { ADMINISTRATOR_REVIEW_REASON } from './ownerLibrarySessionController';
 
 const REGION = 'asia-southeast1';
 const BATCH_SIZE = 100;
@@ -13,7 +14,7 @@ type CallableMigrationResult = {
   complete: boolean;
   remaining: number;
   invalid: number;
-  phase?: 'discover' | 'discovered' | 'blocked' | 'verify';
+  phase?: 'discover' | 'discovered' | 'blocked' | 'verify' | 'apply' | 'complete' | 'rollback' | 'rolled-back';
 };
 
 type LegacyMigrationResult = {
@@ -21,6 +22,8 @@ type LegacyMigrationResult = {
   scanned: number;
   complete: boolean;
 };
+
+const MIGRATION_PHASES = ['discover', 'discovered', 'blocked', 'verify', 'apply', 'complete', 'rollback', 'rolled-back'];
 
 const isSafeCount = (value: unknown): value is number =>
   Number.isSafeInteger(value) && Number(value) >= 0;
@@ -38,7 +41,7 @@ const parseMigrationResult = (value: unknown): CallableMigrationResult => {
     || !isSafeCount(result.remaining)
     || !isSafeCount(result.invalid)
     || (result.phase !== undefined
-      && !['discover', 'discovered', 'blocked', 'verify'].includes(String(result.phase)))
+      && !MIGRATION_PHASES.includes(String(result.phase)))
   ) {
     throw new Error('Library migration service returned an invalid response.');
   }
@@ -50,11 +53,11 @@ const invokeMigrationBatch = async (app: FirebaseApp): Promise<CallableMigration
     protectedFunctionsCapability,
     'Library upgrade',
     async () => {
-      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const { httpsCallable } = await import('firebase/functions');
       const callable = httpsCallable<
         { batchSize: number; dryRun: boolean },
         unknown
-      >(getFunctions(app, REGION), 'migrateLegacyLibrary');
+      >(await getSonFlashFunctions(app, REGION), 'migrateLegacyLibrary');
       const response = await callable({ batchSize: BATCH_SIZE, dryRun: false });
       return response.data;
     },
@@ -70,9 +73,20 @@ export async function migrateLegacyLibraryWithAdmin(
   for (let batch = 0; batch < MAX_BATCHES_PER_ACTION; batch += 1) {
     const result = await invokeMigrationBatch(app);
     if (result.invalid > 0) {
-      throw new Error('Library migration found a malformed card that needs administrator review.');
+      // The server stops a blocked discovery for good, so a retry would only spend its hourly budget.
+      throw Object.assign(
+        new Error('Library migration found a malformed card that needs administrator review.'),
+        { reason: ADMINISTRATOR_REVIEW_REASON },
+      );
     }
-    if (result.complete) return { migrated, scanned, complete: true };
+    if (result.complete || result.phase === 'complete') return { migrated, scanned, complete: true };
+    if (result.phase === 'apply' || result.phase === 'rollback' || result.phase === 'rolled-back') {
+      // The server keeps this job under the administrator tool, so a retry from the browser cannot move it.
+      throw Object.assign(
+        new Error('Library migration is being handled by an administrator.'),
+        { reason: ADMINISTRATOR_REVIEW_REASON },
+      );
+    }
     const nextMigrated = migrated + result.migrated;
     const nextScanned = scanned + result.scanned;
     if (result.phase === 'discovered' || result.phase === 'verify') {

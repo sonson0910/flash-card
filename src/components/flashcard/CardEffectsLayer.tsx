@@ -1,0 +1,168 @@
+import gsap from 'gsap';
+import { useEffect, useRef, useState, type MouseEvent, type RefObject } from 'react';
+import { getSpotlightPosition } from '../../lib/motion';
+
+export interface CardAura {
+  core: string;
+  mid: string;
+  outer: string;
+}
+
+function getCategoryAura(category?: string): CardAura {
+  const cat = (category || '').toLowerCase();
+  if (cat.includes('nature') || cat.includes('environment')) return { core: 'rgba(16, 185, 129, 0.7)', mid: 'rgba(6, 182, 212, 0.45)', outer: 'rgba(5, 150, 105, 0.2)' };
+  if (cat.includes('tech') || cat.includes('science')) return { core: 'rgba(6, 182, 212, 0.8)', mid: 'rgba(59, 130, 246, 0.5)', outer: 'rgba(147, 51, 234, 0.25)' };
+  if (cat.includes('emotion') || cat.includes('feeling') || cat.includes('food')) return { core: 'rgba(244, 63, 94, 0.75)', mid: 'rgba(251, 146, 60, 0.45)', outer: 'rgba(236, 72, 153, 0.2)' };
+  if (cat.includes('work') || cat.includes('business')) return { core: 'rgba(139, 92, 246, 0.75)', mid: 'rgba(6, 182, 212, 0.45)', outer: 'rgba(99, 102, 241, 0.2)' };
+  return { core: 'rgba(6, 182, 212, 0.75)', mid: 'rgba(14, 165, 233, 0.45)', outer: 'rgba(99, 102, 241, 0.2)' };
+}
+
+interface UseCardEffectsOptions {
+  category?: string;
+  faceRef: RefObject<HTMLDivElement | null>;
+  spotlightRef: RefObject<HTMLDivElement | null>;
+  reduceMotion: boolean;
+  isFlipAnimating: boolean;
+  spotlightBackground: string;
+}
+
+export function useCardEffects({ category, faceRef, spotlightRef, reduceMotion, isFlipAnimating, spotlightBackground }: UseCardEffectsOptions) {
+  const [isHovered, setIsHovered] = useState(false);
+  const rafTiltRef = useRef<number | null>(null);
+  const spotlightBoundsRef = useRef<DOMRect | null>(null);
+  const isFlipAnimatingRef = useRef(isFlipAnimating);
+  const lastPointerPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const ignoreStationaryPointerAfterFlipRef = useRef(false);
+  isFlipAnimatingRef.current = isFlipAnimating;
+  const aura = getCategoryAura(category);
+
+  useEffect(() => {
+    if (!isFlipAnimating) return;
+    ignoreStationaryPointerAfterFlipRef.current = true;
+    spotlightBoundsRef.current = null;
+    if (rafTiltRef.current !== null) {
+      window.cancelAnimationFrame(rafTiltRef.current);
+      rafTiltRef.current = null;
+    }
+  }, [isFlipAnimating]);
+
+  useEffect(() => () => {
+    if (rafTiltRef.current !== null) window.cancelAnimationFrame(rafTiltRef.current);
+  }, []);
+
+  const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
+    if (reduceMotion || isFlipAnimatingRef.current || !window.matchMedia('(hover: hover) and (pointer: fine)').matches || rafTiltRef.current !== null) return;
+    const { clientX, clientY, currentTarget } = event;
+    const lastPointer = lastPointerPositionRef.current;
+    if (ignoreStationaryPointerAfterFlipRef.current) {
+      if (lastPointer && lastPointer.x === clientX && lastPointer.y === clientY) return;
+      ignoreStationaryPointerAfterFlipRef.current = false;
+    }
+    lastPointerPositionRef.current = { x: clientX, y: clientY };
+    rafTiltRef.current = window.requestAnimationFrame(() => {
+      rafTiltRef.current = null;
+      if (isFlipAnimatingRef.current) return;
+      const bounds = spotlightBoundsRef.current ?? currentTarget.getBoundingClientRect();
+      spotlightBoundsRef.current = bounds;
+      const position = getSpotlightPosition(clientX, clientY, bounds);
+      for (const target of [spotlightRef.current, faceRef.current]) {
+        target?.style.setProperty('--spotlight-x', `${position.x}%`);
+        target?.style.setProperty('--spotlight-y', `${position.y}%`);
+      }
+      if (faceRef.current) {
+        const px = ((clientX - bounds.left) / bounds.width - 0.5) * 2;
+        const py = ((clientY - bounds.top) / bounds.height - 0.5) * 2;
+        gsap.to(faceRef.current, { rotationX: -py * 4, rotationY: px * 4, duration: 0.28, ease: 'power2.out', overwrite: 'auto' });
+      }
+    });
+  };
+
+  const handleMouseLeave = () => {
+    if (rafTiltRef.current !== null) {
+      window.cancelAnimationFrame(rafTiltRef.current);
+      rafTiltRef.current = null;
+    }
+    setIsHovered(false);
+    spotlightBoundsRef.current = null;
+    lastPointerPositionRef.current = null;
+    ignoreStationaryPointerAfterFlipRef.current = false;
+    for (const target of [spotlightRef.current, faceRef.current]) {
+      target?.style.setProperty('--spotlight-x', '50%');
+      target?.style.setProperty('--spotlight-y', '50%');
+    }
+    if (!isFlipAnimatingRef.current && faceRef.current) gsap.to(faceRef.current, { rotationX: 0, rotationY: 0, duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
+  };
+
+  const handleMouseEnter = (event: MouseEvent<HTMLDivElement>) => {
+    if (!reduceMotion && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      lastPointerPositionRef.current = { x: event.clientX, y: event.clientY };
+      spotlightBoundsRef.current = event.currentTarget.getBoundingClientRect();
+      setIsHovered(true);
+    }
+  };
+
+  return { aura, spotlightBackground, isHovered, handleMouseEnter, handleMouseMove, handleMouseLeave };
+}
+
+interface CardEffectsLayerProps {
+  aura?: CardAura;
+  spotlightRef?: RefObject<HTMLDivElement | null>;
+  isHovered?: boolean;
+  spotlightBackground?: string;
+  holo?: boolean;
+  wings?: boolean;
+  tier?: 'new' | 'learning' | 'mastered';
+}
+
+export function CardEffectsLayer({
+  aura,
+  spotlightRef,
+  isHovered = false,
+  spotlightBackground,
+  holo = false,
+  wings = false,
+  tier = 'new',
+}: CardEffectsLayerProps) {
+  return (
+    <>
+      {aura && (
+        <div
+          data-card-effect="aura"
+          className="flashcard-canvas-aura pointer-events-none absolute -inset-3 sm:-inset-4 z-0 rounded-[44px] opacity-0 blur-xl transition-opacity duration-300 ease-out will-change-[opacity] group-hover:opacity-35 group-focus-within:opacity-35"
+          style={{ background: `radial-gradient(ellipse at 50% 38%, ${aura.core} 0%, ${aura.mid} 45%, ${aura.outer} 70%, transparent 85%)` }}
+          aria-hidden="true"
+        />
+      )}
+      {wings && (
+        <div
+          data-card-effect="hover-wings"
+          data-card-effect-tier={tier}
+          data-card-hovered={isHovered ? 'true' : 'false'}
+          className="flashcard-hover-wings absolute -inset-6 z-[1] pointer-events-none"
+          aria-hidden="true"
+        >
+          <span className="flashcard-wing flashcard-wing-left crystal-wing" />
+          <span className="flashcard-wing flashcard-wing-right crystal-wing" />
+        </div>
+      )}
+      {spotlightRef && (
+        <div
+          ref={spotlightRef}
+          data-card-effect="spotlight"
+          className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-200"
+          style={{
+            background: spotlightBackground,
+            opacity: isHovered ? 1 : 0,
+          }}
+        />
+      )}
+      {holo && (
+        <>
+          <div data-card-effect="holo" className="flashcard-holo" aria-hidden="true" />
+          <div data-card-effect="specular" className="flashcard-canvas-specular" aria-hidden="true" />
+          <div data-card-effect="tier-rim" data-card-effect-tier={tier} className="flashcard-tier-rim" aria-hidden="true" />
+        </>
+      )}
+    </>
+  );
+}

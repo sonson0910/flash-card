@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +9,17 @@ const DEFAULT_ATTEMPT_TIMEOUT_MS = 60_000;
 const MAX_REGISTRY_RETRIES = 1;
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const repositoryRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
+// High advisories that have no patched release and reach only development tooling. An exception applies
+// only while every affected install path is dev-only in the target's lockfile and the date has not passed,
+// so a runtime dependency on the package, or a stale exception, fails the gate again.
+const ACCEPTED_DEV_ADVISORIES = [
+  {
+    id: 'GHSA-fc5q-39xc-vjpf',
+    package: 'picomatch',
+    expires: '2027-01-31',
+    reason: 'ReDoS in glob matching with no patched release (<= 4.0.7); used only by build and test tooling on repository-authored patterns.',
+  },
+];
 const registryErrorPattern = /(?:EAI_AGAIN|ECONNRESET|ECONNREFUSED|ENETUNREACH|ENOTFOUND|EHOSTUNREACH|ETIMEDOUT|ERR_SOCKET_TIMEOUT|fetch failed|audit endpoint returned an error|registry\.npmjs\.org|bad gateway|service unavailable|gateway timeout|too many requests)/i;
 
 function positiveInteger(value, fallback) {
@@ -36,6 +48,33 @@ function highSeverityCount(report) {
     critical: Number(vulnerabilities?.critical ?? 0),
     high: Number(vulnerabilities?.high ?? 0),
   };
+}
+
+function readLockfilePackages(cwd) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(cwd, 'package-lock.json'), 'utf8')).packages ?? {};
+  } catch {
+    return {};
+  }
+}
+
+/** Splits high and critical advisories into accepted dev-only exceptions and blocking findings. */
+function classifyHighAdvisories(report, lockfilePackages, today) {
+  const accepted = new Set();
+  const blocking = new Set();
+  for (const vulnerability of Object.values(report?.vulnerabilities ?? {})) {
+    for (const via of vulnerability?.via ?? []) {
+      if (!via || typeof via !== 'object' || !['high', 'critical'].includes(via.severity)) continue;
+      const id = String(via.url ?? via.source ?? '').split('/').pop();
+      const label = `${via.name} ${id}`;
+      const exception = ACCEPTED_DEV_ADVISORIES.find(entry => entry.id === id && entry.package === via.name);
+      const nodes = vulnerability.nodes ?? [];
+      const devOnly = nodes.length > 0 && nodes.every(node => lockfilePackages[node]?.dev === true);
+      if (exception && today <= exception.expires && devOnly) accepted.add(label);
+      else blocking.add(label);
+    }
+  }
+  return { accepted: [...accepted], blocking: [...blocking] };
 }
 
 function runAudit(args, cwd, timeoutMs) {
@@ -74,7 +113,14 @@ async function auditTarget(target, deadline, attemptTimeoutMs, retryDelayMs) {
     }
 
     if (high > 0 || critical > 0) {
+      const today = new Date().toISOString().slice(0, 10);
+      const { accepted, blocking } = classifyHighAdvisories(result.report, readLockfilePackages(target.cwd), today);
+      if (blocking.length === 0 && accepted.length > 0) {
+        console.warn(`[audit] ${target.label}: accepted dev-only advisories without a patched release: ${accepted.join(', ')}.`);
+        return true;
+      }
       console.error(`[audit] ${target.label}: found ${high} high and ${critical} critical vulnerabilities.`);
+      if (blocking.length > 0) console.error(`[audit] ${target.label}: blocking advisories: ${blocking.join(', ')}.`);
       console.error(result.stdout.trim());
       return false;
     }

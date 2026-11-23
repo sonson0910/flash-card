@@ -35,7 +35,8 @@ describe('release workflow contracts', () => {
       expect(workflow).toContain('DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}');
       expect(workflow).toContain('git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"');
       expect(workflow).toContain('git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"');
-      expect(workflow).toContain('test "$(git rev-parse HEAD)" = "$REVISION"');
+      const checkoutRevision = relativePath.includes('/deploy-') ? '$GITHUB_SHA' : '$REVISION';
+      expect(workflow).toContain(`test "$(git rev-parse HEAD)" = "${checkoutRevision}"`);
       expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
       expect(workflow).toContain('fetch-depth: 0');
     }
@@ -54,7 +55,7 @@ describe('release workflow contracts', () => {
       expect(workflow).not.toContain('test "$GITHUB_SHA" = "$REVISION"');
       expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"');
       expect(workflow).toContain('git merge-base --is-ancestor "$REVISION" "origin/$DEFAULT_BRANCH"');
-      expect(workflow).toContain('test "$(git rev-parse HEAD)" = "$REVISION"');
+      expect(workflow).toContain('test "$(git rev-parse HEAD)" = "$GITHUB_SHA"');
     }
   });
 
@@ -78,6 +79,10 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('--revision "${{ inputs.revision }}"');
     expect(workflow).not.toContain('--revision "${{ github.sha }}"');
     expect(workflow).toContain('artifacts/release-candidate-manifest.json');
+    // Every sealed component must travel with the candidate, or verification downstream fails.
+    for (const component of ['firestore.rules', 'firestore.indexes.json', 'storage.rules', 'firebase.json']) {
+      expect(workflow).toMatch(new RegExp(`^ {12}${component.replaceAll('.', '\\.')}$`, 'm'));
+    }
     expect(workflow).not.toContain('npm run build:release');
     expect(functionsPackage.scripts.preinstall).not.toMatch(/\.\.[/\\]/);
   });
@@ -196,6 +201,29 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('npm run predeploy');
   });
 
+  it('keeps the staging host out of search indexes and checks it after deploy', () => {
+    const staging = read('.github/workflows/deploy-staging.yml');
+    expect(staging).toContain('promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID" --hosting-environment staging');
+    expect(staging.match(/promote-config/g)).toHaveLength(1);
+    const liveCheck = staging.slice(staging.indexOf('name: Verify live HTTPS bytes'));
+    const hostingOnlyExit = liveCheck.indexOf('if [[ "$HOSTING_ONLY" == "true" ]]');
+    const headerCheck = liveCheck.indexOf("grep -qiE '^x-robots-tag:[[:space:]]*noindex, nofollow' artifacts/live-staging/root-headers.txt");
+    const robotsCheck = liveCheck.indexOf("grep -qxE 'Disallow:[[:space:]]*/' artifacts/live-staging/robots.txt");
+    expect(headerCheck).toBeGreaterThan(-1);
+    expect(robotsCheck).toBeGreaterThan(-1);
+    expect(headerCheck).toBeLessThan(hostingOnlyExit);
+    expect(robotsCheck).toBeLessThan(hostingOnlyExit);
+    // A retained candidate sealed before the crawl-blocking file existed gets no robots redirect, so
+    // the robots check runs only for a candidate that ships the file; the header check always runs.
+    const robotsGuard = liveCheck.indexOf('if [[ -f candidate/dist/robots-disallow.txt ]]; then');
+    expect(robotsGuard).toBeGreaterThan(headerCheck);
+    expect(robotsGuard).toBeLessThan(robotsCheck);
+    expect(liveCheck.indexOf('fi', robotsCheck)).toBeLessThan(hostingOnlyExit);
+    for (const relativePath of ['.github/workflows/deploy-production.yml', '.github/workflows/deploy-firestore-rules.yml']) {
+      expect(read(relativePath)).not.toContain('--hosting-environment');
+    }
+  });
+
   it('gates staging composite indexes before Rules, Functions, and Hosting', () => {
     const workflow = read('.github/workflows/deploy-staging.yml');
     const authIndex = workflow.indexOf('google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093');
@@ -210,7 +238,7 @@ describe('release workflow contracts', () => {
     expect(rulesIndex).toBeGreaterThan(readinessIndex);
     expect(functionsIndex).toBeGreaterThan(readinessIndex);
     expect(hostingIndex).toBeGreaterThan(readinessIndex);
-    expect(workflow).toContain('firebase deploy --only firestore:indexes --config firebase.promoted.json');
+    expect(workflow).toContain('firebase" deploy --only firestore:indexes --config firebase.promoted.json');
     expect(workflow).toContain('candidate/firestore.indexes.json');
     expect(workflow).toContain('gcloud firestore indexes composite list');
     expect(workflow).toContain('gcloud firestore indexes fields list');
@@ -221,6 +249,29 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('indexDigest');
     expect(workflow).not.toContain('--only firestore,');
     expect(workflow).not.toContain('firebase deploy --only firestore --config');
+  });
+
+  it('accepts WORM retrieval and staging evidence only from default-branch runs', () => {
+    const workflow = read('.github/workflows/deploy-production.yml');
+    const step = name => workflow.slice(
+      workflow.indexOf(`- name: ${name}`),
+      workflow.indexOf('\n      - ', workflow.indexOf(`- name: ${name}`) + 1),
+    );
+    for (const [name, variable] of [
+      ['Verify read-only WORM retrieval provenance', 'ARCHIVE_VERIFICATION_HEAD_SHA'],
+      ['Verify staging workflow provenance and receipt identity', 'STAGING_HEAD_SHA'],
+    ]) {
+      const provenance = step(name);
+      expect(provenance).toContain('DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}');
+      expect(provenance).toContain('test "$(jq -er \'.head_branch\' <<<"$run_json")" = "$DEFAULT_BRANCH"');
+      expect(provenance).toContain('test "$(jq -er \'.head_repository.full_name\' <<<"$run_json")" = "$GITHUB_REPOSITORY"');
+      expect(provenance).toContain(`echo "${variable}=$head_sha" >> "$GITHUB_ENV"`);
+    }
+    const ancestry = step('Verify candidate ancestry and protected workflow checkout');
+    expect(ancestry).toContain('git merge-base --is-ancestor "$ARCHIVE_VERIFICATION_HEAD_SHA" "origin/$DEFAULT_BRANCH"');
+    expect(ancestry).toContain('git merge-base --is-ancestor "$STAGING_HEAD_SHA" "origin/$DEFAULT_BRANCH"');
+    expect(workflow.indexOf('Verify candidate ancestry and protected workflow checkout'))
+      .toBeLessThan(workflow.indexOf('Download the exact candidate materialized by read-only WORM retrieval'));
   });
 
   it('blocks production until the exact staging deployment receipt is verified', () => {
@@ -258,7 +309,7 @@ describe('release workflow contracts', () => {
   it('gates production Hosting on READY composite indexes from the sealed candidate', () => {
     const workflow = read('.github/workflows/deploy-production.yml');
     const indexJob = workflow.slice(workflow.indexOf('  deploy_indexes:'), workflow.indexOf('  deploy_hosting:'));
-    const hostingJob = workflow.slice(workflow.indexOf('  deploy_hosting:'));
+    const hostingJob = workflow.slice(workflow.indexOf('  deploy_hosting:'), workflow.indexOf('  deploy_functions:'));
     const authIndex = indexJob.indexOf('google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093');
     const setupGcloudIndex = indexJob.indexOf('google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db');
     const readinessIndex = indexJob.indexOf('name: Deploy and verify candidate Firestore composite indexes');
@@ -268,14 +319,14 @@ describe('release workflow contracts', () => {
     expect(indexJob).toContain("inputs.operation == 'promotion'");
     expect(indexJob).toContain('environment: production-hosting');
     expect(functionsJob).toContain('needs: [validate_candidate, deploy_indexes]');
-    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions]');
+    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions, deploy_storage_rules]');
     expect(workflow.indexOf('  deploy_indexes:')).toBeLessThan(workflow.indexOf('  deploy_functions:'));
     expect(workflow.indexOf('  deploy_indexes:')).toBeLessThan(workflow.indexOf('  deploy_hosting:'));
     expect(indexJob).toContain('timeout-minutes: 45');
     expect(hostingJob).toContain('timeout-minutes: 15');
     expect(setupGcloudIndex).toBeGreaterThan(authIndex);
     expect(readinessIndex).toBeGreaterThan(setupGcloudIndex);
-    expect(indexJob).toContain('firebase deploy --only firestore:indexes --config firebase.promoted.json');
+    expect(indexJob).toContain('firebase" deploy --only firestore:indexes --config firebase.promoted.json');
     expect(indexJob).toContain('candidate/firestore.indexes.json');
     expect(indexJob).toContain('gcloud firestore indexes composite list');
     expect(indexJob).toContain('gcloud firestore indexes fields list');
@@ -294,7 +345,7 @@ describe('release workflow contracts', () => {
     const validateJob = workflow.slice(workflow.indexOf('  validate_candidate:'), workflow.indexOf('  deploy_indexes:'));
     const indexJob = workflow.slice(workflow.indexOf('  deploy_indexes:'), workflow.indexOf('  deploy_hosting:'));
     const safetyReceiptIndex = workflow.indexOf('name: Verify the Firestore release-safety receipt');
-    const indexDeployIndex = workflow.indexOf('firebase deploy --only firestore:indexes');
+    const indexDeployIndex = workflow.indexOf('firebase" deploy --only firestore:indexes');
 
     expect(workflow).toContain('firestore_safety_run_id:');
     expect(workflow).toContain('firestore_safety_receipt_sha256:');
@@ -386,42 +437,89 @@ describe('release workflow contracts', () => {
     expect(runbook).not.toContain('that is the planned rollback window');
   });
 
-  it('seals the pinned root Firebase CLI dependency tree and uses only the verified local binary', () => {
+  it('keeps retained candidates deployable after the protected Firebase CLI pin changes', () => {
+    for (const [relativePath, expectedJobs] of [
+      ['.github/workflows/deploy-production.yml', ['deploy_indexes', 'deploy_hosting', 'deploy_functions', 'deploy_storage_rules']],
+      ['.github/workflows/deploy-firestore-rules.yml', ['deploy_rules']],
+      ['.github/workflows/deploy-staging.yml', ['deploy']],
+    ]) {
+      const workflow = read(relativePath);
+      expect(workflow).not.toContain('ref: ${{ inputs.revision }}');
+      for (const jobName of expectedJobs) {
+        const job = workflow.split(`\n  ${jobName}:`)[1].split(/\n  [a-z_]+:/)[0];
+        const checkout = job.slice(job.indexOf('actions/checkout@'), job.indexOf('actions/setup-node@'));
+        expect(checkout).toContain('ref: ${{ github.sha }}');
+        expect(checkout).toContain('test "$(git rev-parse HEAD)" = "$GITHUB_SHA"');
+        expect(checkout).not.toContain('ref: ${{ inputs.revision }}');
+        const tooling = job.slice(job.indexOf('name: Install'), job.indexOf('google-github-actions/auth@'));
+        expect(tooling).not.toContain('working-directory: candidate');
+        expect(tooling).not.toContain('working-directory: validated');
+        expect(tooling).toContain('npm ci --ignore-scripts --no-audit --no-fund');
+        const deployLines = job.split('\n').filter(line => /firebase" deploy/.test(line));
+        expect(deployLines.length).toBeGreaterThan(0);
+        for (const line of deployLines) expect(line).toContain('"$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy');
+      }
+    }
+  });
+
+  it('keeps shell-only staging baselines separate from full promotion evidence', () => {
+    const workflow = read('.github/workflows/deploy-staging.yml');
+    expect(workflow).toContain('hosting_only:');
+    for (const name of [
+      'Materialize sealed Functions runtime dependencies',
+      'Deploy and verify candidate Firestore composite indexes',
+      'Upload immutable Firestore index readiness report',
+      'Deploy only sealed Firestore Rules',
+      'Check Cloud Storage setup on the target project',
+      'Deploy only sealed Storage Rules when Cloud Storage is set up',
+      'Deploy only sealed Functions',
+      'Upload immutable staging deployment receipt',
+    ]) {
+      const step = workflow.split(`- name: ${name}\n`)[1]?.split('\n      - ')[0] ?? '';
+      expect(step).toContain('if: ${{ !inputs.hosting_only }}');
+    }
+    const probe = workflow.slice(workflow.indexOf('- name: Verify live HTTPS bytes'));
+    expect(probe).toContain('HOSTING_ONLY: ${{ inputs.hosting_only }}');
+    expect(probe).toContain('if [[ "$HOSTING_ONLY" == "true" ]]; then');
+    expect(probe.indexOf('exit 0')).toBeGreaterThan(-1);
+    expect(probe.indexOf('node scripts/staging-deployment-receipt.mjs')).toBeGreaterThan(probe.indexOf('exit 0'));
+    const production = read('.github/workflows/deploy-production.yml');
+    expect(production).toContain('release-staging-receipt-${REVISION}-${STAGING_RUN_ID}');
+    expect(production).toContain('select(.expired == false and .workflow_run.id == ($run | tonumber))] | length');
+  });
+
+  it('seals root dependency provenance and uses the verified protected deployment CLI', () => {
     const packageJson = JSON.parse(read('package.json'));
     const packageLock = JSON.parse(read('package-lock.json'));
-    expect(packageJson.devDependencies['firebase-tools']).toBe('15.29.0');
-    expect(packageLock.packages[''].devDependencies['firebase-tools']).toBe('15.29.0');
-    expect(packageLock.packages['node_modules/firebase-tools'].version).toBe('15.29.0');
+    expect(packageJson.devDependencies['firebase-tools']).toBe('15.34.0');
+    expect(packageLock.packages[''].devDependencies['firebase-tools']).toBe('15.34.0');
+    expect(packageLock.packages['node_modules/firebase-tools'].version).toBe('15.34.0');
 
     const releaseWorkflow = read('.github/workflows/release-candidate.yml');
     expect(releaseWorkflow).toContain('package.json');
     expect(releaseWorkflow).toContain('package-lock.json');
 
     for (const [relativePath, jobNames] of [
-      ['.github/workflows/deploy-production.yml', ['deploy_indexes:', 'deploy_hosting:', 'deploy_functions:']],
+      ['.github/workflows/deploy-production.yml', ['deploy_indexes:', 'deploy_hosting:', 'deploy_functions:', 'deploy_storage_rules:']],
       ['.github/workflows/deploy-firestore-rules.yml', ['deploy_rules:']],
     ]) {
       const workflow = read(relativePath);
       for (const jobName of jobNames) {
-        const start = workflow.indexOf(`  ${jobName}`);
-        const end = jobName === 'deploy_indexes:'
-          ? workflow.indexOf('  deploy_hosting:')
-          : jobName === 'deploy_hosting:' ? workflow.indexOf('  deploy_functions:') : workflow.length;
-        const job = workflow.slice(start, end);
+        const job = workflow.split(`\n  ${jobName}\n`)[1].split(/\n  [a-z_]+:\n/)[0];
         const install = job.indexOf('npm ci --ignore-scripts --no-audit --no-fund');
-        const version = job.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.29.0"');
+        const version = job.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.34.0"');
         const auth = job.indexOf('google-github-actions/auth@');
         expect(install).toBeGreaterThan(-1);
         expect(version).toBeGreaterThan(install);
         expect(auth).toBeGreaterThan(version);
-        expect(job).toContain('./node_modules/.bin/firebase deploy');
+        expect(job).toContain('"$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy');
         expect(job).not.toContain('npx --yes firebase-tools');
       }
     }
   });
 
   it('uses exactly one approved Firebase CLI pin and a fixed js-yaml resolution', () => {
-    const approvedVersion = '15.29.0';
+    const approvedVersion = '15.34.0';
     const packageJson = JSON.parse(read('package.json'));
     const packageLock = JSON.parse(read('package-lock.json'));
     const trackedFiles = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' }).split('\0').filter(Boolean);
@@ -458,7 +556,8 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('actions/download-artifact@');
     expect(workflow).toContain('release-artifact.mjs verify');
     expect(workflow.match(/--workflow-run-id "\$\{\{ inputs\.candidate_run_id \}\}"/g) ?? []).toHaveLength(4);
-    expect(workflow.match(/--project-id "\$FIREBASE_PROJECT_ID" --database-id "\$FIRESTORE_DATABASE_ID"/g) ?? []).toHaveLength(3);
+    expect(workflow.match(/--workflow-run-id "\$CANDIDATE_RUN_ID"/g) ?? []).toHaveLength(1);
+    expect(workflow.match(/--project-id "\$FIREBASE_PROJECT_ID" --database-id "\$FIRESTORE_DATABASE_ID"/g) ?? []).toHaveLength(4);
     expect(workflow).toContain('test "$run_path" = ".github/workflows/release-candidate.yml"');
     expect(workflow).toContain('--only hosting');
     expect(workflow).toContain('--only functions');
@@ -466,15 +565,15 @@ describe('release workflow contracts', () => {
     expect(workflow.slice(workflow.indexOf('  deploy_indexes:'), workflow.indexOf('  deploy_hosting:'))).toContain('release-artifact.mjs promote-config');
     expect(hostingJob).toContain('release-artifact.mjs promote-config');
     expect(functionsJob).toContain('release-artifact.mjs promote-config');
-    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions]');
-    expect(hostingJob).toContain("if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_indexes.result == 'success' || (inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped')) && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}");
+    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions, deploy_storage_rules]');
+    expect(hostingJob).toContain("if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_indexes.result == 'success' || (inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped')) && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) && needs.deploy_storage_rules.result == 'success' }}");
     expect(functionsJob).toContain('needs: [validate_candidate, deploy_indexes]');
     expect(functionsJob).not.toContain('needs: [validate_candidate, deploy_hosting]');
     expect(functionsJob).toContain('npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund');
     expect(functionsJob.indexOf('npm ci --prefix candidate/functions')).toBeLessThan(
-      functionsJob.indexOf('./node_modules/.bin/firebase deploy --only functions'),
+      functionsJob.indexOf('"$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only functions'),
     );
-    expect(workflow.match(/firebase_project_pattern='\^\[a-z\]\[a-z0-9-\]\{4,28\}\[a-z0-9\]\$'/g)).toHaveLength(3);
+    expect(workflow.match(/firebase_project_pattern='\^\[a-z\]\[a-z0-9-\]\{4,28\}\[a-z0-9\]\$'/g)).toHaveLength(4);
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);
     expect(workflow).not.toContain('--only firestore --');
   });
@@ -504,6 +603,142 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toMatch(/kms|migration[_-]evidence|rollback-snapshot/i);
     expect(workflow).not.toMatch(/--only firestore(?:\s|$)/);
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);
+  });
+
+  it('deploys every sealed Firebase target from the promoted config on staging and on production promotion', () => {
+    const sealedTargets = ['firestore:indexes', 'firestore:rules', 'storage', 'functions', 'hosting'];
+    const deployedTargets = source => [...source.matchAll(/firebase" deploy --only (\S+) --config firebase\.promoted\.json/g)]
+      .flatMap(([, targets]) => targets.split(','));
+    const staging = deployedTargets(read('.github/workflows/deploy-staging.yml'));
+    const promotion = deployedTargets(read('.github/workflows/deploy-production.yml'));
+    const productionRules = deployedTargets(read('.github/workflows/deploy-firestore-rules.yml'));
+    expect(sealedTargets.filter(target => !staging.includes(target)).join(',')).toBe('');
+    // Firestore Rules ship only through their own migration-bound cutover workflow.
+    expect(sealedTargets.filter(target => target !== 'firestore:rules' && !promotion.includes(target)).join(',')).toBe('');
+    expect(productionRules.join(',')).toBe('firestore:rules');
+    expect(JSON.parse(read('firebase.json')).storage.rules).toBe('storage.rules');
+    expect(read('scripts/release-artifact.mjs')).toContain("storageRules: { path: 'storage.rules', type: 'file' }");
+  });
+
+  it('deploys sealed Storage Rules before Hosting and skips only a project without Cloud Storage', () => {
+    const stepOf = (workflow, name) => workflow.split(`- name: ${name}\n`)[1]?.split('\n      - ')[0] ?? '';
+    const checkStepName = 'Check Cloud Storage setup on the target project';
+    const deployStepName = 'Deploy only sealed Storage Rules when Cloud Storage is set up';
+    const checkStorageSteps = workflow => {
+      const check = stepOf(workflow, checkStepName);
+      expect(check).toContain('id: cloud_storage');
+      expect(check).toContain('set -euo pipefail');
+      expect(check).toContain('state="$(ACCESS_TOKEN="$(gcloud auth print-access-token)" node "$GITHUB_WORKSPACE/scripts/cloud-storage-state.mjs" --project "$FIREBASE_PROJECT_ID")"');
+      expect(check).toContain('echo "state=$state" >> "$GITHUB_OUTPUT"');
+      const deploy = stepOf(workflow, deployStepName);
+      expect(deploy).toContain('STORAGE_STATE: ${{ steps.cloud_storage.outputs.state }}');
+      expect(deploy).toContain('if [[ "$STORAGE_STATE" == "not-enabled" ]]; then');
+      expect(deploy).toContain('>> "$GITHUB_STEP_SUMMARY"');
+      expect(deploy).toContain('test "$STORAGE_STATE" = "enabled"');
+      expect(deploy).toContain('"$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only storage --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive');
+      expect(deploy.indexOf('exit 0')).toBeLessThan(deploy.indexOf('deploy --only storage'));
+      expect(workflow.indexOf(`- name: ${checkStepName}`)).toBeGreaterThan(workflow.indexOf('google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db'));
+      expect(workflow.indexOf(`- name: ${checkStepName}`)).toBeLessThan(workflow.indexOf(`- name: ${deployStepName}`));
+      return { check, deploy };
+    };
+
+    // Staging reads the Storage state before its first mutation, so a denied lookup changes nothing.
+    const staging = read('.github/workflows/deploy-staging.yml');
+    const stagingSteps = checkStorageSteps(staging);
+    expect(stagingSteps.check).toContain('if: ${{ !inputs.hosting_only }}');
+    expect(stagingSteps.deploy).toContain('if: ${{ !inputs.hosting_only }}');
+    expect(stagingSteps.deploy).toContain('working-directory: candidate');
+    expect(staging.indexOf(`- name: ${checkStepName}`)).toBeLessThan(staging.indexOf('- name: Deploy and verify candidate Firestore composite indexes'));
+    const stagingDeploy = staging.indexOf(`- name: ${deployStepName}`);
+    expect(stagingDeploy).toBeGreaterThan(staging.indexOf('- name: Deploy only sealed Firestore Rules'));
+    expect(stagingDeploy).toBeLessThan(staging.indexOf('- name: Deploy only sealed Functions'));
+    expect(stagingDeploy).toBeLessThan(staging.indexOf('- name: Deploy only sealed Hosting bytes'));
+
+    // Production promotion and rollback carry the candidate's Storage Rules ahead of its Hosting.
+    const production = read('.github/workflows/deploy-production.yml');
+    const jobOf = name => production.split(`\n  ${name}:\n`)[1]?.split(/\n  [a-z_]+:\n/)[0] ?? '';
+    const storageJob = jobOf('deploy_storage_rules');
+    const hostingJob = jobOf('deploy_hosting');
+    expect(storageJob).toContain('needs: [validate_candidate, deploy_indexes]');
+    expect(storageJob).toContain("if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_indexes.result == 'success' || (inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped')) }}");
+    expect(storageJob).toContain('environment: production-hosting');
+    expect(storageJob).toContain('release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json');
+    const productionSteps = checkStorageSteps(storageJob);
+    expect(productionSteps.deploy).toContain('working-directory: candidate');
+    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions, deploy_storage_rules]');
+    expect(hostingJob).toContain("&& needs.deploy_storage_rules.result == 'success' }}");
+
+    // An emergency Firestore Rules rollback does not depend on Storage access.
+    const rules = read('.github/workflows/deploy-firestore-rules.yml');
+    expect(rules).not.toContain('--only storage');
+    expect(rules).not.toContain('cloud-storage-state.mjs');
+
+    const scripts = JSON.parse(read('package.json')).scripts;
+    expect(scripts['staging:deploy:storage']).toBe('GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only storage --non-interactive');
+  });
+
+  it('leaves the storage trigger out of a Functions deploy to a project without Cloud Storage', () => {
+    const stepOf = (workflow, name) => workflow.split(`- name: ${name}\n`)[1]?.split('\n      - ')[0] ?? '';
+    const checkStepName = 'Check Cloud Storage setup on the target project';
+    const checkFunctionsStep = (scope, deployStepName) => {
+      const deploy = stepOf(scope, deployStepName);
+      expect(deploy).toContain('STORAGE_STATE: ${{ steps.cloud_storage.outputs.state }}');
+      const signal = deploy.indexOf("printf '%s\\n' 'SONFLASH_CLOUD_STORAGE=not-enabled' >> \"$parameter_file\"");
+      expect(signal).toBeGreaterThan(deploy.indexOf('if [[ "$STORAGE_STATE" == "not-enabled" ]]; then'));
+      expect(signal).toBeGreaterThan(deploy.indexOf("printf '%s\\n' 'ENFORCE_APP_CHECK=true' > \"$parameter_file\""));
+      expect(signal).toBeLessThan(deploy.indexOf('deploy --only functions'));
+      // Any answer other than a proven absence deploys the trigger with the rest.
+      expect(deploy).toContain('test "$STORAGE_STATE" = "enabled"');
+      expect(deploy).toContain('>> "$GITHUB_STEP_SUMMARY"');
+      expect(scope.indexOf(`- name: ${checkStepName}`)).toBeGreaterThan(-1);
+      expect(scope.indexOf(`- name: ${checkStepName}`)).toBeLessThan(scope.indexOf(`- name: ${deployStepName}`));
+    };
+
+    checkFunctionsStep(read('.github/workflows/deploy-staging.yml'), 'Deploy only sealed Functions');
+
+    const production = read('.github/workflows/deploy-production.yml');
+    const functionsJob = production.split('\n  deploy_functions:\n')[1]?.split(/\n  [a-z_]+:\n/)[0] ?? '';
+    checkFunctionsStep(functionsJob, 'Promote only the sealed Functions artifact after App Check approval');
+    const check = stepOf(functionsJob, checkStepName);
+    expect(check).toContain('id: cloud_storage');
+    expect(check).toContain('state="$(ACCESS_TOKEN="$(gcloud auth print-access-token)" node "$GITHUB_WORKSPACE/scripts/cloud-storage-state.mjs" --project "$FIREBASE_PROJECT_ID")"');
+
+    const index = read('functions/src/index.ts');
+    expect(index).toContain("const cloudStorageIsSetUp = process.env.SONFLASH_CLOUD_STORAGE !== 'not-enabled';");
+    expect(index).toContain('export const finalizeFileUpload = cloudStorageIsSetUp && onObjectFinalized({');
+  });
+
+  it('checks the ready Pro entitlement index before promoting production Functions', () => {
+    const workflow = read('.github/workflows/deploy-production.yml');
+    expect(workflow).toContain('gcloud firestore indexes composite list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --format=json');
+    expect(workflow).toContain('node scripts/verify-entitlement-index.mjs "$FIREBASE_PROJECT_ID" "$FIRESTORE_DATABASE_ID"');
+    expect(workflow.indexOf('Verify Pro intent Firestore index is ready')).toBeLessThan(
+      workflow.indexOf('Promote only the sealed Functions artifact'),
+    );
+  });
+
+  it('requires a revision-bound Firestore safety receipt before production promotion', () => {
+    const workflow = read('.github/workflows/deploy-production.yml');
+    const validateJob = workflow.slice(workflow.indexOf('  validate_candidate:'), workflow.indexOf('  deploy_hosting:'));
+    const safetyReceiptIndex = workflow.indexOf('name: Verify the Firestore release-safety receipt');
+    const hostingDeployIndex = workflow.indexOf('Promote only the sealed Hosting artifact');
+
+    expect(workflow).toContain('firestore_safety_run_id:');
+    expect(workflow).toContain('firestore_safety_receipt_sha256:');
+    expect(validateJob).toContain('.github/workflows/verify-firestore-release-safety.yml');
+    expect(validateJob).toContain('test "$(jq -er \'.head_sha\' <<<"$run_json")" = "$REVISION"');
+    expect(validateJob).toContain('firestore-release-safety-${REVISION}-${FIRESTORE_SAFETY_RUN_ID}');
+    expect(validateJob).toContain('run-id: ${{ inputs.firestore_safety_run_id }}');
+    expect(validateJob).toContain('sha256sum "$receipt"');
+    expect(validateJob).toContain('.backup.retentionLocked == true');
+    expect(validateJob).toContain('.backup.retentionSeconds | type == "number" and . >= 7776000');
+    expect(validateJob).toContain('.restore.documentCount == .backup.documentCount');
+    expect(validateJob).toContain('.restore.deletedAfterVerification == true');
+    expect(validateJob).toContain('library_facet_receipts');
+    expect(validateJob).toContain('shared_deck_receipts');
+    expect(safetyReceiptIndex).toBeGreaterThan(-1);
+    expect(hostingDeployIndex).toBeGreaterThan(safetyReceiptIndex);
+    expect(workflow).toContain('group: firestore-production-mutations');
   });
 
   it('does not retain the completed reservation migration workflow', () => {
@@ -554,6 +789,21 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('QUERY_V2');
     expect(workflow).toContain('environment: production-legacy-library-${{ inputs.mode }}');
     expect(workflow).not.toContain('environment: production-hosting');
+  });
+
+  it('has the runbook protect the environment of every legacy library repair mode', () => {
+    // GitHub creates a missing environment on first use without reviewers, so each mode's
+    // environment must be on the list the operator confirms before the rollout.
+    const workflow = read('.github/workflows/repair-legacy-libraries.yml');
+    const options = /\n {8}options:\n((?: {10}- [a-z-]+\n)+)/.exec(workflow)?.[1] ?? '';
+    const modes = [...options.matchAll(/- ([a-z-]+)/g)].map(match => match[1]);
+    expect(modes.length).toBeGreaterThan(0);
+    const runbook = read('docs/runbooks/security-remediation-rollout.md');
+    const reviewerList = runbook.slice(
+      runbook.indexOf('Confirm GitHub environments require reviewers'),
+      runbook.indexOf('3. Confirm Firebase App Check'),
+    );
+    for (const mode of modes) expect(reviewerList).toContain(`\`production-legacy-library-${mode}\``);
   });
 
   it('runs repair only from a verified immutable release candidate', () => {
@@ -627,6 +877,72 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('functions/lib/legacySharedDeckMigrationOperator.js --');
   });
 
+  it('runbook migration recovery steps name only operator modes that exist', () => {
+    const modes = relativePath => {
+      const options = /\n {8}options:\n((?: {10}- [a-z-]+\n)+)/.exec(read(relativePath))?.[1] ?? '';
+      return [...options.matchAll(/- ([a-z-]+)/g)].map(match => match[1]);
+    };
+    const sharedDeckModes = modes('.github/workflows/migrate-legacy-shared-decks.yml');
+    const libraryModes = modes('.github/workflows/repair-legacy-libraries.yml');
+    expect(sharedDeckModes.join(',')).toBe('inventory,verify,apply,supersede,prepare-indexes');
+    expect(libraryModes.join(',')).toBe('dry-run,apply,rollback,restart,catalog-progress');
+
+    const runbook = read('docs/runbooks/security-remediation-rollout.md');
+    const migration = runbook.slice(
+      runbook.indexOf('### 4. Inventory and dry-run shared decks'),
+      runbook.indexOf('### 6. Cut over Firestore Rules'),
+    );
+    const rollback = runbook.slice(runbook.indexOf('## Rollback'));
+    const flat = text => text.replace(/\s+/g, ' ');
+    const sentences = text => flat(text).split(/(?<=[.:])\s+(?=[A-Z-])/);
+    // Shared-deck recovery names only modes the shared-deck workflow offers.
+    for (const [, mode] of flat(migration).matchAll(/(?:[Rr]e-run|[Rr]un|use|in) `([a-z-]+)`/g)) {
+      expect(sharedDeckModes).toContain(mode);
+    }
+    // Once apply has started, beginFreeze refuses a new inventory; only supersede reopens one.
+    for (const sentence of sentences(migration).filter(text => /produce a new inventory|inventoried again/.test(text))) {
+      expect(sentence).toMatch(/supersede/);
+    }
+    // There is no shared-deck rollback mode, so a migration rollback names the workflow that has one.
+    expect(sharedDeckModes).not.toContain('rollback');
+    const migrationRollback = sentences(rollback).filter(text => /migration rollback/i.test(text));
+    expect(migrationRollback.length).toBeGreaterThan(0);
+    for (const sentence of migrationRollback) expect(sentence).toContain('`repair-legacy-libraries.yml`');
+    expect(flat(rollback)).toContain('The shared-deck migration has no rollback mode');
+  });
+
+  it('lets verification name the release itself as the revision that owns the migration', () => {
+    const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
+    const verifyChecks = workflow.slice(
+      workflow.indexOf('if [[ "$MIGRATION_MODE" = verify ]]; then'),
+      workflow.indexOf('if [[ "$MIGRATION_MODE" = apply ]]; then'),
+    );
+    expect(verifyChecks).toContain('[[ "$MIGRATION_SOURCE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]');
+    expect(verifyChecks).not.toContain('test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"');
+  });
+
+  it('lets a protected apply finish a shared-deck migration sealed at an earlier revision', () => {
+    const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
+    const applyChecks = workflow.slice(
+      workflow.indexOf('if [[ "$MIGRATION_MODE" = apply ]]; then'),
+      workflow.indexOf('if [[ "$MIGRATION_MODE" = supersede ]]; then'),
+    );
+    expect(applyChecks).toContain([
+      '            if [[ -n "$MIGRATION_SOURCE_REVISION" ]]; then',
+      '              [[ "$MIGRATION_SOURCE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]',
+      '              test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"',
+      '            fi',
+    ].join('\n'));
+    // The head still has to be the default branch head, and the sealing
+    // revision one of its ancestors, before any credential is loaded.
+    expect(applyChecks).toContain('test "$APPLY_CONFIRMATION" = "APPLY_SHARED_DECK_V2"');
+    const ancestry = workflow.indexOf('git merge-base --is-ancestor "$MIGRATION_SOURCE_REVISION" "$INVENTORY_REVISION"');
+    expect(ancestry).toBeGreaterThan(-1);
+    expect(ancestry).toBeLessThan(workflow.indexOf('google-github-actions/auth@'));
+    expect(workflow.slice(workflow.indexOf('- name: Run the redacted inventory')))
+      .toContain('MIGRATION_SOURCE_REVISION: ${{ inputs.source_revision }}');
+  });
+
   it('requires an authenticated read-only TTL policy snapshot for both shared-deck collections', () => {
     const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
     const setupGcloudIndex = workflow.indexOf('google-github-actions/setup-gcloud@');
@@ -661,6 +977,39 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('sha256sum "$receipt"');
     expect(receiptIndex).toBeGreaterThan(-1);
     expect(deployIndex).toBeGreaterThan(receiptIndex);
+  });
+
+  it('keeps scheduled runs out of the production Firestore mutation concurrency group', () => {
+    // GitHub keeps one pending run per concurrency group and cancels it when another run queues,
+    // so a scheduled run in this group would cancel a pending deploy, index preparation or safety run.
+    const mutationGroup = 'firestore-production-mutations';
+    const scheduledGroup = workflow => {
+      const group = /^concurrency:\n {2}group: (.+)$/m.exec(workflow)?.[1] ?? '';
+      const byEvent = /^\$\{\{ github\.event_name == 'schedule' && '([^']+)' \|\| '([^']+)' \}\}$/.exec(group);
+      return byEvent ? byEvent[1] : group;
+    };
+    const workflowDirectory = new URL('../.github/workflows/', import.meta.url);
+    const scheduled = fs.readdirSync(workflowDirectory)
+      .filter(name => /^ {2}schedule:$/m.test(read(`.github/workflows/${name}`)));
+    expect(scheduled.length).toBeGreaterThan(0);
+    for (const name of scheduled) {
+      expect(scheduledGroup(read(`.github/workflows/${name}`))).not.toContain(mutationGroup);
+    }
+    expect(scheduledGroup(read('.github/workflows/deploy-production.yml'))).toBe(mutationGroup);
+
+    const safety = read('.github/workflows/verify-firestore-release-safety.yml');
+    const cleanup = safety.slice(safety.indexOf('  cleanup:'));
+    expect(safety).toContain(
+      "group: ${{ github.event_name == 'schedule' && 'firestore-release-restore-cleanup' || 'firestore-production-mutations' }}",
+    );
+    // Outside the lock, the scheduled reconciler must leave the database of a run that has not finished.
+    expect(cleanup).toContain('actions: read');
+    expect(cleanup).toContain('GH_TOKEN: ${{ github.token }}');
+    expect(cleanup).toContain('gh api "repos/$GITHUB_REPOSITORY/actions/runs/$owner_run_id" --jq .status');
+    expect(cleanup).toContain('cleanup_failures+=("run-status:$restore_database_id")');
+    const statusIndex = cleanup.indexOf('actions/runs/$owner_run_id');
+    expect(statusIndex).toBeGreaterThan(-1);
+    expect(statusIndex).toBeLessThan(cleanup.indexOf('gcloud firestore operations cancel'));
   });
 
   it('validates the gcloud TTL snapshot state from ttlConfig', () => {
@@ -760,7 +1109,7 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('always() && env.RESTORE_DATABASE_ID !=');
     expect(workflow).toContain('needs: verify');
     expect(workflow).toContain('if: ${{ always() }}');
-    expect(workflow).toContain('group: firestore-production-mutations');
+    expect(workflow).toContain("|| 'firestore-production-mutations' }}");
     expect(workflow).toContain("cron: '17 * * * *'");
     expect(workflow).toContain("if: ${{ github.event_name == 'workflow_dispatch' }}");
     expect(workflow.slice(workflow.indexOf('  cleanup:'))).toContain('timeout-minutes: 60');
@@ -787,7 +1136,7 @@ describe('release workflow contracts', () => {
   it('installs and verifies the local Firebase CLI before preparing indexes', () => {
     const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
     const cliInstallIndex = workflow.indexOf('name: Install the trusted root Firebase CLI');
-    const cliVersionIndex = workflow.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.29.0"');
+    const cliVersionIndex = workflow.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.34.0"');
     const prepareAuthIndex = workflow.indexOf('google-github-actions/auth@');
     const prepareStepIndex = workflow.indexOf('name: Prepare and deploy the exact candidate Firestore indexes');
     const indexesOnlyConfigIndex = workflow.indexOf('artifacts/index-preparation/firebase-project/firebase.json');
@@ -863,6 +1212,24 @@ describe('release workflow contracts', () => {
       { fieldPath: 'schemaVersion', order: 'ASCENDING' },
       { fieldPath: '__name__', order: 'ASCENDING' },
     ]);
+  });
+
+  it('declares every composite index once after the implicit document name is appended', () => {
+    const manifest = JSON.parse(read('firestore.indexes.json'));
+    const signature = index => {
+      const fields = index.fields.map(({ fieldPath, order, arrayConfig }) => [fieldPath, order ?? arrayConfig]);
+      const last = fields.at(-1);
+      if (last?.[0] !== '__name__') fields.push(['__name__', last?.[1] ?? 'ASCENDING']);
+      return JSON.stringify([index.collectionGroup, index.queryScope, fields]);
+    };
+    const seen = new Map();
+    const duplicates = [];
+    manifest.indexes.forEach((index, position) => {
+      const key = signature(index);
+      if (seen.has(key)) duplicates.push(`${index.collectionGroup}: entries ${seen.get(key)} and ${position}`);
+      else seen.set(key, position);
+    });
+    assert.deepEqual(duplicates, []);
   });
 
   it('only seals an index report after active field and operation readback', () => {
@@ -964,6 +1331,39 @@ describe('release workflow contracts', () => {
           '--target', 'project/database',
           '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' }));
       }
+      // An override that turns a single-field index on is active only once that index is READY.
+      const enabledPath = path.join(directory, 'enabled-indexes.json');
+      fs.writeFileSync(enabledPath, JSON.stringify({
+        fieldOverrides: [{
+          collectionGroup: 'cards', fieldPath: 'imageUrl',
+          indexes: [{ order: 'ASCENDING', queryScope: 'COLLECTION' }],
+        }],
+      }));
+      const verifyEnabled = activeIndexes => {
+        fs.writeFileSync(path.join(directory, 'active.json'), JSON.stringify([{
+          name: 'projects/project/databases/database/collectionGroups/cards/fields/imageUrl',
+          indexConfig: { indexes: activeIndexes },
+        }]));
+        execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+          '--indexes', enabledPath, '--active', path.join(directory, 'active.json'),
+          '--database-metadata', path.join(directory, 'database.json'),
+          '--operations', path.join(directory, 'operations.json'), '--baseline-operations', path.join(directory, 'baseline.json'),
+          '--target', 'project/database',
+          '--revision', 'a'.repeat(40), '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
+      };
+      const readyIndex = { queryScope: 'COLLECTION', fields: [{ fieldPath: 'imageUrl', order: 'ASCENDING' }], state: 'READY' };
+      verifyEnabled([readyIndex]);
+      for (const activeIndexes of [
+        [],
+        [{ ...readyIndex, state: 'CREATING' }],
+        [{ ...readyIndex, queryScope: 'COLLECTION_GROUP' }],
+        [{ ...readyIndex, fields: [{ fieldPath: 'imageUrl', order: 'DESCENDING' }] }],
+        [{ ...readyIndex, fields: [{ fieldPath: 'imageUrl', arrayConfig: 'CONTAINS' }] }],
+        [{ ...readyIndex, fields: [{ fieldPath: 'audioUrl', order: 'ASCENDING' }] }],
+        [readyIndex, { ...readyIndex, fields: [{ fieldPath: 'imageUrl', order: 'DESCENDING' }] }],
+      ]) {
+        assert.throws(() => verifyEnabled(activeIndexes));
+      }
       fs.writeFileSync(path.join(directory, 'active.json'), '[]');
       fs.writeFileSync(path.join(directory, 'database.json'), JSON.stringify({ databaseEdition: 'ENTERPRISE' }));
       execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
@@ -1033,6 +1433,49 @@ describe('release workflow contracts', () => {
       assert.equal(report.active, true);
       assert.equal(report.compositeCount, 1);
       assert.equal(report.target, 'demo/(default)');
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts a READY Standard composite that carries the implicit trailing document name', () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lingoflash-implicit-name-index-'));
+    try {
+      const fields = [
+        { fieldPath: 'status', order: 'ASCENDING' },
+        { fieldPath: 'expiresAt', order: 'DESCENDING' },
+      ];
+      const write = (name, value) => fs.writeFileSync(path.join(directory, name), JSON.stringify(value));
+      write('indexes.json', { indexes: [{ collectionGroup: 'entitlements', queryScope: 'COLLECTION', fields }], fieldOverrides: [] });
+      write('active-fields.json', []);
+      write('operations.json', []);
+      write('baseline.json', []);
+      const verify = (edition, readback) => {
+        write('database.json', { databaseEdition: edition });
+        write('active-composite.json', readback.map(entry => ({
+          name: 'projects/demo/databases/(default)/collectionGroups/entitlements/indexes/abc',
+          queryScope: 'COLLECTION',
+          ...entry,
+        })));
+        return () => execFileSync(process.execPath, ['scripts/verify-firestore-index-preparation.mjs',
+          '--indexes', path.join(directory, 'indexes.json'),
+          '--composite', path.join(directory, 'active-composite.json'),
+          '--active', path.join(directory, 'active-fields.json'),
+          '--database-metadata', path.join(directory, 'database.json'),
+          '--operations', path.join(directory, 'operations.json'),
+          '--baseline-operations', path.join(directory, 'baseline.json'),
+          '--target', 'demo/(default)', '--revision', 'a'.repeat(40),
+          '--output', path.join(directory, 'report.json')], { stdio: 'pipe' });
+      };
+      const suffixed = [...fields, { fieldPath: '__name__', order: 'DESCENDING' }];
+      verify('STANDARD', [{ fields: suffixed, state: 'READY' }])();
+      verify('STANDARD', [{ fields, state: 'READY' }])();
+      verify('ENTERPRISE', [{ fields, state: 'READY' }])();
+      assert.throws(verify('STANDARD', [{ fields: suffixed, state: 'CREATING' }]));
+      assert.throws(verify('STANDARD', [{
+        fields: [...fields, { fieldPath: '__name__', order: 'ASCENDING' }], state: 'READY',
+      }]));
+      assert.throws(verify('ENTERPRISE', [{ fields: suffixed, state: 'READY' }]));
     } finally {
       fs.rmSync(directory, { recursive: true, force: true });
     }

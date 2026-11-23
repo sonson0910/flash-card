@@ -60,6 +60,12 @@ const trackSummary = (summary: CatalogWorkspaceSummary, trackId: string) => (
   summary.tracks.find(track => track.trackId === trackId)
 );
 
+const tierDescription: Record<CatalogTierId, string> = {
+  foundation: 'Build an essential vocabulary base.',
+  core: 'Grow a confident working range.',
+  advanced: 'Use precise and nuanced language.',
+};
+
 export function catalogTracksFromSummary(summary: CatalogWorkspaceSummary): CatalogTrackPresentation[] {
   return getCatalogLanguage(summary.release.contentLanguage).tracks
     .filter((track): track is typeof track & { id: CatalogTrackPresentation['id'] } => (
@@ -78,12 +84,6 @@ export function catalogTracksFromSummary(summary: CatalogWorkspaceSummary): Cata
     });
 }
 
-const tierDescription: Record<CatalogTierId, string> = {
-  foundation: 'Build essential language from A1 to A2.',
-  core: 'Grow a confident working range from B1 to B2.',
-  advanced: 'Use precise and nuanced language from C1 to C2.',
-};
-
 export function catalogTiersFromSummary(
   summary: CatalogWorkspaceSummary,
   trackId: string,
@@ -98,7 +98,7 @@ export function catalogTiersFromSummary(
     const mastered = count?.mastered ?? 0;
     return {
       id: tier.id,
-      label: `${tier.label} · ${tier.cefrRange}`,
+      label: tier.label,
       description: tierDescription[tier.id],
       total,
       started,
@@ -111,11 +111,11 @@ export function catalogTiersFromSummary(
 }
 
 export function catalogFiltersFromSummary(
-  summary: CatalogWorkspaceSummary,
+  summary: CatalogWorkspaceSummary | null,
   trackId: string,
   query?: CatalogWorkspaceQuery,
 ): CatalogFilterPresentation {
-  const facets = trackSummary(summary, trackId)?.facets;
+  const facets = summary ? trackSummary(summary, trackId)?.facets : undefined;
   return {
     term: query?.term ?? '',
     cefr: query?.cefrLevel ?? '',

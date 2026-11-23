@@ -1,16 +1,27 @@
 import { cardLogicalKey, cardWordKey, normalizeCardWord } from '../../lib/cardIdentity';
 import type { CardData } from '../../types/card';
-import { extractFlatWords, parseStructuredCardRows } from './spreadsheetModel';
+import {
+  classifyFlatWords,
+  classifyStructuredCardRows,
+  structuredCardLogicalKey,
+  type FlatWordClassification,
+  type StructuredImportLanguageDefaults,
+} from './spreadsheetModel';
 import { planStructuredImportMutation, type SortableCardData } from './spreadsheetMutation';
 import {
   MAX_SPREADSHEET_FILE_BYTES,
   SpreadsheetReadError,
+  SpreadsheetUnsupportedFormatError,
 } from './spreadsheetWorkbook';
 import type { SpreadsheetWorkbook } from './spreadsheetWorkbook';
 
 const DEFAULT_MAX_AI_CARDS = 30;
 
-export { MAX_SPREADSHEET_FILE_BYTES, SpreadsheetReadError } from './spreadsheetWorkbook';
+export {
+  MAX_SPREADSHEET_FILE_BYTES,
+  SpreadsheetReadError,
+  SpreadsheetUnsupportedFormatError,
+} from './spreadsheetWorkbook';
 export type { SpreadsheetWorkbook } from './spreadsheetWorkbook';
 
 export interface SpreadsheetImportRequest {
@@ -22,6 +33,10 @@ export interface SpreadsheetImportProgress {
   current: number;
   total: number;
   word: string;
+  phase?: 'reading' | 'checking' | 'saving';
+  summary?: SpreadsheetImportSummary;
+  issues?: SpreadsheetImportIssue[];
+  omittedIssues?: number;
 }
 
 export interface SpreadsheetImportSummary {
@@ -30,11 +45,24 @@ export interface SpreadsheetImportSummary {
   reused: number;
   failed: number;
   skipped: number;
+  pending?: number;
+  /** New cards whose Deck cell named a deck the learner does not have; they were saved as Unassigned. */
+  deckUnassigned?: number;
+}
+
+export interface SpreadsheetImportIssue {
+  sourceRow: number;
+  sourceColumn?: number;
+  word?: string;
+  kind: 'invalid' | 'duplicate' | 'generation' | 'save' | 'pending';
+  message: string;
 }
 
 export type SpreadsheetImportFailureReason = 'size' | 'read' | 'parse' | 'empty' | 'save' | 'items';
 
-export type SpreadsheetImportResult =
+type ImportResultEvidence = { issues?: SpreadsheetImportIssue[]; omittedIssues?: number };
+
+export type SpreadsheetImportResult = ImportResultEvidence & (
   | { status: 'completed'; summary: SpreadsheetImportSummary; message: string }
   | { status: 'partial'; summary: SpreadsheetImportSummary; message: string }
   | {
@@ -42,7 +70,9 @@ export type SpreadsheetImportResult =
     reason: SpreadsheetImportFailureReason;
     summary: SpreadsheetImportSummary;
     message: string;
-  };
+    /** Generation stopped because the plan or account does not allow more, not because of a connection problem. */
+    generationLimited?: boolean;
+  });
 
 export interface StructuredIntakePlan {
   creates: SortableCardData[];
@@ -59,15 +89,13 @@ export interface FlatIntakeSummary {
   categoryDeltas: Record<string, number>;
 }
 
+export type SpreadsheetSaveOutcome = 'created' | 'reused' | 'failed' | 'pending';
+
 export interface CardIntakePort {
   findExisting(words: readonly (string | Pick<CardData, 'word' | 'normalizedWord' | 'lexemeId' | 'language' | 'senseKey' | 'partOfSpeech' | 'normalizedLemma'>)[]): Promise<Map<string, CardData>>;
-  persistStructured(plan: StructuredIntakePlan): Promise<{
-    createdCount: number;
-    patchedCount?: number;
-    failedPatchCount?: number;
-  }>;
+  persistStructured(plan: StructuredIntakePlan, onSettlement?: (index: number, outcome: SpreadsheetSaveOutcome) => void): Promise<{ createdCount: number; outcomes?: SpreadsheetSaveOutcome[]; patchedCount?: number; failedPatchCount?: number }>;
   touchExisting(card: CardData, touchedAt: string): Promise<void>;
-  generate(word: string, generatedBefore: number): Promise<{ created: boolean; category?: string }>;
+  generate(word: string, generatedBefore: number): Promise<{ created: boolean; category?: string; settlement?: Promise<SpreadsheetSaveOutcome> }>;
   completeFlat(summary: FlatIntakeSummary): Promise<void>;
 }
 
@@ -95,6 +123,8 @@ interface SpreadsheetImportServiceOptions {
   diagnostics?: SpreadsheetImportDiagnosticsPort;
   maxFileBytes?: number;
   maxAiCards?: number;
+  /** The active course's pair, for rows that name no language. Without it such a row names none. */
+  languageDefaults?: StructuredImportLanguageDefaults;
   now?: () => string;
   delay?: (milliseconds: number) => Promise<void>;
   isActive?: () => boolean;
@@ -118,25 +148,45 @@ const completedImportResult = (
   message: `Import complete: ${formatCount(summary.created)} created, ${formatCount(summary.reused)} already in your library.`,
 });
 
-const itemImportResult = (summary: SpreadsheetImportSummary): SpreadsheetImportResult => {
+/**
+ * A rejection every further word would meet too: the plan's AI allowance is used up, or the account
+ * may not generate. Retrying the remaining words only repeats it, so the import stops generating.
+ */
+const stopsFurtherGeneration = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return false;
+  const { kind, code } = error as { kind?: unknown; code?: unknown };
+  if (kind === 'quota' || kind === 'permission' || kind === 'authentication') return true;
+  return typeof code === 'string' && /(^|\/)(resource-exhausted|quota-exceeded|permission-denied|unauthenticated)$/.test(code);
+};
+
+const itemImportResult = (summary: SpreadsheetImportSummary, generationLimited = false): SpreadsheetImportResult => {
   const successful = summary.created + summary.reused;
-  if (summary.failed === 0 && summary.skipped === 0) return completedImportResult(summary);
+  if (summary.failed === 0 && summary.skipped === 0 && !summary.pending) return completedImportResult(summary);
+  if (summary.pending) {
+    return {
+      status: 'partial', summary,
+      message: `Import partly finished: ${formatCount(summary.created)} created, ${formatCount(summary.reused)} already present, ${formatCount(summary.failed)} failed, ${formatCount(summary.skipped)} skipped, and ${formatCount(summary.pending)} not confirmed. Review the pending rows before retrying.`,
+    };
+  }
   if (successful === 0) {
     const details = [
       summary.failed > 0 ? `${formatCount(summary.failed)} items failed` : null,
-      summary.skipped > 0 ? `${formatCount(summary.skipped)} items were skipped by the AI safety limit` : null,
+      summary.skipped > 0 ? `${formatCount(summary.skipped)} items were skipped` : null,
     ].filter(Boolean).join(' and ');
     return {
       status: 'failed',
       reason: 'items',
       summary,
-      message: `No cards were imported: ${details}. Check your sign-in and connection, then try again.`,
+      ...(generationLimited ? { generationLimited } : {}),
+      message: generationLimited
+        ? `No cards were imported: ${details}. Your AI card allowance does not cover more generated cards right now.`
+        : `No cards were imported: ${details}. Check your sign-in and connection, then try again.`,
     };
   }
   return {
     status: 'partial',
     summary,
-    message: `Import partly finished: ${formatCount(summary.created)} created, ${formatCount(summary.reused)} already present, ${formatCount(summary.failed)} failed, and ${formatCount(summary.skipped)} skipped by the AI safety limit. Retry the failed or skipped words later.`,
+    message: `Import partly finished: ${formatCount(summary.created)} created, ${formatCount(summary.reused)} already present, ${formatCount(summary.failed)} failed, and ${formatCount(summary.skipped)} skipped. Retry the failed or skipped words later.`,
   };
 };
 
@@ -146,6 +196,7 @@ export function createSpreadsheetImportService({
   diagnostics = {},
   maxFileBytes = MAX_SPREADSHEET_FILE_BYTES,
   maxAiCards = DEFAULT_MAX_AI_CARDS,
+  languageDefaults,
   now = () => new Date().toISOString(),
   delay = milliseconds => new Promise<void>(resolve => globalThis.setTimeout(resolve, milliseconds)),
   isActive = () => true,
@@ -170,6 +221,51 @@ export function createSpreadsheetImportService({
     loadWorkbook,
   }: SpreadsheetImportRequest): Promise<SpreadsheetImportResult> => {
     let summary = emptyImportSummary();
+    let issues: SpreadsheetImportIssue[] = [];
+    let omittedIssues = 0;
+    let processed = 0;
+    let nextCandidateId = 0;
+    const unsettled = new Map<number, Pick<SpreadsheetImportIssue, 'sourceRow' | 'sourceColumn' | 'word'>>();
+    const unassignedDeckCandidates = new Set<number>();
+    const addIssue = (issue: SpreadsheetImportIssue) => {
+      if (issues.length < 5_000) issues = [...issues, issue];
+      else omittedIssues += 1;
+    };
+    const withEvidence = (result: SpreadsheetImportResult): SpreadsheetImportResult => ({
+      ...result,
+      ...(issues.length ? { issues: [...issues] } : {}),
+      ...(omittedIssues ? { omittedIssues } : {}),
+    });
+    const publish = (word: string, phase: SpreadsheetImportProgress['phase']) => {
+      assertActive();
+      feedback.progress({
+        current: processed,
+        total: summary.total, word, phase,
+        summary: { ...summary }, issues, omittedIssues,
+      });
+    };
+    const track = (candidate: Pick<SpreadsheetImportIssue, 'sourceRow' | 'sourceColumn' | 'word'>) => {
+      const id = nextCandidateId++;
+      unsettled.set(id, candidate);
+      return id;
+    };
+    const settle = (id: number, outcome: SpreadsheetSaveOutcome, failureKind: 'generation' | 'save' = 'save') => {
+      if (!isActive()) return;
+      const candidate = unsettled.get(id);
+      if (!candidate) return;
+      unsettled.delete(id);
+      if (outcome !== 'pending') summary.pending = (summary.pending ?? 0) - 1;
+      if (outcome === 'created') {
+        summary.created += 1;
+        if (unassignedDeckCandidates.has(id)) summary.deckUnassigned = (summary.deckUnassigned ?? 0) + 1;
+      } else if (outcome === 'reused') summary.reused += 1;
+      else if (outcome === 'failed') {
+        summary.failed += 1;
+        addIssue({ ...candidate, kind: failureKind, message: failureKind === 'generation' ? 'The card could not be generated.' : 'The card could not be saved.' });
+      } else addIssue({ ...candidate, kind: 'pending', message: 'The save was not confirmed.' });
+      processed += 1;
+      publish(candidate.word ?? '', 'saving');
+    };
     let phase: 'load' | 'parse' | 'save' = 'load';
     assertActive();
     if (sizeBytes > maxFileBytes) {
@@ -196,65 +292,123 @@ export function createSpreadsheetImportService({
       }
 
       phase = 'parse';
-      const structuredRows = parseStructuredCardRows(workbook.structuredRows);
-      if (structuredRows.length > 0) {
-        summary = { ...summary, total: structuredRows.length };
-        phase = 'save';
-        const existingCards = await awaitStage(() => cards.findExisting(structuredRows.map(row => row.lexemeId ? row : row.word)));
-        const plan: StructuredIntakePlan = { creates: [], patches: [] };
-
-        for (const row of structuredRows) {
-          const logicalKey = row.lexemeId ? `lexeme:${row.lexemeId}` : row.word;
-          const existing = Array.from(existingCards.values()).find(card => cardLogicalKey(card) === logicalKey) ?? null;
-          const mutation = planStructuredImportMutation(row, existing, now());
-          if (mutation.kind === 'create') {
-            plan.creates.push(mutation.card);
+      const structuredMode = workbook.hasStructuredHeader ?? workbook.structuredRows.length > 0;
+      if (structuredMode) {
+        const sourceRows = workbook.structuredSourceRows
+          ?? workbook.structuredRows.map((row, index) => ({ row, sourceRow: index + 2 }));
+        const classified = classifyStructuredCardRows(sourceRows, languageDefaults);
+        summary = { ...summary, total: 0, pending: 0 };
+        const accepted = [] as Extract<typeof classified[number], { kind: 'accepted' }>[];
+        for (const item of classified) {
+          summary.total += 1;
+          if (item.kind === 'accepted') {
+            summary.pending = (summary.pending ?? 0) + 1;
+            accepted.push(item);
           } else {
-            plan.patches.push({ card: mutation.card, fields: mutation.fields });
+            if (item.kind === 'invalid') summary.failed += 1;
+            else summary.skipped += 1;
+            processed += 1;
+            addIssue({
+              sourceRow: item.sourceRow, word: item.word, kind: item.kind,
+              message: item.kind === 'invalid' ? 'A required field or identity is invalid.' : 'This row duplicates an earlier row.',
+            });
           }
+          publish(item.kind === 'accepted' ? item.row.word : item.word ?? '', 'checking');
         }
-
-        const persisted = await awaitStage(() => cards.persistStructured(plan));
-        const created = Math.max(0, Math.min(plan.creates.length, persisted.createdCount));
-        const patched = Math.max(0, Math.min(plan.patches.length, persisted.patchedCount ?? plan.patches.length));
-        const failed = Math.max(0, Math.min(plan.patches.length - patched, persisted.failedPatchCount ?? 0));
-        summary = {
-          ...summary,
-          created,
-          reused: patched + (plan.creates.length - created),
-          failed,
-        };
-        const result = itemImportResult(summary);
+        if (classified.length === 0) {
+          const message = 'No importable rows were found. Add a Word and Translation row, then try again.';
+          feedback.error(message);
+          return { status: 'failed', reason: 'empty', summary, message };
+        }
+        phase = 'save';
+        if (accepted.length > 0) {
+          const existingCards = await awaitStage(() => cards.findExisting(accepted.map(item => item.row)));
+          const plan: StructuredIntakePlan = { creates: [], patches: [] };
+          const candidates: number[] = [];
+          const patches: number[] = [];
+          for (const item of accepted) {
+            const row = item.row;
+            const logicalKey = structuredCardLogicalKey(row);
+            const existing = Array.from(existingCards.values()).find(card => cardLogicalKey(card) === logicalKey) ?? null;
+            const mutation = planStructuredImportMutation(row, existing, now(), { deckNames: workbook.deckNames });
+            const id = track({ sourceRow: item.sourceRow, word: row.word });
+            if (mutation.kind === 'create') {
+              plan.creates.push(mutation.card);
+              candidates.push(id);
+              if (mutation.deckUnassigned) unassignedDeckCandidates.add(id);
+            } else {
+              plan.patches.push({ card: mutation.card, fields: mutation.fields });
+              patches.push(id);
+            }
+          }
+          const all = [...candidates, ...patches];
+          const persisted = await awaitStage(() => cards.persistStructured(plan, (index, outcome) => {
+            const id = all[index];
+            if (id !== undefined) settle(id, outcome);
+          }));
+          all.forEach((id, index) => {
+            if (!unsettled.has(id)) return;
+            const outcome = persisted.outcomes?.[index]
+              ?? (index < candidates.length
+                ? index < persisted.createdCount ? 'created' : 'reused'
+                : persisted.failedPatchCount && index - candidates.length >= (persisted.patchedCount ?? patches.length - persisted.failedPatchCount)
+                  ? 'failed' : 'reused');
+            settle(id, outcome);
+          });
+        }
+        const result = withEvidence(itemImportResult(summary));
         if (result.status !== 'completed') feedback.error(result.message);
         return result;
       }
 
-      const words = extractFlatWords(workbook.flatRows);
-      summary = { ...summary, total: words.length };
-      if (words.length === 0) {
+      const sourceCells = workbook.flatSourceCells ?? workbook.flatRows.flatMap((row, rowIndex) =>
+        row.map((value, columnIndex) => ({ value, sourceRow: rowIndex + 1, sourceColumn: columnIndex + 1 })));
+      const classified = classifyFlatWords(sourceCells);
+      summary = { ...summary, total: 0, pending: 0 };
+      const accepted: Array<Extract<FlatWordClassification, { kind: 'accepted' }>> = [];
+      for (const item of classified) {
+        summary.total += 1;
+        if (item.kind === 'accepted') {
+          summary.pending = (summary.pending ?? 0) + 1;
+          accepted.push(item);
+        } else {
+          summary.skipped += 1;
+          processed += 1;
+          addIssue({
+            sourceRow: item.sourceRow, sourceColumn: item.sourceColumn, word: item.word,
+            kind: item.kind === 'duplicate' ? 'duplicate' : 'generation',
+            message: item.kind === 'duplicate' ? 'This word appears earlier in the file.' : 'This word is beyond the 200-word processing limit.',
+          });
+        }
+        publish(item.word, 'checking');
+      }
+      if (summary.total === 0) {
         const message = 'No importable words were found. Add a Word column or a simple list of words, then try again.';
         assertActive();
         feedback.error(message);
         return { status: 'failed', reason: 'empty', summary, message };
       }
-
       phase = 'save';
-      const existingCards = await awaitStage(() => cards.findExisting(words));
+      const existingCards = await awaitStage(() => cards.findExisting(accepted.map(item => item.word)));
       const categoryDeltas: Record<string, number> = {};
+      const settlements: Promise<void>[] = [];
+      let generatedCount = 0;
+      let aiSkipped = 0;
+      let generationLimited = false;
 
-      for (let index = 0; index < words.length; index += 1) {
-        const word = words[index];
+      for (let index = 0; index < accepted.length; index += 1) {
+        const item = accepted[index];
+        const word = item.word;
         assertActive();
-        feedback.progress({ current: index + 1, total: words.length, word });
-        assertActive();
+        const id = track(item);
         const existing = existingCards.get(normalizeCardWord(word));
         if (existing) {
           try {
             await awaitStage(() => cards.touchExisting(existing, now()));
-            summary.reused += 1;
+            settle(id, 'reused');
           } catch (error) {
             if (error instanceof SpreadsheetImportStaleError) throw error;
-            summary.failed += 1;
+            settle(id, 'failed');
             assertActive();
             diagnostics.itemFailed?.(word, error);
             assertActive();
@@ -262,40 +416,65 @@ export function createSpreadsheetImportService({
           continue;
         }
 
-        if (summary.created >= maxAiCards) {
+        if (generatedCount >= maxAiCards || generationLimited) {
           summary.skipped += 1;
+          aiSkipped += 1;
+          summary.pending = (summary.pending ?? 0) - 1;
+          processed += 1;
+          unsettled.delete(id);
+          addIssue({
+            sourceRow: item.sourceRow, sourceColumn: item.sourceColumn, word,
+            kind: 'generation',
+            message: generationLimited
+              ? 'This word was not generated because the AI limit or plan does not allow more.'
+              : 'This word is beyond the AI generation limit.',
+          });
+          publish(word, 'checking');
           continue;
         }
 
         try {
-          const result = await awaitStage(() => cards.generate(word, summary.created));
+          const result = await awaitStage(() => cards.generate(word, generatedCount));
           if (result.created) {
-            summary.created += 1;
-            const category = result.category || 'Other';
-            categoryDeltas[category] = (categoryDeltas[category] || 0) + 1;
+            generatedCount += 1;
+          }
+          if (result.settlement) {
+            settlements.push(result.settlement.then(outcome => {
+              settle(id, outcome);
+              if (outcome === 'created') {
+                const category = result.category || 'Other';
+                categoryDeltas[category] = (categoryDeltas[category] || 0) + 1;
+              }
+            }));
           } else {
-            summary.reused += 1;
+            settle(id, result.created ? 'created' : 'reused');
+            if (result.created) {
+              const category = result.category || 'Other';
+              categoryDeltas[category] = (categoryDeltas[category] || 0) + 1;
+            }
           }
         } catch (error) {
           if (error instanceof SpreadsheetImportStaleError) throw error;
-          summary.failed += 1;
+          settle(id, 'failed', 'generation');
           assertActive();
           diagnostics.itemFailed?.(word, error);
           assertActive();
+          if (stopsFurtherGeneration(error)) generationLimited = true;
         }
-        if (index < words.length - 1 && summary.created < maxAiCards) {
+        if (index < accepted.length - 1 && generatedCount < maxAiCards && !generationLimited) {
           await awaitStage(() => delay(2500));
         }
       }
 
+      await awaitStage(() => Promise.all(settlements));
       await awaitStage(() => cards.completeFlat({
         successCount: summary.created + summary.reused,
-        generatedCount: summary.created,
-        skippedForAiLimit: summary.skipped,
+        generatedCount,
+        skippedForAiLimit: aiSkipped,
         categoryDeltas,
       }));
 
-      const result = itemImportResult(summary);
+      const result = withEvidence(itemImportResult(summary, generationLimited));
       if (result.status !== 'completed') {
         assertActive();
         feedback.error(result.message);
@@ -305,6 +484,12 @@ export function createSpreadsheetImportService({
       if (error instanceof SpreadsheetImportStaleError) throw error;
       assertActive();
       diagnostics.workbookFailed?.(error);
+      if (error instanceof SpreadsheetUnsupportedFormatError) {
+        const message = error.message;
+        assertActive();
+        feedback.error(message);
+        return { status: 'failed', reason: 'read', summary, message };
+      }
       if (error instanceof SpreadsheetReadError) {
         const message = 'Could not read this spreadsheet. Make sure it is a valid Excel or CSV file, then try again.';
         assertActive();
@@ -318,16 +503,14 @@ export function createSpreadsheetImportService({
         return { status: 'failed', reason: 'parse', summary, message };
       }
 
-      if (summary.total > 0 && summary.created + summary.reused + summary.failed + summary.skipped === 0) {
-        summary = { ...summary, failed: summary.total };
-      }
+      for (const id of [...unsettled.keys()]) settle(id, 'failed');
       const message = 'Could not save the imported cards. Check your sign-in and connection, then try the same file again.';
       assertActive();
       feedback.error(message);
-      if (summary.created + summary.reused > 0) {
-        return { status: 'partial', summary, message };
+      if (summary.created + summary.reused + (summary.pending ?? 0) > 0) {
+        return withEvidence({ status: 'partial', summary, message });
       }
-      return { status: 'failed', reason: 'save', summary, message };
+      return withEvidence({ status: 'failed', reason: 'save', summary, message });
     } finally {
       if (isActive()) {
         feedback.progress(null);

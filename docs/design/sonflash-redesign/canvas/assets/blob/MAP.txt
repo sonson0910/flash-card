@@ -1,0 +1,13 @@
+d2548fc03e1af29fcc236a70efdb071c lumi-hero.webp
+d7afca7d2a5da52af5ee6cd43c820052 lumi-idle.webp
+50e97fa583afffdd2a77b9b443df7c5b lumi-happy.webp
+41b498a73b03ffa4fc367f0ca29d6064 lumi-hint.webp
+caee5a0a0eca4d909adff08acb3f7683 lumi-oops.webp
+b1e57c8ef8fdc7947782a39f7b79c522 lumi-proud.webp
+c121d3092f4d5c593a2455b537c54227 lumi-chibi.webp
+9a2fb07054c9eed38d54ce3ef41a5e38 lumi-sleepy.webp
+146080c586eaf9de6d6d4f5fae93d5c8 lumi-thinking.webp
+16c79cae2c88bd0ab3fed8cbd5c840f5 lumi-sad.webp
+ed058680c239cce56bb63500ca7dd0e4 ed058680c239cce56bb63500ca7dd0e4.jpg (sample card photo)
+dc9678b28352d8aeb0fea95d3a58a38d dc9678b28352d8aeb0fea95d3a58a38d.jpg (sample card photo)
+4e8348b18995828a6faaee433ba17ccd 4e8348b18995828a6faaee433ba17ccd.jpg (sample card photo)

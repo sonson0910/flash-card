@@ -22,7 +22,11 @@ export interface WordInfo {
   register: string;
   commonMistake: string;
   imageSearchQuery: string;
+  /** Other common senses of the word, never equal to `translation`. */
+  translationAlternatives?: string[];
 }
+
+export interface PlainStoryInfo { story: string; translation: string }
 
 export interface StoryInfo {
   title: string;
@@ -53,14 +57,38 @@ export interface StoryGrammarExercise {
   acceptedAnswer: string;
 }
 
-const requiredText = (source: Record<string, unknown>, key: string) => {
-  const value = source[key];
-  if (typeof value !== 'string' || !value.trim()) throw new Error('Invalid AI word data');
-  return value.trim().slice(0, 1000);
-};
+const WORD_INFO_TEXT_LIMITS = {
+  translation: 256,
+  explanation: 1000,
+  explanationTranslation: 1000,
+  phonetic: 256,
+  emoji: 16,
+  category: 60,
+  partOfSpeech: 40,
+  exampleSentence: 1000,
+  exampleTranslation: 1000,
+  mnemonic: 1000,
+  register: 40,
+  commonMistake: 1000,
+  imageSearchQuery: 120,
+} as const satisfies Partial<Record<keyof WordInfo, number>>;
 
-const optionalText = (source: Record<string, unknown>, key: string) =>
-  typeof source[key] === 'string' ? source[key].trim().slice(0, 1000) : '';
+const WORD_INFO_REQUIRED_FIELDS = [
+  'translation', 'explanation', 'explanationTranslation', 'phonetic', 'emoji', 'category',
+] as const;
+
+const WORD_INFO_LIST_FIELDS = ['collocations', 'synonyms', 'antonyms'] as const;
+
+export const TRANSLATION_ALTERNATIVES_MAX = 3;
+const TRANSLATION_ALTERNATIVE_MAX_LENGTH = 256;
+
+type WordInfoTextField = keyof typeof WORD_INFO_TEXT_LIMITS;
+type WordInfoListField = typeof WORD_INFO_LIST_FIELDS[number];
+export type WordInfoField = WordInfoTextField | WordInfoListField | 'cefrLevel' | 'wordFamily' | 'translationAlternatives';
+export type WordInfoFieldValue = string | string[] | NonNullable<WordInfo['wordFamily']>;
+
+const isTextField = (field: string): field is WordInfoTextField =>
+  Object.prototype.hasOwnProperty.call(WORD_INFO_TEXT_LIMITS, field);
 
 const textList = (value: unknown) => Array.isArray(value)
   ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).slice(0, 4).map(item => item.trim().slice(0, 100))
@@ -75,34 +103,95 @@ const optionalWordFamily = (value: unknown) => {
   const adv = typeof obj.adv === 'string' ? obj.adv.trim().slice(0, 100) : undefined;
   if (!noun && !verb && !adj && !adv) return undefined;
   return Object.fromEntries(
-    Object.entries({ noun, verb, adj, adv }).filter(([, item]) => item !== undefined),
+    Object.entries({ noun, verb, adj, adv }).filter(([, item]) => Boolean(item)),
   ) as WordInfo['wordFamily'];
+};
+
+const comparableTranslation = (value: string) => value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+
+/**
+ * Up to three distinct alternatives, each 1-256 characters, none equal to the card's translation.
+ * The card keeps this rule after the learner edits the translation, so callers re-apply it then.
+ */
+export const normalizeTranslationAlternatives = (value: unknown, translation = ''): string[] => {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const primary = comparableTranslation(translation);
+  if (primary) seen.add(primary);
+  const alternatives: string[] = [];
+  for (const item of value) {
+    if (typeof item !== 'string') continue;
+    const text = item.trim().slice(0, TRANSLATION_ALTERNATIVE_MAX_LENGTH);
+    const key = comparableTranslation(text);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    alternatives.push(text);
+    if (alternatives.length === TRANSLATION_ALTERNATIVES_MAX) break;
+  }
+  return alternatives;
+};
+
+/**
+ * Normalises one word field exactly as the final card check does, so a streamed value never changes
+ * when the complete card arrives. Returns undefined for an unknown field or a value of the wrong type.
+ */
+export function normalizeWordInfoField(
+  field: string,
+  value: unknown,
+  context: { translation?: string } = {},
+): WordInfoFieldValue | undefined {
+  if (isTextField(field)) return typeof value === 'string' ? value.trim().slice(0, WORD_INFO_TEXT_LIMITS[field]) : undefined;
+  if (field === 'cefrLevel') {
+    if (typeof value !== 'string') return undefined;
+    const cefr = value.trim().slice(0, 1000).toUpperCase();
+    return /^(A1|A2|B1|B2|C1|C2)$/.test(cefr) ? cefr : '';
+  }
+  if ((WORD_INFO_LIST_FIELDS as readonly string[]).includes(field)) return Array.isArray(value) ? textList(value) : undefined;
+  if (field === 'translationAlternatives') {
+    return Array.isArray(value) ? normalizeTranslationAlternatives(value, context.translation) : undefined;
+  }
+  if (field === 'wordFamily') return optionalWordFamily(value);
+  return undefined;
+}
+
+const fieldText = (source: Record<string, unknown>, field: WordInfoTextField): string => {
+  const value = normalizeWordInfoField(field, source[field]);
+  return typeof value === 'string' ? value : '';
 };
 
 export function parseWordInfo(value: unknown): WordInfo {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid AI word data');
   const source = value as Record<string, unknown>;
-  const cefr = optionalText(source, 'cefrLevel').toUpperCase();
+  for (const field of WORD_INFO_REQUIRED_FIELDS) {
+    if (!fieldText(source, field)) throw new Error('Invalid AI word data');
+  }
+  const translation = fieldText(source, 'translation');
+  const cefrLevel = normalizeWordInfoField('cefrLevel', source.cefrLevel);
+  const list = (field: WordInfoListField) => {
+    const items = normalizeWordInfoField(field, source[field]);
+    return Array.isArray(items) ? items : [];
+  };
 
   return {
-    translation: requiredText(source, 'translation').slice(0, 256),
-    explanation: requiredText(source, 'explanation'),
-    explanationTranslation: requiredText(source, 'explanationTranslation'),
-    phonetic: requiredText(source, 'phonetic').slice(0, 256),
-    emoji: requiredText(source, 'emoji').slice(0, 16),
-    category: requiredText(source, 'category').slice(0, 60),
-    partOfSpeech: optionalText(source, 'partOfSpeech').slice(0, 40),
-    cefrLevel: /^(A1|A2|B1|B2|C1|C2)$/.test(cefr) ? cefr : '',
-    exampleSentence: optionalText(source, 'exampleSentence'),
-    exampleTranslation: optionalText(source, 'exampleTranslation'),
-    collocations: textList(source.collocations),
-    synonyms: textList(source.synonyms),
-    antonyms: textList(source.antonyms),
-    mnemonic: optionalText(source, 'mnemonic') || undefined,
+    translation,
+    explanation: fieldText(source, 'explanation'),
+    explanationTranslation: fieldText(source, 'explanationTranslation'),
+    phonetic: fieldText(source, 'phonetic'),
+    emoji: fieldText(source, 'emoji'),
+    category: fieldText(source, 'category'),
+    partOfSpeech: fieldText(source, 'partOfSpeech'),
+    cefrLevel: typeof cefrLevel === 'string' ? cefrLevel : '',
+    exampleSentence: fieldText(source, 'exampleSentence'),
+    exampleTranslation: fieldText(source, 'exampleTranslation'),
+    collocations: list('collocations'),
+    synonyms: list('synonyms'),
+    antonyms: list('antonyms'),
+    mnemonic: fieldText(source, 'mnemonic') || undefined,
     wordFamily: optionalWordFamily(source.wordFamily),
-    register: optionalText(source, 'register').slice(0, 40),
-    commonMistake: optionalText(source, 'commonMistake'),
-    imageSearchQuery: optionalText(source, 'imageSearchQuery').slice(0, 120),
+    register: fieldText(source, 'register'),
+    commonMistake: fieldText(source, 'commonMistake'),
+    imageSearchQuery: fieldText(source, 'imageSearchQuery'),
+    translationAlternatives: normalizeTranslationAlternatives(source.translationAlternatives, translation),
   };
 }
 
@@ -202,3 +291,15 @@ const parseStoryInfoWithWords = (value: unknown, requestedWords: readonly string
     targetPhrases,
   };
 };
+
+const requiredText = (source: Record<string, unknown>, key: string) => {
+  const value = source[key];
+  if (typeof value !== 'string' || !value.trim()) throw new Error('Invalid AI word data');
+  return value.trim().slice(0, 1000);
+};
+
+export function parsePlainStoryInfo(value: unknown): PlainStoryInfo {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid AI story data');
+  const source = value as Record<string, unknown>;
+  return { story: requiredText(source, 'story'), translation: requiredText(source, 'translation') };
+}

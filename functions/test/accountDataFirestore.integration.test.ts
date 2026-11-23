@@ -1,0 +1,440 @@
+import { randomUUID } from 'node:crypto';
+import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
+import { getAuth, type Auth } from 'firebase-admin/auth';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { analyticsPseudonym } from '../src/analyticsEvents.js';
+import { sweepDueWeeklyDigests } from '../src/reminderEmailDigest.js';
+import { sweepDuePushReminders } from '../src/reminderPushDelivery.js';
+import { updateReminderSettingsForOwner } from '../src/reminderSettingsPersistence.js';
+import { ACCOUNT_RATE_SCOPES, beginAccountDeletion, exportAccountData,
+  finalizeDueDeletions, isAccountDeleting, resumeAccountDeletion } from '../src/accountData.js';
+import { budgetDocumentId } from '../src/rateLimiter.js';
+import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '../src/account-profile-contract.js';
+import { resumeDeletionWithAudit } from '../src/pilotOperator.js';
+import { commitVerifiedGamification, prepareVerifiedGamification, type VerifiedGamificationAction } from '../src/verifiedGamification.js';
+import { assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { readFile } from 'node:fs/promises';
+
+const describeWithEmulator = process.env.FIRESTORE_EMULATOR_HOST ? describe : describe.skip;
+const key = 'deletion-test-secret'.padEnd(32, 'x');
+const now = new Date('2026-09-24T00:00:00.000Z');
+
+describeWithEmulator('account export and deletion', () => {
+  let app: App;
+  let database: Firestore;
+  beforeAll(() => {
+    app = initializeApp({ projectId: 'demo-lingoflash' }, 'account-data-integration');
+    database = getFirestore(app, 'ai-studio-945b4052-4462-4668-8936-277f09f07a37');
+  });
+  afterAll(async () => { await database.terminate(); await deleteApp(app); });
+
+  const fakeAuth = () => {
+    const revokeRefreshTokens = vi.fn(async (_uid: string) => undefined);
+    const deleteUser = vi.fn(async (_uid: string) => undefined);
+    const updateUser = vi.fn(async (_uid: string, _properties: unknown) => undefined);
+    return { auth: { revokeRefreshTokens, deleteUser, updateUser } as unknown as Auth,
+      revokeRefreshTokens, deleteUser, updateUser };
+  };
+
+  it('exports only the requesting owner, then purges every pilot collection and late writes', async () => {
+    const uid = `erase-${randomUUID()}`;
+    const other = `keep-${randomUUID()}`;
+    const pid = analyticsPseudonym(uid, key);
+    const owner = database.collection('users').doc(uid);
+    await owner.set({ displayName: 'private owner' });
+    for (const [collection, id] of [
+      ['cards', 'card-1'], ['card_reservations', 'reserve-1'], ['card_tombstones', 'card-1'],
+      ['profile', 'stats'], ['profile', 'xp_history'], ['profile', 'plan'],
+      ['xp_streams', 'stream-1'], ['review_receipts', 'card-1:op'], ['review_xp_awards', 'award-1'],
+      ['card_create_receipts', 'create-1'], ['practice_sessions', 'practice-1'],
+      ['ai_usage', 'free-2026-09'], ['ai_operations', 'op-1'], ['ai_daily', '2026-09-24'],
+      ['entitlements', 'pro-1'], ['payment_receipts', 'pay-1'], ['catalog_progress', 'lex-1'], ['learning_states', 'lex-1'],
+      ['analytics_rate', 'current'], ['library_facet_receipts', 'op-1'],
+      ['reminderState', 'current'], ['reminderReceipts', '2026-09-27_push'], ['pushTokens', 'device-1'],
+      ['pushTokenSessionCutoffs', 'device-1'],
+    ] as const) await owner.collection(collection).doc(id).set({ ownerId: uid, value: 'private value' });
+    await database.collection('mail').doc(`digest-${uid}`).set({ ownerId: uid, to: ['private@example.test'] });
+    await database.collection('pushTokenOwners').doc(`token-${uid}`).set({ ownerId: uid });
+    await database.collection('pushTokenOwners').doc(`token-${other}`).set({ ownerId: other });
+    await database.collection('card_reports').doc(`report-${uid}`).set({ uid, card: { word: 'private' } });
+    await database.collection('ai_cost_ledger').doc(`cost-${uid}`).set({ uid, estimatedUsdMicros: 3 });
+    await database.collection('analytics_events').doc(`event-${uid}`).set({ pid, name: 'purchase_intent' });
+    await database.collection('payment_settlements').doc(`pay-${uid}`).set({ pid, amountVnd: 79_000 });
+    for (const scope of ACCOUNT_RATE_SCOPES) {
+      await database.collection('_functionRateLimitBudgets').doc(budgetDocumentId(uid, scope))
+        .set({ scope, calls: 1 });
+    }
+    await database.collection('users').doc(other).collection('profile').doc('stats').set({ ownerId: other });
+    await database.collection('card_reports').doc(`report-${other}`).set({ uid: other });
+    await database.collection('mail').doc(`digest-${other}`).set({ ownerId: other, to: ['other@example.test'] });
+    const exportResult = await exportAccountData(database, uid, key);
+    expect(JSON.stringify(exportResult)).toContain('private value');
+    expect(JSON.stringify(exportResult)).not.toContain(other);
+    expect((exportResult as { paymentReceipts: Array<{ id: string; ownerId: string; value: string }> }).paymentReceipts)
+      .toEqual([{ id: 'pay-1', ownerId: uid, value: 'private value' }]);
+    expect((exportResult as { catalogProgress: Array<{ id: string; ownerId: string; value: string }> }).catalogProgress)
+      .toEqual([{ id: 'lex-1', ownerId: uid, value: 'private value' }]);
+    expect((exportResult as { learningStates: Array<{ id: string; ownerId: string; value: string }> }).learningStates)
+      .toEqual([{ id: 'lex-1', ownerId: uid, value: 'private value' }]);
+    expect((exportResult as { aiOperations: Array<{ id: string; ownerId: string; value: string }> }).aiOperations)
+      .toEqual([{ id: 'op-1', ownerId: uid, value: 'private value' }]);
+    expect((exportResult as { reviewReceipts: Array<{ id: string; ownerId: string; value: string }> }).reviewReceipts)
+      .toEqual([{ id: 'card-1:op', ownerId: uid, value: 'private value' }]);
+    expect((exportResult as { reviewXpAwards: Array<{ id: string; ownerId: string; value: string }> }).reviewXpAwards)
+      .toEqual([{ id: 'award-1', ownerId: uid, value: 'private value' }]);
+    expect((exportResult as { analyticsEventCount: number }).analyticsEventCount).toBe(1);
+    expect((exportResult as { mail: Array<{ id: string }> }).mail.map(item => item.id)).toEqual([`digest-${uid}`]);
+    expect((exportResult as { pushTokenOwners: Array<{ id: string }> }).pushTokenOwners.map(item => item.id))
+      .toEqual([`token-${uid}`]);
+
+    const expiry = new Date(now.getTime() - 60_000);
+    await database.collection('shared_decks').doc(`owned-${uid}`).set({ schemaVersion: 2 });
+    await database.collection('shared_deck_owners').doc(`owned-${uid}`).set({
+      ownerUid: uid, schemaVersion: 2, createdAt: new Date(expiry.getTime() - 60_000),
+      expiresAt: expiry, payloadBytes: 1,
+    });
+    await database.collection('shared_decks').doc(`legacy-${uid}`).set({ authorUid: uid });
+    await database.collection('shared_decks').doc(`metadata-legacy-${uid}`).set({ schemaVersion: 1 });
+    await database.collection('shared_deck_owners').doc(`metadata-legacy-${uid}`).set({
+      ownerUid: uid, schemaVersion: 1, createdAt: new Date(expiry.getTime() - 60_000), expiresAt: expiry,
+    });
+    process.env.ANALYTICS_PSEUDONYM_KEY = key;
+    const { exportMyData, deleteMyAccount, getPilotOffer } = await import('../src/index.js');
+    await expect(exportMyData.run({ data: {} } as never)).rejects.toMatchObject({ code: 'unauthenticated' });
+    for (let count = 0; count < 5; count++) {
+      const ownExport = await exportMyData.run({ auth: { uid }, data: {} } as never);
+      expect(JSON.stringify(ownExport)).not.toContain(other);
+    }
+    await expect(exportMyData.run({ auth: { uid }, data: {} } as never))
+      .rejects.toMatchObject({ code: 'resource-exhausted' });
+    await expect(deleteMyAccount.run({ auth: { uid, token: { auth_time: 1 } },
+      data: { confirmation: 'XÓA TÀI KHOẢN', expectedUid: uid } } as never))
+      .rejects.toMatchObject({ code: 'failed-precondition' });
+    await expect(deleteMyAccount.run({ auth: { uid, token: { auth_time: Math.floor(Date.now() / 1000) } },
+      data: { confirmation: 'wrong', expectedUid: uid } } as never))
+      .rejects.toMatchObject({ code: 'invalid-argument' });
+    const { auth, revokeRefreshTokens, deleteUser } = fakeAuth();
+    expect(await beginAccountDeletion(database, auth, uid, key, now)).toBe('waiting');
+    expect(revokeRefreshTokens).toHaveBeenCalledWith(uid);
+    expect(deleteUser).toHaveBeenCalledWith(uid);
+    expect(await isAccountDeleting(database, uid, key)).toBe(true);
+    await expect(getPilotOffer.run({ auth: { uid }, data: {} } as never))
+      .rejects.toMatchObject({ code: 'permission-denied' });
+    expect((await database.collection('shared_decks').doc(`owned-${uid}`).get()).exists).toBe(false);
+    expect((await database.collection('shared_deck_owners').doc(`owned-${uid}`).get()).exists).toBe(false);
+    expect((await database.collection('shared_decks').doc(`legacy-${uid}`).get()).exists).toBe(false);
+    expect((await database.collection('shared_decks').doc(`metadata-legacy-${uid}`).get()).exists).toBe(false);
+    expect((await database.collection('shared_deck_owners').doc(`metadata-legacy-${uid}`).get()).exists).toBe(false);
+    expect((await database.collection('users').doc(other).collection('profile').doc('stats').get()).exists).toBe(true);
+    expect((await database.collection('card_reports').doc(`report-${other}`).get()).exists).toBe(true);
+    expect((await owner.listCollections()).length).toBe(0);
+    expect((await database.collection('ai_cost_ledger').where('uid', '==', uid).get()).empty).toBe(true);
+    expect((await database.collection('card_reports').where('uid', '==', uid).get()).empty).toBe(true);
+    expect((await database.collection('mail').where('ownerId', '==', uid).get()).empty).toBe(true);
+    expect((await database.collection('pushTokenOwners').doc(`token-${uid}`).get()).exists).toBe(false);
+    expect((await database.collection('pushTokenOwners').doc(`token-${other}`).get()).exists).toBe(true);
+    expect((await database.collection('mail').doc(`digest-${other}`).get()).exists).toBe(true);
+    expect((await database.collection('analytics_events').where('pid', '==', pid).get()).empty).toBe(true);
+    expect((await database.collection('payment_settlements').doc(`pay-${uid}`).get()).exists).toBe(true);
+    for (const scope of ACCOUNT_RATE_SCOPES) expect((await database.collection('_functionRateLimitBudgets')
+      .doc(budgetDocumentId(uid, scope)).get()).exists).toBe(false);
+
+    // A second device still has an unexpired ID token and can race a direct Firestore write.
+    await owner.collection('cards').doc('late-card').set({ ownerId: uid });
+    expect(await isAccountDeleting(database, uid, key)).toBe(true);
+    await expect(getPilotOffer.run({ auth: { uid }, data: {} } as never))
+      .rejects.toMatchObject({ code: 'permission-denied' });
+    expect(await finalizeDueDeletions(database, auth, new Date(now.getTime() + 66 * 60_000))).toBe(1);
+    expect((await owner.listCollections()).length).toBe(0);
+    expect((await database.collection('account_tombstones').doc(pid).get()).data())
+      .toMatchObject({ status: 'done' });
+    expect((await database.collection('account_tombstones').doc(pid).get()).data()).not.toHaveProperty('uid');
+  }, 40_000);
+
+  it('exports the account profile and age-restriction marker written by the callable, then deletes both', async () => {
+    process.env.ANALYTICS_PSEUDONYM_KEY = key;
+    const { completeAccountProfile } = await import('../src/index.js');
+    const adult = `profile-${randomUUID()}`;
+    const minor = `restricted-${randomUUID()}`;
+    const currentYear = new Date().getUTCFullYear();
+    const request = (ownerId: string, birthYear: number) => ({
+      ownerId, birthYear, uiLocale: 'vi', nativeLanguage: 'vi',
+      consent: { accepted: true, termsVersion: CURRENT_TERMS_VERSION, privacyVersion: CURRENT_PRIVACY_VERSION },
+    });
+
+    const first = await completeAccountProfile.run({ auth: { uid: adult }, data: request(adult, currentYear - 30) } as never);
+    expect(first).toMatchObject({ status: 'complete', profile: { birthYear: currentYear - 30, uiLocale: 'vi' } });
+    const recordReference = database.doc(`users/${adult}/profile/account`);
+    const writtenAt = (await recordReference.get()).updateTime;
+    const second = await completeAccountProfile.run({
+      auth: { uid: adult }, data: { ...request(adult, currentYear - 40), uiLocale: 'en' },
+    } as never);
+    expect(second).toEqual(first);
+    expect((await recordReference.get()).updateTime?.isEqual(writtenAt!)).toBe(true);
+
+    const restricted = await completeAccountProfile.run({ auth: { uid: minor }, data: request(minor, currentYear - 12) } as never);
+    expect(restricted).toMatchObject({ status: 'restricted' });
+    const marker = (await database.doc(`users/${minor}/profile/age_restriction`).get()).data();
+    expect(Object.keys(marker ?? {})).toEqual(['restrictedAt']);
+    expect((await database.doc(`users/${minor}/profile/account`).get()).exists).toBe(false);
+    expect((await database.collection('users').doc(minor).collection('profile').get()).docs.map(doc => doc.id))
+      .toEqual(['age_restriction']);
+    expect(await completeAccountProfile.run({ auth: { uid: minor }, data: request(minor, currentYear - 30) } as never))
+      .toEqual(restricted);
+
+    const adultExport = await exportAccountData(database, adult, key) as { profile: Array<Record<string, unknown>> };
+    expect(adultExport.profile).toContainEqual({ id: 'account', ...(first as { profile: object }).profile });
+    const minorExport = await exportAccountData(database, minor, key) as { profile: Array<Record<string, unknown>> };
+    expect(minorExport.profile).toEqual([{ id: 'age_restriction', ...marker }]);
+
+    for (const uid of [adult, minor]) {
+      const { auth } = fakeAuth();
+      expect(await beginAccountDeletion(database, auth, uid, key, now)).toBe('waiting');
+      expect((await database.collection('users').doc(uid).listCollections()).length).toBe(0);
+      expect((await database.collection('_functionRateLimitBudgets')
+        .doc(budgetDocumentId(uid, 'account-profile')).get()).exists).toBe(false);
+    }
+  }, 30_000);
+
+  it('exports the verified stats records the server keeps, then deletes them with the account', async () => {
+    const uid = `stats-${randomUUID()}`;
+    const stats = database.doc(`users/${uid}/profile/stats`);
+    await database.doc(`users/${uid}/cards/word-focus`).set({ reviews: 3, difficulty: 'easy' });
+    const verified = (action: VerifiedGamificationAction) => database.runTransaction(async transaction => (
+      commitVerifiedGamification(transaction, await prepareVerifiedGamification(database, transaction, uid, action))
+    ));
+    await verified({
+      kind: 'review', receivedAt: new Date('2026-11-19T13:00:00.000Z'), timeZone: 'Asia/Saigon', targetLanguage: 'en',
+      rating: 'easy', cardId: 'word-focus',
+      reviewedCard: { firstReview: false, firstEasy: false, started: true, mastered: true, reviewTimesMs: [Date.parse('2026-11-19T13:00:00.000Z')] },
+    });
+    await verified({
+      kind: 'match', receivedAt: new Date('2026-11-19T13:01:00.000Z'), timeZone: 'Asia/Saigon', resultXp: 20,
+      practiceStartedAt: new Date('2026-11-19T13:00:30.000Z'), practiceCards: 4,
+    });
+    const stored = (await stats.get()).data() ?? {};
+    const records = ['streakV1', 'achievementsV1', 'studyTimeV1', 'wordWeeksV1'] as const;
+    for (const field of records) expect(stored[field]).toBeTypeOf('object');
+    expect(stored.studyTimeV1).toMatchObject({ totalMs: 30_000 });
+    expect(stored.achievementsV1).toMatchObject({ counters: { reviewedCards: 1, masteredWords: 1 } });
+
+    const exported = await exportAccountData(database, uid, key) as { profile: Array<Record<string, unknown>> };
+    const exportedStats = exported.profile.find(row => row.id === 'stats');
+    for (const field of records) expect(exportedStats?.[field]).toEqual(stored[field]);
+
+    const { auth } = fakeAuth();
+    expect(await beginAccountDeletion(database, auth, uid, key, now)).toBe('waiting');
+    expect((await stats.get()).exists).toBe(false);
+    expect((await database.collection('users').doc(uid).listCollections()).length).toBe(0);
+  }, 30_000);
+
+  it('refuses learner endpoints until the profile is complete, and always for a restricted account', async () => {
+    process.env.ANALYTICS_PSEUDONYM_KEY = key;
+    const { completeAccountProfile, createCourse, getPilotOffer } = await import('../src/index.js');
+    const adult = `guard-${randomUUID()}`;
+    const minor = `guard-restricted-${randomUUID()}`;
+    const currentYear = new Date().getUTCFullYear();
+    const request = (ownerId: string, birthYear: number) => ({
+      ownerId, birthYear, uiLocale: 'en', nativeLanguage: 'en',
+      consent: { accepted: true, termsVersion: CURRENT_TERMS_VERSION, privacyVersion: CURRENT_PRIVACY_VERSION },
+    });
+    const profileRequired = { code: 'failed-precondition', details: { reason: 'account-profile-required' } };
+
+    await expect(getPilotOffer.run({ auth: { uid: adult }, data: {} } as never)).rejects.toMatchObject(profileRequired);
+    await completeAccountProfile.run({ auth: { uid: adult }, data: request(adult, currentYear - 30) } as never);
+    await expect(getPilotOffer.run({ auth: { uid: adult }, data: {} } as never))
+      .resolves.toMatchObject({ intentEligibility: expect.any(String) });
+
+    await completeAccountProfile.run({ auth: { uid: minor }, data: request(minor, currentYear - 12) } as never);
+    await expect(createCourse.run({ auth: { uid: minor }, data: {} } as never)).rejects.toMatchObject(profileRequired);
+    await expect(getPilotOffer.run({ auth: { uid: minor }, data: {} } as never)).rejects.toMatchObject(profileRequired);
+    expect((await database.collection('users').doc(minor).listCollections()).map(collection => collection.id))
+      .toEqual(['profile']);
+
+    for (const uid of [adult, minor]) {
+      const { auth } = fakeAuth();
+      expect(await beginAccountDeletion(database, auth, uid, key, now)).toBe('waiting');
+      await expect(getPilotOffer.run({ auth: { uid }, data: {} } as never)).rejects.toMatchObject({ code: 'permission-denied' });
+    }
+  }, 30_000);
+
+  it('resumes after Auth deletion failed and after the Auth user is gone', async () => {
+    const uid = `resume-${randomUUID()}`;
+    const pid = analyticsPseudonym(uid, key);
+    const { auth, deleteUser } = fakeAuth();
+    deleteUser.mockRejectedValueOnce(new Error('temporary Auth failure'));
+    await expect(beginAccountDeletion(database, auth, uid, key, now)).rejects.toThrow('temporary Auth failure');
+    expect((await database.collection('account_tombstones').doc(pid).get()).data()?.status).toBe('deleting');
+    expect(await resumeDeletionWithAudit(database, auth, {
+      pid, reason: 'Resume after Auth failure', target: 'staging', operator: 'test-operator',
+    }, now)).toBe('waiting');
+    expect((await database.collection('account_tombstones').doc(pid).get()).data()?.status).toBe('auth-deleted');
+    expect(await resumeDeletionWithAudit(database, auth, {
+      pid, reason: 'Complete final purge', target: 'staging', operator: 'test-operator',
+    }, new Date(now.getTime() + 66 * 60_000))).toBe('done');
+    expect(await resumeAccountDeletion(database, auth, pid, new Date(now.getTime() + 67 * 60_000))).toBe('done');
+    const audits = (await database.collection('operator_audit').where('pid', '==', pid).get()).docs
+      .map(snapshot => snapshot.data());
+    expect(audits).toHaveLength(2);
+    expect(audits.map(audit => audit.result.status).sort()).toEqual(['done', 'waiting']);
+    expect(audits.every(audit => audit.mode === 'resume-deletion' && audit.operator === 'test-operator'
+      && audit.target === 'staging' && !Object.hasOwn(audit, 'uid'))).toBe(true);
+  }, 30_000);
+
+  it('disables the Auth account and restarts the 65-minute window when a stuck deletion is resumed late', async () => {
+    const uid = `stuck-${randomUUID()}`;
+    const pid = analyticsPseudonym(uid, key);
+    const { auth, updateUser, deleteUser } = fakeAuth();
+    // Simulate a job that never got past creation (crash right after the tombstone was
+    // written): its own purgeAfter has already elapsed by the time anything resumes it.
+    await database.collection('account_tombstones').doc(pid).create({
+      uid, status: 'deleting', startedAt: now, purgeAfter: new Date(now.getTime() + 65 * 60_000),
+    });
+    const resumedLate = new Date(now.getTime() + 3 * 60 * 60_000);
+    expect(await resumeAccountDeletion(database, auth, pid, resumedLate)).toBe('waiting');
+    expect(updateUser).toHaveBeenCalledWith(uid, { disabled: true });
+    expect(deleteUser).not.toHaveBeenCalled();
+    const afterFirstResume = (await database.collection('account_tombstones').doc(pid).get()).data();
+    expect(afterFirstResume?.status).toBe('deleting');
+    const restartedPurgeAfter = (afterFirstResume?.purgeAfter as { toDate(): Date }).toDate();
+    expect(restartedPurgeAfter.getTime()).toBe(resumedLate.getTime() + 65 * 60_000);
+
+    // A second late resume before the account is ever purged must not disable it again,
+    // but it now proceeds with the real purge, exactly like a fresh (non-late) job would.
+    expect(await resumeAccountDeletion(database, auth, pid, resumedLate)).toBe('waiting');
+    expect(updateUser).toHaveBeenCalledTimes(1);
+    expect(deleteUser).toHaveBeenCalledWith(uid);
+    expect((await database.collection('account_tombstones').doc(pid).get()).data()?.status).toBe('auth-deleted');
+
+    expect(await resumeAccountDeletion(database, auth, pid, new Date(restartedPurgeAfter.getTime() + 60_000)))
+      .toBe('done');
+    expect((await database.collection('account_tombstones').doc(pid).get()).data()).toMatchObject({ status: 'done' });
+  }, 20_000);
+
+  it('deletes an owned deck directly when revoking it fails during account deletion', async () => {
+    const uid = `revoke-fails-${randomUUID()}`;
+    const shareId = `broken-${uid}`;
+    await database.collection('shared_decks').doc(shareId).set({ schemaVersion: 2 });
+    // A corrupted usage document makes every revoke of this owner's decks fail with
+    // SharedDeckUsageStateError; account deletion must still remove the deck and its
+    // ownership record instead of retrying the revoke forever.
+    await database.collection('shared_deck_owners').doc(shareId).set({
+      ownerUid: uid, schemaVersion: 2, createdAt: new Date(now.getTime() - 60_000),
+      expiresAt: new Date(now.getTime() + 60_000), payloadBytes: 1,
+    });
+    await database.collection('users').doc(uid).collection('profile').doc('shared_deck_usage')
+      .set({ schemaVersion: 1, shares: {}, activeCount: 'not-a-number', activeBytes: 0 });
+    const { auth } = fakeAuth();
+    expect(await beginAccountDeletion(database, auth, uid, key, now)).toBe('waiting');
+    expect((await database.collection('shared_decks').doc(shareId).get()).exists).toBe(false);
+    expect((await database.collection('shared_deck_owners').doc(shareId).get()).exists).toBe(false);
+  }, 20_000);
+
+  describe('reminder outreach while a deletion has not finished', () => {
+    const savedAt = new Date('2026-11-07T12:00:00.000Z');
+    const dueAt = new Date('2026-11-08T08:01:00.000Z');
+    const seedDueReminders = async (uid: string) => {
+      const owner = database.collection('users').doc(uid);
+      await owner.collection('profile').doc('stats').set({
+        lastVerifiedReviewAt: new Date('2026-11-07T08:00:00.000Z'), verifiedStreak: 4,
+      });
+      await owner.collection('cards').doc('card-1').set({ nextReviewDate: '2026-11-01T00:00:00.000Z' });
+      await updateReminderSettingsForOwner(database, uid, {
+        days: [0, 1, 2, 3, 4, 5, 6], sendAtLocal: '08:00', timezone: 'UTC', locale: 'en', quietHours: null,
+        onlyIfNotStudiedToday: true, channels: { push: true, emailDigest: true }, pushToken: 'a'.repeat(64),
+      }, savedAt);
+      return owner;
+    };
+    const sweepBoth = async () => {
+      const send = vi.fn(async () => 1);
+      const pushed = await sweepDuePushReminders(database, send, dueAt);
+      const mailed = await sweepDueWeeklyDigests(database, async () => 'learner@example.test', 'demo-lingoflash', dueAt);
+      return { pushed, mailed, sends: send.mock.calls.length };
+    };
+
+    it('sends no push and queues no digest after the purge failed before it reached the reminders', async () => {
+      const uid = `stuck-reminders-${randomUUID()}`;
+      const owner = await seedDueReminders(uid);
+      const failing = new Proxy(database, {
+        get(target, property) {
+          const value = Reflect.get(target, property, target);
+          if (property === 'collection') {
+            return (path: string) => {
+              if (path === 'shared_deck_owners') throw new Error('simulated transient failure');
+              return target.collection(path);
+            };
+          }
+          return typeof value === 'function' ? value.bind(target) : value;
+        },
+      }) as Firestore;
+      const { auth, deleteUser } = fakeAuth();
+      await expect(beginAccountDeletion(failing, auth, uid, key, savedAt))
+        .rejects.toThrow('simulated transient failure');
+      expect((await database.collection('account_tombstones').doc(analyticsPseudonym(uid, key)).get()).data()?.status)
+        .toBe('deleting');
+      expect(deleteUser).not.toHaveBeenCalled();
+      expect((await owner.collection('pushTokens').get()).empty).toBe(true);
+      expect((await database.collection('pushTokenOwners').where('ownerId', '==', uid).get()).empty).toBe(true);
+      expect((await owner.collection('reminderState').doc('current').get()).data())
+        .toMatchObject({ channels: { push: false, emailDigest: false }, nextEligibleSendAt: null, nextWeeklyDigestAt: null });
+
+      expect(await sweepBoth()).toEqual({ pushed: { claimed: 0, sent: 0 }, mailed: 0, sends: 0 });
+      expect((await database.collection('mail').where('ownerId', '==', uid).get()).empty).toBe(true);
+    }, 30_000);
+
+    it('stops reminders of a deletion that sat in deleting past its deadline before locking the account out', async () => {
+      const uid = `stuck-late-${randomUUID()}`;
+      const pid = analyticsPseudonym(uid, key);
+      const owner = await seedDueReminders(uid);
+      const { auth, updateUser } = fakeAuth();
+      await database.collection('account_tombstones').doc(pid).create({
+        uid, status: 'deleting', startedAt: savedAt, purgeAfter: new Date(savedAt.getTime() + 65 * 60_000),
+      });
+      expect(await resumeAccountDeletion(database, auth, pid, new Date(savedAt.getTime() + 3 * 60 * 60_000)))
+        .toBe('waiting');
+      expect(updateUser).toHaveBeenCalledWith(uid, { disabled: true });
+      expect((await owner.collection('reminderState').doc('current').get()).data())
+        .toMatchObject({ channels: { push: false, emailDigest: false } });
+      expect(await sweepBoth()).toEqual({ pushed: { claimed: 0, sent: 0 }, mailed: 0, sends: 0 });
+      await database.recursiveDelete(owner);
+    }, 30_000);
+  });
+
+  it('purges a profile write from a second authenticated device with an old token', async () => {
+    const uid = `device-${randomUUID()}`;
+    const appForRules = initializeApp({ projectId: 'demo-lingoflash' }, 'account-two-devices');
+    const admin = getFirestore(appForRules);
+    const rules = await readFile(new URL('../../firestore.rules', import.meta.url), 'utf8');
+    const environment = await initializeTestEnvironment({ projectId: 'demo-lingoflash', firestore: { rules } });
+    const { auth } = fakeAuth();
+    try {
+      const deviceB = environment.authenticatedContext(uid).firestore();
+      expect(await beginAccountDeletion(admin, auth, uid, key, now)).toBe('waiting');
+      const state = doc(deviceB, 'users', uid, 'profile', 'library_state');
+      await assertSucceeds(setDoc(state, { schemaVersion: 2, libraryEpoch: 0 }));
+      expect((await getDoc(state)).exists()).toBe(true);
+      expect(await finalizeDueDeletions(admin, auth, new Date(now.getTime() + 66 * 60_000))).toBe(1);
+      expect((await getDoc(state)).exists()).toBe(false);
+    } finally {
+      await environment.cleanup();
+      await admin.terminate();
+      await deleteApp(appForRules);
+    }
+  }, 30_000);
+
+  (process.env.FIREBASE_AUTH_EMULATOR_HOST ? it : it.skip)(
+    'deletes the Auth identity so a later sign-in starts with a new uid', async () => {
+      const email = `deleted-${randomUUID()}@example.test`;
+      const uid = `auth-${randomUUID()}`;
+      const auth = getAuth(app);
+      await auth.createUser({ uid, email });
+      expect(await beginAccountDeletion(database, auth, uid, key, now)).toBe('waiting');
+      await expect(auth.getUser(uid)).rejects.toMatchObject({ code: 'auth/user-not-found' });
+      const replacement = await auth.createUser({ email });
+      expect(replacement.uid).not.toBe(uid);
+      await auth.deleteUser(replacement.uid);
+    }, 20_000,
+  );
+});

@@ -1,0 +1,76 @@
+<!--#HEAD Mobile paywall-->
+<div role="dialog" aria-modal="true" aria-labelledby="mpay-title" style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
+<!--#AMBIENT-->
+  <div style="position: relative; z-index: 2; height: 56px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; justify-content: space-between;">
+    <button aria-label="Close" style="width: 38px; height: 38px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    <a href="#" style="font-size: 13px; font-weight: 600; color: {{t.text2}}; text-decoration: none;">Restore purchase</a>
+  </div>
+
+  <div style="position: relative; z-index: 2; flex-grow: 1; padding: 4px 22px 0; display: flex; flex-direction: column;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <span aria-hidden="true" class="sf-pop" style="width: 70px; height: 70px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; border: 3px solid transparent; background: {{seal.bg}}; box-shadow: {{seal.shadow}}; color: {{seal.fg}}; transform: rotate(-10deg); display: flex; align-items: center; justify-content: center; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 21px;">Pro</span>
+      <h1 id="mpay-title" style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 32px; line-height: 1.02; letter-spacing: -0.03em; color: {{t.textStrong}};">Learn faster with <span style="font-style: {{t.emStyle}}; color: {{pro.text}}; text-shadow: {{pro.textGlow}};">AI on your side.</span></h1>
+    </div>
+
+    <ul style="margin: 22px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px;">
+      <sc-for list="{{perks}}" as="k" hint-placeholder-count="5">
+        <li style="display: flex; align-items: center; gap: 12px;">
+          <span style="width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; background: {{pro.soft}}; color: {{pro.check}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{k.icon}}"></path></svg></span>
+          <span><span style="display: block; font-size: 14.5px; font-weight: 650; color: {{t.textStrong}};">{{k.title}}</span><span style="display: block; font-size: 12.5px; color: {{t.text2}};">{{k.desc}}</span></span>
+        </li>
+      </sc-for>
+    </ul>
+
+    <div role="radiogroup" aria-label="Plan" style="margin-top: 22px; display: flex; flex-direction: column; gap: 8px;">
+      <button role="radio" aria-checked="true" style="position: relative; height: 70px; box-sizing: border-box; padding: 0 16px; border-radius: 18px; border: {{sel.border}}; background: {{sel.bg}}; box-shadow: {{sel.shadow}}; color: {{t.text}}; display: flex; align-items: center; gap: 12px; text-align: left;">
+        <span style="width: 20px; height: 20px; box-sizing: border-box; flex-shrink: 0; border-radius: 50%; border: 6px solid {{pro.check}};"></span>
+        <span style="flex-grow: 1;"><span style="display: block; font-size: 15px; font-weight: 700;">Annual</span><span style="display: block; font-size: 12px; color: {{t.text2}};">949.000 ₫ / year · ≈ 2.600 ₫ a day</span></span>
+        <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; color: {{t.textStrong}};">79.000 ₫<span style="font-family: Geist, system-ui, sans-serif; font-size: 11px; color: {{t.text3}};">/mo</span></span>
+        <span style="position: absolute; right: 14px; top: -10px; height: 20px; padding: 0 8px; border-radius: 999px; background: {{pro.solid}}; color: {{pro.solidText}}; font-size: 10.5px; font-weight: 800; display: flex; align-items: center;">SAVE 40%</span>
+      </button>
+      <button role="radio" aria-checked="false" style="height: 60px; box-sizing: border-box; padding: 0 16px; border-radius: 18px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; display: flex; align-items: center; gap: 12px; text-align: left;">
+        <span style="width: 20px; height: 20px; box-sizing: border-box; flex-shrink: 0; border-radius: 50%; border: 1.5px solid {{t.lineStrong}};"></span>
+        <span style="flex-grow: 1; font-size: 15px; font-weight: 600;">Monthly</span>
+        <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; color: {{t.text2}};">129.000 ₫<span style="font-family: Geist, system-ui, sans-serif; font-size: 11px; color: {{t.text3}};">/mo</span></span>
+      </button>
+    </div>
+  </div>
+
+  <footer style="position: relative; z-index: 2; flex-shrink: 0; padding: 16px 22px 26px; display: flex; flex-direction: column; gap: 10px;">
+    <button class="sf-press" style="height: 54px; border-radius: 16px; border: 0; background: #a50064; color: #ffffff; box-shadow: 0 16px 36px -16px rgb(165 0 100 / 0.8); font-size: 15.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px;"><span style="height: 22px; padding: 0 6px; border-radius: 6px; background: #ffffff; color: #a50064; font-size: 11px; font-weight: 800; display: flex; align-items: center;">MoMo</span>Pay with MoMo</button>
+    <button style="height: 46px; border-radius: 16px; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600;">ZaloPay, VNPay or card</button>
+    <p style="margin: 2px 0 0; text-align: center; font-size: 11.5px; line-height: 1.5; color: {{t.text3}};">Cancel anytime · 7-day refund · students get 50% off<br>Your cards and reviews stay free forever.</p>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+//#TOKENS
+    const dark = (this.props.theme ?? 'dark') === 'dark';
+    const t = sfTokens(dark);
+    const pro = dark
+      ? { text: '#ffd98a', textGlow: '0 0 32px rgb(245 174 57 / 0.45)', soft: 'rgb(245 174 57 / 0.1)', line: 'rgb(245 174 57 / 0.38)', solid: 'linear-gradient(135deg, #ffe6a8, #f5ae39)', solidText: '#1d1204', check: '#f5ae39' }
+      : { text: '#8a5a0c', textGlow: 'none', soft: 'rgb(184 134 43 / 0.1)', line: 'rgb(184 134 43 / 0.35)', solid: '#1d1a16', solidText: '#fbf6ec', check: '#8a5a0c' };
+    return {
+      t, pro, grainId: 'mpay-grain-' + (dark ? 'd' : 'l'),
+      amb: { ax: -200, ay: -240, bx: 120, by: 420 },
+      seal: dark
+        ? { bg: 'radial-gradient(circle at 35% 30%, #1d3440, #0c1d26 70%) padding-box, ' + t.goldRim + ' border-box', shadow: '0 0 40px -6px rgb(245 174 57 / 0.7)', fg: '#ffe6a8' }
+        : { bg: 'radial-gradient(circle, #fbf3df 56%, #f1dfae 57%, #fbf3df 60%) padding-box, ' + t.goldRim + ' border-box', shadow: '0 0 0 4px #fffcf5, 0 0 0 5px rgb(184 134 43 / 0.4), 0 8px 16px -8px rgb(120 80 10 / 0.6)', fg: '#7a5410' },
+      sel: dark
+        ? { border: '1.5px solid transparent', bg: 'radial-gradient(ellipse 80% 80% at 100% 0%, rgb(245 174 57 / 0.16), transparent 70%) padding-box, ' + t.cardBg + ' padding-box, ' + t.goldRim + ' border-box', shadow: '0 0 36px -14px rgb(245 174 57 / 0.6)' }
+        : { border: '1.5px solid #b8862b', bg: '#fffcf5', shadow: '0 12px 24px -16px rgb(120 80 10 / 0.5)' },
+      perks: [
+        { title: 'Unlimited AI flashcards', desc: 'From any page, with IPA, audio, examples', icon: 'M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z' },
+        { title: 'A story after every session', desc: 'Today’s words, in context', icon: 'M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z' },
+        { title: 'AI tutor in Vietnamese', desc: 'Ask why, get examples', icon: 'M4 5h16v11H9l-5 4z' },
+        { title: 'Pronunciation score', desc: 'Shadowing, word by word', icon: 'M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3' },
+        { title: '2 streak freezes a month', desc: 'One busy day won’t reset you', icon: 'M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

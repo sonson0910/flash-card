@@ -1,0 +1,147 @@
+/* The review shell from the PairReview, AnimeReview, MobileReview and LangReview boards: while a
+   study session is on screen the app bar steps aside, and the session's own header carries the
+   close button, the segmented progress with its "5 / 12", the timer and tools, the theme switch and
+   the streak. The card and the rating row keep their own rules in practice-board.css. */
+.claude-app-shell:has([data-study-session]) .claude-topbar { display: none; }
+/* The offline banner stays reachable, below the session instead of above its header. */
+.claude-app-shell:has([data-study-session]) .claude-workspace-inner { display: flex; flex-direction: column; }
+.claude-app-shell:has([data-study-session]) .claude-workspace-inner > [data-offline-readiness] { order: 1; width: min(100%, 460px); margin: 24px auto 0; }
+
+.practice-board.practice-board--study.study-shell { width: 100%; max-width: none; }
+
+/* Header: close and title on the left, progress in the middle, tools on the right. */
+.practice-board--study.study-shell [data-study-header] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 460px) minmax(0, 1fr);
+  max-width: none;
+  min-height: 64px;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.study-shell-start, .study-shell-end { display: flex; min-width: 0; align-items: center; gap: 12px; }
+.study-shell-start { justify-self: start; }
+.study-shell-end { justify-self: end; gap: 10px; }
+.study-shell-close { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 999px; }
+.study-shell :is(.study-shell-close, .study-shell-tool) { border-color: var(--practice-line); box-shadow: inset 0 1px rgb(255 255 255 / .12); }
+.study-shell-title { display: none; }
+.study-shell-timer { min-width: 3rem; color: var(--sf-text-muted); font: 700 12px/1 var(--sf-font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.study-shell-summary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.study-shell-summary__icon { display: none; }
+.study-shell .study-shell-streak { height: 44px; min-height: 44px; }
+.study-shell-streak__unit { font-weight: 600; }
+
+.study-shell-progress { display: flex; min-width: 0; align-items: center; gap: 12px; width: 100%; justify-self: center; }
+.practice-board--study.study-shell [data-study-progress] { max-width: 460px; }
+.study-shell-progress [data-study-progress-segments] { display: flex; min-width: 0; flex: 1; align-items: center; gap: 3px; }
+.practice-board--study.study-shell [data-study-progress-segments] > span { height: 4px; flex: 1; transform: none; border-radius: 4px; background: color-mix(in srgb, var(--sf-border) 90%, transparent); box-shadow: none; }
+.practice-board--study.study-shell [data-study-progress-segment='complete'] { background: var(--sf-brand); }
+.dark .practice-board--study.study-shell [data-study-progress-segment='complete'] { box-shadow: 0 0 6px color-mix(in srgb, var(--sf-brand) 50%, transparent); }
+.study-shell-count { flex: none; color: var(--sf-text-muted); font: 700 12px/1 var(--sf-font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Ink & Paper: the light classic board reads the run as a dotted line of cards. */
+html[data-theme-family=classic]:not(.dark) .practice-board--study.study-shell [data-study-progress-segments] {
+  gap: 0;
+  background: linear-gradient(var(--sf-border), var(--sf-border)) center / 100% 1px no-repeat;
+}
+html[data-theme-family=classic]:not(.dark) .practice-board--study.study-shell [data-study-progress-segments] > span {
+  position: relative;
+  height: 12px;
+  border-radius: 0;
+  background: none;
+}
+html[data-theme-family=classic]:not(.dark) .practice-board--study.study-shell [data-study-progress-segments] > span::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--sf-text-muted);
+  border-radius: 50%;
+  background: var(--sf-surface);
+  content: '';
+  translate: -50% -50%;
+}
+html[data-theme-family=classic]:not(.dark) .practice-board--study.study-shell [data-study-progress-segment='complete']::before { border-color: var(--sf-text); background: var(--sf-text); }
+html[data-theme-family=classic]:not(.dark) .study-shell-count { color: var(--sf-text); font: italic 500 15px/1 var(--sf-font-display); }
+
+/* The hint under the card while the answer is hidden; phones reveal with the card's own button. */
+.study-shell-hint {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: -6px 0 16px;
+  color: var(--sf-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.study-shell-kbd {
+  display: inline-grid;
+  min-width: 26px;
+  height: 22px;
+  place-items: center;
+  padding: 0 7px;
+  border: 1px solid var(--sf-border);
+  border-radius: 6px;
+  background: var(--sf-surface-control);
+  color: var(--sf-text-muted);
+  font: 600 11px/1 var(--sf-font-mono);
+}
+html[data-theme-family=classic]:not(.dark) .study-shell-hint { font: italic 500 15px/1.3 var(--sf-font-display); }
+
+.practice-board--study.study-shell .study-shell-combo { max-width: 460px; }
+/* Crystal combo: white type on an opaque crimson plate, so it never reads off a see-through chip. Both
+   ends of the plate keep AA contrast for the small label. */
+html[data-theme-family=crystal] .study-shell [data-study-combo] {
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: linear-gradient(90deg, var(--sf-brand-hover), color-mix(in srgb, var(--sf-brand) 78%, var(--sf-star-shade)));
+  color: var(--sf-on-primary);
+  text-shadow: 0 1px 0 var(--sf-star-shade);
+}
+
+/* Crystal: the AnimeReview header, with the italic step label, slanted segments and a large count. */
+html[data-theme-family=crystal] .study-shell .study-shell-close { border-radius: 0; box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+html[data-theme-family=crystal] .study-shell-title {
+  display: block;
+  color: var(--sf-text-muted);
+  font: italic 800 16px/1 var(--sf-font-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segments] { gap: 4px; }
+html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segments] > span { height: 10px; border-radius: 0; transform: skewX(-30deg); }
+html[data-theme-family=crystal] .practice-board--study.study-shell [data-study-progress-segment='complete'] { background: linear-gradient(90deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 70%, var(--sf-text-strong))); box-shadow: 0 0 8px color-mix(in srgb, var(--sf-brand) 45%, transparent); }
+html[data-theme-family=crystal] .study-shell-count { color: var(--sf-text-muted); font: italic 700 15px/1 var(--sf-font-display); }
+html[data-theme-family=crystal] .study-shell-count__current { color: var(--sf-text-strong); font-size: 24px; font-weight: 900; }
+html[data-theme-family=crystal] .study-shell-timer { font-family: var(--sf-font-display); font-style: italic; }
+html[data-theme-family=crystal] .study-shell-streak__unit { display: none; }
+html[data-theme-family=crystal] .study-shell-hint { font-size: 15px; font-weight: 800; }
+html[data-theme-family=crystal] .study-shell-kbd { border: 0; box-shadow: inset 0 0 0 1px var(--sf-border); }
+
+@media (min-width: 641px) {
+  .study-shell-hint { display: flex; }
+}
+
+/* Phones: the MobileReview header, a single row of close, progress and the session tools. */
+@media (max-width: 640px) {
+  .claude-app-shell:has([data-study-session]) .claude-workspace-inner { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .practice-board--study.study-shell [data-study-header] { display: flex; min-height: 56px; gap: 8px; margin-bottom: 4px; }
+  .study-shell-start { flex: none; }
+  .study-shell-progress { flex: 1; gap: 8px; }
+  .study-shell-end { flex: none; gap: 6px; }
+  html .study-shell :is(.study-shell-title, .study-shell-theme, .study-shell-streak) { display: none; }
+  .study-shell-summary { padding: 0; }
+  .study-shell-summary__icon { display: block; }
+  .study-shell-summary__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  html[data-theme-family=crystal] .study-shell-count__current { font-size: 18px; }
+}

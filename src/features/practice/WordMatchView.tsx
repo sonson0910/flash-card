@@ -1,16 +1,27 @@
-import { Flame, RotateCcw, Timer, Trophy, X, Zap } from 'lucide-react';
+import { Check, Flame, RotateCcw, Timer, Trophy, Zap } from 'lucide-react';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { playCorrectSound, playIncorrectSound } from '../../lib/audio';
 import { triggerConfetti } from '../../lib/confetti';
 import { triggerHaptic } from '../../lib/haptics';
 import { playRewardSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
-import { createWordMatchRound } from './practiceModel';
+import { useFocusModePreference } from '../settings/focus-mode-preference';
+import { PracticeTopBar } from './practice-board-parts';
+import { WORD_MATCH_DURATION_SECONDS } from './practiceModel';
+import './practice-board.css';
 
 interface WordMatchViewProps {
   cards: CardData[];
   onClose: () => void;
-  onCompleteRound?: (roundId: string) => boolean;
+  onComplete?: (pairs: Array<{ cardId: string; word: string; translation: string }>) =>
+    | { awardedXp: number }
+    | null
+    | void
+    | Promise<{ awardedXp: number } | null | void>;
+  onNewRound?: () => boolean | void | Promise<boolean | void>;
+  /** Compatibility input; XP is only awarded by the completed server session. */
   onAddXp?: (amount: number) => void;
 }
 
@@ -21,8 +32,13 @@ interface MatchTile {
   text: string;
 }
 
-const GAME_DURATION_SECONDS = 60;
+const GAME_DURATION_SECONDS = WORD_MATCH_DURATION_SECONDS;
 const PAIRS_PER_ROUND = 6;
+/** Radius of the countdown ring inside its 220-unit box. */
+const TIMER_RADIUS = 100;
+const retryActionClass = 'practice-secondary practice-match__retry crystal-chamfer-sm min-h-11 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
+const primaryActionClass = 'practice-primary crystal-chamfer-sm min-h-12 transition-colors disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
+const secondaryActionClass = 'practice-secondary crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none';
 
 function shuffleArray<T>(items: T[]): T[] {
   const arr = [...items];
@@ -33,30 +49,33 @@ function shuffleArray<T>(items: T[]): T[] {
   return arr;
 }
 
-export function WordMatchView({ cards, onClose, onCompleteRound, onAddXp }: WordMatchViewProps) {
-  const [roundCards, setRoundCards] = useState(() => [...cards]);
-  const roundIdRef = useRef(crypto.randomUUID());
-  const mismatchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const roundGenerationRef = useRef(0);
-  const rewardedRef = useRef(false);
-  const [rewarded, setRewarded] = useState(false);
-  useEffect(() => () => {
-    roundGenerationRef.current += 1;
-    if (mismatchTimeoutRef.current !== null) clearTimeout(mismatchTimeoutRef.current);
-  }, []);
+export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMatchViewProps) {
+  const { _, i18n } = useLingui();
+  const { focusModeEnabled } = useFocusModePreference();
+  const [roundKey, setRoundKey] = useState(0);
+  const deadlineRef = useRef(Date.now() + GAME_DURATION_SECONDS * 1000);
   const [selectedTile, setSelectedTile] = useState<MatchTile | null>(null);
   const [matchedIds, setMatchedIds] = useState<Set<string>>(new Set());
   const [mismatchedIds, setMismatchedIds] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION_SECONDS);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isVictory, setIsVictory] = useState(false);
-  const matchesCount = matchedIds.size / 2;
+  const [matchesCount, setMatchesCount] = useState(0);
+  const [completionStatus, setCompletionStatus] = useState<'idle' | 'verifying' | 'confirmed' | 'failed' | 'unavailable' | 'new-round-failed'>('idle');
+  const [awardedXp, setAwardedXp] = useState(0);
+  const [isStartingNewRound, setIsStartingNewRound] = useState(false);
   const lockSelectionRef = useRef(false);
-  const deadlineRef = useRef(Date.now() + GAME_DURATION_SECONDS * 1000);
+  const matchedCardIdsRef = useRef(new Set<string>());
+  const completionReportedRef = useRef(false);
+  const completionPairsRef = useRef<Array<{ cardId: string; word: string; translation: string }>>([]);
+  const roundGenerationRef = useRef(0);
+  const isMountedRef = useRef(true);
+  const mismatchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Generate bounded, unambiguous word/translation pairs.
+  // Pair every card the session was started with: eligibility was decided before the session began, and
+  // the server verifies a pair for each session card, so the board must not drop any of them.
   const tiles: MatchTile[] = useMemo(() => {
-    const pool = createWordMatchRound(roundCards, PAIRS_PER_ROUND);
+    const pool = cards.slice(0, PAIRS_PER_ROUND);
 
     const generated: MatchTile[] = [];
     pool.forEach(card => {
@@ -75,10 +94,15 @@ export function WordMatchView({ cards, onClose, onCompleteRound, onAddXp }: Word
     });
 
     return shuffleArray(generated);
-  }, [roundCards]);
+  }, [cards, roundKey]);
   const pairCount = tiles.length / 2;
+  const targetLanguage = cards[0]?.language || 'en';
+  const nativeLanguage = cards[0]?.translationLanguage || 'vi';
+  const languageNames = new Intl.DisplayNames([i18n.locale], { type: 'language' });
+  const targetLanguageName = languageNames.of(targetLanguage) || targetLanguage;
+  const nativeLanguageName = languageNames.of(nativeLanguage) || nativeLanguage;
 
-  // A speed-run lasts sixty elapsed seconds, including background time.
+  // Timer countdown
   useEffect(() => {
     if (isGameOver || isVictory) return;
     const tick = () => {
@@ -89,24 +113,49 @@ export function WordMatchView({ cards, onClose, onCompleteRound, onAddXp }: Word
     const timer = window.setInterval(tick, 1000);
     document.addEventListener('visibilitychange', tick);
     return () => { clearInterval(timer); document.removeEventListener('visibilitychange', tick); };
-  }, [isGameOver, isVictory, roundCards]);
+  }, [isGameOver, isVictory]);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; if (mismatchTimerRef.current !== null) clearTimeout(mismatchTimerRef.current); };
+  }, []);
+
+  const submitCompletion = useCallback(async (pairs: Array<{ cardId: string; word: string; translation: string }>) => {
+    const roundGeneration = roundGenerationRef.current;
+    if (!onComplete) {
+      setCompletionStatus('unavailable');
+      return;
+    }
+    setCompletionStatus('verifying');
+    try {
+      const completion = await onComplete(pairs);
+      if (!isMountedRef.current || roundGeneration !== roundGenerationRef.current) return;
+      if (completion) {
+        setAwardedXp(completion.awardedXp);
+        setCompletionStatus('confirmed');
+        playRewardSound();
+        triggerConfetti(0.5, 0.5);
+      } else {
+        setCompletionStatus('failed');
+      }
+    } catch {
+      if (!isMountedRef.current || roundGeneration !== roundGenerationRef.current) return;
+      setCompletionStatus('failed');
+    }
+  }, [onComplete]);
 
   const handleTileClick = useCallback(
     (tile: MatchTile) => {
+      if (Date.now() >= deadlineRef.current) { setTimeLeft(0); setIsGameOver(true); return; }
       if (
         lockSelectionRef.current ||
         matchedIds.has(tile.id) ||
+        matchedCardIdsRef.current.has(tile.cardId) ||
         isGameOver ||
         isVictory
       ) {
         return;
       }
 
-      if (Date.now() >= deadlineRef.current) {
-        setTimeLeft(0);
-        setIsGameOver(true);
-        return;
-      }
       // If clicking the same tile, deselect
       if (selectedTile?.id === tile.id) {
         setSelectedTile(null);
@@ -123,30 +172,32 @@ export function WordMatchView({ cards, onClose, onCompleteRound, onAddXp }: Word
       // Second tile clicked - check match
       lockSelectionRef.current = true;
 
-      // Cannot match two of same type (e.g. 2 English words)
+      // A pair needs one word and one meaning from the same card.
       if (selectedTile.type !== tile.type && selectedTile.cardId === tile.cardId) {
+        if (matchedCardIdsRef.current.has(tile.cardId)) return;
         // MATCH!
         playCorrectSound();
         triggerHaptic('success');
         const nextMatched = new Set(matchedIds);
         nextMatched.add(selectedTile.id);
         nextMatched.add(tile.id);
+        matchedCardIdsRef.current.add(tile.cardId);
         setMatchedIds(nextMatched);
+        setMatchesCount(prev => prev + 1);
         setSelectedTile(null);
         lockSelectionRef.current = false;
 
         // Check Victory
         if (nextMatched.size === tiles.length) {
           setIsVictory(true);
-          playRewardSound();
-          triggerConfetti(0.5, 0.5);
-          if (!rewardedRef.current) {
-            rewardedRef.current = true;
-            if (onCompleteRound) setRewarded(onCompleteRound(roundIdRef.current));
-            else if (onAddXp) {
-              onAddXp(20);
-              setRewarded(true);
-            }
+          if (!completionReportedRef.current) {
+            completionReportedRef.current = true;
+            const pairs = [...matchedCardIdsRef.current].flatMap(cardId => {
+              const card = cards.find(candidate => candidate.id === cardId);
+              return card ? [{ cardId, word: card.word, translation: card.translation }] : [];
+            });
+            completionPairsRef.current = pairs;
+            void submitCompletion(pairs);
           }
         }
       } else {
@@ -156,182 +207,260 @@ export function WordMatchView({ cards, onClose, onCompleteRound, onAddXp }: Word
         setMismatchedIds(new Set([selectedTile.id, tile.id]));
 
         const generation = roundGenerationRef.current;
-        mismatchTimeoutRef.current = setTimeout(() => {
-          if (roundGenerationRef.current !== generation) return;
-          mismatchTimeoutRef.current = null;
+        mismatchTimerRef.current = setTimeout(() => {
+          if (!isMountedRef.current || generation !== roundGenerationRef.current) return;
+          mismatchTimerRef.current = null;
           setMismatchedIds(new Set());
           setSelectedTile(null);
           lockSelectionRef.current = false;
         }, 500);
       }
     },
-    [selectedTile, matchedIds, isGameOver, isVictory, tiles.length, onAddXp, onCompleteRound]
+    [selectedTile, matchedIds, isGameOver, isVictory, tiles.length, cards, submitCompletion]
   );
 
-  const restartGame = () => {
+  const restartGame = async () => {
+    if (mismatchTimerRef.current !== null) { clearTimeout(mismatchTimerRef.current); mismatchTimerRef.current = null; }
     deadlineRef.current = Date.now() + GAME_DURATION_SECONDS * 1000;
-    roundGenerationRef.current += 1;
-    if (mismatchTimeoutRef.current !== null) clearTimeout(mismatchTimeoutRef.current);
-    mismatchTimeoutRef.current = null;
-    roundIdRef.current = crypto.randomUUID();
-    rewardedRef.current = false;
-    setRewarded(false);
-    setRoundCards([...cards]);
+    if (completionReportedRef.current) {
+      if (isStartingNewRound) return;
+      setIsStartingNewRound(true);
+      roundGenerationRef.current += 1;
+      const started = await onNewRound?.();
+      if (!isMountedRef.current) return;
+      setIsStartingNewRound(false);
+      if (started === false || !onNewRound) {
+        setCompletionStatus('new-round-failed');
+        return;
+      }
+      completionReportedRef.current = false;
+    }
+    setRoundKey(prev => prev + 1);
     setSelectedTile(null);
     setMatchedIds(new Set());
     setMismatchedIds(new Set());
     setTimeLeft(GAME_DURATION_SECONDS);
     setIsGameOver(false);
     setIsVictory(false);
+    setMatchesCount(0);
+    setCompletionStatus('idle');
+    setAwardedXp(0);
+    setIsStartingNewRound(false);
     lockSelectionRef.current = false;
+    matchedCardIdsRef.current.clear();
+    completionPairsRef.current = [];
   };
 
+  const renderTile = (tile: MatchTile) => {
+    const isMatched = matchedIds.has(tile.id);
+    const isSelected = selectedTile?.id === tile.id;
+    const isMismatched = mismatchedIds.has(tile.id);
+    const language = tile.type === 'word' ? targetLanguage : nativeLanguage;
+
+    // A matched pair stays in its place, dimmed, so the board does not reshuffle under the learner.
+    if (isMatched) {
+      return (
+        <div key={tile.id} className="practice-match__tile crystal-chamfer" data-kind={tile.type} data-state="matched">
+          <span lang={language} className="practice-match__text">{tile.text}</span>
+          <span className="practice-match__tag">
+            <Check size={15} aria-hidden="true" />
+            <span className="sr-only"><Trans {...msg({ context: 'practice.match.matched', message: 'Matched' })} /></span>
+          </span>
+        </div>
+      );
+    }
+
+    const state = isMismatched ? 'wrong' : isSelected ? 'selected' : 'idle';
+    return (
+      <button
+        key={tile.id}
+        type="button"
+        onClick={() => handleTileClick(tile)}
+        lang={language}
+        aria-pressed={isSelected}
+        data-kind={tile.type}
+        data-state={state}
+        className={`practice-match__tile crystal-chamfer transition-[border-color,background-color,box-shadow,transform] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${
+          isMismatched ? 'motion-safe:animate-shake' : isSelected ? 'ring-2' : ''
+        }`}
+      >
+        <span className="practice-match__text">{tile.text}</span>
+        {state !== 'idle' && (
+          <span className="practice-match__tag" aria-hidden="true">
+            {isMismatched
+              ? <Trans {...msg({ context: 'practice.match.not-a-pair', message: 'Not a pair' })} />
+              : <Trans {...msg({ context: 'practice.match.selected', message: 'Selected' })} />}
+          </span>
+        )}
+      </button>
+    );
+  };
+
+  const minutes = Math.floor(timeLeft / 60);
+  const clock = `${minutes}:${String(timeLeft % 60).padStart(2, '0')}`;
+  const timeFraction = Math.max(0, Math.min(1, timeLeft / GAME_DURATION_SECONDS));
+  const ringLength = 2 * Math.PI * TIMER_RADIUS;
+
   return (
-    <div className="mx-auto flex h-full max-w-2xl flex-col items-center py-4 sm:py-6">
-      {/* Top Bar */}
-      <div className="mb-6 flex w-full items-center justify-between px-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex size-11 items-center justify-center rounded-full p-2 text-[var(--sf-text-muted)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-text)]"
-          aria-label="Close game"
-        >
-          <X size={24} />
-        </button>
+    <div className="practice-board practice-board--match practice-stage" data-practice-mode="match">
+      <PracticeTopBar
+        closeLabel={<Trans {...msg({ context: 'practice.match.close', message: 'Close word match' })} />}
+        closeAriaLabel={_(msg({ id: 'practice.match.close', message: 'Close word match' }))}
+        closeDisabled={completionStatus === 'verifying'}
+        onClose={onClose}
+        mode={<Trans {...msg({ context: 'practice.match.mode', message: 'Word match' })} />}
+        detail={<Trans {...msg({ context: 'practice.match.mode-detail', message: '60-second run' })} />}
+      />
 
-        {/* Timer Pill */}
-        <div
-          className={`flex items-center gap-2 rounded-2xl border px-4 py-2 font-mono text-sm font-black tabular-nums transition-colors ${
-            timeLeft <= 10
-              ? 'border-rose-400 bg-rose-500/15 text-rose-600 dark:text-rose-400 animate-pulse'
-              : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)]'
-          }`}
-        >
-          <Timer size={16} className={timeLeft <= 10 ? 'text-rose-500' : 'text-[var(--sf-brand-text)]'} />
-          <span>{timeLeft}s</span>
-        </div>
-
-        {/* Score badge */}
-        <div className="flex items-center gap-1.5 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-3.5 py-2 text-xs font-black text-amber-600 dark:text-amber-300">
-          <Flame size={15} className="text-amber-500" />
-              <span>{matchesCount} / {pairCount}</span>
-        </div>
-      </div>
-
-      <div className="mb-4 text-center">
-        <h2 className="text-xl font-black tracking-tight text-[var(--sf-text)] sm:text-2xl">
-          Word Match Speed-Run
-        </h2>
-        <p className="mt-1 text-xs text-[var(--sf-text-muted)]">
-          Match each English word with its Vietnamese meaning before time runs out!
-        </p>
-      </div>
-
-      {/* Game Grid */}
       {!isGameOver && !isVictory ? (
-        <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-3.5">
-          {tiles.map(tile => {
-            const isMatched = matchedIds.has(tile.id);
-            const isSelected = selectedTile?.id === tile.id;
-            const isMismatched = mismatchedIds.has(tile.id);
-
-            if (isMatched) {
-              return (
-                <div
-                  key={tile.id}
-                  className="flex min-h-20 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-3 opacity-30 pointer-events-none scale-95 transition-all"
-                >
-                  <span className="text-xs font-bold text-emerald-600 line-through">
-                    {tile.text}
-                  </span>
-                </div>
-              );
-            }
-
-            return (
-              <button
-                key={tile.id}
-                type="button"
-                onClick={() => handleTileClick(tile)}
-                className={`flex min-h-20 items-center justify-center rounded-2xl border p-3 text-center text-xs font-bold transition-all active:scale-95 sm:text-sm ${
-                  isMismatched
-                    ? 'border-rose-400 bg-rose-500/20 text-rose-600 dark:text-rose-300 animate-shake'
-                    : isSelected
-                      ? 'border-cyan-400 bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 shadow-md ring-2 ring-cyan-400'
-                      : 'border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-xs hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)]'
-                }`}
-              >
-                <span className="break-words line-clamp-3 leading-snug">
-                  {tile.text}
+        <>
+          <div className="practice-match">
+            <div className="practice-match__column" role="group" aria-label={targetLanguageName}>
+              {tiles.filter(tile => tile.type === 'word').map(renderTile)}
+            </div>
+            <div className="practice-match__center">
+              <div className="practice-match__timer" data-low={timeLeft <= 10 || undefined} role="timer" aria-label={_({ ...msg({ id: 'practice.match.seconds-left', message: '{seconds, plural, one {# second left} other {# seconds left}}' }), values: { seconds: timeLeft } })}>
+                <svg viewBox="0 0 220 220" aria-hidden="true">
+                  <circle className="practice-match__ring-track" cx="110" cy="110" r={TIMER_RADIUS} />
+                  <circle
+                    className="practice-match__ring"
+                    cx="110"
+                    cy="110"
+                    r={TIMER_RADIUS}
+                    strokeDasharray={`${ringLength * timeFraction} ${ringLength}`}
+                    transform="rotate(-90 110 110)"
+                  />
+                </svg>
+                <span className="practice-match__clock" aria-hidden="true">{clock}</span>
+                <span className="practice-match__clock-label" aria-hidden="true"><Trans {...msg({ context: 'practice.match.left', message: 'left' })} /></span>
+              </div>
+              <p className="practice-match__pairs">
+                <span className="practice-match__pairs-count">{matchesCount} / {pairCount}</span>
+                <span className="practice-match__pairs-label"><Trans {...msg({ context: 'practice.match.pairs-matched', message: 'pairs matched' })} /></span>
+              </p>
+              {!focusModeEnabled && matchesCount >= 2 && (
+                <span data-practice-combo={matchesCount} className="practice-match__combo crystal-chamfer-sm">
+                  <Flame size={14} aria-hidden="true" />
+                  <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: matchesCount }} />
                 </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : isVictory ? (
-        /* Victory Screen */
-        <div className="w-full rounded-[32px] border border-emerald-400/40 bg-[var(--sf-surface)] p-6 text-center shadow-xl sm:p-8">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-emerald-500/30">
-            <Trophy size={32} />
+              )}
+            </div>
+            <div className="practice-match__column" role="group" aria-label={nativeLanguageName}>
+              {tiles.filter(tile => tile.type === 'translation').map(renderTile)}
+            </div>
           </div>
-          <h3 className="mt-4 text-2xl font-black text-[var(--sf-text)]">
-            Excellent! Board complete 🎉
+          <p className="practice-match__hint"><Trans {...msg({ context: 'practice.match.instruction', message: 'Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}.' })} values={{ targetLanguageName, nativeLanguageName }} /></p>
+        </>
+      ) : isVictory ? (
+        <div className="practice-results practice-match__result crystal-chamfer surface-glass" data-outcome="complete">
+          <div className="practice-match__result-icon crystal-chamfer-sm">
+            <Trophy size={30} aria-hidden="true" />
+          </div>
+          <h3 className="practice-match__result-title">
+            <Trans {...msg({ context: 'practice.match.complete-title', message: 'Pairs complete' })} />
           </h3>
-          <p className="mt-1 text-sm text-[var(--sf-text-muted)]">
-              You matched all {pairCount} pairs in just {GAME_DURATION_SECONDS - timeLeft} seconds!
+          <p className="practice-match__result-copy">
+            <Trans {...msg({ context: 'practice.match.complete-copy', message: 'You matched all {pairCount} pairs in {seconds} seconds.' })} values={{ pairCount, seconds: GAME_DURATION_SECONDS - timeLeft }} />
           </p>
 
-          <div className="mt-6 inline-flex items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-2.5 text-sm font-black text-amber-600 dark:text-amber-300">
-            <Zap size={18} className="text-amber-500" />
-            <span>{rewarded ? "+20 XP Speed bonus" : "Round complete"}</span>
-          </div>
+          {completionStatus === 'verifying' && (
+            <p className="practice-match__status" role="status">
+              <Trans {...msg({ context: 'practice.match.verifying-reward', message: 'Verifying your result…' })} />
+            </p>
+          )}
+          {completionStatus === 'confirmed' && (
+            <p className="practice-match__reward crystal-chamfer-sm">
+              <Zap size={17} aria-hidden="true" />
+              <span>{awardedXp > 0
+                ? <Trans {...msg({ context: 'practice.match.verified-xp', message: 'Verified +{awardedXp} XP' })} values={{ awardedXp }} />
+                : <Trans {...msg({ context: 'practice.match.verified-no-xp', message: 'Result verified' })} />}
+              </span>
+            </p>
+          )}
+          {completionStatus === 'failed' && (
+            <div className="practice-match__status">
+              <p className="practice-match__alert" role="alert">
+                <Trans {...msg({ context: 'practice.match.verification-failed', message: 'We could not verify your result. Your completed pairs are still here.' })} />
+              </p>
+              <button
+                type="button"
+                onClick={() => void submitCompletion(completionPairsRef.current)}
+                className={retryActionClass}
+              >
+                <Trans {...msg({ context: 'practice.match.retry-verification', message: 'Retry verification' })} />
+              </button>
+            </div>
+          )}
+          {completionStatus === 'unavailable' && (
+            <p className="practice-match__status" role="status">
+              <Trans {...msg({ context: 'practice.match.no-reward', message: 'This round did not award XP.' })} />
+            </p>
+          )}
+          {completionStatus === 'new-round-failed' && (
+            <div className="practice-match__status">
+              <p className="practice-match__alert" role="alert">
+                <Trans {...msg({ context: 'practice.match.new-round-failed', message: 'We could not start a new verified round. Check your connection and try again.' })} />
+              </p>
+              <button
+                type="button"
+                onClick={() => void restartGame()}
+                className={retryActionClass}
+              >
+                <Trans {...msg({ context: 'practice.match.retry-new-round', message: 'Retry new round' })} />
+              </button>
+            </div>
+          )}
 
-          <div className="mt-8 flex justify-center gap-3">
+          <div className="practice-match__result-actions">
             <button
               type="button"
-              onClick={restartGame}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-95"
+              onClick={() => void restartGame()}
+              disabled={isStartingNewRound || completionStatus === 'verifying'}
+              className={primaryActionClass}
             >
-              <RotateCcw size={16} />
-              <span>Play a new round</span>
+              <RotateCcw size={16} aria-hidden="true" />
+              <span>{isStartingNewRound
+                ? <Trans {...msg({ context: 'practice.match.starting-new-round', message: 'Starting new round…' })} />
+                : <Trans {...msg({ context: 'practice.match.new-round', message: 'New round' })} />}
+              </span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex min-h-12 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
+              disabled={completionStatus === 'verifying'}
+              className={secondaryActionClass}
             >
-              <span>Back</span>
+              <span><Trans {...msg({ context: 'practice.match.back', message: 'Back' })} /></span>
             </button>
           </div>
         </div>
       ) : (
-        /* Game Over Screen */
-        <div className="w-full rounded-[32px] border border-rose-400/30 bg-[var(--sf-surface)] p-6 text-center shadow-xl sm:p-8">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-rose-500/15 text-rose-500">
-            <Timer size={32} />
+        <div className="practice-results practice-match__result crystal-chamfer surface-glass" data-outcome="time-up">
+          <div className="practice-match__result-icon crystal-chamfer-sm">
+            <Timer size={30} aria-hidden="true" />
           </div>
-          <h3 className="mt-4 text-2xl font-black text-[var(--sf-text)]">
-            Time is up! ⏰
+          <h3 className="practice-match__result-title">
+            <Trans {...msg({ context: 'practice.match.time-up', message: 'Time is up' })} />
           </h3>
-          <p className="mt-1 text-sm text-[var(--sf-text-muted)]">
-              You matched {matchesCount} / {pairCount} pairs.
+          <p className="practice-match__result-copy">
+            <Trans {...msg({ context: 'practice.match.time-up-copy', message: 'You matched {matchesCount} of {pairCount} pairs.' })} values={{ matchesCount, pairCount }} />
           </p>
 
-          <div className="mt-8 flex justify-center gap-3">
+          <div className="practice-match__result-actions">
             <button
               type="button"
-              onClick={restartGame}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--sf-brand)] px-6 text-xs font-bold text-[var(--sf-on-brand)] shadow-md transition-all hover:bg-[var(--sf-brand-hover)] active:scale-95"
+              onClick={() => void restartGame()}
+              className={primaryActionClass}
             >
-              <RotateCcw size={16} />
-              <span>Try again</span>
+              <RotateCcw size={16} aria-hidden="true" />
+              <span><Trans {...msg({ context: 'practice.match.try-again', message: 'Try again' })} /></span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex min-h-12 items-center justify-center rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-6 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"
+              className={secondaryActionClass}
             >
-              <span>Back</span>
+              <span><Trans {...msg({ context: 'practice.match.back', message: 'Back' })} /></span>
             </button>
           </div>
         </div>

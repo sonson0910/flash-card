@@ -172,3 +172,26 @@ describe('card delete conflict recovery', () => {
     expect(applyDelete).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('card delete conflict recovery keeps the card it deleted', () => {
+  const command = { cardId: 'word-quite', opId: 'delete-quite', baseRevision: 12, libraryEpoch: 3 };
+  const tombstone = { cardId: 'word-quite', opId: 'delete-quite', libraryEpoch: 3, revision: 16, deletedAt: '2026-07-26T10:00:00.000Z' };
+  const latest = { id: 'word-quite', word: 'quite', translation: 'kha', category: 'Travel', revision: 15 } as CardData;
+
+  it('returns the conflicting revision as the deleted card once the rebased delete lands', async () => {
+    const result = await deleteCardWithConflictRecovery(command, async attempt => (attempt.baseRevision === 15
+      ? { deleted: true as const, tombstone }
+      : { deleted: false as const, reason: 'revision-conflict' as const, currentRevision: 15, currentCard: latest }));
+
+    expect(result).toEqual({ deleted: true, tombstone, deletedCard: latest });
+  });
+
+  it('adds no deleted card when the first delete lands or the conflict carried none', async () => {
+    expect(await deleteCardWithConflictRecovery(command, async () => ({ deleted: true as const, tombstone })))
+      .toEqual({ deleted: true, tombstone });
+    const result = await deleteCardWithConflictRecovery(command, async attempt => (attempt.baseRevision === 15
+      ? { deleted: true as const, tombstone }
+      : { deleted: false as const, reason: 'revision-conflict' as const, currentRevision: 15 }));
+    expect(result).toEqual({ deleted: true, tombstone });
+  });
+});

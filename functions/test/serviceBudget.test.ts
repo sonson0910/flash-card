@@ -1,11 +1,19 @@
-import { readFileSync } from 'node:fs';
+vi.mock('../src/pilotConfig.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/pilotConfig.js')>(), loadPilotConfig: vi.fn(async () => ({ analyticsEnabled: false })) }));
+vi.mock('../src/accountData.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/accountData.js')>(), isAccountDeleting: vi.fn(async () => false), readAccountAccess: vi.fn(async () => ({ deleting: false, profiled: true })) }));
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { describe, expect, it, vi } from 'vitest';
-import { RateLimitExceededError } from '../src/rateLimiter.js';
+import {
+  assertPersistentRateLimitAvailable,
+  consumePersistentRateLimit,
+  consumeRateLimitFailClosed,
+  RATE_LIMIT_STORAGE_DEADLINE_MS,
+  RateLimitExceededError,
+} from '../src/rateLimiter.js';
 import { createReviewCardHandler, toRateLimitHttpsError } from '../src/index.js';
 import {
   consumeOwnerAndServiceBudget,
+  consumeOwnerBudgetsAndServiceBudget,
   consumeServiceBudget,
   withServiceBudget,
 } from '../src/serviceBudget.js';
@@ -14,7 +22,10 @@ const createDatabase = () => {
   const documents = new Map<string, DocumentData>();
   const database = {
     collection: (name: string) => ({
-      doc: (id: string) => ({ path: `${name}/${id}` }),
+      doc: (id: string) => ({
+        path: `${name}/${id}`,
+        get: async () => ({ exists: documents.has(`${name}/${id}`), data: () => documents.get(`${name}/${id}`) }),
+      }),
     }),
     runTransaction: async (update: (transaction: Transaction) => Promise<unknown>) => {
       const transaction = {
@@ -33,25 +44,9 @@ const createDatabase = () => {
 };
 
 describe('service budgets', () => {
- it('applies aggregate service ceilings to every resource mutation callable', () => {
- const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
- for (const [callable, scope] of [
- ['saveGamification', 'gamification-save-service'],
- ['updateLibraryFacets', 'library-facets-update-service'],
- ['createCard', 'card-create-service'],
- ['revokeSharedDeck', 'shared-deck-revoke-service'],
- ['migrateLegacyLibrary', 'legacy-library-migration-service'],
- ] as const) {
- const start = source.indexOf(`export const ${callable} =`);
- const end = source.indexOf('\nexport const ', start + 1);
- expect(start).toBeGreaterThan(-1);
- expect(source.slice(start, end === -1 ? source.length : end)).toContain(`'${scope}'`);
- }
- });
-
- it('applies the aggregate review service ceiling before persistence', async () => {
+ it('applies the per-account review budget, with no shared service ceiling, before persistence', async () => {
    const consumeBudget = vi.fn(async () => undefined);
-   const applyReviewForOwner = vi.fn(async () => ({ applied: true }));
+   const applyReviewForOwner = vi.fn(async () => ({ applied: true as const, duplicate: false, xpAwarded: 0, card: {} }));
    const handler = createReviewCardHandler(false, { consumeBudget, applyReviewForOwner });
 
    await handler({
@@ -86,8 +81,6 @@ describe('service budgets', () => {
      'card-review',
      expect.any(Number),
      expect.any(String),
-     'card-review-service',
-     expect.any(Number),
    );
    expect(consumeBudget.mock.invocationCallOrder[0])
      .toBeLessThan(applyReviewForOwner.mock.invocationCallOrder[0]);
@@ -98,12 +91,6 @@ describe('service budgets', () => {
     'gemini',
     'image-provider',
     'shared-deck-create-service',
-    'gamification-save-service',
-    'library-facets-update-service',
-    'card-create-service',
-    'card-review-service',
-    'shared-deck-revoke-service',
-    'legacy-library-migration-service',
     'pronunciation-assessment-service',
   ]) {
       const database = createDatabase();
@@ -144,6 +131,33 @@ describe('service budgets', () => {
     await expect(consume('user-c')).rejects.toBeInstanceOf(RateLimitExceededError);
   });
 
+  it('spends none of the learner budgets when the shared budget refuses', async () => {
+    const database = createDatabase();
+    const ownerBudgets = [{ scope: 'ai-card', maximum: 1 }, { scope: 'gemini-owner', maximum: 1 }];
+    await consumeServiceBudget(database, 'gemini', 1, 1_000);
+
+    await expect(consumeOwnerBudgetsAndServiceBudget(database, 'user-a', ownerBudgets, 'gemini', 1, 1_000))
+      .rejects.toBeInstanceOf(RateLimitExceededError);
+
+    // A spent counter would refuse this second attempt for the learner's own limit.
+    await expect(consumeOwnerBudgetsAndServiceBudget(database, 'user-a', ownerBudgets, 'gemini-other', 1, 1_000))
+      .resolves.toBeUndefined();
+  });
+
+  it('reads a learner budget without spending it', async () => {
+    const database = createDatabase();
+    await consumePersistentRateLimit(database, 'user-a', 'ai-tutor', 2, 1_000);
+
+    // Reading never counts: the budget stays at one spent call however often it is read.
+    await assertPersistentRateLimitAvailable(database, 'user-a', 'ai-tutor', 2, 1_000);
+    await assertPersistentRateLimitAvailable(database, 'user-a', 'ai-tutor', 2, 1_000);
+    await consumePersistentRateLimit(database, 'user-a', 'ai-tutor', 2, 1_000);
+    await expect(assertPersistentRateLimitAvailable(database, 'user-a', 'ai-tutor', 2, 1_000))
+      .rejects.toBeInstanceOf(RateLimitExceededError);
+    await expect(assertPersistentRateLimitAvailable(database, 'user-b', 'ai-tutor', 2, 1_000))
+      .resolves.toBeUndefined();
+  });
+
   it('requires another aggregate allowance before Unsplash after no usable Pexels results', async () => {
     const database = createDatabase();
     const providers: string[] = [];
@@ -172,5 +186,23 @@ describe('service budgets', () => {
     expect(mapped).toBeInstanceOf(HttpsError);
     expect(mapped?.code).toBe('resource-exhausted');
     expect(mapped?.details).toEqual({ retryAfterSeconds: 3_600 });
+  });
+
+  it('maps a rate-limit storage timeout to a retryable unavailable error instead of an internal one', async () => {
+    vi.useFakeTimers();
+    try {
+      const pending = consumeRateLimitFailClosed(() => new Promise<void>(() => undefined))
+        .catch((error: unknown) => error);
+      await vi.advanceTimersByTimeAsync(RATE_LIMIT_STORAGE_DEADLINE_MS + 1);
+      const timeout = await pending;
+
+      const mapped = toRateLimitHttpsError(timeout, 'Card review limit reached. Try again later.');
+
+      expect(mapped).toBeInstanceOf(HttpsError);
+      expect(mapped?.code).toBe('unavailable');
+      expect(mapped?.message).not.toMatch(/limit reached/);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

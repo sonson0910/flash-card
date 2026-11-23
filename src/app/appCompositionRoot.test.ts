@@ -7,6 +7,7 @@ const runtimeUrl = new URL('./AppRuntime.tsx', import.meta.url);
 const signInRequestUrl = new URL('./landingSignInRequest.ts', import.meta.url);
 const libraryRuntimeUrl = new URL('./useAppLibraryRuntime.ts', import.meta.url);
 const learningCoordinationUrl = new URL('./useAppLearningCoordination.ts', import.meta.url);
+const cardMediaHydrationUrl = new URL('./useAppCardMediaHydration.ts', import.meta.url);
 
 const readIfPresent = (url: URL): string => {
   const file = fileURLToPath(url);
@@ -28,9 +29,11 @@ describe('App composition root contract', () => {
     const signInRequestSource = readIfPresent(signInRequestUrl);
     const libraryRuntimeSource = readIfPresent(libraryRuntimeUrl);
     const learningCoordinationSource = readIfPresent(learningCoordinationUrl);
+    const cardMediaHydrationSource = readIfPresent(cardMediaHydrationUrl);
 
-    expect(appSource).toContain("lazy(() => import('./app/AppRuntimeInitial.virtual'))");
-    expect(appSource).toContain("lazy(() => import('./app/AppRuntimeRetry.virtual'))");
+    expect(appSource).toContain("import('./app/AppRuntimeInitial.virtual')");
+    expect(appSource).toContain("import('./app/AppRuntimeRetry.virtual')");
+    expect(appSource).toContain("loadCatalog(getActiveUiLocale(), 'components')");
     expect(appSource).not.toContain("from './app/appDependencies'");
     expect(appSource).not.toContain("from './app/useAppLibraryRuntime'");
     expect(appSource).not.toContain("from './app/useAppLearningCoordination'");
@@ -46,6 +49,7 @@ describe('App composition root contract', () => {
     const signInDispatch = signInRequestSource.indexOf('await signIn()');
     expect(signInAcknowledgement).toBeGreaterThanOrEqual(0);
     expect(signInDispatch).toBeGreaterThan(signInAcknowledgement);
+    expect(runtimeSource).toContain('publishLandingSignInState({ busy: identity.isSigningIn, error: user ? null : identity.error })');
     expect(runtimeSource).toContain('onLandingUserChange(user ?');
     expect(runtimeSource).toContain('displayName: user.displayName');
     expect(runtimeSource).toContain('email: user.email');
@@ -73,7 +77,8 @@ describe('App composition root contract', () => {
     expect(learningCoordinationSource).toContain('usePracticeWorkspace');
     expect(learningCoordinationSource).toContain('useLearningWorkspace');
     expect(learningCoordinationSource).toContain('useIntakeSharingSession');
-    expect(learningCoordinationSource).toContain('useCardMediaHydration');
+    expect(learningCoordinationSource).toContain('useAppCardMediaHydration');
+    expect(cardMediaHydrationSource).toContain('useCardMediaHydration');
     expect(learningCoordinationSource).toContain('useCustomDeckWorkspace');
     expect(learningCoordinationSource).toContain('useLibraryScreenContract');
   });
@@ -90,9 +95,16 @@ describe('App composition root contract', () => {
 
   it('prefetches the default Today workspace without eager-loading it', () => {
     const source = readFileSync(appUrl, 'utf8');
+    const deferredStartupSource = readFileSync(new URL('./deferredStartup.ts', import.meta.url), 'utf8');
+    const mainSource = readFileSync(new URL('../main.tsx', import.meta.url), 'utf8');
 
-    expect(source).toContain("import('./features/dailyLearning/DailyLearningWorkspace')");
     expect(source).toContain('navigation.viewMode === \'today\'');
-    expect(source).toContain("void import('./features/dailyLearning/DailyLearningWorkspace').catch(() => undefined)");
+    // The prefetch goes through the deferred startup chunk main.tsx already requests, keeping the
+    // workspace's preload list out of the initial bundle.
+    expect(source).toContain("void import('./app/deferredStartup').then(({ prefetchTodayWorkspace }) => prefetchTodayWorkspace()).catch(() => undefined)");
+    expect(mainSource).toContain("void import('./app/deferredStartup')");
+    expect(deferredStartupSource).toContain("export const prefetchTodayWorkspace = (): Promise<unknown> => import('../features/dailyLearning/DailyLearningWorkspace');");
+    expect(source).not.toMatch(/from '\.\/features\/dailyLearning\/DailyLearningWorkspace'/);
+    expect(deferredStartupSource).not.toMatch(/from '\.\.\/features\/dailyLearning\/DailyLearningWorkspace'/);
   });
 });
