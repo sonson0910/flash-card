@@ -659,6 +659,49 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     }
   });
 
+  it('rolls back to the library the applied scan saw, not to a card a retired scan backed up', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const jobId = 'retired-backup-rollback-v3';
+    const jobReference = owner.collection('admin_library_migration_jobs').doc(jobId);
+    // One copy of the word already sits at the id the migration keeps.
+    await owner.collection('cards').doc('word-quite').set({ id: 'word-quite', word: 'quite', translation: 'khá là' });
+    const first = await discoverToEnd(jobId);
+    // A first attempt backs up that card, then stops before applying any group.
+    const [unprepared] = (await jobReference.collection('groups').orderBy('__name__').get()).docs;
+    expect(unprepared.data().normalizedWord).not.toBe('quite');
+    await unprepared.ref.set({ backupSealed: true }, { merge: true });
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision: first.sourceRevision }))
+      .rejects.toBeInstanceOf(LegacyLibraryDiscoveryStateChangedError);
+    const backups = owner.collection('admin_library_migration_backups').doc(jobId).collection('sources');
+    expect((await backups.doc('word-quite').get()).exists).toBe(true);
+    // The learner then deletes that card; its duplicates stay.
+    const learnerTombstone = {
+      cardId: 'word-quite', opId: 'learner-delete', libraryEpoch: 2,
+      revision: 1, deletedAt: '2026-06-01T00:00:00.000Z',
+    };
+    await Promise.all([
+      owner.collection('cards').doc('word-quite').delete(),
+      owner.collection('card_tombstones').doc('word-quite').set(learnerTombstone),
+    ]);
+    const libraryBeforeApply = (await owner.collection('cards').orderBy('__name__').get()).docs
+      .map(document => [document.id, document.data()]);
+
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision: first.sourceRevision }))
+      .rejects.toBeInstanceOf(LegacyLibraryGenerationChangedError);
+    const second = await discoverToEnd(jobId);
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision: second.sourceRevision }))
+      .resolves.toMatchObject({ complete: true, groupCount: 2 });
+    expect((await owner.collection('cards').doc('word-quite').get()).data())
+      .toMatchObject({ translation: 'hoàn toàn' });
+
+    await rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, second.sourceRevision);
+
+    expect((await owner.collection('cards').orderBy('__name__').get()).docs
+      .map(document => [document.id, document.data()])).toEqual(libraryBeforeApply);
+    expect((await owner.collection('cards').doc('word-quite').get()).exists).toBe(false);
+    expect((await owner.collection('card_tombstones').doc('word-quite').get()).data()).toEqual(learnerTombstone);
+  });
+
   it('scans and applies past groups of a retired scan that were never cleaned up', async () => {
     const owner = database.collection('users').doc(OWNER_ID);
     const jobId = 'retired-scan-groups-v3';

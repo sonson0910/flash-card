@@ -2254,14 +2254,19 @@ const rollbackOneGroup = async (
   }
   for (const [index, sourceId] of sourceIds.entries()) {
     const backup = backupSnapshots[index];
+    // Only a card the applied scan listed is restored from its backup. The
+    // kept card's id, when no listed card had it, was unused when the group
+    // was applied, so the card is removed. A backup stored under that id was
+    // captured for an earlier, retired scan and is not this library's state.
     if (originalSourceIds.includes(sourceId)) {
       const expected = originalSources.find(source => source.id === sourceId);
       if (!expected || !backupSourceMatches(backup, expected)) {
         throw new LegacyLibraryRollbackConflictError(1, sourceIds.length);
       }
+      transaction.set(sourceReferences[index], backup.data()?.source ?? {}, { merge: false });
+    } else {
+      transaction.delete(sourceReferences[index]);
     }
-    if (!backup.exists) transaction.delete(sourceReferences[index]);
-    else transaction.set(sourceReferences[index], backup.data()?.source ?? {}, { merge: false });
     const previous = beforeTombstones.find(item => item.cardId === sourceId)?.data;
     if (previous && typeof previous === 'object') transaction.set(tombstoneReferences[index], previous as DocumentData, { merge: false });
     else transaction.delete(tombstoneReferences[index]);
