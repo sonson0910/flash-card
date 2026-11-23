@@ -73,12 +73,14 @@ export const getListenMvpAudioState = (
   lookup: ListenMvpCachedLookupState | null,
   cached: ListenMvpCachedAudioSelection | null,
   identity?: OfflineMediaPackResolutionContext,
+  /** The learner already played the online clip, so a recheck must not take the source away from it. */
+  keepOnlineSource = false,
 ): { readonly pending: boolean; readonly src: string | undefined } => {
   if (!lesson) return { pending: false, src: undefined };
   if (!resolver) return { pending: false, src: lesson.clip.path };
   const clipKey = listenMvpClipKey(lesson.clip, identity);
   if (lookup?.clipKey !== clipKey || lookup.status === 'pending') {
-    return { pending: true, src: undefined };
+    return keepOnlineSource ? { pending: false, src: lesson.clip.path } : { pending: true, src: undefined };
   }
   return {
     pending: false,
@@ -148,6 +150,8 @@ export function ListenMvp({
     ? listenMvpClipKey(lesson.clip, offlineMediaPackIdentity)
     : null;
   const onlinePlaybackStartedRef = useRef(false);
+  const clipPlayedRef = useRef(false);
+  const clipOnlyKey = lesson ? listenMvpClipKey(lesson.clip) : null;
   const onEvidenceRef = useRef(onEvidence);
   onEvidenceRef.current = onEvidence;
   const answerReporter = useRef<{
@@ -181,6 +185,10 @@ export function ListenMvp({
   }, [offlineMediaKey]);
 
   useEffect(() => {
+    clipPlayedRef.current = false;
+  }, [clipOnlyKey]);
+
+  useEffect(() => {
     let disposed = false;
     let source: ListenMvpCachedAudioSource | null = null;
     setCachedAudio(null);
@@ -209,7 +217,7 @@ export function ListenMvp({
           return;
         }
         source = await createListenMvpCachedAudioSource(response);
-        if (!shouldAdoptListenMvpCachedAudio(disposed, onlinePlaybackStartedRef.current)) {
+        if (!shouldAdoptListenMvpCachedAudio(disposed, onlinePlaybackStartedRef.current || clipPlayedRef.current)) {
           source.revoke();
           if (!disposed) {
             setCacheLookup({ clipKey, status: 'ready' });
@@ -243,9 +251,11 @@ export function ListenMvp({
     cacheLookup,
     cachedAudio,
     offlineMediaPackIdentity,
+    clipPlayedRef.current,
   );
 
   const onAudioPlay = useCallback(() => {
+    clipPlayedRef.current = true;
     if (audioState.pending) onlinePlaybackStartedRef.current = true;
   }, [audioState.pending]);
 
