@@ -82,6 +82,15 @@ describe('catalog learning flow', () => {
       expect(catalogEntryIsInLibrary(index, korean)).toBe(true);
       expect(catalogEntryIsInLibrary(index, { ...entry, lemma: '사과' })).toBe(false);
     });
+
+    it('does not take a card without a language tag for its own, since such a card is an English card', () => {
+      const untagged: CardData = { ...catalogEntryToLibraryCard(entry), id: 'word-사과', word: '사과', normalizedWord: '사과' };
+      const result = mergeCatalogEntryIntoLibrary([untagged], korean);
+
+      expect(result.status).toBe('created');
+      expect(result.card.id).toBe(createTargetAwareCardId('사과', 'ko'));
+      expect(catalogEntryIsInLibrary(createCatalogLibraryIdentityIndex([untagged]), korean)).toBe(false);
+    });
   });
 
   it('adds the same catalog entry idempotently by normalized word', () => {
