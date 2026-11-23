@@ -23,6 +23,8 @@ const COMPONENT_PATHS = Object.freeze({
   readiness: { path: 'artifacts/phase6-readiness.json', type: 'file' },
 });
 
+const RELEASE_MANIFEST_PATH = 'artifacts/release-candidate-manifest.json';
+
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 
 const requireSafePath = (root, relativePath, label) => {
@@ -400,6 +402,27 @@ export function sealReleaseArtifact({ root = process.cwd(), revision, workflowRu
   return { ...manifest, candidateSha256: candidateDigest(manifest) };
 }
 
+// Deploy steps read more than the sealed paths (npm prefers functions/npm-shrinkwrap.json over the
+// sealed lock, and a Functions source directory loads any file it names), so the candidate root
+// must hold nothing but the sealed files and their manifest.
+const requireOnlySealedFiles = (root, components) => {
+  const sealed = new Set([RELEASE_MANIFEST_PATH]);
+  for (const component of Object.values(components)) {
+    for (const file of component.files ?? [component]) sealed.add(file.path);
+  }
+  const visit = relativeDirectory => {
+    for (const entry of fs.readdirSync(path.join(root, relativeDirectory), { withFileTypes: true })) {
+      const child = relativeDirectory ? `${relativeDirectory}/${entry.name}` : entry.name;
+      if (entry.isSymbolicLink()) throw new Error(`Release candidate contains a symbolic link at ${child}.`);
+      if (entry.isDirectory()) visit(child);
+      else if (!entry.isFile() || !sealed.has(child)) {
+        throw new Error(`Release candidate holds ${child} outside the sealed components.`);
+      }
+    }
+  };
+  visit('');
+};
+
 const exactKeys = (value, expected) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const actual = Object.keys(value).sort();
@@ -417,6 +440,9 @@ export function verifyReleaseArtifact({
     throw new Error('Release artifact manifest schema is invalid.');
   }
   if (manifest.schemaVersion !== 1) throw new Error('Unsupported release artifact schemaVersion.');
+  if (!exactKeys(manifest.components, Object.keys(COMPONENT_PATHS))) {
+    throw new Error('Release artifact manifest components must be exactly the sealed component set.');
+  }
   validateSealInputs(manifest);
   const revision = expectedRevision.trim().toLowerCase();
   if (manifest.revision !== revision) throw new Error('Release artifact revision does not match the approved revision.');
@@ -441,6 +467,7 @@ export function verifyReleaseArtifact({
       throw new Error(`Release artifact component ${name} does not match its sealed digest.`);
     }
   }
+  requireOnlySealedFiles(candidateRoot, currentComponents);
   return manifest;
 }
 

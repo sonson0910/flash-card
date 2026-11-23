@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { afterEach as nodeAfterEach, describe as nodeDescribe, it as nodeIt } from 'node:test';
@@ -233,6 +234,49 @@ describe('sealed release artifact', () => {
       expectedWorkflowRunId: '12345',
       expectedCandidateSha256: manifest.candidateSha256,
     });
+  });
+
+  it('rejects a candidate root that holds a file outside the sealed components', () => {
+    const root = createCandidate('a'.repeat(40));
+    const manifest = sealReleaseArtifact({
+      root,
+      revision: 'a'.repeat(40),
+      workflowRunId: '12345',
+      generatedAt: '2026-08-10T00:00:00.000Z',
+    });
+    fs.writeFileSync(path.join(root, 'artifacts/release-candidate-manifest.json'), JSON.stringify(manifest));
+    const verify = (candidateManifest = manifest) => () => verifyReleaseArtifact({
+      root,
+      manifest: candidateManifest,
+      expectedRevision: 'a'.repeat(40),
+      expectedWorkflowRunId: '12345',
+      expectedCandidateSha256: candidateManifest.candidateSha256,
+    });
+    verify()();
+    for (const extra of [
+      'functions/npm-shrinkwrap.json',
+      'functions/index.js',
+      'functions/extra/x.js',
+      'firebase.promoted.json',
+      'artifacts/other.json',
+    ]) {
+      fs.mkdirSync(path.dirname(path.join(root, extra)), { recursive: true });
+      fs.writeFileSync(path.join(root, extra), '{}\n');
+      expect(verify()).toThrow(/outside the sealed components/);
+      fs.rmSync(path.join(root, extra));
+    }
+    verify()();
+
+    const components = { ...manifest.components, extra: manifest.components.rootPackage };
+    const payload = {
+      schemaVersion: manifest.schemaVersion,
+      revision: manifest.revision,
+      workflowRunId: manifest.workflowRunId,
+      generatedAt: manifest.generatedAt,
+      components,
+    };
+    const candidateSha256 = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+    expect(verify({ ...payload, candidateSha256 })).toThrow(/components/);
   });
 
   it('rejects a candidate sealed by a different workflow run', () => {

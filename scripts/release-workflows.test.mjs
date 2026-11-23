@@ -245,6 +245,29 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('firebase deploy --only firestore --config');
   });
 
+  it('accepts WORM retrieval and staging evidence only from default-branch runs', () => {
+    const workflow = read('.github/workflows/deploy-production.yml');
+    const step = name => workflow.slice(
+      workflow.indexOf(`- name: ${name}`),
+      workflow.indexOf('\n      - ', workflow.indexOf(`- name: ${name}`) + 1),
+    );
+    for (const [name, variable] of [
+      ['Verify read-only WORM retrieval provenance', 'ARCHIVE_VERIFICATION_HEAD_SHA'],
+      ['Verify staging workflow provenance and receipt identity', 'STAGING_HEAD_SHA'],
+    ]) {
+      const provenance = step(name);
+      expect(provenance).toContain('DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}');
+      expect(provenance).toContain('test "$(jq -er \'.head_branch\' <<<"$run_json")" = "$DEFAULT_BRANCH"');
+      expect(provenance).toContain('test "$(jq -er \'.head_repository.full_name\' <<<"$run_json")" = "$GITHUB_REPOSITORY"');
+      expect(provenance).toContain(`echo "${variable}=$head_sha" >> "$GITHUB_ENV"`);
+    }
+    const ancestry = step('Verify candidate ancestry and protected workflow checkout');
+    expect(ancestry).toContain('git merge-base --is-ancestor "$ARCHIVE_VERIFICATION_HEAD_SHA" "origin/$DEFAULT_BRANCH"');
+    expect(ancestry).toContain('git merge-base --is-ancestor "$STAGING_HEAD_SHA" "origin/$DEFAULT_BRANCH"');
+    expect(workflow.indexOf('Verify candidate ancestry and protected workflow checkout'))
+      .toBeLessThan(workflow.indexOf('Download the exact candidate materialized by read-only WORM retrieval'));
+  });
+
   it('blocks production until the exact staging deployment receipt is verified', () => {
     const workflow = read('.github/workflows/deploy-production.yml');
     expect(workflow).toContain('staging_run_id:');

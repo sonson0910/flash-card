@@ -118,7 +118,9 @@ runtime dependencies still come from the candidate's sealed Functions lockfile.
    SHA-256, and reruns the canonical candidate verifier. A successful retrieval
    receipt is required before the tuple becomes an eligible retained LKG. The same
    run uploads `retrieved-candidate-<revision>-<run>` for two days. Production consumes
-   those exact bytes and re-verifies their sealed digest. If that temporary artifact
+   those exact bytes and re-verifies their sealed digest, accepts a retrieval or staging
+   run only when it ran on the default branch at a commit that main contains, and
+   rejects a candidate that holds any file outside the sealed components. If that temporary artifact
    expires, rerun WORM verification and approve the new receipt; the original Actions
    candidate is not needed for retrieval.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
