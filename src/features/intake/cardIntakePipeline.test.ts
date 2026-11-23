@@ -887,6 +887,38 @@ describe('Card Intake Pipeline contract', () => {
     }));
   });
 
+  it('does not reload the library page for a card the service refused', async () => {
+    const context = createContext();
+    repositoryRuntime.createCardV2IfAbsent.mockRejectedValueOnce(new Error('The card limit was reached.'));
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const result = await pipeline.persistStructured({ creates: [card('apple') as CardData], patches: [] });
+
+    expect(result.outcomes).toEqual(['failed']);
+    // The page was reset once when the card was added at once; the refusal removes a card the
+    // server never listed, so it needs no second read.
+    expect(vi.mocked(context.resetCloudPage)).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the optimistic counts of a single card whose save timed out, because the create may still land', async () => {
+    vi.useFakeTimers();
+    const context = createContext();
+    const candidate = card('apple') as CardData;
+    const cloud = deferred<{ card: typeof candidate; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(cloud.promise);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const persistence = pipeline.persistCards([candidate], 'generate');
+    await vi.advanceTimersByTimeAsync(8_000);
+    await persistence;
+    await vi.waitFor(() => expect(vi.mocked(context.setCloudUnavailable)).toHaveBeenCalledTimes(1));
+
+    expect(vi.mocked(context.updateCloudStats)).toHaveBeenCalledTimes(1);
+    const facetCalls = vi.mocked(context.updateCategoryFacets).mock.calls;
+    expect(facetCalls.reduce((net, [delta]) => net + (delta.General ?? 0), 0)).toBe(1);
+    cloud.resolve({ card: candidate, created: true, gamification: null });
+  });
+
   it('reports a reused shared card under the id it is stored under', async () => {
     const earlier = { ...card('사과'), id: createWordCardId('사과'), language: 'ko', partOfSpeech: 'noun', revision: 4 };
     const shared = { ...card('사과'), id: createTargetAwareCardId('사과', 'ko'), language: 'ko' };

@@ -124,7 +124,8 @@ const compensateOptimisticCard = (
   void update.catch(cause => {
     console.warn('The card was reconciled, but its category facet needs a refresh.', cause);
   });
-  port.resetCloudPage();
+  // A duplicate was listed by the service, so the page must be read again. A refused card never was.
+  if (reason === 'duplicate') port.resetCloudPage();
 };
 
 export function compensateOptimisticDuplicateCard(
@@ -505,8 +506,12 @@ export function createCardIntakePipeline({
           const latest = getContext();
           latest.forgetPromoted(candidate);
           latest.publishCards(latest.getCards().filter(existing => existing.id !== candidate.id));
-          // The card never reached the library, so the optimistic counts and facet go back too.
-          compensateOptimisticCard(candidate, latest, `${facetOperationId}:${operationId}`, 'failed');
+          // A refused card never reached the library, so the optimistic counts and facet go back too.
+          // A timeout proves nothing: the create may still land, so its counts are left as the
+          // create added them and a reload reads them again.
+          if (!(cause instanceof OperationTimeoutError)) {
+            compensateOptimisticCard(candidate, latest, `${facetOperationId}:${operationId}`, 'failed');
+          }
           latest.setCloudUnavailable(true);
           latest.notify('The card could not be saved. Check your connection and try again.');
         }
