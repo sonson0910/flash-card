@@ -574,7 +574,7 @@ export function SessionRecapModal({
                 </StatTile>
                 {showStreak && (
                   <StatTile label={<Trans {...msg({ context: 'recap.streak', message: 'Streak' })} />} value={<>{formatNumber(streakDays)} <span className="practice-recap-chip-today"><Trans {...msg({ context: 'recap.streak-today', message: '+1 today' })} /></span></>}>
-                    <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.streak-note', message: 'A day counts once you review a card.' })} /></p>
+                    <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.streak-note', message: 'A day counts after one review.' })} /></p>
                   </StatTile>
                 )}
                 {!isNext && (

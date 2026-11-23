@@ -409,6 +409,11 @@ msgctxt "recap.progress-breakdown"
 msgid "Saved: {saved} / {total} · Skipped: {skipped} · Not started: {remaining} · Saving: {pending} · Failed: {failed}"
 msgstr ""
 
+#: src/features/practice/SessionRecapModal.tsx:577
+msgctxt "recap.streak-note"
+msgid "A day counts after one review."
+msgstr ""
+
 #: src/features/practice/SessionRecapModal.tsx:361
 msgctxt "recap.back-today"
 msgid "Back to Today"
@@ -559,11 +564,6 @@ msgstr ""
 #: src/features/practice/WordMatchView.tsx:351
 msgctxt "practice.match.instruction"
 msgid "Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}."
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:577
-msgctxt "recap.streak-note"
-msgid "A day counts once you review a card."
 msgstr ""
 
 #: src/features/practice/StudyView.tsx:554

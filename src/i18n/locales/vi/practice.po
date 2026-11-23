@@ -409,6 +409,11 @@ msgctxt "recap.progress-breakdown"
 msgid "Saved: {saved} / {total} · Skipped: {skipped} · Not started: {remaining} · Saving: {pending} · Failed: {failed}"
 msgstr "Đã lưu: {saved} / {total} · Bỏ qua: {skipped} · Chưa bắt đầu: {remaining} · Đang lưu: {pending} · Thất bại: {failed}"
 
+#: src/features/practice/SessionRecapModal.tsx:577
+msgctxt "recap.streak-note"
+msgid "A day counts after one review."
+msgstr "Một ngày được tính sau một lượt ôn."
+
 #: src/features/practice/SessionRecapModal.tsx:361
 msgctxt "recap.back-today"
 msgid "Back to Today"
@@ -560,11 +565,6 @@ msgstr "{count, plural, other {# ký tự}}"
 msgctxt "practice.match.instruction"
 msgid "Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}."
 msgstr "Chọn một từ {targetLanguageName}, rồi chọn nghĩa bằng {nativeLanguageName}."
-
-#: src/features/practice/SessionRecapModal.tsx:577
-msgctxt "recap.streak-note"
-msgid "A day counts once you review a card."
-msgstr "Một ngày được tính khi bạn ôn một thẻ."
 
 #: src/features/practice/StudyView.tsx:554
 msgctxt "study.shortcuts"
