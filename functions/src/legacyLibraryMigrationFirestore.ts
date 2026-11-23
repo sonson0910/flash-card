@@ -2312,7 +2312,10 @@ export async function rollbackLegacyLibraryMigration(
   let current = fence;
   try {
     await ensureBackupRoot(database, ownerId, current);
-    if (current.rollbackGroupCount === 0 && job.phase === 'complete') {
+    // Until the first group is restored the library must still be the sealed
+    // result of the migration. The backup root says whether it was sealed; the
+    // job phase does not, because an interrupted attempt leaves it 'rollback'.
+    if (current.rollbackGroupCount === 0 && rootData.complete === true) {
       await verifySealedFinalLibrary(database, ownerId, current);
     }
     const preflight = await preflightRollback(database, ownerId, current);
