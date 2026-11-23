@@ -1616,7 +1616,11 @@ describe('legacy shared-deck exact inventory', () => {
     const verification = await verifyLegacySharedDeckCutover(database, duplicate);
     expect(verification).toMatchObject({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 2 });
     const firstReport = buildLegacySharedDeckMigrationOperatorReport(duplicate, verification);
-    const rerunVerification = await verifyLegacySharedDeckCutover(database, duplicate);
+    // A verified migration is re-checked against the live ledger, so the
+    // second pass is pinned to a moment at which these shares are still live.
+    const rerunVerification = await verifyLegacySharedDeckCutover(database, duplicate, {
+      now: Timestamp.fromMillis(Date.parse(duplicate.scanStartedAt) + 60_000),
+    });
     expect(rerunVerification).toEqual(verification);
     expect(buildLegacySharedDeckMigrationOperatorReport(duplicate, rerunVerification)).toBe(firstReport);
     expect(JSON.parse(firstReport)).toMatchObject({
@@ -1799,7 +1803,11 @@ describe('legacy shared-deck exact inventory', () => {
     const resumedVerification = await verifyLegacySharedDeckCutover(verifyHarness.database, inventory);
     const resumedReport = buildLegacySharedDeckMigrationOperatorReport(inventory, resumedVerification);
     expect(resumedVerification).toMatchObject({ verified: true });
-    const resumedAgain = await verifyLegacySharedDeckCutover(verifyHarness.database, inventory);
+    // A verified migration is re-checked against the live ledger, so the
+    // second pass is pinned to a moment at which these shares are still live.
+    const resumedAgain = await verifyLegacySharedDeckCutover(verifyHarness.database, inventory, {
+      now: Timestamp.fromMillis(Date.parse(inventory.scanStartedAt) + 60_000),
+    });
     expect(buildLegacySharedDeckMigrationOperatorReport(inventory, resumedAgain)).toBe(resumedReport);
     expect(map.get('admin_shared_deck_migration_jobs/shared_deck_v2')).toMatchObject({
       phase: 'verified', verificationProgress: { active: false },

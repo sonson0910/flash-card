@@ -2847,10 +2847,16 @@ export type LegacySharedDeckCutoverVerification = {
   readonly activeLedgerCount: number;
 };
 
-/** Verify the post-apply public/private pair and ledger before reopening writes. */
+/**
+ * Verify the post-apply public/private pair and ledger before reopening
+ * writes.  Once a migration is verified, calling this again only reads: it
+ * re-checks the store against what learners may have done since and never
+ * closes sharing again.
+ */
 export async function verifyLegacySharedDeckCutover(
   database: Firestore,
   inventory: LegacySharedDeckInventory,
+  options: { readonly now?: Timestamp } = {},
 ): Promise<LegacySharedDeckCutoverVerification> {
   if (inventory.consistency !== 'frozen') throw new LegacySharedDeckApplyError('Cutover requires a frozen inventory.');
   validateSealedInventory(inventory);
@@ -2928,15 +2934,148 @@ export async function verifyLegacySharedDeckCutover(
     return value;
   };
 
+  // Sharing reopened when the migration was verified, so learners have since
+  // created, revoked and outlived shares.  The store can no longer equal the
+  // scan-time picture, and a pass that writes its cursor into the state would
+  // fence every learner until it finished.  This pass therefore only reads.
+  const attestVerified = async (now: Timestamp): Promise<LegacySharedDeckCutoverVerification> => {
+    const nowMillis = now.toMillis();
+    const readOnly = <T>(read: (transaction: Transaction) => Promise<T>): Promise<T> => (
+      database.runTransaction(read, { readOnly: true })
+    );
+    const publicReference = (shareId: string) => database.collection('shared_decks').doc(shareId);
+    const privateReference = (shareId: string) => database.collection('shared_deck_owners').doc(shareId);
+    const ledgerShares = (usage: unknown): DataRecord => {
+      if (!isRecord(usage) || usage.schemaVersion !== 1 || !isRecord(usage.shares)) {
+        throw new LegacySharedDeckApplyError('Cutover verification found a mismatched usage ledger.');
+      }
+      return usage.shares;
+    };
+    // A share created after the cutover belongs to whoever created it, so it
+    // is judged against its own owner record instead of the migrated owner.
+    const assertCurrentShare = (shareId: string, publicData: unknown, privateData: unknown): void => {
+      if (isRecord(publicData) && isRecord(privateData)) {
+        if (publicData.schemaVersion === 2
+          && privateData.schemaVersion === 2
+          && typeof privateData.ownerUid === 'string'
+          && classifyLegacyShare({ shareId, publicData, privateData }, privateData.ownerUid)
+            .disposition === 'keep-current') return;
+      } else {
+        // The TTL policy deletes the two sides of an expired share separately.
+        const remaining = publicData ?? privateData;
+        const expiresAt = isRecord(remaining) ? timestampMillis(remaining.expiresAt) : null;
+        if (isRecord(remaining) && remaining.schemaVersion === 2 && expiresAt !== null && expiresAt <= nowMillis) return;
+      }
+      throw new LegacySharedDeckApplyError('Cutover verification found a share that is not in the current format.');
+    };
+
+    for (const collection of ['shared_decks', 'shared_deck_owners'] as const) {
+      let after: string | null = null;
+      while (true) {
+        const page: { size: number; lastId: string | null } = await readOnly(async transaction => {
+          let query = database.collection(collection).orderBy('__name__').limit(MAX_PAGE_DOCUMENTS);
+          if (after !== null) query = query.startAfter(after);
+          const snapshot = await transaction.get(query);
+          for (const document of snapshot.docs) {
+            // Sealed shares are checked by ID below, together with their ledger entry.
+            if (expectedEntryFor(document.id)) continue;
+            const counterpart = (await transaction.get(
+              collection === 'shared_decks' ? privateReference(document.id) : publicReference(document.id),
+            )).data();
+            if (collection === 'shared_decks') assertCurrentShare(document.id, document.data(), counterpart);
+            else assertCurrentShare(document.id, counterpart, document.data());
+          }
+          return { size: snapshot.size, lastId: snapshot.docs.at(-1)?.id ?? null };
+        });
+        if (page.size < MAX_PAGE_DOCUMENTS || page.lastId === null) break;
+        after = page.lastId;
+      }
+    }
+
+    for (let offset = 0; offset < inventory.entries.length; offset += MAX_PAGE_DOCUMENTS) {
+      const batch = inventory.entries.slice(offset, offset + MAX_PAGE_DOCUMENTS);
+      await readOnly(async transaction => {
+        // One snapshot per batch: a share and its ledger entry always change together.
+        const shares = ledgerShares((await transaction.get(usageRef)).data());
+        for (const entry of batch) {
+          const publicData = (await transaction.get(publicReference(entry.shareId))).data();
+          const privateData = (await transaction.get(privateReference(entry.shareId))).data();
+          if (entry.action === 'block') {
+            throw new LegacySharedDeckApplyError(`Cutover verification found a blocked source for ${entry.shareId}.`);
+          }
+          if (entry.action === 'quarantine') {
+            const copy = (await transaction.get(quarantineReference(database, entry.shareId))).data();
+            const sourceUnchanged = (publicData === undefined ? null : sourceDigest(publicData)) === entry.publicSourceDigest
+              && (privateData === undefined ? null : sourceDigest(privateData)) === entry.privateSourceDigest;
+            const sourceRemoved = publicData === undefined && privateData === undefined;
+            if (!quarantineMatchesSource(copy, entry) || (!sourceUnchanged && !sourceRemoved)) {
+              throw new LegacySharedDeckApplyError(`Cutover verification found an unverified quarantine copy for ${entry.shareId}.`);
+            }
+            continue;
+          }
+          const expiresAt = sourceExpiresAt(entry, inventory.scanStartedAt)?.toMillis() ?? null;
+          const live = expiresAt !== null && expiresAt > nowMillis;
+          const ledgerEntry = Object.hasOwn(shares, entry.shareId) ? shares[entry.shareId] : undefined;
+          if (publicData === undefined && privateData === undefined) {
+            // Revoked by the owner, or expired and removed: either way the ledger let go of it.
+            if (live && ledgerEntry !== undefined) {
+              throw new LegacySharedDeckApplyError('Cutover verification found a mismatched usage ledger.');
+            }
+            continue;
+          }
+          if (publicData === undefined || privateData === undefined) {
+            const remaining = publicData ?? privateData;
+            if (live || !isRecord(remaining) || timestampMillis(remaining.expiresAt) !== expiresAt) {
+              throw new LegacySharedDeckApplyError('Cutover verification found a missing or mismatched schema2 pair.');
+            }
+            continue;
+          }
+          if (!isAppliedPair(entry, publicData, privateData, inventory.ownerUid, inventory.scanStartedAt)) {
+            throw new LegacySharedDeckApplyError('Cutover verification found a missing or mismatched schema2 pair.');
+          }
+          if (live && (!isRecord(ledgerEntry)
+            || ledgerEntry.payloadBytes !== entry.payloadBytes
+            || timestampMillis(ledgerEntry.expiresAt) !== expiresAt)) {
+            throw new LegacySharedDeckApplyError('Cutover verification found a mismatched usage ledger.');
+          }
+        }
+      });
+    }
+
+    return readOnly(async transaction => {
+      if (assertState((await transaction.get(stateRef)).data()).phase !== 'verified') {
+        throw new LegacySharedDeckApplyError('Cutover verification state is not ready.');
+      }
+      const shares = ledgerShares((await transaction.get(usageRef)).data());
+      return {
+        verified: true,
+        validLegacyPublicCount: 0,
+        activeLedgerCount: Object.values(shares).filter(entry => (
+          isRecord(entry) && (timestampMillis(entry.expiresAt) ?? Number.NEGATIVE_INFINITY) > nowMillis
+        )).length,
+      };
+    });
+  };
+
   const initialProgress = await database.runTransaction(async transaction => {
     const snapshot = await transaction.get(stateRef);
     const state = assertState(snapshot.data());
     const rawProgress = state.verificationProgress;
+    if (state.phase === 'verified') {
+      // Nothing below runs for a verified migration, so an active flag here is
+      // only what an interrupted earlier pass left behind.  Clearing it is the
+      // one write this path makes, and it reopens sharing.
+      if (isRecord(rawProgress) && rawProgress.active === true) {
+        transaction.set(stateRef, { ...state, verificationProgress: { ...rawProgress, active: false } });
+      }
+      return null;
+    }
     if (isRecord(rawProgress) && rawProgress.active === true) return parseProgress(rawProgress);
     const progress = emptyProgress();
     transaction.set(stateRef, { ...state, verificationProgress: progress });
     return progress;
   });
+  if (initialProgress === null) return attestVerified(options.now ?? Timestamp.now());
 
   const processSource = async (
     transaction: Transaction,

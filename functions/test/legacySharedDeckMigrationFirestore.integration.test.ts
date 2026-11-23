@@ -134,6 +134,13 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
     target,
     scanStartedAt,
   });
+  const cutOver = async (scanStartedAt?: string) => {
+    await seedLegacyShares('legacy-a', 'legacy-b', 'legacy-c');
+    const inventory = await seal(sealingRevision, scanStartedAt);
+    await applyLegacySharedDeckMigration(database, inventory, applyOptions(inventory));
+    await expect(verifyLegacySharedDeckCutover(database, inventory)).resolves.toMatchObject({ verified: true });
+    return inventory;
+  };
   const applyOperator = (inventoryRevision: string, releaseRevision: string, backup: LegacySharedDeckInventory) => {
     const indexes = preparedIndexes(target, releaseRevision);
     return runLegacySharedDeckApplyOperator({
@@ -223,6 +230,72 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
       expect(await state()).toMatchObject({ phase: 'sealed' });
       expect((await publicShare('legacy-a').get()).data()).toEqual(legacyShareData);
       expect(Object.keys((await usage())!.shares as object)).toEqual(['vanished-share']);
+    }, 30_000);
+  });
+
+  describe('verification of a migration that is already verified', () => {
+    it('passes after learners shared, the owner revoked and expired shares were removed', async () => {
+      // Migrated shares keep at most thirty days from the scan, so this cutover's shares have expired.
+      const inventory = await cutOver(new Date(Date.now() - 31 * DAY_MS).toISOString());
+      await share('another-learner', 'after-cutover');
+      await share(ownerUid, 'owner-after-cutover');
+      await removeAsExpired('legacy-a');
+      await publicShare('legacy-b').delete();
+      const before = await state();
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory))
+        .resolves.toEqual({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 1 });
+
+      expect(await state()).toEqual(before);
+      await expect(share('third-learner', 'later-share')).resolves.toBeDefined();
+    }, 30_000);
+
+    it('passes after the owner revoked a migrated share that had not expired', async () => {
+      const inventory = await cutOver();
+      await expect(revokeSharedDeckAtomically(database, publicShare('legacy-a'), privateShare('legacy-a'), ownerUid))
+        .resolves.toBe(true);
+      await share('another-learner', 'after-cutover');
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory))
+        .resolves.toEqual({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 2 });
+    }, 30_000);
+
+    it('reports a legacy-shaped share written after the cutover without closing sharing', async () => {
+      const inventory = await cutOver();
+      await share('another-learner', 'after-cutover');
+      await publicShare('late-legacy').set(legacyShareData);
+      const before = await state();
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+
+      expect(await state()).toEqual(before);
+      expect(before).toMatchObject({ phase: 'verified', verificationProgress: { active: false } });
+      await expect(share('third-learner', 'later-share')).resolves.toBeDefined();
+    }, 30_000);
+
+    it('reports a live migrated share that lost one side', async () => {
+      const inventory = await cutOver();
+      await privateShare('legacy-b').delete();
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+      await expect(share('another-learner', 'after-cutover')).resolves.toBeDefined();
+    }, 30_000);
+
+    it('releases the fence that an interrupted verification run left on a verified migration', async () => {
+      const inventory = await cutOver();
+      await share('another-learner', 'after-cutover');
+      await stateDocument().update({
+        verificationProgress: {
+          active: true, publicCursor: null, privateCursor: null, publicTerminal: false, privateTerminal: false,
+          sealedCursor: 0, validLegacyPublicCount: 0,
+        },
+      });
+      await expect(share('third-learner', 'while-fenced')).rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory)).resolves.toMatchObject({ verified: true });
+
+      expect(await state()).toMatchObject({ phase: 'verified', verificationProgress: { active: false } });
+      await expect(share('third-learner', 'later-share')).resolves.toBeDefined();
     }, 30_000);
   });
 

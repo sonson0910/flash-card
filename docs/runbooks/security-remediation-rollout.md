@@ -147,7 +147,14 @@ inventory runs. Invalid records remain recoverable; do not delete them.
 If the migration is already in the durable `verified` phase, run the workflow in
 `verify` mode with the immutable `source_revision` that owns that migration. This
 reruns the live cutover checks and emits a report bound to the current release
-revision without rescanning, reapplying, or replacing the sealed migration state.
+revision without a new inventory, reapplying, or replacing the sealed migration
+state. The run only reads: sharing stays open while it runs and if it fails.
+Shares that learners created after the cutover, shares the owner revoked, and
+shares that expired are expected. The run fails when a record is not in the
+current format, or when a migrated share that is still live disagrees with its
+sealed entry or its ledger entry. If an interrupted earlier run left sharing
+closed on a verified migration, this run reopens it. It reads every share once
+per collection, so watch the 30-minute job limit as the share count grows.
 
 If the report requires index preparation, run `prepare-indexes` under its separate
 approval with the same `firestore_safety_run_id` and
