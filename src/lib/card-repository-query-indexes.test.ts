@@ -34,7 +34,7 @@ const queryStates = function* (): Generator<CardQueryState> {
       practiceDeckScopeForLibraryDeck('Deck'),
       practiceDeckScopeForLibraryDeck('Unassigned'),
     ])) {
-      for (const difficulty of values<CardQueryState['difficulty']>([null, 'easy', 'good', 'hard', 'unrated', 'due'])) {
+      for (const difficulty of values<CardQueryState['difficulty']>([null, 'easy', 'good', 'hard', 'learning', 'unrated', 'due'])) {
         for (const partOfSpeech of values([null, 'noun'])) {
           for (const bookmarkedOnly of [false, true]) {
             for (const createdDate of values([null, '2026-09-21'])) {
@@ -73,7 +73,7 @@ describe('library Firestore query index contract', () => {
         accepted += 1;
       }
     }
-    expect({ accepted, rejected }).toEqual({ accepted: 384, rejected: 192 });
+    expect({ accepted, rejected }).toEqual({ accepted: 456, rejected: 216 });
   });
 
   it('keeps deterministic document-id tie breakers in every accepted signature', () => {

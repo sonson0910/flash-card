@@ -20,7 +20,7 @@ export interface OnboardingDraft {
   readonly romanization?: boolean | null;
 }
 
-const draftKey = (ownerId: string) => `sonflash_onboarding_draft_v1_${ownerId}`;
+export const draftKey = (ownerId: string) => `sonflash_onboarding_draft_v1_${ownerId}`;
 type DraftStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const getStorage = (): DraftStorage | null => {
   try { return globalThis.localStorage; } catch { return null; }

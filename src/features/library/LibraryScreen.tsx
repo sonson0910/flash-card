@@ -17,7 +17,7 @@ import type { PracticeDeckScope } from '../../lib/practiceScope';
 import { LibraryOverview } from './LibraryOverview';
 import { EmptyLibraryPanel } from './EmptyLibraryPanel';
 import type { AiGenerationAccess } from './aiGenerationAccess';
-import { getLibraryCardTier, isLibraryCardDue } from './libraryViewModel';
+import { isLibraryCardDue } from './libraryViewModel';
 import './library-canvas.css';
 
 const LibraryCardGrid = lazy(() => import('./LibraryCardGrid').then(module => ({ default: module.LibraryCardGrid })));
@@ -156,33 +156,24 @@ export function deriveActiveLearningFilter(
         ? 'new'
         : model.tools.activeDifficulty === 'easy'
           ? 'mastered'
-          : model.tools.activeDifficulty === 'good' || model.tools.activeDifficulty === 'hard'
+          : model.tools.activeDifficulty === 'learning' || model.tools.activeDifficulty === 'good' || model.tools.activeDifficulty === 'hard'
             ? 'learning'
             : 'all'
   );
 }
 
-/**
- * The "Learning" quick tab spans two difficulty values (good + hard) and also
- * requires review history, which Firestore can't express as a single
- * equality filter — so `changeFilter` resets the server-side difficulty
- * filter to 'All' and this tier check narrows the full result set
- * client-side instead. `deriveActiveLearningFilter` also derives 'learning'
- * when an explicit "hard"/"good" memory-status filter is selected directly
- * (e.g. via a deep-linked URL), purely to highlight the matching tab; in that
- * case the server query is already exact, so re-applying the tier heuristic
- * would incorrectly drop matching cards that have no review history yet.
- * Only apply the local filter when the difficulty query is unfiltered, i.e.
- * when 'learning' actually came from the tab itself.
- */
-export function shouldApplyLocalLearningFilter(
-  model: LibraryScreenModel,
-  activeFilter: LibraryFilter,
-  hasLearningFilterBridge: boolean,
-): boolean {
-  return activeFilter === 'learning'
-    && !hasLearningFilterBridge
-    && model.tools.activeDifficulty === 'All';
+/** Each quick tab is one library query, so its cards, total and page count all follow the tab. */
+export function applyLibraryFilter(actions: LibraryScreenActions, filter: LibraryFilter): void {
+  if (actions.grid.changeLearningFilter) {
+    actions.grid.changeLearningFilter(filter);
+    return;
+  }
+  actions.tools.changeStarredOnly(false);
+  if (filter === 'all') actions.tools.changeDifficulty('All');
+  if (filter === 'learning') actions.tools.changeDifficulty('learning');
+  if (filter === 'due') actions.tools.changeDifficulty('due');
+  if (filter === 'new') actions.tools.changeDifficulty('unrated');
+  if (filter === 'mastered') actions.tools.changeDifficulty('easy');
 }
 
 function DeferredLibraryFallback({ label }: { label: ReactNode }) {
@@ -201,27 +192,11 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
   const headingRef = model.grid.libraryHeadingRef ?? internalHeadingRef;
   const fileInputRef = model.tools.fileInputRef ?? internalFileInputRef;
   const activeFilter = deriveActiveLearningFilter(model, localFilter);
-  const hasLearningFilterBridge = Boolean(actions.grid.changeLearningFilter);
-  const appliesLocalLearningFilter = shouldApplyLocalLearningFilter(model, activeFilter, hasLearningFilterBridge);
-  const visibleCards = appliesLocalLearningFilter
-    ? model.grid.filteredCards.filter(card => getLibraryCardTier(card) === 'learning')
-    : model.grid.filteredCards;
-  const visiblePageCards = appliesLocalLearningFilter
-    ? model.grid.paginatedCards.filter(card => getLibraryCardTier(card) === 'learning')
-    : model.grid.paginatedCards;
   const showFirstUsePanel = shouldShowFirstUseLibraryPanel(model);
 
   const changeFilter = (filter: LibraryFilter) => {
     setLocalFilter(filter);
-    if (actions.grid.changeLearningFilter) {
-      actions.grid.changeLearningFilter(filter);
-      return;
-    }
-    actions.tools.changeStarredOnly(false);
-    if (filter === 'all' || filter === 'learning') actions.tools.changeDifficulty('All');
-    if (filter === 'due') actions.tools.changeDifficulty('due');
-    if (filter === 'new') actions.tools.changeDifficulty('unrated');
-    if (filter === 'mastered') actions.tools.changeDifficulty('easy');
+    applyLibraryFilter(actions, filter);
   };
 
   return (
@@ -278,12 +253,12 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               isMigratingLegacy={model.grid.isMigratingLegacy}
               libraryHeadingRef={headingRef}
               activeCategory={model.grid.activeCategory}
-              filteredCards={visibleCards}
+              filteredCards={model.grid.filteredCards}
               shareCategory={actions.grid.shareCategory}
               isSharing={model.grid.isSharing}
               startStudy={actions.startStudy}
               currentPage={model.grid.currentPage}
-              paginatedCards={visiblePageCards}
+              paginatedCards={model.grid.paginatedCards}
               isPageLoading={model.grid.isPageLoading}
               cloudReadUnavailable={model.grid.cloudReadUnavailable}
               importProgress={model.grid.importProgress}
@@ -378,12 +353,19 @@ function LibraryCanvasRail({
   const { tools } = model;
   const { i18n } = useLingui();
   const filter = (key: string, label: ReactNode, selected: boolean, onClick: () => void) => <button key={key} type="button" data-library-filter={key} aria-pressed={selected} className={selected ? 'is-active' : ''} onClick={onClick}>{label}</button>;
-  const deck = (key: string, name: ReactNode, selected: boolean, count: number, onClick: () => void) => <button key={key} type="button" role="tab" aria-selected={selected} className={selected ? 'is-active' : ''} onClick={onClick}><span>{name}</span><small>{count}</small></button>;
+  const deck = (key: string, name: ReactNode, selected: boolean, count: string | number | null, onClick: () => void) => <button key={key} type="button" role="tab" aria-selected={selected} className={selected ? 'is-active' : ''} onClick={onClick}><span>{name}</span>{count !== null && <small>{count}</small>}</button>;
   const filterMark = (mark: ReactNode) => <span className="library-filter-mark" aria-hidden="true">{mark}</span>;
   return <div className="library-canvas-rail">
     <div className="library-canvas-decks" role="tablist" aria-label={i18n._(msg({ id: 'library.decks.nav-label', message: 'Decks' }))}>
       {deck('all-decks', <Trans {...msg({ id: 'library.decks.all', message: 'All decks' })} />, tools.activeCustomDeck.kind === 'all', tools.libraryCount, () => actions.tools.changeCustomDeck({ kind: 'all' }))}
-      {tools.customDecks.map(deckName => deck(deckName, deckName, tools.activeCustomDeck.kind === 'deck' && tools.activeCustomDeck.name === deckName, tools.cards.filter(card => card.customDeck === deckName).length, () => actions.tools.changeCustomDeck({ kind: 'deck', name: deckName })))}
+      {tools.customDecks.map(deckName => {
+        const selected = tools.activeCustomDeck.kind === 'deck' && tools.activeCustomDeck.name === deckName;
+        // A signed-in learner's cards are one cloud page, so a deck's count is exact only for local libraries;
+        // the selected deck shows what the loaded page holds with a '+', the others show no number.
+        const loaded = tools.cards.filter(card => card.customDeck === deckName).length;
+        const count = !model.isAuthenticated ? loaded : selected ? `${loaded}+` : null;
+        return deck(deckName, deckName, selected, count, () => actions.tools.changeCustomDeck({ kind: 'deck', name: deckName }));
+      })}
     </div>
     <div className="library-canvas-filters">
       {filter('all', <>{filterMark('∗')}<Trans {...msg({ context: 'library.filters.all', message: 'All' })} /></>, activeFilter === 'all', () => onFilterChange('all'))}

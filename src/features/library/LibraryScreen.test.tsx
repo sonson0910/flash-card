@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LearningStateOutcome } from '../learning/learningStateController';
 import type { CardData } from '../../types/card';
 import {
-  cardIsDue, deriveActiveLearningFilter, LibraryScreen, shouldApplyLocalLearningFilter,
+  applyLibraryFilter, cardIsDue, deriveActiveLearningFilter, LibraryScreen,
   shouldShowFirstUseLibraryPanel, type LibraryScreenActions, type LibraryScreenModel,
 } from './LibraryScreen';
 import { setFormatLocale } from '../../lib/format';
@@ -101,6 +101,25 @@ describe('LibraryScreen', () => {
     expect(shouldShowFirstUseLibraryPanel({ ...empty, grid: { ...empty.grid, legacyIssue: { kind: 'cloud-access', message: 'Retry sync', retryable: true } } })).toBe(false);
   });
 
+  it('shows deck rail counts for a signed-in learner only for the selected deck, marked as a lower bound', () => {
+    const deckCard = (id: string, customDeck: string): CardData => ({ ...card, id, customDeck });
+    const page = [deckCard('a', 'A'), deckCard('b', 'A'), deckCard('c', 'A')];
+    const railCounts = (activeCustomDeck: LibraryScreenModel['tools']['activeCustomDeck']) => {
+      const html = renderLibrary({
+        ...model,
+        isAuthenticated: true,
+        overview: { ...model.overview, total: 40 },
+        grid: { ...model.grid, filteredCards: page, paginatedCards: page, libraryCount: 40, customDecks: ['A', 'B'], activeCustomDeck },
+        tools: { ...model.tools, libraryCount: 40, cards: page, customDecks: ['A', 'B'], activeCustomDeck },
+      });
+      const rail = html.match(/<div class="library-canvas-decks"[\s\S]*?<\/div>/)?.[0] ?? '';
+      return [...rail.matchAll(/<span>([^<]*)<\/span>(?:<small>([^<]*)<\/small>)?/g)].map(match => [match[1], match[2] ?? null]);
+    };
+
+    expect(railCounts(ALL_PRACTICE_DECK_SCOPE)).toEqual([['All decks', '40'], ['A', null], ['B', null]]);
+    expect(railCounts({ kind: 'deck', name: 'A' })).toEqual([['All decks', '40'], ['A', '3+'], ['B', null]]);
+  });
+
   it('replaces generic empty CTAs with the Canvas first-use actions and one real import input', () => {
     const empty: LibraryScreenModel = {
       ...model,
@@ -136,48 +155,22 @@ describe('LibraryScreen', () => {
     expect(html).toContain('library-canvas-tools');
   });
 
-  it('keeps an explicit memory-status filter exact instead of re-applying the review-history tier heuristic', () => {
-    // A card can carry a "hard" memory-status label without ever having been
-    // reviewed (e.g. freshly generated/imported with a preset difficulty), so
-    // getLibraryCardTier(card) would classify it as 'new', not 'learning'.
-    // Selecting "hard" via the advanced memory-status filter already asks
-    // Firestore for exactly this card; the Library "Learning" quick tab must
-    // not silently re-exclude it.
-    const hardFilterModel: LibraryScreenModel = {
-      ...model,
-      tools: { ...model.tools, activeDifficulty: 'hard' },
-    };
-    const activeFilter = deriveActiveLearningFilter(hardFilterModel, null);
-
-    expect(activeFilter).toBe('learning');
-    expect(shouldApplyLocalLearningFilter(hardFilterModel, activeFilter, false)).toBe(false);
+  it('highlights the Learning tab for the learning, good and hard memory-status queries', () => {
+    for (const activeDifficulty of ['learning', 'good', 'hard']) {
+      const learningModel: LibraryScreenModel = { ...model, tools: { ...model.tools, activeDifficulty } };
+      expect(deriveActiveLearningFilter(learningModel, null)).toBe('learning');
+    }
   });
 
-  it('still applies the review-history tier filter when the Learning tab itself drives an unfiltered query', () => {
-    // The Learning tab's own click handler resets the difficulty filter to
-    // 'All' and relies on this client-side tier check, since Firestore can't
-    // express "good or hard difficulty AND has review history" as one
-    // equality filter. That path must keep filtering out unreviewed cards.
-    const learningTabModel: LibraryScreenModel = {
-      ...model,
-      grid: { ...model.grid, activeLearningFilter: 'learning' },
-      tools: { ...model.tools, activeDifficulty: 'All' },
-    };
-    const activeFilter = deriveActiveLearningFilter(learningTabModel, null);
+  it('serves the Learning tab with the learning query so pages and totals follow it', () => {
+    const changeDifficulty = vi.fn();
+    const changeStarredOnly = vi.fn();
+    const bridgeless: LibraryScreenActions = { ...actions, tools: { ...actions.tools, changeDifficulty, changeStarredOnly } };
 
-    expect(activeFilter).toBe('learning');
-    expect(shouldApplyLocalLearningFilter(learningTabModel, activeFilter, false)).toBe(true);
-  });
+    applyLibraryFilter(bridgeless, 'learning');
 
-  it('never applies the local tier filter when a cloud-backed learning-filter bridge is provided', () => {
-    const bridgedModel: LibraryScreenModel = {
-      ...model,
-      grid: { ...model.grid, activeLearningFilter: 'learning' },
-      tools: { ...model.tools, activeDifficulty: 'All' },
-    };
-    const activeFilter = deriveActiveLearningFilter(bridgedModel, null);
-
-    expect(shouldApplyLocalLearningFilter(bridgedModel, activeFilter, true)).toBe(false);
+    expect(changeDifficulty).toHaveBeenCalledWith('learning');
+    expect(changeDifficulty).not.toHaveBeenCalledWith('All');
   });
 
   it('uses scheduled review dates, including FSRS due dates, for the Due filter', () => {

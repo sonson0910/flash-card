@@ -1,6 +1,7 @@
 import { getDocFromServer, doc, type DocumentData } from 'firebase/firestore';
 import { fetchLibraryDueCount } from '../../lib/cardRepository';
 import { app, auth, db, getSonFlashFunctions, protectedFunctionsCapability } from '../../lib/firebase';
+import { storedTokenKey } from './pushTokenStorageKey';
 
 export type ReminderSettings = {
   days: number[];
@@ -25,7 +26,6 @@ export const loadReminderDueCount = async (uid: string): Promise<number> => {
   return (await fetchLibraryDueCount(db, uid)).due;
 };
 
-const storedTokenKey = (uid: string) => `sonflash_push_token_${encodeURIComponent(uid)}`;
 const sessionTokens = new Map<string, string>();
 const pendingSaves = new Map<string, Set<Promise<ReminderSettings>>>();
 const closingOwners = new Set<string>();

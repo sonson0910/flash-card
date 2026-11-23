@@ -208,7 +208,7 @@ export function buildLibraryScreenContract({
       newDeckInput: ui.newDeckInput,
       activeCustomDeck: query.deck,
       cards: library.cards,
-      cloudFacetsComplete: cloud.facetsComplete,
+      cloudFacetsComplete: view.cloudFacetsComplete,
       sortedCategories: view.sortedCategories,
       categoryCounts: view.categoryCounts,
       activeCategory: query.category,

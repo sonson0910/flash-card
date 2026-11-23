@@ -58,8 +58,8 @@ export const isOnboardingStepId = (value: unknown): value is OnboardingStepId =>
   typeof value === 'string' && (ONBOARDING_STEPS as readonly string[]).includes(value);
 
 /** The course profile remains the authority for whether onboarding is needed. */
-const resumeKey = (ownerId: string) => `sonflash_onboarding_step_v1_${ownerId}`;
-const inProgressKey = (ownerId: string) => `sonflash_onboarding_started_v1_${ownerId}`;
+export const resumeKey = (ownerId: string) => `sonflash_onboarding_step_v1_${ownerId}`;
+export const inProgressKey = (ownerId: string) => `sonflash_onboarding_started_v1_${ownerId}`;
 
 type ResumeStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const getStorage = (): ResumeStorage | null => {

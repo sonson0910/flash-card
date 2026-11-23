@@ -54,6 +54,54 @@ describe('account deletion local cleanup', () => {
     expect(values.get(gamificationStorageKeys(null).snapshot)).toBe('anonymous');
     expect(session.size).toBe(0);
   });
+
+  it('removes deck cache, skill evidence, onboarding, push token and extension owner data of the deleted owner only', () => {
+    const deckCache = (ownerId: string) => JSON.stringify({ version: 2, ownerId, decks: ['IELTS'], coverPresets: {} });
+    const values = new Map<string, string>([
+      ['lingoflash_custom_decks_scoped_v1', deckCache('u1')],
+      ['lingoflash_custom_decks', '["IELTS"]'],
+      ['lingoflash_custom_decks_owner', 'u1'],
+      ['lingoflash_skill_evidence_v4_u1', 'x'],
+      ['lingoflash_skill_evidence_v4_u2', 'keep'],
+      ['sonflash_onboarding_draft_v1_u1', 'x'],
+      ['sonflash_onboarding_draft_v1_u2', 'keep'],
+      ['sonflash_onboarding_step_v1_u1', 'x'],
+      ['sonflash_onboarding_started_v1_u1', 'x'],
+      ['sonflash_push_token_u1', 'x'],
+      ['sonflash_push_token_u2', 'keep'],
+      ['lingoflash_library_facet_operation_times_v1', '[]'],
+    ]);
+    const session = new Map([['lingoflash_browser_extension_import_owner', '{}']]);
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      removeItem: (key: string) => { values.delete(key); },
+      get length() { return values.size; },
+      key: (index: number) => [...values.keys()][index] ?? null,
+    };
+    removeOwnerLocalKeys(storage, { removeItem: key => { session.delete(key); } }, 'u1');
+    expect([...values.keys()].sort()).toEqual([
+      'lingoflash_skill_evidence_v4_u2', 'sonflash_onboarding_draft_v1_u2', 'sonflash_push_token_u2',
+    ]);
+    expect(session.size).toBe(0);
+  });
+
+  it('keeps another learner\'s deck cache and the shared slots when the deleted owner is no longer signed in', () => {
+    const values = new Map<string, string>([
+      ['lingoflash_custom_decks_scoped_v1', JSON.stringify({ version: 2, ownerId: 'u2', decks: ['Mine'], coverPresets: {} })],
+      ['lingoflash_custom_decks_owner', 'u2'],
+      ['lingoflash_library_facet_operation_times_v1', '[]'],
+    ]);
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      removeItem: (key: string) => { values.delete(key); },
+      get length() { return values.size; },
+      key: (index: number) => [...values.keys()][index] ?? null,
+    };
+    removeOwnerLocalKeys(storage, { removeItem: () => {} }, 'u1', false);
+    expect([...values.keys()].sort()).toEqual([
+      'lingoflash_custom_decks_owner', 'lingoflash_custom_decks_scoped_v1', 'lingoflash_library_facet_operation_times_v1',
+    ]);
+  });
 });
 
 const functions = vi.hoisted(() => ({

@@ -12,7 +12,8 @@ export const CLOUD_PAGE_SIZE = 9;
 export interface CardQueryState {
   category: string | null;
   customDeck: PracticeDeckScope;
-  difficulty: 'easy' | 'good' | 'hard' | 'unrated' | 'due' | null;
+  /** `learning` is the union of the good and hard ratings. */
+  difficulty: 'easy' | 'good' | 'hard' | 'learning' | 'unrated' | 'due' | null;
   partOfSpeech: string | null;
   bookmarkedOnly: boolean;
   createdDate: string | null;
@@ -100,7 +101,10 @@ export function cardMatchesQuery(card: CardData, filters: CardQueryState): boole
   if (!practiceDeckScopeMatchesCard(filters.customDeck ?? ALL_PRACTICE_DECK_SCOPE, card.customDeck)) return false;
   if (filters.difficulty && filters.difficulty !== 'due') {
     const difficulty = card.difficulty || 'unrated';
-    if (difficulty !== filters.difficulty) return false;
+    const matches = filters.difficulty === 'learning'
+      ? difficulty === 'good' || difficulty === 'hard'
+      : difficulty === filters.difficulty;
+    if (!matches) return false;
   }
   if (filters.difficulty === 'due' && !isCardDue(card)) return false;
   if (filters.bookmarkedOnly && card.bookmarked !== true) return false;

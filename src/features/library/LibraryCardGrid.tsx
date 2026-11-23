@@ -91,11 +91,36 @@ export function buildBulkDeckAssignPatches(
   return cards.map(card => ({ cardId: card.id, fields: { customDeck: targetDeck } }));
 }
 
-/** Each card toggles from its own current bookmark state, not a shared value. */
+/** Each card toggles from its own bookmark state when the learner clicked, not a shared value. */
+export function buildBulkBookmarkTargets(
+  cards: readonly Pick<CardData, 'id' | 'bookmarked'>[],
+): Map<string, boolean> {
+  return new Map(cards.map(card => [card.id, !card.bookmarked]));
+}
+
+/**
+ * Targets for a bookmark click: a card the earlier click already decided keeps that target (even when the
+ * live card has since been starred by it), and only cards new to the selection are decided from their state.
+ */
+export function resolveBulkBookmarkTargets(
+  saved: ReadonlyMap<string, boolean> | null,
+  cards: readonly Pick<CardData, 'id' | 'bookmarked'>[],
+): Map<string, boolean> {
+  return new Map([...buildBulkBookmarkTargets(cards), ...(saved ?? [])]);
+}
+
+/**
+ * Patches only the cards that are not yet at their target. Reusing the targets of the first click makes a
+ * retry after a partial failure finish that request instead of flipping the cards that already succeeded.
+ */
 export function buildBulkBookmarkPatches(
   cards: readonly Pick<CardData, 'id' | 'bookmarked'>[],
+  targets: ReadonlyMap<string, boolean> = buildBulkBookmarkTargets(cards),
 ): BulkCardFieldPatchRequest[] {
-  return cards.map(card => ({ cardId: card.id, fields: { bookmarked: !card.bookmarked } }));
+  return cards.flatMap(card => {
+    const target = targets.get(card.id) ?? !card.bookmarked;
+    return target === card.bookmarked ? [] : [{ cardId: card.id, fields: { bookmarked: target } }];
+  });
 }
 
 export function getLegacyUpgradePresentation({ pending, migrating, issue }: { pending: number; migrating: boolean; issue: LegacyMigrationIssue | null }) {
@@ -175,6 +200,8 @@ export function LibraryCardGrid({
   const deleteTriggerRef = useRef<HTMLElement | null>(null);
   const deleteConfirmedRef = useRef(false);
   const startingRef = useRef(false);
+  // Targets of a bulk bookmark click that failed, kept until the learner changes the selection or it succeeds.
+  const bookmarkRetryRef = useRef<Map<string, boolean> | null>(null);
   const [starting, setStarting] = useState(false);
   // Update synchronously during render so an editor captured for account A is
   // never rendered with account B's cards while the owner-reset effect waits.
@@ -234,6 +261,7 @@ export function LibraryCardGrid({
   useEffect(() => {
     if (resetOwnerRef.current === ownerId) return;
     resetOwnerRef.current = ownerId;
+    bookmarkRetryRef.current = null;
     setEditingCard(null);
     setDeletingCard(null);
     setDetailCardId(null);
@@ -255,6 +283,7 @@ export function LibraryCardGrid({
   }, [detailCardId, detailCard, libraryHeadingRef]);
 
   const toggleSelected = (cardId: string) => {
+    bookmarkRetryRef.current = null;
     setSelectedIds(previous => {
       const next = new Set(previous);
       if (next.has(cardId)) next.delete(cardId);
@@ -264,6 +293,7 @@ export function LibraryCardGrid({
   };
 
   const toggleAllVisible = () => {
+    bookmarkRetryRef.current = null;
     setSelectedIds(previous => {
       const next = new Set(previous);
       if (allVisibleSelected) cards.forEach(card => next.delete(card.id));
@@ -278,6 +308,7 @@ export function LibraryCardGrid({
     setBulkError(false);
     try {
       await operation();
+      bookmarkRetryRef.current = null;
       setSelectedIds(new Set());
       setBulkDeck('');
     } catch {
@@ -296,8 +327,11 @@ export function LibraryCardGrid({
   };
 
   const bulkBookmark = () => {
+    const targets = resolveBulkBookmarkTargets(bookmarkRetryRef.current, selectedCards);
+    bookmarkRetryRef.current = targets;
     void runBulk(async () => {
-      await bulkPatchCards(buildBulkBookmarkPatches(selectedCards));
+      const patches = buildBulkBookmarkPatches(selectedCards, targets);
+      if (patches.length) await bulkPatchCards(patches);
     });
   };
 
@@ -341,7 +375,7 @@ export function LibraryCardGrid({
         <label><span className="sr-only"><Trans {...msg({ context: 'library.bulk.deck-label', message: 'Move selected cards to deck' })} /></span><select value={bulkDeck} onChange={event => setBulkDeck(event.target.value)} disabled={bulkBusy}><option value="">{catalog._(msg({ id: 'library.bulk.choose-deck', message: 'Choose deck' }))}</option>{customDecks.map(deck => <option key={deck} value={deck}>{deck}</option>)}<option value="__unassigned__">{catalog._(msg({ id: 'library.bulk.unassigned', message: 'Unassigned' }))}</option></select></label>
         <button type="button" onClick={bulkAssign} disabled={!bulkDeck || bulkBusy}>{bulkBusy ? <Loader2 size={14} className="animate-spin" aria-hidden="true"/> : <Check size={14} aria-hidden="true"/>}<Trans {...msg({ context: 'library.bulk.assign', message: 'Assign' })} /></button>
         <button type="button" onClick={bulkBookmark} disabled={bulkBusy}><Star size={14} aria-hidden="true"/><Trans {...msg({ context: 'library.bulk.bookmark', message: 'Bookmark' })} /></button>
-        <button type="button" onClick={() => setSelectedIds(new Set())} disabled={bulkBusy}><Trans {...msg({ context: 'library.bulk.clear', message: 'Clear' })} /></button>
+        <button type="button" onClick={() => { bookmarkRetryRef.current = null; setSelectedIds(new Set()); }} disabled={bulkBusy}><Trans {...msg({ context: 'library.bulk.clear', message: 'Clear' })} /></button>
       </div>}
       {bulkError && <p className="library-canvas-bulk-error" role="alert"><Trans {...msg({ context: 'library.bulk.error', message: 'Some cards could not be updated. Try again.' })} /></p>}
       {loadingLabel && <p className="library-canvas-loading" role="status">{loadingStatus}</p>}

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { i18n } from '@lingui/core';
-import { buildBulkBookmarkPatches, buildBulkDeckAssignPatches, getLegacyUpgradePresentation } from './LibraryCardGrid';
+import { buildBulkBookmarkPatches, buildBulkBookmarkTargets, buildBulkDeckAssignPatches, getLegacyUpgradePresentation, resolveBulkBookmarkTargets } from './LibraryCardGrid';
 import { getRelativeReviewDays } from './libraryPresentation';
 
 beforeEach(() => {
@@ -166,6 +166,47 @@ describe('bulk patch construction', () => {
     ]);
   });
 
+  it('repeats the first click\'s bookmark targets on a retry after a partial failure', () => {
+    let cards = [
+      { id: 'card-a', bookmarked: false },
+      { id: 'card-b', bookmarked: false },
+      { id: 'card-c', bookmarked: false },
+    ];
+    const targets = buildBulkBookmarkTargets(cards);
+    const first = buildBulkBookmarkPatches(cards, targets);
+    expect(first.map(patch => patch.cardId)).toEqual(['card-a', 'card-b', 'card-c']);
+
+    // The callable applied A and B locally, then rejected C, so the grid re-renders with A and B starred.
+    cards = cards.map(card => card.id === 'card-c' ? card : { ...card, bookmarked: true });
+    expect(buildBulkBookmarkPatches(cards, targets)).toEqual([
+      { cardId: 'card-c', fields: { bookmarked: true } },
+    ]);
+  });
+
+  it('keeps the first click\'s targets when a selected card leaves the page before the retry', () => {
+    const first = [
+      { id: 'card-a', bookmarked: false },
+      { id: 'card-b', bookmarked: false },
+      { id: 'card-c', bookmarked: false },
+    ];
+    const saved = resolveBulkBookmarkTargets(null, first);
+
+    // A and B were applied, C was deleted elsewhere and dropped from the live page: the retry sees only A and B, both starred.
+    const retryCards = [{ id: 'card-a', bookmarked: true }, { id: 'card-b', bookmarked: true }];
+    const targets = resolveBulkBookmarkTargets(saved, retryCards);
+
+    expect(targets.get('card-a')).toBe(true);
+    expect(targets.get('card-b')).toBe(true);
+    expect(buildBulkBookmarkPatches(retryCards, targets)).toEqual([]);
+  });
+
+  it('decides a card that is new to the selection from its own bookmark state', () => {
+    const saved = resolveBulkBookmarkTargets(null, [{ id: 'card-a', bookmarked: false }]);
+    const targets = resolveBulkBookmarkTargets(saved, [{ id: 'card-a', bookmarked: true }, { id: 'card-d', bookmarked: true }]);
+
+    expect([...targets]).toEqual([['card-a', true], ['card-d', false]]);
+  });
+
   it('returns no patches for an empty selection', () => {
     expect(buildBulkDeckAssignPatches([], 'Deck A')).toEqual([]);
     expect(buildBulkBookmarkPatches([])).toEqual([]);
@@ -177,7 +218,7 @@ describe('bulk actions call the batched callable once per action', () => {
     const source = readFileSync(fileURLToPath(new URL('./LibraryCardGrid.tsx', import.meta.url)), 'utf8');
 
     expect(source).toContain('await bulkPatchCards(buildBulkDeckAssignPatches(selectedCards, target));');
-    expect(source).toContain('await bulkPatchCards(buildBulkBookmarkPatches(selectedCards));');
+    expect(source).toContain('if (patches.length) await bulkPatchCards(patches);');
     expect(source).not.toMatch(/Promise\.all\(selectedCards\.map/);
   });
 });
