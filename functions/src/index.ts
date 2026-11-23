@@ -121,6 +121,7 @@ import {
   PronunciationAssessmentValidationError,
 } from './pronunciationAssessment.js';
 import {
+  assertPersistentRateLimitAvailable,
   consumeRateLimitFailClosed,
   consumePersistentRateLimit,
   RateLimitExceededError,
@@ -558,6 +559,21 @@ const consumeBudget = async (
   );
 };
 
+// Refuses a learner who is already over their own hourly limit without spending anything.
+const assertBudgetAvailable = async (
+  userId: string,
+  scope: string,
+  maximum: number,
+  message: string,
+) => {
+  await consumeCallableBudget(
+    () => consumeRateLimitFailClosed(
+      () => assertPersistentRateLimitAvailable(database, userId, scope, maximum),
+    ),
+    message,
+  );
+};
+
 const safeText = (value: unknown, maximum: number) => typeof value === 'string'
   ? value.trim().slice(0, maximum)
   : '';
@@ -863,6 +879,11 @@ exact meaning selected above and disambiguating polysemous words. Do not request
     }
   }
 
+    // A learner already over their own hourly limit is refused here, before the allowance is
+    // reserved. The hourly budgets are spent only after the daily allowance admits the action,
+    // so a refused request cannot use up the hourly calls that every learner shares, and all of
+    // them are taken together so a refused shared budget leaves the learner's own unspent.
+    await assertBudgetAvailable(userId, budget.scope, budget.maximum, budget.message);
     let allowanceConfig;
     try { allowanceConfig = await loadPilotConfig(database); }
     catch { throw new HttpsError('unavailable', 'AI allowance is unavailable. Try again later.'); }
@@ -876,9 +897,6 @@ exact meaning selected above and disambiguating polysemous words. Do not request
       throw error;
     }
     try {
-    // The hourly budgets are spent only after the daily allowance admits the action, so a
-    // refused request cannot use up the hourly calls that every learner shares, and all of
-    // them are taken together so a refused shared budget leaves the learner's own unspent.
     await consumeBudget(
       userId,
       budget.scope,
@@ -1150,7 +1168,9 @@ export const askCardTutor = onCall({
     throw new HttpsError('permission-denied', 'The AI account changed.');
   }
   const budget = getVocabularyAiBudget('tutor');
-  await consumeBudget(userId, budget.scope, budget.maximum, budget.message);
+  // The learner's own limit is only read here, which still guards the card read and the
+  // allowance; it is spent together with the shared budget once the allowance admits the turn.
+  await assertBudgetAvailable(userId, budget.scope, budget.maximum, budget.message);
   const card = await loadTutorCard(database, userId, input.cardId).catch(error => {
     if (error instanceof TutorCardNotFoundError) throw new HttpsError('not-found', error.message);
     throw error;
@@ -1168,12 +1188,14 @@ export const askCardTutor = onCall({
     throw error;
   }
   try {
-    await consumeCallableBudget(
-      () => consumeRateLimitFailClosed(() => consumeOwnerAndServiceBudget(
-        database, userId, 'gemini-owner', MAX_GEMINI_CALLS_PER_OWNER_HOUR,
-        'gemini', MAX_GEMINI_CALLS_PER_HOUR,
-      )),
+    await consumeBudget(
+      userId,
+      budget.scope,
+      budget.maximum,
       budget.message,
+      'gemini',
+      MAX_GEMINI_CALLS_PER_HOUR,
+      MAX_GEMINI_CALLS_PER_OWNER_HOUR,
     );
     const answer = await callGemini(userId, 'tutor', {
       model: MODEL,

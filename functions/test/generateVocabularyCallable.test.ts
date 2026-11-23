@@ -21,6 +21,7 @@ const loadPilotConfig = vi.fn(async (..._args: unknown[]) => ({ ...PILOT_CONFIG_
 const isAccountDeleting = vi.fn(async (..._args: unknown[]) => false);
 const consumePersistentRateLimit = vi.fn(async (..._args: unknown[]) => undefined);
 const consumePersistentRateLimits = vi.fn(async (..._args: unknown[]) => undefined);
+const assertPersistentRateLimitAvailable = vi.fn(async (..._args: unknown[]) => undefined);
 const runMeteredGemini = vi.fn();
 const generateContent = vi.fn();
 const generateContentStream = vi.fn();
@@ -52,6 +53,7 @@ vi.mock('../src/rateLimiter.js', async importOriginal => ({
   ...await importOriginal<typeof import('../src/rateLimiter.js')>(),
   consumePersistentRateLimit: (...args: unknown[]) => consumePersistentRateLimit(...args),
   consumePersistentRateLimits: (...args: unknown[]) => consumePersistentRateLimits(...args),
+  assertPersistentRateLimitAvailable: (...args: unknown[]) => assertPersistentRateLimitAvailable(...args),
 }));
 vi.mock('../src/aiCostLedger.js', async importOriginal => ({
   ...await importOriginal<typeof import('../src/aiCostLedger.js')>(),
@@ -95,6 +97,7 @@ describe('generateVocabulary callable', () => {
     isAccountDeleting.mockReset().mockResolvedValue(false);
     consumePersistentRateLimit.mockReset().mockResolvedValue(undefined);
     consumePersistentRateLimits.mockReset().mockResolvedValue(undefined);
+    assertPersistentRateLimitAvailable.mockReset().mockResolvedValue(undefined);
     generateContent.mockReset();
     generateContentStream.mockReset();
     runMeteredGemini.mockReset().mockImplementation(async ({ parse }: { parse: (response: unknown) => unknown }) =>
@@ -199,6 +202,43 @@ describe('generateVocabulary callable', () => {
         auth: { uid: 'owner-1' }, data: { action: 'word', input: 'apple', operationId: randomUUID() },
       } as never)).rejects.toMatchObject({ code: 'resource-exhausted' });
       expect([...spent.keys()]).toEqual([]);
+    });
+
+    it('leaves the learner\'s own tutor budget unspent', async () => {
+      const spent = useInMemoryBudgets();
+      const { askCardTutor } = await import('../src/index.js');
+      await expect(askCardTutor.run({ auth: { uid: 'owner-1' }, data: {
+        cardId: 'word-123', question: 'Give an example', history: [],
+      } } as never)).rejects.toMatchObject({ code: 'resource-exhausted' });
+      expect([...spent.keys()]).toEqual([]);
+      expect(refundNonCardAction).toHaveBeenCalledTimes(1);
+      expect(runMeteredGemini).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the learner has used up their own hourly limit', () => {
+    const ownerLimit = () => assertPersistentRateLimitAvailable.mockRejectedValue(new RateLimitExceededError(1_000));
+
+    it.each(nonCardRequests)('refuses $action before touching the daily allowance', async data => {
+      ownerLimit();
+      const { generateVocabulary } = await import('../src/index.js');
+      await expect(generateVocabulary.run({ auth: { uid: 'owner-1' }, data } as never))
+        .rejects.toMatchObject({ code: 'resource-exhausted' });
+      expect(assertPersistentRateLimitAvailable).toHaveBeenCalledTimes(1);
+      expect(reserveNonCardAction).not.toHaveBeenCalled();
+      expect(refundNonCardAction).not.toHaveBeenCalled();
+      expect(consumePersistentRateLimits).not.toHaveBeenCalled();
+    });
+
+    it('refuses a tutor turn before reading the card or reserving the allowance', async () => {
+      ownerLimit();
+      const { askCardTutor } = await import('../src/index.js');
+      await expect(askCardTutor.run({ auth: { uid: 'owner-1' }, data: {
+        cardId: 'word-123', question: 'Give an example', history: [],
+      } } as never)).rejects.toMatchObject({ code: 'resource-exhausted' });
+      expect(loadTutorCard).not.toHaveBeenCalled();
+      expect(reserveNonCardAction).not.toHaveBeenCalled();
+      expect(consumePersistentRateLimits).not.toHaveBeenCalled();
     });
   });
 

@@ -4,6 +4,8 @@ import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Tran
 import { HttpsError } from 'firebase-functions/v2/https';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  assertPersistentRateLimitAvailable,
+  consumePersistentRateLimit,
   consumeRateLimitFailClosed,
   RATE_LIMIT_STORAGE_DEADLINE_MS,
   RateLimitExceededError,
@@ -20,7 +22,10 @@ const createDatabase = () => {
   const documents = new Map<string, DocumentData>();
   const database = {
     collection: (name: string) => ({
-      doc: (id: string) => ({ path: `${name}/${id}` }),
+      doc: (id: string) => ({
+        path: `${name}/${id}`,
+        get: async () => ({ exists: documents.has(`${name}/${id}`), data: () => documents.get(`${name}/${id}`) }),
+      }),
     }),
     runTransaction: async (update: (transaction: Transaction) => Promise<unknown>) => {
       const transaction = {
@@ -136,6 +141,20 @@ describe('service budgets', () => {
 
     // A spent counter would refuse this second attempt for the learner's own limit.
     await expect(consumeOwnerBudgetsAndServiceBudget(database, 'user-a', ownerBudgets, 'gemini-other', 1, 1_000))
+      .resolves.toBeUndefined();
+  });
+
+  it('reads a learner budget without spending it', async () => {
+    const database = createDatabase();
+    await consumePersistentRateLimit(database, 'user-a', 'ai-tutor', 2, 1_000);
+
+    // Reading never counts: the budget stays at one spent call however often it is read.
+    await assertPersistentRateLimitAvailable(database, 'user-a', 'ai-tutor', 2, 1_000);
+    await assertPersistentRateLimitAvailable(database, 'user-a', 'ai-tutor', 2, 1_000);
+    await consumePersistentRateLimit(database, 'user-a', 'ai-tutor', 2, 1_000);
+    await expect(assertPersistentRateLimitAvailable(database, 'user-a', 'ai-tutor', 2, 1_000))
+      .rejects.toBeInstanceOf(RateLimitExceededError);
+    await expect(assertPersistentRateLimitAvailable(database, 'user-b', 'ai-tutor', 2, 1_000))
       .resolves.toBeUndefined();
   });
 
