@@ -5,9 +5,12 @@ import { pathToFileURL } from 'node:url';
 
 export const DEFAULT_BUNDLE_BUDGETS = {
   // Optimized baseline: 204,028 B raw / 64,716 B gzip JS. Keep about 10%
-  // initial headroom.
+  // initial headroom (71,188 B gzip). Startup correctness fixes (theme
+  // fallback when a theme family fails to load, one activation of the first
+  // catalogs, catalog reload on a language switch, a readable recovery panel
+  // with no active locale) measured 222,633 B raw / 71,056 B gzip.
   initialJavaScriptRaw: 224_000,
-  initialJavaScriptGzip: 71_000,
+  initialJavaScriptGzip: 71_200,
   // Refreshed learning UI baseline: 196,193 B raw / 28,008 B gzip. Keep
   // about 5% reviewed headroom.
   initialCssRaw: 206_000,
@@ -30,8 +33,12 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   // queries, migration and session states, honest error reasons): Linux
   // measured 3,383,091 B raw / 1,071,126 B gzip, all in lazily loaded
   // chunks. The initial-load caps above are unchanged.
-  totalJavaScriptRaw: 3_420_000,
-  totalJavaScriptGzip: 1_082_000,
+  // Second round of correctness fixes (durable library clear, review and
+  // capture failure copy, streak ended state, export of every course,
+  // lazily started App Check): Linux measured 3,422,002 B raw /
+  // 1,083,544 B gzip, again in lazily loaded chunks.
+  totalJavaScriptRaw: 3_460_000,
+  totalJavaScriptGzip: 1_095_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
   // Reviewed media baseline includes all supported media copied into dist.
