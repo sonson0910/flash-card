@@ -257,6 +257,30 @@ describe('CatalogWorkspace inlined interactions', () => {
     });
   });
 
+  it('sends a second adopt request when the learner retries a failed addition', async () => {
+    const adoptCards = vi.fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({ status: 'completed', candidateCount: 1, createdCount: 1, reusedCount: 0, cards: [], resolvedCards: [] });
+    seedCatalogPage();
+
+    let workspace = render({ adoptCards });
+    workspace.actions.addToLibrary('lexeme-1');
+    await vi.waitFor(() => {
+      workspace = render({ adoptCards });
+      expect(workspace.model.cards[0]?.libraryState).toBe('failed');
+    });
+    expect(adoptCards).toHaveBeenCalledTimes(1);
+
+    workspace.actions.addToLibrary('lexeme-1');
+    workspace = render({ adoptCards });
+    expect(workspace.model.cards[0]?.libraryState).toBe('adding');
+    expect(adoptCards).toHaveBeenCalledTimes(2);
+    await vi.waitFor(() => {
+      workspace = render({ adoptCards });
+      expect(workspace.model.cards[0]?.libraryState).toBe('added');
+    });
+  });
+
   it('does not settle an optimistic addition into a replacement owner scope', async () => {
     const adoption = deferred<{
       status: 'completed'; candidateCount: number; createdCount: number; reusedCount: number; cards: []; resolvedCards: [];
