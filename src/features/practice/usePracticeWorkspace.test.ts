@@ -353,10 +353,11 @@ describe('usePracticeWorkspace', () => {
     }));
 
     const onAuthoritativeOutcome = doubles.session.mock.calls[0][0].onAuthoritativeOutcome;
-    onAuthoritativeOutcome({ xp: 20, level: 1, streak: 0, events: [] }, 'op-a', 1);
-    expect(gamification.acceptAuthoritativeOutcome).not.toHaveBeenCalled();
-    onAuthoritativeOutcome({ xp: 20, level: 1, streak: 0, events: [] }, 'op-a', 0);
+    // The session lifecycle decides whether an outcome is current before it reaches the workspace, and the
+    // workspace keeps no owner counter of its own to disagree with it.
+    onAuthoritativeOutcome({ xp: 20, level: 1, streak: 0, events: [] }, 'op-a', 3);
     expect(gamification.acceptAuthoritativeOutcome).toHaveBeenCalledWith({ xp: 20, level: 1, streak: 0, events: [] });
+    expect(readFileSync(new URL('./usePracticeWorkspace.ts', import.meta.url), 'utf8')).not.toMatch(/ownerGeneration/);
   });
 
   it('keeps the composition boundary free of provider and persistence vocabulary', () => {

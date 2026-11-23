@@ -135,10 +135,6 @@ export function usePracticeWorkspace({
   reportError,
 }: PracticeWorkspaceOptions): PracticeWorkspace {
   const gamification = useVerifiedGamificationState({ ownerId, database: gamificationDatabase });
-  const ownerGenerationRef = useRef({ ownerId, generation: 0 });
-  if (ownerGenerationRef.current.ownerId !== ownerId) {
-    ownerGenerationRef.current = { ownerId, generation: ownerGenerationRef.current.generation + 1 };
-  }
   const targetLanguage = languageProfile.source.code;
   const normalizedTargetLanguage = normalizeCardLanguage(targetLanguage);
   const nativeLanguage = normalizeCardLanguage(languageProfile.target.code);
@@ -162,7 +158,6 @@ export function usePracticeWorkspace({
     learning,
     languageProfile,
     onAuthoritativeOutcome: (outcome, operationId, sessionToken) => {
-      if (sessionToken !== ownerGenerationRef.current.generation) return;
       gamification.acceptAuthoritativeOutcome(outcome);
       onCeremony?.(outcome, operationId, sessionToken);
     },
