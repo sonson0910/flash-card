@@ -1177,8 +1177,8 @@ describe('card identity whose derived id is held by a renamed card', () => {
   const colourHash = createHash('sha256').update('colour').digest('hex');
   const colorWord = { word: 'color', translation: 'màu', language: 'en', translationLanguage: 'vi', origin: 'manual' as const };
   const colourWord = { ...colorWord, word: 'colour' };
-  const colorId = canonicalCard(colorWord).id;
-  const colourId = canonicalCard(colourWord).id;
+  const colorId = String(canonicalCard(colorWord).id);
+  const colourId = String(canonicalCard(colourWord).id);
   const renamedCard = (id: string, word: string) => ({
     ...canonicalCard({ ...colorWord, word }), id, schemaVersion: 2, revision: 2, libraryEpoch: 0,
   });
