@@ -44,9 +44,8 @@ const allowedDifficulties = new Set<LibraryDifficulty>([
  * The "mastered" tier (the Star tier on Progress and in Vocabulary) is the stored rating Easy:
  * `difficulty == 'easy'`. That is the field the cloud count behind Progress "All N" counts and the
  * one equality filter Firestore can serve from the existing `difficulty` index, so a mastered page
- * costs exactly what an Easy page costs and its total matches N. The grid's Star badge also treats
- * an interval of 21 days or more as mastered; that heuristic needs a disjunctive query and is not
- * part of this filter.
+ * costs exactly what an Easy page costs and its total matches N. The grid's Star badge, the Learning
+ * tab and the overview counts use the same rule, so one card never lands in two classes.
  */
 export const MASTERED_CARD_DIFFICULTY = 'easy' as const;
 
