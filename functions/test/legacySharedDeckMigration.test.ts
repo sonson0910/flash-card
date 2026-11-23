@@ -377,8 +377,8 @@ describe('legacy shared-deck exact inventory', () => {
     };
     expect(classifyLegacyShare(share, ownerUid)).toMatchObject({ disposition: 'keep-current', reasonCode: 'current' });
     expect(classifyLegacyShare({
-      ...share,
-      publicData: { ...share.publicData, cards: [{ ...card, word: ` ${'a'.repeat(10)} ` }] },
+      ...current('current-padded', { cards: [{ ...card, word: ` ${'a'.repeat(10)} ` }] }),
+      privateData: share.privateData,
     }, ownerUid)).toMatchObject({ reasonCode: 'malformed-public' });
   });
 
