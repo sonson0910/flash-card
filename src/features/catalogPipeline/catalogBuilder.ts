@@ -58,7 +58,7 @@ export const fingerprintCatalogEntity = async (
   entity: LexemeV3 | TrackMembershipV3,
 ): Promise<string> => sha256Hex(encoder.encode(canonicalCatalogJson(entity)));
 
-/** Binds the protected approval to the complete validated source bundle. */
+/** Binds the complete validated source bundle, including unit descriptors, for operator comparison. */
 export const fingerprintCatalogSourceBundle = async (
   source: CatalogSourceBundleV1,
 ): Promise<string> => sha256Hex(encoder.encode(canonicalCatalogJson(source)));
@@ -82,7 +82,8 @@ const referencedAssetRights = (
     .sort((left, right) => compareCanonical(left.sourceRef, right.sourceRef));
 };
 
-export const fingerprintCatalogApproval = async (
+/** Binds lexemes, memberships and the referenced trusted asset rights; it feeds the release id. */
+const fingerprintCatalogSourceRights = async (
   source: CatalogSourceBundleV1,
   registry: CatalogSourceAssetRegistryV1,
 ): Promise<string> => sha256Hex(encoder.encode(canonicalCatalogJson({
@@ -105,6 +106,25 @@ export const fingerprintCatalogApproval = async (
   assetRights: referencedAssetRights(source, registry),
   artifactUse: CATALOG_TRUSTED_ARTIFACT_USE,
 })));
+
+/**
+ * The digest a protected approval must match. A V2 source also binds its unit descriptors, so unit
+ * titles and unit order cannot change after approval. A V1 source has no descriptors and keeps the
+ * same value as the source and rights digest.
+ */
+export const fingerprintCatalogApproval = async (
+  source: CatalogSourceBundleV1,
+  registry: CatalogSourceAssetRegistryV1,
+): Promise<string> => {
+  const sourceRights = await fingerprintCatalogSourceRights(source, registry);
+  if (source.unitDescriptors === undefined) return sourceRights;
+  return sha256Hex(encoder.encode(canonicalCatalogJson({
+    sourceRights,
+    unitDescriptors: [...source.unitDescriptors].sort((left, right) => (
+      compareCanonical(left.trackId, right.trackId) || compareCanonical(left.unitId, right.unitId)
+    )),
+  })));
+};
 
 const reviewContentProjection = (entity: LexemeV3 | TrackMembershipV3): unknown => {
   if ('language' in entity) {
@@ -421,7 +441,7 @@ const deriveCatalogReleaseIdForRegistry = async (
   options: CatalogReleaseBuildOptions,
   trustedAssetRegistry: CatalogSourceAssetRegistryV1,
 ): Promise<string> => {
-  const assetRightsDigest = await fingerprintCatalogApproval(source, trustedAssetRegistry);
+  const assetRightsDigest = await fingerprintCatalogSourceRights(source, trustedAssetRegistry);
   const digest = await sha256Hex(encoder.encode(canonicalCatalogJson(
     releaseIdentityProjection(source, options, assetRightsDigest),
   )));

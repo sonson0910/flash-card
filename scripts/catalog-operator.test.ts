@@ -254,6 +254,32 @@ describe('catalog filesystem operator', () => {
     expect(result).toMatchObject({ status: 'built', memberships: 1 });
   }, CLI_TEST_TIMEOUT_MS);
 
+  it('reports a different approvalDigest when a V2 unit title changes on disk', async () => {
+    const root = await temporaryDirectory();
+    const source = await publishedV2Source();
+    const manifestPath = await writeSource(root, source);
+    const rightsPath = path.join(root, 'rights-registry.json');
+    const approved = await validateCatalogFiles(manifestPath, rightsPath);
+    if (approved.status !== 'accepted' || approved.approvalDigest === undefined) {
+      throw new Error('Expected an accepted validation with an approval digest.');
+    }
+
+    await writeFile(path.join(root, 'units.json'), JSON.stringify([{
+      ...source.unitDescriptors![0],
+      titles: [{ language: 'en', text: 'Unapproved title' }, { language: 'vi', text: 'Tiêu đề chưa duyệt' }],
+    }]));
+    const edited = await validateCatalogFiles(manifestPath, rightsPath);
+    if (edited.status !== 'accepted') throw new Error('Expected an accepted validation.');
+
+    expect(edited.approvalDigest).toBeDefined();
+    expect(edited.approvalDigest).not.toBe(approved.approvalDigest);
+    await expect(buildCatalogFiles(manifestPath, path.join(root, 'release'), rightsPath, {
+      reviewerId: 'fixture-reviewer',
+      approvedDigest: approved.approvalDigest,
+      reviewedAt: now,
+    }, undefined, true)).resolves.toMatchObject({ status: 'rejected', reason: 'approval-digest-mismatch' });
+  }, CLI_TEST_TIMEOUT_MS);
+
   it('rejects traversal, symlink, and oversized manifest inputs', async () => {
     const traversalRoot = await temporaryDirectory();
     const traversalManifest = path.join(traversalRoot, 'source-manifest.json');

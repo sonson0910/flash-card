@@ -345,6 +345,58 @@ describe('buildCatalogRelease', () => {
     });
   });
 
+  it('rejects unit titles or unit order changed after the protected digest was approved', async () => {
+    const source = await bundle(2);
+    const approvedSource: CatalogSourceBundleV1 = {
+      ...source,
+      manifest: { ...source.manifest, manifestVersion: 2, unitDescriptorFile: 'units.json' },
+      memberships: source.memberships.map((candidate, index) => ({
+        ...candidate,
+        entity: { ...candidate.entity, lessonGroup: index === 0 ? 'unit-a' : 'unit-b' },
+      })),
+      unitDescriptors: [
+        { unitId: 'unit-a', trackId: 'general', tier: 'foundation', ordinal: 1,
+          titles: [{ language: 'en', text: 'First steps' }, { language: 'vi', text: 'Bước đầu tiên' }] },
+        { unitId: 'unit-b', trackId: 'general', tier: 'foundation', ordinal: 2,
+          titles: [{ language: 'en', text: 'Second steps' }, { language: 'vi', text: 'Bước thứ hai' }] },
+      ],
+    };
+    // Memberships carry their own review digest, so re-seal them after the unit assignment changed.
+    const sealed: CatalogSourceBundleV1 = {
+      ...approvedSource,
+      memberships: await Promise.all(approvedSource.memberships.map(async candidate => ({
+        ...candidate,
+        review: {
+          ...candidate.review,
+          contentDigest: await fingerprintCatalogReviewContent({ ...candidate.entity, editorialStatus: 'reviewed' }),
+        },
+      }))),
+    };
+    const approvedOptions = await optionsFor(sealed);
+    await expect(buildCatalogRelease(sealed, approvedOptions)).resolves.toMatchObject({ status: 'built' });
+
+    const [first, second] = sealed.unitDescriptors!;
+    const retitled: CatalogSourceBundleV1 = {
+      ...sealed,
+      unitDescriptors: [
+        { ...first, titles: [{ language: 'en', text: 'Unapproved title' }, { language: 'vi', text: 'Tiêu đề chưa duyệt' }] },
+        second,
+      ],
+    };
+    const reordered: CatalogSourceBundleV1 = {
+      ...sealed,
+      unitDescriptors: [{ ...second, ordinal: 1 }, { ...first, ordinal: 2 }],
+    };
+
+    for (const changed of [retitled, reordered]) {
+      expect(await fingerprintCatalogApproval(changed, rightsRegistry()))
+        .not.toBe(await fingerprintCatalogApproval(sealed, rightsRegistry()));
+      await expect(buildCatalogRelease(changed, approvedOptions)).resolves.toEqual({
+        status: 'rejected', reason: 'approval-digest-mismatch',
+      });
+    }
+  });
+
   it('rejects a V2 unit with more than 20 memberships', async () => {
     const source = await bundle(21);
     const withUnits: CatalogSourceBundleV1 = {

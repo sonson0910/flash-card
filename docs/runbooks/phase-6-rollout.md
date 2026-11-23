@@ -138,8 +138,9 @@ runtime dependencies still come from the candidate's sealed Functions lockfile.
    ```
 
    The build accepts only the exact combined protected `approvalDigest` from
-   that rights-aware validation (binding the validated source and referenced
-   trusted asset rights), the singular protected reviewer identity, and an
+   that rights-aware validation (binding the validated source, a V2 source's
+   unit titles and unit order, and the referenced trusted asset rights), the
+   singular protected reviewer identity, and an
    approval timestamp no more than 24 hours old (with only a small bounded future
    skew). Never accept reviewer authority from
    candidate files, `CATALOG_TRUSTED_REVIEWER_IDS`, or caller-provided flags.
