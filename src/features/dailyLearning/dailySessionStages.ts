@@ -273,6 +273,8 @@ export interface DailySessionPointer {
   readonly matchTimeZone?: string;
   /** A locally won round whose server completion must be replayed before recap. */
   readonly matchCompletionPending?: boolean;
+  /** The round's practice session expired, so a reload shows that notice instead of starting another round. */
+  readonly matchExpired?: boolean;
   readonly stats: DailySessionStats;
   readonly startedAt: string;
 }
@@ -349,6 +351,7 @@ const isDailySessionPointer = (value: unknown): value is DailySessionPointer => 
     && (candidate.matchFinished === undefined || typeof candidate.matchFinished === 'boolean')
     && (candidate.matchTimeZone === undefined || typeof candidate.matchTimeZone === 'string')
     && (candidate.matchCompletionPending === undefined || typeof candidate.matchCompletionPending === 'boolean')
+    && (candidate.matchExpired === undefined || typeof candidate.matchExpired === 'boolean')
     && isDailySessionStats(candidate.stats)
     && typeof candidate.startedAt === 'string';
 };

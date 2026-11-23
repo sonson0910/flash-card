@@ -1114,6 +1114,35 @@ describe('card intake controller', () => {
     expect(result).toMatchObject({ status: 'completed', candidateCount: 1, createdCount: 1 });
   });
 
+  it('accepts a shared plain card that names the course language without a catalog identity', async () => {
+    const { port, persistCards } = createFakePort();
+    const intake = createCardIntakeController({ port, language: languageProfileForPair('ja', 'vi') });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [{ word: '猫', translation: 'con mèo', language: 'ja' }],
+    });
+
+    expect(persistCards).toHaveBeenCalledWith([
+      expect.objectContaining({ word: '猫', language: 'ja', id: createTargetAwareCardId('猫', 'ja') }),
+    ], 'shared');
+    expect(result).toMatchObject({ status: 'completed', candidateCount: 1, createdCount: 1 });
+  });
+
+  it('refuses a shared plain card whose language disagrees with the course language', async () => {
+    const { port, persistCards } = createFakePort();
+    const intake = createCardIntakeController({ port, language: languageProfileForPair('ja', 'vi') });
+
+    const result = await intake.adoptSharedDeck({
+      cards: [
+        { word: 'chat', translation: 'con mèo', language: 'fr' },
+        { word: '犬', translation: 'con chó', language: 'ja' },
+      ],
+    });
+
+    expect(persistCards).toHaveBeenCalledWith([expect.objectContaining({ word: '犬' })], 'shared');
+    expect(result).toMatchObject({ status: 'completed', candidateCount: 1 });
+  });
+
   it('clears only a shared-adoption error and preserves newer intake errors', async () => {
     const { port } = createFakePort();
     const intake = createCardIntakeController({ port });

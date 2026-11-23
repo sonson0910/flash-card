@@ -369,6 +369,29 @@ describe('useCustomDeckWorkspace owner isolation', () => {
     expect(cacheWrites).toEqual([]);
   });
 
+  it('reports a failed in-flight creation when mutation access was paused during the write', async () => {
+    const remoteCreate = deferred<undefined>();
+    const decks = ['Owner A private deck'];
+    const { cacheWrites, mutations, ports, render } = createWorkspaceHarness();
+    mutations.add.mockImplementation(() => remoteCreate.promise);
+
+    const workspace = render('owner-a', decks);
+    flushEffects();
+    cacheWrites.length = 0;
+    const createPromise = workspace.actions.createDeck('Unsaved deck');
+    const outcome = createPromise.then(() => 'resolved', () => 'rejected');
+    await vi.waitFor(() => expect(mutations.add).toHaveBeenCalledOnce());
+
+    render('owner-a', decks, true, false);
+    flushEffects();
+    cacheWrites.length = 0;
+    remoteCreate.reject(new Error('write failed'));
+
+    expect(await outcome).toBe('rejected');
+    expect(ports.reportError).toHaveBeenCalledWith(expect.stringContaining('not ready yet'));
+    expect(cacheWrites).toEqual([]);
+  });
+
   it('stops an in-flight same-owner deletion before later remote writes after access is paused', async () => {
     const ownerACard: CardData = {
       id: 'owner-a-card',

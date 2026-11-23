@@ -240,10 +240,15 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
         try {
           await current.mutations.add(current.owner.id, plan.name, preset);
         } catch (cause) {
-          if (!isCurrentOwner() || !latestRef.current.owner.remoteAvailable) return;
+          if (!isCurrentOwner()) return;
           current.ports.warn('Custom deck profile could not be updated.', cause);
-          current.ports.reportError(deckCreationFailureMessage);
-          throw new Error(deckCreationFailureMessage);
+          // The write was refused while owner writes were paused: the deck was not saved,
+          // so the dialog must see a failure rather than a silent success.
+          const failureMessage = latestRef.current.owner.remoteAvailable
+            ? deckCreationFailureMessage
+            : deckCloudNotReadyMessage;
+          current.ports.reportError(failureMessage);
+          throw new Error(failureMessage);
         }
         if (!isCurrentOwner() || !latestRef.current.owner.remoteAvailable) return;
       }

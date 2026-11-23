@@ -280,3 +280,70 @@ it('stops retrying a daily Word Match completion whose practice session expired 
 
   await act(async () => root.unmount());
 });
+
+it('resumes into the expired notice after a reload instead of starting a new Word Match round', async () => {
+  const cards = ['alpha', 'bravo', 'charlie', 'delta'].map(card);
+  const container = installMinimalReactDom();
+  const start = vi.mocked(firebasePracticeSessionService.start);
+  const complete = vi.mocked(firebasePracticeSessionService.complete);
+  start.mockReset();
+  complete.mockReset();
+  start.mockResolvedValue({
+    sessionId: 'daily-match-start-1',
+    game: 'match',
+    expiresAt: '2026-10-03T00:30:00.000Z',
+    challenge: { kind: 'match', cards: cards.map(item => ({ cardId: item.id, word: item.word, translation: item.translation })) },
+  } as never);
+  complete.mockRejectedValue(new ProtectedFunctionError({
+    message: 'This practice round expired before its result could be saved. Start a new round.',
+    kind: 'unknown', code: 'failed-precondition', retryable: false, reason: 'practice-session-expired',
+  }));
+  writeDailySessionPointer({
+    ownerId: OWNER,
+    ...PAIR,
+    stage: 'match',
+    reviewLogicalIds: [],
+    freshLogicalIds: [],
+    matchCardIds: cards.map(item => item.id),
+    matchSkipReason: null,
+    matchStartOpId: 'daily-match-start-1',
+    matchCompletionId: 'daily-match-complete-1',
+    matchCompletionPending: true,
+    stats: emptyDailySessionStats,
+    startedAt: '2026-10-03T00:00:00.000Z',
+  });
+  i18n.load('en', {});
+  i18n.activate('en');
+  const renderWorkspace = (root: ReturnType<typeof createRoot>) => root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
+    ownerId={OWNER}
+    languageProfile={ENGLISH_TO_VIETNAMESE_PROFILE}
+    isOffline={false}
+    initialLesson="session"
+    streak={0}
+    studyXpHistory={[]}
+    loadPracticePool={vi.fn().mockResolvedValue(cards)}
+    reviewCard={vi.fn()}
+    openLesson={vi.fn()}
+    openVocabulary={vi.fn()}
+    openPaths={vi.fn()}
+    continueReview={vi.fn()}
+    openMorePractice={vi.fn()}
+    openWeeklyRecap={vi.fn()}
+    onVerifiedPracticeOutcome={vi.fn()}
+  /></I18nProvider>);
+  const firstRoot = createRoot(container);
+  await act(async () => { renderWorkspace(firstRoot); });
+  await act(async () => { await vi.waitFor(() => expect(textOf(container)).toContain('open for too long')); });
+  expect(readDailySessionPointer(OWNER)).toMatchObject({ matchExpired: true, matchStartOpId: null });
+  await act(async () => firstRoot.unmount());
+
+  // A reload keeps only the saved pointer.
+  const secondRoot = createRoot(container);
+  await act(async () => { renderWorkspace(secondRoot); });
+  await act(async () => { await vi.waitFor(() => expect(textOf(container)).toContain('open for too long')); });
+
+  // Only the first mount replayed the saved challenge; the reload did not open another round.
+  expect(start).toHaveBeenCalledTimes(1);
+
+  await act(async () => secondRoot.unmount());
+});
