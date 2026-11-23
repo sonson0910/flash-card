@@ -1,5 +1,5 @@
 import type { Firestore } from 'firebase/firestore';
-import { app as firebaseApp, getSonFlashFunctions, isFirebaseConfigured, protectedFunctionsCapability } from './firebase';
+import { app as firebaseApp, auth, getSonFlashFunctions, isFirebaseConfigured, protectedFunctionsCapability } from './firebase';
 import { ProtectedFunctionError, runProtectedFunction } from './protectedFunctionsCapability';
 
 /**
@@ -144,7 +144,6 @@ export async function bulkMutateCardsViaCallable(
   deletes: readonly BulkCardDeleteCommand[] = [],
 ): Promise<BulkCardMutationItemResult[]> {
   void database;
-  void userId;
   if (!isFirebaseConfigured || !firebaseApp) {
     throw new ProtectedFunctionError({
       message: 'Bulk card update is unavailable because protected cloud features are not configured for this build.',
@@ -154,15 +153,27 @@ export async function bulkMutateCardsViaCallable(
     });
   }
   return runProtectedFunction(protectedFunctionsCapability, 'Bulk card update', async () => {
+    // The callable acts on whoever is signed in; a command prepared for one account must never run as another.
+    const assertActiveOwner = () => {
+      if (auth?.currentUser?.uid !== userId) {
+        throw new ProtectedFunctionError({
+          message: 'Bulk card update stopped because the active account changed. Retry after sign-in settles.',
+          kind: 'authentication', code: 'owner-mismatch', retryable: false,
+        });
+      }
+    };
+    assertActiveOwner();
     const { httpsCallable } = await import('firebase/functions');
     const app = firebaseApp;
     if (!app) throw new Error('Firebase is not initialized.');
     const callable = httpsCallable<
-      { libraryEpoch: number; patches: BulkCardPatchCommand[]; deletes: BulkCardDeleteCommand[] },
+      { expectedOwnerId: string; libraryEpoch: number; patches: BulkCardPatchCommand[]; deletes: BulkCardDeleteCommand[] },
       unknown
     >(await getSonFlashFunctions(app), 'bulkMutateCards');
     try {
+      assertActiveOwner();
       const response = await callable({
+        expectedOwnerId: userId,
         libraryEpoch,
         patches: patches.map(patch => ({ ...patch, fieldMask: [...patch.fieldMask] })),
         deletes: [...deletes],

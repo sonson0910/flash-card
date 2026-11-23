@@ -23,18 +23,56 @@ const validAuthTimeSeconds = (value: unknown): value is number =>
 
 const pushTokenId = (token: string): string => createHash('sha256').update(token).digest('hex');
 
-const disablePush = (transaction: Transaction, stateRef: DocumentReference, now: Date): void => {
-  transaction.update(stateRef, {
-    'channels.push': false,
-    nextEligibleSendAt: null,
-    nextEligibleLocalDay: null,
-    consecutiveIgnored: 0,
-    lastPushReceiptId: null,
-    lastEvaluatedSentAt: null,
-    backoffSkipNext: false,
-    updatedAt: Timestamp.fromDate(now),
-  });
+const pushOff = {
+  'channels.push': false,
+  nextEligibleSendAt: null,
+  nextEligibleLocalDay: null,
+  consecutiveIgnored: 0,
+  lastPushReceiptId: null,
+  lastEvaluatedSentAt: null,
+  backoffSkipNext: false,
 };
+
+const emailDigestOff = {
+  'channels.emailDigest': false,
+  nextWeeklyDigestAt: null,
+  nextWeeklyDigestLocalDay: null,
+};
+
+export const disablePush = (transaction: Transaction, stateRef: DocumentReference, now: Date): void => {
+  transaction.update(stateRef, { ...pushOff, updatedAt: Timestamp.fromDate(now) });
+};
+
+export const disableEmailDigest = (transaction: Transaction, stateRef: DocumentReference, now: Date): void => {
+  transaction.update(stateRef, { ...emailDigestOff, updatedAt: Timestamp.fromDate(now) });
+};
+
+/**
+ * Ends all reminder outreach for an owner inside the caller's transaction: both channels off, no schedule
+ * left, and every push token and its registry entry removed. Reads come first, so the caller must not
+ * have written anything yet.
+ */
+export async function stopReminderDeliveryForOwner(
+  transaction: Transaction,
+  database: Firestore,
+  ownerId: string,
+  now: Date,
+): Promise<void> {
+  const owner = database.collection('users').doc(ownerId);
+  const stateRef = owner.collection('reminderState').doc('current');
+  const [state, tokens] = await Promise.all([
+    transaction.get(stateRef), transaction.get(owner.collection('pushTokens').limit(20)),
+  ]);
+  const registrySnapshots = await Promise.all(tokens.docs.map(token =>
+    transaction.get(database.collection('pushTokenOwners').doc(token.id))));
+  if (state.exists) {
+    transaction.update(stateRef, { ...pushOff, ...emailDigestOff, updatedAt: Timestamp.fromDate(now) });
+  }
+  tokens.docs.forEach((token, index) => {
+    transaction.delete(token.ref);
+    if (registrySnapshots[index].data()?.ownerId === ownerId) transaction.delete(registrySnapshots[index].ref);
+  });
+}
 
 export function parsePushTokenRequest(value: unknown): string {
   if (!record(value) || Object.keys(value).some(key => !['token', 'expectedOwnerId', 'endSession'].includes(key))

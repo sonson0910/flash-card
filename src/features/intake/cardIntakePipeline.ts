@@ -1,7 +1,7 @@
 import { fetchAudioUrl } from '../../lib/audio';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { mapWithConcurrency } from '../../lib/asyncPool';
-import { cardLogicalKey, createTargetAwareCardId, normalizeCardWord } from '../../lib/cardIdentity';
+import { cardLogicalKey, createTargetAwareCardId, effectiveCardTargetLanguage, normalizeCardWord } from '../../lib/cardIdentity';
 import { isRetryableCloudError } from '../../lib/cloudError';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import {
@@ -181,7 +181,10 @@ export function createCardIntakePipeline({
       return key ? [[key, word] as const] : [];
     });
     const local = current.getCards().filter(card => belongsToVerifiedLibraryEpoch(card, current.libraryEpoch));
-    const matches = indexCardsByNormalizedWord(local);
+    // A card with the same spelling in another course is a different card: its identity carries the target.
+    const targetLanguage = current.languageProfile?.source.code;
+    const matches = indexCardsByNormalizedWord(targetLanguage === undefined
+      ? local : local.filter(card => effectiveCardTargetLanguage(card) === targetLanguage));
     const logicalMatches = new Map(local.map(card => [cardLogicalKey(card), card]));
 
     const ownerId = current.ownerId;
@@ -190,12 +193,9 @@ export function createCardIntakePipeline({
     }
     if (db && isFirebaseConfigured && current.libraryEpoch !== null) {
       try {
-        const cloud = await findCardsByNormalizedWords(
-          db,
-          ownerId,
-          normalizedWords,
-          current.libraryEpoch,
-        );
+        const cloud = targetLanguage === undefined
+          ? await findCardsByNormalizedWords(db, ownerId, normalizedWords, current.libraryEpoch)
+          : await findCardsByNormalizedWords(db, ownerId, normalizedWords, current.libraryEpoch, targetLanguage);
         assertCurrent(session);
         cloud.forEach((card, word) => matches.set(word, card));
         for (const [key, requested] of logicalInputs) {

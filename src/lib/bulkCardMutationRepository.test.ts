@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const firebaseRuntime = vi.hoisted(() => ({
   app: { name: 'test-app' } as unknown,
+  auth: { currentUser: { uid: 'owner-a' } as { uid: string } | null },
   isFirebaseConfigured: true,
   protectedFunctionsCapability: { available: true } as
     | { available: true }
@@ -45,6 +46,7 @@ const deleteCommand: BulkCardDeleteCommand = {
 describe('bulkMutateCardsViaCallable', () => {
   beforeEach(() => {
     firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.auth.currentUser = { uid: 'owner-a' };
     firebaseRuntime.protectedFunctionsCapability = { available: true };
     mocks.getFunctions.mockClear();
     mocks.httpsCallable.mockReset();
@@ -65,6 +67,7 @@ describe('bulkMutateCardsViaCallable', () => {
 
     expect(mocks.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'bulkMutateCards');
     expect(callable).toHaveBeenCalledWith({
+      expectedOwnerId: 'owner-a',
       libraryEpoch: 2,
       patches: [{ ...patchCommand, fieldMask: ['customDeck'] }],
       deletes: [deleteCommand],
@@ -73,6 +76,35 @@ describe('bulkMutateCardsViaCallable', () => {
       { cardId: 'card-1', op: 'patch', applied: true, revision: 4 },
       { cardId: 'card-2', op: 'delete', applied: true, revision: 6, deletedAt: '2026-09-26T00:00:00.000Z', opId: 'device-a:delete-1', libraryEpoch: 2 },
     ]);
+  });
+
+  it.each([
+    ['another account', { uid: 'owner-b' }],
+    ['no account', null],
+  ])('stops before calling the service when %s is signed in instead of the owner', async (_label, currentUser) => {
+    const callable = vi.fn();
+    mocks.httpsCallable.mockReturnValue(callable);
+    firebaseRuntime.auth.currentUser = currentUser;
+
+    await expect(bulkMutateCardsViaCallable({} as never, 'owner-a', 2, [patchCommand], [deleteCommand]))
+      .rejects.toMatchObject({ kind: 'authentication', code: 'owner-mismatch' });
+    expect(callable).not.toHaveBeenCalled();
+  });
+
+  it('does not rebase a conflicted delete onto another account after the account changed', async () => {
+    const callable = vi.fn().mockImplementationOnce(async () => {
+      firebaseRuntime.auth.currentUser = { uid: 'owner-b' };
+      return { data: { results: [{ cardId: 'card-2', op: 'delete', applied: false, reason: 'revision-conflict', currentRevision: 7 }] } };
+    });
+    mocks.httpsCallable.mockReturnValue(callable);
+    const attempt = async (baseRevision: number) => {
+      const [result] = await bulkMutateCardsViaCallable({} as never, 'owner-a', 2, [], [{ ...deleteCommand, baseRevision }]);
+      if (result.applied || result.op !== 'delete') throw new Error('unexpected result');
+      return attempt(result.currentRevision);
+    };
+
+    await expect(attempt(5)).rejects.toMatchObject({ code: 'owner-mismatch' });
+    expect(callable).toHaveBeenCalledTimes(1);
   });
 
   it('parses an unapplied patch result carrying a conflict reason', async () => {

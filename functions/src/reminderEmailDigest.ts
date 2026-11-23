@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { Timestamp, type DocumentReference, type Firestore } from 'firebase-admin/firestore';
+import { AGE_RESTRICTION_DOCUMENT_ID } from './account-profile-contract.js';
 import { InputValidationError } from './inputValidation.js';
+import { disableEmailDigest } from './reminderSettingsPersistence.js';
 import { nextReminderAfterScheduledDay, quietHoursEndAfter, studiedOnLocalDay } from './reminderSchedule.js';
 import { reminderTodayUrl } from './reminderAppOrigin.js';
 import { parseStreakState, streakStatus } from './streak-rules.js';
@@ -70,6 +72,11 @@ export async function enqueueWeeklyDigest(
       ? studiedOnLocalDay(studiedAt.toDate(), now, state.timezone) : false;
     const stale = now.getTime() - eligibleAt > 24 * 60 * 60_000;
     const sends = dueCount > 0 && !receipt.exists && Boolean(email) && Boolean(studiedAt) && !studiedToday && !stale;
+    // Read only when a send is otherwise due. A restricted account keeps no digest schedule.
+    if (sends && (await transaction.get(owner.collection('profile').doc(AGE_RESTRICTION_DOCUMENT_ID))).exists) {
+      disableEmailDigest(transaction, stateRef, now);
+      return false;
+    }
     // The run as the next review would find it: missed days use held freezes, and a gap they cannot
     // bridge ends the run. The stored count alone still shows a run that has already ended.
     const run = isCount(stats?.verifiedStreak) ? stats.verifiedStreak : 0;

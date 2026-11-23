@@ -10,6 +10,7 @@ import {
   type CompleteAccountProfileRequest,
   type CompleteAccountProfileResponse,
 } from './account-profile-contract.js';
+import { stopReminderDeliveryForOwner } from './reminderSettingsPersistence.js';
 
 export const ACCOUNT_PROFILE_PATH = `users/{uid}/profile/${ACCOUNT_PROFILE_DOCUMENT_ID}`;
 export const AGE_RESTRICTION_PATH = `users/{uid}/profile/${AGE_RESTRICTION_DOCUMENT_ID}`;
@@ -72,6 +73,8 @@ export const completeAccountProfile = async (
       return { status: 'complete', profile: storedOrThrow(parseAccountProfileRecord, record.data()) };
     }
     if (outcome === 'restricted') {
+      // A restricted account gets no outreach, and it cannot reach the settings that would turn it off.
+      await stopReminderDeliveryForOwner(transaction, database, authenticatedOwnerId, at);
       transaction.create(markerReference, { restrictedAt: timestamp });
       return { status: 'restricted', restrictedAt: timestamp };
     }

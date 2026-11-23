@@ -190,6 +190,17 @@ export const extractFlatWords = (rows: unknown[][], maximum = 200) => {
   return words;
 };
 
+/** The scheduler's difficulty when the card has one, otherwise the legacy rating it was last given. */
+const reviewDifficultyCell = (card: CardData): number | string => {
+  const scheduled = card.fsrs?.difficulty;
+  if (typeof scheduled === 'number' && Number.isFinite(scheduled)) return Math.round(scheduled * 100) / 100;
+  return card.difficulty && card.difficulty !== 'unrated' ? card.difficulty : '';
+};
+
+/**
+ * Columns after "CEFR Level" other than "Date Added" are export-only: the review schedule belongs to the
+ * server, so the import never reads them back.
+ */
 export const cardsToSpreadsheetRows = (cards: CardData[]) => cards.map(card => ({
   'Lexeme ID': card.lexemeId || '',
   Language: card.language || '',
@@ -208,5 +219,12 @@ export const cardsToSpreadsheetRows = (cards: CardData[]) => cards.map(card => (
   Starred: card.bookmarked ? 'Yes' : '',
   Difficulty: card.learnerDifficulty ? LEARNER_DIFFICULTY_LABELS[card.learnerDifficulty] : '',
   'CEFR Level': card.cefrLevel || '',
+  'Example Sentence': card.exampleSentence || '',
+  Mnemonic: card.mnemonic || '',
+  'Next Review Date': card.nextReviewDate || '',
+  'Interval (days)': typeof card.interval === 'number' ? card.interval : '',
+  'Review Count': typeof card.reviews === 'number' ? card.reviews : 0,
+  'Review Difficulty': reviewDifficultyCell(card),
+  'Mastered Date': card.masteredAt || '',
   'Date Added': card.createdAt ? new Date(card.createdAt).toLocaleDateString() : 'N/A',
 }));

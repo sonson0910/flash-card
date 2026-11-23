@@ -36,11 +36,12 @@ const rows = async (query: Query) => (await query.get()).docs.map(doc => ({ id: 
 export async function exportAccountData(database: Firestore, uid: string, key: string) {
   const owner = database.collection('users').doc(uid);
   const pid = analyticsPseudonym(uid, key);
-  const [profile, entitlements, paymentReceipts, catalogProgress, aiUsage, aiDaily, xpStreams, reviewReceipts, reviewXpAwards, cardCreateReceipts, practiceSessions,
+  const [profile, entitlements, paymentReceipts, catalogProgress, learningStates, aiOperations, aiUsage, aiDaily, xpStreams, reviewReceipts, reviewXpAwards, cardCreateReceipts, practiceSessions,
     reminderState, reminderReceipts, pushTokens, pushTokenSessionCutoffs, pushTokenOwners,
     mail, reports, events, fileRows] = await Promise.all([
     rows(owner.collection('profile')), rows(owner.collection('entitlements')),
     rows(owner.collection('payment_receipts')), rows(owner.collection('catalog_progress')),
+    rows(owner.collection('learning_states')), rows(owner.collection('ai_operations')),
     rows(owner.collection('ai_usage')), rows(owner.collection('ai_daily')),
     rows(owner.collection('xp_streams')),
     rows(owner.collection('review_receipts')),
@@ -55,7 +56,7 @@ export async function exportAccountData(database: Firestore, uid: string, key: s
     database.collection('analytics_events').where('pid', '==', pid).count().get(),
     exportedFileRows(database, uid),
   ]);
-  return jsonValue({ exportedAt: new Date(), profile, entitlements, paymentReceipts, catalogProgress, aiUsage, aiDaily,
+  return jsonValue({ exportedAt: new Date(), profile, entitlements, paymentReceipts, catalogProgress, learningStates, aiOperations, aiUsage, aiDaily,
     xpStreams, reviewReceipts, reviewXpAwards, cardCreateReceipts, practiceSessions,
     reminderState, reminderReceipts, pushTokens, pushTokenSessionCutoffs, pushTokenOwners,
     mail, cardReports: reports, files: fileRows.files, fileUsage: fileRows.fileUsage,

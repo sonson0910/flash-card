@@ -9,6 +9,7 @@ import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
 import { languageProfileForPair } from '../courses/courseLanguageProfile';
 import { createTargetAwareCardId, createWordCardId } from '../../lib/cardIdentity';
 import { OperationTimeoutError } from '../../lib/async';
+import { createSpreadsheetImportService } from '../importExport/spreadsheetImportService';
 
 const generationRuntime = vi.hoisted(() => ({
   generateWordInfo: vi.fn(),
@@ -160,6 +161,60 @@ describe('Card Intake Pipeline contract', () => {
     expect(repositoryRuntime.findCardByNormalizedWord).toHaveBeenCalledWith(
       {}, 'owner-a', expect.objectContaining({ word: 'bank', language: 'ko' }), 3,
     );
+  });
+
+  describe('with a non-English course active', () => {
+    const englishBank = { ...card('bank'), id: 'word-bank', libraryEpoch: 3 } as CardData;
+    const koreanBank = {
+      ...card('bank'), id: 'word-ko-bank', language: 'ko', translationLanguage: 'vi', libraryEpoch: 3,
+    } as CardData;
+    const koreanContext = (cards: CardData[]): CardIntakePortOptions => ({
+      ...createContext(), languageProfile: languageProfileForPair('ko', 'vi'), getCards: () => cards,
+    });
+
+    it('asks the library for cards of the active target language only', async () => {
+      const pipeline = createCardIntakePipeline({ getContext: () => koreanContext([]) });
+
+      await pipeline.findExisting(['Bank']);
+
+      expect(repositoryRuntime.findCardsByNormalizedWords).toHaveBeenCalledWith({}, 'owner-a', ['bank'], 3, 'ko');
+    });
+
+    it('does not take a same-spelling card of another course for the word', async () => {
+      const pipeline = createCardIntakePipeline({ getContext: () => koreanContext([englishBank]) });
+
+      await expect(pipeline.findExisting(['Bank'])).resolves.toEqual(new Map());
+    });
+
+    it('still finds the card of the active course among same-spelling cards', async () => {
+      const pipeline = createCardIntakePipeline({ getContext: () => koreanContext([englishBank, koreanBank]) });
+
+      await expect(pipeline.findExisting(['Bank'])).resolves.toEqual(new Map([['bank', koreanBank]]));
+    });
+
+    it('imports a flat word as a new card instead of reusing the other course card', async () => {
+      const context = koreanContext([englishBank]);
+      const pipeline = createCardIntakePipeline({ getContext: () => context });
+      const generate = vi.fn(async () => ({ created: true, category: 'General' }));
+      const service = createSpreadsheetImportService({
+        cards: {
+          findExisting: pipeline.findExisting, touchExisting: pipeline.touchExisting,
+          generate, completeFlat: vi.fn(async () => undefined), persistStructured: vi.fn(),
+        },
+        feedback: { start: vi.fn(), clearError: vi.fn(), progress: vi.fn(), error: vi.fn(), finish: vi.fn(), resetSource: vi.fn() },
+        delay: async () => undefined,
+      });
+
+      const result = await service.import({
+        sizeBytes: 10,
+        loadWorkbook: async () => ({ hasStructuredHeader: false, structuredRows: [], flatRows: [['Bank']] }) as never,
+      });
+
+      expect(generate).toHaveBeenCalledWith('Bank', 0);
+      expect(result.summary).toMatchObject({ created: 1, reused: 0 });
+      expect(context.notify).not.toHaveBeenCalledWith(expect.stringContaining('already in your library'));
+      expect(context.publishCards).not.toHaveBeenCalled();
+    });
   });
 
   it('keeps legacy default-English lookups on the bulk word path', async () => {
