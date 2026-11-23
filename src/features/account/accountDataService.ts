@@ -1,6 +1,14 @@
 import { auth, app, db, getSonFlashFunctions } from '../../lib/firebase';
 import { gamificationStorageKeys } from '../gamification/gamificationStorage';
 import { accountProfileCopyKey } from '../profileCompletion/accountProfileDeviceCopy';
+import { skillEvidenceStorageKey } from '../skillEvidence/skillEvidenceStorage';
+import { draftKey as onboardingDraftKey } from '../onboarding/onboardingDraft';
+import { inProgressKey as onboardingStartedKey, resumeKey as onboardingStepKey } from '../onboarding/onboardingModel';
+import { storedTokenKey as pushTokenKey } from '../reminders/pushTokenStorageKey';
+import { BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY } from '../browserExtension/browserExtensionImport';
+import {
+  legacyDeckCacheKey, legacyDeckOwnerCacheKey, ownerScopedDeckCacheKey, parseOwnerScopedDeckCache,
+} from '../library/ownerScopedDeckCache';
 import {
   cloudBackoffCacheKey, cloudFacetsCacheKey, cloudPageCacheKey, cloudStatsCacheKey, progressEvidenceCachePrefix,
 } from '../library/libraryStorage';
@@ -33,9 +41,21 @@ export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeI
     cloudPageCacheKey(uid), cloudStatsCacheKey(uid), cloudFacetsCacheKey(uid), cloudBackoffCacheKey(uid),
     `lingoflash_library_epoch_${encodeURIComponent(uid)}`,
     accountProfileCopyKey(uid),
+    skillEvidenceStorageKey(uid), pushTokenKey(uid),
+    onboardingDraftKey(uid), onboardingStepKey(uid), onboardingStartedKey(uid),
   ];
-  if (clearSharedState) keys.push('lingoflash_shared_deck_operation_v1');
+  // Unlike the per-owner keys, these hold one slot for whichever learner used the device last, and the facet
+  // operation log carries no owner at all, so only a still-signed-in deleted owner may clear them.
+  if (clearSharedState) keys.push('lingoflash_shared_deck_operation_v1', 'lingoflash_library_facet_operation_times_v1');
   for (const key of keys) storage.removeItem(key);
+  // The deck cache is a single slot keyed by the owner stored inside it, so another learner's slot stays.
+  if (parseOwnerScopedDeckCache(storage.getItem(ownerScopedDeckCacheKey))?.ownerId === uid) {
+    storage.removeItem(ownerScopedDeckCacheKey);
+  }
+  if (storage.getItem(legacyDeckOwnerCacheKey) === uid) {
+    storage.removeItem(legacyDeckOwnerCacheKey);
+    storage.removeItem(legacyDeckCacheKey);
+  }
   for (let index = storage.length - 1; index >= 0; index--) {
     const key = storage.key(index);
     if (key?.startsWith(progressEvidenceCachePrefix(uid))
@@ -45,6 +65,7 @@ export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeI
   if (clearSharedState) {
     session.removeItem('lingoflash_word_draft');
     session.removeItem('lingoflash_word_operation');
+    session.removeItem(BROWSER_EXTENSION_IMPORT_OWNER_STORAGE_KEY);
     session.removeItem('lingoflash_browser_extension_import');
     session.removeItem('lingoflash_browser_extension_draft_import');
   }
