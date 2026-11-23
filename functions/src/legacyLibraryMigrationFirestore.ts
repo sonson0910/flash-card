@@ -653,9 +653,10 @@ const requestCommitDiscoveryPage = async (
       groupSnapshots.flatMap(snapshot => {
         if (!snapshot.exists) return [];
         const group = parseDiscoveryGroup(snapshot.data());
+        // A group of a retired scan is a leftover; this page overwrites it.
+        if (group.scanId !== current.scanId) return [];
         if (
-          group.scanId !== current.scanId
-          || group.libraryEpoch !== current.libraryEpoch
+          group.libraryEpoch !== current.libraryEpoch
           || group.sourceRevision !== current.sourceRevision
         ) throw new LegacyLibraryDiscoveryStateChangedError();
         return [[discoveryGroupKey(group), group] as const];
@@ -775,10 +776,13 @@ const readManifestGroups = async (
   database: Firestore,
   ownerId: string,
   jobId: string,
+  scanId?: string,
 ): Promise<LegacyLibraryIdentityGroup[]> => {
   const snapshot = await discoveryJobRef(database, ownerId, jobId).collection(DISCOVERY_GROUP_COLLECTION)
     .orderBy(FieldPath.documentId()).get();
-  return snapshot.docs.map(document => parseDiscoveryGroup(document.data()));
+  const groups = snapshot.docs.map(document => parseDiscoveryGroup(document.data()));
+  // Groups of a retired scan can outlive it; they are not part of the manifest.
+  return scanId === undefined ? groups : groups.filter(group => group.scanId === scanId);
 };
 
 const readFreshLibrary = async (
@@ -1126,6 +1130,85 @@ export const clearZeroProgressFence = async (
   clearLibraryMigrationFenceMirror(transaction, database, ownerId);
 });
 
+const RETIRED_GROUP_DELETE_PAGE = 200;
+
+/**
+ * Retires a manifest that no longer describes the library and reopens its job
+ * for a new scan, so a later discovery reports a new revision to approve.
+ *
+ * It runs only while no group has been applied. With a fence, the fence must
+ * still be the caller's own; without one (the library generation changed
+ * before a fence could be taken) the generation change is confirmed again.
+ * The job reset, the fence release and the backup root removal are one
+ * transaction: the owner is never left fenced on a manifest nobody can apply.
+ */
+const reopenDiscoveryForChangedLibrary = async (
+  database: Firestore,
+  ownerId: string,
+  options: LegacyLibraryMigrationApplyOptions,
+  fence: MigrationFence | null,
+): Promise<void> => {
+  const jobReference = discoveryJobRef(database, ownerId, options.jobId);
+  const retiredScanId = await database.runTransaction(async transaction => {
+    const fenceReference = migrationFenceReference(database, ownerId);
+    const [jobSnapshot, fenceSnapshot, stateSnapshot] = await Promise.all([
+      transaction.get(jobReference),
+      transaction.get(fenceReference),
+      transaction.get(libraryStateRef(database, ownerId)),
+    ]);
+    if (!jobSnapshot.exists) return null;
+    const job = validDiscoveryJob(jobSnapshot.data());
+    if (job.sourceRevision !== options.sourceRevision || (job.appliedGroupCount ?? 0) !== 0) return null;
+    if (fence) {
+      if (!fenceSnapshot.exists) return null;
+      const current = fenceFromSnapshot(fenceSnapshot);
+      if (
+        current.token !== fence.token
+        || current.leaseOwner !== fence.leaseOwner
+        || current.revision !== fence.revision
+        || current.phase === 'rollback'
+        || current.appliedGroupCount !== 0
+      ) return null;
+    } else {
+      const currentEpoch = stateSnapshot.exists ? safeCounter(stateSnapshot.data()?.libraryEpoch) : 0;
+      if (fenceSnapshot.exists || job.phase !== 'discovered' || currentEpoch === job.libraryEpoch) return null;
+    }
+    transaction.set(jobReference, discoveryJobData({
+      schemaVersion: 3,
+      scanId: randomUUID(),
+      phase: 'discover',
+      cursor: null,
+      libraryEpoch: null,
+      sourceRevision: '',
+      scanned: 0,
+      sourceCount: 0,
+      groupCount: 0,
+      lastPageDigest: null,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+    }, Timestamp.now()), { merge: false });
+    transaction.delete(backupRef(database, ownerId, options.jobId));
+    if (fence) {
+      transaction.delete(fenceReference);
+      clearLibraryMigrationFenceMirror(transaction, database, ownerId);
+    }
+    return job.scanId;
+  });
+  if (retiredScanId === null) return;
+  // Readers already ignore the retired scan's groups, so this only tidies up.
+  // Each page is a transaction, which keeps a new scan's writes out of it.
+  const retiredGroups = jobReference.collection(DISCOVERY_GROUP_COLLECTION)
+    .where('scanId', '==', retiredScanId).limit(RETIRED_GROUP_DELETE_PAGE);
+  for (;;) {
+    const deleted = await database.runTransaction(async transaction => {
+      const snapshot = await transaction.get(retiredGroups);
+      for (const document of snapshot.docs) transaction.delete(document.ref);
+      return snapshot.size;
+    });
+    if (deleted < RETIRED_GROUP_DELETE_PAGE) return;
+  }
+};
+
 const ensureBackupRoot = async (
   database: Firestore,
   ownerId: string,
@@ -1215,12 +1298,16 @@ const prepareGroupBackup = async (
   let hasWrites = false;
   for (const [index, source] of group.sources.entries()) {
     const existing = existingBackups[index];
-    if (existing?.exists && !backupSourceMatches(existing, source, false)) {
+    const matches = Boolean(existing?.exists && backupSourceMatches(existing, source, false));
+    // Before the first group is applied the live card, checked against the
+    // manifest above, is the state to restore. A backup that differs was
+    // captured for a scan that has since been retired, so it is replaced.
+    if (existing?.exists && !matches && fence.appliedGroupCount !== 0) {
       throw new LegacyLibraryDiscoveryStateChangedError();
     }
-    if (!existing?.exists) {
+    if (!matches) {
       hasWrites = true;
-      batch.create(sourceBackupReferences[index], {
+      const backup = {
         sourceId: source.id,
         sourceDigest: source.sourceDigest,
         sourceBytes: source.sourceBytes,
@@ -1228,7 +1315,9 @@ const prepareGroupBackup = async (
         prepared: true,
         sealed: false,
         capturedAt: stableTimestamp(fence),
-      });
+      };
+      if (existing?.exists) batch.set(sourceBackupReferences[index], backup, { merge: false });
+      else batch.create(sourceBackupReferences[index], backup);
     }
   }
   if (hasWrites) await batch.commit();
@@ -1736,10 +1825,18 @@ export async function applyLegacyLibraryMigration(
       complete: true,
     };
   }
-  let fence = await beginMigrationFence(database, ownerId, options, 'verify');
+  let fence: MigrationFence;
+  try {
+    fence = await beginMigrationFence(database, ownerId, options, 'verify');
+  } catch (error) {
+    if (error instanceof LegacyLibraryGenerationChangedError) {
+      await reopenDiscoveryForChangedLibrary(database, ownerId, options, null);
+    }
+    throw error;
+  }
   try {
     const job = await readMigrationJob(database, ownerId, options.jobId);
-    const groups = await readManifestGroups(database, ownerId, options.jobId);
+    const groups = await readManifestGroups(database, ownerId, options.jobId, job.scanId);
     if (groups.length !== fence.groupCount) throw new LegacyLibraryDiscoveryStateChangedError();
     if (fence.appliedGroupCount === 0) {
       const fresh = await readFreshLibrary(database, ownerId);
@@ -1776,7 +1873,14 @@ export async function applyLegacyLibraryMigration(
     return await finalizeMigration(database, ownerId, fence, groups, finalState);
   } catch (error) {
     if (fence.appliedGroupCount === 0) {
-      await clearZeroProgressFence(database, ownerId, fence, 'discovered');
+      // A library that changed since the scan makes this manifest unusable for
+      // good, so the job goes back to discovery. Any other failure keeps the
+      // approved manifest for a retry with the same revision.
+      if (error instanceof LegacyLibraryGenerationChangedError) {
+        await reopenDiscoveryForChangedLibrary(database, ownerId, options, fence);
+      } else {
+        await clearZeroProgressFence(database, ownerId, fence, 'discovered');
+      }
     }
     throw error;
   }

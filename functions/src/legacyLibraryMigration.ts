@@ -365,8 +365,10 @@ export async function runLegacyLibraryDiscovery(
     if (normalizedWords.some(word => !word || word.length > MAX_CLEANUP_IDENTITY_KEY_LENGTH)) {
       throw new LegacyLibraryDiscoveryBlockedError('invalid-normalized-word');
     }
-    const previousGroups = await store.readDiscoveryGroups(ownerId, options.jobId, normalizedWords);
     const scanId = existing?.scanId ?? randomUUID();
+    // A group stored by a retired scan of this job is not part of this scan.
+    const previousGroups = (await store.readDiscoveryGroups(ownerId, options.jobId, normalizedWords))
+      .filter(group => group.scanId === scanId);
     const previousRevision = existing?.sourceRevision || createLegacyLibraryInitialRevision(scanId, page.libraryEpoch);
     if (existing.libraryEpoch !== null && existing.libraryEpoch !== page.libraryEpoch) {
       throw new LegacyLibraryDiscoveryBlockedError('library-epoch-changed');
