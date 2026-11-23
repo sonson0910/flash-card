@@ -3,7 +3,7 @@ import { Timestamp, type DocumentReference, type Firestore } from 'firebase-admi
 import { AGE_RESTRICTION_DOCUMENT_ID } from './account-profile-contract.js';
 import { InputValidationError } from './inputValidation.js';
 import { disableEmailDigest } from './reminderSettingsPersistence.js';
-import { nextReminderAfterScheduledDay, quietHoursEndAfter, studiedOnLocalDay } from './reminderSchedule.js';
+import { nextReminderAfterScheduledDay, quietHoursEndAfter, studiedOnStudyDay } from './reminderSchedule.js';
 import { reminderTodayUrl } from './reminderAppOrigin.js';
 import { parseStreakState, streakStatus } from './streak-rules.js';
 import { isCount, isStudyDay, studyDaysBetween } from './study-day-rules.js';
@@ -69,7 +69,7 @@ export async function enqueueWeeklyDigest(
     const stats = (await transaction.get(owner.collection('profile').doc('stats'))).data();
     const studiedAt = stats?.lastVerifiedReviewAt instanceof Timestamp ? stats.lastVerifiedReviewAt : null;
     const studiedToday = studiedAt && state.onlyIfNotStudiedToday !== false
-      ? studiedOnLocalDay(studiedAt.toDate(), now, state.timezone) : false;
+      ? studiedOnStudyDay(studiedAt.toDate(), now, stats?.rewardTimeZone, state.timezone) : false;
     const stale = now.getTime() - eligibleAt > 24 * 60 * 60_000;
     const sends = dueCount > 0 && !receipt.exists && Boolean(email) && Boolean(studiedAt) && !studiedToday && !stale;
     // Read only when a send is otherwise due. A restricted account keeps no digest schedule.
