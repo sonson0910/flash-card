@@ -1497,7 +1497,7 @@ export const createStarterCards = onCall({
       // The starter catalog only ever produces manual-origin cards today;
       // this batch reserving AI quota is a billing decision, not a change
       // to how these cards are tagged.
-      for (const cardId of result.cardIds) {
+      for (const cardId of result.createdCardIds) {
         await emitPilotEvent(userId, 'capture_completed', key => ({
           origin: 'manual', cardRef: analyticsCardRef(userId, cardId, key),
         }));

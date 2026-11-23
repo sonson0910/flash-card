@@ -218,6 +218,40 @@ describe('owner library session controller', () => {
     });
   });
 
+  it('shows no upgrade notice when the adapter finds no older card', async () => {
+    const adapter = fakeAdapter();
+    adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: true });
+    const controller = createOwnerLibrarySessionController({ adapter });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 5 });
+
+    await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
+    expect(controller.getSnapshot()).toMatchObject({ legacyPending: 0, legacyIssue: null });
+  });
+
+  it('shows the exact number of older cards the adapter counted', async () => {
+    const adapter = fakeAdapter();
+    adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: false, pending: 2 });
+    const controller = createOwnerLibrarySessionController({ adapter });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 50 });
+
+    await vi.waitFor(() => expect(controller.getSnapshot().legacyPending).toBe(2));
+  });
+
+  it('hands an upgrade that stops at discovery to the administrator instead of offering it again', async () => {
+    const adapter = fakeAdapter();
+    adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: false, pending: 2 });
+    adapter.migrateLegacyCards = async () => ({ migrated: 0, scanned: 2, complete: false });
+    const controller = createOwnerLibrarySessionController({ adapter });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 5 });
+    await vi.waitFor(() => expect(controller.getSnapshot().legacyPending).toBe(2));
+    await controller.migrateLegacy();
+
+    expect(controller.getSnapshot().legacyIssue).toMatchObject({ kind: 'trusted-migration', retryable: false });
+  });
+
   it('isolates owner B from late owner A work and cleans up A subscription', async () => {
     const adapter = fakeAdapter();
     const aProgress = deferred<{ scanned: number; complete: boolean }>();

@@ -1,5 +1,19 @@
 import type { FirebaseApp } from 'firebase/app';
-import { FieldPath, arrayRemove, deleteField, doc, onSnapshot, runTransaction, updateDoc, type Firestore } from 'firebase/firestore';
+import {
+  FieldPath,
+  arrayRemove,
+  collection,
+  deleteField,
+  doc,
+  getCountFromServer,
+  onSnapshot,
+  query,
+  runTransaction,
+  setDoc,
+  updateDoc,
+  where,
+  type Firestore,
+} from 'firebase/firestore';
 import {
   clearCustomDeckAssignments,
   getLegacyCardQueryMigrationProgress,
@@ -13,6 +27,37 @@ import {
   normalizeCustomDeckProfile,
   type CoverPreset,
 } from '../library/customDecks';
+
+const CURRENT_CARD_SCHEMA_VERSION = 2;
+const QUERY_MIGRATION_VERSION = 2;
+
+/**
+ * Counts the cards that are not in the current stored shape. A library with no
+ * such card needs no upgrade, however its advisory progress document looks.
+ */
+async function countOlderCards(database: Firestore, ownerId: string): Promise<number> {
+  const cards = collection(database, 'users', ownerId, 'cards');
+  const [all, current] = await Promise.all([
+    getCountFromServer(cards),
+    getCountFromServer(query(cards, where('schemaVersion', '==', CURRENT_CARD_SCHEMA_VERSION))),
+  ]);
+  return Math.max(0, all.data().count - current.data().count);
+}
+
+/** Records the finished state once so later opens skip the count. Advisory: a refused write is harmless. */
+async function markLibraryUpgradeComplete(database: Firestore, ownerId: string, scanned: number): Promise<void> {
+  try {
+    await setDoc(doc(database, 'users', ownerId, 'profile', 'query_migration'), {
+      migrationVersion: QUERY_MIGRATION_VERSION,
+      lastDocumentId: null,
+      complete: true,
+      scanned,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.warn('The library upgrade status could not be recorded.', error);
+  }
+}
 
 export function createOwnerLibrarySessionFirebaseAdapter({
   app,
@@ -42,7 +87,20 @@ export function createOwnerLibrarySessionFirebaseAdapter({
     },
     getLegacyMigrationProgress: async ownerId => {
       if (!database) return { scanned: 0, complete: false };
-      return getLegacyCardQueryMigrationProgress(database, ownerId);
+      const progress = await getLegacyCardQueryMigrationProgress(database, ownerId);
+      if (progress.complete) return progress;
+      // A missing or unfinished progress document says nothing about the cards:
+      // libraries created after the browser upgrade was removed never get one.
+      let older: number;
+      try {
+        older = await countOlderCards(database, ownerId);
+      } catch (error) {
+        console.warn('Older library cards could not be counted.', error);
+        return progress;
+      }
+      if (older > 0) return { scanned: progress.scanned, complete: false, pending: older };
+      await markLibraryUpgradeComplete(database, ownerId, progress.scanned);
+      return { scanned: progress.scanned, complete: true };
     },
     migrateLegacyCards: async () => {
       if (!app || !database) return { migrated: 0, scanned: 0, complete: false };

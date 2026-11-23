@@ -61,6 +61,7 @@ vi.mock('firebase/functions', () => ({
 import {
   CardMutationPreconditionError,
   createCardIfAbsent,
+  createStarterCardBatch,
   createCardV2IfAbsent,
   deleteAllCards,
   applyCardPatchIfCurrent,
@@ -3398,5 +3399,45 @@ describe('legacy card maintenance', () => {
       }),
       { merge: true },
     );
+  });
+});
+
+describe('starter card batch response', () => {
+  const starter = (id: string, word: string) => ({
+    id, word, translation: 'nghĩa', explanation: '', phonetic: '', emoji: '📝', category: 'Basics',
+    audioUrl: null, imageUrl: null, language: 'en', translationLanguage: 'vi', origin: 'manual' as const,
+    bookmarked: false, difficulty: 'unrated' as const,
+  });
+  const batch = [starter('word-hello', 'hello'), starter('word-water', 'water'), starter('word-love', 'love')];
+
+  beforeEach(() => {
+    firebaseRuntime.isFirebaseConfigured = true;
+    firebaseRuntime.protectedFunctionsCapability.available = true;
+    functionsRuntime.httpsCallable.mockReset();
+  });
+
+  it('reports only the starter cards the server says the learner holds', async () => {
+    functionsRuntime.httpsCallable.mockReturnValue(vi.fn().mockResolvedValue({
+      data: { kind: 'created', cardIds: ['word-water', 'word-love'], createdCardIds: ['word-love'] },
+    }));
+
+    const result = await createStarterCardBatch({} as never, 'owner-1', 'starter-en-vi', batch as never);
+
+    expect(result.quotaExceeded).toBe(false);
+    expect(result.created.map(card => card.id)).toEqual(['word-water', 'word-love']);
+  });
+
+  it('rejects an answer that names a card outside the request or repeats one', async () => {
+    functionsRuntime.httpsCallable.mockReturnValue(vi.fn().mockResolvedValue({
+      data: { kind: 'completed', cardIds: ['word-water', 'word-elsewhere'] },
+    }));
+    await expect(createStarterCardBatch({} as never, 'owner-1', 'starter-en-vi', batch as never))
+      .rejects.toThrow('out of sync');
+
+    functionsRuntime.httpsCallable.mockReturnValue(vi.fn().mockResolvedValue({
+      data: { kind: 'completed', cardIds: ['word-water', 'word-water'] },
+    }));
+    await expect(createStarterCardBatch({} as never, 'owner-1', 'starter-en-vi', batch as never))
+      .rejects.toThrow('out of sync');
   });
 });

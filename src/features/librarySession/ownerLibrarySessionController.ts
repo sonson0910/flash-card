@@ -4,6 +4,8 @@ import { normalizeCustomDeckProfile, type CoverPreset } from '../library/customD
 export interface LegacyMigrationProgress {
   scanned: number;
   complete: boolean;
+  /** The exact number of older cards still to upgrade, when the adapter counted them. */
+  pending?: number;
 }
 
 export interface LegacyMigrationIssue {
@@ -65,15 +67,15 @@ const errorField = (error: unknown, field: 'code' | 'reason'): string => {
   return typeof value === 'string' ? value.toLowerCase() : '';
 };
 
+const TRUSTED_MIGRATION_ISSUE: LegacyMigrationIssue = {
+  kind: 'trusted-migration',
+  retryable: false,
+  message: 'Some older cards need a secure one-time migration. Your cards are safe; this repair must run from the administrator migration tool.',
+};
+
 export function getLegacyMigrationIssue(error: unknown): LegacyMigrationIssue {
   const reason = errorField(error, 'reason');
-  if (reason === 'identity-conflict') {
-    return {
-      kind: 'trusted-migration',
-      retryable: false,
-      message: 'Some older cards need a secure one-time migration. Your cards are safe; this repair must run from the administrator migration tool.',
-    };
-  }
+  if (reason === 'identity-conflict') return TRUSTED_MIGRATION_ISSUE;
 
   const code = errorField(error, 'code').replace(/^firestore\//, '');
   if (code === 'unauthenticated') {
@@ -104,6 +106,19 @@ export function getLegacyMigrationIssue(error: unknown): LegacyMigrationIssue {
     message: 'The library upgrade could not finish. Your cards are safe; check your connection and retry.',
   };
 }
+
+const pendingFromProgress = (progress: LegacyMigrationProgress, total: number): number => {
+  if (progress.complete) return 0;
+  if (Number.isSafeInteger(progress.pending) && Number(progress.pending) > 0) {
+    return Math.floor(Number(progress.pending));
+  }
+  const scanned = Number.isSafeInteger(progress.scanned) && progress.scanned > 0
+    ? Math.floor(progress.scanned)
+    : 0;
+  // An exact-size final batch still needs one empty follow-up scan before
+  // the server progress can safely be marked complete.
+  return Math.max(1, total - scanned);
+};
 
 export function createOwnerLibrarySessionController({
   adapter,
@@ -177,13 +192,7 @@ export function createOwnerLibrarySessionController({
       const total = currentCloudTotal;
       if (total === 0) return 0;
       const progress = await adapter.getLegacyMigrationProgress(ownerId);
-      if (progress.complete) return 0;
-      const scanned = Number.isSafeInteger(progress.scanned) && progress.scanned > 0
-        ? Math.floor(progress.scanned)
-        : 0;
-      // An exact-size final batch still needs one empty follow-up scan before
-      // the server progress can safely be marked complete.
-      return Math.max(1, total - scanned);
+      return pendingFromProgress(progress, total);
     };
 
     void countLegacy().then(legacyPending => {
@@ -219,11 +228,8 @@ export function createOwnerLibrarySessionController({
         !active(ownerId, refreshGeneration)
         || legacyRefreshToken !== refreshToken
       ) return;
-      const scanned = Number.isSafeInteger(progress.scanned) && progress.scanned > 0
-        ? Math.floor(progress.scanned)
-        : 0;
       publish({
-        legacyPending: progress.complete ? 0 : Math.max(1, total - scanned),
+        legacyPending: pendingFromProgress(progress, total),
         legacyIssue: null,
       });
     } catch (error) {
@@ -252,7 +258,14 @@ export function createOwnerLibrarySessionController({
         const legacyPending = result.complete
           ? 0
           : Math.max(1, snapshot.legacyPending - scanned);
-        publish({ legacyPending, legacyIssue: null, status: 'ready' });
+        // The browser only discovers older cards; repairing them is an
+        // administrator job, so a run that ends without completing leaves
+        // nothing to retry from here.
+        publish({
+          legacyPending,
+          legacyIssue: result.complete ? null : TRUSTED_MIGRATION_ISSUE,
+          status: 'ready',
+        });
       }
       return { status: 'completed', ...result };
     } catch (error) {

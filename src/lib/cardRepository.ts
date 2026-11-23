@@ -2016,12 +2016,13 @@ const parseCallableStarterCardsResponse = (value: unknown): { cardIds: readonly 
  * Creates the whole onboarding starter-card batch through one server call
  * (`createStarterCards`), which reserves the same monthly AI-card quota
  * `createCard` charges per word and writes every card atomically in a
- * single transaction. The batch is all-or-nothing: the server never grants
- * part of a batch, so a caller near its monthly limit gets a clean
- * `quotaExceeded: true` instead of a partial pack. `operationId` must stay
- * stable across a retry of the same logical onboarding attempt — reusing it
- * is what makes the retry free of a double charge; a genuinely new attempt
- * must mint a new one.
+ * single transaction. The write is all-or-nothing: a caller near its monthly
+ * limit gets a clean `quotaExceeded: true` instead of a partial pack. A word
+ * the learner already owns is kept as it is, and one they deleted earlier is
+ * left out, so `created` lists only the starter cards the learner holds.
+ * `operationId` must stay stable across a retry of the same logical
+ * onboarding attempt — reusing it is what makes the retry free of a double
+ * charge; a genuinely new attempt must mint a new one.
  */
 export async function createStarterCardBatch(
   db: Firestore,
@@ -2049,10 +2050,14 @@ export async function createStarterCardBatch(
       const response = await callable({ operationId, cards: normalizedCards });
       const parsed = parseCallableStarterCardsResponse(response.data);
       const expectedIds = new Set(cards.map(card => card.id));
-      if (parsed.cardIds.length !== cards.length || !parsed.cardIds.every(id => expectedIds.has(id))) {
+      // The server leaves out a starter word the learner deleted earlier, so
+      // the answer may be a subset of the request; it never names a card that
+      // was not asked for.
+      const returnedIds = new Set(parsed.cardIds);
+      if (returnedIds.size !== parsed.cardIds.length || !parsed.cardIds.every(id => expectedIds.has(id))) {
         throw new StarterCardCallableResponseError();
       }
-      return { created: cards, quotaExceeded: false };
+      return { created: cards.filter(card => returnedIds.has(card.id)), quotaExceeded: false };
     });
   } catch (error) {
     if (error instanceof ProtectedFunctionError && error.reason === 'ai-card-quota') {

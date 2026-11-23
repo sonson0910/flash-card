@@ -28,6 +28,12 @@ import {
 } from './verifiedGamification.js';
 
 export const MAX_CARD_ALLOCATION = 5_000;
+// Owner-reversible product rule: capture XP is paid once per card identity. Set
+// to false to pay it again each time a deleted word is created anew.
+const CAPTURE_XP_ONCE_PER_IDENTITY = true;
+// How many derived ids a word may try when the id of its word is held by a
+// card that was renamed to another word.
+const MAX_RELOCATED_CARD_ID_ATTEMPTS = 8;
 const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
 const RESOURCE_USAGE_SCHEMA_VERSION = 1 as const;
 
@@ -917,10 +923,34 @@ export async function createCardForOwner(
     if (existingReservation && !isMatchingIdentity(existingReservation, identity, plainTargetLanguage)) {
       throw new CardAllocationConflictError('identity-conflict', 'The card identity reservation conflicts with the request.');
     }
-    const id = existingReservation?.cardId as string | undefined ?? proposedId;
-    const canonical = owner.collection('cards').doc(id);
+    // A plain card id is derived from its word, but a headword correction keeps
+    // the id while it changes the word. The id a reservation points to, or the
+    // id of the word itself, can therefore hold a card that now belongs to
+    // another word. That card keeps its id; the identity being created takes
+    // the next derived id that is free instead of failing for good.
+    const reservedId = existingReservation?.cardId as string | undefined;
+    const candidateIds = identity.startsWith('lexeme:')
+      ? [reservedId ?? proposedId]
+      : [...new Set([
+        reservedId ?? proposedId,
+        proposedId,
+        ...Array.from({ length: MAX_RELOCATED_CARD_ID_ATTEMPTS }, (_, index) => `${proposedId}-${index + 2}`),
+      ])];
+    let candidateIndex = 0;
+    let id = candidateIds[0];
+    let canonical = owner.collection('cards').doc(id);
+    let cardSnapshot = await transaction.get(canonical);
+    while (
+      cardSnapshot.exists
+      && !cardMatchesIdentity(cardSnapshot.data() as CardRecord, identity, id, plainTargetLanguage)
+      && candidateIndex + 1 < candidateIds.length
+    ) {
+      candidateIndex += 1;
+      id = candidateIds[candidateIndex];
+      canonical = owner.collection('cards').doc(id);
+      cardSnapshot = await transaction.get(canonical);
+    }
     const tombstone = owner.collection('card_tombstones').doc(id);
-    const cardSnapshot = await transaction.get(canonical);
     const tombstoneSnapshot = await transaction.get(tombstone);
     const usageSnapshot = await transaction.get(resourceUsage);
     const currentEpoch = readEpoch(stateSnapshot);
@@ -955,8 +985,20 @@ export async function createCardForOwner(
         || (existingEpoch !== undefined && Number(existingEpoch) < currentEpoch)),
     );
     const hadIdentity = Boolean(existingReservation || existingCard);
+    // A reservation names the card that holds its identity. When that card id
+    // moved to a derived id above, the reservation follows it.
+    const repointReservation = () => {
+      if (existingReservation && existingReservation.cardId !== id) {
+        transaction.set(reservation, expectedReservation, { merge: false });
+      }
+    };
+    // The permanent reservation is the identity's lifetime record. Capture XP
+    // is paid for the first card of an identity only, so deleting a card and
+    // creating the same word again (or again after clearing the library) cannot
+    // pay it twice.
+    const awardsCaptureXp = !CAPTURE_XP_ONCE_PER_IDENTITY || !hadIdentity;
     const complete = async (result: CardAllocationResult): Promise<CardAllocationResult> => {
-      const gamification = verifiedCreate && result.created && !result.restored
+      const gamification = verifiedCreate && result.created && !result.restored && awardsCaptureXp
         ? await prepareVerifiedGamification(database, transaction, ownerId, {
           kind: 'create', receivedAt: verifiedCreate.receivedAt, timeZone: verifiedCreate.timeZone,
         })
@@ -979,6 +1021,7 @@ export async function createCardForOwner(
         upsertCatalogProgressForCard(database, transaction, ownerId, normalizedExisting);
       }
       if (!existingReservation) transaction.create(reservation, expectedReservation);
+      else repointReservation();
       return result;
     }
 
@@ -1051,6 +1094,7 @@ export async function createCardForOwner(
     });
     await applyRestoreFacetDelta();
     if (existingCard && !existingReservation) transaction.create(reservation, expectedReservation);
+    else repointReservation();
     upsertCatalogProgressForCard(database, transaction, ownerId, createdCard);
     if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
     else transaction.create(canonical, createdCard);
@@ -1089,21 +1133,42 @@ export async function createCardV2ForOwner(
 
 export const MAX_STARTER_CARDS_PER_BATCH = 20;
 
+/**
+ * `cardIds` lists the starter cards the learner holds under their catalog id
+ * after the call, in catalog order: the ones this call wrote and the ones they
+ * already owned. The client only accepts ids it asked for, so a starter word
+ * the learner holds under another id (renamed, or relocated by a collision) is
+ * left out, and so is a word whose identity is claimed without a live card
+ * (the learner deleted it earlier) or whose catalog id holds another word. A
+ * replayed card that has since been deleted is left out too. `createdCardIds`
+ * is the subset this call wrote.
+ */
 export type StarterCardBatchResult =
   | { kind: 'completed'; cardIds: readonly string[] }
-  | { kind: 'created'; cardIds: readonly string[] };
+  | { kind: 'created'; cardIds: readonly string[]; createdCardIds: readonly string[] };
+
+const CARD_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+
+const isCurrentGenerationCard = (card: CardRecord, currentEpoch: number): boolean =>
+  (card.libraryEpoch === undefined ? 0 : Number(card.libraryEpoch)) === currentEpoch;
 
 /**
- * Reserves N units of the same monthly AI-card quota `reserveWordOperation`
- * spends and creates every starter card in one Firestore transaction —
+ * Reserves one unit of the same monthly AI-card quota `reserveWordOperation`
+ * spends for each starter card it writes, and writes them in one Firestore
+ * transaction —
  * unlike a real AI generation, a starter card's content is fully known
  * upfront from the static catalog, so there is no external call to bridge
  * between reserving and writing, and the two collapse into a single atomic
- * step. Either the whole batch (quota debit + every card) commits, or none
- * of it does: a client retry with the same `operationId` after a timeout or
- * crash either replays the already-completed result or safely redoes the
+ * step. Either the whole write (quota debit + every new card) commits, or
+ * none of it does: a client retry with the same `operationId` after a timeout
+ * or crash either replays the already-completed result or safely redoes the
  * whole batch, and never spends quota twice for it. Pro users resolve
  * through the same `resolvePlan` pro-period logic as any other AI spend.
+ *
+ * A starter word whose identity the learner already claimed (a live card, a
+ * permanent reservation left by a deleted card, or a tombstone) is never
+ * written again and costs no quota: the learner keeps the card they have, and
+ * a word they deleted stays deleted.
  */
 export async function createStarterCardsForOwner(
   database: Firestore,
@@ -1168,58 +1233,89 @@ export async function createStarterCardsForOwner(
     if (operation?.requestHash && operation.requestHash !== requestHash && operation.status === 'completed') {
       throw new AiQuotaError('operation-request-mismatch', { reason: 'operation-request-mismatch' });
     }
+    const currentEpoch = readEpoch(stateSnapshot);
     if (operation?.status === 'completed') {
-      const cardIds = Array.isArray(operation.result)
-        ? operation.result.filter((id): id is string => typeof id === 'string')
+      const storedIds = Array.isArray(operation.result)
+        ? operation.result.filter((id): id is string => typeof id === 'string' && CARD_ID_PATTERN.test(id))
         : [];
+      // The replay answers with the cards that still exist, so a card the
+      // learner deleted since is not reported as created again.
+      const storedCards = await Promise.all(storedIds.map(id => transaction.get(owner.collection('cards').doc(id))));
+      const cardIds = storedIds.filter((_, index) => {
+        const stored = storedCards[index];
+        return stored.exists && isCurrentGenerationCard(stored.data() as CardRecord, currentEpoch);
+      });
       return { kind: 'completed' as const, cardIds };
     }
+
+    // Read every identity before the first write. The permanent reservation is
+    // the claim on a word; a live card, a tombstone or a reservation each mean
+    // the word is not new to this learner.
+    const probes = await Promise.all(normalizedCards.map(async card => {
+      const identity = card.normalizedWord as string;
+      const plainTargetLanguage = typeof card.language === 'string' ? card.language : undefined;
+      const id = card.id as string;
+      const reservationRef = owner.collection('card_reservations').doc(reservationId(identity, plainTargetLanguage));
+      const canonicalRef = owner.collection('cards').doc(id);
+      const [reservationSnapshot, cardSnapshot, tombstoneSnapshot] = await Promise.all([
+        transaction.get(reservationRef),
+        transaction.get(canonicalRef),
+        transaction.get(owner.collection('card_tombstones').doc(id)),
+      ]);
+      const existingCard = cardSnapshot.exists ? cardSnapshot.data() as CardRecord : null;
+      const owned = Boolean(
+        existingCard
+        && isCurrentGenerationCard(existingCard, currentEpoch)
+        && cardMatchesIdentity(existingCard, identity, id, plainTargetLanguage),
+      );
+      const claimed = reservationSnapshot.exists || cardSnapshot.exists || tombstoneSnapshot.exists;
+      return {
+        card, identity, plainTargetLanguage, id, reservationRef, canonicalRef,
+        status: owned ? 'owned' as const : claimed ? 'claimed' as const : 'new' as const,
+      };
+    }));
+    const toCreate = probes.filter(probe => probe.status === 'new');
+    const cardIds = probes.filter(probe => probe.status !== 'claimed').map(probe => probe.id);
+    const createdCardIds = toCreate.map(probe => probe.id);
 
     const plan = resolvePlan(planSnapshot.data(), now, config);
     const periodKey = plan.periodKey;
     const usageRef = owner.collection('ai_usage').doc(periodKey);
     const quotaUsageSnapshot = await transaction.get(usageRef);
     const used = asAiQuotaCount(quotaUsageSnapshot.data()?.used);
-    const requestedUnits = normalizedCards.length;
-    if (config.quotaEnforced && used + requestedUnits > plan.limit) {
+    const requestedUnits = toCreate.length;
+    if (requestedUnits > 0 && config.quotaEnforced && used + requestedUnits > plan.limit) {
       throw new AiQuotaError('ai-card-quota', {
         reason: 'ai-card-quota', used, limit: plan.limit, requested: requestedUnits,
         periodEndsAt: plan.endsAt.toISOString(), tier: plan.tier,
       });
     }
 
-    const currentEpoch = readEpoch(stateSnapshot);
     const currentCount = safeStoredCardCount(usageSnapshot) ?? existingCardCount;
     if (currentCount + requestedUnits > MAX_CARD_ALLOCATION) {
       throw new CardAllocationLimitError();
     }
 
-    const cardIds: string[] = [];
-    for (const card of normalizedCards) {
-      const identity = card.normalizedWord as string;
-      const plainTargetLanguage = typeof card.language === 'string' ? card.language : undefined;
-      const id = card.id as string;
-      const reservationRef = owner.collection('card_reservations').doc(reservationId(identity, plainTargetLanguage));
-      const canonicalRef = owner.collection('cards').doc(id);
-      // .create() (not .set()) so a genuine identity collision — e.g. this
-      // exact batch already exists under a different operationId — aborts
-      // the whole transaction instead of silently overwriting a card.
+    for (const { card, identity, plainTargetLanguage, id, reservationRef, canonicalRef } of toCreate) {
+      // .create() (not .set()) so a collision that appeared after the reads
+      // above aborts the transaction instead of silently overwriting a card.
       transaction.create(reservationRef, createReservation(identity, id, plainTargetLanguage));
       transaction.create(canonicalRef, { ...card, id, schemaVersion: 2, revision: 1, libraryEpoch: currentEpoch });
-      cardIds.push(id);
     }
-    transaction.set(usageRef, {
-      periodKey, tier: plan.tier, used: used + requestedUnits, limit: plan.limit,
-      periodStartsAt: plan.startsAt, periodEndsAt: plan.endsAt, updatedAt: now,
-    }, { merge: true });
-    transaction.set(resourceUsage, {
-      schemaVersion: RESOURCE_USAGE_SCHEMA_VERSION,
-      cardCount: currentCount + requestedUnits,
-    }, { merge: true });
+    if (requestedUnits > 0) {
+      transaction.set(usageRef, {
+        periodKey, tier: plan.tier, used: used + requestedUnits, limit: plan.limit,
+        periodStartsAt: plan.startsAt, periodEndsAt: plan.endsAt, updatedAt: now,
+      }, { merge: true });
+      transaction.set(resourceUsage, {
+        schemaVersion: RESOURCE_USAGE_SCHEMA_VERSION,
+        cardCount: currentCount + requestedUnits,
+      }, { merge: true });
+    }
     transaction.set(operationRef, {
       status: 'completed', requestHash, periodKey, reservedAt: now, completedAt: now, result: cardIds,
     }, { merge: true });
-    return { kind: 'created' as const, cardIds };
+    return { kind: 'created' as const, cardIds, createdCardIds };
   });
 }
 
@@ -1279,7 +1375,8 @@ export type RenameCardHeadwordResult = {
  * A legacy (non-lexeme) card's identity reservation is keyed on its
  * normalizedWord, so renaming it swaps that reservation inside the same
  * transaction as the card write (release the old one, claim the new one,
- * reject if the new word is already claimed by a different card). A
+ * reject if a live card of this library already holds the new word; a
+ * reservation whose card is gone or holds another word is taken over). A
  * canonical (lexemeId) card's reservation is keyed on its lexemeId, which
  * this callable never touches — its `word`/`normalizedWord` are display-only
  * relative to its lexeme tuple (`normalizedLemma`, `partOfSpeech`,
@@ -1361,7 +1458,26 @@ export async function renameCardHeadwordForOwner(
       if (newReservationSnapshot.exists) {
         const existing = newReservationSnapshot.data() as CardRecord;
         if (existing.cardId !== request.cardId) {
-          throw new CardHeadwordRenameConflictError('duplicate-word', 'Another card already uses this word.');
+          // A reservation outlives its card, so it only blocks the rename while
+          // the card it names still holds this word in the current library.
+          const holderId = typeof existing.cardId === 'string' && CARD_ID_PATTERN.test(existing.cardId)
+            ? existing.cardId
+            : null;
+          const holder = holderId ? await transaction.get(owner.collection('cards').doc(holderId)) : null;
+          const holderData = holder?.exists ? holder.data() as CardRecord : null;
+          if (
+            !holderId
+            || (holderData
+              && isCurrentGenerationCard(holderData, currentEpoch)
+              && cardMatchesIdentity(holderData, newIdentity, holderId, plainTargetLanguage))
+          ) {
+            throw new CardHeadwordRenameConflictError('duplicate-word', 'Another card already uses this word.');
+          }
+          transaction.set(
+            newReservation,
+            createReservation(newIdentity, request.cardId, plainTargetLanguage),
+            { merge: false },
+          );
         }
       } else {
         transaction.create(newReservation, createReservation(newIdentity, request.cardId, plainTargetLanguage));
