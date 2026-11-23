@@ -229,47 +229,47 @@ msgid "cardReport.dialog.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardReport/cardReportService.ts:57
+#: src/features/cardReport/cardReportService.ts:69
 msgid "cardReport.error.authentication"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardReport/cardReportService.ts:61
+#: src/features/cardReport/cardReportService.ts:73
 msgid "cardReport.error.configuration"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardReport/cardReportService.ts:65
+#: src/features/cardReport/cardReportService.ts:77
 msgid "cardReport.error.fallback"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardReport/cardReportService.ts:60
+#: src/features/cardReport/cardReportService.ts:72
 msgid "cardReport.error.network"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardReport/cardReportService.ts:56
+#: src/features/cardReport/cardReportService.ts:68
 msgid "cardReport.error.not-found"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardReport/cardReportService.ts:58
+#: src/features/cardReport/cardReportService.ts:70
 msgid "cardReport.error.permission"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardReport/cardReportService.ts:59
+#: src/features/cardReport/cardReportService.ts:71
 msgid "cardReport.error.quota"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardReport/cardReportService.ts:50
+#: src/features/cardReport/cardReportService.ts:62
 msgid "cardReport.error.submit-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardReport/cardReportService.ts:62
+#: src/features/cardReport/cardReportService.ts:74
 msgid "cardReport.error.unknown"
 msgstr ""
 

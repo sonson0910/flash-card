@@ -18,7 +18,7 @@ msgctxt "rich-story-view.retell-in-your-own-words"
 msgid "Retell in your own words"
 msgstr "Kể lại bằng lời của bạn"
 
-#: src/features/practice/SessionRecapModal.tsx:515
+#: src/features/practice/SessionRecapModal.tsx:517
 msgctxt "recap.what-next"
 msgid "What next"
 msgstr "Tiếp theo"
@@ -28,12 +28,12 @@ msgctxt "practice.story.gloss"
 msgid "Lumi gloss"
 msgstr "Lumi giải nghĩa"
 
-#: src/features/practice/WordMatchView.tsx:367
+#: src/features/practice/WordMatchView.tsx:368
 msgctxt "practice.match.verifying-reward"
 msgid "Verifying your result…"
 msgstr "Đang xác minh kết quả…"
 
-#: src/features/practice/WordMatchView.tsx:389
+#: src/features/practice/WordMatchView.tsx:390
 msgctxt "practice.match.retry-verification"
 msgid "Retry verification"
 msgstr "Thử xác minh lại"
@@ -78,12 +78,12 @@ msgctxt "languagePractice.feedback.incorrect"
 msgid "Try this card again in the next round."
 msgstr "Hãy thử lại thẻ này ở lượt sau."
 
-#: src/features/practice/WordMatchView.tsx:310
+#: src/features/practice/WordMatchView.tsx:311
 msgctxt "practice.match.mode"
 msgid "Word match"
 msgstr "Ghép từ"
 
-#: src/features/practice/WordMatchView.tsx:395
+#: src/features/practice/WordMatchView.tsx:396
 msgctxt "practice.match.no-reward"
 msgid "This round did not award XP."
 msgstr "Vòng này không cộng XP."
@@ -93,12 +93,12 @@ msgctxt "rich-story-view.check-understanding"
 msgid "Check understanding"
 msgstr "Kiểm tra khả năng hiểu"
 
-#: src/features/practice/SessionRecapModal.tsx:484
+#: src/features/practice/SessionRecapModal.tsx:486
 msgctxt "recap.study-time"
 msgid "Study time"
 msgstr "Thời gian học"
 
-#: src/features/practice/SessionRecapModal.tsx:359
+#: src/features/practice/SessionRecapModal.tsx:361
 msgctxt "recap.title-seconds"
 msgid "Session complete · {seconds} s"
 msgstr "Hoàn thành phiên học · {seconds} giây"
@@ -108,12 +108,12 @@ msgctxt "practice.results.keep-practising"
 msgid "Keep practising until the difficult words feel automatic."
 msgstr "Hãy tiếp tục luyện đến khi các từ khó trở nên tự nhiên."
 
-#: src/features/practice/SessionRecapModal.tsx:379
+#: src/features/practice/SessionRecapModal.tsx:381
 msgctxt "recap.remembered-count"
 msgid "{count} remembered"
 msgstr "Nhớ {count} thẻ"
 
-#: src/features/practice/SessionRecapModal.tsx:205
+#: src/features/practice/SessionRecapModal.tsx:207
 msgctxt "recap.tier.new"
 msgid "New"
 msgstr "Mới"
@@ -128,7 +128,7 @@ msgctxt "languagePractice.ko.instruction"
 msgid "Build the Hangul word from its meaning."
 msgstr "Ghép từ Hangul theo nghĩa cho sẵn."
 
-#: src/features/practice/SessionRecapModal.tsx:463
+#: src/features/practice/SessionRecapModal.tsx:465
 msgctxt "recap.cheer"
 msgid "All done!"
 msgstr "Xong rồi!"
@@ -138,7 +138,7 @@ msgctxt "study.streak-unit"
 msgid "{count, plural, one {day} other {days}}"
 msgstr "{count, plural, other {ngày}}"
 
-#: src/features/practice/WordMatchView.tsx:338
+#: src/features/practice/WordMatchView.tsx:339
 msgctxt "practice.match.pairs-matched"
 msgid "pairs matched"
 msgstr "cặp đã ghép"
@@ -153,8 +153,8 @@ msgctxt "study.recall-mode"
 msgid "Recall mode"
 msgstr "Chế độ gợi nhớ"
 
-#: src/features/practice/SessionRecapModal.tsx:533
-#: src/features/practice/SessionRecapModal.tsx:593
+#: src/features/practice/SessionRecapModal.tsx:535
+#: src/features/practice/SessionRecapModal.tsx:595
 msgctxt "recap.weekly"
 msgid "View weekly recap"
 msgstr "Xem tổng kết tuần"
@@ -164,7 +164,7 @@ msgctxt "practice.spelling.mode-detail"
 msgid "listen and type"
 msgstr "nghe rồi gõ"
 
-#: src/features/practice/SessionRecapModal.tsx:519
+#: src/features/practice/SessionRecapModal.tsx:521
 msgctxt "recap.card-count"
 msgid "{count, plural, one {# card} other {# cards}}"
 msgstr "{count, plural, other {# thẻ}}"
@@ -174,7 +174,7 @@ msgctxt "recap.reminder-failed"
 msgid "Could not update the reminder. Try again."
 msgstr "Không cập nhật được lời nhắc. Hãy thử lại."
 
-#: src/features/practice/WordMatchView.tsx:306
+#: src/features/practice/WordMatchView.tsx:307
 msgctxt "practice.match.close"
 msgid "Close word match"
 msgstr "Đóng phần ghép từ"
@@ -184,7 +184,7 @@ msgctxt "practice.shadowing.match-take"
 msgid "% match · take {take}"
 msgstr "% khớp · lượt {take}"
 
-#: src/features/practice/SessionRecapModal.tsx:389
+#: src/features/practice/SessionRecapModal.tsx:391
 msgctxt "recap.tomorrow-cards"
 msgid "Tomorrow · {count, plural, one {# card} other {# cards}}"
 msgstr "Ngày mai · {count, plural, other {# thẻ}}"
@@ -249,13 +249,13 @@ msgctxt "practice.loading.story"
 msgid "Loading story"
 msgstr "Đang tải câu chuyện"
 
-#: src/features/practice/SessionRecapModal.tsx:233
+#: src/features/practice/SessionRecapModal.tsx:235
 msgctxt "recap.card-levels"
 msgid "{count, plural, one {+# level} other {+# levels}}"
 msgstr "{count, plural, other {+# cấp}}"
 
-#: src/features/practice/WordMatchView.tsx:432
-#: src/features/practice/WordMatchView.tsx:462
+#: src/features/practice/WordMatchView.tsx:433
+#: src/features/practice/WordMatchView.tsx:463
 msgctxt "practice.match.back"
 msgid "Back"
 msgstr "Quay lại"
@@ -275,12 +275,12 @@ msgctxt "practice.spelling.words-right"
 msgid "{score} of {answered} words right"
 msgstr "Đúng {score}/{answered} từ"
 
-#: src/features/practice/SessionRecapModal.tsx:384
+#: src/features/practice/SessionRecapModal.tsx:386
 msgctxt "recap.share-week-streak"
 msgid "{count}-day streak card"
 msgstr "Thẻ chuỗi {count} ngày"
 
-#: src/features/practice/SessionRecapModal.tsx:485
+#: src/features/practice/SessionRecapModal.tsx:487
 msgctxt "recap.study-time-session"
 msgid "This session"
 msgstr "Phiên này"
@@ -295,7 +295,7 @@ msgctxt "practice.shadowing.try-again"
 msgid "Try again"
 msgstr "Thử lại"
 
-#: src/features/practice/WordMatchView.tsx:408
+#: src/features/practice/WordMatchView.tsx:409
 msgctxt "practice.match.retry-new-round"
 msgid "Retry new round"
 msgstr "Thử lại vòng mới"
@@ -316,7 +316,7 @@ msgctxt "practice.card-state.mastered"
 msgid "Mastered"
 msgstr "Thành thạo"
 
-#: src/features/practice/WordMatchView.tsx:442
+#: src/features/practice/WordMatchView.tsx:443
 msgctxt "practice.match.time-up"
 msgid "Time is up"
 msgstr "Hết giờ"
@@ -346,12 +346,12 @@ msgctxt "study-view.meet-this-word"
 msgid "Meet this word"
 msgstr "Làm quen với từ này"
 
-#: src/features/practice/SessionRecapModal.tsx:358
+#: src/features/practice/SessionRecapModal.tsx:360
 msgctxt "recap.title-duration"
 msgid "Session complete · {minutes} min {seconds} s"
 msgstr "Hoàn thành phiên học · {minutes} phút {seconds} giây"
 
-#: src/features/practice/WordMatchView.tsx:266
+#: src/features/practice/WordMatchView.tsx:267
 msgctxt "practice.match.matched"
 msgid "Matched"
 msgstr "Đã ghép"
@@ -368,7 +368,7 @@ msgctxt "practice.results.accuracy"
 msgid "Accuracy"
 msgstr "Độ chính xác"
 
-#: src/features/practice/SessionRecapModal.tsx:380
+#: src/features/practice/SessionRecapModal.tsx:382
 msgctxt "recap.revisit-count"
 msgid "{count} to revisit"
 msgstr "{count} thẻ cần ôn lại"
@@ -378,7 +378,7 @@ msgctxt "shadowing-view.practice-card-sentence"
 msgid "Practice card sentence"
 msgstr "Luyện câu của thẻ"
 
-#: src/features/practice/SessionRecapModal.tsx:395
+#: src/features/practice/SessionRecapModal.tsx:397
 msgctxt "recap.what-next-question"
 msgid "What next?"
 msgstr "Tiếp theo là gì?"
@@ -399,27 +399,27 @@ msgctxt "languagePractice.action.next"
 msgid "Next"
 msgstr "Tiếp"
 
-#: src/features/practice/SessionRecapModal.tsx:402
+#: src/features/practice/SessionRecapModal.tsx:404
 msgctxt "recap.word-match-detail"
 msgid "{count, plural, one {# word from this session} other {# words from this session}}"
 msgstr "{count, plural, other {# từ trong phiên này}}"
 
-#: src/features/practice/SessionRecapModal.tsx:374
+#: src/features/practice/SessionRecapModal.tsx:376
 msgctxt "recap.progress-breakdown"
 msgid "Saved: {saved} / {total} · Skipped: {skipped} · Not started: {remaining} · Saving: {pending} · Failed: {failed}"
 msgstr "Đã lưu: {saved} / {total} · Bỏ qua: {skipped} · Chưa bắt đầu: {remaining} · Đang lưu: {pending} · Thất bại: {failed}"
 
-#: src/features/practice/SessionRecapModal.tsx:577
+#: src/features/practice/SessionRecapModal.tsx:579
 msgctxt "recap.streak-note"
 msgid "A day counts after one review."
 msgstr "Một ngày được tính sau một lượt ôn."
 
-#: src/features/practice/SessionRecapModal.tsx:361
+#: src/features/practice/SessionRecapModal.tsx:363
 msgctxt "recap.back-today"
 msgid "Back to Today"
 msgstr "Về Hôm nay"
 
-#: src/features/practice/WordMatchView.tsx:382
+#: src/features/practice/WordMatchView.tsx:383
 msgctxt "practice.match.verification-failed"
 msgid "We could not verify your result. Your completed pairs are still here."
 msgstr "Không thể xác minh kết quả. Các cặp bạn đã hoàn thành vẫn còn đây."
@@ -430,13 +430,13 @@ msgctxt "practice.feedback.incorrect-prefix"
 msgid "Incorrect. The correct answer is"
 msgstr "Chưa đúng. Đáp án đúng là"
 
-#: src/features/practice/SessionRecapModal.tsx:473
+#: src/features/practice/SessionRecapModal.tsx:475
 msgctxt "recap.best-run-detail"
 msgid "Remembered in a row"
 msgstr "Nhớ liên tiếp"
 
-#: src/features/practice/SessionRecapModal.tsx:385
-#: src/features/practice/SessionRecapModal.tsx:533
+#: src/features/practice/SessionRecapModal.tsx:387
+#: src/features/practice/SessionRecapModal.tsx:535
 msgctxt "recap.weekly-detail-week"
 msgid "Your week so far"
 msgstr "Tuần của bạn đến lúc này"
@@ -446,7 +446,7 @@ msgctxt "languagePractice.zh.instruction"
 msgid "Choose the tone for every pinyin syllable."
 msgstr "Chọn thanh điệu cho từng âm tiết pinyin."
 
-#: src/features/practice/SessionRecapModal.tsx:524
+#: src/features/practice/SessionRecapModal.tsx:526
 msgctxt "recap.word-match-chip-detail"
 msgid "{seconds} s · {count, plural, one {# word} other {# words}}"
 msgstr "{seconds} giây · {count, plural, other {# từ}}"
@@ -461,7 +461,7 @@ msgctxt "practice.actions.next"
 msgid "Next"
 msgstr "Tiếp"
 
-#: src/features/practice/WordMatchView.tsx:455
+#: src/features/practice/WordMatchView.tsx:456
 msgctxt "practice.match.try-again"
 msgid "Try again"
 msgstr "Thử lại"
@@ -481,7 +481,7 @@ msgctxt "practice.spelling.complete"
 msgid "Complete"
 msgstr "Hoàn thành"
 
-#: src/features/practice/SessionRecapModal.tsx:201
+#: src/features/practice/SessionRecapModal.tsx:203
 msgctxt "recap.grade.new"
 msgid "Bud"
 msgstr "Chồi"
@@ -501,7 +501,7 @@ msgctxt "languagePractice.zh.missingTones"
 msgid "This card needs verified pinyin tone data before it can be practised."
 msgstr "Thẻ này cần dữ liệu thanh điệu pinyin đã được xác minh trước khi luyện."
 
-#: src/features/practice/SessionRecapModal.tsx:519
+#: src/features/practice/SessionRecapModal.tsx:521
 msgctxt "recap.review-misses"
 msgid "Review misses"
 msgstr "Ôn thẻ quên"
@@ -561,7 +561,7 @@ msgctxt "practice.spelling.character-count"
 msgid "{count, plural, one {# character} other {# characters}}"
 msgstr "{count, plural, other {# ký tự}}"
 
-#: src/features/practice/WordMatchView.tsx:351
+#: src/features/practice/WordMatchView.tsx:352
 msgctxt "practice.match.instruction"
 msgid "Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}."
 msgstr "Chọn một từ {targetLanguageName}, rồi chọn nghĩa bằng {nativeLanguageName}."
@@ -586,7 +586,12 @@ msgctxt "study.recall-mode.listen-to-word"
 msgid "Listen → Word"
 msgstr "Nghe → Từ"
 
-#: src/features/practice/SessionRecapModal.tsx:381
+#: src/features/practice/SessionRecapModal.tsx:190
+msgctxt "recap.remind-at-zone"
+msgid "Remind me at <0>{time}</0> ({zone})"
+msgstr "Nhắc mình lúc <0>{time}</0> ({zone})"
+
+#: src/features/practice/SessionRecapModal.tsx:383
 msgctxt "recap.retry-missed"
 msgid "{count, plural, one {Retry the missed word} other {Retry the # missed words}}"
 msgstr "{count, plural, other {Ôn lại # từ đã quên}}"
@@ -601,7 +606,7 @@ msgctxt "study.hint"
 msgid "Say it out loud first, then reveal <0>Space</0>"
 msgstr "Đọc to trước, rồi lật thẻ <0>Space</0>"
 
-#: src/features/practice/SessionRecapModal.tsx:488
+#: src/features/practice/SessionRecapModal.tsx:490
 msgctxt "recap.words"
 msgid "Words"
 msgstr "Từ"
@@ -611,7 +616,7 @@ msgctxt "practice.quiz.streak"
 msgid "{count} in a row"
 msgstr "{count} câu liên tiếp"
 
-#: src/features/practice/WordMatchView.tsx:362
+#: src/features/practice/WordMatchView.tsx:363
 msgctxt "practice.match.complete-copy"
 msgid "You matched all {pairCount} pairs in {seconds} seconds."
 msgstr "Bạn đã ghép đủ {pairCount} cặp trong {seconds} giây."
@@ -626,7 +631,7 @@ msgctxt "practice.spelling.check"
 msgid "Check"
 msgstr "Kiểm tra"
 
-#: src/features/practice/SessionRecapModal.tsx:581
+#: src/features/practice/SessionRecapModal.tsx:583
 msgctxt "recap.next-review"
 msgid "Next review"
 msgstr "Lần ôn tới"
@@ -668,7 +673,7 @@ msgctxt "recap.tomorrow-error"
 msgid "Count unavailable"
 msgstr "Không lấy được số thẻ"
 
-#: src/features/practice/WordMatchView.tsx:359
+#: src/features/practice/WordMatchView.tsx:360
 msgctxt "practice.match.complete-title"
 msgid "Pairs complete"
 msgstr "Hoàn thành các cặp"
@@ -678,24 +683,24 @@ msgctxt "languagePractice.loadError"
 msgid "This language exercise could not load. Please try again."
 msgstr "Không thể tải bài luyện ngôn ngữ này. Hãy thử lại."
 
-#: src/features/practice/WordMatchView.tsx:423
+#: src/features/practice/WordMatchView.tsx:424
 msgctxt "practice.match.new-round"
 msgid "New round"
 msgstr "Vòng mới"
 
-#: src/features/practice/SessionRecapModal.tsx:390
-#: src/features/practice/SessionRecapModal.tsx:543
-#: src/features/practice/SessionRecapModal.tsx:581
+#: src/features/practice/SessionRecapModal.tsx:392
+#: src/features/practice/SessionRecapModal.tsx:545
+#: src/features/practice/SessionRecapModal.tsx:583
 msgctxt "recap.tomorrow"
 msgid "Tomorrow"
 msgstr "Ngày mai"
 
-#: src/features/practice/SessionRecapModal.tsx:572
+#: src/features/practice/SessionRecapModal.tsx:574
 msgctxt "recap.xp-unit"
 msgid "XP"
 msgstr "XP"
 
-#: src/features/practice/SessionRecapModal.tsx:446
+#: src/features/practice/SessionRecapModal.tsx:448
 msgctxt "recap.streak-day"
 msgid "Day {count}"
 msgstr "Ngày {count}"
@@ -705,7 +710,7 @@ msgctxt "recap.reminder-unavailable"
 msgid "Reminders need notifications on this device."
 msgstr "Lời nhắc cần bật thông báo trên thiết bị này."
 
-#: src/features/practice/WordMatchView.tsx:290
+#: src/features/practice/WordMatchView.tsx:291
 msgctxt "practice.match.not-a-pair"
 msgid "Not a pair"
 msgstr "Không cùng cặp"
@@ -736,7 +741,7 @@ msgctxt "practice.results.good"
 msgid "Great work. This vocabulary is becoming secure."
 msgstr "Làm tốt lắm. Bạn đang nhớ từ vựng chắc hơn."
 
-#: src/features/practice/SessionRecapModal.tsx:382
+#: src/features/practice/SessionRecapModal.tsx:384
 msgctxt "recap.share-week"
 msgid "Share your week"
 msgstr "Chia sẻ tuần của bạn"
@@ -761,22 +766,22 @@ msgctxt "languagePractice.footer.progress"
 msgid "Word {current} of {total}"
 msgstr "Từ {current}/{total}"
 
-#: src/features/practice/SessionRecapModal.tsx:362
+#: src/features/practice/SessionRecapModal.tsx:364
 msgctxt "recap.continue"
 msgid "Continue learning"
 msgstr "Tiếp tục học"
 
-#: src/features/practice/SessionRecapModal.tsx:354
+#: src/features/practice/SessionRecapModal.tsx:356
 msgctxt "recap.title"
 msgid "Session complete"
 msgstr "Hoàn thành phiên học"
 
-#: src/features/practice/SessionRecapModal.tsx:524
+#: src/features/practice/SessionRecapModal.tsx:526
 msgctxt "recap.word-match-chip"
 msgid "Word Match"
 msgstr "Ghép từ"
 
-#: src/features/practice/WordMatchView.tsx:374
+#: src/features/practice/WordMatchView.tsx:375
 msgctxt "practice.match.verified-xp"
 msgid "Verified +{awardedXp} XP"
 msgstr "Đã xác minh +{awardedXp} XP"
@@ -786,7 +791,7 @@ msgctxt "practice.quiz.choose-answer"
 msgid "Choose one answer"
 msgstr "Chọn một đáp án"
 
-#: src/features/practice/WordMatchView.tsx:291
+#: src/features/practice/WordMatchView.tsx:292
 msgctxt "practice.match.selected"
 msgid "Selected"
 msgstr "Đã chọn"
@@ -803,7 +808,7 @@ msgctxt "practice.learn-first"
 msgid "I don't know this — learn first"
 msgstr "Tôi chưa biết từ này — học trước"
 
-#: src/features/practice/SessionRecapModal.tsx:202
+#: src/features/practice/SessionRecapModal.tsx:204
 msgctxt "recap.grade.learning"
 msgid "Bloom"
 msgstr "Nở"
@@ -878,7 +883,7 @@ msgctxt "practice.story.lumi.meaning"
 msgid "“{word}” means {meaning}."
 msgstr "“{word}” nghĩa là {meaning}."
 
-#: src/features/practice/SessionRecapModal.tsx:225
+#: src/features/practice/SessionRecapModal.tsx:227
 msgctxt "recap.card-move"
 msgid "Moved from {from} to {to}"
 msgstr "Chuyển từ {from} lên {to}"
@@ -898,7 +903,7 @@ msgctxt "practice.story.generation-stopped"
 msgid "Story generation stopped"
 msgstr "Đã dừng tạo câu chuyện"
 
-#: src/features/practice/SessionRecapModal.tsx:499
+#: src/features/practice/SessionRecapModal.tsx:501
 msgctxt "recap.cards-up"
 msgid "Cards glowed up"
 msgstr "Thẻ lên cấp"
@@ -923,18 +928,18 @@ msgctxt "languagePractice.key.enter"
 msgid "Enter"
 msgstr "Enter"
 
-#: src/features/practice/SessionRecapModal.tsx:476
-#: src/features/practice/SessionRecapModal.tsx:576
+#: src/features/practice/SessionRecapModal.tsx:478
+#: src/features/practice/SessionRecapModal.tsx:578
 msgctxt "recap.streak"
 msgid "Streak"
 msgstr "Chuỗi ngày"
 
-#: src/features/practice/WordMatchView.tsx:401
+#: src/features/practice/WordMatchView.tsx:402
 msgctxt "practice.match.new-round-failed"
 msgid "We could not start a new verified round. Check your connection and try again."
 msgstr "Không thể bắt đầu vòng mới đã xác minh. Hãy kiểm tra kết nối và thử lại."
 
-#: src/features/practice/SessionRecapModal.tsx:477
+#: src/features/practice/SessionRecapModal.tsx:479
 msgctxt "recap.streak-detail"
 msgid "Days in a row"
 msgstr "Ngày liên tiếp"
@@ -952,7 +957,7 @@ msgstr "Không hiện mức âm micro vì bạn chưa cho phép truy cập. Từ
 #: src/features/practice/QuizView.tsx:304
 #: src/features/practice/SpellingView.tsx:251
 #: src/features/practice/StudyView.tsx:429
-#: src/features/practice/WordMatchView.tsx:343
+#: src/features/practice/WordMatchView.tsx:344
 msgctxt "study.combo"
 msgid "Combo ×{count}"
 msgstr "Chuỗi ×{count}"
@@ -1003,7 +1008,7 @@ msgctxt "study.card-count"
 msgid "{current} / {total} saved"
 msgstr "Đã lưu {current} / {total}"
 
-#: src/features/practice/SessionRecapModal.tsx:572
+#: src/features/practice/SessionRecapModal.tsx:574
 msgctxt "recap.experience"
 msgid "Experience"
 msgstr "Kinh nghiệm"
@@ -1033,12 +1038,12 @@ msgctxt "languagePractice.results.close"
 msgid "Back to library"
 msgstr "Về thư viện"
 
-#: src/features/practice/SessionRecapModal.tsx:554
+#: src/features/practice/SessionRecapModal.tsx:556
 msgctxt "recap.headline"
 msgid "{count, plural, one {<0>#</0> word, <1>locked in.</1>} other {<0>#</0> words, <1>locked in.</1>}}"
 msgstr "{count, plural, other {<0>#</0> từ, <1>đã ghi nhớ.</1>}}"
 
-#: src/features/practice/WordMatchView.tsx:334
+#: src/features/practice/WordMatchView.tsx:335
 msgctxt "practice.match.left"
 msgid "left"
 msgstr "còn lại"
@@ -1048,114 +1053,114 @@ msgctxt "practice.quiz.your-answer"
 msgid "Your answer"
 msgstr "Bạn chọn"
 
-#: src/features/practice/SessionRecapModal.tsx:378
+#: src/features/practice/SessionRecapModal.tsx:380
 msgctxt "recap.description-remembered"
 msgid "You remembered {good} of {total}."
 msgstr "Bạn đã nhớ {good} trên {total} thẻ."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:103
+#: src/features/practice/usePracticeGames.ts:106
 msgid "practice.error.account-daily-spend"
 msgstr "Bạn đã dùng hết hạn mức chi phí AI hôm nay. Thử lại sau 00:00 (giờ Việt Nam)."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:104
+#: src/features/practice/usePracticeGames.ts:107
 msgid "practice.error.ai-card-quota"
 msgstr "Bạn đã dùng hết số thẻ AI kỳ này. Xem gói Pro hoặc đợi kỳ tiếp theo; ôn tập và thêm thẻ thủ công vẫn dùng được."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:105
+#: src/features/practice/usePracticeGames.ts:108
 msgid "practice.error.ai-daily-allowance"
 msgstr "Bạn đã dùng hết lượt AI phụ hôm nay. Thử lại sau 00:00 (giờ Việt Nam)."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:338
+#: src/features/practice/usePracticeGames.ts:341
 msgid "practice.error.complete"
 msgstr "Không lưu được kết quả luyện tập. Hãy kiểm tra kết nối và thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:110
+#: src/features/practice/usePracticeGames.ts:113
 msgid "practice.error.configuration"
 msgstr "Không thể tạo câu chuyện. Vui lòng thử lại sau."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:543
+#: src/features/practice/usePracticeGames.ts:546
 msgid "practice.error.language-drill-card-count"
 msgstr "Bạn cần ít nhất 1 thẻ để luyện ngôn ngữ."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:646
+#: src/features/practice/usePracticeGames.ts:649
 msgid "practice.error.match-card-count"
 msgstr "Bạn cần ít nhất 4 thẻ để chơi Ghép từ."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:111
+#: src/features/practice/usePracticeGames.ts:114
 msgid "practice.error.network"
 msgstr "Không thể kết nối dịch vụ tạo câu chuyện. Kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:106
+#: src/features/practice/usePracticeGames.ts:109
 msgid "practice.error.operation-in-flight"
 msgstr "Nội dung AI vẫn đang được tạo. Thử lại sau vài giây."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:109
+#: src/features/practice/usePracticeGames.ts:112
 msgid "practice.error.permission"
 msgstr "Dịch vụ đám mây được bảo vệ đã từ chối tạo câu chuyện. Hãy tải lại và đăng nhập lại; nếu vẫn tiếp diễn, hãy liên hệ quản trị viên để kiểm tra App Check hoặc quy tắc truy cập."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:277
+#: src/features/practice/usePracticeGames.ts:280
 msgid "practice.error.prepare"
 msgstr "Không thể chuẩn bị hoạt động này. Kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:376
+#: src/features/practice/usePracticeGames.ts:379
 msgid "practice.error.quiz-card-count"
 msgstr "Bạn cần ít nhất 4 thẻ đã học để bắt đầu bài kiểm tra."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:107
+#: src/features/practice/usePracticeGames.ts:110
 msgid "practice.error.quota"
 msgstr "Đã đạt giới hạn sử dụng AI. Hãy thử lại khi hạn mức được đặt lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:102
+#: src/features/practice/usePracticeGames.ts:105
 msgid "practice.error.service-daily-cap"
 msgstr "AI tạm dừng vì hạn mức chung hôm nay đã hết. Thử lại sau 00:00 (giờ Việt Nam)."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:335
+#: src/features/practice/usePracticeGames.ts:338
 msgid "practice.error.session-expired"
 msgstr "Vòng này đã mở quá lâu nên không lưu được kết quả. Hãy bắt đầu một vòng mới."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:704
+#: src/features/practice/usePracticeGames.ts:707
 msgid "practice.error.shadowing-no-cards"
 msgstr "Bạn cần có thẻ trong thư viện để luyện phát âm nhại theo."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:108
+#: src/features/practice/usePracticeGames.ts:111
 msgid "practice.error.sign-in"
 msgstr "Hãy đăng nhập lại để tạo câu chuyện."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:455
+#: src/features/practice/usePracticeGames.ts:458
 msgid "practice.error.spelling-card-count"
 msgstr "Bạn cần ít nhất 4 thẻ đã học để luyện chính tả."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:114
+#: src/features/practice/usePracticeGames.ts:117
 msgid "practice.error.story"
 msgstr "Hiện không thể tạo câu chuyện. Vui lòng thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:603
+#: src/features/practice/usePracticeGames.ts:606
 msgid "practice.error.story-no-cards"
 msgstr "Chưa có thẻ phù hợp để tạo câu chuyện bằng AI. Hãy thêm hoặc đồng bộ thẻ rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:99
-#: src/features/practice/usePracticeGames.ts:276
+#: src/features/practice/usePracticeGames.ts:102
+#: src/features/practice/usePracticeGames.ts:279
 msgid "practice.error.timeout"
 msgstr "Chuẩn bị hoạt động này mất quá lâu. Kiểm tra kết nối rồi thử lại."
 
@@ -1166,12 +1171,12 @@ msgid "practice.feedback.correct"
 msgstr "Đúng rồi."
 
 #. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:307
+#: src/features/practice/WordMatchView.tsx:308
 msgid "practice.match.close"
 msgstr "Đóng ghép từ"
 
 #. js-lingui-explicit-id
-#: src/features/practice/WordMatchView.tsx:321
+#: src/features/practice/WordMatchView.tsx:322
 msgid "practice.match.seconds-left"
 msgstr "{seconds, plural, other {còn # giây}}"
 
@@ -1486,7 +1491,7 @@ msgstr "Câu chuyện của bạn đã sẵn sàng."
 msgid "practice.story.speech-unavailable"
 msgstr "Không phát được giọng đọc. Bạn vẫn có thể đọc câu chuyện."
 
-#: src/features/practice/SessionRecapModal.tsx:506
+#: src/features/practice/SessionRecapModal.tsx:508
 msgctxt "recap.needs-review"
 msgid "To revisit"
 msgstr "Cần xem lại"
@@ -1501,12 +1506,12 @@ msgctxt "practice.shadowing.mode"
 msgid "Shadowing"
 msgstr "Bắt chước phát âm"
 
-#: src/features/practice/SessionRecapModal.tsx:576
+#: src/features/practice/SessionRecapModal.tsx:578
 msgctxt "recap.streak-today"
 msgid "+1 today"
 msgstr "+1 hôm nay"
 
-#: src/features/practice/WordMatchView.tsx:375
+#: src/features/practice/WordMatchView.tsx:376
 msgctxt "practice.match.verified-no-xp"
 msgid "Result verified"
 msgstr "Đã xác minh kết quả"
@@ -1516,7 +1521,7 @@ msgctxt "practice.shadowing.mode-detail"
 msgid "say it after me"
 msgstr "đọc theo mình"
 
-#: src/features/practice/SessionRecapModal.tsx:481
+#: src/features/practice/SessionRecapModal.tsx:483
 msgctxt "recap.xp-session"
 msgid "This session"
 msgstr "Phiên này"
@@ -1536,7 +1541,7 @@ msgctxt "practice.shadowing.your-take"
 msgid "Your take"
 msgstr "Lượt đọc của bạn"
 
-#: src/features/practice/SessionRecapModal.tsx:355
+#: src/features/practice/SessionRecapModal.tsx:357
 msgctxt "recap.summary-title"
 msgid "Session summary"
 msgstr "Tổng kết phiên học"
@@ -1552,17 +1557,17 @@ msgid "Close"
 msgstr "Gần đúng"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:560
+#: src/features/practice/SessionRecapModal.tsx:562
 msgid "recap.cards-up-label"
 msgstr "Các từ đã lên cấp"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:369
+#: src/features/practice/SessionRecapModal.tsx:371
 msgid "recap.close"
 msgstr "Đóng phần tổng kết"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SessionRecapModal.tsx:567
+#: src/features/practice/SessionRecapModal.tsx:569
 msgid "recap.recall-split"
 msgstr "Nhớ {good}, cần ôn lại {again}"
 
@@ -1597,7 +1602,7 @@ msgctxt "languagePractice.ja.sentence.instruction"
 msgid "Choose the missing word."
 msgstr "Chọn từ còn thiếu."
 
-#: src/features/practice/SessionRecapModal.tsx:377
+#: src/features/practice/SessionRecapModal.tsx:379
 msgctxt "recap.description-promoted"
 msgid "You remembered {good} of {total}, and {promoted, plural, one {# word} other {# words}} moved up a level."
 msgstr "Bạn đã nhớ {good} trên {total} thẻ, và {promoted, plural, other {# từ}} đã lên cấp."
@@ -1607,7 +1612,7 @@ msgctxt "study-view.take-a-moment-to-review-the-card-before-recall-practice"
 msgid "Take a moment to review the card before recall practice."
 msgstr "Hãy xem thẻ trước khi luyện nhớ lại."
 
-#: src/features/practice/WordMatchView.tsx:445
+#: src/features/practice/WordMatchView.tsx:446
 msgctxt "practice.match.time-up-copy"
 msgid "You matched {matchesCount} of {pairCount} pairs."
 msgstr "Bạn đã ghép {matchesCount} trên {pairCount} cặp."
@@ -1617,7 +1622,7 @@ msgctxt "study.swipe.again"
 msgid "AGAIN 👎"
 msgstr "LẠI 👎"
 
-#: src/features/practice/SessionRecapModal.tsx:189
+#: src/features/practice/SessionRecapModal.tsx:191
 msgctxt "recap.remind-at"
 msgid "Remind me at <0>{time}</0>"
 msgstr "Nhắc mình lúc <0>{time}</0>"
@@ -1650,12 +1655,12 @@ msgstr "Chuỗi {count} ngày"
 
 #. js-lingui-explicit-id
 #: src/features/practice/practice-board-parts.tsx:111
-#: src/features/practice/SessionRecapModal.tsx:364
+#: src/features/practice/SessionRecapModal.tsx:366
 #: src/features/practice/StudyView.tsx:576
 msgid "shell.theme.quick-toggle"
 msgstr "Chuyển giữa chế độ sáng và tối"
 
-#: src/features/practice/SessionRecapModal.tsx:566
+#: src/features/practice/SessionRecapModal.tsx:568
 msgctxt "recap.recall"
 msgid "Recall"
 msgstr "Ghi nhớ"
@@ -1721,7 +1726,7 @@ msgstr "Đánh giá ghi nhớ"
 msgid "study.shortcut.star-play-speak"
 msgstr "Gắn sao / nghe / nói"
 
-#: src/features/practice/WordMatchView.tsx:422
+#: src/features/practice/WordMatchView.tsx:423
 msgctxt "practice.match.starting-new-round"
 msgid "Starting new round…"
 msgstr "Đang bắt đầu vòng mới…"
@@ -1731,17 +1736,17 @@ msgctxt "practice.story.words-heading"
 msgid "Words in this story"
 msgstr "Các từ trong câu chuyện"
 
-#: src/features/practice/SessionRecapModal.tsx:206
+#: src/features/practice/SessionRecapModal.tsx:208
 msgctxt "recap.tier.learning"
 msgid "Learning"
 msgstr "Đang học"
 
-#: src/features/practice/WordMatchView.tsx:311
+#: src/features/practice/WordMatchView.tsx:312
 msgctxt "practice.match.mode-detail"
 msgid "60-second run"
 msgstr "lượt 60 giây"
 
-#: src/features/practice/SessionRecapModal.tsx:472
+#: src/features/practice/SessionRecapModal.tsx:474
 msgctxt "recap.best-run"
 msgid "Best combo"
 msgstr "Chuỗi đúng dài nhất"
@@ -1771,7 +1776,7 @@ msgctxt "languagePractice.zh.title"
 msgid "Hear the tones"
 msgstr "Nghe thanh điệu"
 
-#: src/features/practice/SessionRecapModal.tsx:401
+#: src/features/practice/SessionRecapModal.tsx:403
 msgctxt "recap.word-match"
 msgid "Play Word Match · {seconds} s"
 msgstr "Chơi Ghép từ · {seconds} giây"
@@ -1812,8 +1817,8 @@ msgctxt "practice.spelling.lumi.listen"
 msgid "Listen, then type it"
 msgstr "Nghe rồi gõ lại nhé"
 
-#: src/features/practice/SessionRecapModal.tsx:203
-#: src/features/practice/SessionRecapModal.tsx:306
+#: src/features/practice/SessionRecapModal.tsx:205
+#: src/features/practice/SessionRecapModal.tsx:308
 msgctxt "recap.grade.mastered"
 msgid "Star"
 msgstr "Sao"
@@ -1848,7 +1853,7 @@ msgctxt "practice.spelling.lumi.right"
 msgid "Spot on!"
 msgstr "Chuẩn luôn!"
 
-#: src/features/practice/SessionRecapModal.tsx:207
+#: src/features/practice/SessionRecapModal.tsx:209
 msgctxt "recap.tier.mastered"
 msgid "Mastered"
 msgstr "Đã thành thạo"
@@ -1864,7 +1869,7 @@ msgctxt "practice.actions.saving-result"
 msgid "Saving result…"
 msgstr "Đang lưu kết quả…"
 
-#: src/features/practice/SessionRecapModal.tsx:468
+#: src/features/practice/SessionRecapModal.tsx:470
 msgctxt "recap.accuracy"
 msgid "Accuracy"
 msgstr "Độ chính xác"
@@ -1879,7 +1884,7 @@ msgctxt "practice.story.target-language"
 msgid "{languageName}"
 msgstr "{languageName}"
 
-#: src/features/practice/SessionRecapModal.tsx:480
+#: src/features/practice/SessionRecapModal.tsx:482
 msgctxt "recap.xp-earned"
 msgid "XP earned"
 msgstr "XP nhận được"
@@ -1926,7 +1931,7 @@ msgctxt "practice.actions.view-results"
 msgid "View results"
 msgstr "Xem kết quả"
 
-#: src/features/practice/SessionRecapModal.tsx:469
+#: src/features/practice/SessionRecapModal.tsx:471
 msgctxt "recap.remembered-of"
 msgid "{good} of {total} remembered"
 msgstr "Nhớ {good} trên {total} thẻ"
@@ -1940,13 +1945,3 @@ msgstr "Nghe"
 msgctxt "languagePractice.action.hint"
 msgid "Hint"
 msgstr "Gợi ý"
-
-#: src/features/practice/SessionRecapModal.tsx:579
-msgctxt "recap.streak-note"
-msgid "A day counts once you review a card."
-msgstr "Một ngày được tính khi bạn ôn một thẻ."
-
-#: src/features/practice/SessionRecapModal.tsx:190
-msgctxt "recap.remind-at-zone"
-msgid "Remind me at <0>{time}</0> ({zone})"
-msgstr "Nhắc mình lúc <0>{time}</0> ({zone})"

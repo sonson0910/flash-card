@@ -140,7 +140,7 @@ msgid "daily-goals.goal.win-match"
 msgstr "Thắng một ván Ghép từ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:97
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:98
 msgid "daily-goals.heading"
 msgstr "Mục tiêu hôm nay"
 
@@ -155,7 +155,7 @@ msgid "daily-goals.progress-value"
 msgstr "{done} trên {target}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:101
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:102
 msgid "daily-goals.resets-in"
 msgstr "Làm mới sau {hours} giờ {minutes} phút"
 
@@ -1289,12 +1289,12 @@ msgid "today.adult-statement"
 msgstr "SonFlash dành cho người học từ 18 tuổi trở lên."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1366
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1365
 msgid "today.answer.correct"
 msgstr "Đúng."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1366
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1365
 msgid "today.answer.incorrect"
 msgstr "Chưa đúng."
 
@@ -1707,7 +1707,7 @@ msgid "today.kicker"
 msgstr "Học hằng ngày"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1370
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1369
 msgid "today.lesson.fallback"
 msgstr "{mode} không khả dụng cho thẻ này, nên đã dùng nhớ chủ động."
 
@@ -1884,12 +1884,12 @@ msgid "today.placement.title"
 msgstr "Chưa biết bắt đầu từ đâu?"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1472
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1469
 msgid "today.plan.caught-up"
 msgstr "Kế hoạch hôm nay không còn thẻ đến hạn hoặc thẻ mới."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1473
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1470
 msgid "today.plan.empty"
 msgstr "Thêm từ vựng hoặc quay lại khi đến hạn ôn thẻ."
 
@@ -1904,17 +1904,17 @@ msgid "today.plan.order"
 msgstr "Thứ tự kế hoạch hằng ngày"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1470
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1467
 msgid "today.plan.preparing"
 msgstr "Đang chuẩn bị kế hoạch hằng ngày có giới hạn…"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1474
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1471
 msgid "today.plan.ready"
 msgstr "Kế hoạch của bạn đã sẵn sàng."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1474
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1471
 msgid "today.plan.short"
 msgstr "Kế hoạch ngắn hơn đã sẵn sàng."
 

@@ -140,7 +140,7 @@ msgid "daily-goals.goal.win-match"
 msgstr "Win a word match"
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:97
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:98
 msgid "daily-goals.heading"
 msgstr "Daily goals"
 
@@ -155,7 +155,7 @@ msgid "daily-goals.progress-value"
 msgstr "{done} of {target}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:101
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:102
 msgid "daily-goals.resets-in"
 msgstr "Resets in {hours} h {minutes} min"
 
@@ -1289,12 +1289,12 @@ msgid "today.adult-statement"
 msgstr "SonFlash is for learners aged 18 and over."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1366
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1365
 msgid "today.answer.correct"
 msgstr "Correct."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1366
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1365
 msgid "today.answer.incorrect"
 msgstr "Not quite."
 
@@ -1707,7 +1707,7 @@ msgid "today.kicker"
 msgstr "Daily learning"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1370
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1369
 msgid "today.lesson.fallback"
 msgstr "{mode} was unavailable for this card, so active recall was used."
 
@@ -1884,12 +1884,12 @@ msgid "today.placement.title"
 msgstr "Not sure where to begin?"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1472
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1469
 msgid "today.plan.caught-up"
 msgstr "No due or new cards are available in this daily plan."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1473
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1470
 msgid "today.plan.empty"
 msgstr "Add vocabulary or return when a reviewed card is due."
 
@@ -1904,17 +1904,17 @@ msgid "today.plan.order"
 msgstr "Daily plan order"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1470
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1467
 msgid "today.plan.preparing"
 msgstr "Preparing a bounded daily plan…"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1474
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1471
 msgid "today.plan.ready"
 msgstr "Your plan is ready."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1474
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1471
 msgid "today.plan.short"
 msgstr "A shorter plan is ready."
 

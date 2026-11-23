@@ -140,7 +140,7 @@ msgid "daily-goals.goal.win-match"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:97
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:98
 msgid "daily-goals.heading"
 msgstr ""
 
@@ -155,7 +155,7 @@ msgid "daily-goals.progress-value"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:101
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:102
 msgid "daily-goals.resets-in"
 msgstr ""
 
@@ -1289,12 +1289,12 @@ msgid "today.adult-statement"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1366
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1365
 msgid "today.answer.correct"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1366
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1365
 msgid "today.answer.incorrect"
 msgstr ""
 
@@ -1707,7 +1707,7 @@ msgid "today.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1370
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1369
 msgid "today.lesson.fallback"
 msgstr ""
 
@@ -1884,12 +1884,12 @@ msgid "today.placement.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1472
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1469
 msgid "today.plan.caught-up"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1473
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1470
 msgid "today.plan.empty"
 msgstr ""
 
@@ -1904,17 +1904,17 @@ msgid "today.plan.order"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1470
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1467
 msgid "today.plan.preparing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1474
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1471
 msgid "today.plan.ready"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1474
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1471
 msgid "today.plan.short"
 msgstr ""
 
