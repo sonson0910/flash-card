@@ -242,7 +242,7 @@ export const selectLibraryStats = ({
     total: difficultySummary.total,
     reviewed: difficultySummary.reviewed,
     learned: difficultySummary.easy,
-    learning: difficultySummary.good + difficultySummary.hard + difficultySummary.unrated,
+    learning: difficultySummary.good + difficultySummary.hard,
     dueToday: difficultySummary.due,
     dueAsOfDate: difficultySummary.dueAsOfDate,
     categoryChart: Object.keys(categoryCounts).map(name => ({ name, value: categoryCounts[name] })),

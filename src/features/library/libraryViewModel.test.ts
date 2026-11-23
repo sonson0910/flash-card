@@ -280,7 +280,7 @@ describe('library view model', () => {
       xpHistory: { 'Aug 2, 2026': 10, 'Aug 1, 2026': 5 },
     }));
 
-    expect(model.stats).toMatchObject({ total: 9, learned: 3, learning: 6, dueToday: 2 });
+    expect(model.stats).toMatchObject({ total: 9, learned: 3, learning: 3, dueToday: 2 });
     expect(model.stats.categoryChart).toEqual([
       { name: 'IELTS', value: 6 },
       { name: 'TOEIC', value: 3 },
