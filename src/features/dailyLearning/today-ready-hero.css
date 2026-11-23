@@ -25,14 +25,14 @@
   --td-em-style: normal; --td-em-glow: 0 0 36px color-mix(in srgb, var(--sf-brand) 50%, transparent);
   --td-btn-radius: 16px; --td-display-weight: 440;
   --td-card-radius: 30px; --td-card-border: 1.5px solid transparent;
-  --td-card-bg: radial-gradient(ellipse 70% 80% at 100% 0%, color-mix(in srgb, var(--sf-second) 24%, transparent), transparent 70%) padding-box, var(--sf-card-front) padding-box, var(--sf-rim-learning) border-box;
+  --td-card-bg: radial-gradient(ellipse 70% 80% at 100% 0%, color-mix(in srgb, var(--sf-second) 24%, transparent), transparent 70%) padding-box, var(--sf-solid-card-front, var(--sf-card-front)) padding-box, var(--sf-rim-learning) border-box;
   --td-card-shadow: 0 0 60px -24px color-mix(in srgb, var(--sf-brand) 60%, transparent), 0 40px 80px -40px color-mix(in srgb, black 90%, transparent);
   --td-blur: blur(18px); --td-radius: 22px;
   --td-bar: linear-gradient(90deg, var(--sf-brand), var(--sf-second)); --td-bar-glow: 0 0 14px color-mix(in srgb, var(--sf-brand) 60%, transparent);
   --td-link: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) 40%, transparent), var(--sf-border)); --td-dot-glow: 0 0 20px color-mix(in srgb, var(--sf-brand) 60%, transparent);
   --td-ghost: color-mix(in srgb, var(--sf-surface) 90%, black); --td-mini-radius: 22px; --td-image-margin: 0; --td-image-radius: 0;
   --td-front-border: 1.5px solid transparent;
-  --td-front-bg: var(--sf-card-front) padding-box, var(--sf-rim-learning) border-box;
+  --td-front-bg: var(--sf-solid-card-front, var(--sf-card-front)) padding-box, var(--sf-rim-learning) border-box;
   --td-front-shadow: 0 30px 60px -24px color-mix(in srgb, black 90%, transparent), 0 0 40px -12px color-mix(in srgb, var(--sf-brand) 50%, transparent);
 }
 

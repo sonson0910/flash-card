@@ -168,7 +168,7 @@
 }
 :root.dark:not([data-theme-family="crystal"]) .create-card-dialog__preview {
   border: 1px solid transparent;
-  background: var(--sf-card-bg) padding-box, var(--sf-rim-learning) border-box;
+  background: var(--sf-solid-card, var(--sf-card-bg)) padding-box, var(--sf-rim-learning) border-box;
   box-shadow: 0 0 36px -14px color-mix(in srgb, var(--sf-brand) 45%, transparent);
 }
 .create-card-dialog__cover {
@@ -513,7 +513,7 @@ html[data-theme-family="crystal"] .create-card-dialog__preview--stream {
   padding: 14px 16px;
   border: 2px solid transparent;
   clip-path: var(--nk-chamfer);
-  background: var(--sf-card-bg) padding-box, var(--sf-rim-learning) border-box;
+  background: var(--sf-solid-card, var(--sf-card-bg)) padding-box, var(--sf-rim-learning) border-box;
   box-shadow: none;
   filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 28%, transparent));
 }

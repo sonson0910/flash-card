@@ -476,7 +476,7 @@
   border: 1.5px solid transparent;
   border-radius: 22px;
   background:
-    var(--sf-card-bg, var(--sf-surface)) padding-box,
+    var(--sf-solid-card, var(--sf-card-bg, var(--sf-surface))) padding-box,
     var(--library-card-rim, linear-gradient(var(--sf-border), var(--sf-border))) border-box;
   box-shadow: 0 24px 50px -28px rgb(0 0 0 / .9), var(--library-card-glow, 0 0 0 0 transparent);
 }

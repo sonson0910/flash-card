@@ -69,6 +69,12 @@
 
 html[data-theme-family=crystal] .claude-app-shell { font-family: var(--sf-font-body); background: var(--sf-space), var(--sf-canvas); }
 html[data-theme-family=crystal] .claude-app-shell::before { opacity: 1; background-image: var(--nk-stars); mix-blend-mode: normal; }
+/* Crystal panels in the workspace are glass over the painted backdrop. Dialogs, menus, faces that sit on a
+   gradient border and the practice board keep the solid values, which are captured here before the workspace
+   swaps them. The practice board also uses the surface colour as ink and inside colour mixes, so it must stay opaque. */
+html[data-theme-family=crystal] { --sf-solid-surface: var(--sf-surface); --sf-solid-card: var(--sf-card-bg); --sf-solid-card-front: var(--sf-card-front); }
+html[data-theme-family=crystal] .claude-workspace-inner { --sf-surface: var(--sf-glass-surface, var(--sf-solid-surface)); --sf-card-bg: var(--sf-glass-card, var(--sf-solid-card)); --sf-card-front: var(--sf-glass-card-front, var(--sf-solid-card-front)); }
+html[data-theme-family=crystal] .claude-workspace-inner :is([role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], dialog, .practice-board) { --sf-surface: var(--sf-solid-surface); --sf-card-bg: var(--sf-solid-card); --sf-card-front: var(--sf-solid-card-front); }
 html[data-theme-family=crystal] .claude-topbar { height: 78px; border: 0; }
 html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 44px; gap: 24px; }
 html[data-theme-family=crystal] .claude-brand-classic { display: none; }
