@@ -760,6 +760,21 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('environment: production-hosting');
   });
 
+  it('has the runbook protect the environment of every legacy library repair mode', () => {
+    // GitHub creates a missing environment on first use without reviewers, so each mode's
+    // environment must be on the list the operator confirms before the rollout.
+    const workflow = read('.github/workflows/repair-legacy-libraries.yml');
+    const options = /\n {8}options:\n((?: {10}- [a-z-]+\n)+)/.exec(workflow)?.[1] ?? '';
+    const modes = [...options.matchAll(/- ([a-z-]+)/g)].map(match => match[1]);
+    expect(modes.length).toBeGreaterThan(0);
+    const runbook = read('docs/runbooks/security-remediation-rollout.md');
+    const reviewerList = runbook.slice(
+      runbook.indexOf('Confirm GitHub environments require reviewers'),
+      runbook.indexOf('3. Confirm Firebase App Check'),
+    );
+    for (const mode of modes) expect(reviewerList).toContain(`\`production-legacy-library-${mode}\``);
+  });
+
   it('runs repair only from a verified immutable release candidate', () => {
     const workflow = read('.github/workflows/repair-legacy-libraries.yml');
     expect(workflow).toContain('revision:');
