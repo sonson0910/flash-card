@@ -136,8 +136,10 @@ const protocolSources = {
   'extensionDueCountBridge.ts': await readFile(path.join(root, 'src/features/extensionBridge/extensionDueCountBridge.ts'), 'utf8'),
   'course-profile-contract.ts': await readFile(path.join(root, 'functions/src/course-profile-contract.ts'), 'utf8'),
   'index.html': await readFile(path.join(root, 'index.html'), 'utf8'),
+  'background-ui.js': await readFile(path.join(extensionRoot, 'background-ui.js'), 'utf8'),
 };
 const declared = (file, name) => ({ file, name });
+const idPattern = /(\/\^\[A-Za-z0-9_-\]\{\d+,\d+\}\$\/)\.test\(/g;
 const protocolGroups = [
   { label: 'import hash key', entries: [declared('shared.js', 'IMPORT_HASH_KEY'), declared('app-bridge.js', 'IMPORT_HASH_KEY'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_HASH_KEY')] },
   { label: 'import protocol version', entries: [declared('shared.js', 'IMPORT_PROTOCOL_VERSION'), declared('app-bridge.js', 'IMPORT_PROTOCOL_VERSION'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_PROTOCOL_VERSION'), { file: 'index.html', pattern: /<meta\s+name="sonflash-import-runtime"\s+content="([^"]*)"/ }] },
@@ -159,13 +161,30 @@ const protocolGroups = [
   { label: 'due count message', entries: [declared('app-bridge.js', 'DUE_COUNT_TYPE'), declared('extensionDueCountBridge.ts', 'EXTENSION_DUE_COUNT_MESSAGE')] },
   { label: 'due count clear message', entries: [declared('app-bridge.js', 'DUE_COUNT_CLEAR_TYPE'), declared('extensionDueCountBridge.ts', 'EXTENSION_DUE_COUNT_CLEAR_MESSAGE')] },
   { label: 'due count bound', entries: [declared('shared.js', 'MAX_DUE_COUNT'), declared('extensionDueCountBridge.ts', 'MAX_DUE_COUNT')] },
+  { label: 'app bridge port name', entries: [declared('app-bridge.js', 'APP_BRIDGE_PORT_NAME'), declared('background-core.js', 'APP_BRIDGE_PORT_NAME')] },
+  {
+    label: 'import id pattern',
+    entries: ['shared.js', 'app-bridge.js', 'background-core.js', 'browserExtensionImport.ts'].map(file => ({ file, pattern: idPattern, literal: true })),
+  },
+  {
+    label: 'requested deck bound',
+    entries: [
+      declared('shared.js', 'MAX_DECK_NAME_LENGTH'),
+      declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_DECK_LENGTH'),
+      declared('useBrowserExtensionImport.ts', 'MAX_DECK_NAME_LENGTH'),
+      { file: 'app-bridge.js', pattern: /requestedDeck\)\.slice\(0,\s*(\d+)\)/g },
+      { file: 'background-core.js', pattern: /requestedDeck\.trim\(\)\.slice\(0,\s*(\d+)\)/g },
+      { file: 'background-core.js', pattern: /requestedDeck\.slice\(0,\s*(\d+)\)/g },
+    ],
+  },
   { label: 'selected text bound', entries: [declared('shared.js', 'MAX_TEXT_LENGTH'), declared('app-bridge.js', 'MAX_TEXT_LENGTH'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_TEXT_LENGTH')] },
   { label: 'context bound', entries: [declared('shared.js', 'MAX_CONTEXT_LENGTH'), declared('app-bridge.js', 'MAX_CONTEXT_LENGTH'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_CONTEXT_LENGTH')] },
   { label: 'page title bound', entries: [declared('shared.js', 'MAX_PAGE_TITLE_LENGTH'), declared('app-bridge.js', 'MAX_PAGE_TITLE_LENGTH'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_PAGE_TITLE_LENGTH')] },
   { label: 'source URL bound', entries: [declared('shared.js', 'MAX_SOURCE_URL_LENGTH'), declared('app-bridge.js', 'MAX_SOURCE_URL_LENGTH'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_SOURCE_URL_LENGTH')] },
   { label: 'encoded import bound', entries: [declared('shared.js', 'MAX_ENCODED_IMPORT_LENGTH'), declared('app-bridge.js', 'MAX_ENCODED_IMPORT_LENGTH'), declared('browserExtensionImport.ts', 'BROWSER_EXTENSION_IMPORT_MAX_ENCODED_LENGTH')] },
-  { label: 'course target languages', entries: [declared('shared.js', 'COURSE_TARGET_LANGUAGES'), declared('app-bridge.js', 'CAPTURE_SOURCE_LANGUAGES'), declared('course-profile-contract.ts', 'COURSE_TARGET_LANGUAGES')] },
+  { label: 'course target languages', entries: [declared('shared.js', 'COURSE_TARGET_LANGUAGES'), declared('app-bridge.js', 'CAPTURE_SOURCE_LANGUAGES'), declared('course-profile-contract.ts', 'COURSE_TARGET_LANGUAGES'), { file: 'background-ui.js', pattern: /(\[[^\]]*\])\.includes\(payload\.courseLanguage\)/, literal: true }] },
 ];
+if (/source:\s*['"`]/.test(appHookSource)) fail('the web app hook must post with the declared message source constant, not an inline literal.');
 const protocolDrift = findProtocolDrift(protocolSources, protocolGroups);
 if (protocolDrift.length) fail(`app and extension protocol constants must match:\n${protocolDrift.join('\n')}`);
 if (/\beval\s*\(|new\s+Function\s*\(/.test(sharedSource + workerSource + bridgeSource)) fail('dynamic code execution is forbidden.');

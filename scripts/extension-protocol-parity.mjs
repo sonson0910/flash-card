@@ -50,6 +50,8 @@ export const readConstant = (source, name) => {
 /**
  * Each group names one wire value and where each side declares it: `{ label, entries: [{ file, name }] }`
  * or `{ label, entries: [{ file, pattern }] }` for a value written inline (the first capture group is the value; digits compare as numbers).
+ * Add `literal: true` to read the capture as a plain literal, so an inline list or regex compares like a declared constant.
+ * A global `pattern` compares every match in the file, so a value repeated inline cannot drift within one file.
  * Returns one message per group whose sides disagree or cannot be read.
  */
 export const findProtocolDrift = (sources, groups) => {
@@ -65,9 +67,14 @@ export const findProtocolDrift = (sources, groups) => {
       }
       try {
         if (entry.pattern) {
-          const match = entry.pattern.exec(source);
-          if (!match) throw new Error('pattern did not match');
-          values.push({ where, value: /^\d+$/.test(match[1]) ? String(Number(match[1])) : JSON.stringify(match[1]) });
+          const matches = entry.pattern.global ? [...source.matchAll(entry.pattern)] : [entry.pattern.exec(source)].filter(Boolean);
+          if (!matches.length) throw new Error('pattern did not match');
+          for (const match of matches) {
+            const value = entry.literal
+              ? parseLiteral(match[1])
+              : /^\d+$/.test(match[1]) ? String(Number(match[1])) : JSON.stringify(match[1]);
+            values.push({ where, value });
+          }
         } else {
           values.push({ where, value: readConstant(source, entry.name) });
         }
