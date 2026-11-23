@@ -372,9 +372,6 @@ const validatePersistedResults = (
     if (!identity || !expectedCard) {
       throw new Error('Card intake persistence returned a card for the wrong word.');
     }
-    if (result.created && identity.card.id !== expectedCard.id) {
-      throw new Error('Card intake persistence changed a newly created card identity.');
-    }
     if (validated.has(logicalId)) {
       throw new Error('Card intake persistence returned duplicate card identities.');
     }

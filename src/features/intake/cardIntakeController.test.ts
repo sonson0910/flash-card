@@ -917,7 +917,7 @@ describe('card intake controller', () => {
     expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
   });
 
-  it('requires a newly created result to retain the candidate card ID', async () => {
+  it('hands on a newly created card under the id the service stored it under', async () => {
     const { port, persistCards } = createFakePort();
     vi.mocked(persistCards).mockResolvedValue([
       { card: { ...card('apple'), id: 'legacy-apple' }, created: true },
@@ -928,7 +928,12 @@ describe('card intake controller', () => {
       cards: [{ word: 'apple', translation: 'táo' }],
     });
 
-    expect(result).toMatchObject({ status: 'failed', error: expect.any(Error) });
+    expect(result).toMatchObject({
+      status: 'completed',
+      createdCount: 1,
+      cards: [{ id: 'legacy-apple', word: 'apple' }],
+      resolvedCards: [{ id: 'legacy-apple', word: 'apple' }],
+    });
   });
 
   it('fails closed when a persistence result has a wrong or malformed identity', async () => {
