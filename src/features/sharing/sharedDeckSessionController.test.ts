@@ -1206,6 +1206,7 @@ describe('an owner can revoke earlier share links', () => {
       const args = { category: 'IELTS', cards: [card('apple')], total: 1, hasNext: false };
       await first.controller.actions.createShare(args);
       vi.setSystemTime(new Date('2026-08-01T00:00:02.000Z'));
+      vi.mocked(first.adapter.create).mockRejectedValueOnce(new Error('response lost'));
       await first.controller.actions.createShare(args);
       const calls = vi.mocked(first.adapter.create).mock.calls;
       expect(calls[1]![0].opId).toBe(calls[0]![0].opId);
