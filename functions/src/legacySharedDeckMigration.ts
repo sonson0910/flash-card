@@ -3021,6 +3021,11 @@ export async function applyLegacySharedDeckMigration(
 
 export type LegacySharedDeckCutoverVerification = {
   readonly verified: boolean;
+  /**
+   * Always 0 in a successful verification: a valid legacy public share is
+   * rejected with an error before this report exists. It stays in the report
+   * so the operator output keeps its shape.
+   */
   readonly validLegacyPublicCount: number;
   readonly activeLedgerCount: number;
 };
@@ -3067,7 +3072,6 @@ export async function verifyLegacySharedDeckCutover(
     readonly publicTerminal: boolean;
     readonly privateTerminal: boolean;
     readonly sealedCursor: number;
-    readonly validLegacyPublicCount: number;
   };
   const emptyProgress = (): VerificationProgress => ({
     active: true,
@@ -3076,10 +3080,8 @@ export async function verifyLegacySharedDeckCutover(
     publicTerminal: false,
     privateTerminal: false,
     sealedCursor: 0,
-    validLegacyPublicCount: 0,
   });
   const parseProgress = (value: unknown): VerificationProgress => {
-    const validLegacyPublicCount = isRecord(value) ? value.validLegacyPublicCount : undefined;
     if (!isRecord(value)
       || typeof value.active !== 'boolean'
       || (value.publicCursor !== null && typeof value.publicCursor !== 'string')
@@ -3088,9 +3090,7 @@ export async function verifyLegacySharedDeckCutover(
       || typeof value.privateTerminal !== 'boolean'
       || !Number.isSafeInteger(value.sealedCursor)
       || (value.sealedCursor as number) < 0
-      || (value.sealedCursor as number) > inventory.entries.length
-      || !Number.isSafeInteger(validLegacyPublicCount)
-      || (validLegacyPublicCount as number) < 0) {
+      || (value.sealedCursor as number) > inventory.entries.length) {
       throw new LegacySharedDeckApplyError('Cutover verification progress is malformed.');
     }
     return value as unknown as VerificationProgress;
@@ -3271,7 +3271,7 @@ export async function verifyLegacySharedDeckCutover(
     shareId: string,
     publicData: DataRecord | undefined,
     privateData: DataRecord | undefined,
-  ): Promise<boolean> => {
+  ): Promise<void> => {
     const expectedEntry = expectedEntryFor(shareId);
     if (!expectedEntry) throw new LegacySharedDeckApplyError('Cutover verification found a source record outside the sealed inventory.');
     if (expectedEntry.action === 'block') {
@@ -3283,19 +3283,19 @@ export async function verifyLegacySharedDeckCutover(
       const quarantineSnapshot = await transaction.get(quarantineReference(database, shareId));
       if (quarantinedSourceRemoved(
         expectedEntry, publicData, privateData, quarantineSnapshot.data(), inventory.scanStartedAt, nowMillis,
-      )) return false;
+      )) return;
       const entry = entryFor({ shareId, publicData, privateData }, inventory.ownerUid, inventory.scanStartedAt);
       if (entry.publicSourceDigest !== expectedEntry.publicSourceDigest
         || entry.privateSourceDigest !== expectedEntry.privateSourceDigest
         || !quarantineMatchesSource(quarantineSnapshot.data(), expectedEntry)) {
         throw new LegacySharedDeckApplyError(`Cutover verification found an unverified quarantine copy for ${shareId}.`);
       }
-      return false;
+      return;
     }
     // An expired share the TTL policy has started to remove has no pair left to compare.
     if (sealedShareState(
       expectedEntry, publicData, privateData, inventory.ownerUid, inventory.scanStartedAt, nowMillis,
-    ) === 'expired') return false;
+    ) === 'expired') return;
     if (entryFor({ shareId, publicData, privateData }, inventory.ownerUid, inventory.scanStartedAt).action === 'block') {
       throw new LegacySharedDeckApplyError(`Cutover verification found an invalid source for ${shareId}.`);
     }
@@ -3314,7 +3314,6 @@ export async function verifyLegacySharedDeckCutover(
       )) {
       throw new LegacySharedDeckApplyError('Cutover verification found a missing or mismatched schema2 pair.');
     }
-    return false;
   };
 
   const scanSource = async (
@@ -3339,7 +3338,6 @@ export async function verifyLegacySharedDeckCutover(
         if (snapshot.size > MAX_VERIFY_ENTRIES_PER_TRANSACTION) {
           throw new LegacySharedDeckApplyError('Cutover verification page exceeded its transaction bound.');
         }
-        let pageLegacyCount = 0;
         for (const document of snapshot.docs) {
           const shareId = document.id;
           const side = document.data() as DataRecord;
@@ -3349,7 +3347,7 @@ export async function verifyLegacySharedDeckCutover(
           const privateData = publicFirst
             ? (await transaction.get(database.collection('shared_deck_owners').doc(shareId))).data() as DataRecord | undefined
             : side;
-          if (await processSource(transaction, shareId, publicData, privateData)) pageLegacyCount += 1;
+          await processSource(transaction, shareId, publicData, privateData);
         }
         const lastId = snapshot.docs.at(-1)?.id ?? after;
         const pageProgress: VerificationProgress = {
@@ -3358,7 +3356,6 @@ export async function verifyLegacySharedDeckCutover(
           privateCursor: publicFirst ? progress.privateCursor : lastId,
           publicTerminal: publicFirst ? snapshot.size < MAX_VERIFY_ENTRIES_PER_TRANSACTION : progress.publicTerminal,
           privateTerminal: publicFirst ? progress.privateTerminal : snapshot.size < MAX_VERIFY_ENTRIES_PER_TRANSACTION,
-          validLegacyPublicCount: progress.validLegacyPublicCount + pageLegacyCount,
         };
         transaction.set(stateRef, { ...state, verificationProgress: pageProgress });
         return {
@@ -3393,9 +3390,7 @@ export async function verifyLegacySharedDeckCutover(
       for (const expectedEntry of batch) {
         const publicData = (await transaction.get(database.collection('shared_decks').doc(expectedEntry.shareId))).data() as DataRecord | undefined;
         const privateData = (await transaction.get(database.collection('shared_deck_owners').doc(expectedEntry.shareId))).data() as DataRecord | undefined;
-        if (await processSource(transaction, expectedEntry.shareId, publicData, privateData)) {
-          throw new LegacySharedDeckApplyError('Cutover verification found a valid legacy public share.');
-        }
+        await processSource(transaction, expectedEntry.shareId, publicData, privateData);
       }
       const nextProgress: VerificationProgress = {
         ...progress,
@@ -3404,9 +3399,6 @@ export async function verifyLegacySharedDeckCutover(
       transaction.set(stateRef, { ...state, verificationProgress: nextProgress });
       return nextProgress;
     });
-  }
-  if (sealedProgress.validLegacyPublicCount > 0) {
-    throw new LegacySharedDeckApplyError('Cutover verification found a valid legacy public share.');
   }
 
   const expected = expectedUsage(inventory.entries, inventory.scanStartedAt);
@@ -3433,7 +3425,7 @@ export async function verifyLegacySharedDeckCutover(
     });
     return {
       verified: true,
-      validLegacyPublicCount: sealedProgress.validLegacyPublicCount,
+      validLegacyPublicCount: 0,
       activeLedgerCount: expected.activeCount,
     };
   });

@@ -1646,6 +1646,48 @@ describe('legacy shared-deck exact inventory', () => {
     expect(map.get('admin_shared_deck_migration_jobs/shared_deck_v2')).toMatchObject({ phase: 'verified' });
   });
 
+  it('refuses to verify while a legacy public share remains and keeps no legacy counter once it verifies', async () => {
+    const shareId = 'legacy-left-behind';
+    const inventory = await createFrozenLegacySharedDeckInventory({
+      store: pageStore([{
+        publicDocuments: [publicDocument(legacy(shareId))], privateDocuments: [],
+        publicTerminal: true, privateTerminal: true,
+      }]),
+      ownerUid,
+      runId: 'legacy-left-behind-run',
+      revision: '9'.repeat(40),
+      target: 'test',
+      scanStartedAt: '2026-08-24T00:00:00.000Z',
+    });
+    const legacySource = legacy(shareId).publicData as Record<string, unknown>;
+    const stateKey = 'admin_shared_deck_migration_jobs/shared_deck_v2';
+    const map = new Map<string, Record<string, unknown>>([
+      [stateKey, {
+        schemaVersion: 2, ownerUid, phase: 'sealed', revision: inventory.revision,
+        target: inventory.target, inventoryDigest: inventory.inventoryDigest, ledgerReady: false,
+        manifest: inventory.sealedManifest,
+      }],
+      [`shared_decks/${shareId}`, legacySource],
+    ]);
+    const { database } = firestoreMapDatabase(map);
+    await applyLegacySharedDeckMigration(database, inventory, {
+      ownerUid, revision: inventory.revision, target: inventory.target,
+      confirmation: 'APPLY_SHARED_DECK_V2', backupManifest: signedBackupManifest(inventory),
+      backupPublicKey: backupVerificationKey, indexPreparation: preparedIndexes(inventory),
+    });
+
+    const migrated = map.get(`shared_decks/${shareId}`)!;
+    map.set(`shared_decks/${shareId}`, legacySource);
+    await expect(verifyLegacySharedDeckCutover(database, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+    expect(map.get(stateKey)).toMatchObject({ phase: 'applied' });
+
+    map.set(`shared_decks/${shareId}`, migrated);
+    await expect(verifyLegacySharedDeckCutover(database, inventory)).resolves.toMatchObject({ verified: true });
+    const verified = map.get(stateKey)!;
+    expect(verified).toMatchObject({ phase: 'verified', verificationProgress: { active: false } });
+    expect(verified.verificationProgress).not.toHaveProperty('validLegacyPublicCount');
+  });
+
   it('quarantines digestable malformed public records without deleting their source', async () => {
     const malformed = legacy('malformed-copyable', { unexpected: 'preserve-raw' });
     const inventory = await createFrozenLegacySharedDeckInventory({
