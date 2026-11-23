@@ -253,7 +253,28 @@ export const selectLibraryStats = ({
   };
 };
 
-export function buildLibraryViewModel(input: LibraryViewModelInput) {
+/**
+ * The stored category facets are owner-wide, while the library, its counts and its stats are scoped to the
+ * active course. Facets that add up to more cards than the course holds include another course's cards, so
+ * they cannot name this course's categories or counts; the page's own cards are used (and marked partial).
+ */
+export const selectCourseCategoryFacets = ({
+  isAuthenticated,
+  cloudStats,
+  cloudCategoryCounts,
+  cloudFacetsComplete,
+}: Pick<LibraryViewModelInput, 'isAuthenticated' | 'cloudStats' | 'cloudCategoryCounts' | 'cloudFacetsComplete'>): {
+  cloudCategoryCounts: Record<string, number>;
+  cloudFacetsComplete: boolean;
+} => {
+  const facetTotal = Object.values(cloudCategoryCounts).reduce((sum, count) => sum + count, 0);
+  return isAuthenticated && cloudStats.total > 0 && facetTotal > cloudStats.total
+    ? { cloudCategoryCounts: {}, cloudFacetsComplete: false }
+    : { cloudCategoryCounts, cloudFacetsComplete };
+};
+
+export function buildLibraryViewModel(rawInput: LibraryViewModelInput) {
+  const input = { ...rawInput, ...selectCourseCategoryFacets(rawInput) };
   const usesCloudPage = input.isAuthenticated && input.usesCloudPagination;
   const filteredCards = selectFilteredLibraryCards(input.cards, input.query, usesCloudPage);
   const pageable = input.isAuthenticated
@@ -304,5 +325,6 @@ export function buildLibraryViewModel(input: LibraryViewModelInput) {
     }),
     difficultySummary,
     stats,
+    cloudFacetsComplete: input.cloudFacetsComplete,
   };
 }

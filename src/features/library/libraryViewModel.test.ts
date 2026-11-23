@@ -283,4 +283,44 @@ describe('library view model', () => {
     ]);
     expect(Object.keys(model.groupedCards)).toEqual(['Today', 'Jul 1, 2026']);
   });
+
+  it('ignores owner-wide facets that include cards from other courses', () => {
+    const model = buildLibraryViewModel(input({
+      cards: [
+        makeCard('ja-1', { category: 'Food' }),
+        makeCard('ja-2', { category: 'Anime' }),
+      ],
+      isAuthenticated: true,
+      usesCloudPagination: true,
+      cloudTotal: 13,
+      // The active course holds 13 cards; the owner-wide facets also count 52 cards of another course.
+      cloudStats: { ...cloudStats, total: 13, unrated: 13 },
+      cloudCategoryCounts: { Food: 45, Travel: 12, Anime: 8 },
+      cloudFacetsComplete: true,
+    }));
+
+    expect(model.sortedCategories).toEqual(['All', 'Anime', 'Food']);
+    expect(model.categoryCounts).toEqual({ All: 13, Food: 1, Anime: 1 });
+    expect(model.cloudFacetsComplete).toBe(false);
+    expect(model.stats.categoryChart).toEqual([
+      { name: 'Food', value: 1 },
+      { name: 'Anime', value: 1 },
+    ]);
+    expect(model.stats.categoryChartIsPartial).toBe(true);
+  });
+
+  it('keeps complete facets that fit inside the active course total', () => {
+    const model = buildLibraryViewModel(input({
+      cards: [makeCard('one', { category: 'Food' })],
+      isAuthenticated: true,
+      usesCloudPagination: true,
+      cloudTotal: 13,
+      cloudStats: { ...cloudStats, total: 13, unrated: 13 },
+      cloudCategoryCounts: { Food: 8, Anime: 5 },
+      cloudFacetsComplete: true,
+    }));
+
+    expect(model.categoryCounts).toEqual({ All: 13, Food: 8, Anime: 5 });
+    expect(model.cloudFacetsComplete).toBe(true);
+  });
 });
