@@ -998,7 +998,7 @@ describe('a failed silent capture tells the extension why, independent of the me
   it('reports a deleted requested deck, an invalid selection and a course cancel', async () => {
     expect(await resultFor({ requestedDeck: 'Gone' }, {}, unreachable))
       .toMatchObject({ status: 'error', reason: 'deck-missing' });
-    expect(await resultFor({}, {}, async () => ({ status: 'invalid' })))
+    expect(await resultFor({}, {}, async () => ({ status: 'invalid', reason: 'empty' as const })))
       .toMatchObject({ status: 'error', reason: 'invalid-selection' });
     expect(await resultFor({ sourceLanguage: 'en' }, { ensureCaptureCourse: async () => 'cancel' }, unreachable))
       .toMatchObject({ status: 'error', reason: 'course-cancelled' });
