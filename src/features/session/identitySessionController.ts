@@ -142,7 +142,7 @@ export function createIdentitySessionController({
   });
 
   // The pending retry of a failed owner epoch read: a backoff timer and a reconnect subscription.
-  let epochRetry: { retry: () => void; timer: ReturnType<typeof globalThis.setTimeout> | null; unsubscribe: () => void } | null = null;
+  let epochRetry: { retry: () => void; publication: number; timer: ReturnType<typeof globalThis.setTimeout> | null; unsubscribe: () => void } | null = null;
 
   const cancelEpochRetry = () => {
     if (!epochRetry) return;
@@ -210,6 +210,7 @@ export function createIdentitySessionController({
     const delay = EPOCH_RETRY_DELAYS_MS[attempt];
     epochRetry = {
       retry,
+      publication,
       timer: delay === undefined || isCloudQuotaError(epochFailure)
         ? null
         : globalThis.setTimeout(retry, delay),
@@ -363,6 +364,20 @@ export function createIdentitySessionController({
     return true;
   };
 
+  /**
+   * Retry for the learner who sees the error: a failed owner epoch read is read again now instead of waiting for
+   * the next timed retry; any other error (observer failure, failed sign-out) is cleared so the screen stops
+   * offering a retry that changes nothing.
+   */
+  const retry = () => {
+    const { owner, error } = snapshot;
+    if (!error) return;
+    publish({ error: null });
+    if (!owner || epochRetry?.publication !== ownerPublication) return;
+    cancelEpochRetry();
+    void verifyOwnerEpoch(owner, ownerPublication, observationGeneration, 0);
+  };
+
   return {
     getSnapshot: () => snapshot,
     subscribe: (listener: (next: IdentitySessionSnapshot) => void) => {
@@ -374,6 +389,7 @@ export function createIdentitySessionController({
     signIn,
     signOut,
     clearError: () => publish({ error: null }),
+    retry,
     acceptVerifiedOwnerEpoch,
   };
 }

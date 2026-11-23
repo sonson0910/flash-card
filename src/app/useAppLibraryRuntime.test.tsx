@@ -6,6 +6,7 @@ const runtime = vi.hoisted(() => ({
   revoke: vi.fn<() => Promise<void>>(),
   finish: vi.fn(),
   signOut: vi.fn<() => Promise<{ status: 'completed' | 'failed' }>>(),
+  retryIdentity: vi.fn(),
   sessionInputs: [] as Array<{ catalog: { statsOpen: boolean } }>,
   catalogQuery: vi.fn(),
 }));
@@ -34,7 +35,7 @@ vi.mock('../features/librarySession/useLibrarySession', () => ({
       },
       owner: {}, cloud: {},
     },
-    actions: { identity: { signIn: vi.fn(), signOut: runtime.signOut, clearError: vi.fn() }, owner: { migrateLegacy: vi.fn() } },
+    actions: { identity: { signIn: vi.fn(), signOut: runtime.signOut, clearError: vi.fn(), retry: runtime.retryIdentity }, owner: { migrateLegacy: vi.fn() } },
   }),
 }));
 vi.mock('../features/librarySession/useLibrarySessionPorts', () => ({
@@ -80,6 +81,7 @@ describe('useAppLibraryRuntime sign-out', () => {
     runtime.revoke.mockReset();
     runtime.finish.mockReset();
     runtime.signOut.mockReset();
+    runtime.retryIdentity.mockReset();
     runtime.catalogQuery.mockReset();
   });
 
@@ -98,6 +100,25 @@ describe('useAppLibraryRuntime sign-out', () => {
       expect(runtime.catalogQuery).toHaveBeenLastCalledWith({ ownerId: 'owner-b' });
       await act(async () => { root.render(<Harness ownerId={null} />); });
       expect(runtime.catalogQuery).toHaveBeenLastCalledWith({ ownerId: null });
+    } finally {
+      await act(async () => { root.unmount(); });
+    }
+  });
+
+  it('asks the identity session to retry when the learner retries a sync', async () => {
+    const captured: { current: ReturnType<typeof useAppLibraryRuntime> | null } = { current: null };
+    const root = createRoot(installMinimalReactDom());
+    function Harness() {
+      captured.current = useAppLibraryRuntime({
+        identity: {} as never, courseScopeReady: true, viewMode: 'library' as never, isStatsOpen: false,
+        statsRefreshRequest: null, targetLanguage: 'en', reportError: vi.fn(), clearError: vi.fn(), notify: vi.fn(),
+      });
+      return null;
+    }
+    try {
+      await act(async () => { root.render(<Harness />); });
+      await act(async () => { await captured.current!.actions.retrySync(); });
+      expect(runtime.retryIdentity).toHaveBeenCalledOnce();
     } finally {
       await act(async () => { root.unmount(); });
     }

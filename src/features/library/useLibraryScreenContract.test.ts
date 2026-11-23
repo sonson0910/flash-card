@@ -42,7 +42,7 @@ const createInput = () => {
     toggleStarred: vi.fn(), chooseDeckScope: vi.fn(), goToPage: vi.fn(), goToNextPage: vi.fn(), goToPreviousPage: vi.fn(),
   };
   const sessionActions = {
-    identity: { signIn: vi.fn(), signOut: vi.fn(), clearError: vi.fn(), acceptVerifiedOwnerEpoch: vi.fn() },
+    identity: { signIn: vi.fn(), signOut: vi.fn(), clearError: vi.fn(), retry: vi.fn(), acceptVerifiedOwnerEpoch: vi.fn() },
     owner: {
       migrateLegacy: vi.fn(async () => ({
         status: 'completed' as const,

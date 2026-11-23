@@ -74,7 +74,7 @@ export interface LibrarySessionModel {
 
 export interface LibrarySessionActions {
   identity: Pick<IdentitySessionBinding,
-    'signIn' | 'signOut' | 'clearError' | 'acceptVerifiedOwnerEpoch'>;
+    'signIn' | 'signOut' | 'clearError' | 'retry' | 'acceptVerifiedOwnerEpoch'>;
   owner: OwnerLibraryBinding['actions'];
 }
 
@@ -134,6 +134,7 @@ export function useLibrarySession(
         signIn: identity.signIn,
         signOut: identity.signOut,
         clearError: identity.clearError,
+        retry: identity.retry,
         acceptVerifiedOwnerEpoch: identity.acceptVerifiedOwnerEpoch,
       },
       owner: owner.actions,

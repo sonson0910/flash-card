@@ -366,6 +366,37 @@ describe('identity session controller', () => {
       });
     });
 
+    it('reads the epoch again at once when the learner retries a failed read', async () => {
+      vi.useFakeTimers();
+      const { adapter, emitOwner } = createFakeAdapter();
+      vi.mocked(adapter.loadOwnerEpoch).mockRejectedValueOnce(unavailable()).mockResolvedValue(6);
+      const session = createIdentitySessionController({ adapter, subscribeReconnect: withReconnect().subscribeReconnect });
+      session.start();
+      await emitOwner(owner('manual-retry'));
+      expect(session.getSnapshot()).toMatchObject({ canPublishMutations: false });
+      expect(session.getSnapshot().error).not.toBeNull();
+
+      session.retry();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(adapter.loadOwnerEpoch).toHaveBeenCalledTimes(2);
+      expect(session.getSnapshot()).toMatchObject({ ownerEpoch: { ownerId: 'manual-retry', value: 6 }, canPublishMutations: true, error: null });
+    });
+
+    it('clears an error that has nothing to read again', async () => {
+      const { adapter, emitOwner, emitError } = createFakeAdapter();
+      const session = createIdentitySessionController({ adapter });
+      session.start();
+      await emitOwner(owner('observer-owner'));
+      emitError(new Error('observer failed'));
+      expect(session.getSnapshot().error).toBe('observer failed');
+
+      session.retry();
+
+      expect(session.getSnapshot().error).toBeNull();
+      expect(adapter.loadOwnerEpoch).toHaveBeenCalledTimes(1);
+    });
+
     it('retries when the connection returns after the timed retries are used up', async () => {
       vi.useFakeTimers();
       const { adapter, emitOwner } = createFakeAdapter();
