@@ -922,7 +922,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Luyện hội thoại"
 
-#: src/app/AppRuntime.tsx:649
+#: src/app/AppRuntime.tsx:654
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -1689,7 +1689,7 @@ msgctxt "shell.share.outgoing-description"
 msgid "Anyone with the link can preview this deck and copy it into their own library."
 msgstr "Ai có liên kết này đều có thể xem trước bộ thẻ và sao chép vào thư viện riêng."
 
-#: src/App.tsx:87
+#: src/App.tsx:28
 msgctxt "shell.loading.app"
 msgid "Loading SonFlash…"
 msgstr "Đang tải SonFlash…"
@@ -1899,7 +1899,7 @@ msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:638
+#: src/app/AppRuntime.tsx:643
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -2079,7 +2079,7 @@ msgstr "Không thể tải không gian học tập."
 
 #. js-lingui-explicit-id
 #: src/app/app-runtime-error.tsx:12
-#: src/app/AppRuntimeBoundary.tsx:33
+#: src/app/AppRuntimeBoundary.tsx:34
 msgid "shell.runtime-error.retry"
 msgstr "Thử tải lại không gian học tập"
 
@@ -2219,7 +2219,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Không thể cập nhật trực tiếp từ đám mây. Hãy thử lại khi kết nối ổn định hơn."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:484
+#: src/app/AppRuntime.tsx:489
 msgid "shell.sync.retry-failed"
 msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
 
@@ -2306,7 +2306,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr "Chọn một giờ và SonFlash sẽ nhắc bạn ôn tập."
 
-#: src/app/AppRuntime.tsx:650
+#: src/app/AppRuntime.tsx:655
 #: src/components/shell/CourseSwitcherControl.tsx:127
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2488,7 +2488,7 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Chọn một ngôn ngữ trước đã. Bạn có thể thêm ngôn ngữ khác trong trình chuyển khóa học."
 
-#: src/app/AppRuntime.tsx:652
+#: src/app/AppRuntime.tsx:657
 #: src/app/AppViewStage.tsx:163
 msgctxt "course.loading"
 msgid "Preparing your courses…"

@@ -36,6 +36,7 @@ import animeSpelling from "../../assets/landing/anime-spelling.jpg";
 import animeImmediate from "../../assets/landing/anime-immediate.jpg";
 import animeInstant from "../../assets/landing/anime-instant.jpg";
 import { CrystalWings } from "./CrystalWings";
+import { LandingSignInNotice } from "./LandingSignInNotice";
 import "./landing-page.css";
 
 interface LandingPageProps {
@@ -44,6 +45,8 @@ interface LandingPageProps {
   readonly onOpenCatalog?: () => void;
   readonly onOpenProgress?: () => void;
   readonly onSignIn?: () => void | Promise<void>;
+  readonly signInBusy?: boolean;
+  readonly signInError?: string | null;
   readonly user?: {
     displayName?: string | null;
     email?: string | null;
@@ -314,7 +317,7 @@ const crystalRibbonItems = [
   { id: 'ielts-band-goal', label: <Trans {...msg({ context: 'landing.ribbon.ielts-band-goal', message: 'IELTS band goal' })} /> },
 ];
 
-function CrystalLandingHero({ onEnterApp, onSignIn, user, showLumi }: Pick<LandingPageProps, 'onEnterApp' | 'onSignIn' | 'user'> & { readonly showLumi: boolean }) {
+function CrystalLandingHero({ onEnterApp, onSignIn, signInBusy, user, showLumi }: Pick<LandingPageProps, 'onEnterApp' | 'onSignIn' | 'signInBusy' | 'user'> & { readonly showLumi: boolean }) {
   const { _ } = useLingui();
   // Lumi first paints small and grows once loaded, so the headline stays the largest paint.
   const [lumiRevealed, setLumiRevealed] = useState(false);
@@ -327,7 +330,7 @@ function CrystalLandingHero({ onEnterApp, onSignIn, user, showLumi }: Pick<Landi
       <p className="crystal-description"><Trans {...msg({ context: 'landing.hero.description', message: 'Build an English vocabulary you can reach for with context, spaced review, and active recall.' })} /></p>
       <div className="crystal-actions">
         <button type="button" onClick={onEnterApp} className="crystal-primary"><span className="crystal-shine" aria-hidden="true" /><span><Trans {...msg({ context: 'landing.hero.start', message: 'Start learning' })} /></span> <Play size={18} fill="currentColor" strokeWidth={0} aria-hidden="true" /></button>
-        {onSignIn && !user && <button type="button" onClick={() => void onSignIn()} className="crystal-secondary"><Trans {...msg({ context: 'landing.hero.sign-in', message: 'Sign in to sync' })} /></button>}
+        {onSignIn && !user && <button type="button" disabled={signInBusy} onClick={() => void onSignIn()} className="crystal-secondary"><Trans {...msg({ context: 'landing.hero.sign-in', message: 'Sign in to sync' })} /></button>}
       </div>
       <p className="crystal-proof"><span aria-hidden="true" /><Trans {...msg({ context: 'landing.hero.proof.extension', message: '<0>Chrome</0> extension, free' })} components={{ 0: <strong /> }} /></p>
     </div>
@@ -531,6 +534,8 @@ export function LandingPage({
   onOpenLibrary,
   onOpenCatalog,
   onSignIn,
+  signInBusy = false,
+  signInError = null,
   user,
 }: LandingPageProps) {
   const { _ } = useLingui();
@@ -590,6 +595,7 @@ export function LandingPage({
   return (
     <div className="landing-canvas min-h-[100svh] overflow-x-clip bg-[var(--sf-canvas)] text-[var(--sf-text)] selection:bg-[var(--sf-brand)] selection:text-[var(--sf-on-brand)]">
       <main>
+        {!user && <LandingSignInNotice busy={signInBusy} error={signInError} />}
         {!user && accountDeletionStarted && <p role="status" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-[var(--sf-success)] sm:px-8 lg:px-12"><Trans {...msg({ id: 'account.data.delete.started', message: 'We could not confirm whether account deletion finished. If you can still sign in later, contact support.' })} /></p>}
         {!user && accountDeletionCacheWarning && <p role="alert" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-[var(--sf-danger)] sm:px-8 lg:px-12"><Trans {...msg({ id: 'account.data.delete.cache-warning', message: 'SonFlash couldn\'t clear saved account data from this device. Clear SonFlash site data in your browser.' })} /></p>}
         <section
@@ -719,6 +725,7 @@ export function LandingPage({
                 {onSignIn && !user && (
                   <button
                     type="button"
+                    disabled={signInBusy}
                     onClick={() => void onSignIn()}
                     className="landing-sign-in min-h-11 rounded-lg px-4 text-[14.5px] font-semibold hover:text-[var(--sf-brand-text)] focus-visible:outline-2"
                   >
@@ -854,7 +861,7 @@ export function LandingPage({
               </details>
             </header>
             {family === "crystal"
-              ? <CrystalLandingHero onEnterApp={onEnterApp} onSignIn={onSignIn} user={user} showLumi={showLumi} />
+              ? <CrystalLandingHero onEnterApp={onEnterApp} onSignIn={onSignIn} signInBusy={signInBusy} user={user} showLumi={showLumi} />
               : <ClassicLandingHero onEnterApp={onEnterApp} />}
             {videoEnabled ? (
             <fieldset className="landing-atmospheres mb-3 border-l border-[var(--sf-border)] pl-4">
@@ -1166,6 +1173,7 @@ export function LandingPage({
             {onSignIn && !user && (
               <button
                 type="button"
+                disabled={signInBusy}
                 onClick={() => void onSignIn()}
                 className={`${actionClass} w-full sm:w-auto`}
               >

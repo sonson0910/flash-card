@@ -135,6 +135,7 @@ export interface AppRuntimeProps {
   readonly signInRequest: number | null;
   readonly onSignInRequestHandled: (request: number) => void;
   readonly onLandingUserChange: (user: LandingUser | null) => void;
+  readonly onLandingSignInState: (state: { readonly busy: boolean; readonly error: string | null }) => void;
 }
 
 export function useOwnerScopedMessage(
@@ -167,6 +168,7 @@ export default function AppRuntime({
   signInRequest,
   onSignInRequestHandled,
   onLandingUserChange,
+  onLandingSignInState,
 }: AppRuntimeProps) {
   const { _ } = useLingui();
   const identitySession = appDependencies.sessions.libraryHooks.useIdentitySession();
@@ -462,6 +464,9 @@ export default function AppRuntime({
       photoURL: user.photoURL,
     } : null);
   }, [onLandingUserChange, user?.displayName, user?.email, user?.photoURL]);
+  useEffect(() => {
+    onLandingSignInState({ busy: identity.isSigningIn, error: user ? null : identity.error });
+  }, [identity.error, identity.isSigningIn, onLandingSignInState, user]);
   useEffect(() => {
     void consumeLandingSignInRequest(
       signInRequest,

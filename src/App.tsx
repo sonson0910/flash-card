@@ -40,6 +40,7 @@ export default function App() {
   const [signInRequest, setSignInRequest] = useState(0);
   const [acknowledgedSignInRequest, setAcknowledgedSignInRequest] = useState(0);
   const [landingUser, setLandingUser] = useState<LandingUser | null>(null);
+  const [landingSignIn, setLandingSignIn] = useState({ busy: false, error: null as string | null });
   const [runtimeFailed, setRuntimeFailed] = useState(false);
 
   useEffect(() => {
@@ -94,6 +95,8 @@ export default function App() {
               onOpenProgress={openProgress}
               onSignIn={requestLandingSignIn}
               user={landingUser}
+              signInBusy={landingSignIn.busy}
+              signInError={landingSignIn.error}
             />
           </Suspense>
       )}
@@ -107,6 +110,7 @@ export default function App() {
                 signInRequest={signInRequest > acknowledgedSignInRequest ? signInRequest : null}
                 onSignInRequestHandled={handleSignInRequestHandled}
                 onLandingUserChange={setLandingUser}
+                onLandingSignInState={setLandingSignIn}
               />
             </Suspense>
           </AppRuntimeBoundary>
