@@ -424,7 +424,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           throw new Error('Cloud library storage is not ready yet. Try again in a moment.');
         }
         const database = db;
-        const stableSource = source ?? mutation.card;
+        let stableSource = source ?? mutation.card;
         let deleteReceipt: LearningStateMutationResult['deleteReceipt'];
         try {
           const result = await deleteCardWithConflictRecovery({
@@ -446,7 +446,9 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               operationId: result.tombstone.opId,
               libraryEpoch: result.tombstone.libraryEpoch,
               deletedAt: result.tombstone.deletedAt,
+              ...(result.deletedCard ? { card: result.deletedCard } : {}),
             };
+            if (result.deletedCard) stableSource = result.deletedCard;
           } else {
             const activeEpoch = await getLibraryEpoch(database, ownerId);
             current.acceptVerifiedEpoch(ownerId, activeEpoch);

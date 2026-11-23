@@ -1,5 +1,5 @@
 import type { CardIntakeActions } from '../intake/useCardIntake';
-import { captureFailureMessage } from '../../lib/captureFailureMessage';
+import { captureFailureMessage, captureFailureReason, type CaptureFailureReason } from '../../lib/captureFailureMessage';
 import {
   BROWSER_EXTENSION_IMPORT_APP_SOURCE,
   BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE,
@@ -95,6 +95,7 @@ const publishSilentResult = (
   payload: {
     status: 'created' | 'existing' | 'auth-required' | 'error';
     message?: string;
+    reason?: CaptureFailureReason;
     card?: {
       word?: unknown;
       translation?: unknown;
@@ -132,6 +133,8 @@ const publishSilentResult = (
       language: cardPrimaryLanguage(card),
       aiGenerated: card?.origin === 'ai',
       message: boundedText(payload.message, 512),
+      // Additive: an extension that predates it reads only the message.
+      ...(payload.reason ? { reason: payload.reason } : {}),
     },
   };
   const targetOrigin = globalThis.location?.origin || '*';
@@ -176,11 +179,11 @@ export const startBrowserExtensionImportRuntime = (
   let generationEpoch = 0;
   const terminalIntentKeys = new Set<string>();
 
-  const publishTerminalError = (intent: BrowserExtensionImportIntent, message: string) => {
+  const publishTerminalError = (intent: BrowserExtensionImportIntent, message: string, reason?: CaptureFailureReason) => {
     const key = intentKey(intent);
     if (terminalIntentKeys.has(key)) return;
     terminalIntentKeys.add(key);
-    publishSilentResult(intent, { status: 'error', message });
+    publishSilentResult(intent, { status: 'error', message, reason });
   };
 
   const clearRetry = () => {
@@ -199,7 +202,7 @@ export const startBrowserExtensionImportRuntime = (
     if (intent) {
       clearPendingBrowserExtensionImport(browser.getSessionStorage(), intent.id, intent.nonce);
       if (ownerChanged) {
-        publishTerminalError(intent, 'Import cancelled because the signed-in account changed. Capture the word again.');
+        publishTerminalError(intent, 'Import cancelled because the signed-in account changed. Capture the word again.', 'account-changed');
       }
     }
   };
@@ -208,9 +211,10 @@ export const startBrowserExtensionImportRuntime = (
     intent: BrowserExtensionImportIntent,
     storage: BrowserExtensionImportStorage | null,
     message: string,
+    reason: CaptureFailureReason,
   ) => {
     clearPendingBrowserExtensionImport(storage, intent.id, intent.nonce);
-    publishTerminalError(intent, message);
+    publishTerminalError(intent, message, reason);
   };
 
   const finishIntent = (intent: BrowserExtensionImportIntent) => {
@@ -227,12 +231,12 @@ export const startBrowserExtensionImportRuntime = (
     if (!intent || intent.mode !== 'silent') return;
     let storage;
     try { storage = browser.getSessionStorage(); } catch {
-      publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.');
+      publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.', 'not-verified');
       return;
     }
     const storedOwnerId = readPendingBrowserExtensionImportOwner(storage, intent);
     if (storedOwnerId && options.ownerId && storedOwnerId !== options.ownerId) {
-      rejectBeforeClaim(intent, storage, 'Import cancelled because the signed-in account changed. Capture the word again.');
+      rejectBeforeClaim(intent, storage, 'Import cancelled because the signed-in account changed. Capture the word again.', 'account-changed');
       return;
     }
     const key = intentKey(intent);
@@ -243,7 +247,7 @@ export const startBrowserExtensionImportRuntime = (
     pendingOwnerId = storedOwnerId ?? options.ownerId;
     if (!storedOwnerId && pendingOwnerId
       && !writePendingBrowserExtensionImportOwner(storage, intent, pendingOwnerId)) {
-      rejectBeforeClaim(intent, storage, 'Could not securely prepare this import. Capture the word again.');
+      rejectBeforeClaim(intent, storage, 'Could not securely prepare this import. Capture the word again.', 'not-verified');
       pendingIntent = null;
       pendingOwnerId = null;
       return;
@@ -321,6 +325,7 @@ export const startBrowserExtensionImportRuntime = (
       publishSilentResult(intent, {
         status: 'error',
         message: `Deck “${requestedDeck}” không còn tồn tại. Hãy chọn lại deck rồi thử lại.`,
+        reason: 'deck-missing',
       });
       finishIntent(intent);
       return;
@@ -402,6 +407,7 @@ export const startBrowserExtensionImportRuntime = (
           publishSilentResult(intent, {
             status: 'error',
             message: 'Select an English word or short phrase of at most 80 characters.',
+            reason: 'invalid-selection',
           });
           if (intent.mode !== 'silent') {
             options.reportError('The selected text could not be added. Select an English word or short phrase.');
@@ -410,6 +416,7 @@ export const startBrowserExtensionImportRuntime = (
           publishSilentResult(intent, {
             status: 'error',
             message: captureFailureMessage(result.error),
+            reason: captureFailureReason(result.error),
           });
         }
       }).catch(error => {
@@ -418,6 +425,7 @@ export const startBrowserExtensionImportRuntime = (
         publishSilentResult(intent, {
           status: 'error',
           message: captureFailureMessage(error),
+          reason: captureFailureReason(error),
         });
         if (intent.mode !== 'silent') {
           options.reportError(captureFailureMessage(error));
@@ -440,6 +448,7 @@ export const startBrowserExtensionImportRuntime = (
         publishSilentResult(intent, {
           status: 'error',
           message: 'Import cancelled: switch to a matching course, then capture the word again.',
+          reason: 'course-cancelled',
         });
         return;
       }
@@ -451,6 +460,7 @@ export const startBrowserExtensionImportRuntime = (
       publishSilentResult(intent, {
         status: 'error',
         message: 'Could not prepare the matching course. The word was not saved.',
+        reason: 'course-unavailable',
       });
     });
   };
@@ -469,7 +479,7 @@ export const startBrowserExtensionImportRuntime = (
     const intent = parseBrowserExtensionImportValue(candidate.payload);
     if (intent?.mode === 'silent') {
       if (isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
-      else publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.');
+      else publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.', 'not-verified');
     }
   });
   capturePending();
@@ -489,7 +499,7 @@ export const startBrowserExtensionImportRuntime = (
     },
     acceptVerifiedIntent(intent) {
       if (isBackedByVerifiedStorage(intent)) claimVerifiedIntent(intent);
-      else publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.');
+      else publishTerminalError(intent, 'Could not securely verify this import. Capture the word again.', 'not-verified');
     },
     acceptUnverifiedIntent(candidate) {
       const intent = parseBrowserExtensionImportValue(candidate);

@@ -1487,6 +1487,26 @@ test('a fresh capture assumes the synced course target language instead of the f
   assert.equal(statusCall?.message.payload?.speechLocale, 'ko-KR');
 });
 
+test('relays a known failure reason to the bubble and popup and drops an unknown one', async () => {
+  for (const [reason, expected] of [['quota-daily', 'quota-daily'], ['not-in-the-list', undefined]]) {
+    const worker = await createWorkerContext();
+    const started = await startQuickAdd(worker);
+    const result = await sendRuntimeMessage(worker, {
+      type: 'APP_IMPORT_RESULT',
+      bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+      payload: appResultPayload(worker, started.id, { status: 'error', message: 'Anything', reason }),
+    }, appSender(worker));
+    assert.equal(result.ignored, false);
+    const popupStatus = worker.calls.find(call => call.type === 'runtime.sendMessage'
+      && call.message.payload?.status === 'error');
+    assert.equal(popupStatus?.message.payload?.reason, expected);
+    assert.equal(popupStatus?.message.payload?.message, 'Anything');
+    const bubble = worker.calls.filter(call => call.type === 'scripting.executeScript')
+      .map(call => call.details.args?.[0]).find(args => args?.status === 'error');
+    assert.equal(bubble?.reason, expected);
+  }
+});
+
 test('a fresh capture reports no language when no course locale has ever been synced', async () => {
   const worker = await createWorkerContext();
   const started = await startQuickAdd(worker);

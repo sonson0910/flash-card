@@ -1032,9 +1032,12 @@
     }
   };
 
+  // Bounded failure codes from the app and the page bridge. The extension shows its own catalog text for
+  // a code and keeps the app's message only as a fallback; a code not listed here is dropped.
+  const RESULT_REASONS = new Set(['quota-ai-cards','quota-daily','quota-service','quota','in-flight','auth','permission','network','configuration','timeout','failed','deck-missing','course-cancelled','course-unavailable','invalid-selection','account-changed','not-verified','storage-unavailable','runtime-timeout','requires-runtime','compat-failed']);
   const normalizeResult = p => {
     if (!p||typeof p!=='object'||Array.isArray(p)||typeof p.id!=='string'||!/^[A-Za-z0-9_-]{8,128}$/.test(p.id)||!isValidImportNonce(p.nonce)||!['created','existing','auth-required','error'].includes(p.status)) return null;
-    return {id:p.id,nonce:p.nonce,status:p.status,word:bounded(p.word,80),translation:bounded(p.translation,256),phonetic:bounded(p.phonetic,256),explanation:bounded(p.explanation,1024),exampleSentence:bounded(p.exampleSentence,1024),exampleTranslation:bounded(p.exampleTranslation,1024),aiGenerated:p.aiGenerated===true,language:normalizeCourseTargetLanguage(p.language),message:bounded(p.message,512)};
+    return {id:p.id,nonce:p.nonce,status:p.status,word:bounded(p.word,80),translation:bounded(p.translation,256),phonetic:bounded(p.phonetic,256),explanation:bounded(p.explanation,1024),exampleSentence:bounded(p.exampleSentence,1024),exampleTranslation:bounded(p.exampleTranslation,1024),aiGenerated:p.aiGenerated===true,language:normalizeCourseTargetLanguage(p.language),message:bounded(p.message,512),...(RESULT_REASONS.has(p.reason)?{reason:p.reason}:{})};
   };
   const appResult = async (payload,sender) => {
     const r=normalizeResult(payload); if (!r) throw new Error('Kết quả LingoFlash không hợp lệ.');
@@ -1089,9 +1092,9 @@
         notifyPopupStatus({id:job.id,status:'auth-required',text:job.text,inlineShown});
       } else {
         await saveRetry(job);
-        const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message:r.message||'Không thể tạo hoặc lưu flashcard này.',retryId:job.id});
+        const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message:r.message||'Không thể tạo hoặc lưu flashcard này.',reason:r.reason,retryId:job.id});
         inlineShown = displayed.ok;
-        notifyPopupStatus({id:job.id,status:'error',text:job.text,message:r.message||'Không thể tạo hoặc lưu flashcard này.',inlineShown});
+        notifyPopupStatus({id:job.id,status:'error',text:job.text,message:r.message||'Không thể tạo hoặc lưu flashcard này.',reason:r.reason,inlineShown});
       }
       await cleanup(job); return {ignored:false};
     })();

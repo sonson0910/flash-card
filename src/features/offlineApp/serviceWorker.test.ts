@@ -589,6 +589,61 @@ describe('offline service worker', () => {
     }
   });
 
+  it('serves the cached shell for locale and library navigations but not for static documents', async () => {
+    const api = loadWorkerApi();
+    const storage = new MemoryCacheStorage();
+    const cache = await storage.open(api.shellCacheName(appDescriptor.fingerprint));
+    await cache.put('https://app.test/index.html', new Response('shell', {
+      headers: { 'content-type': 'text/html' },
+    }));
+    const handler = api.createServiceWorkerHandlers({
+      descriptor: appDescriptor,
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: async () => new Response('network'),
+    });
+    const navigate = (path: string) => ({ method: 'GET', mode: 'navigate', url: `https://app.test${path}` });
+
+    for (const path of ['/vi?view=today', '/vi', '/vi/', '/library', '/library?view=library', '/landing', '/?view=today']) {
+      expect(handler.shouldHandleFetch(navigate(path)), path).toBe(true);
+      expect(await (await handler.handleFetch(navigate(path)))?.text(), path).toBe('shell');
+    }
+    for (const path of ['/privacy', '/privacy.html', '/terms', '/terms.html', '/browser-extension-privacy.html', '/health.json', '/__/auth/handler', '/api/x', '/robots.txt']) {
+      expect(handler.shouldHandleFetch(navigate(path)), path).toBe(false);
+      expect(await handler.handleFetch(navigate(path)), path).toBeUndefined();
+    }
+    expect(handler.shouldHandleFetch({ method: 'GET', url: 'https://app.test/library' })).toBe(false);
+    expect(handler.shouldHandleFetch({ method: 'GET', mode: 'navigate', url: 'https://other.test/library' })).toBe(false);
+    expect(handler.shouldHandleFetch({ method: 'POST', mode: 'navigate', url: 'https://app.test/library' })).toBe(false);
+  });
+
+  it('serves a locale landing path from its own cached page and every other route from the root shell', async () => {
+    const api = loadWorkerApi();
+    const storage = new MemoryCacheStorage();
+    const cache = await storage.open(api.shellCacheName(appDescriptor.fingerprint));
+    const html = { headers: { 'content-type': 'text/html' } };
+    await cache.put('https://app.test/index.html', new Response('root shell', html));
+    await cache.put('https://app.test/vi/index.html', new Response('vi shell', html));
+    const handler = api.createServiceWorkerHandlers({
+      descriptor: {
+        ...appDescriptor,
+        assets: [...appDescriptor.assets, { url: '/vi/index.html', sha256: digest('vi shell'), bytes: 8 }],
+      },
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: async () => new Response('network'),
+    });
+    const navigate = (path: string) => ({ method: 'GET', mode: 'navigate', url: `https://app.test${path}` });
+    const served = async (path: string) => (await handler.handleFetch(navigate(path)))?.text();
+
+    expect(await served('/vi')).toBe('vi shell');
+    expect(await served('/vi/')).toBe('vi shell');
+    expect(await served('/vi?view=today')).toBe('vi shell');
+    expect(await served('/')).toBe('root shell');
+    expect(await served('/library')).toBe('root shell');
+    expect(await served('/vi/library')).toBe('root shell');
+  });
+
   it('rejects private documents from a worker descriptor', () => {
     const api = loadWorkerApi();
 

@@ -65,7 +65,7 @@ const createFake = () => {
   };
 };
 
-const createUndoFake = (restoreConflict = false) => {
+const createUndoFake = (restoreConflict = false, deletedCard?: CardData) => {
   let ownerKey: string | null = 'user:a';
   let ownerId: string | null = 'user-a';
   let currentCard: CardData | undefined = card;
@@ -84,6 +84,7 @@ const createUndoFake = (restoreConflict = false) => {
             finality: 'committed', ownerId,
             operationId: 'device-delete-1',
             libraryEpoch: mutation.libraryEpoch, deletedAt: '2026-08-09T00:00:01.000Z',
+            ...(deletedCard ? { card: deletedCard } : {}),
           },
         };
       }
@@ -321,6 +322,17 @@ describe('learning state controller', () => {
     expect(publications.filter(publication => publication.kind === 'restore')).toEqual([
       { kind: 'restore', card }, { kind: 'restore', card },
     ]);
+  });
+
+  it('undoes a delete with the card the cloud actually deleted when it differs from the local copy', async () => {
+    const deletedCard = { ...card, category: 'Travel', revision: (card.revision ?? 0) + 1 };
+    const { controller, persisted } = createUndoFake(false, deletedCard);
+    const deleted = await controller.delete(card.id, 'delete-rebased');
+    const token = ('result' in deleted ? deleted.result.undoToken : undefined)!;
+
+    expect(token.card).toEqual(deletedCard);
+    await controller.restore(token, { operationId: 'restore-rebased', operationCreatedAt: '2026-08-09T00:00:02.000Z' });
+    expect(persisted.find(mutation => mutation.operation === 'restore')).toMatchObject({ card: deletedCard });
   });
 
   it('does not publish a cloud tombstone or re-delete conflict', async () => {

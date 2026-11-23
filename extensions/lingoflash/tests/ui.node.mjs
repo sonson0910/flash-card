@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
+import { createI18nMock } from './i18n-test-helper.mjs';
 
 const uiSource = await readFile(new URL('../background-ui.js', import.meta.url), 'utf8');
 const coreSource = await readFile(new URL('../background-core.js', import.meta.url), 'utf8');
@@ -240,7 +241,7 @@ test('renders SVG controls in the serialized inline bubble', () => {
   assert.ok(nodes.some(node => node.tagName === 'SVG'));
 });
 
-const renderBubbleForToneAssertions = payload => {
+const renderBubbleForToneAssertions = (payload, locale) => {
   class FakeElement {
     constructor(tagName = '') {
       this.tagName = tagName.toUpperCase();
@@ -271,6 +272,7 @@ const renderBubbleForToneAssertions = payload => {
     speechSynthesis: { speak() {}, cancel() {} },
     SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } },
   };
+  if (locale) isolated.chrome = { i18n: createI18nMock(locale) };
   isolated.globalThis = isolated;
   vm.createContext(isolated);
   const sourceContext = { globalThis: {} };
@@ -349,6 +351,38 @@ test('classifies an AI-quota error message as a quota tone with an upgrade actio
   assert.match(note?.textContent ?? '', /Dịch nhanh vẫn miễn phí/);
   assert.ok(buttons.some(button => /Nâng cấp Pro/.test(button.textContent ?? '')));
   assert.equal(buttons.some(button => /Thử lại từ này/.test(button.textContent ?? '')), false);
+});
+
+test('shows the quota state and catalog text for a quota reason, whatever language the message is in', () => {
+  for (const locale of ['en', 'vi']) {
+    const { nodes } = renderBubbleForToneAssertions({
+      status: 'error', text: 'resilient', reason: 'quota-ai-cards', message: 'any english text', retryId: 'job_quota_2',
+    }, locale);
+    const errorNode = nodes.find(node => node.className === 'err');
+    const note = nodes.find(node => node.className === 'quota-note');
+    const catalog = createI18nMock(locale);
+    assert.equal(errorNode?.dataset?.tone, 'quota');
+    assert.equal(errorNode?.textContent, catalog.getMessage('captureReason_quota_ai_cards'));
+    assert.equal(note?.textContent, catalog.getMessage('bubbleQuotaNote'));
+    assert.notEqual(errorNode?.textContent, 'any english text');
+  }
+});
+
+test('shows catalog text for a non-quota reason and keeps the message for an unknown or missing reason', () => {
+  const english = createI18nMock('en');
+  const byReason = renderBubbleForToneAssertions({
+    status: 'error', text: 'resilient', reason: 'deck-missing', message: 'Deck “X” không còn tồn tại.', retryId: 'job_reason_1',
+  }, 'en');
+  const reasonNode = byReason.nodes.find(node => node.className === 'err');
+  assert.equal(reasonNode?.textContent, english.getMessage('captureReason_deck_missing'));
+  assert.equal(reasonNode?.dataset?.tone, undefined);
+
+  const unknown = renderBubbleForToneAssertions({
+    status: 'error', text: 'resilient', reason: 'brand-new-reason', message: 'Fallback message', retryId: 'job_reason_2',
+  }, 'en');
+  assert.equal(unknown.nodes.find(node => node.className === 'err')?.textContent, 'Fallback message');
+  const legacy = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', message: 'Đã hết hạn mức AI.' }, 'en');
+  assert.equal(legacy.nodes.find(node => node.className === 'err')?.dataset?.tone, 'quota');
 });
 
 test('keeps the retry button, and no quota tone, for a non-quota error even with a retryId', () => {

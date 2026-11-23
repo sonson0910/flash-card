@@ -875,6 +875,40 @@ test('classifies an AI-quota error message as the quota state, distinct from a g
   assert.equal(action.textContent, 'Mở SonFlash · Nâng cấp Pro');
 });
 
+test('shows the quota state and its own text for a quota reason even when the message is not Vietnamese', async () => {
+  const popup = await createPopupContext();
+
+  popup.elements.get('selection-form').dispatch('submit', { preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  popup.runtimeListeners[0]({
+    type: 'QUICK_ADD_STATUS',
+    payload: {
+      id: 'job_123456789', status: 'error', inlineShown: false, text: 'resilient',
+      reason: 'quota-ai-cards', message: 'You have used your AI cards.',
+    },
+  });
+
+  assert.equal(popup.elements.get('state-card').dataset.state, 'quota');
+  assert.equal(popup.elements.get('state-desc').textContent, createI18nMock('vi').getMessage('captureReason_quota_ai_cards'));
+});
+
+test('shows catalog text for a non-quota reason and no quota state', async () => {
+  const popup = await createPopupContext();
+
+  popup.elements.get('selection-form').dispatch('submit', { preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  popup.runtimeListeners[0]({
+    type: 'QUICK_ADD_STATUS',
+    payload: {
+      id: 'job_123456789', status: 'error', inlineShown: false, text: 'resilient',
+      reason: 'course-cancelled', message: 'Import cancelled: switch to a matching course.',
+    },
+  });
+
+  assert.equal(popup.elements.get('state-card').dataset.state, 'error');
+  assert.equal(popup.elements.get('state-desc').textContent, createI18nMock('vi').getMessage('captureReason_course_cancelled'));
+});
+
 test('shows a generic error state card whose retry action resends RETRY_QUICK_ADD and applies the retried result', async () => {
   const popup = await createPopupContext({
     retryQuickAddResponse: { ok: true, id: 'job_retry_1', text: 'resilient' },

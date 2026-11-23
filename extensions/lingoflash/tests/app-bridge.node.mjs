@@ -725,6 +725,7 @@ test('does not use the compatibility fallback when a verified v3 intent carries 
   assert.ok(result);
   assert.equal(result.args[0].payload.status, 'error');
   assert.match(result.args[0].payload.message, /context|runtime|current/i);
+  assert.equal(result.args[0].payload.reason, 'requires-runtime');
   assert.equal(bridge.wasFallbackSubmitted(), false);
   assert.equal(bridge.storageValues.has('lingoflash_browser_extension_import'), false);
 });
@@ -761,6 +762,7 @@ test('reports storage failure without claiming delivery through an unverified me
   const result = bridge.calls.find(call => call.type === 'runtime.sendMessage' && call.args[0].type === 'APP_IMPORT_RESULT');
   assert.equal(result.args[0].payload.status, 'error');
   assert.match(result.args[0].payload.message, /storage/i);
+  assert.equal(result.args[0].payload.reason, 'storage-unavailable');
   assert.equal(bridge.calls.some(call => call.type === 'window.postMessage' && call.message.type === 'LINGOFLASH_EXTENSION_IMPORT_READY'), false);
   assert.equal(bridge.wasFallbackSubmitted(), false);
 });

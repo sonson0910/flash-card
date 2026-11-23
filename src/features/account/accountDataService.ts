@@ -46,7 +46,9 @@ export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeI
   ];
   // Unlike the per-owner keys, these hold one slot for whichever learner used the device last, and the facet
   // operation log carries no owner at all, so only a still-signed-in deleted owner may clear them.
-  if (clearSharedState) keys.push('lingoflash_shared_deck_operation_v1', 'lingoflash_library_facet_operation_times_v1');
+  if (clearSharedState) {
+    keys.push('lingoflash_shared_deck_operation_v1', 'lingoflash_library_facet_operation_times_v1', 'lingoflash_shared_deck_links_v1');
+  }
   for (const key of keys) storage.removeItem(key);
   // The deck cache is a single slot keyed by the owner stored inside it, so another learner's slot stays.
   if (parseOwnerScopedDeckCache(storage.getItem(ownerScopedDeckCacheKey))?.ownerId === uid) {

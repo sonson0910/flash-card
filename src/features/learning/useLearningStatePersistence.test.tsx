@@ -798,6 +798,27 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     );
   });
 
+  it('counts the delete against the card it actually removed after rebasing onto a concurrent edit', async () => {
+    const latest = { ...card, category: 'Travel', revision: (card.revision ?? 0) + 1 };
+    mocks.deleteCardWithTombstone
+      .mockResolvedValueOnce({
+        deleted: false, reason: 'revision-conflict', currentRevision: latest.revision, currentCard: latest,
+      })
+      .mockResolvedValueOnce({
+        deleted: true,
+        tombstone: {
+          cardId: card.id, opId: 'cleanup-1', libraryEpoch: 2, revision: 4, deletedAt: '2026-08-09T00:00:05.000Z',
+        },
+      });
+    const harness = createHarness();
+
+    await expect(harness.persistence.persist(deleteMutation)).resolves.toMatchObject({
+      deleteReceipt: { finality: 'committed', card: latest },
+    });
+    expect(harness.updateCategoryFacets).toHaveBeenCalledWith({ Travel: -1 }, expect.stringContaining('delete'));
+    expect(harness.updateCategoryFacets).not.toHaveBeenCalledWith({ Study: -1 }, expect.anything());
+  });
+
   it('refreshes the epoch without a receipt when a delete is stale', async () => {
     mocks.deleteCardWithTombstone.mockResolvedValue({ deleted: false, reason: 'stale-library-epoch' });
     const harness = createHarness();

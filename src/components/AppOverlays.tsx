@@ -3,7 +3,7 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle, Check, ChevronRight, Copy, Link2, Loader2, Lock, MessagesSquare, Share2, ShieldCheck, X } from 'lucide-react';
-import type { SharedDeckIncomingPreview, SharedDeckLanguagePair, SharedDeckOutgoingPreview, SharedDeckTruncation } from '../features/sharing/sharedDeckSessionController';
+import type { SharedDeckEarlierShare, SharedDeckIncomingPreview, SharedDeckLanguagePair, SharedDeckOutgoingPreview, SharedDeckTruncation } from '../features/sharing/sharedDeckSessionController';
 import { cn } from '../lib/cn';
 import { copyTextToClipboard } from '../lib/recoverableActions';
 import { formatNumber } from '../lib/format';
@@ -56,6 +56,8 @@ interface AppOverlaysProps {
   cancelSharedDeck: () => void;
   canRevokeShare: boolean;
   revokeShare: () => Promise<void>;
+  earlierShares?: readonly SharedDeckEarlierShare[];
+  revokeEarlierShare?: (shareId: string) => Promise<void>;
   isSharing: boolean;
   isPracticeMenuOpen: boolean;
   setIsPracticeMenuOpen: (value: boolean) => void;
@@ -162,7 +164,7 @@ const displayLanguageName = (code: string, locale: string) => {
 export function AppOverlays({
   shareDialogOpen, shareLink, shareWarning, shareError, onDismissShareError, shareExpiresAt, outgoingSharePreview, incomingSharePreview,
   dismissShareDialog, showShareDialog, acceptSharedDeck, cancelSharedDeck,
-  canRevokeShare, revokeShare, isSharing,
+  canRevokeShare, revokeShare, earlierShares = [], revokeEarlierShare, isSharing,
   isPracticeMenuOpen, setIsPracticeMenuOpen, startQuiz,
   cards = [], ownerId = null, isOffline = false, listenPracticeHandoff, onDismissListenPractice = () => undefined,
   startSpelling, startLanguageDrill, startMatch, startShadowing, practiceCards, visibleLibraryCount, practiceLanguage, generateStory, isStatsOpen, setIsStatsOpen,
@@ -344,6 +346,8 @@ export function AppOverlays({
                   isSharing={isSharing}
                   onCopy={() => void copyShareLink()}
                   onDismissCopyError={() => setCopyFailed(false)}
+                  earlierShares={earlierShares}
+                  onRevokeEarlier={revokeEarlierShare}
                 />
               ) : isSharing ? <ShareDialogLoading /> : shareError ? null : <ShareDialogEmpty />}
               </div>
@@ -589,6 +593,8 @@ export function OutgoingShareDetails({
   isSharing,
   onCopy,
   onDismissCopyError,
+  earlierShares = [],
+  onRevokeEarlier,
 }: {
   shareLink: string;
   shareWarning: SharedDeckTruncation | null;
@@ -599,6 +605,8 @@ export function OutgoingShareDetails({
   isSharing: boolean;
   onCopy: () => void;
   onDismissCopyError: () => void;
+  earlierShares?: readonly SharedDeckEarlierShare[];
+  onRevokeEarlier?: (shareId: string) => Promise<void>;
 }) {
   const { _, i18n } = useLingui();
   const data = preview;
@@ -654,7 +662,45 @@ export function OutgoingShareDetails({
       </div>
       {data?.containsAiGeneratedCards ? <div role="note" className="share-dialog-warning flex gap-2.5 px-3.5 py-3 text-xs leading-relaxed text-[var(--sf-text)]"><AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" /><span><Trans {...msg({ context: 'flashcard.ai-disclosure', message: 'AI-generated content may be incorrect. Please check the meaning.' })} /></span></div> : null}
       <p className="text-xs text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'shell.share.copy-private', message: 'This link opens a preview. The recipient decides whether to add a separate copy.' })} /></p>
+      {earlierShares.length > 0 && onRevokeEarlier ? (
+        <EarlierShareLinks shares={earlierShares} isSharing={isSharing} onRevoke={onRevokeEarlier} />
+      ) : null}
     </div>
+  );
+}
+
+function EarlierShareLinks({ shares, isSharing, onRevoke }: {
+  shares: readonly SharedDeckEarlierShare[];
+  isSharing: boolean;
+  onRevoke: (shareId: string) => Promise<void>;
+}) {
+  const { _, i18n } = useLingui();
+  const allLibrary = _(msg({ id: 'shell.share.all-library', message: 'All library cards' }));
+  return (
+    <section data-share-earlier className="share-dialog-earlier space-y-2 border-t border-[var(--sf-border)] pt-4">
+      <h3 className="m-0 text-xs font-semibold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'shell.share.earlier-heading', message: 'Earlier links you can still revoke' })} /></h3>
+      <ul className="m-0 list-none space-y-1 p-0">
+        {shares.map(share => {
+          const title = categoryTitle(share.category, allLibrary);
+          const expiry = formatShareDate(share.expiresAt, i18n.locale);
+          return (
+            <li key={share.shareId} data-share-earlier-item={share.shareId} className="flex items-center gap-3">
+              <span className="min-w-0 flex-1 text-[13px] text-[var(--sf-text)]">
+                <span className="block break-words font-semibold">{title}</span>
+                {expiry ? <span className="block text-xs text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'shell.share.expires-on', message: 'Link expires on {date}' })} values={{ date: expiry }} /></span> : null}
+              </span>
+              <button
+                type="button"
+                disabled={isSharing}
+                onClick={() => void onRevoke(share.shareId)}
+                aria-label={_({ ...msg({ context: 'shell.share.earlier-revoke-label', message: 'Revoke the link for {title}' }), values: { title } })}
+                className="share-dialog-revoke min-h-11 shrink-0 border-0 bg-transparent px-1 text-sm font-semibold text-[var(--sf-danger)] underline-offset-4 hover:underline disabled:cursor-wait disabled:opacity-60"
+              ><Trans {...msg({ context: 'shell.share.earlier-revoke', message: 'Revoke' })} /></button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

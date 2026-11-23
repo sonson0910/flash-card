@@ -53,8 +53,12 @@ export async function deleteCardWithConflictRecovery(
   if (firstResult.deleted || firstResult.reason !== 'revision-conflict') {
     return firstResult;
   }
-  return applyDelete({
+  const retried = await applyDelete({
     ...command,
     baseRevision: firstResult.currentRevision,
   });
+  // The retry deletes exactly the revision the conflict reported, so that card is what was removed.
+  return retried.deleted && firstResult.currentCard
+    ? { ...retried, deletedCard: firstResult.currentCard }
+    : retried;
 }

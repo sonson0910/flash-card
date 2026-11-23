@@ -6,6 +6,7 @@ import type {
   Transaction,
 } from 'firebase-admin/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
+import { serializeCardResponse } from './cardPersistence.js';
 import { InputValidationError } from './inputValidation.js';
 import { LegacyLibraryMigrationFenceError } from './legacyLibraryMigrationOwnerScope.js';
 import { deleteCatalogProgressForCard } from './catalogProgressPersistence.js';
@@ -75,7 +76,15 @@ export type BulkCardMutationItemResult =
     opId: string;
     libraryEpoch: number;
   }
-  | { cardId: string; op: 'delete'; applied: false; reason: 'revision-conflict'; currentRevision: number };
+  | {
+    cardId: string;
+    op: 'delete';
+    applied: false;
+    reason: 'revision-conflict';
+    currentRevision: number;
+    // The card as stored now, so a caller that rebases onto it knows what its delete removes.
+    currentCard?: Record<string, unknown>;
+  };
 
 export type BulkCardMutationResult = {
   results: BulkCardMutationItemResult[];
@@ -316,7 +325,10 @@ function resolveDeleteResult(
     };
   }
   if (cardData && command.baseRevision !== cardRevision) {
-    return { cardId: command.cardId, op: 'delete', applied: false, reason: 'revision-conflict', currentRevision: cardRevision };
+    return {
+      cardId: command.cardId, op: 'delete', applied: false, reason: 'revision-conflict', currentRevision: cardRevision,
+      currentCard: serializeCardResponse(cardData),
+    };
   }
   const baseRevision = Math.max(command.baseRevision, cardRevision, previousTombstoneRevision);
   const tombstoneRevision = nextRevision(baseRevision);

@@ -1,6 +1,38 @@
 import { OperationTimeoutError } from './async';
 import { ProtectedFunctionError } from './protectedFunctionsCapability';
 
+/**
+ * Why a capture failed, as a bounded code the extension turns into text of its own language.
+ * The wire message stays as a fallback; the quota wording in it is still what an extension
+ * older than this field detects, so keep 'hạn mức', 'số thẻ' or 'lượt AI' in every quota message.
+ */
+export const CAPTURE_FAILURE_REASONS = [
+  'quota-ai-cards', 'quota-daily', 'quota-service', 'quota', 'in-flight',
+  'auth', 'permission', 'network', 'configuration', 'timeout', 'failed',
+  'deck-missing', 'course-cancelled', 'course-unavailable', 'invalid-selection', 'account-changed', 'not-verified',
+] as const;
+export type CaptureFailureReason = typeof CAPTURE_FAILURE_REASONS[number];
+
+const QUOTA_REASONS: Record<string, CaptureFailureReason> = {
+  'ai-card-quota': 'quota-ai-cards',
+  'ai-daily-allowance': 'quota-daily',
+  'account-daily-spend': 'quota-daily',
+  'service-daily-cap': 'quota-service',
+};
+
+export const captureFailureReason = (error: unknown): CaptureFailureReason => {
+  if (error instanceof ProtectedFunctionError) {
+    if (error.retryAfterMs !== undefined) return 'in-flight';
+    if (error.kind === 'quota') return QUOTA_REASONS[error.reason ?? ''] ?? 'quota';
+    if (error.kind === 'authentication') return 'auth';
+    if (error.kind === 'permission') return 'permission';
+    if (error.kind === 'network') return 'network';
+    if (error.kind === 'configuration') return 'configuration';
+    return 'failed';
+  }
+  return error instanceof OperationTimeoutError ? 'timeout' : 'failed';
+};
+
 export const captureFailureMessage = (error: unknown): string => {
   if (error instanceof ProtectedFunctionError) {
     if (error.retryAfterMs !== undefined) return error.message;

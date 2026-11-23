@@ -1566,9 +1566,10 @@ export async function applyCardPatchIfCurrent(
 }
 
 export type DeleteCardWithTombstoneResult =
-  | { deleted: true; tombstone: CardTombstone }
+  // `deletedCard` is the card as it stood when a conflicting revision was rebased onto; only that recovery sets it.
+  | { deleted: true; tombstone: CardTombstone; deletedCard?: CardData }
   | { deleted: false; reason: 'stale-library-epoch' | 'future-library-epoch' }
-  | { deleted: false; reason: 'revision-conflict'; currentRevision: number };
+  | { deleted: false; reason: 'revision-conflict'; currentRevision: number; currentCard?: CardData };
 
 export async function deleteCardWithTombstone(
   db: Firestore,
@@ -1603,6 +1604,7 @@ export async function deleteCardWithTombstone(
       deleted: false,
       reason: 'revision-conflict',
       currentRevision: result.currentRevision,
+      ...(result.currentCard ? { currentCard: result.currentCard } : {}),
     };
   }
   return {

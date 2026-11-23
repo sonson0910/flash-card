@@ -339,9 +339,29 @@ describe('applyBulkCardMutationsForOwner', () => {
     });
     expect(result.results).toEqual([{
       cardId: 'word-focus', op: 'delete', applied: false, reason: 'revision-conflict', currentRevision: 9,
+      currentCard: expect.objectContaining({ id: 'word-focus', revision: 9 }),
     }]);
     expect(test.writes).toEqual([]);
     expect(test.deletes).toEqual([]);
+  });
+
+  it('returns the latest stored card with a delete conflict so the caller can rebase on what it will delete', async () => {
+    const test = harness({
+      'users/owner/cards/word-focus': snapshot(true, baseCard({
+        revision: 9,
+        category: 'Travel',
+        updatedAt: { toDate: () => new Date('2026-08-24T01:02:03.000Z') },
+      })),
+    });
+    const result = await applyBulkCardMutationsForOwner(test.database, 'owner', {
+      libraryEpoch: 2,
+      patches: [],
+      deletes: [{ cardId: 'word-focus', baseRevision: 3, opId: 'device-a:delete-1' }],
+    });
+    expect(result.results[0]).toMatchObject({
+      applied: false,
+      currentCard: { category: 'Travel', revision: 9, updatedAt: '2026-08-24T01:02:03.000Z' },
+    });
   });
 
   it('processes a mixed batch independently, applying the valid command and reporting the conflicting one', async () => {

@@ -299,6 +299,8 @@ export const overlayShareProps = (learning: LearningRuntime) => {
   const actions = learning.actions.intakeSharing;
   return {
     shareLink: share.shareLink,
+    earlierShares: share.earlierShares,
+    revokeEarlierShare: async (shareId: string) => { await actions.revokeShare(shareId); },
     shareWarning: share.shareWarning,
     shareExpiresAt: share.expiresAt,
     shareError: share.error,
