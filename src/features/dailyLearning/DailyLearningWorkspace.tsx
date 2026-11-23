@@ -169,6 +169,7 @@ const pointerForSession = (state: MultiStageState): DailySessionPointer | null =
   ...(state.stagePlan.match.finished ? { matchFinished: true } : {}),
   ...(state.matchTimeZone ? { matchTimeZone: state.matchTimeZone } : {}),
   matchCompletionPending: state.matchCompletionPending,
+  ...(state.phase.kind === 'match' && state.matchStatus === 'expired' ? { matchExpired: true } : {}),
   stats: state.stats,
   startedAt: state.startedAt,
 } : null;
@@ -1000,7 +1001,8 @@ export default function DailyLearningWorkspace({
       ownerId: ownerRef.current, targetLanguage, translationLanguage, stagePlan, stats: pointer.stats, startedAt: pointer.startedAt, phase,
       matchStartOpId: pointer.matchStartOpId ?? null, matchCompletionId: pointer.matchCompletionId ?? null,
       ...(pointer.matchTimeZone ? { matchTimeZone: pointer.matchTimeZone } : {}),
-      matchCompletionPending: pointer.matchCompletionPending ?? false, matchStatus: 'idle',
+      matchCompletionPending: pointer.matchCompletionPending ?? false,
+      matchStatus: phase.kind === 'match' && pointer.matchExpired ? 'expired' : 'idle',
     });
   }, [routeLesson, multiStage, lesson, activePool, currentPairCards, navigateLesson, startStageExercises, targetLanguage, translationLanguage]);
 
