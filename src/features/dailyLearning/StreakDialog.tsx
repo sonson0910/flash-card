@@ -27,7 +27,7 @@ interface StreakChipProps {
   readonly onStartSession?: () => void;
 }
 
-type DialogState = 'active' | 'frozen' | 'repair' | 'milestone';
+type DialogState = 'active' | 'frozen' | 'repair' | 'ended' | 'milestone';
 type DayState = StreakWeekDayState;
 interface DayEntry { readonly day: string; readonly state: DayState; readonly isToday: boolean }
 
@@ -167,6 +167,7 @@ const confetti = Array.from({ length: 14 }, (_piece, index) => ({
 
 const dialogStateFor = (view: StreakView): DialogState | null => {
   if (view.repair) return 'repair';
+  if (view.status === 'ended') return 'ended';
   if (view.status === 'frozen') return 'frozen';
   if (view.status === 'safe' && (STREAK_MILESTONES as readonly number[]).includes(view.length)
     && view.milestones[`${view.length as StreakMilestone}`] === view.today) return 'milestone';
@@ -195,17 +196,20 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
   const held = view?.freezes.held ?? 0;
   const showFreezes = Boolean(view) && (state === 'active' || state === 'frozen');
   const milestoneXp = state === 'milestone' ? STREAK_MILESTONE_XP[length as StreakMilestone] : undefined;
-  const lumiPose: LumiPose = state === 'milestone' ? 'proud' : state === 'repair' ? 'sad' : 'hint';
+  const lumiPose: LumiPose = state === 'milestone' ? 'proud' : state === 'repair' || state === 'ended' ? 'sad' : 'hint';
+  const runEnded = state === 'repair' || state === 'ended';
   const startsSession = onStartSession && (state === 'repair' || (state !== 'milestone' && !studiedToday));
   const em = <em />;
 
   const chip = view?.repair
     ? <><FlameIcon size={16} className="today-streak-flame" />{_(msg({ id: 'today.streak.chip.repair', message: 'Repair your streak' }))}</>
-    : held > 0
-      ? <><FreezeIcon size={14} className="today-streak-freeze" />{_({ ...msg({ id: 'today.streak.chip.freezes', message: '{count, plural, one {# streak freeze} other {# streak freezes}}' }), values: { count: held } })}</>
-      : <><FlameIcon size={16} className="today-streak-flame" />{_({ ...msg({ id: 'today.streak.chip', message: '{count, plural, one {# study day} other {# study days}}' }), values: { count: length } })}</>;
+    : state === 'ended'
+      ? <><FlameIcon size={16} className="today-streak-flame" />{_(msg({ id: 'today.streak.chip.ended', message: 'Streak ended' }))}</>
+      : held > 0
+        ? <><FreezeIcon size={14} className="today-streak-freeze" />{_({ ...msg({ id: 'today.streak.chip.freezes', message: '{count, plural, one {# streak freeze} other {# streak freezes}}' }), values: { count: held } })}</>
+        : <><FlameIcon size={16} className="today-streak-flame" />{_({ ...msg({ id: 'today.streak.chip', message: '{count, plural, one {# study day} other {# study days}}' }), values: { count: length } })}</>;
 
-  const eyebrow = state === 'repair'
+  const eyebrow = runEnded
     ? <Trans {...msg({ id: 'today.streak.ended-eyebrow', message: '{count} → 0' })} values={{ count: previous }} />
     : state === 'milestone'
       ? length === 30
@@ -213,7 +217,7 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
         : <Trans {...msg({ id: 'today.streak.milestone.eyebrow', message: 'Streak milestone' })} />
       : <Trans {...msg({ id: 'today.streak.eyebrow', message: '{count}-day streak' })} values={{ count: length }} />;
 
-  const title = state === 'repair'
+  const title = runEnded
     ? <Trans {...msg({ id: 'today.streak.ended-title', message: 'Your {count}-day streak <0>ended.</0>' })} values={{ count: previous }} components={{ 0: em }} />
     : state === 'milestone'
       ? crystal
@@ -223,7 +227,9 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
         ? <Trans {...msg({ id: 'today.streak.safe-title', message: 'Your streak <0>is safe.</0>' })} components={{ 0: em }} />
         : <Trans {...msg({ id: 'today.streak.open-title', message: 'Keep your streak <0>going.</0>' })} components={{ 0: em }} />;
 
-  const description = state === 'repair'
+  const description = state === 'ended'
+    ? <Trans {...msg({ id: 'today.streak.ended-description', message: 'Start a new run today. Your XP and words are safe.' })} />
+    : state === 'repair'
     ? crystal
       ? <Trans {...msg({ id: 'today.streak.repair-description.crystal', message: 'Life happens. You can still bring it back — repair it before the window closes, or simply start fresh today.' })} />
       : <Trans {...msg({ id: 'today.streak.repair-description', message: 'Life happens. You can still bring it back — repair it before the window closes, or simply start a new run today.' })} />
@@ -264,9 +270,11 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
     ? view?.repair?.state === 'in-progress'
       ? <Trans {...msg({ id: 'today.streak.repair.continue', message: 'Keep repairing' })} />
       : <Trans {...msg({ id: 'today.streak.repair.start', message: 'Start a session' })} />
-    : state === 'milestone'
-      ? <Trans {...msg({ id: 'today.streak.continue', message: 'Continue' })} />
-      : <Trans {...msg({ id: 'today.streak.keep-going', message: 'Keep it going' })} />;
+    : state === 'ended' && startsSession
+      ? <Trans {...msg({ id: 'today.streak.repair.start', message: 'Start a session' })} />
+      : state === 'milestone' || state === 'ended'
+        ? <Trans {...msg({ id: 'today.streak.continue', message: 'Continue' })} />
+        : <Trans {...msg({ id: 'today.streak.keep-going', message: 'Keep it going' })} />;
 
   return (
     <Dialog.Root>
@@ -299,7 +307,7 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
                 )}
                 {state === 'frozen' && <span className="streak-dialog-badge"><FreezeIcon size={crystal ? 22 : 20} tips={!crystal} /></span>}
                 {state === 'milestone' && !crystal && <span className="streak-dialog-gold-chip">{number(length)}</span>}
-                {state === 'repair' && crystal && (
+                {runEnded && crystal && (
                   <svg className="streak-dialog-crack" viewBox="0 0 150 168" preserveAspectRatio="none"><path d="M78 10 L66 60 L86 84 L62 118 L74 158" /></svg>
                 )}
               </span>

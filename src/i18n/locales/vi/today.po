@@ -2079,27 +2079,32 @@ msgid "today.stage.weak.count"
 msgstr "{count, plural, one {# từ cần củng cố} other {# từ cần củng cố}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:206
+#: src/features/dailyLearning/StreakDialog.tsx:210
 msgid "today.streak.chip"
 msgstr "{count, plural, one {# ngày học} other {# ngày học}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:205
+#: src/features/dailyLearning/StreakDialog.tsx:207
+msgid "today.streak.chip.ended"
+msgstr "Chuỗi đã đứt"
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/StreakDialog.tsx:209
 msgid "today.streak.chip.freezes"
 msgstr "{count, plural, other {# lượt đóng băng chuỗi}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:203
+#: src/features/dailyLearning/StreakDialog.tsx:205
 msgid "today.streak.chip.repair"
 msgstr "Khôi phục chuỗi"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:285
+#: src/features/dailyLearning/StreakDialog.tsx:293
 msgid "today.streak.close"
 msgstr "Đóng chi tiết chuỗi ngày học"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:268
+#: src/features/dailyLearning/StreakDialog.tsx:276
 msgid "today.streak.continue"
 msgstr "Tiếp tục"
 
@@ -2134,17 +2139,22 @@ msgid "today.streak.day.today"
 msgstr "hôm nay, chưa học"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:209
+#: src/features/dailyLearning/StreakDialog.tsx:231
+msgid "today.streak.ended-description"
+msgstr "Hãy bắt đầu chuỗi mới ngay hôm nay. XP và từ vựng của bạn vẫn an toàn."
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/StreakDialog.tsx:213
 msgid "today.streak.ended-eyebrow"
 msgstr "{count} → 0"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:217
+#: src/features/dailyLearning/StreakDialog.tsx:221
 msgid "today.streak.ended-title"
 msgstr "Chuỗi {count} ngày của bạn <0>đã đứt.</0>"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:214
+#: src/features/dailyLearning/StreakDialog.tsx:218
 msgid "today.streak.eyebrow"
 msgstr "Chuỗi {count} ngày"
 
@@ -2179,87 +2189,87 @@ msgid "today.streak.freezes.none"
 msgstr "Đã hết lượt đóng băng"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:247
+#: src/features/dailyLearning/StreakDialog.tsx:253
 msgid "today.streak.freezes.note"
 msgstr "Lượt đóng băng được dùng tự động."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:233
+#: src/features/dailyLearning/StreakDialog.tsx:239
 msgid "today.streak.frozen-description"
 msgstr "{count, plural, =1 {Hôm qua bạn không học nên một lượt đóng băng chuỗi đã được dùng.} other {Bạn đã lỡ # ngày gần nhất nên # lượt đóng băng chuỗi đã được dùng.}} Học hôm nay để chuỗi tiếp tục."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:232
+#: src/features/dailyLearning/StreakDialog.tsx:238
 msgid "today.streak.frozen-description.crystal"
 msgstr "{count, plural, =1 {Hôm qua bạn không học nên một lượt đóng băng chuỗi đã được dùng.} other {Bạn đã lỡ # ngày gần nhất nên # lượt đóng băng chuỗi đã được dùng.}} Học hôm nay để streak tiếp tục."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:269
+#: src/features/dailyLearning/StreakDialog.tsx:277
 msgid "today.streak.keep-going"
 msgstr "Tiếp tục nhé"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:212
+#: src/features/dailyLearning/StreakDialog.tsx:216
 msgid "today.streak.milestone.badge-eyebrow"
 msgstr "Mở khóa huy hiệu · Web Wanderer"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:237
+#: src/features/dailyLearning/StreakDialog.tsx:243
 msgid "today.streak.milestone.description"
 msgstr "{count} ngày đều đặn có mặt. Nhờ vậy từ vựng mới nhớ thật lâu."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:213
+#: src/features/dailyLearning/StreakDialog.tsx:217
 msgid "today.streak.milestone.eyebrow"
 msgstr "Mốc chuỗi ngày"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:236
+#: src/features/dailyLearning/StreakDialog.tsx:242
 msgid "today.streak.milestone.month"
 msgstr "Tròn một tháng đều đặn có mặt. Nhờ vậy từ vựng mới nhớ thật lâu."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:221
+#: src/features/dailyLearning/StreakDialog.tsx:225
 msgid "today.streak.milestone.title"
 msgstr "{count} ngày <0>liên tiếp.</0>"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:220
+#: src/features/dailyLearning/StreakDialog.tsx:224
 msgid "today.streak.milestone.title.crystal"
 msgstr "{count} ngày <0>liên tiếp!</0>"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:245
+#: src/features/dailyLearning/StreakDialog.tsx:251
 msgid "today.streak.milestone.xp"
 msgstr "Đã cộng +{xp} XP"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:248
+#: src/features/dailyLearning/StreakDialog.tsx:254
 msgid "today.streak.note"
 msgstr "Một ngày được tính khi bạn ôn ít nhất một thẻ."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:240
+#: src/features/dailyLearning/StreakDialog.tsx:246
 msgid "today.streak.open-description"
 msgstr "Học hôm nay để giữ chuỗi {count} ngày của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:224
+#: src/features/dailyLearning/StreakDialog.tsx:228
 msgid "today.streak.open-title"
 msgstr "Giữ chuỗi học <0>tiếp tục.</0>"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:229
+#: src/features/dailyLearning/StreakDialog.tsx:235
 msgid "today.streak.repair-description"
 msgstr "Chuyện thường tình thôi. Bạn vẫn có thể lấy lại — khôi phục trước khi hết thời hạn, hoặc đơn giản là bắt đầu chuỗi mới hôm nay."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:228
+#: src/features/dailyLearning/StreakDialog.tsx:234
 msgid "today.streak.repair-description.crystal"
 msgstr "Chuyện thường tình thôi. Bạn vẫn có thể lấy lại — khôi phục trước khi hết thời hạn, hoặc bắt đầu lại từ đầu hôm nay."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:265
+#: src/features/dailyLearning/StreakDialog.tsx:271
 msgid "today.streak.repair.continue"
 msgstr "Tiếp tục khôi phục"
 
@@ -2269,7 +2279,7 @@ msgid "today.streak.repair.kicker"
 msgstr "Khôi phục"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:243
+#: src/features/dailyLearning/StreakDialog.tsx:249
 msgid "today.streak.repair.note"
 msgstr "Bỏ qua cũng không bị phạt."
 
@@ -2289,12 +2299,13 @@ msgid "today.streak.repair.safe"
 msgstr "Dù thế nào, XP và từ vựng của bạn vẫn được giữ nguyên."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:266
+#: src/features/dailyLearning/StreakDialog.tsx:272
+#: src/features/dailyLearning/StreakDialog.tsx:274
 msgid "today.streak.repair.start"
 msgstr "Bắt đầu một phiên học"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:337
+#: src/features/dailyLearning/StreakDialog.tsx:345
 msgid "today.streak.repair.start-fresh"
 msgstr "Bắt đầu lại"
 
@@ -2309,52 +2320,52 @@ msgid "today.streak.repair.window"
 msgstr "Thời hạn khôi phục: <0>{hours} giờ {minutes} phút</0>"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:239
+#: src/features/dailyLearning/StreakDialog.tsx:245
 msgid "today.streak.safe-description"
 msgstr "Hôm nay bạn đã học, nên chuỗi {count} ngày vẫn tiếp tục. Quay lại ngày mai để thành {next} ngày."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:223
+#: src/features/dailyLearning/StreakDialog.tsx:227
 msgid "today.streak.safe-title"
 msgstr "Chuỗi học của bạn <0>vẫn an toàn.</0>"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:260
+#: src/features/dailyLearning/StreakDialog.tsx:266
 msgid "today.streak.stat.best"
 msgstr "Chuỗi dài nhất"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:260
+#: src/features/dailyLearning/StreakDialog.tsx:266
 msgid "today.streak.stat.best-value"
 msgstr "{count, plural, other {# ngày}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:258
+#: src/features/dailyLearning/StreakDialog.tsx:264
 msgid "today.streak.stat.days"
 msgstr "Ngày học tuần này"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:253
+#: src/features/dailyLearning/StreakDialog.tsx:259
 msgid "today.streak.stat.new-words"
 msgstr "Từ mới"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:254
+#: src/features/dailyLearning/StreakDialog.tsx:260
 msgid "today.streak.stat.recall"
 msgstr "Nhớ đúng"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:252
+#: src/features/dailyLearning/StreakDialog.tsx:258
 msgid "today.streak.stat.reviews"
 msgstr "Lượt ôn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:255
+#: src/features/dailyLearning/StreakDialog.tsx:261
 msgid "today.streak.stat.run-xp"
 msgstr "XP"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:259
+#: src/features/dailyLearning/StreakDialog.tsx:265
 msgid "today.streak.stat.xp"
 msgstr "XP tuần này"
 

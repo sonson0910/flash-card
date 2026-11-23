@@ -2146,6 +2146,11 @@ msgid "shell.streak"
 msgstr ""
 
 #. js-lingui-explicit-id
+#: src/app/announceStreakRepair.ts:8
+msgid "shell.streak.repaired"
+msgstr ""
+
+#. js-lingui-explicit-id
 #: src/components/shell/localized-sync-status.ts:38
 #: src/components/shell/localized-sync-status.ts:39
 msgid "shell.sync.awaiting-cloud"
