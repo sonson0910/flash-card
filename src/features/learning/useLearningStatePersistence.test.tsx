@@ -697,6 +697,39 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       .resolves.toMatchObject({ reviewFinality: 'committed', xpAwarded: 2 });
   });
 
+  it('keeps a review rejected by the migration fence unresolved so the same operation is retried', async () => {
+    const reviewedAt = new Date('2026-08-24T00:00:00.000Z');
+    const fields = scheduleReview(card, 'good', reviewedAt);
+    const fenced = new ProtectedFunctionError({
+      message: 'The library is being upgraded.', kind: 'network', code: 'failed-precondition',
+      retryable: true, reason: 'library-migration-fenced',
+    });
+    const commands: ReviewCommand[] = [];
+    mocks.applyReviewWithConflictRecovery.mockImplementation(async (command: ReviewCommand) => {
+      commands.push(command);
+      if (commands.length === 1) throw fenced;
+      return { applied: true, duplicate: false, xpAwarded: 2, card: { ...card, ...fields, revision: 4 } };
+    });
+    const harness = createHarness();
+    const mutation: LearningStateMutation = {
+      ...reviewMutation, operation: 'review', fields,
+      fieldMask: Object.keys(fields) as CardMutableField[], publication: { kind: 'patch', cardId: card.id, fields },
+    };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      await expect(harness.persistence.persist(mutation)).rejects.toBe(fenced);
+    } finally {
+      warn.mockRestore();
+    }
+
+    expect(harness.options.refreshCloud).not.toHaveBeenCalled();
+    expect((fenced as ProtectedFunctionError & { reviewConflictTerminal?: boolean }).reviewConflictTerminal)
+      .toBeUndefined();
+    await expect(harness.persistence.persist(mutation))
+      .resolves.toMatchObject({ reviewFinality: 'committed', xpAwarded: 2 });
+    expect(commands.map(command => command.opId)).toEqual([mutation.operationId, mutation.operationId]);
+  });
+
   it('marks the cloud unavailable and rethrows on a retryable network failure', async () => {
     const networkError = Object.assign(new Error('offline'), { code: 'unavailable' });
     mocks.applyCardPatchIfCurrent.mockRejectedValue(networkError);

@@ -104,6 +104,16 @@ describe('protected Firebase Functions failure classification', () => {
     );
     expect(failure).toMatchObject({ kind: 'configuration', reason: 'offer-changed', retryable: false });
   });
+  it('reports the migration fence as a temporary, retryable failure instead of a deployment mismatch', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), {
+        code: 'functions/failed-precondition', details: { reason: 'library-migration-fenced' },
+      }), 'Card review',
+    );
+    expect(failure).toMatchObject({ kind: 'network', reason: 'library-migration-fenced', retryable: true });
+    expect(failure.message).not.toMatch(/out of sync/);
+    expect(failure.message).toMatch(/upgrad/i);
+  });
   it.each([
     ['service-daily-cap', 'hạn mức chung'],
     ['account-daily-spend', 'hạn mức chi phí AI'],

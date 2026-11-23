@@ -451,7 +451,7 @@ export const updateLibraryFacets = onCall({
     return await applyLibraryFacetMutation(database, userId, input);
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     if (error instanceof LibraryFacetOwnerMismatchError) {
       throw new HttpsError('permission-denied', error.message);
@@ -491,6 +491,13 @@ export const toAccountProfileHttpsError = (error: unknown): HttpsError | null =>
   }
   return null;
 };
+
+// The reason lets clients tell a temporary migration fence from a deployment mismatch.
+const libraryFencedHttpsError = () => new HttpsError(
+  'failed-precondition',
+  'The library is temporarily fenced for migration.',
+  { reason: 'library-migration-fenced' },
+);
 
 export const toRateLimitHttpsError = (error: unknown, message: string): HttpsError | null => {
   if (!(error instanceof RateLimitExceededError)) return null;
@@ -1345,7 +1352,7 @@ export const createCard = onCall({
     return result;
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     const allocationError = toCardAllocationHttpsError(error);
     if (allocationError) throw allocationError;
@@ -1386,7 +1393,7 @@ export const createCardV2 = onCall({
     });
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     const allocationError = toCardAllocationHttpsError(error);
     if (allocationError) throw allocationError;
@@ -1511,7 +1518,7 @@ export const createStarterCards = onCall({
       throw new HttpsError(code, error.message, error.details);
     }
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     const allocationError = toCardAllocationHttpsError(error);
     if (allocationError) throw allocationError;
@@ -1541,7 +1548,7 @@ export const renameCardHeadword = onCall({
     return await renameCardHeadwordForOwner(database, userId, input);
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     const renameError = toCardHeadwordRenameHttpsError(error);
     if (renameError) throw renameError;
@@ -1792,7 +1799,7 @@ export const createReviewCardHandler = (
     return result;
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     if (error instanceof ReviewPersistenceConflictError) {
       throw toReviewHttpsError(error, strict);
@@ -1950,7 +1957,7 @@ export const bulkMutateCards = onCall({
     return await applyBulkCardMutationsForOwner(database, userId, input);
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     if (error instanceof BulkMutationEpochError) {
       throw new HttpsError('failed-precondition', 'The bulk card mutation precondition failed.', { reason: error.reason });
@@ -1982,7 +1989,7 @@ export const clearLibraryCardsPage = onCall({
     return await clearLibraryCardsPageForOwner(database, userId, input);
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     if (error instanceof ClearLibraryEpochError) {
       throw new HttpsError('failed-precondition', 'The clear library precondition failed.', { reason: error.reason });

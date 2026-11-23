@@ -156,6 +156,12 @@ export function classifyProtectedFunctionError(
       kind: 'configuration', code, retryable: false, reason: 'offer-changed',
     });
   }
+  if (code === 'failed-precondition' && failureDetails?.reason === 'library-migration-fenced') {
+    return new ProtectedFunctionError({
+      message: 'Your library is being upgraded, so this change was not saved yet. Try again in a few minutes.',
+      kind: 'network', code, retryable: true, reason: 'library-migration-fenced',
+    });
+  }
   if (code === 'failed-precondition' || code === 'not-found') {
     return new ProtectedFunctionError({
       message: `${operation} cannot run because this app and its cloud deployment are out of sync. Update the deployment configuration before retrying.`,
