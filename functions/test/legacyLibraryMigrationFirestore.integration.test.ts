@@ -12,6 +12,7 @@ import {
   LegacyLibraryRollbackConflictError,
   rollbackLegacyLibraryMigration,
 } from '../src/legacyLibraryMigrationFirestore.js';
+import { assertOwnerLibraryWriteAllowed } from '../src/legacyLibraryMigrationOwnerScope.js';
 
 const describeWithEmulator = process.env.FIRESTORE_EMULATOR_HOST ? describe : describe.skip;
 const DATABASE_ID = 'ai-studio-945b4052-4462-4668-8936-277f09f07a37';
@@ -658,6 +659,59 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     )).rejects.toBeInstanceOf(LegacyLibraryRollbackConflictError);
     expect((await owner.collection('profile').doc('library_migration_fence').get()).data())
       .toMatchObject({ active: true, phase: 'rollback', rollbackGroupCount: 1 });
+  });
+
+  it('releases the fence when a resumed rollback of a completed migration is refused before any restore', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const store = createFirestoreLegacyLibraryDiscoveryStore(database);
+    const jobId = 'resumed-rollback-refused-v3';
+    let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 2 });
+    while (discovery.phase === 'discover') {
+      discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 2 });
+    }
+    const jobReference = owner.collection('admin_library_migration_jobs').doc(jobId);
+    const fenceReference = owner.collection('profile').doc('library_migration_fence');
+    const sourceRevision = String((await jobReference.get()).data()?.sourceRevision ?? '');
+    await applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision });
+    // The fence is gone after completion, so the learner can change a migrated card.
+    const canonical = owner.collection('cards').doc('word-migrate');
+    await canonical.set({ translation: 'learner edit after completion' }, { merge: true });
+
+    // The first rollback commits its fence and then its runner dies: no later
+    // transaction runs, so neither the restore nor the cleanup happens.
+    const runTransaction = database.runTransaction.bind(database);
+    let transactions = 0;
+    (database as unknown as { runTransaction: unknown }).runTransaction = async (...args: unknown[]) => {
+      transactions += 1;
+      if (transactions > 1) throw new Error('runner stopped after the fence commit');
+      return (runTransaction as (...values: unknown[]) => Promise<unknown>)(...args);
+    };
+    try {
+      await expect(rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, sourceRevision))
+        .rejects.toThrow('runner stopped after the fence commit');
+    } finally {
+      delete (database as unknown as { runTransaction?: unknown }).runTransaction;
+    }
+    expect((await fenceReference.get()).data())
+      .toMatchObject({ active: true, phase: 'rollback', rollbackGroupCount: 0 });
+    expect((await jobReference.get()).data()).toMatchObject({ phase: 'rollback' });
+    const expiredAt = Date.now() - 1;
+    await Promise.all([
+      fenceReference.set({ leaseExpiresAt: expiredAt }, { merge: true }),
+      jobReference.set({ leaseExpiresAt: Timestamp.fromMillis(expiredAt) }, { merge: true }),
+    ]);
+
+    await expect(rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, sourceRevision))
+      .rejects.toBeInstanceOf(LegacyLibraryRollbackConflictError);
+
+    expect((await fenceReference.get()).exists).toBe(false);
+    expect((await owner.collection('profile').doc('library_state').get()).data()?.libraryMigrationFenceActive)
+      .toBeUndefined();
+    expect((await jobReference.get()).data()).toMatchObject({ phase: 'complete' });
+    expect((await canonical.get()).data()?.translation).toBe('learner edit after completion');
+    await expect(database.runTransaction(transaction => (
+      assertOwnerLibraryWriteAllowed(transaction, database, OWNER_ID)
+    ))).resolves.toBeUndefined();
   });
 
   it('rejects a concurrent discovery lease before reading a page', async () => {

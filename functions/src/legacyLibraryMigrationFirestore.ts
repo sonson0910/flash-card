@@ -2213,8 +2213,11 @@ export async function rollbackLegacyLibraryMigration(
     });
     return { rolledBack: preflight.plans.length, complete: true };
   } catch (error) {
+    // A retry after an interrupted attempt reads the job as 'rollback', so the
+    // job phase cannot tell a completed migration from a half-applied one. The
+    // backup root can: it stays complete until a rollback has finished.
     if (current.rollbackGroupCount === 0
-        && (job.phase === 'complete' || current.appliedGroupCount === 0)) {
+        && (rootData.complete === true || current.appliedGroupCount === 0)) {
       await clearZeroProgressFence(database, ownerId, current, 'complete');
     }
     throw error;
