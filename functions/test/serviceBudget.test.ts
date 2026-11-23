@@ -11,6 +11,7 @@ import {
 import { createReviewCardHandler, toRateLimitHttpsError } from '../src/index.js';
 import {
   consumeOwnerAndServiceBudget,
+  consumeOwnerBudgetsAndServiceBudget,
   consumeServiceBudget,
   withServiceBudget,
 } from '../src/serviceBudget.js';
@@ -123,6 +124,19 @@ describe('service budgets', () => {
     await expect(consume('user-a')).rejects.toBeInstanceOf(RateLimitExceededError);
     await expect(consume('user-b')).resolves.toBeUndefined();
     await expect(consume('user-c')).rejects.toBeInstanceOf(RateLimitExceededError);
+  });
+
+  it('spends none of the learner budgets when the shared budget refuses', async () => {
+    const database = createDatabase();
+    const ownerBudgets = [{ scope: 'ai-card', maximum: 1 }, { scope: 'gemini-owner', maximum: 1 }];
+    await consumeServiceBudget(database, 'gemini', 1, 1_000);
+
+    await expect(consumeOwnerBudgetsAndServiceBudget(database, 'user-a', ownerBudgets, 'gemini', 1, 1_000))
+      .rejects.toBeInstanceOf(RateLimitExceededError);
+
+    // A spent counter would refuse this second attempt for the learner's own limit.
+    await expect(consumeOwnerBudgetsAndServiceBudget(database, 'user-a', ownerBudgets, 'gemini-other', 1, 1_000))
+      .resolves.toBeUndefined();
   });
 
   it('requires another aggregate allowance before Unsplash after no usable Pexels results', async () => {

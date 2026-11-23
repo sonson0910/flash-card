@@ -161,6 +161,47 @@ describe('generateVocabulary callable', () => {
     expect(refundNonCardAction).toHaveBeenCalledWith(expect.anything(), 'owner-1', '2026-09-30');
   });
 
+  describe('when the shared Gemini budget is used up', () => {
+    // Budgets live in one map and a call that includes the shared budget while it
+    // is used up commits nothing, as the real transaction does.
+    const useInMemoryBudgets = () => {
+      const spent = new Map<string, number>();
+      const consume = (budgets: ReadonlyArray<{ userId: string; scope: string; maximum: number }>) => {
+        if (budgets.some(budget => budget.userId === '__service__' && budget.scope === 'gemini')) {
+          throw new RateLimitExceededError(1_000);
+        }
+        for (const budget of budgets) spent.set(`${budget.userId}/${budget.scope}`, (spent.get(`${budget.userId}/${budget.scope}`) ?? 0) + 1);
+      };
+      consumePersistentRateLimit.mockImplementation(async (...args: unknown[]) => {
+        consume([{ userId: String(args[1]), scope: String(args[2]), maximum: Number(args[3]) }]);
+      });
+      consumePersistentRateLimits.mockImplementation(async (...args: unknown[]) => {
+        consume(args[1] as Parameters<typeof consume>[0]);
+      });
+      return spent;
+    };
+
+    it('leaves the learner\'s own translate budget unspent', async () => {
+      const spent = useInMemoryBudgets();
+      const { generateVocabulary } = await import('../src/index.js');
+      await expect(generateVocabulary.run({ auth: { uid: 'owner-1' }, data: { action: 'translate', input: 'apple' } } as never))
+        .rejects.toMatchObject({ code: 'resource-exhausted' });
+      expect([...spent.keys()]).toEqual([]);
+      expect(refundNonCardAction).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves the learner\'s own card generation budget unspent', async () => {
+      const spent = useInMemoryBudgets();
+      reserveWordOperation.mockResolvedValue({ kind: 'reserved', attemptId: 'attempt-1', periodKey: 'free-2026-09' });
+      settleWordOperation.mockResolvedValue(true);
+      const { generateVocabulary } = await import('../src/index.js');
+      await expect(generateVocabulary.run({
+        auth: { uid: 'owner-1' }, data: { action: 'word', input: 'apple', operationId: randomUUID() },
+      } as never)).rejects.toMatchObject({ code: 'resource-exhausted' });
+      expect([...spent.keys()]).toEqual([]);
+    });
+  });
+
   it('cancels only the authenticated owner operation with a validated ID', async () => {
     cancelWordOperation.mockResolvedValue({ cancelled: true, counted: false });
     const { cancelCardGeneration } = await import('../src/index.js');
@@ -698,7 +739,7 @@ describe('generateVocabulary callable', () => {
   it('refunds the reservation but rethrows the original error when the budget check fails', async () => {
     reserveWordOperation.mockResolvedValue({ kind: 'reserved', attemptId: 'attempt-1', periodKey: 'free-2026-09' });
     settleWordOperation.mockResolvedValue(true);
-    consumePersistentRateLimit.mockRejectedValue(new RateLimitExceededError(5_000));
+    consumePersistentRateLimits.mockRejectedValue(new RateLimitExceededError(5_000));
     const { generateVocabulary } = await import('../src/index.js');
     await expect(generateVocabulary.run({
       auth: { uid: 'owner-1' }, data: { action: 'word', input: 'apple', operationId: randomUUID() },
@@ -711,7 +752,7 @@ describe('generateVocabulary callable', () => {
 
   it('still rethrows the original error when the refund itself fails', async () => {
     reserveWordOperation.mockResolvedValue({ kind: 'reserved', attemptId: 'attempt-1', periodKey: 'free-2026-09' });
-    consumePersistentRateLimit.mockRejectedValue(new RateLimitExceededError(5_000));
+    consumePersistentRateLimits.mockRejectedValue(new RateLimitExceededError(5_000));
     settleWordOperation.mockRejectedValue(new Error('refund transaction failed'));
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { generateVocabulary } = await import('../src/index.js');
