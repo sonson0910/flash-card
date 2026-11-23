@@ -1733,3 +1733,206 @@ describe('card creator streaming, stop and try again', () => {
     expect(persistCards.mock.calls[1][0][0]).not.toHaveProperty('translationAlternatives');
   });
 });
+
+describe('card creator regeneration that ends before it finishes', () => {
+  type Generated = Awaited<ReturnType<CardIntakeControllerPort['generateCard']>>;
+  const noMedia = () => Promise.resolve({ audioUrl: null, imageUrl: null });
+  const completeCard = (patch: Partial<CardData> = {}): CardData => ({
+    ...card('bank'),
+    translation: 'ngân hàng',
+    explanation: 'A financial institution.',
+    explanationTranslation: 'Một tổ chức tài chính.',
+    exampleSentence: 'I went to the bank.',
+    exampleTranslation: 'Tôi đã đến ngân hàng.',
+    ...patch,
+  });
+
+  /** A complete card, then a meaning regeneration that has delivered its translation and is still running. */
+  const startMeaningRegeneration = async () => {
+    const { port, persistCards } = createFakePort();
+    const meaning = deferred<Generated>();
+    vi.mocked(port.generateCard)
+      .mockResolvedValueOnce({ card: completeCard(), mediaPromise: noMedia() })
+      .mockReturnValueOnce(meaning.promise);
+    port.cancelGeneration = vi.fn(async () => false);
+    const intake = createCardIntakeController({ port });
+    intake.cardCreator.open();
+    intake.cardCreator.updateDraft({ word: 'bank' });
+    await intake.cardCreator.generatePreview();
+    const pending = intake.cardCreator.regenerate(['meaning']);
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledTimes(2));
+    const request = vi.mocked(port.generateCard).mock.calls[1][0];
+    const deliver = (field: string, value: unknown) =>
+      request.onProgress?.({ operationId: request.operationId!, stage: 'field', field, value });
+    return { port, persistCards, intake, meaning, pending, request, deliver };
+  };
+
+  it('puts the card back to what it was when the regeneration is stopped after a detail arrived', async () => {
+    const { port, persistCards, intake, meaning, pending, deliver } = await startMeaningRegeneration();
+    deliver('translation', 'bờ sông');
+    expect(intake.getSnapshot().cardCreator.preview).toMatchObject({ translation: 'bờ sông' });
+
+    await intake.cardCreator.stopGeneration!();
+    meaning.resolve({ card: completeCard(), mediaPromise: noMedia() });
+    await pending;
+
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      stage: 'preview',
+      preview: { translation: 'ngân hàng', explanation: 'A financial institution.' },
+      generationOutcome: { kind: 'stopped', partial: true, refunded: false },
+    });
+
+    // A later regeneration of another group cannot leave a mix of old and new meaning behind.
+    vi.mocked(port.generateCard).mockResolvedValueOnce({
+      card: completeCard({ exampleSentence: 'The bank was closed.', exampleTranslation: 'Ngân hàng đã đóng cửa.' }),
+      mediaPromise: noMedia(),
+    });
+    await intake.cardCreator.regenerate(['examples']);
+    await expect(intake.cardCreator.save()).resolves.toMatchObject({ status: 'saved' });
+    expect(persistCards.mock.calls[0][0][0]).toMatchObject({
+      translation: 'ngân hàng',
+      explanation: 'A financial institution.',
+      exampleSentence: 'The bank was closed.',
+    });
+  });
+
+  it('puts the card back to what it was when the regeneration fails after a detail arrived', async () => {
+    const { intake, meaning, pending, deliver } = await startMeaningRegeneration();
+    deliver('translation', 'bờ sông');
+    deliver('explanation', 'The side of a river.');
+
+    meaning.reject(new Error('stream broke'));
+    await pending;
+
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      stage: 'preview',
+      preview: { translation: 'ngân hàng', explanation: 'A financial institution.' },
+      error: { code: 'generation' },
+      generationOutcome: { kind: 'failed', partial: true },
+      regenerating: ['meaning'],
+    });
+  });
+
+  it('keeps what the learner typed into a detail while it was regenerating', async () => {
+    const { intake, meaning, pending, deliver } = await startMeaningRegeneration();
+    deliver('translation', 'bờ sông');
+    intake.cardCreator.updatePreview({ translation: 'ngân hàng thương mại' });
+
+    meaning.reject(new Error('stream broke'));
+    await pending;
+
+    expect(intake.getSnapshot().cardCreator.preview).toMatchObject({
+      translation: 'ngân hàng thương mại',
+      explanation: 'A financial institution.',
+    });
+  });
+
+  it('keeps the card whole when a second regeneration is stopped before any detail arrives', async () => {
+    const { port, persistCards, intake, meaning, pending, deliver } = await startMeaningRegeneration();
+    deliver('translation', 'bờ sông');
+    await intake.cardCreator.stopGeneration!();
+    meaning.resolve({ card: completeCard(), mediaPromise: noMedia() });
+    await pending;
+
+    const again = deferred<Generated>();
+    vi.mocked(port.generateCard).mockReturnValueOnce(again.promise);
+    port.cancelGeneration = vi.fn(async () => true);
+    const second = intake.cardCreator.regenerate(['meaning']);
+    await vi.waitFor(() => expect(port.generateCard).toHaveBeenCalledTimes(3));
+    await intake.cardCreator.stopGeneration!();
+    again.resolve({ card: completeCard(), mediaPromise: noMedia() });
+    await second;
+
+    await expect(intake.cardCreator.save()).resolves.toMatchObject({ status: 'saved' });
+    expect(persistCards.mock.calls[0][0][0]).toMatchObject({ translation: 'ngân hàng' });
+  });
+
+  it('finishes an interrupted regeneration under the same request instead of a new one', async () => {
+    const { port, intake, meaning, pending, request, deliver } = await startMeaningRegeneration();
+    deliver('translation', 'bờ sông');
+    meaning.reject(new Error('stream broke'));
+    await pending;
+    vi.mocked(port.generateCard).mockResolvedValueOnce({
+      card: completeCard({ translation: 'ngân hàng', explanation: 'A place that keeps money.' }),
+      mediaPromise: noMedia(),
+    });
+
+    await expect(intake.cardCreator.retryGeneration!()).resolves.toMatchObject({ status: 'preview' });
+
+    const retry = vi.mocked(port.generateCard).mock.calls[2][0];
+    expect(retry.operationId).toBe(request.operationId);
+    expect(intake.getSnapshot().cardCreator).toMatchObject({
+      stage: 'preview',
+      preview: { explanation: 'A place that keeps money.' },
+      generationOutcome: null,
+    });
+  });
+});
+
+describe('card creator after a page reload', () => {
+  const storageDraft = () => {
+    const storage: {
+      word: string | null;
+      operation: Parameters<NonNullable<CardIntakeDraftPort['writeOperation']>>[0] | null;
+    } = { word: null, operation: null };
+    const draft: CardIntakeDraftPort = {
+      read: () => storage.word,
+      write: value => { storage.word = value; },
+      clear: () => { storage.word = null; },
+      readOperation: () => storage.operation,
+      writeOperation: operation => { storage.operation = operation; },
+      clearOperation: () => { storage.operation = null; },
+    };
+    return { storage, draft };
+  };
+
+  it('generates the same unsaved word under the request id it already holds', async () => {
+    const { storage, draft } = storageDraft();
+    const firstPort = createFakePort().port;
+    const before = createCardIntakeController({ port: firstPort, draft });
+    before.cardCreator.open();
+    before.cardCreator.updateDraft({ word: 'ubiquitous' });
+    await before.cardCreator.generatePreview();
+    const firstId = vi.mocked(firstPort.generateCard).mock.calls[0][0].operationId;
+    expect(storage.operation?.id).toBe(firstId);
+
+    const secondPort = createFakePort().port;
+    const after = createCardIntakeController({ port: secondPort, draft });
+    after.cardCreator.open();
+    expect(storage.operation?.id).toBe(firstId);
+    await after.cardCreator.generatePreview();
+
+    expect(vi.mocked(secondPort.generateCard).mock.calls[0][0].operationId).toBe(firstId);
+  });
+
+  it('drops the stored request id when the learner changes the word', async () => {
+    const { storage, draft } = storageDraft();
+    const before = createCardIntakeController({ port: createFakePort().port, draft });
+    before.cardCreator.open();
+    before.cardCreator.updateDraft({ word: 'ubiquitous' });
+    await before.cardCreator.generatePreview();
+    expect(storage.operation).not.toBeNull();
+
+    const after = createCardIntakeController({ port: createFakePort().port, draft });
+    after.cardCreator.open();
+    after.cardCreator.updateDraft({ word: 'ephemeral' });
+
+    expect(storage.operation).toBeNull();
+  });
+
+  it('drops the stored request id when the learner discards the card', async () => {
+    const { storage, draft } = storageDraft();
+    const before = createCardIntakeController({ port: createFakePort().port, draft });
+    before.cardCreator.open();
+    before.cardCreator.updateDraft({ word: 'ubiquitous' });
+    await before.cardCreator.generatePreview();
+    expect(storage.operation).not.toBeNull();
+
+    const after = createCardIntakeController({ port: createFakePort().port, draft });
+    after.cardCreator.open();
+    after.cardCreator.cancel();
+
+    expect(storage.operation).toBeNull();
+    expect(storage.word).toBeNull();
+  });
+});

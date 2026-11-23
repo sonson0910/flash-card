@@ -725,7 +725,7 @@ msgstr "Đóng hộp thoại xóa thư viện"
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:99
 #: src/features/intake/CreateCardDialog.tsx:60
-#: src/features/intake/CreateCardDialog.tsx:1097
+#: src/features/intake/CreateCardDialog.tsx:1107
 #: src/features/library/AiDialogueModal.tsx:156
 #: src/features/library/LibraryDialogOverlays.tsx:116
 #: src/features/library/LibraryTools.tsx:320
@@ -735,9 +735,9 @@ msgstr "Đóng"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:95
-#: src/features/intake/CreateCardDialog.tsx:1064
-#: src/features/intake/CreateCardDialog.tsx:1095
-#: src/features/intake/CreateCardDialog.tsx:1103
+#: src/features/intake/CreateCardDialog.tsx:1074
+#: src/features/intake/CreateCardDialog.tsx:1105
+#: src/features/intake/CreateCardDialog.tsx:1113
 msgid "library.create-card.add-manually"
 msgstr "Thêm thủ công"
 
@@ -748,7 +748,7 @@ msgstr "Phát âm từ {word}"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:68
-#: src/features/intake/CreateCardDialog.tsx:445
+#: src/features/intake/CreateCardDialog.tsx:452
 msgid "library.create-card.cefr"
 msgstr "Trình độ CEFR"
 
@@ -774,19 +774,19 @@ msgstr "Giới hạn gói"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:71
-#: src/features/intake/CreateCardDialog.tsx:469
+#: src/features/intake/CreateCardDialog.tsx:476
 msgid "library.create-card.definition"
 msgstr "Định nghĩa"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:58
-#: src/features/intake/CreateCardDialog.tsx:891
+#: src/features/intake/CreateCardDialog.tsx:901
 msgid "library.create-card.description.ai"
 msgstr "SonFlash soạn thẻ — bạn quyết định giữ lại gì."
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:59
-#: src/features/intake/CreateCardDialog.tsx:891
+#: src/features/intake/CreateCardDialog.tsx:901
 msgid "library.create-card.description.manual"
 msgstr "Thêm các thông tin bạn đã biết, rồi lưu thẻ."
 
@@ -802,108 +802,108 @@ msgstr "Thẻ cho {word} đã có trong thư viện của bạn. Chọn từ kh�
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:88
-#: src/features/intake/CreateCardDialog.tsx:1034
+#: src/features/intake/CreateCardDialog.tsx:1044
 msgid "library.create-card.empty-preview"
 msgstr "Bản xem trước thẻ vừa tạo sẽ hiện ở đây."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:149
+#: src/features/intake/CreateCardDialog.tsx:150
 msgid "library.create-card.error.attempts-exhausted"
 msgstr "Lượt yêu cầu AI này đã dùng hết số lần thử lại. Thử lại sẽ bắt đầu một lượt yêu cầu mới."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:133
+#: src/features/intake/CreateCardDialog.tsx:134
 msgid "library.create-card.error.authentication"
 msgstr "Đăng nhập lại để tạo thẻ AI. Từ của bạn vẫn còn ở đây."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:135
+#: src/features/intake/CreateCardDialog.tsx:136
 msgid "library.create-card.error.configuration"
 msgstr "Dịch vụ AI chưa sẵn sàng cho ứng dụng này. Hãy thử lại sau."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:141
+#: src/features/intake/CreateCardDialog.tsx:142
 msgid "library.create-card.error.deck-unavailable"
 msgstr "Deck “{deck}” không còn khả dụng. Chọn deck khác và thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:142
+#: src/features/intake/CreateCardDialog.tsx:143
 msgid "library.create-card.error.default"
 msgstr "Không thể tạo thẻ này. Từ của bạn vẫn còn ở đây; hãy thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:140
+#: src/features/intake/CreateCardDialog.tsx:141
 msgid "library.create-card.error.duplicate"
 msgstr "Thẻ này đã có trong thư viện của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:143
+#: src/features/intake/CreateCardDialog.tsx:144
 msgid "library.create-card.error.empty-word"
 msgstr "Nhập một từ hoặc cụm từ để tạo thẻ."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:144
+#: src/features/intake/CreateCardDialog.tsx:145
 msgid "library.create-card.error.generate-deck"
 msgstr "Chọn một deck khả dụng trước khi tạo thẻ."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:138
+#: src/features/intake/CreateCardDialog.tsx:139
 msgid "library.create-card.error.generation"
 msgstr "Dịch vụ AI không thể tạo thẻ này. Từ của bạn vẫn còn ở đây; hãy thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:137
+#: src/features/intake/CreateCardDialog.tsx:138
 msgid "library.create-card.error.invalid"
 msgstr "Kiểm tra lại thông tin thẻ rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:146
+#: src/features/intake/CreateCardDialog.tsx:147
 msgid "library.create-card.error.manual-deck"
 msgstr "Chọn một deck khả dụng trước khi lưu thẻ."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:145
+#: src/features/intake/CreateCardDialog.tsx:146
 msgid "library.create-card.error.manual-fields"
 msgstr "Nhập từ và nghĩa trước khi lưu thẻ thủ công."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:148
+#: src/features/intake/CreateCardDialog.tsx:149
 msgid "library.create-card.error.offline"
 msgstr "Bạn đang ngoại tuyến. Hãy kết nối lại để tạo thẻ, hoặc thêm thẻ thủ công."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:134
+#: src/features/intake/CreateCardDialog.tsx:135
 msgid "library.create-card.error.permission"
 msgstr "Dịch vụ AI đã từ chối yêu cầu này. Đăng nhập lại và thử lại lần nữa."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:131
+#: src/features/intake/CreateCardDialog.tsx:132
 msgid "library.create-card.error.quota"
 msgstr "Bạn đã dùng hết hạn mức thẻ AI. Thêm thẻ này thủ công hoặc thử lại khi hạn mức được đặt lại."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:147
+#: src/features/intake/CreateCardDialog.tsx:148
 msgid "library.create-card.error.regenerate-selection"
 msgstr "Chọn ít nhất một mục để tạo lại."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:139
+#: src/features/intake/CreateCardDialog.tsx:140
 msgid "library.create-card.error.save"
 msgstr "Không thể lưu thẻ. Bản nháp của bạn vẫn còn ở đây; hãy thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:136
+#: src/features/intake/CreateCardDialog.tsx:137
 msgid "library.create-card.error.timeout"
 msgstr "Dịch vụ AI phản hồi quá lâu. Từ của bạn vẫn còn ở đây; hãy thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:132
+#: src/features/intake/CreateCardDialog.tsx:133
 msgid "library.create-card.error.unavailable"
 msgstr "Dịch vụ AI hiện không khả dụng. Từ của bạn vẫn còn ở đây; hãy thử lại."
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:72
-#: src/features/intake/CreateCardDialog.tsx:484
+#: src/features/intake/CreateCardDialog.tsx:491
 msgid "library.create-card.example"
 msgstr "Ví dụ"
 
@@ -924,7 +924,7 @@ msgstr "Ví dụ"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:102
-#: src/features/intake/CreateCardDialog.tsx:1106
+#: src/features/intake/CreateCardDialog.tsx:1117
 msgid "library.create-card.generate-preview"
 msgstr "Tạo bản xem trước"
 
@@ -935,25 +935,25 @@ msgstr "Đang tạo…"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:55
-#: src/features/intake/CreateCardDialog.tsx:888
+#: src/features/intake/CreateCardDialog.tsx:898
 msgid "library.create-card.kicker.ai"
 msgstr "THẺ MỚI"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:56
-#: src/features/intake/CreateCardDialog.tsx:888
+#: src/features/intake/CreateCardDialog.tsx:898
 msgid "library.create-card.kicker.manual"
 msgstr "THẺ THỦ CÔNG"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:79
-#: src/features/intake/CreateCardDialog.tsx:1020
+#: src/features/intake/CreateCardDialog.tsx:1030
 msgid "library.create-card.manual-details"
 msgstr "THÔNG TIN THỦ CÔNG"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:70
-#: src/features/intake/CreateCardDialog.tsx:457
+#: src/features/intake/CreateCardDialog.tsx:464
 msgid "library.create-card.meaning"
 msgstr "Nghĩa"
 
@@ -964,7 +964,7 @@ msgstr "tùy chọn"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:49
-#: src/features/intake/CreateCardDialog.tsx:969
+#: src/features/intake/CreateCardDialog.tsx:979
 msgid "library.create-card.part-of-speech"
 msgstr "Từ loại"
 
@@ -1000,31 +1000,31 @@ msgstr "SonFlash đang chuẩn bị thẻ của bạn…"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:61
-#: src/features/intake/CreateCardDialog.tsx:424
+#: src/features/intake/CreateCardDialog.tsx:431
 msgid "library.create-card.preview.ai-draft"
 msgstr "Bản nháp AI"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:63
-#: src/features/intake/CreateCardDialog.tsx:425
+#: src/features/intake/CreateCardDialog.tsx:432
 msgid "library.create-card.preview.edit-generated"
 msgstr "Chỉnh sửa thông tin vừa tạo bên dưới"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:64
-#: src/features/intake/CreateCardDialog.tsx:425
+#: src/features/intake/CreateCardDialog.tsx:432
 msgid "library.create-card.preview.edit-manual"
 msgstr "Chỉnh sửa thông tin thẻ của bạn bên dưới"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:62
-#: src/features/intake/CreateCardDialog.tsx:424
+#: src/features/intake/CreateCardDialog.tsx:431
 msgid "library.create-card.preview.manual-draft"
 msgstr "Bản nháp thủ công"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:66
-#: src/features/intake/CreateCardDialog.tsx:433
+#: src/features/intake/CreateCardDialog.tsx:440
 msgid "library.create-card.pronunciation"
 msgstr "Phát âm"
 
@@ -1035,13 +1035,13 @@ msgstr "/phiên âm/"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:93
-#: src/features/intake/CreateCardDialog.tsx:1047
+#: src/features/intake/CreateCardDialog.tsx:1057
 msgid "library.create-card.ready-after-saving"
 msgstr "Sẵn sàng sau khi lưu"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:97
-#: src/features/intake/CreateCardDialog.tsx:1104
+#: src/features/intake/CreateCardDialog.tsx:1115
 msgid "library.create-card.regenerate"
 msgstr "Tạo lại"
 
@@ -1052,13 +1052,13 @@ msgstr "Tạo lại các mục đã chọn của thẻ"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:84
-#: src/features/intake/CreateCardDialog.tsx:1004
+#: src/features/intake/CreateCardDialog.tsx:1014
 msgid "library.create-card.regenerate-hint"
-msgstr "Mỗi lần tạo hoàn tất dùng một lượt yêu cầu AI"
+msgstr "Mỗi lần tạo có trả về nội dung dùng một lượt yêu cầu AI"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:83
-#: src/features/intake/CreateCardDialog.tsx:1004
+#: src/features/intake/CreateCardDialog.tsx:1014
 msgid "library.create-card.regenerate-selected"
 msgstr "Tạo lại các mục đã chọn"
 
@@ -1069,7 +1069,7 @@ msgstr "Đang tạo lại…"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:96
-#: src/features/intake/CreateCardDialog.tsx:1102
+#: src/features/intake/CreateCardDialog.tsx:1112
 msgid "library.create-card.request-count"
 msgstr "{count, plural, one {# lượt yêu cầu AI đã hoàn tất} other {# lượt yêu cầu AI đã hoàn tất}}"
 
@@ -1080,9 +1080,9 @@ msgstr "Đang giữ yêu cầu AI của bạn…"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:101
-#: src/features/intake/CreateCardDialog.tsx:1093
-#: src/features/intake/CreateCardDialog.tsx:1106
-#: src/features/intake/CreateCardDialog.tsx:1106
+#: src/features/intake/CreateCardDialog.tsx:1103
+#: src/features/intake/CreateCardDialog.tsx:1117
+#: src/features/intake/CreateCardDialog.tsx:1117
 msgid "library.create-card.save"
 msgstr "Lưu thẻ"
 
@@ -1108,7 +1108,7 @@ msgstr "{step} đã xong, {ready}/{total}"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:117
-#: src/features/intake/CreateCardDialog.tsx:1092
+#: src/features/intake/CreateCardDialog.tsx:1102
 msgid "library.create-card.stream.cancel"
 msgstr "Hủy"
 
@@ -1118,7 +1118,7 @@ msgid "library.create-card.stream.deck"
 msgstr "Bộ thẻ · {deck}"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:128
+#: src/features/intake/CreateCardDialog.tsx:129
 msgid "library.create-card.stream.failed-partial"
 msgstr "Quá trình tạo đã dừng trước khi thẻ hoàn tất. Các nội dung đang hiển thị chưa được kiểm tra."
 
@@ -1148,7 +1148,7 @@ msgid "library.create-card.stream.note"
 msgstr "Bạn có thể sửa từng trường ngay khi nó xuất hiện — AI vẫn tiếp tục viết phần còn lại."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:1070
+#: src/features/intake/CreateCardDialog.tsx:1080
 msgid "library.create-card.stream.ready"
 msgstr "<0>{ready}/{total}</0> mục đã xong"
 
@@ -1161,6 +1161,11 @@ msgstr "{ready}/{total} mục đã xong"
 #: src/features/intake/CreateCardDialog.tsx:120
 msgid "library.create-card.stream.reconnecting"
 msgstr "Đang kết nối lại…"
+
+#. js-lingui-explicit-id
+#: src/features/intake/CreateCardDialog.tsx:128
+msgid "library.create-card.stream.regeneration-failed"
+msgstr "Quá trình tạo lại đã dừng trước khi hoàn tất. Thẻ giữ nguyên nội dung trước đó và lượt yêu cầu này vẫn được tính."
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:121
@@ -1224,19 +1229,20 @@ msgstr "Đã dừng tạo thẻ."
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:118
-#: src/features/intake/CreateCardDialog.tsx:1099
+#: src/features/intake/CreateCardDialog.tsx:1109
+#: src/features/intake/CreateCardDialog.tsx:1114
 msgid "library.create-card.stream.try-again"
 msgstr "Thử lại"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:57
-#: src/features/intake/CreateCardDialog.tsx:889
+#: src/features/intake/CreateCardDialog.tsx:899
 msgid "library.create-card.title"
 msgstr "Thêm từ mới"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:75
-#: src/features/intake/CreateCardDialog.tsx:497
+#: src/features/intake/CreateCardDialog.tsx:504
 msgid "library.create-card.translation"
 msgstr "Nghĩa"
 
@@ -1252,7 +1258,7 @@ msgstr "Không khả dụng"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:81
-#: src/features/intake/CreateCardDialog.tsx:1021
+#: src/features/intake/CreateCardDialog.tsx:1031
 msgid "library.create-card.use-ai-draft"
 msgstr "Dùng bản nháp AI"
 
@@ -1263,7 +1269,7 @@ msgstr "Từ hoặc cụm từ"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:77
-#: src/features/intake/CreateCardDialog.tsx:512
+#: src/features/intake/CreateCardDialog.tsx:519
 msgid "library.create-card.word-family"
 msgstr "Họ từ"
 
@@ -1273,28 +1279,28 @@ msgid "library.create-card.word-family-field"
 msgstr "Họ từ {part}"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:156
+#: src/features/intake/CreateCardDialog.tsx:157
 msgid "library.create-card.word-family.adjective"
 msgstr "tính từ"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:157
+#: src/features/intake/CreateCardDialog.tsx:158
 msgid "library.create-card.word-family.adverb"
 msgstr "trạng từ"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:154
+#: src/features/intake/CreateCardDialog.tsx:155
 msgid "library.create-card.word-family.noun"
 msgstr "danh từ"
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:155
+#: src/features/intake/CreateCardDialog.tsx:156
 msgid "library.create-card.word-family.verb"
 msgstr "động từ"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:80
-#: src/features/intake/CreateCardDialog.tsx:1020
+#: src/features/intake/CreateCardDialog.tsx:1030
 msgid "library.create-card.your-card"
 msgstr "Thẻ của bạn"
 

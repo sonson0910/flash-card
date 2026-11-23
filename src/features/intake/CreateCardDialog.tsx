@@ -81,7 +81,7 @@ const CREATE_CARD_MESSAGES = {
   useAiDraft: msg({ id: 'library.create-card.use-ai-draft', message: 'Use AI draft' }),
   regenerateGroup: msg({ id: 'library.create-card.regenerate-group', message: 'Regenerate selected card details' }),
   regenerateSelected: msg({ id: 'library.create-card.regenerate-selected', message: 'Regenerate selected details' }),
-  regenerateHint: msg({ id: 'library.create-card.regenerate-hint', message: 'Each completed generation uses one AI request' }),
+  regenerateHint: msg({ id: 'library.create-card.regenerate-hint', message: 'Each generation that returns details uses one AI request' }),
   preparing: msg({ id: 'library.create-card.preparing', message: 'SonFlash is preparing your card…' }),
   reserving: msg({ id: 'library.create-card.reserving', message: 'Reserving your AI request…' }),
   drafting: msg({ id: 'library.create-card.drafting', message: 'Drafting your card with AI…' }),
@@ -125,6 +125,7 @@ const CREATE_CARD_MESSAGES = {
     stoppedPartial: msg({ id: 'library.create-card.stream.stopped-partial', message: 'Stopped. Part of the card had already arrived, so this request still counts.' }),
     stoppedCounted: msg({ id: 'library.create-card.stream.stopped-counted', message: 'Stopped. This request still counts.' }),
     stoppedUnknown: msg({ id: 'library.create-card.stream.stopped-unknown', message: 'Generation stopped.' }),
+    regenerationFailed: msg({ id: 'library.create-card.stream.regeneration-failed', message: 'Regeneration stopped before it finished. Your card keeps its earlier details, and this request still counts.' }),
     failedPartial: msg({ id: 'library.create-card.stream.failed-partial', message: 'Generation stopped before the card was finished. The details shown were not checked.' }),
   },
   errors: {
@@ -330,9 +331,15 @@ const isQuotaError = (error: unknown): boolean => {
 const isOfflineError = (error: unknown): boolean => nestedErrorField(error, 'code') === 'offline';
 
 /** The copy for a stopped or unfinished generation; it claims a refund only when the server confirmed one. */
-const generationOutcomeMessage = (outcome: CardCreatorModel['generationOutcome']): MessageDescriptor | null => {
+const generationOutcomeMessage = (
+  outcome: CardCreatorModel['generationOutcome'],
+  regeneration: boolean,
+): MessageDescriptor | null => {
   if (!outcome) return null;
-  if (outcome.kind === 'failed') return outcome.partial ? CREATE_CARD_MESSAGES.stream.failedPartial : null;
+  if (outcome.kind === 'failed') {
+    if (!outcome.partial) return null;
+    return regeneration ? CREATE_CARD_MESSAGES.stream.regenerationFailed : CREATE_CARD_MESSAGES.stream.failedPartial;
+  }
   if (outcome.refunded === true) return CREATE_CARD_MESSAGES.stream.stoppedRefunded;
   if (outcome.refunded === false) {
     return outcome.partial ? CREATE_CARD_MESSAGES.stream.stoppedPartial : CREATE_CARD_MESSAGES.stream.stoppedCounted;
@@ -579,7 +586,10 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
   const unfinished = !manualMode && model.stage === 'error' && model.generationOutcome?.partial === true;
   const streamLayout = streaming || (firstGeneration && unfinished);
   const streamSteps = deriveStreamSteps(model);
-  const outcomeMessage = generationOutcomeMessage(model.generationOutcome);
+  const outcomeMessage = generationOutcomeMessage(model.generationOutcome, model.regenerating.length > 0);
+  // A regeneration that delivered details was charged, and the same request finishes it at no charge.
+  const canResumeRegeneration = !manualMode && hasPreview && model.regenerating.length > 0
+    && model.generationOutcome?.partial === true;
   const stoppedOnly = model.error?.code === 'stopped';
   const error = localError ?? (model.error && !stoppedOnly ? cardCreatorErrorMessage(model.error) : null);
   const quotaError = isQuotaError(model.error)
@@ -1001,7 +1011,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
                     <span>{translate(generationStatus)}</span>
                   </div>}
                   {!manualMode && <div className="create-card-dialog__regeneration" aria-label={translate(CREATE_CARD_MESSAGES.regenerateGroup)}>
-                    <div className="create-card-dialog__regeneration-heading"><span><Trans {...msg({ id: 'library.create-card.regenerate-selected', message: 'Regenerate selected details' })} /></span><small><Trans {...msg({ id: 'library.create-card.regenerate-hint', message: 'Each completed generation uses one AI request' })} /></small></div>
+                    <div className="create-card-dialog__regeneration-heading"><span><Trans {...msg({ id: 'library.create-card.regenerate-selected', message: 'Regenerate selected details' })} /></span><small><Trans {...msg({ id: 'library.create-card.regenerate-hint', message: 'Each generation that returns details uses one AI request' })} /></small></div>
                     <div className="create-card-dialog__regeneration-options">
                       {REGENERABLE_FIELDS.map(field => <button
                         key={field.value}
@@ -1101,6 +1111,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
             </footer> : <footer className="create-card-dialog__footer">
               <span className="create-card-dialog__request-count"><Sparkles size={14} aria-hidden="true" /><Trans {...msg({ id: 'library.create-card.request-count', message: '{count, plural, one {# AI request completed} other {# AI requests completed}}' })} values={{ count: model.completedAiRequests }} /></span>
               {!manualMode && !hasPreview && <button type="button" className="create-card-dialog__manual-link" onClick={enterManualMode}><Trans {...msg({ id: 'library.create-card.add-manually', message: 'Add manually' })} /></button>}
+              {canResumeRegeneration && <button type="button" className="create-card-dialog__secondary" onClick={retryGeneration} disabled={isBusy}><RefreshCw size={15} aria-hidden="true" /><Trans {...msg({ id: 'library.create-card.stream.try-again', message: 'Try again' })} /></button>}
               {!manualMode && hasPreview && <button type="button" className="create-card-dialog__secondary" onClick={regenerate} disabled={isBusy || selectedFields.size === 0}><RefreshCw size={15} aria-hidden="true" />{model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.regenerating} /> : <Trans {...msg({ id: 'library.create-card.regenerate', message: 'Regenerate' })} />}</button>}
               <button ref={primaryRef} type="submit" className="create-card-dialog__primary" disabled={isBusy || saveBlocked || Boolean(model.duplicate) || (!manualMode && !model.draft.word.trim()) || !deckIsAllowed}>
                 {model.stage === 'generating' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.generating} /> : model.stage === 'saving' ? <SpinnerLabel descriptor={CREATE_CARD_MESSAGES.saving} /> : manualMode ? <Trans {...msg({ id: 'library.create-card.save', message: 'Save card' })} /> : hasPreview ? <Trans {...msg({ id: 'library.create-card.save', message: 'Save card' })} /> : <Trans {...msg({ id: 'library.create-card.generate-preview', message: 'Generate preview' })} />}
