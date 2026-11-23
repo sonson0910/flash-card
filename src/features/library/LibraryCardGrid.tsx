@@ -99,6 +99,17 @@ export function buildBulkBookmarkTargets(
 }
 
 /**
+ * Targets for a bookmark click: a card the earlier click already decided keeps that target (even when the
+ * live card has since been starred by it), and only cards new to the selection are decided from their state.
+ */
+export function resolveBulkBookmarkTargets(
+  saved: ReadonlyMap<string, boolean> | null,
+  cards: readonly Pick<CardData, 'id' | 'bookmarked'>[],
+): Map<string, boolean> {
+  return new Map([...buildBulkBookmarkTargets(cards), ...(saved ?? [])]);
+}
+
+/**
  * Patches only the cards that are not yet at their target. Reusing the targets of the first click makes a
  * retry after a partial failure finish that request instead of flipping the cards that already succeeded.
  */
@@ -189,7 +200,8 @@ export function LibraryCardGrid({
   const deleteTriggerRef = useRef<HTMLElement | null>(null);
   const deleteConfirmedRef = useRef(false);
   const startingRef = useRef(false);
-  const bookmarkRetryRef = useRef<{ selection: string; targets: Map<string, boolean> } | null>(null);
+  // Targets of a bulk bookmark click that failed, kept until the learner changes the selection or it succeeds.
+  const bookmarkRetryRef = useRef<Map<string, boolean> | null>(null);
   const [starting, setStarting] = useState(false);
   // Update synchronously during render so an editor captured for account A is
   // never rendered with account B's cards while the owner-reset effect waits.
@@ -249,6 +261,7 @@ export function LibraryCardGrid({
   useEffect(() => {
     if (resetOwnerRef.current === ownerId) return;
     resetOwnerRef.current = ownerId;
+    bookmarkRetryRef.current = null;
     setEditingCard(null);
     setDeletingCard(null);
     setDetailCardId(null);
@@ -270,6 +283,7 @@ export function LibraryCardGrid({
   }, [detailCardId, detailCard, libraryHeadingRef]);
 
   const toggleSelected = (cardId: string) => {
+    bookmarkRetryRef.current = null;
     setSelectedIds(previous => {
       const next = new Set(previous);
       if (next.has(cardId)) next.delete(cardId);
@@ -279,6 +293,7 @@ export function LibraryCardGrid({
   };
 
   const toggleAllVisible = () => {
+    bookmarkRetryRef.current = null;
     setSelectedIds(previous => {
       const next = new Set(previous);
       if (allVisibleSelected) cards.forEach(card => next.delete(card.id));
@@ -312,11 +327,8 @@ export function LibraryCardGrid({
   };
 
   const bulkBookmark = () => {
-    const selection = selectedCards.map(card => card.id).join('|');
-    const targets = bookmarkRetryRef.current?.selection === selection
-      ? bookmarkRetryRef.current.targets
-      : buildBulkBookmarkTargets(selectedCards);
-    bookmarkRetryRef.current = { selection, targets };
+    const targets = resolveBulkBookmarkTargets(bookmarkRetryRef.current, selectedCards);
+    bookmarkRetryRef.current = targets;
     void runBulk(async () => {
       const patches = buildBulkBookmarkPatches(selectedCards, targets);
       if (patches.length) await bulkPatchCards(patches);

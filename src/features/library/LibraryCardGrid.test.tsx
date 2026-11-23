@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { i18n } from '@lingui/core';
-import { buildBulkBookmarkPatches, buildBulkBookmarkTargets, buildBulkDeckAssignPatches, getLegacyUpgradePresentation } from './LibraryCardGrid';
+import { buildBulkBookmarkPatches, buildBulkBookmarkTargets, buildBulkDeckAssignPatches, getLegacyUpgradePresentation, resolveBulkBookmarkTargets } from './LibraryCardGrid';
 import { getRelativeReviewDays } from './libraryPresentation';
 
 beforeEach(() => {
@@ -181,6 +181,30 @@ describe('bulk patch construction', () => {
     expect(buildBulkBookmarkPatches(cards, targets)).toEqual([
       { cardId: 'card-c', fields: { bookmarked: true } },
     ]);
+  });
+
+  it('keeps the first click\'s targets when a selected card leaves the page before the retry', () => {
+    const first = [
+      { id: 'card-a', bookmarked: false },
+      { id: 'card-b', bookmarked: false },
+      { id: 'card-c', bookmarked: false },
+    ];
+    const saved = resolveBulkBookmarkTargets(null, first);
+
+    // A and B were applied, C was deleted elsewhere and dropped from the live page: the retry sees only A and B, both starred.
+    const retryCards = [{ id: 'card-a', bookmarked: true }, { id: 'card-b', bookmarked: true }];
+    const targets = resolveBulkBookmarkTargets(saved, retryCards);
+
+    expect(targets.get('card-a')).toBe(true);
+    expect(targets.get('card-b')).toBe(true);
+    expect(buildBulkBookmarkPatches(retryCards, targets)).toEqual([]);
+  });
+
+  it('decides a card that is new to the selection from its own bookmark state', () => {
+    const saved = resolveBulkBookmarkTargets(null, [{ id: 'card-a', bookmarked: false }]);
+    const targets = resolveBulkBookmarkTargets(saved, [{ id: 'card-a', bookmarked: true }, { id: 'card-d', bookmarked: true }]);
+
+    expect([...targets]).toEqual([['card-a', true], ['card-d', false]]);
   });
 
   it('returns no patches for an empty selection', () => {
