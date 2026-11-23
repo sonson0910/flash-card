@@ -235,6 +235,41 @@ describe('owner library session controller', () => {
     });
   });
 
+  it('keeps a legacy upgrade that needs an administrator non-retryable when the library total changes', async () => {
+    const adapter = fakeAdapter();
+    const blocked = Object.assign(new Error('Legacy library discovery needs administrator review.'), { reason: 'administrator-review' });
+    adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: false });
+    adapter.migrateLegacyCards = async () => { throw blocked; };
+    const controller = createOwnerLibrarySessionController({ adapter });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 1 });
+    await vi.waitFor(() => expect(controller.getSnapshot().legacyPending).toBe(1));
+    await controller.migrateLegacy();
+    expect(controller.getSnapshot().legacyIssue).toMatchObject({ kind: 'trusted-migration', retryable: false });
+
+    // The learner adds a card; the pending count refreshes, the issue stays.
+    await controller.updateContext({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 2 });
+    expect(controller.getSnapshot()).toMatchObject({
+      legacyPending: 2,
+      legacyIssue: { kind: 'trusted-migration', retryable: false },
+    });
+  });
+
+  it('still clears a temporary legacy upgrade failure when the library total changes and progress reads again', async () => {
+    const adapter = fakeAdapter();
+    adapter.getLegacyMigrationProgress = async () => ({ scanned: 0, complete: false });
+    adapter.migrateLegacyCards = async () => { throw new Error('offline'); };
+    const controller = createOwnerLibrarySessionController({ adapter });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 1 });
+    await vi.waitFor(() => expect(controller.getSnapshot().legacyPending).toBe(1));
+    await controller.migrateLegacy();
+    expect(controller.getSnapshot().legacyIssue).toMatchObject({ kind: 'temporary', retryable: true });
+
+    await controller.updateContext({ ownerId: 'owner-a', libraryEpoch: 0, cloudTotal: 2 });
+    expect(controller.getSnapshot().legacyIssue).toBeNull();
+  });
+
   it('isolates owner B from late owner A work and cleans up A subscription', async () => {
     const adapter = fakeAdapter();
     const aProgress = deferred<{ scanned: number; complete: boolean }>();

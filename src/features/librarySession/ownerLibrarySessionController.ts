@@ -16,6 +16,7 @@ export interface OwnerLibrarySessionAdapter {
   readonly available: boolean;
   subscribeDeckProfile(
     ownerId: string,
+    /** `null` means the device cache has no answer yet; a profile the server confirms is absent arrives as an empty profile. */
     onDecks: (profile: unknown | null) => void,
     onError: (error: unknown) => void,
   ): () => void;
@@ -228,7 +229,9 @@ export function createOwnerLibrarySessionController({
         : 0;
       publish({
         legacyPending: progress.complete ? 0 : Math.max(1, total - scanned),
-        legacyIssue: null,
+        // The browser cannot read why a discovery stopped, so a repair that
+        // needs an administrator stays shown until a new upgrade run.
+        legacyIssue: snapshot.legacyIssue?.kind === 'trusted-migration' ? snapshot.legacyIssue : null,
       });
     } catch (error) {
       if (
