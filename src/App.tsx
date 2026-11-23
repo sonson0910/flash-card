@@ -41,7 +41,9 @@ export default function App() {
   const [runtimeFailed, setRuntimeFailed] = useState(false);
 
   useEffect(() => {
-    if (navigation.viewMode === 'today') void import('./features/dailyLearning/DailyLearningWorkspace').catch(() => undefined);
+    if (navigation.viewMode === 'today') {
+      void import('./app/deferredStartup').then(({ prefetchTodayWorkspace }) => prefetchTodayWorkspace()).catch(() => undefined);
+    }
   }, [navigation.viewMode]);
 
   useEffect(() => {

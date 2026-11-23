@@ -9,3 +9,9 @@ export const startDeferredShellWork = (): void => {
   listenForReminderOpen();
   observeWebVitals();
 };
+
+/**
+ * Warms the default Today workspace while the app runtime loads. It sits in this chunk, which main.tsx already
+ * requests before the first render, so the workspace's long list of preloaded files stays out of the initial bundle.
+ */
+export const prefetchTodayWorkspace = (): Promise<unknown> => import('../features/dailyLearning/DailyLearningWorkspace');

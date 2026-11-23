@@ -95,9 +95,16 @@ describe('App composition root contract', () => {
 
   it('prefetches the default Today workspace without eager-loading it', () => {
     const source = readFileSync(appUrl, 'utf8');
+    const deferredStartupSource = readFileSync(new URL('./deferredStartup.ts', import.meta.url), 'utf8');
+    const mainSource = readFileSync(new URL('../main.tsx', import.meta.url), 'utf8');
 
-    expect(source).toContain("import('./features/dailyLearning/DailyLearningWorkspace')");
     expect(source).toContain('navigation.viewMode === \'today\'');
-    expect(source).toContain("void import('./features/dailyLearning/DailyLearningWorkspace').catch(() => undefined)");
+    // The prefetch goes through the deferred startup chunk main.tsx already requests, keeping the
+    // workspace's preload list out of the initial bundle.
+    expect(source).toContain("void import('./app/deferredStartup').then(({ prefetchTodayWorkspace }) => prefetchTodayWorkspace()).catch(() => undefined)");
+    expect(mainSource).toContain("void import('./app/deferredStartup')");
+    expect(deferredStartupSource).toContain("export const prefetchTodayWorkspace = (): Promise<unknown> => import('../features/dailyLearning/DailyLearningWorkspace');");
+    expect(source).not.toMatch(/from '\.\/features\/dailyLearning\/DailyLearningWorkspace'/);
+    expect(deferredStartupSource).not.toMatch(/from '\.\.\/features\/dailyLearning\/DailyLearningWorkspace'/);
   });
 });
