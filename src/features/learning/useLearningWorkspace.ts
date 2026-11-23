@@ -123,6 +123,8 @@ export function useLearningWorkspace(
   const sourceOverridesRef = useRef(new Map<string, SourceOverride>());
   const deleteTokensRef = useRef(new Map<string, LearningDeleteUndoToken>());
   const restoreRequestsRef = useRef(new Map<string, LearningRestoreRequest>());
+  // When each undo token arrived, on the monotonic clock: the delete time is the server's, the device clock is not.
+  const tokenReceivedAtRef = useRef(new Map<string, number>());
 
   const persistence = dependencies.usePersistence({
     ownerId: options.owner.id,
@@ -223,7 +225,12 @@ export function useLearningWorkspace(
     deleteCard: async cardId => {
       const outcome = await commands.deleteCard(cardId);
       const token = 'result' in outcome ? outcome.result.undoToken : undefined;
-      if (token) deleteTokensRef.current.set(cardId, token);
+      if (token) {
+        deleteTokensRef.current.set(cardId, token);
+        const received = tokenReceivedAtRef.current;
+        received.set(token.lifecycleId, performance.now());
+        if (received.size > 500) received.delete(received.keys().next().value as string);
+      }
       return outcome;
     },
     restoreCard: async token => {
@@ -233,9 +240,15 @@ export function useLearningWorkspace(
         const operationId = current.createOperationId?.('restore', token.card.id)
           ?? (globalThis.crypto?.randomUUID?.()
             ?? `restore-${token.card.id}-${Date.now()}-${++fallbackRestoreOperationSequence}`);
-        const now = current.now?.() ?? new Date();
         const afterDelete = Date.parse(token.deletedAt) + 1;
-        const operationCreatedAt = new Date(Math.max(now.getTime(), afterDelete)).toISOString();
+        // The server refuses an operation time more than a few minutes ahead of its own clock, so a
+        // device clock that runs fast must not stamp the restore: count the time since the delete
+        // response from the server's delete time instead.
+        const receivedAt = tokenReceivedAtRef.current.get(token.lifecycleId);
+        const stamped = receivedAt === undefined
+          ? (current.now?.() ?? new Date()).getTime()
+          : afterDelete + Math.max(0, performance.now() - receivedAt);
+        const operationCreatedAt = new Date(Math.max(stamped, afterDelete)).toISOString();
         request = { operationId, operationCreatedAt };
         restoreRequestsRef.current.set(token.lifecycleId, request);
         while (restoreRequestsRef.current.size > 500) {
