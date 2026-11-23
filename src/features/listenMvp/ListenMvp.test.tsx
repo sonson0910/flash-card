@@ -2,6 +2,7 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { LISTEN_MVP_PILOT_LESSONS } from './listenMvpPilot';
 import type { CardData } from '../../types/card';
 import type { ListenMvpLessonV1 } from './listenMvpContract';
 import {
@@ -11,6 +12,7 @@ import {
   getListenMvpAudioState,
   listenMvpClipKey,
   listenMvpSaveLabel,
+  orderListenMvpOptions,
   shouldAdoptListenMvpCachedAudio,
 } from './ListenMvp';
 
@@ -604,5 +606,21 @@ describe('ListenMvp', () => {
       vi.useRealTimers();
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe('listen comprehension option order', () => {
+  it('rotates the published options deterministically and does not always put the answer first', () => {
+    const positions = LISTEN_MVP_PILOT_LESSONS.map(pilot => {
+      const html = renderToStaticMarkup(<ListenMvp lesson={pilot} />);
+      const rendered = pilot.comprehension.options
+        .map(option => ({ option, at: html.indexOf(`>${option.replace(/&/g, '&amp;')}</button>`) }))
+        .sort((left, right) => left.at - right.at)
+        .map(entry => entry.option);
+      expect(rendered).toEqual(orderListenMvpOptions(pilot.comprehension.options, `guest:${pilot.clip.id}`));
+      expect([...rendered].sort()).toEqual([...pilot.comprehension.options].sort());
+      return rendered.indexOf(pilot.comprehension.answer);
+    });
+    expect(new Set(positions).size).toBeGreaterThan(1);
   });
 });

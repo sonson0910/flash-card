@@ -109,6 +109,22 @@ export const createListenMvpCachedAudioSource = async (
   };
 };
 
+/**
+ * The published options list the correct answer first. Rotate them by a stable hash of the learner and
+ * clip, so the answer is not always in the same place and a learner sees the same order every time.
+ */
+export const orderListenMvpOptions = (
+  options: readonly string[],
+  scopeKey: string,
+): readonly string[] => {
+  if (options.length < 2) return options;
+  let hash = 0x811c9dc5;
+  for (const character of scopeKey) hash = Math.imul(hash ^ (character.codePointAt(0) ?? 0), 0x01000193) >>> 0;
+  hash = Math.imul(hash ^ (hash >>> 15), 0x2c1b3c6d) >>> 0;
+  const pivot = (hash ^ (hash >>> 12)) % options.length;
+  return [...options.slice(pivot), ...options.slice(0, pivot)];
+};
+
 export const shouldAdoptListenMvpCachedAudio = (
   disposed: boolean,
   onlinePlaybackStarted: boolean,
@@ -365,7 +381,7 @@ export function ListenMvp({
       <fieldset className="space-y-3 border-t border-[var(--sf-border)] pt-5">
         <legend className="text-sm font-black">{lesson.comprehension.question}</legend>
         <div className="grid gap-2 sm:grid-cols-2">
-          {lesson.comprehension.options.map(option => <button key={option} type="button" onClick={() => selectAnswer(option)} aria-pressed={interaction.selectedAnswer === option} className="min-h-12 rounded-xl border border-[var(--sf-border)] px-4 py-3 text-left text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none aria-[pressed=true]:border-[var(--sf-brand)] aria-[pressed=true]:bg-cyan-50 dark:aria-[pressed=true]:bg-cyan-950/30">{option}</button>)}
+          {orderListenMvpOptions(lesson.comprehension.options, lessonKey).map(option => <button key={option} type="button" onClick={() => selectAnswer(option)} aria-pressed={interaction.selectedAnswer === option} className="min-h-12 rounded-xl border border-[var(--sf-border)] px-4 py-3 text-left text-sm font-bold transition-colors hover:border-[var(--sf-brand)] focus-visible:outline-2 motion-reduce:transition-none aria-[pressed=true]:border-[var(--sf-brand)] aria-[pressed=true]:bg-cyan-50 dark:aria-[pressed=true]:bg-cyan-950/30">{option}</button>)}
         </div>
         {interaction.selectedAnswer && <p className={`flex items-center gap-2 text-sm font-bold ${answerCorrect ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`} role="status" aria-live="polite">{answerCorrect && <CheckCircle2 className="size-4" aria-hidden="true" />}{answerCorrect ? 'Correct — nice listening.' : 'Not quite. Listen again and try once more.'}</p>}
       </fieldset>
