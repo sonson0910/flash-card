@@ -149,6 +149,76 @@ describeWithEmulators('learner file uploads against the emulators', () => {
     expect(await exists(object.name)).toBe(false);
   });
 
+  describe('listing a library larger than one page', () => {
+    const record = (uid: string, status: string, at: Date, bytes: number | null) => ({
+      schemaVersion: 1, ownerId: uid, name: 'photo.webp', kind: 'image', contentType: 'image/webp', purpose: 'card-image', courseId: null,
+      status, declaredBytes: 1_000, bytes, verification: status === 'ready' ? 'complete' : 'failed',
+      rejectionReason: status === 'rejected' ? 'signature' : null, createdAt: at, updatedAt: at, reservationExpiresAt: null,
+    });
+    const fileId = (prefix: string, index: number) => `${prefix}${String(index).padStart(20 - prefix.length, '0')}`;
+    const seed = async (uid: string, rows: Array<[string, ReturnType<typeof record>]>) => {
+      const files = database.collection('users').doc(uid).collection('files');
+      for (let start = 0; start < rows.length; start += 400) {
+        const batch = database.batch();
+        for (const [id, data] of rows.slice(start, start + 400)) batch.set(files.doc(id), data);
+        await batch.commit();
+      }
+    };
+
+    it('reaches every ready file through the cursor, newest first, and can delete the oldest', async () => {
+      const uid = owner();
+      const rows: Array<[string, ReturnType<typeof record>]> = [];
+      for (let index = 0; index < 210; index += 1) {
+        rows.push([fileId('ready', index), record(uid, 'ready', new Date(now.getTime() - (210 - index) * 1_000), 1_000)]);
+      }
+      // Two files created in the same millisecond must not hide each other across the page boundary.
+      rows.push([fileId('tie-a', 0), record(uid, 'ready', new Date(now.getTime() - 500_000), 1_000)]);
+      rows.push([fileId('tie-b', 0), record(uid, 'ready', new Date(now.getTime() - 500_000), 1_000)]);
+      await seed(uid, rows);
+      await database.collection('users').doc(uid).collection('file_usage').doc('current')
+        .set({ usedBytes: 212_000, reservedBytes: 0, fileCount: 212 });
+
+      const first = await listFiles(database, uid, config, now);
+      expect(first.files).toHaveLength(200);
+      expect(first.nextCursor).toEqual(expect.any(String));
+      const second = await listFiles(database, uid, config, now, first.nextCursor);
+      expect(second.files).toHaveLength(12);
+      expect(second.nextCursor).toBeNull();
+      const ids = [...first.files, ...second.files].map(file => file.id);
+      expect(new Set(ids).size).toBe(212);
+      expect(ids).toContain(fileId('ready', 0));
+      expect(ids).toContain(fileId('tie-a', 0));
+      expect(ids).toContain(fileId('tie-b', 0));
+      await expect(deleteFile(database, objects, uid, fileId('ready', 0), now))
+        .resolves.toEqual({ usage: { usedBytes: 211_000, reservedBytes: 0, fileCount: 211 } });
+    });
+
+    it('does not let old rejected records push stored files out of the list, and removes those records', async () => {
+      const uid = owner();
+      const rows: Array<[string, ReturnType<typeof record>]> = [
+        [fileId('ready', 0), record(uid, 'ready', new Date(now.getTime() - 10 * 86_400_000), 1_000)],
+      ];
+      for (let index = 0; index < 210; index += 1) {
+        rows.push([fileId('stale', index), record(uid, 'rejected', new Date(now.getTime() - 2 * 86_400_000 + index * 1_000), 1_000)]);
+      }
+      rows.push([fileId('fresh', 0), record(uid, 'rejected', new Date(now.getTime() - 60_000), 1_000)]);
+      await seed(uid, rows);
+      await database.collection('users').doc(uid).collection('file_usage').doc('current')
+        .set({ usedBytes: 1_000, reservedBytes: 0, fileCount: 1 });
+
+      const first = await listFiles(database, uid, config, now);
+      const all = [...first.files];
+      for (let next = first.nextCursor; next;) {
+        const page = await listFiles(database, uid, config, now, next);
+        all.push(...page.files);
+        next = page.nextCursor;
+      }
+      expect(all.map(file => file.id).sort()).toEqual([fileId('fresh', 0), fileId('ready', 0)].sort());
+      const remaining = await database.collection('users').doc(uid).collection('files').get();
+      expect(remaining.docs.map(doc => doc.id).sort()).toEqual([fileId('fresh', 0), fileId('ready', 0)].sort());
+    });
+  });
+
   it('attaches a stored file to an existing course, then deletes it and gives the bytes back', async () => {
     const uid = owner();
     await seedCourse(uid);

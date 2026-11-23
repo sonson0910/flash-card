@@ -58,6 +58,12 @@ describe('upload request parsing', () => {
   it('parses list, update and delete requests strictly', () => {
     expect(parseListFilesRequest({ ownerId: 'owner-1' })).toEqual({ ownerId: 'owner-1' });
     expect(() => parseListFilesRequest({ ownerId: 'owner-1', all: true })).toThrow(InputValidationError);
+    const cursor = '1700000000000:AbCdEfGhIjKlMnOpQrSt';
+    expect(parseListFilesRequest({ ownerId: 'owner-1', cursor })).toEqual({ ownerId: 'owner-1', cursor });
+    expect(parseListFilesRequest({ ownerId: 'owner-1', cursor: null })).toEqual({ ownerId: 'owner-1' });
+    for (const bad of ['', 'next', '1700000000000', '17000:short', `${cursor}/x`, 5]) {
+      expect(() => parseListFilesRequest({ ownerId: 'owner-1', cursor: bad })).toThrow(InputValidationError);
+    }
     expect(parseFileIdRequest({ ownerId: 'owner-1', fileId: 'AbCdEfGhIjKlMnOpQrSt' }))
       .toEqual({ ownerId: 'owner-1', fileId: 'AbCdEfGhIjKlMnOpQrSt' });
     expect(() => parseFileIdRequest({ ownerId: 'owner-1', fileId: '../x' })).toThrow(InputValidationError);

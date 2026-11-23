@@ -19,7 +19,8 @@ export interface UploadTransfer {
  * callables and Cloud Storage; the in-memory adapter backs unit tests and fixture pages.
  */
 export interface FilePort {
-  list(): Promise<FileListing>;
+  /** One page of files, newest first; `cursor` is a previous page's `nextCursor`. */
+  list(cursor?: string): Promise<FileListing>;
   prepare(input: PrepareUploadInput): Promise<PreparedUpload>;
   upload(prepared: PreparedUpload, data: Blob, contentType: string, onProgress: (sentBytes: number, totalBytes: number) => void): UploadTransfer;
   attach(fileId: string, courseId: string | null): Promise<FileSummary>;

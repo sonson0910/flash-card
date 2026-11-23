@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import type { DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
+import { FieldPath, Timestamp, type DocumentReference, type Firestore, type Transaction } from 'firebase-admin/firestore';
 import { resolvePlan } from './aiQuota.js';
 import { createLegacyCourseProfile } from './course-profile-contract.js';
 import { InputValidationError } from './inputValidation.js';
@@ -154,10 +154,16 @@ export const parseUpdateFileRequest = (value: unknown): { ownerId: string; fileI
   return { ownerId: ownerIdAt(source.ownerId), fileId: fileIdAt(source.fileId), courseId: courseIdAt(source.courseId) };
 };
 
-export const parseListFilesRequest = (value: unknown): { ownerId: string } => {
+/** Where the next page of the file list starts: the creation time of the last file shown, then its ID. */
+const FILE_LIST_CURSOR_PATTERN = /^(\d{1,16}):([A-Za-z0-9_-]{20,64})$/;
+
+export const parseListFilesRequest = (value: unknown): { ownerId: string; cursor?: string } => {
   const source = plainObject(value, 'request');
-  onlyKeys(source, ['ownerId'], 'request');
-  return { ownerId: ownerIdAt(source.ownerId) };
+  onlyKeys(source, ['ownerId', 'cursor'], 'request');
+  const ownerId = ownerIdAt(source.ownerId);
+  if (source.cursor === undefined || source.cursor === null) return { ownerId };
+  if (typeof source.cursor !== 'string' || !FILE_LIST_CURSOR_PATTERN.test(source.cursor)) fail('cursor', 'must come from a file list');
+  return { ownerId, cursor: source.cursor as string };
 };
 
 interface UsageRecord { usedBytes: number; reservedBytes: number; fileCount: number }
@@ -430,20 +436,39 @@ export interface FileListing {
   readonly files: readonly FileSummary[];
   readonly usage: { readonly usedBytes: number; readonly reservedBytes: number; readonly fileCount: number };
   readonly limits: FileLimits;
+  /** Passed back as `cursor` to list the files that come after this page; null when there are none. */
+  readonly nextCursor: string | null;
 }
 
-export async function listFiles(database: Firestore, uid: string, config: PilotConfig, now = new Date()): Promise<FileListing> {
+/**
+ * One page of the learner's files, newest first. A rejected upload has no stored object and only
+ * explains the failure, so its record is removed once it is older than the window the learner is
+ * shown; otherwise old rejections would fill every page ahead of the files that are still stored.
+ */
+export async function listFiles(database: Firestore, uid: string, config: PilotConfig, now = new Date(),
+  cursor: string | null = null): Promise<FileListing> {
   const refs = ownerRefs(database, uid);
+  const after = cursor === null ? null : FILE_LIST_CURSOR_PATTERN.exec(cursor);
+  if (cursor !== null && !after) throw new InputValidationError('cursor must come from a file list.');
+  let query = refs.files.orderBy('createdAt', 'desc').orderBy(FieldPath.documentId(), 'desc');
+  if (after) query = query.startAfter(Timestamp.fromMillis(Number(after[1])), after[2]);
   const [planSnapshot, usageSnapshot, filesSnapshot] = await Promise.all([
-    refs.plan.get(), refs.usage.get(), refs.files.orderBy('createdAt', 'desc').limit(FILE_LIST_LIMIT).get(),
+    refs.plan.get(), refs.usage.get(), query.limit(FILE_LIST_LIMIT + 1).get(),
   ]);
   const usage = usageOf(usageSnapshot.data());
   const files: FileSummary[] = [];
+  const staleRejected: DocumentReference[] = [];
+  const page = filesSnapshot.docs.slice(0, FILE_LIST_LIMIT);
+  const last = filesSnapshot.docs.length > FILE_LIST_LIMIT ? page[page.length - 1] : undefined;
+  const lastCreatedAt = last ? asDate((last.data() as FileRecord).createdAt) : null;
   let expiredReservation = false;
-  for (const snapshot of filesSnapshot.docs) {
+  for (const snapshot of page) {
     const record = snapshot.data() as FileRecord;
     const updatedAt = asDate(record.updatedAt);
-    if (record.status === 'rejected' && updatedAt && now.getTime() - updatedAt.getTime() > REJECTED_RECORD_TTL_MS) continue;
+    if (record.status === 'rejected' && updatedAt && now.getTime() - updatedAt.getTime() > REJECTED_RECORD_TTL_MS) {
+      staleRejected.push(snapshot.ref);
+      continue;
+    }
     const expiresAt = asDate(record.reservationExpiresAt);
     if (record.status === 'uploading' && expiresAt && expiresAt <= now) {
       expiredReservation = true;
@@ -451,6 +476,11 @@ export async function listFiles(database: Firestore, uid: string, config: PilotC
     }
     const summary = summaryOf(snapshot.id, record);
     if (summary) files.push(summary);
+  }
+  if (staleRejected.length) {
+    const batch = database.batch();
+    for (const ref of staleRejected) batch.delete(ref);
+    await batch.commit();
   }
   if (expiredReservation) {
     await database.runTransaction(async transaction => {
@@ -464,6 +494,7 @@ export async function listFiles(database: Firestore, uid: string, config: PilotC
     files,
     usage: { usedBytes: usage.usedBytes, reservedBytes: usage.reservedBytes, fileCount: usage.fileCount },
     limits: fileLimitsFor(planSnapshot.data(), now, config),
+    nextCursor: last && lastCreatedAt ? `${lastCreatedAt.getTime()}:${last.id}` : null,
   };
 }
 

@@ -2330,10 +2330,10 @@ export const listMyFiles = onCall({
   timeoutSeconds: 15, memory: '256MiB', maxInstances: 5,
 }, async request => {
   const userId = await requireProfiledUser(request.auth);
-  fileOwnerRequest(() => parseListFilesRequest(request.data), userId);
+  const parsed = fileOwnerRequest(() => parseListFilesRequest(request.data), userId);
   await consumeBudget(userId, 'file-list', MAX_FILE_LISTS_PER_HOUR, 'File list limit reached. Try again later.');
   try {
-    return await listFiles(database, userId, await loadPilotConfig(database));
+    return await listFiles(database, userId, await loadPilotConfig(database), new Date(), parsed.cursor ?? null);
   } catch (error) {
     return fileFailure(error, 'list');
   }
