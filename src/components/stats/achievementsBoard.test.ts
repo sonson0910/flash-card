@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { LibraryStatsViewModel } from '../../features/library/libraryViewModel';
 import { achievementsFixture, stateFromFixture, type VerifiedStatsFixture } from '../../features/gamification/testing/verifiedStatsFixtures';
 import { setFormatLocale } from '../../lib/format';
-import { buildAchievementsBoard, formatEarnedDay, formatEarnedDayLong, lateReviewWindow } from './achievementsBoard';
+import { buildAchievementsBoard, computeAchievementBadgeStats, formatEarnedDay, formatEarnedDayLong, lateReviewWindow } from './achievementsBoard';
 
 const stats = (): LibraryStatsViewModel => ({ total: 1, reviewed: 1, learned: 0, learning: 1, dueToday: 1, categoryChart: [], categoryChartIsPartial: false, difficultyChart: [], xpChartData: [{ date: '2026-09-28', XP: 100 }] });
 
@@ -115,5 +115,16 @@ describe('earned dates', () => {
     expect(lateReviewWindow()).toEqual({ start: '10:00 PM', end: '4:00 AM' });
     setFormatLocale('vi');
     expect(lateReviewWindow()).toEqual({ start: '22:00', end: '4:00' });
+  });
+});
+
+describe('computeAchievementBadgeStats', () => {
+  it('keeps a badge below its target under 100% even when the ratio rounds up', () => {
+    const progress = (xp: number) => computeAchievementBadgeStats({ ...stats(), reviewed: 0, learned: 0, xpChartData: [{ date: '2026-11-20', XP: xp }] })
+      .find(badge => badge.id === 'xp_total_500')!;
+
+    expect(progress(499)).toMatchObject({ unlocked: false, progress: 99, current: 499 });
+    expect(progress(498).progress).toBe(99);
+    expect(progress(500)).toMatchObject({ unlocked: true, progress: 100 });
   });
 });

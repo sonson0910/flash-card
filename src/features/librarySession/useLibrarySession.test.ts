@@ -62,6 +62,7 @@ const createDependencies = (authenticated = true) => {
     signIn: vi.fn(async () => ({ status: 'completed' as const })),
     signOut: vi.fn(async () => ({ status: 'completed' as const })),
     clearError: vi.fn(),
+    retry: vi.fn(),
     acceptVerifiedOwnerEpoch: vi.fn(() => true),
   };
   const ownerActions = {

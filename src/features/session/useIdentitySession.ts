@@ -27,6 +27,7 @@ export function useIdentitySession({
     signIn: controller.signIn,
     signOut: controller.signOut,
     clearError: controller.clearError,
+    retry: controller.retry,
     acceptVerifiedOwnerEpoch: controller.acceptVerifiedOwnerEpoch,
   };
 }

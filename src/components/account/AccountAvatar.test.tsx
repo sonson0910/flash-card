@@ -22,6 +22,11 @@ describe('AccountAvatar', () => {
     expect(icon).not.toContain('animate-spin');
   });
 
+  it('keeps a whole code point when a name or email starts with an astral character', () => {
+    expect(getIdentityInitials(authenticated({ displayName: '😀 An' }))).toBe('😀A');
+    expect(getIdentityInitials(authenticated({ email: '𠮷tanaka@example.com' }))).toBe('𠮷');
+  });
+
   it('shows a spinner while the session loads or a sign-in is running, and an icon when signed out', () => {
     expect(renderToStaticMarkup(<AccountAvatar identity={{ status: 'loading' }} compact />)).toContain('animate-spin motion-reduce:animate-none');
     expect(renderToStaticMarkup(<AccountAvatar identity={{ status: 'signed-out', isConfigured: true, isSigningIn: true }} />)).toContain('animate-spin');

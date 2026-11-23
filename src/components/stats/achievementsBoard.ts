@@ -47,17 +47,21 @@ export function resolveAchievementBadgeState(stat: Pick<AchievementBadgeStat, 'u
  * badges) and the weekly recap milestones strip, so both read the exact same thresholds from
  * the exact same `LibraryStatsViewModel` instead of drifting apart.
  */
+/** A badge below its target never reads 100%, whatever the rounding. */
+const progressTowards = (current: number, target: number): number =>
+  current >= target ? 100 : Math.min(99, Math.floor(current / target * 100));
+
 export function computeAchievementBadgeStats(stats: LibraryStatsViewModel): AchievementBadgeStat[] {
   const totalXp = stats.xpChartData.reduce((sum, item) => sum + item.XP, 0);
   const maxSingleDayXp = Math.max(0, ...stats.xpChartData.map(item => item.XP));
   const activeDays = stats.xpChartData.filter(item => item.XP > 0).length;
   return [
-    { id: 'streak_3', unlocked: activeDays >= 3, progress: Math.min(100, Math.round(activeDays / 3 * 100)), current: activeDays, target: 3 },
-    { id: 'mastery_10', unlocked: stats.reviewed >= 10, progress: Math.min(100, Math.round(stats.reviewed / 10 * 100)), current: stats.reviewed, target: 10 },
-    { id: 'mastery_50', unlocked: stats.learned >= 50, progress: Math.min(100, Math.round(stats.learned / 50 * 100)), current: stats.learned, target: 50 },
-    { id: 'xp_100', unlocked: maxSingleDayXp >= 100, progress: Math.min(100, Math.round(maxSingleDayXp / 100 * 100)), current: maxSingleDayXp, target: 100 },
-    { id: 'xp_total_500', unlocked: totalXp >= 500, progress: Math.min(100, Math.round(totalXp / 500 * 100)), current: totalXp, target: 500 },
-    { id: 'night_owl', unlocked: activeDays >= 5, progress: Math.min(100, Math.round(activeDays / 5 * 100)), current: activeDays, target: 5 },
+    { id: 'streak_3', unlocked: activeDays >= 3, progress: progressTowards(activeDays, 3), current: activeDays, target: 3 },
+    { id: 'mastery_10', unlocked: stats.reviewed >= 10, progress: progressTowards(stats.reviewed, 10), current: stats.reviewed, target: 10 },
+    { id: 'mastery_50', unlocked: stats.learned >= 50, progress: progressTowards(stats.learned, 50), current: stats.learned, target: 50 },
+    { id: 'xp_100', unlocked: maxSingleDayXp >= 100, progress: progressTowards(maxSingleDayXp, 100), current: maxSingleDayXp, target: 100 },
+    { id: 'xp_total_500', unlocked: totalXp >= 500, progress: progressTowards(totalXp, 500), current: totalXp, target: 500 },
+    { id: 'night_owl', unlocked: activeDays >= 5, progress: progressTowards(activeDays, 5), current: activeDays, target: 5 },
   ];
 }
 

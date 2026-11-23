@@ -24,122 +24,122 @@ msgid "Share"
 msgstr "Chia sẻ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:230
+#: src/components/stats/achievementsBoard.ts:234
 msgid "achievements.badge.active-days-3"
 msgstr "Thói quen chớm nở"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:231
+#: src/components/stats/achievementsBoard.ts:235
 msgid "achievements.badge.active-days-3.condition"
 msgstr "Nhận XP vào {target} ngày khác nhau."
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:234
+#: src/components/stats/achievementsBoard.ts:238
 msgid "achievements.badge.active-days-5"
 msgstr "Đều đặn quay lại"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:235
+#: src/components/stats/achievementsBoard.ts:239
 msgid "achievements.badge.active-days-5.condition"
 msgstr "Nhận XP vào {target} ngày khác nhau."
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:242
+#: src/components/stats/achievementsBoard.ts:246
 msgid "achievements.badge.day-xp-100"
 msgstr "Ngày học rực rỡ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:243
+#: src/components/stats/achievementsBoard.ts:247
 msgid "achievements.badge.day-xp-100.condition"
 msgstr "Nhận {target} XP trong một ngày."
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:226
+#: src/components/stats/achievementsBoard.ts:230
 msgid "achievements.badge.first-review"
 msgstr "Tia sáng đầu tiên"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:227
+#: src/components/stats/achievementsBoard.ts:231
 msgid "achievements.badge.first-review.condition"
 msgstr "Hoàn thành lượt ôn tập đầu tiên."
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:250
+#: src/components/stats/achievementsBoard.ts:254
 msgid "achievements.badge.late-reviews-10"
 msgstr "Cú đêm"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:251
+#: src/components/stats/achievementsBoard.ts:255
 msgid "achievements.badge.late-reviews-10.condition"
 msgstr "{target} lượt ôn tập từ {start} đến {end}."
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:266
+#: src/components/stats/achievementsBoard.ts:270
 msgid "achievements.badge.mastered-100"
 msgstr "Trăm từ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:267
+#: src/components/stats/achievementsBoard.ts:271
 msgid "achievements.badge.mastered-100.condition"
 msgstr "{target} từ được chấm Dễ."
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:262
+#: src/components/stats/achievementsBoard.ts:266
 msgid "achievements.badge.mastered-50"
 msgstr "Người giữ sao"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:263
+#: src/components/stats/achievementsBoard.ts:267
 msgid "achievements.badge.mastered-50.condition"
 msgstr "{target} từ được chấm Dễ."
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:238
+#: src/components/stats/achievementsBoard.ts:242
 msgid "achievements.badge.reviewed-10"
 msgstr "Gợi nhớ đang nở rộ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:239
+#: src/components/stats/achievementsBoard.ts:243
 msgid "achievements.badge.reviewed-10.condition"
 msgstr "Ôn tập {target} thẻ khác nhau."
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:254
+#: src/components/stats/achievementsBoard.ts:258
 msgid "achievements.badge.spelling-50"
 msgstr "Tai thính"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:255
+#: src/components/stats/achievementsBoard.ts:259
 msgid "achievements.badge.spelling-50.condition"
 msgstr "{target} câu trả lời đúng trong Chính tả."
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:246
+#: src/components/stats/achievementsBoard.ts:250
 msgid "achievements.badge.streak-7"
 msgstr "Tuần lễ rực lửa"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:247
+#: src/components/stats/achievementsBoard.ts:251
 msgid "achievements.badge.streak-7.condition"
 msgstr "{target} ngày liên tiếp."
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:270
+#: src/components/stats/achievementsBoard.ts:274
 msgid "achievements.badge.web-wanderer"
 msgstr "Lữ khách mạng"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:271
+#: src/components/stats/achievementsBoard.ts:275
 msgid "achievements.badge.web-wanderer.condition"
 msgstr "{target} ngày liên tiếp."
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:258
+#: src/components/stats/achievementsBoard.ts:262
 msgid "achievements.badge.xp-500"
 msgstr "Bộ sưu tập đang lớn dần"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:259
+#: src/components/stats/achievementsBoard.ts:263
 msgid "achievements.badge.xp-500.condition"
 msgstr "Tích lũy {target} XP."
 
@@ -244,12 +244,12 @@ msgid "achievements.title.shown"
 msgstr "Đang hiện trên thẻ của bạn"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:278
+#: src/components/stats/achievementsBoard.ts:282
 msgid "achievements.title.word-collector"
 msgstr "Nhà sưu tầm từ"
 
 #. js-lingui-explicit-id
-#: src/components/stats/achievementsBoard.ts:277
+#: src/components/stats/achievementsBoard.ts:281
 msgid "achievements.title.word-keeper"
 msgstr "Người giữ từ"
 

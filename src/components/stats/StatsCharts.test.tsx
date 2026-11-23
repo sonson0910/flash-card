@@ -129,7 +129,7 @@ describe('StatsCharts accessible data equivalents', () => {
     expect(html).toContain('26 weeks');
     expect(html).toMatch(/aria-pressed="true"[^>]*><span>26 weeks<\/span>/);
     expect(html).toContain('<dt class="text-[var(--sf-text-muted)]">Again</dt><dd class="font-bold tabular-nums">1</dd>');
-    expect(html).toContain('Coverage begins 2026-09-20; this range is partial.');
+    expect(html).toContain('Coverage begins Sep 20, 2026; this range is partial.');
   });
 
   it('follows a range chosen by the page and leaves the switch to the page', () => {

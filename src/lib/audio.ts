@@ -1,4 +1,5 @@
 import { isSupportedAudioUrl as isSupportedAbsoluteAudioUrl } from './mediaUrlPolicy';
+import { AUDIO_PLAYBACK_FAILED, AUDIO_PLAYBACK_UNSUPPORTED } from './speechMessages';
 
 export { playIncorrectSound, playSuccessSound as playCorrectSound } from './interactionSounds';
 
@@ -50,7 +51,6 @@ export function claimContentPlayback(stop: () => void): () => void {
   return () => { if (contentPlaybackStop === stop) contentPlaybackStop = null; };
 }
 
-const speechFailureMessage = 'Audio could not be played. Check this site’s audio permission and try again.';
 
 interface WordAudioOptions extends SpeechCallbacks {
   speechLocale?: string;
@@ -100,9 +100,9 @@ export function playWordAudio(
     try {
       if (!speakNow(word, {
         onEnd: stop,
-        onError: () => fail(speechFailureMessage),
-      }, SPEECH_RATES[options.speed ?? 1] ?? SPEECH_RATES[1], options.speechLocale, options.voice)) fail('Audio playback is not supported by this browser.');
-    } catch { fail(speechFailureMessage); }
+        onError: () => fail(AUDIO_PLAYBACK_FAILED),
+      }, SPEECH_RATES[options.speed ?? 1] ?? SPEECH_RATES[1], options.speechLocale, options.voice)) fail(AUDIO_PLAYBACK_UNSUPPORTED);
+    } catch { fail(AUDIO_PLAYBACK_FAILED); }
   };
   try {
     audio = options.audio !== undefined ? options.audio : isSupportedAudioUrl(audioUrl)

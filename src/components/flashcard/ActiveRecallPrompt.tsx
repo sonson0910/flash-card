@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { CardData } from '../../types/card';
 import { buildRecallPrompt, isRecallAnswerCorrect, resolveRecallMode, type RecallMode } from '../../lib/recall';
 import { isSupportedImageUrl } from '../../lib/images';
+import { createImeSubmitGuard } from '../../lib/imeSubmitGuard';
 import { CardImage } from './CardImage';
 import { playWordAudio, type WordAudioPlayback } from '../../lib/audio';
 import { voiceForActiveCourseCard } from '../../lib/courseVoicePreference';
@@ -43,6 +44,7 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
   const [answerInput, setAnswerInput] = useState('');
   const [answerCorrect, setAnswerCorrect] = useState<boolean | null>(null);
   const audioPlaybackRef = useRef<WordAudioPlayback | null>(null);
+  const imeSubmitGuard = useRef(createImeSubmitGuard()).current;
 
   useEffect(() => {
     setAnswerInput('');
@@ -61,10 +63,8 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
 
   const checkAnswer = (event: FormEvent) => {
     event.preventDefault();
-    // An IME composing a Hangul/kana/pinyin candidate can trigger the
-    // Enter-to-submit form event before the learner has confirmed their
-    // input; ignore that submit instead of checking a half-typed answer.
-    if ((event.nativeEvent as SubmitEvent & { isComposing?: boolean }).isComposing) return;
+    // Enter that confirms an IME candidate must not grade the half-typed answer.
+    if (imeSubmitGuard.shouldBlockSubmit(event.nativeEvent as SubmitEvent & { isComposing?: boolean; keyCode?: number })) return;
     if (!answerInput.trim()) return;
     setAnswerCorrect(isRecallAnswerCorrect(answerInput, prompt.answer));
   };
@@ -123,6 +123,9 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable }:
               setAnswerInput(event.target.value);
               setAnswerCorrect(null);
             }}
+            onCompositionStart={imeSubmitGuard.onCompositionStart}
+            onCompositionEnd={imeSubmitGuard.onCompositionEnd}
+            onKeyDown={event => { if (imeSubmitGuard.shouldBlockKeyDown(event.nativeEvent)) event.preventDefault(); }}
             autoComplete="off"
             spellCheck="false"
             placeholder={_(msg({ id: 'flashcard.recall.answer-placeholder', message: 'Type your answer…' }))}

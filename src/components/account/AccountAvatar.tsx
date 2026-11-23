@@ -1,6 +1,9 @@
 import { Loader2, UserRound } from 'lucide-react';
 import type { SyncIdentityViewModel } from '../shell/shellTypes';
 
+/** The first code point, so an astral character is never cut into a lone surrogate. */
+const firstCodePoint = (text: string): string => Array.from(text)[0] ?? '';
+
 /**
  * Initials of the signed-in account: the first letters of up to two name parts, or the first
  * letter of the email when the account has no name. Null while signed out or loading.
@@ -8,8 +11,9 @@ import type { SyncIdentityViewModel } from '../shell/shellTypes';
 export function getIdentityInitials(identity: SyncIdentityViewModel): string | null {
   if (identity.status !== 'authenticated') return null;
   const name = identity.displayName?.trim();
-  if (name) return name.split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase();
-  return identity.email?.trim().slice(0, 1).toUpperCase() || null;
+  if (name) return name.split(/\s+/).map(firstCodePoint).slice(0, 2).join('').toUpperCase();
+  const email = identity.email?.trim();
+  return email ? firstCodePoint(email).toUpperCase() : null;
 }
 
 interface AccountAvatarProps {
