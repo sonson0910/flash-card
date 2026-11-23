@@ -58,12 +58,12 @@ const course: Course = {
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 
-const renderRow = (): Tree => {
+const renderRow = (currentCourse: Course = course, goalId = 'goal-ielts'): Tree => {
   hooks.cursor = 0;
-  const panel = CourseGoalsPanel({ course, onClose: vi.fn() });
+  const panel = CourseGoalsPanel({ course: currentCourse, onClose: vi.fn() });
   let row: Tree | undefined;
   walk(panel, element => {
-    if (typeof element.type === 'function' && (element.props?.goal as { id?: string } | undefined)?.id === 'goal-ielts') row = element;
+    if (typeof element.type === 'function' && (element.props?.goal as { id?: string } | undefined)?.id === goalId) row = element;
   });
   if (!row || typeof row.type !== 'function') throw new Error('Goal row not found');
   return (row.type as (props: Record<string, unknown>) => Tree)(row.props ?? {});
@@ -153,6 +153,45 @@ describe('existing course goal editing', () => {
     row = renderRow();
     expect(updateGoal).toHaveBeenCalledTimes(2);
     expect(findAll(row, 'form')).toHaveLength(0);
+  });
+});
+
+describe('a goal level typed in a compatibility form', () => {
+  const toeicCourse: Course = {
+    ...course,
+    goals: [{ id: 'goal-toeic', kind: 'toeic', level: '700', targetDate: null, status: 'active', createdAt: '2026-01-01T00:00:00.000Z' }],
+  };
+
+  beforeEach(() => {
+    hooks.cursor = 0;
+    hooks.states = [];
+    addGoal.mockReset();
+    updateGoal.mockReset();
+  });
+
+  it('is saved in its canonical form when an existing goal is edited', async () => {
+    updateGoal.mockResolvedValue({ ok: true });
+    let row = renderRow(toeicCourse, 'goal-toeic');
+    (findAll(row, 'button')[0].props?.onClick as () => void)();
+    row = renderRow(toeicCourse, 'goal-toeic');
+    change(findAll(row, 'input')[0], '　８００  点 ');
+    row = renderRow(toeicCourse, 'goal-toeic');
+    (findAll(row, 'form')[0].props?.onSubmit as (event: { preventDefault(): void }) => void)({ preventDefault: vi.fn() });
+    await flush();
+    expect(updateGoal).toHaveBeenCalledWith('course-en', 'goal-toeic', { level: '800 点', targetDate: null });
+  });
+
+  it('is saved in its canonical form when a goal is added', async () => {
+    addGoal.mockResolvedValue({ ok: true });
+    const emptyCourse: Course = { ...course, goals: [] };
+    let form = renderAddForm(emptyCourse);
+    pickBand(form, '7.5');
+    form = renderAddForm({ ...course, goals: [course.goals[0]] });
+    change(findAll(form, 'input')[0], 'ＴＯＥＩＣ　８００');
+    form = renderAddForm({ ...course, goals: [course.goals[0]] });
+    (findAll(form, 'form')[0].props?.onSubmit as (event: { preventDefault(): void }) => void)({ preventDefault: vi.fn() });
+    await flush();
+    expect(addGoal).toHaveBeenCalledWith('course-en', { kind: 'toeic', level: 'TOEIC 800', targetDate: null });
   });
 });
 

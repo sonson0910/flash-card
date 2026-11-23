@@ -6,7 +6,7 @@ import { IELTS_GOAL_KIND } from '../../../functions/src/course-profile-contract'
 import { IeltsBandPicker } from '../examProgress/IeltsBandPicker';
 import { LatestExamScoreEditor } from '../examProgress/LatestExamScoreEditor';
 import { useCourseSession } from './CourseGate';
-import type { Course, CourseGoal } from './courseModel';
+import { canonicalGoalLevel, type Course, type CourseGoal } from './courseModel';
 import { goalKindLabel, goalKindsFor } from './courseGoalCatalog';
 
 const rowClass = 'flex min-h-11 w-full items-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm';
@@ -47,7 +47,7 @@ function GoalRow({ ownerId, course, goal, pending }: { readonly ownerId: string 
       event.preventDefault();
       if (pending || saving) return;
       setSaving(true);
-      void actions.updateGoal(course.id, goal.id, { level: level.trim() || null, targetDate: targetDate || null }).then(result => {
+      void actions.updateGoal(course.id, goal.id, { level: canonicalGoalLevel(level), targetDate: targetDate || null }).then(result => {
         if (result.ok) setEditing(false);
       }).finally(() => setSaving(false));
     }}>
@@ -90,7 +90,7 @@ function AddGoalForm({ course, pending }: { readonly course: Course; readonly pe
     event.preventDefault();
     if (pending || saving) return;
     setSaving(true);
-    void actions.addGoal(course.id, { kind, level: level.trim() || null, targetDate: targetDate || null }).then(result => {
+    void actions.addGoal(course.id, { kind, level: canonicalGoalLevel(level), targetDate: targetDate || null }).then(result => {
       if (result.ok) { setLevel(''); setTargetDate(''); }
     }).finally(() => setSaving(false));
   }}>

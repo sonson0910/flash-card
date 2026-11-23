@@ -2600,6 +2600,7 @@ msgstr "Crystal Star: Day"
 #: src/components/shell/CourseSwitcherControl.tsx:181
 #: src/features/courses/AddCourseDialog.tsx:117
 #: src/features/courses/CoursesSurface.tsx:225
+#: src/features/onboarding/OnboardingJourney.tsx:343
 msgctxt "course.error.generic"
 msgid "That course action did not go through. Please try again."
 msgstr "That course action did not go through. Please try again."
