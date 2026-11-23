@@ -9,6 +9,9 @@ import {
   cardCreatorErrorMessage,
   type CreateCardDialogProps,
 } from './CreateCardDialog';
+import { OperationTimeoutError } from '../../lib/async';
+import { captureFailureMessage } from '../../lib/captureFailureMessage';
+import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import {
   createInitialCardCreatorModel,
   type CardCreateResult,
@@ -404,5 +407,17 @@ describe('cardCreatorErrorMessage', () => {
     expect(cardCreatorErrorMessage(null)).toContain('could not be created');
     expect(cardCreatorErrorMessage({ code: 'offline', message: 'Offline.' })).toContain('You’re offline');
     expect(cardCreatorErrorMessage({ code: 'generation', cause: { reason: 'operation-attempts-exhausted' } })).toContain('used all of its retries');
+  });
+
+  it.each<[string, unknown, string]>([
+    ['quota', new ProtectedFunctionError({ message: 'quota', kind: 'quota', code: 'resource-exhausted', retryable: false }), 'AI card allowance'],
+    ['authentication', new ProtectedFunctionError({ message: 'auth', kind: 'authentication', code: 'unauthenticated', retryable: false }), 'Sign in again'],
+    ['network', new ProtectedFunctionError({ message: 'net', kind: 'network', code: 'unavailable', retryable: true }), 'AI service is unavailable'],
+    ['timeout', new OperationTimeoutError('timed out'), 'took too long'],
+  ])('shows English copy for a %s failure whose message is the Vietnamese wire sentence', (_name, cause, expected) => {
+    const text = cardCreatorErrorMessage({ code: 'generation', message: captureFailureMessage(cause), cause });
+
+    expect(text).toContain(expected);
+    expect(text).not.toMatch(/[ạảãàáâấầẩẫậăắằẳẵặẹẻẽèéêếềểễệỉịọỏõòóôốồổỗộơớờởỡợụủũùúưứừửữựỳỵỷỹđ]/i);
   });
 });
