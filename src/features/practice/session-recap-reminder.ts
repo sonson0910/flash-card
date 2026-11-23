@@ -32,6 +32,16 @@ const withoutUnavailableEmail = (settings: ReminderSettings): ReminderSettings =
   ? settings
   : { ...settings, channels: { ...settings.channels, emailDigest: false } };
 
+/**
+ * The saved reminder zone when it is not this device's zone, so the recap can name the clock the
+ * reminder follows (Settings shows the same mismatch); null when they match or the device zone is unknown.
+ */
+export const reminderZoneOffDevice = (settings: ReminderSettings): string | null => {
+  let deviceZone: string | null = null;
+  try { deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch { deviceZone = null; }
+  return deviceZone && settings.timezone && settings.timezone !== deviceZone ? settings.timezone : null;
+};
+
 const snapshot = (settings: ReminderSettings, canEnable: boolean): SessionRecapReminder => ({
   enabled: settings.channels.push, sendAtLocal: settings.sendAtLocal, canEnable, settings,
 });
