@@ -2,7 +2,7 @@ import { i18n } from '@lingui/core';
 import { I18nProvider as LinguiProvider } from '@lingui/react';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { setFormatLocale } from '../lib/formatLocale';
-import { activateCatalogLocale, loadCatalog, loadVisitedCatalogs, setActiveUiLocale } from './loadCatalog';
+import { activateCatalogLocale, getActiveUiLocale, loadCatalog, loadVisitedCatalogs, setActiveUiLocale } from './loadCatalog';
 import {
   documentDirection, documentLanguage, ENABLED_UI_LOCALES, UI_LOCALE_STORAGE_KEY,
   type ActiveUiLocale, type UiLocale,
@@ -28,12 +28,11 @@ const allowQueryOverride = (): boolean => import.meta.env.MODE !== 'production'
   || (typeof location !== 'undefined'
     && (['localhost', '127.0.0.1'].includes(location.hostname) || location.hostname.includes('--')));
 
-const initialLocale = (profileLocale?: string | null): ActiveUiLocale => {
+const initialLocale = (): ActiveUiLocale => {
   const locale = resolveLocale({
     search: typeof location === 'undefined' ? '' : location.search,
     pathname: typeof location === 'undefined' ? '' : location.pathname,
     storedLocale: readStoredLocale(),
-    profileLocale,
     navigatorLanguages: typeof navigator === 'undefined' ? [] : navigator.languages,
     allowQueryOverride: allowQueryOverride(),
   });
@@ -42,13 +41,11 @@ const initialLocale = (profileLocale?: string | null): ActiveUiLocale => {
   return locale;
 };
 
-export function I18nProvider({ children, profileLocale }: { children: ReactNode; profileLocale?: string | null }) {
-  const [locale, setLocale] = useState<ActiveUiLocale>(() => initialLocale(profileLocale));
+export function I18nProvider({ children }: { children: ReactNode }) {
+  const [locale, setLocale] = useState<ActiveUiLocale>(initialLocale);
   const [catalogError, setCatalogError] = useState<Error | null>(null);
   const changeNumber = useRef(0);
   const hasLocalChoice = useRef(false);
-  const activeLocale = useRef(locale);
-  activeLocale.current = locale;
 
   const applyLocale = useCallback(async (next: ActiveUiLocale, persist: boolean) => {
     const change = ++changeNumber.current;
@@ -93,14 +90,13 @@ export function I18nProvider({ children, profileLocale }: { children: ReactNode;
         pathname: location.pathname,
         allowQueryOverride: allowQueryOverride(),
         storedLocale: event.newValue,
-        profileLocale,
         navigatorLanguages: navigator.languages,
       });
       void applyLocale(next, false);
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
-  }, [applyLocale, profileLocale]);
+  }, [applyLocale]);
 
   // The account language applies only while this device has no language choice of its own.
   const applyProfileLocale = useCallback((accountLocale: string | null | undefined) => {
@@ -112,10 +108,8 @@ export function I18nProvider({ children, profileLocale }: { children: ReactNode;
       profileLocale: accountLocale,
       navigatorLanguages: navigator.languages,
     });
-    if (next !== activeLocale.current) void applyLocale(next, false);
+    if (next !== getActiveUiLocale()) void applyLocale(next, false);
   }, [applyLocale]);
-
-  useEffect(() => applyProfileLocale(profileLocale), [applyProfileLocale, profileLocale]);
 
   if (catalogError) throw catalogError;
   return <LocaleContext.Provider value={{ locale, setUiLocale, applyProfileLocale }}>
