@@ -29,7 +29,7 @@ type Listener = { onState: (state: AccountProfileState) => void; onError: (error
 const fakePort = () => {
   const listeners = new Map<string, Listener>();
   const subscriptions: string[] = [];
-  const port: AccountProfilePort & { complete: ReturnType<typeof vi.fn> } = {
+  const port: AccountProfilePort & { complete: ReturnType<typeof vi.fn>; saveUiLocale: ReturnType<typeof vi.fn> } = {
     subscribe: (ownerId, onState, onError) => {
       const listener = { onState, onError, stopped: false };
       listeners.set(ownerId, listener);
@@ -37,6 +37,7 @@ const fakePort = () => {
       return () => { listener.stopped = true; };
     },
     complete: vi.fn(async () => ({ status: 'complete' as const, profile })),
+    saveUiLocale: vi.fn(async () => undefined),
   };
   return { port, listeners, subscriptions };
 };
@@ -106,6 +107,23 @@ describe('useAccountProfileGate', () => {
     // A late snapshot that has not seen the new record yet must not reopen the form.
     await act(async () => listeners.get('owner-a')!.onState({ status: 'required' }));
     expect(seen.current?.status).toBe('complete');
+  });
+
+  it('stores a chosen language for the signed-in owner and ignores a failed save', async () => {
+    const { port, listeners } = fakePort();
+    const { seen, rerender } = await mountGate('owner-a', port);
+    await act(async () => listeners.get('owner-a')!.onState({ status: 'complete', profile }));
+
+    await act(async () => seen.current!.saveUiLocale('vi'));
+    expect(port.saveUiLocale).toHaveBeenCalledWith({ ownerId: 'owner-a', uiLocale: 'vi' });
+
+    port.saveUiLocale.mockRejectedValueOnce(new Error('offline'));
+    await act(async () => seen.current!.saveUiLocale('en'));
+    expect(port.saveUiLocale).toHaveBeenCalledTimes(2);
+
+    await rerender(null);
+    await act(async () => seen.current!.saveUiLocale('vi'));
+    expect(port.saveUiLocale).toHaveBeenCalledTimes(2);
   });
 
   it('shows the restricted state the server decided', async () => {

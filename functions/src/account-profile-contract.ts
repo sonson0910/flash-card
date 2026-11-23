@@ -45,6 +45,11 @@ export interface CompleteAccountProfileRequest {
   };
 }
 
+export interface UpdateAccountUiLocaleRequest {
+  readonly ownerId: string;
+  readonly uiLocale: AccountUiLocale;
+}
+
 export type CompleteAccountProfileResponse =
   | { readonly status: 'complete'; readonly profile: AccountProfileRecord }
   | { readonly status: 'restricted'; readonly restrictedAt: string };
@@ -128,6 +133,14 @@ export const parseCompleteAccountProfileRequest = (value: unknown): CompleteAcco
       termsVersion: versionAt(consent.termsVersion, 'request.consent.termsVersion'),
       privacyVersion: versionAt(consent.privacyVersion, 'request.consent.privacyVersion'),
     },
+  };
+};
+
+export const parseUpdateAccountUiLocaleRequest = (value: unknown): UpdateAccountUiLocaleRequest => {
+  const record = recordAt(value, 'request', ['ownerId', 'uiLocale']);
+  return {
+    ownerId: ownerAt(record.ownerId, 'request.ownerId'),
+    uiLocale: enumAt(record.uiLocale, 'request.uiLocale', ACCOUNT_UI_LOCALES),
   };
 };
 

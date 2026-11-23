@@ -182,7 +182,9 @@ import {
   type CourseProfileMutationRequest,
 } from './course-profile-persistence.js';
 import { parseSetLatestExamScoreRequest, setLatestExamScore as storeLatestExamScore } from './exam-score-persistence.js';
-import { AccountProfileValidationError, parseCompleteAccountProfileRequest } from './account-profile-contract.js';
+import {
+  AccountProfileValidationError, parseCompleteAccountProfileRequest, parseUpdateAccountUiLocaleRequest,
+} from './account-profile-contract.js';
 import { buildMnemonicPrompt, buildTranslatePrompt } from './vocabularyPrompts.js';
 import {
   bucketFileObjects, configureAccountFileObjects, deleteFile, FileServiceError, finalizeUploadedFile, listFiles,
@@ -191,9 +193,11 @@ import {
 } from './userFiles.js';
 import {
   AccountProfileConsentOutdatedError,
+  AccountProfileMissingError,
   AccountProfileOwnerMismatchError,
   AccountProfileStoredDataError,
   completeAccountProfile as completeStoredAccountProfile,
+  updateAccountUiLocale as updateStoredAccountUiLocale,
 } from './account-profile-persistence.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
@@ -240,6 +244,7 @@ const MAX_CARD_HEADWORD_RENAMES_PER_HOUR = 30;
 const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
 const MAX_COURSE_PROFILE_MUTATIONS_PER_HOUR = 120;
 const MAX_ACCOUNT_PROFILE_COMPLETIONS_PER_HOUR = 20;
+const MAX_ACCOUNT_UI_LOCALE_UPDATES_PER_HOUR = 60;
 const MAX_LEGACY_LIBRARY_MIGRATIONS_PER_HOUR = 30;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps()[0] ?? initializeApp();
@@ -497,6 +502,9 @@ export const toAccountProfileHttpsError = (error: unknown): HttpsError | null =>
   }
   if (error instanceof AccountProfileStoredDataError) {
     return new HttpsError('failed-precondition', error.message, { reason: 'profile-invalid' });
+  }
+  if (error instanceof AccountProfileMissingError) {
+    return new HttpsError('failed-precondition', error.message, { reason: 'account-profile-required' });
   }
   return null;
 };
@@ -2304,6 +2312,41 @@ export const completeAccountProfile = onCall({
       errorName: error instanceof Error ? error.name : 'UnknownError',
     });
     throw new HttpsError('internal', 'Account profile completion could not be completed.');
+  }
+});
+
+// Saves the language the learner chose after the profile was completed. Logs never include the value.
+export const updateAccountUiLocale = onCall({
+  region: REGION,
+  secrets: [analyticsPseudonymKey],
+  enforceAppCheck,
+  timeoutSeconds: 15,
+  memory: '256MiB',
+  maxInstances: 5,
+}, async request => {
+  const userId = await requireProfiledUser(request.auth);
+  let parsedRequest;
+  try {
+    parsedRequest = parseUpdateAccountUiLocaleRequest(request.data);
+  } catch (error) {
+    const mapped = toAccountProfileHttpsError(error);
+    if (mapped) throw mapped;
+    throw error;
+  }
+  if (parsedRequest.ownerId !== userId) {
+    throw new HttpsError('permission-denied', 'Account profile request owner does not match the authenticated owner.');
+  }
+  await consumeBudget(userId, 'account-ui-locale', MAX_ACCOUNT_UI_LOCALE_UPDATES_PER_HOUR,
+    'Language update limit reached. Try again later.');
+  try {
+    return await updateStoredAccountUiLocale(database, userId, parsedRequest);
+  } catch (error) {
+    const mapped = toAccountProfileHttpsError(error);
+    if (mapped) throw mapped;
+    console.error('Account language update failed.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw new HttpsError('internal', 'The account language could not be saved.');
   }
 });
 

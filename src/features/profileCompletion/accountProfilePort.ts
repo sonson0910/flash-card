@@ -9,6 +9,7 @@ import {
   type AccountProfileRecord,
   type CompleteAccountProfileRequest,
   type CompleteAccountProfileResponse,
+  type UpdateAccountUiLocaleRequest,
 } from '../../../functions/src/account-profile-contract';
 import { clearAccountProfileCopy, readAccountProfileCopy, writeAccountProfileCopy } from './accountProfileDeviceCopy';
 
@@ -34,6 +35,8 @@ export interface AccountProfilePort {
     onError: (error: AccountProfileError) => void,
   ): () => void;
   complete(request: CompleteAccountProfileRequest): Promise<CompleteAccountProfileResponse>;
+  /** Stores the language the learner chose on the completed profile, so another device can apply it. */
+  saveUiLocale(request: UpdateAccountUiLocaleRequest): Promise<void>;
 }
 
 type DocumentRead = { readonly exists: boolean; readonly confirmed: boolean; readonly data: unknown };
@@ -132,5 +135,11 @@ export const createFirebaseAccountProfilePort = (app: FirebaseApp, database: Fir
     } catch (error) {
       throw accountProfileErrorFrom(error);
     }
+  },
+  async saveUiLocale(request) {
+    const { httpsCallable } = await import('firebase/functions');
+    await httpsCallable<UpdateAccountUiLocaleRequest, { uiLocale: string }>(
+      await getSonFlashFunctions(app), 'updateAccountUiLocale',
+    )(request);
   },
 });
