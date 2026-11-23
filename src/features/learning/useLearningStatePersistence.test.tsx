@@ -12,6 +12,8 @@ import type { CardMutableField } from '../../lib/cardMutationProtocol';
 import { scheduleReview } from '../../lib/reviewScheduler';
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { deriveLibraryFacetOperationId } from '../../lib/cardRepository';
+import { OWN_STORAGE_BUCKETS, ownStorageImageFileId } from '../../lib/mediaUrlPolicy';
+import { clearFileCardPhotos, createFileCardPhotos, type FileCardPhotoStore } from '../files/fileCardPhotos';
 
 const mocks = vi.hoisted(() => ({
   applyCardPatchIfCurrent: vi.fn(),
@@ -1097,5 +1099,58 @@ describe('useLearningStatePersistence bulk patching', () => {
     await expect(harness.persistence.persistBulkPatch!([{ cardId: card.id, fields: { bookmarked: true } }]))
       .rejects.toThrow('Cloud library storage is not ready yet. Try again in a moment.');
     expect(mocks.bulkPatchCards).not.toHaveBeenCalled();
+  });
+});
+
+describe('useLearningStatePersistence card photo saves', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('leaves no card showing a photo file that was deleted while a card save was putting it on the card', async () => {
+    const fileId = 'f'.repeat(24);
+    const photo = `https://firebasestorage.googleapis.com/v0/b/${[...OWN_STORAGE_BUCKETS][0]}/o/users%2Fuser-a%2Ffiles%2F${fileId}?alt=media&token=0123456789abcdef-0123`;
+    // The card as the cloud holds it; the save lands only when the test lets it.
+    const cloud: { imageUrl: string | null; revision: number } = { imageUrl: null, revision: 3 };
+    let land: (() => void) | undefined;
+    mocks.applyCardPatchIfCurrent.mockImplementationOnce((_db: unknown, _owner: string, command: { fields: Partial<CardData> }) =>
+      new Promise(resolve => {
+        land = () => {
+          cloud.imageUrl = command.fields.imageUrl ?? null;
+          cloud.revision += 1;
+          resolve({ applied: true, revision: cloud.revision });
+        };
+      }));
+    const harness = createHarness();
+    const saving = harness.persistence.persist({
+      ownerKey: 'user-a',
+      operationId: 'edit-photo',
+      operation: 'patch',
+      intent: 'patch',
+      cardId: card.id,
+      fields: { imageUrl: photo, imageSearchQuery: '' },
+      fieldMask: ['imageUrl', 'imageSearchQuery'],
+      baseRevision: 3,
+      libraryEpoch: 2,
+      publication: { kind: 'patch', cardId: card.id, fields: { imageUrl: photo, imageSearchQuery: '' } },
+    });
+    const store: FileCardPhotoStore = {
+      find: async id => (ownStorageImageFileId(cloud.imageUrl) === id ? [{ id: card.id, revision: cloud.revision }] : []),
+      clear: async () => {
+        cloud.imageUrl = null;
+        cloud.revision += 1;
+        return true;
+      },
+    };
+    const photos = createFileCardPhotos(store, { has: () => false, removePhoto: async () => false });
+
+    // The delete starts while the save is still on its way to the cloud.
+    const deleting = clearFileCardPhotos(photos, fileId, undefined);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    land?.();
+    await saving;
+    await deleting;
+
+    expect(cloud.imageUrl).toBeNull();
   });
 });

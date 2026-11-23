@@ -36,6 +36,7 @@ import {
   writeLocalValue,
 } from '../library/libraryStorage';
 import { planClearFailureRecovery, runEpochProtectedLibraryClear } from '../library/libraryMutationRecovery';
+import { trackCardPhotoSave } from '../files/cardPhotoSaves';
 import type {
   LearningRestoreConflictReason,
   LearningStateMutation,
@@ -254,13 +255,13 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               rememberReviewCommand(commandKey, nextCommand),
             ));
           } else {
-            result = await applyCardPatchWithConflictRecovery({
+            result = await trackCardPhotoSave(mutation.fields.imageUrl, applyCardPatchWithConflictRecovery({
               cardId: mutation.cardId,
               fields: mutation.fields,
               fieldMask: mutation.fieldMask,
               baseRevision: mutation.baseRevision,
               libraryEpoch: mutation.libraryEpoch,
-            }, command => applyCardPatchIfCurrent(database, ownerId, command));
+            }, command => applyCardPatchIfCurrent(database, ownerId, command)));
           }
 
           if (result.applied) {
