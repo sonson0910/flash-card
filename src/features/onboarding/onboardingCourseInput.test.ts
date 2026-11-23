@@ -8,7 +8,7 @@ const input = (goalKind: string, goalLevel: string) => onboardingCourseInput({
 
 describe('the goal level a learner types during onboarding', () => {
   it('is sent in its canonical form, so a level typed with an IME is accepted by the course contract', () => {
-    for (const [typed, canonical] of [['Ｎ３', 'N3'], ['TOPIK Ⅱ', 'TOPIK II'], ['  N3   upper  ', 'N3 upper']] as const) {
+    for (const [typed, canonical] of [['Ｎ３', 'N3'], ['TOPIK Ⅱ', 'TOPIK II'], ['  N3 upper  ', 'N3 upper'], ['N3  upper', 'N3  upper']] as const) {
       const course = input('jlpt', typed);
       expect(course.goals?.[0]?.level).toBe(canonical);
       expect(() => normalizeCreateCourseInput(course)).not.toThrow();

@@ -174,11 +174,27 @@ describe('a goal level typed in a compatibility form', () => {
     let row = renderRow(toeicCourse, 'goal-toeic');
     (findAll(row, 'button')[0].props?.onClick as () => void)();
     row = renderRow(toeicCourse, 'goal-toeic');
-    change(findAll(row, 'input')[0], '　８００  点 ');
+    change(findAll(row, 'input')[0], '　８００　点 ');
     row = renderRow(toeicCourse, 'goal-toeic');
     (findAll(row, 'form')[0].props?.onSubmit as (event: { preventDefault(): void }) => void)({ preventDefault: vi.fn() });
     await flush();
     expect(updateGoal).toHaveBeenCalledWith('course-en', 'goal-toeic', { level: '800 点', targetDate: null });
+  });
+
+  it('is resent exactly as stored when only the date of an old goal is edited', async () => {
+    updateGoal.mockResolvedValue({ ok: true });
+    const oldIelts: Course = {
+      ...course,
+      goals: [{ id: 'goal-old', kind: 'ielts', level: '7.5  overall', targetDate: null, status: 'active', createdAt: '2026-01-01T00:00:00.000Z' }],
+    };
+    let row = renderRow(oldIelts, 'goal-old');
+    (findAll(row, 'button')[0].props?.onClick as () => void)();
+    row = renderRow(oldIelts, 'goal-old');
+    change(findAll(row, 'input')[0], '2027-01-15');
+    row = renderRow(oldIelts, 'goal-old');
+    (findAll(row, 'form')[0].props?.onSubmit as (event: { preventDefault(): void }) => void)({ preventDefault: vi.fn() });
+    await flush();
+    expect(updateGoal).toHaveBeenCalledWith('course-en', 'goal-old', { level: '7.5  overall', targetDate: '2027-01-15' });
   });
 
   it('is saved in its canonical form when a goal is added', async () => {

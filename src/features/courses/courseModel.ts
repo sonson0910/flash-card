@@ -81,11 +81,12 @@ export { CourseProfileValidationError };
 
 /**
  * The form of a free-text goal level the course contract accepts: compatibility characters (full-width
- * digits from an IME, Roman-numeral glyphs) folded by NFKC, runs of whitespace collapsed, ends trimmed.
+ * digits from an IME, Roman-numeral glyphs) folded by NFKC, ends trimmed. Spacing inside the text is kept
+ * as typed, because the contract does not require it to change and a stored level must be resendable as is.
  * An empty result means no level.
  */
 export const canonicalGoalLevel = (value: string): string | null =>
-  value.normalize('NFKC').replace(/\s+/g, ' ').trim() || null;
+  value.normalize('NFKC').trim() || null;
 
 export type CourseErrorCode =
   | 'course-exists'
