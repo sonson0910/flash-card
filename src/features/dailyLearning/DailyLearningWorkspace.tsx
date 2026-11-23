@@ -921,7 +921,9 @@ export default function DailyLearningWorkspace({
     startStageExercises(items);
     setMultiStage({
       ...current,
-      stagePlan: { ...current.stagePlan, review: items },
+      // Only the weak cards are played again: the finished new-word and Word Match stages leave the plan,
+      // so the retry goes from this lesson straight back to the recap.
+      stagePlan: { review: items, fresh: [], match: { cards: [], skipReason: null } },
       stats: { ...current.stats, weakCardIds: [] },
       phase: { kind: 'lesson', stage: 'review' },
     });

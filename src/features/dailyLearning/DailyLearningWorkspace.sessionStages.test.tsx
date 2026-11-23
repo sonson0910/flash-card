@@ -217,3 +217,109 @@ it('switching course while a Word Match completion is pending keeps the pending 
   await act(async () => root.unmount());
 }, 30_000);
 
+it('retrying weak cards from the recap reviews only the weak cards and does not replay the finished new and match stages', async () => {
+  const due = card('due-word', { reviews: 1, difficulty: 'good', nextReviewDate: '2026-10-01T00:00:00.000Z' } as Partial<CardData>);
+  const fresh = card('fresh-word');
+  const m1 = card('match-one', { reviews: 2, difficulty: 'good', nextReviewDate: '2099-01-01T00:00:00.000Z' } as Partial<CardData>);
+  const m2 = card('match-two', { reviews: 2, difficulty: 'good', nextReviewDate: '2099-01-01T00:00:00.000Z' } as Partial<CardData>);
+  const pool = [due, fresh, m1, m2];
+  const byId = new Map(pool.map(entry => [entry.id, entry]));
+  const loadPracticePool = vi.fn().mockResolvedValue(pool);
+  const reviewCard = vi.fn().mockResolvedValue({ status: 'published', result: { xpAwarded: 10 } });
+  practice.start = vi.fn(async ({ cardIds }: { cardIds: string[] }) => ({
+    sessionId: 'match-session', game: 'match', expiresAt: '2099-01-01T00:00:00.000Z',
+    challenge: { kind: 'match', cards: cardIds.map(id => ({ cardId: id, word: byId.get(id)!.word, translation: byId.get(id)!.translation })) },
+  }));
+  // The server replays a completed session: same receipt, same awardedXp, same studyTimeMs.
+  practice.complete = vi.fn(async () => ({
+    sessionId: 'match-session', correct: 4, total: 4, awardedXp: 20,
+    outcome: { xp: 500, level: 3, streak: 1, events: [], studyTimeMs: 60_000 },
+  }));
+  const container = installMinimalReactDom();
+  writeDailySessionPointer({
+    ownerId: OWNER, targetLanguage: 'en', translationLanguage: 'vi', stage: 'review',
+    reviewLogicalIds: [logicalIdentity(due)], freshLogicalIds: [logicalIdentity(fresh)],
+    matchCardIds: pool.map(entry => entry.id), matchSkipReason: null,
+    matchStartOpId: null, matchCompletionId: null, matchCompletionPending: false,
+    stats: emptyDailySessionStats, startedAt: '2026-10-03T00:00:00.000Z',
+  });
+  i18n.load('en', {}); i18n.activate('en');
+  const root = createRoot(container);
+  await act(async () => {
+    root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
+      ownerId={OWNER} database={null} languageProfile={ENGLISH_TO_VIETNAMESE_PROFILE} isOffline={false} initialLesson="session"
+      streak={0} studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={reviewCard}
+      openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
+      openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
+    /></I18nProvider>);
+  });
+  await act(async () => { await vi.waitFor(() => expect(screens.lesson?.model.prompt).toBe(due.word)); });
+
+  // Review stage: the due card is rated Again, so it becomes a weak card.
+  await rateCurrent('again');
+  expect(screens.bridge.model.nextStage).toBe('new');
+  screens.lesson = null;
+  await act(async () => { screens.bridge.actions.continue(); });
+  await act(async () => { await vi.waitFor(() => expect(screens.lesson?.model.prompt).toBe(fresh.word)); });
+  screens.bridge = null;
+  await rateCurrent('good');
+  expect(screens.bridge.model.nextStage).toBe('match');
+  await act(async () => { screens.bridge.actions.continue(); });
+  await settle();
+  expect(screens.match).not.toBeNull();
+  await act(async () => { await screens.match.onComplete(screens.match.cards.map((entry: CardData) => ({ cardId: entry.id, word: entry.word, translation: entry.translation }))); });
+  await settle();
+  expect(screens.recap).not.toBeNull();
+  const firstRecapXp = screens.recap.xpEarned;
+  const firstRecapStudyTime = screens.recap.studyTimeMs;
+  expect(firstRecapXp).toBe(10 + 10 + 20);
+  expect(typeof screens.recap.onRetryWeak).toBe('function');
+
+  // Retry weak cards: only the due card is weak.
+  screens.lesson = null; screens.bridge = null; screens.match = null;
+  await act(async () => { screens.recap.onRetryWeak(); });
+  screens.recap = null;
+  await act(async () => { await vi.waitFor(() => expect(screens.lesson?.model.prompt).toBe(due.word)); });
+  await rateCurrent('good');
+  const nextStageAfterRetry = screens.bridge.model.nextStage;
+
+  // Follow the default Continue path to the end and record what the learner is shown.
+  let guard = 0;
+  while (!screens.recap && guard < 6) {
+    guard += 1;
+    if (screens.bridge && screens.bridge.model.nextStage !== 'recap') {
+      const next = screens.bridge.model.nextStage;
+      screens.lesson = null; screens.match = null;
+      await act(async () => { screens.bridge.actions.continue(); });
+      screens.bridge = null;
+      if (next === 'match') {
+        await settle();
+        expect(screens.match).not.toBeNull();
+        await act(async () => { await screens.match.onComplete(screens.match.cards.map((entry: CardData) => ({ cardId: entry.id, word: entry.word, translation: entry.translation }))); });
+      } else {
+        await settle();
+        expect(screens.lesson).not.toBeNull();
+        await rateCurrent('good');
+      }
+    } else if (screens.bridge) {
+      await act(async () => { screens.bridge.actions.continue(); });
+    }
+    await act(async () => { await Promise.resolve(); });
+  }
+
+  const observed = {
+    nextStageAfterRetry,
+    reviewCardCallsForFreshWord: reviewCard.mock.calls.filter(call => call[0] === fresh.id).length,
+    matchCompletionCalls: practice.complete.mock.calls.length,
+    finalRecapXp: screens.recap?.xpEarned,
+    finalRecapStudyTimeMs: screens.recap?.studyTimeMs,
+  };
+  expect(observed).toEqual({
+    nextStageAfterRetry: 'recap',
+    reviewCardCallsForFreshWord: 1,
+    matchCompletionCalls: 1,
+    finalRecapXp: firstRecapXp + 10,
+    finalRecapStudyTimeMs: firstRecapStudyTime,
+  });
+  await act(async () => root.unmount());
+}, 30_000);
