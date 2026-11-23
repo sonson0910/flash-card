@@ -804,7 +804,7 @@ export default function DailyLearningWorkspace({
     lessonScopeRef.current = { ownerId: ownerRef.current, targetLanguage, translationLanguage };
     session.start(steps);
     navigateLesson(mode, focusDestination);
-  }, [currentPairCards, navigateLesson, plan, session, targetLanguage, translationLanguage]);
+  }, [currentPairCards, isOffline, navigateLesson, plan, session, targetLanguage, translationLanguage]);
 
   const startStageExercises = useCallback((items: readonly DailyPlanItem[]) => {
     lessonScopeRef.current = { ownerId: ownerRef.current, targetLanguage, translationLanguage };
