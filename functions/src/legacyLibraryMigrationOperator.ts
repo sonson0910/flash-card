@@ -2,6 +2,7 @@ import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { writeFile } from 'node:fs/promises';
 import runtimeTarget from './runtime-target.json';
+import { repairCatalogProgressForOwner } from './catalogProgressPersistence.js';
 import {
   applyLegacyLibraryMigration,
   createFirestoreLegacyLibraryDiscoveryStore,
@@ -12,6 +13,7 @@ import {
 import { runLegacyLibraryDiscovery } from './legacyLibraryMigration.js';
 import {
   createMigrationOwnerKey,
+  LegacyLibraryMigrationFenceError,
   selectMigrationOwnerIds,
 } from './legacyLibraryMigrationOwnerScope.js';
 
@@ -26,10 +28,14 @@ const DATABASE_ID = runtimeTarget.firestoreDatabaseId;
 const JOB_ID = 'query-v3';
 const MAX_DISCOVERY_PAGES_PER_OWNER = 1_000;
 const DIGEST = /^[a-f0-9]{64}$/;
+// Apply takes the revision of a discovered owner and rollback the one of an
+// owner that was fenced or completed; the other phases have nothing to act on.
+const REVISION_PHASES = new Set(['discovered', 'verify', 'apply', 'complete', 'rollback']);
 
 // Validate every operator-controlled value before creating an Admin SDK client.
-if (requestedMode !== 'dry-run' && requestedMode !== 'apply' && requestedMode !== 'rollback') {
-  throw new Error('MIGRATION_MODE must be dry-run, apply or rollback.');
+if (requestedMode !== 'dry-run' && requestedMode !== 'apply' && requestedMode !== 'rollback'
+  && requestedMode !== 'catalog-progress') {
+  throw new Error('MIGRATION_MODE must be dry-run, apply, rollback or catalog-progress.');
 }
 if (!projectId || projectId !== PROJECT_ID) throw new Error('FIREBASE_PROJECT_ID does not match the sealed Functions target.');
 if (!databaseId || databaseId !== DATABASE_ID) throw new Error('FIRESTORE_DATABASE_ID does not match the sealed Functions target.');
@@ -39,7 +45,10 @@ if (requestedMode === 'apply' && confirmation !== 'APPLY_QUERY_V3') {
 if (requestedMode === 'rollback' && confirmation !== 'ROLLBACK_QUERY_V3') {
   throw new Error('Rollback requires MIGRATION_CONFIRMATION=ROLLBACK_QUERY_V3.');
 }
-if (requestedMode !== 'dry-run') {
+if (requestedMode === 'catalog-progress' && confirmation !== 'REPAIR_CATALOG_PROGRESS') {
+  throw new Error('Catalog progress repair requires MIGRATION_CONFIRMATION=REPAIR_CATALOG_PROGRESS.');
+}
+if (requestedMode === 'apply' || requestedMode === 'rollback') {
   if (!requestedOwnerKey || !/^[a-f0-9]{12}$/.test(requestedOwnerKey)) {
     throw new Error('Apply and rollback require a 12-character MIGRATION_OWNER_KEY.');
   }
@@ -48,19 +57,32 @@ if (requestedMode !== 'dry-run') {
   }
 }
 
-const mode = requestedMode as 'dry-run' | 'apply' | 'rollback';
+const mode = requestedMode as 'dry-run' | 'apply' | 'rollback' | 'catalog-progress';
 
 async function main(): Promise<void> {
   const app = getApps()[0] ?? initializeApp({ projectId: projectId as string });
   const database = getFirestore(app, databaseId as string);
   try {
     const store = createFirestoreLegacyLibraryDiscoveryStore(database);
-    const ownerIds = mode === 'dry-run'
+    const ownerIds = mode === 'dry-run' || mode === 'catalog-progress'
       ? await listLibraryOwnerIds(database)
       : await listMigrationManifestOwnerIds(database, JOB_ID);
-    const selected = selectMigrationOwnerIds(ownerIds, mode, requestedOwnerKey);
+    const selected = mode === 'catalog-progress'
+      ? ownerIds
+      : selectMigrationOwnerIds(ownerIds, mode, requestedOwnerKey);
     const reports: Array<Record<string, unknown>> = [];
-    if (mode === 'dry-run') {
+    if (mode === 'catalog-progress') {
+      // Idempotent: an owner fenced by a migration is reported and left for a later run.
+      for (const ownerId of selected) {
+        const ownerKey = createMigrationOwnerKey(ownerId);
+        try {
+          reports.push({ ownerKey, mode, ...await repairCatalogProgressForOwner(database, ownerId) });
+        } catch (error) {
+          if (!(error instanceof LegacyLibraryMigrationFenceError)) throw error;
+          reports.push({ ownerKey, mode, skipped: 'migration-fence' });
+        }
+      }
+    } else if (mode === 'dry-run') {
       for (const ownerId of selected) {
         let discovery = await runLegacyLibraryDiscovery(store, ownerId, {
           jobId: JOB_ID,
@@ -72,9 +94,12 @@ async function main(): Promise<void> {
           discovery = await runLegacyLibraryDiscovery(store, ownerId, { jobId: JOB_ID, batchSize: 100 });
           pages += 1;
         }
-        if (discovery.phase !== 'discovered') throw new Error('Legacy discovery did not reach terminal state.');
-        const manifest = await database.collection('users').doc(ownerId)
-          .collection('admin_library_migration_jobs').doc(JOB_ID).get();
+        // Another owner's finished, blocked or fenced job is a row of the report,
+        // not a failure of the run; only a scan that never ended is.
+        if (discovery.phase === 'discover') throw new Error('Legacy discovery did not reach terminal state.');
+        const manifest = (await database.collection('users').doc(ownerId)
+          .collection('admin_library_migration_jobs').doc(JOB_ID).get()).data();
+        const sourceRevision = manifest?.sourceRevision;
         reports.push({
           ownerKey: createMigrationOwnerKey(ownerId),
           mode,
@@ -82,8 +107,12 @@ async function main(): Promise<void> {
           scanned: discovery.scanned,
           sourceCount: discovery.sourceCount ?? 0,
           groupCount: discovery.groupCount ?? 0,
-          sourceRevision: manifest.data()?.sourceRevision ?? null,
-          complete: false,
+          sourceRevision: REVISION_PHASES.has(discovery.phase)
+            && typeof sourceRevision === 'string' && DIGEST.test(sourceRevision) ? sourceRevision : null,
+          ...(discovery.phase === 'blocked' && typeof manifest?.blockedReason === 'string'
+            ? { blockedReason: manifest.blockedReason }
+            : {}),
+          complete: discovery.phase === 'complete',
           invalid: discovery.invalid,
         });
       }

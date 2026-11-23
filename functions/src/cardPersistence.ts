@@ -976,6 +976,7 @@ export async function createCardForOwner(
       const result = await complete({ created: false, card: serializeCardResponse(normalizedExisting) });
       if (!isStrictCurrent) {
         transaction.set(canonical, normalizedExisting, { merge: false });
+        upsertCatalogProgressForCard(database, transaction, ownerId, normalizedExisting);
       }
       if (!existingReservation) transaction.create(reservation, expectedReservation);
       return result;

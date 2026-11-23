@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
-import { FieldValue, getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { DocumentReference, FieldValue, getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { canonicalCard, createCardForOwner } from '../src/cardPersistence.js';
 import { runLegacyLibraryDiscovery } from '../src/legacyLibraryMigration.js';
@@ -111,6 +111,66 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
       .toContain('lead-metal');
     expect((await owner.collection('cards').orderBy('__name__').get()).docs.map(document => document.id))
       .toContain('lead-guide');
+  });
+
+  it('keeps the catalog progress of migrated lexeme cards in step with them and restores it on rollback', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const lexeme = (senseKey: string) => {
+      const bytes = Buffer.from(JSON.stringify(['en', 'lead', 'noun', senseKey])).toString('hex');
+      const value = `\u0000${bytes}`;
+      const slug = value.normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
+      return {
+        word: 'lead', normalizedWord: 'lead', language: 'en', normalizedLemma: 'lead',
+        partOfSpeech: 'noun', senseKey,
+        lexemeId: `lexeme-${slug}-${createHash('sha256').update(value).digest('hex').slice(0, 24)}`,
+      };
+    };
+    const metal = lexeme('metal');
+    const guide = lexeme('guide');
+    const progress = owner.collection('catalog_progress');
+    // Two cards of one lexeme: the merged card is mastered while the stored
+    // projection still says what the weaker card said. The other lexeme card
+    // was written before projections existed and has none.
+    const staleProjection = {
+      schemaVersion: 1, ownerId: OWNER_ID, lexemeId: metal.lexemeId, targetLanguage: 'en',
+      status: 'active', cardRevision: 1, libraryEpoch: 2, updatedAt: Timestamp.fromMillis(1_000),
+    };
+    await Promise.all([
+      owner.collection('cards').doc('lead-metal-weak').set({
+        id: 'lead-metal-weak', ...metal, translation: 'chì', reviews: 1, interval: 1, revision: 1,
+      }),
+      owner.collection('cards').doc('lead-metal-strong').set({
+        id: 'lead-metal-strong', ...metal, translation: 'chì', reviews: 9, interval: 30,
+        difficulty: 'good', revision: 4,
+      }),
+      owner.collection('cards').doc('lead-guide').set({
+        id: 'lead-guide', ...guide, translation: 'dẫn', reviews: 2, interval: 3,
+      }),
+      progress.doc(metal.lexemeId).set(staleProjection),
+    ]);
+    const jobId = 'lexeme-progress-v3';
+    const store = createFirestoreLegacyLibraryDiscoveryStore(database);
+    let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 100 });
+    while (discovery.phase === 'discover') {
+      discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 100 });
+    }
+    const sourceRevision = String((await owner.collection('admin_library_migration_jobs').doc(jobId).get()).data()?.sourceRevision ?? '');
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision }))
+      .resolves.toMatchObject({ complete: true });
+
+    const metalCard = (await owner.collection('cards').doc(metal.lexemeId).get()).data();
+    const guideCard = (await owner.collection('cards').doc(guide.lexemeId).get()).data();
+    expect((await progress.doc(metal.lexemeId).get()).data()).toMatchObject({
+      schemaVersion: 1, ownerId: OWNER_ID, lexemeId: metal.lexemeId, targetLanguage: 'en',
+      status: 'mastered', cardRevision: metalCard?.revision, libraryEpoch: 2,
+    });
+    expect((await progress.doc(guide.lexemeId).get()).data()).toMatchObject({
+      lexemeId: guide.lexemeId, status: 'active', cardRevision: guideCard?.revision, libraryEpoch: 2,
+    });
+
+    await rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, sourceRevision);
+    expect((await progress.doc(metal.lexemeId).get()).data()).toEqual(staleProjection);
+    expect((await progress.doc(guide.lexemeId).get()).exists).toBe(false);
   });
 
   it('replays a terminal discovery byte-for-byte without reopening writes', async () => {
@@ -1075,6 +1135,51 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     await expect(rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, sourceRevision))
       .rejects.toBeInstanceOf(LegacyLibraryRollbackConflictError);
 
+    expect(await snapshotLibrary()).toEqual(libraryBefore);
+    expect((await fenceReference.get()).exists).toBe(false);
+    expect((await jobReference.get()).data()).toMatchObject({ phase: 'complete' });
+  });
+
+  it('refuses a rollback that read the backup before the migration completed once the learner has added a card', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const jobId = 'rollback-read-before-completion-v3';
+    const jobReference = owner.collection('admin_library_migration_jobs').doc(jobId);
+    const fenceReference = owner.collection('profile').doc('library_migration_fence');
+    const rootReference = owner.collection('admin_library_migration_backups').doc(jobId);
+    const { sourceRevision } = await discoverToEnd(jobId);
+    await applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision });
+    // The rollback read the backup root while the apply was still sealing it,
+    // so what it read says the migration had not completed yet.
+    const { complete: _complete, finalAggregateDigest: _digest, finalCardCount: _count, ...unsealed } =
+      (await rootReference.get()).data() ?? {};
+    // Then the apply completed and the learner added a word no migrated group covers.
+    await createCardForOwner(database, OWNER_ID, { word: 'banana', translation: 'chuối' });
+    const snapshotLibrary = async () => ({
+      cards: (await owner.collection('cards').orderBy('__name__').get()).docs
+        .map(document => [document.id, document.data()]),
+      facets: (await owner.collection('profile').doc('library_facets').get()).data(),
+      resourceUsage: (await owner.collection('profile').doc('resource_usage').get()).data(),
+    });
+    const libraryBefore = await snapshotLibrary();
+
+    const prototype = DocumentReference.prototype as unknown as { get: (...args: unknown[]) => Promise<unknown> };
+    const get = prototype.get;
+    let staleReads = 0;
+    prototype.get = function (this: DocumentReference, ...args: unknown[]) {
+      if (this.path === rootReference.path && staleReads === 0) {
+        staleReads += 1;
+        return Promise.resolve({ exists: true, id: this.id, ref: this, data: () => ({ ...unsealed, complete: false }) });
+      }
+      return get.apply(this, args);
+    };
+    try {
+      await expect(rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, sourceRevision))
+        .rejects.toBeInstanceOf(LegacyLibraryRollbackConflictError);
+    } finally {
+      prototype.get = get;
+    }
+
+    expect(staleReads).toBe(1);
     expect(await snapshotLibrary()).toEqual(libraryBefore);
     expect((await fenceReference.get()).exists).toBe(false);
     expect((await jobReference.get()).data()).toMatchObject({ phase: 'complete' });

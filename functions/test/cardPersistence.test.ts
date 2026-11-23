@@ -489,6 +489,39 @@ describe('card persistence', () => {
       libraryEpoch: 2,
     })).resolves.toMatchObject({ created: false, card: { id: lexemeId, lexemeId } });
     expect(harness.writes).toEqual([]);
+    // Adding a word the learner already holds costs no catalog progress read.
+    expect(harness.events.filter(event => event.includes('/catalog_progress/'))).toEqual([]);
+  });
+
+  it('keeps catalog progress in step when an existing lexeme card is rewritten in its current shape', async () => {
+    const lexemeId = canonicalLexemeId();
+    const canonical = {
+      ...card, word: 'lead', normalizedWord: 'lead', partOfSpeech: 'noun', language: 'en', senseKey: 'metal', lexemeId,
+    };
+    // An existing card of the current generation that is not yet in the
+    // strict current shape is rewritten with a new revision.
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      [`users/owner/cards/${lexemeId}`, snapshot(true, {
+        ...canonical, id: undefined, libraryEpoch: 2, revision: 2, interval: 25,
+      })],
+      [`users/owner/catalog_progress/${lexemeId}`, snapshot(true, {
+        schemaVersion: 1, ownerId: 'owner', lexemeId, targetLanguage: 'en',
+        status: 'active', cardRevision: 2, libraryEpoch: 2,
+      })],
+    ]));
+
+    const result = await createCardForOwner(harness.database, 'owner', canonical, {
+      maximumCards: 5,
+      libraryEpoch: 2,
+    });
+    expect(result).toMatchObject({ created: false, card: { id: lexemeId, revision: 3 } });
+    expect(harness.writes).toContainEqual(expect.objectContaining({
+      method: 'set',
+      path: `users/owner/catalog_progress/${lexemeId}`,
+      data: expect.objectContaining({ status: 'mastered', cardRevision: 3, libraryEpoch: 2 }),
+    }));
   });
 
   it('returns an existing strict current card without rewriting its revision or leaking timestamps', async () => {

@@ -587,6 +587,54 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
       await expect(share('another-learner', 'after-cutover')).resolves.toBeDefined();
     }, 30_000);
 
+    it('finishes after an expired quarantined record was removed while the apply was stopped', async () => {
+      await seedLegacyShares('a-live');
+      await publicShare('b-empty-expired').set({
+        category: 'Basics', cards: [], createdAt: longAgo(), expiresAt: Timestamp.fromMillis(Date.now() - 10 * DAY_MS),
+      });
+      const inventory = await seal(sealingRevision);
+      expect(inventory.entries.find(entry => entry.shareId === 'b-empty-expired')).toMatchObject({ action: 'quarantine' });
+      await expect(applyLegacySharedDeckMigration(stoppingAfterTransactions(database, 5), inventory, applyOptions(inventory)))
+        .rejects.toThrow('apply job stopped');
+      expect(await state()).toMatchObject({ phase: 'applying', progress: { nextEntry: 1 } });
+      await publicShare('b-empty-expired').delete();
+
+      const report = JSON.parse(await applyOperator(sealingRevision, laterRevision, inventory)) as Record<string, unknown>;
+
+      expect(report).toMatchObject({ revision: laterRevision, migrationRevision: sealingRevision, verified: true });
+      expect((await quarantineCopy('b-empty-expired').get()).exists).toBe(false);
+      await expect(share('another-learner', 'after-cutover')).resolves.toBeDefined();
+    }, 30_000);
+
+    it('removes the owner record of an expired share whose public record the TTL policy removed first', async () => {
+      await seedLegacyShares('a-live');
+      const createdAt = longAgo();
+      const expiresAt = Timestamp.fromMillis(Date.now() - 10 * DAY_MS);
+      await publicShare('c-expired-transitional').set({
+        authorUid: ownerUid, category: 'Basics', cards: [legacyCard], createdAt, expiresAt, schemaVersion: 1,
+      });
+      await privateShare('c-expired-transitional').set({ ownerUid, createdAt, expiresAt, schemaVersion: 1 });
+      const inventory = await seal(sealingRevision);
+      expect(inventory.entries.find(entry => entry.shareId === 'c-expired-transitional'))
+        .toMatchObject({ disposition: 'migrate-transitional' });
+      await publicShare('c-expired-transitional').delete();
+
+      await applyLegacySharedDeckMigration(database, inventory, applyOptions(inventory));
+      await expect(verifyLegacySharedDeckCutover(database, inventory)).resolves.toMatchObject({ verified: true });
+
+      // The first-generation owner record is not left for the cutover report or the owner to trip over.
+      const report = JSON.parse(await runLegacySharedDeckVerification(
+        { ownerUid, revision: sealingRevision, sourceRevision: sealingRevision, target },
+        expected => readSealedLegacySharedDeckInventory(database, expected),
+        sealed => verifyLegacySharedDeckCutover(database, sealed),
+      )) as Record<string, unknown>;
+      expect(report).toMatchObject({ verified: true });
+      expect((await privateShare('c-expired-transitional').get()).exists).toBe(false);
+      await expect(revokeSharedDeckAtomically(
+        database, publicShare('c-expired-transitional'), privateShare('c-expired-transitional'), ownerUid,
+      )).resolves.toBe(false);
+    }, 30_000);
+
     it('still stops when a quarantined record that has no expiry disappears before it was copied', async () => {
       await seedLegacyShares('a-live');
       await publicShare('b-empty').set({ category: 'Basics', cards: [], createdAt: legacyShareData.createdAt });

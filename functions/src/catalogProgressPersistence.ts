@@ -1,5 +1,6 @@
-import { FieldValue, type DocumentData, type Firestore, type Transaction } from 'firebase-admin/firestore';
+import { FieldPath, FieldValue, type DocumentData, type Firestore, type Transaction } from 'firebase-admin/firestore';
 import type { CardRecord } from './cardPersistence.js';
+import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
 
 export type CatalogProgressStatus = 'active' | 'mastered';
 
@@ -46,6 +47,78 @@ export const catalogProgressReferenceForCard = (
   const source = projectionSource(card);
   return source ? projectionRef(database, ownerId, source.lexemeId) : null;
 };
+
+/**
+ * Whether the stored projection already says what readers take from the card.
+ * Edits that are not reviews raise the card revision without touching the
+ * projection, so the revision alone is no reason to write it again.
+ */
+const catalogProgressMatchesCard = (
+  stored: DocumentData | undefined,
+  card: DocumentData | CardRecord,
+): boolean => {
+  const source = projectionSource(card);
+  if (!source) return true;
+  return stored?.schemaVersion === 1
+    && isCounter(stored.cardRevision)
+    && stored.lexemeId === source.lexemeId
+    && stored.targetLanguage === source.targetLanguage
+    && stored.status === source.status
+    && stored.libraryEpoch === source.libraryEpoch;
+};
+
+const REPAIR_PAGE_SIZE = 200;
+
+/**
+ * Writes the catalog progress of each lexeme card in the owner's current
+ * library where it is missing or says something else. Lexeme cards written
+ * before the projection existed have none, and no learner action writes it
+ * until the card's next review. A second run writes nothing. An owner whose
+ * library is fenced by a migration is refused with the fence error.
+ */
+export async function repairCatalogProgressForOwner(
+  database: Firestore,
+  ownerId: string,
+): Promise<{ scanned: number; repaired: number }> {
+  const owner = database.collection('users').doc(ownerId);
+  let scanned = 0;
+  let repaired = 0;
+  let cursor: string | undefined;
+  for (;;) {
+    let query = owner.collection('cards').orderBy(FieldPath.documentId()).limit(REPAIR_PAGE_SIZE);
+    if (cursor !== undefined) query = query.startAfter(cursor);
+    const page = await query.get();
+    scanned += page.size;
+    // A lexeme card is stored under its lexeme id; one per projection.
+    const candidates = page.docs
+      .filter(document => projectionSource(document.data())?.lexemeId === document.id)
+      .map(document => document.ref);
+    if (candidates.length > 0) {
+      repaired += await database.runTransaction(async transaction => {
+        await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
+        const state = await transaction.get(owner.collection('profile').doc('library_state'));
+        const libraryEpoch = state.exists ? state.data()?.libraryEpoch ?? 0 : 0;
+        const cards = (await transaction.getAll(...candidates)).flatMap(snapshot => {
+          const data = snapshot.data();
+          const source = data ? projectionSource(data) : null;
+          return data && source?.lexemeId === snapshot.id && source.libraryEpoch === libraryEpoch ? [data] : [];
+        });
+        if (cards.length === 0) return 0;
+        const stored = await transaction.getAll(...cards.map(card => projectionRef(database, ownerId, String(card.lexemeId))));
+        let written = 0;
+        cards.forEach((card, index) => {
+          if (catalogProgressMatchesCard(stored[index]?.data(), card)) return;
+          upsertCatalogProgressForCard(database, transaction, ownerId, card);
+          written += 1;
+        });
+        return written;
+      });
+    }
+    if (page.size < REPAIR_PAGE_SIZE) break;
+    cursor = page.docs[page.docs.length - 1]!.id;
+  }
+  return { scanned, repaired };
+}
 
 export const upsertCatalogProgressForCard = (
   database: Firestore,
