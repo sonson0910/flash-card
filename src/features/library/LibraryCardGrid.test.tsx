@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { i18n } from '@lingui/core';
-import { buildBulkBookmarkPatches, buildBulkDeckAssignPatches, getLegacyUpgradePresentation } from './LibraryCardGrid';
+import { buildBulkBookmarkPatches, buildBulkBookmarkTargets, buildBulkDeckAssignPatches, getLegacyUpgradePresentation } from './LibraryCardGrid';
 import { getRelativeReviewDays } from './libraryPresentation';
 
 beforeEach(() => {
@@ -166,6 +166,23 @@ describe('bulk patch construction', () => {
     ]);
   });
 
+  it('repeats the first click\'s bookmark targets on a retry after a partial failure', () => {
+    let cards = [
+      { id: 'card-a', bookmarked: false },
+      { id: 'card-b', bookmarked: false },
+      { id: 'card-c', bookmarked: false },
+    ];
+    const targets = buildBulkBookmarkTargets(cards);
+    const first = buildBulkBookmarkPatches(cards, targets);
+    expect(first.map(patch => patch.cardId)).toEqual(['card-a', 'card-b', 'card-c']);
+
+    // The callable applied A and B locally, then rejected C, so the grid re-renders with A and B starred.
+    cards = cards.map(card => card.id === 'card-c' ? card : { ...card, bookmarked: true });
+    expect(buildBulkBookmarkPatches(cards, targets)).toEqual([
+      { cardId: 'card-c', fields: { bookmarked: true } },
+    ]);
+  });
+
   it('returns no patches for an empty selection', () => {
     expect(buildBulkDeckAssignPatches([], 'Deck A')).toEqual([]);
     expect(buildBulkBookmarkPatches([])).toEqual([]);
@@ -177,7 +194,7 @@ describe('bulk actions call the batched callable once per action', () => {
     const source = readFileSync(fileURLToPath(new URL('./LibraryCardGrid.tsx', import.meta.url)), 'utf8');
 
     expect(source).toContain('await bulkPatchCards(buildBulkDeckAssignPatches(selectedCards, target));');
-    expect(source).toContain('await bulkPatchCards(buildBulkBookmarkPatches(selectedCards));');
+    expect(source).toContain('if (patches.length) await bulkPatchCards(patches);');
     expect(source).not.toMatch(/Promise\.all\(selectedCards\.map/);
   });
 });
