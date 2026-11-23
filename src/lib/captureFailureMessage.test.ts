@@ -22,6 +22,16 @@ describe('capture failure guidance', () => {
     expect(captureFailureMessage(error)).toMatch(/Từ đã chọn vẫn được giữ lại/);
   });
 
+  it('shows the wait of an hourly limit instead of the plan quota text', () => {
+    const error = new ProtectedFunctionError({
+      message: 'Bạn đã gửi quá nhiều yêu cầu trong một giờ. Hãy thử lại sau khoảng 20 phút.',
+      kind: 'quota', code: 'resource-exhausted', retryable: false, reason: 'rate-limit',
+    });
+    expect(captureFailureMessage(error)).toContain('khoảng 20 phút');
+    expect(captureFailureMessage(error)).not.toContain('hết hạn mức');
+    expect(captureFailureReason(error)).toBe('failed');
+  });
+
   it('preserves actionable quota and in-flight guidance', () => {
     expect(captureFailureMessage(protectedFailure('quota', 'Bạn đã dùng hết số thẻ AI kỳ này.')))
       .toContain('số thẻ AI');
