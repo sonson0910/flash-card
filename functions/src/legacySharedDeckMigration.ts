@@ -2273,10 +2273,11 @@ const sharePayload = (publicData: DataRecord): DataRecord => ({
 });
 
 /**
- * The public document of a share the callable wrote.  The callable cuts long
- * text at its limit after trimming, which can leave a trailing space, so the
- * payload is held to what the callable accepts and not to the byte-exact form
- * the inventory requires of a source it is about to rewrite.
+ * The public document of a share the callable wrote.  An older callable cut
+ * long text at its limit after trimming, which could leave a trailing space
+ * at exactly that limit, so the payload is held to what the callable accepts
+ * and not to the byte-exact form the inventory requires of a source it is
+ * about to rewrite.
  */
 const isCurrentPublicRecord = (publicData: unknown): publicData is DataRecord => {
   if (!isRecord(publicData)
