@@ -552,4 +552,12 @@ describe('shared-deck persistence', () => {
       .toBe('failed-precondition');
     expect(toSharedDeckHttpsError(new Error('unrelated'))).toBeNull();
   });
+
+  it('gives each failed-precondition share state its own client-readable reason', () => {
+    const reasonOf = (error: Error) => (toSharedDeckHttpsError(error)?.details as { reason?: string } | undefined)?.reason;
+    expect(reasonOf(new SharedDeckOperationExpiredError())).toBe('operation-expired');
+    expect(reasonOf(new SharedDeckOperationConflictError())).toBe('operation-conflict');
+    expect(reasonOf(new SharedDeckMigrationRequiredError())).toBe('migration-frozen');
+    expect(reasonOf(new SharedDeckUsageStateError())).toBe('usage-state');
+  });
 });

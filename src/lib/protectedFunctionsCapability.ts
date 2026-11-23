@@ -168,6 +168,30 @@ export function classifyProtectedFunctionError(
       kind: 'unknown', code, retryable: false, reason: 'practice-session-expired',
     });
   }
+  if (code === 'failed-precondition' && failureDetails?.reason === 'operation-expired') {
+    return new ProtectedFunctionError({
+      message: 'This share request is out of date. Check that this device\'s date and time are correct, then try again.',
+      kind: 'unknown', code, retryable: false, reason: 'operation-expired',
+    });
+  }
+  if (code === 'failed-precondition' && failureDetails?.reason === 'migration-frozen') {
+    return new ProtectedFunctionError({
+      message: 'Deck sharing is paused for maintenance. Try again in a few minutes.',
+      kind: 'network', code, retryable: true, reason: 'migration-frozen',
+    });
+  }
+  if (code === 'failed-precondition' && failureDetails?.reason === 'operation-conflict') {
+    return new ProtectedFunctionError({
+      message: 'This share request clashed with an earlier one. Try sharing the deck again.',
+      kind: 'unknown', code, retryable: false, reason: 'operation-conflict',
+    });
+  }
+  if (code === 'failed-precondition' && failureDetails?.reason === 'usage-state') {
+    return new ProtectedFunctionError({
+      message: 'Deck sharing is temporarily unavailable for your account. Try again later.',
+      kind: 'unknown', code, retryable: false, reason: 'usage-state',
+    });
+  }
   if (code === 'failed-precondition' || code === 'not-found') {
     return new ProtectedFunctionError({
       message: `${operation} cannot run because this app and its cloud deployment are out of sync. Update the deployment configuration before retrying.`,
