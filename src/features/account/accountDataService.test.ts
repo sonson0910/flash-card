@@ -29,6 +29,7 @@ describe('account deletion local cleanup', () => {
       ['sonflash_progress_forecast_owner-a_ko:en', 'keep'],
       ['sonflash_progress_forecast_owner-b:en', 'keep'],
       ['lingoflash_shared_deck_operation_v1', 'private'],
+      ['lingoflash_shared_deck_links_v1', 'private'],
       ['sonflash_account_profile_v1_owner-a', 'private'],
       ['sonflash_account_profile_v1_owner-b', 'keep'],
     ]);
@@ -48,6 +49,7 @@ describe('account deletion local cleanup', () => {
     expect(values.get('sonflash_progress_forecast_owner-b:en')).toBe('keep');
     expect(values.get('lingoflash_cloud_stats_owner-ab_ko')).toBe('keep');
     expect(values.has('lingoflash_shared_deck_operation_v1')).toBe(false);
+    expect(values.has('lingoflash_shared_deck_links_v1')).toBe(false);
     expect(values.has('sonflash_account_profile_v1_owner-a')).toBe(false);
     expect(values.get('sonflash_account_profile_v1_owner-b')).toBe('keep');
     expect(values.get('lingoflash_cloud_page_owner-b')).toBe('keep');

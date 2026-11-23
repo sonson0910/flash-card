@@ -1036,3 +1036,104 @@ describe('shared deck session controller', () => {
     expect(storage.getItem('lingoflash_shared_deck_operation_v1')).toBeNull();
   });
 });
+
+describe('an owner can revoke earlier share links', () => {
+  const future = () => new Date(Date.now() + 10 * 24 * 60 * 60 * 1_000).toISOString();
+
+  const sharer = (storage: MemoryStorage, adapter?: SharedDeckAdapter) => {
+    const base = setup('https://sonflash.test/library', storage);
+    let count = 0;
+    const sharedAdapter: SharedDeckAdapter = adapter ?? {
+      ...base.adapter,
+      create: vi.fn(async () => ({ shareId: `share-${++count}`, expiresAt: future() })),
+    };
+    const make = () => createSharedDeckSessionController({
+      adapter: sharedAdapter,
+      intake: base.intake,
+      browser: new FakeBrowser('https://sonflash.test/library'),
+      storage,
+    });
+    return { adapter: sharedAdapter, make };
+  };
+  const share = (controller: ReturnType<typeof createSharedDeckSessionController>, category: string, word: string) =>
+    controller.actions.createShare({ category, cards: [card(word)], total: 1, hasNext: false });
+
+  it('restores the revoke control for the latest share after a reload', async () => {
+    const storage = new MemoryStorage();
+    const { adapter, make } = sharer(storage);
+    const before = make();
+    await before.activate('owner-1');
+    await share(before, 'Deck A', 'apple');
+
+    const after = make();
+    await after.activate('owner-1');
+    expect(after.getSnapshot()).toMatchObject({
+      activeShareId: 'share-1',
+      shareLink: 'https://sonflash.test/library?share=share-1',
+      isShareDialogOpen: false,
+      outgoingPreview: { category: 'Deck A', cardCount: 1 },
+    });
+    expect(await after.actions.revokeShare()).toEqual({ status: 'revoked' });
+    expect(adapter.revoke).toHaveBeenCalledWith('share-1', 'owner-1');
+  });
+
+  it('keeps an earlier share revocable after a newer one, newest first', async () => {
+    const storage = new MemoryStorage();
+    const { adapter, make } = sharer(storage);
+    const controller = make();
+    await controller.activate('owner-1');
+    await share(controller, 'Deck A', 'apple');
+    await share(controller, 'Deck B', 'pear');
+
+    expect(await controller.actions.revokeShare()).toEqual({ status: 'revoked' });
+    expect(adapter.revoke).toHaveBeenLastCalledWith('share-2', 'owner-1');
+    expect(controller.getSnapshot()).toMatchObject({ activeShareId: 'share-1', outgoingPreview: { category: 'Deck A' } });
+    expect(await controller.actions.revokeShare()).toEqual({ status: 'revoked' });
+    expect(adapter.revoke).toHaveBeenLastCalledWith('share-1', 'owner-1');
+    expect(controller.getSnapshot().activeShareId).toBeNull();
+
+    const reloaded = make();
+    await reloaded.activate('owner-1');
+    expect(reloaded.getSnapshot().activeShareId).toBeNull();
+  });
+
+  it('does not expose one owner\'s shares to another or keep expired ones', async () => {
+    const storage = new MemoryStorage();
+    const { make } = sharer(storage);
+    const first = make();
+    await first.activate('owner-1');
+    await share(first, 'Deck A', 'apple');
+
+    const other = make();
+    await other.activate('owner-2');
+    expect(other.getSnapshot().activeShareId).toBeNull();
+    await other.activate('owner-1');
+    expect(other.getSnapshot().activeShareId).toBe('share-1');
+
+    const expired = sharer(new MemoryStorage(), {
+      load: vi.fn(),
+      create: vi.fn(async () => ({ shareId: 'share-old', expiresAt: new Date(Date.now() - 1_000).toISOString() })),
+      revoke: vi.fn(async () => undefined),
+    });
+    const old = expired.make();
+    await old.activate('owner-1');
+    await share(old, 'Deck A', 'apple');
+    const reloaded = expired.make();
+    await reloaded.activate('owner-1');
+    expect(reloaded.getSnapshot().activeShareId).toBeNull();
+  });
+
+  it('leaves a share stored when the revoke call fails', async () => {
+    const storage = new MemoryStorage();
+    const { adapter, make } = sharer(storage);
+    const controller = make();
+    await controller.activate('owner-1');
+    await share(controller, 'Deck A', 'apple');
+    vi.mocked(adapter.revoke).mockRejectedValueOnce(new Error('offline'));
+    expect(await controller.actions.revokeShare()).toEqual({ status: 'failed' });
+
+    const reloaded = make();
+    await reloaded.activate('owner-1');
+    expect(reloaded.getSnapshot().activeShareId).toBe('share-1');
+  });
+});

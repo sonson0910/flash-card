@@ -34,7 +34,7 @@ export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeI
     `lingoflash_library_epoch_${encodeURIComponent(uid)}`,
     accountProfileCopyKey(uid),
   ];
-  if (clearSharedState) keys.push('lingoflash_shared_deck_operation_v1');
+  if (clearSharedState) keys.push('lingoflash_shared_deck_operation_v1', 'lingoflash_shared_deck_links_v1');
   for (const key of keys) storage.removeItem(key);
   for (let index = storage.length - 1; index >= 0; index--) {
     const key = storage.key(index);

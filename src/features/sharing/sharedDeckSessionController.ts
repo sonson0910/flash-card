@@ -18,6 +18,9 @@ const SHARED_DECK_PAIR_HANDOFF_POLL_MS = 25;
 const SHARED_DECK_OPERATION_STORAGE_KEY = 'lingoflash_shared_deck_operation_v1';
 const SHARED_DECK_OPERATION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1_000;
 const MAX_PENDING_SHARED_DECK_OPERATIONS = 20;
+// Links the owner created on this device and has not revoked, so Revoke still works after a reload or a newer share.
+const SHARED_DECK_LINKS_STORAGE_KEY = 'lingoflash_shared_deck_links_v1';
+const MAX_STORED_SHARE_LINKS = 20;
 const INVALID_SHARED_CARD_BATCH_MESSAGE = 'This shared deck contains invalid vocabulary cards. No changes were made; ask the sender to create a new link.';
 const EMPTY_SHARED_CARD_BATCH_MESSAGE = 'This shared deck contains no usable vocabulary cards. No changes were made; ask the sender to create a new link.';
 
@@ -179,6 +182,43 @@ const validShareId = (value: unknown): string | null => {
     && SHARE_ID_PATTERN.test(shareId)
     ? shareId
     : null;
+};
+
+type StoredShareLink = {
+  ownerId: string;
+  shareId: string;
+  expiresAt: string;
+  preview: SharedDeckOutgoingPreview;
+};
+
+const storedPairField = (value: unknown): string | null => (typeof value === 'string' ? value : null);
+
+const validStoredShareLink = (value: unknown, now: number): StoredShareLink | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const preview = record.preview as Record<string, unknown> | null | undefined;
+  const shareId = validShareId(record.shareId);
+  if (typeof record.ownerId !== 'string' || record.ownerId.length === 0 || record.ownerId.length > 128 || !shareId
+    || typeof record.expiresAt !== 'string' || !(Date.parse(record.expiresAt) > now)
+    || !preview || typeof preview !== 'object' || typeof preview.category !== 'string'
+    || !Number.isSafeInteger(preview.cardCount)) return null;
+  return {
+    ownerId: record.ownerId,
+    shareId,
+    expiresAt: record.expiresAt,
+    preview: {
+      category: preview.category,
+      cardCount: preview.cardCount as number,
+      languagePairs: (Array.isArray(preview.languagePairs) ? preview.languagePairs : [])
+        .filter((pair): pair is Record<string, unknown> => !!pair && typeof pair === 'object')
+        .map(pair => ({
+          targetLanguage: storedPairField(pair.targetLanguage),
+          translationLanguage: storedPairField(pair.translationLanguage),
+        })),
+      expiresAt: record.expiresAt,
+      containsAiGeneratedCards: preview.containsAiGeneratedCards === true,
+    },
+  };
 };
 
 const readShareId = (location: string): { present: boolean; shareId: string | null } => {
@@ -580,6 +620,38 @@ export function createSharedDeckSessionController({
     void persistPendingCreates(readPendingCreates().filter(candidate => candidate.opId !== operation.opId));
   };
 
+  const readStoredLinks = (): StoredShareLink[] => {
+    try {
+      const raw = storage?.getItem(SHARED_DECK_LINKS_STORAGE_KEY);
+      const records = raw ? JSON.parse(raw) : [];
+      const now = Date.now();
+      return (Array.isArray(records) ? records : [])
+        .map(record => validStoredShareLink(record, now))
+        .filter((link): link is StoredShareLink => link !== null)
+        .slice(0, MAX_STORED_SHARE_LINKS);
+    } catch { return []; }
+  };
+
+  const writeStoredLinks = (links: StoredShareLink[]): void => {
+    try {
+      if (links.length > 0) storage?.setItem(SHARED_DECK_LINKS_STORAGE_KEY, JSON.stringify(links));
+      else storage?.removeItem(SHARED_DECK_LINKS_STORAGE_KEY);
+    } catch { /* A link that is not remembered here can still be revoked until the page closes. */ }
+  };
+
+  /** The snapshot fields for the owner's newest unrevoked link, or the empty share state when there is none. */
+  const ownShareState = (owner: string | null): Partial<SharedDeckSessionSnapshot> => {
+    const latest = owner ? readStoredLinks().find(link => link.ownerId === owner) : undefined;
+    return latest
+      ? {
+        activeShareId: latest.shareId,
+        shareLink: buildShareLink(browser.getCurrentUrl(), latest.shareId),
+        expiresAt: latest.expiresAt,
+        outgoingPreview: latest.preview,
+      }
+      : { activeShareId: null, shareLink: null, expiresAt: null, outgoingPreview: null };
+  };
+
   const activate = async (owner: string | null): Promise<void> => {
     if (disposed) return;
     if (hasActivated && owner === activeOwner) return;
@@ -592,16 +664,13 @@ export function createSharedDeckSessionController({
       pendingSharedDeck = null;
       publish({
         isShareDialogOpen: false,
-        activeShareId: null,
-        shareLink: null,
         shareWarning: null,
-        outgoingPreview: null,
         incomingPreview: null,
-        expiresAt: null,
         notice: null,
         error: null,
       });
     }
+    publish(ownShareState(owner));
     const requested = readShareId(browser.getCurrentUrl());
     if (!requested.present) {
       publish({ isLoading: false });
@@ -718,6 +787,10 @@ export function createSharedDeckSessionController({
         clearPendingCreate(operation);
         const shareLink = buildShareLink(browser.getCurrentUrl(), shareId);
         const completedPreview = { ...outgoingPreview, expiresAt: isoDate(result.expiresAt) };
+        writeStoredLinks([
+          { ownerId: owner, shareId, expiresAt: result.expiresAt, preview: completedPreview },
+          ...readStoredLinks().filter(link => link.shareId !== shareId),
+        ].slice(0, MAX_STORED_SHARE_LINKS));
         publish({
           activeShareId: shareId,
           shareLink,
@@ -849,13 +922,11 @@ export function createSharedDeckSessionController({
           SHARED_DECK_OPERATION_TIMEOUT_MS,
         );
         if (!isCurrent(operationLifecycle, owner)) return { status: 'stale' };
+        writeStoredLinks(readStoredLinks().filter(link => link.shareId !== shareId));
         publish({
-          activeShareId: null,
-          shareLink: null,
+          ...ownShareState(owner),
           shareWarning: null,
-          outgoingPreview: null,
           isShareDialogOpen: false,
-          expiresAt: null,
           notice: 'The shared deck link has been revoked.',
         });
         return { status: 'revoked' };
