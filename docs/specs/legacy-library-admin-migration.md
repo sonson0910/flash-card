@@ -12,7 +12,10 @@ card searchable/pageable under schema v2 without losing the strongest learning s
 - Functions verification: `npm --prefix functions run lint && npm --prefix functions test && npm --prefix functions run build`
 - Repository verification: `npm run verify`
 - Operator dry-run: dispatched only by the protected GitHub migration workflow; emits
-  12-character SHA-256 owner keys and aggregate counts only
+  12-character SHA-256 owner keys and aggregate counts only. Every owner gets a row with
+  its job phase: an owner already applied, rolled back, blocked (with its reason code) or
+  fenced does not stop the run. A row carries a source revision only for a phase that
+  apply (`discovered`) or rollback (`verify`, `apply`, `complete`, `rollback`) accepts
 - Operator apply/rollback: dispatched only after selecting exactly one owner key from
   a clean dry-run for the same revision and target
 - Library changed after the dry-run: apply fails without migrating anything, releases

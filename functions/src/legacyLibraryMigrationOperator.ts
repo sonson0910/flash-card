@@ -26,6 +26,9 @@ const DATABASE_ID = runtimeTarget.firestoreDatabaseId;
 const JOB_ID = 'query-v3';
 const MAX_DISCOVERY_PAGES_PER_OWNER = 1_000;
 const DIGEST = /^[a-f0-9]{64}$/;
+// Apply takes the revision of a discovered owner and rollback the one of an
+// owner that was fenced or completed; the other phases have nothing to act on.
+const REVISION_PHASES = new Set(['discovered', 'verify', 'apply', 'complete', 'rollback']);
 
 // Validate every operator-controlled value before creating an Admin SDK client.
 if (requestedMode !== 'dry-run' && requestedMode !== 'apply' && requestedMode !== 'rollback') {
@@ -72,9 +75,12 @@ async function main(): Promise<void> {
           discovery = await runLegacyLibraryDiscovery(store, ownerId, { jobId: JOB_ID, batchSize: 100 });
           pages += 1;
         }
-        if (discovery.phase !== 'discovered') throw new Error('Legacy discovery did not reach terminal state.');
-        const manifest = await database.collection('users').doc(ownerId)
-          .collection('admin_library_migration_jobs').doc(JOB_ID).get();
+        // Another owner's finished, blocked or fenced job is a row of the report,
+        // not a failure of the run; only a scan that never ended is.
+        if (discovery.phase === 'discover') throw new Error('Legacy discovery did not reach terminal state.');
+        const manifest = (await database.collection('users').doc(ownerId)
+          .collection('admin_library_migration_jobs').doc(JOB_ID).get()).data();
+        const sourceRevision = manifest?.sourceRevision;
         reports.push({
           ownerKey: createMigrationOwnerKey(ownerId),
           mode,
@@ -82,8 +88,12 @@ async function main(): Promise<void> {
           scanned: discovery.scanned,
           sourceCount: discovery.sourceCount ?? 0,
           groupCount: discovery.groupCount ?? 0,
-          sourceRevision: manifest.data()?.sourceRevision ?? null,
-          complete: false,
+          sourceRevision: REVISION_PHASES.has(discovery.phase)
+            && typeof sourceRevision === 'string' && DIGEST.test(sourceRevision) ? sourceRevision : null,
+          ...(discovery.phase === 'blocked' && typeof manifest?.blockedReason === 'string'
+            ? { blockedReason: manifest.blockedReason }
+            : {}),
+          complete: discovery.phase === 'complete',
           invalid: discovery.invalid,
         });
       }
