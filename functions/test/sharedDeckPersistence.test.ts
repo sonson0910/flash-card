@@ -336,6 +336,14 @@ describe('shared-deck persistence', () => {
     expect(harness.writes).toEqual([]);
   });
 
+  it('documents the per-owner share limits it enforces', () => {
+    const decision = readFileSync(new URL(
+      '../../docs/architecture/adr-006-transactional-card-identity-and-private-share-ownership.md', import.meta.url,
+    ), 'utf8').replace(/\s+/g, ' ');
+    expect(decision).toContain(`at most ${MAX_SHARED_DECKS} active (unexpired) shares`);
+    expect(decision).toContain(`at most ${MAX_SHARED_DECK_BYTES.toLocaleString('en-US')} bytes of active share payload`);
+  });
+
   it('enforces exact count and byte boundaries, allowing equality', async () => {
     const input = deckInput();
     const documents = buildSharedDeckDocuments(input, 'owner', time(0), time(1_000));

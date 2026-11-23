@@ -17,12 +17,14 @@ import './files.css';
 export interface FileCourseOption {
   readonly id: string;
   readonly label: string;
+  /** An archived course still names the files attached to it but is not offered as an attach target. */
+  readonly archived?: boolean;
 }
 
 export interface FilesWorkspaceProps {
   /** The signed-in learner's file service. Keep it stable for the life of the mount. */
   readonly port: FilePort;
-  /** Courses a stored file can be attached to; the attach box is left out when there are none. */
+  /** The learner's courses: the active ones are attach targets (the attach box is left out when there are none) and every one names its files. */
   readonly courses?: readonly FileCourseOption[];
   readonly defaultCourseId?: string | null;
   /** Shown as "Manage all files" under the list when the host has a fuller files view. */
@@ -143,6 +145,7 @@ export interface FilesWorkspaceViewProps {
 
 export function FilesWorkspaceView({ upload, session, library, courses, defaultCourseId, onRetryList, onLoadMore, onDelete, cardPhotoCount, onOpen, onManageFiles, headingRef }: FilesWorkspaceViewProps) {
   const { _ } = useLingui();
+  const attachTargets = courses.filter(course => !course.archived);
   const inputRef = useRef<HTMLInputElement>(null);
   const filesHeadingRef = useRef<HTMLHeadingElement>(null);
   const [accept, setAccept] = useState(FILE_INPUT_ACCEPT);
@@ -205,7 +208,7 @@ export function FilesWorkspaceView({ upload, session, library, courses, defaultC
               upload={upload}
               session={session}
               listing={library.listing}
-              courses={courses}
+              courses={attachTargets}
               defaultCourseId={defaultCourseId}
               onBrowse={browse}
               onDropFile={choose}
@@ -695,8 +698,13 @@ function FileShelf({ library, courses, headingId, headingRef, onBrowse, onRetry,
   const listing = library.listing;
   const files = listing?.files ?? [];
   const count = listing?.usage.fileCount ?? 0;
-  const courseLabel = (courseId: string | null) => (courseId ? courses.find(course => course.id === courseId)?.label : null)
-    ?? _(msg({ id: 'files.shelf.no-course', message: 'No course' }));
+  const courseLabel = (courseId: string | null) => {
+    const course = courseId ? courses.find(option => option.id === courseId) : undefined;
+    if (!course) return _(msg({ id: 'files.shelf.no-course', message: 'No course' }));
+    return course.archived
+      ? formatMessage(_, msg({ id: 'files.shelf.course-archived', message: '{course} (archived)' }), { course: course.label })
+      : course.label;
+  };
 
   return (
     <div className="sf-files-shelf">

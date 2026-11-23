@@ -946,3 +946,8 @@ msgstr ""
 #: src/features/files/StorageUsageMeter.tsx:30
 msgid "files.usage.value"
 msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:705
+msgid "files.shelf.course-archived"
+msgstr ""

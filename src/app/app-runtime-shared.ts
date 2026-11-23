@@ -175,10 +175,16 @@ export const studyShortcut = (event: {
   return event.key === 'ArrowLeft' ? 'previous' : null;
 };
 
-/** The courses a stored file can be attached to: the active ones, named by the language they teach (one course per language). */
+/**
+ * The courses a stored file can name, each by the language it teaches (one course per language). An archived
+ * course is marked so a file attached to it still shows its course, but it is not offered as an attach target.
+ */
 export const fileCourseOptions = (courses: readonly Course[], translate: I18n['_']): FileCourseOption[] => courses
-  .filter(course => course.status === 'active')
-  .map(course => ({ id: course.id, label: translate(TARGET_LANGUAGE_LABEL[course.targetLanguage]) }));
+  .map(course => ({
+    id: course.id,
+    label: translate(TARGET_LANGUAGE_LABEL[course.targetLanguage]),
+    ...(course.status === 'active' ? {} : { archived: true }),
+  }));
 
 /** Views that render their own `<h1>` (and take the heading focus) skip the shell's screen-reader heading. */
 export const shouldShowViewHeading = (viewMode: string): boolean =>

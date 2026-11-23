@@ -77,6 +77,9 @@ export const createUploadSession = (options: UploadSessionOptions): UploadSessio
   let reservedFileId: string | null = null;
   let pending: { selection: UploadSelection } | null = null;
   let unconfirmedFileId: string | null = null;
+  // The reservation whose answer never arrived, with the course it named: asking again with the same
+  // ID and course cannot reserve twice, and the service treats a different course as a different upload.
+  let lostPrepare: { readonly fileId: string; readonly courseId: string | null } | null = null;
   let disposed = false;
 
   const set = (next: UploadState) => {
@@ -92,6 +95,18 @@ export const createUploadSession = (options: UploadSessionOptions): UploadSessio
     if (!fileId) return;
     void port.remove(fileId).then(
       usage => options.onChanged?.(listing => ({ ...listing, usage, files: listing.files.filter(file => file.id !== fileId) })),
+      () => undefined,
+    );
+  };
+
+  // A lost reservation the learner will not retry holds its bytes until it expires, so give it back;
+  // removing an ID the service never reserved is answered the same way.
+  const releaseLostPrepare = () => {
+    const lost = lostPrepare;
+    lostPrepare = null;
+    if (!lost) return;
+    void port.remove(lost.fileId).then(
+      usage => { if (!disposed) options.onChanged?.(listing => ({ ...listing, usage, files: listing.files.filter(file => file.id !== lost.fileId) })); },
       () => undefined,
     );
   };
@@ -132,14 +147,21 @@ export const createUploadSession = (options: UploadSessionOptions): UploadSessio
     pending = { selection };
     set({ phase: 'validating', check: 'plan', name: selection.name, kind: selection.kind });
     let prepared;
+    const requestedFileId = lostPrepare?.fileId ?? globalThis.crypto?.randomUUID?.();
+    const requestedCourseId = lostPrepare ? lostPrepare.courseId : options.courseId?.() ?? null;
+    lostPrepare = null;
     try {
       prepared = await port.prepare({
         name: selection.name, contentType: selection.contentType, bytes: selection.bytes,
-        purpose: options.purpose ?? 'source', courseId: options.courseId?.() ?? null,
+        purpose: options.purpose ?? 'source', courseId: requestedCourseId,
+        ...(requestedFileId ? { fileId: requestedFileId } : {}),
       });
     } catch (error) {
       if (!current(token)) return;
       const failure = toFileError(error);
+      if ((failure.kind === 'network' || failure.kind === 'unavailable') && requestedFileId) {
+        lostPrepare = { fileId: requestedFileId, courseId: requestedCourseId };
+      }
       if (failure.kind === 'quota') set({ phase: 'quota-exceeded', selection });
       else if (failure.kind === 'size') set({ phase: 'rejected', check: 'size', name: selection.name, kind: selection.kind });
       else if (failure.kind === 'type') set({ phase: 'rejected', check: 'type', name: selection.name, kind: selection.kind });
@@ -149,10 +171,10 @@ export const createUploadSession = (options: UploadSessionOptions): UploadSessio
     }
     if (!current(token)) return;
     reservedFileId = prepared.fileId;
-    // The service now holds the bytes in reserve; the record itself is listed once it settles.
-    options.onChanged?.(listing => ({
-      ...listing, usage: { ...listing.usage, reservedBytes: listing.usage.reservedBytes + selection.bytes },
-    }));
+    // The service now holds the bytes in reserve and reports the usage that results; the record itself
+    // is listed once it settles.
+    const { usage: reservedUsage } = prepared;
+    if (reservedUsage) options.onChanged?.(listing => ({ ...listing, usage: reservedUsage }));
     set({ phase: 'uploading', selection, sent: 0 });
     transfer = port.upload(prepared, selection.data, selection.contentType, sent => {
       if (current(token) && state.phase === 'uploading') set({ phase: 'uploading', selection, sent: Math.min(sent, selection.bytes) });
@@ -243,6 +265,7 @@ export const createUploadSession = (options: UploadSessionOptions): UploadSessio
       attempt += 1;
       const token = attempt;
       pending = null;
+      releaseLostPrepare();
       const selection = await prepareSelection(token, file);
       if (selection && current(token)) await send(selection);
     },
@@ -277,10 +300,12 @@ export const createUploadSession = (options: UploadSessionOptions): UploadSessio
       if (state.phase === 'uploading') releaseReservation();
       attempt += 1;
       pending = null;
+      releaseLostPrepare();
       set({ phase: 'select', kind: null });
     },
     dispose() {
       transfer?.cancel();
+      releaseLostPrepare();
       disposed = true;
       listeners.clear();
     },

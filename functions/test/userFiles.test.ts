@@ -32,6 +32,14 @@ describe('upload request parsing', () => {
       .toMatchObject({ contentType: 'image/webp', purpose: 'card-image', courseId: 'course-en' });
   });
 
+  it('accepts a file ID the browser chose for a repeatable reservation, and only a well-formed one', () => {
+    const fileId = '3f2b8c1e-5d4a-4e7b-9a10-0c6d2f8e1b77';
+    expect(parsePrepareFileUploadRequest({ ...valid, fileId })).toMatchObject({ fileId });
+    for (const bad of ['short', 'has/slash/in/the/identifier', 'x'.repeat(65), 42, null]) {
+      expect(() => parsePrepareFileUploadRequest({ ...valid, fileId: bad })).toThrow(InputValidationError);
+    }
+  });
+
   it('refuses unsupported types, non-positive sizes, unknown fields and card images that are not images', () => {
     for (const request of [
       { ...valid, bytes: 0 },

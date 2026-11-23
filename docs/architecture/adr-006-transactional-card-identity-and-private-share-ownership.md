@@ -92,6 +92,15 @@ contains at most 100 cards, is additionally bounded to 750,000 encoded bytes, an
 gets an `expiresAt` timestamp 30 days after creation. The callable returns that
 timestamp with the share ID.
 
+Each owner is also bounded in aggregate by a server-only usage ledger
+(`shared_deck_usage`) that the same transaction updates: at most 100 active
+(unexpired) shares and at most 25,000,000 bytes of active share payload. A new share
+that would exceed either limit is refused with a quota error (`resource-exhausted`)
+until the owner revokes a share or one expires. The limits are the
+`MAX_SHARED_DECKS` and `MAX_SHARED_DECK_BYTES` constants in
+[`sharedDeckPersistence.ts`](../../functions/src/sharedDeckPersistence.ts); a test
+keeps these numbers in step with the constants.
+
 Revocation reads both documents before writing. Private ownership metadata is the
 only authority to revoke: when it is absent or is not a valid current record, the
 transaction refuses with a migration-required error and deletes nothing, even if a
@@ -118,7 +127,8 @@ share even if asynchronous TTL deletion has not run yet.
 - Public share payloads no longer reveal an owner UID.
 - Share create/revoke cannot leave a one-sided current pair under normal Firestore
   transaction semantics.
-- Links have a documented storage/cost boundary: 100 cards and 30 days.
+- Links have a documented storage/cost boundary: 100 cards and 30 days per share,
+  and 100 active shares and 25,000,000 active bytes per owner.
 
 ### Costs and limitations
 

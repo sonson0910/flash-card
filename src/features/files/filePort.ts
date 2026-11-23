@@ -6,6 +6,11 @@ export interface PrepareUploadInput {
   readonly bytes: number;
   readonly purpose: FilePurpose;
   readonly courseId: string | null;
+  /**
+   * A file ID chosen on the device. Asking again with the same ID returns the reservation the first
+   * request made, so a retry after a lost answer does not reserve the bytes twice.
+   */
+  readonly fileId?: string;
 }
 
 /** One running browser upload. `cancel` aborts the transfer; `done` settles once it ends. */

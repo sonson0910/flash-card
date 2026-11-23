@@ -946,3 +946,8 @@ msgstr "Đã dùng"
 #: src/features/files/StorageUsageMeter.tsx:30
 msgid "files.usage.value"
 msgstr "Đã dùng {used} trên {limit}"
+
+#. js-lingui-explicit-id
+#: src/features/files/FilesWorkspace.tsx:705
+msgid "files.shelf.course-archived"
+msgstr "{course} (đã lưu trữ)"

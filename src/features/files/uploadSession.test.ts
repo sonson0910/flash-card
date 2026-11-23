@@ -59,9 +59,11 @@ describe('upload session', () => {
     await session.choose(named('reading.pdf', 'application/pdf', 2048));
     expect(list).toHaveBeenCalledOnce();
     expect(onChanged).toHaveBeenCalledTimes(2);
-    // The reservation is an edit to the shown listing; the listing that settled the upload replaces it.
+    // The reservation is an edit to the shown listing that takes the usage the service reported, not an
+    // estimate added on the device; the listing that settled the upload replaces it.
     const [reserve] = onChanged.mock.calls[0]!;
-    expect(reserve(shown)).toEqual({ ...shown, usage: { usedBytes: 0, reservedBytes: 2048, fileCount: 0 } });
+    const stale = { ...shown, usage: { usedBytes: 0, reservedBytes: 999, fileCount: 7 } };
+    expect(reserve(stale)).toEqual({ ...stale, usage: { usedBytes: 0, reservedBytes: 2048, fileCount: 0 } });
     expect(onChanged).toHaveBeenLastCalledWith(expect.objectContaining({
       files: [expect.objectContaining({ name: 'reading.pdf', status: 'ready', bytes: 2048 })],
       usage: { usedBytes: 2048, reservedBytes: 0, fileCount: 1 },
@@ -167,6 +169,105 @@ describe('upload session', () => {
     await session.retry();
     expect(session.getState()).toMatchObject({ phase: 'results' });
     expect((await port.list()).files.map(file => file.status)).toEqual(['ready']);
+  });
+
+  it('asks again with the same file ID when the answer to a reservation was lost, so the bytes are reserved once', async () => {
+    const { port, session } = setup();
+    const prepare = port.prepare.bind(port);
+    const asked: Array<string | undefined> = [];
+    let lostAnswer = true;
+    port.prepare = async input => {
+      asked.push(input.fileId);
+      const prepared = await prepare(input);
+      if (lostAnswer) {
+        lostAnswer = false;
+        throw new FileError('network');
+      }
+      return prepared;
+    };
+    await session.choose(named('reading.pdf', 'application/pdf', 2048));
+    expect(session.getState().phase).toBe('retry');
+    await session.retry();
+    expect(session.getState().phase).toBe('results');
+    expect(asked).toHaveLength(2);
+    expect(asked[0]).toBeTruthy();
+    expect(asked[1]).toBe(asked[0]);
+    const listing = await port.list();
+    expect(listing.files).toHaveLength(1);
+    expect(listing.usage).toEqual({ usedBytes: 2048, reservedBytes: 0, fileCount: 1 });
+  });
+
+  /** A port whose first answer to a reservation is lost after the service committed it. */
+  const losingFirstAnswer = (port: ReturnType<typeof createMemoryFilePort>) => {
+    const prepare = port.prepare.bind(port);
+    const asked: Array<{ fileId?: string; courseId: string | null }> = [];
+    let lostAnswer = true;
+    port.prepare = async input => {
+      asked.push({ fileId: input.fileId, courseId: input.courseId });
+      const prepared = await prepare(input);
+      if (lostAnswer) {
+        lostAnswer = false;
+        throw new FileError('network');
+      }
+      return prepared;
+    };
+    return asked;
+  };
+
+  it('gives the lost reservation back when the learner picks the file again instead of retrying', async () => {
+    const { port, session } = setup();
+    const asked = losingFirstAnswer(port);
+    await session.choose(named('reading.pdf', 'application/pdf', 2048));
+    expect(session.getState().phase).toBe('retry');
+    expect((await port.list()).usage.reservedBytes).toBe(2048);
+    await session.choose(named('reading.pdf', 'application/pdf', 2048));
+    await flush();
+    expect(session.getState().phase).toBe('results');
+    expect(asked[1]!.fileId).not.toBe(asked[0]!.fileId);
+    const listing = await port.list();
+    expect(listing.files).toHaveLength(1);
+    expect(listing.usage).toEqual({ usedBytes: 2048, reservedBytes: 0, fileCount: 1 });
+  });
+
+  it('gives the lost reservation back when the learner leaves instead of retrying', async () => {
+    const onChanged = vi.fn();
+    const { port, session } = setup({}, { onChanged });
+    losingFirstAnswer(port);
+    await session.choose(named('reading.pdf', 'application/pdf', 2048));
+    expect((await port.list()).usage.reservedBytes).toBe(2048);
+    session.reset();
+    await flush();
+    const listing = await port.list();
+    expect(listing.files).toEqual([]);
+    expect(listing.usage).toEqual({ usedBytes: 0, reservedBytes: 0, fileCount: 0 });
+    expect(onChanged).toHaveBeenCalledWith(expect.any(Function));
+  });
+
+  it('asks again for the course the lost request named, even if the active course changed meanwhile', async () => {
+    let course: string | null = 'course-en';
+    const { port, session } = setup({}, { courseId: () => course });
+    const asked = losingFirstAnswer(port);
+    await session.choose(named('reading.pdf', 'application/pdf', 2048));
+    course = 'course-ko';
+    await session.retry();
+    expect(session.getState().phase).toBe('results');
+    expect(asked.map(request => request.courseId)).toEqual(['course-en', 'course-en']);
+    expect(asked[1]!.fileId).toBe(asked[0]!.fileId);
+    expect((await port.list()).files).toHaveLength(1);
+  });
+
+  it('asks with a new file ID for a different selection or after the upload itself failed', async () => {
+    const { port, session } = setup();
+    const asked: Array<string | undefined> = [];
+    const prepare = port.prepare.bind(port);
+    port.prepare = async input => {
+      asked.push(input.fileId);
+      if (asked.length === 1) throw new FileError('network');
+      return prepare(input);
+    };
+    await session.choose(named('reading.pdf', 'application/pdf', 2048));
+    await session.choose(named('other.pdf', 'application/pdf', 1024));
+    expect(asked[1]).not.toBe(asked[0]);
   });
 
   it('shows the service rejection when the stored bytes fail verification', async () => {
