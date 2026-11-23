@@ -839,7 +839,7 @@ describe('release workflow contracts', () => {
     const sharedDeckModes = modes('.github/workflows/migrate-legacy-shared-decks.yml');
     const libraryModes = modes('.github/workflows/repair-legacy-libraries.yml');
     expect(sharedDeckModes.join(',')).toBe('inventory,verify,apply,supersede,prepare-indexes');
-    expect(libraryModes.join(',')).toBe('dry-run,apply,rollback,catalog-progress');
+    expect(libraryModes.join(',')).toBe('dry-run,apply,rollback,restart,catalog-progress');
 
     const runbook = read('docs/runbooks/security-remediation-rollout.md');
     const migration = runbook.slice(

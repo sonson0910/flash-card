@@ -23,6 +23,11 @@ card searchable/pageable under schema v2 without losing the strongest learning s
   each owner's current library, which cards written before the projection existed lack.
   Idempotent; a fenced owner is reported as `skipped: migration-fence` and left for a
   later run. Reports owner keys with scanned and repaired counts only
+- Operator restart (`MIGRATION_CONFIRMATION=RESTART_QUERY_V3`, owner key only): after the
+  cause a dry-run reported for a `blocked` owner is repaired, starts that owner's job
+  over with a new scan. Only a blocked job restarts; it never applied a group, so its
+  manifest and backup root are retired with it. Dispatch dry-run again and approve the
+  revision it reports. A `rolled-back` job does not restart
 - Library changed after the dry-run: apply fails without migrating anything, releases
   the fence and reopens discovery for that owner; dispatch dry-run again and approve
   the new revision it reports. The earlier revision is never applied

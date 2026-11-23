@@ -4,6 +4,7 @@ import {
   FieldValue,
   Timestamp,
   type DocumentData,
+  type DocumentReference,
   type DocumentSnapshot,
   type Firestore,
   type Transaction,
@@ -1132,6 +1133,40 @@ export const clearZeroProgressFence = async (
 
 const RETIRED_GROUP_DELETE_PAGE = 200;
 
+const freshDiscoveryJob = (): LegacyLibraryDiscoveryJob => ({
+  schemaVersion: 3,
+  scanId: randomUUID(),
+  phase: 'discover',
+  cursor: null,
+  libraryEpoch: null,
+  sourceRevision: '',
+  scanned: 0,
+  sourceCount: 0,
+  groupCount: 0,
+  lastPageDigest: null,
+  leaseOwner: null,
+  leaseExpiresAt: null,
+});
+
+// Readers already ignore a retired scan's groups, so this only tidies up.
+// Each page is a transaction, which keeps a new scan's writes out of it.
+const deleteRetiredDiscoveryGroups = async (
+  database: Firestore,
+  jobReference: DocumentReference,
+  retiredScanId: string,
+): Promise<void> => {
+  const retiredGroups = jobReference.collection(DISCOVERY_GROUP_COLLECTION)
+    .where('scanId', '==', retiredScanId).limit(RETIRED_GROUP_DELETE_PAGE);
+  for (;;) {
+    const deleted = await database.runTransaction(async transaction => {
+      const snapshot = await transaction.get(retiredGroups);
+      for (const document of snapshot.docs) transaction.delete(document.ref);
+      return snapshot.size;
+    });
+    if (deleted < RETIRED_GROUP_DELETE_PAGE) return;
+  }
+};
+
 /**
  * Retires a manifest that no longer describes the library and reopens its job
  * for a new scan, so a later discovery reports a new revision to approve.
@@ -1173,20 +1208,7 @@ const reopenDiscoveryForChangedLibrary = async (
       const currentEpoch = stateSnapshot.exists ? safeCounter(stateSnapshot.data()?.libraryEpoch) : 0;
       if (fenceSnapshot.exists || job.phase !== 'discovered' || currentEpoch === job.libraryEpoch) return null;
     }
-    transaction.set(jobReference, discoveryJobData({
-      schemaVersion: 3,
-      scanId: randomUUID(),
-      phase: 'discover',
-      cursor: null,
-      libraryEpoch: null,
-      sourceRevision: '',
-      scanned: 0,
-      sourceCount: 0,
-      groupCount: 0,
-      lastPageDigest: null,
-      leaseOwner: null,
-      leaseExpiresAt: null,
-    }, Timestamp.now()), { merge: false });
+    transaction.set(jobReference, discoveryJobData(freshDiscoveryJob(), Timestamp.now()), { merge: false });
     transaction.delete(backupRef(database, ownerId, options.jobId));
     if (fence) {
       transaction.delete(fenceReference);
@@ -1194,20 +1216,36 @@ const reopenDiscoveryForChangedLibrary = async (
     }
     return job.scanId;
   });
-  if (retiredScanId === null) return;
-  // Readers already ignore the retired scan's groups, so this only tidies up.
-  // Each page is a transaction, which keeps a new scan's writes out of it.
-  const retiredGroups = jobReference.collection(DISCOVERY_GROUP_COLLECTION)
-    .where('scanId', '==', retiredScanId).limit(RETIRED_GROUP_DELETE_PAGE);
-  for (;;) {
-    const deleted = await database.runTransaction(async transaction => {
-      const snapshot = await transaction.get(retiredGroups);
-      for (const document of snapshot.docs) transaction.delete(document.ref);
-      return snapshot.size;
-    });
-    if (deleted < RETIRED_GROUP_DELETE_PAGE) return;
-  }
+  if (retiredScanId !== null) await deleteRetiredDiscoveryGroups(database, jobReference, retiredScanId);
 };
+
+/**
+ * Starts a blocked job over with a new scan once the operator has repaired
+ * what blocked it. A blocked job never applied a group, so its backup root
+ * holds nothing to restore and goes with the retired scan, as on a reopen.
+ */
+export async function restartBlockedLegacyLibraryDiscovery(
+  database: Firestore,
+  ownerId: string,
+  jobId: string,
+): Promise<void> {
+  const jobReference = discoveryJobRef(database, ownerId, jobId);
+  const retiredScanId = await database.runTransaction(async transaction => {
+    const [jobSnapshot, fenceSnapshot] = await Promise.all([
+      transaction.get(jobReference),
+      transaction.get(migrationFenceReference(database, ownerId)),
+    ]);
+    if (!jobSnapshot.exists) throw new LegacyLibraryDiscoveryStateChangedError();
+    const job = validDiscoveryJob(jobSnapshot.data());
+    if (job.phase !== 'blocked' || (job.appliedGroupCount ?? 0) !== 0 || fenceSnapshot.exists) {
+      throw new LegacyLibraryDiscoveryStateChangedError();
+    }
+    transaction.set(jobReference, discoveryJobData(freshDiscoveryJob(), Timestamp.now()), { merge: false });
+    transaction.delete(backupRef(database, ownerId, jobId));
+    return job.scanId;
+  });
+  await deleteRetiredDiscoveryGroups(database, jobReference, retiredScanId);
+}
 
 const ensureBackupRoot = async (
   database: Firestore,

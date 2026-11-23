@@ -12,6 +12,7 @@ import {
   LegacyLibraryDiscoveryStateChangedError,
   LegacyLibraryGenerationChangedError,
   LegacyLibraryRollbackConflictError,
+  restartBlockedLegacyLibraryDiscovery,
   rollbackLegacyLibraryMigration,
 } from '../src/legacyLibraryMigrationFirestore.js';
 import { assertOwnerLibraryWriteAllowed } from '../src/legacyLibraryMigrationOwnerScope.js';
@@ -1242,6 +1243,31 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
       .toMatchObject({ phase: 'blocked', blockedReason: 'library-epoch-changed' });
     expect((await owner.collection('cards').get()).size).toBe(3);
     expect((await owner.collection('card_reservations').get()).empty).toBe(true);
+  });
+
+  it('restarts a blocked job once the card that blocked it is repaired, and then applies it', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const jobId = 'blocked-restart-v3';
+    const jobReference = owner.collection('admin_library_migration_jobs').doc(jobId);
+    await owner.collection('cards').doc('legacy-blank').set({ id: 'legacy-blank', word: '   ', translation: 'trống' });
+    const blocked = await discoverToEnd(jobId);
+    expect(blocked.discovery).toMatchObject({ phase: 'blocked', invalid: 1 });
+    // Discovery alone never leaves a blocked job.
+    await expect(discoverToEnd(jobId)).resolves.toMatchObject({ discovery: { phase: 'blocked' } });
+
+    await owner.collection('cards').doc('legacy-blank').set({ id: 'legacy-blank', word: 'Blank', translation: 'trống' });
+    await restartBlockedLegacyLibraryDiscovery(database, OWNER_ID, jobId);
+    expect((await jobReference.get()).data()).toMatchObject({ phase: 'discover', sourceRevision: '', scanned: 0 });
+    expect((await jobReference.get()).data()?.blockedReason).toBeUndefined();
+
+    const restarted = await discoverToEnd(jobId);
+    expect(restarted.discovery).toMatchObject({ phase: 'discovered', sourceCount: 4, groupCount: 3 });
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision: restarted.sourceRevision }))
+      .resolves.toMatchObject({ complete: true, groupCount: 3 });
+    // Only a blocked job restarts; a completed one is left as it is.
+    await expect(restartBlockedLegacyLibraryDiscovery(database, OWNER_ID, jobId))
+      .rejects.toBeInstanceOf(LegacyLibraryDiscoveryStateChangedError);
+    expect((await jobReference.get()).data()?.phase).toBe('complete');
   });
 
   it('discovers and applies a word whose cards are pages apart', async () => {
