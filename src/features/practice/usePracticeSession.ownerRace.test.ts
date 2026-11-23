@@ -1641,4 +1641,98 @@ describe('usePracticeSession owner isolation', () => {
     await expect(session.commands.submitStudyRating('good')).resolves.toEqual({ status: 'committed', xpAwarded: 2 });
     expect(learning.reviewCard).toHaveBeenCalledTimes(2);
   });
+
+  const reviewStudyCardAt = async (render: ReturnType<typeof createSessionHarness>['render'], index: number) => {
+    let session = render({ mode: 'study' });
+    session.commands.setStudyIndex(index);
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render({ mode: 'study' });
+    return session.commands.submitStudyRating('good');
+  };
+
+  it('keeps the recap closed while a card of the study snapshot is unreviewed after a reviewed card was removed', async () => {
+    const pool = Array.from({ length: 10 }, (_, index) => card(index + 1));
+    const { render } = createSessionHarness(pool);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    const order = session.study.cards.map(candidate => candidate.id);
+    expect(order).toHaveLength(10);
+
+    for (const index of [0, 1, 2, 3]) await expect(reviewStudyCardAt(render, index)).resolves.toMatchObject({ status: 'committed' });
+    session = render({ mode: 'study' });
+    session.snapshot.removeCard(order[2]);
+    session = renderAfterEffects(render);
+    expect(session.study.cards).toHaveLength(9);
+
+    for (const index of [3, 4, 5, 6]) await reviewStudyCardAt(render, index);
+    expect(render({ mode: 'study' }).study.showRecap).toBe(false);
+    await reviewStudyCardAt(render, 7);
+    const study = render({ mode: 'study' }).study;
+    expect(study.summary.remaining).toBe(1);
+    expect(study.showRecap).toBe(false);
+  });
+
+  it('keeps the learner on the restored card after the current study card is deleted and restored', async () => {
+    const pool = Array.from({ length: 5 }, (_, index) => card(index + 1));
+    const { render } = createSessionHarness(pool);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    const order = session.study.cards.map(candidate => candidate.id);
+
+    await reviewStudyCardAt(render, 0);
+    await reviewStudyCardAt(render, 1);
+    session = render({ mode: 'study' });
+    session.commands.setStudyIndex(2);
+    session = renderAfterEffects(render);
+    const deleted = session.study.cards[session.study.index];
+    expect(deleted.id).toBe(order[2]);
+
+    session.snapshot.removeCard(deleted.id);
+    session = renderAfterEffects(render);
+    expect(session.study.cards[session.study.index].id).toBe(order[3]);
+
+    session.snapshot.restoreCard(deleted);
+    session = renderAfterEffects(render);
+    expect(session.study.cards.map(candidate => candidate.id)).toEqual(order);
+    expect(session.study.cards[session.study.index].id).toBe(order[2]);
+  });
+
+  it('keeps the same current card when a card removed before it is restored', async () => {
+    const pool = Array.from({ length: 5 }, (_, index) => card(index + 1));
+    const { render } = createSessionHarness(pool);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    const order = session.study.cards.map(candidate => candidate.id);
+
+    session = render({ mode: 'study' });
+    session.snapshot.removeCard(order[0]);
+    session.commands.setStudyIndex(2);
+    session = renderAfterEffects(render);
+    const current = session.study.cards[session.study.index].id;
+
+    session.snapshot.restoreCard(pool[0]);
+    session = renderAfterEffects(render);
+    expect(session.study.cards[session.study.index].id).toBe(current);
+  });
+
+  it('ignores a restore for a card that was never in the study snapshot', async () => {
+    const pool = Array.from({ length: 3 }, (_, index) => card(index + 1));
+    const { render } = createSessionHarness(pool);
+    let session = render();
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    const order = session.study.cards.map(candidate => candidate.id);
+
+    session.snapshot.restoreCard(card(99));
+    session = renderAfterEffects(render);
+    expect(session.study.cards.map(candidate => candidate.id)).toEqual(order);
+  });
 });

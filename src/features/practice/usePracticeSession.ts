@@ -605,7 +605,8 @@ export function usePracticeSession({
           const persistedCard = studyCardsRef.current.find(card => card.id === activeCard.id) ?? activeCard;
           setWeakCards(previous => [...previous.filter(card => card.id !== activeCard.id), persistedCard]);
         }
-        if (lifecycle.reviewedCount() === studyCardsRef.current.length) {
+        const snapshotIds = studyCardsRef.current.map(card => card.id);
+        if (snapshotIds.length > 0 && lifecycle.reviewSummary(snapshotIds).saved === snapshotIds.length) {
           if (persistedRating === 'good' || persistedRating === 'easy') triggerConfetti(0.5, 0.5);
           setShowRecap(true);
         }
@@ -768,16 +769,29 @@ export function usePracticeSession({
     studyCardsRef.current = nextCards;
     setStudyCards(nextCards);
   }, []);
+  // Cards taken out of the study snapshot, with the place they held, so an undo puts one back where it was.
+  const removedSnapshotCardsRef = useRef(new Map<string, { readonly activationId: number; readonly index: number }>());
   const removeSnapshotCard = useCallback((cardId: string) => {
+    const index = studyCardsRef.current.findIndex(card => card.id === cardId);
+    const activationId = lifecycle.studyActivationId();
+    if (index >= 0 && activationId !== null) removedSnapshotCardsRef.current.set(cardId, { activationId, index });
     const nextCards = studyCardsRef.current.filter(card => card.id !== cardId);
     studyCardsRef.current = nextCards;
     setStudyCards(nextCards);
-  }, []);
+  }, [lifecycle]);
   const restoreSnapshotCard = useCallback((card: CardData) => {
-    const nextCards = [card, ...studyCardsRef.current.filter(candidate => candidate.id !== card.id)];
+    const removed = removedSnapshotCardsRef.current.get(card.id);
+    removedSnapshotCardsRef.current.delete(card.id);
+    // Only a card this study activation removed returns to it; any other undo is not part of the session.
+    if (!removed || !lifecycle.isStudyActivationCurrent(removed.activationId)) return;
+    const others = studyCardsRef.current.filter(candidate => candidate.id !== card.id);
+    const insertAt = Math.min(removed.index, others.length);
+    const nextCards = [...others.slice(0, insertAt), card, ...others.slice(insertAt)];
     studyCardsRef.current = nextCards;
     setStudyCards(nextCards);
-  }, []);
+    // A card restored ahead of the learner must not push them back onto a card they already passed.
+    setStudyIndex(current => (insertAt < current ? current + 1 : current));
+  }, [lifecycle]);
   const clearSnapshot = useCallback(() => {
     studyCardsRef.current = [];
     setStudyCards([]);
