@@ -170,7 +170,7 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
         </div>
         <div data-settings-course-preferences className="ss-course-rows">
           <label className="ss-row ss-switch-row">
-            <span className="ss-row__text"><span className="ss-row__title"><Trans {...msg({ context: 'settings.course.romanization', message: 'Show romanization' })} /></span><span className="ss-row__sub"><Trans {...msg({ context: 'settings.course.romanization.description', message: 'Your saved choice for this course. Each card has its own reading switch.' })} /></span></span>
+            <span className="ss-row__text"><span className="ss-row__title"><Trans {...msg({ context: 'settings.course.romanization', message: 'Show romanization' })} /></span><span className="ss-row__sub">{activeCourse.targetLanguage === 'en' ? <Trans {...msg({ context: 'settings.course.romanization.description-en', message: 'Your saved choice for this course.' })} /> : <Trans {...msg({ context: 'settings.course.romanization.description', message: 'Your saved choice for this course. Each card has its own reading switch.' })} />}</span></span>
             <input type="checkbox" role="switch" disabled={model.pending} checked={activeCourse.preferences.showRomanization} onChange={event => updatePreferences({ showRomanization: event.target.checked })} />
           </label>
           <div data-settings-course-voice className="ss-row">

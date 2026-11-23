@@ -644,6 +644,11 @@ msgctxt "settings.follow-system.description"
 msgid "Match your device’s light or dark setting."
 msgstr "Match your device’s light or dark setting."
 
+#: src/features/settings/CourseSettingsSection.tsx:173
+msgctxt "settings.course.romanization.description-en"
+msgid "Your saved choice for this course."
+msgstr "Your saved choice for this course."
+
 #: src/features/reminders/ReminderSettingsSection.tsx:207
 msgctxt "settings.reminders.push-unavailable"
 msgid "Push needs a supported browser and configured web push key."

@@ -50,6 +50,25 @@ describe('CourseSettingsSection', () => {
     expect(html).toContain('Japanese');
   });
 
+  it('does not promise a per-card reading switch on an English course', () => {
+    const englishCourse = { ...activeCourse, id: 'course-en', targetLanguage: 'en' as const, goals: [], preferences: { ...activeCourse.preferences, zhScript: null } };
+    const englishValue: CourseGateValue = {
+      ...value,
+      model: {
+        ...value.model,
+        profile: { activeCourseId: englishCourse.id, courses: [englishCourse] },
+        activeCourse: englishCourse,
+      },
+    };
+    const englishHtml = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseContext.Provider value={englishValue}><CourseSettingsSection /></CourseContext.Provider></I18nProvider>);
+    const chineseHtml = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseContext.Provider value={value}><CourseSettingsSection /></CourseContext.Provider></I18nProvider>);
+
+    expect(englishHtml).toContain('Show romanization');
+    expect(englishHtml).toContain('Your saved choice for this course.');
+    expect(englishHtml).not.toContain('reading switch');
+    expect(chineseHtml).toContain('Each card has its own reading switch.');
+  });
+
   it('keeps app settings and archived-course recovery when no course is active', () => {
     const noActiveCourse: CourseGateValue = {
       ...value,
