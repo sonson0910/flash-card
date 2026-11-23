@@ -86,7 +86,9 @@ export async function fetchWebWordsPage({
     // Defense in depth: the query's own ordering already guarantees this,
     // the filter here only protects against a future query-shape change.
     .filter((card): card is CardData & { source: NonNullable<CardData['source']> } => {
-      if (!card.source) return false;
+      // A web capture always names a page: cards saved by older app builds carry only a typed
+      // context sentence and a save time, and are not web words.
+      if (!card.source || (!card.source.url && !card.source.title)) return false;
       try {
         const pair = effectiveCardLanguagePair(card);
         return pair.language === targetLanguage && pair.translationLanguage === translationLanguage;
