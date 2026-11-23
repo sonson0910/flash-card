@@ -28,6 +28,9 @@ import {
 } from './verifiedGamification.js';
 
 export const MAX_CARD_ALLOCATION = 5_000;
+// How many derived ids a word may try when the id of its word is held by a
+// card that was renamed to another word.
+const MAX_RELOCATED_CARD_ID_ATTEMPTS = 8;
 const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
 const RESOURCE_USAGE_SCHEMA_VERSION = 1 as const;
 
@@ -917,10 +920,34 @@ export async function createCardForOwner(
     if (existingReservation && !isMatchingIdentity(existingReservation, identity, plainTargetLanguage)) {
       throw new CardAllocationConflictError('identity-conflict', 'The card identity reservation conflicts with the request.');
     }
-    const id = existingReservation?.cardId as string | undefined ?? proposedId;
-    const canonical = owner.collection('cards').doc(id);
+    // A plain card id is derived from its word, but a headword correction keeps
+    // the id while it changes the word. The id a reservation points to, or the
+    // id of the word itself, can therefore hold a card that now belongs to
+    // another word. That card keeps its id; the identity being created takes
+    // the next derived id that is free instead of failing for good.
+    const reservedId = existingReservation?.cardId as string | undefined;
+    const candidateIds = identity.startsWith('lexeme:')
+      ? [reservedId ?? proposedId]
+      : [...new Set([
+        reservedId ?? proposedId,
+        proposedId,
+        ...Array.from({ length: MAX_RELOCATED_CARD_ID_ATTEMPTS }, (_, index) => `${proposedId}-${index + 2}`),
+      ])];
+    let candidateIndex = 0;
+    let id = candidateIds[0];
+    let canonical = owner.collection('cards').doc(id);
+    let cardSnapshot = await transaction.get(canonical);
+    while (
+      cardSnapshot.exists
+      && !cardMatchesIdentity(cardSnapshot.data() as CardRecord, identity, id, plainTargetLanguage)
+      && candidateIndex + 1 < candidateIds.length
+    ) {
+      candidateIndex += 1;
+      id = candidateIds[candidateIndex];
+      canonical = owner.collection('cards').doc(id);
+      cardSnapshot = await transaction.get(canonical);
+    }
     const tombstone = owner.collection('card_tombstones').doc(id);
-    const cardSnapshot = await transaction.get(canonical);
     const tombstoneSnapshot = await transaction.get(tombstone);
     const usageSnapshot = await transaction.get(resourceUsage);
     const currentEpoch = readEpoch(stateSnapshot);
@@ -955,6 +982,13 @@ export async function createCardForOwner(
         || (existingEpoch !== undefined && Number(existingEpoch) < currentEpoch)),
     );
     const hadIdentity = Boolean(existingReservation || existingCard);
+    // A reservation names the card that holds its identity. When that card id
+    // moved to a derived id above, the reservation follows it.
+    const repointReservation = () => {
+      if (existingReservation && existingReservation.cardId !== id) {
+        transaction.set(reservation, expectedReservation, { merge: false });
+      }
+    };
     const complete = async (result: CardAllocationResult): Promise<CardAllocationResult> => {
       const gamification = verifiedCreate && result.created && !result.restored
         ? await prepareVerifiedGamification(database, transaction, ownerId, {
@@ -978,6 +1012,7 @@ export async function createCardForOwner(
         transaction.set(canonical, normalizedExisting, { merge: false });
       }
       if (!existingReservation) transaction.create(reservation, expectedReservation);
+      else repointReservation();
       return result;
     }
 
@@ -1050,6 +1085,7 @@ export async function createCardForOwner(
     });
     await applyRestoreFacetDelta();
     if (existingCard && !existingReservation) transaction.create(reservation, expectedReservation);
+    else repointReservation();
     upsertCatalogProgressForCard(database, transaction, ownerId, createdCard);
     if (cardSnapshot.exists || existingReservation) transaction.set(canonical, createdCard, { merge: false });
     else transaction.create(canonical, createdCard);
@@ -1327,7 +1363,8 @@ export type RenameCardHeadwordResult = {
  * A legacy (non-lexeme) card's identity reservation is keyed on its
  * normalizedWord, so renaming it swaps that reservation inside the same
  * transaction as the card write (release the old one, claim the new one,
- * reject if the new word is already claimed by a different card). A
+ * reject if a live card of this library already holds the new word; a
+ * reservation whose card is gone or holds another word is taken over). A
  * canonical (lexemeId) card's reservation is keyed on its lexemeId, which
  * this callable never touches — its `word`/`normalizedWord` are display-only
  * relative to its lexeme tuple (`normalizedLemma`, `partOfSpeech`,
@@ -1409,7 +1446,26 @@ export async function renameCardHeadwordForOwner(
       if (newReservationSnapshot.exists) {
         const existing = newReservationSnapshot.data() as CardRecord;
         if (existing.cardId !== request.cardId) {
-          throw new CardHeadwordRenameConflictError('duplicate-word', 'Another card already uses this word.');
+          // A reservation outlives its card, so it only blocks the rename while
+          // the card it names still holds this word in the current library.
+          const holderId = typeof existing.cardId === 'string' && CARD_ID_PATTERN.test(existing.cardId)
+            ? existing.cardId
+            : null;
+          const holder = holderId ? await transaction.get(owner.collection('cards').doc(holderId)) : null;
+          const holderData = holder?.exists ? holder.data() as CardRecord : null;
+          if (
+            !holderId
+            || (holderData
+              && isCurrentGenerationCard(holderData, currentEpoch)
+              && cardMatchesIdentity(holderData, newIdentity, holderId, plainTargetLanguage))
+          ) {
+            throw new CardHeadwordRenameConflictError('duplicate-word', 'Another card already uses this word.');
+          }
+          transaction.set(
+            newReservation,
+            createReservation(newIdentity, request.cardId, plainTargetLanguage),
+            { merge: false },
+          );
         }
       } else {
         transaction.create(newReservation, createReservation(newIdentity, request.cardId, plainTargetLanguage));

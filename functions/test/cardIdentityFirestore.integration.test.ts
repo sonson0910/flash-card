@@ -6,6 +6,7 @@ import { applyBulkCardMutationsForOwner } from '../src/bulkCardMutationPersisten
 import {
   createCardForOwner,
   createStarterCardsForOwner,
+  renameCardHeadwordForOwner,
 } from '../src/cardPersistence.js';
 import { PILOT_CONFIG_DEFAULTS } from '../src/pilotConfig.js';
 
@@ -21,6 +22,8 @@ const starterBatch = [
 ];
 const now = new Date('2026-09-27T04:00:00.000Z');
 const PILOT_PERIOD_KEY = `free-${now.toISOString().slice(0, 7)}`;
+// A deleted word comes back only with an explicit creation time after its deletion.
+const afterDeletion = () => new Date(Date.now() + 60_000).toISOString();
 
 describeWithEmulator('card identity persistence in Firestore', () => {
   let app: App;
@@ -79,6 +82,69 @@ describeWithEmulator('card identity persistence in Firestore', () => {
       const again = await createStarterCardsForOwner(database, ownerId, 'starter-en-vi', starterBatch, now, PILOT_CONFIG_DEFAULTS);
 
       expect(again).toEqual({ kind: 'completed', cardIds: first.cardIds.slice(1) });
+    });
+  });
+
+  describe('headword correction', () => {
+    it('lets the old word be added again after a rename', async () => {
+      const ownerId = await newOwner();
+      const color = await createCardForOwner(database, ownerId, word('color', 'màu'));
+      await renameCardHeadwordForOwner(database, ownerId, {
+        cardId: cardIdOf(color), word: 'colour', baseRevision: Number(color.card.revision), libraryEpoch: 0,
+      });
+
+      const again = await createCardForOwner(database, ownerId, word('color', 'màu'));
+
+      expect(again.created).toBe(true);
+      expect(again.card).toMatchObject({ normalizedWord: 'color' });
+      expect(cardIdOf(again)).not.toBe(cardIdOf(color));
+      const renamed = await database.doc(`users/${ownerId}/cards/${cardIdOf(color)}`).get();
+      expect(renamed.data()).toMatchObject({ normalizedWord: 'colour' });
+      // The identity now resolves to the new card on the next create.
+      const retry = await createCardForOwner(database, ownerId, word('color', 'màu'));
+      expect(retry).toMatchObject({ created: false, card: { id: cardIdOf(again) } });
+    });
+
+    it('keeps both words creatable after the renamed card was deleted and the old word re-added', async () => {
+      const ownerId = await newOwner();
+      const color = await createCardForOwner(database, ownerId, word('color', 'màu'));
+      const renamed = await renameCardHeadwordForOwner(database, ownerId, {
+        cardId: cardIdOf(color), word: 'colour', baseRevision: Number(color.card.revision), libraryEpoch: 0,
+      });
+      await deleteCard(ownerId, cardIdOf(color), Number(renamed.card.revision));
+      const color2 = await createCardForOwner(database, ownerId, { ...word('color', 'màu'), createdAt: afterDeletion() });
+      expect(color2.created).toBe(true);
+
+      const colour = await createCardForOwner(database, ownerId, word('colour', 'màu'));
+
+      expect(colour.created).toBe(true);
+      expect(colour.card).toMatchObject({ normalizedWord: 'colour' });
+      expect(cardIdOf(colour)).not.toBe(cardIdOf(color2));
+    });
+
+    it('renames a typo to a word whose card was deleted earlier', async () => {
+      const ownerId = await newOwner();
+      const hello = await createCardForOwner(database, ownerId, word('hello', 'xin chào'));
+      await deleteCard(ownerId, cardIdOf(hello), 1);
+      const typo = await createCardForOwner(database, ownerId, word('helo', 'xin chào'));
+
+      const renamed = await renameCardHeadwordForOwner(database, ownerId, {
+        cardId: cardIdOf(typo), word: 'hello', baseRevision: Number(typo.card.revision), libraryEpoch: 0,
+      });
+
+      expect(renamed.card).toMatchObject({ id: cardIdOf(typo), normalizedWord: 'hello' });
+      const retry = await createCardForOwner(database, ownerId, word('hello', 'xin chào'));
+      expect(retry).toMatchObject({ created: false, card: { id: cardIdOf(typo) } });
+    });
+
+    it('still refuses a rename onto a word a live card holds', async () => {
+      const ownerId = await newOwner();
+      await createCardForOwner(database, ownerId, word('hello', 'xin chào'));
+      const typo = await createCardForOwner(database, ownerId, word('helo', 'xin chào'));
+
+      await expect(renameCardHeadwordForOwner(database, ownerId, {
+        cardId: cardIdOf(typo), word: 'hello', baseRevision: Number(typo.card.revision), libraryEpoch: 0,
+      })).rejects.toMatchObject({ reason: 'duplicate-word' });
     });
   });
 });
