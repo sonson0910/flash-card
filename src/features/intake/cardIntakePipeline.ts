@@ -1,7 +1,7 @@
 import { fetchAudioUrl } from '../../lib/audio';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { mapWithConcurrency } from '../../lib/asyncPool';
-import { cardLogicalKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
+import { cardLogicalKey, createTargetAwareCardId, normalizeCardWord } from '../../lib/cardIdentity';
 import { isRetryableCloudError } from '../../lib/cloudError';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import {
@@ -149,6 +149,20 @@ export function createCardIntakePipeline({
     if (!sessionGuard.isCurrent(token)) throw new StaleIntakeSessionError();
   };
   const mediaSessions = new WeakMap<CardData, IntakeSessionToken>();
+  // The card service decides where a card is stored: a word still claimed by an earlier card
+  // keeps that card's id. The card shown at once then takes the stored id, so later edits,
+  // reviews and media reach the document that exists.
+  const storedCardIds = new WeakMap<CardData, string>();
+  const adoptStoredCardId = (candidate: CardData, storedId: string, latest: CardIntakePortOptions) => {
+    const cards = latest.getCards();
+    const shown = cards.find(existing =>
+      existing.id === candidate.id && cardLogicalKey(existing) === cardLogicalKey(candidate));
+    const stored = { ...(shown ?? candidate), id: storedId };
+    latest.rememberPromoted(stored);
+    if (!shown) return;
+    latest.publishCards(cards.flatMap(existing =>
+      existing === shown ? [stored] : existing.id === storedId ? [] : [existing]));
+  };
   const persistedCardOperations = new Map<string, {
     operationId: string;
     promise: Promise<Array<{ card: CardData; created: boolean }>>;
@@ -201,16 +215,26 @@ export function createCardIntakePipeline({
     ]);
   };
 
-  const touchExisting: CardIntakeControllerPort['touchExisting'] = async (card, touchedAt) => {
+  // `optimisticId` names the row shown for a create the service answered with `card`, a card
+  // stored under another id. That row points at a document that was never written, so it leaves
+  // the list in the same publish that brings the stored card forward.
+  const touchExisting = async (card: CardData, touchedAt: string, optimisticId?: string): Promise<void> => {
     const current = getContext();
-    if (current.getCards().some(existing =>
-      existing.id === card.id && isCardProtocolVersionNewer(existing, card))) return;
+    const shownCards = current.getCards().filter(existing => existing.id !== optimisticId);
+    const shownNewer = shownCards.find(existing =>
+      existing.id === card.id && isCardProtocolVersionNewer(existing, card));
+    if (shownNewer) {
+      if (optimisticId === undefined) return;
+      current.rememberPromoted(shownNewer);
+      current.publishCards(shownCards);
+      return;
+    }
     const promotion = promoteExistingCard(card, touchedAt);
     const promoted = promotion.card;
     current.rememberPromoted(promoted);
     const next = retainCardsForSession(
       mergeCards(
-        current.getCards().filter(candidate => cardLogicalKey(candidate) !== cardLogicalKey(promoted)),
+        shownCards.filter(candidate => cardLogicalKey(candidate) !== cardLogicalKey(promoted)),
         [promoted],
       ),
       current.cardsPerPage,
@@ -304,7 +328,9 @@ export function createCardIntakePipeline({
       capturedAt: request.capturedAt || new Date().toISOString(),
     } : undefined;
     const card: IntakeCard = {
-        id: createWordCardId(normalizedWord),
+        // The same rule the card service applies, so the card shown at once and the stored
+        // document share one id: word-only for English, target-aware for every other language.
+        id: createTargetAwareCardId(normalizedWord, request.language.source.code),
         ...(source ? { source } : {}),
         origin: 'ai',
         language: request.language.source.code,
@@ -429,6 +455,8 @@ export function createCardIntakePipeline({
       try {
         const result = await settle();
         const outcome: SpreadsheetSaveOutcome = result.created ? 'created' : 'reused';
+        const storedElsewhere = result.card.id !== candidate.id;
+        if (storedElsewhere) storedCardIds.set(candidate, result.card.id);
         onSettlement?.(index, outcome);
         try {
           if (!sessionGuard.isCurrent(session)) return outcome;
@@ -437,15 +465,19 @@ export function createCardIntakePipeline({
           if (result.created && result.gamification) {
             latest.acceptGamificationOutcome?.(result.gamification, operationId);
           }
-          if (result.created) return outcome;
+          if (result.created) {
+            if (storedElsewhere) adoptStoredCardId(candidate, result.card.id, latest);
+            return outcome;
+          }
           // Someone else already created this word; reconcile the optimistic
-          // duplicate with the authoritative card the cloud returned.
-          if (!latest.getCards().some(existing => existing.id === result.card.id)) {
+          // duplicate with the authoritative card the cloud returned. A word held
+          // under another id leaves a second row behind even when its card is shown.
+          if (storedElsewhere || !latest.getCards().some(existing => existing.id === result.card.id)) {
             compensateOptimisticDuplicateCard(candidate, latest, facetOperationId);
             const cardToTouch = !keepExistingDeck && candidate.customDeck && candidate.customDeck !== result.card.customDeck
               ? await assignExistingDeck(result.card, candidate.customDeck)
               : result.card;
-            await touchExisting(cardToTouch, new Date().toISOString());
+            await touchExisting(cardToTouch, new Date().toISOString(), storedElsewhere ? candidate.id : undefined);
           }
         } catch (cause) {
           console.warn('The saved card could not be reconciled locally.', cause);
@@ -476,7 +508,12 @@ export function createCardIntakePipeline({
         if (outcomes.some(outcome => outcome !== 'created' && outcome !== 'reused')) {
           throw new Error('Some shared cards could not be confirmed.');
         }
-        return results.map((result, index) => ({ ...result, created: outcomes[index] === 'created' }));
+        // A reused card is reported under the id it is stored under, so the caller can study it.
+        return results.map((result, index) => {
+          const created = outcomes[index] === 'created';
+          const storedId = created ? undefined : storedCardIds.get(result.card);
+          return { card: storedId ? { ...result.card, id: storedId } : result.card, created };
+        });
       }
     } else void settlements;
     return results;
@@ -618,7 +655,9 @@ export function createCardIntakePipeline({
     applyMedia: async (card, media) => {
       const session = mediaSessions.get(card);
       if (!session || !sessionGuard.isCurrent(session)) return;
-      await getContext().patchCard(card.id, media, card);
+      const storedId = storedCardIds.get(card);
+      const target = storedId ? { ...card, id: storedId } : card;
+      await getContext().patchCard(target.id, media, target);
     },
     persistStructured: async ({ creates, patches }, onSettlement) => {
       const session = sessionGuard.capture();

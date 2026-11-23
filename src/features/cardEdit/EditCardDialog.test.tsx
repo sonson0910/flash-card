@@ -898,6 +898,24 @@ describe('EditCardDialog', () => {
       );
     });
 
+    it('keeps the category counts of the next account untouched when the account changes while the save is in flight', async () => {
+      // The save was made for user-1 and is confirmed for user-1; by then another account is signed in.
+      const onSave = vi.fn(async (): Promise<LearningStateOutcome> => {
+        firebaseMocks.auth.currentUser = { uid: 'user-2' };
+        return { status: 'published', result: { ownerKey: 'user-1', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } };
+      });
+      let view = render({ card: { ...card, category: 'Nature' }, open: true, onOpenChange: vi.fn(), onSave });
+      (findByProp(view.tree, 'data-edit-category-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'Business' } },
+      );
+      view = render({ card: { ...card, category: 'Nature' }, open: true, onOpenChange: vi.fn(), onSave });
+
+      await view.submit({ preventDefault: vi.fn() });
+
+      expect(onSave).toHaveBeenCalledWith('card-1', { category: 'Business' });
+      expect(cardRepositoryMocks.applyCategoryDeltas).not.toHaveBeenCalled();
+    });
+
     it('never fires a facets delta call when the category is untouched', async () => {
       const onSave = vi.fn(async (): Promise<LearningStateOutcome> =>
         ({ status: 'published', result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } }));

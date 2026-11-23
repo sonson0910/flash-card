@@ -77,12 +77,16 @@ export function useAppLearningCoordination({
   const catalogActions = actions.catalog;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
+  // A card screen writes back after a slow answer (AI text, a headword rename). The updater a screen
+  // was rendered with stays bound to that render's owner, so an answer that arrives after the account
+  // changed is refused instead of patching the card the next owner holds under the same id.
+  const cardUpdateOwnerId = user?.uid ?? null;
   const practiceLearning = useMemo(() => ({
     reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>): Promise<LearningStateOutcome> => await learningActionsRef.current?.reviewCard(...args) ?? { status: 'no-active-owner' },
     toggleBookmark: (...args: Parameters<LearningWorkspaceActions['toggleBookmark']>) => learningActionsRef.current?.toggleBookmark(...args),
     assignDeck: (...args: Parameters<LearningWorkspaceActions['assignDeck']>) => learningActionsRef.current?.assignDeck(...args),
-    updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields) ?? Promise.resolve({ status: 'no-active-owner' as const }),
-  }), []);
+    updateCard: (cardId: string, fields: Partial<CardData>) => learningActionsRef.current?.updateCard(cardId, fields, { expectedOwnerId: cardUpdateOwnerId }) ?? Promise.resolve({ status: 'no-active-owner' as const }),
+  }), [cardUpdateOwnerId]);
   const practiceWorkspace = usePracticeWorkspace({
     mode: viewMode === 'language-drill' || viewMode === 'study' || isPracticeView(viewMode) ? viewMode : 'library',
     openView: nextView => setViewMode(nextView),
@@ -164,6 +168,10 @@ export function useAppLearningCoordination({
     },
   }, appDependencies.sessions.learningWorkspace).actions;
   learningActionsRef.current = learningCommands;
+  const updateCardForOwner = useCallback<LearningWorkspaceActions['updateCard']>(
+    (cardId, fields, options) => learningCommands.updateCard(cardId, fields, { ...options, expectedOwnerId: cardUpdateOwnerId }),
+    [learningCommands, cardUpdateOwnerId],
+  );
   const deckWorkspace = useCustomDeckWorkspace({
     identityReady: librarySession.identity.status !== 'loading',
     owner: {
@@ -282,7 +290,7 @@ export function useAppLearningCoordination({
         },
       },
       intake: { model: intakeSharing.model, actions: { ...intakeSharing.actions, shareCategory } },
-      learning: { actions: { ...learningCommands, deleteCard } },
+      learning: { actions: { ...learningCommands, updateCard: updateCardForOwner, deleteCard } },
     },
     library: {
       cards,
@@ -339,7 +347,7 @@ export function useAppLearningCoordination({
       },
       clearAll,
       deleteCard,
-      updateCard: learningCommands.updateCard,
+      updateCard: updateCardForOwner,
       resetClearFeedback,
     },
   };

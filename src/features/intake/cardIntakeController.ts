@@ -1,5 +1,5 @@
 import { isSupportedAudioUrl } from '../../lib/audio';
-import { cardLogicalKey, createWordCardId } from '../../lib/cardIdentity';
+import { cardLogicalKey, createTargetAwareCardId } from '../../lib/cardIdentity';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import { isSupportedImageUrl } from '../../lib/images';
@@ -399,7 +399,7 @@ const sharedCardCandidate = (
   const wordFamily = boundedWordFamily(source.wordFamily);
   const origin = source.origin === 'ai' || source.origin === 'manual' ? source.origin : undefined;
   return {
-    id: lexemeId || createWordCardId(word),
+    id: lexemeId || createTargetAwareCardId(word, languageCode || language.source.code),
     ...(lexemeId ? { lexemeId, senseKey, normalizedLemma } : {}),
     // The active course, not the shared card's own claim, decides the
     // language tag: course-mismatch routing (see shareCourseMatching.ts)
@@ -543,7 +543,7 @@ const manualCardFromDraft = (
   const deck = boundedText(draft.deck, 128);
   const partOfSpeech = normalizePartOfSpeech(draft.partOfSpeech);
   const card: CardData = {
-    id: createWordCardId(word),
+    id: createTargetAwareCardId(word, language.source.code),
     origin: 'manual',
     language: language.source.code,
     translationLanguage: language.target.code,

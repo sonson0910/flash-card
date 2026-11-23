@@ -350,6 +350,30 @@ describe('useLearningWorkspace', () => {
     expect(staleOutcome).toEqual({ status: 'stale-owner' });
   });
 
+  it('refuses a card update requested for an owner who is no longer the active one', async () => {
+    const setup = options();
+    const stub = createPersistenceStub();
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, { usePersistence: stub.usePersistence }).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+
+    // The next owner holds a card under the same id.
+    setup.value.owner = { id: 'owner-b', verifiedEpoch: 0 };
+    const lateOutcome = await actions!.updateCard(sourceCard.id, { mnemonic: 'requested by owner-a' }, { expectedOwnerId: 'owner-a' });
+
+    expect(lateOutcome).toEqual({ status: 'stale-owner' });
+    expect(stub.persistCalls).toHaveLength(0);
+    expect(setup.libraryPatch).not.toHaveBeenCalled();
+    expect(setup.practicePatch).not.toHaveBeenCalled();
+
+    setup.value.owner = { id: 'owner-a', verifiedEpoch: 0 };
+    await actions!.updateCard(sourceCard.id, { mnemonic: 'requested by owner-a' }, { expectedOwnerId: 'owner-a' });
+    expect(stub.persistCalls).toHaveLength(1);
+  });
+
   it('reports a missing-card outcome instead of silently discarding an edit for an unknown card', async () => {
     const setup = options();
     const stub = createPersistenceStub();

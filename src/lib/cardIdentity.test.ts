@@ -14,6 +14,7 @@ import {
   normalizeCardWord,
 } from './cardIdentity';
 import { createLexemeId } from '../features/multilingual/lexemeIdentity';
+import { canonicalCard } from '../../functions/src/cardPersistence';
 
 describe('card identity', () => {
   it('normalizes case, Unicode width and repeated whitespace into one identity', () => {
@@ -129,6 +130,21 @@ describe('card identity', () => {
     expect(isCardIdentityReservationForWord(korean, 'bank', 'ko')).toBe(true);
     expect(isCardIdentityReservationForWord(korean, 'bank', 'ja')).toBe(false);
     expect(isCardIdentityReservationForWord(korean, 'bank')).toBe(false);
+  });
+
+  it('derives the card id the trusted card service stores, for every target language and script', () => {
+    const storedId = (word: string, language: string) => canonicalCard({
+      id: createWordCardId(word), word, language, translationLanguage: 'vi', translation: 'nghĩa',
+      explanation: '', explanationTranslation: '', phonetic: '', emoji: '📝', category: 'Other',
+      audioUrl: null, imageUrl: null,
+    }).id;
+
+    for (const language of ['en', 'ko', 'ja', 'zh', 'fr']) {
+      for (const word of ['chat', 'Bank', 'crème brûlée', "l'été", '사과', '猫', '銀行に行く', 'ｆｕｌｌ　ｗｉｄｔｈ', 'x'.repeat(200)]) {
+        expect(createTargetAwareCardId(word, language), `${language}:${word}`).toBe(storedId(word, language));
+      }
+    }
+    expect(createTargetAwareCardId('chat', 'fr')).not.toBe(createWordCardId('chat'));
   });
 
   it('keeps same-spelling cards separate by non-English target', () => {

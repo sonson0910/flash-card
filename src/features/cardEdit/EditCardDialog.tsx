@@ -9,6 +9,7 @@ import type { CardData, LearnerDifficulty } from '../../types/card';
 import { LEARNER_DIFFICULTIES, MAX_CARD_TAG_LENGTH, MAX_CARD_TAGS } from '../../lib/cardNormalization';
 import {
   cardEditCloudAvailable,
+  cardEditOwnerId,
   CardHeadwordRenameError,
   mirrorCardCategoryEdit,
   renameOwnCardHeadword,
@@ -342,6 +343,8 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
     }
     setSaving(true);
     setError(null);
+    // The account this save is made for; a rename or a slow save can outlast it.
+    const ownerId = cardEditOwnerId();
     try {
       let cardToSave = openedCard;
       if (wordDirty) {
@@ -361,7 +364,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
       }
       // The facets mirror must never gate the save the learner is waiting on.
       if (Object.prototype.hasOwnProperty.call(patch, 'category')) {
-        mirrorCardCategoryEdit(cardToSave, patch.category as string);
+        mirrorCardCategoryEdit(cardToSave, patch.category as string, ownerId);
       }
       closeSheet(true);
     } catch {
