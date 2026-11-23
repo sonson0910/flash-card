@@ -37,11 +37,10 @@ export const loadCatalog = (locale: ActiveUiLocale, area: string): Promise<void>
 };
 
 export const loadVisitedCatalogs = async (locale: ActiveUiLocale): Promise<void> => {
-  // A screen opened while these catalogs load registers its area afterwards, so keep going until no new area appears.
-  const requested = new Set<string>();
-  for (let pending = [...visitedAreas]; pending.length > 0; pending = [...visitedAreas].filter(area => !requested.has(area))) {
-    pending.forEach(area => requested.add(area));
-    await Promise.all(pending.map(area => loadCatalog(locale, area)));
+  // A screen opened while these load registers its area meanwhile, so go again until none is added.
+  for (let known = -1; known !== visitedAreas.size;) {
+    known = visitedAreas.size;
+    await Promise.all([...visitedAreas].map(area => loadCatalog(locale, area)));
   }
 };
 
