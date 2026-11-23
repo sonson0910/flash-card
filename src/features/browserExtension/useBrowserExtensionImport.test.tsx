@@ -1,6 +1,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
+import { extensionOwnerMarkerFor } from '../extensionBridge/extensionOwnerMarker';
 import { useBrowserExtensionImport } from './useBrowserExtensionImport';
 import type { BrowserExtensionImportOptions } from './browserExtensionImportRuntime';
 
@@ -112,9 +113,9 @@ describe('useBrowserExtensionImport deck metadata sync', () => {
 
 describe('useBrowserExtensionImport course locale sync', () => {
   it('clears a missing active course and uses a fresh scope when another course becomes active', async () => {
-    const posted: Array<{ type: string; payload: { scope: string } }> = [];
+    const posted: Array<{ type: string; payload: { scope: string; owner?: string } }> = [];
     vi.stubGlobal('location', { origin: 'https://app.example.test' });
-    vi.stubGlobal('postMessage', (message: { type: string; payload: { scope: string } }) => posted.push(message));
+    vi.stubGlobal('postMessage', (message: { type: string; payload: { scope: string; owner?: string } }) => posted.push(message));
     const root = createRoot(installMinimalReactDom());
 
     function Harness(props: { options: BrowserExtensionImportOptions }) {
@@ -128,6 +129,8 @@ describe('useBrowserExtensionImport course locale sync', () => {
       });
       const firstScope = posted.find(message => message.type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE')?.payload.scope;
       expect(firstScope).toBeDefined();
+      expect(posted.find(message => message.type === 'LINGOFLASH_EXTENSION_COURSE_LOCALE')?.payload)
+        .toMatchObject({ owner: extensionOwnerMarkerFor('owner-a') });
 
       await act(async () => {
         root.render(<Harness options={optionsFor({ courseNativeLanguage: null, courseTargetLanguage: null })} />);
@@ -345,6 +348,7 @@ describe('useBrowserExtensionImport course locale sync', () => {
       expect(courseLocale).toBeDefined();
       expect(courseLocale?.payload).toEqual({
         scope: deckMetadata?.payload.scope,
+        owner: extensionOwnerMarkerFor('owner-a'),
         nativeLanguage: 'en',
         targetLanguage: 'ko',
       });

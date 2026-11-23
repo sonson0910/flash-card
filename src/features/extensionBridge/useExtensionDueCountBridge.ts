@@ -11,6 +11,7 @@ import {
   postExtensionDueCountMessage,
   type ExtensionDueCountScope,
 } from './extensionDueCountBridge';
+import { extensionOwnerMarkerFor } from './extensionOwnerMarker';
 
 const EXTENSION_PROVIDER_READY_MESSAGE = 'LINGOFLASH_EXTENSION_PROVIDER_READY';
 
@@ -57,6 +58,7 @@ export function useExtensionDueCountBridge({ ownerId, ready, dueCount }: Extensi
     if (normalized === null) return;
     postExtensionDueCountMessage(EXTENSION_DUE_COUNT_MESSAGE, {
       scope: scopeRef.current.scope,
+      owner: extensionOwnerMarkerFor(scopeRef.current.ownerId),
       count: normalized,
     });
   };

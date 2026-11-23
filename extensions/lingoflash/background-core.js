@@ -19,6 +19,7 @@
   const TRANSLATE_COMMAND_ID = 'translate-only-selection';
   const JOB_KEY_PREFIX = 'lingoflash_quick_add_job_';
   const RETRY_KEY_PREFIX = 'lingoflash_quick_add_retry_';
+  const OWNER_MARKER_KEY = 'lingoflash_owner_marker';
   const INLINE_SAVE_KEY_PREFIX = 'lingoflash_inline_save_';
   const INLINE_SAVE_TTL_MS = 30 * 60_000;
   // Marks a retry receipt whose capture had no confirmed course language, so a
@@ -129,6 +130,33 @@
         if (name.startsWith(RETRY_KEY_PREFIX)) await apiCall(transientStorage, 'remove', name);
       }
     } catch {}
+  };
+  // Scopes are random per app document, so they cannot say whether a new scope
+  // belongs to the same account. The app therefore sends an opaque, stable
+  // marker of the signed-in account with the syncs it publishes. The marker is
+  // kept beside the history it guards: a different marker means another account
+  // took over the browser, and only then are the previous account's history and
+  // receipts dropped. A reload, a second tab or a course switch keeps the marker.
+  const readOwnerMarker = async () => {
+    try { return normalizeDeckScope((await apiCall(transientStorage, 'get', OWNER_MARKER_KEY))?.[OWNER_MARKER_KEY]); } catch { return ''; }
+  };
+  let ownerMarkerTail = Promise.resolve();
+  const adoptOwnerMarker = value => {
+    const marker = normalizeDeckScope(value);
+    if (!marker) return ownerMarkerTail;
+    ownerMarkerTail = ownerMarkerTail.catch(() => undefined).then(async () => {
+      const stored = await readOwnerMarker();
+      if (stored === marker) return;
+      if (stored) await dropOwnerBoundHistory();
+      try { await apiCall(transientStorage, 'set', { [OWNER_MARKER_KEY]: marker }); } catch {}
+    });
+    return ownerMarkerTail;
+  };
+  // A job records the marker that was current when it started. A result that
+  // arrives after another account took over must not enter that account's history.
+  const jobOwnerIsCurrent = async job => {
+    const stored = await readOwnerMarker();
+    return !job?.ownerMarker || !stored || job.ownerMarker === stored;
   };
   // A quick translation shown in a page can offer "Save" once. The bubble only
   // holds an opaque id; the text and course stay here, so a save request can
@@ -538,7 +566,6 @@
       const scope = normalizeDeckScope(scopes[channel]);
       if (scope) payload.scopes[channel] = scope;
     }
-    if (Object.keys(payload.scopes).length) void dropOwnerBoundHistory();
     try {
       void apiCall(extensionApi.runtime, 'sendMessage', {
         type: METADATA_INVALIDATED_MESSAGE,
@@ -675,6 +702,7 @@
       confirmedDueCountScope = metadata.scope;
       await setDueCountActionBadge(metadata.count);
       ensureCurrent();
+      await adoptOwnerMarker(payload?.owner);
       if (previousScope) notifyMetadataInvalidated(provider.generation, { due: previousScope });
       return { count: metadata.count };
     });
@@ -730,6 +758,7 @@
       await apiCall(deckMetadataStorage, 'set', { [COURSE_LOCALE_STORAGE_KEY]: metadata });
       ensureCurrent();
       confirmedCourseLocaleScope = metadata.scope;
+      await adoptOwnerMarker(payload?.owner);
       if (previousScope) notifyMetadataInvalidated(provider.generation, { locale: previousScope });
       return { nativeLanguage: metadata.nativeLanguage, targetLanguage: metadata.targetLanguage };
     });
@@ -965,7 +994,8 @@
     if (!retry && providerBinding && !jobProviderBindingIsCurrent(providerBinding)) {
       throw providerError();
     }
-    const job={v:IMPORT_PROTOCOL_VERSION,id,nonce,text:s.text,context:bounded(s.context,MAX_CONTEXT_LENGTH),...(sourceLanguage ? { sourceLanguage } : {}),mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now(),sourceUrl:s.sourceUrl||'',pageTitle:s.pageTitle||'',...(providerBinding ?? {}),...(requestedDeck ? { requestedDeck } : {})};
+    const ownerMarker = await readOwnerMarker();
+    const job={v:IMPORT_PROTOCOL_VERSION,id,nonce,text:s.text,context:bounded(s.context,MAX_CONTEXT_LENGTH),...(sourceLanguage ? { sourceLanguage } : {}),mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now(),sourceUrl:s.sourceUrl||'',pageTitle:s.pageTitle||'',...(providerBinding ?? {}),...(ownerMarker ? { ownerMarker } : {}),...(requestedDeck ? { requestedDeck } : {})};
     if (quickAddSourceLocks.has(job.sourceTabId)) throw new Error('Đã có một tác vụ quick-add đang chạy trên tab này.');
     quickAddSourceLocks.add(job.sourceTabId);
     try {
@@ -1034,8 +1064,8 @@
         if (!translated.text) try { translated = await googleTranslate(job.text); } catch {}
         const t=bounded(translated.text,256);
         // The result came from the verified worker tab and the app wrote the card, so it is
-        // always reported. A capture whose app session has since ended stays out of the history.
-        if (jobProviderBindingIsCurrent(job)) await recordRecentLookup({text:job.text,translation:t,sourceLanguage:translated.sourceLanguage,targetLanguage:'vi',kind:'create',status:r.status,timestamp:Date.now()});
+        // always reported. A capture finished after another account took over stays out of that account's history.
+        if (await jobOwnerIsCurrent(job)) await recordRecentLookup({text:job.text,translation:t,sourceLanguage:translated.sourceLanguage,targetLanguage:'vi',kind:'create',status:r.status,timestamp:Date.now()});
         const displayed = await show(job.sourceTabId,{status:r.status,modeLabel:'TẠO + LƯU • 1 AI REQUEST',text:job.text,anchor:job.anchor,translation:t,speechLocale:speechLocaleForLanguage(translated.sourceLanguage),sourceLanguage:translated.sourceLanguage,phonetic:r.phonetic,explanation:r.explanation,exampleSentence:r.exampleSentence,exampleTranslation:r.exampleTranslation,aiGenerated:r.aiGenerated});
         inlineShown = displayed.ok;
         notifyPopupStatus({

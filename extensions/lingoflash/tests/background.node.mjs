@@ -1968,14 +1968,14 @@ test('rejects a popup retry when there is no active tab to resolve as the fallba
   worker.context.chrome.tabs.query = originalQuery;
 });
 
-const syncCourseLocale = (worker, scope, { providerId, tabId = 7, targetLanguage = 'ko' } = {}) => sendRuntimeMessage(worker, {
+const syncCourseLocale = (worker, scope, { providerId, tabId = 7, targetLanguage = 'ko', owner } = {}) => sendRuntimeMessage(worker, {
   type: 'SYNC_COURSE_LOCALE',
   ...(providerId ? { providerId } : {}),
-  payload: { scope, nativeLanguage: 'vi', targetLanguage },
+  payload: { scope, nativeLanguage: 'vi', targetLanguage, ...(owner ? { owner } : {}) },
 }, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: tabId }, frameId: 0 });
 
-const failBoundCapture = async (worker, scope) => {
-  assert.equal((await syncCourseLocale(worker, scope)).ok, true);
+const failBoundCapture = async (worker, scope, owner) => {
+  assert.equal((await syncCourseLocale(worker, scope, { owner })).ok, true);
   const started = await startQuickAdd(worker);
   const failed = await sendRuntimeMessage(worker, {
     type: 'APP_IMPORT_RESULT',
@@ -2021,14 +2021,14 @@ test('refuses a retry at once when its app session can no longer be verified', a
 
 test('reports the card the app saved when another app tab connects during generation', async () => {
   const worker = await createWorkerContext();
-  assert.equal((await syncCourseLocale(worker, 'opaque_scope_saved_first_123456')).ok, true);
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_saved_first_123456', { owner: 'owner_marker_same_123456' })).ok, true);
   const started = await startQuickAdd(worker);
   const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
   assert.equal(verified.verified, true);
 
   const secondPort = worker.connectProvider({ url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 });
   const secondProviderId = secondPort.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
-  assert.equal((await syncCourseLocale(worker, 'opaque_scope_saved_second_12345', { providerId: secondProviderId, tabId: 8 })).ok, true);
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_saved_second_12345', { providerId: secondProviderId, tabId: 8, owner: 'owner_marker_same_123456' })).ok, true);
 
   const delivered = await sendRuntimeMessage(worker, {
     type: 'APP_IMPORT_RESULT',
@@ -2042,14 +2042,57 @@ test('reports the card the app saved when another app tab connects during genera
   assert.ok(worker.calls.some(call => call.type === 'runtime.sendMessage'
     && call.message.type === 'QUICK_ADD_STATUS' && call.message.payload.status === 'created'));
   assert.ok(worker.calls.some(call => call.type === 'tabs.remove' && call.id === 99));
-  // The session that captured the word has ended, so it is not part of the next session's history.
+  // Another tab of the same account is not a new owner: the saved word stays in the history.
+  const history = (await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items;
+  assert.deepEqual(Array.from(history, item => [item.kind, item.status]), [['create', 'created']]);
+});
+
+test('keeps the saved words and retry receipts when the same account reconnects, opens another tab or switches course', async () => {
+  const worker = await createWorkerContext();
+  const owner = 'owner_marker_same_123456';
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_same_owner_a_12345', { owner })).ok, true);
+  const saved = await startQuickAdd(worker);
+  await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, saved.id, { status: 'created', translation: 'bền bỉ' }),
+  }, appSender(worker));
+  await failBoundCapture(worker, 'opaque_scope_same_owner_a_12345', owner);
+
+  const portB = worker.connectProvider({ url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 });
+  const providerB = portB.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_same_owner_b_12345', { providerId: providerB, tabId: 8, owner })).ok, true);
+  await sendRuntimeMessageRaw(worker, { type: 'CLEAR_DUE_COUNT', providerId: providerB, payload: { scope: 'opaque_scope_same_owner_b_12345' } }, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 });
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_same_owner_c_12345', { providerId: providerB, tabId: 8, owner })).ok, true);
+  await flushMicrotasks();
+
+  const history = (await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items;
+  assert.deepEqual(Array.from(history, item => item.kind), ['create']);
+  assert.ok(worker.storageValues.has('lingoflash_quick_add_retry_7'));
+});
+
+test('does not record a card finished after another account took over the browser', async () => {
+  const worker = await createWorkerContext();
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_takeover_a_12345', { owner: 'owner_marker_first_123456' })).ok, true);
+  const started = await startQuickAdd(worker);
+
+  const portB = worker.connectProvider({ url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 8 }, frameId: 0 });
+  const providerB = portB.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_takeover_b_12345', { providerId: providerB, tabId: 8, owner: 'owner_marker_second_12345' })).ok, true);
+
+  const delivered = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'created', translation: 'kiên cường' }),
+  }, appSender(worker));
+  assert.equal(delivered.ok, true);
   assert.deepEqual([...(await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items], []);
 });
 
 test('hides the saved words and retry receipts of a signed-out account from the next account', async () => {
   const worker = await createWorkerContext();
   const appTab = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 }, frameId: 0 };
-  await sendRuntimeMessage(worker, { type: 'SYNC_DUE_COUNT', payload: { scope: 'opaque_scope_owner_a_123456', count: 3 } }, appTab);
+  await sendRuntimeMessage(worker, { type: 'SYNC_DUE_COUNT', payload: { scope: 'opaque_scope_owner_a_123456', count: 3, owner: 'owner_marker_first_123456' } }, appTab);
   await sendRuntimeMessage(worker, { type: 'SYNC_DECK_METADATA', payload: { scope: 'opaque_scope_owner_a_123456', decks: ['A deck'] } }, appTab);
 
   const saved = await startQuickAdd(worker);
@@ -2075,7 +2118,7 @@ test('hides the saved words and retry receipts of a signed-out account from the 
 
   const portB = worker.connectProvider(appTab);
   const providerB = portB.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId;
-  const synced = await sendRuntimeMessageRaw(worker, { type: 'SYNC_DUE_COUNT', providerId: providerB, payload: { scope: 'opaque_scope_owner_b_123456', count: 0 } }, appTab);
+  const synced = await sendRuntimeMessageRaw(worker, { type: 'SYNC_DUE_COUNT', providerId: providerB, payload: { scope: 'opaque_scope_owner_b_123456', count: 0, owner: 'owner_marker_second_12345' } }, appTab);
   assert.equal(synced.ok, true);
   await flushMicrotasks();
 
@@ -2084,9 +2127,9 @@ test('hides the saved words and retry receipts of a signed-out account from the 
   assert.equal([...worker.storageValues.keys()].some(name => name.startsWith('lingoflash_quick_add_retry_')), false);
 });
 
-test('drops saved-word history when a new scope replaces the confirmed one but keeps translate-only lookups', async () => {
+test('drops saved-word history only when another account is confirmed, and keeps translate-only lookups', async () => {
   const worker = await createWorkerContext({ fetchImpl: async () => ({ ok: true, json: async () => [[['xin chào', 'hello']], null, 'en'] }) });
-  assert.equal((await syncCourseLocale(worker, 'opaque_scope_replaced_a_123456', { targetLanguage: 'en' })).ok, true);
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_replaced_a_123456', { targetLanguage: 'en', owner: 'owner_marker_first_123456' })).ok, true);
   const translated = await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: 'hello' });
   assert.equal(translated.ok, true);
   const started = await startQuickAdd(worker);
@@ -2098,7 +2141,12 @@ test('drops saved-word history when a new scope replaces the confirmed one but k
   const before = (await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items;
   assert.deepEqual(Array.from(before, item => item.kind).sort(), ['create', 'translate']);
 
-  assert.equal((await syncCourseLocale(worker, 'opaque_scope_replaced_b_123456', { targetLanguage: 'en' })).ok, true);
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_replaced_b_123456', { targetLanguage: 'en', owner: 'owner_marker_first_123456' })).ok, true);
+  await flushMicrotasks();
+  const sameOwner = (await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items;
+  assert.deepEqual(Array.from(sameOwner, item => item.kind).sort(), ['create', 'translate']);
+
+  assert.equal((await syncCourseLocale(worker, 'opaque_scope_replaced_c_123456', { targetLanguage: 'en', owner: 'owner_marker_second_12345' })).ok, true);
   await flushMicrotasks();
   const after = (await sendRuntimeMessage(worker, { type: 'GET_RECENT_LOOKUPS' })).items;
   assert.deepEqual(Array.from(after, item => item.kind), ['translate']);

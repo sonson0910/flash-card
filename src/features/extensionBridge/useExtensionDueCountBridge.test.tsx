@@ -1,6 +1,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
+import { extensionOwnerMarkerFor } from './extensionOwnerMarker';
 import { useExtensionDueCountBridge, type ExtensionDueCountBridgeOptions } from './useExtensionDueCountBridge';
 
 const installMinimalReactDom = () => {
@@ -61,10 +62,11 @@ describe('useExtensionDueCountBridge', () => {
         root.render(<Harness options={optionsFor({ ready: true, dueCount: 12 })} />);
       });
       expect(posted).toHaveLength(1);
-      const synced = posted[0] as { type: string; payload: { scope: string; count: number } };
+      const synced = posted[0] as { type: string; payload: { scope: string; count: number; owner: string } };
       expect(synced.type).toBe('LINGOFLASH_EXTENSION_DUE_COUNT');
       expect(synced.payload.scope).toMatch(/^[\w-]{8,}$/);
       expect(synced.payload.count).toBe(12);
+      expect(synced.payload.owner).toBe(extensionOwnerMarkerFor('owner-a'));
       expect(JSON.stringify(synced)).not.toContain('owner-a');
     } finally {
       act(() => root.unmount());

@@ -12,6 +12,7 @@ import {
   type BrowserExtensionImportIntent,
   writePendingBrowserExtensionImportOwner,
 } from './browserExtensionImport';
+import { extensionOwnerMarkerFor } from '../extensionBridge/extensionOwnerMarker';
 import type { BrowserExtensionImportRuntime } from './browserExtensionImportRuntime';
 import type { BrowserExtensionImportOptions } from './browserExtensionImportRuntime';
 
@@ -133,6 +134,7 @@ export function useBrowserExtensionImport(options: BrowserExtensionImportOptions
     if (current.courseNativeLanguage && current.courseTargetLanguage) {
       postExtensionBridgeMessage(COURSE_LOCALE_MESSAGE, {
         scope: deckScopeRef.current.scope,
+        owner: extensionOwnerMarkerFor(current.ownerId),
         nativeLanguage: current.courseNativeLanguage,
         targetLanguage: current.courseTargetLanguage,
       });
