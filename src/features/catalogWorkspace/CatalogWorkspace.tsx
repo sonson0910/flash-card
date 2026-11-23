@@ -46,6 +46,7 @@ import {
   settleCatalogLibraryAdd,
   catalogEntryToLibraryCard,
 } from './catalogLearningFlow';
+import { catalogAddNotice } from './useCatalogLibraryActions';
 import {
   createPersonalLibraryPathPresentation,
   type PersonalLibraryPathInput,
@@ -188,9 +189,7 @@ export default function CatalogWorkspace({
     const result = await adoptCards([catalogEntryToLibraryCard(entry)]);
     if (result.status !== 'completed') return 'failed' as const;
     const created = result.createdCount > 0;
-    notify(created
-      ? `“${entry.lemma}” was added to your library and today’s plan.`
-      : `“${entry.lemma}” is already in your library.`);
+    notify(catalogAddNotice(created, entry.lemma));
     return created ? 'created' as const : 'existing' as const;
   }, [adoptCards, notify]);
   const service = useMemo(() => createCatalogWorkspaceService({

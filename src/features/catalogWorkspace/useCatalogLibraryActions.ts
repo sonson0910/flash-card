@@ -1,3 +1,5 @@
+import { i18n } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
 import { useCallback, useMemo } from 'react';
 import type { CardData } from '../../types/card';
 import type { IntakeSharingSessionActions } from '../intake/useIntakeSharingSession';
@@ -7,6 +9,11 @@ import {
   createCatalogLibraryIdentityIndex,
 } from './catalogLearningFlow';
 import type { CatalogVocabularyPresentation } from './catalogPresentation';
+
+/** The toast shown after a catalog word is added, or found already in the library. */
+export const catalogAddNotice = (created: boolean, lemma: string): string => i18n._(created
+  ? msg({ id: 'catalog.workspace.added-to-library', message: '“{lemma}” was added to your library and today’s plan.' })
+  : msg({ id: 'catalog.workspace.already-in-library', message: '“{lemma}” is already in your library.' }), { lemma });
 
 interface UseCatalogLibraryActionsOptions {
   readonly cards: readonly CardData[];
@@ -31,12 +38,9 @@ export function useCatalogLibraryActions({
     if (!adoptCards) return 'failed' as const;
     const result = await adoptCards([catalogEntryToLibraryCard(entry)]);
     if (result.status !== 'completed') return 'failed' as const;
-    if (result.createdCount > 0) {
-      notify(`“${entry.lemma}” was added to your library and today’s plan.`);
-      return 'created' as const;
-    }
-    notify(`“${entry.lemma}” is already in your library.`);
-    return 'existing' as const;
+    const created = result.createdCount > 0;
+    notify(catalogAddNotice(created, entry.lemma));
+    return created ? 'created' as const : 'existing' as const;
   }, [adoptCards, notify]);
 
   return { isInLibrary, addToLibrary };

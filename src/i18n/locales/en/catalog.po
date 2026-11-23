@@ -168,103 +168,113 @@ msgid "catalog.personal.review-due-description"
 msgstr "Cards scheduled for review now."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:105
+#: src/features/catalogWorkspace/useCatalogLibraryActions.ts:15
+msgid "catalog.workspace.added-to-library"
+msgstr "“{lemma}” was added to your library and today’s plan."
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/useCatalogLibraryActions.ts:16
+msgid "catalog.workspace.already-in-library"
+msgstr "“{lemma}” is already in your library."
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:106
 msgid "catalog.workspace.checking"
 msgstr "Checking this device for a reviewed catalog…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:115
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:116
 msgid "catalog.workspace.downloading"
 msgstr "Downloading and verifying the reviewed catalog…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:121
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:122
 msgid "catalog.workspace.empty-results"
 msgstr "No words match all selected filters."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:117
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:118
 msgid "catalog.workspace.install-error"
 msgstr "The reviewed catalog was not installed. Any earlier release is unchanged."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:116
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:117
 msgid "catalog.workspace.installed"
 msgstr "Verified catalog installed."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:110
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:111
 msgid "catalog.workspace.language-unavailable"
 msgstr "This language does not have a reviewed release yet."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:113
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:114
 msgid "catalog.workspace.open-error"
 msgstr "The catalog could not be opened safely."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:630
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:631
 msgid "catalog.workspace.or-more"
 msgstr " or more"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:108
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:109
 msgid "catalog.workspace.personal-empty"
 msgstr "Add your first vocabulary cards to start a personal path."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:109
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:110
 msgid "catalog.workspace.personal-unavailable"
 msgstr "Your library summary is unavailable for this course. Open vocabulary to see your cards."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:107
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:108
 msgid "catalog.workspace.personal-with-cards"
 msgstr "Your path is built from {count, number} cards already in your library."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:114
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:115
 msgid "catalog.workspace.read-error"
 msgstr "Vocabulary could not be read safely."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:106
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:107
 msgid "catalog.workspace.ready"
 msgstr "The reviewed catalog is ready on this device."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:112
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:113
 msgid "catalog.workspace.release-missing-offline"
 msgstr "No reviewed catalog is stored on this device. Connect once to download it."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:111
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:112
 msgid "catalog.workspace.release-missing-online"
 msgstr "No reviewed catalog release is installed. You can check the same-origin release channel."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.test.tsx:357
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:125
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:126
 msgid "catalog.workspace.result-summary"
 msgstr "Showing {count, number}{more} {track} {tier} {count, plural, one {word} other {words}}."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:118
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:119
 msgid "catalog.workspace.storage-blocked"
 msgstr "Catalog storage is blocked by another SonFlash tab. Close older SonFlash tabs, then try again."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:119
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:120
 msgid "catalog.workspace.storage-timeout"
 msgstr "Catalog storage did not respond in time. Close older SonFlash tabs, then try again."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:144
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:145
 msgid "catalog.workspace.unknown-error"
 msgstr "Unknown catalog error."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:120
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:121
 msgid "catalog.workspace.updating"
 msgstr "Updating vocabulary…"
 
@@ -610,17 +620,17 @@ msgid "paths.track.toeic.label"
 msgstr "TOEIC"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:123
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:124
 msgid "paths.unit.continue-partial"
 msgstr "Some words could not be confirmed. Try again to continue this unit."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:124
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:125
 msgid "paths.unit.continue-read-error"
 msgstr "This unit could not be prepared. Check your connection and try again."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:122
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:123
 msgid "paths.unit.continue-scope-unavailable"
 msgstr "This unit is unavailable. Reopen Paths and try again."
 
