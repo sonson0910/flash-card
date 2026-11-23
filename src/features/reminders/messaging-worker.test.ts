@@ -38,15 +38,16 @@ describe('browser reminder worker', () => {
     expect(openWindow).toHaveBeenCalledWith('/?view=today');
   });
 
-  it('opens Today in a new window when an open page is not controlled by the push worker', async () => {
+  it('focuses an open page the push worker cannot navigate and asks it to open Today instead of opening a second window', async () => {
     const handlers = new Map<string, (event: unknown) => void>();
     const openWindow = vi.fn(async () => undefined);
     const focus = vi.fn(async () => undefined);
+    const postMessage = vi.fn();
     const navigate = vi.fn(async () => { throw new TypeError('The client is not controlled by this service worker.'); });
     const worker = {
       location: { origin: 'https://sonflash.app' },
       registration: { showNotification: vi.fn() },
-      clients: { matchAll: vi.fn(async () => [{ url: 'https://sonflash.app/', navigate, focus }]), openWindow },
+      clients: { matchAll: vi.fn(async () => [{ url: 'https://sonflash.app/', navigate, focus, postMessage }]), openWindow },
       addEventListener: (name: string, listener: (event: unknown) => void) => { handlers.set(name, listener); },
     };
     runInNewContext(source, { self: worker, URL });
@@ -59,6 +60,31 @@ describe('browser reminder worker', () => {
     await clickDone;
 
     expect(navigate).toHaveBeenCalledWith('/?view=today');
+    expect(focus).toHaveBeenCalledOnce();
+    expect(postMessage).toHaveBeenCalledWith({ type: 'sonflash-open-path', path: '/?view=today' });
+    expect(openWindow).not.toHaveBeenCalled();
+  });
+
+  it('opens Today in a new window when an open page cannot be focused', async () => {
+    const handlers = new Map<string, (event: unknown) => void>();
+    const openWindow = vi.fn(async () => undefined);
+    const navigate = vi.fn(async () => { throw new TypeError('The client is not controlled by this service worker.'); });
+    const focus = vi.fn(async () => { throw new TypeError('The window cannot be focused.'); });
+    const worker = {
+      location: { origin: 'https://sonflash.app' },
+      registration: { showNotification: vi.fn() },
+      clients: { matchAll: vi.fn(async () => [{ url: 'https://sonflash.app/', navigate, focus, postMessage: vi.fn() }]), openWindow },
+      addEventListener: (name: string, listener: (event: unknown) => void) => { handlers.set(name, listener); },
+    };
+    runInNewContext(source, { self: worker, URL });
+
+    let clickDone = Promise.resolve();
+    handlers.get('notificationclick')?.({
+      notification: { close: vi.fn(), data: { path: '/?view=today' } },
+      waitUntil: (promise: Promise<void>) => { clickDone = promise; },
+    });
+    await clickDone;
+
     expect(openWindow).toHaveBeenCalledWith('/?view=today');
   });
 
