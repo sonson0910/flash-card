@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { LOCALES, PRODUCTION_ORIGIN, readLocaleMetadata } from './generate-locale-pages.mjs';
 
 const canonicalUrl = locale => `${PRODUCTION_ORIGIN}${locale.path ? `/${locale.path}/` : '/'}`;
@@ -73,4 +74,6 @@ export const checkLocalePages = ({ root = path.resolve('.'), target = process.en
   console.log(`Validated ${LOCALES.length} localized landing pages for target "${target}".`);
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) checkLocalePages();
+// The entry path is resolved the way Node resolved the module URL: symlinks followed and the path
+// percent-encoded, so a checkout under a path with spaces, non-ASCII characters or a link still runs.
+if (process.argv[1] && import.meta.url === pathToFileURL(fs.realpathSync(path.resolve(process.argv[1]))).href) checkLocalePages();
