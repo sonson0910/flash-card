@@ -368,6 +368,13 @@ const previewManualDraftFrom = (model: CardCreatorModel): ManualCardDraft => ({
   } : {}),
 });
 
+/** Switching to manual keeps the details of a preview the learner already has, so saving never starts from blank fields. */
+export const manualDraftForEntry = (current: ManualCardDraft, model: CardCreatorModel): ManualCardDraft => (
+  model.preview
+    ? previewManualDraftFrom(model)
+    : { ...current, word: model.draft.word, deck: model.draft.deck, partOfSpeech: model.draft.partOfSpeech }
+);
+
 const cardFamily = (card: CardData): string => Object.entries(card.wordFamily ?? {})
   .map(([name, value]) => `${name}: ${value}`)
   .join(' · ');
@@ -824,12 +831,7 @@ export function CreateCardDialog({ model, actions, deckOptions, allowUnassigned 
   };
 
   const enterManualMode = () => {
-    setManualDraft(current => ({
-      ...current,
-      word: model.draft.word,
-      deck: model.draft.deck,
-      partOfSpeech: model.draft.partOfSpeech,
-    }));
+    setManualDraft(current => manualDraftForEntry(current, model));
     setManualMode(true);
     setLocalError(null);
   };
