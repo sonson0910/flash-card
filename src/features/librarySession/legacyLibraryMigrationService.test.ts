@@ -41,6 +41,28 @@ describe('legacyLibraryMigrationService', () => {
     expect(functions.callable).toHaveBeenCalledOnce();
   });
 
+  it.each(['apply', 'rollback', 'rolled-back'])('reports the %s phase as administrator-handled, not as an invalid response', async phase => {
+    functions.callable.mockResolvedValueOnce({
+      data: { migrated: 0, merged: 0, scanned: 0, complete: false, remaining: 0, invalid: 0, phase, sourceCount: 3, groupCount: 3 },
+    });
+
+    const failure = await migrateLegacyLibraryWithAdmin({} as never).then(() => null, (error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).message).not.toContain('invalid response');
+    expect(getLegacyMigrationIssue(failure)).toMatchObject({ kind: 'trusted-migration', retryable: false });
+    expect(functions.callable).toHaveBeenCalledOnce();
+  });
+
+  it('treats the complete phase as a finished upgrade', async () => {
+    functions.callable.mockResolvedValueOnce({
+      data: { migrated: 0, merged: 0, scanned: 0, complete: false, remaining: 0, invalid: 0, phase: 'complete', sourceCount: 3, groupCount: 3 },
+    });
+
+    await expect(migrateLegacyLibraryWithAdmin({} as never)).resolves.toEqual({ migrated: 0, scanned: 0, complete: true });
+    expect(functions.callable).toHaveBeenCalledOnce();
+  });
+
   it('continues bounded Admin chunks until final verification is complete', async () => {
     functions.callable
       .mockResolvedValueOnce({

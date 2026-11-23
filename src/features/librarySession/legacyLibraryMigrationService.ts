@@ -14,7 +14,7 @@ type CallableMigrationResult = {
   complete: boolean;
   remaining: number;
   invalid: number;
-  phase?: 'discover' | 'discovered' | 'blocked' | 'verify';
+  phase?: 'discover' | 'discovered' | 'blocked' | 'verify' | 'apply' | 'complete' | 'rollback' | 'rolled-back';
 };
 
 type LegacyMigrationResult = {
@@ -22,6 +22,8 @@ type LegacyMigrationResult = {
   scanned: number;
   complete: boolean;
 };
+
+const MIGRATION_PHASES = ['discover', 'discovered', 'blocked', 'verify', 'apply', 'complete', 'rollback', 'rolled-back'];
 
 const isSafeCount = (value: unknown): value is number =>
   Number.isSafeInteger(value) && Number(value) >= 0;
@@ -39,7 +41,7 @@ const parseMigrationResult = (value: unknown): CallableMigrationResult => {
     || !isSafeCount(result.remaining)
     || !isSafeCount(result.invalid)
     || (result.phase !== undefined
-      && !['discover', 'discovered', 'blocked', 'verify'].includes(String(result.phase)))
+      && !MIGRATION_PHASES.includes(String(result.phase)))
   ) {
     throw new Error('Library migration service returned an invalid response.');
   }
@@ -77,7 +79,14 @@ export async function migrateLegacyLibraryWithAdmin(
         { reason: ADMINISTRATOR_REVIEW_REASON },
       );
     }
-    if (result.complete) return { migrated, scanned, complete: true };
+    if (result.complete || result.phase === 'complete') return { migrated, scanned, complete: true };
+    if (result.phase === 'apply' || result.phase === 'rollback' || result.phase === 'rolled-back') {
+      // The server keeps this job under the administrator tool, so a retry from the browser cannot move it.
+      throw Object.assign(
+        new Error('Library migration is being handled by an administrator.'),
+        { reason: ADMINISTRATOR_REVIEW_REASON },
+      );
+    }
     const nextMigrated = migrated + result.migrated;
     const nextScanned = scanned + result.scanned;
     if (result.phase === 'discovered' || result.phase === 'verify') {
