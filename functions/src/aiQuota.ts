@@ -62,6 +62,9 @@ export function resolvePlan(value: unknown, now: Date, config: PilotConfig): Pla
 
 export type WordReservation = { kind: 'completed'; result: unknown } | { kind: 'reserved'; attemptId: string; periodKey: string };
 
+/** A reservation the allowance refused; thrown as the quota error once the transaction has committed its bookkeeping. */
+type RefusedReservation = { kind: 'refused'; used: number; limit: number; periodEndsAt: string; tier: 'free' | 'pro' };
+
 /** Operations written before attempts were counted had made exactly one attempt on their unit. */
 const recordedAttempts = (value: unknown): number =>
   Number.isSafeInteger(value) && Number(value) >= 1 ? Number(value) : 1;
@@ -71,7 +74,7 @@ export async function reserveWordOperation(database: Firestore, uid: string, ope
   const owner = database.collection('users').doc(uid);
   const operationRef = owner.collection('ai_operations').doc(operationId);
   const planRef = owner.collection('profile').doc('plan');
-  return database.runTransaction(async transaction => {
+  const outcome = await database.runTransaction(async (transaction): Promise<WordReservation | RefusedReservation> => {
     const [operationSnapshot, planSnapshot] = await Promise.all([transaction.get(operationRef), transaction.get(planRef)]);
     const operation = operationSnapshot.data() as AiOperationRecord | undefined;
     // Only a live operation (still reserved, or already completed) owns its request shape.
@@ -117,9 +120,14 @@ export async function reserveWordOperation(database: Firestore, uid: string, ope
     const usageSnapshot = await transaction.get(usageRef);
     const used = asAiQuotaCount(usageSnapshot.data()?.used);
     if (config.quotaEnforced && used >= plan.limit) {
-      throw new AiQuotaError('ai-card-quota', {
-        reason: 'ai-card-quota', used, limit: plan.limit, periodEndsAt: plan.endsAt.toISOString(), tier: plan.tier,
-      });
+      // A refusal must leave the document saying the allowance is enforced at this limit: an earlier
+      // reservation made while the switch was off recorded `enforced: false`, and the meter would keep
+      // hiding the exhausted state while every request is refused. Written only when the record is stale.
+      const recorded = usageSnapshot.data();
+      if (recorded && (recorded.enforced !== true || recorded.limit !== plan.limit)) {
+        transaction.set(usageRef, { enforced: true, limit: plan.limit, updatedAt: now }, { merge: true });
+      }
+      return { kind: 'refused', used, limit: plan.limit, periodEndsAt: plan.endsAt.toISOString(), tier: plan.tier };
     }
     transaction.set(usageRef, {
       periodKey, tier: plan.tier, used: used + 1, limit: plan.limit, enforced: config.quotaEnforced,
@@ -131,6 +139,11 @@ export async function reserveWordOperation(database: Firestore, uid: string, ope
     }, { merge: true });
     return { kind: 'reserved', attemptId, periodKey };
   });
+  if (outcome.kind === 'refused') {
+    const { kind: _kind, ...details } = outcome;
+    throw new AiQuotaError('ai-card-quota', { reason: 'ai-card-quota', ...details });
+  }
+  return outcome;
 }
 
 export async function settleWordOperation(database: Firestore, uid: string, operationId: string,
