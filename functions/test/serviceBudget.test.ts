@@ -3,7 +3,11 @@ vi.mock('../src/accountData.js', async importOriginal => ({ ...await importOrigi
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { describe, expect, it, vi } from 'vitest';
-import { RateLimitExceededError } from '../src/rateLimiter.js';
+import {
+  consumeRateLimitFailClosed,
+  RATE_LIMIT_STORAGE_DEADLINE_MS,
+  RateLimitExceededError,
+} from '../src/rateLimiter.js';
 import { createReviewCardHandler, toRateLimitHttpsError } from '../src/index.js';
 import {
   consumeOwnerAndServiceBudget,
@@ -149,5 +153,23 @@ describe('service budgets', () => {
     expect(mapped).toBeInstanceOf(HttpsError);
     expect(mapped?.code).toBe('resource-exhausted');
     expect(mapped?.details).toEqual({ retryAfterSeconds: 3_600 });
+  });
+
+  it('maps a rate-limit storage timeout to a retryable unavailable error instead of an internal one', async () => {
+    vi.useFakeTimers();
+    try {
+      const pending = consumeRateLimitFailClosed(() => new Promise<void>(() => undefined))
+        .catch((error: unknown) => error);
+      await vi.advanceTimersByTimeAsync(RATE_LIMIT_STORAGE_DEADLINE_MS + 1);
+      const timeout = await pending;
+
+      const mapped = toRateLimitHttpsError(timeout, 'Card review limit reached. Try again later.');
+
+      expect(mapped).toBeInstanceOf(HttpsError);
+      expect(mapped?.code).toBe('unavailable');
+      expect(mapped?.message).not.toMatch(/limit reached/);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

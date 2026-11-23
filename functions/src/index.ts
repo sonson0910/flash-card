@@ -117,6 +117,7 @@ import {
   consumeRateLimitFailClosed,
   consumePersistentRateLimit,
   RateLimitExceededError,
+  RateLimitStorageTimeoutError,
   RATE_LIMIT_WINDOW_MS,
 } from './rateLimiter.js';
 import { consumeOwnerAndServiceBudget, withServiceBudget } from './serviceBudget.js';
@@ -500,6 +501,10 @@ const libraryFencedHttpsError = () => new HttpsError(
 );
 
 export const toRateLimitHttpsError = (error: unknown, message: string): HttpsError | null => {
+  // A counter that cannot be written in time is a transient failure, not a limit the learner reached.
+  if (error instanceof RateLimitStorageTimeoutError) {
+    return new HttpsError('unavailable', 'The service is busy. Try again in a moment.');
+  }
   if (!(error instanceof RateLimitExceededError)) return null;
   const retryAfterMs = Number.isFinite(error.retryAfterMs)
     ? Math.max(0, error.retryAfterMs)
