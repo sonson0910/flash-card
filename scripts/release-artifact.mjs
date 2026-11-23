@@ -456,10 +456,37 @@ const stripHooks = value => {
   return copy;
 };
 
-export function createPromotedFirebaseConfig(config, options) {
+const STAGING_ROBOTS_PATH = 'robots-disallow.txt';
+
+// The sealed build carries production robots and no noindex meta, because one artifact serves both
+// targets. A staging promotion therefore adds the search directives to its Hosting config.
+export function createPromotedFirebaseConfig(config, { hostingEnvironment = 'production', ...options } = {}) {
+  if (!['production', 'staging'].includes(hostingEnvironment)) {
+    throw new Error('Promoted Hosting environment must be production or staging.');
+  }
   validateFirebaseDeploymentConfig(config, options);
-  return stripHooks(config);
+  const promoted = stripHooks(config);
+  if (hostingEnvironment === 'staging') {
+    const hosting = Array.isArray(promoted.hosting) ? promoted.hosting[0] : promoted.hosting;
+    hosting.headers = [
+      ...(hosting.headers ?? []),
+      { source: '**', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+    ];
+    hosting.redirects = [
+      { source: '/robots.txt', destination: `/${STAGING_ROBOTS_PATH}`, type: 302 },
+      ...(hosting.redirects ?? []),
+    ];
+  }
+  return promoted;
 }
+
+const requireStagingRobotsFile = root => {
+  const relativePath = `${COMPONENT_PATHS.dist.path}/${STAGING_ROBOTS_PATH}`;
+  requireFile(root, relativePath, 'stagingRobots');
+  if (!/^Disallow:\s*\/\s*$/m.test(fs.readFileSync(path.resolve(root, relativePath), 'utf8'))) {
+    throw new Error('The candidate robots-disallow.txt must disallow all crawling.');
+  }
+};
 
 const parseOptions = args => {
   const options = new Map();
@@ -519,8 +546,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const root = path.resolve(options.get('--root') || '.');
     const source = path.resolve(root, options.get('--source') || 'firebase.json');
     const output = path.resolve(root, options.get('--output') || 'firebase.promoted.json');
+    const hostingEnvironment = options.get('--hosting-environment') || 'production';
+    if (hostingEnvironment === 'staging') requireStagingRobotsFile(root);
     writeJson(output, createPromotedFirebaseConfig(JSON.parse(fs.readFileSync(source, 'utf8')), {
       expectedFirestoreDatabaseId: options.get('--database-id'),
+      hostingEnvironment,
     }));
     console.log(`Wrote hook-free promoted Firebase config to ${path.relative(root, output)}.`);
   } else {

@@ -407,4 +407,35 @@ describe('sealed release artifact', () => {
       storage: { rules: 'storage.rules' },
     });
   });
+
+  it('promotes a staging Hosting config that blocks indexing and crawling, and leaves production unchanged', () => {
+    const staging = createPromotedFirebaseConfig(firebaseConfig(), { hostingEnvironment: 'staging' });
+    expect(staging.hosting).toEqual({
+      public: 'dist',
+      headers: [{ source: '**', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }],
+      redirects: [{ source: '/robots.txt', destination: '/robots-disallow.txt', type: 302 }],
+    });
+    const production = createPromotedFirebaseConfig(firebaseConfig(), { hostingEnvironment: 'production' });
+    expect(production).toEqual(createPromotedFirebaseConfig(firebaseConfig()));
+    assert.doesNotMatch(JSON.stringify(production), /X-Robots-Tag|robots/);
+    expect(() => createPromotedFirebaseConfig(firebaseConfig(), { hostingEnvironment: 'preview' }))
+      .toThrow(/Hosting environment/);
+  });
+
+  it('promotes a staging config only from a candidate that ships the crawl-blocking robots file', () => {
+    const root = createCandidate();
+    const promote = () => execFileSync(process.execPath, [
+      path.resolve('scripts/release-artifact.mjs'), 'promote-config', '--root', root,
+      '--source', 'firebase.json', '--output', 'firebase.promoted.json', '--hosting-environment', 'staging',
+    ], { stdio: 'pipe' });
+    expect(promote).toThrow();
+    fs.writeFileSync(path.join(root, 'dist/robots-disallow.txt'), 'User-agent: *\nAllow: /\n');
+    expect(promote).toThrow();
+    fs.writeFileSync(path.join(root, 'dist/robots-disallow.txt'), 'User-agent: *\nDisallow: /\n');
+    promote();
+    const promoted = JSON.parse(fs.readFileSync(path.join(root, 'firebase.promoted.json'), 'utf8'));
+    expect(promoted.hosting.headers).toEqual([
+      { source: '**', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+    ]);
+  });
 });

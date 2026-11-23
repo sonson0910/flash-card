@@ -201,6 +201,23 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('npm run predeploy');
   });
 
+  it('keeps the staging host out of search indexes and checks it after deploy', () => {
+    const staging = read('.github/workflows/deploy-staging.yml');
+    expect(staging).toContain('promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID" --hosting-environment staging');
+    expect(staging.match(/promote-config/g)).toHaveLength(1);
+    const liveCheck = staging.slice(staging.indexOf('name: Verify live HTTPS bytes'));
+    const hostingOnlyExit = liveCheck.indexOf('if [[ "$HOSTING_ONLY" == "true" ]]');
+    const headerCheck = liveCheck.indexOf("grep -qiE '^x-robots-tag:[[:space:]]*noindex, nofollow' artifacts/live-staging/root-headers.txt");
+    const robotsCheck = liveCheck.indexOf("grep -qxE 'Disallow:[[:space:]]*/' artifacts/live-staging/robots.txt");
+    expect(headerCheck).toBeGreaterThan(-1);
+    expect(robotsCheck).toBeGreaterThan(-1);
+    expect(headerCheck).toBeLessThan(hostingOnlyExit);
+    expect(robotsCheck).toBeLessThan(hostingOnlyExit);
+    for (const relativePath of ['.github/workflows/deploy-production.yml', '.github/workflows/deploy-firestore-rules.yml']) {
+      expect(read(relativePath)).not.toContain('--hosting-environment');
+    }
+  });
+
   it('gates staging composite indexes before Rules, Functions, and Hosting', () => {
     const workflow = read('.github/workflows/deploy-staging.yml');
     const authIndex = workflow.indexOf('google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093');

@@ -65,6 +65,10 @@ export const checkLocalePages = ({ root = path.resolve('.'), target = process.en
     if (target === 'production' && !/^Disallow:\s*$/im.test(robots) && !robots.includes('Allow: /')) failures.push('robots.txt: production build must allow crawling');
     if (target !== 'production' && !/^Disallow:\s*\/\s*$/im.test(robots)) failures.push(`robots.txt: ${target} build must disallow all crawling`);
   }
+  const disallowRobotsFile = path.join(dist, 'robots-disallow.txt');
+  if (!fs.existsSync(disallowRobotsFile) || !/^Disallow:\s*\/\s*$/im.test(fs.readFileSync(disallowRobotsFile, 'utf8'))) {
+    failures.push('robots-disallow.txt: must exist and disallow all crawling');
+  }
   if (failures.length) throw new Error(`Locale page validation failed:\n${failures.map(failure => `- ${failure}`).join('\n')}`);
   console.log(`Validated ${LOCALES.length} localized landing pages for target "${target}".`);
 };
