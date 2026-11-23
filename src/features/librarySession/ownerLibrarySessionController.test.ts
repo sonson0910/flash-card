@@ -304,6 +304,22 @@ describe('owner library session controller', () => {
     expect(controller.getSnapshot().legacyIssue).toBeNull();
   });
 
+  it('lets a library total update during the activation count win over the activation result', async () => {
+    const adapter = fakeAdapter();
+    const progress = deferred<{ scanned: number; complete: boolean }>();
+    adapter.getLegacyMigrationProgress = () => progress.promise;
+    const controller = createOwnerLibrarySessionController({ adapter });
+
+    // The first render for the next owner still carries the previous owner's total.
+    controller.activate({ ownerId: 'owner-b', libraryEpoch: null, cloudTotal: 240 });
+    await controller.updateContext({ ownerId: 'owner-b', libraryEpoch: null, cloudTotal: 0 });
+    expect(controller.getSnapshot().legacyPending).toBe(0);
+
+    progress.resolve({ scanned: 0, complete: false });
+    await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
+    expect(controller.getSnapshot()).toMatchObject({ ownerId: 'owner-b', legacyPending: 0, legacyIssue: null });
+  });
+
   it('isolates owner B from late owner A work and cleans up A subscription', async () => {
     const adapter = fakeAdapter();
     const aProgress = deferred<{ scanned: number; complete: boolean }>();
