@@ -461,6 +461,50 @@ describe('card persistence', () => {
     expect(harness.writes.map(write => write.path)).not.toContain('users/owner/profile/xp_history');
   });
 
+  it('pays no capture XP when a deleted word is created again with a later creation time', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, {
+        cardId: 'word-hello', opId: 'delete-hello', libraryEpoch: 2, revision: 3,
+        deletedAt: '2026-09-01T00:00:00.000Z',
+      })],
+    ]));
+
+    await expect(createCardV2ForOwner(harness.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'create-hello-again', timeZone: 'UTC',
+      operationCreatedAt: '2026-09-27T12:00:00.000Z', receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    })).resolves.toMatchObject({ created: true, gamification: null, card: { revision: 4 } });
+    const paths = harness.writes.map(write => write.path);
+    expect(paths).not.toContain('users/owner/profile/stats');
+    expect(paths).not.toContain('users/owner/profile/xp_history');
+    expect(paths).toContain('users/owner/card_create_receipts/create-hello-again');
+    // The identity was already counted: the owner card total does not move.
+    expect(paths).not.toContain('users/owner/profile/resource_usage');
+  });
+
+  it('pays no capture XP when a word is created again after the library was cleared', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 3 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/cards/word-hello', snapshot(true, {
+        ...card, id: 'word-hello', word: 'hello', schemaVersion: 2, revision: 1, libraryEpoch: 2,
+      })],
+    ]));
+
+    await expect(createCardV2ForOwner(harness.database, 'owner', card, {
+      maximumCards: 5, libraryEpoch: 3, opId: 'create-after-clear', timeZone: 'UTC',
+      receivedAt: new Date('2026-09-27T12:00:00.000Z'),
+    })).resolves.toMatchObject({ created: true, gamification: null });
+    expect(harness.writes.map(write => write.path)).not.toContain('users/owner/profile/stats');
+  });
+
   it('returns an existing canonical card on retry without treating its lexeme identity as a word', async () => {
     const lexemeId = canonicalLexemeId();
     const identity = `lexeme:${lexemeId}`;

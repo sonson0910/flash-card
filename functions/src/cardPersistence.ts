@@ -28,6 +28,9 @@ import {
 } from './verifiedGamification.js';
 
 export const MAX_CARD_ALLOCATION = 5_000;
+// Owner-reversible product rule: capture XP is paid once per card identity. Set
+// to false to pay it again each time a deleted word is created anew.
+const CAPTURE_XP_ONCE_PER_IDENTITY = true;
 // How many derived ids a word may try when the id of its word is held by a
 // card that was renamed to another word.
 const MAX_RELOCATED_CARD_ID_ATTEMPTS = 8;
@@ -989,8 +992,13 @@ export async function createCardForOwner(
         transaction.set(reservation, expectedReservation, { merge: false });
       }
     };
+    // The permanent reservation is the identity's lifetime record. Capture XP
+    // is paid for the first card of an identity only, so deleting a card and
+    // creating the same word again (or again after clearing the library) cannot
+    // pay it twice.
+    const awardsCaptureXp = !CAPTURE_XP_ONCE_PER_IDENTITY || !hadIdentity;
     const complete = async (result: CardAllocationResult): Promise<CardAllocationResult> => {
-      const gamification = verifiedCreate && result.created && !result.restored
+      const gamification = verifiedCreate && result.created && !result.restored && awardsCaptureXp
         ? await prepareVerifiedGamification(database, transaction, ownerId, {
           kind: 'create', receivedAt: verifiedCreate.receivedAt, timeZone: verifiedCreate.timeZone,
         })

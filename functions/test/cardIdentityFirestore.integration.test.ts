@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { applyBulkCardMutationsForOwner } from '../src/bulkCardMutationPersistence.js';
 import {
   createCardForOwner,
+  createCardV2ForOwner,
   createStarterCardsForOwner,
   renameCardHeadwordForOwner,
 } from '../src/cardPersistence.js';
@@ -145,6 +146,48 @@ describeWithEmulator('card identity persistence in Firestore', () => {
       await expect(renameCardHeadwordForOwner(database, ownerId, {
         cardId: cardIdOf(typo), word: 'hello', baseRevision: Number(typo.card.revision), libraryEpoch: 0,
       })).rejects.toMatchObject({ reason: 'duplicate-word' });
+    });
+  });
+
+  describe('capture XP', () => {
+    const createV2 = (ownerId: string, text: string, opId: string, createdAt: string) => createCardV2ForOwner(
+      database, ownerId, { ...word(text, 'nghĩa'), createdAt },
+      { libraryEpoch: 0, opId, timeZone: 'UTC', operationCreatedAt: createdAt, receivedAt: new Date(createdAt) },
+    );
+    const verifiedXp = async (ownerId: string) => (await database.doc(`users/${ownerId}/profile/stats`).get()).data()?.verifiedXp;
+
+    it('pays the first card of a word once, not again after it is deleted and created anew', async () => {
+      const ownerId = await newOwner();
+      const first = await createV2(ownerId, 'water', 'create-1', '2026-09-27T01:00:00.000Z');
+      expect(first.gamification?.xp).toBe(10);
+      expect(await verifiedXp(ownerId)).toBe(10);
+      await deleteCard(ownerId, cardIdOf(first), Number(first.card.revision));
+
+      const again = await createV2(ownerId, 'water', 'create-2', afterDeletion());
+
+      expect(again.created).toBe(true);
+      expect(again.gamification).toBeNull();
+      expect(await verifiedXp(ownerId)).toBe(10);
+      const usage = await database.doc(`users/${ownerId}/profile/resource_usage`).get();
+      expect(usage.data()?.cardCount).toBe(1);
+    });
+
+    it('does not pay again for a word created anew after the library was cleared', async () => {
+      const ownerId = await newOwner();
+      await createV2(ownerId, 'water', 'create-1', '2026-09-27T01:00:00.000Z');
+      await database.doc(`users/${ownerId}/profile/library_state`).set({ libraryEpoch: 1 });
+
+      const again = await createCardV2ForOwner(
+        database, ownerId, { ...word('water', 'nghĩa'), createdAt: '2026-09-27T02:00:00.000Z' },
+        {
+          libraryEpoch: 1, opId: 'create-2', timeZone: 'UTC',
+          operationCreatedAt: '2026-09-27T02:00:00.000Z', receivedAt: new Date('2026-09-27T02:00:00.000Z'),
+        },
+      );
+
+      expect(again.created).toBe(true);
+      expect(again.gamification).toBeNull();
+      expect(await verifiedXp(ownerId)).toBe(10);
     });
   });
 });
