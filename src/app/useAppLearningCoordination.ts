@@ -77,9 +77,8 @@ export function useAppLearningCoordination({
   const catalogActions = actions.catalog;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const learningActionsRef = useRef<LearningWorkspaceActions | null>(null);
-  // A card screen writes back after a slow answer (AI text, a headword rename). The updater a screen
-  // was rendered with stays bound to that render's owner, so an answer that arrives after the account
-  // changed is refused instead of patching the card the next owner holds under the same id.
+  // A card screen writes back after a slow answer (AI text, a headword rename). Its updater stays bound to the owner
+  // of the render that made it, so an answer arriving after an account change cannot patch the next owner's card.
   const cardUpdateOwnerId = user?.uid ?? null;
   const practiceLearning = useMemo(() => ({
     reviewCard: async (...args: Parameters<LearningWorkspaceActions['reviewCard']>): Promise<LearningStateOutcome> => await learningActionsRef.current?.reviewCard(...args) ?? { status: 'no-active-owner' },
@@ -125,8 +124,7 @@ export function useAppLearningCoordination({
         },
         patch: (cardId, fields) => {
           patchRecentlyPromotedCards(ports.recentlyPromotedCardsRef.current, id => id === cardId, fields);
-          ports.setCards(current =>
-            current.map(card => card.id === cardId ? { ...card, ...fields } : card));
+          ports.setCards(current => current.map(card => card.id === cardId ? { ...card, ...fields } : card));
         },
         remove: cardId => {
           forgetRecentlyPromotedCard(ports.recentlyPromotedCardsRef.current, cardId);
@@ -168,10 +166,8 @@ export function useAppLearningCoordination({
     },
   }, appDependencies.sessions.learningWorkspace).actions;
   learningActionsRef.current = learningCommands;
-  const updateCardForOwner = useCallback<LearningWorkspaceActions['updateCard']>(
-    (cardId, fields, options) => learningCommands.updateCard(cardId, fields, { ...options, expectedOwnerId: cardUpdateOwnerId }),
-    [learningCommands, cardUpdateOwnerId],
-  );
+  const updateCardForOwner = useCallback<LearningWorkspaceActions['updateCard']>((cardId, fields, options) =>
+    learningCommands.updateCard(cardId, fields, { ...options, expectedOwnerId: cardUpdateOwnerId }), [learningCommands, cardUpdateOwnerId]);
   const deckWorkspace = useCustomDeckWorkspace({
     identityReady: librarySession.identity.status !== 'loading',
     owner: {
@@ -188,8 +184,7 @@ export function useAppLearningCoordination({
       assignCard: learningCommands.assignDeck,
       publishCards: (cardIds, fields) => {
         patchRecentlyPromotedCards(ports.recentlyPromotedCardsRef.current, id => cardIds.has(id), fields);
-        ports.setCards(previous => previous.map(card =>
-          cardIds.has(card.id) ? { ...card, ...fields } : card));
+        ports.setCards(previous => previous.map(card => cardIds.has(card.id) ? { ...card, ...fields } : card));
       },
       publishPractice: (cardIds, fields) => practiceWorkspace.snapshotRef.current.updateCards(cardIds, fields),
       chooseAllDecks: () => catalogActions.chooseDeckScope(ALL_PRACTICE_DECK_SCOPE),
