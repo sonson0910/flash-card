@@ -46,6 +46,7 @@ export interface LibrarySessionLibraryInput {
 export interface LibrarySessionInputPorts {
   ownerAdapter: OwnerLibrarySessionAdapter;
   getPromotedCards(): readonly CardData[];
+  releaseSavedPromotedCards(pageCards: readonly CardData[]): void;
 }
 
 export interface LibrarySessionInputs {
@@ -110,6 +111,7 @@ export function useLibrarySession(
     statsRefreshRequest: catalog.statsRefreshRequest,
     progressEvidenceOpen: catalog.progressEvidenceOpen,
     getPromotedCards: ports.getPromotedCards,
+    releaseSavedPromotedCards: ports.releaseSavedPromotedCards,
   });
 
   return {

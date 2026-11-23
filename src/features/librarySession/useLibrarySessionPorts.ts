@@ -31,6 +31,7 @@ export interface LibrarySessionPortPublications {
     previousPage(): void;
   };
   promotedCards(): readonly CardData[];
+  releaseSavedPromotedCards(pageCards: readonly CardData[]): void;
 }
 
 export interface LibrarySessionPortsOptions {
@@ -70,6 +71,7 @@ export function createLibrarySessionPortsBinding(
   const session = {
     get ownerAdapter() { return options.ownerAdapter; },
     getPromotedCards: () => options.publications.promotedCards(),
+    releaseSavedPromotedCards: pageCards => options.publications.releaseSavedPromotedCards(pageCards),
   } satisfies LibrarySessionInputPorts;
   const ports = { session };
   const actions: LibrarySessionPortsActions = {

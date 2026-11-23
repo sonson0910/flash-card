@@ -8,6 +8,7 @@ import {
   groupCardsByDate,
   overlayRecentlyPromotedCards,
   promoteExistingCard,
+  releaseSavedPromotedCards,
   shouldResetLibraryPageAfterSync,
 } from './libraryPresentation';
 import type { CardData } from '../../types/card';
@@ -242,5 +243,83 @@ describe('library presentation model', () => {
       page: 1,
       pageSize: 9,
     })).toEqual([newerPageCopy]);
+  });
+
+  describe('releasing promoted copies the cloud page has caught up with', () => {
+    const filters = {
+      category: null,
+      customDeck: ALL_PRACTICE_DECK_SCOPE,
+      difficulty: null,
+      partOfSpeech: null,
+      bookmarkedOnly: false,
+      createdDate: null,
+      wordPrefix: '',
+    };
+    const newCard = (word: string, extra: Partial<CardData> = {}): CardData => ({
+      id: `local-${word}`,
+      word,
+      normalizedWord: word,
+      translation: '',
+      explanation: '',
+      phonetic: '',
+      emoji: '📘',
+      category: 'Other',
+      audioUrl: null,
+      imageUrl: null,
+      createdAt: '2026-11-23T02:00:00.000Z',
+      ...extra,
+    });
+    const page1 = (pageCards: CardData[], promoted: Map<string, CardData>) => overlayRecentlyPromotedCards({
+      pageCards,
+      promotedCards: [...promoted.values()],
+      filters,
+      page: 1,
+      pageSize: 9,
+    });
+
+    it('lets a new card deleted elsewhere leave page 1 once the page has shown its saved copy', () => {
+      const promoted = new Map([['apple', newCard('apple')], ['pear', newCard('pear')]]);
+      const saved = [
+        newCard('apple', { id: 'apple', revision: 1, libraryEpoch: 3 }),
+        newCard('pear', { id: 'pear', revision: 1, libraryEpoch: 3 }),
+      ];
+
+      releaseSavedPromotedCards(promoted, saved);
+      expect(page1(saved, promoted).map(card => card.word)).toEqual(['apple', 'pear']);
+
+      // Another tab deletes apple, then clears the library.
+      expect(page1([saved[1]!], promoted).map(card => card.word)).toEqual(['pear']);
+      expect(page1([], promoted)).toEqual([]);
+    });
+
+    it('keeps a new card pinned until the page holds its saved copy', () => {
+      const promoted = new Map([['apple', newCard('apple')]]);
+
+      releaseSavedPromotedCards(promoted, [newCard('banana', { id: 'banana', revision: 1 })]);
+
+      expect(page1([], promoted).map(card => card.word)).toEqual(['apple']);
+    });
+
+    it('keeps a promoted copy that is newer than the page copy', () => {
+      const promoted = new Map([['apple', newCard('apple', { id: 'apple', revision: 2, bookmarked: true })]]);
+
+      releaseSavedPromotedCards(promoted, [newCard('apple', { id: 'apple', revision: 1 })]);
+
+      expect(promoted.has('apple')).toBe(true);
+    });
+
+    it('keeps a touched card pinned to the top after the page holds its saved copy', () => {
+      const touched = newCard('consider', {
+        id: 'consider',
+        revision: 4,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        sortTouchedAt: '2026-11-23T02:00:00.000Z',
+      });
+      const promoted = new Map([['consider', touched]]);
+
+      releaseSavedPromotedCards(promoted, [{ ...touched, revision: 5 }]);
+
+      expect(promoted.has('consider')).toBe(true);
+    });
   });
 });

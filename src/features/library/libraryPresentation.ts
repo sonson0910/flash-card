@@ -131,6 +131,26 @@ export function forgetRecentlyPromotedCard(promotedCards: Map<string, CardData>,
   }
 }
 
+/**
+ * Drops the promoted copy of a new card once a cloud page holds its saved
+ * copy. Such a copy only bridges the gap until the page query includes the
+ * card; keeping it afterwards would put the card back on page 1 after it is
+ * deleted or cleared elsewhere. A touched card stays: the page is ordered by
+ * creation time, so the promoted copy is what keeps it at the top.
+ */
+export function releaseSavedPromotedCards(
+  promotedCards: Map<string, CardData>,
+  pageCards: readonly CardData[],
+): void {
+  if (promotedCards.size === 0) return;
+  const pageCardsByWord = new Map(pageCards.map(card => [cardWordKey(card), card]));
+  for (const [key, card] of [...promotedCards]) {
+    if (card.sortTouchedAt) continue;
+    const pageCard = pageCardsByWord.get(cardWordKey(card));
+    if (pageCard && compareStoredCardVersions(pageCard, card) >= 0) promotedCards.delete(key);
+  }
+}
+
 export function overlayRecentlyPromotedCards({
   pageCards,
   promotedCards,
