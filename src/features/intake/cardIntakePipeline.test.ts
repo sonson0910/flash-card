@@ -720,6 +720,76 @@ describe('Card Intake Pipeline contract', () => {
     expect(vi.mocked(context.patchCard)).toHaveBeenCalledWith(earlier.id, expect.anything(), expect.objectContaining({ id: earlier.id }));
   });
 
+  it('replaces the card shown at once with the card already on the page when the word is held under another id', async () => {
+    // A library written before non-English ids carried the language still holds this word under
+    // its word-only id, and that card is already on the page the learner is looking at.
+    const earlier = { ...card('사과'), id: createWordCardId('사과'), language: 'ko', partOfSpeech: 'noun', revision: 4, libraryEpoch: 3 };
+    const candidate = { ...card('사과'), id: createTargetAwareCardId('사과', 'ko'), language: 'ko' };
+    // The list the port reads only changes when the app renders again, as in the running app.
+    let rendered: CardData[] = [earlier];
+    let stats = { ...createContext().cloudStats, total: 1, unrated: 1 };
+    const publishCards = vi.fn<(next: CardData[]) => void>();
+    const context: CardIntakePortOptions = {
+      ...createContext(),
+      getCards: () => rendered,
+      publishCards,
+      updateCloudStats: vi.fn(update => { stats = typeof update === 'function' ? update(stats) : update; }),
+    };
+    const stored = deferred<{ card: CardData; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(stored.promise);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const [persisted] = await pipeline.persistCards([candidate], 'generate');
+    rendered = publishCards.mock.calls.at(-1)![0];
+    expect(rendered.map(value => value.id)).toEqual([candidate.id, earlier.id]);
+    expect(stats.total).toBe(2);
+    stored.resolve({ card: earlier, created: false, gamification: null });
+
+    await vi.waitFor(() => expect(publishCards.mock.calls.at(-1)![0].map(value => value.id)).toEqual([earlier.id]));
+    expect(stats).toMatchObject({ total: 1, unrated: 1 });
+    expect(vi.mocked(context.updateCategoryFacets)).toHaveBeenLastCalledWith({ General: -1 }, 'facet-op:duplicate');
+    expect(vi.mocked(context.rememberPromoted)).toHaveBeenLastCalledWith(expect.objectContaining({ id: earlier.id }));
+    // Media that arrives afterwards follows the stored card, as it does for a word held under the same id.
+    await pipeline.applyMedia(persisted!.card, { audioUrl: null, imageUrl: 'https://images.example/apple.jpg' });
+    expect(vi.mocked(context.patchCard)).toHaveBeenLastCalledWith(
+      earlier.id,
+      { audioUrl: null, imageUrl: 'https://images.example/apple.jpg' },
+      expect.objectContaining({ id: earlier.id }),
+    );
+    expect(vi.mocked(context.patchCard)).not.toHaveBeenCalledWith(candidate.id, expect.anything(), expect.anything());
+  });
+
+  it('drops the card shown at once when the page already holds a newer copy of the stored card', async () => {
+    const earlier = { ...card('사과'), id: createWordCardId('사과'), language: 'ko', revision: 6, libraryEpoch: 3 };
+    const candidate = { ...card('사과'), id: createTargetAwareCardId('사과', 'ko'), language: 'ko' };
+    let rendered: CardData[] = [earlier];
+    const publishCards = vi.fn<(next: CardData[]) => void>();
+    const context: CardIntakePortOptions = { ...createContext(), getCards: () => rendered, publishCards };
+    const stored = deferred<{ card: CardData; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(stored.promise);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await pipeline.persistCards([candidate], 'generate');
+    rendered = publishCards.mock.calls.at(-1)![0];
+    // The answer was read before an edit the page already shows.
+    stored.resolve({ card: { ...earlier, revision: 5 }, created: false, gamification: null });
+
+    await vi.waitFor(() => expect(publishCards.mock.calls.at(-1)![0]).toEqual([earlier]));
+    expect(vi.mocked(context.rememberPromoted)).toHaveBeenLastCalledWith(earlier);
+  });
+
+  it('reports a reused shared card under the id it is stored under', async () => {
+    const earlier = { ...card('사과'), id: createWordCardId('사과'), language: 'ko', partOfSpeech: 'noun', revision: 4 };
+    const shared = { ...card('사과'), id: createTargetAwareCardId('사과', 'ko'), language: 'ko' };
+    repositoryRuntime.createCardV2IfAbsent.mockResolvedValueOnce({ card: earlier, created: false, gamification: null });
+    const pipeline = createCardIntakePipeline({ getContext: createContext });
+
+    const results = await pipeline.persistCards([shared], 'shared');
+
+    // The result keeps the shared content and names the document that exists.
+    expect(results).toEqual([{ card: { ...shared, id: earlier.id }, created: false }]);
+  });
+
   it('persists captured browser-extension source metadata on the generated card without leaking it into the AI request', async () => {
     generationRuntime.generateWordInfo.mockResolvedValueOnce({
       translation: 'dẫn đầu', explanation: '', explanationTranslation: '', phonetic: '/liːd/',
