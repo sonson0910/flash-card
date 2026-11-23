@@ -63,8 +63,10 @@ test('user-visible worker, popup and shared strings come from the catalog, not V
     const source = await readFile(new URL(`../${file}`, import.meta.url), 'utf8');
     source.split('\n').forEach((line, index) => {
       const code = line.trim();
-      if (code.startsWith('//') || !vietnamese.test(code) || internal.test(code)) return;
-      if (/\bt\('[A-Za-z_]+'/.test(code)) return;
+      if (code.startsWith('//') || internal.test(code)) return;
+      // A translated call keeps its Vietnamese fallback; only a literal outside it is a defect.
+      const outsideCalls = code.replace(/\bt\('[A-Za-z_]+',\s*(?:\[[^\]]*\]|[^,)\[]*),\s*(?:'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)\s*\)/g, '');
+      if (!vietnamese.test(outsideCalls)) return;
       offenders.push(`${file}:${index + 1}: ${code.slice(0, 120)}`);
     });
   }

@@ -246,6 +246,7 @@
   "popupLumiTip": { "message": "Bôi đen một từ bất kỳ, mình dịch liền cho!" },
   "errorSelectionEmpty": {"message": "Hãy bôi đen một từ hoặc cụm từ tiếng Anh trước."},
   "errorSelectionTooLong": {"message": "Đoạn đã chọn dài $COUNT$ ký tự. LingoFlash hỗ trợ tối đa $MAX$ ký tự.", "placeholders": {"count": {"content": "$1"}, "max": {"content": "$2"}}},
+  "errorJobIncomplete": {"message": "LingoFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại."},
   "errorJobExpired": {"message": "Tác vụ LingoFlash đã hết hạn. Hãy thử lại."},
   "errorFloatingIconProtected": {"message": "Website này không thể bật floating icon."},
   "errorFloatingIconNoPermission": {"message": "Website chưa được cấp quyền cho floating icon."},

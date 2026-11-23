@@ -246,6 +246,7 @@
   "popupLumiTip": { "message": "Highlight any word and I will translate it right away!" },
   "errorSelectionEmpty": {"message": "Select an English word or phrase first."},
   "errorSelectionTooLong": {"message": "The selection is $COUNT$ characters long. SonFlash supports at most $MAX$ characters.", "placeholders": {"count": {"content": "$1"}, "max": {"content": "$2"}}},
+  "errorJobIncomplete": {"message": "SonFlash has not finished. Open the extension, check your sign-in and AI settings, then try again."},
   "errorJobExpired": {"message": "The SonFlash task expired. Try again."},
   "errorFloatingIconProtected": {"message": "This website cannot use the floating icon."},
   "errorFloatingIconNoPermission": {"message": "This website has not been granted permission for the floating icon."},
