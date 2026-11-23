@@ -564,6 +564,26 @@ describe('verified gamification', () => {
       expect(test.writes.map(write => write.path)).toEqual(['users/owner/profile/stats', 'users/owner/profile/xp_history', awardPath('word-focus', '2026-03-08')]);
     });
 
+    it.each(['create', 'quiz', 'spelling'] as const)('keeps coverage from the first action when it is a %s', async kind => {
+      const test = harness();
+      const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({
+        kind, timeZone: 'UTC', resultXp: 5,
+      }));
+      expect(prepared.statsPatch.dailyGoalsV1).toEqual({ coverageStartedOn: '2026-03-08', days: { '2026-03-08': counters(0, 0) } });
+    });
+
+    it.each(['review', 'create', 'quiz'] as const)('starts coverage on the next day when XP was earned before the counters existed (%s)', async kind => {
+      const { dailyGoalsV1: _none, ...stats } = stored(undefined)['users/owner/profile/stats'];
+      const test = harness({ 'users/owner/profile/stats': stats });
+      const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({
+        kind, timeZone: 'UTC', resultXp: 5,
+      }));
+      expect(prepared.statsPatch.dailyGoalsV1).toEqual({
+        coverageStartedOn: '2026-03-09',
+        days: { '2026-03-08': counters(kind === 'review' ? 1 : 0, 0) },
+      });
+    });
+
     it('counts a studied card only when the review earns XP', async () => {
       const test = harness({
         ...stored({ coverageStartedOn: '2026-03-01', days: { '2026-03-08': counters(3, 1) } }),
@@ -629,7 +649,8 @@ describe('verified gamification', () => {
       const test = harness(stored(value));
       const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({ timeZone: 'UTC' }));
       const patch = prepared.statsPatch.dailyGoalsV1 as Record<string, unknown>;
-      expect(withoutDeletes(patch)).toEqual({ coverageStartedOn: '2026-03-08', days: { '2026-03-08': counters(1, 0) } });
+      // XP was earned before this reset, and the reset map does not hold it, so the first counted day is the next one.
+      expect(withoutDeletes(patch)).toEqual({ coverageStartedOn: '2026-03-09', days: { '2026-03-08': counters(1, 0) } });
       // Every stored key the reset value lacks is deleted, so the merge write cannot keep it.
       const storedKeys = (source: unknown, prefix = ''): string[] => typeof source === 'object' && source !== null
         ? Object.entries(source).flatMap(([key, child]) => [`${prefix}${key}`, ...storedKeys(child, `${prefix}${key}.`)])

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as serverXpRules from '../../../functions/src/xp-rules';
+import type { StreakStateV1 } from '../../../functions/src/streak-rules';
 import { sessionXpCeiling } from '../dailyLearning/todayScreenFacts';
 import { buildDailyGoals, type DailyGoalsInput } from './dailyGoalsModel';
 
@@ -16,6 +17,11 @@ const input = (overrides: Partial<DailyGoalsInput> = {}): DailyGoalsInput => ({
   dailyGoals: { coverageStartedOn: '2026-11-10', days: {} },
   ...overrides,
 });
+
+const freezeRecord: StreakStateV1 = {
+  coverageStartedOn: '2026-11-01', freezes: 0, refilledWeek: '2026-11-16', best: 12, bestCountedFrom: '2026-11-01',
+  days: {}, milestones: {}, repair: null, lastRepairedOn: null,
+};
 
 const goal = <Id extends string>(model: ReturnType<typeof buildDailyGoals>, id: Id) => model.goals.find(item => item.id === id);
 
@@ -54,20 +60,31 @@ describe('daily goals model', () => {
     expect(goal(early, 'study-cards')?.progress).toMatchObject({ state: 'counted', done: 0 });
   });
 
-  it('shows unknown progress on the first counted day when XP was earned before the counter started', () => {
-    const counters = { coverageStartedOn: '2026-11-19', days: { '2026-11-19': { studiedCards: 2, matchWins: 0 } } };
+  it('shows unknown progress on a day that started before the counters when XP was already earned', () => {
+    const counters = { coverageStartedOn: '2026-11-20', days: { '2026-11-19': { studiedCards: 2, matchWins: 0 } } };
     const uncounted = buildDailyGoals(input({ dailyGoals: counters, xpHistory: { '2026-11-19': 30 } }));
     expect(goal(uncounted, 'study-cards')?.progress).toEqual({ state: 'unknown', target: 10 });
     expect(goal(uncounted, 'win-match')?.progress).toEqual({ state: 'unknown', target: 1 });
-    const fullyCounted = buildDailyGoals(input({ dailyGoals: counters, xpHistory: { '2026-11-19': 4 } }));
-    expect(goal(fullyCounted, 'study-cards')?.progress).toMatchObject({ state: 'counted', done: 2 });
+    const untouched = buildDailyGoals(input({ dailyGoals: { coverageStartedOn: '2026-11-20', days: {} } }));
+    expect(goal(untouched, 'study-cards')?.progress).toMatchObject({ state: 'counted', done: 0 });
+  });
+
+  it('keeps counted progress on the first counted day whatever else earned XP that day', () => {
+    // 3 reviewed cards (6 XP) plus a created card (10 XP) or a correct quiz answer (5 XP): the counters
+    // existed for every action of the day, so the XP of actions that are not goals must not hide them.
+    const counters = { coverageStartedOn: '2026-11-19', days: { '2026-11-19': { studiedCards: 3, matchWins: 0 } } };
+    for (const earned of [16, 11]) {
+      const model = buildDailyGoals(input({ dailyGoals: counters, xpHistory: { '2026-11-19': earned } }));
+      expect(goal(model, 'study-cards')?.progress).toMatchObject({ state: 'counted', done: 3, target: 10 });
+      expect(goal(model, 'win-match')?.progress).toMatchObject({ state: 'counted', done: 0, target: 1 });
+    }
   });
 
   it('treats missing counters as zero only when no XP was earned today', () => {
     expect(goal(buildDailyGoals(input({ dailyGoals: undefined })), 'study-cards')?.progress).toMatchObject({ state: 'counted', done: 0 });
     expect(goal(buildDailyGoals(input({ dailyGoals: undefined, xpHistory: { '2026-11-19': 2 } })), 'study-cards')?.progress)
       .toEqual({ state: 'unknown', target: 10 });
-    expect(goal(buildDailyGoals(input({ dailyGoals: { coverageStartedOn: '2026-11-20', days: {} } })), 'study-cards')?.progress)
+    expect(goal(buildDailyGoals(input({ dailyGoals: { coverageStartedOn: '2026-11-20', days: {} }, xpHistory: { '2026-11-19': 2 } })), 'study-cards')?.progress)
       .toEqual({ state: 'unknown', target: 10 });
   });
 
@@ -89,6 +106,23 @@ describe('daily goals model', () => {
       .toMatchObject({ streakDays: 0, progress: { done: 0 } });
     expect(goal(buildDailyGoals(input({ streak: 0, lastStudyDay: undefined })), 'keep-streak'))
       .toMatchObject({ streakDays: 0 });
+  });
+
+  it('keeps the run in the keep-streak goal while a held freeze covers the missed days', () => {
+    const streakState = { ...freezeRecord, freezes: 1 };
+    // Two days ago with one freeze held: the streak surfaces and the next review keep the run.
+    expect(goal(buildDailyGoals(input({ streak: 12, lastStudyDay: '2026-11-17', streakState })), 'keep-streak'))
+      .toMatchObject({ streakDays: 12, progress: { done: 0, target: 1 } });
+    expect(goal(buildDailyGoals(input({ streak: 12, lastStudyDay: '2026-11-17', streakState: { ...streakState, freezes: 0 } })), 'keep-streak'))
+      .toMatchObject({ streakDays: 0 });
+    expect(goal(buildDailyGoals(input({ streak: 12, lastStudyDay: '2026-11-18', streakState: { ...streakState, freezes: 0 } })), 'keep-streak'))
+      .toMatchObject({ streakDays: 12 });
+    // Three days ago needs two freezes, so one is not enough.
+    expect(goal(buildDailyGoals(input({ streak: 12, lastStudyDay: '2026-11-16', streakState })), 'keep-streak'))
+      .toMatchObject({ streakDays: 0 });
+    // An account without a streak record counts the freezes of its reward inventory.
+    expect(goal(buildDailyGoals(input({ streak: 12, lastStudyDay: '2026-11-17', rewards: { streakFreezes: 1 } })), 'keep-streak'))
+      .toMatchObject({ streakDays: 12 });
   });
 
   it('counts down to the end of the study day', () => {
