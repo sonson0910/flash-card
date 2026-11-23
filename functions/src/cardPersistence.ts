@@ -855,6 +855,11 @@ const assertNoFutureReviewTimes = (card: CardRecord, now: Date): void => {
   }
 };
 
+const withoutScheduling = (card: CardRecord): CardRecord => {
+  const { fsrs: _fsrs, nextReviewDate: _nextReviewDate, ...rest } = card;
+  return { ...rest, difficulty: 'unrated', reviews: 0, interval: 0, easeFactor: 2.5, correctStreak: 0, reviewHistory: [] };
+};
+
 export async function createCardForOwner(
   database: Firestore,
   ownerId: string,
@@ -1089,8 +1094,13 @@ export async function createCardForOwner(
       ? suppliedMasteredAt
       : undefined;
 
+    // Only a restore of a card this account held brings back the schedule it had: a
+    // delete leaves a tombstone, and every card ever created leaves a reservation. Every
+    // other create, a restore flag on a word the server never saw included, is a new
+    // word: a review is the only thing that may schedule or master it.
+    const bringsBackSchedule = (restore && (hadIdentity || tombstoneSnapshot.exists)) || restoresPriorCard;
     const createdCard = {
-      ...normalizedCard,
+      ...(bringsBackSchedule ? normalizedCard : withoutScheduling(normalizedCard)),
       ...(restoredMasteredAt ? { masteredAt: restoredMasteredAt } : {}),
       id,
       schemaVersion: 2,

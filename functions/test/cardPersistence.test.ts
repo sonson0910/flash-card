@@ -265,6 +265,74 @@ describe('card persistence', () => {
     }));
   });
 
+  describe('a create that carries scheduling state', () => {
+    const scheduled = {
+      difficulty: 'easy', reviews: 6, interval: 30, easeFactor: 2.9, correctStreak: 5,
+      nextReviewDate: '2026-07-01T00:00:00.000Z',
+      reviewHistory: [{ rating: 'easy', reviewedAt: '2026-06-01T00:00:00.000Z', scheduledDays: 30, elapsedDays: 0 }],
+      fsrs: {
+        due: '2026-07-01T00:00:00.000Z', stability: 30, difficulty: 3, elapsedDays: 0, scheduledDays: 30,
+        learningSteps: 0, reps: 6, lapses: 0, state: 2, lastReview: '2026-06-01T00:00:00.000Z',
+      },
+    };
+    const createWith = async (
+      options: Record<string, unknown>,
+      create = createCardForOwner,
+      deletedBefore = false,
+    ) => {
+      const lexemeId = canonicalLexemeId();
+      const harness = transactionHarness(new Map([
+        ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+        ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+        ...(deletedBefore ? [[`users/owner/card_tombstones/${lexemeId}`, snapshot(true, {
+          cardId: lexemeId, opId: 'delete-lead', libraryEpoch: 2, revision: 1, deletedAt: '2026-06-01T00:00:00.000Z',
+        })]] as [string, DocumentSnapshot][] : []),
+      ]));
+      await create(harness.database, 'owner', {
+        ...card,
+        word: 'lead', normalizedWord: 'lead', normalizedLemma: 'lead', partOfSpeech: 'noun',
+        lexemeId, language: 'en', senseKey: 'metal', ...scheduled,
+      }, { maximumCards: 5, libraryEpoch: 2, opId: 'create-lead', ...options } as never);
+      return {
+        stored: harness.writes.find(write => write.path === `users/owner/cards/${lexemeId}`)?.data,
+        projected: harness.writes.find(write => write.path === `users/owner/catalog_progress/${lexemeId}`)?.data,
+      };
+    };
+
+    it('starts a plain create unrated and active, whatever scheduling state it was sent with', async () => {
+      const { stored, projected } = await createWith({});
+      expect(stored).toMatchObject({
+        difficulty: 'unrated', reviews: 0, interval: 0, easeFactor: 2.5, correctStreak: 0, reviewHistory: [],
+      });
+      expect(stored).not.toHaveProperty('fsrs');
+      expect(stored).not.toHaveProperty('nextReviewDate');
+      expect(projected).toMatchObject({ status: 'active' });
+    });
+
+    it('starts a verified create unrated and active too', async () => {
+      const { stored, projected } = await createWith({ timeZone: 'Asia/Saigon' }, createCardV2ForOwner as never);
+      expect(stored).toMatchObject({ difficulty: 'unrated', interval: 0, reviews: 0 });
+      expect(stored).not.toHaveProperty('fsrs');
+      expect(projected).toMatchObject({ status: 'active' });
+    });
+
+    it('keeps the scheduling state a restore of a deleted card carries', async () => {
+      const { stored, projected } = await createWith(
+        { restore: true, operationCreatedAt: new Date().toISOString() }, createCardForOwner, true,
+      );
+      expect(stored).toMatchObject({ difficulty: 'easy', reviews: 6, interval: 30, correctStreak: 5 });
+      expect(stored).toHaveProperty('fsrs');
+      expect(projected).toMatchObject({ status: 'mastered' });
+    });
+
+    it('starts a restore of a card the server never held unrated and active', async () => {
+      const { stored, projected } = await createWith({ restore: true, operationCreatedAt: new Date().toISOString() });
+      expect(stored).toMatchObject({ difficulty: 'unrated', reviews: 0, interval: 0, correctStreak: 0 });
+      expect(stored).not.toHaveProperty('fsrs');
+      expect(projected).toMatchObject({ status: 'active' });
+    });
+  });
+
   it('keeps a plain Korean card separate from an English card with the same spelling and preserves translationLanguage', async () => {
     const englishHarness = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
