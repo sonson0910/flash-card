@@ -2,10 +2,11 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { LUMI_ENABLED_STORAGE_KEY } from '../settings/lumi-preference';
+import * as themeAssets from './loadThemeAssets';
 import { ThemeProvider, useTheme } from './ThemeProvider';
 
-const { loadThemeAssets } = vi.hoisted(() => ({ loadThemeAssets: vi.fn() }));
-vi.mock('./loadThemeAssets', () => ({ loadThemeAssets }));
+// A spy on the real export: a module mock was bypassed now and then when the provider started two imports in one tick.
+const loadThemeAssets = vi.spyOn(themeAssets, 'loadThemeAssets');
 
 class MemoryStorage {
   private readonly values = new Map<string, string>();
@@ -253,6 +254,35 @@ it('follows OS mode changes and turns follow-system off after an explicit mode s
     await act(async () => { theme?.setMode('light'); });
     expect(theme).toMatchObject({ mode: 'light', followSystem: false });
     expect(storage.getItem('sonflash_theme_follow_system')).toBe('false');
+  } finally {
+    await act(async () => { root.unmount(); });
+  }
+});
+
+it('picks up a theme another tab saved between the first render and the storage subscription', async () => {
+  const storage = new MemoryStorage();
+  const { container, rootElement } = installMinimalReactDom();
+  vi.stubGlobal('localStorage', storage);
+  const root = createRoot(container);
+  let theme: ReturnType<typeof useTheme> | null = null;
+
+  function Harness() {
+    theme = useTheme();
+    // The provider has already read the saved theme; this write stands for another tab's change, which fires no
+    // storage event here because the provider is not listening yet.
+    if (storage.getItem('sonflash_theme_family') === null) {
+      storage.setItem('sonflash_theme_family', 'crystal');
+      storage.setItem('lingoflash_theme', 'light');
+    }
+    return null;
+  }
+
+  try {
+    await act(async () => { root.render(<ThemeProvider><Harness /></ThemeProvider>); });
+
+    await vi.waitFor(() => expect(rootElement.dataset.themeFamily).toBe('crystal'));
+    expect(loadThemeAssets).toHaveBeenCalledWith('crystal');
+    expect(theme).toMatchObject({ family: 'crystal', mode: 'light' });
   } finally {
     await act(async () => { root.unmount(); });
   }

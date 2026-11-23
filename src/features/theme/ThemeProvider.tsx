@@ -84,6 +84,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
     };
     globalThis.addEventListener?.('storage', onStorage);
+    // Another tab can save a theme between the first render's read and this subscription; no event reaches this tab for it.
+    const saved = readThemePreference(storage, getSystemThemeMode());
+    const shown = requestedPreferenceRef.current;
+    if (saved.family !== shown.family || saved.mode !== shown.mode || saved.followSystem !== shown.followSystem) apply(() => saved, false);
     return () => {
       globalThis.removeEventListener?.('storage', onStorage);
     };
