@@ -48,7 +48,7 @@ msgctxt "practice.shadowing.you-said"
 msgid "You said:"
 msgstr "You said:"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:182
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:185
 msgctxt "languagePractice.ko.title"
 msgid "Build the syllable blocks"
 msgstr "Build the syllable blocks"
@@ -73,7 +73,7 @@ msgctxt "practice.shadowing.close"
 msgid "Close shadowing practice"
 msgstr "Close shadowing practice"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:308
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:314
 msgctxt "languagePractice.feedback.incorrect"
 msgid "Try this card again in the next round."
 msgstr "Try this card again in the next round."
@@ -118,12 +118,12 @@ msgctxt "recap.tier.new"
 msgid "New"
 msgstr "New"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:255
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:260
 msgctxt "languagePractice.zh.tones"
 msgid "Pinyin tones"
 msgstr "Pinyin tones"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:216
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:221
 msgctxt "languagePractice.ko.instruction"
 msgid "Build the Hangul word from its meaning."
 msgstr "Build the Hangul word from its meaning."
@@ -229,12 +229,12 @@ msgctxt "practice.shadowing.model-voice"
 msgid "Spoken by your browser voice. Tap play to hear it."
 msgstr "Spoken by your browser voice. Tap play to hear it."
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:284
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:289
 msgctxt "languagePractice.ko.block-formula"
 msgid "Each block = 초성 initial + 중성 vowel + 종성 final"
 msgstr "Each block = 초성 initial + 중성 vowel + 종성 final"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:221
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:226
 msgctxt "languagePractice.en.instruction"
 msgid "Type the vocabulary word for this meaning."
 msgstr "Type the vocabulary word for this meaning."
@@ -265,7 +265,7 @@ msgctxt "study.recall-mode.adaptive"
 msgid "Adaptive difficulty"
 msgstr "Adaptive difficulty"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:180
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:183
 msgctxt "languagePractice.en.pack"
 msgid "English pack"
 msgstr "English pack"
@@ -300,7 +300,7 @@ msgctxt "practice.match.retry-new-round"
 msgid "Retry new round"
 msgstr "Retry new round"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:336
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:342
 msgctxt "languagePractice.results.score"
 msgid "{correct} of {total} correct"
 msgstr "{correct} of {total} correct"
@@ -336,7 +336,7 @@ msgctxt "practice.quiz.results-subtitle"
 msgid "Your vocabulary review results"
 msgstr "Your vocabulary review results"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:218
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:223
 msgctxt "languagePractice.ja.instruction"
 msgid "Read the word, then type it in Japanese."
 msgstr "Read the word, then type it in Japanese."
@@ -356,7 +356,7 @@ msgctxt "practice.match.matched"
 msgid "Matched"
 msgstr "Matched"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:183
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:186
 msgctxt "languagePractice.ja.title"
 msgid "Type the reading"
 msgstr "Type the reading"
@@ -394,7 +394,7 @@ msgctxt "practice.score"
 msgid "Score: {score} / {total}"
 msgstr "Score: {score} / {total}"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:312
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:318
 msgctxt "languagePractice.action.next"
 msgid "Next"
 msgstr "Next"
@@ -436,7 +436,7 @@ msgctxt "recap.weekly-detail-week"
 msgid "Your week so far"
 msgstr "Your week so far"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:220
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:225
 msgctxt "languagePractice.zh.instruction"
 msgid "Choose the tone for every pinyin syllable."
 msgstr "Choose the tone for every pinyin syllable."
@@ -481,7 +481,7 @@ msgctxt "recap.grade.new"
 msgid "Bud"
 msgstr "Bud"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:295
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:301
 msgctxt "languagePractice.ko.physicalKeyboard"
 msgid "Physical keyboard: type the 2-set keys shown on each button."
 msgstr "Physical keyboard: type the 2-set keys shown on each button."
@@ -491,7 +491,7 @@ msgctxt "practice.story.mode-detail"
 msgid "written from your words"
 msgstr "written from your words"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:253
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:258
 msgctxt "languagePractice.zh.missingTones"
 msgid "This card needs verified pinyin tone data before it can be practised."
 msgstr "This card needs verified pinyin tone data before it can be practised."
@@ -501,7 +501,7 @@ msgctxt "recap.review-misses"
 msgid "Review misses"
 msgstr "Review misses"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:338
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:344
 msgctxt "languagePractice.results.try-again"
 msgid "Try again"
 msgstr "Try again"
@@ -536,7 +536,7 @@ msgctxt "practice.spelling.results-subtitle"
 msgid "Your spelling practice results"
 msgstr "Your spelling practice results"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:178
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:181
 msgctxt "languagePractice.ja.pack"
 msgid "Japanese pack · 日本語"
 msgstr "Japanese pack · 日本語"
@@ -571,7 +571,7 @@ msgctxt "practice.loading.study"
 msgid "Loading study session"
 msgstr "Loading study session"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:312
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:318
 msgctxt "languagePractice.action.check"
 msgid "Check"
 msgstr "Check"
@@ -636,7 +636,7 @@ msgctxt "study-view.summary"
 msgid "Summary"
 msgstr "Summary"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:185
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:188
 msgctxt "languagePractice.en.title"
 msgid "Spell the word"
 msgstr "Spell the word"
@@ -668,7 +668,7 @@ msgctxt "practice.match.complete-title"
 msgid "Pairs complete"
 msgstr "Pairs complete"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:253
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:258
 msgctxt "languagePractice.loadError"
 msgid "This language exercise could not load. Please try again."
 msgstr "This language exercise could not load. Please try again."
@@ -736,7 +736,7 @@ msgctxt "recap.share-week"
 msgid "Share your week"
 msgstr "Share your week"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:308
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:314
 msgctxt "languagePractice.feedback.correct"
 msgid "Correct."
 msgstr "Correct."
@@ -751,7 +751,7 @@ msgctxt "practice.spelling.mode"
 msgid "Spelling"
 msgstr "Spelling"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:310
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:316
 msgctxt "languagePractice.footer.progress"
 msgid "Word {current} of {total}"
 msgstr "Word {current} of {total}"
@@ -786,7 +786,7 @@ msgctxt "practice.match.selected"
 msgid "Selected"
 msgstr "Selected"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:239
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:244
 msgctxt "languagePractice.progress"
 msgid "Item {current} of {total}"
 msgstr "Item {current} of {total}"
@@ -814,52 +814,57 @@ msgid "Target phrases"
 msgstr "Target phrases"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:243
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:248
 msgid "languagePractice.action.listen"
 msgstr "Play pronunciation"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:253
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:258
 msgid "languagePractice.action.retry"
 msgstr "Retry"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:245
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
 msgid "languagePractice.action.slow"
 msgstr "Toggle slow pronunciation"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:230
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:235
 msgid "languagePractice.en.placeholder"
 msgstr "Word"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:225
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:230
 msgid "languagePractice.ja.placeholder"
 msgstr "Kana answer"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:303
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:309
 msgid "languagePractice.ja.sentence.choices"
 msgstr "Sentence completion choices"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:223
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:228
 msgid "languagePractice.ja.sentence.placeholder"
 msgstr "Type the missing word"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:271
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:276
 msgid "languagePractice.ko.emptyBlocks"
 msgstr "Empty Hangul blocks"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:227
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:232
 msgid "languagePractice.ko.placeholder"
 msgstr "Hangul answer"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:229
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:298
+msgid "languagePractice.ko.space"
+msgstr "Space"
+
+#. js-lingui-explicit-id
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:234
 msgid "languagePractice.zh.placeholder"
 msgstr "Hanzi answer"
 
@@ -903,12 +908,12 @@ msgctxt "shadowing-view.practice-clip-sentence"
 msgid "Practice clip sentence"
 msgstr "Practice clip sentence"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:286
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:291
 msgctxt "languagePractice.ko.final-correction"
 msgid "Final consonant: {typed} makes a different word. Delete it and choose {expected}."
 msgstr "Final consonant: {typed} makes a different word. Delete it and choose {expected}."
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:312
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:318
 msgctxt "languagePractice.key.enter"
 msgid "Enter"
 msgstr "Enter"
@@ -983,7 +988,7 @@ msgctxt "study.recall-mode.image-to-word"
 msgid "Image → Word"
 msgstr "Image → Word"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:293
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:299
 msgctxt "languagePractice.ko.backspace"
 msgid "Delete"
 msgstr "Delete"
@@ -1013,12 +1018,12 @@ msgctxt "study.recall-mode.native-to-target"
 msgid "{nativeLanguage} → {targetLanguage}"
 msgstr "{nativeLanguage} → {targetLanguage}"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:177
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:180
 msgctxt "languagePractice.ko.pack"
 msgid "Korean pack · 한국어"
 msgstr "Korean pack · 한국어"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:339
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:345
 msgctxt "languagePractice.results.close"
 msgid "Back to library"
 msgstr "Back to library"
@@ -1526,7 +1531,7 @@ msgctxt "recap.summary-title"
 msgid "Session summary"
 msgstr "Session summary"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:253
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:258
 msgctxt "languagePractice.loading"
 msgid "Loading this language exercise…"
 msgstr "Loading this language exercise…"
@@ -1577,7 +1582,7 @@ msgctxt "practice.results.correct-answers"
 msgid "Correct answers"
 msgstr "Correct answers"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:214
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:219
 msgctxt "languagePractice.ja.sentence.instruction"
 msgid "Choose the missing word."
 msgstr "Choose the missing word."
@@ -1607,7 +1612,7 @@ msgctxt "recap.remind-at"
 msgid "Remind me at <0>{time}</0>"
 msgstr "Remind me at <0>{time}</0>"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:335
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:341
 msgctxt "languagePractice.results.title"
 msgid "Drill complete"
 msgstr "Drill complete"
@@ -1731,7 +1736,7 @@ msgctxt "recap.best-run"
 msgid "Best combo"
 msgstr "Best combo"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:179
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:182
 msgctxt "languagePractice.zh.pack"
 msgid "Chinese pack · 中文"
 msgstr "Chinese pack · 中文"
@@ -1756,7 +1761,7 @@ msgctxt "practice.loading.match"
 msgid "Loading word match"
 msgstr "Loading word match"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:184
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:187
 msgctxt "languagePractice.zh.title"
 msgid "Hear the tones"
 msgstr "Hear the tones"
@@ -1782,12 +1787,12 @@ msgctxt "rich-story-view.read-aloud"
 msgid "Read aloud"
 msgstr "Read aloud"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:181
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:184
 msgctxt "languagePractice.ja.sentence.title"
 msgid "Complete the sentence"
 msgstr "Complete the sentence"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:299
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:305
 msgctxt "languagePractice.answer.label"
 msgid "Your answer"
 msgstr "Your answer"
@@ -1828,7 +1833,7 @@ msgctxt "practice.shadowing.focus-word"
 msgid "Focus word"
 msgstr "Focus word"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:270
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:275
 msgctxt "languagePractice.ko.keyboard"
 msgid "Hangul block keyboard"
 msgstr "Hangul block keyboard"
@@ -1905,7 +1910,7 @@ msgctxt "practice.spelling.speed-slow"
 msgid "0.6× slow"
 msgstr "0.6× slow"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:236
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:241
 msgctxt "languagePractice.action.exit"
 msgid "Exit"
 msgstr "Exit"
@@ -1926,7 +1931,7 @@ msgctxt "practice.story.listen"
 msgid "Listen"
 msgstr "Listen"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:311
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:317
 msgctxt "languagePractice.action.hint"
 msgid "Hint"
 msgstr "Hint"
