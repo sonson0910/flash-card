@@ -49,6 +49,7 @@ import {
   parseCardSourceMetadata,
   type CardSourceMetadata,
 } from './inputValidation.js';
+import { catalogProgressReferenceForCard, upsertCatalogProgressForCard } from './catalogProgressPersistence.js';
 
 const MIGRATION_VERSION = 2;
 const BACKUP_COLLECTION = 'admin_library_migration_backups';
@@ -1544,6 +1545,10 @@ const applyMigrationGroup = async (
     + canonicalLegacyLibraryUtf8Bytes(afterReservation).byteLength
     + tombstoneData.reduce((total, item) => total + canonicalLegacyLibraryUtf8Bytes(item.data).byteLength, 0);
   if (estimate > 8 * 1024 * 1024) throw new LegacyLibraryMigrationResourceLimitError();
+  // The kept lexeme card's catalog progress follows the rewritten card; the
+  // projection it replaces is kept with the plan so rollback can put it back.
+  const progressReference = catalogProgressReferenceForCard(database, ownerId, updatedCard);
+  const progressSnapshot = progressReference ? await transaction.get(progressReference) : null;
   const planBackup = {
     schemaVersion: 1,
     identity: group.identity,
@@ -1561,11 +1566,16 @@ const applyMigrationGroup = async (
     appliedDigest,
     sourceRevision: fence.sourceRevision,
     libraryEpoch: fence.libraryEpoch,
+    ...(progressReference ? {
+      catalogProgressId: progressReference.id,
+      catalogProgressBefore: progressSnapshot?.exists ? progressSnapshot.data() ?? null : null,
+    } : {}),
     status: 'applied',
     appliedAt: stableTimestamp(current),
   };
   transaction.set(planReference, planBackup, { merge: false });
   transaction.set(cardsRef(database, ownerId).doc(livePlan.primaryId), updatedCard, { merge: false });
+  upsertCatalogProgressForCard(database, transaction, ownerId, updatedCard);
   transaction.set(reservationRef(database, ownerId, reservationKey(group.identity, group.normalizedWord)), afterReservation, { merge: false });
   for (const item of tombstoneData) {
     if (item.data) transaction.set(tombstoneRef(database, ownerId, item.cardId), item.data, { merge: false });
@@ -2275,6 +2285,16 @@ const rollbackOneGroup = async (
   if (beforeReservation && typeof beforeReservation === 'object') {
     transaction.set(reservationRef(database, ownerId, reservationKey(String(plan.identity), String(plan.normalizedWord))), beforeReservation as DocumentData, { merge: false });
   } else transaction.delete(reservationRef(database, ownerId, reservationKey(String(plan.identity), String(plan.normalizedWord))));
+  // A plan applied before catalog progress was kept with it has no field and
+  // leaves the projection alone, as its apply did.
+  if (typeof plan.catalogProgressId === 'string') {
+    const progressReference = ownerRef(database, ownerId).collection('catalog_progress')
+      .doc(assertSafeSegment(plan.catalogProgressId, 'Catalog progress ID'));
+    const previousProgress = plan.catalogProgressBefore;
+    if (previousProgress && typeof previousProgress === 'object') {
+      transaction.set(progressReference, previousProgress as DocumentData, { merge: false });
+    } else transaction.delete(progressReference);
+  }
   transaction.set(reference, { status: 'rolledBack', rolledBackAt: stableTimestamp(current) }, { merge: true });
   const next: MigrationFence = {
     ...current,

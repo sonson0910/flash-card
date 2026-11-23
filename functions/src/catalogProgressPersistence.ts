@@ -47,6 +47,17 @@ export const catalogProgressReferenceForCard = (
   return source ? projectionRef(database, ownerId, source.lexemeId) : null;
 };
 
+/** Whether the stored projection already says what the card says. */
+export const catalogProgressMatchesCard = (
+  stored: DocumentData | undefined,
+  card: DocumentData | CardRecord,
+): boolean => {
+  const source = projectionSource(card);
+  if (!source) return true;
+  return stored?.schemaVersion === 1
+    && (Object.keys(source) as Array<keyof typeof source>).every(key => stored[key] === source[key]);
+};
+
 export const upsertCatalogProgressForCard = (
   database: Firestore,
   transaction: Transaction,
