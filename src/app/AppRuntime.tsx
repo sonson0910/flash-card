@@ -297,6 +297,10 @@ export default function AppRuntime({
   });
   const undoOwnerRef = useRef<string | null | undefined>(undefined);
   const currentOwnerId = library.model.user?.uid ?? null;
+  const loadOwnerCardCount = useMemo(
+    () => currentOwnerId && appDependencies.configuration.cloudAvailable ? () => appDependencies.library.countOwnerCards(currentOwnerId) : undefined,
+    [currentOwnerId],
+  );
   // One file service per signed-in owner, so the settings section and the My files page each list once per open.
   const filePort = useMemo(
     () => (currentOwnerId && isFirebaseConfigured ? createFirebaseFilePort({ ownerId: currentOwnerId }) : null),
@@ -745,6 +749,7 @@ export default function AppRuntime({
             practiceOpenerRef={overlayPracticeOpenerRef}
             statsOpenerRef={statsOpenerRef}
             clearOpenerRef={clearOpenerRef}
+            loadOwnerCardCount={loadOwnerCardCount}
             onExportLibrary={libraryActions.exportLibrary}
             onOpenProgress={() => setViewMode('progress')}
           />

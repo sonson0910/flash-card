@@ -266,6 +266,16 @@ describe('app dependency composition', () => {
       });
   });
 
+  it('counts every card the owner holds, with no course or deck scope, for the clear-library confirmation', async () => {
+    mocks.countCards.mockResolvedValue(250);
+
+    await expect(appDependencies.library.countOwnerCards('owner-2')).resolves.toBe(250);
+
+    const filters = mocks.countCards.mock.calls.at(-1)?.[2];
+    expect(filters).toMatchObject({ category: null, difficulty: null, wordPrefix: '' });
+    expect(filters).not.toHaveProperty('targetLanguage');
+  });
+
   it('preserves exact truncation metadata for share batches larger than 100 cards', async () => {
     const cards = Array.from({ length: 100 }, (_, index) => ({ id: `shared-${index}` }));
     mocks.fetchCardPage.mockResolvedValue({ items: cards, hasNext: true });

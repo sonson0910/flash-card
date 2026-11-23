@@ -5,7 +5,7 @@ const course = (id: string, targetLanguage: string, status = 'active') => ({ id,
 const profile = (activeCourseId: string) => ({
   activeCourseId,
   courses: [course('en', 'en'), course('ko', 'ko')],
-}) as Parameters<typeof silentCaptureCourseDecision>[2];
+}) as unknown as Parameters<typeof silentCaptureCourseDecision>[2];
 
 describe('silentCaptureCourseDecision', () => {
   it('proceeds when the capture language is the active course', () => {

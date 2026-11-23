@@ -1,6 +1,6 @@
 import type { CardData } from '../types/card';
 import type { LibraryFacets } from '../lib/cardRepository';
-import type { PracticeDeckScope } from '../lib/practiceScope';
+import { ALL_PRACTICE_DECK_SCOPE, type PracticeDeckScope } from '../lib/practiceScope';
 import {
   applyCategoryDeltas,
   countCards,
@@ -140,6 +140,14 @@ export const appDependencies = {
   library: {
     updateCategoryFacets,
     loadAllCards,
+    // Every card the owner holds, across courses: what clearing the library deletes.
+    countOwnerCards: async (ownerId: string): Promise<number> => {
+      if (!cloudAvailable || !db) throw new Error('Card storage is unavailable.');
+      return countCards(db, ownerId, {
+        category: null, customDeck: ALL_PRACTICE_DECK_SCOPE, difficulty: null, partOfSpeech: null,
+        bookmarkedOnly: false, createdDate: null, wordPrefix: '',
+      });
+    },
     loadMultilingualCards: async (ownerId: string | null, maximum = 100) => {
       if (!cloudAvailable || !db || !ownerId) return null;
       const { createMultilingualFirebaseReader } = await import(

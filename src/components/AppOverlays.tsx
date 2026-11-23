@@ -11,6 +11,7 @@ import { GsapEntrance } from './motion/GsapEntrance';
 import { RecoverableActionFeedback } from './RecoverableActionFeedback';
 import { scheduleOverlayFocusRestore } from '../features/overlays/useOverlayState';
 import { getPracticeModes, resolvePracticeModeAction, type PracticeModeId } from '../features/practice/practiceModeRegistry';
+import { clearLibraryFigures, useOwnerCardCount } from '../features/library/clearLibraryFigures';
 import type { LibraryDialogPhase } from '../features/library/LibraryDialogOverlays';
 import type { LibraryInsightsPhase } from '../features/library/LibraryDialogOverlays';
 import { getActiveUiLocale, loadCatalog } from '../i18n/loadCatalog';
@@ -87,6 +88,8 @@ interface AppOverlaysProps {
   resetClearFeedback: () => void;
   /** Number of decks the clear-library confirmation lists, counted the way the library counts them. */
   deckCount?: number;
+  /** Counts every card the owner holds across courses; the clear-library confirmation shows it, as clearing deletes them all. */
+  loadOwnerCardCount?: () => Promise<number>;
   isLoading: boolean;
   shareOpenerRef: RefObject<HTMLElement | null>;
   practiceOpenerRef: RefObject<HTMLElement | null>;
@@ -167,10 +170,15 @@ export function AppOverlays({
   cards = [], ownerId = null, isOffline = false, listenPracticeHandoff, onDismissListenPractice = () => undefined,
   startSpelling, startLanguageDrill, startMatch, startShadowing, practiceCards, visibleLibraryCount, practiceLanguage, generateStory, isStatsOpen, setIsStatsOpen,
   statsData, insightsPhase, insightsError, onRetryInsights, showClearConfirm, setShowClearConfirm, clearAll, isLoading,
-  clearStatus, clearError, resetClearFeedback, deckCount,
+  clearStatus, clearError, resetClearFeedback, deckCount, loadOwnerCardCount,
   shareOpenerRef, practiceOpenerRef, statsOpenerRef, clearOpenerRef, onExportLibrary, onOpenProgress,
 }: AppOverlaysProps) {
   const { _, i18n } = useLingui();
+  const ownerCardCount = useOwnerCardCount(showClearConfirm, loadOwnerCardCount);
+  const clearFigures = clearLibraryFigures(
+    { total: statsData.total, learned: statsData.learned, ...(deckCount === undefined ? {} : { deckCount }) },
+    { tracked: !!loadOwnerCardCount, cardCount: ownerCardCount },
+  );
   const shareUnavailable = !incomingSharePreview && !shareLink && !isSharing;
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
@@ -463,9 +471,9 @@ export function AppOverlays({
             status={clearStatus}
             errorMessage={clearError}
             restoreFocusRef={clearOpenerRef}
-            cardCount={statsData.total > 0 ? statsData.total : undefined}
-            masteredCount={statsData.total > 0 ? statsData.learned : undefined}
-            deckCount={statsData.total > 0 ? deckCount : undefined}
+            cardCount={clearFigures.cardCount}
+            masteredCount={clearFigures.masteredCount}
+            deckCount={clearFigures.deckCount}
             onExport={onExportLibrary}
           />
         </Suspense>
