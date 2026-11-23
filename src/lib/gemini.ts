@@ -262,7 +262,9 @@ export async function askCardTutor(
       { cardId: string; question: string; history: CardTutorTurn[]; expectedOwnerId: string },
       { answer: string }
     >(functions, 'askCardTutor');
-    const request = { cardId, question, history: history.slice(-3), expectedOwnerId };
+    // The callable accepts only question and answer per turn; callers may carry display fields.
+    const turns = history.slice(-3).map(({ question: asked, answer }) => ({ question: asked, answer }));
+    const request = { cardId, question, history: turns, expectedOwnerId };
     const { data } = await (signal ? callable.stream(request, { signal }) : callable.stream(request));
     const answer = (await data)?.answer;
     if (typeof answer !== 'string' || !answer.trim()) throw new Error('AI tutor returned an empty answer.');
