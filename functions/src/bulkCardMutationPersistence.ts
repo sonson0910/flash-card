@@ -74,8 +74,6 @@ export type BulkCardMutationItemResult =
     deletedAt: string;
     opId: string;
     libraryEpoch: number;
-    /** Set when another operation had already deleted the card, so this one changed nothing. */
-    alreadyDeleted?: true;
   }
   | { cardId: string; op: 'delete'; applied: false; reason: 'revision-conflict'; currentRevision: number };
 
@@ -314,7 +312,7 @@ function resolveDeleteResult(
       revision: safeCounter(tombstoneData.revision, 1) || 1,
       deletedAt: String(tombstoneData.deletedAt ?? deletedAt),
       opId: typeof tombstoneData.opId === 'string' ? tombstoneData.opId : command.opId,
-      libraryEpoch: tombstoneEpoch, alreadyDeleted: true,
+      libraryEpoch: tombstoneEpoch,
     };
   }
   if (cardData && command.baseRevision !== cardRevision) {

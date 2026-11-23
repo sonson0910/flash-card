@@ -11,6 +11,7 @@ import type { ReviewApplyResult, ReviewCommand } from '../../lib/cardReviewRepos
 import type { CardMutableField } from '../../lib/cardMutationProtocol';
 import { scheduleReview } from '../../lib/reviewScheduler';
 import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
+import { deriveLibraryFacetOperationId } from '../../lib/cardRepository';
 
 const mocks = vi.hoisted(() => ({
   applyCardPatchIfCurrent: vi.fn(),
@@ -743,10 +744,9 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     );
   });
 
-  it('keeps the receipt but leaves stats and facets alone when another operation had already deleted the card', async () => {
+  it('counts a delete once per card by keying the facet change on the tombstone operation', async () => {
     mocks.deleteCardWithTombstone.mockResolvedValue({
       deleted: true,
-      alreadyDeleted: true,
       tombstone: {
         cardId: card.id, opId: 'other-device-cleanup', libraryEpoch: 2, revision: 4, deletedAt: '2026-08-09T00:00:05.000Z',
       },
@@ -757,8 +757,12 @@ describe('useLearningStatePersistence patch reconciliation', () => {
       publication: { kind: 'delete', cardId: card.id },
       deleteReceipt: { finality: 'committed', operationId: 'other-device-cleanup', libraryEpoch: 2 },
     });
-    expect(harness.updateCategoryFacets).not.toHaveBeenCalled();
-    expect(harness.updateCloudStats).not.toHaveBeenCalled();
+    expect(harness.updateCloudStats).toHaveBeenCalledTimes(1);
+    expect(harness.updateCategoryFacets).toHaveBeenCalledTimes(1);
+    expect(harness.updateCategoryFacets).toHaveBeenCalledWith(
+      { Study: -1 },
+      deriveLibraryFacetOperationId('other-device-cleanup', 'delete'),
+    );
   });
 
   it('refreshes the epoch without a receipt when a delete is stale', async () => {

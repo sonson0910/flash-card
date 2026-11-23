@@ -1564,7 +1564,7 @@ export async function applyCardPatchIfCurrent(
 }
 
 export type DeleteCardWithTombstoneResult =
-  | { deleted: true; tombstone: CardTombstone; alreadyDeleted?: true }
+  | { deleted: true; tombstone: CardTombstone }
   | { deleted: false; reason: 'stale-library-epoch' | 'future-library-epoch' }
   | { deleted: false; reason: 'revision-conflict'; currentRevision: number };
 
@@ -1612,7 +1612,6 @@ export async function deleteCardWithTombstone(
       revision: result.revision,
       deletedAt: result.deletedAt,
     },
-    ...(result.alreadyDeleted ? { alreadyDeleted: true as const } : {}),
   };
 }
 

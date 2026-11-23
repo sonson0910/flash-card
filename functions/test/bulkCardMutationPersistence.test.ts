@@ -311,7 +311,7 @@ describe('applyBulkCardMutationsForOwner', () => {
     expect(test.deletes).toEqual([]);
   });
 
-  it('marks a delete as already applied when another operation deleted the card first', async () => {
+  it('answers a delete of a card another operation deleted with that operation id and writes nothing', async () => {
     const test = harness({
       'users/owner/card_tombstones/word-focus': snapshot(true, {
         cardId: 'word-focus', opId: 'device-a:delete-1', libraryEpoch: 2, revision: 4, deletedAt: '2026-08-24T00:00:00.000Z',
@@ -324,7 +324,7 @@ describe('applyBulkCardMutationsForOwner', () => {
     });
     expect(result.results).toEqual([{
       cardId: 'word-focus', op: 'delete', applied: true, revision: 4, deletedAt: '2026-08-24T00:00:00.000Z',
-      opId: 'device-a:delete-1', libraryEpoch: 2, alreadyDeleted: true,
+      opId: 'device-a:delete-1', libraryEpoch: 2,
     }]);
     expect(test.writes).toEqual([]);
     expect(test.deletes).toEqual([]);

@@ -78,16 +78,6 @@ describe('bulkMutateCardsViaCallable', () => {
     ]);
   });
 
-  it('keeps the already-deleted mark of a delete another operation had applied', async () => {
-    const deleted = { cardId: 'card-2', op: 'delete', applied: true, revision: 6, deletedAt: '2026-09-26T00:00:00.000Z', opId: 'device-b:delete-9', libraryEpoch: 2 };
-    mocks.httpsCallable.mockReturnValue(vi.fn().mockResolvedValue({ data: { results: [{ ...deleted, alreadyDeleted: true }, { ...deleted, cardId: 'card-3' }] } }));
-
-    const results = await bulkMutateCardsViaCallable({} as never, 'owner-a', 2, [], [deleteCommand, { ...deleteCommand, cardId: 'card-3' }]);
-
-    expect(results[0]).toEqual({ ...deleted, alreadyDeleted: true });
-    expect(results[1]).toEqual({ ...deleted, cardId: 'card-3' });
-  });
-
   it.each([
     ['another account', { uid: 'owner-b' }],
     ['no account', null],

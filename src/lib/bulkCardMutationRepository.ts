@@ -41,8 +41,6 @@ export type BulkCardMutationItemResult =
       deletedAt: string;
       opId: string;
       libraryEpoch: number;
-      /** Another operation had already deleted the card; this one changed nothing. */
-      alreadyDeleted?: true;
     }
   | { cardId: string; op: 'delete'; applied: false; reason: 'revision-conflict'; currentRevision: number };
 
@@ -104,7 +102,6 @@ const parseItemResult = (value: unknown): BulkCardMutationItemResult => {
           deletedAt: source.deletedAt as string,
           opId: source.opId as string,
           libraryEpoch: Number(source.libraryEpoch),
-          ...(source.alreadyDeleted === true ? { alreadyDeleted: true as const } : {}),
         }
       : { cardId: source.cardId, op: 'patch', applied: true, revision: Number(source.revision) };
   }

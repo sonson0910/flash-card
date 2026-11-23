@@ -451,8 +451,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             const activeEpoch = await getLibraryEpoch(database, ownerId);
             current.acceptVerifiedEpoch(ownerId, activeEpoch);
           }
-          // An operation that found the card already deleted changed nothing, so it owes no stats or facet change.
-          if (result.deleted && !result.alreadyDeleted && stableSource && latestRef.current.ownerId === ownerId) {
+          if (result.deleted && stableSource && latestRef.current.ownerId === ownerId) {
             const difficulty = stableSource.difficulty && stableSource.difficulty !== 'unrated' ? stableSource.difficulty : 'unrated';
             current.updateCloudStats(stats => ({
               ...stats,
@@ -462,9 +461,11 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               bookmarked: stableSource.bookmarked ? Math.max(0, stats.bookmarked - 1) : stats.bookmarked,
               due: stableSource.nextReviewDate && isCardDue(stableSource) ? Math.max(0, stats.due - 1) : stats.due,
             }));
+            // Keyed on the operation that deleted the card, so devices and retries that find it
+            // already deleted share one facet receipt and the category counts it down once.
             void current.updateCategoryFacets(
               { [stableSource.category || 'Other']: -1 },
-              deriveLibraryFacetOperationId(mutation.operationId, 'delete'),
+              deriveLibraryFacetOperationId(result.tombstone.opId, 'delete'),
             );
           }
         } catch (cause) {
