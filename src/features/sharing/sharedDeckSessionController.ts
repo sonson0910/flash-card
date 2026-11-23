@@ -17,6 +17,8 @@ const SHARED_DECK_PAIR_HANDOFF_TIMEOUT_MS = 5_000;
 const SHARED_DECK_PAIR_HANDOFF_POLL_MS = 25;
 const SHARED_DECK_OPERATION_STORAGE_KEY = 'lingoflash_shared_deck_operation_v1';
 const SHARED_DECK_OPERATION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1_000;
+// Matches the server's tolerance for an operation stamped ahead of its clock, so a clock stepped back keeps the retry idempotent.
+const SHARED_DECK_OPERATION_FUTURE_SKEW_MS = 5 * 60 * 1_000;
 const MAX_PENDING_SHARED_DECK_OPERATIONS = 20;
 // Links the owner created on this device and has not revoked, so Revoke still works after a reload or a newer share.
 const SHARED_DECK_LINKS_STORAGE_KEY = 'lingoflash_shared_deck_links_v1';
@@ -513,7 +515,7 @@ const validPendingOperation = (value: unknown, now: number): PendingSharedDeckOp
   if (opId.length > 128) return null;
   const createdAt = Date.parse(record.operationCreatedAt);
   if (!Number.isFinite(createdAt) || Number(operationIdMatch[1]) !== createdAt
-    || createdAt > now || now - createdAt >= SHARED_DECK_OPERATION_MAX_AGE_MS) return null;
+    || createdAt > now + SHARED_DECK_OPERATION_FUTURE_SKEW_MS || now - createdAt >= SHARED_DECK_OPERATION_MAX_AGE_MS) return null;
   return {
     ownerId: record.ownerId,
     fingerprint: record.fingerprint,
