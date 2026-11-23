@@ -7,6 +7,7 @@ import { budgetDocumentId } from './rateLimiter.js';
 import {
   revokeSharedDeckAtomically, SharedDeckMigrationRequiredError, SharedDeckUsageStateError,
 } from './sharedDeckPersistence.js';
+import { stopReminderDeliveryForOwner } from './reminderSettingsPersistence.js';
 import { configuredAccountFileObjects, exportedFileRows, type FileObjectStore } from './userFiles.js';
 
 const HOUR = 3_600_000;
@@ -176,6 +177,9 @@ export async function resumeAccountDeletion(database: Firestore, auth: Auth, pid
   if (job.status === 'deleting') {
     const originalPurgeAfter = asDate(job.purgeAfter);
     if (!originalPurgeAfter) throw new Error('Deletion purge deadline is invalid.');
+    // Outreach ends before any step that can fail: the sweeps never read the tombstone, so a purge that
+    // stops half-way (or a lockout that waits for the next run) must not leave pushes or a digest armed.
+    await database.runTransaction(transaction => stopReminderDeliveryForOwner(transaction, database, uid, now));
     if (originalPurgeAfter <= now && !job.disabledAt) {
       // The job sat in "deleting" past its own deadline without ever running: a device
       // could still sign in and write through Rules the whole time. Lock the account out

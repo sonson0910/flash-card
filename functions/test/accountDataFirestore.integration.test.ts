@@ -4,6 +4,9 @@ import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { analyticsPseudonym } from '../src/analyticsEvents.js';
+import { sweepDueWeeklyDigests } from '../src/reminderEmailDigest.js';
+import { sweepDuePushReminders } from '../src/reminderPushDelivery.js';
+import { updateReminderSettingsForOwner } from '../src/reminderSettingsPersistence.js';
 import { ACCOUNT_RATE_SCOPES, beginAccountDeletion, exportAccountData,
   finalizeDueDeletions, isAccountDeleting, resumeAccountDeletion } from '../src/accountData.js';
 import { budgetDocumentId } from '../src/rateLimiter.js';
@@ -328,6 +331,76 @@ describeWithEmulator('account export and deletion', () => {
     expect((await database.collection('shared_decks').doc(shareId).get()).exists).toBe(false);
     expect((await database.collection('shared_deck_owners').doc(shareId).get()).exists).toBe(false);
   }, 20_000);
+
+  describe('reminder outreach while a deletion has not finished', () => {
+    const savedAt = new Date('2026-11-07T12:00:00.000Z');
+    const dueAt = new Date('2026-11-08T08:01:00.000Z');
+    const seedDueReminders = async (uid: string) => {
+      const owner = database.collection('users').doc(uid);
+      await owner.collection('profile').doc('stats').set({
+        lastVerifiedReviewAt: new Date('2026-11-07T08:00:00.000Z'), verifiedStreak: 4,
+      });
+      await owner.collection('cards').doc('card-1').set({ nextReviewDate: '2026-11-01T00:00:00.000Z' });
+      await updateReminderSettingsForOwner(database, uid, {
+        days: [0, 1, 2, 3, 4, 5, 6], sendAtLocal: '08:00', timezone: 'UTC', locale: 'en', quietHours: null,
+        onlyIfNotStudiedToday: true, channels: { push: true, emailDigest: true }, pushToken: 'a'.repeat(64),
+      }, savedAt);
+      return owner;
+    };
+    const sweepBoth = async () => {
+      const send = vi.fn(async () => 1);
+      const pushed = await sweepDuePushReminders(database, send, dueAt);
+      const mailed = await sweepDueWeeklyDigests(database, async () => 'learner@example.test', 'demo-lingoflash', dueAt);
+      return { pushed, mailed, sends: send.mock.calls.length };
+    };
+
+    it('sends no push and queues no digest after the purge failed before it reached the reminders', async () => {
+      const uid = `stuck-reminders-${randomUUID()}`;
+      const owner = await seedDueReminders(uid);
+      const failing = new Proxy(database, {
+        get(target, property) {
+          const value = Reflect.get(target, property, target);
+          if (property === 'collection') {
+            return (path: string) => {
+              if (path === 'shared_deck_owners') throw new Error('simulated transient failure');
+              return target.collection(path);
+            };
+          }
+          return typeof value === 'function' ? value.bind(target) : value;
+        },
+      }) as Firestore;
+      const { auth, deleteUser } = fakeAuth();
+      await expect(beginAccountDeletion(failing, auth, uid, key, savedAt))
+        .rejects.toThrow('simulated transient failure');
+      expect((await database.collection('account_tombstones').doc(analyticsPseudonym(uid, key)).get()).data()?.status)
+        .toBe('deleting');
+      expect(deleteUser).not.toHaveBeenCalled();
+      expect((await owner.collection('pushTokens').get()).empty).toBe(true);
+      expect((await database.collection('pushTokenOwners').where('ownerId', '==', uid).get()).empty).toBe(true);
+      expect((await owner.collection('reminderState').doc('current').get()).data())
+        .toMatchObject({ channels: { push: false, emailDigest: false }, nextEligibleSendAt: null, nextWeeklyDigestAt: null });
+
+      expect(await sweepBoth()).toEqual({ pushed: { claimed: 0, sent: 0 }, mailed: 0, sends: 0 });
+      expect((await database.collection('mail').where('ownerId', '==', uid).get()).empty).toBe(true);
+    }, 30_000);
+
+    it('stops reminders of a deletion that sat in deleting past its deadline before locking the account out', async () => {
+      const uid = `stuck-late-${randomUUID()}`;
+      const pid = analyticsPseudonym(uid, key);
+      const owner = await seedDueReminders(uid);
+      const { auth, updateUser } = fakeAuth();
+      await database.collection('account_tombstones').doc(pid).create({
+        uid, status: 'deleting', startedAt: savedAt, purgeAfter: new Date(savedAt.getTime() + 65 * 60_000),
+      });
+      expect(await resumeAccountDeletion(database, auth, pid, new Date(savedAt.getTime() + 3 * 60 * 60_000)))
+        .toBe('waiting');
+      expect(updateUser).toHaveBeenCalledWith(uid, { disabled: true });
+      expect((await owner.collection('reminderState').doc('current').get()).data())
+        .toMatchObject({ channels: { push: false, emailDigest: false } });
+      expect(await sweepBoth()).toEqual({ pushed: { claimed: 0, sent: 0 }, mailed: 0, sends: 0 });
+      await database.recursiveDelete(owner);
+    }, 30_000);
+  });
 
   it('purges a profile write from a second authenticated device with an old token', async () => {
     const uid = `device-${randomUUID()}`;
