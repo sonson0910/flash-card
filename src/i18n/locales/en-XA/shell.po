@@ -2678,3 +2678,28 @@ msgstr ""
 #: src/features/profileCompletion/ProfileCompletionGate.tsx:118
 msgid "profile-completion.sign-out.failed"
 msgstr ""
+
+#: src/features/onboarding/HangulPrimer.tsx:58
+msgctxt "onboarding.primer.reader.description"
+msgid "Save Hangul alone as my reading aid."
+msgstr ""
+
+#: src/features/courses/CoursesSurface.tsx:64
+msgctxt "course.manage.reading-aid.romanization-on"
+msgid "Romanization preferred"
+msgstr ""
+
+#: src/features/onboarding/HangulPrimer.tsx:54
+msgctxt "onboarding.primer.learning.description"
+msgid "Save romanization as my reading aid for this course."
+msgstr ""
+
+#: src/features/onboarding/HangulPrimer.tsx:61
+msgctxt "onboarding.primer.note"
+msgid "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
+msgstr ""
+
+#: src/features/courses/CoursesSurface.tsx:65
+msgctxt "course.manage.reading-aid.romanization-off"
+msgid "Romanization not needed"
+msgstr ""

@@ -39,6 +39,8 @@ describe('CourseSettingsSection', () => {
     expect(html).toContain('Daily pace');
     expect(html).toMatch(/data-settings-course-preferences[^>]*>.*Show romanization.*Daily pace/);
     expect(html).toContain('Show romanization');
+    expect(html).toContain('Your saved choice for this course. Each card has its own reading switch.');
+    expect(html).not.toContain('under each word on cards');
     expect(html).toContain('role="switch"');
     expect(html).toMatch(/<label[^>]*>.*Show romanization.*role="switch"/);
     expect(html).toContain('Chinese script');
@@ -46,6 +48,25 @@ describe('CourseSettingsSection', () => {
     expect(html).toContain('Traditional');
     expect(html).toContain('Archived courses');
     expect(html).toContain('Japanese');
+  });
+
+  it('does not promise a per-card reading switch on an English course', () => {
+    const englishCourse = { ...activeCourse, id: 'course-en', targetLanguage: 'en' as const, goals: [], preferences: { ...activeCourse.preferences, zhScript: null } };
+    const englishValue: CourseGateValue = {
+      ...value,
+      model: {
+        ...value.model,
+        profile: { activeCourseId: englishCourse.id, courses: [englishCourse] },
+        activeCourse: englishCourse,
+      },
+    };
+    const englishHtml = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseContext.Provider value={englishValue}><CourseSettingsSection /></CourseContext.Provider></I18nProvider>);
+    const chineseHtml = renderToStaticMarkup(<I18nProvider i18n={i18n}><CourseContext.Provider value={value}><CourseSettingsSection /></CourseContext.Provider></I18nProvider>);
+
+    expect(englishHtml).toContain('Show romanization');
+    expect(englishHtml).toContain('Your saved choice for this course.');
+    expect(englishHtml).not.toContain('reading switch');
+    expect(chineseHtml).toContain('Each card has its own reading switch.');
   });
 
   it('keeps app settings and archived-course recovery when no course is active', () => {

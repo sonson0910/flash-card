@@ -690,3 +690,13 @@ msgstr "Thao tác với khóa học không thành công. Hãy thử lại."
 msgctxt "settings.theme.paper.description"
 msgid "A warm, bright reading surface."
 msgstr "Trang đọc sáng và ấm áp."
+
+#: src/features/settings/CourseSettingsSection.tsx:173
+msgctxt "settings.course.romanization.description"
+msgid "Your saved choice for this course. Each card has its own reading switch."
+msgstr "Lựa chọn đã lưu cho khóa học này. Mỗi thẻ có công tắc cách đọc riêng."
+
+#: src/features/settings/CourseSettingsSection.tsx:173
+msgctxt "settings.course.romanization.description-en"
+msgid "Your saved choice for this course."
+msgstr "Lựa chọn đã lưu cho khóa học này."

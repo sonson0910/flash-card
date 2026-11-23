@@ -61,8 +61,8 @@ function readingAidLabel(course: Course, _: ReturnType<typeof useLingui>['_']): 
   }
   if (course.targetLanguage === 'ko' || course.targetLanguage === 'ja') {
     return course.preferences.showRomanization
-      ? _(msg({ context: 'course.manage.reading-aid.romanization-on', message: 'Romanization on' }))
-      : _(msg({ context: 'course.manage.reading-aid.romanization-off', message: 'Romanization off' }));
+      ? _(msg({ context: 'course.manage.reading-aid.romanization-on', message: 'Romanization preferred' }))
+      : _(msg({ context: 'course.manage.reading-aid.romanization-off', message: 'Romanization not needed' }));
   }
   return null;
 }

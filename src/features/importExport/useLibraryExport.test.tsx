@@ -1,6 +1,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { activateCatalogLocale, loadCatalog, setActiveUiLocale } from '../../i18n/loadCatalog';
 import type { CardData } from '../../types/card';
 import { useLibraryExport } from './useLibraryExport';
 
@@ -45,6 +46,12 @@ function card(id: string): CardData {
 
 type Options = Parameters<typeof useLibraryExport>[0];
 
+beforeAll(async () => {
+  setActiveUiLocale('en');
+  await loadCatalog('en', 'library');
+  activateCatalogLocale('en');
+});
+
 describe('useLibraryExport', () => {
   afterEach(() => { vi.unstubAllGlobals(); });
 
@@ -53,7 +60,7 @@ describe('useLibraryExport', () => {
     const loadAllCards = vi.fn(() => new Promise<readonly CardData[]>(resolve => { release = resolve; }));
     const reportError = vi.fn();
     const notify = vi.fn();
-    const base: Options = { ownerId: 'owner-a', cards: [card('a')], minimumExpectedCards: 1, loadAllCards, reportError, notify };
+    const base: Options = { ownerId: 'owner-a', cards: [card('a')], minimumExpectedCards: 1, loadAllCards, countAllCards: async () => 1, reportError, notify };
     let exportLibrary!: () => Promise<void>;
     function Harness(props: Options) {
       exportLibrary = useLibraryExport(props).exportLibrary;
@@ -66,7 +73,12 @@ describe('useLibraryExport', () => {
       vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', false);
       return exportLibrary();
     };
-    return { start, rerender, release: (cards: readonly CardData[]) => release(cards), reportError, notify, root };
+    // The all-course count is read first, so the card read starts a moment after the export does.
+    const releaseCards = async (cards: readonly CardData[]) => {
+      await vi.waitFor(() => expect(loadAllCards).toHaveBeenCalled());
+      release(cards);
+    };
+    return { start, rerender, release: releaseCards, reportError, notify, root };
   }
 
   it('completes when only the visible cards array is republished during the export', async () => {
@@ -74,10 +86,10 @@ describe('useLibraryExport', () => {
     const pending = start();
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
     await rerender({ cards: [card('a')] });
-    release([card('a'), card('b')]);
+    await release([card('a'), card('b')]);
     await pending;
     expect(reportError).not.toHaveBeenCalled();
-    expect(notify).toHaveBeenCalledWith('Exported 2 cards.');
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining('Exported 2 cards'));
     await act(async () => { root.unmount(); });
   });
 
@@ -86,7 +98,7 @@ describe('useLibraryExport', () => {
     const pending = start();
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
     await rerender({ ownerId: 'owner-b' });
-    release([card('a')]);
+    await release([card('a')]);
     await pending;
     expect(notify).not.toHaveBeenCalled();
     expect(reportError).toHaveBeenCalledTimes(1);

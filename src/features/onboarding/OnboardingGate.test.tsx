@@ -415,6 +415,10 @@ describe('OnboardingGate', () => {
     expect(text).toContain('한국');
     expect(html).toMatch(/aria-pressed="true"[^>]*>.*?I can already read Hangul/);
     expect(html).toMatch(/aria-pressed="false"[^>]*>.*?still learning to read/);
+    expect(text).toContain('Save romanization as my reading aid for this course.');
+    expect(text).toContain('Save Hangul alone as my reading aid.');
+    expect(text).toContain('Every Korean card has its own Romanization switch.');
+    expect(text).not.toMatch(/on my cards|Show Korean only/);
     // The letters run past a phone screen, so Continue stays pinned while they scroll.
     expect(html).toContain('onboarding-journey__footer onb-footer onboarding-journey__footer--sticky');
   });

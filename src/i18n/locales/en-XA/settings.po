@@ -690,3 +690,13 @@ msgstr ""
 msgctxt "settings.theme.paper.description"
 msgid "A warm, bright reading surface."
 msgstr ""
+
+#: src/features/settings/CourseSettingsSection.tsx:173
+msgctxt "settings.course.romanization.description"
+msgid "Your saved choice for this course. Each card has its own reading switch."
+msgstr ""
+
+#: src/features/settings/CourseSettingsSection.tsx:173
+msgctxt "settings.course.romanization.description-en"
+msgid "Your saved choice for this course."
+msgstr ""

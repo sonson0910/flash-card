@@ -690,3 +690,13 @@ msgstr "That course action did not go through. Please try again."
 msgctxt "settings.theme.paper.description"
 msgid "A warm, bright reading surface."
 msgstr "A warm, bright reading surface."
+
+#: src/features/settings/CourseSettingsSection.tsx:173
+msgctxt "settings.course.romanization.description"
+msgid "Your saved choice for this course. Each card has its own reading switch."
+msgstr "Your saved choice for this course. Each card has its own reading switch."
+
+#: src/features/settings/CourseSettingsSection.tsx:173
+msgctxt "settings.course.romanization.description-en"
+msgid "Your saved choice for this course."
+msgstr "Your saved choice for this course."
