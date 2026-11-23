@@ -779,11 +779,6 @@ msgstr ""
 msgid "exam-band-picker.legend"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:277
-msgid "extension.import.course-mismatch-confirm"
-msgstr ""
-
 #: src/features/courses/CoursesSurface.tsx:252
 msgctxt "course.manage.reading-aid"
 msgid "Reading aid"
@@ -926,7 +921,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr ""
 
-#: src/app/AppRuntime.tsx:647
+#: src/app/AppRuntime.tsx:643
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -1898,7 +1893,7 @@ msgid "shell.language.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:636
+#: src/app/AppRuntime.tsx:632
 msgid "shell.learning-workspace"
 msgstr ""
 
@@ -2196,7 +2191,7 @@ msgid "shell.sync.paused-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:482
+#: src/app/AppRuntime.tsx:478
 msgid "shell.sync.retry-failed"
 msgstr ""
 
@@ -2283,7 +2278,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr ""
 
-#: src/app/AppRuntime.tsx:648
+#: src/app/AppRuntime.tsx:644
 #: src/components/shell/CourseSwitcherControl.tsx:127
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2460,7 +2455,7 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr ""
 
-#: src/app/AppRuntime.tsx:650
+#: src/app/AppRuntime.tsx:646
 #: src/app/AppViewStage.tsx:160
 msgctxt "course.loading"
 msgid "Preparing your courses…"
