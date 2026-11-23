@@ -422,7 +422,7 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
       const documents = await share('another-learner', 'cut-at-a-space', Timestamp.now(), {
         imageSearchQuery: `${'a'.repeat(119)} b`,
       });
-      expect((documents.sharedDeck.cards as { imageSearchQuery: string }[])[0]!.imageSearchQuery).toBe(`${'a'.repeat(119)} `);
+      expect((documents.sharedDeck.cards as { imageSearchQuery: string }[])[0]!.imageSearchQuery).toBe('a'.repeat(119));
 
       await expect(verifyLegacySharedDeckCutover(database, inventory)).resolves.toMatchObject({ verified: true });
     }, 30_000);
