@@ -239,27 +239,9 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
 
-      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
-
       - name: Deploy only Firestore Rules
         working-directory: validated
         run: >-
           "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only firestore:rules --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
-        env:
-          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
-
-      - name: Deploy only sealed Storage Rules when Cloud Storage is enabled
-        working-directory: validated
-        shell: bash
-        run: |
-          set -euo pipefail
-          storage_state="$(ACCESS_TOKEN="$(gcloud auth print-access-token)" node "$GITHUB_WORKSPACE/scripts/cloud-storage-state.mjs" --project "$FIREBASE_PROJECT_ID")"
-          if [[ "$storage_state" == "not-enabled" ]]; then
-            echo "::warning title=Storage Rules not deployed::Cloud Storage is not set up on $FIREBASE_PROJECT_ID, so the sealed Storage Rules were not deployed."
-            echo "Storage Rules: not deployed; Cloud Storage is not set up on $FIREBASE_PROJECT_ID." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          test "$storage_state" = "enabled"
-          "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only storage --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
