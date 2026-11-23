@@ -638,7 +638,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
 
       let batch: Awaited<ReturnType<typeof bulkPatchCards>>;
       try {
-        batch = await bulkPatchCards(database, ownerId, commands);
+        batch = await bulkPatchCards(database, ownerId, commands, current.verifiedEpoch);
       } catch (cause) {
         console.warn('Bulk card update could not be saved.', cause);
         current.setCloudUnavailable(true);
@@ -646,6 +646,9 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           if (isQuotaError(cause)) cacheCloudBackoff(ownerId);
           current.reportError('Cloud is temporarily unavailable. Try again in a moment.');
         } else if (cause instanceof CardMutationPreconditionError && cause.reason === 'future-library-epoch') {
+          current.reportError('Cloud library generation changed. Try again in a moment.');
+        } else if (cause instanceof CardMutationPreconditionError && cause.reason === 'stale-library-epoch') {
+          current.acceptVerifiedEpoch(ownerId, await getLibraryEpoch(database, ownerId));
           current.reportError('Cloud library generation changed. Try again in a moment.');
         } else {
           current.reportError('The update could not be saved. Please try again.');

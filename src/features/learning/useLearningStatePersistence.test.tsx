@@ -1020,6 +1020,7 @@ describe('useLearningStatePersistence bulk patching', () => {
       { kind: 'database' },
       'user-a',
       [{ cardId: card.id, baseRevision: 3, fields: { bookmarked: true }, fieldMask: ['bookmarked'] }],
+      expect.any(Number),
     );
     expect(outcomes).toEqual([{
       cardId: card.id,
@@ -1056,6 +1057,7 @@ describe('useLearningStatePersistence bulk patching', () => {
       { kind: 'database' },
       'user-a',
       [{ cardId: card.id, baseRevision: 3, fields: { customDeck: 'Deck A' }, fieldMask: ['customDeck'] }],
+      expect.any(Number),
     );
     expect(outcomes).toEqual([
       { cardId: card.id, applied: true, publication: expect.objectContaining({ kind: 'patch', cardId: card.id }) },

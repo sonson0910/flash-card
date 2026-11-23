@@ -2396,10 +2396,13 @@ export async function bulkPatchCards(
   db: Firestore,
   userId: string,
   patches: readonly BulkCardPatchCommand[],
+  callerLibraryEpoch?: number,
 ): Promise<BulkCardPatchBatchResult> {
-  if (patches.length === 0) return { libraryEpoch: await getLibraryEpoch(db, userId), outcomes: [] };
+  if (patches.length === 0) return { libraryEpoch: callerLibraryEpoch ?? await getLibraryEpoch(db, userId), outcomes: [] };
 
-  let libraryEpoch = await getLibraryEpoch(db, userId);
+  // The revisions in `patches` come from the caller's view of the library, so when the
+  // caller names its epoch the batch is sent with it and never silently moved to a newer one.
+  let libraryEpoch = callerLibraryEpoch ?? await getLibraryEpoch(db, userId);
   const outcomes = new Map<string, BulkCardPatchOutcome>();
   const pending = new Map(patches.map(patch => [patch.cardId, patch]));
 
@@ -2418,6 +2421,7 @@ export async function bulkPatchCards(
         if (error.reason === 'future-library-epoch') {
           throw new CardMutationPreconditionError('future-library-epoch');
         }
+        if (callerLibraryEpoch !== undefined) throw new CardMutationPreconditionError('stale-library-epoch');
         libraryEpoch = await getLibraryEpoch(db, userId);
         continue;
       }
@@ -2440,7 +2444,7 @@ export async function bulkPatchCards(
       } else if (result.reason === 'requires-migration') {
         migrationCandidates.push(request);
         pending.delete(result.cardId);
-      } else if (result.reason === 'stale-library-epoch') {
+      } else if (result.reason === 'stale-library-epoch' && callerLibraryEpoch === undefined) {
         // Left pending; retried below once the epoch has been refreshed.
         epochDrifted = true;
       } else if (result.reason === 'revision-conflict') {
