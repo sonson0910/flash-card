@@ -1894,7 +1894,7 @@ msgid "library.empty.word-placeholder"
 msgstr "Nhập một từ hoặc cụm từ…"
 
 #. js-lingui-explicit-id
-#: src/features/importExport/useLibraryExport.ts:66
+#: src/features/importExport/useLibraryExport.ts:65
 msgid "library.export.completed"
 msgstr "{count, plural, other {Đã xuất # thẻ từ tất cả khóa học của bạn.}}"
 

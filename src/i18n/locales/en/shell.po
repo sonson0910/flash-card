@@ -59,7 +59,7 @@ msgid "This date has already passed. Pick a date ahead."
 msgstr "This date has already passed. Pick a date ahead."
 
 #: src/components/shell/DesktopNavigation.tsx:94
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:80
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:81
 msgctxt "shell.brand.mark"
 msgid "S"
 msgstr "S"
@@ -155,7 +155,7 @@ msgctxt "onboarding.trial.state.known"
 msgid "Got it"
 msgstr "Got it"
 
-#: src/app/AppViewStage.tsx:152
+#: src/app/AppViewStage.tsx:151
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr "Preparing today’s learning plan…"
@@ -198,6 +198,11 @@ msgctxt "course.due-count"
 msgid "{count} due"
 msgstr "{count} due"
 
+#: src/features/onboarding/HangulPrimer.tsx:58
+msgctxt "onboarding.primer.reader.description"
+msgid "Save Hangul alone as my reading aid."
+msgstr "Save Hangul alone as my reading aid."
+
 #: src/components/AppOverlays.tsx:542
 msgctxt "shell.share.incoming-safeguard"
 msgid "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
@@ -222,6 +227,11 @@ msgstr "Active"
 msgctxt "app-overlays.text-practice.offline"
 msgid "Reconnect to start text practice."
 msgstr "Reconnect to start text practice."
+
+#: src/features/courses/CoursesSurface.tsx:64
+msgctxt "course.manage.reading-aid.romanization-on"
+msgid "Romanization preferred"
+msgstr "Romanization preferred"
 
 #: src/features/courses/CourseGoalsPanel.tsx:56
 #: src/features/courses/CourseGoalsPanel.tsx:104
@@ -451,7 +461,7 @@ msgctxt "onboarding.primer.block.title"
 msgid "Build one syllable block"
 msgstr "Build one syllable block"
 
-#: src/app/AppViewStage.tsx:160
+#: src/app/AppViewStage.tsx:159
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr "Preparing appearance settings…"
@@ -835,7 +845,7 @@ msgctxt "onboarding.trial.again"
 msgid "Forgot"
 msgstr "Forgot"
 
-#: src/app/AppViewStage.tsx:161
+#: src/app/AppViewStage.tsx:160
 msgctxt "shell.loading.web-words"
 msgid "Preparing your web words…"
 msgstr "Preparing your web words…"
@@ -877,11 +887,6 @@ msgctxt "onboarding.trial.state.pending"
 msgid "Not yet"
 msgstr "Not yet"
 
-#: src/features/courses/CoursesSurface.tsx:65
-msgctxt "course.manage.reading-aid.romanization-off"
-msgid "Romanization off"
-msgstr "Romanization off"
-
 #: src/features/courses/CoursesSurface.tsx:198
 msgctxt "course.manage.title.crystal"
 msgid "Pick your <0>star</0>"
@@ -922,7 +927,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Text practice"
 
-#: src/app/AppRuntime.tsx:653
+#: src/app/AppRuntime.tsx:654
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -987,21 +992,6 @@ msgstr "Your copy"
 msgctxt "course.goal.no-detail"
 msgid "No level or date set"
 msgstr "No level or date set"
-
-#: src/features/onboarding/HangulPrimer.tsx:58
-msgctxt "onboarding.primer.reader.description"
-msgid "Show Korean only."
-msgstr "Show Korean only."
-
-#: src/features/onboarding/HangulPrimer.tsx:54
-msgctxt "onboarding.primer.learning.description"
-msgid "Show romanization next to Korean on my cards."
-msgstr "Show romanization next to Korean on my cards."
-
-#: src/features/onboarding/HangulPrimer.tsx:61
-msgctxt "onboarding.primer.note"
-msgid "You can turn romanization on or off any time in Settings."
-msgstr "You can turn romanization on or off any time in Settings."
 
 #. js-lingui-explicit-id
 #: src/features/examProgress/LatestExamScoreEditor.tsx:144
@@ -1265,7 +1255,7 @@ msgctxt "onboarding.phone.body"
 msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
 msgstr "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
 
-#: src/app/AppViewStage.tsx:162
+#: src/app/AppViewStage.tsx:161
 msgctxt "shell.loading.files"
 msgid "Preparing your files…"
 msgstr "Preparing your files…"
@@ -1291,259 +1281,264 @@ msgid "Pass {exams}"
 msgstr "Pass {exams}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:104
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:161
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:106
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:172
 msgid "profile-completion.account-access"
 msgstr "Account access"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:119
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:126
 msgid "profile-completion.account-data"
 msgstr "Account data"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:187
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:333
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:198
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:345
 msgid "profile-completion.birth-year"
 msgstr "Birth year"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:58
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
 msgid "profile-completion.birth-year.format"
 msgstr "Enter your birth year as four digits, for example 1994."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
 msgid "profile-completion.birth-year.future"
 msgstr "The birth year cannot be in the future."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:61
 msgid "profile-completion.birth-year.implausible"
 msgstr "Check the birth year. It is too far in the past."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:342
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:354
 msgid "profile-completion.birth-year.placeholder"
 msgstr "YYYY"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:61
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:62
 msgid "profile-completion.birth-year.rejected"
 msgstr "Check your birth year and try again."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:391
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:403
 msgid "profile-completion.consent"
 msgstr "I am 18 or older and I agree to the <terms>Terms</terms> and the <privacy>Privacy policy</privacy>."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:398
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:410
 msgid "profile-completion.consent.required"
 msgstr "Required before continuing."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:236
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:248
 msgid "profile-completion.details.eyebrow"
 msgstr "Complete signup"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:237
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:249
 msgid "profile-completion.details.title"
 msgstr "Your account details"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:65
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
 msgid "profile-completion.error.consent-outdated"
 msgstr "The terms or the privacy policy changed. Reload the page to review them."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:163
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:174
 msgid "profile-completion.error.lede"
 msgstr "Check your connection and try again. Nothing was changed."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:67
 msgid "profile-completion.error.rate-limited"
 msgstr "Too many attempts. Wait a while, then try again."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:166
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:177
 msgid "profile-completion.error.retry"
 msgstr "Try again"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:67
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:68
 msgid "profile-completion.error.save-failed"
 msgstr "We could not save your details. Check your connection and try again."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:162
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:173
 msgid "profile-completion.error.title"
 msgstr "We could not check your account."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:230
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:242
 msgid "profile-completion.eyebrow"
 msgstr "Complete signup · once"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:121
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:128
 msgid "profile-completion.help"
 msgstr "Need help?"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:232
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:244
 msgid "profile-completion.lede"
 msgstr "Set the language details that travel with your account."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:354
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:366
 msgid "profile-completion.locale"
 msgstr "App language"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:360
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:372
 msgid "profile-completion.native-language"
 msgstr "Native language"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:402
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:414
 msgid "profile-completion.note"
 msgstr "We keep your birth year only to confirm the 18+ requirement. It is part of your account data download and is removed when you delete the account."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:203
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:241
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:214
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:253
 msgid "profile-completion.outcomes.eyebrow"
 msgstr "Return + outcomes"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:252
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:264
 msgid "profile-completion.outcomes.next"
 msgstr "Next"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:210
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:248
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:221
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:260
 msgid "profile-completion.outcomes.return"
 msgstr "Return"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:49
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:50
 msgid "profile-completion.outcomes.title"
 msgstr "Keep the next step visible."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:50
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:51
 msgid "profile-completion.outcomes.title.crystal"
 msgstr "Keep the next action clear."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:191
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:202
 msgid "profile-completion.restricted.account"
 msgstr "Account"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:188
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:199
 msgid "profile-completion.restricted.birth-year"
 msgstr "Does not meet requirement"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:177
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:183
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:188
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:194
 msgid "profile-completion.restricted.eyebrow"
 msgstr "Age restricted"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:206
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:217
 msgid "profile-completion.restricted.gate"
 msgstr "Age gate"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:207
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:218
 msgid "profile-completion.restricted.gate-detail"
 msgstr "Account creation cannot continue."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:179
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:190
 msgid "profile-completion.restricted.lede"
 msgstr "The birth year does not meet the current account age requirement."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:196
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:207
 msgid "profile-completion.restricted.note"
 msgstr "Your birth year was not saved. If it was entered by mistake, contact support."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:192
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:203
 msgid "profile-completion.restricted.paused"
 msgstr "Creation paused"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:199
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:210
 msgid "profile-completion.restricted.return"
 msgstr "Return to sign in"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:211
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:222
 msgid "profile-completion.restricted.return-detail"
 msgstr "Sign in"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:184
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:195
 msgid "profile-completion.restricted.status"
 msgstr "Account status"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:45
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:46
 msgid "profile-completion.restricted.title"
 msgstr "We cannot create this account yet."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:46
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:47
 msgid "profile-completion.restricted.title.crystal"
 msgstr "Account creation paused"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:226
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:238
 msgid "profile-completion.return.footer"
 msgstr "Return location · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:53
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:54
 msgid "profile-completion.return.preserved"
 msgstr "Return location preserved · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:54
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:55
 msgid "profile-completion.return.preserved.crystal"
 msgstr "Return anchor · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:253
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:408
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:265
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:420
 msgid "profile-completion.save"
 msgstr "Save and continue"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:407
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:419
 msgid "profile-completion.saving"
 msgstr "Saving…"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:108
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:167
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:110
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:178
 msgid "profile-completion.sign-out"
 msgstr "Sign out"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:41
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:118
+msgid "profile-completion.sign-out.failed"
+msgstr "Could not stop browser reminders. Try signing out again."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:42
 msgid "profile-completion.title"
 msgstr "Make SonFlash yours."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:42
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:43
 msgid "profile-completion.title.crystal"
 msgstr "Make it yours"
 
@@ -1618,7 +1613,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr "Create course"
 
-#: src/app/AppViewStage.tsx:144
+#: src/app/AppViewStage.tsx:143
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr "Preparing learning paths…"
@@ -1899,7 +1894,7 @@ msgid "shell.language.open"
 msgstr "Choose language"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:642
+#: src/app/AppRuntime.tsx:643
 msgid "shell.learning-workspace"
 msgstr "Learning workspace"
 
@@ -2224,7 +2219,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Live cloud updates are unavailable. Retry when your connection improves."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:488
+#: src/app/AppRuntime.tsx:489
 msgid "shell.sync.retry-failed"
 msgstr "Sync could not finish. Your changes remain on this device. Try again."
 
@@ -2285,6 +2280,11 @@ msgctxt "shell.share.more-cards"
 msgid "+{count} more"
 msgstr "+{count} more"
 
+#: src/features/onboarding/HangulPrimer.tsx:54
+msgctxt "onboarding.primer.learning.description"
+msgid "Save romanization as my reading aid for this course."
+msgstr "Save romanization as my reading aid for this course."
+
 #: src/components/shell/CourseSwitcherControl.tsx:176
 msgctxt "course.switcher.heading"
 msgid "Your <0>courses</0>"
@@ -2311,7 +2311,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr "Pick a time and SonFlash will remind you to review."
 
-#: src/app/AppRuntime.tsx:654
+#: src/app/AppRuntime.tsx:655
 #: src/components/shell/CourseSwitcherControl.tsx:127
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2336,6 +2336,11 @@ msgstr "Let's add your <0>first cards</0>"
 msgctxt "onboarding.level.foundation.description"
 msgid "New to the language, or you know a few words."
 msgstr "New to the language, or you know a few words."
+
+#: src/features/onboarding/HangulPrimer.tsx:61
+msgctxt "onboarding.primer.note"
+msgid "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
+msgstr "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
 
 #: src/features/onboarding/ReminderPhonePreview.tsx:38
 msgctxt "onboarding.phone.caption"
@@ -2407,6 +2412,11 @@ msgctxt "shell.menu.export"
 msgid "Export library to Excel"
 msgstr "Export library to Excel"
 
+#: src/features/courses/CoursesSurface.tsx:65
+msgctxt "course.manage.reading-aid.romanization-off"
+msgid "Romanization not needed"
+msgstr "Romanization not needed"
+
 #: src/components/shell/SkipToContentLink.tsx:12
 msgctxt "shell.skip-content"
 msgid "Skip to content"
@@ -2426,11 +2436,6 @@ msgstr "Exam date {date}"
 msgctxt "course.manage.stat.due"
 msgid "Due"
 msgstr "Due"
-
-#: src/features/courses/CoursesSurface.tsx:64
-msgctxt "course.manage.reading-aid.romanization-on"
-msgid "Romanization on"
-msgstr "Romanization on"
 
 #: src/features/onboarding/OnboardingJourney.tsx:490
 msgctxt "onboarding.goal.curious"
@@ -2452,7 +2457,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/app/AppViewStage.tsx:159
+#: src/app/AppViewStage.tsx:158
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr "Preparing learning progress…"
@@ -2498,8 +2503,8 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Pick one language for now. You can add more from the course switcher."
 
-#: src/app/AppRuntime.tsx:656
-#: src/app/AppViewStage.tsx:163
+#: src/app/AppRuntime.tsx:657
+#: src/app/AppViewStage.tsx:162
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Preparing your courses…"
@@ -2673,33 +2678,3 @@ msgstr "Your daily study goal, new words and reviews together. Today adds up to 
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Appearance settings"
-
-#. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:118
-msgid "profile-completion.sign-out.failed"
-msgstr "Could not stop browser reminders. Try signing out again."
-
-#: src/features/onboarding/HangulPrimer.tsx:58
-msgctxt "onboarding.primer.reader.description"
-msgid "Save Hangul alone as my reading aid."
-msgstr "Save Hangul alone as my reading aid."
-
-#: src/features/courses/CoursesSurface.tsx:64
-msgctxt "course.manage.reading-aid.romanization-on"
-msgid "Romanization preferred"
-msgstr "Romanization preferred"
-
-#: src/features/onboarding/HangulPrimer.tsx:54
-msgctxt "onboarding.primer.learning.description"
-msgid "Save romanization as my reading aid for this course."
-msgstr "Save romanization as my reading aid for this course."
-
-#: src/features/onboarding/HangulPrimer.tsx:61
-msgctxt "onboarding.primer.note"
-msgid "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
-msgstr "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
-
-#: src/features/courses/CoursesSurface.tsx:65
-msgctxt "course.manage.reading-aid.romanization-off"
-msgid "Romanization not needed"
-msgstr "Romanization not needed"

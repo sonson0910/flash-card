@@ -98,11 +98,6 @@ msgctxt "settings.course.add"
 msgid "Add a language"
 msgstr "Add a language"
 
-#: src/features/settings/CourseSettingsSection.tsx:176
-msgctxt "settings.course.romanization.description"
-msgid "A reading aid under each word on cards"
-msgstr "A reading aid under each word on cards"
-
 #: src/features/settings/CourseSettingsSection.tsx:87
 msgctxt "settings.course.ui-language"
 msgid "App language"
@@ -332,6 +327,11 @@ msgstr "Prism Day"
 msgctxt "settings.course.romanization"
 msgid "Show romanization"
 msgstr "Show romanization"
+
+#: src/features/settings/CourseSettingsSection.tsx:176
+msgctxt "settings.course.romanization.description"
+msgid "Your saved choice for this course. Each card has its own reading switch."
+msgstr "Your saved choice for this course. Each card has its own reading switch."
 
 #: src/features/settings/CourseSettingsSection.tsx:268
 msgctxt "settings.course.pace.error"
@@ -644,6 +644,11 @@ msgctxt "settings.follow-system.description"
 msgid "Match your device’s light or dark setting."
 msgstr "Match your device’s light or dark setting."
 
+#: src/features/settings/CourseSettingsSection.tsx:176
+msgctxt "settings.course.romanization.description-en"
+msgid "Your saved choice for this course."
+msgstr "Your saved choice for this course."
+
 #: src/features/reminders/ReminderSettingsSection.tsx:207
 msgctxt "settings.reminders.push-unavailable"
 msgid "Push needs a supported browser and configured web push key."
@@ -690,13 +695,3 @@ msgstr "That course action did not go through. Please try again."
 msgctxt "settings.theme.paper.description"
 msgid "A warm, bright reading surface."
 msgstr "A warm, bright reading surface."
-
-#: src/features/settings/CourseSettingsSection.tsx:173
-msgctxt "settings.course.romanization.description"
-msgid "Your saved choice for this course. Each card has its own reading switch."
-msgstr "Your saved choice for this course. Each card has its own reading switch."
-
-#: src/features/settings/CourseSettingsSection.tsx:173
-msgctxt "settings.course.romanization.description-en"
-msgid "Your saved choice for this course."
-msgstr "Your saved choice for this course."

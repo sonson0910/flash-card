@@ -246,6 +246,12 @@ msgctxt "landing.nav.pricing"
 msgid "Pricing & access"
 msgstr ""
 
+#: src/features/landing/LandingPage.tsx:215
+#: src/features/landing/LandingPage.tsx:216
+msgctxt "landing.pricing.value.card-cap"
+msgid "Up to 5,000"
+msgstr ""
+
 #: src/features/landing/LandingPage.tsx:1102
 msgctxt "landing.pricing.title"
 msgid "Pricing & access"
@@ -324,6 +330,11 @@ msgstr ""
 #: src/features/landing/LandingPage.tsx:494
 msgctxt "landing.demo.back-language"
 msgid "Vietnamese"
+msgstr ""
+
+#: src/features/landing/LandingPage.tsx:247
+msgctxt "landing.pricing.faq.exhausted.answer"
+msgid "You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot."
 msgstr ""
 
 #: src/features/landing/LandingPage.tsx:1185
@@ -465,8 +476,6 @@ msgstr ""
 
 #: src/features/landing/LandingPage.tsx:209
 #: src/features/landing/LandingPage.tsx:210
-#: src/features/landing/LandingPage.tsx:215
-#: src/features/landing/LandingPage.tsx:216
 msgctxt "landing.pricing.value.unlimited"
 msgid "Unlimited"
 msgstr ""
@@ -522,11 +531,6 @@ msgctxt "landing.nav.sign-in"
 msgid "Sign in"
 msgstr ""
 
-#: src/features/landing/LandingPage.tsx:247
-msgctxt "landing.pricing.faq.exhausted.answer"
-msgid "You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro."
-msgstr ""
-
 #: src/features/landing/LandingPage.tsx:976
 msgctxt "landing.languages.eyebrow"
 msgid "Where SonFlash is headed"
@@ -550,11 +554,6 @@ msgstr ""
 #: src/features/landing/LandingPage.tsx:341
 msgctxt "landing.demo.grade.bloom"
 msgid "Bloom"
-msgstr ""
-
-#: src/features/landing/LandingPage.tsx:238
-msgctxt "landing.pricing.faq.free.answer"
-msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month."
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -612,6 +611,11 @@ msgstr ""
 #: src/features/landing/LandingPage.tsx:228
 msgctxt "landing.pricing.value.included"
 msgid "Included"
+msgstr ""
+
+#: src/features/landing/LandingPage.tsx:238
+msgctxt "landing.pricing.faq.free.answer"
+msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day."
 msgstr ""
 
 #: src/features/landing/LandingPage.tsx:1005
@@ -708,20 +712,4 @@ msgstr ""
 #: src/features/landing/LandingPage.tsx:1082
 msgctxt "landing.methods.open-library"
 msgid "Open your library"
-msgstr ""
-
-#: src/features/landing/LandingPage.tsx:213
-#: src/features/landing/LandingPage.tsx:214
-msgctxt "landing.pricing.value.card-cap"
-msgid "Up to 5,000"
-msgstr ""
-
-#: src/features/landing/LandingPage.tsx:245
-msgctxt "landing.pricing.faq.exhausted.answer"
-msgid "You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot."
-msgstr ""
-
-#: src/features/landing/LandingPage.tsx:236
-msgctxt "landing.pricing.faq.free.answer"
-msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day."
 msgstr ""

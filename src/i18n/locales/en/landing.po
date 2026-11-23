@@ -246,6 +246,12 @@ msgctxt "landing.nav.pricing"
 msgid "Pricing & access"
 msgstr "Pricing & access"
 
+#: src/features/landing/LandingPage.tsx:215
+#: src/features/landing/LandingPage.tsx:216
+msgctxt "landing.pricing.value.card-cap"
+msgid "Up to 5,000"
+msgstr "Up to 5,000"
+
 #: src/features/landing/LandingPage.tsx:1102
 msgctxt "landing.pricing.title"
 msgid "Pricing & access"
@@ -325,6 +331,11 @@ msgstr "Read it clearly"
 msgctxt "landing.demo.back-language"
 msgid "Vietnamese"
 msgstr "Vietnamese"
+
+#: src/features/landing/LandingPage.tsx:247
+msgctxt "landing.pricing.faq.exhausted.answer"
+msgid "You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot."
+msgstr "You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot."
 
 #: src/features/landing/LandingPage.tsx:1185
 msgctxt "landing.closing.consent"
@@ -465,8 +476,6 @@ msgstr "Pronunciation practice"
 
 #: src/features/landing/LandingPage.tsx:209
 #: src/features/landing/LandingPage.tsx:210
-#: src/features/landing/LandingPage.tsx:215
-#: src/features/landing/LandingPage.tsx:216
 msgctxt "landing.pricing.value.unlimited"
 msgid "Unlimited"
 msgstr "Unlimited"
@@ -522,11 +531,6 @@ msgctxt "landing.nav.sign-in"
 msgid "Sign in"
 msgstr "Sign in"
 
-#: src/features/landing/LandingPage.tsx:247
-msgctxt "landing.pricing.faq.exhausted.answer"
-msgid "You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro."
-msgstr "You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro."
-
 #: src/features/landing/LandingPage.tsx:976
 msgctxt "landing.languages.eyebrow"
 msgid "Where SonFlash is headed"
@@ -551,11 +555,6 @@ msgstr "SonFlash currently teaches English vocabulary, with meanings shown in En
 msgctxt "landing.demo.grade.bloom"
 msgid "Bloom"
 msgstr "Bloom"
-
-#: src/features/landing/LandingPage.tsx:238
-msgctxt "landing.pricing.faq.free.answer"
-msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month."
-msgstr "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month."
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:723
@@ -613,6 +612,11 @@ msgstr "Choose an atmosphere"
 msgctxt "landing.pricing.value.included"
 msgid "Included"
 msgstr "Included"
+
+#: src/features/landing/LandingPage.tsx:238
+msgctxt "landing.pricing.faq.free.answer"
+msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day."
+msgstr "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day."
 
 #: src/features/landing/LandingPage.tsx:1005
 msgctxt "landing.languages.status.available"
@@ -709,19 +713,3 @@ msgstr "Reviews & spaced scheduling"
 msgctxt "landing.methods.open-library"
 msgid "Open your library"
 msgstr "Open your library"
-
-#: src/features/landing/LandingPage.tsx:213
-#: src/features/landing/LandingPage.tsx:214
-msgctxt "landing.pricing.value.card-cap"
-msgid "Up to 5,000"
-msgstr "Up to 5,000"
-
-#: src/features/landing/LandingPage.tsx:245
-msgctxt "landing.pricing.faq.exhausted.answer"
-msgid "You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot."
-msgstr "You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot."
-
-#: src/features/landing/LandingPage.tsx:236
-msgctxt "landing.pricing.faq.free.answer"
-msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day."
-msgstr "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day."

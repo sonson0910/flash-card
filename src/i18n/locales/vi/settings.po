@@ -98,11 +98,6 @@ msgctxt "settings.course.add"
 msgid "Add a language"
 msgstr "Thêm ngôn ngữ"
 
-#: src/features/settings/CourseSettingsSection.tsx:176
-msgctxt "settings.course.romanization.description"
-msgid "A reading aid under each word on cards"
-msgstr "Gợi ý cách đọc dưới mỗi từ trên thẻ"
-
 #: src/features/settings/CourseSettingsSection.tsx:87
 msgctxt "settings.course.ui-language"
 msgid "App language"
@@ -332,6 +327,11 @@ msgstr "Prism Day"
 msgctxt "settings.course.romanization"
 msgid "Show romanization"
 msgstr "Hiện phiên âm Latin"
+
+#: src/features/settings/CourseSettingsSection.tsx:176
+msgctxt "settings.course.romanization.description"
+msgid "Your saved choice for this course. Each card has its own reading switch."
+msgstr "Lựa chọn đã lưu cho khóa học này. Mỗi thẻ có công tắc cách đọc riêng."
 
 #: src/features/settings/CourseSettingsSection.tsx:268
 msgctxt "settings.course.pace.error"
@@ -644,6 +644,11 @@ msgctxt "settings.follow-system.description"
 msgid "Match your device’s light or dark setting."
 msgstr "Theo chế độ sáng hoặc tối của thiết bị."
 
+#: src/features/settings/CourseSettingsSection.tsx:176
+msgctxt "settings.course.romanization.description-en"
+msgid "Your saved choice for this course."
+msgstr "Lựa chọn đã lưu cho khóa học này."
+
 #: src/features/reminders/ReminderSettingsSection.tsx:207
 msgctxt "settings.reminders.push-unavailable"
 msgid "Push needs a supported browser and configured web push key."
@@ -690,13 +695,3 @@ msgstr "Thao tác với khóa học không thành công. Hãy thử lại."
 msgctxt "settings.theme.paper.description"
 msgid "A warm, bright reading surface."
 msgstr "Trang đọc sáng và ấm áp."
-
-#: src/features/settings/CourseSettingsSection.tsx:173
-msgctxt "settings.course.romanization.description"
-msgid "Your saved choice for this course. Each card has its own reading switch."
-msgstr "Lựa chọn đã lưu cho khóa học này. Mỗi thẻ có công tắc cách đọc riêng."
-
-#: src/features/settings/CourseSettingsSection.tsx:173
-msgctxt "settings.course.romanization.description-en"
-msgid "Your saved choice for this course."
-msgstr "Lựa chọn đã lưu cho khóa học này."

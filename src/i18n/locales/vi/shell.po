@@ -59,7 +59,7 @@ msgid "This date has already passed. Pick a date ahead."
 msgstr "Ngày này đã qua. Hãy chọn một ngày phía trước."
 
 #: src/components/shell/DesktopNavigation.tsx:94
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:80
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:81
 msgctxt "shell.brand.mark"
 msgid "S"
 msgstr "S"
@@ -155,7 +155,7 @@ msgctxt "onboarding.trial.state.known"
 msgid "Got it"
 msgstr "Đã nhớ"
 
-#: src/app/AppViewStage.tsx:152
+#: src/app/AppViewStage.tsx:151
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
@@ -198,6 +198,11 @@ msgctxt "course.due-count"
 msgid "{count} due"
 msgstr "{count} đến hạn"
 
+#: src/features/onboarding/HangulPrimer.tsx:58
+msgctxt "onboarding.primer.reader.description"
+msgid "Save Hangul alone as my reading aid."
+msgstr "Lưu chỉ dùng Hangul làm gợi ý cách đọc của tôi."
+
 #: src/components/AppOverlays.tsx:542
 msgctxt "shell.share.incoming-safeguard"
 msgid "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
@@ -222,6 +227,11 @@ msgstr "Đang học"
 msgctxt "app-overlays.text-practice.offline"
 msgid "Reconnect to start text practice."
 msgstr "Kết nối lại mạng để bắt đầu luyện hội thoại."
+
+#: src/features/courses/CoursesSurface.tsx:64
+msgctxt "course.manage.reading-aid.romanization-on"
+msgid "Romanization preferred"
+msgstr "Ưu tiên phiên âm Latin"
 
 #: src/features/courses/CourseGoalsPanel.tsx:56
 #: src/features/courses/CourseGoalsPanel.tsx:104
@@ -451,7 +461,7 @@ msgctxt "onboarding.primer.block.title"
 msgid "Build one syllable block"
 msgstr "Ghép một khối âm tiết"
 
-#: src/app/AppViewStage.tsx:160
+#: src/app/AppViewStage.tsx:159
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr "Đang mở cài đặt giao diện…"
@@ -835,7 +845,7 @@ msgctxt "onboarding.trial.again"
 msgid "Forgot"
 msgstr "Quên rồi"
 
-#: src/app/AppViewStage.tsx:161
+#: src/app/AppViewStage.tsx:160
 msgctxt "shell.loading.web-words"
 msgid "Preparing your web words…"
 msgstr "Đang chuẩn bị các từ trên web của bạn…"
@@ -877,11 +887,6 @@ msgctxt "onboarding.trial.state.pending"
 msgid "Not yet"
 msgstr "Chưa chấm"
 
-#: src/features/courses/CoursesSurface.tsx:65
-msgctxt "course.manage.reading-aid.romanization-off"
-msgid "Romanization off"
-msgstr "Tắt phiên âm Latin"
-
 #: src/features/courses/CoursesSurface.tsx:198
 msgctxt "course.manage.title.crystal"
 msgid "Pick your <0>star</0>"
@@ -922,7 +927,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Luyện hội thoại"
 
-#: src/app/AppRuntime.tsx:653
+#: src/app/AppRuntime.tsx:654
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -987,21 +992,6 @@ msgstr "Bản sao của bạn"
 msgctxt "course.goal.no-detail"
 msgid "No level or date set"
 msgstr "Chưa đặt trình độ hoặc ngày"
-
-#: src/features/onboarding/HangulPrimer.tsx:58
-msgctxt "onboarding.primer.reader.description"
-msgid "Show Korean only."
-msgstr "Chỉ hiện tiếng Hàn."
-
-#: src/features/onboarding/HangulPrimer.tsx:54
-msgctxt "onboarding.primer.learning.description"
-msgid "Show romanization next to Korean on my cards."
-msgstr "Hiện phiên âm Latin cạnh tiếng Hàn trên thẻ của tôi."
-
-#: src/features/onboarding/HangulPrimer.tsx:61
-msgctxt "onboarding.primer.note"
-msgid "You can turn romanization on or off any time in Settings."
-msgstr "Bạn có thể bật hoặc tắt phiên âm Latin bất cứ lúc nào trong Cài đặt."
 
 #. js-lingui-explicit-id
 #: src/features/examProgress/LatestExamScoreEditor.tsx:144
@@ -1265,7 +1255,7 @@ msgctxt "onboarding.phone.body"
 msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
 msgstr "{count, plural, other {# thẻ đến hạn ôn tập.}}"
 
-#: src/app/AppViewStage.tsx:162
+#: src/app/AppViewStage.tsx:161
 msgctxt "shell.loading.files"
 msgid "Preparing your files…"
 msgstr "Đang chuẩn bị các tệp của bạn…"
@@ -1291,259 +1281,264 @@ msgid "Pass {exams}"
 msgstr "Thi đậu {exams}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:104
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:161
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:106
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:172
 msgid "profile-completion.account-access"
 msgstr "Truy cập tài khoản"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:119
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:126
 msgid "profile-completion.account-data"
 msgstr "Dữ liệu tài khoản"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:187
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:333
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:198
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:345
 msgid "profile-completion.birth-year"
 msgstr "Năm sinh"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:58
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
 msgid "profile-completion.birth-year.format"
 msgstr "Nhập năm sinh gồm bốn chữ số, ví dụ 1994."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
 msgid "profile-completion.birth-year.future"
 msgstr "Năm sinh không thể ở tương lai."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:61
 msgid "profile-completion.birth-year.implausible"
 msgstr "Hãy kiểm tra năm sinh. Năm này quá xa trong quá khứ."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:342
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:354
 msgid "profile-completion.birth-year.placeholder"
 msgstr "YYYY"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:61
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:62
 msgid "profile-completion.birth-year.rejected"
 msgstr "Hãy kiểm tra năm sinh rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:391
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:403
 msgid "profile-completion.consent"
 msgstr "Tôi từ 18 tuổi trở lên và đồng ý với <terms>Điều khoản</terms> và <privacy>Chính sách quyền riêng tư</privacy>."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:398
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:410
 msgid "profile-completion.consent.required"
 msgstr "Bắt buộc trước khi tiếp tục."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:236
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:248
 msgid "profile-completion.details.eyebrow"
 msgstr "Hoàn tất đăng ký"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:237
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:249
 msgid "profile-completion.details.title"
 msgstr "Thông tin tài khoản của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:65
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
 msgid "profile-completion.error.consent-outdated"
 msgstr "Điều khoản hoặc chính sách quyền riêng tư đã thay đổi. Hãy tải lại trang để xem lại."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:163
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:174
 msgid "profile-completion.error.lede"
 msgstr "Hãy kiểm tra kết nối rồi thử lại. Chưa có gì bị thay đổi."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:67
 msgid "profile-completion.error.rate-limited"
 msgstr "Bạn đã thử quá nhiều lần. Hãy đợi một lúc rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:166
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:177
 msgid "profile-completion.error.retry"
 msgstr "Thử lại"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:67
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:68
 msgid "profile-completion.error.save-failed"
 msgstr "Chưa lưu được thông tin của bạn. Hãy kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:162
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:173
 msgid "profile-completion.error.title"
 msgstr "Chưa kiểm tra được tài khoản của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:230
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:242
 msgid "profile-completion.eyebrow"
 msgstr "Hoàn tất đăng ký · một lần"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:121
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:128
 msgid "profile-completion.help"
 msgstr "Cần trợ giúp?"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:232
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:244
 msgid "profile-completion.lede"
 msgstr "Thiết lập thông tin ngôn ngữ đi cùng tài khoản của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:354
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:366
 msgid "profile-completion.locale"
 msgstr "Ngôn ngữ ứng dụng"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:360
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:372
 msgid "profile-completion.native-language"
 msgstr "Tiếng mẹ đẻ"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:402
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:414
 msgid "profile-completion.note"
 msgstr "Chúng tôi chỉ giữ năm sinh để xác nhận yêu cầu từ 18 tuổi. Năm sinh có trong tệp tải dữ liệu tài khoản và bị xóa khi bạn xóa tài khoản."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:203
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:241
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:214
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:253
 msgid "profile-completion.outcomes.eyebrow"
 msgstr "Quay lại + kết quả"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:252
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:264
 msgid "profile-completion.outcomes.next"
 msgstr "Tiếp theo"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:210
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:248
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:221
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:260
 msgid "profile-completion.outcomes.return"
 msgstr "Quay lại"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:49
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:50
 msgid "profile-completion.outcomes.title"
 msgstr "Luôn thấy rõ bước tiếp theo."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:50
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:51
 msgid "profile-completion.outcomes.title.crystal"
 msgstr "Giữ rõ hành động tiếp theo."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:191
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:202
 msgid "profile-completion.restricted.account"
 msgstr "Tài khoản"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:188
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:199
 msgid "profile-completion.restricted.birth-year"
 msgstr "Chưa đáp ứng yêu cầu"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:177
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:183
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:188
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:194
 msgid "profile-completion.restricted.eyebrow"
 msgstr "Giới hạn độ tuổi"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:206
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:217
 msgid "profile-completion.restricted.gate"
 msgstr "Kiểm tra độ tuổi"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:207
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:218
 msgid "profile-completion.restricted.gate-detail"
 msgstr "Không thể tiếp tục tạo tài khoản."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:179
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:190
 msgid "profile-completion.restricted.lede"
 msgstr "Năm sinh chưa đáp ứng yêu cầu độ tuổi hiện tại của tài khoản."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:196
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:207
 msgid "profile-completion.restricted.note"
 msgstr "Năm sinh của bạn không được lưu. Nếu bạn nhập nhầm, hãy liên hệ hỗ trợ."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:192
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:203
 msgid "profile-completion.restricted.paused"
 msgstr "Tạm dừng tạo tài khoản"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:199
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:210
 msgid "profile-completion.restricted.return"
 msgstr "Quay lại đăng nhập"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:211
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:222
 msgid "profile-completion.restricted.return-detail"
 msgstr "Đăng nhập"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:184
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:195
 msgid "profile-completion.restricted.status"
 msgstr "Trạng thái tài khoản"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:45
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:46
 msgid "profile-completion.restricted.title"
 msgstr "Chúng tôi chưa thể tạo tài khoản này."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:46
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:47
 msgid "profile-completion.restricted.title.crystal"
 msgstr "Tạm dừng tạo tài khoản"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:226
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:238
 msgid "profile-completion.return.footer"
 msgstr "Vị trí quay lại · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:53
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:54
 msgid "profile-completion.return.preserved"
 msgstr "Đã giữ vị trí quay lại · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:54
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:55
 msgid "profile-completion.return.preserved.crystal"
 msgstr "Điểm quay lại · {location}"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:253
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:408
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:265
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:420
 msgid "profile-completion.save"
 msgstr "Lưu và tiếp tục"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:407
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:419
 msgid "profile-completion.saving"
 msgstr "Đang lưu…"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:108
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:167
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:110
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:178
 msgid "profile-completion.sign-out"
 msgstr "Đăng xuất"
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:41
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:118
+msgid "profile-completion.sign-out.failed"
+msgstr "Không thể dừng nhắc nhở trên trình duyệt. Hãy thử đăng xuất lại."
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:42
 msgid "profile-completion.title"
 msgstr "Cá nhân hóa SonFlash của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:42
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:43
 msgid "profile-completion.title.crystal"
 msgstr "Cá nhân hóa ngay"
 
@@ -1618,7 +1613,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr "Tạo khóa học"
 
-#: src/app/AppViewStage.tsx:144
+#: src/app/AppViewStage.tsx:143
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr "Đang chuẩn bị các lộ trình học…"
@@ -1899,7 +1894,7 @@ msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:642
+#: src/app/AppRuntime.tsx:643
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -2224,7 +2219,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Không thể cập nhật trực tiếp từ đám mây. Hãy thử lại khi kết nối ổn định hơn."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:488
+#: src/app/AppRuntime.tsx:489
 msgid "shell.sync.retry-failed"
 msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
 
@@ -2285,6 +2280,11 @@ msgctxt "shell.share.more-cards"
 msgid "+{count} more"
 msgstr "+{count} thẻ nữa"
 
+#: src/features/onboarding/HangulPrimer.tsx:54
+msgctxt "onboarding.primer.learning.description"
+msgid "Save romanization as my reading aid for this course."
+msgstr "Lưu phiên âm Latin làm gợi ý cách đọc của tôi cho khóa học này."
+
 #: src/components/shell/CourseSwitcherControl.tsx:176
 msgctxt "course.switcher.heading"
 msgid "Your <0>courses</0>"
@@ -2311,7 +2311,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr "Chọn một giờ và SonFlash sẽ nhắc bạn ôn tập."
 
-#: src/app/AppRuntime.tsx:654
+#: src/app/AppRuntime.tsx:655
 #: src/components/shell/CourseSwitcherControl.tsx:127
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2336,6 +2336,11 @@ msgstr "Thêm <0>những thẻ đầu tiên</0> nhé"
 msgctxt "onboarding.level.foundation.description"
 msgid "New to the language, or you know a few words."
 msgstr "Mới bắt đầu với ngôn ngữ này, hoặc mới biết vài từ."
+
+#: src/features/onboarding/HangulPrimer.tsx:61
+msgctxt "onboarding.primer.note"
+msgid "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
+msgstr "Mỗi thẻ tiếng Hàn có công tắc phiên âm Latin riêng. Bạn có thể đổi lựa chọn này bất cứ lúc nào trong Cài đặt."
 
 #: src/features/onboarding/ReminderPhonePreview.tsx:38
 msgctxt "onboarding.phone.caption"
@@ -2407,6 +2412,11 @@ msgctxt "shell.menu.export"
 msgid "Export library to Excel"
 msgstr "Xuất thư viện sang Excel"
 
+#: src/features/courses/CoursesSurface.tsx:65
+msgctxt "course.manage.reading-aid.romanization-off"
+msgid "Romanization not needed"
+msgstr "Không cần phiên âm Latin"
+
 #: src/components/shell/SkipToContentLink.tsx:12
 msgctxt "shell.skip-content"
 msgid "Skip to content"
@@ -2426,11 +2436,6 @@ msgstr "Ngày thi {date}"
 msgctxt "course.manage.stat.due"
 msgid "Due"
 msgstr "Đến hạn"
-
-#: src/features/courses/CoursesSurface.tsx:64
-msgctxt "course.manage.reading-aid.romanization-on"
-msgid "Romanization on"
-msgstr "Hiện phiên âm Latin"
 
 #: src/features/onboarding/OnboardingJourney.tsx:490
 msgctxt "onboarding.goal.curious"
@@ -2452,7 +2457,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr "Hủy"
 
-#: src/app/AppViewStage.tsx:159
+#: src/app/AppViewStage.tsx:158
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr "Đang chuẩn bị tiến độ học…"
@@ -2498,8 +2503,8 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Chọn một ngôn ngữ trước đã. Bạn có thể thêm ngôn ngữ khác trong trình chuyển khóa học."
 
-#: src/app/AppRuntime.tsx:656
-#: src/app/AppViewStage.tsx:163
+#: src/app/AppRuntime.tsx:657
+#: src/app/AppViewStage.tsx:162
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Đang chuẩn bị các khóa học của bạn…"
@@ -2673,33 +2678,3 @@ msgstr "Mục tiêu học mỗi ngày, gồm cả từ mới và thẻ ôn tập
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Cài đặt giao diện"
-
-#. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:118
-msgid "profile-completion.sign-out.failed"
-msgstr "Không thể dừng nhắc nhở trên trình duyệt. Hãy thử đăng xuất lại."
-
-#: src/features/onboarding/HangulPrimer.tsx:58
-msgctxt "onboarding.primer.reader.description"
-msgid "Save Hangul alone as my reading aid."
-msgstr "Lưu chỉ dùng Hangul làm gợi ý cách đọc của tôi."
-
-#: src/features/courses/CoursesSurface.tsx:64
-msgctxt "course.manage.reading-aid.romanization-on"
-msgid "Romanization preferred"
-msgstr "Ưu tiên phiên âm Latin"
-
-#: src/features/onboarding/HangulPrimer.tsx:54
-msgctxt "onboarding.primer.learning.description"
-msgid "Save romanization as my reading aid for this course."
-msgstr "Lưu phiên âm Latin làm gợi ý cách đọc của tôi cho khóa học này."
-
-#: src/features/onboarding/HangulPrimer.tsx:61
-msgctxt "onboarding.primer.note"
-msgid "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
-msgstr "Mỗi thẻ tiếng Hàn có công tắc phiên âm Latin riêng. Bạn có thể đổi lựa chọn này bất cứ lúc nào trong Cài đặt."
-
-#: src/features/courses/CoursesSurface.tsx:65
-msgctxt "course.manage.reading-aid.romanization-off"
-msgid "Romanization not needed"
-msgstr "Không cần phiên âm Latin"
