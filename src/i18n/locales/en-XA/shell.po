@@ -1689,7 +1689,7 @@ msgctxt "shell.share.outgoing-description"
 msgid "Anyone with the link can preview this deck and copy it into their own library."
 msgstr ""
 
-#: src/App.tsx:87
+#: src/App.tsx:89
 msgctxt "shell.loading.app"
 msgid "Loading SonFlash…"
 msgstr ""
