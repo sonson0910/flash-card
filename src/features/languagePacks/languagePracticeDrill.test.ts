@@ -5,7 +5,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { CardData } from '../../types/card';
 import { LanguagePracticeDrill, resolveOnScreenHangulKey } from './LanguagePracticeDrill';
-import { composeHangulBlocks, createLanguagePracticeDrill, evaluateJapaneseSentenceCloze, evaluateToneLanguagePracticeDrill, evaluateTypedLanguagePracticeDrill, findHangulFinalCorrection, languagePracticeDrillSurfaceState, shouldRevealLanguagePracticeReading, shouldStartJapaneseSentenceCloze } from './languagePracticeDrill';
+import { toneSyllableLabel, composeHangulBlocks, createLanguagePracticeDrill, evaluateJapaneseSentenceCloze, evaluateToneLanguagePracticeDrill, evaluateTypedLanguagePracticeDrill, findHangulFinalCorrection, languagePracticeDrillSurfaceState, shouldRevealLanguagePracticeReading, shouldStartJapaneseSentenceCloze } from './languagePracticeDrill';
 import { jaLanguagePack } from './packs/ja';
 
 type TestElement = { readonly type: unknown; readonly props: Record<string, unknown> };
@@ -327,4 +327,12 @@ describe('language practice drill model', () => {
     }
   });
 
+  it('removes only the tone mark from a syllable label and keeps the umlaut of ü', () => {
+    expect(toneSyllableLabel('lǜ')).toBe('lü');
+    expect(toneSyllableLabel('nǚ')).toBe('nü');
+    expect(toneSyllableLabel('lǖ')).toBe('lü');
+    expect(toneSyllableLabel('mā')).toBe('ma');
+    expect(toneSyllableLabel('hǎo')).toBe('hao');
+    expect(toneSyllableLabel('lù')).toBe('lu');
+  });
 });

@@ -36,6 +36,11 @@ export interface LanguagePracticeDrillResult {
 export type LanguagePracticeDrillSurfaceState = 'loading' | 'error' | 'missing-tone-data' | 'ready';
 
 /** Reveal a reading only after the learner asks for help or checks an answer. */
+/** A pinyin syllable without its tone mark; the diaeresis of ü stays so lü and lu remain distinct. */
+export function toneSyllableLabel(text: string): string {
+  return text.normalize('NFD').replace(/[\u0300\u0301\u0304\u030c]/gu, '').normalize('NFC');
+}
+
 export function shouldRevealLanguagePracticeReading(showHint: boolean, checked: boolean): boolean {
   return showHint || checked;
 }
