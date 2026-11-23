@@ -58,6 +58,8 @@ const SettingsScreen = lazy(() => Promise.all([
 ]).then(([component]) => component));
 const WebWordsPage = lazy(() => Promise.all([
   import('../features/webWords/WebWordsPage'), loadCatalog(getActiveUiLocale(), 'today'),
+  // Its day labels come from the library presentation helpers.
+  loadCatalog(getActiveUiLocale(), 'library'),
 ]).then(([module]) => ({ default: module.WebWordsPage })));
 const FilesWorkspace = lazy(() => Promise.all([
   import('../features/files/FilesWorkspace'), loadCatalog(getActiveUiLocale(), 'files'),
