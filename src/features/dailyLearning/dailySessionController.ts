@@ -75,20 +75,23 @@ export function createDailySessionController({
     operation = (async () => {
       try {
         const outcome = await reviewCard(review.itemId, review.rating, review.operationId);
-        if (outcome?.status === 'review-conflict' && outcome.result.reviewConflictTerminal) {
-          // The card was changed or deleted on another device, so this rating can never be saved and a
-          // retry would only repeat the conflict. Move on without counting the rating.
-          if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
-          const skipped = reduceLessonState(snapshot, { type: 'persisted', operationId: review.operationId });
-          if (skipped === snapshot) return { status: 'stale-session' };
-          publish(skipped);
-          return { status: 'skipped' };
+        if (outcome?.status === 'review-conflict') {
+          // A refusal the learner can act on (reviewed later on another device, device clock ahead) is shown,
+          // and Retry sends a new review at the new time.
+          const conflictMessage = reviewConflictMessage(outcome.result.reviewConflictReason);
+          if (conflictMessage) throw new Error(conflictMessage);
+          if (outcome.result.reviewConflictTerminal) {
+            // The card was changed or deleted on another device, so this rating can never be saved and a
+            // retry would only repeat the conflict. Move on without counting the rating.
+            if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
+            const skipped = reduceLessonState(snapshot, { type: 'persisted', operationId: review.operationId });
+            if (skipped === snapshot) return { status: 'stale-session' };
+            publish(skipped);
+            return { status: 'skipped' };
+          }
         }
         if (outcome?.status !== 'published') {
-          const conflictMessage = outcome?.status === 'review-conflict'
-            ? reviewConflictMessage(outcome.result.reviewConflictReason)
-            : undefined;
-          throw new Error(conflictMessage ?? `The review was not saved (${outcome?.status ?? 'missing outcome'}).`);
+          throw new Error(`The review was not saved (${outcome?.status ?? 'missing outcome'}).`);
         }
         if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
         if (typeof outcome.result.xpAwarded !== 'number') {
