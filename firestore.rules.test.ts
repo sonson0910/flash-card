@@ -2668,6 +2668,22 @@ describe('Firestore security rules', () => {
       }));
     });
 
+    it('keeps the card creation time fixed after creation', async () => {
+      const owner = testEnvironment.authenticatedContext('owner').firestore();
+      const cardId = 'edit-sheet-created-at';
+      await seedCurrentCard(testEnvironment, 'owner', cardId, {
+        ...validCard(cardId),
+        createdAt: '2026-11-01T00:00:00.000Z',
+      });
+      const ref = doc(owner, `users/owner/cards/${cardId}`);
+      await assertFails(updateDoc(ref, { createdAt: '2020-01-01T00:00:00.000Z', revision: 2 }));
+      await assertSucceeds(updateDoc(ref, {
+        createdAt: '2026-11-01T00:00:00.000Z',
+        category: 'Business',
+        revision: 2,
+      }));
+    });
+
     it('allows changing customDeck in one write', async () => {
       const owner = testEnvironment.authenticatedContext('owner').firestore();
       const cardId = 'edit-sheet-custom-deck';
