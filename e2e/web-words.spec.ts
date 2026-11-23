@@ -130,7 +130,7 @@ test.describe('WebWords page', () => {
     await workspace.getByRole('checkbox', { name: /ephemeral/i }).check();
     await workspace.getByRole('button', { name: 'Add to today' }).click();
 
-    await expect(workspace.getByText(/were not added to today's new-word stage/i)).toBeVisible();
+    await expect(workspace.getByText(/are queued and get priority in your next new-word session/i)).toBeVisible();
     await workspace.getByRole('button', { name: 'Close web words' }).first().click();
     await expect(workspace).toBeHidden();
     await expect(page).toHaveURL(/[?&]view=today(?:&|$)/);
@@ -214,7 +214,7 @@ test.describe('WebWords page', () => {
     await expect(workspace.getByRole('heading', { level: 1, name: 'Words you met on the web' })).toBeVisible();
     await workspace.getByRole('checkbox', { name: /lucid/i }).check();
     await workspace.getByRole('button', { name: 'Add to today' }).click();
-    await expect(workspace.getByText(/were not added to today's new-word stage/i)).toBeVisible();
+    await expect(workspace.getByText(/are queued and get priority in your next new-word session/i)).toBeVisible();
 
     const pendingKey = `sonflash:pending-fresh-priority:${testUser.uid}:en:vi`;
     const readPending = () => page.evaluate(key => JSON.parse(sessionStorage.getItem(key) ?? '[]') as string[], pendingKey);
