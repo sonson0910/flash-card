@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
-import { createI18nMock } from './i18n-test-helper.mjs';
+import { createI18nMock, loadMessages } from './i18n-test-helper.mjs';
 
 const uiSource = await readFile(new URL('../background-ui.js', import.meta.url), 'utf8');
 const coreSource = await readFile(new URL('../background-core.js', import.meta.url), 'utf8');
@@ -775,6 +775,19 @@ test('writes the bubble mode chip from the locale catalog, not from worker text'
   assert.doesNotMatch(english?.textContent ?? '', /[À-ỹ]/);
 });
 
+test('writes the bubble from the strings the worker sends before the browser language', () => {
+  const en = loadMessages('en');
+  const messages = Object.fromEntries(Object.entries(en).filter(([name]) => /^bubble/.test(name)));
+  const sent = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode: 'save-ai', version: '1.6.5', messages }, 'vi').nodes;
+  const chip = sent.find(node => node.className === 'm');
+  const brand = sent.find(node => node.className === 'b' && /v1\.6\.5/i.test(node.textContent));
+  assert.equal(chip?.textContent, createI18nMock('en').getMessage('bubbleModeSaveAi'));
+  assert.equal(brand?.textContent, createI18nMock('en').getMessage('bubbleBrand', ['1.6.5']));
+
+  const browser = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode: 'save-ai', version: '1.6.5' }, 'vi').nodes;
+  assert.equal(browser.find(node => node.className === 'm')?.textContent, createI18nMock('vi').getMessage('bubbleModeSaveAi'));
+});
+
 test('sends retry and open-app requests only for a real click', () => {
   const retryBubble = renderLanguageBubble({ status: 'error', text: 'resilient', message: 'AI busy', retryId: 'job_retry_1' });
   const retry = retryBubble.nodes.find(node => node.dataset?.kind === 'action');
@@ -856,4 +869,10 @@ test('an earlier bubble timer never removes a newer bubble in the reused host', 
   renderer({ status: 'created', text: 'resilient', translation: 'bền bỉ', bubbleDurationMs: 5_000 });
   advance(5_000);
   assert.equal(firstHost.isConnected, false);
+});
+
+test('labels the auto-spoken source speaker in the active UI language', () => {
+  const { nodes } = renderBubbleForToneAssertions({ status: 'translated', text: 'apple', translation: 'quả táo', autoSpeak: true, speechLocale: 'en' }, 'en');
+  const speaker = nodes.find(node => node.dataset?.speechState === 'playing');
+  assert.equal(speaker?.attributes['aria-label'], 'Pronounce apple (playing)');
 });

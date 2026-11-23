@@ -14,7 +14,7 @@
       <span class="brand-mark" aria-hidden="true">S</span>
     <svg class="brand-star" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,52.0 38.2,35.7 50.0,4.0" fill="#ff5470"></polygon><polygon points="50.0,52.0 50.0,4.0 61.8,35.7" fill="#7a0820"></polygon><polygon points="50.0,52.0 61.8,35.7 95.7,37.2" fill="#ff5470"></polygon><polygon points="50.0,52.0 95.7,37.2 69.2,58.2" fill="#7a0820"></polygon><polygon points="50.0,52.0 69.2,58.2 78.2,90.8" fill="#ff5470"></polygon><polygon points="50.0,52.0 78.2,90.8 50.0,72.2" fill="#7a0820"></polygon><polygon points="50.0,52.0 50.0,72.2 21.8,90.8" fill="#ff5470"></polygon><polygon points="50.0,52.0 21.8,90.8 30.8,58.2" fill="#7a0820"></polygon><polygon points="50.0,52.0 30.8,58.2 4.3,37.2" fill="#ff5470"></polygon><polygon points="50.0,52.0 4.3,37.2 38.2,35.7" fill="#7a0820"></polygon></svg>
       <div class="brand-name"><span>Son</span><em>Flash</em></div>
-      <span class="brand-version" aria-label="Extension version">v1.6.4</span>
+      <span class="brand-version" aria-label="Extension version">v1.6.5</span>
       <span id="target-language-label" class="target-language-label" hidden></span>
       <a class="brand-settings" href="options.html" target="_blank" rel="noopener" data-i18n-aria-label="optionsLink" aria-label="Cài đặt">
         <svg class="icon-cog" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>
@@ -56,11 +56,11 @@
           <select id="requested-deck" class="deck-select" disabled>
             <option value="" data-i18n="deckSharedOption">Thư viện chung</option>
           </select>
-          <p id="deck-status" class="deck-status" role="status" aria-live="polite" data-i18n="deckSyncing">Đang đồng bộ deck…</p>
+          <p id="deck-status" class="deck-status" role="status" aria-live="polite">Đang đồng bộ deck…</p>
         </div>
         <section class="selection-icon-settings" aria-labelledby="selection-icon-heading">
           <h2 id="selection-icon-heading" data-i18n="floatingIconHeading">Biểu tượng nổi</h2>
-          <button id="selection-icon-toggle" class="selection-icon-switch" type="button" aria-pressed="false" aria-labelledby="selection-icon-heading selection-icon-toggle" data-i18n="floatingIconOff">Tắt</button>
+          <button id="selection-icon-toggle" class="selection-icon-switch" type="button" aria-pressed="false" aria-labelledby="selection-icon-heading selection-icon-toggle">Tắt</button>
           <p id="selection-icon-status" class="selection-icon-status" role="status" aria-live="polite"></p>
         </section>
       </div>
@@ -79,7 +79,7 @@
 
     <div id="result-card" class="result-card" role="region" data-i18n-aria-label="resultRegionLabel" aria-label="Chi tiết bản dịch" hidden>
       <div class="result-header">
-        <span class="result-badge" id="result-badge" data-i18n="resultBadge">Kết quả</span>
+        <span class="result-badge" id="result-badge">Kết quả</span>
         <button class="result-close" id="result-close" type="button" data-i18n-aria-label="resultCloseAriaLabel" aria-label="Đóng kết quả">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
         </button>
@@ -103,7 +103,7 @@
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"></path><path d="m15.5 8.5 3 3-3 3"></path><path d="M15.5 5.5a7 7 0 0 1 0 11"></path></svg>
           <span data-i18n="recentSpeakLabel">Nghe</span>
         </button>
-        <button class="result-btn primary-btn" id="result-save" type="button" data-i18n="resultSaveButton" hidden>+ Lưu Flashcard</button>
+        <button class="result-btn primary-btn" id="result-save" type="button" hidden>+ Lưu Flashcard</button>
       </div>
     </div>
 

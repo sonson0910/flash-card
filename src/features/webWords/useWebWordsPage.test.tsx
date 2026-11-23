@@ -210,3 +210,34 @@ it('becomes empty once filtered batches are exhausted without an active-pair car
 
   await act(async () => root.unmount());
 });
+
+it('lists the capture days newest first, with undated captures last', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-11-23T12:00:00'));
+  const captured: { current: ReturnType<typeof useWebWordsPage> | null } = { current: null };
+  const root = createRoot(installMinimalReactDom());
+  try {
+    const dated = (id: string, capturedAt: string): CardData => ({ ...card(id, 'en'), createdAt: capturedAt, source: { url: 'https://example.com/a', capturedAt } } as CardData);
+    const undated = { ...card('undated', 'en'), createdAt: '', source: { url: 'https://example.com/a' } } as CardData;
+    // The query returns the newest capture first; the day labels do not sort that way as text.
+    mocks.fetchWebWordsPage.mockResolvedValueOnce({
+      items: [
+        dated('today', '2026-11-23T09:00:00'), dated('yesterday', '2026-11-22T09:00:00'),
+        dated('nov20', '2026-11-20T09:00:00'), dated('nov3', '2026-11-03T09:00:00'),
+        dated('oct3', '2026-10-03T09:00:00'), dated('dec2025', '2025-12-01T09:00:00'), undated,
+      ],
+      cursor: null,
+      hasNext: false,
+    });
+    function Harness() {
+      captured.current = useWebWordsPage({ ownerId: 'owner-a', targetLanguage: 'en', translationLanguage: 'vi' });
+      return null;
+    }
+    await act(async () => { root.render(<Harness />); });
+    await act(async () => { await vi.waitFor(() => expect(captured.current?.state.status).toBe('ready')); });
+    expect(captured.current?.state.availableDays).toEqual(['Today', 'Yesterday', 'Nov 20, 2026', 'Nov 3, 2026', 'Oct 3, 2026', 'Dec 1, 2025', 'Older']);
+  } finally {
+    await act(async () => root.unmount());
+    vi.useRealTimers();
+  }
+});

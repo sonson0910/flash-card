@@ -104,6 +104,9 @@ const createPopupContext = async ({
   courseLocaleResponse = { ok: true, nativeLanguage: null, targetLanguage: null },
   selectionResponse = { ok: true, text: 'resilient' },
   translateResponse = { ok: true, text: 'resilient', translation: 'bền bỉ' },
+  // Mirrors the real markup: every element of popup.html that carries a
+  // data-i18n attribute is visible to localizeDocument.
+  localizeFromHtml = false,
 } = {}) => {
   const ids = [
     'selection', 'requested-deck', 'character-count', 'translate-button', 'add-button', 'speak-selection', 'speech-support-status', 'status',
@@ -198,6 +201,16 @@ const createPopupContext = async ({
       return { ok: false };
     }
   };
+  const localizedElements = [];
+  if (localizeFromHtml) {
+    for (const [tag, id] of popupHtmlSource.matchAll(/<[^>]*\bid="([^"]+)"[^>]*>/g)) {
+      const key = tag.match(/\bdata-i18n="([^"]+)"/)?.[1];
+      if (key && elements.has(id)) {
+        elements.get(id).dataset.i18n = key;
+        localizedElements.push(elements.get(id));
+      }
+    }
+  }
   const context = {
     Array,
     Date,
@@ -214,6 +227,7 @@ const createPopupContext = async ({
     URLSearchParams,
     clearTimeout,
     document: {
+      querySelectorAll: () => localizedElements,
       getElementById: id => elements.get(id),
       createElement: tag => {
         const element = new FakeElement();
@@ -370,6 +384,17 @@ test('renders a quick translation result card with a save action', async () => {
   assert.equal(popup.elements.get('result-word').textContent, 'resilient');
   assert.equal(popup.elements.get('result-translation').textContent, 'bền bỉ');
   assert.equal(popup.elements.get('result-save').hidden, false);
+});
+
+test('labels the playing and failed speaker states from the UI language catalog', async () => {
+  const popup = await createPopupContext();
+  popup.elements.get('translate-button').dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+  const speaker = popup.elements.get('result-speak');
+  speaker.dispatch('click');
+  assert.equal(speaker.attributes['aria-label'], `Nghe phát âm resilient${loadMessages('vi').bubbleSpeechPlayingSuffix.message}`);
+  assert.match(popupSource, /t\('bubbleSpeechErrorSuffix'/);
+  assert.doesNotMatch(popupSource, /' \(đang phát\)' :|' \(lỗi\)' :/);
 });
 
 test('resets the result speaker state and accessible label when a new result replaces the old one', async () => {
@@ -660,6 +685,28 @@ test('clears rendered deck, due-count, and course-locale metadata when the provi
   assert.equal(popup.elements.get('due-count-suffix').textContent, '');
   assert.equal(popup.elements.get('target-language-label').hidden, true);
   assert.equal(popup.elements.get('target-language-label').textContent, '');
+});
+
+test('keeps the deck error and the floating icon state when the course locale is retired', async () => {
+  const popup = await createPopupContext({
+    deckLoadError: true,
+    localizeFromHtml: true,
+    activeSite: { ok: true, pattern: 'https://example.com/*', protected: false, enabled: true },
+  });
+  const toggle = popup.elements.get('selection-icon-toggle');
+  assert.equal(toggle.textContent, 'Bật');
+  assert.match(popup.elements.get('deck-status').textContent, /mở SonFlash/i);
+
+  popup.runtimeListeners[0]({
+    type: 'LINGOFLASH_EXTENSION_METADATA_INVALIDATED',
+    generation: 1,
+    scopes: { locale: 'opaque_scope_locale_a_123456' },
+  });
+
+  assert.equal(toggle.textContent, 'Bật');
+  assert.equal(toggle.attributes['aria-pressed'], 'true');
+  assert.match(popup.elements.get('deck-status').textContent, /mở SonFlash/i);
+  assert.equal(popup.elements.get('deck-status').dataset.tone, 'error');
 });
 
 test('ignores a late due-count response for a retired provider scope', async () => {

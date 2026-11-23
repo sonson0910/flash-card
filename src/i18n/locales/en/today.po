@@ -2570,3 +2570,8 @@ msgstr "These cards already follow their normal review schedule."
 msgctxt "webWords.chip.new"
 msgid "New"
 msgstr "New"
+
+#: src/features/webWords/WebWordsPage.tsx:263
+msgctxt "webWords.feedback.queued"
+msgid "These words are queued and get priority in your next new-word session."
+msgstr "These words are queued and get priority in your next new-word session."

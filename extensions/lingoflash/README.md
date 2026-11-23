@@ -1,4 +1,4 @@
-# SonFlash Browser Extension v1.6.4
+# SonFlash Browser Extension v1.6.5
 
 A Manifest V3 WebExtension for Chrome-compatible browsers and Safari. The
 folder, storage keys, and internal protocol identifiers are still named
@@ -22,10 +22,14 @@ Open SonFlash once from the extension popup and sign in. The browser keeps the n
 ## Language and appearance
 
 The popup, options page, in-page result bubble, and context menu are fully
-localized through Chrome's `i18n` API (`_locales/en`, `_locales/vi`); Chrome
-picks English or Vietnamese from the browser's own UI language automatically,
-with the shipped markup already carrying the Vietnamese `default_locale` copy
-so the page is correct even before any script runs. Popup and options pages
+localized (`_locales/en`, `_locales/vi`). All four follow the native language of
+the course the signed-in app last confirmed: the worker loads that packaged
+catalog, sends the bubble the strings it reads, and rebuilds the context menu
+when the course locale is synced or retired. Without a confirmed course they
+use Chrome's `i18n` API, which picks English or Vietnamese from the browser's
+own UI language; a browser language that is neither falls back to English in
+the bubble and the menus. The shipped markup carries the Vietnamese
+`default_locale` copy so the page is correct even before any script runs. Popup and options pages
 self-host the same Fraunces/Geist/Geist Mono fonts (Classic) and Kanit/Nunito
 fonts (Crystal Star) the main app uses (see `fonts/SOURCES.md`) so they render
 correctly without a network request; the in-page result bubble and the
@@ -81,7 +85,7 @@ npm run extension:build
 Output:
 
 - `artifacts/browser-extension/lingoflash/`
-- `artifacts/browser-extension/lingoflash-extension-v1.6.4.zip`
+- `artifacts/browser-extension/lingoflash-extension-v1.6.5.zip`
 
 ## Chrome installation
 

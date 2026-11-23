@@ -147,12 +147,12 @@
   const selectionValidation = value => {
     const text = normalizeSelectedText(value);
     if (!text) {
-      return { ok: false, error: 'Hãy bôi đen một từ hoặc cụm từ trước.' };
+      return { ok: false, error: t('errorSelectionEmpty', undefined, 'Hãy bôi đen một từ hoặc cụm từ trước.') };
     }
     if (text.length > MAX_TEXT_LENGTH) {
       return {
         ok: false,
-        error: `Đoạn đã chọn dài ${text.length} ký tự. LingoFlash hỗ trợ tối đa ${MAX_TEXT_LENGTH} ký tự.`,
+        error: t('errorSelectionTooLong', [text.length, MAX_TEXT_LENGTH], `Đoạn đã chọn dài ${text.length} ký tự. SonFlash hỗ trợ tối đa ${MAX_TEXT_LENGTH} ký tự.`),
       };
     }
     return { ok: true, text };
@@ -758,13 +758,17 @@
   // Chrome/Firefox resolve getMessage() against the browser's own UI locale
   // automatically; outside a real extension runtime (unit tests, Node) this
   // safely degrades to the caller-supplied fallback so behavior never regresses.
+  // The message `name` of a fetched catalog with substitutions applied, or ''.
+  const catalogMessage = (catalog, name, substitutions) => {
+    const entry = catalog?.[name];
+    return entry && typeof entry.message === 'string' && entry.message
+      ? applyMessageCatalogSubstitutions(entry.message, entry.placeholders, substitutions)
+      : '';
+  };
+
   const t = (name, substitutions, fallback = '') => {
-    if (localeOverrideCatalog) {
-      const entry = localeOverrideCatalog[name];
-      if (entry && typeof entry.message === 'string' && entry.message) {
-        return applyMessageCatalogSubstitutions(entry.message, entry.placeholders, substitutions);
-      }
-    }
+    const overridden = catalogMessage(localeOverrideCatalog, name, substitutions);
+    if (overridden) return overridden;
     try {
       const resolved = i18nApi()?.getMessage(name, substitutions);
       return typeof resolved === 'string' && resolved ? resolved : fallback;
@@ -900,6 +904,8 @@
     normalizeCourseLocaleMetadata,
     normalizeRetiredCourseLocaleScopes,
     t,
+    catalogMessage,
+    loadLocaleMessageCatalog,
     localizeDocument,
     applyColorScheme,
     applyThemeFamily,

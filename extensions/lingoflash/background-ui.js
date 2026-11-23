@@ -155,7 +155,25 @@
     // Content scripts and executeScript-injected functions keep access to
     // chrome.i18n; this falls back to the same literal SonFlash copy outside
     // a real extension runtime (e.g. unit tests).
+    // The worker sends the catalog entries of the course's native language in
+    // payload.messages; without them the browser language applies.
+    const catalogText = (name, substitutions) => {
+      const entry = payload.messages?.[name];
+      if (!entry || typeof entry.message !== 'string' || !entry.message) return '';
+      const args = substitutions === undefined || substitutions === null
+        ? []
+        : Array.isArray(substitutions) ? substitutions : [substitutions];
+      let text = entry.message;
+      for (const [placeholder, definition] of Object.entries(entry.placeholders ?? {})) {
+        const content = String(definition?.content ?? '');
+        const positional = content.match(/^\$(\d)$/);
+        text = text.replaceAll(new RegExp(`\\$${placeholder}\\$`, 'gi'), positional ? String(args[Number(positional[1]) - 1] ?? '') : content);
+      }
+      return text;
+    };
     const bt = (name, substitutions, fallback) => {
+      const fromCatalog = catalogText(name, substitutions);
+      if (fromCatalog) return fromCatalog;
       try {
         const resolved = (globalThis.browser ?? globalThis.chrome)?.i18n?.getMessage(name, substitutions);
         return typeof resolved === 'string' && resolved ? resolved : fallback;
@@ -439,7 +457,8 @@
     if (wordLanguage) source.setAttribute('lang', wordLanguage);
     const sourceLine = document.createElement('div'); sourceLine.className = 'source-line';
     const sourceFallback = payload.text || bt('bubbleDefaultWordFallback', undefined, 'từ đã chọn');
-    const sourceSpeaker = speechButtonInPage(payload.text || '', bt('bubbleSpeakSelectionLabel', [sourceFallback], `Nghe phát âm ${sourceFallback}`), payload.speechLocale);
+    const sourceSpeakLabel = bt('bubbleSpeakSelectionLabel', [sourceFallback], `Nghe phát âm ${sourceFallback}`);
+    const sourceSpeaker = speechButtonInPage(payload.text || '', sourceSpeakLabel, payload.speechLocale);
     sourceLine.append(source, sourceSpeaker);
     const lineLanguage = pageLanguage && pageLanguage === detectedLanguage ? pageLanguage : detectedLanguage;
     if (languageMode && lineLanguage && payload.status === 'translated') {
@@ -668,7 +687,7 @@
     frame.append(caret, card);
     root.append(style, frame);
     if (payload.autoSpeak && ['translated', 'created', 'existing'].includes(payload.status)) {
-      speakTextInPage(payload.text || '', payload.speechLocale, sourceSpeaker, `Nghe phát âm ${payload.text || 'từ đã chọn'}`);
+      speakTextInPage(payload.text || '', payload.speechLocale, sourceSpeaker, sourceSpeakLabel);
     }
     const a = payload.anchor, vw = Math.max(document.documentElement.clientWidth || 0, innerWidth || 0), vh = Math.max(document.documentElement.clientHeight || 0, innerHeight || 0);
     host.style.left = `${a ? Math.min(Math.max(12, Number(a.left)||12), Math.max(12,vw-bubbleWidth-12)) : Math.max(12,vw-bubbleWidth-12)}px`;
