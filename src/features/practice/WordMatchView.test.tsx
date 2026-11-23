@@ -88,4 +88,12 @@ describe('WordMatchView', () => {
 
     expect(html).toContain('0 / 0');
   });
+
+  it('shows every card of the session as a pair even when two cards now share a translation', () => {
+    const cards = sampleCards.map((card, index) => (index < 2 ? { ...card, translation: 'cùng nghĩa' } : card)) as CardData[];
+    const html = render(cards);
+
+    expect(html).toContain('0 / 6');
+    expect(html.match(/data-state="idle"/g)).toHaveLength(12);
+  });
 });

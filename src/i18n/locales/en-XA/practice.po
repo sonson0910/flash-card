@@ -1940,3 +1940,13 @@ msgstr ""
 msgctxt "languagePractice.action.hint"
 msgid "Hint"
 msgstr ""
+
+#: src/features/practice/SessionRecapModal.tsx:579
+msgctxt "recap.streak-note"
+msgid "A day counts once you review a card."
+msgstr ""
+
+#: src/features/practice/SessionRecapModal.tsx:190
+msgctxt "recap.remind-at-zone"
+msgid "Remind me at <0>{time}</0> ({zone})"
+msgstr ""

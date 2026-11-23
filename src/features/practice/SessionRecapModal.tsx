@@ -18,7 +18,7 @@ import { readLumiEnabled } from '../settings/lumi-preference';
 import { useTheme } from '../theme/ThemeProvider';
 import type { CardData } from '../../types/card';
 import { WORD_MATCH_DURATION_SECONDS } from './practiceModel';
-import { sessionRecapReminderPort, type SessionRecapReminder, type SessionRecapReminderPort } from './session-recap-reminder';
+import { reminderZoneOffDevice, sessionRecapReminderPort, type SessionRecapReminder, type SessionRecapReminderPort } from './session-recap-reminder';
 import { loadTomorrowDueCount } from './session-recap-service';
 import './practice-board.css';
 import './session-recap-goal.css';
@@ -123,7 +123,7 @@ function TomorrowDueText({ result, msPerReview }: { result: TomorrowDueResult; m
   return <Trans {...msg({ context: 'recap.tomorrow-count', message: '{count, plural, one {# card due} other {# cards due}}' })} values={{ count }} />;
 }
 
-type ReminderView =
+export type ReminderView =
   | { readonly status: 'loading' | 'unavailable' }
   | { readonly status: 'ready'; readonly value: SessionRecapReminder; readonly saving: boolean; readonly notice: 'blocked' | 'failed' | null };
 
@@ -181,11 +181,13 @@ function ReminderSwitch({ view, onToggle, describedBy }: { view: ReminderView; o
   );
 }
 
-function ReminderNote({ view }: { view: ReminderView }) {
+export function ReminderNote({ view }: { view: ReminderView }) {
   if (view.status !== 'ready') return null;
   if (view.notice === 'failed') return <Trans {...msg({ context: 'recap.reminder-failed', message: 'Could not update the reminder. Try again.' })} />;
   if (view.notice === 'blocked') return <Trans {...msg({ context: 'recap.reminder-blocked', message: 'Allow notifications to get the reminder.' })} />;
   if (!view.value.enabled && !view.value.canEnable) return <Trans {...msg({ context: 'recap.reminder-unavailable', message: 'Reminders need notifications on this device.' })} />;
+  const zone = reminderZoneOffDevice(view.value.settings);
+  if (zone) return <Trans {...msg({ context: 'recap.remind-at-zone', message: 'Remind me at <0>{time}</0> ({zone})' })} values={{ time: view.value.sendAtLocal, zone }} components={{ 0: <span className="practice-recap-time" /> }} />;
   return <Trans {...msg({ context: 'recap.remind-at', message: 'Remind me at <0>{time}</0>' })} values={{ time: view.value.sendAtLocal }} components={{ 0: <span className="practice-recap-time" /> }} />;
 }
 

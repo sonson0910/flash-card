@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { messages as enPractice } from '../../i18n/locales/en/practice.po';
 import type { CardData } from '../../types/card';
-import { SessionRecapModal, type SessionRecapPromotion } from './SessionRecapModal';
+import { ReminderNote, SessionRecapModal, type ReminderView, type SessionRecapPromotion } from './SessionRecapModal';
 
 const source = readFileSync(new URL('./SessionRecapModal.tsx', import.meta.url), 'utf8');
 
@@ -199,5 +199,21 @@ describe('SessionRecapModal', () => {
     expect(source).toContain('<Dialog.Content asChild');
     expect(source).toContain('<GsapEntrance');
     expect(source).toContain('variant="result"');
+  });
+
+  it('the recap reminder note names the reminder time zone when it differs from the device zone', () => {
+    const view = (timezone: string): ReminderView => ({
+      status: 'ready', saving: false, notice: null,
+      value: { enabled: false, sendAtLocal: '20:00', canEnable: true, settings: { timezone, sendAtLocal: '20:00' } as never },
+    });
+    const note = (timezone: string) => renderToStaticMarkup(<I18nProvider i18n={i18n}><ReminderNote view={view(timezone)} /></I18nProvider>);
+    const zone = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(() => ({ resolvedOptions: () => ({ timeZone: 'Europe/Berlin' }) }) as never);
+    try {
+      expect(note('Asia/Ho_Chi_Minh')).toContain('Asia/Ho_Chi_Minh');
+      expect(note('Europe/Berlin')).not.toContain('Europe/Berlin');
+      expect(note('Europe/Berlin')).toContain('20:00');
+    } finally {
+      zone.mockRestore();
+    }
   });
 });

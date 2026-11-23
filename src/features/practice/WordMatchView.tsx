@@ -9,7 +9,7 @@ import { playRewardSound } from '../../lib/interactionSounds';
 import type { CardData } from '../../types/card';
 import { useFocusModePreference } from '../settings/focus-mode-preference';
 import { PracticeTopBar } from './practice-board-parts';
-import { createWordMatchRound, WORD_MATCH_DURATION_SECONDS } from './practiceModel';
+import { WORD_MATCH_DURATION_SECONDS } from './practiceModel';
 import './practice-board.css';
 
 interface WordMatchViewProps {
@@ -72,9 +72,10 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
   const isMountedRef = useRef(true);
   const mismatchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Generate paired target words and native meanings.
+  // Pair every card the session was started with: eligibility was decided before the session began, and
+  // the server verifies a pair for each session card, so the board must not drop any of them.
   const tiles: MatchTile[] = useMemo(() => {
-    const pool = createWordMatchRound(cards, PAIRS_PER_ROUND);
+    const pool = cards.slice(0, PAIRS_PER_ROUND);
 
     const generated: MatchTile[] = [];
     pool.forEach(card => {

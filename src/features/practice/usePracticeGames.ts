@@ -68,6 +68,9 @@ const snapshotCard = (cards: readonly CardData[], snapshot: PracticeSessionCard)
 /** Recorded for a word the learner revealed or skipped without typing anything. */
 export const SPELLING_GIVE_UP_RESPONSE = '\u2014';
 
+/** The longest typed response the practice session service accepts for one word. */
+const SPELLING_RESPONSE_MAX_LENGTH = 256;
+
 const quizQuestionsFromChallenge = (cards: readonly CardData[], challenge: PracticeSessionChallenge): QuizQuestion[] => {
   if (challenge.kind !== 'quiz') throw new Error('The practice session returned the wrong challenge.');
   return challenge.questions.map(question => {
@@ -494,7 +497,7 @@ export function usePracticeGames({
     } else {
       playIncorrectSound();
     }
-    if (spellingSessionRef.current) spellingSessionRef.current.responses[card.id] = spellingInput;
+    if (spellingSessionRef.current) spellingSessionRef.current.responses[card.id] = spellingInput.slice(0, SPELLING_RESPONSE_MAX_LENGTH);
     scheduleDelayedAudio(
       'spelling',
       card,

@@ -660,6 +660,28 @@ describe('usePracticeGames', () => {
     expect(Object.values((request.answers as { responses: Record<string, string> }).responses)).toEqual(Array.from({ length: total }, () => SPELLING_GIVE_UP_RESPONSE));
   });
 
+  it('stores a spelling answer within the length the server accepts', async () => {
+    const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
+    await render().startSpelling();
+    let games = render();
+    const total = games.spellingCards.length;
+    for (let index = 0; index < total; index += 1) {
+      games.setSpellingInput('x'.repeat(300));
+      games = render();
+      games.checkSpelling({ preventDefault: vi.fn() } as never);
+      games = render();
+      games.nextSpelling();
+      games = render();
+    }
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const [request] = dependencies.practiceSessionService.complete.mock.calls[0];
+    const responses = Object.values((request.answers as { responses: Record<string, string> }).responses);
+    expect(responses).toHaveLength(total);
+    for (const response of responses) expect(response.length).toBeLessThanOrEqual(256);
+  });
+
   it('forwards the stable completion ID with the server outcome', async () => {
     const { dependencies, render } = renderPracticeGames([card(1), card(2), card(3), card(4)]);
     await render().startQuiz();
