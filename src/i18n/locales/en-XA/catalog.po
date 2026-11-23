@@ -213,7 +213,7 @@ msgid "catalog.workspace.open-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:631
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:636
 msgid "catalog.workspace.or-more"
 msgstr ""
 
@@ -254,7 +254,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.test.tsx:357
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:126
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:127
 msgid "catalog.workspace.result-summary"
 msgstr ""
 
@@ -269,7 +269,7 @@ msgid "catalog.workspace.storage-timeout"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:145
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:146
 msgid "catalog.workspace.unknown-error"
 msgstr ""
 
@@ -621,11 +621,16 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:124
-msgid "paths.unit.continue-partial"
+msgid "paths.unit.continue-other-language"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:125
+msgid "paths.unit.continue-partial"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:126
 msgid "paths.unit.continue-read-error"
 msgstr ""
 

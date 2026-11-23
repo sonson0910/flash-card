@@ -186,6 +186,22 @@ describe('CatalogWorkspace Continue', () => {
   });
 });
 
+describe('CatalogWorkspace Continue in another course language', () => {
+  it('explains that the unit is outside the course language instead of reading or continuing it', async () => {
+    let workspace = render({ targetLanguage: 'ko' });
+    workspace.actions.prepareSelectedUnit();
+    workspace = render({ targetLanguage: 'ko' });
+    workspace.actions.confirmSelectedUnit();
+    await Promise.resolve();
+    workspace = render({ targetLanguage: 'ko' });
+
+    expect(workspaceService.readUnit).not.toHaveBeenCalled();
+    expect(baseProps.continueCatalogUnit).not.toHaveBeenCalled();
+    expect(workspace.model.pathUnitContinue?.error).toMatch(/different language than your course/);
+    expect(workspace.model.pathUnitContinue?.busy).toBe(false);
+  });
+});
+
 describe('CatalogWorkspace inlined interactions', () => {
   it('commits only the latest search term after the debounce delay', () => {
     vi.useFakeTimers();

@@ -121,6 +121,7 @@ const copy = {
   updating: msg({ id: 'catalog.workspace.updating', message: 'Updating vocabulary…' }),
   emptyResults: msg({ id: 'catalog.workspace.empty-results', message: 'No words match all selected filters.' }),
   unitUnavailable: msg({ id: 'paths.unit.continue-scope-unavailable', message: 'This unit is unavailable. Reopen Paths and try again.' }),
+  unitOtherLanguage: msg({ id: 'paths.unit.continue-other-language', message: 'This unit is in a different language than your course, so it cannot be continued here. Switch to a course in this language first.' }),
   unitPartial: msg({ id: 'paths.unit.continue-partial', message: 'Some words could not be confirmed. Try again to continue this unit.' }),
   unitReadError: msg({ id: 'paths.unit.continue-read-error', message: 'This unit could not be prepared. Check your connection and try again.' }),
   resultSummary: msg({ id: 'catalog.workspace.result-summary', message: 'Showing {count, number}{more} {track} {tier} {count, plural, one {word} other {words}}.' }),
@@ -570,6 +571,10 @@ export default function CatalogWorkspace({
     setIsContinuingUnit(true);
     setContinueError(null);
     try {
+      if (query.languageCode !== targetLanguage) {
+        setContinueError(i18n._(copy.unitOtherLanguage));
+        return;
+      }
       const result = await service.readUnit({
         catalogId: query.catalogId,
         releaseId: query.releaseId,

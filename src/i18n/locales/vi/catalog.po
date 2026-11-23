@@ -213,7 +213,7 @@ msgid "catalog.workspace.open-error"
 msgstr "Không thể mở danh mục một cách an toàn."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:631
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:636
 msgid "catalog.workspace.or-more"
 msgstr " trở lên"
 
@@ -254,7 +254,7 @@ msgstr "Chưa cài bản phát hành danh mục đã duyệt. Bạn có thể ki
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.test.tsx:357
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:126
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:127
 msgid "catalog.workspace.result-summary"
 msgstr "Hiển thị {count, number}{more} {track} {tier} {count, plural, other {từ}}."
 
@@ -269,7 +269,7 @@ msgid "catalog.workspace.storage-timeout"
 msgstr "Bộ nhớ danh mục không phản hồi kịp thời. Hãy đóng các tab SonFlash cũ rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:145
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:146
 msgid "catalog.workspace.unknown-error"
 msgstr "Lỗi danh mục không xác định."
 
@@ -621,11 +621,16 @@ msgstr "TOEIC"
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:124
+msgid "paths.unit.continue-other-language"
+msgstr "Bài này thuộc ngôn ngữ khác với khóa học của bạn nên chưa thể tiếp tục ở đây. Hãy chuyển sang khóa học của ngôn ngữ này trước."
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:125
 msgid "paths.unit.continue-partial"
 msgstr "Một số từ chưa được xác nhận. Hãy thử lại để tiếp tục bài này."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:125
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:126
 msgid "paths.unit.continue-read-error"
 msgstr "Không thể chuẩn bị bài này. Kiểm tra kết nối rồi thử lại."
 

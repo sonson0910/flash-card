@@ -213,7 +213,7 @@ msgid "catalog.workspace.open-error"
 msgstr "The catalog could not be opened safely."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:631
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:636
 msgid "catalog.workspace.or-more"
 msgstr " or more"
 
@@ -254,7 +254,7 @@ msgstr "No reviewed catalog release is installed. You can check the same-origin 
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.test.tsx:357
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:126
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:127
 msgid "catalog.workspace.result-summary"
 msgstr "Showing {count, number}{more} {track} {tier} {count, plural, one {word} other {words}}."
 
@@ -269,7 +269,7 @@ msgid "catalog.workspace.storage-timeout"
 msgstr "Catalog storage did not respond in time. Close older SonFlash tabs, then try again."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:145
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:146
 msgid "catalog.workspace.unknown-error"
 msgstr "Unknown catalog error."
 
@@ -621,11 +621,16 @@ msgstr "TOEIC"
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogWorkspace.tsx:124
+msgid "paths.unit.continue-other-language"
+msgstr "This unit is in a different language than your course, so it cannot be continued here. Switch to a course in this language first."
+
+#. js-lingui-explicit-id
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:125
 msgid "paths.unit.continue-partial"
 msgstr "Some words could not be confirmed. Try again to continue this unit."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:125
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:126
 msgid "paths.unit.continue-read-error"
 msgstr "This unit could not be prepared. Check your connection and try again."
 
