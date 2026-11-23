@@ -142,7 +142,7 @@ function LumiGuide({ step }: { readonly step: OnboardingStepId }) {
       <p className="onb-lumi-title">{title}</p>
       <p className="onb-lumi-body">{body}</p>
     </div>
-    <Lumi pose={step === 'aha' ? 'proud' : 'happy'} size={290} className="crystal-ornament onb-lumi-figure" />
+    <Lumi pose={step === 'language' ? 'wave' : step === 'aha' ? 'study' : 'happy'} size={290} className="crystal-ornament onb-lumi-figure" />
   </aside>;
 }
 

@@ -263,7 +263,7 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
   if (model.status === 'guided') return <GuidedPractice model={model} actions={actions} showLumi={showLumi} crystal={crystal} />;
   if (model.status === 'complete') return <section aria-labelledby="daily-lesson-heading" className="lesson-complete-canvas daily-canvas" data-learning-canvas="lesson-complete">
     <div className="lesson-complete-card">
-      {showLumi && <Lumi pose="proud" size={88} className="crystal-ornament mx-auto mb-2" />}
+      {showLumi && <Lumi pose="cheer" size={88} className="crystal-ornament mx-auto mb-2" />}
       <p className="lesson-field-label">{_(msg({ id: 'daily.lesson.session-complete-kicker', message: 'Session complete' }))}</p>
       <h1 id="daily-lesson-heading" ref={model.headingRef} tabIndex={-1} className="lesson-card-title mt-3">{_(msg({ id: 'daily.lesson.complete', message: 'Lesson complete' }))}</h1>
       <p className="lesson-help mx-auto mt-3 max-w-xl text-pretty" role="status">{model.liveMessage}</p>

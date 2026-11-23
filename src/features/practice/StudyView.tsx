@@ -327,7 +327,7 @@ export function StudyView({
         globalThis.document?.documentElement.dataset.themeFamily === 'crystal'
         && readLumiEnabled()
       ) {
-        setLumiReaction(effectiveRating === 'again' || effectiveRating === 'hard' ? 'oops' : 'happy');
+        setLumiReaction(effectiveRating === 'again' ? 'oops' : effectiveRating === 'hard' ? 'focus' : 'happy');
       }
 
       const isPositive = effectiveRating === 'good' || effectiveRating === 'easy';

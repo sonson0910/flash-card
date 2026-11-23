@@ -1,6 +1,8 @@
 import { type ComponentPropsWithoutRef, type CSSProperties } from 'react';
 import { useReducedMotion } from '../../lib/motionPreferenceHooks';
+import lumiCheer from '../../assets/lumi/lumi-cheer.webp';
 import lumiChibi from '../../assets/lumi/lumi-chibi.webp';
+import lumiFocus from '../../assets/lumi/lumi-focus.webp';
 import lumiHappy from '../../assets/lumi/lumi-happy.webp';
 import lumiHero from '../../assets/lumi/lumi-hero.webp';
 import lumiHint from '../../assets/lumi/lumi-hint.webp';
@@ -9,9 +11,11 @@ import lumiOops from '../../assets/lumi/lumi-oops.webp';
 import lumiProud from '../../assets/lumi/lumi-proud.webp';
 import lumiSad from '../../assets/lumi/lumi-sad.webp';
 import lumiSleepy from '../../assets/lumi/lumi-sleepy.webp';
+import lumiStudy from '../../assets/lumi/lumi-study.webp';
 import lumiThinking from '../../assets/lumi/lumi-thinking.webp';
+import lumiWave from '../../assets/lumi/lumi-wave.webp';
 
-export const lumiPoses = ['hero', 'idle', 'happy', 'hint', 'oops', 'proud', 'chibi', 'sleepy', 'thinking', 'sad'] as const;
+export const lumiPoses = ['hero', 'idle', 'happy', 'hint', 'oops', 'proud', 'chibi', 'sleepy', 'thinking', 'sad', 'cheer', 'study', 'wave', 'focus'] as const;
 
 export type LumiPose = typeof lumiPoses[number];
 
@@ -26,6 +30,10 @@ const poseSources: Record<LumiPose, string> = {
   sleepy: lumiSleepy,
   thinking: lumiThinking,
   sad: lumiSad,
+  cheer: lumiCheer,
+  study: lumiStudy,
+  wave: lumiWave,
+  focus: lumiFocus,
 };
 
 type LumiSharedProps = Omit<ComponentPropsWithoutRef<'img'>, 'alt' | 'aria-hidden' | 'height' | 'loading' | 'src' | 'width'> & {

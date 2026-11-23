@@ -196,7 +196,7 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
   const held = view?.freezes.held ?? 0;
   const showFreezes = Boolean(view) && (state === 'active' || state === 'frozen');
   const milestoneXp = state === 'milestone' ? STREAK_MILESTONE_XP[length as StreakMilestone] : undefined;
-  const lumiPose: LumiPose = state === 'milestone' ? 'proud' : state === 'repair' || state === 'ended' ? 'sad' : 'hint';
+  const lumiPose: LumiPose = state === 'milestone' ? 'cheer' : state === 'repair' || state === 'ended' ? 'sad' : 'hint';
   const runEnded = state === 'repair' || state === 'ended';
   const startsSession = onStartSession && (state === 'repair' || (state !== 'milestone' && !studiedToday));
   const em = <em />;

@@ -4,7 +4,7 @@ import { Lumi, lumiPoses } from './Lumi';
 
 describe('Lumi', () => {
   it('maps every approved pose to a local sprite', () => {
-    expect(lumiPoses).toEqual(['hero', 'idle', 'happy', 'hint', 'oops', 'proud', 'chibi', 'sleepy', 'thinking', 'sad']);
+    expect(lumiPoses).toEqual(['hero', 'idle', 'happy', 'hint', 'oops', 'proud', 'chibi', 'sleepy', 'thinking', 'sad', 'cheer', 'study', 'wave', 'focus']);
 
     for (const pose of lumiPoses) {
       expect(renderToStaticMarkup(<Lumi pose={pose} size={48} />)).toContain(`data-lumi-pose="${pose}"`);
