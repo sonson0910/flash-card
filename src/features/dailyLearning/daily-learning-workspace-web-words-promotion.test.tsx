@@ -317,7 +317,6 @@ it('resumes into the expired notice after a reload instead of starting a new Wor
     languageProfile={ENGLISH_TO_VIETNAMESE_PROFILE}
     isOffline={false}
     initialLesson="session"
-    streak={0}
     studyXpHistory={[]}
     loadPracticePool={vi.fn().mockResolvedValue(cards)}
     reviewCard={vi.fn()}
