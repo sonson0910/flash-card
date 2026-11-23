@@ -79,19 +79,25 @@ export const createMemoryFilePort = (options: MemoryFilePortOptions): FilePort &
     async prepare(input) {
       const kind = ACCEPTED_CONTENT_TYPES[input.contentType];
       if (!kind) throw new FileError('type');
+      const repeated = input.fileId ? files.get(input.fileId) : undefined;
+      if (repeated) {
+        // The same request again returns its reservation instead of making a second one.
+        if (repeated.status !== 'uploading' || repeated.declaredBytes !== input.bytes) throw new FileError('rejected');
+        return { fileId: repeated.id, path: `memory/${repeated.id}`, maxFileBytes: options.limits.maxFileBytes, expiresAt: repeated.createdAt ?? '', usage: usage() };
+      }
       if (input.bytes > options.limits.maxFileBytes) throw new FileError('size');
       const current = usage();
       if (current.usedBytes + current.reservedBytes + input.bytes > options.limits.limitBytes) throw new FileError('quota');
       if (input.courseId && options.courseIds && !options.courseIds.includes(input.courseId)) throw new FileError('not-found');
       sequence += 1;
-      const fileId = `memory-file-${String(sequence).padStart(8, '0')}`;
+      const fileId = input.fileId ?? `memory-file-${String(sequence).padStart(8, '0')}`;
       const stamp = now().toISOString();
       files.set(fileId, {
         id: fileId, name: input.name, kind, contentType: input.contentType, purpose: input.purpose,
         courseId: input.courseId, status: 'uploading', verification: 'pending', bytes: null, declaredBytes: input.bytes,
         rejectionReason: null, createdAt: stamp, updatedAt: stamp,
       });
-      return { fileId, path: `memory/${fileId}`, maxFileBytes: options.limits.maxFileBytes, expiresAt: stamp };
+      return { fileId, path: `memory/${fileId}`, maxFileBytes: options.limits.maxFileBytes, expiresAt: stamp, usage: usage() };
     },
     upload(prepared, data, _contentType, onProgress) {
       const transfer = options.transfer?.(data, onProgress) ?? {
@@ -119,7 +125,7 @@ export const createMemoryFilePort = (options: MemoryFilePortOptions): FilePort &
       return next;
     },
     async remove(fileId) {
-      if (!files.delete(fileId)) throw new FileError('not-found');
+      files.delete(fileId);
       blobs.delete(fileId);
       return usage();
     },

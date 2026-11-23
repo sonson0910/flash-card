@@ -50,6 +50,8 @@ export interface PreparedUpload {
   readonly path: string;
   readonly maxFileBytes: number;
   readonly expiresAt: string;
+  /** The account's usage once this upload is reserved, as the service counts it. */
+  readonly usage?: FileUsage;
 }
 
 /** Content types the service accepts; the file chooser offers the same list. */
