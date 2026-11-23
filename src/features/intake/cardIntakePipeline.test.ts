@@ -1138,6 +1138,24 @@ describe('Card Intake Pipeline contract', () => {
     expect(aiOptions).not.toHaveProperty('pageTitle');
   });
 
+  it('gives a card made in the app with only a context sentence no web source', async () => {
+    generationRuntime.generateWordInfo.mockResolvedValueOnce({
+      translation: 'dẫn đầu', explanation: '', explanationTranslation: '', phonetic: '/liːd/',
+      emoji: '🎭', category: 'General', partOfSpeech: 'verb', cefrLevel: 'B1',
+      exampleSentence: '', exampleTranslation: '', collocations: [], synonyms: [], antonyms: [],
+      register: '', commonMistake: '', imageSearchQuery: 'lead actor',
+    });
+    const pipeline = createCardIntakePipeline({ getContext: createContext });
+
+    const generated = await pipeline.generateCard({
+      term: 'lead',
+      language: ENGLISH_TO_VIETNAMESE_PROFILE,
+      context: 'The lead actor arrived.',
+    });
+
+    expect(generated.card.source).toBeUndefined();
+  });
+
   it.each([
     ['with a context sentence', { context: 'The lead actor arrived.' }],
     ['without a context sentence', {}],

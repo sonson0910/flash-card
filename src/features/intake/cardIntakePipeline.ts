@@ -332,11 +332,10 @@ export function createCardIntakePipeline({
     assertCurrent(session);
     const sourceUrl = typeof request.sourceUrl === 'string' ? request.sourceUrl.trim() : '';
     const pageTitle = typeof request.pageTitle === 'string' ? request.pageTitle.trim() : '';
-    // Persist the capture context instead of only spending it on the Gemini
-    // prompt above: without this, "where did this word come from" is lost
-    // the moment generation finishes.
+    // Only a capture from the web (a page address, a page title or a capture time) leaves a source:
+    // Web words lists every card that has one, so a context sentence typed in the app must not make it.
     const capturedContext = typeof request.context === 'string' ? request.context.trim() : '';
-    const hasSource = Boolean(sourceUrl || pageTitle || capturedContext || request.capturedAt);
+    const hasSource = Boolean(sourceUrl || pageTitle || request.capturedAt);
     const source = hasSource ? {
       ...(sourceUrl ? { url: sourceUrl } : {}),
       ...(pageTitle ? { title: pageTitle } : {}),
