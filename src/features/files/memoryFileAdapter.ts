@@ -82,7 +82,7 @@ export const createMemoryFilePort = (options: MemoryFilePortOptions): FilePort &
       const repeated = input.fileId ? files.get(input.fileId) : undefined;
       if (repeated) {
         // The same request again returns its reservation instead of making a second one.
-        if (repeated.status !== 'uploading' || repeated.declaredBytes !== input.bytes) throw new FileError('rejected');
+        if (repeated.status !== 'uploading' || repeated.declaredBytes !== input.bytes || repeated.courseId !== input.courseId) throw new FileError('rejected');
         return { fileId: repeated.id, path: `memory/${repeated.id}`, maxFileBytes: options.limits.maxFileBytes, expiresAt: repeated.createdAt ?? '', usage: usage() };
       }
       if (input.bytes > options.limits.maxFileBytes) throw new FileError('size');
