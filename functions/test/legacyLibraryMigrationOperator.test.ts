@@ -12,6 +12,8 @@ const state = vi.hoisted(() => ({
   jobs: new Map<string, Record<string, unknown>>(),
   fencedOwnerIds: new Set<string>(),
   repairedOwnerIds: [] as string[],
+  manifestOwnerIds: [] as string[],
+  restartedOwnerIds: [] as string[],
 }));
 
 vi.mock('../src/catalogProgressPersistence.js', () => ({
@@ -52,7 +54,10 @@ vi.mock('firebase-admin/firestore', async importOriginal => ({
 
 vi.mock('../src/legacyLibraryMigrationFirestore.js', () => ({
   listLibraryOwnerIds: async () => [...state.ownerIds],
-  listMigrationManifestOwnerIds: async () => [],
+  listMigrationManifestOwnerIds: async () => [...state.manifestOwnerIds],
+  restartLegacyLibraryDiscovery: async (_database: unknown, ownerId: string, jobId: string) => {
+    state.restartedOwnerIds.push(`${ownerId}/${jobId}`);
+  },
   applyLegacyLibraryMigration: async () => { throw new Error('dry-run must not apply'); },
   rollbackLegacyLibraryMigration: async () => { throw new Error('dry-run must not roll back'); },
   createFirestoreLegacyLibraryDiscoveryStore: () => ({
@@ -180,5 +185,36 @@ describe('legacy library operator catalog progress repair', () => {
     await expect(runOperator('catalog-progress')).rejects
       .toThrow('Catalog progress repair requires MIGRATION_CONFIRMATION=REPAIR_CATALOG_PROGRESS.');
     expect(state.repairedOwnerIds).toEqual([]);
+  });
+});
+
+describe('legacy library operator restart of a blocked or rolled-back job', () => {
+  beforeEach(async () => {
+    const { createMigrationOwnerKey } = await import('../src/legacyLibraryMigrationOwnerScope.js');
+    state.manifestOwnerIds = ['owner-a', 'owner-b'];
+    state.restartedOwnerIds = [];
+    process.env.MIGRATION_OWNER_KEY = createMigrationOwnerKey('owner-b');
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.MIGRATION_MODE;
+    delete process.env.MIGRATION_CONFIRMATION;
+    delete process.env.MIGRATION_OWNER_KEY;
+  });
+
+  it('restarts the one owner the key names, without a source revision', async () => {
+    const { exitCodes, errors, report } = await runOperator('restart', 'RESTART_QUERY_V3');
+
+    expect(errors).toEqual([]);
+    expect(exitCodes).toEqual([0]);
+    expect(state.restartedOwnerIds).toEqual(['owner-b/query-v3']);
+    expect(report?.reports).toEqual([expect.objectContaining({ mode: 'restart', phase: 'discover' })]);
+    expect(JSON.stringify(report)).not.toContain('owner-');
+  });
+
+  it('refuses to run without its confirmation', async () => {
+    await expect(runOperator('restart')).rejects
+      .toThrow('Restart requires MIGRATION_CONFIRMATION=RESTART_QUERY_V3.');
+    expect(state.restartedOwnerIds).toEqual([]);
   });
 });

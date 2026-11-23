@@ -706,6 +706,32 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
       expect(await state()).toMatchObject({ phase: 'verified', revision: laterRevision });
     }, 30_000);
 
+    it.each([
+      ['frozen', 1],
+      ['sealing', 2],
+    ] as const)('is inventoried again from the later revision when the inventory stopped while %s', async (phase, allowed) => {
+      await seedLegacyShares('legacy-a', 'legacy-b');
+      // The freeze, then one transaction per sealed chunk, then the seal itself.
+      await expect(createFrozenLegacySharedDeckInventory({
+        store: createFirestoreLegacySharedDeckInventoryStore(stoppingAfterTransactions(database, allowed)),
+        ownerUid,
+        runId: sealingRevision,
+        revision: sealingRevision,
+        target,
+        scanStartedAt: new Date().toISOString(),
+      })).rejects.toThrow('apply job stopped');
+      expect(await state()).toMatchObject({ phase, revision: sealingRevision });
+      await expect(share('another-learner', 'while-fenced')).rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
+
+      const fresh = await seal(laterRevision);
+      expect(await state()).toMatchObject({ phase: 'sealed', revision: laterRevision });
+      const report = JSON.parse(await applyOperator(laterRevision, laterRevision, fresh)) as Record<string, unknown>;
+
+      expect(report).toMatchObject({ revision: laterRevision, migrationRevision: laterRevision, migratedCount: 2, verified: true });
+      expect(await state()).toMatchObject({ phase: 'verified', revision: laterRevision });
+      await expect(share('another-learner', 'after-cutover')).resolves.toBeDefined();
+    }, 30_000);
+
     it('refuses to supersede once a source has been written', async () => {
       await seedLegacyShares('legacy-a', 'legacy-b');
       const inventory = await seal(sealingRevision);

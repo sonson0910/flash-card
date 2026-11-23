@@ -64,7 +64,11 @@ export const createFirestoreLegacySharedDeckInventoryStore = (
       const snapshot = await transaction.get(state);
       if (snapshot.exists) {
         const data = snapshot.data();
-        if (data?.phase === 'superseded' && data?.ownerUid === ownerUid && data?.target === target
+        // An inventory that stopped before it was sealed was never reported or
+        // approved and wrote no share, so a later revision's inventory takes it
+        // over the way it takes over a superseded one.
+        const replaceable = data?.phase === 'superseded' || data?.phase === 'frozen' || data?.phase === 'sealing';
+        if (replaceable && data?.ownerUid === ownerUid && data?.target === target
           && data?.revision !== revision) {
           transaction.set(state, {
             schemaVersion: 2,

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 
-export type LegacyLibraryMigrationMode = 'dry-run' | 'apply' | 'rollback';
+export type LegacyLibraryMigrationMode = 'dry-run' | 'apply' | 'rollback' | 'restart';
 
 export const LIBRARY_MIGRATION_FENCE_SCHEMA_VERSION = 1 as const;
 export const LIBRARY_MIGRATION_FENCE_COLLECTION = 'profile';

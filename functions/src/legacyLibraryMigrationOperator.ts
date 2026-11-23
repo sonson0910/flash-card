@@ -8,6 +8,7 @@ import {
   createFirestoreLegacyLibraryDiscoveryStore,
   listLibraryOwnerIds,
   listMigrationManifestOwnerIds,
+  restartLegacyLibraryDiscovery,
   rollbackLegacyLibraryMigration,
 } from './legacyLibraryMigrationFirestore.js';
 import { runLegacyLibraryDiscovery } from './legacyLibraryMigration.js';
@@ -34,8 +35,8 @@ const REVISION_PHASES = new Set(['discovered', 'verify', 'apply', 'complete', 'r
 
 // Validate every operator-controlled value before creating an Admin SDK client.
 if (requestedMode !== 'dry-run' && requestedMode !== 'apply' && requestedMode !== 'rollback'
-  && requestedMode !== 'catalog-progress') {
-  throw new Error('MIGRATION_MODE must be dry-run, apply, rollback or catalog-progress.');
+  && requestedMode !== 'restart' && requestedMode !== 'catalog-progress') {
+  throw new Error('MIGRATION_MODE must be dry-run, apply, rollback, restart or catalog-progress.');
 }
 if (!projectId || projectId !== PROJECT_ID) throw new Error('FIREBASE_PROJECT_ID does not match the sealed Functions target.');
 if (!databaseId || databaseId !== DATABASE_ID) throw new Error('FIRESTORE_DATABASE_ID does not match the sealed Functions target.');
@@ -45,19 +46,23 @@ if (requestedMode === 'apply' && confirmation !== 'APPLY_QUERY_V3') {
 if (requestedMode === 'rollback' && confirmation !== 'ROLLBACK_QUERY_V3') {
   throw new Error('Rollback requires MIGRATION_CONFIRMATION=ROLLBACK_QUERY_V3.');
 }
+if (requestedMode === 'restart' && confirmation !== 'RESTART_QUERY_V3') {
+  throw new Error('Restart requires MIGRATION_CONFIRMATION=RESTART_QUERY_V3.');
+}
 if (requestedMode === 'catalog-progress' && confirmation !== 'REPAIR_CATALOG_PROGRESS') {
   throw new Error('Catalog progress repair requires MIGRATION_CONFIRMATION=REPAIR_CATALOG_PROGRESS.');
 }
+if ((requestedMode === 'apply' || requestedMode === 'rollback' || requestedMode === 'restart')
+  && (!requestedOwnerKey || !/^[a-f0-9]{12}$/.test(requestedOwnerKey))) {
+  throw new Error('Apply, rollback and restart require a 12-character MIGRATION_OWNER_KEY.');
+}
 if (requestedMode === 'apply' || requestedMode === 'rollback') {
-  if (!requestedOwnerKey || !/^[a-f0-9]{12}$/.test(requestedOwnerKey)) {
-    throw new Error('Apply and rollback require a 12-character MIGRATION_OWNER_KEY.');
-  }
   if (!requestedSourceRevision || !DIGEST.test(requestedSourceRevision)) {
     throw new Error('Apply and rollback require a 64-character MIGRATION_SOURCE_REVISION.');
   }
 }
 
-const mode = requestedMode as 'dry-run' | 'apply' | 'rollback' | 'catalog-progress';
+const mode = requestedMode as 'dry-run' | 'apply' | 'rollback' | 'restart' | 'catalog-progress';
 
 async function main(): Promise<void> {
   const app = getApps()[0] ?? initializeApp({ projectId: projectId as string });
@@ -116,6 +121,12 @@ async function main(): Promise<void> {
           invalid: discovery.invalid,
         });
       }
+    } else if (mode === 'restart') {
+      const ownerId = selected[0];
+      if (!ownerId) throw new Error('No owner matched the supplied owner key.');
+      // A blocked or rolled-back job has no revision to approve; the next dry-run reports the new scan's.
+      await restartLegacyLibraryDiscovery(database, ownerId, JOB_ID);
+      reports.push({ ownerKey: createMigrationOwnerKey(ownerId), mode, phase: 'discover' });
     } else {
       const ownerId = selected[0];
       if (!ownerId) throw new Error('No owner matched the supplied owner key.');
