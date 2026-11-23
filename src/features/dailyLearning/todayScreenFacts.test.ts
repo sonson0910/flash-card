@@ -12,7 +12,6 @@ import {
   sourceSite,
   stageMinutes,
   streakRunStats,
-  studyRun,
   studyWeek,
 } from './todayScreenFacts';
 
@@ -78,27 +77,11 @@ describe('todayScreenFacts', () => {
     ])).toBe(6);
   });
 
-  it('reads the current study run from verified day history', () => {
-    const history = [
-      { date: '2026-11-14', XP: 10 },
-      { date: '2026-11-16', XP: 4 },
-      { date: '2026-11-17', XP: 6 },
-      { date: '2026-11-18', XP: 0 },
-    ];
-    expect(studyRun(history, '2026-11-18')).toEqual({ studiedToday: false, days: 2 });
-    expect(runDayNumber(studyRun(history, '2026-11-18'))).toBe(3);
-    expect(studyRun([...history, { date: '2026-11-18', XP: 2 }], '2026-11-18')).toEqual({ studiedToday: true, days: 3 });
+  it('numbers the day of the run: today once studied, otherwise the next day', () => {
+    expect(runDayNumber({ studiedToday: false, days: 2 })).toBe(3);
     expect(runDayNumber({ studiedToday: true, days: 3 })).toBe(3);
-    expect(studyRun(history, '2026-11-20')).toEqual({ studiedToday: false, days: 0 });
-    expect(runDayNumber(studyRun([], '2026-11-20'))).toBe(1);
-    expect(studyRun([{ date: '2026-03-01', XP: 1 }, { date: '2026-02-28', XP: 1 }], '2026-03-02').days).toBe(2);
-  });
-
-  it('counts the run from the server streak once today is evidenced', () => {
-    const onlyToday = [{ date: '2026-11-18', XP: 4 }];
-    expect(studyRun(onlyToday, '2026-11-18', 3)).toEqual({ studiedToday: true, days: 3 });
-    expect(runDayNumber(studyRun(onlyToday, '2026-11-18', 3))).toBe(3);
-    expect(studyRun([{ date: '2026-11-17', XP: 4 }], '2026-11-18', 3)).toEqual({ studiedToday: false, days: 1 });
+    expect(runDayNumber({ studiedToday: false, days: 0 })).toBe(1);
+    expect(runDayNumber({ studiedToday: true, days: 0 })).toBe(1);
   });
 
   it('greets by the whole display name only when it fits', () => {
@@ -120,7 +103,7 @@ describe('todayScreenFacts', () => {
       { date: '2026-11-18', XP: 6 },
       { date: '2026-11-19', XP: 4 },
     ];
-    const week = studyWeek(history, '2026-11-19', studyRun(history, '2026-11-19'));
+    const week = studyWeek(history, '2026-11-19', { studiedToday: true, days: 2 });
     expect(week.map(day => day.date)).toEqual(['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20', '2026-11-21', '2026-11-22']);
     expect(week.map(day => day.state)).toEqual(['done', 'missed', 'done', 'done', 'future', 'future', 'future']);
     expect(week.filter(day => day.isToday).map(day => day.date)).toEqual(['2026-11-19']);

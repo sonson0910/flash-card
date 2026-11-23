@@ -45,17 +45,6 @@ export const isoDayInTimeZone = (date: Date, timeZone?: string): string => {
   return `${value('year')}-${value('month')}-${value('day')}`;
 };
 
-/** The stored counter advances on read; show it only after actual XP activity today. */
-export const evidencedStudyStreak = (
-  streak: number,
-  xpHistory: readonly { readonly date: string; readonly XP: number }[],
-  now = new Date(),
-  rewardTimeZone?: string,
-): number => {
-  const day = isoDayInTimeZone(now, rewardTimeZone);
-  return xpHistory.some(entry => entry.date === day && entry.XP > 0) ? streak : 0;
-};
-
 /**
  * What the "reveal" transition should do when a lesson question's feedback first appears.
  * A pure decision so the reduced-motion/sound-off/haptics-off gating stays exclusively inside

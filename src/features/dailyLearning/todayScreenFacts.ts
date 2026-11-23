@@ -87,38 +87,11 @@ export const sessionXpCeiling = (stages: readonly TodayStageFact[]): number => s
   return total;
 }, 0);
 
-const previousIsoDay = (isoDay: string): string => {
-  const [year, month, day] = isoDay.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, day - 1)).toISOString().slice(0, 10);
-};
-
 export interface StudyRun {
   readonly studiedToday: boolean;
   /** Consecutive study days ending today (when studied) or yesterday. */
   readonly days: number;
 }
-
-/**
- * Reads the current run of study days from the verified per-day XP history. `evidencedStreak`
- * is the server's streak once today is evidenced (0 otherwise); it wins over the history count
- * because the stored history may not reach back to the start of the run, and the streak chip
- * shows that same number.
- */
-export const studyRun = (
-  history: readonly { readonly date: string; readonly XP: number }[],
-  todayIso: string,
-  evidencedStreak = 0,
-): StudyRun => {
-  const studied = new Set(history.filter(entry => entry.XP > 0).map(entry => entry.date));
-  const studiedToday = studied.has(todayIso);
-  let cursor = studiedToday ? todayIso : previousIsoDay(todayIso);
-  let days = 0;
-  while (studied.has(cursor) && days < studied.size) {
-    days += 1;
-    cursor = previousIsoDay(cursor);
-  }
-  return { studiedToday, days: studiedToday ? Math.max(days, evidencedStreak) : days };
-};
 
 /** "Day N" of the run: today counts once the learner has studied, otherwise finishing today makes it the next day. */
 export const runDayNumber = (run: StudyRun): number => run.studiedToday ? Math.max(1, run.days) : run.days + 1;
