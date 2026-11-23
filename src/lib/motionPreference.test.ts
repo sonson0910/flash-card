@@ -43,4 +43,16 @@ describe('motion preference', () => {
     setUserReducedMotion(true);
     expect(getEffectiveReducedMotion()).toBe(true);
   });
+
+  it('keeps the reduction in memory when storage is readable but writes fail', () => {
+    installBrowser();
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: () => { throw new DOMException('full', 'QuotaExceededError'); },
+    });
+    setUserReducedMotion(true);
+    expect(getEffectiveReducedMotion()).toBe(true);
+    setUserReducedMotion(false);
+    expect(getEffectiveReducedMotion()).toBe(false);
+  });
 });
