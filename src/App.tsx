@@ -25,8 +25,6 @@ const AppRuntime = runtimeRetry
     loadCatalog(getActiveUiLocale(), 'practice'),
   ]).then(([component]) => component));
 
-const appLoadingLabel = <Trans {...msg({ context: 'shell.loading.app', message: 'Loading SonFlash…' })} />;
-
 interface LandingUser {
   readonly displayName?: string | null;
   readonly email?: string | null;
@@ -40,7 +38,6 @@ export default function App() {
   const [signInRequest, setSignInRequest] = useState(0);
   const [acknowledgedSignInRequest, setAcknowledgedSignInRequest] = useState(0);
   const [landingUser, setLandingUser] = useState<LandingUser | null>(null);
-  const [landingSignIn, setLandingSignIn] = useState({ busy: false, error: null as string | null });
   const [runtimeFailed, setRuntimeFailed] = useState(false);
 
   useEffect(() => {
@@ -87,7 +84,7 @@ export default function App() {
   return (
     <>
       {navigation.viewMode === 'landing' && !runtimeFailed && (
-          <Suspense fallback={<div className="app-loading crystal-starfield font-bold text-[var(--sf-brand-text)]">{appLoadingLabel}</div>}>
+          <Suspense fallback={<div className="app-loading crystal-starfield font-bold text-[var(--sf-brand-text)]"><Trans {...msg({ context: 'shell.loading.app', message: 'Loading SonFlash…' })} /></div>}>
             <LandingPage
               onEnterApp={enterApp}
               onOpenLibrary={openLibrary}
@@ -95,14 +92,12 @@ export default function App() {
               onOpenProgress={openProgress}
               onSignIn={requestLandingSignIn}
               user={landingUser}
-              signInBusy={landingSignIn.busy}
-              signInError={landingSignIn.error}
             />
           </Suspense>
       )}
       {runtimeActivated && (
           <AppRuntimeBoundary onError={handleRuntimeError} onRetry={retryRuntime}>
-            <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="app-loading"><WorkspaceLoadingPanel>{appLoadingLabel}</WorkspaceLoadingPanel></div>}>
+            <Suspense fallback={navigation.viewMode === 'landing' ? null : <div className="app-loading"><WorkspaceLoadingPanel /></div>}>
               <AppRuntime
                 navigation={navigation}
                 practiceOpenerRef={practiceOpenerRef}
@@ -110,7 +105,6 @@ export default function App() {
                 signInRequest={signInRequest > acknowledgedSignInRequest ? signInRequest : null}
                 onSignInRequestHandled={handleSignInRequestHandled}
                 onLandingUserChange={setLandingUser}
-                onLandingSignInState={setLandingSignIn}
               />
             </Suspense>
           </AppRuntimeBoundary>

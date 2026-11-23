@@ -2,7 +2,7 @@ const areas = {
   landing: ['src/features/landing'],
   shell: [
     'src/App.tsx', 'src/app', 'src/components/shell', 'src/features/navigation',
-    'src/components/AppErrorBoundary.tsx', 'src/components/AppOverlays.tsx',
+    'src/components/AppErrorBoundary.tsx', 'src/components/AppOverlays.tsx', 'src/components/WorkspaceLoadingPanel.tsx',
     'src/features/library/libraryViewModel.ts',
     'src/components/RecoverableActionFeedback.tsx', 'src/components/ui/UndoToast.tsx',
     'src/features/courses', 'src/features/onboarding', 'src/features/offlineApp/OfflineReadiness.tsx',

@@ -18,7 +18,7 @@ describe('App runtime loading fallback', () => {
     const html = renderToStaticMarkup(<LinguiProvider i18n={i18n}><App /></LinguiProvider>);
 
     expect(html).toContain('workspace-loading-label');
-    expect(html).toContain('Đang tải SonFlash…');
+    expect(html).toContain('Đang tải không gian học tập…');
     expect(html).not.toContain('Loading workspace');
   });
 });

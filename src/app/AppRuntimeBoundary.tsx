@@ -1,6 +1,7 @@
 import { msg } from '@lingui/core/macro';
 import React, { lazy, Suspense, type ErrorInfo, type ReactNode } from 'react';
 import { Trans } from '@lingui/react';
+import { logRenderError } from '../components/AppErrorBoundary';
 
 const AppRuntimeError = lazy(() => import('./app-runtime-error'));
 
@@ -22,7 +23,7 @@ export class AppRuntimeBoundary extends React.Component<AppRuntimeBoundaryProps,
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('Unhandled workspace render error', { name: error.name, componentStack: info.componentStack?.slice(0, 1000) });
+    logRenderError(error, info);
     this.props.onError(error);
   }
 
