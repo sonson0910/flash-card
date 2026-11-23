@@ -128,13 +128,13 @@ export function useAppLearningCoordination({
         },
         remove: cardId => {
           forgetRecentlyPromotedCard(ports.recentlyPromotedCardsRef.current, cardId);
-          mediaHydration.actions.invalidateCard(cardId);
+          mediaHydration.actions.invalidateCard(cardId); intakeSharing.actions.invalidateCard(cardId);
           ports.setCards(current => current.filter(card => card.id !== cardId));
         },
         clear: () => {
           ports.recentlyPromotedCardsRef.current.clear();
           ports.browser.actions.bumpHydrationSession();
-          ports.cardsRef.current.forEach(card => mediaHydration.actions.invalidateCard(card.id));
+          ports.cardsRef.current.forEach(card => { mediaHydration.actions.invalidateCard(card.id); intakeSharing.actions.invalidateCard(card.id); });
           ports.setCards([]);
           offerUndo(user?.uid ?? null, null);
         },
