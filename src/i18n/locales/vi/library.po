@@ -645,6 +645,91 @@ msgid "library.canvas.search-placeholder"
 msgstr "Tìm từ hoặc nghĩa…"
 
 #. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:27
+msgid "library.capture-failure.account-changed"
+msgstr "Đã hủy nhập vì tài khoản đang đăng nhập đã thay đổi. Hãy chọn lại từ."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:17
+msgid "library.capture-failure.auth"
+msgstr "Bạn cần đăng nhập Google để tạo thẻ. Từ đã chọn vẫn được giữ lại; đăng nhập rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:20
+msgid "library.capture-failure.configuration"
+msgstr "Dịch vụ AI chưa sẵn sàng. Từ đã chọn vẫn được giữ lại; hãy thử lại sau."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:24
+msgid "library.capture-failure.course-cancelled"
+msgstr "Đã hủy nhập: hãy chuyển sang khóa học phù hợp rồi chọn lại từ."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:25
+msgid "library.capture-failure.course-unavailable"
+msgstr "Không chuẩn bị được khóa học phù hợp. Từ chưa được lưu."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:23
+msgid "library.capture-failure.deck-missing"
+msgstr "Deck đã chọn không còn tồn tại. Hãy chọn lại deck rồi thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:22
+msgid "library.capture-failure.failed"
+msgstr "Chưa tạo hoặc lưu được thẻ. Từ đã chọn vẫn được giữ lại; hãy thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:16
+msgid "library.capture-failure.in-flight"
+msgstr "Thẻ AI cho từ này đang được tạo. Từ đã chọn vẫn được giữ lại; thử lại sau vài giây."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:26
+msgid "library.capture-failure.invalid-selection"
+msgstr "Hãy chọn một từ hoặc cụm từ ngắn (tối đa 80 ký tự) thuộc ngôn ngữ của khóa học."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:19
+msgid "library.capture-failure.network"
+msgstr "Kết nối hoặc dịch vụ AI bị gián đoạn. Từ đã chọn vẫn được giữ lại; hãy thử lại."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:28
+msgid "library.capture-failure.not-verified"
+msgstr "Không xác minh được yêu cầu nhập này một cách an toàn. Hãy chọn lại từ."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:18
+msgid "library.capture-failure.permission"
+msgstr "Quyền truy cập AI bị từ chối. Từ đã chọn vẫn được giữ lại; hãy đăng nhập lại rồi thử."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:15
+msgid "library.capture-failure.quota"
+msgstr "Dịch vụ AI đã hết hạn mức. Từ đã chọn vẫn được giữ lại; hãy thử lại sau."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:12
+msgid "library.capture-failure.quota-ai-cards"
+msgstr "Bạn đã dùng hết số thẻ AI kỳ này. Xem gói Pro hoặc đợi kỳ mới; ôn tập và thêm thẻ thủ công vẫn dùng được."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:13
+msgid "library.capture-failure.quota-daily"
+msgstr "Bạn đã dùng hết lượt AI hôm nay. Thử lại sau 00:00 (giờ Việt Nam)."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:14
+msgid "library.capture-failure.quota-service"
+msgstr "AI tạm dừng vì hạn mức chung hôm nay đã hết. Thử lại sau 00:00 (giờ Việt Nam)."
+
+#. js-lingui-explicit-id
+#: src/features/intake/captureFailureCopy.ts:21
+msgid "library.capture-failure.timeout"
+msgstr "Dịch vụ AI phản hồi quá lâu. Từ đã chọn vẫn được giữ lại; hãy thử lại."
+
+#. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:434
 msgid "library.card.bookmark"
 msgstr "Đánh dấu thẻ"
@@ -2929,104 +3014,3 @@ msgstr "trên {count, plural, other {# deck}}"
 msgctxt "library.edit-card.discard"
 msgid "Discard"
 msgstr "Bỏ"
-
-#: src/features/library/EmptyLibraryPanel.tsx:226
-#: src/features/library/LibraryTools.tsx:686
-msgctxt "library.create.word-label"
-msgid "English word"
-msgstr "Từ tiếng Anh"
-
-#: src/features/library/LibraryTools.tsx:840
-msgctxt "library.filters.search-label"
-msgid "Search English words"
-msgstr "Tìm từ tiếng Anh"
-
-#: src/features/library/LibraryDialogOverlays.tsx:454
-msgctxt "library.insights.kicker"
-msgid "Stats · last 30 days"
-msgstr "Thống kê · 30 ngày qua"
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:27
-msgid "library.capture-failure.account-changed"
-msgstr "Đã hủy nhập vì tài khoản đang đăng nhập đã thay đổi. Hãy chọn lại từ."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:17
-msgid "library.capture-failure.auth"
-msgstr "Bạn cần đăng nhập Google để tạo thẻ. Từ đã chọn vẫn được giữ lại; đăng nhập rồi thử lại."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:20
-msgid "library.capture-failure.configuration"
-msgstr "Dịch vụ AI chưa sẵn sàng. Từ đã chọn vẫn được giữ lại; hãy thử lại sau."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:24
-msgid "library.capture-failure.course-cancelled"
-msgstr "Đã hủy nhập: hãy chuyển sang khóa học phù hợp rồi chọn lại từ."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:25
-msgid "library.capture-failure.course-unavailable"
-msgstr "Không chuẩn bị được khóa học phù hợp. Từ chưa được lưu."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:23
-msgid "library.capture-failure.deck-missing"
-msgstr "Deck đã chọn không còn tồn tại. Hãy chọn lại deck rồi thử lại."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:22
-msgid "library.capture-failure.failed"
-msgstr "Chưa tạo hoặc lưu được thẻ. Từ đã chọn vẫn được giữ lại; hãy thử lại."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:16
-msgid "library.capture-failure.in-flight"
-msgstr "Thẻ AI cho từ này đang được tạo. Từ đã chọn vẫn được giữ lại; thử lại sau vài giây."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:26
-msgid "library.capture-failure.invalid-selection"
-msgstr "Hãy chọn một từ hoặc cụm từ ngắn (tối đa 80 ký tự) thuộc ngôn ngữ của khóa học."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:19
-msgid "library.capture-failure.network"
-msgstr "Kết nối hoặc dịch vụ AI bị gián đoạn. Từ đã chọn vẫn được giữ lại; hãy thử lại."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:28
-msgid "library.capture-failure.not-verified"
-msgstr "Không xác minh được yêu cầu nhập này một cách an toàn. Hãy chọn lại từ."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:18
-msgid "library.capture-failure.permission"
-msgstr "Quyền truy cập AI bị từ chối. Từ đã chọn vẫn được giữ lại; hãy đăng nhập lại rồi thử."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:15
-msgid "library.capture-failure.quota"
-msgstr "Dịch vụ AI đã hết hạn mức. Từ đã chọn vẫn được giữ lại; hãy thử lại sau."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:12
-msgid "library.capture-failure.quota-ai-cards"
-msgstr "Bạn đã dùng hết số thẻ AI kỳ này. Xem gói Pro hoặc đợi kỳ mới; ôn tập và thêm thẻ thủ công vẫn dùng được."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:13
-msgid "library.capture-failure.quota-daily"
-msgstr "Bạn đã dùng hết lượt AI hôm nay. Thử lại sau 00:00 (giờ Việt Nam)."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:14
-msgid "library.capture-failure.quota-service"
-msgstr "AI tạm dừng vì hạn mức chung hôm nay đã hết. Thử lại sau 00:00 (giờ Việt Nam)."
-
-#. js-lingui-explicit-id
-#: src/features/intake/captureFailureCopy.ts:21
-msgid "library.capture-failure.timeout"
-msgstr "Dịch vụ AI phản hồi quá lâu. Từ đã chọn vẫn được giữ lại; hãy thử lại."
