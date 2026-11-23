@@ -27,6 +27,17 @@ async function prepareTheme(page: Page, theme: (typeof themes)[number], viewport
 
 async function expectScreen(page: Page, testInfo: TestInfo, name: string, mask: Locator[] = []) {
   await expect(page.locator('html')).toHaveAttribute('data-theme-family', /classic|crystal/);
+  // WebKit antialiases an outline differently while one of its transitions runs and until the frame after it ends,
+  // so the capture waits for running transitions to end and then for two frames.
+  await page.evaluate(async () => {
+    await Promise.all(document.getAnimations()
+      .filter(animation => animation.playState === 'running' && animation.effect?.getComputedTiming().endTime !== Infinity)
+      .map(animation => animation.finished.catch(() => undefined)));
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
+  // The onboarding mascot loads lazily and decodes off the main thread, so the capture waits until it can paint.
+  const mascot = page.locator('.onb-lumi-figure');
+  if (await mascot.isVisible()) await mascot.evaluate(image => (image as HTMLImageElement).decode());
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `${name} has horizontal overflow`).toBe(true);
   const screenshot = testInfo.outputPath(`${name}.png`);
   const image = await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide', mask });
@@ -87,6 +98,8 @@ async function seedKoreanCards(db: Firestore, ownerId: string) {
 
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} courses, goals, settings and onboarding capture at ${viewport.name}`, async ({ page, db, testUser, signIn, blockExternalNetwork }, testInfo) => {
+    // Eight full-page captures at the desktop size use most of the default budget in WebKit.
+    test.setTimeout(60_000);
     await prepareTheme(page, theme, viewport);
     await blockExternalNetwork(page);
     await signIn(page, '/?view=today&locale=en');
