@@ -363,4 +363,18 @@ describe('useFlashcardSpeechMatch', () => {
       await act(async () => harness.root.unmount());
     }
   });
+
+  it.each([["don't"], ['well-known'], ["I don't know"]])('scores a correctly spoken %s as an exact match', async spoken => {
+    const { instances } = installRecognition();
+    const harness = mountHarness();
+    try {
+      await harness.render({ cardId: 'card-a', word: spoken, explanation: 'a greeting' });
+      act(() => harness.snapshot().startPronunciationCheck({ stopPropagation: vi.fn() }, 'word'));
+      act(() => instances[0].onresult?.({ results: [{ isFinal: true, 0: { transcript: spoken, confidence: 0.9 } }] }));
+
+      expect(harness.snapshot().pronunciationScore?.score).toBeGreaterThanOrEqual(95);
+    } finally {
+      await act(async () => harness.root.unmount());
+    }
+  });
 });
