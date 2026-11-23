@@ -24,10 +24,13 @@ card searchable/pageable under schema v2 without losing the strongest learning s
   Idempotent; a fenced owner is reported as `skipped: migration-fence` and left for a
   later run. Reports owner keys with scanned and repaired counts only
 - Operator restart (`MIGRATION_CONFIRMATION=RESTART_QUERY_V3`, owner key only): after the
-  cause a dry-run reported for a `blocked` owner is repaired, starts that owner's job
-  over with a new scan. Only a blocked job restarts; it never applied a group, so its
-  manifest and backup root are retired with it. Dispatch dry-run again and approve the
-  revision it reports. A `rolled-back` job does not restart
+  cause a dry-run reported for a `blocked` owner is repaired, or after a `rolled-back`
+  owner's cause is fixed and a fixed release is deployed, starts that owner's job over
+  with a new scan. A blocked job never applied a group, so its manifest and backup root
+  are retired with it. A rolled-back job's rollback backup is kept: its root, plans and
+  source backups move to the backup id `<job id>:rolled-back:<retired scan id>`, which
+  no later apply or rollback reads. Any other phase is refused. Dispatch dry-run again
+  and approve the revision it reports
 - Library changed after the dry-run: apply fails without migrating anything, releases
   the fence and reopens discovery for that owner; dispatch dry-run again and approve
   the new revision it reports. The earlier revision is never applied

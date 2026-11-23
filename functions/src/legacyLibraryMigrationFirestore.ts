@@ -1219,30 +1219,81 @@ const reopenDiscoveryForChangedLibrary = async (
   if (retiredScanId !== null) await deleteRetiredDiscoveryGroups(database, jobReference, retiredScanId);
 };
 
+const ROLLED_BACK_BACKUP_MOVE_PAGE = 200;
+
+// The backup id a rolled-back attempt is kept under once its job restarts.
+const rolledBackBackupId = (jobId: string, scanId: string): string => `${jobId}:rolled-back:${scanId}`;
+
+// Moves the plan and source backups of a rolled-back attempt under its
+// archive id, one page per batch, so a rerun after an interruption moves only
+// what is left. Nothing writes them meanwhile: apply and rollback refuse a
+// rolled-back job, and the job is reset only after this returns.
+const moveRolledBackBackups = async (
+  database: Firestore,
+  ownerId: string,
+  jobId: string,
+  archiveId: string,
+): Promise<void> => {
+  const root = backupRef(database, ownerId, jobId);
+  const archive = backupRef(database, ownerId, archiveId);
+  for (const name of ['plans', 'sources'] as const) {
+    for (;;) {
+      const snapshot = await root.collection(name).limit(ROLLED_BACK_BACKUP_MOVE_PAGE).get();
+      if (snapshot.empty) break;
+      const batch = database.batch();
+      for (const document of snapshot.docs) {
+        batch.set(archive.collection(name).doc(document.id), document.data());
+        batch.delete(document.ref);
+      }
+      await batch.commit();
+      if (snapshot.size < ROLLED_BACK_BACKUP_MOVE_PAGE) break;
+    }
+  }
+};
+
+const restartableJob = (job: LegacyLibraryDiscoveryJob, fenced: boolean): boolean => !fenced && (
+  (job.phase === 'blocked' && (job.appliedGroupCount ?? 0) === 0) || job.phase === 'rolled-back'
+);
+
 /**
- * Starts a blocked job over with a new scan once the operator has repaired
- * what blocked it. A blocked job never applied a group, so its backup root
- * holds nothing to restore and goes with the retired scan, as on a reopen.
+ * Starts a blocked or rolled-back job over with a new scan once the operator
+ * has repaired what stopped it. A blocked job never applied a group, so its
+ * backup root holds nothing to restore and goes with the retired scan, as on a
+ * reopen. A rolled-back job's backup is rollback data and is kept: it moves
+ * whole under the retired scan's archive id, where no apply or rollback of a
+ * later scan reads or overwrites it.
  */
-export async function restartBlockedLegacyLibraryDiscovery(
+export async function restartLegacyLibraryDiscovery(
   database: Firestore,
   ownerId: string,
   jobId: string,
 ): Promise<void> {
   const jobReference = discoveryJobRef(database, ownerId, jobId);
+  const fenceReference = migrationFenceReference(database, ownerId);
+  const root = backupRef(database, ownerId, jobId);
+  const [jobSnapshot, fenceSnapshot] = await Promise.all([jobReference.get(), fenceReference.get()]);
+  if (!jobSnapshot.exists) throw new LegacyLibraryDiscoveryStateChangedError();
+  const job = validDiscoveryJob(jobSnapshot.data());
+  if (!restartableJob(job, fenceSnapshot.exists)) throw new LegacyLibraryDiscoveryStateChangedError();
+  const archiveId = job.phase === 'rolled-back' ? rolledBackBackupId(jobId, job.scanId) : null;
+  if (archiveId !== null) await moveRolledBackBackups(database, ownerId, jobId, archiveId);
   const retiredScanId = await database.runTransaction(async transaction => {
-    const [jobSnapshot, fenceSnapshot] = await Promise.all([
+    const [currentSnapshot, currentFence, rootSnapshot] = await Promise.all([
       transaction.get(jobReference),
-      transaction.get(migrationFenceReference(database, ownerId)),
+      transaction.get(fenceReference),
+      transaction.get(root),
     ]);
-    if (!jobSnapshot.exists) throw new LegacyLibraryDiscoveryStateChangedError();
-    const job = validDiscoveryJob(jobSnapshot.data());
-    if (job.phase !== 'blocked' || (job.appliedGroupCount ?? 0) !== 0 || fenceSnapshot.exists) {
+    if (!currentSnapshot.exists) throw new LegacyLibraryDiscoveryStateChangedError();
+    const current = validDiscoveryJob(currentSnapshot.data());
+    if (current.scanId !== job.scanId || current.phase !== job.phase || !restartableJob(current, currentFence.exists)) {
       throw new LegacyLibraryDiscoveryStateChangedError();
     }
     transaction.set(jobReference, discoveryJobData(freshDiscoveryJob(), Timestamp.now()), { merge: false });
-    transaction.delete(backupRef(database, ownerId, jobId));
-    return job.scanId;
+    if (archiveId !== null && rootSnapshot.exists) {
+      transaction.set(backupRef(database, ownerId, archiveId), rootSnapshot.data() ?? {});
+    }
+    transaction.delete(root);
+    return current.scanId;
   });
   await deleteRetiredDiscoveryGroups(database, jobReference, retiredScanId);
 }

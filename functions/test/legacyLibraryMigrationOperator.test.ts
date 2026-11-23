@@ -55,7 +55,7 @@ vi.mock('firebase-admin/firestore', async importOriginal => ({
 vi.mock('../src/legacyLibraryMigrationFirestore.js', () => ({
   listLibraryOwnerIds: async () => [...state.ownerIds],
   listMigrationManifestOwnerIds: async () => [...state.manifestOwnerIds],
-  restartBlockedLegacyLibraryDiscovery: async (_database: unknown, ownerId: string, jobId: string) => {
+  restartLegacyLibraryDiscovery: async (_database: unknown, ownerId: string, jobId: string) => {
     state.restartedOwnerIds.push(`${ownerId}/${jobId}`);
   },
   applyLegacyLibraryMigration: async () => { throw new Error('dry-run must not apply'); },
@@ -188,7 +188,7 @@ describe('legacy library operator catalog progress repair', () => {
   });
 });
 
-describe('legacy library operator restart of a blocked job', () => {
+describe('legacy library operator restart of a blocked or rolled-back job', () => {
   beforeEach(async () => {
     const { createMigrationOwnerKey } = await import('../src/legacyLibraryMigrationOwnerScope.js');
     state.manifestOwnerIds = ['owner-a', 'owner-b'];

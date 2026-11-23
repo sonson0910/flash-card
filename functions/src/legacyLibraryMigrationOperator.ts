@@ -8,7 +8,7 @@ import {
   createFirestoreLegacyLibraryDiscoveryStore,
   listLibraryOwnerIds,
   listMigrationManifestOwnerIds,
-  restartBlockedLegacyLibraryDiscovery,
+  restartLegacyLibraryDiscovery,
   rollbackLegacyLibraryMigration,
 } from './legacyLibraryMigrationFirestore.js';
 import { runLegacyLibraryDiscovery } from './legacyLibraryMigration.js';
@@ -124,8 +124,8 @@ async function main(): Promise<void> {
     } else if (mode === 'restart') {
       const ownerId = selected[0];
       if (!ownerId) throw new Error('No owner matched the supplied owner key.');
-      // A blocked job has no revision to approve; the next dry-run reports the new scan's.
-      await restartBlockedLegacyLibraryDiscovery(database, ownerId, JOB_ID);
+      // A blocked or rolled-back job has no revision to approve; the next dry-run reports the new scan's.
+      await restartLegacyLibraryDiscovery(database, ownerId, JOB_ID);
       reports.push({ ownerKey: createMigrationOwnerKey(ownerId), mode, phase: 'discover' });
     } else {
       const ownerId = selected[0];

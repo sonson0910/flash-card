@@ -12,7 +12,7 @@ import {
   LegacyLibraryDiscoveryStateChangedError,
   LegacyLibraryGenerationChangedError,
   LegacyLibraryRollbackConflictError,
-  restartBlockedLegacyLibraryDiscovery,
+  restartLegacyLibraryDiscovery,
   rollbackLegacyLibraryMigration,
 } from '../src/legacyLibraryMigrationFirestore.js';
 import { assertOwnerLibraryWriteAllowed } from '../src/legacyLibraryMigrationOwnerScope.js';
@@ -1256,7 +1256,7 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     await expect(discoverToEnd(jobId)).resolves.toMatchObject({ discovery: { phase: 'blocked' } });
 
     await owner.collection('cards').doc('legacy-blank').set({ id: 'legacy-blank', word: 'Blank', translation: 'trống' });
-    await restartBlockedLegacyLibraryDiscovery(database, OWNER_ID, jobId);
+    await restartLegacyLibraryDiscovery(database, OWNER_ID, jobId);
     expect((await jobReference.get()).data()).toMatchObject({ phase: 'discover', sourceRevision: '', scanned: 0 });
     expect((await jobReference.get()).data()?.blockedReason).toBeUndefined();
 
@@ -1265,9 +1265,51 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision: restarted.sourceRevision }))
       .resolves.toMatchObject({ complete: true, groupCount: 3 });
     // Only a blocked job restarts; a completed one is left as it is.
-    await expect(restartBlockedLegacyLibraryDiscovery(database, OWNER_ID, jobId))
+    await expect(restartLegacyLibraryDiscovery(database, OWNER_ID, jobId))
       .rejects.toBeInstanceOf(LegacyLibraryDiscoveryStateChangedError);
     expect((await jobReference.get()).data()?.phase).toBe('complete');
+  });
+
+  it('restarts a rolled-back job with a new scan, keeps its rollback backup, and then applies it', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const jobId = 'rolled-back-restart-v3';
+    const jobReference = owner.collection('admin_library_migration_jobs').doc(jobId);
+    const backups = owner.collection('admin_library_migration_backups');
+    const snapshotOf = async (root: DocumentReference) => ({
+      root: (await root.get()).data(),
+      plans: (await root.collection('plans').orderBy('__name__').get()).docs.map(document => [document.id, document.data()]),
+      sources: (await root.collection('sources').orderBy('__name__').get()).docs.map(document => [document.id, document.data()]),
+    });
+    const libraryBefore = (await owner.collection('cards').orderBy('__name__').get()).docs
+      .map(document => [document.id, document.data()]);
+    const first = await discoverToEnd(jobId);
+    const firstScanId = String((await jobReference.get()).data()?.scanId);
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision: first.sourceRevision }))
+      .resolves.toMatchObject({ complete: true, groupCount: 2 });
+    await rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, first.sourceRevision);
+    expect((await jobReference.get()).data()?.phase).toBe('rolled-back');
+    const rollbackBackup = await snapshotOf(backups.doc(jobId));
+    expect(rollbackBackup.plans).toHaveLength(2);
+    expect(rollbackBackup.sources).toHaveLength(3);
+    // Discovery and apply leave a rolled-back job as it is.
+    await expect(discoverToEnd(jobId)).resolves.toMatchObject({ discovery: { phase: 'rolled-back' } });
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision: first.sourceRevision }))
+      .rejects.toBeInstanceOf(LegacyLibraryDiscoveryStateChangedError);
+
+    await restartLegacyLibraryDiscovery(database, OWNER_ID, jobId);
+
+    expect((await jobReference.get()).data()).toMatchObject({ phase: 'discover', sourceRevision: '', scanned: 0 });
+    // The rollback backup is kept whole under the retired scan's archive id.
+    await expect(snapshotOf(backups.doc(`${jobId}:rolled-back:${firstScanId}`))).resolves.toEqual(rollbackBackup);
+    await expect(snapshotOf(backups.doc(jobId))).resolves.toEqual({ root: undefined, plans: [], sources: [] });
+
+    const second = await discoverToEnd(jobId);
+    expect(second.discovery).toMatchObject({ phase: 'discovered', sourceCount: 3, groupCount: 2 });
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision: second.sourceRevision }))
+      .resolves.toMatchObject({ complete: true, groupCount: 2 });
+    await rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, second.sourceRevision);
+    expect((await owner.collection('cards').orderBy('__name__').get()).docs
+      .map(document => [document.id, document.data()])).toEqual(libraryBefore);
   });
 
   it('discovers and applies a word whose cards are pages apart', async () => {
