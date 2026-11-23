@@ -909,6 +909,51 @@ describe('card persistence', () => {
     expect(futureRestore.writes).toEqual([]);
   });
 
+  describe('restoring a deleted mastered card', () => {
+    const deletedAt = '2026-07-01T10:00:00.000Z';
+    const restoreWith = async (changes: Record<string, unknown>, restore: boolean = true) => {
+      const harness = transactionHarness(new Map([
+        ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+        ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1 })],
+        ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+          schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+        })],
+        ['users/owner/card_tombstones/word-hello', snapshot(true, {
+          cardId: 'word-hello', opId: 'delete-hello', libraryEpoch: 2, revision: 3, deletedAt,
+        })],
+        ['users/owner/profile/library_facets', snapshot(true, {
+          categories: { Basics: 2 }, complete: false, version: 1, updatedAt: '2026-07-02T10:00:00.000Z',
+        })],
+      ]));
+      await createCardForOwner(harness.database, 'owner', {
+        ...card, createdAt: '2026-06-01T10:00:00.000Z', difficulty: 'easy', reviews: 4, interval: 30, ...changes,
+      }, {
+        maximumCards: 5, libraryEpoch: 2, baseRevision: 0, opId: 'restore-hello',
+        operationCreatedAt: '2026-07-01T10:00:05.000Z', ...(restore ? { restore: true as const } : {}),
+      });
+      return harness.writes.find(write => write.path === 'users/owner/cards/word-hello')?.data;
+    };
+
+    it('keeps the mastery date the card had when it was deleted', async () => {
+      expect(await restoreWith({ masteredAt: '2026-06-20T08:00:00.000Z' }))
+        .toMatchObject({ difficulty: 'easy', masteredAt: '2026-06-20T08:00:00.000Z' });
+      expect(await restoreWith({ difficulty: 'unrated', interval: 30, masteredAt: '2026-06-20T08:00:00.000Z' }))
+        .toMatchObject({ masteredAt: '2026-06-20T08:00:00.000Z' });
+    });
+
+    it('drops a mastery date that no earlier state of the card could have held', async () => {
+      expect(await restoreWith({ masteredAt: '2026-07-01T10:00:01.000Z' })).not.toHaveProperty('masteredAt');
+      expect(await restoreWith({ masteredAt: '2026-05-31T23:59:59.000Z' })).not.toHaveProperty('masteredAt');
+      expect(await restoreWith({ difficulty: 'unrated', interval: 3, masteredAt: '2026-06-20T08:00:00.000Z' }))
+        .not.toHaveProperty('masteredAt');
+    });
+
+    it('never takes a mastery date from a fresh capture', async () => {
+      const data = await restoreWith({ createdAt: '2026-07-01T10:00:05.000Z', masteredAt: '2026-06-20T08:00:00.000Z' }, false);
+      expect(data).not.toHaveProperty('masteredAt');
+    });
+  });
+
   it('accepts maximum-safe counters but rejects a tombstone increment at the ceiling', async () => {
     const maxSafe = Number.MAX_SAFE_INTEGER;
     const harness = transactionHarness(new Map([

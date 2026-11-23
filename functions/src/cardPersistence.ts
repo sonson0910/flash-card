@@ -62,6 +62,9 @@ export class CardAllocationConflictError extends Error {
 
 export type CardRecord = Record<string, unknown>;
 
+export const isMasteredCard = (card: CardRecord): boolean => card.difficulty === 'easy'
+  || Number(card.interval ?? (card.fsrs as Record<string, unknown> | undefined)?.scheduledDays ?? 0) >= 21;
+
 export type CardAllocationResult = {
   created: boolean;
   card: DocumentData;
@@ -1055,9 +1058,21 @@ export async function createCardForOwner(
     if (tombstoneRevision > requestedBaseRevision && !explicitlyRecreatesAfterDeletion) {
       throw new CardAllocationConflictError('deleted', 'The card was deleted by a newer operation.');
     }
+    // Mastery time is server-stamped, so a create never takes it from the
+    // client. Restoring a deleted card is the exception: the card keeps the
+    // date it was mastered when that date fits the card's own lifetime, so it
+    // stays in the recently mastered views and a later review does not restamp it.
+    const suppliedMasteredAt = restoresPriorCard ? optionalDate(cardSource.masteredAt, 'masteredAt') : undefined;
+    const restoredMasteredAt = suppliedMasteredAt
+      && isMasteredCard(normalizedCard)
+      && Date.parse(suppliedMasteredAt) >= originalCreationTime
+      && Date.parse(suppliedMasteredAt) <= deletionTime
+      ? suppliedMasteredAt
+      : undefined;
 
     const createdCard = {
       ...normalizedCard,
+      ...(restoredMasteredAt ? { masteredAt: restoredMasteredAt } : {}),
       id,
       schemaVersion: 2,
       revision: tombstoneRevision > 0 ? nextProtocolCounter(tombstoneRevision, 'revision') : 1,

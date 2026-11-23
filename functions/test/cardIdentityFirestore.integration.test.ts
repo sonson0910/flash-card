@@ -149,6 +149,39 @@ describeWithEmulator('card identity persistence in Firestore', () => {
     });
   });
 
+  describe('restoring a deleted mastered card', () => {
+    const restoreAfterDelete = async (supplied: (masteredAt: string, deletedAt: string) => string) => {
+      const ownerId = await newOwner();
+      const created = await createCardForOwner(database, ownerId, word('river', 'sông'));
+      const cardId = cardIdOf(created);
+      const masteredAt = new Date().toISOString();
+      const cardRef = database.doc(`users/${ownerId}/cards/${cardId}`);
+      await cardRef.update({ difficulty: 'easy', reviews: 3, interval: 30, masteredAt });
+      const stored = (await cardRef.get()).data()!;
+      await deleteCard(ownerId, cardId, Number(stored.revision));
+      const deletedAt = String((await database.doc(`users/${ownerId}/card_tombstones/${cardId}`).get()).data()?.deletedAt);
+      const clientCard: Record<string, unknown> = { ...stored, masteredAt: supplied(masteredAt, deletedAt) };
+      for (const field of ['updatedAt', 'schemaVersion', 'revision', 'libraryEpoch']) delete clientCard[field];
+      await createCardForOwner(database, ownerId, clientCard, {
+        libraryEpoch: 0, baseRevision: Number(stored.revision), opId: `restore-${randomUUID()}`,
+        operationCreatedAt: new Date(Date.parse(deletedAt) + 1_000).toISOString(), restore: true,
+      });
+      return { restored: (await cardRef.get()).data()!, masteredAt };
+    };
+
+    it('keeps the mastery date the card had when it was deleted', async () => {
+      const { restored, masteredAt } = await restoreAfterDelete(original => original);
+      expect(restored.difficulty).toBe('easy');
+      expect(restored.masteredAt).toBe(masteredAt);
+    });
+
+    it('drops a mastery date later than the deletion', async () => {
+      const { restored } = await restoreAfterDelete((_, deletedAt) => new Date(Date.parse(deletedAt) + 3_600_000).toISOString());
+      expect(restored.difficulty).toBe('easy');
+      expect(restored).not.toHaveProperty('masteredAt');
+    });
+  });
+
   describe('capture XP', () => {
     const createV2 = (ownerId: string, text: string, opId: string, createdAt: string) => createCardV2ForOwner(
       database, ownerId, { ...word(text, 'nghĩa'), createdAt },
