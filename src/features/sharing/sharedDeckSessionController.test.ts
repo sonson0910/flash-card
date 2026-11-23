@@ -6,6 +6,7 @@ import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { CourseError } from '../courses/courseModel';
 import type { CardData } from '../../types/card';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
+import { setActiveUiLocale } from '../../i18n/loadCatalog';
 import { createSharedDeckCoursePort } from './shareCourseMatching';
 import {
   createSharedDeckSessionController,
@@ -283,6 +284,37 @@ describe('shared deck session controller', () => {
     });
     expect(browser.url).toContain('?share=deck-native-mismatch');
     expect(browser.replacements).toEqual([]);
+  });
+
+  it('words the meaning-language mismatch in the UI language although the library catalog was not loaded yet', async () => {
+    const course = {
+      id: 'course-ko', targetLanguage: 'ko', nativeLanguage: 'en', status: 'active', goals: [],
+      preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+      createdAt: '2026-01-01T00:00:00.000Z',
+    } as const;
+    const coursePort = createSharedDeckCoursePort({
+      model: {
+        status: 'ready', source: 'cloud', profile: { activeCourseId: course.id, courses: [course] },
+        activeCourse: course, pending: false, errorCode: null,
+      },
+      actions: {} as never,
+    });
+    const { controller, adapter } = setup('https://sonflash.test/?share=deck-native-mismatch', undefined, coursePort);
+    vi.mocked(adapter.load).mockResolvedValue({
+      category: 'Shared', targetLanguage: 'ko', nativeLanguage: 'vi',
+      cards: [canonicalCard('resilience', 'ko', 'vi')],
+    });
+    setActiveUiLocale('vi');
+    i18n.load('vi', {});
+    i18n.activate('vi');
+    try {
+      await controller.activate('owner-1');
+      await controller.actions.acceptShared();
+      expect(controller.getSnapshot().error).toContain('ngôn ngữ nghĩa khác');
+    } finally {
+      setActiveUiLocale('en');
+      i18n.activate('en');
+    }
   });
 
   it('retries one accepted share after the intake pair converges', async () => {
@@ -1020,6 +1052,39 @@ describe('shared deck session controller', () => {
       opId: firstOperation.opId,
       operationCreatedAt: firstOperation.operationCreatedAt,
     });
+  });
+
+  it('releases a request the server refused so refusals never fill the retry cap', async () => {
+    const storage = new MemoryStorage();
+    const { controller, adapter } = setup(undefined, storage);
+    await controller.activate('owner-1');
+    vi.mocked(adapter.create).mockRejectedValue(new ProtectedFunctionError({
+      message: 'limit', kind: 'quota', code: 'resource-exhausted', retryable: false,
+    }));
+    for (let index = 0; index < 21; index += 1) {
+      await expect(controller.actions.createShare({
+        category: 'IELTS', cards: [card(`refused-${index}`)], total: 1, hasNext: false,
+      })).resolves.toEqual({ status: 'failed' });
+    }
+    expect(adapter.create).toHaveBeenCalledTimes(21);
+    expect(storage.getItem('lingoflash_shared_deck_operation_v1')).toBeNull();
+  });
+
+  it('counts the retry cap per owner on a shared browser', async () => {
+    const storage = new MemoryStorage();
+    const first = setup(undefined, storage);
+    await first.controller.activate('owner-1');
+    vi.mocked(first.adapter.create).mockRejectedValue(new Error('ambiguous'));
+    for (let index = 0; index < 20; index += 1) {
+      await first.controller.actions.createShare({
+        category: 'IELTS', cards: [card(`word-${index}`)], total: 1, hasNext: false,
+      });
+    }
+    const second = setup(undefined, storage);
+    await second.controller.activate('owner-2');
+    await expect(second.controller.actions.createShare({
+      category: 'IELTS', cards: [card('other-owner')], total: 1, hasNext: false,
+    })).resolves.toMatchObject({ status: 'created' });
   });
 
   it('discards corrupt persisted operations without blocking a new share', async () => {
