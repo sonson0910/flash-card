@@ -90,6 +90,8 @@ test('deleting a photo counts the cards that show it in every course and takes t
   await seedCourseProfile({ targetLanguage: 'ko' });
   await blockExternalNetwork(page, [STORAGE_EMULATOR_PORT]);
   await signIn(page, '/?view=files&locale=en');
+  // The listing carries the plan limits; a file chosen before it arrives stops at "Continue to service".
+  await expect(page.getByRole('complementary', { name: 'My files' }).getByText('No files yet')).toBeVisible();
   await page.getByLabel('Choose a PDF, EPUB, or image').setInputFiles({ name: 'lead-pipe.png', mimeType: 'image/png', buffer: png });
   await expect(page.getByRole('heading', { name: 'Ready to attach' })).toBeVisible({ timeout: 45_000 });
   const stored = await db.collection('users').doc(testUser.uid).collection('files').get();
