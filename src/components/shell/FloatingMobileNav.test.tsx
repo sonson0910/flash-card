@@ -81,4 +81,11 @@ describe('FloatingMobileNav', () => {
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).toMatch(/aria-current="page"[^>]*><span class="claude-mobile-nav-icon"[^]*?>Vocabulary<\/span>/);
   });
+
+  it.each(['study', 'quiz', 'spelling', 'story', 'match', 'shadowing', 'language-drill', 'landing'] as const)('is hidden during %s', view => {
+    const html = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+      <FloatingMobileNav activeView={view} onSelectView={vi.fn()} />
+    </I18nProvider>);
+    expect(html).toBe('');
+  });
 });

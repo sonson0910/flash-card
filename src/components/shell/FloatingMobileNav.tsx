@@ -34,9 +34,9 @@ function TabIcon({ path, crystal }: { readonly path: string; readonly crystal: b
 export function FloatingMobileNav({ activeView, onSelectView }: FloatingMobileNavProps) {
   const { _ } = useLingui();
   const { family } = useTheme();
-  if (['study', 'quiz', 'spelling', 'story', 'match', 'shadowing', 'landing'].includes(activeView)) return null;
+  if (activeView === 'language-drill' || ['study', 'quiz', 'spelling', 'story', 'match', 'shadowing', 'landing'].includes(activeView)) return null;
   const crystal = family === 'crystal';
-  const highlighted = shellNavigationView(activeView === 'language-drill' ? 'spelling' : activeView);
+  const highlighted = shellNavigationView(activeView);
   const items: ReadonlyArray<{ readonly view: MobileTabView; readonly label: ReactNode }> = [
     { view: 'today', label: <Trans {...msg({ id: 'shell.nav.today', message: 'Today' })} /> },
     { view: 'catalog', label: <Trans {...msg({ id: 'shell.nav.paths', message: 'Paths' })} /> },
