@@ -240,8 +240,8 @@ describe('library view model', () => {
       cloudFacetsComplete: false,
     }));
 
-    expect(model.categoryCounts).toEqual({ All: 40, IELTS: 1, Other: 1, TOEIC: 12 });
-    expect(model.sortedCategories).toEqual(['All', 'IELTS', 'Other', 'TOEIC']);
+    expect(model.categoryCounts).toEqual({ All: 40, IELTS: 1, Other: 1 });
+    expect(model.sortedCategories).toEqual(['All', 'IELTS', 'Other']);
     expect(model.stats.categoryChart).toEqual([
       { name: 'IELTS', value: 1 },
       { name: 'Uncategorized', value: 1 },
@@ -307,6 +307,40 @@ describe('library view model', () => {
       { name: 'Anime', value: 1 },
     ]);
     expect(model.stats.categoryChartIsPartial).toBe(true);
+  });
+
+  it('does not trust facets while the active course total is unknown', () => {
+    const model = buildLibraryViewModel(input({
+      cards: [makeCard('ja-1', { category: 'Food' })],
+      isAuthenticated: true,
+      usesCloudPagination: true,
+      cloudTotal: 0,
+      cloudStats: { ...cloudStats, total: 0 },
+      cloudCategoryCounts: { Food: 45, Travel: 12, Anime: 8 },
+      cloudFacetsComplete: true,
+    }));
+
+    expect(model.sortedCategories).toEqual(['All', 'Food']);
+    expect(model.cloudFacetsComplete).toBe(false);
+    expect(model.stats.categoryChart).toEqual([{ name: 'Food', value: 1 }]);
+    expect(model.stats.categoryChartIsPartial).toBe(true);
+  });
+
+  it('does not add categories from facets that are still incomplete', () => {
+    const model = buildLibraryViewModel(input({
+      cards: [makeCard('ja-1', { category: 'Anime' })],
+      isAuthenticated: true,
+      usesCloudPagination: true,
+      cloudTotal: 20,
+      // Only 17 of the 20 cards of the active course, so the sum fits, yet Travel belongs to another course.
+      cloudStats: { ...cloudStats, total: 20, unrated: 20 },
+      cloudCategoryCounts: { Travel: 12, Anime: 5 },
+      cloudFacetsComplete: false,
+    }));
+
+    expect(model.sortedCategories).toEqual(['All', 'Anime']);
+    expect(model.categoryCounts).toEqual({ All: 20, Anime: 1 });
+    expect(model.cloudFacetsComplete).toBe(false);
   });
 
   it('keeps complete facets that fit inside the active course total', () => {

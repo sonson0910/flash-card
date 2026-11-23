@@ -257,8 +257,10 @@ export const selectLibraryStats = ({
 
 /**
  * The stored category facets are owner-wide, while the library, its counts and its stats are scoped to the
- * active course. Facets that add up to more cards than the course holds include another course's cards, so
- * they cannot name this course's categories or counts; the page's own cards are used (and marked partial).
+ * active course. They can be told apart from this course's categories only when they are complete and add up
+ * to no more cards than the loaded course total: a larger sum includes another course's cards, an unknown
+ * total (stats not loaded or failed) cannot rule that out, and incomplete facets may name categories that
+ * belong to another course. In those cases the page's own cards are used (and marked partial).
  */
 export const selectCourseCategoryFacets = ({
   isAuthenticated,
@@ -270,9 +272,10 @@ export const selectCourseCategoryFacets = ({
   cloudFacetsComplete: boolean;
 } => {
   const facetTotal = Object.values(cloudCategoryCounts).reduce((sum, count) => sum + count, 0);
-  return isAuthenticated && cloudStats.total > 0 && facetTotal > cloudStats.total
-    ? { cloudCategoryCounts: {}, cloudFacetsComplete: false }
-    : { cloudCategoryCounts, cloudFacetsComplete };
+  const scopedToCourse = cloudFacetsComplete && cloudStats.total > 0 && facetTotal <= cloudStats.total;
+  return !isAuthenticated || scopedToCourse || facetTotal === 0
+    ? { cloudCategoryCounts, cloudFacetsComplete }
+    : { cloudCategoryCounts: {}, cloudFacetsComplete: false };
 };
 
 export function buildLibraryViewModel(rawInput: LibraryViewModelInput) {
