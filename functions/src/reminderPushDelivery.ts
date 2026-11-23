@@ -29,6 +29,10 @@ export async function currentPushTokensForClaim(
 
 const asTime = (value: unknown): number | null => value instanceof Timestamp ? value.toMillis() : null;
 
+// A receipt is keyed by the schedule day alone, so it cannot tell two zones apart. The zone is stored in the
+// receipt, and a push claimed in another zone less than this long ago also counts as the one for the new day.
+const ZONE_CHANGE_MIN_PUSH_GAP_MS = 12 * 60 * 60_000;
+
 const ownerFromStatePath = (path: string): string => {
   const match = /^users\/([^/]+)\/reminderState\/current$/.exec(path);
   if (!match) throw new InputValidationError('Reminder state path is invalid.');
@@ -95,13 +99,21 @@ export async function claimDuePushReminder(
 
     const receiptId = `${state.nextEligibleLocalDay}_push`;
     const receiptRef = owner.collection('reminderReceipts').doc(receiptId);
-    const duplicate = (await transaction.get(receiptRef)).exists;
+    const existingReceipt = await transaction.get(receiptRef);
+    // A receipt without a zone predates zone changes and stands for every zone; one from another zone stands
+    // only for that zone's own local day, so the same date in a new zone is a different day.
+    const receiptZone = existingReceipt.data()?.timezone;
+    const duplicate = existingReceipt.exists && (typeof receiptZone !== 'string' || receiptZone === schedule.timezone);
+    const previousZone = previousReceipt?.timezone;
+    const previousClaimedAt = asTime(previousReceipt?.claimedAt);
+    const zoneChangedTooRecently = typeof previousZone === 'string' && previousZone !== schedule.timezone
+      && previousClaimedAt !== null && now.getTime() - previousClaimedAt < ZONE_CHANGE_MIN_PUSH_GAP_MS;
     const studiedToday = studiedAt && state.onlyIfNotStudiedToday !== false
       ? studiedOnLocalDay(studiedAt.toDate(), now, schedule.timezone) : false;
     const stale = now.getTime() - eligibleAt > 60 * 60_000;
     const backoffSkip = ignored >= 3 && ignored < 7 && skipNext;
     const canSend = Boolean(studiedAt) && dueCount > 0 && !studiedToday && !stale
-      && ignored < 7 && !backoffSkip && !duplicate;
+      && ignored < 7 && !backoffSkip && !duplicate && !zoneChangedTooRecently;
     // Read only when a send is otherwise due. A restricted account keeps no push schedule.
     if (canSend && (await transaction.get(owner.collection('profile').doc(AGE_RESTRICTION_DOCUMENT_ID))).exists) {
       disablePush(transaction, stateRef, now);
@@ -133,7 +145,12 @@ export async function claimDuePushReminder(
       updatedAt: Timestamp.fromDate(now),
     });
     if (!claim) return null;
-    transaction.create(receiptRef, { claimedAt: Timestamp.fromDate(now), channel: 'push', opId: randomUUID() });
+    const receipt = {
+      claimedAt: Timestamp.fromDate(now), channel: 'push', opId: randomUUID(), timezone: schedule.timezone,
+    };
+    // The same date can already hold the receipt of another zone; the new zone's claim replaces it.
+    if (existingReceipt.exists) transaction.set(receiptRef, receipt);
+    else transaction.create(receiptRef, receipt);
     return { ownerId, scheduledDay: state.nextEligibleLocalDay, dueCount,
       locale: state.locale === 'vi' ? 'vi' : 'en', tokens, receiptRef };
   });
