@@ -37,8 +37,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreference] = useState(() => readThemePreference(storage, getSystemThemeMode()));
   const requestedPreferenceRef = useRef(preference);
   const crystalReadyRef = useRef(false);
+  // The family the root actually shows: Crystal only counts once its assets have loaded.
+  const shownFamilyRef = useRef<ThemeFamily>(preference.family === 'crystal' ? 'classic' : preference.family);
 
   const commit = useCallback((next: ThemePreference) => {
+    shownFamilyRef.current = next.family;
     applyThemeToRoot(next, root);
     setPreference(next);
   }, [root]);
@@ -51,7 +54,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const next = requestedPreferenceRef.current;
         if (next.family === 'crystal') commit(next);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        // The choice stays saved and loads again on the next attempt, but mode changes must still apply meanwhile.
+        commit({ ...requestedPreferenceRef.current, family: shownFamilyRef.current });
+      });
   }, [commit]);
 
   const apply = useCallback((update: (current: ThemePreference) => ThemePreference, persist = true) => {
