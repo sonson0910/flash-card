@@ -302,6 +302,7 @@ describe('spreadsheet import service', () => {
       })),
     ]);
     expect(result.message).not.toMatch(/sign-in and connection/);
+    expect(result).toMatchObject({ status: 'failed', reason: 'items', generationLimited: true });
     expect(events).toContain('complete:0');
   });
 

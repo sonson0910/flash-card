@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/library/LibraryTools.tsx:366
+#: src/features/library/LibraryTools.tsx:368
 msgctxt "library.deck.unassigned-sum"
 msgid "{current} + {moved, plural, one {# card} other {# cards}}"
 msgstr ""
@@ -39,7 +39,7 @@ msgid "LUMI · LINK"
 msgstr ""
 
 #: src/features/library/EmptyLibraryPanel.tsx:226
-#: src/features/library/LibraryTools.tsx:686
+#: src/features/library/LibraryTools.tsx:688
 msgctxt "library.create.word-label"
 msgid "English word"
 msgstr ""
@@ -49,7 +49,7 @@ msgctxt "library.empty.generate-help"
 msgid "Add a word or phrase to generate a card."
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:840
+#: src/features/library/LibraryTools.tsx:842
 msgctxt "library.filters.search-label"
 msgid "Search English words"
 msgstr ""
@@ -74,7 +74,7 @@ msgctxt "library.insights.xp"
 msgid "XP · recent activity"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1014
+#: src/features/cardEdit/EditCardDialog.tsx:1016
 msgctxt "library.edit-card.save"
 msgid "Save changes"
 msgstr ""
@@ -109,7 +109,7 @@ msgctxt "library.grid.search-label"
 msgid "Search words"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:343
+#: src/features/library/LibraryTools.tsx:345
 msgctxt "library.deck.delete-effect-uncounted"
 msgid "The deck goes away, but its cards stay in your library and move to <0>Unassigned</0>. Nothing you have learned is lost."
 msgstr ""
@@ -119,13 +119,13 @@ msgctxt "library.loading.tools"
 msgid "Loading library tools"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:200
+#: src/features/library/LibraryTools.tsx:202
 msgctxt "library.import.failure-save"
 msgid "Check your connection, then try again."
 msgstr ""
 
 #: src/features/library/EmptyLibraryPanel.tsx:258
-#: src/features/library/LibraryTools.tsx:717
+#: src/features/library/LibraryTools.tsx:719
 msgctxt "library.create.building"
 msgid "Building your card"
 msgstr ""
@@ -158,7 +158,7 @@ msgctxt "library.import.progress"
 msgid "Importing {current, number} of {total, number}"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1008
+#: src/features/cardEdit/EditCardDialog.tsx:1010
 msgctxt "library.edit-card.back-to-card"
 msgid "back to card"
 msgstr ""
@@ -178,7 +178,7 @@ msgctxt "library.overview.deck-count"
 msgid "// {count, plural, one {# deck} other {# decks}}"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:1013
+#: src/features/library/LibraryTools.tsx:1015
 msgctxt "library.deck.cancel"
 msgid "Cancel"
 msgstr ""
@@ -209,7 +209,7 @@ msgctxt "library.bulk.assign"
 msgid "Assign"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:766
+#: src/features/library/LibraryTools.tsx:768
 msgctxt "library.tools.dialogue"
 msgid "AI Dialogue"
 msgstr ""
@@ -224,12 +224,12 @@ msgctxt "library.grid.no-match-description"
 msgid "Clear the active filters to return to your complete vocabulary library."
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:962
+#: src/features/cardEdit/EditCardDialog.tsx:964
 msgctxt "library.edit-card.more-fields"
 msgid "Definition, translations and memory hook"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:880
+#: src/features/cardEdit/EditCardDialog.tsx:882
 msgctxt "library.edit-card.editing-badge"
 msgid "· editing"
 msgstr ""
@@ -244,7 +244,7 @@ msgctxt "library.import.failed-empty"
 msgid "No supported card rows were found in this spreadsheet."
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:934
+#: src/features/library/LibraryTools.tsx:936
 msgctxt "library.filters.memory-status"
 msgid "Memory status"
 msgstr ""
@@ -291,7 +291,7 @@ msgstr ""
 msgid "common.close"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:360
+#: src/features/library/LibraryTools.tsx:362
 msgctxt "library.deck.unassigned"
 msgid "Unassigned"
 msgstr ""
@@ -301,7 +301,7 @@ msgctxt "library.import.results-so-far"
 msgid "Results so far"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:356
+#: src/features/library/LibraryTools.tsx:358
 msgctxt "library.deck.removed-caption"
 msgid "deck removed"
 msgstr ""
@@ -311,12 +311,12 @@ msgctxt "library.grid.clear-filters"
 msgid "Clear filters"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:777
+#: src/features/cardEdit/EditCardDialog.tsx:779
 msgctxt "library.edit-card.find-another-photo"
 msgid "Find another photo"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:371
+#: src/features/library/LibraryTools.tsx:373
 msgctxt "library.deck.unassigned-incoming"
 msgid "{count, plural, one {card moves here} other {cards move here}}"
 msgstr ""
@@ -341,7 +341,7 @@ msgctxt "library.import.failed-hint"
 msgid "needs attention"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1014
+#: src/features/cardEdit/EditCardDialog.tsx:1016
 msgctxt "library.edit-card.saving"
 msgid "Saving changes…"
 msgstr ""
@@ -356,7 +356,7 @@ msgctxt "library.import.summary-failed"
 msgid "Failed"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:641
+#: src/features/library/LibraryTools.tsx:643
 msgctxt "library.create.title"
 msgid "Create a card"
 msgstr ""
@@ -366,13 +366,13 @@ msgctxt "library.insights.no-xp"
 msgid "Complete a review to start your activity chart."
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1031
+#: src/features/cardEdit/EditCardDialog.tsx:1033
 #: src/features/library/LibraryCardGrid.tsx:452
 msgctxt "library.delete.title"
 msgid "Delete card?"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:821
+#: src/features/library/LibraryTools.tsx:823
 msgctxt "library.filters.title"
 msgid "Filters"
 msgstr ""
@@ -387,7 +387,12 @@ msgctxt "library.grid.page-loaded"
 msgid "Page {page} loaded with {count, plural, one {# card} other {# cards}}."
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1008
+#: src/features/library/LibraryTools.tsx:198
+msgctxt "library.import.failure-limited"
+msgid "Your AI card allowance does not cover more generated cards right now."
+msgstr ""
+
+#: src/features/cardEdit/EditCardDialog.tsx:1010
 msgctxt "library.edit-card.esc-key"
 msgid "Esc"
 msgstr ""
@@ -417,7 +422,7 @@ msgctxt "library.insights.category"
 msgid "By category"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1048
+#: src/features/cardEdit/EditCardDialog.tsx:1050
 msgctxt "library.edit-card.deleting"
 msgid "Deleting card…"
 msgstr ""
@@ -427,7 +432,7 @@ msgctxt "library.insights.xp-total"
 msgid "{count, number} XP"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:1000
+#: src/features/library/LibraryTools.tsx:1002
 msgctxt "library.decks.title"
 msgid "Decks ({count, number})"
 msgstr ""
@@ -437,7 +442,7 @@ msgctxt "library.insights.kicker"
 msgid "Stats · last 30 days"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1044
+#: src/features/cardEdit/EditCardDialog.tsx:1046
 #: src/features/library/LibraryCardGrid.tsx:452
 #: src/features/library/LibraryDialogOverlays.tsx:211
 msgctxt "common.cancel"
@@ -464,7 +469,7 @@ msgctxt "library.grid.import-progress"
 msgid "Creating {current} of {total}"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1048
+#: src/features/cardEdit/EditCardDialog.tsx:1050
 msgctxt "library.edit-card.discard-confirm"
 msgid "Discard changes"
 msgstr ""
@@ -474,7 +479,7 @@ msgctxt "library.import.skipped"
 msgid "Skipped"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1044
+#: src/features/cardEdit/EditCardDialog.tsx:1046
 msgctxt "library.edit-card.keep-editing"
 msgid "Keep editing"
 msgstr ""
@@ -494,7 +499,7 @@ msgctxt "library.import.download-errors"
 msgid "Download error report"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1010
+#: src/features/cardEdit/EditCardDialog.tsx:1012
 msgctxt "library.edit-card.cancel"
 msgid "Cancel"
 msgstr ""
@@ -509,7 +514,7 @@ msgctxt "library.clear.try-again"
 msgid "Try again"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:904
+#: src/features/cardEdit/EditCardDialog.tsx:906
 msgctxt "library.edit-card.kicker"
 msgid "Card editor"
 msgstr ""
@@ -524,7 +529,7 @@ msgctxt "library.import.failure-size"
 msgid "Choose a smaller spreadsheet, then try again."
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1039
+#: src/features/cardEdit/EditCardDialog.tsx:1041
 msgctxt "library.edit-card.delete-failed"
 msgid "This card could not be deleted. Try again."
 msgstr ""
@@ -539,12 +544,12 @@ msgctxt "library.clear.confirm"
 msgid "Delete everything"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:392
+#: src/features/library/LibraryTools.tsx:394
 msgctxt "library.deck.delete"
 msgid "Delete deck"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:910
+#: src/features/cardEdit/EditCardDialog.tsx:912
 msgctxt "library.edit-card.description"
 msgid "Changes update this card while its review history stays intact."
 msgstr ""
@@ -560,12 +565,12 @@ msgctxt "library.loading.cards"
 msgid "Loading library cards"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:392
+#: src/features/library/LibraryTools.tsx:394
 msgctxt "library.deck.delete-again"
 msgid "Try deleting again"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:327
+#: src/features/library/LibraryTools.tsx:329
 msgctxt "library.deck.delete-dialog-title"
 msgid "Delete “{deckName}”?"
 msgstr ""
@@ -600,33 +605,33 @@ msgctxt "library.tools.more"
 msgid "More library tools"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1048
+#: src/features/cardEdit/EditCardDialog.tsx:1050
 msgctxt "library.edit-card.retry-delete"
 msgid "Retry delete"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:1013
+#: src/features/library/LibraryTools.tsx:1015
 msgctxt "library.deck.new"
 msgid "New deck"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:198
+#: src/features/library/LibraryTools.tsx:200
 msgctxt "library.import.failure-items"
 msgid "Check your sign-in and connection, then try again."
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:347
+#: src/features/library/LibraryTools.tsx:349
 msgctxt "library.deck.delete-effect"
 msgid "{count, plural, one {The deck goes away, but its <0>#</0> card stays in your library and moves to <1>Unassigned</1>. Nothing you have learned is lost.} other {The deck goes away, but its <0>#</0> cards stay in your library and move to <1>Unassigned</1>. Nothing you have learned is lost.}}"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:255
+#: src/features/library/LibraryTools.tsx:257
 msgid "library-tools.ielts-travel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:252
+#: src/features/library/LibraryTools.tsx:254
 msgid "library-tools.new-deck-name"
 msgstr ""
 
@@ -656,7 +661,7 @@ msgid "library.card.bookmark"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:854
+#: src/features/cardEdit/EditCardDialog.tsx:856
 #: src/features/library/LibraryCardGrid.tsx:426
 msgid "library.card.delete"
 msgstr ""
@@ -718,7 +723,7 @@ msgid "library.card.unseen"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1090
+#: src/features/library/LibraryTools.tsx:1092
 msgid "library.categories.all"
 msgstr ""
 
@@ -733,7 +738,7 @@ msgstr ""
 #: src/features/intake/CreateCardDialog.tsx:1107
 #: src/features/library/AiDialogueModal.tsx:156
 #: src/features/library/LibraryDialogOverlays.tsx:116
-#: src/features/library/LibraryTools.tsx:332
+#: src/features/library/LibraryTools.tsx:334
 #: src/features/library/WordExtractorModal.tsx:303
 msgid "library.close"
 msgstr ""
@@ -1310,39 +1315,39 @@ msgid "library.create-card.your-card"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:751
+#: src/features/library/LibraryTools.tsx:753
 msgid "library.create.busy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:754
+#: src/features/library/LibraryTools.tsx:756
 msgid "library.create.check-library"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/EmptyLibraryPanel.tsx:247
-#: src/features/library/LibraryTools.tsx:747
+#: src/features/library/LibraryTools.tsx:749
 msgid "library.create.creating"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:753
+#: src/features/library/LibraryTools.tsx:755
 msgid "library.create.generate"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/EmptyLibraryPanel.tsx:249
-#: src/features/library/LibraryTools.tsx:749
+#: src/features/library/LibraryTools.tsx:751
 msgid "library.create.importing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:628
+#: src/features/library/LibraryTools.tsx:630
 msgid "library.create.sign-in-help"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:703
+#: src/features/library/LibraryTools.tsx:705
 msgid "library.create.word-placeholder"
 msgstr ""
 
@@ -1423,22 +1428,22 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryDialogOverlays.tsx:148
-#: src/features/library/LibraryTools.tsx:1143
+#: src/features/library/LibraryTools.tsx:1145
 msgid "library.deck.create-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1062
+#: src/features/library/LibraryTools.tsx:1064
 msgid "library.deck.delete-action"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:377
+#: src/features/library/LibraryTools.tsx:379
 msgid "library.deck.delete-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1061
+#: src/features/library/LibraryTools.tsx:1063
 msgid "library.deck.delete-this"
 msgstr ""
 
@@ -1469,7 +1474,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryScreen.tsx:360
-#: src/features/library/LibraryTools.tsx:1018
+#: src/features/library/LibraryTools.tsx:1020
 msgid "library.decks.all"
 msgstr ""
 
@@ -1479,7 +1484,7 @@ msgid "library.decks.nav-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1023
+#: src/features/library/LibraryTools.tsx:1025
 msgid "library.decks.unassigned"
 msgstr ""
 
@@ -1564,42 +1569,42 @@ msgid "library.dialogue.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:606
+#: src/features/cardEdit/EditCardDialog.tsx:608
 msgid "library.edit-card.add-suggested-tag"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:564
+#: src/features/cardEdit/EditCardDialog.tsx:566
 msgid "library.edit-card.add-tag"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:569
+#: src/features/cardEdit/EditCardDialog.tsx:571
 msgid "library.edit-card.add-tag-placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:405
+#: src/features/cardEdit/EditCardDialog.tsx:407
 msgid "library.edit-card.added-on"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:483
+#: src/features/cardEdit/EditCardDialog.tsx:485
 msgid "library.edit-card.ai-suggested"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:943
+#: src/features/cardEdit/EditCardDialog.tsx:945
 msgid "library.edit-card.card-fields"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:915
+#: src/features/cardEdit/EditCardDialog.tsx:917
 msgid "library.edit-card.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:423
+#: src/features/cardEdit/EditCardDialog.tsx:425
 msgid "library.edit-card.deck"
 msgstr ""
 
@@ -1609,27 +1614,27 @@ msgid "library.edit-card.deck-missing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:436
+#: src/features/cardEdit/EditCardDialog.tsx:438
 msgid "library.edit-card.deck-not-listed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:431
+#: src/features/cardEdit/EditCardDialog.tsx:433
 msgid "library.edit-card.deck-unassigned"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:630
+#: src/features/cardEdit/EditCardDialog.tsx:632
 msgid "library.edit-card.difficulty"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:656
+#: src/features/cardEdit/EditCardDialog.tsx:658
 msgid "library.edit-card.difficulty-clear"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:652
+#: src/features/cardEdit/EditCardDialog.tsx:654
 msgid "library.edit-card.difficulty-clear-label"
 msgstr ""
 
@@ -1644,7 +1649,7 @@ msgid "library.edit-card.difficulty-hard"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:661
+#: src/features/cardEdit/EditCardDialog.tsx:663
 msgid "library.edit-card.difficulty-helper"
 msgstr ""
 
@@ -1654,7 +1659,7 @@ msgid "library.edit-card.difficulty-medium"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:926
+#: src/features/cardEdit/EditCardDialog.tsx:928
 msgid "library.edit-card.draft-preview"
 msgstr ""
 
@@ -1704,46 +1709,46 @@ msgid "library.edit-card.last-review-hard"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:727
-#: src/features/cardEdit/EditCardDialog.tsx:731
+#: src/features/cardEdit/EditCardDialog.tsx:729
+#: src/features/cardEdit/EditCardDialog.tsx:733
 msgid "library.edit-card.part-of-speech"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:670
-#: src/features/cardEdit/EditCardDialog.tsx:977
+#: src/features/cardEdit/EditCardDialog.tsx:672
+#: src/features/cardEdit/EditCardDialog.tsx:979
 msgid "library.edit-card.phonetic"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:880
-#: src/features/cardEdit/EditCardDialog.tsx:934
+#: src/features/cardEdit/EditCardDialog.tsx:882
+#: src/features/cardEdit/EditCardDialog.tsx:936
 msgid "library.edit-card.preview-fallback"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:816
-#: src/features/cardEdit/EditCardDialog.tsx:829
+#: src/features/cardEdit/EditCardDialog.tsx:818
+#: src/features/cardEdit/EditCardDialog.tsx:831
 msgid "library.edit-card.remove-image"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:551
+#: src/features/cardEdit/EditCardDialog.tsx:553
 msgid "library.edit-card.remove-tag"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:910
+#: src/features/cardEdit/EditCardDialog.tsx:912
 msgid "library.edit-card.review-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:904
+#: src/features/cardEdit/EditCardDialog.tsx:906
 msgid "library.edit-card.review-kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:406
+#: src/features/cardEdit/EditCardDialog.tsx:408
 msgid "library.edit-card.reviewed-count"
 msgstr ""
 
@@ -1753,43 +1758,43 @@ msgid "library.edit-card.save-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:1014
+#: src/features/cardEdit/EditCardDialog.tsx:1016
 msgid "library.edit-card.save-resume"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:712
+#: src/features/cardEdit/EditCardDialog.tsx:714
 msgid "library.edit-card.save-word"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:455
+#: src/features/cardEdit/EditCardDialog.tsx:457
 msgid "library.edit-card.starred"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:533
+#: src/features/cardEdit/EditCardDialog.tsx:535
 msgid "library.edit-card.tag-duplicate"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:537
-#: src/features/cardEdit/EditCardDialog.tsx:594
+#: src/features/cardEdit/EditCardDialog.tsx:539
+#: src/features/cardEdit/EditCardDialog.tsx:596
 msgid "library.edit-card.tag-limit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:535
+#: src/features/cardEdit/EditCardDialog.tsx:537
 msgid "library.edit-card.tag-too-long"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:541
+#: src/features/cardEdit/EditCardDialog.tsx:543
 msgid "library.edit-card.tags"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:600
+#: src/features/cardEdit/EditCardDialog.tsx:602
 msgid "library.edit-card.tags-from-card"
 msgstr ""
 
@@ -1799,58 +1804,58 @@ msgid "library.edit-card.translation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:803
+#: src/features/cardEdit/EditCardDialog.tsx:805
 msgid "library.edit-card.upload-image"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:795
+#: src/features/cardEdit/EditCardDialog.tsx:797
 msgid "library.edit-card.upload-image-cancel"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:840
+#: src/features/cardEdit/EditCardDialog.tsx:842
 msgid "library.edit-card.upload-image-checking"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:847
+#: src/features/cardEdit/EditCardDialog.tsx:849
 msgid "library.edit-card.upload-image-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:787
+#: src/features/cardEdit/EditCardDialog.tsx:789
 msgid "library.edit-card.upload-image-input"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:841
+#: src/features/cardEdit/EditCardDialog.tsx:843
 msgid "library.edit-card.upload-image-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:845
+#: src/features/cardEdit/EditCardDialog.tsx:847
 msgid "library.edit-card.upload-image-quota"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:806
+#: src/features/cardEdit/EditCardDialog.tsx:808
 msgid "library.edit-card.upload-image-short"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:846
+#: src/features/cardEdit/EditCardDialog.tsx:848
 msgid "library.edit-card.upload-image-type"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:507
+#: src/features/cardEdit/EditCardDialog.tsx:509
 msgid "library.edit-card.use-meaning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:682
-#: src/features/cardEdit/EditCardDialog.tsx:687
+#: src/features/cardEdit/EditCardDialog.tsx:684
+#: src/features/cardEdit/EditCardDialog.tsx:689
 msgid "library.edit-card.word"
 msgstr ""
 
@@ -2000,79 +2005,79 @@ msgid "library.extract.word-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:942
+#: src/features/library/LibraryTools.tsx:944
 msgid "library.filters.all-statuses"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:921
+#: src/features/library/LibraryTools.tsx:923
 msgid "library.filters.all-word-types"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:972
+#: src/features/library/LibraryTools.tsx:974
 msgid "library.filters.clear-date"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:962
+#: src/features/library/LibraryTools.tsx:964
 msgid "library.filters.cloud-date-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:979
+#: src/features/library/LibraryTools.tsx:981
 msgid "library.filters.date-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:943
+#: src/features/library/LibraryTools.tsx:945
 msgid "library.filters.due"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryScreen.tsx:374
-#: src/features/library/LibraryTools.tsx:946
+#: src/features/library/LibraryTools.tsx:948
 msgid "library.filters.learning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:945
+#: src/features/library/LibraryTools.tsx:947
 msgid "library.filters.learning-all"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryScreen.tsx:375
-#: src/features/library/LibraryTools.tsx:944
+#: src/features/library/LibraryTools.tsx:946
 msgid "library.filters.mastered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:937
+#: src/features/library/LibraryTools.tsx:939
 msgid "library.filters.memory-status-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:947
+#: src/features/library/LibraryTools.tsx:949
 msgid "library.filters.needs-practice"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:948
+#: src/features/library/LibraryTools.tsx:950
 msgid "library.filters.not-reviewed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:916
+#: src/features/library/LibraryTools.tsx:918
 msgid "library.filters.part-of-speech-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:852
+#: src/features/library/LibraryTools.tsx:854
 msgid "library.filters.search-placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:879
+#: src/features/library/LibraryTools.tsx:881
 msgid "library.filters.starred-label"
 msgstr ""
 
@@ -2092,20 +2097,20 @@ msgid "library.grid.previous-page"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:652
-#: src/features/library/LibraryTools.tsx:653
+#: src/features/library/LibraryTools.tsx:654
+#: src/features/library/LibraryTools.tsx:655
 msgid "library.import.action"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/library/EmptyLibraryPanel.tsx:275
-#: src/features/library/LibraryTools.tsx:659
+#: src/features/library/LibraryTools.tsx:661
 msgid "library.import.choose-file"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:652
-#: src/features/library/LibraryTools.tsx:653
+#: src/features/library/LibraryTools.tsx:654
+#: src/features/library/LibraryTools.tsx:655
 msgid "library.import.in-progress"
 msgstr ""
 
@@ -2316,12 +2321,12 @@ msgctxt "library.import.failed-size"
 msgid "This file is too large to import. Choose a smaller spreadsheet and try again."
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:376
+#: src/features/library/LibraryTools.tsx:378
 msgctxt "library.deck.progress-kept"
 msgid "Review schedules and mastery are kept for every card."
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:860
+#: src/features/cardEdit/EditCardDialog.tsx:862
 msgctxt "library.edit-card.source-label"
 msgid "Captured from"
 msgstr ""
@@ -2341,8 +2346,8 @@ msgctxt "library.overview.due"
 msgid "due today"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1037
-#: src/features/cardEdit/EditCardDialog.tsx:1037
+#: src/features/cardEdit/EditCardDialog.tsx:1039
+#: src/features/cardEdit/EditCardDialog.tsx:1039
 msgctxt "library.edit-card.discard-description"
 msgid "Your remaining draft will be removed."
 msgstr ""
@@ -2362,7 +2367,7 @@ msgctxt "library.grid.title"
 msgid "Your library"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:831
+#: src/features/library/LibraryTools.tsx:833
 msgctxt "library.filters.reset"
 msgid "Reset all"
 msgstr ""
@@ -2402,7 +2407,7 @@ msgctxt "library.grid.study-now"
 msgid "Study now"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:723
+#: src/features/library/LibraryTools.tsx:725
 msgctxt "library-tools.deck-space"
 msgid "Deck space"
 msgstr ""
@@ -2417,7 +2422,7 @@ msgctxt "library.grid.page"
 msgid "Page {current} / {total}"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:748
+#: src/features/cardEdit/EditCardDialog.tsx:750
 msgctxt "library.edit-card.category"
 msgid "Category"
 msgstr ""
@@ -2458,7 +2463,7 @@ msgctxt "common.retry"
 msgid "Retry"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:913
+#: src/features/library/LibraryTools.tsx:915
 msgctxt "library.filters.part-of-speech"
 msgid "Part of speech"
 msgstr ""
@@ -2469,7 +2474,7 @@ msgctxt "library.empty.title-emphasis"
 msgid "first word."
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:731
+#: src/features/library/LibraryTools.tsx:733
 msgctxt "library-tools.unassigned"
 msgid "Unassigned"
 msgstr ""
@@ -2489,13 +2494,13 @@ msgctxt "library.import.mapping-required"
 msgid "Required"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1037
+#: src/features/cardEdit/EditCardDialog.tsx:1039
 #: src/features/library/LibraryCardGrid.tsx:452
 msgctxt "library.delete.description"
 msgid "This will permanently remove {word} from your library."
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:381
+#: src/features/library/LibraryTools.tsx:383
 msgctxt "library.deck.keep"
 msgid "Keep deck"
 msgstr ""
@@ -2510,7 +2515,7 @@ msgctxt "library.import.progress-fallback"
 msgid "{current} of {total}"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:326
+#: src/features/library/LibraryTools.tsx:328
 msgctxt "library.deck.delete-kicker"
 msgid "Delete deck"
 msgstr ""
@@ -2520,7 +2525,7 @@ msgctxt "library.import.dialog-title"
 msgid "Import from spreadsheet"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:896
+#: src/features/library/LibraryTools.tsx:898
 msgctxt "library.filters.more"
 msgid "More"
 msgstr ""
@@ -2557,7 +2562,7 @@ msgctxt "library.insights.no-category"
 msgid "No category data yet."
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1048
+#: src/features/cardEdit/EditCardDialog.tsx:1050
 #: src/features/library/LibraryCardGrid.tsx:452
 msgctxt "library.delete.confirm"
 msgid "Delete card"
@@ -2598,7 +2603,7 @@ msgctxt "library.bulk.deck-label"
 msgid "Move selected cards to deck"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:998
+#: src/features/cardEdit/EditCardDialog.tsx:1000
 msgctxt "library.edit-card.history-note"
 msgid "Your review history is kept. Changes appear on this card right away."
 msgstr ""
@@ -2608,12 +2613,12 @@ msgctxt "library.empty.scan"
 msgid "Scan a text"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:392
+#: src/features/library/LibraryTools.tsx:394
 msgctxt "library.deck.deleting"
 msgid "Deleting…"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:1075
+#: src/features/library/LibraryTools.tsx:1077
 msgctxt "library.categories.title"
 msgid "Categories"
 msgstr ""
@@ -2639,13 +2644,13 @@ msgctxt "library.deck.created"
 msgid "Deck created. Your cards can be assigned to it from the library."
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1031
+#: src/features/cardEdit/EditCardDialog.tsx:1033
 msgctxt "library.edit-card.discard-title"
 msgid "Discard unsaved changes?"
 msgstr ""
 
 #: src/features/library/LibraryScreen.tsx:376
-#: src/features/library/LibraryTools.tsx:882
+#: src/features/library/LibraryTools.tsx:884
 msgctxt "library.filters.starred"
 msgid "Starred"
 msgstr ""
@@ -2711,7 +2716,7 @@ msgctxt "library.insights.empty"
 msgid "There is not enough learning data to show insights yet."
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:761
+#: src/features/cardEdit/EditCardDialog.tsx:763
 msgctxt "library.edit-card.image"
 msgid "Image"
 msgstr ""
@@ -2721,12 +2726,12 @@ msgctxt "library.clear.mastered"
 msgid "mastered words"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:740
+#: src/features/cardEdit/EditCardDialog.tsx:742
 msgctxt "library.edit-card.part-of-speech-locked"
 msgid "Locked to this card's published sense."
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1014
+#: src/features/cardEdit/EditCardDialog.tsx:1016
 msgctxt "library.edit-card.retry-save"
 msgid "Retry save"
 msgstr ""
@@ -2751,13 +2756,13 @@ msgctxt "library.import.pending-hint"
 msgid "save not confirmed"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:885
-#: src/features/cardEdit/EditCardDialog.tsx:935
+#: src/features/cardEdit/EditCardDialog.tsx:887
+#: src/features/cardEdit/EditCardDialog.tsx:937
 msgctxt "library.edit-card.unsaved-badge"
 msgid "Unsaved"
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:362
+#: src/features/library/LibraryTools.tsx:364
 msgctxt "library.deck.unassigned-incoming-uncounted"
 msgid "its cards move here"
 msgstr ""
@@ -2772,14 +2777,14 @@ msgctxt "library.import.retry-guidance"
 msgid "Retry failed or skipped words after checking the source rows."
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:819
-#: src/features/cardEdit/EditCardDialog.tsx:832
+#: src/features/cardEdit/EditCardDialog.tsx:821
+#: src/features/cardEdit/EditCardDialog.tsx:834
 msgctxt "library.edit-card.remove-image-short"
 msgid "Remove"
 msgstr ""
 
 #: src/features/library/EmptyLibraryPanel.tsx:258
-#: src/features/library/LibraryTools.tsx:716
+#: src/features/library/LibraryTools.tsx:718
 msgctxt "library.create.analysing"
 msgid "AI is analysing"
 msgstr ""
@@ -2824,7 +2829,7 @@ msgctxt "library.import.partial-chip-detail"
 msgid "Some rows will not be imported."
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:956
+#: src/features/library/LibraryTools.tsx:958
 msgctxt "library.filters.date-created"
 msgid "Date created"
 msgstr ""
@@ -2834,12 +2839,12 @@ msgctxt "library.import.completed-guidance"
 msgid "Your new and existing cards are ready in the library."
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:782
+#: src/features/library/LibraryTools.tsx:784
 msgctxt "library.create.help"
 msgid "Definitions, phonetic audio, usage examples, and smart visuals auto-generated."
 msgstr ""
 
-#: src/features/library/LibraryTools.tsx:776
+#: src/features/library/LibraryTools.tsx:778
 msgctxt "library.tools.scan"
 msgid "Scan Text"
 msgstr ""
@@ -2849,7 +2854,7 @@ msgctxt "library.clear.description-scope"
 msgid "This permanently deletes every card, deck and review history on all your synced devices."
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:907
+#: src/features/cardEdit/EditCardDialog.tsx:909
 msgctxt "library.edit-card.title"
 msgid "Edit card"
 msgstr ""
@@ -2874,7 +2879,7 @@ msgctxt "library.overview.across-decks"
 msgid "across {count, plural, one {# deck} other {# decks}}"
 msgstr ""
 
-#: src/features/cardEdit/EditCardDialog.tsx:1010
+#: src/features/cardEdit/EditCardDialog.tsx:1012
 msgctxt "library.edit-card.discard"
 msgid "Discard"
 msgstr ""

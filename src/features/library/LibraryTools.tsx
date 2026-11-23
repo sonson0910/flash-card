@@ -194,6 +194,8 @@ export function SpreadsheetImportStatus({
           <Trans {...msg({ context: 'library.import.failure-parse', message: 'Check the spreadsheet columns and format, then try again.' })} />
         ) : result.reason === 'empty' ? (
           <Trans {...msg({ context: 'library.import.failure-empty', message: 'Add at least one word to the spreadsheet, then try again.' })} />
+        ) : result.reason === 'items' && result.generationLimited ? (
+          <Trans {...msg({ context: 'library.import.failure-limited', message: 'Your AI card allowance does not cover more generated cards right now.' })} />
         ) : result.reason === 'items' ? (
           <Trans {...msg({ context: 'library.import.failure-items', message: 'Check your sign-in and connection, then try again.' })} />
         ) : (

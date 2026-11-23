@@ -70,6 +70,8 @@ export type SpreadsheetImportResult = ImportResultEvidence & (
     reason: SpreadsheetImportFailureReason;
     summary: SpreadsheetImportSummary;
     message: string;
+    /** Generation stopped because the plan or account does not allow more, not because of a connection problem. */
+    generationLimited?: boolean;
   });
 
 export interface StructuredIntakePlan {
@@ -175,6 +177,7 @@ const itemImportResult = (summary: SpreadsheetImportSummary, generationLimited =
       status: 'failed',
       reason: 'items',
       summary,
+      ...(generationLimited ? { generationLimited } : {}),
       message: generationLimited
         ? `No cards were imported: ${details}. Your AI card allowance does not cover more generated cards right now.`
         : `No cards were imported: ${details}. Check your sign-in and connection, then try again.`,

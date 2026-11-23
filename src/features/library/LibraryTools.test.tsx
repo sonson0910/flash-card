@@ -351,6 +351,40 @@ describe('spreadsheet import feedback', () => {
     expect(html).not.toContain('Import partly finished.');
   });
 
+  it('says the AI allowance is used up, not that the connection failed, when generation stopped for a limit', () => {
+    const html = renderMarkup(
+      <SpreadsheetImportStatus
+        progress={null}
+        result={{
+          status: 'failed',
+          reason: 'items',
+          generationLimited: true,
+          summary: { total: 4, created: 0, reused: 0, failed: 1, skipped: 3 },
+          message: 'No cards were imported.',
+        }}
+      />,
+    );
+
+    expect(html).toContain('Your AI card allowance does not cover more generated cards right now.');
+    expect(html).not.toContain('Check your sign-in and connection');
+  });
+
+  it('keeps the connection guidance for a failed import that was not stopped by a limit', () => {
+    const html = renderMarkup(
+      <SpreadsheetImportStatus
+        progress={null}
+        result={{
+          status: 'failed',
+          reason: 'items',
+          summary: { total: 2, created: 0, reused: 0, failed: 2, skipped: 0 },
+          message: 'No cards were imported.',
+        }}
+      />,
+    );
+
+    expect(html).toContain('Check your sign-in and connection, then try again.');
+  });
+
   it('uses Vietnamese catalog copy instead of service text and localizes filter values', () => {
     i18n.activate('vi');
     const importHtml = renderMarkup(
