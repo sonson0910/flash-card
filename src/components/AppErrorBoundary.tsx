@@ -11,6 +11,8 @@ const errorCopy = {
 };
 
 const recoveryCopy = (id: string, fallback: string) => {
+  // Lingui throws when no locale was ever activated (a catalog failed on the first visit).
+  if (!i18n.locale) return fallback;
   const translated = i18n._(id);
   return translated === id ? fallback : translated;
 };
