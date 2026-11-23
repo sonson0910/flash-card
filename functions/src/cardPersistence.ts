@@ -1032,7 +1032,12 @@ export async function createCardForOwner(
     // A generated canonical timestamp is not proof of a deliberate replay. Only
     // an explicit protocol timestamp or caller-supplied creation time may pass
     // the deletion barrier, matching the prior offline mutation semantics.
-    const operationTime = Date.parse(operationCreatedAt ?? String(cardSource.createdAt ?? ''));
+    // A verified create is a fresh capture: replaying the same operation is
+    // answered from its receipt, so its time is the server receive time. The
+    // device clock cannot be compared with the server's deletion time.
+    const operationTime = verifiedCreate
+      ? verifiedCreate.receivedAt.getTime()
+      : Date.parse(operationCreatedAt ?? String(cardSource.createdAt ?? ''));
     const deletionTime = tombstoneSnapshot.exists
       ? Date.parse(String((tombstoneSnapshot.data() as CardRecord).deletedAt ?? ''))
       : Number.NaN;
@@ -1044,6 +1049,7 @@ export async function createCardForOwner(
     // new card lifetime even when its word has a prior deletion tombstone.
     const originalCreationTime = Date.parse(String(cardSource.createdAt ?? ''));
     const restoresPriorCard = explicitlyRecreatesAfterDeletion
+      && !verifiedCreate
       && Number.isFinite(originalCreationTime)
       && originalCreationTime <= deletionTime;
     if (tombstoneRevision > requestedBaseRevision && !explicitlyRecreatesAfterDeletion) {

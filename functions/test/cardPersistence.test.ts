@@ -809,6 +809,33 @@ describe('card persistence', () => {
     expect(result).not.toHaveProperty('restored');
   });
 
+  it('accepts a fresh verified capture of a deleted word from a device whose clock runs behind the server', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      ['users/owner/card_reservations/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', snapshot(true, {
+        schemaVersion: 1, cardId: 'word-hello', normalizedWord: 'hello',
+      })],
+      ['users/owner/card_tombstones/word-hello', snapshot(true, {
+        cardId: 'word-hello', opId: 'delete-hello', libraryEpoch: 2, revision: 3, deletedAt: '2026-08-11T10:00:00.000Z',
+      })],
+    ]));
+    // The device clock is four minutes behind: its capture time precedes the
+    // server's deletion time although the capture happened after the deletion.
+    const slowClock = '2026-08-11T09:56:30.000Z';
+
+    const result = await createCardV2ForOwner(harness.database, 'owner', { ...card, createdAt: slowClock }, {
+      maximumCards: 5, libraryEpoch: 2, opId: 'capture-hello-again', timeZone: 'UTC',
+      operationCreatedAt: slowClock, receivedAt: new Date('2026-08-11T10:01:00.000Z'),
+    });
+
+    expect(result).toMatchObject({ created: true, card: { revision: 4 } });
+    expect(result).not.toHaveProperty('restored');
+    expect(harness.writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ method: 'set', path: 'users/owner/cards/word-hello' }),
+    ]));
+  });
+
   it('applies a queued restore facet delta once when create is retried', async () => {
     const operationCreatedAt = new Date().toISOString();
     const harness = concurrentAllocationHarness(new Map([
