@@ -13,6 +13,8 @@ export interface OfflineReadinessProps {
   readonly production?: boolean;
   readonly serviceWorker?: ServiceWorkerContainer;
   readonly registration?: ServiceWorkerRegistration | null;
+  /** Runs before the shell worker takes the root scope; a failure does not stop the preparation. */
+  readonly beforePrepare?: () => Promise<void>;
 }
 
 const statusMessage = (status: OfflineReadinessStatus): MessageDescriptor => {
@@ -137,6 +139,7 @@ export function OfflineReadiness({
   production = import.meta.env.PROD,
   serviceWorker: suppliedServiceWorker,
   registration: suppliedRegistration,
+  beforePrepare,
 }: OfflineReadinessProps) {
   const [status, setStatus] = useState<OfflineReadinessStatus>(() => (
     !production
@@ -278,6 +281,7 @@ export function OfflineReadiness({
     preparationTimedOutRef.current = false;
     setStatus('preparing');
     try {
+      await beforePrepare?.().catch(() => undefined);
       const registration = await installOfflineAppShell(serviceWorker, READY_TIMEOUT_MS, nextRegistration => {
         preparationRegistrationRef.current = nextRegistration;
         attachRegistrationRef.current(nextRegistration);

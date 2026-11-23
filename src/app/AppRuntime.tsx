@@ -84,6 +84,7 @@ import '../styles/shell.css';
 import { OfflineReadiness } from '../features/offlineApp/OfflineReadiness';
 import type { ListenPracticeHandoff, ListenPracticeScope } from './AppViewStage';
 
+const moveLegacyPushWorkerBeforePrepare = () => import('../features/reminders/reminderService').then(service => service.moveLegacyPushWorker());
 const AppOverlays = lazy(() => import('../components/AppOverlays').then(module => ({ default: module.AppOverlays })));
 const AnimeReveal = lazy(() => Promise.all([
   import('../features/rewards/AnimeReveal'), loadCatalog(getActiveUiLocale(), 'rewards'),
@@ -637,7 +638,7 @@ export default function AppRuntime({
         className="claude-workspace flex-1 relative w-full overflow-y-auto z-10 scrollbar-thin focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
       >
         <div className="claude-workspace-inner relative w-full max-w-[1440px] mx-auto px-5 pt-5 pb-28 sm:px-8 lg:px-11 lg:pt-3 lg:pb-8">
-          {viewMode !== 'landing' && <OfflineReadiness />}
+          {viewMode !== 'landing' && <OfflineReadiness beforePrepare={moveLegacyPushWorkerBeforePrepare} />}
           {shouldShowViewHeading(viewMode) && (
             <h1 ref={viewHeadingRef} tabIndex={-1} className="sr-only">{_(APP_VIEW_HEADINGS[viewMode])}</h1>
           )}

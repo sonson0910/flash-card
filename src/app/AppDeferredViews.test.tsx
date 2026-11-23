@@ -96,6 +96,6 @@ describe('AppDeferredViews', () => {
     const runtimeSource = readFileSync(new URL('./AppRuntime.tsx', import.meta.url), 'utf8');
 
     expect(runtimeSource).toContain("import { OfflineReadiness } from '../features/offlineApp/OfflineReadiness';");
-    expect(runtimeSource).toContain("{viewMode !== 'landing' && <OfflineReadiness />}");
+    expect(runtimeSource).toMatch(/\{viewMode !== 'landing' && <OfflineReadiness[ />]/);
   });
 });

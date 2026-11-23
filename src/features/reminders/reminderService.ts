@@ -69,12 +69,13 @@ export const canOfferBrowserPush = async (): Promise<boolean> => {
 
 // A scope holds one registration, and the offline app shell worker owns the root scope. The push worker takes the scope
 // Firebase Messaging uses by default, which no page lives under, so the two registrations never replace each other.
+const PUSH_WORKER_SCRIPT = '/firebase-messaging-sw.js';
 const PUSH_WORKER_SCOPE = '/firebase-cloud-messaging-push-scope';
 
 const currentPushToken = async (permission: NotificationPermission): Promise<string> => {
   if (!await canOfferBrowserPush() || !app) throw new Error('Browser push is unavailable on this device.');
   if (permission !== 'granted') throw new Error('Notification permission was not granted.');
-  const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: PUSH_WORKER_SCOPE });
+  const registration = await navigator.serviceWorker.register(PUSH_WORKER_SCRIPT, { scope: PUSH_WORKER_SCOPE });
   const { getMessaging, getToken } = await import('firebase/messaging');
   const token = await getToken(getMessaging(app), { vapidKey, serviceWorkerRegistration: registration });
   if (!token) throw new Error('Browser push registration did not return a token.');
@@ -125,6 +126,25 @@ const performReminderSave = async (uid: string, settings: ReminderSettings): Pro
   if (token) rememberToken(uid, token);
   else if (!effectiveSettings.channels.push && previousToken) forgetToken(uid, previousToken);
   return effectiveSettings;
+};
+
+/**
+ * An earlier version registered the push worker at the root scope. Preparing the offline app registers the shell worker
+ * over whatever holds that scope, and the push subscription stays with the registration, so pushes would then reach a
+ * worker that cannot show them. Re-subscribe this device at the push scope first, which rotates its token, then drop
+ * the old registration. Does nothing unless the root scope holds the push worker and this device holds the owner's token.
+ */
+export const moveLegacyPushWorker = async (container: ServiceWorkerContainer | undefined = globalThis.navigator?.serviceWorker): Promise<void> => {
+  const uid = auth?.currentUser?.uid;
+  if (!uid || typeof container?.getRegistration !== 'function' || closingOwners.has(uid)) return;
+  const root = await container.getRegistration('/');
+  const worker = root?.active ?? root?.waiting ?? root?.installing;
+  if (!root || !worker || new URL(worker.scriptURL, globalThis.location?.href).pathname !== PUSH_WORKER_SCRIPT) return;
+  if (!storedToken(uid) || globalThis.Notification?.permission !== 'granted') return;
+  const settings = await loadReminderSettings(uid);
+  if (!settings.channels.push) return;
+  await saveReminderSettings(settings);
+  await root.unregister();
 };
 
 export const saveReminderSettings = (settings: ReminderSettings): Promise<ReminderSettings> => {

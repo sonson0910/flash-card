@@ -415,6 +415,42 @@ describe('OfflineReadiness', () => {
     }
   });
 
+  it('runs the before-prepare step ahead of the shell registration and still prepares when it fails', async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    const order: string[] = [];
+    const shellRegistration = {
+      active: activatedWorker, installing: null, waiting: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+    } as unknown as ServiceWorkerRegistration;
+    const serviceWorker = {
+      register: vi.fn(async () => { order.push('register'); return shellRegistration; }),
+      getRegistration: vi.fn(async () => null),
+      ready: Promise.resolve(shellRegistration),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as ServiceWorkerContainer;
+    const beforePrepare = vi.fn(async () => { order.push('before'); throw new Error('push move failed'); });
+
+    try {
+      await act(async () => {
+        root.render(createElement(OfflineReadiness, { production: true, serviceWorker, beforePrepare }));
+        await flushReact();
+      });
+      const button = findElement(container, candidate => (
+        candidate.tagName === 'button' && textContent(candidate) === 'Prepare offline'
+      ));
+      if (!button) throw new Error('Prepare offline button was not rendered.');
+      await act(async () => {
+        invokeClick(button);
+        await flushReact();
+      });
+      expect(order).toEqual(['before', 'register']);
+    } finally {
+      await act(async () => root.unmount());
+    }
+  });
+
   it('surfaces registration failures as retryable errors', async () => {
     const serviceWorker = {
       register: vi.fn(async () => { throw new Error('storage denied'); }),
