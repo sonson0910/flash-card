@@ -151,12 +151,17 @@ export function useWebWordsPage({ ownerId, targetLanguage, translationLanguage }
   }, [items]);
 
   const availableDays = useMemo(() => {
-    const days = new Set<string>();
+    // Day labels ('Today', 'Nov 3, 2026', 'Older') do not sort as text, so order
+    // them by their newest capture; captures without a usable date go last.
+    const newestByDay = new Map<string, number>();
     for (const card of items) {
       const day = webWordsDayFromCard(card);
-      if (day) days.add(day);
+      if (!day) continue;
+      const time = Date.parse(card.source?.capturedAt || card.createdAt || '');
+      const newest = Number.isFinite(time) ? time : Number.NEGATIVE_INFINITY;
+      newestByDay.set(day, Math.max(newestByDay.get(day) ?? Number.NEGATIVE_INFINITY, newest));
     }
-    return [...days].sort().reverse();
+    return [...newestByDay].sort((a, b) => (a[1] === b[1] ? 0 : b[1] > a[1] ? 1 : -1)).map(([day]) => day);
   }, [items]);
 
   const toggleSelected = useCallback((cardId: string) => {

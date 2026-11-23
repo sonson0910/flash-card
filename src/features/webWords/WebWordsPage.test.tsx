@@ -180,14 +180,17 @@ describe('WebWordsPage', () => {
     expect(splitContextAtWord('오늘 결심을 했다.', '결심')).toEqual(['오늘 ', '결심', '을 했다.']);
   });
 
-  it('does not promise future admission for deferred new-word outcomes', () => {
-    for (const addToTodayStatus of ['added-capped', 'added-unloaded', 'added-session-not-started', 'added-after-new-stage'] as const) {
+  it('says queued words are queued and only reports not added when nothing was queued', () => {
+    for (const addToTodayStatus of ['added-capped', 'added-unloaded', 'added-session-not-started'] as const) {
       setState({ status: 'ready', groups: [], addToTodayStatus });
       const html = render();
-      expect(html).toContain('were not added to today&#x27;s new-word stage');
-      expect(html).toContain('study them elsewhere or try again later');
-      expect(html).not.toContain('queue for a later session');
+      expect(html).toContain('queued and get priority in your next new-word session');
+      expect(html).not.toContain('were not added');
     }
+    setState({ status: 'ready', groups: [], addToTodayStatus: 'added-after-new-stage' });
+    const html = render();
+    expect(html).toContain('were not added to today&#x27;s new-word stage');
+    expect(html).toContain('study them elsewhere or try again later');
   });
 
   it('explains that learned cards remain on their normal review schedule', () => {

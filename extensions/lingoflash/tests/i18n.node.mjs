@@ -59,3 +59,22 @@ test('popup intro does not limit create and save to one language', () => {
     assert.doesNotMatch(catalog.popupIntro.message, /English only|chỉ hỗ trợ tiếng Anh/, `${locale}.popupIntro`);
   }
 });
+
+test('user-visible worker, popup and shared strings come from the catalog, not Vietnamese literals', async () => {
+  // Internal protocol and provider-validation errors never reach a learner.
+  const internal = /metadata|Scope|due-count|Due-count|course locale|Course locale|Nguồn|Kênh app|Kết quả LingoFlash|Nonce|Tab\/frame|URL ứng dụng|production|xác nhận kết quả đã hiển thị/;
+  const vietnamese = /[ăâđêôơưáàảãạéèẻẽẹíìỉĩịóòỏõọúùủũụýỳỷỹỵ]/i;
+  const offenders = [];
+  for (const file of ['shared.js', 'background-core.js']) {
+    const source = await readFile(new URL(`../${file}`, import.meta.url), 'utf8');
+    source.split('\n').forEach((line, index) => {
+      const code = line.trim();
+      if (code.startsWith('//') || internal.test(code)) return;
+      // A translated call keeps its Vietnamese fallback; only a literal outside it is a defect.
+      const outsideCalls = code.replace(/\bt\('[A-Za-z_]+',\s*(?:\[[^\]]*\]|[^,)\[]*),\s*(?:'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)\s*\)/g, '');
+      if (!vietnamese.test(outsideCalls)) return;
+      offenders.push(`${file}:${index + 1}: ${code.slice(0, 120)}`);
+    });
+  }
+  assert.deepEqual(offenders, []);
+});

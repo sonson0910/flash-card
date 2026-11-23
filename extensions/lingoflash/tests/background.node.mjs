@@ -3,6 +3,7 @@ import { webcrypto } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
+import { createI18nMock } from './i18n-test-helper.mjs';
 
 const sourceFiles = [
   '../shared.js',
@@ -2629,6 +2630,22 @@ test('bounds the response body parsing phase as well as the network request', as
 
   assert.equal(response.ok, false);
   assert.match(response.error, /hết thời gian/i);
+});
+
+test('reports worker errors in the browser UI language', async () => {
+  const hung = await createWorkerContext({
+    timerCapMs: 1,
+    fetchImpl: async () => ({ ok: true, json: () => new Promise(() => {}) }),
+  });
+  hung.context.chrome.i18n = createI18nMock('en');
+  const timedOut = await sendRuntimeMessage(hung, { type: 'TRANSLATE_SELECTION', text: 'resilient' });
+  assert.equal(timedOut.error, 'Google Translate timed out after 9 seconds.');
+
+  const busy = await createWorkerContext();
+  busy.context.chrome.i18n = createI18nMock('en');
+  await startQuickAdd(busy);
+  const second = await startQuickAdd(busy);
+  assert.equal(second.error, 'A quick-add job is already running on this tab.');
 });
 
 test('allows at most one quick-add job for a source tab', async () => {

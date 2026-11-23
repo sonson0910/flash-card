@@ -260,7 +260,8 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
           <p role="status" aria-live="polite" className="ww-feedback">
             {state.addToTodayStatus === 'added' && <Trans {...msg({ context: 'webWords.feedback.added', message: 'Added to today\'s new words.' })} />}
             {state.addToTodayStatus === 'added-partial' && <Trans {...msg({ context: 'webWords.feedback.added-partial', message: 'Added the words that fit today; the rest are queued for a later session.' })} />}
-            {['added-capped', 'added-unloaded', 'added-session-not-started', 'added-after-new-stage'].includes(state.addToTodayStatus) && <Trans {...msg({ context: 'webWords.feedback.not-added', message: 'These cards were not added to today\'s new-word stage. You can study them elsewhere or try again later.' })} />}
+            {['added-capped', 'added-unloaded', 'added-session-not-started'].includes(state.addToTodayStatus) && <Trans {...msg({ context: 'webWords.feedback.queued', message: 'These words are queued and get priority in your next new-word session.' })} />}
+            {state.addToTodayStatus === 'added-after-new-stage' && <Trans {...msg({ context: 'webWords.feedback.not-added', message: 'These cards were not added to today\'s new-word stage. You can study them elsewhere or try again later.' })} />}
             {state.addToTodayStatus === 'scheduled-normal-review' && <Trans {...msg({ context: 'webWords.feedback.scheduled-normal-review', message: 'These cards already follow their normal review schedule.' })} />}
             {state.addToTodayHasNormallyScheduledCards && state.addToTodayStatus !== 'scheduled-normal-review' && <span className="ww-feedback__extra"><Trans {...msg({ context: 'webWords.feedback.some-scheduled-normal-review', message: 'Other selected cards follow their normal review schedule.' })} /></span>}
           </p>

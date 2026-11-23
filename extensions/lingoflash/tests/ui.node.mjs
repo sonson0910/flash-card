@@ -857,3 +857,9 @@ test('an earlier bubble timer never removes a newer bubble in the reused host', 
   advance(5_000);
   assert.equal(firstHost.isConnected, false);
 });
+
+test('labels the auto-spoken source speaker in the active UI language', () => {
+  const { nodes } = renderBubbleForToneAssertions({ status: 'translated', text: 'apple', translation: 'quả táo', autoSpeak: true, speechLocale: 'en' }, 'en');
+  const speaker = nodes.find(node => node.dataset?.speechState === 'playing');
+  assert.equal(speaker?.attributes['aria-label'], 'Pronounce apple (playing)');
+});
