@@ -8,7 +8,10 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   // initial headroom (71,188 B gzip). Startup correctness fixes (theme
   // fallback when a theme family fails to load, one activation of the first
   // catalogs, catalog reload on a language switch, a readable recovery panel
-  // with no active locale) measured 222,633 B raw / 71,056 B gzip.
+  // with no active locale) measured 222,633 B raw / 71,056 B gzip. Later
+  // fixes reached 222,747 B raw / 71,101 B gzip; warming the Today workspace
+  // from the deferred startup chunk and dropping the modulepreload polyfill
+  // measured 221,454 B raw / 70,482 B gzip.
   initialJavaScriptRaw: 224_000,
   initialJavaScriptGzip: 71_200,
   // Refreshed learning UI baseline: 196,193 B raw / 28,008 B gzip. Keep
