@@ -280,9 +280,9 @@ test('a new signed-in learner advances from language selection to a target choic
   await expect(levels.getByRole('button', { name: /^Core/ })).toHaveAttribute('aria-pressed', 'true');
   await continueButton.click();
 
-  await expect(dialog.getByRole('heading', { name: 'How many new words each day?' })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'How many cards each day?' })).toBeVisible();
   await expect(progress).toHaveAttribute('aria-valuetext', '5 / 7');
-  await expect(dialog.locator('.onb-projection')).toHaveText('70new words a week in your plan at 10 a day.About 7 min a day for new words, plus the reviews that come due.');
+  await expect(dialog.locator('.onb-projection')).toHaveText('70cards a week at 10 a day.About 6 min a day at this pace.');
   await dialog.getByRole('button', { name: 'Try 5 cards' }).click();
 
   // The trial grades the real starter cards the server wrote for this course.

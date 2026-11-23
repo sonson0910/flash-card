@@ -25,11 +25,11 @@ async function prepareTheme(page: Page, theme: (typeof themes)[number], viewport
   }, theme);
 }
 
-async function expectScreen(page: Page, testInfo: TestInfo, name: string) {
+async function expectScreen(page: Page, testInfo: TestInfo, name: string, mask: Locator[] = []) {
   await expect(page.locator('html')).toHaveAttribute('data-theme-family', /classic|crystal/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `${name} has horizontal overflow`).toBe(true);
   const screenshot = testInfo.outputPath(`${name}.png`);
-  const image = await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide' });
+  const image = await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide', mask });
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
   return { image, name };
 }
@@ -131,7 +131,8 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(countdown.locator('.onb-weeks > span')).toHaveCount(12);
     await expect(countdown).toContainText('13 weeks until exam day.');
     await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
-    const examScreenshot = await expectScreen(page, testInfo, `course-onboarding-exam-${theme.family}-${theme.mode}-${viewport.name}`);
+    // The date field shows a day 86 days from today, so it changes every day; the countdown beside it does not.
+    const examScreenshot = await expectScreen(page, testInfo, `course-onboarding-exam-${theme.family}-${theme.mode}-${viewport.name}`, [onboarding.getByLabel('Exam date (optional)')]);
 
     await seedCourses(db, testUser.uid);
     await page.reload();
@@ -307,11 +308,11 @@ for (const theme of themes) for (const viewport of viewports) {
     const primerScreenshot = await expectScreen(page, testInfo, `course-onboarding-script-${theme.family}-${theme.mode}-${viewport.name}`);
     await onboarding.getByRole('button', { name: 'Continue' }).click();
 
-    await expect(onboarding.getByRole('heading', { name: 'How many new words each day?' })).toBeVisible();
+    await expect(onboarding.getByRole('heading', { name: 'How many cards each day?' })).toBeVisible();
     await expect(onboarding.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '6 / 8');
     await expect(onboarding.locator('.onboarding-pace-grid > button')).toHaveCount(4);
-    await expect(onboarding.locator('.onb-pace-minutes')).toHaveText(['≈ 4 min a day', '≈ 7 min a day', '≈ 10 min a day', '≈ 14 min a day']);
-    await expect(onboarding.locator('.onb-projection')).toHaveText('70new words a week in your plan at 10 a day.About 7 min a day for new words, plus the reviews that come due.');
+    await expect(onboarding.locator('.onb-pace-minutes')).toHaveText(['≈ 4 min a day', '≈ 6 min a day', '≈ 8 min a day', '≈ 9 min a day']);
+    await expect(onboarding.locator('.onb-projection')).toHaveText('70cards a week at 10 a day.About 6 min a day at this pace.');
     const paceScreenshot = await expectScreen(page, testInfo, `course-onboarding-daily-pace-${theme.family}-${theme.mode}-${viewport.name}`);
 
     await onboarding.getByRole('button', { name: 'Try 5 cards' }).click();
