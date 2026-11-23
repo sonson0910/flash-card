@@ -825,6 +825,17 @@
     return [];
   });
 
+  // Drops the history of words the app saved, keeping translate-only lookups.
+  // Saved words describe one signed-in account; lookups have no owner.
+  const clearCreatedRecentLookups = () => withRecentLookupMutationLock(async () => {
+    if (!transientStorage) return;
+    const stored = (await apiCall(transientStorage, 'get', RECENT_LOOKUPS_STORAGE_KEY))?.[RECENT_LOOKUPS_STORAGE_KEY];
+    if (!Array.isArray(stored)) return;
+    const kept = stored.map(normalizeRecentLookup).filter(item => item && item.kind !== 'create');
+    if (kept.length === 0) await apiCall(transientStorage, 'remove', RECENT_LOOKUPS_STORAGE_KEY);
+    else if (kept.length !== stored.length) await apiCall(transientStorage, 'set', { [RECENT_LOOKUPS_STORAGE_KEY]: kept });
+  });
+
   globalThis.LingoFlashExtension = Object.freeze({
     DEFAULT_APP_URL,
     APP_ORIGIN,
@@ -900,6 +911,7 @@
     readRecentLookups,
     recordRecentLookup,
     clearRecentLookups,
+    clearCreatedRecentLookups,
     validateAppUrl,
     createIntentId,
     createImportNonce,

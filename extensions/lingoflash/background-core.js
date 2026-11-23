@@ -6,7 +6,7 @@
     sanitizeSourceUrl, boundedPageTitle, DECK_METADATA_STORAGE_KEY, DECK_METADATA_GENERATION_STORAGE_KEY, DECK_METADATA_RETIRED_SCOPES_STORAGE_KEY,
     DUE_COUNT_STORAGE_KEY, DUE_COUNT_RETIRED_SCOPES_STORAGE_KEY, extensionApi, transientStorage, deckMetadataStorage, usesPromiseApi,
     apiCall, buildImportUrl, createImportNonce, createIntentId, isValidImportNonce, selectionValidation, normalizeSilentImportIntent,
-    readSettings, writeUserSettings, updateSelectionIconSites, readRecentLookups, recordRecentLookup, clearRecentLookups, normalizeDeckScope, normalizeDeckMetadata, normalizeRetiredDeckScopes,
+    readSettings, writeUserSettings, updateSelectionIconSites, readRecentLookups, recordRecentLookup, clearRecentLookups, clearCreatedRecentLookups, normalizeDeckScope, normalizeDeckMetadata, normalizeRetiredDeckScopes,
     normalizeDueCountMetadata, normalizeRetiredDueCountScopes,
     COURSE_LOCALE_STORAGE_KEY, COURSE_LOCALE_RETIRED_SCOPES_STORAGE_KEY, normalizeCourseTargetLanguage, normalizeCourseLocaleMetadata, normalizeRetiredCourseLocaleScopes,
     normalizeSelectionIconSites, selectionIconSitePatternFromUrl, isProtectedSelectionIconUrl, t,
@@ -117,6 +117,19 @@
       && Number.isSafeInteger(receipt.expiresAt) && receipt.expiresAt > Date.now() ? receipt : null;
   };
   const clearRetry = async tabId => { try { await apiCall(transientStorage, 'remove', retryKey(tabId)); } catch {} };
+  // The capture history of saved words and the retry receipts describe one
+  // signed-in session. When a confirmed session ends or is replaced, the next
+  // account on this browser must not inherit them. Translate-only history has
+  // no owner and stays.
+  const dropOwnerBoundHistory = async () => {
+    try { await clearCreatedRecentLookups(); } catch {}
+    try {
+      const stored = await apiCall(transientStorage, 'get', null) ?? {};
+      for (const name of Object.keys(stored)) {
+        if (name.startsWith(RETRY_KEY_PREFIX)) await apiCall(transientStorage, 'remove', name);
+      }
+    } catch {}
+  };
   // A quick translation shown in a page can offer "Save" once. The bubble only
   // holds an opaque id; the text and course stay here, so a save request can
   // only ever save the word this tab was shown, into the course it named.
@@ -360,18 +373,33 @@
       providerScopeChannel,
     };
   };
+  const confirmedScopeForChannel = channel => channel === 'locale'
+    ? confirmedCourseLocaleScope
+    : channel === 'due'
+      ? confirmedDueCountScope
+      : confirmedDeckScope;
   const jobProviderBindingIsCurrent = job => {
     const binding = normalizeProviderBinding(job);
     if (!binding) return !job?.providerId && !job?.providerGeneration && !job?.providerScope;
     const provider = providers.get(binding.providerId);
-    const currentScope = binding.providerScopeChannel === 'locale'
-      ? confirmedCourseLocaleScope
-      : binding.providerScopeChannel === 'due'
-        ? confirmedDueCountScope
-        : confirmedDeckScope;
     return providerIsCurrent(provider)
       && provider.generation === binding.providerGeneration
-      && currentScope === binding.providerScope;
+      && confirmedScopeForChannel(binding.providerScopeChannel) === binding.providerScope;
+  };
+  // A retry can outlive the worker that issued its binding: the worker idles
+  // out, the app document reconnects under a new provider id and re-publishes
+  // the same scope. Same scope means the same app document and owner, so the
+  // retry moves to the live provider. A different or missing scope proves
+  // nothing about the owner, so the caller must refuse the retry.
+  const rebindRetryProviderBinding = binding => {
+    if (!providerIsCurrent(currentProvider)) return null;
+    if (confirmedScopeForChannel(binding.providerScopeChannel) !== binding.providerScope) return null;
+    return {
+      providerId: currentProvider.id,
+      providerGeneration: currentProvider.generation,
+      providerScope: binding.providerScope,
+      providerScopeChannel: binding.providerScopeChannel,
+    };
   };
   // The target language a fresh capture is studying: the confirmed active
   // course's target language when the app has synced one, else '' (unknown).
@@ -510,6 +538,7 @@
       const scope = normalizeDeckScope(scopes[channel]);
       if (scope) payload.scopes[channel] = scope;
     }
+    if (Object.keys(payload.scopes).length) void dropOwnerBoundHistory();
     try {
       void apiCall(extensionApi.runtime, 'sendMessage', {
         type: METADATA_INVALIDATED_MESSAGE,
@@ -906,12 +935,19 @@
       : await selection(input);
     const id=retry?.id ?? createIntentId(), nonce=createImportNonce();
     const requestedDeck = retry?.requestedDeck || (typeof input?.requestedDeck === 'string' ? input.requestedDeck.trim().slice(0, 128) : '');
-    const providerBinding = retry ? normalizeProviderBinding(retry) : capturedProviderBinding;
+    let providerBinding = retry ? normalizeProviderBinding(retry) : capturedProviderBinding;
     if (!retry && providerWasCurrentAtCapture && !providerBinding) {
       throw new Error('Phiên app chưa xác nhận metadata hiện tại. Hãy chờ SonFlash đồng bộ rồi thử lại.');
     }
     if (retry?.providerId && !providerBinding) {
       throw new Error('Không thể xác minh phiên app của lượt thử lại. Hãy chọn lại văn bản và tạo flashcard mới.');
+    }
+    if (retry && providerBinding && !jobProviderBindingIsCurrent(providerBinding)) {
+      providerBinding = rebindRetryProviderBinding(providerBinding);
+      if (!providerBinding) {
+        await clearRetry(input.tabId);
+        throw new Error('Không thể xác minh phiên app của lượt thử lại. Hãy chọn lại văn bản và tạo flashcard mới.');
+      }
     }
     // A retry must preserve the captured course language, including a
     // language recorded as unknown. Receipts with neither are ambiguous, so
@@ -985,7 +1021,6 @@
       let job=await readJob(r.id); if (!job) return {ignored:true};
       if (typeof sender?.tab?.id!=='number'||sender.tab.id!==job.workerTabId||sender.frameId!==0) throw new Error('Tab/frame trả kết quả không khớp với tác vụ LingoFlash.');
       if (r.nonce !== job.nonce) throw new Error('Nonce kết quả LingoFlash không khớp với tác vụ.');
-      if (!jobProviderBindingIsCurrent(job)) throw new Error('Phiên app đã thay đổi; kết quả này không còn hợp lệ.');
       if (job.resultClaimedAt || job.errorClaimedAt) return {ignored:true};
       job = await claimTerminalResult(job);
       if (!job) return {ignored:true};
@@ -998,7 +1033,9 @@
         let translated = { text: r.translation, sourceLanguage: r.language || normalizeCourseTargetLanguage(job.sourceLanguage) || '' };
         if (!translated.text) try { translated = await googleTranslate(job.text); } catch {}
         const t=bounded(translated.text,256);
-        await recordRecentLookup({text:job.text,translation:t,sourceLanguage:translated.sourceLanguage,targetLanguage:'vi',kind:'create',status:r.status,timestamp:Date.now()});
+        // The result came from the verified worker tab and the app wrote the card, so it is
+        // always reported. A capture whose app session has since ended stays out of the history.
+        if (jobProviderBindingIsCurrent(job)) await recordRecentLookup({text:job.text,translation:t,sourceLanguage:translated.sourceLanguage,targetLanguage:'vi',kind:'create',status:r.status,timestamp:Date.now()});
         const displayed = await show(job.sourceTabId,{status:r.status,modeLabel:'TẠO + LƯU • 1 AI REQUEST',text:job.text,anchor:job.anchor,translation:t,speechLocale:speechLocaleForLanguage(translated.sourceLanguage),sourceLanguage:translated.sourceLanguage,phonetic:r.phonetic,explanation:r.explanation,exampleSentence:r.exampleSentence,exampleTranslation:r.exampleTranslation,aiGenerated:r.aiGenerated});
         inlineShown = displayed.ok;
         notifyPopupStatus({
