@@ -656,10 +656,9 @@ const requestCommitDiscoveryPage = async (
         const group = parseDiscoveryGroup(snapshot.data());
         // A group of a retired scan is a leftover; this page overwrites it.
         if (group.scanId !== current.scanId) return [];
-        if (
-          group.libraryEpoch !== current.libraryEpoch
-          || group.sourceRevision !== current.sourceRevision
-        ) throw new LegacyLibraryDiscoveryStateChangedError();
+        // A group keeps the revision of the page that last wrote it, which is
+        // older than the job's once a later page did not touch it.
+        if (group.libraryEpoch !== current.libraryEpoch) throw new LegacyLibraryDiscoveryStateChangedError();
         return [[discoveryGroupKey(group), group] as const];
       }),
     );

@@ -1244,4 +1244,23 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     expect((await owner.collection('card_reservations').get()).empty).toBe(true);
   });
 
+  it('discovers and applies a word whose cards are pages apart', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const jobId = 'pages-apart-v3';
+    const store = createFirestoreLegacyLibraryDiscoveryStore(database);
+    // Card ids order the scan: the two "quite" cards come first, then "Migrate",
+    // then a third "quite" two pages after the group was last written.
+    await owner.collection('cards').doc('legacy-zz-quite').set({ id: 'legacy-zz-quite', word: 'QUITE', translation: 'khá' });
+    let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 1 });
+    for (let page = 1; discovery.phase === 'discover' && page < 10; page += 1) {
+      discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 1 });
+    }
+
+    expect(discovery).toMatchObject({ phase: 'discovered', sourceCount: 4, groupCount: 2 });
+    const job = (await owner.collection('admin_library_migration_jobs').doc(jobId).get()).data() ?? {};
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision: String(job.sourceRevision) }))
+      .resolves.toMatchObject({ complete: true, groupCount: 2 });
+    expect((await owner.collection('cards').get()).size).toBe(2);
+  });
+
 });
