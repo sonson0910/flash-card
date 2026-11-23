@@ -118,7 +118,8 @@ describe('spreadsheet import/export model', () => {
       expect(Object.keys(exported[0])).toEqual([
         'Lexeme ID', 'Language', 'Translation Language', 'Sense Key', 'Normalized Lemma', 'Word', 'Translation',
         'Explanation', 'Phonetic', 'Part of Speech', 'Category', 'Emoji',
-        'Deck', 'Tags', 'Starred', 'Difficulty', 'CEFR Level', 'Date Added',
+        'Deck', 'Tags', 'Starred', 'Difficulty', 'CEFR Level', 'Example Sentence', 'Mnemonic',
+        'Next Review Date', 'Interval (days)', 'Review Count', 'Review Difficulty', 'Mastered Date', 'Date Added',
       ]);
       expect(parseStructuredCardRows(exported)).toEqual([
         expect.objectContaining({
@@ -158,6 +159,35 @@ describe('spreadsheet import/export model', () => {
     expect(plainRow).not.toHaveProperty('tags');
     expect(plainRow).not.toHaveProperty('bookmarked');
     expect(plainRow).not.toHaveProperty('learnerDifficulty');
+  });
+
+  it('exports the review schedule, example and mnemonic of a card, and the import drops them again', () => {
+    const [reviewed, fresh] = cardsToSpreadsheetRows([{
+      id: '1', word: 'levee', translation: 'đê', explanation: '', phonetic: '', emoji: '🌊',
+      category: 'Nature', partOfSpeech: 'noun', audioUrl: null, imageUrl: null,
+      exampleSentence: 'The levee held.', mnemonic: 'Leave the water behind',
+      nextReviewDate: '2026-12-01T00:00:00.000Z', interval: 12, reviews: 5, masteredAt: '2026-11-20T08:00:00.000Z',
+      fsrs: {
+        due: '2026-12-01T00:00:00.000Z', stability: 12, difficulty: 6.4321, elapsedDays: 3, scheduledDays: 12,
+        learningSteps: 0, reps: 5, lapses: 1, state: 2,
+      },
+    }, {
+      id: '2', word: 'river', translation: 'sông', explanation: '', phonetic: '', emoji: '🏞️',
+      category: 'Nature', partOfSpeech: 'noun', audioUrl: null, imageUrl: null, difficulty: 'hard',
+    }]);
+
+    expect(reviewed).toMatchObject({
+      'Example Sentence': 'The levee held.', Mnemonic: 'Leave the water behind',
+      'Next Review Date': '2026-12-01T00:00:00.000Z', 'Interval (days)': 12, 'Review Count': 5,
+      'Review Difficulty': 6.43, 'Mastered Date': '2026-11-20T08:00:00.000Z',
+    });
+    expect(fresh).toMatchObject({
+      'Example Sentence': '', Mnemonic: '', 'Next Review Date': '', 'Interval (days)': '', 'Review Count': 0,
+      'Review Difficulty': 'hard', 'Mastered Date': '',
+    });
+    const [imported] = parseStructuredCardRows([reviewed]);
+    expect(imported).toMatchObject({ word: 'levee', exampleSentence: 'The levee held.' });
+    expect(JSON.stringify(imported)).not.toMatch(/2026-12-01|6\.43|Leave the water|masteredAt|interval|reviews/i);
   });
 
   it('reads the organising columns leniently and ignores values it does not know', () => {

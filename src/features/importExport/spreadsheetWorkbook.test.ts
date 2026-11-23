@@ -400,7 +400,8 @@ describe('spreadsheet workbook loader', () => {
     const headers = [
       'Lexeme ID', 'Language', 'Translation Language', 'Sense Key', 'Normalized Lemma', 'Word', 'Translation',
       'Explanation', 'Phonetic', 'Part of Speech', 'Category', 'Emoji',
-      'Deck', 'Tags', 'Starred', 'Difficulty', 'CEFR Level', 'Date Added',
+      'Deck', 'Tags', 'Starred', 'Difficulty', 'CEFR Level', 'Example Sentence', 'Mnemonic',
+      'Next Review Date', 'Interval (days)', 'Review Count', 'Review Difficulty', 'Mastered Date', 'Date Added',
     ];
     expect(Object.keys(rows[0])).toEqual(headers);
 

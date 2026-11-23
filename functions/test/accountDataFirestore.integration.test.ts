@@ -47,7 +47,7 @@ describeWithEmulator('account export and deletion', () => {
       ['xp_streams', 'stream-1'], ['review_receipts', 'card-1:op'], ['review_xp_awards', 'award-1'],
       ['card_create_receipts', 'create-1'], ['practice_sessions', 'practice-1'],
       ['ai_usage', 'free-2026-09'], ['ai_operations', 'op-1'], ['ai_daily', '2026-09-24'],
-      ['entitlements', 'pro-1'], ['payment_receipts', 'pay-1'], ['catalog_progress', 'lex-1'],
+      ['entitlements', 'pro-1'], ['payment_receipts', 'pay-1'], ['catalog_progress', 'lex-1'], ['learning_states', 'lex-1'],
       ['analytics_rate', 'current'], ['library_facet_receipts', 'op-1'],
       ['reminderState', 'current'], ['reminderReceipts', '2026-09-27_push'], ['pushTokens', 'device-1'],
       ['pushTokenSessionCutoffs', 'device-1'],
@@ -73,6 +73,10 @@ describeWithEmulator('account export and deletion', () => {
       .toEqual([{ id: 'pay-1', ownerId: uid, value: 'private value' }]);
     expect((exportResult as { catalogProgress: Array<{ id: string; ownerId: string; value: string }> }).catalogProgress)
       .toEqual([{ id: 'lex-1', ownerId: uid, value: 'private value' }]);
+    expect((exportResult as { learningStates: Array<{ id: string; ownerId: string; value: string }> }).learningStates)
+      .toEqual([{ id: 'lex-1', ownerId: uid, value: 'private value' }]);
+    expect((exportResult as { aiOperations: Array<{ id: string; ownerId: string; value: string }> }).aiOperations)
+      .toEqual([{ id: 'op-1', ownerId: uid, value: 'private value' }]);
     expect((exportResult as { reviewReceipts: Array<{ id: string; ownerId: string; value: string }> }).reviewReceipts)
       .toEqual([{ id: 'card-1:op', ownerId: uid, value: 'private value' }]);
     expect((exportResult as { reviewXpAwards: Array<{ id: string; ownerId: string; value: string }> }).reviewXpAwards)
