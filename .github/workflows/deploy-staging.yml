@@ -257,9 +257,20 @@ jobs:
           test -f "$parameter_file"
           grep -qxF 'ENFORCE_APP_CHECK=true' "$parameter_file"
 
+          # A storage trigger cannot deploy without a default bucket and would fail every function
+          # with it, so the sealed Functions leave it out when the parameter file says so.
+          if [[ "$STORAGE_STATE" == "not-enabled" ]]; then
+            printf '%s\n' 'SONFLASH_CLOUD_STORAGE=not-enabled' >> "$parameter_file"
+            echo "::warning title=Storage trigger not deployed::Cloud Storage is not set up on $FIREBASE_PROJECT_ID, so finalizeFileUpload was left out of the Functions deploy."
+            echo "Functions: finalizeFileUpload not deployed; Cloud Storage is not set up on $FIREBASE_PROJECT_ID." >> "$GITHUB_STEP_SUMMARY"
+          else
+            test "$STORAGE_STATE" = "enabled"
+          fi
+
           "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          STORAGE_STATE: ${{ steps.cloud_storage.outputs.state }}
 
       - name: Deploy only sealed Hosting bytes
         working-directory: candidate

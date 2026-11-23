@@ -197,16 +197,35 @@ grants each deployment identity, on its target project: `firebasestorage.default
 `production-hosting`. Without the grant, the staging deploy and the production Hosting
 promotion fail closed, whether or not Cloud Storage is set up.
 
+The Functions deploy reads the same state, in the staging workflow and in the
+`deploy_functions` job of `deploy-production.yml`. The upload trigger `finalizeFileUpload`
+listens on the default bucket, and the pinned Firebase CLI refuses to deploy any function
+while one storage trigger has no bucket to resolve. When the state is `not-enabled`, the
+workflow adds `SONFLASH_CLOUD_STORAGE=not-enabled` to the Functions parameter file, the
+trigger is left out of that deploy, and the run raises a `Storage trigger not deployed`
+warning with a step-summary line. Any other answer than `enabled` fails the job. The
+identity in `production-functions` therefore needs the same
+`firebasestorage.defaultBucket.get` and `serviceusage.services.use` grants.
+
+The scheduled functions (`sweepAiOperations`, `finalizeAccountDeletions`,
+`sweepPushReminders`, `sweepWeeklyDigests`) need the Cloud Scheduler API enabled on the
+target project and Cloud Scheduler job permissions (Cloud Scheduler Admin) on the identity
+that deploys Functions. A secret newly bound to a function needs
+`roles/secretmanager.secretAccessor` for the Functions runtime service account on that
+secret; the deployment identities cannot grant it, so the owner binds it before the
+release.
+
 Cloud Storage is not yet enabled in production, so uploads (My files) cannot work there
 yet. To enable it, the owner:
 
-1. Confirms the grants above on the production identity.
+1. Confirms the grants above on the production identities.
 2. Sets up Cloud Storage in the Firebase console in **production mode** (deny all), never
    test mode, which would let any client read or overwrite any learner's files.
-3. Promotes the next candidate (or re-promotes the current one with a fresh approval and
-   `promote_functions=false`) through `deploy-production.yml`, and confirms the step
-   summary shows Storage Rules deployed rather than the skip warning. Until then every
-   upload fails closed.
+3. Promotes the next candidate (or re-promotes the current one with a fresh approval)
+   through `deploy-production.yml` with `promote_functions=true`, and confirms the step
+   summary shows Storage Rules deployed and no `finalizeFileUpload not deployed` line.
+   Until both are deployed every upload fails closed: without the trigger a stored file
+   is never settled.
 4. Smoke-tests that a learner can upload and open their own file, and that another
    account and a signed-out client cannot read it.
 

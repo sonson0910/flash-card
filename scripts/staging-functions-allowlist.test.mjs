@@ -45,7 +45,8 @@ describe('staging Functions deployment', () => {
     ].sort());
     const indexSource = fs.readFileSync('functions/src/index.ts', 'utf8');
     const exportedEndpoints = Array.from(
-      indexSource.matchAll(/export const ([A-Za-z][A-Za-z0-9]*)\s*=\s*(?:onCall|onSchedule|onRequest|onObjectFinalized|courseProfileCallable)\(/g),
+      // The storage trigger is exported behind the Cloud Storage setup signal of the deploy workflows.
+      indexSource.matchAll(/export const ([A-Za-z][A-Za-z0-9]*)\s*=\s*(?:cloudStorageIsSetUp && )?(?:onCall|onSchedule|onRequest|onObjectFinalized|courseProfileCallable)\(/g),
       match => match[1],
     ).sort();
     assert.deepEqual([...existing, ...pilot].sort(), exportedEndpoints);

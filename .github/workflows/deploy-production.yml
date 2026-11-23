@@ -674,6 +674,16 @@ jobs:
           gcloud firestore indexes composite list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --format=json \
             | node scripts/verify-entitlement-index.mjs "$FIREBASE_PROJECT_ID" "$FIRESTORE_DATABASE_ID"
 
+      - name: Check Cloud Storage setup on the target project
+        id: cloud_storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          state="$(ACCESS_TOKEN="$(gcloud auth print-access-token)" node "$GITHUB_WORKSPACE/scripts/cloud-storage-state.mjs" --project "$FIREBASE_PROJECT_ID")"
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+
       - name: Promote only the sealed Functions artifact after App Check approval
         working-directory: candidate
         shell: bash
@@ -692,11 +702,22 @@ jobs:
       
           test -f "$parameter_file"
           grep -qxF 'ENFORCE_APP_CHECK=true' "$parameter_file"
-      
+
+          # A storage trigger cannot deploy without a default bucket and would fail every function
+          # with it, so the sealed Functions leave it out when the parameter file says so.
+          if [[ "$STORAGE_STATE" == "not-enabled" ]]; then
+            printf '%s\n' 'SONFLASH_CLOUD_STORAGE=not-enabled' >> "$parameter_file"
+            echo "::warning title=Storage trigger not deployed::Cloud Storage is not set up on $FIREBASE_PROJECT_ID, so finalizeFileUpload was left out of the Functions deploy."
+            echo "Functions: finalizeFileUpload not deployed; Cloud Storage is not set up on $FIREBASE_PROJECT_ID." >> "$GITHUB_STEP_SUMMARY"
+          else
+            test "$STORAGE_STATE" = "enabled"
+          fi
+
           "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only functions --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           APP_CHECK_OBSERVATION_REF: ${{ inputs.app_check_observation_ref }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          STORAGE_STATE: ${{ steps.cloud_storage.outputs.state }}
 
   deploy_storage_rules:
     needs: [validate_candidate, deploy_indexes]

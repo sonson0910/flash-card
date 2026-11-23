@@ -677,6 +677,37 @@ describe('release workflow contracts', () => {
     expect(scripts['staging:deploy:storage']).toBe('GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only storage --non-interactive');
   });
 
+  it('leaves the storage trigger out of a Functions deploy to a project without Cloud Storage', () => {
+    const stepOf = (workflow, name) => workflow.split(`- name: ${name}\n`)[1]?.split('\n      - ')[0] ?? '';
+    const checkStepName = 'Check Cloud Storage setup on the target project';
+    const checkFunctionsStep = (scope, deployStepName) => {
+      const deploy = stepOf(scope, deployStepName);
+      expect(deploy).toContain('STORAGE_STATE: ${{ steps.cloud_storage.outputs.state }}');
+      const signal = deploy.indexOf("printf '%s\\n' 'SONFLASH_CLOUD_STORAGE=not-enabled' >> \"$parameter_file\"");
+      expect(signal).toBeGreaterThan(deploy.indexOf('if [[ "$STORAGE_STATE" == "not-enabled" ]]; then'));
+      expect(signal).toBeGreaterThan(deploy.indexOf("printf '%s\\n' 'ENFORCE_APP_CHECK=true' > \"$parameter_file\""));
+      expect(signal).toBeLessThan(deploy.indexOf('deploy --only functions'));
+      // Any answer other than a proven absence deploys the trigger with the rest.
+      expect(deploy).toContain('test "$STORAGE_STATE" = "enabled"');
+      expect(deploy).toContain('>> "$GITHUB_STEP_SUMMARY"');
+      expect(scope.indexOf(`- name: ${checkStepName}`)).toBeGreaterThan(-1);
+      expect(scope.indexOf(`- name: ${checkStepName}`)).toBeLessThan(scope.indexOf(`- name: ${deployStepName}`));
+    };
+
+    checkFunctionsStep(read('.github/workflows/deploy-staging.yml'), 'Deploy only sealed Functions');
+
+    const production = read('.github/workflows/deploy-production.yml');
+    const functionsJob = production.split('\n  deploy_functions:\n')[1]?.split(/\n  [a-z_]+:\n/)[0] ?? '';
+    checkFunctionsStep(functionsJob, 'Promote only the sealed Functions artifact after App Check approval');
+    const check = stepOf(functionsJob, checkStepName);
+    expect(check).toContain('id: cloud_storage');
+    expect(check).toContain('state="$(ACCESS_TOKEN="$(gcloud auth print-access-token)" node "$GITHUB_WORKSPACE/scripts/cloud-storage-state.mjs" --project "$FIREBASE_PROJECT_ID")"');
+
+    const index = read('functions/src/index.ts');
+    expect(index).toContain("const cloudStorageIsSetUp = process.env.SONFLASH_CLOUD_STORAGE !== 'not-enabled';");
+    expect(index).toContain('export const finalizeFileUpload = cloudStorageIsSetUp && onObjectFinalized({');
+  });
+
   it('checks the ready Pro entitlement index before promoting production Functions', () => {
     const workflow = read('.github/workflows/deploy-production.yml');
     expect(workflow).toContain('gcloud firestore indexes composite list --project="$FIREBASE_PROJECT_ID" --database="$FIRESTORE_DATABASE_ID" --format=json');

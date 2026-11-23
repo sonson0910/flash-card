@@ -146,4 +146,17 @@ describe('finalize trigger', () => {
     expect(finalizeUploadedFile).toHaveBeenCalledWith(expect.anything(), expect.anything(),
       { name: `users/owner-1/files/${fileId}`, size: 4_096, contentType: 'application/pdf' }, PILOT_CONFIG_DEFAULTS);
   });
+
+  it('is left out of a deploy whose parameter file says the project has no Cloud Storage', async () => {
+    vi.resetModules();
+    process.env.SONFLASH_CLOUD_STORAGE = 'not-enabled';
+    try {
+      const module = await import('../src/index.js') as unknown as Record<string, unknown>;
+      expect(module.finalizeFileUpload).toBe(false);
+      expect(module.prepareFileUpload).toBeTypeOf('function');
+    } finally {
+      delete process.env.SONFLASH_CLOUD_STORAGE;
+      vi.resetModules();
+    }
+  });
 });

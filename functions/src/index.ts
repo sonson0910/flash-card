@@ -2507,10 +2507,15 @@ export const deleteMyFile = onCall({
   }
 });
 
+// A storage trigger cannot be deployed to a project without a default bucket, and one such trigger
+// fails the deploy of every function. The deploy workflows write SONFLASH_CLOUD_STORAGE=not-enabled
+// to the parameter file of such a project, and the trigger is then left out of the deploy.
+const cloudStorageIsSetUp = process.env.SONFLASH_CLOUD_STORAGE !== 'not-enabled';
+
 // Settles every upload from the stored object itself: the browser's byte count is never trusted.
 // A failed run is delivered again: settling is idempotent, and a read of the object's head that
 // failed must be repeated rather than stored without its signature check.
-export const finalizeFileUpload = onObjectFinalized({
+export const finalizeFileUpload = cloudStorageIsSetUp && onObjectFinalized({
   region: REGION, timeoutSeconds: 60, memory: '256MiB', maxInstances: 5, retry: true,
 }, async event => {
   const bucket = getStorage(adminApp).bucket(event.data.bucket) as unknown as BucketLike;
