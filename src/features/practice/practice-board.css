@@ -190,7 +190,8 @@
   /* The white cheer metal disappears on Prism Day; the theme metal is a navy-to-crimson ink there. */
   --rk-cheer: var(--sf-metal);
   --rc-accent: #a30c2d;
-  background: var(--sf-space);
+  /* The canvas colour under the painted backdrop keeps the board opaque while the art is still loading. */
+  background: var(--sf-space), var(--sf-canvas);
 }
 .practice-recap-board[data-family="crystal"]::before {
   inset: -10% auto auto 50%; width: 380px; height: 120%; margin-left: -190px;
