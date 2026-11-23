@@ -12,7 +12,11 @@ import type { SharedDeckCoursePort } from '../features/sharing/shareCourseMatchi
 import { useCustomDeckWorkspace } from '../features/library/useCustomDeckWorkspace';
 import { useLibraryScreenContract } from '../features/library/useLibraryScreenContract';
 import { canStartLibraryClear } from '../features/library/libraryMutationRecovery';
-import { existingCardRevealState } from '../features/library/libraryPresentation';
+import {
+  existingCardRevealState,
+  forgetRecentlyPromotedCard,
+  patchRecentlyPromotedCards,
+} from '../features/library/libraryPresentation';
 import {
   cloudFacetsCacheKey,
   cloudPageCacheKey,
@@ -119,13 +123,18 @@ export function useAppLearningCoordination({
           ports.setCards(current =>
             retainCardsForSession([card, ...current.filter(candidate => candidate.id !== card.id)], cardsPerPage));
         },
-        patch: (cardId, fields) => ports.setCards(current =>
-          current.map(card => card.id === cardId ? { ...card, ...fields } : card)),
+        patch: (cardId, fields) => {
+          patchRecentlyPromotedCards(ports.recentlyPromotedCardsRef.current, id => id === cardId, fields);
+          ports.setCards(current =>
+            current.map(card => card.id === cardId ? { ...card, ...fields } : card));
+        },
         remove: cardId => {
+          forgetRecentlyPromotedCard(ports.recentlyPromotedCardsRef.current, cardId);
           mediaHydration.actions.invalidateCard(cardId);
           ports.setCards(current => current.filter(card => card.id !== cardId));
         },
         clear: () => {
+          ports.recentlyPromotedCardsRef.current.clear();
           ports.browser.actions.bumpHydrationSession();
           ports.cardsRef.current.forEach(card => mediaHydration.actions.invalidateCard(card.id));
           ports.setCards([]);
@@ -173,8 +182,11 @@ export function useAppLearningCoordination({
     mutations: appDependencies.adapters.ownerDecks,
     ports: {
       assignCard: learningCommands.assignDeck,
-      publishCards: (cardIds, fields) => ports.setCards(previous => previous.map(card =>
-        cardIds.has(card.id) ? { ...card, ...fields } : card)),
+      publishCards: (cardIds, fields) => {
+        patchRecentlyPromotedCards(ports.recentlyPromotedCardsRef.current, id => cardIds.has(id), fields);
+        ports.setCards(previous => previous.map(card =>
+          cardIds.has(card.id) ? { ...card, ...fields } : card));
+      },
       publishPractice: (cardIds, fields) => practiceWorkspace.snapshotRef.current.updateCards(cardIds, fields),
       chooseAllDecks: () => catalogActions.chooseDeckScope(ALL_PRACTICE_DECK_SCOPE),
       recoverCloud: (ownerId, message) => {

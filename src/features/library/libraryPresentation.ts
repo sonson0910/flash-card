@@ -1,5 +1,6 @@
 import { cardMatchesQuery, sortCardsByActivity, type CardQueryState } from '../../lib/cardQuery';
 import { cardWordKey } from '../../lib/cardIdentity';
+import { compareStoredCardVersions } from '../../lib/deviceStore';
 import { ALL_PRACTICE_DECK_SCOPE } from '../../lib/practiceScope';
 import type { CardData } from '../../types/card';
 import { i18n } from '@lingui/core';
@@ -109,6 +110,27 @@ export function promoteExistingCard<T extends { createdAt?: string }>(
   };
 }
 
+/** Applies a published change to the promoted copies of the matching cards, following a word edit. */
+export function patchRecentlyPromotedCards(
+  promotedCards: Map<string, CardData>,
+  matches: (cardId: string) => boolean,
+  fields: Partial<CardData>,
+): void {
+  for (const [key, card] of [...promotedCards]) {
+    if (!matches(card.id)) continue;
+    const patched = { ...card, ...fields };
+    promotedCards.delete(key);
+    promotedCards.set(cardWordKey(patched), patched);
+  }
+}
+
+/** Drops the promoted copy of a removed card so page 1 cannot show it again. */
+export function forgetRecentlyPromotedCard(promotedCards: Map<string, CardData>, cardId: string): void {
+  for (const [key, card] of [...promotedCards]) {
+    if (card.id === cardId) promotedCards.delete(key);
+  }
+}
+
 export function overlayRecentlyPromotedCards({
   pageCards,
   promotedCards,
@@ -130,6 +152,9 @@ export function overlayRecentlyPromotedCards({
       .map(card => {
         const pageCard = pageCardsByWord.get(cardWordKey(card));
         if (!pageCard) return card;
+        // A later revision on the page already carries every change made
+        // since the card was promoted, including ones from other devices.
+        if (compareStoredCardVersions(pageCard, card) > 0) return pageCard;
         return {
           ...pageCard,
           ...card,

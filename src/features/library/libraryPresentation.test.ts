@@ -206,4 +206,41 @@ describe('library presentation model', () => {
       sortTouchedAt: '2026-07-28T10:00:00.000Z',
     });
   });
+
+  it('shows the page copy of a promoted card once the page holds a newer revision', () => {
+    const promoted = {
+      id: 'consider',
+      word: 'consider',
+      normalizedWord: 'consider',
+      translation: 'cân nhắc',
+      explanation: '',
+      phonetic: '',
+      emoji: '📘',
+      category: 'Other',
+      audioUrl: null,
+      imageUrl: null,
+      bookmarked: false,
+      revision: 1,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sortTouchedAt: '2026-07-28T10:00:00.000Z',
+    } satisfies CardData;
+    const newerPageCopy = { ...promoted, bookmarked: true, translation: 'xem xét', revision: 2 } satisfies CardData;
+    const filters = {
+      category: null,
+      customDeck: ALL_PRACTICE_DECK_SCOPE,
+      difficulty: null,
+      partOfSpeech: null,
+      bookmarkedOnly: false,
+      createdDate: null,
+      wordPrefix: '',
+    };
+
+    expect(overlayRecentlyPromotedCards({
+      pageCards: [newerPageCopy],
+      promotedCards: [promoted],
+      filters,
+      page: 1,
+      pageSize: 9,
+    })).toEqual([newerPageCopy]);
+  });
 });
