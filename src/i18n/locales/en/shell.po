@@ -2668,3 +2668,8 @@ msgstr "Your daily study goal, new words and reviews together. Today adds up to 
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Appearance settings"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:118
+msgid "profile-completion.sign-out.failed"
+msgstr "Could not stop browser reminders. Try signing out again."

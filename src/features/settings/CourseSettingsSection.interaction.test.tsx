@@ -5,6 +5,8 @@ const hooks = vi.hoisted(() => ({ cursor: 0, states: [] as unknown[], refs: [] a
 const updateCourse = vi.hoisted(() => vi.fn());
 const reopenCourse = vi.hoisted(() => vi.fn());
 const writeDailyPace = vi.hoisted(() => vi.fn());
+const createCourse = vi.hoisted(() => vi.fn());
+const account = vi.hoisted(() => ({ nativeLanguage: null as 'vi' | 'en' | null }));
 const session = vi.hoisted(() => ({
   model: {
     ownerId: 'owner-a', status: 'ready' as const, pending: false,
@@ -45,7 +47,8 @@ vi.mock('@lingui/react', () => ({
   useLingui: () => ({ _: (value: unknown) => typeof value === 'string' ? value : 'label' }),
 }));
 vi.mock('../../i18n/I18nProvider', () => ({ useUiLocale: () => 'en', useSetUiLocale: () => vi.fn() }));
-vi.mock('../courses/CourseGate', () => ({ useCourseSession: () => ({ model: session.model, actions: { updateCourse, reopenCourse } }) }));
+vi.mock('../courses/CourseGate', () => ({ useCourseSession: () => ({ model: session.model, actions: { updateCourse, reopenCourse, createCourse } }) }));
+vi.mock('../profileCompletion/AccountProfileContext', () => ({ useAccountProfileNativeLanguage: () => account.nativeLanguage }));
 vi.mock('./dailyPacePreference', () => ({
   DAILY_PACE_OPTIONS: [5, 10, 15, 20], DEFAULT_DAILY_PACE: 10,
   readDailyPace: () => 10, writeDailyPace,
@@ -82,6 +85,8 @@ describe('CourseSettingsSection preference writes', () => {
     updateCourse.mockReset();
     reopenCourse.mockReset();
     writeDailyPace.mockReset();
+    createCourse.mockReset();
+    account.nativeLanguage = null;
     session.model.ownerId = 'owner-a';
     session.model.pending = false;
     session.model.profile = { courses: [] };
@@ -218,5 +223,27 @@ describe('CourseSettingsSection preference writes', () => {
     expect(find(tree, value => value.type === 'p' && value.props?.role === 'alert')).toBeUndefined();
     expect(voiceSelect()?.props?.value).toBe('');
     expect(voicesChanged).toBeDefined();
+  });
+
+  it('starts another language with the account native language rather than the active course', async () => {
+    account.nativeLanguage = 'en';
+    createCourse.mockResolvedValue({ ok: true });
+    const tree = render();
+    const korean = findButtons(tree).find(button => Boolean(find(button.props?.children, child => child.props?.lang === 'ko')));
+    expect(korean).toBeDefined();
+    (korean?.props?.onClick as () => void)();
+    await flush();
+
+    expect(createCourse).toHaveBeenCalledWith({ targetLanguage: 'ko', nativeLanguage: 'en' });
+  });
+
+  it('falls back to the active course native language when the account has none', async () => {
+    createCourse.mockResolvedValue({ ok: true });
+    const tree = render();
+    const korean = findButtons(tree).find(button => Boolean(find(button.props?.children, child => child.props?.lang === 'ko')));
+    (korean?.props?.onClick as () => void)();
+    await flush();
+
+    expect(createCourse).toHaveBeenCalledWith({ targetLanguage: 'ko', nativeLanguage: 'vi' });
   });
 });

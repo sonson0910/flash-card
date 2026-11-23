@@ -130,6 +130,37 @@ it('keeps the active root theme when Crystal assets fail to load', async () => {
   }
 });
 
+it('still applies light and dark changes after Crystal assets fail to load', async () => {
+  loadThemeAssets.mockRejectedValue(new Error('stylesheet failed'));
+  const storage = new MemoryStorage();
+  const { container, rootElement } = installMinimalReactDom();
+  vi.stubGlobal('localStorage', storage);
+  const root = createRoot(container);
+  let theme: ReturnType<typeof useTheme> | null = null;
+
+  function Harness() {
+    theme = useTheme();
+    return null;
+  }
+
+  try {
+    await act(async () => { root.render(<ThemeProvider><Harness /></ThemeProvider>); });
+    await act(async () => { theme?.setFamily('crystal'); });
+    await vi.waitFor(() => expect(loadThemeAssets).toHaveBeenCalledWith('crystal'));
+    rootElement.classList.remove.mockClear();
+    rootElement.classList.add.mockClear();
+
+    await act(async () => { theme?.setMode('light'); });
+
+    await vi.waitFor(() => expect(theme).toMatchObject({ family: 'classic', mode: 'light' }));
+    expect(rootElement.classList.remove).toHaveBeenCalledWith('dark');
+    expect(rootElement.dataset.themeFamily).toBe('classic');
+    expect(storage.getItem('sonflash_theme_family')).toBe('crystal');
+  } finally {
+    await act(async () => { root.unmount(); });
+  }
+});
+
 it('applies only the final Crystal choice after a rapid Crystal, Classic, Crystal sequence', async () => {
   let resolveAssets: (() => void) | undefined;
   loadThemeAssets.mockImplementation(() => new Promise<void>(resolve => { resolveAssets = resolve; }));

@@ -38,7 +38,11 @@ export const loadCatalog = (locale: ActiveUiLocale, area: string, activate = tru
 };
 
 export const loadVisitedCatalogs = async (locale: ActiveUiLocale): Promise<void> => {
-  await Promise.all([...visitedAreas].map(area => loadCatalog(locale, area)));
+  // A screen opened while these load registers its area meanwhile, so go again until none is added.
+  for (let known = -1; known !== visitedAreas.size;) {
+    known = visitedAreas.size;
+    await Promise.all([...visitedAreas].map(area => loadCatalog(locale, area)));
+  }
 };
 
 export const activateCatalogLocale = (locale: ActiveUiLocale) => i18n.activate(linguiLocale(locale));

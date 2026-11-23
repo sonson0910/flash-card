@@ -6,9 +6,11 @@ import { useSetUiLocale, useUiLocale } from '../../i18n/I18nProvider';
 import { ENABLED_UI_LOCALES, UI_LOCALES, type UiLocale } from '../../i18n/locales';
 import { courseVoicePreferenceKey, readSpeechSynthesisVoices, voicesForTargetLanguage } from '../../lib/courseVoicePreference';
 import { useCourseSession } from '../courses/CourseGate';
+import { defaultCourseNativeLanguage } from '../courses/AddCourseDialog';
 import { goalKindLabel } from '../courses/courseGoalCatalog';
 import { NATIVE_LANGUAGE_LABEL, TARGET_LANGUAGE_LABEL } from '../courses/courseLanguageLabels';
 import { COURSE_NATIVE_LANGUAGES, COURSE_TARGET_LANGUAGES, type CourseNativeLanguage, type CourseTargetLanguage } from '../courses/courseModel';
+import { useAccountProfileNativeLanguage } from '../profileCompletion/AccountProfileContext';
 import { DAILY_PACE_OPTIONS, readDailyPace, writeDailyPace, type DailyPace } from './dailyPacePreference';
 import './settings-theme.css';
 
@@ -46,6 +48,7 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
   const uiLocale = useUiLocale();
   const setUiLocale = useSetUiLocale();
   const { model, actions } = useCourseSession();
+  const profileNativeLanguage = useAccountProfileNativeLanguage();
   const [pace, setPace] = useState<DailyPace>(readDailyPace);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[] | null | false>(null);
   const [saveError, setSaveError] = useState<'course' | 'pace' | null>(null);
@@ -111,7 +114,7 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
   const otherActiveCourses = courses.filter(course => course.status === 'active' && course.id !== activeCourse?.id);
   const usedTargets = new Set(courses.map(course => course.targetLanguage));
   const addableTargets = COURSE_TARGET_LANGUAGES.filter(language => !usedTargets.has(language));
-  const newCourseNative: CourseNativeLanguage = activeCourse?.nativeLanguage ?? (uiLocale === 'vi' ? 'vi' : 'en');
+  const newCourseNative = defaultCourseNativeLanguage(profileNativeLanguage, activeCourse ?? null, uiLocale);
   const targetVoices = activeCourse && Array.isArray(voices) ? voicesForTargetLanguage(voices, activeCourse.targetLanguage) : [];
   const savedVoiceKey = activeCourse?.preferences.pronunciationVariant ?? null;
   const savedVoiceAvailable = Boolean(savedVoiceKey && targetVoices.some(voice => courseVoicePreferenceKey(voice) === savedVoiceKey));

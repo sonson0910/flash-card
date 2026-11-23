@@ -3,17 +3,23 @@ import { useEffect, useState } from 'react';
 const STORAGE_KEY = 'sonflash_focus_mode_enabled';
 const CHANGE_EVENT = 'sonflash_focus_mode_changed';
 let fallbackEnabled = false;
+// Set only while the last write to storage failed, so the in-memory choice wins over the stale stored value.
+let writeFailed = false;
 
 export const readFocusModeEnabled = (): boolean => {
   try {
     const storage = globalThis.localStorage;
+    if (writeFailed) return fallbackEnabled;
     return storage ? storage.getItem(STORAGE_KEY) === 'true' : fallbackEnabled;
   } catch { return fallbackEnabled; }
 };
 
 export const writeFocusModeEnabled = (enabled: boolean): void => {
   fallbackEnabled = enabled;
-  try { globalThis.localStorage?.setItem(STORAGE_KEY, String(enabled)); } catch { /* Keep the setting in memory. */ }
+  try {
+    globalThis.localStorage?.setItem(STORAGE_KEY, String(enabled));
+    writeFailed = false;
+  } catch { writeFailed = true; /* Keep the setting in memory. */ }
   globalThis.dispatchEvent?.(new Event(CHANGE_EVENT));
 };
 

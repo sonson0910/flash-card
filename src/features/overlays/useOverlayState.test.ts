@@ -140,6 +140,29 @@ describe('useOverlayState', () => {
     expect(render(opener, undefined, undefined, 'owner-b').clearOpenerRef.current).toBeNull();
   });
 
+  it('closes the insights dialog, practice menu and share dialog when the owner changes', () => {
+    const opener = { isConnected: true } as HTMLElement;
+    const overlays = render(opener, undefined, undefined, 'owner-a');
+    overlays.openStats(opener);
+    overlays.openPractice(opener);
+    overlays.openShare('https://example.test/share', opener);
+    const open = render(opener, undefined, undefined, 'owner-a');
+    expect(open.isStatsOpen).toBe(true);
+    expect(open.isPracticeMenuOpen).toBe(true);
+    expect(open.shareLink).not.toBeNull();
+
+    const switched = render(opener, undefined, undefined, 'owner-b');
+    expect(switched.isStatsOpen).toBe(false);
+    expect(switched.isPracticeMenuOpen).toBe(false);
+    expect(switched.shareLink).toBeNull();
+    const settled = render(opener, undefined, undefined, 'owner-b');
+    expect(settled.isStatsOpen).toBe(false);
+    expect(settled.isPracticeMenuOpen).toBe(false);
+    expect(settled.shareLink).toBeNull();
+    expect(settled.statsOpenerRef.current).toBeNull();
+    expect(settled.shareOpenerRef.current).toBeNull();
+  });
+
   it('chooses a connected opener and otherwise falls back to the view heading', () => {
     const connected = { isConnected: true } as HTMLElement;
     const disconnected = { isConnected: false } as HTMLElement;

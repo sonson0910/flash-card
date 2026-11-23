@@ -51,7 +51,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const next = requestedPreferenceRef.current;
         if (next.family === 'crystal') commit(next);
       })
-      .catch(() => undefined);
+      // Crystal never loaded, so the root still shows Classic: keep applying mode changes there. The saved choice is retried later.
+      .catch(() => commit({ ...requestedPreferenceRef.current, family: 'classic' }));
   }, [commit]);
 
   const apply = useCallback((update: (current: ThemePreference) => ThemePreference, persist = true) => {

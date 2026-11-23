@@ -22,4 +22,17 @@ describe('focus mode preference', () => {
     values.delete('sonflash_focus_mode_enabled');
     expect(readFocusModeEnabled()).toBe(false);
   });
+
+  it('keeps the choice in memory when storage is readable but writes fail', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: () => { throw new DOMException('full', 'QuotaExceededError'); },
+    });
+    vi.stubGlobal('dispatchEvent', vi.fn());
+
+    writeFocusModeEnabled(true);
+    expect(readFocusModeEnabled()).toBe(true);
+    writeFocusModeEnabled(false);
+    expect(readFocusModeEnabled()).toBe(false);
+  });
 });

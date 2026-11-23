@@ -28,7 +28,7 @@ msgctxt "settings.reminders.badge.read-only"
 msgid "Read only"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:177
+#: src/features/settings/CourseSettingsSection.tsx:180
 msgctxt "settings.voice"
 msgid "Voice"
 msgstr ""
@@ -58,7 +58,7 @@ msgctxt "settings.reminders.skip"
 msgid "Skip for now"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:244
+#: src/features/settings/CourseSettingsSection.tsx:247
 msgctxt "settings.course.meaning-language.scope"
 msgid "Applies to new cards. Existing card meanings do not change."
 msgstr ""
@@ -88,22 +88,22 @@ msgctxt "settings.reminders.smart"
 msgid "Smart reminder"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:261
+#: src/features/settings/CourseSettingsSection.tsx:264
 msgctxt "settings.course.note.body"
 msgid "Meanings stay in the language they were written in."
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:160
+#: src/features/settings/CourseSettingsSection.tsx:163
 msgctxt "settings.course.add"
 msgid "Add a language"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:173
+#: src/features/settings/CourseSettingsSection.tsx:176
 msgctxt "settings.course.romanization.description"
 msgid "A reading aid under each word on cards"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:84
+#: src/features/settings/CourseSettingsSection.tsx:87
 msgctxt "settings.course.ui-language"
 msgid "App language"
 msgstr ""
@@ -158,12 +158,12 @@ msgctxt "settings.sound.label"
 msgid "Study sounds"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:219
+#: src/features/settings/CourseSettingsSection.tsx:222
 msgctxt "settings.course.archived"
 msgid "Archived courses"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:185
+#: src/features/settings/CourseSettingsSection.tsx:188
 msgctxt "settings.voice.automatic"
 msgid "Automatic"
 msgstr ""
@@ -173,7 +173,7 @@ msgctxt "settings.follow-system.label"
 msgid "Follow system"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:85
+#: src/features/settings/CourseSettingsSection.tsx:88
 msgctxt "settings.course.ui-language.scope"
 msgid "Menus, buttons, emails and notifications"
 msgstr ""
@@ -193,7 +193,7 @@ msgctxt "settings.theme.paper"
 msgid "Ink & Paper"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:191
+#: src/features/settings/CourseSettingsSection.tsx:194
 msgctxt "settings.course.keyboard.ko-help"
 msgid "Korean 2-set (두벌식): add Korean in your device keyboard settings, or use the on-screen keys in Korean practice."
 msgstr ""
@@ -208,7 +208,7 @@ msgctxt "settings.reminders.preview.mail-subject"
 msgid "Your SonFlash weekly recap"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:201
+#: src/features/settings/CourseSettingsSection.tsx:204
 msgctxt "settings.course.pace.description"
 msgid "Cards you aim to study each day"
 msgstr ""
@@ -238,7 +238,7 @@ msgctxt "settings.reminders.timezone"
 msgid "Time zone"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:191
+#: src/features/settings/CourseSettingsSection.tsx:194
 msgctxt "settings.course.keyboard"
 msgid "Keyboard"
 msgstr ""
@@ -253,7 +253,7 @@ msgctxt "settings.reminders.timezone.use-device"
 msgid "Use this device’s time zone"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:186
+#: src/features/settings/CourseSettingsSection.tsx:189
 msgctxt "settings.voice.unavailable"
 msgid "Saved voice unavailable · Automatic"
 msgstr ""
@@ -328,12 +328,12 @@ msgctxt "settings.crystal-mode.day"
 msgid "Prism Day"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:173
+#: src/features/settings/CourseSettingsSection.tsx:176
 msgctxt "settings.course.romanization"
 msgid "Show romanization"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:265
+#: src/features/settings/CourseSettingsSection.tsx:268
 msgctxt "settings.course.pace.error"
 msgid "Daily pace could not be saved. Please try again."
 msgstr ""
@@ -373,7 +373,7 @@ msgctxt "settings.reminders.preview.mail-day"
 msgid "Sun"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:194
+#: src/features/settings/CourseSettingsSection.tsx:197
 msgctxt "settings.course.script"
 msgid "Chinese script"
 msgstr ""
@@ -418,7 +418,7 @@ msgctxt "settings.crystal-mode.night"
 msgid "Starry Night"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:197
+#: src/features/settings/CourseSettingsSection.tsx:200
 msgctxt "settings.course.script.traditional"
 msgid "Traditional"
 msgstr ""
@@ -443,7 +443,7 @@ msgctxt "settings.menu.sounds"
 msgid "Sounds & haptics"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:167
+#: src/features/settings/CourseSettingsSection.tsx:170
 msgctxt "settings.course.active-badge"
 msgid "Active"
 msgstr ""
@@ -468,7 +468,7 @@ msgctxt "settings.reminders.preview.mail-link"
 msgid "Continue on SonFlash →"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:229
+#: src/features/settings/CourseSettingsSection.tsx:232
 msgctxt "settings.course.add.title"
 msgid "Start another language"
 msgstr ""
@@ -478,7 +478,7 @@ msgctxt "settings.reminders.quiet"
 msgid "Quiet hours"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:201
+#: src/features/settings/CourseSettingsSection.tsx:204
 msgctxt "settings.course.pace"
 msgid "Daily pace"
 msgstr ""
@@ -494,33 +494,33 @@ msgid "Reminders follow this clock."
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:157
+#: src/features/settings/CourseSettingsSection.tsx:160
 msgid "settings.course.list.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:202
+#: src/features/settings/CourseSettingsSection.tsx:205
 msgid "settings.course.pace.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:203
+#: src/features/settings/CourseSettingsSection.tsx:206
 msgid "settings.course.pace.option"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:99
-#: src/features/settings/CourseSettingsSection.tsx:155
+#: src/features/settings/CourseSettingsSection.tsx:102
+#: src/features/settings/CourseSettingsSection.tsx:158
 msgid "settings.course.region"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:195
+#: src/features/settings/CourseSettingsSection.tsx:198
 msgid "settings.course.script.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:81
+#: src/features/settings/CourseSettingsSection.tsx:84
 msgid "settings.course.ui-language.label"
 msgstr ""
 
@@ -570,22 +570,22 @@ msgid "settings.sound.preview"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:125
+#: src/features/settings/CourseSettingsSection.tsx:128
 msgid "settings.voice.empty"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:119
+#: src/features/settings/CourseSettingsSection.tsx:122
 msgid "settings.voice.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:123
+#: src/features/settings/CourseSettingsSection.tsx:126
 msgid "settings.voice.missing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:121
+#: src/features/settings/CourseSettingsSection.tsx:124
 msgid "settings.voice.unsupported"
 msgstr ""
 
@@ -599,12 +599,12 @@ msgctxt "settings.sounds.description"
 msgid "Feedback while you study, on this device."
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:208
+#: src/features/settings/CourseSettingsSection.tsx:211
 msgctxt "settings.course.archive"
 msgid "Archive course"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:177
+#: src/features/settings/CourseSettingsSection.tsx:180
 msgctxt "settings.voice.description"
 msgid "Read words aloud with a voice on this device"
 msgstr ""
@@ -614,17 +614,17 @@ msgctxt "settings.description"
 msgid "Choose a look and tune the details that help you focus."
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:196
+#: src/features/settings/CourseSettingsSection.tsx:199
 msgctxt "settings.course.script.simplified"
 msgid "Simplified"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:257
+#: src/features/settings/CourseSettingsSection.tsx:260
 msgctxt "settings.course.meaning-language.preview"
 msgid "preview on a card"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:159
+#: src/features/settings/CourseSettingsSection.tsx:162
 msgctxt "settings.course.list.title"
 msgid "Your courses · {count}"
 msgstr ""
@@ -634,7 +634,7 @@ msgctxt "settings.reminders.push-denied"
 msgid "Browser notifications are blocked. Allow them in your browser settings to turn on push."
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:243
+#: src/features/settings/CourseSettingsSection.tsx:246
 msgctxt "settings.course.meaning-language.title"
 msgid "Meanings and explanations in"
 msgstr ""
@@ -671,17 +671,17 @@ msgctxt "settings.sounds.eyebrow"
 msgid "Sounds & haptics"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:223
+#: src/features/settings/CourseSettingsSection.tsx:226
 msgctxt "settings.course.reopen"
 msgid "Reopen"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:261
+#: src/features/settings/CourseSettingsSection.tsx:264
 msgctxt "settings.course.note.title"
 msgid "Switching the app language never changes your cards."
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:264
+#: src/features/settings/CourseSettingsSection.tsx:267
 msgctxt "course.error.generic"
 msgid "That course action did not go through. Please try again."
 msgstr ""

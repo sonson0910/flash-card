@@ -129,4 +129,25 @@ describe('ProfileCompletionGate save lifecycle', () => {
     await act(async () => { resolve(savedInVietnamese); });
     expect(ui.setUiLocale).not.toHaveBeenCalled();
   });
+
+  it.each(['error', 'restricted'] as const)('says so on the %s screen when signing out fails, and allows another try', async screen => {
+    const onSignOut = vi.fn(async () => ({ status: 'failed' as const }));
+    const container = installMinimalReactDom();
+    root = createRoot(container as unknown as Element);
+    await act(async () => root!.render(
+      <ProfileCompletionGate screen={screen} submit={vi.fn()} retry={vi.fn()} returnLabel="Vocabulary library" onSignOut={onSignOut} />,
+    ));
+    const signOutButton = () => findElement(container, element => element.nodeName === 'BUTTON'
+      && /Sign out|Return to sign in/.test(element.textContent));
+    expect(() => findElement(container, element => element.attributes.get('role') === 'alert')).toThrow();
+
+    await act(async () => { reactProps(signOutButton()).onClick!({}); });
+
+    expect(onSignOut).toHaveBeenCalledTimes(1);
+    expect(findElement(container, element => element.attributes.get('role') === 'alert').textContent)
+      .toBe('Could not stop browser reminders. Try signing out again.');
+    expect((signOutButton() as unknown as { disabled: boolean }).disabled).toBe(false);
+    await act(async () => { reactProps(signOutButton()).onClick!({}); });
+    expect(onSignOut).toHaveBeenCalledTimes(2);
+  });
 });

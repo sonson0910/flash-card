@@ -709,3 +709,19 @@ msgstr "Ôn tập & lịch lặp lại ngắt quãng"
 msgctxt "landing.methods.open-library"
 msgid "Open your library"
 msgstr "Mở thư viện"
+
+#: src/features/landing/LandingPage.tsx:213
+#: src/features/landing/LandingPage.tsx:214
+msgctxt "landing.pricing.value.card-cap"
+msgid "Up to 5,000"
+msgstr "Tối đa 5.000"
+
+#: src/features/landing/LandingPage.tsx:245
+msgctxt "landing.pricing.faq.exhausted.answer"
+msgid "You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot."
+msgstr "Bạn vẫn có thể ôn tập và tự thêm thẻ. Tính năng tạo thẻ bằng AI sẽ mở lại vào tháng sau. Gói Pro chưa được bán trong giai đoạn thử nghiệm."
+
+#: src/features/landing/LandingPage.tsx:236
+msgctxt "landing.pricing.faq.free.answer"
+msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day."
+msgstr "Đúng vậy. Ôn tập, thẻ tự tạo và tiện ích Chrome đều miễn phí, không giới hạn thời gian. Gói Free có 30 thẻ tạo bằng AI mỗi tháng, tối đa 20 lượt dùng AI mỗi ngày."

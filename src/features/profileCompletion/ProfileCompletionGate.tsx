@@ -31,7 +31,8 @@ export interface ProfileCompletionGateProps {
   readonly retry: AccountProfileGate['retry'];
   /** The heading of the screen the learner was opening; it opens after the profile is saved. */
   readonly returnLabel: string;
-  readonly onSignOut: () => void | Promise<void>;
+  /** Resolves `{ status: 'failed' }` when the account could not be signed out, so the gate can say so. */
+  readonly onSignOut: () => void | Promise<unknown>;
 }
 
 type Family = 'classic' | 'crystal';
@@ -86,11 +87,12 @@ function BrandMark({ family }: { family: Family }) {
   </span>;
 }
 
-function GateFrame({ family, returnStatus, onSignOut, signOutDisabled, footer, offerAccountData, children }: {
+function GateFrame({ family, returnStatus, onSignOut, signOutDisabled, signOutFailed, footer, offerAccountData, children }: {
   family: Family;
   returnStatus: ReactNode;
   onSignOut: () => void;
   signOutDisabled: boolean;
+  signOutFailed: boolean;
   footer: ReactNode;
   offerAccountData: boolean;
   children: ReactNode;
@@ -111,7 +113,12 @@ function GateFrame({ family, returnStatus, onSignOut, signOutDisabled, footer, o
         </button>
       </div>
     </header>
-    <main className="profile-gate__main">{children}</main>
+    <main className="profile-gate__main">
+      {signOutFailed && <p role="alert" className="profile-gate__note profile-gate__note--warning crystal-chamfer-sm">
+        <Trans {...msg({ id: 'profile-completion.sign-out.failed', message: 'Could not stop browser reminders. Try signing out again.' })} />
+      </p>}
+      {children}
+    </main>
     <footer className="profile-gate__footer">
       {footer}
       <div className="profile-gate__footer-links">
@@ -148,14 +155,18 @@ export function ProfileCompletionGate({ screen, submit, retry, returnLabel, onSi
   const { family } = useTheme();
   const headingRef = useHeadingFocus(screen);
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutFailed, setSignOutFailed] = useState(false);
   const signOut = () => {
     if (signingOut) return;
     setSigningOut(true);
-    void Promise.resolve(onSignOut()).finally(() => setSigningOut(false));
+    setSignOutFailed(false);
+    void Promise.resolve(onSignOut())
+      .then(result => setSignOutFailed((result as { status?: string } | undefined)?.status === 'failed'), () => setSignOutFailed(true))
+      .finally(() => setSigningOut(false));
   };
 
   if (screen === 'error') {
-    return <GateFrame family={family} returnStatus={null} onSignOut={signOut} signOutDisabled={signingOut} footer={null} offerAccountData={false}>
+    return <GateFrame family={family} returnStatus={null} onSignOut={signOut} signOutDisabled={signingOut} signOutFailed={signOutFailed} footer={null} offerAccountData={false}>
       <section className="profile-gate__sheet profile-gate__sheet--single max-md:crystal-chamfer max-md:surface-glass" aria-labelledby="profile-gate-title">
         <div className="profile-gate__intro">
           <p className="profile-gate__eyebrow"><Trans {...msg({ id: 'profile-completion.account-access', message: 'Account access' })} /></p>
@@ -171,7 +182,7 @@ export function ProfileCompletionGate({ screen, submit, retry, returnLabel, onSi
   }
 
   if (screen === 'restricted') {
-    return <GateFrame family={family} returnStatus={null} onSignOut={signOut} signOutDisabled={signingOut} footer={null} offerAccountData>
+    return <GateFrame family={family} returnStatus={null} onSignOut={signOut} signOutDisabled={signingOut} signOutFailed={signOutFailed} footer={null} offerAccountData>
       <div className="profile-gate__sheet max-md:crystal-chamfer max-md:surface-glass" data-screen="restricted">
         <div className="profile-gate__intro">
           <p className="profile-gate__eyebrow"><Trans {...msg({ id: 'profile-completion.restricted.eyebrow', message: 'Age restricted' })} /></p>
@@ -222,6 +233,7 @@ export function ProfileCompletionGate({ screen, submit, retry, returnLabel, onSi
     returnStatus={<p className="profile-gate__return-status"><span className="profile-gate__dot" aria-hidden="true" />{_({ ...RETURN_PRESERVED[family], values: { location } })}</p>}
     onSignOut={signOut}
     signOutDisabled={signingOut}
+    signOutFailed={signOutFailed}
     offerAccountData
     footer={<p className="profile-gate__footer-return"><Trans {...msg({ id: 'profile-completion.return.footer', message: 'Return location · {location}' })} values={{ location }} /></p>}
   >

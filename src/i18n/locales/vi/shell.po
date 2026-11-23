@@ -2668,3 +2668,8 @@ msgstr "Mục tiêu học mỗi ngày, gồm cả từ mới và thẻ ôn tập
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Cài đặt giao diện"
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:118
+msgid "profile-completion.sign-out.failed"
+msgstr "Không thể dừng nhắc nhở trên trình duyệt. Hãy thử đăng xuất lại."
