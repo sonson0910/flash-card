@@ -1,5 +1,6 @@
 import { and, collection, doc, getDoc, getDocs, or, query, where, type Firestore } from 'firebase/firestore';
 import { applyCardPatchIfCurrent, getLibraryEpoch } from '../../lib/cardRepository';
+import { cloudPageCacheKey, removeLocalValue } from '../library/libraryStorage';
 import { OWN_STORAGE_BUCKETS, ownStorageImageFileId } from '../../lib/mediaUrlPolicy';
 import type { CardData } from '../../types/card';
 import type { FileCardPhotoCard, FileCardPhotoStore } from './fileCardPhotos';
@@ -56,10 +57,16 @@ export const firestoreCardPhotoStore = (db: Firestore, ownerId: string): FileCar
     },
     async clear(fileId, cards) {
       const libraryEpoch = await getLibraryEpoch(db, ownerId);
-      for (const card of cards) {
-        if (!await removePhoto(fileId, card, libraryEpoch)) return false;
+      try {
+        for (const card of cards) {
+          if (!await removePhoto(fileId, card, libraryEpoch)) return false;
+        }
+        return true;
+      } finally {
+        // These cards are saved straight in Firestore, so the cached library page, which can still hold
+        // one of them with the old photo, is dropped and read again from the cloud.
+        removeLocalValue(cloudPageCacheKey(ownerId));
       }
-      return true;
     },
   };
 };
