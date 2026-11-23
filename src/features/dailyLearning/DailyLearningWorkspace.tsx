@@ -1321,7 +1321,6 @@ export default function DailyLearningWorkspace({
       .slice(0, activeLesson.index + 1)
       .filter(step => step.stage === 'review' || step.stage === 'independent-recall').length;
     const status = activeLesson.phase === 'persisting' ? 'rating-saving'
-      : activeLesson.phase === 'sync-pending' ? 'rating-sync-pending'
       : activeLesson.phase === 'save-error' ? 'rating-error'
         : activeLesson.phase === 'completed' ? 'complete'
           : stage === 'introduction' ? 'introduction'
@@ -1358,9 +1357,7 @@ export default function DailyLearningWorkspace({
           ? i18n._(msg({ id: 'today.lesson.fallback', message: '{mode} was unavailable for this card, so active recall was used.' }).id, { mode: modeLabels[currentExercise.fallbackFrom] }) : undefined,
       } } : {}),
         ...(activeLesson.error ? { errorMessage: `${activeLesson.error} This question is still open.` } : {}),
-        ...(activeLesson.syncPendingReviewCount > 0 ? { syncPendingReviewCount: activeLesson.syncPendingReviewCount } : {}),
-      liveMessage: activeLesson.phase === 'sync-pending' ? 'Review saved on this device and waiting to sync.'
-        : activeLesson.phase === 'introduction' ? 'Learn this word before recalling it.'
+      liveMessage: activeLesson.phase === 'introduction' ? 'Learn this word before recalling it.'
         : activeLesson.phase === 'answering' && stage === 'guided' ? 'Review the word, then continue to independent recall.'
           : activeLesson.phase === 'feedback' ? 'Review the answer, then rate your recall.'
         : activeLesson.phase === 'completed' ? 'Your daily lesson is complete.'

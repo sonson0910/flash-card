@@ -32,7 +32,7 @@ interface StudyViewProps {
   revealed: boolean;
   needsIntroduction?: boolean;
   reviewedCardId: string | null;
-  reviewStatus?: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
+  reviewStatus?: 'idle' | 'saving' | 'saved' | 'error';
   reviewError?: string | null;
   paused?: boolean;
   goodCount?: number;

@@ -56,7 +56,7 @@ export interface PracticeSessionController {
     needsIntroduction: boolean;
     reviewedCardId: string | null;
     isStarting: boolean;
-    reviewStatus: 'idle' | 'saving' | 'sync-pending' | 'saved' | 'error';
+    reviewStatus: 'idle' | 'saving' | 'saved' | 'error';
     reviewError: string | null;
     isPaused?: boolean;
     goodCount: number;
@@ -305,7 +305,6 @@ export function usePracticeSession({
   const [reviewedCardId, setReviewedCardId] = useState<string | null>(null);
   const [isStartingStudy, setIsStartingStudy] = useState(false);
   const [savingReviewCardId, setSavingReviewCardId] = useState<string | null>(null);
-  const [syncPendingReviewCardId, setSyncPendingReviewCardId] = useState<string | null>(null);
   const [reviewFailure, setReviewFailure] = useState<{ cardId: string; message: string } | null>(null);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const studyReviewRecordsRef = useRef(new Map<string, StudyReviewRecord>());
@@ -417,7 +416,6 @@ export function usePracticeSession({
     setReviewedCardId(null);
     setIsStartingStudy(false);
     setSavingReviewCardId(null);
-    setSyncPendingReviewCardId(null);
     setReviewFailure(null);
     setEditingCardId(null);
     studyReviewRecordsRef.current.clear();
@@ -484,7 +482,6 @@ export function usePracticeSession({
         setRevealed(false);
         setReviewedCardId(null);
         setSavingReviewCardId(null);
-        setSyncPendingReviewCardId(null);
         setReviewFailure(null);
         setGoodCount(0);
         setXpEarned(0);
@@ -811,8 +808,6 @@ export function usePracticeSession({
     ? 'idle' as const
     : savingReviewCardId === activeCardId
       ? 'saving' as const
-      : syncPendingReviewCardId === activeCardId
-        ? 'sync-pending' as const
       : lifecycle.isReviewed(activeCardId)
         ? 'saved' as const
         : reviewFailure?.cardId === activeCardId
