@@ -4,6 +4,7 @@ import { msg } from '@lingui/core/macro';
 import { useUiLocale } from '../../i18n/I18nProvider';
 import type { CardData } from '../../types/card';
 import type { CloudLibraryStats } from '../librarySession/cloudLibraryPageController';
+import { daysToIntroduceWords } from '../dailyLearning/dailyPlan';
 import { readDailyPaceForEta } from '../settings/dailyPacePreference';
 import type { CatalogLearningStatus, CatalogWorkspaceSummary } from '../catalogCache/catalogSummary';
 import { CatalogCacheOpenError, type HydratedCatalogEntry } from '../catalogCache/catalogCache';
@@ -528,7 +529,7 @@ export default function CatalogWorkspace({
   const allUnitsComplete = trackUnits.length > 0 && trackUnits.every(progress => progress.status === 'complete');
   const pace = readDailyPaceForEta();
   const etaDays = pace && selectedUnit?.introduced != null
-    ? Math.ceil((selectedUnit.unit.total - selectedUnit.introduced) / pace)
+    ? daysToIntroduceWords(selectedUnit.unit.total - selectedUnit.introduced, pace)
     : null;
   const focusUnitPreview = () => globalThis.requestAnimationFrame?.(() => {
     globalThis.document?.getElementById('catalog-unit-preview')?.focus({ preventScroll: false });

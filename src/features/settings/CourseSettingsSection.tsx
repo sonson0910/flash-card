@@ -198,7 +198,7 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
             </select>
           </div>}
           <div className="ss-row">
-            <span className="ss-row__text"><span className="ss-row__title"><Trans {...msg({ context: 'settings.course.pace', message: 'Daily pace' })} /></span><span className="ss-row__sub"><Trans {...msg({ context: 'settings.course.pace.description', message: 'New words introduced each day' })} /></span></span>
+            <span className="ss-row__text"><span className="ss-row__title"><Trans {...msg({ context: 'settings.course.pace', message: 'Daily pace' })} /></span><span className="ss-row__sub"><Trans {...msg({ context: 'settings.course.pace.description', message: 'Cards you aim to study each day' })} /></span></span>
             <select className="ss-select crystal-chamfer-sm" aria-label={_(msg({ id: 'settings.course.pace.label', message: 'Daily pace' }))} value={pace} onChange={event => changePace(Number(event.target.value) as DailyPace)}>
               {DAILY_PACE_OPTIONS.map(option => <option key={option} value={option}>{_(msg({ id: 'settings.course.pace.option', message: '{count} cards / day' }).id, { count: option })}</option>)}
             </select>

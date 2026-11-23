@@ -168,103 +168,103 @@ msgid "catalog.personal.review-due-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:104
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:105
 msgid "catalog.workspace.checking"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:114
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:115
 msgid "catalog.workspace.downloading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:120
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:121
 msgid "catalog.workspace.empty-results"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:116
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:117
 msgid "catalog.workspace.install-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:115
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:116
 msgid "catalog.workspace.installed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:109
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:110
 msgid "catalog.workspace.language-unavailable"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:112
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:113
 msgid "catalog.workspace.open-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:629
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:630
 msgid "catalog.workspace.or-more"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:107
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:108
 msgid "catalog.workspace.personal-empty"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:108
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:109
 msgid "catalog.workspace.personal-unavailable"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:106
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:107
 msgid "catalog.workspace.personal-with-cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:113
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:114
 msgid "catalog.workspace.read-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:105
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:106
 msgid "catalog.workspace.ready"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:111
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:112
 msgid "catalog.workspace.release-missing-offline"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:110
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:111
 msgid "catalog.workspace.release-missing-online"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.test.tsx:357
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:124
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:125
 msgid "catalog.workspace.result-summary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:117
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:118
 msgid "catalog.workspace.storage-blocked"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:118
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:119
 msgid "catalog.workspace.storage-timeout"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:143
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:144
 msgid "catalog.workspace.unknown-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:119
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:120
 msgid "catalog.workspace.updating"
 msgstr ""
 
@@ -610,17 +610,17 @@ msgid "paths.track.toeic.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:122
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:123
 msgid "paths.unit.continue-partial"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:123
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:124
 msgid "paths.unit.continue-read-error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:121
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:122
 msgid "paths.unit.continue-scope-unavailable"
 msgstr ""
 

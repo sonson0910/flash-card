@@ -53,7 +53,7 @@ msgctxt "flashcard.recall.correct"
 msgid "Correct. Reveal the answer to compare."
 msgstr "Correct. Reveal the answer to compare."
 
-#: src/components/flashcard/CardMnemonicSection.tsx:54
+#: src/components/flashcard/CardMnemonicSection.tsx:56
 msgctxt "flashcard.mnemonic.title"
 msgid "AI Mnemonic · Memory Hook"
 msgstr "AI Mnemonic · Memory Hook"
@@ -585,17 +585,17 @@ msgstr "Learning details: examples, collocations and nuances"
 
 #. js-lingui-explicit-id
 #: src/components/flashcard/CardBack.tsx:197
-#: src/components/flashcard/CardMnemonicSection.tsx:61
+#: src/components/flashcard/CardMnemonicSection.tsx:63
 msgid "flashcard.memory-hook"
 msgstr "Memory hook"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:42
+#: src/components/flashcard/CardMnemonicSection.tsx:44
 msgid "flashcard.mnemonic.error"
 msgstr "Unable to generate mnemonic right now. Please try again."
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/CardMnemonicSection.tsx:55
+#: src/components/flashcard/CardMnemonicSection.tsx:57
 msgid "flashcard.mnemonic.generate"
 msgstr "Generate a new mnemonic"
 
@@ -968,7 +968,7 @@ msgctxt "flashcard.part-of-speech-prefix"
 msgid "Part of speech:"
 msgstr "Part of speech:"
 
-#: src/components/flashcard/CardMnemonicSection.tsx:61
+#: src/components/flashcard/CardMnemonicSection.tsx:63
 msgctxt "flashcard.mnemonic.generating"
 msgid "Generating memory hint…"
 msgstr "Generating memory hint…"

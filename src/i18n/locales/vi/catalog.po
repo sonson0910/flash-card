@@ -168,103 +168,103 @@ msgid "catalog.personal.review-due-description"
 msgstr "Các thẻ đến hạn ôn ngay bây giờ."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:104
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:105
 msgid "catalog.workspace.checking"
 msgstr "Đang kiểm tra danh mục đã duyệt trên thiết bị này…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:114
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:115
 msgid "catalog.workspace.downloading"
 msgstr "Đang tải và xác thực danh mục đã duyệt…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:120
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:121
 msgid "catalog.workspace.empty-results"
 msgstr "Không có từ nào khớp với tất cả bộ lọc đã chọn."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:116
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:117
 msgid "catalog.workspace.install-error"
 msgstr "Danh mục đã duyệt chưa được cài đặt. Bản phát hành trước đó không thay đổi."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:115
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:116
 msgid "catalog.workspace.installed"
 msgstr "Đã cài danh mục đã xác thực."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:109
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:110
 msgid "catalog.workspace.language-unavailable"
 msgstr "Ngôn ngữ này chưa có bản phát hành đã duyệt."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:112
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:113
 msgid "catalog.workspace.open-error"
 msgstr "Không thể mở danh mục một cách an toàn."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:629
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:630
 msgid "catalog.workspace.or-more"
 msgstr " trở lên"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:107
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:108
 msgid "catalog.workspace.personal-empty"
 msgstr "Thêm thẻ từ vựng đầu tiên để bắt đầu lộ trình cá nhân."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:108
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:109
 msgid "catalog.workspace.personal-unavailable"
 msgstr "Chưa thể xem tổng quan thư viện cho khóa học này. Mở Kho từ vựng để xem các thẻ của bạn."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:106
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:107
 msgid "catalog.workspace.personal-with-cards"
 msgstr "Lộ trình của bạn được tạo từ {count, number} thẻ đã có trong thư viện."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:113
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:114
 msgid "catalog.workspace.read-error"
 msgstr "Không thể đọc từ vựng một cách an toàn."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:105
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:106
 msgid "catalog.workspace.ready"
 msgstr "Danh mục đã duyệt đã sẵn sàng trên thiết bị này."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:111
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:112
 msgid "catalog.workspace.release-missing-offline"
 msgstr "Không có danh mục đã duyệt nào được lưu trên thiết bị này. Hãy kết nối một lần để tải xuống."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:110
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:111
 msgid "catalog.workspace.release-missing-online"
 msgstr "Chưa cài bản phát hành danh mục đã duyệt. Bạn có thể kiểm tra kênh phát hành cùng nguồn gốc."
 
 #. js-lingui-explicit-id
 #: src/features/catalogWorkspace/CatalogScreen.test.tsx:357
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:124
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:125
 msgid "catalog.workspace.result-summary"
 msgstr "Hiển thị {count, number}{more} {track} {tier} {count, plural, other {từ}}."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:117
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:118
 msgid "catalog.workspace.storage-blocked"
 msgstr "Bộ nhớ danh mục đang bị một tab SonFlash khác chặn. Hãy đóng các tab SonFlash cũ rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:118
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:119
 msgid "catalog.workspace.storage-timeout"
 msgstr "Bộ nhớ danh mục không phản hồi kịp thời. Hãy đóng các tab SonFlash cũ rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:143
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:144
 msgid "catalog.workspace.unknown-error"
 msgstr "Lỗi danh mục không xác định."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:119
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:120
 msgid "catalog.workspace.updating"
 msgstr "Đang cập nhật từ vựng…"
 
@@ -610,17 +610,17 @@ msgid "paths.track.toeic.label"
 msgstr "TOEIC"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:122
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:123
 msgid "paths.unit.continue-partial"
 msgstr "Một số từ chưa được xác nhận. Hãy thử lại để tiếp tục bài này."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:123
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:124
 msgid "paths.unit.continue-read-error"
 msgstr "Không thể chuẩn bị bài này. Kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogWorkspace.tsx:121
+#: src/features/catalogWorkspace/CatalogWorkspace.tsx:122
 msgid "paths.unit.continue-scope-unavailable"
 msgstr "Bài này hiện không khả dụng. Mở lại Lộ trình rồi thử lại."
 

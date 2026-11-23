@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CardData } from '../../types/card';
-import { buildDailyPlan, buildDailyLessonSteps, logicalIdentity } from './dailyPlan';
+import { buildDailyPlan, buildDailyLessonSteps, daysToIntroduceWords, logicalIdentity, MAXIMUM_NEW_WORDS_PER_DAY } from './dailyPlan';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 
 const card = (id: string, overrides: Partial<CardData> = {}): CardData => ({
@@ -175,5 +175,20 @@ describe('buildDailyLessonSteps', () => {
       ['guided', 'new'],
       ['independent-recall', 'new'],
     ]);
+  });
+});
+
+describe('new words per day', () => {
+  it('introduces no more new words than the daily limit whatever the pace asks for', () => {
+    const cards = Array.from({ length: 30 }, (_, index) => card(`new-${index}`));
+    const plan = buildDailyPlan(cards, { now: new Date('2026-06-01T00:00:00.000Z') });
+
+    expect(plan.counts.new).toBe(MAXIMUM_NEW_WORDS_PER_DAY);
+  });
+
+  it('estimates the days left from the words Today introduces, not from the pace', () => {
+    expect(daysToIntroduceWords(30, 20)).toBe(Math.ceil(30 / MAXIMUM_NEW_WORDS_PER_DAY));
+    expect(daysToIntroduceWords(30, 5)).toBe(6);
+    expect(daysToIntroduceWords(0, 10)).toBe(0);
   });
 });
