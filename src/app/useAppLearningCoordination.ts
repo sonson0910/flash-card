@@ -212,7 +212,7 @@ export function useAppLearningCoordination({
   }, [learningCommands]);
   const resetSpreadsheetSource = useCallback(() => { if (fileInputRef.current) fileInputRef.current.value = ''; }, []);
   const sharingDependencies = useMemo(
-    () => appDependencies.intake.forOwner(user?.uid ?? null, languageProfile.source.code),
+    () => appDependencies.intake.forOwner(user?.uid ?? null, languageProfile.source.code, languageProfile.target.code),
     [user?.uid, languageProfile],
   );
   const intakeSharing = useIntakeSharingSession({

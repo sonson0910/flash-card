@@ -6,7 +6,7 @@ import { TARGET_LANGUAGE_LABEL } from '../features/courses/courseLanguageLabels'
 import type { FileCourseOption } from '../features/files/FilesWorkspace';
 import { getLibraryCardTier } from '../features/library/libraryViewModel';
 import type { AnimeRevealEventKind, AnimeRevealSourcePayload } from '../features/rewards/AnimeReveal';
-import type { SharedDeckIncomingPreview } from '../features/sharing/sharedDeckSessionController';
+import { resolveShareCourseAction } from '../features/sharing/shareCourseMatching';
 import type { LearningCeremony } from './useAppLearningCoordination';
 import type { useAppLearningCoordination } from './useAppLearningCoordination';
 import type { useAppLibraryRuntime } from './useAppLibraryRuntime';
@@ -144,19 +144,17 @@ export function latestStatsRefresh<T extends { requestId: number }>(first: T | n
   return first.requestId > second.requestId ? first : second;
 }
 
-export const extensionCapturePreview = (
+/** A silent capture may run only when its language already matches the active course; the hidden worker tab cannot ask. */
+export const silentCaptureCourseDecision = (
   targetLanguage: CourseTargetLanguage,
   translationLanguage: CourseNativeLanguage,
-): SharedDeckIncomingPreview => ({
-  shareId: '',
-  category: '',
-  cardCount: 0,
-  sampleWords: [],
-  languagePairs: [{ targetLanguage, translationLanguage }],
-  createdAt: null,
-  expiresAt: null,
-  containsAiGeneratedCards: false,
-});
+  profile: Parameters<typeof resolveShareCourseAction>[1],
+): 'proceed' | 'cancel' => {
+  const decision = resolveShareCourseAction({
+    languagePairs: [{ targetLanguage, translationLanguage }],
+  }, profile);
+  return !decision || decision.action === 'none' ? 'proceed' : 'cancel';
+};
 
 export type StudyShortcut = 'reveal' | 'next' | 'previous' | 'again' | 'hard' | 'good' | 'easy' | 'bookmark';
 

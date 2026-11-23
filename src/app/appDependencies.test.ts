@@ -251,6 +251,31 @@ describe('app dependency composition', () => {
     expect(mocks.countCards).not.toHaveBeenCalled();
   });
 
+  it('names the active course pair on cards saved without one so the share carries a language pair', async () => {
+    mocks.fetchCardPage.mockResolvedValue({
+      items: [{ id: 'old', word: 'apple', language: 'en' }, { id: 'newer', word: 'pear', language: 'en', translationLanguage: 'fr' }],
+      hasNext: false,
+    });
+
+    await expect(appDependencies.intake.forOwner('owner-2', 'en', 'vi').loadCards({ category: 'IELTS', customDeck: { kind: 'deck', name: 'Reading' } }))
+      .resolves.toMatchObject({
+        cards: [
+          { id: 'old', language: 'en', translationLanguage: 'vi' },
+          { id: 'newer', language: 'en', translationLanguage: 'fr' },
+        ],
+      });
+  });
+
+  it('counts every card the owner holds, with no course or deck scope, for the clear-library confirmation', async () => {
+    mocks.countCards.mockResolvedValue(250);
+
+    await expect(appDependencies.library.countOwnerCards('owner-2')).resolves.toBe(250);
+
+    const filters = mocks.countCards.mock.calls.at(-1)?.[2];
+    expect(filters).toMatchObject({ category: null, difficulty: null, wordPrefix: '' });
+    expect(filters).not.toHaveProperty('targetLanguage');
+  });
+
   it('preserves exact truncation metadata for share batches larger than 100 cards', async () => {
     const cards = Array.from({ length: 100 }, (_, index) => ({ id: `shared-${index}` }));
     mocks.fetchCardPage.mockResolvedValue({ items: cards, hasNext: true });

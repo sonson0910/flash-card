@@ -85,8 +85,9 @@ import type {
   TodayLearnerFacts,
   TodayScreenModel,
 } from './dailyLearningPresentation';
-import { evidencedStudyStreak, isoDayInTimeZone } from './dailyLearningPresentation';
-import { sourceSite, streakRunStats, studyRun, studyWeek } from './todayScreenFacts';
+import { isoDayInTimeZone } from './dailyLearningPresentation';
+import { sourceSite, streakRunStats, studyWeek } from './todayScreenFacts';
+import { verifiedStreakFigures } from './todayStreakFigures';
 import { subscribeToActiveSessionNewStagePromotions } from './webWordsSessionPriority';
 
 const LessonScreen = lazy(() => import('./LessonScreen').then(module => ({ default: module.LessonScreen })));
@@ -233,6 +234,7 @@ export interface DailyLearningWorkspaceProps {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
   readonly focusIntent?: number;
   readonly initialLesson: DailyLessonMode | null;
+  /** The stored run; Today and the recap read the server's streak projection instead, so this is not shown. */
   readonly streak: number;
   readonly studyXpHistory: readonly { readonly date: string; readonly XP: number }[];
   readonly rewardTimeZone?: string;
@@ -426,7 +428,6 @@ export default function DailyLearningWorkspace({
   headingRef,
   focusIntent = 0,
   initialLesson,
-  streak,
   studyXpHistory,
   rewardTimeZone,
   database,
@@ -1441,13 +1442,11 @@ export default function DailyLearningWorkspace({
     : null;
   const todayPreviewCard = plan?.items[0]?.card ?? (matchOnlySession ? todayStagePlan?.match.cards[0] : undefined);
   const isWebCapture = (card: CardData) => Boolean(card.source?.url);
-  const todayStreak = evidencedStudyStreak(streak, studyXpHistory, undefined, rewardTimeZone);
   const todayIso = isoDayInTimeZone(new Date(), rewardTimeZone);
-  const todayRun = studyRun(studyXpHistory, todayIso, todayStreak);
-  // The server's streak record, read for this moment; before the account has a verified study day
-  // the XP-history streak above stays in charge.
+  // The server's streak record, read for this moment: a day counts once the server accepted a review for it.
   const streakNow = new Date();
   const verifiedStreakView = buildStreakView(verifiedGamification, streakNow);
+  const { streakDays: todayStreak, run: todayRun } = verifiedStreakFigures(verifiedStreakView);
   const todayStreakView = verifiedStreakView.status !== 'none' || verifiedStreakView.repair ? verifiedStreakView : undefined;
 
   const todayModel: TodayScreenModel = {

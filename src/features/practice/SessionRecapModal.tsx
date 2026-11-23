@@ -48,7 +48,7 @@ interface SessionRecapModalProps {
   summary?: StudyReviewSummary;
   /** Cards that moved up a tier in this session; only the daily session tracks them. */
   promotions?: readonly SessionRecapPromotion[];
-  /** The verified study streak, passed only once today has earned XP. */
+  /** The verified study streak, passed only once the server has counted today (a reviewed card). */
   streakDays?: number;
   /** The longest run of remembered cards in a row in this session. */
   bestRun?: number;
@@ -574,7 +574,7 @@ export function SessionRecapModal({
                 </StatTile>
                 {showStreak && (
                   <StatTile label={<Trans {...msg({ context: 'recap.streak', message: 'Streak' })} />} value={<>{formatNumber(streakDays)} <span className="practice-recap-chip-today"><Trans {...msg({ context: 'recap.streak-today', message: '+1 today' })} /></span></>}>
-                    <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.streak-note', message: 'A day counts once you earn XP.' })} /></p>
+                    <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.streak-note', message: 'A day counts once you review a card.' })} /></p>
                   </StatTile>
                 )}
                 {!isNext && (

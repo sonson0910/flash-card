@@ -107,7 +107,7 @@ const renderCoordination = async () => {
   function Harness() {
     useAppLearningCoordination({
       library: library as never, courseScopeReady: true, viewMode: 'library' as never,
-      languageProfile: { source: { code: 'en' } } as never, coursePort: null, setViewMode: vi.fn(),
+      languageProfile: { source: { code: 'en' }, target: { code: 'vi' } } as never, coursePort: null, setViewMode: vi.fn(),
       setPracticeMenuOpen: vi.fn(), rememberOpener: vi.fn(), shareOpenerRef: { current: null },
       reportError: vi.fn(), notify: vi.fn(), offerUndo: vi.fn(),
     });

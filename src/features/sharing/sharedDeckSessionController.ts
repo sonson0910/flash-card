@@ -25,6 +25,8 @@ const MAX_STORED_SHARE_LINKS_PER_OWNER = 100;
 const INVALID_SHARED_CARD_BATCH_MESSAGE = 'This shared deck contains invalid vocabulary cards. No changes were made; ask the sender to create a new link.';
 const EMPTY_SHARED_CARD_BATCH_MESSAGE = 'This shared deck contains no usable vocabulary cards. No changes were made; ask the sender to create a new link.';
 
+const UNKNOWN_SHARED_DECK_LANGUAGE_MESSAGE = 'This shared deck does not say which language it teaches. No cards were added; ask the sender to create a new link.';
+
 class InvalidSharedCardBatchError extends Error {}
 
 export interface SharedDeckAdapter {
@@ -851,6 +853,12 @@ export function createSharedDeckSessionController({
       const operationLifecycle = lifecycle;
       if (pending.lifecycle !== operationLifecycle || pending.owner !== owner) {
         return { status: 'stale' };
+      }
+      // A deck that names no single language pair cannot be routed to a matching course, so the
+      // active course would silently decide the language of every imported card.
+      if (coursePort && (coursePort.shouldValidateIncomingPair?.() ?? true) && !pending.expectedPair) {
+        publish({ error: UNKNOWN_SHARED_DECK_LANGUAGE_MESSAGE });
+        return { status: 'failed' };
       }
       activeOperation = true;
       publish({ isLoading: true, error: null, notice: null });

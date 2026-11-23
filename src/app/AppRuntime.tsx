@@ -28,7 +28,7 @@ import { CourseProvider, readyCourseSessionForOwner, useCourseSession, type Cour
 import { activeCourseNativeLanguage, activeCourseTargetLanguage, languageProfileForCourse } from '../features/courses/courseLanguageProfile';
 import type { CourseTargetLanguage } from '../features/courses/courseModel';
 import { goalKindLabel } from '../features/courses/courseGoalCatalog';
-import { createSharedDeckCoursePort, resolveShareCourseAction } from '../features/sharing/shareCourseMatching';
+import { createSharedDeckCoursePort } from '../features/sharing/shareCourseMatching';
 import { createFirebaseFilePort } from '../features/files/firebaseFileAdapter';
 import { OnboardingGate } from '../features/onboarding/OnboardingGate';
 import { AccountProfileProvider } from '../features/profileCompletion/AccountProfileContext';
@@ -50,7 +50,7 @@ import {
   desktopNavigationActions,
   dismissQueuedCeremony,
   equipCeremonyFrame,
-  extensionCapturePreview,
+  silentCaptureCourseDecision,
   fileCourseOptions,
   latestStatsRefresh,
   libraryInsightsPhase,
@@ -268,22 +268,18 @@ export default function AppRuntime({
     [currentCourseSession],
   );
   // Gate for the extension's silent (one-click, no-review) capture path
-  // only: manual captures already open the library view, where the real
-  // course switcher is visible before the user generates anything, so no
-  // extra gate is needed there. Cancelling here leaves nothing generated.
+  // only. The worker tab that runs it is never in front of the learner, so
+  // nothing may be asked there: a word captured for another course is
+  // cancelled and the source tab reports it, instead of switching or creating
+  // a course on a dialog nobody can see. Nothing is generated when cancelled.
   const ensureExtensionCaptureCourse = useCallback(async (targetLanguage: CourseTargetLanguage): Promise<'proceed' | 'cancel'> => {
-    if (!identityOwnerId || !currentCourseSession || !coursePort) return 'cancel';
-    const preview = extensionCapturePreview(targetLanguage, activeCourseNativeLanguage(currentCourseSession.model.activeCourse));
-    const decision = resolveShareCourseAction(preview, currentCourseSession.model.profile);
-    if (!decision || decision.action === 'none') return 'proceed';
-    const confirmed = globalThis.confirm?.(_(msg({
-      id: 'extension.import.course-mismatch-confirm',
-      message: "This word was saved for a different language than your active course. Switch to (or create) the matching course to save it?",
-    }))) ?? true;
-    if (!confirmed) return 'cancel';
-    await coursePort.ensureCourseForIncomingShare(preview);
-    return identityOwnerRef.current === identityOwnerId ? 'proceed' : 'cancel';
-  }, [identityOwnerId, currentCourseSession, coursePort, _]);
+    if (!identityOwnerId || !currentCourseSession) return 'cancel';
+    return silentCaptureCourseDecision(
+      targetLanguage,
+      activeCourseNativeLanguage(currentCourseSession.model.activeCourse),
+      currentCourseSession.model.profile,
+    );
+  }, [identityOwnerId, currentCourseSession]);
   const [weeklyRecapRequest, setWeeklyRecapRequest] = useState<{ ownerId: string; requestId: number; targetLanguage: string } | null>(null);
   const [insightsRefreshRequest, setInsightsRefreshRequest] = useState<{ ownerId: string; requestId: number; targetLanguage: string } | null>(null);
   const nextStatsRefreshRequestId = useRef(0);
@@ -303,6 +299,10 @@ export default function AppRuntime({
   });
   const undoOwnerRef = useRef<string | null | undefined>(undefined);
   const currentOwnerId = library.model.user?.uid ?? null;
+  const loadOwnerCardCount = useMemo(
+    () => currentOwnerId && appDependencies.configuration.cloudAvailable ? () => appDependencies.library.countOwnerCards(currentOwnerId) : undefined,
+    [currentOwnerId],
+  );
   // One file service per signed-in owner, so the settings section and the My files page each list once per open.
   const filePort = useMemo(
     () => (currentOwnerId && isFirebaseConfigured ? createFirebaseFilePort({ ownerId: currentOwnerId }) : null),
@@ -751,6 +751,7 @@ export default function AppRuntime({
             practiceOpenerRef={overlayPracticeOpenerRef}
             statsOpenerRef={statsOpenerRef}
             clearOpenerRef={clearOpenerRef}
+            loadOwnerCardCount={loadOwnerCardCount}
             onExportLibrary={libraryActions.exportLibrary}
             onOpenProgress={() => setViewMode('progress')}
           />

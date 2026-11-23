@@ -561,6 +561,11 @@ msgctxt "practice.match.instruction"
 msgid "Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}."
 msgstr ""
 
+#: src/features/practice/SessionRecapModal.tsx:577
+msgctxt "recap.streak-note"
+msgid "A day counts once you review a card."
+msgstr ""
+
 #: src/features/practice/StudyView.tsx:538
 msgctxt "study.shortcuts"
 msgid "Study shortcuts"
@@ -1744,11 +1749,6 @@ msgstr ""
 #: src/features/languagePacks/LanguagePracticeDrill.tsx:182
 msgctxt "languagePractice.zh.pack"
 msgid "Chinese pack · 中文"
-msgstr ""
-
-#: src/features/practice/SessionRecapModal.tsx:577
-msgctxt "recap.streak-note"
-msgid "A day counts once you earn XP."
 msgstr ""
 
 #: src/features/practice/SpellingView.tsx:459
