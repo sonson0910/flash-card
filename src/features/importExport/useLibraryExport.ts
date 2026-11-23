@@ -22,10 +22,9 @@ type XlsxMiniModule = typeof import('@e965/xlsx/dist/xlsx.mini.min');
 export function useLibraryExport(options: LibraryExportOptions) {
   const contextRef = useRef({ ...options, generation: 0 });
   const previous = contextRef.current;
-  const changed = previous.ownerId !== options.ownerId
-    || previous.cards !== options.cards
-    || previous.minimumExpectedCards !== options.minimumExpectedCards;
-  contextRef.current = { ...options, generation: previous.generation + Number(changed) };
+  // Only an owner change invalidates a running export: it loads its own full snapshot, so a republished
+  // visible page must not abort it.
+  contextRef.current = { ...options, generation: previous.generation + Number(previous.ownerId !== options.ownerId) };
 
   const [phase, setPhase] = useState<LibraryExportPhase>('idle');
   const exporterRef = useRef<ReturnType<typeof createLibraryExportOperation<CardData, PreparedSpreadsheet>> | null>(null);
