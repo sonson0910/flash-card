@@ -2199,7 +2199,7 @@ msgid "library.part-of-speech.verb"
 msgstr "Verb"
 
 #. js-lingui-explicit-id
-#: src/features/sharing/sharedDeckSessionController.ts:813
+#: src/features/sharing/sharedDeckSessionController.ts:821
 msgid "library.share.meaning-language-mismatch"
 msgstr "This shared deck uses a different meaning language from your existing course. Change the course's Meaning language in Settings, then try again."
 
