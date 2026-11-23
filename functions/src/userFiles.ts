@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import type { DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
 import { resolvePlan } from './aiQuota.js';
+import { createLegacyCourseProfile } from './course-profile-contract.js';
 import { InputValidationError } from './inputValidation.js';
 import type { PilotConfig } from './pilotConfig.js';
 
@@ -226,7 +227,7 @@ export async function prepareFileUpload(database: Firestore, uid: string, reques
       transaction.get(refs.plan), transaction.get(refs.usage),
       request.courseId ? transaction.get(refs.courses) : Promise.resolve(null),
     ]);
-    if (request.courseId && !courseExists(coursesSnapshot?.data(), request.courseId)) {
+    if (request.courseId && !courseExists(coursesSnapshot, request.courseId)) {
       throw new FileServiceError('course-not-found');
     }
     const limits = fileLimitsFor(planSnapshot.data(), now, config);
@@ -266,7 +267,9 @@ export async function prepareFileUpload(database: Firestore, uid: string, reques
   });
 }
 
-const courseExists = (data: unknown, courseId: string): boolean => {
+/** An account without a stored course profile has the implicit legacy profile, as course reads assume. */
+const courseExists = (snapshot: { exists: boolean; data(): unknown } | null, courseId: string): boolean => {
+  const data = snapshot?.exists ? snapshot.data() : createLegacyCourseProfile();
   const courses = data && typeof data === 'object' ? (data as { courses?: unknown }).courses : null;
   return Array.isArray(courses) && courses.some(course => course && typeof course === 'object'
     && (course as { id?: unknown }).id === courseId);
@@ -469,7 +472,7 @@ export async function updateFileCourse(database: Firestore, uid: string, fileId:
     const record = recordSnapshot.data() as FileRecord | undefined;
     if (!record) throw new FileServiceError('not-found');
     if (record.status !== 'ready' && record.status !== 'partial') throw new FileServiceError('not-ready');
-    if (courseId && !courseExists(coursesSnapshot?.data(), courseId)) throw new FileServiceError('course-not-found');
+    if (courseId && !courseExists(coursesSnapshot, courseId)) throw new FileServiceError('course-not-found');
     transaction.update(fileRef, { courseId, updatedAt: now });
     const summary = summaryOf(fileId, { ...record, courseId, updatedAt: now });
     if (!summary) throw new FileServiceError('not-found');
