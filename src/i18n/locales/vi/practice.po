@@ -561,6 +561,11 @@ msgctxt "practice.match.instruction"
 msgid "Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}."
 msgstr "Chọn một từ {targetLanguageName}, rồi chọn nghĩa bằng {nativeLanguageName}."
 
+#: src/features/practice/SessionRecapModal.tsx:577
+msgctxt "recap.streak-note"
+msgid "A day counts once you review a card."
+msgstr "Một ngày được tính khi bạn ôn một thẻ."
+
 #: src/features/practice/StudyView.tsx:538
 msgctxt "study.shortcuts"
 msgid "Study shortcuts"
@@ -1740,11 +1745,6 @@ msgstr "Chuỗi đúng dài nhất"
 msgctxt "languagePractice.zh.pack"
 msgid "Chinese pack · 中文"
 msgstr "Gói tiếng Trung · 中文"
-
-#: src/features/practice/SessionRecapModal.tsx:577
-msgctxt "recap.streak-note"
-msgid "A day counts once you earn XP."
-msgstr "Một ngày được tính khi bạn nhận XP."
 
 #: src/features/practice/SpellingView.tsx:459
 msgctxt "practice.spelling.skip"
