@@ -3047,3 +3047,26 @@ test('without session storage a restart removes expired retry and in-page save r
     ['lingoflash_inline_save_8', 'lingoflash_quick_add_retry_8'],
   );
 });
+
+test('bubble payloads name the capture mode with a token instead of Vietnamese label text', async () => {
+  const worker = await createWorkerContext({
+    executeScriptCaptureResult: { text: 'resilient', anchor: null, context: 'Resilient people recover.' },
+  });
+  for (const menuItemId of ['lingoflash-translate-only', 'lingoflash-translate-save']) {
+    for (const listener of worker.events.menuClicks.listeners) {
+      listener({ menuItemId, selectionText: 'resilient' }, { id: 7 });
+    }
+    for (let round = 0; round < 20; round += 1) await flushMicrotasks();
+  }
+  const payloads = worker.calls
+    .filter(call => call.type === 'scripting.executeScript' && call.details.func?.name === 'renderInlineBubble')
+    .map(call => call.details.args[0]);
+  const modes = new Set(payloads.map(payload => payload.mode));
+
+  assert.ok(modes.has('translate-free'));
+  assert.ok(modes.has('save-ai'));
+  for (const payload of payloads) {
+    assert.equal(payload.modeLabel, undefined);
+    assert.match(String(payload.mode ?? 'save'), /^(translate-free|translate-google|save|save-ai)$/);
+  }
+});

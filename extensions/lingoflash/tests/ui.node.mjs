@@ -758,3 +758,19 @@ test('keeps the plain translated badge when the background offers no save', () =
   });
   assert.equal(quoted.text(quoted.nodes.find(node => node.className === 'q')), '…groups demanded an immediate response from the…');
 });
+
+test('writes the bubble mode chip from the locale catalog, not from worker text', () => {
+  for (const [locale, mode, key] of [
+    ['en', 'translate-free', 'bubbleModeTranslateFree'],
+    ['en', 'translate-google', 'bubbleModeTranslateGoogle'],
+    ['en', 'save', 'bubbleModeSave'],
+    ['vi', 'save-ai', 'bubbleModeSaveAi'],
+  ]) {
+    const { nodes } = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode }, locale);
+    const chip = nodes.find(node => node.className === 'm');
+    assert.equal(chip?.textContent, createI18nMock(locale).getMessage(key), `${locale} ${mode}`);
+    assert.ok(chip?.textContent);
+  }
+  const english = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode: 'save-ai' }, 'en').nodes.find(node => node.className === 'm');
+  assert.doesNotMatch(english?.textContent ?? '', /[À-ỹ]/);
+});

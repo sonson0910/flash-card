@@ -637,7 +637,13 @@
         meta.append(cost);
       }
     } else {
-      if (payload.modeLabel) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = payload.modeLabel; meta.append(mode); }
+      const modeText = {
+        'translate-free': bt('bubbleModeTranslateFree', undefined, 'DỊCH NHANH • FREE'),
+        'translate-google': bt('bubbleModeTranslateGoogle', undefined, 'DỊCH NHANH • GOOGLE'),
+        save: bt('bubbleModeSave', undefined, 'TẠO + LƯU'),
+        'save-ai': bt('bubbleModeSaveAi', undefined, 'TẠO + LƯU • 1 AI REQUEST'),
+      }[payload.mode];
+      if (modeText) { const mode = document.createElement('span'); mode.className = 'm'; mode.textContent = modeText; meta.append(mode); }
       meta.append(brand);
     }
     foot.append(meta);
