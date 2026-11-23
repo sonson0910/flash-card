@@ -2079,12 +2079,23 @@ export async function createStarterCardBatch(
   try {
     return await runProtectedFunction(protectedFunctionsCapability, 'Starter card creation', async () => {
       if (!firebaseApp) throw new Error('Firebase is not initialized.');
+      // The callable acts on whoever is signed in once it is sent: a batch prepared for one account must not run as another.
+      const assertActiveOwner = () => {
+        if (auth?.currentUser?.uid !== userId) {
+          throw new ProtectedFunctionError({
+            message: 'Starter card creation stopped because the active account changed.',
+            kind: 'authentication', code: 'owner-mismatch', retryable: false,
+          });
+        }
+      };
+      assertActiveOwner();
       const { httpsCallable } = await import('firebase/functions');
-      const callable = httpsCallable<{ operationId: string; cards: CardData[] }, unknown>(
+      const callable = httpsCallable<{ expectedOwnerId: string; operationId: string; cards: CardData[] }, unknown>(
         await getSonFlashFunctions(firebaseApp), 'createStarterCards',
       );
       const normalizedCards = cards.map(card => normalizeCardForMutation(card, card.id));
-      const response = await callable({ operationId, cards: normalizedCards });
+      assertActiveOwner();
+      const response = await callable({ expectedOwnerId: userId, operationId, cards: normalizedCards });
       const parsed = parseCallableStarterCardsResponse(response.data);
       const expectedIds = new Set(cards.map(card => card.id));
       // The server leaves out a starter word the learner deleted earlier, so

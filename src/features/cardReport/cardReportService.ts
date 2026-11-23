@@ -1,6 +1,6 @@
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
-import { app, getSonFlashFunctions, protectedFunctionsCapability } from '../../lib/firebase';
+import { app, auth, getSonFlashFunctions, protectedFunctionsCapability } from '../../lib/firebase';
 import { ProtectedFunctionError, runProtectedFunction } from '../../lib/protectedFunctionsCapability';
 
 const REGION = 'asia-southeast1';
@@ -34,13 +34,25 @@ export async function submitCardReport(input: CardReportInput): Promise<void> {
   const note = input.note?.trim() ?? '';
   if (note.length > 280) throw new Error(i18n._(msg({ id: 'cardReport.validation.note-length', message: 'The note can be at most 280 characters.' })));
 
+  // The report is about a card the signed-in learner was looking at; it must not be filed under another account.
+  const reporterId = auth?.currentUser?.uid ?? null;
   const response = await runProtectedFunction(protectedFunctionsCapability, 'Card report', async () => {
+    const assertSameReporter = () => {
+      if (reporterId && auth?.currentUser?.uid !== reporterId) {
+        throw new ProtectedFunctionError({
+          message: 'Card report stopped because the active account changed.',
+          kind: 'authentication', code: 'owner-mismatch', retryable: false,
+        });
+      }
+    };
     const { httpsCallable } = await import('firebase/functions');
-    const callable = httpsCallable<CardReportInput, { reportId: string; status: 'open' }>(
+    const callable = httpsCallable<CardReportInput & { expectedOwnerId?: string }, { reportId: string; status: 'open' }>(
       await getSonFlashFunctions(firebaseApp, REGION),
       'reportCard',
     );
+    assertSameReporter();
     return callable({
+      ...(reporterId ? { expectedOwnerId: reporterId } : {}),
       cardId: input.cardId,
       reason: input.reason,
       ...(note ? { note } : {}),

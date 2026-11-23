@@ -10,6 +10,7 @@ import {
   InputValidationError,
   parseCardLanguagePair,
   parseCardSourceMetadata,
+  parseExpectedOwnerId,
 } from './inputValidation.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
 import { ownStorageImageOwner } from './ownFileImageUrl.js';
@@ -641,13 +642,14 @@ const createFingerprint = (value: unknown): string =>
   createHash('sha256').update(stableJson(value)).digest('hex');
 
 export interface StarterCardsBatchRequest {
+  expectedOwnerId?: string;
   operationId: string;
   cards: readonly unknown[];
 }
 
 export const parseCreateStarterCardsRequest = (value: unknown): StarterCardsBatchRequest => {
   const source = asRecord(value, 'Starter card request must be an object.');
-  if (Object.keys(source).some(key => !new Set(['operationId', 'cards']).has(key))) {
+  if (Object.keys(source).some(key => !new Set(['operationId', 'cards', 'expectedOwnerId']).has(key))) {
     throw new InputValidationError('Starter card request contains an unsupported field.');
   }
   const operationId = boundedText(source.operationId, 'operationId', 128);
@@ -660,7 +662,8 @@ export const parseCreateStarterCardsRequest = (value: unknown): StarterCardsBatc
   if (source.cards.length > MAX_STARTER_CARDS_PER_BATCH) {
     throw new InputValidationError('Starter card batch is too large.');
   }
-  return { operationId, cards: source.cards };
+  const expectedOwnerId = parseExpectedOwnerId(source.expectedOwnerId);
+  return { ...(expectedOwnerId === undefined ? {} : { expectedOwnerId }), operationId, cards: source.cards };
 };
 
 const ownerDocument = (database: Firestore, ownerId: string) =>

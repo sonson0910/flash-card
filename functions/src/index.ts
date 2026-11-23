@@ -1519,6 +1519,9 @@ export const createStarterCards = onCall({
 }, async request => {
   const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCreateStarterCardsRequest(request.data));
+  if (input.expectedOwnerId !== undefined && input.expectedOwnerId !== userId) {
+    throw new HttpsError('permission-denied', 'The account changed before the starter cards were created.');
+  }
   await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
     'Card creation limit reached. Try again later.');
   let quotaConfig;
@@ -1600,6 +1603,9 @@ export const reportCard = onCall({
 }, async request => {
   const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseCardReportRequest(request.data));
+  if (input.expectedOwnerId !== undefined && input.expectedOwnerId !== userId) {
+    throw new HttpsError('permission-denied', 'The account changed before the card was reported.');
+  }
   await consumeBudget(userId, 'card-report', 30, 'Card report limit reached. Try again later.');
   try {
     const result = await reportCardForOwner(database, userId, input);

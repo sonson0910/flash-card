@@ -1,5 +1,5 @@
 import type { Firestore } from 'firebase-admin/firestore';
-import { InputValidationError } from './inputValidation.js';
+import { InputValidationError, parseExpectedOwnerId } from './inputValidation.js';
 
 export const CARD_REPORT_REASONS = [
   'wrong-meaning',
@@ -13,6 +13,7 @@ export const CARD_REPORT_REASONS = [
 export type CardReportReason = typeof CARD_REPORT_REASONS[number];
 
 export type CardReportRequest = {
+  expectedOwnerId?: string;
   cardId: string;
   reason: CardReportReason;
   note?: string;
@@ -33,7 +34,7 @@ const asRecord = (value: unknown): Record<string, unknown> => (
 
 export const parseCardReportRequest = (value: unknown): CardReportRequest => {
   const source = asRecord(value);
-  if (Object.keys(source).some(key => !['cardId', 'reason', 'note'].includes(key))) {
+  if (Object.keys(source).some(key => !['cardId', 'reason', 'note', 'expectedOwnerId'].includes(key))) {
     throw new InputValidationError('Card report contains an unsupported field.');
   }
   if (typeof source.cardId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(source.cardId)) {
@@ -47,7 +48,9 @@ export const parseCardReportRequest = (value: unknown): CardReportRequest => {
     throw new InputValidationError('Card report note must be at most 280 characters.');
   }
   const note = typeof source.note === 'string' ? source.note.trim() : '';
+  const expectedOwnerId = parseExpectedOwnerId(source.expectedOwnerId);
   return {
+    ...(expectedOwnerId === undefined ? {} : { expectedOwnerId }),
     cardId: source.cardId,
     reason: source.reason as CardReportReason,
     ...(note ? { note } : {}),

@@ -114,3 +114,12 @@ describe('card reporting', () => {
     expect(creates).toHaveLength(0);
   });
 });
+
+describe('card report owner binding', () => {
+  it('accepts an optional expected owner and rejects an invalid one', () => {
+    expect(parseCardReportRequest({ cardId: 'card_1', reason: 'other', expectedOwnerId: 'owner-a' }))
+      .toEqual({ cardId: 'card_1', reason: 'other', expectedOwnerId: 'owner-a' });
+    expect(() => parseCardReportRequest({ cardId: 'card_1', reason: 'other', expectedOwnerId: 'a/b' }))
+      .toThrow(InputValidationError);
+  });
+});
