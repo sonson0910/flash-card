@@ -23,9 +23,9 @@ export interface ExtensionDueCountBridgeOptions {
   // a due count is never posted before the app itself trusts its own state
   // for this owner.
   readonly ready: boolean;
-  // Real due-card count already computed by the app; this hook never reads
-  // Firestore itself.
-  readonly dueCount: number;
+  // Real due-card count already computed by the app for the active course and
+  // today; null while none is known. This hook never reads Firestore itself.
+  readonly dueCount: number | null;
 }
 
 /**
@@ -45,15 +45,15 @@ export function useExtensionDueCountBridge({ ownerId, ready, dueCount }: Extensi
     if (!isBrowserExtensionImportTopFrame()) return;
     const current = optionsRef.current;
     const previous = scopeRef.current;
-    if (previous && (previous.ownerId !== current.ownerId || !current.ready)) {
+    const normalized = current.dueCount === null ? null : normalizeExtensionDueCount(current.dueCount);
+    if (previous && (previous.ownerId !== current.ownerId || !current.ready || current.dueCount === null)) {
       postExtensionDueCountMessage(EXTENSION_DUE_COUNT_CLEAR_MESSAGE, { scope: previous.scope });
       scopeRef.current = null;
     }
-    if (!current.ownerId || !current.ready) return;
+    if (!current.ownerId || !current.ready || current.dueCount === null) return;
     if (!scopeRef.current) {
       scopeRef.current = { ownerId: current.ownerId, scope: createOpaqueExtensionDueCountScope() };
     }
-    const normalized = normalizeExtensionDueCount(current.dueCount);
     if (normalized === null) return;
     postExtensionDueCountMessage(EXTENSION_DUE_COUNT_MESSAGE, {
       scope: scopeRef.current.scope,

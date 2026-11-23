@@ -19,6 +19,7 @@ import { accountDeletionNoticePath, withoutAccountDeletionNotices } from '../fea
 import { AppShellMotion } from '../components/motion/AppShellMotion';
 import { useBrowserExtensionImport } from '../features/browserExtension/useBrowserExtensionImport';
 import { useExtensionDueCountBridge } from '../features/extensionBridge/useExtensionDueCountBridge';
+import { extensionDueCountFor, localDayKey } from '../features/extensionBridge/extensionDueCountBridge';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { APP_VIEW_HEADINGS } from '../features/navigation/app-view-headings';
@@ -451,7 +452,7 @@ export default function AppRuntime({
     courseNativeLanguage: activeCourse ? activeCourseNativeLanguage(activeCourse) : null,
     courseTargetLanguage: activeCourse ? activeCourseTargetLanguage(activeCourse) : null,
   });
-  useExtensionDueCountBridge({ ownerId: currentOwnerId, ready: libraryReady, dueCount: cloudStats.due });
+  useExtensionDueCountBridge({ ownerId: currentOwnerId, ready: libraryReady, dueCount: extensionDueCountFor(cloud, currentOwnerId, targetLanguage, localDayKey()) });
   const handledSignInRequestRef = useRef(0);
   useEffect(() => {
     onLandingUserChange(user ? {

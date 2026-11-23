@@ -24,6 +24,26 @@ export const normalizeExtensionDueCount = (value: number): number | null => (
   Number.isSafeInteger(value) && value >= 0 ? Math.min(value, MAX_DUE_COUNT) : null
 );
 
+// The badge number is only real when the loaded stats belong to the signed-in
+// owner, to the active course and to the current local day. Anything else (the
+// empty placeholder, the previous course's stats, a count from yesterday) must
+// not reach the extension, so the caller treats null as "nothing to publish".
+export const extensionDueCountFor = (
+  cloud: { ownerId?: string | null; statsTargetLanguage?: string | null; stats: { due: number; dueAsOfDate?: string } },
+  ownerId: string | null,
+  targetLanguage: string | null,
+  localDay: string,
+): number | null => (
+  ownerId && cloud.ownerId === ownerId && targetLanguage && cloud.statsTargetLanguage === targetLanguage
+    && cloud.stats.dueAsOfDate === localDay
+    ? cloud.stats.due
+    : null
+);
+
+export const localDayKey = (now = new Date()): string => (
+  [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-')
+);
+
 // Opaque, non-identifying scope token. It ties a due-count sync/clear pair
 // together for the extension's own scope-retirement bookkeeping without ever
 // exposing the real owner id to the extension runtime.
