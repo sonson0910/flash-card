@@ -9,6 +9,7 @@ import {
   parseAgeRestrictionMarker,
   type CompleteAccountProfileRequest,
   type CompleteAccountProfileResponse,
+  type UpdateAccountUiLocaleRequest,
 } from './account-profile-contract.js';
 import { stopReminderDeliveryForOwner } from './reminderSettingsPersistence.js';
 
@@ -26,6 +27,13 @@ export class AccountProfileConsentOutdatedError extends Error {
   constructor() {
     super('The accepted terms or privacy policy version is not current. Reload and review them again.');
     this.name = 'AccountProfileConsentOutdatedError';
+  }
+}
+
+export class AccountProfileMissingError extends Error {
+  constructor() {
+    super('Complete your account profile first.');
+    this.name = 'AccountProfileMissingError';
   }
 }
 
@@ -81,5 +89,26 @@ export const completeAccountProfile = async (
     const created = createAccountProfileRecord(request, timestamp);
     transaction.create(recordReference, created as unknown as DocumentData);
     return { status: 'complete', profile: created };
+  });
+};
+
+/**
+ * Saves the language the learner last chose onto the completed profile, so another device with no saved
+ * choice applies it. Only the one field changes, and a value that is already stored writes nothing.
+ */
+export const updateAccountUiLocale = async (
+  database: Firestore,
+  authenticatedOwnerId: string,
+  request: UpdateAccountUiLocaleRequest,
+): Promise<{ uiLocale: UpdateAccountUiLocaleRequest['uiLocale'] }> => {
+  if (request.ownerId !== authenticatedOwnerId) throw new AccountProfileOwnerMismatchError();
+  const recordReference = database.collection('users').doc(authenticatedOwnerId)
+    .collection('profile').doc(ACCOUNT_PROFILE_DOCUMENT_ID);
+  return database.runTransaction(async (transaction: Transaction) => {
+    const record = await transaction.get(recordReference);
+    if (!record.exists) throw new AccountProfileMissingError();
+    const stored = storedOrThrow(parseAccountProfileRecord, record.data());
+    if (stored.uiLocale !== request.uiLocale) transaction.update(recordReference, { uiLocale: request.uiLocale });
+    return { uiLocale: request.uiLocale };
   });
 };

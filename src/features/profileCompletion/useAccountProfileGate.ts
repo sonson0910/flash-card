@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   AccountProfileRecord,
+  AccountUiLocale,
   CompleteAccountProfileRequest,
 } from '../../../functions/src/account-profile-contract';
 import { app, db } from '../../lib/firebase';
@@ -15,6 +16,8 @@ export interface AccountProfileGate {
   /** Sends the completed form to the server; resolves with the server's decision for this owner. */
   readonly submit: (request: Omit<CompleteAccountProfileRequest, 'ownerId'>) => Promise<AccountProfileState>;
   readonly retry: () => void;
+  /** Stores the language the learner chose for the signed-in owner. Fire and forget: a failure is not retried. */
+  readonly saveUiLocale: (uiLocale: AccountUiLocale) => void;
 }
 
 export interface AccountProfileGateOptions {
@@ -107,6 +110,29 @@ export function useAccountProfileGate(
     return state;
   }, [port]);
 
+  // One save is in flight at a time and only the newest choice waits behind it, so the account never ends
+  // on an older language because two calls reached the server out of order.
+  const languageSaves = useRef<{ running: boolean; waiting: { ownerId: string; uiLocale: AccountUiLocale } | null }>(
+    { running: false, waiting: null },
+  );
+  const saveUiLocale = useCallback<AccountProfileGate['saveUiLocale']>(uiLocale => {
+    const ownerId = scopeRef.current.ownerId;
+    if (!port || !ownerId) return;
+    const saves = languageSaves.current;
+    saves.waiting = { ownerId, uiLocale };
+    if (saves.running) return;
+    saves.running = true;
+    void (async () => {
+      while (saves.waiting) {
+        const next = saves.waiting;
+        saves.waiting = null;
+        if (scopeRef.current.ownerId !== next.ownerId) continue;
+        try { await port.saveUiLocale(next); } catch { /* A failed save is not retried. */ }
+      }
+      saves.running = false;
+    })();
+  }, [port]);
+
   const retry = useCallback(() => {
     setOwned(null);
     setAttempt(value => value + 1);
@@ -114,7 +140,7 @@ export function useAccountProfileGate(
 
   return useMemo<AccountProfileGate>(() => {
     const current = owned?.ownerId === ownerId ? owned : null;
-    const base = { submit, retry };
+    const base = { submit, retry, saveUiLocale };
     if (!ownerId) return { ...base, status: 'signed-out', profile: null, restrictedAt: null };
     if (!current) return { ...base, status: 'loading', profile: null, restrictedAt: null };
     if (current.kind === 'error') return { ...base, status: 'error', profile: null, restrictedAt: null };
@@ -122,5 +148,5 @@ export function useAccountProfileGate(
     if (state.status === 'complete') return { ...base, status: 'complete', profile: state.profile, restrictedAt: null };
     if (state.status === 'restricted') return { ...base, status: 'restricted', profile: null, restrictedAt: state.restrictedAt };
     return { ...base, status: 'required', profile: null, restrictedAt: null };
-  }, [owned, ownerId, retry, submit]);
+  }, [owned, ownerId, retry, saveUiLocale, submit]);
 }

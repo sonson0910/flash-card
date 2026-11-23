@@ -22,7 +22,7 @@ export const ACCOUNT_RATE_SCOPES: readonly string[] = [
   'practice-session-complete', 'reward-frame-equip',
   'clear-library-page', 'card-headword-rename', 'bulk-card-mutation', 'course-profile',
   'reminder-settings', 'push-token-revoke', 'push-session-end', 'ai-card-cancel',
-  'account-profile', 'file-prepare', 'file-list', 'file-update', 'file-delete',
+  'account-profile', 'account-ui-locale', 'file-prepare', 'file-list', 'file-update', 'file-delete',
 ];
 
 const jsonValue = (value: unknown): unknown => {

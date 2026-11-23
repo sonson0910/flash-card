@@ -584,7 +584,7 @@ export default function AppRuntime({
         onSignOut={handleGateSignOut}
       />
     ) : (
-    <AccountProfileProvider profile={accountProfile.profile}>
+    <AccountProfileProvider profile={accountProfile.profile} saveUiLocale={accountProfile.saveUiLocale}>
     <CardEditorServicesProvider value={cardEditorServices}>
     <VerifiedStatsProvider source={verifiedStatsSource}>
     <div ref={appShellRef} data-view={viewMode} className={`app-canvas claude-app-shell min-h-dvh h-dvh text-[var(--sf-text)] font-sans flex flex-col overflow-hidden transition-colors relative ${isDarkMode ? 'dark' : ''}`}>
