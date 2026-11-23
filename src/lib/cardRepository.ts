@@ -2432,6 +2432,11 @@ export async function bulkPatchCards(
       throw new CardMutationPreconditionError('future-library-epoch');
     }
 
+    if (callerLibraryEpoch !== undefined
+      && results.some(result => !result.applied && result.reason === 'stale-library-epoch')) {
+      throw new CardMutationPreconditionError('stale-library-epoch');
+    }
+
     const migrationCandidates: BulkCardPatchCommand[] = [];
     let epochDrifted = false;
     for (const result of results) {

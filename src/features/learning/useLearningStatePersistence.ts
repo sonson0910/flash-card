@@ -649,6 +649,12 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
           current.reportError('Cloud library generation changed. Try again in a moment.');
         } else if (cause instanceof CardMutationPreconditionError && cause.reason === 'stale-library-epoch') {
           current.acceptVerifiedEpoch(ownerId, await getLibraryEpoch(database, ownerId));
+          // The cards held in this view predate the new generation; reload them so a retry does not
+          // reuse their old revisions against cards recreated under the same ids.
+          if (latestRef.current.ownerId === ownerId) {
+            current.resetCloudPage();
+            current.refreshCloud();
+          }
           current.reportError('Cloud library generation changed. Try again in a moment.');
         } else {
           current.reportError('The update could not be saved. Please try again.');
