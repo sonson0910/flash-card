@@ -1328,6 +1328,21 @@ describe('card intake controller', () => {
     expect(resetSource).toHaveBeenCalledOnce();
   });
 
+  it('files a two-column spreadsheet row under the active course', async () => {
+    const { port } = createFakePort();
+    const intake = createCardIntakeController({ port, language: languageProfileForPair('ja', 'vi') });
+
+    await intake.importSpreadsheet({
+      sizeBytes: 100,
+      loadWorkbook: async () => ({ structuredRows: [{ Word: '猫', Translation: 'mèo' }], flatRows: [] }),
+    });
+
+    expect(port.persistStructured).toHaveBeenCalledWith(
+      expect.objectContaining({ creates: [expect.objectContaining({ language: 'ja', translationLanguage: 'vi' })] }),
+      expect.any(Function),
+    );
+  });
+
   it('keeps an active import running while its view closes and reopens', async () => {
     const { port } = createFakePort();
     const settlement = deferred<'created' | 'reused' | 'failed' | 'pending'>();

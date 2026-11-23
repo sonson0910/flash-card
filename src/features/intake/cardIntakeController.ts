@@ -685,6 +685,7 @@ export function createCardIntakeController({
       workbookFailed: error => diagnostics.generationFailed?.(error),
     },
     delay: spreadsheetDelay,
+    languageDefaults: { language: language.source.code, translationLanguage: language.target.code },
     now,
     isActive: () => spreadsheetLifecycle !== null
       && controllerLifecycle === spreadsheetLifecycle

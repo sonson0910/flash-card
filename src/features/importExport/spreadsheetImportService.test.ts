@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
+import { createTargetAwareCardId } from '../../lib/cardIdentity';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 import {
   createSpreadsheetImportService,
@@ -107,6 +108,27 @@ describe('spreadsheet import service', () => {
       persist.mock.calls[0][0].creates[0].id,
       persist.mock.calls[0][0].creates[0].id,
     ]);
+  });
+
+  it('creates a row without language cells in the active course and does not patch an English card with the same spelling', async () => {
+    const { feedback, cards } = createFakePorts();
+    const english = { ...existingCard('猫'), id: 'word-猫', translationLanguage: 'vi' };
+    const persist = vi.fn(async (plan: StructuredIntakePlan) => ({ createdCount: plan.creates.length }));
+    cards.findExisting = vi.fn(async () => new Map([['猫', english]]));
+    cards.persistStructured = persist;
+    const importer = createSpreadsheetImportService({ cards, feedback, languageDefaults: { language: 'ja', translationLanguage: 'vi' } });
+
+    const result = await importer.import({ sizeBytes: 1, loadWorkbook: async () => ({
+      structuredRows: [{ Word: '猫', Translation: 'mèo' }],
+      flatRows: [],
+    }) });
+
+    expect(result.summary).toMatchObject({ created: 1, reused: 0 });
+    expect(cards.findExisting).toHaveBeenCalledWith([expect.objectContaining({ language: 'ja' })]);
+    expect(persist.mock.calls[0][0]).toMatchObject({
+      creates: [{ language: 'ja', translationLanguage: 'vi', id: createTargetAwareCardId('猫', 'ja') }],
+      patches: [],
+    });
   });
 
   it('does not patch a same-spelling card from another target language', async () => {
