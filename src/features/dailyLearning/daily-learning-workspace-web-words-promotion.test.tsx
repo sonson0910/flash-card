@@ -169,7 +169,6 @@ it('commits a loaded same-pair WebWord into a mounted session and serves it next
       languageProfile={ENGLISH_TO_VIETNAMESE_PROFILE}
       isOffline={false}
       initialLesson="session"
-      streak={0}
       studyXpHistory={[]}
       loadPracticePool={loadPracticePool}
       reviewCard={reviewCard}
@@ -256,7 +255,6 @@ it('stops retrying a daily Word Match completion whose practice session expired 
       languageProfile={ENGLISH_TO_VIETNAMESE_PROFILE}
       isOffline={false}
       initialLesson="session"
-      streak={0}
       studyXpHistory={[]}
       loadPracticePool={vi.fn().mockResolvedValue(cards)}
       reviewCard={vi.fn()}

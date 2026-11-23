@@ -151,7 +151,7 @@ it('offers the English listening pilot only in an English course', async () => {
   const root = createRoot(container);
   const render = (profile: typeof ENGLISH_TO_VIETNAMESE_PROFILE) => root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
     ownerId={OWNER} database={null} languageProfile={profile} isOffline={false} initialLesson={null}
-    streak={0} studyXpHistory={[]} loadPracticePool={vi.fn().mockResolvedValue([])} reviewCard={vi.fn()}
+    studyXpHistory={[]} loadPracticePool={vi.fn().mockResolvedValue([])} reviewCard={vi.fn()}
     openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
     openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
   /></I18nProvider>);
@@ -188,7 +188,7 @@ it('switching course while a Word Match completion is pending keeps the pending 
   const root = createRoot(container);
   const render = (profile: typeof ENGLISH_TO_VIETNAMESE_PROFILE) => root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
     ownerId={OWNER} database={null} languageProfile={profile} isOffline={false} initialLesson="session"
-    streak={0} studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={reviewCard}
+    studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={reviewCard}
     openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
     openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
   /></I18nProvider>);
@@ -248,7 +248,7 @@ it('retrying weak cards from the recap reviews only the weak cards and does not 
   await act(async () => {
     root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
       ownerId={OWNER} database={null} languageProfile={ENGLISH_TO_VIETNAMESE_PROFILE} isOffline={false} initialLesson="session"
-      streak={0} studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={reviewCard}
+      studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={reviewCard}
       openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
       openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
     /></I18nProvider>);
@@ -353,7 +353,7 @@ it('a session in another course does not discard a Word Match completion that is
   const root = createRoot(container);
   const render = (profile: typeof ENGLISH_TO_VIETNAMESE_PROFILE, initialLesson: 'session' | null) => root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
     ownerId={OWNER} database={null} languageProfile={profile} isOffline={false} initialLesson={initialLesson}
-    streak={0} studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={vi.fn()}
+    studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={vi.fn()}
     openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
     openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
   /></I18nProvider>);
@@ -395,7 +395,7 @@ it('opens a listening lesson route in a course that has no English pilot', async
   await act(async () => {
     root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
       ownerId={OWNER} database={null} languageProfile={KOREAN_PROFILE} isOffline={false} initialLesson="listening"
-      streak={0} studyXpHistory={[]} loadPracticePool={vi.fn().mockResolvedValue([koreanDue])} reviewCard={vi.fn()}
+      studyXpHistory={[]} loadPracticePool={vi.fn().mockResolvedValue([koreanDue])} reviewCard={vi.fn()}
       openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
       openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
     /></I18nProvider>);
@@ -433,7 +433,7 @@ it('shows the Word Match preview word at the tier it reached in this session', a
   await act(async () => {
     root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
       ownerId={OWNER} database={null} languageProfile={ENGLISH_TO_VIETNAMESE_PROFILE} isOffline={false} initialLesson="session"
-      streak={0} studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={reviewCard as never}
+      studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={reviewCard as never}
       openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
       openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
     /></I18nProvider>);
@@ -461,7 +461,7 @@ it('does not ask again for a review card that was rated before the tab reloaded'
   const mount = async (pool: CardData[], root: ReturnType<typeof createRoot>) => act(async () => {
     root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
       ownerId={OWNER} database={null} languageProfile={ENGLISH_TO_VIETNAMESE_PROFILE} isOffline={false} initialLesson="session"
-      streak={0} studyXpHistory={[]} loadPracticePool={vi.fn().mockResolvedValue(pool)} reviewCard={reviewCard as never}
+      studyXpHistory={[]} loadPracticePool={vi.fn().mockResolvedValue(pool)} reviewCard={reviewCard as never}
       openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
       openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
     /></I18nProvider>);

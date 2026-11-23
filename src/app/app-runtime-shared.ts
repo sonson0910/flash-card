@@ -322,11 +322,10 @@ export const viewStageStatsProps = <T, S, U extends {
   statsTargetLanguage?: string | null;
   isStatsLoading: boolean;
   error: string | null;
-}, V extends { streak: number }>(stats: T, cloud: U, overview: V) => ({
+}>(stats: T, cloud: U) => ({
   stats,
   cloudStats: cloud.stats,
   cloudStatsTargetLanguage: cloud.statsTargetLanguage,
-  streak: overview.streak,
   isStatsLoading: cloud.isStatsLoading,
   statsError: cloud.error,
 });

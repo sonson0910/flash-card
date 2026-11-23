@@ -418,7 +418,7 @@ describe('AppOverlays listening handoff', () => {
     const renderWorkspace = (index: number) => {
       dailyPilotMock.index = index;
       return createElement(DailyLearningWorkspace, {
-        languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE, streak: 0, studyXpHistory: [], openWeeklyRecap: () => undefined, onVerifiedPracticeOutcome: () => undefined,
+        languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE, studyXpHistory: [], openWeeklyRecap: () => undefined, onVerifiedPracticeOutcome: () => undefined,
         ownerId: 'owner-a',
         isOffline: false,
         initialLesson: 'listening',

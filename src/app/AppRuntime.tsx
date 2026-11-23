@@ -653,7 +653,7 @@ export default function AppRuntime({
               {...viewStageNavigationActions(setViewMode)}
               openMasteredVocabulary={openMasteredVocabulary}
               {...viewStageLearningProps(library, learning, setNotice)}
-              {...viewStageStatsProps(stats, cloud, overview)}
+              {...viewStageStatsProps(stats, cloud)}
               rewardTimeZone={stats.rewardTimeZone}
               learner={todayLearner}
               {...(courseScopeReady && user ? { learnerLevel: { level: overview.level, xp: overview.xp, gamification: verifiedGamification, identity: shellIdentity } } : {})}
