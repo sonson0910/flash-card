@@ -73,6 +73,12 @@ export interface LearningWorkspaceOptions {
 export interface LearningCardUpdateOptions {
   source?: CardData;
   expectedLifecycle?: string;
+  /**
+   * The owner the caller was acting for when it requested the update. An update that
+   * settles after the owner changed is refused, so it cannot land on a card the next
+   * owner holds under the same id.
+   */
+  expectedOwnerId?: string | null;
 }
 
 export interface LearningWorkspaceActions {
@@ -194,6 +200,9 @@ export function useLearningWorkspace(
     },
     updateCard: async (cardId, fields, updateOptions) => {
       const current = latestRef.current;
+      if (updateOptions?.expectedOwnerId !== undefined && updateOptions.expectedOwnerId !== current.owner.id) {
+        return { status: 'stale-owner' };
+      }
       if (!current.library.isPatchCurrent(cardId, updateOptions?.expectedLifecycle)) {
         return { status: 'stale-owner' };
       }
