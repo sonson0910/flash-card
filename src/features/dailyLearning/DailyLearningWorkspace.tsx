@@ -12,6 +12,7 @@ import { readyCourseSessionForOwner, useCourseSession } from '../courses/CourseG
 import { buildStreakView } from '../gamification/streakView';
 import { useVerifiedGamificationState, type VerifiedGamificationState } from '../gamification/verifiedGamificationClient';
 import { firebasePracticeSessionService, practiceTimeZone, type PracticeGamificationOutcome, type PracticeSessionChallenge } from '../practice/practiceSessionService';
+import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { cardsForLanguagePair } from '../practice/practiceModel';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { buildDailyLessonSteps, buildDailyPlan, logicalIdentity, type DailyPlan, type DailyPlanItem } from './dailyPlan';
@@ -108,7 +109,7 @@ type MultiStagePhase =
   | { readonly kind: 'match' }
   | { readonly kind: 'recap' };
 
-type MatchStatus = 'idle' | 'starting' | 'ready' | 'start-error' | 'completing' | 'complete-error';
+type MatchStatus = 'idle' | 'starting' | 'ready' | 'start-error' | 'completing' | 'complete-error' | 'expired';
 
 interface MultiStageState {
   readonly ownerId: string | null;
@@ -1029,7 +1030,14 @@ export default function DailyLearningWorkspace({
         ...state, stats: { ...state.stats, matchXp: state.stats.matchXp + result.awardedXp, ...(state.stats.studyTimeMs === undefined ? {} : { studyTimeMs: state.stats.studyTimeMs + (result.outcome.studyTimeMs ?? 0) }) }, phase: { kind: 'recap' }, matchCompletionPending: false, matchStatus: 'ready',
       }), 'completing', matchStartOpId, matchCompletionId);
       return { awardedXp: result.awardedXp };
-    } catch {
+    } catch (error) {
+      if (error instanceof ProtectedFunctionError && error.reason === 'practice-session-expired') {
+        // The server will never accept this session again, so the saved completion is dropped instead of retried.
+        updateCurrentMatch(state => ({
+          ...state, matchStartOpId: null, matchCompletionId: null, matchCompletionPending: false, matchStatus: 'expired',
+        }), 'completing', matchStartOpId, matchCompletionId);
+        return null;
+      }
       updateCurrentMatch(state => ({ ...state, matchStatus: 'complete-error' }), 'completing', matchStartOpId, matchCompletionId);
       return null;
     }
@@ -1142,6 +1150,12 @@ export default function DailyLearningWorkspace({
     const completionFailed = activeMultiStage.matchStatus === 'complete-error';
     const matchFailed = activeMultiStage.matchStatus === 'start-error' || completionFailed;
     const hasRetainedCompletion = completionFailed || activeMultiStage.matchCompletionPending;
+    if (activeMultiStage.matchStatus === 'expired') {
+      return <div data-active-daily-match="true" role="status" className="rounded-2xl border border-[var(--sf-border)] p-5">
+        <p><Trans {...msg({ context: 'today.match.session-expired', message: 'This round was open for too long, so its result could not be saved.' })} /></p>
+        <button type="button" onClick={finishMatchStage}><Trans {...msg({ context: 'session.bridge.continue', message: 'Continue' })} /></button>
+      </div>;
+    }
     return <div data-active-daily-match="true" role="status" className="rounded-2xl border border-[var(--sf-border)] p-5">
       {matchFailed ? <>
         <p>{isOffline
