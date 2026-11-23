@@ -33,6 +33,12 @@ export function localizeShellSyncStatus(
       footerLabel: translate(msg({ id: 'shell.sync.paused', message: 'Cloud paused' })),
       detail: translate(msg({ id: 'shell.sync.paused-detail', message: 'Live cloud updates are unavailable. Retry when your connection improves.' })),
     };
+    case 'awaiting-cloud': return {
+      ...status,
+      headerLabel: translate(msg({ id: 'shell.sync.awaiting-cloud', message: 'Waiting for cloud' })),
+      footerLabel: translate(msg({ id: 'shell.sync.awaiting-cloud', message: 'Waiting for cloud' })),
+      detail: translate(msg({ id: 'shell.sync.awaiting-cloud-detail', message: 'Showing the copy saved on this device until the cloud confirms it.' })),
+    };
     case 'needs-attention': return {
       ...status,
       headerLabel: translate(msg({ id: 'shell.sync.needs-attention', message: 'Needs attention' })),

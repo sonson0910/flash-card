@@ -2563,17 +2563,17 @@ msgid "Reused"
 msgstr "Reused"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:120
+#: src/features/library/libraryViewModel.ts:121
 msgid "shell.library-count.cached-cloud"
 msgstr "{cached, number} cached / {cloud, number} cloud"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:123
+#: src/features/library/libraryViewModel.ts:124
 msgid "shell.library-count.cards"
 msgstr "{count, plural, one {# card} other {# cards}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:121
+#: src/features/library/libraryViewModel.ts:122
 msgid "shell.library-count.cloud-paused"
 msgstr "Cloud paused"
 

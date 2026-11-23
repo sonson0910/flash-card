@@ -1919,17 +1919,17 @@ msgid "shell.level.short"
 msgstr "Lv {level}"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:120
+#: src/features/library/libraryViewModel.ts:121
 msgid "shell.library-count.cached-cloud"
 msgstr "{cached, number} cached / {cloud, number} cloud"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:123
+#: src/features/library/libraryViewModel.ts:124
 msgid "shell.library-count.cards"
 msgstr "{count, plural, one {# card} other {# cards}}"
 
 #. js-lingui-explicit-id
-#: src/features/library/libraryViewModel.ts:121
+#: src/features/library/libraryViewModel.ts:122
 msgid "shell.library-count.cloud-paused"
 msgstr "Cloud paused"
 
@@ -2144,6 +2144,17 @@ msgid "shell.streak"
 msgstr "{count} day streak"
 
 #. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:38
+#: src/components/shell/localized-sync-status.ts:39
+msgid "shell.sync.awaiting-cloud"
+msgstr "Waiting for cloud"
+
+#. js-lingui-explicit-id
+#: src/components/shell/localized-sync-status.ts:40
+msgid "shell.sync.awaiting-cloud-detail"
+msgstr "Showing the copy saved on this device until the cloud confirms it."
+
+#. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:68
 #: src/components/shell/LibraryManagementMenu.tsx:186
 #: src/components/shell/localized-sync-status.ts:20
@@ -2163,8 +2174,8 @@ msgid "shell.sync.device"
 msgstr "On this device"
 
 #. js-lingui-explicit-id
-#: src/components/shell/localized-sync-status.ts:38
-#: src/components/shell/localized-sync-status.ts:39
+#: src/components/shell/localized-sync-status.ts:44
+#: src/components/shell/localized-sync-status.ts:45
 msgid "shell.sync.needs-attention"
 msgstr "Needs attention"
 

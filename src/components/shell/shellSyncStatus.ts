@@ -2,10 +2,12 @@ export interface ShellSyncStatusInput {
   isOnline: boolean;
   cloudUnavailable: boolean;
   isCheckingCloud?: boolean;
+  /** The shown library page came from the device cache and the server has not confirmed it yet. */
+  awaitingCloudConfirmation?: boolean;
   error?: string | null;
 }
 
-export type ShellSyncStatusKind = 'synced' | 'checking' | 'offline' | 'cloud-paused' | 'needs-attention';
+export type ShellSyncStatusKind = 'synced' | 'checking' | 'offline' | 'cloud-paused' | 'awaiting-cloud' | 'needs-attention';
 
 export interface ShellSyncStatus {
   kind: ShellSyncStatusKind;
@@ -15,6 +17,10 @@ export interface ShellSyncStatus {
   healthy: boolean;
   busy: boolean;
   canRetry: boolean;
+}
+
+export function isAwaitingCloudConfirmation(page: { signedIn: boolean; serverConfirmed: boolean; isLoading: boolean }): boolean {
+  return page.signedIn && !page.isLoading && !page.serverConfirmed;
 }
 
 export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus {
@@ -61,6 +67,17 @@ export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus
       healthy: false,
       busy: false,
       canRetry: true,
+    };
+  }
+  if (input.awaitingCloudConfirmation) {
+    return {
+      kind: 'awaiting-cloud',
+      headerLabel: 'Waiting for cloud',
+      footerLabel: 'Waiting for cloud',
+      detail: 'Showing the copy saved on this device until the cloud confirms it.',
+      healthy: false,
+      busy: true,
+      canRetry: false,
     };
   }
   return {

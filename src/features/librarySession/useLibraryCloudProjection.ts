@@ -8,6 +8,7 @@ export interface LibraryCloudProjectionValue {
   hasNext: boolean;
   isLoading: boolean;
   unavailable: boolean;
+  serverConfirmed: boolean;
   stats: LibrarySessionModel['cloud']['stats'];
   facets: Record<string, number>;
   facetsComplete: boolean;
@@ -107,6 +108,7 @@ export function createLibraryCloudProjectionController({
       hasNext: cloud.hasNext,
       isLoading: cloud.isLoading,
       unavailable: cloud.cloudUnavailable,
+      serverConfirmed: Boolean(cloud.serverConfirmed),
       stats: cloud.stats,
       facets: cloud.facets,
       facetsComplete: cloud.facetsComplete,
