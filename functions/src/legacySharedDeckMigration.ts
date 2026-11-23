@@ -2495,6 +2495,49 @@ const usageEqual = (left: unknown, right: LegacySharedDeckApplyReport['ledger'])
   JSON.stringify(usageComparable(left)) === JSON.stringify(usageComparable(right))
 );
 
+const timestampMillis = (value: unknown): number | null => (
+  value instanceof Timestamp ? value.toMillis() : millisFromTimestamp(timestampCanonical(value))
+);
+
+/**
+ * The share callable creates the owner's ledger on the first share and only
+ * drops expired entries on a later create or revoke.  A ledger written before
+ * the freeze therefore covers a subset of the inventory and may still list
+ * shares that expired.  Apply can replace it with the inventory's ledger when
+ * it is internally consistent and every share it counts as live at the scan is
+ * the same share in the inventory; anything else is a conflict an operator
+ * must look at.
+ */
+const usageReconcilable = (
+  value: unknown,
+  expected: LegacySharedDeckApplyReport['ledger'],
+  scanStartedAt: string,
+): boolean => {
+  if (!isRecord(value) || value.schemaVersion !== 1 || !isRecord(value.shares)) return false;
+  const scanMillis = Date.parse(scanStartedAt);
+  let allBytes = 0;
+  let liveCount = 0;
+  let liveBytes = 0;
+  const entries = Object.entries(value.shares);
+  for (const [shareId, entry] of entries) {
+    if (!isRecord(entry)) return false;
+    const { payloadBytes } = entry;
+    const expiresAt = timestampMillis(entry.expiresAt);
+    if (typeof payloadBytes !== 'number' || !Number.isSafeInteger(payloadBytes) || payloadBytes < 0 || expiresAt === null) {
+      return false;
+    }
+    allBytes += payloadBytes;
+    if (expiresAt <= scanMillis) continue;
+    const sealed = Object.hasOwn(expected.shares, shareId) ? expected.shares[shareId] : undefined;
+    if (!sealed || sealed.payloadBytes !== payloadBytes || sealed.expiresAt.toMillis() !== expiresAt) return false;
+    liveCount += 1;
+    liveBytes += payloadBytes;
+  }
+  // Same counter rule the share callable enforces before it trusts a ledger.
+  return (value.activeCount === entries.length && value.activeBytes === allBytes)
+    || (value.activeCount === liveCount && value.activeBytes === liveBytes);
+};
+
 /**
  * Apply one owner in one Firestore transaction. Valid source documents are
  * rewritten in place, preserving IDs and payloads; invalid records are copied
@@ -2580,7 +2623,10 @@ export async function applyLegacySharedDeckMigration(
       throw new LegacySharedDeckApplyError('A sealed migration that has not started must be applied from the revision that sealed it.');
     }
     const usageSnapshot = await transaction.get(usageRef);
-    if (usageSnapshot.exists && !usageEqual(usageSnapshot.data(), ledger)) {
+    const beforeLedgerWrite = state.phase === 'sealed' || state.phase === 'applying';
+    if (usageSnapshot.exists
+      && !usageEqual(usageSnapshot.data(), ledger)
+      && !(beforeLedgerWrite && usageReconcilable(usageSnapshot.data(), ledger, inventory.scanStartedAt))) {
       throw new LegacySharedDeckApplyError('Existing shared-deck ledger does not match inventory.');
     }
   });
@@ -2768,10 +2814,14 @@ export async function applyLegacySharedDeckMigration(
       || currentState.progress.nextEntry !== inventory.entries.length) {
       throw new LegacySharedDeckApplyError('Shared-deck migration is incomplete.');
     }
-    if (usageSnapshot.exists && !usageEqual(usageSnapshot.data(), ledger)) {
-      throw new LegacySharedDeckApplyError('Existing shared-deck ledger does not match inventory.');
+    if (!usageSnapshot.exists) {
+      transaction.create(usageRef, ledger);
+    } else if (!usageEqual(usageSnapshot.data(), ledger)) {
+      if (!usageReconcilable(usageSnapshot.data(), ledger, inventory.scanStartedAt)) {
+        throw new LegacySharedDeckApplyError('Existing shared-deck ledger does not match inventory.');
+      }
+      transaction.set(usageRef, ledger);
     }
-    if (!usageSnapshot.exists) transaction.create(usageRef, ledger);
     transaction.set(stateRef, {
       ...currentState,
       phase: 'applied',

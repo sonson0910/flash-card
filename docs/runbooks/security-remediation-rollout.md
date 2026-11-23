@@ -172,6 +172,13 @@ The apply report must prove:
 Any mismatch stops the rollout before Rules cutover. Do not retry with changed
 inputs; produce a new inventory and approval.
 
+The owner's usage ledger may already exist, because the share callable creates
+it on the owner's first share. Apply replaces it with the sealed ledger when its
+counters are consistent and every share it counts as live at the scan is the
+same share in the inventory. It still stops before any write when that ledger
+counts a live share the inventory does not hold; repair that by hand before a
+new approval.
+
 Sharing is closed for every learner from the inventory until the migration
 reaches `verified`, so an apply that stops part-way must be finished, not left:
 

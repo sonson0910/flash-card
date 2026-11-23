@@ -20,6 +20,7 @@ import { runLegacySharedDeckApplyOperator } from '../src/legacySharedDeckMigrati
 import {
   buildSharedDeckDocuments,
   createSharedDeckAtomically,
+  revokeSharedDeckAtomically,
   SharedDeckMigrationRequiredError,
 } from '../src/sharedDeckPersistence.js';
 
@@ -124,6 +125,7 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
     await createSharedDeckAtomically(database, publicShare(shareId), privateShare(shareId), documents, { now });
     return documents;
   };
+  const removeAsExpired = (shareId: string) => Promise.all([publicShare(shareId).delete(), privateShare(shareId).delete()]);
   const seal = (revision: string, scanStartedAt = new Date().toISOString()) => createFrozenLegacySharedDeckInventory({
     store: createFirestoreLegacySharedDeckInventoryStore(database),
     ownerUid,
@@ -168,6 +170,60 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
   afterAll(async () => {
     await Promise.all(databases.map(used => used.terminate()));
     await deleteApp(app);
+  });
+
+  describe('apply with an owner ledger that already exists', () => {
+    it('completes when the share callable created the ledger before the inventory', async () => {
+      await seedLegacyShares('legacy-a', 'legacy-b');
+      const current = await share(ownerUid, 'current-share');
+      expect(Object.keys((await usage())!.shares as object)).toEqual(['current-share']);
+
+      const inventory = await seal(sealingRevision);
+      expect(inventory.applyEligible).toBe(true);
+      const report = await applyLegacySharedDeckMigration(database, inventory, applyOptions(inventory));
+      await expect(verifyLegacySharedDeckCutover(database, inventory))
+        .resolves.toEqual({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 3 });
+
+      expect(await state()).toMatchObject({ phase: 'verified', ledgerReady: true });
+      const ledger = await usage();
+      expect(ledger).toEqual(report.ledger);
+      expect(Object.keys(ledger!.shares as object).sort()).toEqual(['current-share', 'legacy-a', 'legacy-b']);
+      expect(ledger!.shares).toMatchObject({
+        'current-share': { payloadBytes: current.ownership.payloadBytes, expiresAt: current.ownership.expiresAt },
+      });
+      // The rebuilt ledger is the one the share callables keep working from.
+      await expect(revokeSharedDeckAtomically(database, publicShare('legacy-a'), privateShare('legacy-a'), ownerUid))
+        .resolves.toBe(true);
+      await expect(share('another-learner', 'after-cutover')).resolves.toBeDefined();
+    }, 30_000);
+
+    it('drops a ledger entry whose share expired and was removed before the scan', async () => {
+      await share(ownerUid, 'expired-share', Timestamp.fromMillis(Date.now() - 40 * DAY_MS));
+      await removeAsExpired('expired-share');
+      await seedLegacyShares('legacy-a');
+
+      const inventory = await seal(sealingRevision);
+      await applyLegacySharedDeckMigration(database, inventory, applyOptions(inventory));
+      await expect(verifyLegacySharedDeckCutover(database, inventory)).resolves.toMatchObject({ verified: true });
+
+      expect(await state()).toMatchObject({ phase: 'verified', ledgerReady: true });
+      expect(await usage()).toMatchObject({ activeCount: 1, shares: { 'legacy-a': {} } });
+      expect(Object.keys((await usage())!.shares as object)).toEqual(['legacy-a']);
+    }, 30_000);
+
+    it('still stops before any write when the ledger counts a live share the inventory does not hold', async () => {
+      await share(ownerUid, 'vanished-share');
+      await removeAsExpired('vanished-share');
+      await seedLegacyShares('legacy-a');
+
+      const inventory = await seal(sealingRevision);
+      await expect(applyLegacySharedDeckMigration(database, inventory, applyOptions(inventory)))
+        .rejects.toThrow('Existing shared-deck ledger does not match inventory.');
+
+      expect(await state()).toMatchObject({ phase: 'sealed' });
+      expect((await publicShare('legacy-a').get()).data()).toEqual(legacyShareData);
+      expect(Object.keys((await usage())!.shares as object)).toEqual(['vanished-share']);
+    }, 30_000);
   });
 
   describe('a migration that stopped after the default branch moved on', () => {
