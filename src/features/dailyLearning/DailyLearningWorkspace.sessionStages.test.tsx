@@ -163,3 +163,57 @@ it('offers the English listening pilot only in an English course', async () => {
   expect(screens.today.model.listenPilotAvailable).toBe(false);
   await act(async () => root.unmount());
 }, 30_000);
+
+it('switching course while a Word Match completion is pending keeps the pending completion for retry', async () => {
+  const pool = ['one', 'two', 'three', 'four'].map(id => card(`pair-${id}`, { reviews: 2, difficulty: 'good', nextReviewDate: '2099-01-01T00:00:00.000Z' } as Partial<CardData>));
+  const byId = new Map(pool.map(entry => [entry.id, entry]));
+  const loadPracticePool = vi.fn().mockResolvedValue(pool);
+  const reviewCard = vi.fn();
+  practice.start = vi.fn(async ({ cardIds }: { cardIds: string[] }) => ({
+    sessionId: 'start-op', game: 'match', expiresAt: '2099-01-01T00:00:00.000Z',
+    challenge: { kind: 'match', cards: cardIds.map(id => ({ cardId: id, word: byId.get(id)!.word, translation: byId.get(id)!.translation })) },
+  }));
+  // The completion call fails once (network or server error), so the earned round stays pending.
+  practice.complete = vi.fn(async () => { throw new Error('unavailable'); });
+  const container = installMinimalReactDom();
+  // The learner won the round; the pointer holds the pending completion (as completeDailyMatch writes it).
+  writeDailySessionPointer({
+    ownerId: OWNER, targetLanguage: 'en', translationLanguage: 'vi', stage: 'match',
+    reviewLogicalIds: [], freshLogicalIds: [],
+    matchCardIds: pool.map(entry => entry.id), matchSkipReason: null,
+    matchStartOpId: 'start-op', matchCompletionId: 'complete-op', matchTimeZone: 'UTC', matchCompletionPending: true,
+    stats: emptyDailySessionStats, startedAt: '2026-10-03T00:00:00.000Z',
+  });
+  i18n.load('en', {}); i18n.activate('en');
+  const root = createRoot(container);
+  const render = (profile: typeof ENGLISH_TO_VIETNAMESE_PROFILE) => root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
+    ownerId={OWNER} database={null} languageProfile={profile} isOffline={false} initialLesson="session"
+    streak={0} studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={reviewCard}
+    openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
+    openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
+  /></I18nProvider>);
+  await act(async () => { render(ENGLISH_TO_VIETNAMESE_PROFILE); });
+  await settle();
+  expect(practice.complete).toHaveBeenCalledTimes(1);
+  const beforeSwitch = readDailySessionPointer(OWNER);
+  expect(beforeSwitch?.matchCompletionPending).toBe(true);
+
+  // Same owner switches course in the top-bar switcher while the workspace stays mounted.
+  await act(async () => { render(KOREAN_PROFILE); });
+  await settle();
+  const afterSwitch = readDailySessionPointer(OWNER);
+  expect(afterSwitch).toMatchObject({ matchCompletionPending: true, matchCompletionId: 'complete-op', targetLanguage: 'en' });
+  // Back in the original course the pending completion is retried with the same id.
+  practice.complete = vi.fn(async () => ({
+    sessionId: 'start-op', correct: 4, total: 4, awardedXp: 20,
+    outcome: { xp: 500, level: 3, streak: 1, events: [], studyTimeMs: 60_000 },
+  }));
+  await act(async () => { render(ENGLISH_TO_VIETNAMESE_PROFILE); });
+  await settle();
+  await act(async () => { screens.today.actions.startSession(); });
+  await settle();
+  expect(practice.complete).toHaveBeenCalledTimes(1);
+  expect(practice.complete).toHaveBeenCalledWith(expect.objectContaining({ sessionId: 'start-op', completionId: 'complete-op' }));
+  await act(async () => root.unmount());
+}, 30_000);
+
