@@ -42,6 +42,8 @@ export function mirrorCardCategoryEdit(card: CardData, nextCategory: string, own
     uid,
     delta,
     deriveLibraryFacetOperationId(`card-edit:${card.id}:${card.revision ?? 0}`, 'category-edit'),
+    undefined,
+    card.libraryEpoch,
   ).catch(facetError => {
     console.error('Category facets mirror could not be updated after a card edit.', facetError);
   });

@@ -489,6 +489,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
             void current.updateCategoryFacets(
               { [stableSource.category || 'Other']: -1 },
               deriveLibraryFacetOperationId(result.tombstone.opId, 'delete'),
+              result.tombstone.libraryEpoch,
             );
           }
         } catch (cause) {

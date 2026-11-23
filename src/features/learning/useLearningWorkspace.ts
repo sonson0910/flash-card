@@ -47,7 +47,7 @@ export interface LearningWorkspacePracticePort {
 export interface LearningWorkspaceInfrastructurePorts {
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   mutateCloudStats(update: (current: LearningWorkspaceStats) => LearningWorkspaceStats): void;
-  publishCategoryFacets(deltas: Record<string, number>, operationId?: string): Promise<void>;
+  publishCategoryFacets(deltas: Record<string, number>, operationId?: string, libraryEpoch?: number): Promise<void>;
   resetCloudState(facetsComplete: boolean): void;
   resetCloudPage(): void;
   refreshCloud(): void;
@@ -150,7 +150,8 @@ export function useLearningWorkspace(
     },
     acceptVerifiedEpoch: (ownerId, epoch) => latestRef.current.ports.acceptVerifiedEpoch(ownerId, epoch),
     updateCloudStats: update => latestRef.current.ports.mutateCloudStats(update),
-    updateCategoryFacets: (deltas, operationId) => latestRef.current.ports.publishCategoryFacets(deltas, operationId),
+    updateCategoryFacets: (deltas, operationId, libraryEpoch) =>
+      latestRef.current.ports.publishCategoryFacets(deltas, operationId, libraryEpoch),
     resetCloudState: facetsComplete => latestRef.current.ports.resetCloudState(facetsComplete),
     resetCloudPage: () => latestRef.current.ports.resetCloudPage(),
     refreshCloud: () => latestRef.current.ports.refreshCloud(),

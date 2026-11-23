@@ -14,10 +14,15 @@ export const LIBRARY_FACET_LEGACY_COMPATIBILITY_CUTOFF_MS = Date.UTC(2026, 11, 3
 const RESERVED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 const OPERATION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9:_-]*$/;
 const FACET_FIELDS = ['categories', 'complete', 'version', 'updatedAt'] as const;
+// Facets written before clears recorded their library generation lack this field.
+const CLEARED_EPOCH_FIELD = 'clearedLibraryEpoch';
 export type LibraryFacetOperation = 'delta' | 'clear';
 
 export type LibraryFacetMutationRequest =
-  | { op: 'delta'; ownerId: string; opId: string; operationCreatedAt?: string; delta: Record<string, number> }
+  | {
+    op: 'delta'; ownerId: string; opId: string; operationCreatedAt?: string; delta: Record<string, number>;
+    libraryEpoch?: number;
+  }
   | { op: 'clear'; ownerId: string; opId: string; operationCreatedAt?: string };
 
 export interface LibraryFacets {
@@ -157,9 +162,14 @@ const parseReceiptResult = (value: unknown): LibraryFacets => {
   return parseResult(source);
 };
 
-const parseStoredFacets = (value: unknown): LibraryFacets => {
+const parseStoredFacets = (value: unknown): LibraryFacets & { clearedLibraryEpoch: number } => {
   const source = asRecord(value, 'Stored library facets are invalid.');
-  exactKeys(source, FACET_FIELDS, 'Stored library facets contain unsupported fields.');
+  const hasClearedEpoch = Object.hasOwn(source, CLEARED_EPOCH_FIELD);
+  exactKeys(
+    source,
+    hasClearedEpoch ? [...FACET_FIELDS, CLEARED_EPOCH_FIELD] : FACET_FIELDS,
+    'Stored library facets contain unsupported fields.',
+  );
   if (typeof source.complete !== 'boolean' || source.version !== 1
     || typeof source.updatedAt !== 'string'
     || source.updatedAt.length < 1
@@ -169,6 +179,7 @@ const parseStoredFacets = (value: unknown): LibraryFacets => {
   return {
     categories: parseCategoryMap(source.categories, 'Stored library facets are invalid.'),
     complete: source.complete,
+    clearedLibraryEpoch: hasClearedEpoch ? safeCounter(source[CLEARED_EPOCH_FIELD], 'Stored library facets are invalid.') : 0,
   };
 };
 
@@ -204,6 +215,8 @@ const sortCodeUnits = <T extends [string, unknown]>(entries: T[]): T[] => entrie
   return left.length - right.length;
 });
 
+// The library generation of a delta is not part of its fingerprint: one logical
+// operation keeps one receipt whether or not the client that sends it tags it.
 const canonicalRequest = (request: LibraryFacetMutationRequest): string => JSON.stringify(
   request.op === 'delta'
     ? {
@@ -242,7 +255,12 @@ const parseFacetMutationRequest = (
     return timestamp;
   };
   if (source.op === 'delta') {
-    exactKeys(source, [...expectedBaseKeys, 'delta'], 'Library facet delta request contains unsupported fields.');
+    const hasLibraryEpoch = Object.hasOwn(source, 'libraryEpoch');
+    exactKeys(
+      source,
+      [...expectedBaseKeys, 'delta', ...(hasLibraryEpoch ? ['libraryEpoch'] : [])],
+      'Library facet delta request contains unsupported fields.',
+    );
     if (!validOwnerId(source.ownerId)) throw new InputValidationError('Library facet owner ID is invalid.');
     if (!validOperationId(source.opId)) throw new InputValidationError('Library facet operation ID is invalid.');
     const deltaSource = asRecord(source.delta, 'Library facet delta must be an object.');
@@ -257,8 +275,14 @@ const parseFacetMutationRequest = (
       if (!validCategory(category)) throw new InputValidationError('Library facet category is invalid.');
       delta[category] = safeDelta(amount);
     }
+    const libraryEpoch = hasLibraryEpoch
+      ? safeCounter(source.libraryEpoch, 'Library facet library generation is invalid.')
+      : undefined;
     const createdAt = parsedOperationCreatedAt();
-    return { op: 'delta', ownerId: source.ownerId, opId: source.opId, ...(createdAt ? { operationCreatedAt: createdAt } : {}), delta };
+    return {
+      op: 'delta', ownerId: source.ownerId, opId: source.opId, ...(createdAt ? { operationCreatedAt: createdAt } : {}), delta,
+      ...(libraryEpoch === undefined ? {} : { libraryEpoch }),
+    };
   }
   if (source.op === 'clear') {
     exactKeys(source, expectedBaseKeys, 'Library facet clear request contains unsupported fields.');
@@ -278,6 +302,9 @@ const facetsReference = (database: Firestore, ownerId: string) =>
 
 const receiptsReference = (database: Firestore, ownerId: string) =>
   database.collection('users').doc(ownerId).collection('profile').doc('library_facet_receipts');
+
+const libraryStateReference = (database: Firestore, ownerId: string) =>
+  database.collection('users').doc(ownerId).collection('profile').doc('library_state');
 
 const receiptReference = (database: Firestore, ownerId: string, opId: string) =>
   database.collection('users').doc(ownerId).collection('library_facet_receipts').doc(opId);
@@ -318,21 +345,35 @@ const applyParsedLibraryFacetMutation = async (
     return parseReceiptResult(storedReceipt.result);
   }
   await assertOwnerLibraryWriteAllowed(transaction, database, ownerId);
-  const [facetsSnapshot, receiptsSnapshot] = await Promise.all([
+  // Only a clear reads the library generation; a delta adds no read.
+  const [facetsSnapshot, receiptsSnapshot, stateSnapshot] = await Promise.all([
     transaction.get(facetsRef),
     transaction.get(receiptsRef),
+    parsedRequest.op === 'clear' ? transaction.get(libraryStateReference(database, ownerId)) : null,
   ]);
   const current = facetsSnapshot.exists
     ? parseStoredFacets(facetsSnapshot.data())
-    : { categories: Object.create(null) as Record<string, number>, complete: false };
+    : { categories: Object.create(null) as Record<string, number>, complete: false, clearedLibraryEpoch: 0 };
+  // A delta for a card created or deleted before the last clear arrived late: the
+  // clear already removed that card's count, so applying it would put a count back.
+  if (parsedRequest.op === 'delta' && parsedRequest.libraryEpoch !== undefined
+    && parsedRequest.libraryEpoch < current.clearedLibraryEpoch) {
+    return parseResult({ categories: current.categories, complete: current.complete });
+  }
   const receipts = receiptsSnapshot.exists
     ? parseReceiptDocument(receiptsSnapshot.data())
     : { version: 1 as const, receipts: [] };
   const categories = Object.fromEntries(Object.entries(current.categories));
   let complete = current.complete;
+  let clearedLibraryEpoch = current.clearedLibraryEpoch;
   if (parsedRequest.op === 'clear') {
     for (const category of Object.keys(categories)) delete categories[category];
     complete = true;
+    const stateEpoch = stateSnapshot?.exists ? stateSnapshot.data()?.libraryEpoch : 0;
+    clearedLibraryEpoch = Math.max(
+      clearedLibraryEpoch,
+      Number.isSafeInteger(stateEpoch) && Number(stateEpoch) >= 0 ? Number(stateEpoch) : 0,
+    );
   } else {
     for (const [category, delta] of Object.entries(parsedRequest.delta)) {
       const previousValue = categories[category] ?? 0;
@@ -358,6 +399,7 @@ const applyParsedLibraryFacetMutation = async (
     complete: result.complete,
     version: 1,
     updatedAt: new Date().toISOString(),
+    ...(clearedLibraryEpoch > 0 ? { [CLEARED_EPOCH_FIELD]: clearedLibraryEpoch } : {}),
   });
   transaction.set(receiptsRef, {
     version: 1,

@@ -892,7 +892,7 @@ describe('Card Intake Pipeline contract', () => {
 
     await vi.waitFor(() => expect(publishCards.mock.calls.at(-1)![0].map(value => value.id)).toEqual([earlier.id]));
     expect(stats).toMatchObject({ total: 1, unrated: 1 });
-    expect(vi.mocked(context.updateCategoryFacets)).toHaveBeenLastCalledWith({ General: -1 }, expect.stringMatching(/^facet-op:create-.+:duplicate$/));
+    expect(vi.mocked(context.updateCategoryFacets)).toHaveBeenLastCalledWith({ General: -1 }, expect.stringMatching(/^facet-op:create-.+:duplicate$/), 3);
     expect(vi.mocked(context.rememberPromoted)).toHaveBeenLastCalledWith(expect.objectContaining({ id: earlier.id }));
     // Media that arrives afterwards follows the stored card, as it does for a word held under the same id.
     await pipeline.applyMedia(persisted!.card, { audioUrl: null, imageUrl: 'https://images.example/apple.jpg' });
@@ -941,7 +941,24 @@ describe('Card Intake Pipeline contract', () => {
 
     await vi.waitFor(() => expect(shown).toEqual([expect.objectContaining({ id: stored.id, reviews: 5, revision: 3, difficulty: 'good' })]));
     expect(stats).toMatchObject({ total: 0, unrated: 0 });
-    expect(vi.mocked(context.updateCategoryFacets)).toHaveBeenLastCalledWith({ General: -1 }, expect.stringMatching(/:duplicate$/));
+    expect(vi.mocked(context.updateCategoryFacets)).toHaveBeenLastCalledWith({ General: -1 }, expect.stringMatching(/:duplicate$/), 3);
+  });
+
+  it('tags every category facet change of a save with the library generation it was saved under', async () => {
+    const context = createContext();
+    repositoryRuntime.createCardV2IfAbsent
+      .mockRejectedValueOnce(new Error('The card limit was reached.'))
+      .mockImplementationOnce(async (...args: unknown[]) => ({ card: args[2] as { id: string }, created: true, gamification: null }));
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await pipeline.persistStructured({ creates: [card('apple') as CardData, card('pear') as CardData], patches: [] });
+    const catalogCard = { ...card('catalog-tagged'), lexemeId: 'lexeme-tagged' };
+    repositoryRuntime.createCardV2IfAbsent.mockResolvedValueOnce({ card: catalogCard, created: true, gamification: null });
+    await pipeline.createConfirmedCatalogCards([catalogCard]);
+
+    const facetCalls = vi.mocked(context.updateCategoryFacets).mock.calls as unknown[][];
+    expect(facetCalls.map(call => String(call[1]).split(':').at(-1))).toEqual(['create', 'failed', 'create']);
+    expect(facetCalls.map(call => call[2])).toEqual([3, 3, 3]);
   });
 
   it('takes back each duplicate in a batch under its own compensation id', async () => {

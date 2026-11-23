@@ -108,6 +108,7 @@ const compensateOptimisticCard = (
   port: OptimisticDuplicateCompensationPort,
   operationId: string | undefined,
   reason: 'duplicate' | 'failed',
+  libraryEpoch?: number,
 ): void => {
   // Each counter takes back exactly what the optimistic create added for this card.
   port.updateCloudStats(stats => ({
@@ -119,7 +120,7 @@ const compensateOptimisticCard = (
   const category = card.category || 'Other';
   const delta = { [category]: -1 };
   const update = operationId
-    ? port.updateCategoryFacets(delta, deriveLibraryFacetOperationId(operationId, reason))
+    ? port.updateCategoryFacets(delta, deriveLibraryFacetOperationId(operationId, reason), libraryEpoch)
     : port.updateCategoryFacets(delta);
   void update.catch(cause => {
     console.warn('The card was reconciled, but its category facet needs a refresh.', cause);
@@ -459,7 +460,11 @@ export function createCardIntakePipeline({
         counts[category] = (counts[category] || 0) + 1;
         return counts;
       }, {});
-      void active.updateCategoryFacets(deltas, deriveLibraryFacetOperationId(facetOperationId, 'create'));
+      void active.updateCategoryFacets(
+        deltas,
+        deriveLibraryFacetOperationId(facetOperationId, 'create'),
+        activeLibraryEpoch,
+      );
       active.resetCatalog();
       active.resetCloudPage();
     }
@@ -486,7 +491,7 @@ export function createCardIntakePipeline({
           // card forward. Ids are deterministic, so the card shown at once can carry the stored id
           // and still be the optimistic one; only the answer tells the two apart. The compensation
           // id names this call and this card, so every duplicate in a batch is counted once.
-          compensateOptimisticCard(candidate, latest, `${facetOperationId}:${operationId}`, 'duplicate');
+          compensateOptimisticCard(candidate, latest, `${facetOperationId}:${operationId}`, 'duplicate', activeLibraryEpoch);
           const cardToTouch = !keepExistingDeck && candidate.customDeck && candidate.customDeck !== result.card.customDeck
             ? await assignExistingDeck(result.card, candidate.customDeck)
             : result.card;
@@ -506,7 +511,7 @@ export function createCardIntakePipeline({
           latest.forgetPromoted(candidate);
           latest.publishCards(latest.getCards().filter(existing => existing.id !== candidate.id));
           // A refused card never reached the library, so the optimistic counts and facet go back too.
-          compensateOptimisticCard(candidate, latest, `${facetOperationId}:${operationId}`, 'failed');
+          compensateOptimisticCard(candidate, latest, `${facetOperationId}:${operationId}`, 'failed', activeLibraryEpoch);
           latest.setCloudUnavailable(true);
           latest.notify('The card could not be saved. Check your connection and try again.');
         }
@@ -635,6 +640,7 @@ export function createCardIntakePipeline({
         void active.updateCategoryFacets(
           deltas,
           deriveLibraryFacetOperationId(facetOperationId, 'create'),
+          activeLibraryEpoch,
         );
         confirmed.forEach(result => {
           if (result.created && result.gamification) {

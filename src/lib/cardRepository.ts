@@ -614,6 +614,8 @@ export async function applyCategoryDeltas(
   deltas: Record<string, number>,
   operationId?: string,
   operationCreatedAt?: string,
+  /** The library generation the card change was made under; the server ignores a delta older than its last clear. */
+  libraryEpoch?: number,
 ): Promise<LibraryFacets> {
   void db;
   const operation = await libraryFacetOperation(operationId, operationCreatedAt);
@@ -622,6 +624,7 @@ export async function applyCategoryDeltas(
     ownerId: userId,
     ...operation,
     delta: deltas,
+    ...(libraryEpoch === undefined ? {} : { libraryEpoch }),
   });
 }
 
@@ -743,7 +746,7 @@ export function deriveLibraryFacetOperationId(operationId: string, suffix: strin
 }
 
 type LibraryFacetMutationRequest =
-  | { op: 'delta'; ownerId: string; opId: string; operationCreatedAt?: string; delta: Record<string, number> }
+  | { op: 'delta'; ownerId: string; opId: string; operationCreatedAt?: string; delta: Record<string, number>; libraryEpoch?: number }
   | { op: 'clear'; ownerId: string; opId: string; operationCreatedAt?: string };
 
 class LibraryFacetCallableResponseError extends Error {

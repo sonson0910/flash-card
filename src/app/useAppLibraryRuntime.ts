@@ -215,10 +215,10 @@ export function useAppLibraryRuntime({
     recentlyPromotedCardsRef.current.clear();
   }, [user?.uid]);
 
-  const updateCategoryFacets = useCallback(async (deltas: Record<string, number>, operationId?: string) => {
+  const updateCategoryFacets = useCallback(async (deltas: Record<string, number>, operationId?: string, libraryEpoch?: number) => {
     if (!user) return;
     const ownerId = user.uid;
-    const facets = await appDependencies.library.updateCategoryFacets(ownerId, deltas, operationId);
+    const facets = await appDependencies.library.updateCategoryFacets(ownerId, deltas, operationId, libraryEpoch);
     if (!facets || activeOwnerIdRef.current !== ownerId) return;
     setCloudCategoryCounts(facets.categories);
     setCloudFacetsComplete(facets.complete);

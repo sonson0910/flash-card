@@ -36,8 +36,15 @@ const validFacets = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const harness = (facets?: DocumentData, receipts?: DocumentData, fenced = false, receipt?: DocumentData) => {
+const harness = (
+  facets?: DocumentData,
+  receipts?: DocumentData,
+  fenced = false,
+  receipt?: DocumentData,
+  libraryState?: DocumentData,
+) => {
   const values = new Map<string, DocumentSnapshot>([
+    ['users/owner/profile/library_state', snapshot(libraryState !== undefined, libraryState)],
     ['users/owner/profile/library_facets', snapshot(facets !== undefined, facets)],
     ['users/owner/profile/library_facet_receipts', snapshot(receipts !== undefined, receipts)],
     [`users/owner/library_facet_receipts/${TEST_OPERATION_ID}`, snapshot(receipt !== undefined, receipt)],
@@ -135,6 +142,49 @@ describe('library facet persistence', () => {
       opId: TEST_OPERATION_ID,
     }))
       .resolves.toEqual({ categories: {}, complete: true });
+  });
+
+  it('accepts a library generation only as a counter on a delta', () => {
+    expect(parseLibraryFacetMutationRequest(request({ libraryEpoch: 2 }))).toMatchObject({ libraryEpoch: 2 });
+    for (const libraryEpoch of [-1, 1.5, '2', null]) {
+      expect(() => parseLibraryFacetMutationRequest({ ...request(), libraryEpoch })).toThrow();
+    }
+    expect(() => parseLibraryFacetMutationRequest({
+      op: 'clear', ownerId: 'owner', operationCreatedAt: TEST_OPERATION_CREATED_AT,
+      opId: TEST_OPERATION_ID, libraryEpoch: 2,
+    })).toThrow();
+  });
+
+  it('records the library generation the facets were cleared at', async () => {
+    const test = harness(validFacets(), undefined, false, undefined, { libraryEpoch: 4, schemaVersion: 2 });
+    await expect(applyLibraryFacetMutation(test.database, 'owner', {
+      op: 'clear', ownerId: 'owner', operationCreatedAt: TEST_OPERATION_CREATED_AT,
+      opId: TEST_OPERATION_ID,
+    })).resolves.toEqual({ categories: {}, complete: true });
+    expect(test.writes[0]).toMatchObject({
+      path: 'users/owner/profile/library_facets',
+      data: { categories: {}, complete: true, clearedLibraryEpoch: 4 },
+    });
+  });
+
+  it('leaves the counts alone for a delta made before the last clear', async () => {
+    const test = harness(validFacets({ categories: { TOEIC: 1 }, complete: true, clearedLibraryEpoch: 4 }));
+    await expect(applyLibraryFacetMutation(test.database, 'owner', request({ libraryEpoch: 3 })))
+      .resolves.toEqual({ categories: { TOEIC: 1 }, complete: true });
+    expect(test.writes).toEqual([]);
+  });
+
+  it('applies a delta made after the last clear and keeps the clear generation', async () => {
+    const test = harness(validFacets({ categories: {}, complete: true, clearedLibraryEpoch: 4 }));
+    await expect(applyLibraryFacetMutation(test.database, 'owner', request({ libraryEpoch: 4 })))
+      .resolves.toEqual({ categories: { IELTS: 1 }, complete: true });
+    expect(test.writes[0].data).toMatchObject({ categories: { IELTS: 1 }, clearedLibraryEpoch: 4 });
+  });
+
+  it('applies a delta without a library generation as an older client sends it', async () => {
+    const test = harness(validFacets({ categories: {}, complete: true, clearedLibraryEpoch: 4 }));
+    await expect(applyLibraryFacetMutation(test.database, 'owner', request()))
+      .resolves.toEqual({ categories: { IELTS: 1 }, complete: true });
   });
 
   it('fails closed on malformed stored data before any write', async () => {
