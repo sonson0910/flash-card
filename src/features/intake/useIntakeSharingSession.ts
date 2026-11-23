@@ -10,6 +10,7 @@ import type {
   SharedDeckAdapter,
   SharedDeckBrowser,
   SharedDeckCardBatch,
+  SharedDeckEarlierShare,
 } from '../sharing/sharedDeckSessionController';
 import type { SharedDeckCoursePort } from '../sharing/shareCourseMatching';
 import { useSharedDeckSession } from '../sharing/useSharedDeckSession';
@@ -24,6 +25,7 @@ import type { SpreadsheetImportSettings } from '../importExport/spreadsheetWorkb
 import type { CardIntakePortOptions } from './cardIntakePortContract';
 
 const SHARE_CATEGORY_LOAD_TIMEOUT_MS = 20_000;
+const NO_EARLIER_SHARES: readonly SharedDeckEarlierShare[] = [];
 const captureAnalytics = {
   captureStarted: (event: { requestId: string; surface: 'app' | 'extension' }) => {
     void import('../../lib/analytics').then(({ recordPilotClientEvent, PILOT_APP_VERSION }) => {
@@ -93,6 +95,7 @@ export interface IntakeSharingSessionModel {
     isLoading: boolean;
     isShareDialogOpen: boolean;
     activeShareId: string | null;
+    earlierShares?: readonly SharedDeckEarlierShare[];
     shareLink: string | null;
     shareWarning: ReturnType<typeof useSharedDeckSession>['model']['shareWarning'];
     outgoingPreview?: ReturnType<typeof useSharedDeckSession>['model']['outgoingPreview'];
@@ -116,7 +119,7 @@ export interface IntakeSharingSessionActions {
   shareCategory(selection: ShareCategorySelection): Promise<ShareCategoryResult>;
   acceptShared(): ReturnType<ReturnType<typeof useSharedDeckSession>['actions']['acceptShared']>;
   cancelShared(): void;
-  revokeShare(): ReturnType<ReturnType<typeof useSharedDeckSession>['actions']['revokeShare']>;
+  revokeShare(shareId?: string): ReturnType<ReturnType<typeof useSharedDeckSession>['actions']['revokeShare']>;
   dismissShareLink(): void;
   showShareDialog(): void;
   clearShareError(): void;
@@ -330,6 +333,7 @@ dependencies: IntakeSharingSessionDependencies,
       isLoading: isPreparingShare || sharedDeck.model.isLoading,
       isShareDialogOpen: sharedDeck.model.isShareDialogOpen,
       activeShareId: sharedDeck.model.activeShareId,
+      earlierShares: sharedDeck.model.earlierShares ?? NO_EARLIER_SHARES,
       shareLink: sharedDeck.model.shareLink,
       shareWarning: sharedDeck.model.shareWarning,
       outgoingPreview: sharedDeck.model.outgoingPreview,

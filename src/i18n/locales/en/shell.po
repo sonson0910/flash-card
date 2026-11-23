@@ -33,7 +33,7 @@ msgctxt "shell.menu.card-style-standard"
 msgid "Card style: Standard"
 msgstr "Card style: Standard"
 
-#: src/components/AppOverlays.tsx:400
+#: src/components/AppOverlays.tsx:404
 msgctxt "shell.practice-menu.keys"
 msgid "<0>Press</0> <1/> to pick"
 msgstr "<0>Press</0> <1/> to pick"
@@ -94,7 +94,7 @@ msgctxt "onboarding.pace.subtitle"
 msgid "New words added to your reviews each day. You can change this any time in Settings."
 msgstr "New words added to your reviews each day. You can change this any time in Settings."
 
-#: src/components/AppOverlays.tsx:381
+#: src/components/AppOverlays.tsx:385
 msgctxt "shell.practice-menu.title"
 msgid "Choose a practice mode"
 msgstr "Choose a practice mode"
@@ -119,7 +119,7 @@ msgctxt "shell.theme.appearance-settings"
 msgid "More appearance options"
 msgstr "More appearance options"
 
-#: src/components/AppOverlays.tsx:647
+#: src/components/AppOverlays.tsx:655
 msgctxt "shell.share.fact-revoke"
 msgid "You can revoke this link at any time."
 msgstr "You can revoke this link at any time."
@@ -175,8 +175,8 @@ msgctxt "onboarding.reminder.title"
 msgid "When should we <0>nudge you?</0>"
 msgstr "When should we <0>nudge you?</0>"
 
-#: src/components/AppOverlays.tsx:503
-#: src/components/AppOverlays.tsx:615
+#: src/components/AppOverlays.tsx:507
+#: src/components/AppOverlays.tsx:623
 msgctxt "shell.share.cards-count"
 msgid "{count, plural, one {# card} other {# cards}}"
 msgstr "{count, plural, one {# card} other {# cards}}"
@@ -186,12 +186,12 @@ msgctxt "course.add.subtitle"
 msgid "Your current courses stay as they are. Each language gets its own cards, goals and daily queue."
 msgstr "Your current courses stay as they are. Each language gets its own cards, goals and daily queue."
 
-#: src/components/AppOverlays.tsx:352
+#: src/components/AppOverlays.tsx:356
 msgctxt "shell.share.revoking"
 msgid "Revoking…"
 msgstr "Revoking…"
 
-#: src/components/AppOverlays.tsx:766
+#: src/components/AppOverlays.tsx:812
 msgctxt "shell.practice-menu.preparing"
 msgid "Preparing…"
 msgstr "Preparing…"
@@ -203,7 +203,7 @@ msgctxt "course.due-count"
 msgid "{count} due"
 msgstr "{count} due"
 
-#: src/components/AppOverlays.tsx:530
+#: src/components/AppOverlays.tsx:534
 msgctxt "shell.share.incoming-safeguard"
 msgid "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
 msgstr "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
@@ -228,7 +228,7 @@ msgctxt "onboarding.pace.estimate"
 msgid "About {minutes} min a day for new words, plus the reviews that come due."
 msgstr "About {minutes} min a day for new words, plus the reviews that come due."
 
-#: src/components/AppOverlays.tsx:198
+#: src/components/AppOverlays.tsx:200
 msgctxt "app-overlays.text-practice.offline"
 msgid "Reconnect to start text practice."
 msgstr "Reconnect to start text practice."
@@ -260,12 +260,12 @@ msgctxt "shell.menu.clear-library"
 msgid "Clear the entire library"
 msgstr "Clear the entire library"
 
-#: src/components/AppOverlays.tsx:625
+#: src/components/AppOverlays.tsx:633
 msgctxt "shell.share.link-label"
 msgid "Share link"
 msgstr "Share link"
 
-#: src/components/AppOverlays.tsx:525
+#: src/components/AppOverlays.tsx:529
 msgctxt "shell.share.no-sample-preview"
 msgid "A card preview is not available for this shared deck."
 msgstr "A card preview is not available for this shared deck."
@@ -300,12 +300,12 @@ msgctxt "onboarding.lumi.language.title"
 msgid "Hi, I’m Lumi!"
 msgstr "Hi, I’m Lumi!"
 
-#: src/components/AppOverlays.tsx:352
+#: src/components/AppOverlays.tsx:356
 msgctxt "shell.share.revoke"
 msgid "Revoke link"
 msgstr "Revoke link"
 
-#: src/components/AppOverlays.tsx:379
+#: src/components/AppOverlays.tsx:383
 msgctxt "shell.practice-menu.kicker-count"
 msgid "Practice · {count, plural, one {# card} other {# cards}}"
 msgstr "Practice · {count, plural, one {# card} other {# cards}}"
@@ -320,7 +320,7 @@ msgctxt "onboarding.pace.tag.serious"
 msgid "Serious"
 msgstr "Serious"
 
-#: src/components/AppOverlays.tsx:574
+#: src/components/AppOverlays.tsx:578
 msgctxt "shell.share.language-pair"
 msgid "{target} → {native}"
 msgstr "{target} → {native}"
@@ -345,7 +345,7 @@ msgctxt "onboarding.eyebrow.step"
 msgid "Step {step} of {total}"
 msgstr "Step {step} of {total}"
 
-#: src/components/AppOverlays.tsx:645
+#: src/components/AppOverlays.tsx:653
 msgctxt "shell.share.fact-private"
 msgid "Recipients get their own copy; your progress and review history stay private."
 msgstr "Recipients get their own copy; your progress and review history stay private."
@@ -391,7 +391,7 @@ msgctxt "shell.footer.library"
 msgid "LIBRARY:"
 msgstr "LIBRARY:"
 
-#: src/components/AppOverlays.tsx:646
+#: src/components/AppOverlays.tsx:654
 msgctxt "shell.share.fact-edits"
 msgid "Edits you make later are not pushed to copies already taken."
 msgstr "Edits you make later are not pushed to copies already taken."
@@ -421,7 +421,7 @@ msgctxt "onboarding.lumi.exam.body"
 msgid "Set a date and I’ll count the days down with you."
 msgstr "Set a date and I’ll count the days down with you."
 
-#: src/components/AppOverlays.tsx:556
+#: src/components/AppOverlays.tsx:560
 msgctxt "shell.share.adding"
 msgid "Adding…"
 msgstr "Adding…"
@@ -436,7 +436,7 @@ msgctxt "onboarding.eyebrow.level"
 msgid "Your target"
 msgstr "Your target"
 
-#: src/components/AppOverlays.tsx:119
+#: src/components/AppOverlays.tsx:121
 msgctxt "shell.share.incoming-description"
 msgid "Review this shared deck before deciding whether to add it."
 msgstr "Review this shared deck before deciding whether to add it."
@@ -667,7 +667,7 @@ msgctxt "onboarding.lumi.trial.title"
 msgid "Flip your first cards!"
 msgstr "Flip your first cards!"
 
-#: src/components/AppOverlays.tsx:306
+#: src/components/AppOverlays.tsx:308
 msgctxt "shell.share.outgoing-title"
 msgid "Share “{title}”"
 msgstr "Share “{title}”"
@@ -687,18 +687,19 @@ msgctxt "onboarding.countdown.kicker"
 msgid "Countdown"
 msgstr "Countdown"
 
-#: src/components/AppOverlays.tsx:533
-#: src/components/AppOverlays.tsx:650
+#: src/components/AppOverlays.tsx:537
+#: src/components/AppOverlays.tsx:658
+#: src/components/AppOverlays.tsx:690
 msgctxt "shell.share.expires-on"
 msgid "Link expires on {date}"
 msgstr "Link expires on {date}"
 
-#: src/components/AppOverlays.tsx:387
+#: src/components/AppOverlays.tsx:391
 msgctxt "shell.practice-menu.scope"
 msgid "Course language:"
 msgstr "Course language:"
 
-#: src/components/AppOverlays.tsx:495
+#: src/components/AppOverlays.tsx:499
 msgctxt "shell.share.cards"
 msgid "Cards"
 msgstr "Cards"
@@ -713,7 +714,7 @@ msgctxt "course.manage.card-index"
 msgid "Course {number}"
 msgstr "Course {number}"
 
-#: src/components/AppOverlays.tsx:385
+#: src/components/AppOverlays.tsx:389
 msgctxt "shell.practice-menu.description"
 msgid "Choose a different way to practice with words from your library."
 msgstr "Choose a different way to practice with words from your library."
@@ -728,12 +729,12 @@ msgctxt "course.switcher.switched"
 msgid "Switched to {language}"
 msgstr "Switched to {language}"
 
-#: src/components/AppOverlays.tsx:610
+#: src/components/AppOverlays.tsx:618
 msgctxt "shell.share.updating"
 msgid "Updating this share link…"
 msgstr "Updating this share link…"
 
-#: src/components/AppOverlays.tsx:353
+#: src/components/AppOverlays.tsx:357
 msgctxt "shell.share.done"
 msgid "Done"
 msgstr "Done"
@@ -819,7 +820,7 @@ msgctxt "onboarding.trial.result-body"
 msgid "All {total} cards are already in your library, ready for your first review."
 msgstr "All {total} cards are already in your library, ready for your first review."
 
-#: src/components/AppOverlays.tsx:656
+#: src/components/AppOverlays.tsx:664
 msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr "This link opens a preview. The recipient decides whether to add a separate copy."
@@ -849,9 +850,9 @@ msgctxt "onboarding.aha.none-added"
 msgid "No cards were added."
 msgstr "No cards were added."
 
-#: src/components/AppOverlays.tsx:515
-#: src/components/AppOverlays.tsx:532
-#: src/components/AppOverlays.tsx:655
+#: src/components/AppOverlays.tsx:519
+#: src/components/AppOverlays.tsx:536
+#: src/components/AppOverlays.tsx:663
 msgctxt "flashcard.ai-disclosure"
 msgid "AI-generated content may be incorrect. Please check the meaning."
 msgstr "AI-generated content may be incorrect. Please check the meaning."
@@ -871,7 +872,7 @@ msgctxt "onboarding.phone.now"
 msgid "now"
 msgstr "now"
 
-#: src/components/AppOverlays.tsx:525
+#: src/components/AppOverlays.tsx:529
 msgctxt "shell.share.no-cards"
 msgid "This shared deck has no cards to add."
 msgstr "This shared deck has no cards to add."
@@ -896,7 +897,7 @@ msgctxt "course.add.title"
 msgid "Add a <0>language</0>"
 msgstr "Add a <0>language</0>"
 
-#: src/components/AppOverlays.tsx:382
+#: src/components/AppOverlays.tsx:386
 msgctxt "shell.practice-menu.kicker"
 msgid "Practice"
 msgstr "Practice"
@@ -911,17 +912,17 @@ msgctxt "onboarding.aha.pending"
 msgid "Adding your cards…"
 msgstr "Adding your cards…"
 
-#: src/components/AppOverlays.tsx:630
+#: src/components/AppOverlays.tsx:638
 msgctxt "shell.share.copy-short"
 msgid "Copy"
 msgstr "Copy"
 
-#: src/components/AppOverlays.tsx:384
+#: src/components/AppOverlays.tsx:388
 msgctxt "shell.practice-menu.library-count"
 msgid "From your library · {count, plural, one {# card} other {# cards}}"
 msgstr "From your library · {count, plural, one {# card} other {# cards}}"
 
-#: src/components/AppOverlays.tsx:393
+#: src/components/AppOverlays.tsx:397
 msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Text practice"
@@ -942,7 +943,7 @@ msgctxt "onboarding.target.heading"
 msgid "What are you <0>learning?</0>"
 msgstr "What are you <0>learning?</0>"
 
-#: src/components/AppOverlays.tsx:299
+#: src/components/AppOverlays.tsx:301
 msgctxt "shell.share.incoming-kicker"
 msgid "Shared with you"
 msgstr "Shared with you"
@@ -977,7 +978,7 @@ msgctxt "course.add.submit"
 msgid "Add {language}"
 msgstr "Add {language}"
 
-#: src/components/AppOverlays.tsx:499
+#: src/components/AppOverlays.tsx:503
 msgctxt "shell.share.copy"
 msgid "Your copy"
 msgstr "Your copy"
@@ -1129,7 +1130,7 @@ msgctxt "onboarding.eyebrow.aha"
 msgid "First cards"
 msgstr "First cards"
 
-#: src/components/AppOverlays.tsx:621
+#: src/components/AppOverlays.tsx:629
 msgctxt "shell.share.truncation"
 msgid "This link includes {shared} of {total} cards. Create smaller decks to share the rest."
 msgstr "This link includes {shared} of {total} cards. Create smaller decks to share the rest."
@@ -1154,7 +1155,7 @@ msgctxt "onboarding.level.foundation"
 msgid "Foundation"
 msgstr "Foundation"
 
-#: src/components/AppOverlays.tsx:514
+#: src/components/AppOverlays.tsx:518
 msgctxt "shell.share.no-translation"
 msgid "Translation not available"
 msgstr "Translation not available"
@@ -1179,7 +1180,7 @@ msgctxt "course.goal.completed"
 msgid "(completed)"
 msgstr "(completed)"
 
-#: src/components/AppOverlays.tsx:200
+#: src/components/AppOverlays.tsx:202
 msgctxt "app-overlays.text-practice.description"
 msgid "Use your vocabulary in a bounded six-turn text mission."
 msgstr "Use your vocabulary in a bounded six-turn text mission."
@@ -1224,17 +1225,17 @@ msgctxt "onboarding.trial.grade-label"
 msgid "Did you know this word?"
 msgstr "Did you know this word?"
 
-#: src/components/AppOverlays.tsx:498
+#: src/components/AppOverlays.tsx:502
 msgctxt "shell.share.languages"
 msgid "Languages"
 msgstr "Languages"
 
-#: src/components/AppOverlays.tsx:433
+#: src/components/AppOverlays.tsx:437
 msgctxt "app-overlays.practise-your-vocabulary-in-a-bounded-text-conversation"
 msgid "Practise your vocabulary in a bounded text conversation."
 msgstr "Practise your vocabulary in a bounded text conversation."
 
-#: src/components/AppOverlays.tsx:201
+#: src/components/AppOverlays.tsx:203
 msgctxt "app-overlays.text-practice.needs-card"
 msgid "Add a vocabulary card with a word and meaning first."
 msgstr "Add a vocabulary card with a word and meaning first."
@@ -1244,12 +1245,12 @@ msgstr "Add a vocabulary card with a word and meaning first."
 msgid "onboarding.title"
 msgstr "Set up your course"
 
-#: src/components/AppOverlays.tsx:496
+#: src/components/AppOverlays.tsx:500
 msgctxt "shell.share.category"
 msgid "Category"
 msgstr "Category"
 
-#: src/components/AppOverlays.tsx:502
+#: src/components/AppOverlays.tsx:506
 msgctxt "shell.share.words-inside"
 msgid "A few words inside"
 msgstr "A few words inside"
@@ -1274,10 +1275,15 @@ msgctxt "shell.loading.files"
 msgid "Preparing your files…"
 msgstr "Preparing your files…"
 
-#: src/components/AppOverlays.tsx:402
+#: src/components/AppOverlays.tsx:406
 msgctxt "shell.practice-menu.cancel"
 msgid "Cancel"
 msgstr "Cancel"
+
+#: src/components/AppOverlays.tsx:681
+msgctxt "shell.share.earlier-heading"
+msgid "Earlier links you can still revoke"
+msgstr "Earlier links you can still revoke"
 
 #: src/features/onboarding/OnboardingJourney.tsx:121
 msgctxt "onboarding.lumi.goal.body"
@@ -1653,12 +1659,12 @@ msgctxt "course.switcher.shared-progress"
 msgid "Level, XP and streak are shared"
 msgstr "Level, XP and streak are shared"
 
-#: src/components/AppOverlays.tsx:393
+#: src/components/AppOverlays.tsx:397
 msgctxt "app-overlays.text-practice.duration"
 msgid "6 turns"
 msgstr "6 turns"
 
-#: src/components/AppOverlays.tsx:118
+#: src/components/AppOverlays.tsx:120
 msgctxt "shell.share.incoming-created"
 msgid "Shared on {date}"
 msgstr "Shared on {date}"
@@ -1668,7 +1674,7 @@ msgctxt "onboarding.trial.position"
 msgid "Card {position} of {total}"
 msgstr "Card {position} of {total}"
 
-#: src/components/AppOverlays.tsx:556
+#: src/components/AppOverlays.tsx:560
 msgctxt "shell.share.add-count"
 msgid "Add {count} cards"
 msgstr "Add {count} cards"
@@ -1683,7 +1689,7 @@ msgctxt "shell.theme.classic-dark"
 msgid "Midnight Aurora"
 msgstr "Midnight Aurora"
 
-#: src/components/AppOverlays.tsx:313
+#: src/components/AppOverlays.tsx:315
 msgctxt "shell.share.outgoing-description"
 msgid "Anyone with the link can preview this deck and copy it into their own library."
 msgstr "Anyone with the link can preview this deck and copy it into their own library."
@@ -2057,7 +2063,7 @@ msgid "shell.offline.status.update"
 msgstr "Update available. Reopen SonFlash after your study session."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:388
+#: src/components/AppOverlays.tsx:392
 msgid "shell.practice-menu.close"
 msgstr "Close practice menu"
 
@@ -2073,68 +2079,69 @@ msgid "shell.runtime-error.retry"
 msgstr "Retry workspace"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:303
-#: src/components/AppOverlays.tsx:306
-#: src/components/AppOverlays.tsx:496
-#: src/components/AppOverlays.tsx:605
+#: src/components/AppOverlays.tsx:305
+#: src/components/AppOverlays.tsx:308
+#: src/components/AppOverlays.tsx:500
+#: src/components/AppOverlays.tsx:613
+#: src/components/AppOverlays.tsx:678
 msgid "shell.share.all-library"
 msgstr "All library cards"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:643
+#: src/components/AppOverlays.tsx:651
 msgid "shell.share.behavior"
 msgstr "Sharing behavior"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:316
+#: src/components/AppOverlays.tsx:318
 msgid "shell.share.close"
 msgstr "Close share dialog"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:636
+#: src/components/AppOverlays.tsx:644
 msgid "shell.share.copy-failed"
 msgstr "The link could not be copied. Copy it manually or try the copy button again."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:629
+#: src/components/AppOverlays.tsx:637
 msgid "shell.share.copy-link"
 msgstr "Copy share link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:637
+#: src/components/AppOverlays.tsx:645
 msgid "shell.share.dismiss-copy-error"
 msgstr "Dismiss copy error"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:324
-#: src/components/AppOverlays.tsx:493
+#: src/components/AppOverlays.tsx:326
+#: src/components/AppOverlays.tsx:497
 msgid "shell.share.dismiss-error"
 msgstr "Dismiss share error"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:299
-#: src/components/AppOverlays.tsx:306
-#: src/components/AppOverlays.tsx:320
+#: src/components/AppOverlays.tsx:301
+#: src/components/AppOverlays.tsx:308
+#: src/components/AppOverlays.tsx:322
 msgid "shell.share.kicker"
 msgstr "Share deck"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:628
+#: src/components/AppOverlays.tsx:636
 msgid "shell.share.link-input"
 msgstr "Vocabulary deck share link"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:506
+#: src/components/AppOverlays.tsx:510
 msgid "shell.share.sample-vocabulary"
 msgstr "Sample vocabulary"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:576
+#: src/components/AppOverlays.tsx:580
 msgid "shell.share.target-unspecified"
 msgstr "Target language unspecified"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:577
+#: src/components/AppOverlays.tsx:581
 msgid "shell.share.translation-unspecified"
 msgstr "Translation language unspecified"
 
@@ -2252,7 +2259,7 @@ msgctxt "onboarding.aha.quota-note"
 msgid "Your monthly Free card allowance is almost used up, so {count} card(s) were not added."
 msgstr "Your monthly Free card allowance is almost used up, so {count} card(s) were not added."
 
-#: src/components/AppOverlays.tsx:503
+#: src/components/AppOverlays.tsx:507
 msgctxt "shell.share.more-cards"
 msgid "+{count} more"
 msgstr "+{count} more"
@@ -2314,7 +2321,12 @@ msgctxt "onboarding.phone.caption"
 msgid "How your reminder looks when it arrives."
 msgstr "How your reminder looks when it arrives."
 
-#: src/components/AppOverlays.tsx:432
+#: src/components/AppOverlays.tsx:698
+msgctxt "shell.share.earlier-revoke"
+msgid "Revoke"
+msgstr "Revoke"
+
+#: src/components/AppOverlays.tsx:436
 msgctxt "app-overlays.text-practice-mission"
 msgid "Text practice mission"
 msgstr "Text practice mission"
@@ -2344,12 +2356,12 @@ msgctxt "onboarding.countdown.days"
 msgid "{days, plural, one {day to {goal}} other {days to {goal}}}"
 msgstr "{days, plural, one {day to {goal}} other {days to {goal}}}"
 
-#: src/components/AppOverlays.tsx:312
+#: src/components/AppOverlays.tsx:314
 msgctxt "shell.share.empty-description"
 msgid "Close this dialog and try opening the share link again."
 msgstr "Close this dialog and try opening the share link again."
 
-#: src/components/AppOverlays.tsx:556
+#: src/components/AppOverlays.tsx:560
 msgctxt "shell.share.add-none"
 msgid "No cards to add"
 msgstr "No cards to add"
@@ -2374,7 +2386,7 @@ msgctxt "shell.skip-content"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/components/AppOverlays.tsx:123
+#: src/components/AppOverlays.tsx:125
 msgctxt "shell.share.loading"
 msgid "Preparing the shared deck…"
 msgstr "Preparing the shared deck…"
@@ -2399,12 +2411,12 @@ msgctxt "onboarding.goal.curious"
 msgid "Just curious"
 msgstr "Just curious"
 
-#: src/components/AppOverlays.tsx:630
+#: src/components/AppOverlays.tsx:638
 msgctxt "shell.share.copied"
 msgid "Copied"
 msgstr "Copied"
 
-#: src/components/AppOverlays.tsx:653
+#: src/components/AppOverlays.tsx:661
 msgctxt "shell.share.privacy-warning"
 msgid "Shared cards may include memory hooks and personal notes. Review them for private information before sharing."
 msgstr "Shared cards may include memory hooks and personal notes. Review them for private information before sharing."
@@ -2419,7 +2431,7 @@ msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr "Preparing learning progress…"
 
-#: src/components/AppOverlays.tsx:499
+#: src/components/AppOverlays.tsx:503
 msgctxt "shell.share.copy-detail"
 msgid "New library deck"
 msgstr "New library deck"
@@ -2429,7 +2441,7 @@ msgctxt "course.status.archived"
 msgid "Archived"
 msgstr "Archived"
 
-#: src/components/AppOverlays.tsx:399
+#: src/components/AppOverlays.tsx:403
 msgctxt "shell.practice-menu.keys-unlock"
 msgid "<0>Press</0> <1/> to pick · add cards to unlock more"
 msgstr "<0>Press</0> <1/> to pick · add cards to unlock more"
@@ -2439,7 +2451,7 @@ msgctxt "onboarding.exam.level-subtitle"
 msgid "Both are optional and you can change them later."
 msgstr "Both are optional and you can change them later."
 
-#: src/components/AppOverlays.tsx:196
+#: src/components/AppOverlays.tsx:198
 msgctxt "app-overlays.text-practice.signed-out"
 msgid "Sign in to practise with your vocabulary."
 msgstr "Sign in to practise with your vocabulary."
@@ -2486,7 +2498,7 @@ msgctxt "course.add.native-label"
 msgid "Explain meanings in"
 msgstr "Explain meanings in"
 
-#: src/components/AppOverlays.tsx:553
+#: src/components/AppOverlays.tsx:557
 msgctxt "shell.share.cancel"
 msgid "Cancel"
 msgstr "Cancel"
@@ -2501,12 +2513,17 @@ msgctxt "onboarding.progress.label"
 msgid "Setup progress"
 msgstr "Setup progress"
 
+#: src/components/AppOverlays.tsx:696
+msgctxt "shell.share.earlier-revoke-label"
+msgid "Revoke the link for {title}"
+msgstr "Revoke the link for {title}"
+
 #: src/features/onboarding/StarterCardTrial.tsx:53
 msgctxt "onboarding.trial.body"
 msgid "Turn the card to see its meaning. These cards are already in your library."
 msgstr "Turn the card to see its meaning. These cards are already in your library."
 
-#: src/components/AppOverlays.tsx:305
+#: src/components/AppOverlays.tsx:307
 msgctxt "shell.share.empty-title"
 msgid "No shared deck to show"
 msgstr "No shared deck to show"
@@ -2541,7 +2558,7 @@ msgctxt "course.manage.title"
 msgid "Your <0>languages</0>"
 msgstr "Your <0>languages</0>"
 
-#: src/components/AppOverlays.tsx:641
+#: src/components/AppOverlays.tsx:649
 msgctxt "shell.share.link-copied"
 msgid "Link copied"
 msgstr "Link copied"
@@ -2566,7 +2583,7 @@ msgctxt "onboarding.pace.heading"
 msgid "How many new words <0>each day?</0>"
 msgstr "How many new words <0>each day?</0>"
 
-#: src/components/AppOverlays.tsx:678
+#: src/components/AppOverlays.tsx:724
 msgctxt "shell.share.manage"
 msgid "Manage shared link"
 msgstr "Manage shared link"
@@ -2615,7 +2632,7 @@ msgctxt "shell.theme.crystal-dark"
 msgid "Crystal Star: Night"
 msgstr "Crystal Star: Night"
 
-#: src/components/AppOverlays.tsx:492
+#: src/components/AppOverlays.tsx:496
 msgctxt "shell.share.importing"
 msgid "Adding {count} cards to your new deck…"
 msgstr "Adding {count} cards to your new deck…"

@@ -2199,7 +2199,7 @@ msgid "library.part-of-speech.verb"
 msgstr "Động từ"
 
 #. js-lingui-explicit-id
-#: src/features/sharing/sharedDeckSessionController.ts:813
+#: src/features/sharing/sharedDeckSessionController.ts:914
 msgid "library.share.meaning-language-mismatch"
 msgstr "Bộ thẻ được chia sẻ này dùng ngôn ngữ nghĩa khác với khóa học hiện có của bạn. Hãy đổi ngôn ngữ Nghĩa của khóa học trong Cài đặt, rồi thử lại."
 

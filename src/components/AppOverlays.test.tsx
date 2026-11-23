@@ -81,6 +81,40 @@ describe('share overlays', () => {
     expect(html.indexOf('share-dialog-facts')).toBeLessThan(html.indexOf('Review them for private information before sharing'));
   });
 
+  it('lists earlier links with their own revoke control that names the link', () => {
+    const html = renderToStaticMarkup(
+      <LinguiProvider i18n={i18n}><OutgoingShareDetails
+        shareLink="https://example.test/?share=deck-2"
+        shareWarning={null}
+        preview={null}
+        copied={false}
+        copyFailed={false}
+        isSharing={false}
+        onCopy={vi.fn()}
+        onDismissCopyError={vi.fn()}
+        earlierShares={[{ shareId: 'deck-1', category: 'IELTS', cardCount: 3, expiresAt: '2026-10-23T10:00:00.000Z' }]}
+        onRevokeEarlier={vi.fn(async () => undefined)}
+      /></LinguiProvider>,
+    );
+    const withoutEarlier = renderToStaticMarkup(
+      <LinguiProvider i18n={i18n}><OutgoingShareDetails
+        shareLink="https://example.test/?share=deck-2"
+        shareWarning={null}
+        preview={null}
+        copied={false}
+        copyFailed={false}
+        isSharing={false}
+        onCopy={vi.fn()}
+        onDismissCopyError={vi.fn()}
+      /></LinguiProvider>,
+    );
+
+    expect(html).toContain('data-share-earlier-item="deck-1"');
+    expect(html).toContain('Earlier links you can still revoke');
+    expect(html).toContain('aria-label="Revoke the link for IELTS"');
+    expect(withoutEarlier).not.toContain('data-share-earlier');
+  });
+
   it('shows real card previews with an explicit empty state when no preview words are available', () => {
     const html = renderToStaticMarkup(
       <LinguiProvider i18n={i18n}><IncomingSharePreview

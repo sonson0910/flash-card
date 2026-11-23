@@ -1097,6 +1097,65 @@ describe('an owner can revoke earlier share links', () => {
     expect(reloaded.getSnapshot().activeShareId).toBeNull();
   });
 
+  it('revokes an earlier share while a newer one stays shared', async () => {
+    const storage = new MemoryStorage();
+    const { adapter, make } = sharer(storage);
+    const controller = make();
+    await controller.activate('owner-1');
+    await share(controller, 'Deck A', 'apple');
+    await share(controller, 'Deck B', 'pear');
+    expect(controller.getSnapshot()).toMatchObject({
+      activeShareId: 'share-2',
+      isShareDialogOpen: true,
+      earlierShares: [{ shareId: 'share-1', category: 'Deck A', cardCount: 1 }],
+    });
+
+    expect(await controller.actions.revokeShare('share-1')).toEqual({ status: 'revoked' });
+    expect(adapter.revoke).toHaveBeenCalledTimes(1);
+    expect(adapter.revoke).toHaveBeenCalledWith('share-1', 'owner-1');
+    expect(controller.getSnapshot()).toMatchObject({
+      activeShareId: 'share-2',
+      shareLink: 'https://sonflash.test/library?share=share-2',
+      isShareDialogOpen: true,
+      earlierShares: [],
+    });
+
+    const reloaded = make();
+    await reloaded.activate('owner-1');
+    expect(reloaded.getSnapshot()).toMatchObject({ activeShareId: 'share-2', earlierShares: [] });
+  });
+
+  it('does not revoke a link this device does not hold for the signed-in owner', async () => {
+    const storage = new MemoryStorage();
+    const { adapter, make } = sharer(storage);
+    const first = make();
+    await first.activate('owner-1');
+    await share(first, 'Deck A', 'apple');
+
+    const other = make();
+    await other.activate('owner-2');
+    expect(await other.actions.revokeShare('share-1')).toEqual({ status: 'missing' });
+    expect(await other.actions.revokeShare('share-unknown')).toEqual({ status: 'missing' });
+    expect(adapter.revoke).not.toHaveBeenCalled();
+  });
+
+  it('keeps every active link of an owner, and one owner\'s links never evict another\'s', async () => {
+    const storage = new MemoryStorage();
+    const { make } = sharer(storage);
+    const controller = make();
+    await controller.activate('owner-2');
+    await share(controller, 'Deck Z', 'zebra');
+    await controller.activate('owner-1');
+    for (let index = 0; index < 25; index += 1) await share(controller, `Deck ${index}`, `word${index}`);
+    expect(controller.getSnapshot().earlierShares).toHaveLength(24);
+
+    const reloaded = make();
+    await reloaded.activate('owner-1');
+    expect(reloaded.getSnapshot().earlierShares).toHaveLength(24);
+    await reloaded.activate('owner-2');
+    expect(reloaded.getSnapshot()).toMatchObject({ activeShareId: 'share-1', earlierShares: [] });
+  });
+
   it('does not expose one owner\'s shares to another or keep expired ones', async () => {
     const storage = new MemoryStorage();
     const { make } = sharer(storage);
