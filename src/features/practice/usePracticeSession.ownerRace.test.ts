@@ -1544,6 +1544,32 @@ describe('usePracticeSession owner isolation', () => {
     await expect(session.commands.submitStudyRating('good')).resolves.toBe('retryable-error');
   });
 
+  it('does not offer a retry for a card that a terminal conflict removed from the snapshot', async () => {
+    const { learning, render } = createSessionHarness([card(1), card(2)]);
+    let session = render();
+    // The learning state controller drops the card from the practice snapshot before it reports the conflict.
+    learning.reviewCard.mockImplementationOnce(async (cardId: string) => {
+      session.snapshot.removeCard(cardId);
+      return {
+        status: 'review-conflict',
+        result: { reviewConflictTerminal: true, publication: { kind: 'delete', cardId } } as never,
+      } as never;
+    });
+    flushEffects();
+    await session.commands.startStudy();
+    session = renderAfterEffects(render);
+    session.commands.reveal();
+    session = render();
+    const ratedId = session.study.cards[session.study.index].id;
+
+    await expect(session.commands.submitStudyRating('good')).resolves.toBe('ignored');
+    expect(learning.reviewCard).toHaveBeenCalledTimes(1);
+    session = render();
+    expect(session.study.cards.map(entry => entry.id)).not.toContain(ratedId);
+    expect(session.study.reviewError).toBeNull();
+    expect(session.study.reviewStatus).not.toBe('error');
+  });
+
   it('leaves a final conflict retryable without marking it committed', async () => {
     const { learning, render } = createSessionHarness([card(1)]);
     learning.reviewCard

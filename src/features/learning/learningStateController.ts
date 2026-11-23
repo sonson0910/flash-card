@@ -297,6 +297,12 @@ export function createLearningStateController({
 
       if (result.reviewFinality === 'conflict') {
         if (result.reviewConflictTerminal && plan.operation === 'review') reviewPlans.delete(operationKey);
+        // The card was deleted (or its library cleared) on another device: drop it from the visible
+        // snapshots so it cannot be rated again and fail the same way.
+        if (result.reviewConflictTerminal && result.publication?.kind === 'delete') {
+          snapshots.library.apply(result.publication);
+          snapshots.practice.apply(result.publication);
+        }
         return { status: 'review-conflict', result };
       }
       if (result.restoreFinality === 'conflict') {
