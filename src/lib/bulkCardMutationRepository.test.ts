@@ -75,6 +75,28 @@ describe('bulkMutateCardsViaCallable', () => {
     ]);
   });
 
+  it('keeps the latest card a delete conflict carries and still accepts one without it', async () => {
+    const callable = vi.fn().mockResolvedValue({
+      data: {
+        results: [
+          {
+            cardId: 'card-1', op: 'delete', applied: false, reason: 'revision-conflict', currentRevision: 9,
+            currentCard: { id: 'card-1', word: 'focus', translation: 'tap trung', category: 'Travel', revision: 9 },
+          },
+          { cardId: 'card-2', op: 'delete', applied: false, reason: 'revision-conflict', currentRevision: 4 },
+        ],
+      },
+    });
+    mocks.httpsCallable.mockReturnValue(callable);
+
+    const results = await bulkMutateCardsViaCallable({} as never, 'owner-a', 2, [], [deleteCommand]);
+
+    expect(results[0]).toMatchObject({
+      applied: false, currentRevision: 9, currentCard: { id: 'card-1', category: 'Travel', revision: 9 },
+    });
+    expect(results[1]).toEqual({ cardId: 'card-2', op: 'delete', applied: false, reason: 'revision-conflict', currentRevision: 4 });
+  });
+
   it('parses an unapplied patch result carrying a conflict reason', async () => {
     const callable = vi.fn().mockResolvedValue({
       data: { results: [{ cardId: 'card-1', op: 'patch', applied: false, reason: 'revision-conflict', currentRevision: 9 }] },

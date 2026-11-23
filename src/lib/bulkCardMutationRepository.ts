@@ -1,6 +1,8 @@
 import type { Firestore } from 'firebase/firestore';
 import { app as firebaseApp, getSonFlashFunctions, isFirebaseConfigured, protectedFunctionsCapability } from './firebase';
 import { ProtectedFunctionError, runProtectedFunction } from './protectedFunctionsCapability';
+import { normalizeCardData } from './cardNormalization';
+import type { CardData } from '../types/card';
 
 /**
  * Fields the bulk-mutation callable accepts. This intentionally mirrors the
@@ -42,7 +44,15 @@ export type BulkCardMutationItemResult =
       opId: string;
       libraryEpoch: number;
     }
-  | { cardId: string; op: 'delete'; applied: false; reason: 'revision-conflict'; currentRevision: number };
+  | {
+      cardId: string;
+      op: 'delete';
+      applied: false;
+      reason: 'revision-conflict';
+      currentRevision: number;
+      /** The card as stored now; absent from a service that predates it. */
+      currentCard?: CardData;
+    };
 
 // Extends ProtectedFunctionError (not plain Error) so `runProtectedFunction`'s
 // catch-all classifier passes it through unchanged instead of collapsing it
@@ -112,7 +122,17 @@ const parseItemResult = (value: unknown): BulkCardMutationItemResult => {
     if (source.reason !== 'revision-conflict' || !Number.isSafeInteger(source.currentRevision)) {
       throw new Error('The protected bulk mutation service returned an invalid result.');
     }
-    return { cardId: source.cardId, op: 'delete', applied: false, reason: 'revision-conflict', currentRevision: Number(source.currentRevision) };
+    const currentCard = source.currentCard && typeof source.currentCard === 'object' && !Array.isArray(source.currentCard)
+      ? normalizeCardData(source.currentCard as Partial<CardData>, source.cardId)
+      : undefined;
+    return {
+      cardId: source.cardId,
+      op: 'delete',
+      applied: false,
+      reason: 'revision-conflict',
+      currentRevision: Number(source.currentRevision),
+      ...(currentCard ? { currentCard } : {}),
+    };
   }
   return {
     cardId: source.cardId,

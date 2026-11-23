@@ -89,6 +89,8 @@ export interface LearningStateMutationResult {
     operationId: string;
     libraryEpoch: number;
     deletedAt: string;
+    /** The card as the cloud deleted it, when that differs from the local copy the delete started from. */
+    card?: CardData;
   };
   undoToken?: LearningDeleteUndoToken;
   restoreFinality?: 'restored' | 'conflict';
@@ -278,7 +280,7 @@ export function createLearningStateController({
           const undoToken: LearningDeleteUndoToken = {
             ownerKey,
             ownerId: result.deleteReceipt.ownerId,
-            card: { ...plan.card },
+            card: { ...(result.deleteReceipt.card ?? plan.card) },
             expectedLibraryEpoch: plan.libraryEpoch,
             deleteOperationId: result.deleteReceipt.operationId,
             deletedAt: result.deleteReceipt.deletedAt,
