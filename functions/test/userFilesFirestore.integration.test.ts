@@ -274,6 +274,29 @@ describeWithEmulators('learner file uploads against the emulators', () => {
     expect(await usageOf(uid)).toMatchObject({ reservedBytes: 0 });
   });
 
+  it('removes the stored object of a reservation that was released without its upload ever settling', async () => {
+    const uid = owner();
+    const request = {
+      ownerId: uid, name: 'stuck.pdf', contentType: 'application/pdf', bytes: 400, purpose: 'source' as const, courseId: null,
+    };
+    const listed = await prepareFileUpload(database, uid, request, config, now, objects);
+    const prepared = await prepareFileUpload(database, uid, request, config, now, objects);
+    // The finalize run for both uploads never happened, so their objects have no settled record.
+    const listedObject = await upload(uid, listed.fileId, pdf(400), 'application/pdf');
+    const preparedObject = await upload(uid, prepared.fileId, pdf(400), 'application/pdf');
+    const later = new Date(now.getTime() + 61 * 60_000);
+
+    expect((await listFiles(database, uid, config, later, null, objects)).files).toEqual([]);
+    expect(await exists(listedObject.name)).toBe(false);
+    expect(await exists(preparedObject.name)).toBe(false);
+
+    const again = await prepareFileUpload(database, uid, request, config, now, objects);
+    const againObject = await upload(uid, again.fileId, pdf(400), 'application/pdf');
+    const muchLater = new Date(later.getTime() + 61 * 60_000);
+    await prepareFileUpload(database, uid, request, config, muchLater, objects);
+    expect(await exists(againObject.name)).toBe(false);
+  });
+
   it('exports file records and removes both objects and records when the account is purged', async () => {
     const uid = owner();
     const prepared = await prepareFileUpload(database, uid, {
