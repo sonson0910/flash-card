@@ -918,4 +918,44 @@ describe("practice view accessibility contracts", () => {
       /<div[^>]*role="img"[^>]*aria-label="No illustration available"/,
     );
   });
+
+  it("does not grade a recall answer while an IME composition is open", async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    type Node = typeof container;
+    const find = (node: Node, tag: string): Node | undefined =>
+      node.tagName === tag
+        ? node
+        : node.childNodes.filter((child): child is Node => child.nodeType === 1).map(child => find(child, tag)).find(Boolean);
+    const handlers = (node: Node) => {
+      const key = Object.keys(node).find(name => name.startsWith("__reactProps$"))!;
+      return (node as unknown as Record<string, Record<string, (event: unknown) => void>>)[key]!;
+    };
+
+    try {
+      await act(async () => {
+        root.render(<ActiveRecallPrompt card={quizQuestion.card} mode="native-to-target" onReveal={vi.fn()} />);
+      });
+      const input = handlers(find(container, "INPUT")!);
+      const submit = async () => {
+        await act(async () => { handlers(find(container, "FORM")!).onSubmit!({ preventDefault() {}, nativeEvent: {} }); });
+      };
+
+      await act(async () => { input.onChange!({ target: { value: "こん" } }); input.onCompositionStart!({}); });
+      const enter = { key: "Enter", nativeEvent: { key: "Enter", isComposing: true }, preventDefault: vi.fn() };
+      await act(async () => { input.onKeyDown!(enter); });
+      expect(enter.preventDefault).toHaveBeenCalled();
+
+      await submit();
+      expect(container.textContent).not.toContain("Not quite");
+
+      await act(async () => { input.onCompositionEnd!({}); });
+      await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+      await submit();
+      expect(container.textContent).toContain("Not quite");
+    } finally {
+      await act(async () => { root.unmount(); });
+      vi.unstubAllGlobals();
+    }
+  });
 });
