@@ -198,6 +198,11 @@ msgctxt "course.due-count"
 msgid "{count} due"
 msgstr "{count} đến hạn"
 
+#: src/features/onboarding/HangulPrimer.tsx:58
+msgctxt "onboarding.primer.reader.description"
+msgid "Save Hangul alone as my reading aid."
+msgstr "Lưu chỉ dùng Hangul làm gợi ý cách đọc của tôi."
+
 #: src/components/AppOverlays.tsx:542
 msgctxt "shell.share.incoming-safeguard"
 msgid "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
@@ -222,6 +227,11 @@ msgstr "Đang học"
 msgctxt "app-overlays.text-practice.offline"
 msgid "Reconnect to start text practice."
 msgstr "Kết nối lại mạng để bắt đầu luyện hội thoại."
+
+#: src/features/courses/CoursesSurface.tsx:64
+msgctxt "course.manage.reading-aid.romanization-on"
+msgid "Romanization preferred"
+msgstr "Ưu tiên phiên âm Latin"
 
 #: src/features/courses/CourseGoalsPanel.tsx:56
 #: src/features/courses/CourseGoalsPanel.tsx:104
@@ -877,11 +887,6 @@ msgctxt "onboarding.trial.state.pending"
 msgid "Not yet"
 msgstr "Chưa chấm"
 
-#: src/features/courses/CoursesSurface.tsx:65
-msgctxt "course.manage.reading-aid.romanization-off"
-msgid "Romanization off"
-msgstr "Tắt phiên âm Latin"
-
 #: src/features/courses/CoursesSurface.tsx:198
 msgctxt "course.manage.title.crystal"
 msgid "Pick your <0>star</0>"
@@ -987,21 +992,6 @@ msgstr "Bản sao của bạn"
 msgctxt "course.goal.no-detail"
 msgid "No level or date set"
 msgstr "Chưa đặt trình độ hoặc ngày"
-
-#: src/features/onboarding/HangulPrimer.tsx:58
-msgctxt "onboarding.primer.reader.description"
-msgid "Show Korean only."
-msgstr "Chỉ hiện tiếng Hàn."
-
-#: src/features/onboarding/HangulPrimer.tsx:54
-msgctxt "onboarding.primer.learning.description"
-msgid "Show romanization next to Korean on my cards."
-msgstr "Hiện phiên âm Latin cạnh tiếng Hàn trên thẻ của tôi."
-
-#: src/features/onboarding/HangulPrimer.tsx:61
-msgctxt "onboarding.primer.note"
-msgid "You can turn romanization on or off any time in Settings."
-msgstr "Bạn có thể bật hoặc tắt phiên âm Latin bất cứ lúc nào trong Cài đặt."
 
 #. js-lingui-explicit-id
 #: src/features/examProgress/LatestExamScoreEditor.tsx:144
@@ -2280,6 +2270,11 @@ msgctxt "shell.share.more-cards"
 msgid "+{count} more"
 msgstr "+{count} thẻ nữa"
 
+#: src/features/onboarding/HangulPrimer.tsx:54
+msgctxt "onboarding.primer.learning.description"
+msgid "Save romanization as my reading aid for this course."
+msgstr "Lưu phiên âm Latin làm gợi ý cách đọc của tôi cho khóa học này."
+
 #: src/components/shell/CourseSwitcherControl.tsx:176
 msgctxt "course.switcher.heading"
 msgid "Your <0>courses</0>"
@@ -2331,6 +2326,11 @@ msgstr "Thêm <0>những thẻ đầu tiên</0> nhé"
 msgctxt "onboarding.level.foundation.description"
 msgid "New to the language, or you know a few words."
 msgstr "Mới bắt đầu với ngôn ngữ này, hoặc mới biết vài từ."
+
+#: src/features/onboarding/HangulPrimer.tsx:61
+msgctxt "onboarding.primer.note"
+msgid "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
+msgstr "Mỗi thẻ tiếng Hàn có công tắc phiên âm Latin riêng. Bạn có thể đổi lựa chọn này bất cứ lúc nào trong Cài đặt."
 
 #: src/features/onboarding/ReminderPhonePreview.tsx:38
 msgctxt "onboarding.phone.caption"
@@ -2402,6 +2402,11 @@ msgctxt "shell.menu.export"
 msgid "Export library to Excel"
 msgstr "Xuất thư viện sang Excel"
 
+#: src/features/courses/CoursesSurface.tsx:65
+msgctxt "course.manage.reading-aid.romanization-off"
+msgid "Romanization not needed"
+msgstr "Không cần phiên âm Latin"
+
 #: src/components/shell/SkipToContentLink.tsx:12
 msgctxt "shell.skip-content"
 msgid "Skip to content"
@@ -2421,11 +2426,6 @@ msgstr "Ngày thi {date}"
 msgctxt "course.manage.stat.due"
 msgid "Due"
 msgstr "Đến hạn"
-
-#: src/features/courses/CoursesSurface.tsx:64
-msgctxt "course.manage.reading-aid.romanization-on"
-msgid "Romanization on"
-msgstr "Hiện phiên âm Latin"
 
 #: src/features/onboarding/OnboardingJourney.tsx:479
 msgctxt "onboarding.goal.curious"

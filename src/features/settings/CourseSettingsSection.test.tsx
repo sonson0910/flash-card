@@ -39,6 +39,8 @@ describe('CourseSettingsSection', () => {
     expect(html).toContain('Daily pace');
     expect(html).toMatch(/data-settings-course-preferences[^>]*>.*Show romanization.*Daily pace/);
     expect(html).toContain('Show romanization');
+    expect(html).toContain('Your saved choice for this course. Each card has its own reading switch.');
+    expect(html).not.toContain('under each word on cards');
     expect(html).toContain('role="switch"');
     expect(html).toMatch(/<label[^>]*>.*Show romanization.*role="switch"/);
     expect(html).toContain('Chinese script');

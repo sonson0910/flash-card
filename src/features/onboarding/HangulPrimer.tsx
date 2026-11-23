@@ -51,14 +51,14 @@ export function HangulPrimer({ eyebrow, romanization, onChoose }: HangulPrimerPr
       <div className="onb-primer-choices" role="group" aria-label={_(msg({ context: 'onboarding.primer.choice-label', message: 'Reading aid' }))}>
         <button type="button" aria-pressed={romanization === true} className="onb-option onb-primer-choice crystal-chamfer" onClick={() => onChoose(true)}>
           <span className="onb-option-name"><Trans {...msg({ context: 'onboarding.primer.learning', message: 'I’m still learning to read' })} /></span>
-          <span className="onb-option-sub"><Trans {...msg({ context: 'onboarding.primer.learning.description', message: 'Show romanization next to Korean on my cards.' })} /></span>
+          <span className="onb-option-sub"><Trans {...msg({ context: 'onboarding.primer.learning.description', message: 'Save romanization as my reading aid for this course.' })} /></span>
         </button>
         <button type="button" aria-pressed={romanization === false} className="onb-option onb-primer-choice crystal-chamfer" onClick={() => onChoose(false)}>
           <span className="onb-option-name"><Trans {...msg({ context: 'onboarding.primer.reader', message: 'I can already read Hangul' })} /></span>
-          <span className="onb-option-sub"><Trans {...msg({ context: 'onboarding.primer.reader.description', message: 'Show Korean only.' })} /></span>
+          <span className="onb-option-sub"><Trans {...msg({ context: 'onboarding.primer.reader.description', message: 'Save Hangul alone as my reading aid.' })} /></span>
         </button>
       </div>
-      <p className="onb-primer-note"><Trans {...msg({ context: 'onboarding.primer.note', message: 'You can turn romanization on or off any time in Settings.' })} /></p>
+      <p className="onb-primer-note"><Trans {...msg({ context: 'onboarding.primer.note', message: 'Every Korean card has its own Romanization switch. You can change this choice any time in Settings.' })} /></p>
     </div>
     <div className="onb-primer-board crystal-chamfer">
       <section className="onb-primer-block" aria-label={_(msg({ context: 'onboarding.primer.block.label', message: 'Build one syllable block' }))}>

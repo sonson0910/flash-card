@@ -198,6 +198,11 @@ msgctxt "course.due-count"
 msgid "{count} due"
 msgstr ""
 
+#: src/features/onboarding/HangulPrimer.tsx:58
+msgctxt "onboarding.primer.reader.description"
+msgid "Save Hangul alone as my reading aid."
+msgstr ""
+
 #: src/components/AppOverlays.tsx:542
 msgctxt "shell.share.incoming-safeguard"
 msgid "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
@@ -221,6 +226,11 @@ msgstr ""
 #: src/components/AppOverlays.tsx:208
 msgctxt "app-overlays.text-practice.offline"
 msgid "Reconnect to start text practice."
+msgstr ""
+
+#: src/features/courses/CoursesSurface.tsx:64
+msgctxt "course.manage.reading-aid.romanization-on"
+msgid "Romanization preferred"
 msgstr ""
 
 #: src/features/courses/CourseGoalsPanel.tsx:56
@@ -877,11 +887,6 @@ msgctxt "onboarding.trial.state.pending"
 msgid "Not yet"
 msgstr ""
 
-#: src/features/courses/CoursesSurface.tsx:65
-msgctxt "course.manage.reading-aid.romanization-off"
-msgid "Romanization off"
-msgstr ""
-
 #: src/features/courses/CoursesSurface.tsx:198
 msgctxt "course.manage.title.crystal"
 msgid "Pick your <0>star</0>"
@@ -986,21 +991,6 @@ msgstr ""
 #: src/features/courses/CourseGoalsPanel.tsx:33
 msgctxt "course.goal.no-detail"
 msgid "No level or date set"
-msgstr ""
-
-#: src/features/onboarding/HangulPrimer.tsx:58
-msgctxt "onboarding.primer.reader.description"
-msgid "Show Korean only."
-msgstr ""
-
-#: src/features/onboarding/HangulPrimer.tsx:54
-msgctxt "onboarding.primer.learning.description"
-msgid "Show romanization next to Korean on my cards."
-msgstr ""
-
-#: src/features/onboarding/HangulPrimer.tsx:61
-msgctxt "onboarding.primer.note"
-msgid "You can turn romanization on or off any time in Settings."
 msgstr ""
 
 #. js-lingui-explicit-id
@@ -2280,6 +2270,11 @@ msgctxt "shell.share.more-cards"
 msgid "+{count} more"
 msgstr ""
 
+#: src/features/onboarding/HangulPrimer.tsx:54
+msgctxt "onboarding.primer.learning.description"
+msgid "Save romanization as my reading aid for this course."
+msgstr ""
+
 #: src/components/shell/CourseSwitcherControl.tsx:176
 msgctxt "course.switcher.heading"
 msgid "Your <0>courses</0>"
@@ -2330,6 +2325,11 @@ msgstr ""
 #: src/features/onboarding/OnboardingJourney.tsx:94
 msgctxt "onboarding.level.foundation.description"
 msgid "New to the language, or you know a few words."
+msgstr ""
+
+#: src/features/onboarding/HangulPrimer.tsx:61
+msgctxt "onboarding.primer.note"
+msgid "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
 msgstr ""
 
 #: src/features/onboarding/ReminderPhonePreview.tsx:38
@@ -2402,6 +2402,11 @@ msgctxt "shell.menu.export"
 msgid "Export library to Excel"
 msgstr ""
 
+#: src/features/courses/CoursesSurface.tsx:65
+msgctxt "course.manage.reading-aid.romanization-off"
+msgid "Romanization not needed"
+msgstr ""
+
 #: src/components/shell/SkipToContentLink.tsx:12
 msgctxt "shell.skip-content"
 msgid "Skip to content"
@@ -2420,11 +2425,6 @@ msgstr ""
 #: src/features/courses/CoursesSurface.tsx:95
 msgctxt "course.manage.stat.due"
 msgid "Due"
-msgstr ""
-
-#: src/features/courses/CoursesSurface.tsx:64
-msgctxt "course.manage.reading-aid.romanization-on"
-msgid "Romanization on"
 msgstr ""
 
 #: src/features/onboarding/OnboardingJourney.tsx:479

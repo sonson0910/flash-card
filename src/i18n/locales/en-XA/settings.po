@@ -98,11 +98,6 @@ msgctxt "settings.course.add"
 msgid "Add a language"
 msgstr ""
 
-#: src/features/settings/CourseSettingsSection.tsx:173
-msgctxt "settings.course.romanization.description"
-msgid "A reading aid under each word on cards"
-msgstr ""
-
 #: src/features/settings/CourseSettingsSection.tsx:84
 msgctxt "settings.course.ui-language"
 msgid "App language"
@@ -331,6 +326,11 @@ msgstr ""
 #: src/features/settings/CourseSettingsSection.tsx:173
 msgctxt "settings.course.romanization"
 msgid "Show romanization"
+msgstr ""
+
+#: src/features/settings/CourseSettingsSection.tsx:173
+msgctxt "settings.course.romanization.description"
+msgid "Your saved choice for this course. Each card has its own reading switch."
 msgstr ""
 
 #: src/features/settings/CourseSettingsSection.tsx:265

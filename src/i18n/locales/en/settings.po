@@ -98,11 +98,6 @@ msgctxt "settings.course.add"
 msgid "Add a language"
 msgstr "Add a language"
 
-#: src/features/settings/CourseSettingsSection.tsx:173
-msgctxt "settings.course.romanization.description"
-msgid "A reading aid under each word on cards"
-msgstr "A reading aid under each word on cards"
-
 #: src/features/settings/CourseSettingsSection.tsx:84
 msgctxt "settings.course.ui-language"
 msgid "App language"
@@ -332,6 +327,11 @@ msgstr "Prism Day"
 msgctxt "settings.course.romanization"
 msgid "Show romanization"
 msgstr "Show romanization"
+
+#: src/features/settings/CourseSettingsSection.tsx:173
+msgctxt "settings.course.romanization.description"
+msgid "Your saved choice for this course. Each card has its own reading switch."
+msgstr "Your saved choice for this course. Each card has its own reading switch."
 
 #: src/features/settings/CourseSettingsSection.tsx:265
 msgctxt "settings.course.pace.error"

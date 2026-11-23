@@ -103,7 +103,8 @@ describe('courses surface', () => {
     expect(html).toContain('aria-label="Add Chinese"');
     expect(html).not.toContain('aria-label="Add Japanese"');
     expect(html).toContain('Extension saves to');
-    expect(html).toContain('Romanization on');
+    expect(html).toContain('Romanization preferred');
+    expect(html).not.toContain('Romanization on');
     expect(html).toContain('Meanings in');
     expect(html).not.toContain('Start 한국어 lesson');
   });
