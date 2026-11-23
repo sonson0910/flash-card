@@ -61,7 +61,8 @@ test(practiceDecorationTest, async ({ page, signIn }) => {
   for (const mode of ['Quiz', 'Spelling']) {
     await page.getByRole('button', { name: 'More practice' }).click();
     await page.getByRole('button', { name: new RegExp(`^${mode}`) }).click();
-    await expect(page.locator('.practice-board')).toBeVisible();
+    // Each practice view is its own lazy chunk; its first mount can outlast the default 5s on a busy machine.
+    await expect(page.locator('.practice-board')).toBeVisible({ timeout: 15_000 });
     const workspace = page.locator('.claude-workspace');
     await expect.poll(() => workspace.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
     await page.getByRole('button', { name: 'Exit', exact: true }).click();
