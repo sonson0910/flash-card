@@ -450,3 +450,54 @@ it('shows the Word Match preview word at the tier it reached in this session', a
   expect(screens.bridge.model.previewCard).toMatchObject({ word: fresh.word, tier: 'learning' });
   await act(async () => root.unmount());
 }, 30_000);
+
+it('does not ask again for a review card that was rated before the tab reloaded', async () => {
+  const due = (id: string, nextReviewDate: string) => card(id, { reviews: 3, difficulty: 'good', correctStreak: 3, nextReviewDate } as Partial<CardData>);
+  const first = due('first-due', '2026-10-01T00:00:00.000Z');
+  const second = due('second-due', '2026-10-02T00:00:00.000Z');
+  const m1 = card('match-one', { reviews: 2, difficulty: 'good', nextReviewDate: '2099-01-01T00:00:00.000Z' } as Partial<CardData>);
+  const m2 = card('match-two', { reviews: 2, difficulty: 'good', nextReviewDate: '2099-01-01T00:00:00.000Z' } as Partial<CardData>);
+  const reviewCard = vi.fn(async () => ({ status: 'published', result: { xpAwarded: 10 } }));
+  const mount = async (pool: CardData[], root: ReturnType<typeof createRoot>) => act(async () => {
+    root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
+      ownerId={OWNER} database={null} languageProfile={ENGLISH_TO_VIETNAMESE_PROFILE} isOffline={false} initialLesson="session"
+      streak={0} studyXpHistory={[]} loadPracticePool={vi.fn().mockResolvedValue(pool)} reviewCard={reviewCard as never}
+      openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
+      openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
+    /></I18nProvider>);
+  });
+  i18n.load('en', {}); i18n.activate('en');
+  const pointer = {
+    ownerId: OWNER, targetLanguage: 'en', translationLanguage: 'vi', stage: 'review' as const,
+    reviewLogicalIds: [logicalIdentity(first), logicalIdentity(second)], freshLogicalIds: [],
+    matchCardIds: [m1.id, m2.id], matchSkipReason: null,
+    matchStartOpId: null, matchCompletionId: null, matchCompletionPending: false,
+    stats: emptyDailySessionStats, startedAt: '2026-10-03T00:00:00.000Z',
+  };
+
+  const firstContainer = installMinimalReactDom();
+  writeDailySessionPointer(pointer);
+  const firstRoot = createRoot(firstContainer);
+  await mount([first, second, m1, m2], firstRoot);
+  await act(async () => { await vi.waitFor(() => expect(screens.lesson?.model.prompt).toBe(first.word)); });
+  // The first card is rated Again: it stays weak, and its next review moves to tomorrow.
+  await act(async () => { screens.lesson.actions.chooseAnswer('x'); });
+  await act(async () => { screens.lesson.actions.submitAnswer(); });
+  await act(async () => { screens.lesson.actions.rate('again'); });
+  await act(async () => { await vi.waitFor(() => expect(screens.lesson?.model.prompt).toBe(second.word)); });
+  const saved = readDailySessionPointer(OWNER);
+  expect(saved).not.toBeNull();
+  await act(async () => firstRoot.unmount());
+  vi.unstubAllGlobals();
+
+  // Reload: the library now holds the committed card as weak and scheduled for tomorrow.
+  const committedFirst = { ...first, difficulty: 'hard', correctStreak: 0, reviews: 4, nextReviewDate: '2999-01-01T00:00:00.000Z' } as CardData;
+  screens.lesson = null;
+  const secondContainer = installMinimalReactDom();
+  writeDailySessionPointer(saved!);
+  const secondRoot = createRoot(secondContainer);
+  await mount([committedFirst, second, m1, m2], secondRoot);
+  await act(async () => { await vi.waitFor(() => expect(screens.lesson?.model.prompt).toBe(second.word)); });
+  expect(screens.lesson.model.progress.total).toBe(1);
+  await act(async () => secondRoot.unmount());
+}, 30_000);

@@ -130,15 +130,19 @@ export const logicalIdsOf = (items: readonly DailyPlanItem[]): readonly string[]
 
 /**
  * Items from the original per-stage snapshot that are still present in a freshly rebuilt bucket.
- * A committed review advances `nextReviewDate` server-side, so a committed card drops out of the
- * fresh `due`/`weak`/`new` bucket on its own; nothing here re-adds or re-rates a committed card.
+ * A committed review advances `nextReviewDate` server-side, so a committed card normally drops out of
+ * the fresh `due`/`new` bucket on its own. A card that stays weak after its rating (rated Again, or a
+ * streak of at most one) does not, so the logical ids committed in this run are removed explicitly:
+ * nothing here re-adds or re-rates a committed card.
  */
 export function outstandingItems(
   snapshotLogicalIds: readonly string[],
   freshBucket: readonly DailyPlanItem[],
+  committedLogicalIds: readonly string[] = [],
 ): readonly DailyPlanItem[] {
   const snapshot = new Set(snapshotLogicalIds);
-  return freshBucket.filter(item => snapshot.has(item.logicalId));
+  const committed = new Set(committedLogicalIds);
+  return freshBucket.filter(item => snapshot.has(item.logicalId) && !committed.has(item.logicalId));
 }
 
 /** One committed rating: the lesson stage it belonged to and whether the learner remembered the card. */
@@ -173,6 +177,8 @@ export interface DailySessionStats {
   readonly studyTimeMs?: number;
   /** Committed answers in order. Missing on a pointer saved by an older client, so no combo is shown. */
   readonly answers?: readonly DailySessionAnswer[];
+  /** Logical ids of the cards rated in the current review run, so a resumed run does not ask for them again. Missing on a pointer saved by an older client. */
+  readonly committedReviewLogicalIds?: readonly string[];
   /** Cards whose committed review raised their tier. Missing on a pointer saved by an older client. */
   readonly promotions?: readonly DailySessionPromotion[];
 }
@@ -186,6 +192,7 @@ export function applyRatingToStats(
   xpAwarded: number,
   stage?: DailySessionAnswer['stage'],
   creditedStudyTimeMs = 0,
+  logicalId?: string,
 ): DailySessionStats {
   const isPositive = rating === 'good' || rating === 'easy';
   const weakCardIds = isPositive
@@ -203,6 +210,9 @@ export function applyRatingToStats(
     ...(stats.studyTimeMs === undefined ? {} : { studyTimeMs: stats.studyTimeMs + creditedStudyTimeMs }),
     ...(answers ? { answers } : {}),
     ...(stats.promotions ? { promotions: stats.promotions } : {}),
+    ...(stage === 'review' && logicalId
+      ? { committedReviewLogicalIds: [...(stats.committedReviewLogicalIds ?? []).filter(id => id !== logicalId), logicalId].slice(-MAX_SESSION_ANSWERS) }
+      : stats.committedReviewLogicalIds ? { committedReviewLogicalIds: stats.committedReviewLogicalIds } : {}),
   };
 }
 
@@ -313,7 +323,9 @@ const isDailySessionStats = (value: unknown): value is DailySessionStats => {
     && typeof candidate.matchXp === 'number' && isStringArray(candidate.weakCardIds)
     && (candidate.studyTimeMs === undefined || Number.isSafeInteger(candidate.studyTimeMs) && Number(candidate.studyTimeMs) >= 0)
     && (candidate.answers === undefined || isSessionAnswerList(candidate.answers))
-    && (candidate.promotions === undefined || isPromotionList(candidate.promotions));
+    && (candidate.promotions === undefined || isPromotionList(candidate.promotions))
+    && (candidate.committedReviewLogicalIds === undefined || isStringArray(candidate.committedReviewLogicalIds)
+      && candidate.committedReviewLogicalIds.length <= MAX_SESSION_ANSWERS);
 };
 
 const isSessionStageId = (value: unknown): value is SessionStageId => (

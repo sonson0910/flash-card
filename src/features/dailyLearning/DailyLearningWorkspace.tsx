@@ -943,7 +943,7 @@ export default function DailyLearningWorkspace({
       // is marked finished, so the retry goes from this lesson straight back to the recap, which still
       // offers the round as an optional replay.
       stagePlan: { review: items, fresh: [], match: { ...current.stagePlan.match, skipReason: null, finished: true } },
-      stats: { ...current.stats, weakCardIds: [] },
+      stats: { ...current.stats, weakCardIds: [], committedReviewLogicalIds: [] },
       phase: { kind: 'lesson', stage: 'review' },
     });
   }, [finishMultiStageSession, isCurrentSession, startStageExercises]);
@@ -993,7 +993,7 @@ export default function DailyLearningWorkspace({
     const now = new Date();
     const freshPlan = buildDailyPlan(currentPairCards, { now, freshPriorityLogicalIds: pointer.freshLogicalIds });
     const stagePlan: SessionStagePlan = {
-      review: outstandingItems(pointer.reviewLogicalIds, freshPlan.items.filter(item => item.reason === 'due' || item.reason === 'weak')),
+      review: outstandingItems(pointer.reviewLogicalIds, freshPlan.items.filter(item => item.reason === 'due' || item.reason === 'weak'), pointer.stats.committedReviewLogicalIds),
       fresh: freshItemsForResume(pointer.freshLogicalIds, currentPairCards, now),
       match: {
         ...restoredSessionMatchStage(activePool.cards, pointer.matchCardIds, { targetLanguage, translationLanguage }, Boolean(pointer.matchStartOpId)),
@@ -1321,7 +1321,7 @@ export default function DailyLearningWorkspace({
         : undefined;
       setMultiStage(current => {
         if (!isCurrentSession(current)) return current;
-        const rated = applyRatingToStats(current.stats, cardId, rating, result.xpAwarded, current.phase.kind === 'lesson' ? current.phase.stage : undefined, result.studyTimeMs ?? 0);
+        const rated = applyRatingToStats(current.stats, cardId, rating, result.xpAwarded, current.phase.kind === 'lesson' ? current.phase.stage : undefined, result.studyTimeMs ?? 0, before && logicalIdentity(before));
         const stats = before && reviewed ? applyTierChangeToStats(rated, cardId, getLibraryCardTier(before), getLibraryCardTier(reviewed)) : rated;
         return { ...current, stats };
       });
