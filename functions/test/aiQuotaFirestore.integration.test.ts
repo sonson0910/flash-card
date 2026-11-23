@@ -40,6 +40,16 @@ describeWithEmulator('Firestore account AI quota', () => {
     expect(usage.data()?.used).toBe(30);
   }, 30_000);
 
+  it('records whether the allowance is enforced on the usage document so the client meter can match it', async () => {
+    const uid = `enforced-${randomUUID()}`;
+    const usageRef = database.collection('users').doc(uid).collection('ai_usage').doc(freePeriod(now, config).periodKey);
+    await reserveWordOperation(database, uid, randomUUID(), 'enforced-1', now, config);
+    expect((await usageRef.get()).data()).toMatchObject({ used: 1, enforced: true });
+    const open = { ...config, quotaEnforced: false, freeMonthlyAiCards: 1 };
+    await expect(reserveWordOperation(database, uid, randomUUID(), 'enforced-2', now, open)).resolves.toMatchObject({ kind: 'reserved' });
+    expect((await usageRef.get()).data()).toMatchObject({ used: 2, limit: 1, enforced: false });
+  }, 15_000);
+
   it('allows one concurrent reservation, takes over stale work, and ignores the old attempt', async () => {
     const uid = `concurrent-${randomUUID()}`;
     const operationId = randomUUID();

@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/plan/PlanUsageMeter.tsx:29
+#: src/features/plan/PlanUsageMeter.tsx:31
 msgctxt "plan.usage.exhausted.pro-hint"
 msgid "Pro adds more generations."
 msgstr "Gói Pro có thêm lượt tạo thẻ."
@@ -23,7 +23,7 @@ msgctxt "billing.upgrade.offer.no-renew"
 msgid "No auto-renewal. Payment is not being collected or opened yet."
 msgstr "Không tự động gia hạn. Hiện chưa thu tiền hoặc mở thanh toán."
 
-#: src/features/plan/PlanUsageMeter.tsx:28
+#: src/features/plan/PlanUsageMeter.tsx:30
 msgctxt "plan.usage.exhausted"
 msgid "No AI card generations left. Resets {reset}. You can still review, add cards manually, and export your data."
 msgstr "Bạn đã dùng hết lượt tạo thẻ bằng AI. Hạn mức làm mới {reset}. Bạn vẫn có thể ôn tập, tự thêm thẻ và xuất dữ liệu."
@@ -85,6 +85,11 @@ msgctxt "plan.usage.period.free"
 msgid "{used} / {limit} AI cards this month"
 msgstr "{used} / {limit} thẻ AI trong tháng này"
 
+#: src/features/plan/PlanUsageMeter.tsx:29
+msgctxt "plan.usage.exhausted.pro"
+msgid "No AI card generations left on this Pro plan. Pro ends {reset}. You can still review, add cards manually, and export your data."
+msgstr "Bạn đã dùng hết lượt tạo thẻ bằng AI của gói Pro. Gói Pro kết thúc {reset}. Bạn vẫn có thể ôn tập, tự thêm thẻ và xuất dữ liệu."
+
 #: src/features/billing/UpgradeDialog.tsx:103
 msgctxt "billing.upgrade.quota-exhausted"
 msgid "Your current AI card allowance is exhausted. You can still review, add cards manually, and export your data."
@@ -99,6 +104,11 @@ msgstr "Pro đã hoạt động trên tài khoản của bạn."
 msgctxt "billing.upgrade.intent.unavailable"
 msgid "Registration is temporarily unavailable. Please try again later."
 msgstr "Việc đăng ký tạm thời chưa khả dụng. Hãy thử lại sau."
+
+#: src/features/billing/UpgradeDialog.tsx:95
+msgctxt "billing.upgrade.offer.cards"
+msgid "{count, plural, one {# AI card} other {# AI cards}} for {days, plural, one {# day} other {# days}}"
+msgstr "{count, plural, one {# thẻ AI} other {# thẻ AI}} trong {days, plural, one {# ngày} other {# ngày}}"
 
 #: src/features/billing/UpgradeDialog.tsx:98
 msgctxt "billing.upgrade.entitlement.loading"
@@ -125,11 +135,6 @@ msgctxt "billing.upgrade.title"
 msgid "Add momentum to your learning"
 msgstr "Thêm nhịp cho việc học"
 
-#: src/features/billing/UpgradeDialog.tsx:95
-msgctxt "billing.upgrade.offer.cards"
-msgid "{count, plural, one {# AI card} other {# AI cards}} per month"
-msgstr "{count, plural, one {# thẻ AI mỗi tháng} other {# thẻ AI mỗi tháng}}"
-
 #: src/features/billing/UpgradeDialog.tsx:93
 msgctxt "billing.upgrade.offer.duration"
 msgid "Pro · {days, plural, one {# day} other {# days}}"
@@ -140,7 +145,7 @@ msgctxt "plan.usage.period.pro"
 msgid "{used} / {limit} AI cards on the Pro plan"
 msgstr "{used} / {limit} thẻ AI của gói Pro"
 
-#: src/features/plan/PlanUsageMeter.tsx:34
+#: src/features/plan/PlanUsageMeter.tsx:36
 msgctxt "plan.usage.view-pro"
 msgid "See Pro plan"
 msgstr "Xem gói Pro"

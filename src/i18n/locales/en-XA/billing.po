@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/plan/PlanUsageMeter.tsx:29
+#: src/features/plan/PlanUsageMeter.tsx:31
 msgctxt "plan.usage.exhausted.pro-hint"
 msgid "Pro adds more generations."
 msgstr ""
@@ -23,7 +23,7 @@ msgctxt "billing.upgrade.offer.no-renew"
 msgid "No auto-renewal. Payment is not being collected or opened yet."
 msgstr ""
 
-#: src/features/plan/PlanUsageMeter.tsx:28
+#: src/features/plan/PlanUsageMeter.tsx:30
 msgctxt "plan.usage.exhausted"
 msgid "No AI card generations left. Resets {reset}. You can still review, add cards manually, and export your data."
 msgstr ""
@@ -85,6 +85,11 @@ msgctxt "plan.usage.period.free"
 msgid "{used} / {limit} AI cards this month"
 msgstr ""
 
+#: src/features/plan/PlanUsageMeter.tsx:29
+msgctxt "plan.usage.exhausted.pro"
+msgid "No AI card generations left on this Pro plan. Pro ends {reset}. You can still review, add cards manually, and export your data."
+msgstr ""
+
 #: src/features/billing/UpgradeDialog.tsx:103
 msgctxt "billing.upgrade.quota-exhausted"
 msgid "Your current AI card allowance is exhausted. You can still review, add cards manually, and export your data."
@@ -98,6 +103,11 @@ msgstr ""
 #: src/features/billing/UpgradeDialog.tsx:102
 msgctxt "billing.upgrade.intent.unavailable"
 msgid "Registration is temporarily unavailable. Please try again later."
+msgstr ""
+
+#: src/features/billing/UpgradeDialog.tsx:95
+msgctxt "billing.upgrade.offer.cards"
+msgid "{count, plural, one {# AI card} other {# AI cards}} for {days, plural, one {# day} other {# days}}"
 msgstr ""
 
 #: src/features/billing/UpgradeDialog.tsx:98
@@ -125,11 +135,6 @@ msgctxt "billing.upgrade.title"
 msgid "Add momentum to your learning"
 msgstr ""
 
-#: src/features/billing/UpgradeDialog.tsx:95
-msgctxt "billing.upgrade.offer.cards"
-msgid "{count, plural, one {# AI card} other {# AI cards}} per month"
-msgstr ""
-
 #: src/features/billing/UpgradeDialog.tsx:93
 msgctxt "billing.upgrade.offer.duration"
 msgid "Pro · {days, plural, one {# day} other {# days}}"
@@ -140,7 +145,7 @@ msgctxt "plan.usage.period.pro"
 msgid "{used} / {limit} AI cards on the Pro plan"
 msgstr ""
 
-#: src/features/plan/PlanUsageMeter.tsx:34
+#: src/features/plan/PlanUsageMeter.tsx:36
 msgctxt "plan.usage.view-pro"
 msgid "See Pro plan"
 msgstr ""

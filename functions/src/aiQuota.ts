@@ -122,7 +122,7 @@ export async function reserveWordOperation(database: Firestore, uid: string, ope
       });
     }
     transaction.set(usageRef, {
-      periodKey, tier: plan.tier, used: used + 1, limit: plan.limit,
+      periodKey, tier: plan.tier, used: used + 1, limit: plan.limit, enforced: config.quotaEnforced,
       periodStartsAt: plan.startsAt, periodEndsAt: plan.endsAt, updatedAt: now,
     }, { merge: true });
     transaction.set(operationRef, {

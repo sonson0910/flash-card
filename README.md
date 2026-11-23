@@ -257,7 +257,8 @@ For a read-only cost report, set the explicit `PILOT_TARGET=staging|production`,
 `FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`,
 `PILOT_REPORT_FROM`, `PILOT_REPORT_TO` and `ANALYTICS_PSEUDONYM_KEY` in the operator environment,
 then run `node functions/lib/aiCostReportOperator.js` after building Functions. The report prints
-daily calls, spend, word-card cost percentiles, timeout share and pseudonymous top accounts;
+daily calls, spend, word-card cost percentiles over calls with measured token usage, the timeout, learner-stop and
+provider-error shares, and pseudonymous top accounts;
 never paste its secret or raw ledger records into a report.
 For pilot Pro access, build Functions and run `node functions/lib/pilotOperator.js` with the same
 three target variables, `PILOT_OPERATOR_MODE=grant|revoke|status`, `PILOT_OPERATOR_UID`, and

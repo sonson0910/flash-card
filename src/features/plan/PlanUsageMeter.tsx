@@ -15,7 +15,7 @@ export function PlanUsageMeter({ source = 'quota', onOpenUpgrade }: {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const usage = usePlanUsage();
   if (!usage) return null;
-  const exhausted = usage.used >= usage.limit;
+  const exhausted = usage.enforced && usage.used >= usage.limit;
   const reset = getDateTimeFormat({ timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'medium' }).format(usage.periodEndsAt);
   return (
     <div role="status" aria-live="polite" className="crystal-chamfer-sm rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-3 text-xs text-[var(--sf-text-muted)] shadow-[var(--sf-panel-shadow)]">
@@ -25,7 +25,9 @@ export function PlanUsageMeter({ source = 'quota', onOpenUpgrade }: {
         ? <Trans {...msg({ context: 'plan.usage.period.pro', message: '{used} / {limit} AI cards on the Pro plan' })} values={{ used: usage.used, limit: usage.limit }} />
         : <Trans {...msg({ context: 'plan.usage.period.free', message: '{used} / {limit} AI cards this month' })} values={{ used: usage.used, limit: usage.limit }} />}</span>
       {exhausted && <p className="mt-1 text-amber-700 dark:text-amber-300">
-        <Trans {...msg({ context: 'plan.usage.exhausted', message: 'No AI card generations left. Resets {reset}. You can still review, add cards manually, and export your data.' })} values={{ reset }} />
+        {usage.tier === 'pro'
+          ? <Trans {...msg({ context: 'plan.usage.exhausted.pro', message: 'No AI card generations left on this Pro plan. Pro ends {reset}. You can still review, add cards manually, and export your data.' })} values={{ reset }} />
+          : <Trans {...msg({ context: 'plan.usage.exhausted', message: 'No AI card generations left. Resets {reset}. You can still review, add cards manually, and export your data.' })} values={{ reset }} />}
         {usage.tier === 'free' && <> <Trans {...msg({ context: 'plan.usage.exhausted.pro-hint', message: 'Pro adds more generations.' })} /></>}
       </p>}
       {usage.tier === 'free' && (exhausted || source === 'menu') && <button type="button"

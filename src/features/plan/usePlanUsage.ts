@@ -7,6 +7,8 @@ export interface PlanUsage {
   tier: 'free' | 'pro';
   used: number;
   limit: number;
+  /** False while the server records usage but does not refuse generation at the limit. */
+  enforced: boolean;
   periodEndsAt: Date;
 }
 
@@ -57,6 +59,13 @@ export function resolvePlanPeriod(plan: Record<string, unknown> | undefined, now
   return { tier, key, endsAt, nextRefreshAt };
 }
 
+export function readPlanUsageCounters(data: Record<string, unknown> | undefined, tier: 'free' | 'pro'):
+  Pick<PlanUsage, 'used' | 'limit' | 'enforced'> {
+  const used = Number.isSafeInteger(data?.used) && (data!.used as number) >= 0 ? data!.used as number : 0;
+  const limit = Number.isSafeInteger(data?.limit) && (data!.limit as number) > 0 ? data!.limit as number : tier === 'pro' ? 1_000 : 30;
+  return { used, limit, enforced: data?.enforced !== false };
+}
+
 export function usePlanUsageState(enabled = true): PlanUsageState {
   const [state, setState] = useState<PlanUsageState>({ status: 'loading' });
   useEffect(() => {
@@ -93,10 +102,7 @@ export function usePlanUsageState(enabled = true): PlanUsageState {
         }, Math.min(Math.max(1, nextRefreshAt.getTime() - now.getTime() + 1_000), 2_147_483_647));
         stopUsage = onSnapshot(doc(db!, 'users', user.uid, 'ai_usage', key), snapshot => {
           if (!active || generation !== accountGeneration || usage !== usageGeneration) return;
-          const data = snapshot.data();
-          const used = Number.isSafeInteger(data?.used) && data!.used >= 0 ? data!.used as number : 0;
-          const limit = Number.isSafeInteger(data?.limit) && data!.limit > 0 ? data!.limit as number : tier === 'pro' ? 1_000 : 30;
-          setState({ status: 'ready', usage: { tier, used, limit, periodEndsAt: endsAt } });
+          setState({ status: 'ready', usage: { tier, ...readPlanUsageCounters(snapshot.data(), tier), periodEndsAt: endsAt } });
         }, () => { if (active && generation === accountGeneration && usage === usageGeneration) setState({ status: 'error' }); });
       };
       stopPlan = onSnapshot(doc(db, 'users', user.uid, 'profile', 'plan'), planSnapshot => {
