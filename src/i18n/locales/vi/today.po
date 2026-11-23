@@ -23,6 +23,11 @@ msgctxt "webWords.lumi.tag"
 msgid "Lumi · Link"
 msgstr "Lumi · Link"
 
+#: src/features/webWords/WebWordsPage.tsx:263
+msgctxt "webWords.feedback.queued"
+msgid "These words are queued and get priority in your next new-word session."
+msgstr "Những từ này đã được xếp hàng và được ưu tiên trong buổi từ mới tiếp theo của bạn."
+
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1175
 msgctxt "today.match.session-expired"
 msgid "This round was open for too long, so its result could not be saved."
@@ -68,7 +73,7 @@ msgctxt "progress.metric.mastered"
 msgid "Mastered"
 msgstr "Đã thành thạo"
 
-#: src/features/webWords/WebWordsPage.tsx:296
+#: src/features/webWords/WebWordsPage.tsx:297
 msgctxt "webWords.status.empty-batch"
 msgid "No web words for this course are in this batch. Load more to keep looking."
 msgstr "Không có từ web nào cho khóa học này trong lô này. Hãy tải thêm để tiếp tục tìm."
@@ -83,7 +88,7 @@ msgctxt "webWords.lumi.text"
 msgid "I keep the whole sentence, so you remember the context."
 msgstr "Mình giữ cả câu gốc, để bạn nhớ ngữ cảnh."
 
-#: src/features/webWords/WebWordsPage.tsx:263
+#: src/features/webWords/WebWordsPage.tsx:264
 msgctxt "webWords.feedback.not-added"
 msgid "These cards were not added to today's new-word stage. You can study them elsewhere or try again later."
 msgstr "Những thẻ này chưa được thêm vào chặng từ mới hôm nay. Bạn có thể học chúng ở nơi khác hoặc thử lại sau."
@@ -631,7 +636,7 @@ msgstr "Kiểm tra trình độ"
 msgid "daily.placement.unsure"
 msgstr "Mình không chắc"
 
-#: src/features/webWords/WebWordsPage.tsx:272
+#: src/features/webWords/WebWordsPage.tsx:273
 msgctxt "webWords.status.loading"
 msgid "Loading your web words…"
 msgstr "Đang tải từ trên web của bạn…"
@@ -646,12 +651,12 @@ msgctxt "progress.forecast.unavailable"
 msgid "Forecast is unavailable while saved progress is loading."
 msgstr "Dự báo chưa sẵn sàng khi tiến độ đã lưu đang tải."
 
-#: src/features/webWords/WebWordsPage.tsx:308
+#: src/features/webWords/WebWordsPage.tsx:309
 msgctxt "webWords.actions.load-more"
 msgid "Load more"
 msgstr "Tải thêm"
 
-#: src/features/webWords/WebWordsPage.tsx:277
+#: src/features/webWords/WebWordsPage.tsx:278
 msgctxt "webWords.status.signed-out"
 msgid "Sign in to see words you saved from the web."
 msgstr "Đăng nhập để xem các từ bạn đã lưu từ web."
@@ -770,7 +775,7 @@ msgstr "{percent}%"
 msgid "exam-progress.set-target"
 msgstr "Đặt band mục tiêu"
 
-#: src/features/webWords/WebWordsPage.tsx:265
+#: src/features/webWords/WebWordsPage.tsx:266
 msgctxt "webWords.feedback.some-scheduled-normal-review"
 msgid "Other selected cards follow their normal review schedule."
 msgstr "Các thẻ được chọn khác theo lịch ôn tập thông thường."
@@ -897,7 +902,7 @@ msgctxt "progress.achievements.open"
 msgid "View achievements"
 msgstr "Xem thành tích"
 
-#: src/features/webWords/WebWordsPage.tsx:281
+#: src/features/webWords/WebWordsPage.tsx:282
 msgctxt "webWords.status.error"
 msgid "Web words could not load. Try again."
 msgstr "Không tải được từ trên web. Hãy thử lại."
@@ -907,7 +912,7 @@ msgctxt "webWords.actions.add-all-to-session"
 msgid "Add all {count} to today’s session"
 msgstr "Thêm cả {count} từ vào buổi học hôm nay"
 
-#: src/features/webWords/WebWordsPage.tsx:288
+#: src/features/webWords/WebWordsPage.tsx:289
 msgctxt "webWords.status.empty.description"
 msgid "Save a word while reading on the web, and it will show up here."
 msgstr "Lưu một từ khi đọc trên web, nó sẽ xuất hiện ở đây."
@@ -1263,7 +1268,7 @@ msgctxt "webWords.filter.day.label"
 msgid "Day"
 msgstr "Ngày"
 
-#: src/features/webWords/WebWordsPage.tsx:287
+#: src/features/webWords/WebWordsPage.tsx:288
 msgctxt "webWords.status.empty.title"
 msgid "No web words yet"
 msgstr "Chưa có từ nào từ web"
@@ -1473,7 +1478,7 @@ msgstr "Kế hoạch chưa khả dụng"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayScreen.tsx:395
-#: src/features/webWords/WebWordsPage.tsx:282
+#: src/features/webWords/WebWordsPage.tsx:283
 msgid "today.error.retry"
 msgstr "Thử lại"
 
@@ -2524,7 +2529,7 @@ msgctxt "progress.mastered.title"
 msgid "Recently <0>mastered</0>"
 msgstr "Mới <0>thành thạo</0>"
 
-#: src/features/webWords/WebWordsPage.tsx:264
+#: src/features/webWords/WebWordsPage.tsx:265
 msgctxt "webWords.feedback.scheduled-normal-review"
 msgid "These cards already follow their normal review schedule."
 msgstr "Những thẻ này đã theo lịch ôn tập thông thường."

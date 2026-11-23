@@ -23,6 +23,11 @@ msgctxt "webWords.lumi.tag"
 msgid "Lumi · Link"
 msgstr "Lumi · Link"
 
+#: src/features/webWords/WebWordsPage.tsx:263
+msgctxt "webWords.feedback.queued"
+msgid "These words are queued and get priority in your next new-word session."
+msgstr "These words are queued and get priority in your next new-word session."
+
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1175
 msgctxt "today.match.session-expired"
 msgid "This round was open for too long, so its result could not be saved."
@@ -68,7 +73,7 @@ msgctxt "progress.metric.mastered"
 msgid "Mastered"
 msgstr "Mastered"
 
-#: src/features/webWords/WebWordsPage.tsx:296
+#: src/features/webWords/WebWordsPage.tsx:297
 msgctxt "webWords.status.empty-batch"
 msgid "No web words for this course are in this batch. Load more to keep looking."
 msgstr "No web words for this course are in this batch. Load more to keep looking."
@@ -83,7 +88,7 @@ msgctxt "webWords.lumi.text"
 msgid "I keep the whole sentence, so you remember the context."
 msgstr "I keep the whole sentence, so you remember the context."
 
-#: src/features/webWords/WebWordsPage.tsx:263
+#: src/features/webWords/WebWordsPage.tsx:264
 msgctxt "webWords.feedback.not-added"
 msgid "These cards were not added to today's new-word stage. You can study them elsewhere or try again later."
 msgstr "These cards were not added to today's new-word stage. You can study them elsewhere or try again later."
@@ -631,7 +636,7 @@ msgstr "Level check"
 msgid "daily.placement.unsure"
 msgstr "I’m not sure"
 
-#: src/features/webWords/WebWordsPage.tsx:272
+#: src/features/webWords/WebWordsPage.tsx:273
 msgctxt "webWords.status.loading"
 msgid "Loading your web words…"
 msgstr "Loading your web words…"
@@ -646,12 +651,12 @@ msgctxt "progress.forecast.unavailable"
 msgid "Forecast is unavailable while saved progress is loading."
 msgstr "Forecast is unavailable while saved progress is loading."
 
-#: src/features/webWords/WebWordsPage.tsx:308
+#: src/features/webWords/WebWordsPage.tsx:309
 msgctxt "webWords.actions.load-more"
 msgid "Load more"
 msgstr "Load more"
 
-#: src/features/webWords/WebWordsPage.tsx:277
+#: src/features/webWords/WebWordsPage.tsx:278
 msgctxt "webWords.status.signed-out"
 msgid "Sign in to see words you saved from the web."
 msgstr "Sign in to see words you saved from the web."
@@ -770,7 +775,7 @@ msgstr "{percent}%"
 msgid "exam-progress.set-target"
 msgstr "Set a target band"
 
-#: src/features/webWords/WebWordsPage.tsx:265
+#: src/features/webWords/WebWordsPage.tsx:266
 msgctxt "webWords.feedback.some-scheduled-normal-review"
 msgid "Other selected cards follow their normal review schedule."
 msgstr "Other selected cards follow their normal review schedule."
@@ -897,7 +902,7 @@ msgctxt "progress.achievements.open"
 msgid "View achievements"
 msgstr "View achievements"
 
-#: src/features/webWords/WebWordsPage.tsx:281
+#: src/features/webWords/WebWordsPage.tsx:282
 msgctxt "webWords.status.error"
 msgid "Web words could not load. Try again."
 msgstr "Web words could not load. Try again."
@@ -907,7 +912,7 @@ msgctxt "webWords.actions.add-all-to-session"
 msgid "Add all {count} to today’s session"
 msgstr "Add all {count} to today’s session"
 
-#: src/features/webWords/WebWordsPage.tsx:288
+#: src/features/webWords/WebWordsPage.tsx:289
 msgctxt "webWords.status.empty.description"
 msgid "Save a word while reading on the web, and it will show up here."
 msgstr "Save a word while reading on the web, and it will show up here."
@@ -1263,7 +1268,7 @@ msgctxt "webWords.filter.day.label"
 msgid "Day"
 msgstr "Day"
 
-#: src/features/webWords/WebWordsPage.tsx:287
+#: src/features/webWords/WebWordsPage.tsx:288
 msgctxt "webWords.status.empty.title"
 msgid "No web words yet"
 msgstr "No web words yet"
@@ -1473,7 +1478,7 @@ msgstr "Plan unavailable"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayScreen.tsx:395
-#: src/features/webWords/WebWordsPage.tsx:282
+#: src/features/webWords/WebWordsPage.tsx:283
 msgid "today.error.retry"
 msgstr "Try again"
 
@@ -2524,7 +2529,7 @@ msgctxt "progress.mastered.title"
 msgid "Recently <0>mastered</0>"
 msgstr "Recently <0>mastered</0>"
 
-#: src/features/webWords/WebWordsPage.tsx:264
+#: src/features/webWords/WebWordsPage.tsx:265
 msgctxt "webWords.feedback.scheduled-normal-review"
 msgid "These cards already follow their normal review schedule."
 msgstr "These cards already follow their normal review schedule."
