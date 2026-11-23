@@ -332,6 +332,11 @@ msgctxt "landing.demo.back-language"
 msgid "Vietnamese"
 msgstr "Tiếng Việt"
 
+#: src/features/landing/LandingPage.tsx:245
+msgctxt "landing.pricing.faq.exhausted.answer"
+msgid "You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot."
+msgstr "Bạn vẫn có thể ôn tập và tự thêm thẻ. Tính năng tạo thẻ bằng AI sẽ mở lại vào tháng sau. Gói Pro chưa được bán trong giai đoạn thử nghiệm."
+
 #: src/features/landing/LandingPage.tsx:1178
 msgctxt "landing.closing.consent"
 msgid "SonFlash is for learners aged 18 and over. By signing in, you agree to the <terms>Terms</terms> and have read the <privacy>Privacy Policy</privacy>."
@@ -521,11 +526,6 @@ msgctxt "landing.nav.sign-in"
 msgid "Sign in"
 msgstr "Đăng nhập"
 
-#: src/features/landing/LandingPage.tsx:245
-msgctxt "landing.pricing.faq.exhausted.answer"
-msgid "You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro."
-msgstr "Bạn vẫn có thể ôn tập và tự thêm thẻ. Tính năng tạo thẻ bằng AI sẽ mở lại vào tháng sau, hoặc ngay lập tức với gói Pro."
-
 #: src/features/landing/LandingPage.tsx:970
 msgctxt "landing.languages.eyebrow"
 msgid "Where SonFlash is headed"
@@ -550,11 +550,6 @@ msgstr "Hiện SonFlash dạy từ vựng tiếng Anh, với nghĩa hiển thị
 msgctxt "landing.demo.grade.bloom"
 msgid "Bloom"
 msgstr "Nở"
-
-#: src/features/landing/LandingPage.tsx:236
-msgctxt "landing.pricing.faq.free.answer"
-msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month."
-msgstr "Đúng vậy. Ôn tập, thẻ tự tạo và tiện ích Chrome đều miễn phí, không giới hạn thời gian. Gói Free có 30 thẻ tạo bằng AI mỗi tháng."
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:718
@@ -612,6 +607,11 @@ msgstr "Chọn không gian học"
 msgctxt "landing.pricing.value.included"
 msgid "Included"
 msgstr "Có sẵn"
+
+#: src/features/landing/LandingPage.tsx:236
+msgctxt "landing.pricing.faq.free.answer"
+msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day."
+msgstr "Đúng vậy. Ôn tập, thẻ tự tạo và tiện ích Chrome đều miễn phí, không giới hạn thời gian. Gói Free có 30 thẻ tạo bằng AI mỗi tháng, tối đa 20 lượt dùng AI mỗi ngày."
 
 #: src/features/landing/LandingPage.tsx:999
 msgctxt "landing.languages.status.available"

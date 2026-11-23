@@ -332,6 +332,11 @@ msgctxt "landing.demo.back-language"
 msgid "Vietnamese"
 msgstr "Vietnamese"
 
+#: src/features/landing/LandingPage.tsx:245
+msgctxt "landing.pricing.faq.exhausted.answer"
+msgid "You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot."
+msgstr "You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot."
+
 #: src/features/landing/LandingPage.tsx:1178
 msgctxt "landing.closing.consent"
 msgid "SonFlash is for learners aged 18 and over. By signing in, you agree to the <terms>Terms</terms> and have read the <privacy>Privacy Policy</privacy>."
@@ -521,11 +526,6 @@ msgctxt "landing.nav.sign-in"
 msgid "Sign in"
 msgstr "Sign in"
 
-#: src/features/landing/LandingPage.tsx:245
-msgctxt "landing.pricing.faq.exhausted.answer"
-msgid "You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro."
-msgstr "You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro."
-
 #: src/features/landing/LandingPage.tsx:970
 msgctxt "landing.languages.eyebrow"
 msgid "Where SonFlash is headed"
@@ -550,11 +550,6 @@ msgstr "SonFlash currently teaches English vocabulary, with meanings shown in En
 msgctxt "landing.demo.grade.bloom"
 msgid "Bloom"
 msgstr "Bloom"
-
-#: src/features/landing/LandingPage.tsx:236
-msgctxt "landing.pricing.faq.free.answer"
-msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month."
-msgstr "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month."
 
 #. js-lingui-explicit-id
 #: src/features/landing/LandingPage.tsx:718
@@ -612,6 +607,11 @@ msgstr "Choose an atmosphere"
 msgctxt "landing.pricing.value.included"
 msgid "Included"
 msgstr "Included"
+
+#: src/features/landing/LandingPage.tsx:236
+msgctxt "landing.pricing.faq.free.answer"
+msgid "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day."
+msgstr "Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day."
 
 #: src/features/landing/LandingPage.tsx:999
 msgctxt "landing.languages.status.available"

@@ -233,7 +233,7 @@ const pricingFaq = [
     question: <Trans {...msg({ context: 'landing.pricing.faq.free.question', message: 'Is the free plan really free?' })} />,
     answer: (
       <Trans
-        {...msg({ context: 'landing.pricing.faq.free.answer', message: 'Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month.' })}
+        {...msg({ context: 'landing.pricing.faq.free.answer', message: 'Yes. Reviews, manual cards, and the Chrome extension stay free with no time limit. Free includes 30 AI-generated cards each month, up to 20 AI actions a day.' })}
       />
     ),
   },
@@ -242,7 +242,7 @@ const pricingFaq = [
     question: <Trans {...msg({ context: 'landing.pricing.faq.exhausted.question', message: 'What happens if I use all 30 AI cards?' })} />,
     answer: (
       <Trans
-        {...msg({ context: 'landing.pricing.faq.exhausted.answer', message: 'You can keep reviewing and add cards manually. AI generation resumes next month, or right away with Pro.' })}
+        {...msg({ context: 'landing.pricing.faq.exhausted.answer', message: 'You can keep reviewing and add cards manually. AI generation resumes next month. Pro is not on sale during the pilot.' })}
       />
     ),
   },
