@@ -194,6 +194,14 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
   const activeFilter = deriveActiveLearningFilter(model, localFilter);
   const showFirstUsePanel = shouldShowFirstUseLibraryPanel(model);
 
+  const toolsRef = useRef<HTMLDetailsElement | null>(null);
+  const openCreateTools = () => {
+    const tools = toolsRef.current;
+    if (!tools) return;
+    tools.open = true;
+    globalThis.requestAnimationFrame?.(() => document.getElementById('new-word')?.focus());
+  };
+
   const changeFilter = (filter: LibraryFilter) => {
     setLocalFilter(filter);
     applyLibraryFilter(actions, filter);
@@ -274,6 +282,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
               hasNextCloudPage={model.grid.hasNextCloudPage}
               libraryCount={model.grid.libraryCount}
               onClearFilters={actions.grid.clearFilters}
+              onCreateCard={openCreateTools}
               isGenerating={model.tools.isGenerating || model.tools.isLoading}
               viewMode={viewMode}
               onViewModeChange={setViewMode}
@@ -281,7 +290,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
           </Suspense>
         )}
       </div>
-      {!showFirstUsePanel && <details className="library-canvas-tools" data-library-region="tools">
+      {!showFirstUsePanel && <details ref={toolsRef} className="library-canvas-tools" data-library-region="tools">
         <summary><Trans {...msg({ context: 'library.tools.more', message: 'More library tools' })} /></summary>
         <div>
           <Suspense fallback={<DeferredLibraryFallback label={<Trans {...msg({ context: 'library.loading.tools', message: 'Loading library tools' })} />} />}>
