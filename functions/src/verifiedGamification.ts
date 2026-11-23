@@ -202,26 +202,21 @@ const reviewActivity = (value: unknown): ReviewActivity | undefined => {
 
 // Review activity is display-only, so it never blocks a review: a stored value that cannot be read
 // starts over, and a review whose language has no usable slot leaves the stored activity as it was.
-const nextReviewActivity = (stored: unknown, language: unknown, day: string, rating: string): {
-  activity: ReviewActivity | undefined;
-  startedOver: boolean;
-} => {
+const nextReviewActivity = (stored: unknown, language: unknown, day: string, rating: string): ReviewActivity | undefined => {
   if (!['again', 'hard', 'good', 'easy'].includes(rating)) {
     throw new InputValidationError('Review activity rating is invalid.');
   }
   let activity: ReviewActivity | undefined;
-  let startedOver = false;
   try {
     activity = reviewActivity(stored);
   } catch (error) {
     if (!(error instanceof InputValidationError)) throw error;
     console.warn('Stored review activity was unusable and starts over.');
-    startedOver = true;
   }
   const coverageStartedOnByLanguage = { ...(activity?.coverageStartedOnByLanguage ?? {}) };
   const allDays: ReviewActivity['daysByLanguage'] = { ...(activity?.daysByLanguage ?? {}) };
   if (!isLanguage(language) || (!allDays[language] && Object.keys(allDays).length >= MAX_REVIEW_ACTIVITY_LANGUAGES)) {
-    return { activity, startedOver };
+    return activity;
   }
   const counters = allDays[language]?.[day] ?? { reviewed: 0, again: 0, hard: 0, good: 0, easy: 0 };
   if (counters.reviewed >= MAX_REVIEW_ACTIVITY_COUNTER || counters[rating as keyof ReviewActivityCounters] >= MAX_REVIEW_ACTIVITY_COUNTER) {
@@ -235,7 +230,7 @@ const nextReviewActivity = (stored: unknown, language: unknown, day: string, rat
       .filter(([localDay]) => localDay >= windowStart));
   }
   coverageStartedOnByLanguage[language] ??= day;
-  return { activity: { coverageStartedOnByLanguage, daysByLanguage: allDays }, startedOver };
+  return { coverageStartedOnByLanguage, daysByLanguage: allDays };
 };
 
 const reviewActivityOutcome = (activity: ReviewActivity | undefined, language: unknown): VerifiedReviewActivity | undefined => {
@@ -388,10 +383,9 @@ export async function prepareVerifiedGamification(
   }
   const xpAwarded = action.kind === 'review' ? (awardSnapshot?.exists ? 0 : xpFor(action)) : xpFor(action);
   const hasXpAward = xpAwarded > 0;
-  const nextActivity = action.kind === 'review' && storedTimeZone
+  const activity = action.kind === 'review' && storedTimeZone
     ? nextReviewActivity(stats.reviewActivityV1, action.targetLanguage, studyDay, action.rating ?? '')
     : undefined;
-  const activity = nextActivity?.activity;
   const xp = counter(stats.verifiedXp);
   const oldLevel = levelForXp(xp);
   const crossesRewardLevel = (gain: number) => gain > 0 && oldLevel < 13 && levelForXp(xp + gain) >= 13;
@@ -576,8 +570,9 @@ export async function prepareVerifiedGamification(
         || action.receivedAt.getTime() > lastVerifiedReviewAt.toMillis())
         ? { lastVerifiedReviewAt: Timestamp.fromDate(action.receivedAt) } : {}),
       ...(activity ? {
-        // A merge write keeps stored keys the new value lacks, so a value that started over replaces the old one.
-        reviewActivityV1: nextActivity?.startedOver ? replacingMergePatch(stats.reviewActivityV1, { ...activity }) : activity,
+        // A merge write keeps stored keys the new value lacks, so days that left the window, and a value
+        // that started over, are deleted rather than merged back into what is stored.
+        reviewActivityV1: replacingMergePatch(stats.reviewActivityV1, { ...activity }),
       } : {}),
       [DAILY_GOALS_FIELD]: replacingMergePatch(stats[DAILY_GOALS_FIELD], dailyGoals),
       [STREAK_FIELD]: replacingMergePatch(stats[STREAK_FIELD], { ...streakAdvance.state }),

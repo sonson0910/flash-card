@@ -77,6 +77,12 @@ const masteredQuery = 'users/owner/cards where difficulty == easy';
 
 const isDeleteSentinel = (value: unknown) => value instanceof FieldValue && value.isEqual(FieldValue.delete());
 
+/** The days of one language that remain stored after the patch is merged, as Firestore merges nested maps. */
+const storedDaysAfter = (patch: unknown, language: string): string[] => {
+  const days = (patch as { daysByLanguage: Record<string, Record<string, unknown>> }).daysByLanguage[language];
+  return Object.keys(days).filter(day => !isDeleteSentinel(days[day]));
+};
+
 const action = (overrides = {}) => ({
   kind: 'review' as const,
   receivedAt: new Date('2026-03-08T10:30:00.000Z'),
@@ -222,8 +228,9 @@ describe('verified gamification', () => {
       coverageStartedOnByLanguage: Record<string, string>;
       daysByLanguage: Record<string, Record<string, { reviewed: number; hard: number }>>;
     };
-    expect(Object.keys(activity.daysByLanguage.en)).toHaveLength(182);
-    expect(activity.daysByLanguage.en['2025-09-07']).toBeUndefined();
+    expect(storedDaysAfter(activity, 'en')).toHaveLength(182);
+    // A merge write keeps stored keys the patch lacks, so the day that left the window is deleted outright.
+    expect(isDeleteSentinel(activity.daysByLanguage.en['2025-09-07'])).toBe(true);
     expect(activity.daysByLanguage.en['2025-09-08']).toMatchObject({ reviewed: 1 });
     expect(activity.daysByLanguage.en['2026-03-08']).toMatchObject({ reviewed: 1, hard: 1 });
     expect(activity.coverageStartedOnByLanguage).toEqual({ en: '2025-09-07', ko: '2026-03-07' });
@@ -245,8 +252,9 @@ describe('verified gamification', () => {
     const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({
       receivedAt: new Date('2026-03-08T12:00:00.000Z'), targetLanguage: 'en', rating: 'easy', timeZone: 'UTC',
     }));
+    expect(storedDaysAfter(prepared.statsPatch.reviewActivityV1, 'en')).toEqual(['2025-09-08', '2026-03-07', '2026-03-08']);
     const days = (prepared.statsPatch.reviewActivityV1 as { daysByLanguage: Record<string, Record<string, unknown>> }).daysByLanguage.en;
-    expect(Object.keys(days)).toEqual(['2025-09-08', '2026-03-07', '2026-03-08']);
+    expect(isDeleteSentinel(days['2025-01-01'])).toBe(true);
   });
 
   it('retains a newer activity day when a transaction retry records an older receipt day', async () => {
@@ -265,6 +273,33 @@ describe('verified gamification', () => {
     const days = (prepared.statsPatch.reviewActivityV1 as { daysByLanguage: Record<string, Record<string, unknown>> }).daysByLanguage.en;
     expect(days).toHaveProperty('2026-03-07');
     expect(days).toHaveProperty('2026-03-08');
+  });
+
+  it('keeps a learner who reviews on more than 182 days reviewing with the recent days intact', async () => {
+    const full = Object.fromEntries(Array.from({ length: 182 }, (_, index) => [
+      new Date(Date.UTC(2025, 8, 7 + index)).toISOString().slice(0, 10), { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 },
+    ]));
+    const stored = {
+      verifiedXp: 4, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC',
+      reviewActivityV1: { coverageStartedOnByLanguage: { en: '2025-09-07' }, daysByLanguage: { en: full } },
+    };
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const first = harness({ 'users/owner/profile/stats': stored });
+    const prepared = await prepareVerifiedGamification(
+      first.database, first.transaction, 'owner', action({ receivedAt: new Date('2026-03-08T12:00:00.000Z'), timeZone: 'UTC' }),
+    );
+    // What Firestore holds after the write: the deleted day is gone, every other day is untouched.
+    const patch = prepared.statsPatch.reviewActivityV1 as { daysByLanguage: { en: Record<string, unknown> } };
+    const persisted = Object.fromEntries(Object.entries({ ...full, ...patch.daysByLanguage.en }).filter(([, value]) => !isDeleteSentinel(value)));
+    expect(Object.keys(persisted)).toHaveLength(182);
+    // The next review reads that stored value, and it still parses: nothing starts over.
+    const second = harness({ 'users/owner/profile/stats': {
+      ...stored, lastVerifiedStudyDay: '2026-03-08',
+      reviewActivityV1: { coverageStartedOnByLanguage: { en: '2025-09-07' }, daysByLanguage: { en: persisted } },
+    } });
+    await prepareVerifiedGamification(second.database, second.transaction, 'owner', action({ receivedAt: new Date('2026-03-09T12:00:00.000Z'), timeZone: 'UTC' }));
+    expect(warning).not.toHaveBeenCalled();
+    warning.mockRestore();
   });
 
   it('commits a review in a language beyond the activity limit and leaves the stored activity unchanged', async () => {
