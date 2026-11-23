@@ -73,6 +73,7 @@ export function CardFront({
     isHovered={isHovered}
     playAudio={playAudio}
     isPlayingAudio={isPlayingAudio}
+    isBlindMode={isBlindMode}
     focusAfterFlipRef={focusAfterFlipRef}
     showCardSide={showCardSide}
   />;
@@ -372,9 +373,10 @@ function ZenCardFront({
   isHovered,
   playAudio,
   isPlayingAudio,
+  isBlindMode,
   focusAfterFlipRef,
   showCardSide,
-}: Pick<CardFrontProps, 'tier' | 'data' | 'faceRef' | 'spotlightRef' | 'spotlightBackground' | 'isHovered' | 'playAudio' | 'isPlayingAudio' | 'focusAfterFlipRef' | 'showCardSide'>) {
+}: Pick<CardFrontProps, 'tier' | 'data' | 'faceRef' | 'spotlightRef' | 'spotlightBackground' | 'isHovered' | 'playAudio' | 'isPlayingAudio' | 'isBlindMode' | 'focusAfterFlipRef' | 'showCardSide'>) {
   const { _ } = useLingui();
   return (
 <div
@@ -424,9 +426,12 @@ function ZenCardFront({
 
                 {/* Centered Example Sentence from Mockup */}
                 {data.explanation && (
-                  <p lang={data.language || 'en'} className="mt-6 max-w-lg text-balance text-base sm:text-lg leading-relaxed text-slate-100/85 font-normal text-center px-4">
-                    {data.explanation}
-                  </p>
+                  <div className="relative mt-6 max-w-lg">
+                    <p lang={data.language || 'en'} aria-hidden={isBlindMode} className={`text-balance text-base sm:text-lg leading-relaxed text-slate-100/85 font-normal text-center px-4 transition-[filter,opacity] ${isBlindMode ? 'select-none blur-md opacity-35' : ''}`}>
+                      {data.explanation}
+                    </p>
+                    {isBlindMode && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><span className="text-xs font-bold text-slate-100/80"><Trans {...msg({ context: 'flashcard.definition.hidden', message: 'Definition hidden' })} /></span></div>}
+                  </div>
                 )}
               </div>
 

@@ -331,8 +331,8 @@ describe('practice menu copy', () => {
   });
 
   it('explains why a guest or offline learner cannot open AI practice', () => {
-    expect(listenPracticeUnavailableMessage(null, false)).toBe('Sign in to practise this phrase.');
-    expect(listenPracticeUnavailableMessage('owner-a', true)).toBe('Reconnect to practise this phrase.');
+    expect(listenPracticeUnavailableMessage(null, false)?.message).toBe('Sign in to practise this phrase.');
+    expect(listenPracticeUnavailableMessage('owner-a', true)?.message).toBe('Reconnect to practise this phrase.');
     expect(listenPracticeUnavailableMessage('owner-a', false)).toBeNull();
   });
 });

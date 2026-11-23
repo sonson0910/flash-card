@@ -155,7 +155,7 @@ msgctxt "onboarding.trial.state.known"
 msgid "Got it"
 msgstr "Đã nhớ"
 
-#: src/app/AppViewStage.tsx:151
+#: src/app/AppViewStage.tsx:152
 msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
@@ -451,7 +451,7 @@ msgctxt "onboarding.primer.block.title"
 msgid "Build one syllable block"
 msgstr "Ghép một khối âm tiết"
 
-#: src/app/AppViewStage.tsx:159
+#: src/app/AppViewStage.tsx:160
 msgctxt "shell.loading.settings"
 msgid "Preparing appearance settings…"
 msgstr "Đang mở cài đặt giao diện…"
@@ -835,7 +835,7 @@ msgctxt "onboarding.trial.again"
 msgid "Forgot"
 msgstr "Quên rồi"
 
-#: src/app/AppViewStage.tsx:160
+#: src/app/AppViewStage.tsx:161
 msgctxt "shell.loading.web-words"
 msgid "Preparing your web words…"
 msgstr "Đang chuẩn bị các từ trên web của bạn…"
@@ -922,7 +922,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Luyện hội thoại"
 
-#: src/app/AppRuntime.tsx:649
+#: src/app/AppRuntime.tsx:653
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -1265,7 +1265,7 @@ msgctxt "onboarding.phone.body"
 msgid "{count, plural, one {# card is ready for review.} other {# cards are ready for review.}}"
 msgstr "{count, plural, other {# thẻ đến hạn ôn tập.}}"
 
-#: src/app/AppViewStage.tsx:161
+#: src/app/AppViewStage.tsx:162
 msgctxt "shell.loading.files"
 msgid "Preparing your files…"
 msgstr "Đang chuẩn bị các tệp của bạn…"
@@ -1618,7 +1618,7 @@ msgctxt "course.create.submit"
 msgid "Create course"
 msgstr "Tạo khóa học"
 
-#: src/app/AppViewStage.tsx:143
+#: src/app/AppViewStage.tsx:144
 msgctxt "shell.loading.paths"
 msgid "Preparing learning paths…"
 msgstr "Đang chuẩn bị các lộ trình học…"
@@ -1899,7 +1899,7 @@ msgid "shell.language.open"
 msgstr "Chọn ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:638
+#: src/app/AppRuntime.tsx:642
 msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
@@ -1954,6 +1954,16 @@ msgstr "Quản lý thư viện"
 #: src/components/shell/LibraryManagementMenu.tsx:312
 msgid "shell.library-menu.zen-toggle-description"
 msgstr "Chuyển giữa chế độ Học tiêu chuẩn và chế độ Kính Zen tối giản"
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:44
+msgid "shell.listen-practice.reconnect"
+msgstr "Kết nối lại để luyện cụm từ này."
+
+#. js-lingui-explicit-id
+#: src/app/AppViewStage.tsx:43
+msgid "shell.listen-practice.sign-in"
+msgstr "Đăng nhập để luyện cụm từ này."
 
 #. js-lingui-explicit-id
 #: src/components/shell/DesktopNavigation.tsx:76
@@ -2069,7 +2079,7 @@ msgstr "Không thể tải không gian học tập."
 
 #. js-lingui-explicit-id
 #: src/app/app-runtime-error.tsx:12
-#: src/app/AppRuntimeBoundary.tsx:33
+#: src/app/AppRuntimeBoundary.tsx:35
 msgid "shell.runtime-error.retry"
 msgstr "Thử tải lại không gian học tập"
 
@@ -2209,7 +2219,7 @@ msgid "shell.sync.paused-detail"
 msgstr "Không thể cập nhật trực tiếp từ đám mây. Hãy thử lại khi kết nối ổn định hơn."
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:484
+#: src/app/AppRuntime.tsx:488
 msgid "shell.sync.retry-failed"
 msgstr "Không thể hoàn tất đồng bộ. Các thay đổi vẫn được giữ trên thiết bị này. Hãy thử lại."
 
@@ -2296,7 +2306,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr "Chọn một giờ và SonFlash sẽ nhắc bạn ôn tập."
 
-#: src/app/AppRuntime.tsx:650
+#: src/app/AppRuntime.tsx:654
 #: src/components/shell/CourseSwitcherControl.tsx:127
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2326,6 +2336,11 @@ msgstr "Mới bắt đầu với ngôn ngữ này, hoặc mới biết vài từ
 msgctxt "onboarding.phone.caption"
 msgid "How your reminder looks when it arrives."
 msgstr "Lời nhắc của bạn sẽ hiện như thế này."
+
+#: src/components/WorkspaceLoadingPanel.tsx:21
+msgctxt "shell.loading.workspace"
+msgid "Loading workspace…"
+msgstr "Đang tải không gian học tập…"
 
 #: src/components/AppOverlays.tsx:706
 msgctxt "shell.share.earlier-revoke"
@@ -2432,7 +2447,7 @@ msgctxt "course.goal.edit.cancel"
 msgid "Cancel"
 msgstr "Hủy"
 
-#: src/app/AppViewStage.tsx:158
+#: src/app/AppViewStage.tsx:159
 msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr "Đang chuẩn bị tiến độ học…"
@@ -2478,8 +2493,8 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Chọn một ngôn ngữ trước đã. Bạn có thể thêm ngôn ngữ khác trong trình chuyển khóa học."
 
-#: src/app/AppRuntime.tsx:652
-#: src/app/AppViewStage.tsx:162
+#: src/app/AppRuntime.tsx:656
+#: src/app/AppViewStage.tsx:163
 msgctxt "course.loading"
 msgid "Preparing your courses…"
 msgstr "Đang chuẩn bị các khóa học của bạn…"
@@ -2595,7 +2610,7 @@ msgid "Manage shared link"
 msgstr "Quản lý liên kết chia sẻ"
 
 #: src/app/AppDeferredViews.tsx:23
-#: src/app/AppRuntime.tsx:93
+#: src/app/AppRuntime.tsx:94
 msgctxt "shell.opening-dialog"
 msgid "Opening dialog"
 msgstr "Đang mở hộp thoại"

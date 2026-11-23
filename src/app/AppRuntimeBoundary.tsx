@@ -1,6 +1,7 @@
 import { msg } from '@lingui/core/macro';
 import React, { lazy, Suspense, type ErrorInfo, type ReactNode } from 'react';
 import { Trans } from '@lingui/react';
+import { logRenderError } from '../components/AppErrorBoundary';
 
 const AppRuntimeError = lazy(() => import('./app-runtime-error'));
 
@@ -21,7 +22,8 @@ export class AppRuntimeBoundary extends React.Component<AppRuntimeBoundaryProps,
     return { error };
   }
 
-  componentDidCatch(error: Error, _info: ErrorInfo) {
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    logRenderError(error, info);
     this.props.onError(error);
   }
 

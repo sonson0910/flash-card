@@ -15,6 +15,7 @@ import { WorkspaceLoadingPanel } from '../components/WorkspaceLoadingPanel';
 import { useAppLibraryRuntime } from './useAppLibraryRuntime';
 import { useAppLearningCoordination } from './useAppLearningCoordination';
 import { consumeLandingSignInRequest } from './landingSignInRequest';
+import { publishLandingSignInState } from '../features/landing/landingSignInState';
 import { accountDeletionNoticePath, withoutAccountDeletionNotices } from '../features/account/account-deletion-notice';
 import { AppShellMotion } from '../components/motion/AppShellMotion';
 import { useBrowserExtensionImport } from '../features/browserExtension/useBrowserExtensionImport';
@@ -463,6 +464,9 @@ export default function AppRuntime({
     } : null);
   }, [onLandingUserChange, user?.displayName, user?.email, user?.photoURL]);
   useEffect(() => {
+    publishLandingSignInState({ busy: identity.isSigningIn, error: user ? null : identity.error });
+  }, [identity.error, identity.isSigningIn, user]);
+  useEffect(() => {
     void consumeLandingSignInRequest(
       signInRequest,
       handledSignInRequestRef,
@@ -499,7 +503,7 @@ export default function AppRuntime({
     const activeOwnerId = user?.uid ?? null;
     const unavailableMessage = listenPracticeUnavailableMessage(activeOwnerId, !isBrowserOnline);
     if (unavailableMessage) {
-      setNotice(unavailableMessage);
+      setNotice(_(unavailableMessage));
       return;
     }
     if (!getSafeListenPracticeHandoff(handoff, listenPracticeScopeRef.current, activeOwnerId)
@@ -512,7 +516,7 @@ export default function AppRuntime({
       ownerId: activeOwnerId,
       cards: capListenPracticeCards(handoff.cards),
     });
-  }, [isBrowserOnline, overlayPracticeOpenerRef, rememberOpener, setIsPracticeMenuOpen, setNotice, user?.uid]);
+  }, [_, isBrowserOnline, overlayPracticeOpenerRef, rememberOpener, setIsPracticeMenuOpen, setNotice, user?.uid]);
   const dismissListenPractice = useCallback(() => {
     setListenPracticeHandoff(null);
   }, []);

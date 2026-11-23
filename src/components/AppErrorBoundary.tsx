@@ -11,8 +11,17 @@ const errorCopy = {
 };
 
 const recoveryCopy = (id: string, fallback: string) => {
-  const translated = i18n._(id);
+  // Lingui throws when no locale was ever activated (a catalog failed on the first visit).
+  const translated = i18n.locale ? i18n._(id) : id;
   return translated === id ? fallback : translated;
+};
+
+/** Logs the error name and a bounded component stack, never the message, which can quote learner content. */
+export const logRenderError = (error: Error, info: ErrorInfo) => {
+  console.error('Render error', {
+    name: error.name,
+    componentStack: info.componentStack?.slice(0, 1000),
+  });
 };
 
 interface AppErrorBoundaryProps {
@@ -31,10 +40,7 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('Unhandled application render error', {
-      name: error.name,
-      componentStack: info.componentStack?.slice(0, 1000),
-    });
+    logRenderError(error, info);
   }
 
   render() {

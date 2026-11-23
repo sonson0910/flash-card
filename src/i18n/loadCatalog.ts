@@ -15,7 +15,8 @@ export const getActiveUiLocale = () => activeUiLocale;
 export const setActiveUiLocale = (locale: ActiveUiLocale) => { activeUiLocale = locale; };
 export const linguiLocale = (locale: ActiveUiLocale) => locale === 'pseudo' ? 'en-XA' : locale;
 
-export const loadCatalog = (locale: ActiveUiLocale, area: string): Promise<void> => {
+// The first load passes activate=false so the caller can activate once every startup area has arrived.
+export const loadCatalog = (locale: ActiveUiLocale, area: string, activate = true): Promise<void> => {
   const code = linguiLocale(locale);
   const key = `${code}/${area}`;
   const existing = loaded.get(key);
@@ -29,7 +30,7 @@ export const loadCatalog = (locale: ActiveUiLocale, area: string): Promise<void>
       ? (await import('./pseudo')).expandPseudoCatalog(messages)
       : messages;
     i18n.load(code, catalog);
-    if (activeUiLocale === locale) i18n.activate(code);
+    if (activate && activeUiLocale === locale) i18n.activate(code);
   });
   loaded.set(key, promise);
   promise.catch(() => loaded.delete(key));

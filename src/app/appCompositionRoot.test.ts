@@ -49,6 +49,7 @@ describe('App composition root contract', () => {
     const signInDispatch = signInRequestSource.indexOf('await signIn()');
     expect(signInAcknowledgement).toBeGreaterThanOrEqual(0);
     expect(signInDispatch).toBeGreaterThan(signInAcknowledgement);
+    expect(runtimeSource).toContain('publishLandingSignInState({ busy: identity.isSigningIn, error: user ? null : identity.error })');
     expect(runtimeSource).toContain('onLandingUserChange(user ?');
     expect(runtimeSource).toContain('displayName: user.displayName');
     expect(runtimeSource).toContain('email: user.email');
