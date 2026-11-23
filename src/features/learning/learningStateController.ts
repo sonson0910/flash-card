@@ -78,6 +78,8 @@ export interface LearningStateMutationResult {
   publication: LearningStatePublication;
   reviewFinality?: 'committed' | 'conflict';
   reviewConflictTerminal?: boolean;
+  /** Why the server refused the review, when it gave a final answer rather than failing. */
+  reviewConflictReason?: string;
   xpAwarded?: number;
   /** Study time the server credited for this review; absent when it reported none. */
   studyTimeMs?: number;
@@ -127,6 +129,15 @@ export type LearningStateOutcome =
 
 type TerminalOutcome = Exclude<LearningStateOutcome, { status: 'published' }>;
 type MutationPlan = LearningStateMutation | TerminalOutcome;
+
+/** What to tell the learner about a review the server refused for good; undefined when no specific copy applies. */
+export const reviewConflictMessage = (reason: string | undefined): string | undefined => {
+  if (reason === 'stale-review') return 'This card was reviewed on another device.';
+  if (reason === 'future-review-clock-skew') {
+    return 'The clock on this device is ahead of the cloud. Check the date and time, then try again.';
+  }
+  return undefined;
+};
 
 const isTerminalReviewError = (error: unknown): boolean =>
   Boolean(error && typeof error === 'object' && (error as { reviewConflictTerminal?: unknown }).reviewConflictTerminal === true);

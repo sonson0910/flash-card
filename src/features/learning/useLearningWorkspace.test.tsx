@@ -276,6 +276,31 @@ describe('useLearningWorkspace', () => {
     expect(setup.restorePracticeCard).toHaveBeenCalledOnce();
   });
 
+  it('stamps a restore from the server delete time when the device clock runs fast', async () => {
+    const setup = options();
+    setup.value.now = () => new Date('2026-08-12T00:10:00.000Z');
+    const stub = createPersistenceStub();
+    let actions: LearningWorkspaceActions | null = null;
+    function Harness() {
+      actions = useLearningWorkspace(setup.value, { usePersistence: stub.usePersistence }).actions;
+      return null;
+    }
+    renderToStaticMarkup(<Harness />);
+    const clock = vi.spyOn(performance, 'now');
+    try {
+      clock.mockReturnValue(1_000);
+      const deleted = await actions!.deleteCard(sourceCard.id);
+      const token = ('result' in deleted ? deleted.result.undoToken : undefined)!;
+      clock.mockReturnValue(4_000);
+      await actions!.restoreCard(token);
+    } finally {
+      clock.mockRestore();
+    }
+
+    const restore = stub.persistCalls.find(mutation => mutation.operation === 'restore');
+    expect(restore).toMatchObject({ operationCreatedAt: '2026-08-12T00:00:03.001Z' });
+  });
+
   it('does not restore when the owner or verified library epoch changes', async () => {
     const setup = options();
     const stub = createPersistenceStub();

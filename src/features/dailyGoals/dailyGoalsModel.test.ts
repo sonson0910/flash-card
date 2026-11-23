@@ -26,6 +26,14 @@ const freezeRecord: StreakStateV1 = {
 const goal = <Id extends string>(model: ReturnType<typeof buildDailyGoals>, id: Id) => model.goals.find(item => item.id === id);
 
 describe('daily goals model', () => {
+  it('counts nothing until the verified stats have loaded', () => {
+    const model = buildDailyGoals(input({ hydrated: false, streak: 0 }));
+    expect(goal(model, 'study-cards')).toMatchObject({ progress: { state: 'unknown', target: 10 } });
+    expect(goal(model, 'win-match')).toMatchObject({ progress: { state: 'unknown', target: 1 } });
+    expect(goal(model, 'keep-streak')).toMatchObject({ progress: { state: 'unknown', target: 1 } });
+    expect(goal(buildDailyGoals(input({ hydrated: true })), 'study-cards')).toMatchObject({ progress: { state: 'counted', done: 0 } });
+  });
+
   it('shows only the XP amounts the server grants', () => {
     expect(serverXpRules.REVIEW_CARD_XP).toBe(2);
     expect(serverXpRules.MATCH_WIN_XP).toBe(20);

@@ -85,6 +85,7 @@ export function DailyGoalsPanel({ gamification, planHasMatch, dailyPace, now: fi
     streak: gamification.streak,
     lastStudyDay: gamification.lastStudyDay,
     dailyGoals: gamification.dailyGoals,
+    hydrated: gamification.hydrated,
     streakState: gamification.streakState,
     rewards: gamification.rewards,
     hydrationFailed: gamification.hydrationFailed,

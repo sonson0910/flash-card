@@ -90,6 +90,8 @@ export interface DailyGoalCounts {
 }
 
 export interface VerifiedGamificationState extends AuthoritativeGamification {
+  /** False until the stats, xp history and rewards snapshots have all arrived (absent in fixtures that are already loaded). */
+  readonly hydrated?: boolean;
   readonly studyDay?: string;
   readonly xpHistory: Readonly<Record<string, number>>;
   readonly rewards: RewardInventory;
@@ -123,7 +125,7 @@ const zeroInventory: RewardInventory = Object.freeze({
 });
 
 const zeroState = (): VerifiedGamificationState => ({
-  xp: 0, level: 1, streak: 0, xpHistory: {}, rewards: zeroInventory,
+  hydrated: false, xp: 0, level: 1, streak: 0, xpHistory: {}, rewards: zeroInventory,
   legacyHistory: { label: 'legacy', xp: 0, streak: 0, history: {} },
   reviewActivityByLanguage: {},
 });
@@ -390,6 +392,7 @@ export function useVerifiedGamificationState({ ownerId, database }: UseVerifiedG
   const deferredOutcomesRef = useRef<VerifiedGamificationOutcome[]>([]);
   const hydrationPendingRef = useRef(false);
   const pendingOutcomeXpRef = useRef<number | null>(null);
+  const [subscriptionAttempt, setSubscriptionAttempt] = useState(0);
   ownerRef.current = ownerId;
   const scopedState = stateOwnerRef.current === ownerId ? state : zeroState();
 
@@ -397,6 +400,7 @@ export function useVerifiedGamificationState({ ownerId, database }: UseVerifiedG
     let cancelled = false;
     let failed = false;
     let hydrated = false;
+    let stopAuthWatch: (() => void) | null = null;
     const received = { stats: false, xpHistory: false, rewards: false };
     let statsValue: unknown;
     let xpHistoryValue: unknown;
@@ -431,11 +435,11 @@ export function useVerifiedGamificationState({ ownerId, database }: UseVerifiedG
         hydrationPendingRef.current = false;
         const replayed = replayAuthoritativeGamificationOutcomes(next, deferredOutcomes);
         pendingOutcomeXpRef.current = replayed.xp > next.xp ? replayed.xp : null;
-        setState(replayed);
+        setState({ ...replayed, hydrated: true });
       } else {
         const pendingXp = pendingOutcomeXpRef.current;
         if (pendingXp !== null && next.xp >= pendingXp) pendingOutcomeXpRef.current = null;
-        setState(current => pendingXp !== null && next.xp < pendingXp ? current : next);
+        setState(current => pendingXp !== null && next.xp < pendingXp ? current : { ...next, hydrated: true });
       }
     };
     const fail = (error: Error) => {
@@ -446,6 +450,16 @@ export function useVerifiedGamificationState({ ownerId, database }: UseVerifiedG
       console.error('Failed to hydrate verified gamification.', error);
       stopAll();
       if (!hydrated) setState(current => ({ ...current, hydrationFailed: true }));
+      // The owner-only listeners are denied while the session is lost. Listen again once the same owner's
+      // credentials come back, so the goals do not stay frozen until a reload.
+      let first = true;
+      stopAuthWatch = auth?.onIdTokenChanged(user => {
+        if (first) { first = false; return; }
+        if (cancelled || user?.uid !== ownerId) return;
+        stopAuthWatch?.();
+        stopAuthWatch = null;
+        setSubscriptionAttempt(attempt => attempt + 1);
+      }) ?? null;
     };
     addSubscription(onSnapshot(doc(database, ...profile, 'stats'), snapshot => {
       statsValue = snapshot.exists() ? snapshot.data() : undefined;
@@ -466,11 +480,12 @@ export function useVerifiedGamificationState({ ownerId, database }: UseVerifiedG
     return () => {
       cancelled = true;
       stopAll();
+      stopAuthWatch?.();
       deferredOutcomesRef.current = [];
       hydrationPendingRef.current = false;
       pendingOutcomeXpRef.current = null;
     };
-  }, [database, ownerId]);
+  }, [database, ownerId, subscriptionAttempt]);
 
   const acceptAuthoritativeOutcome = useCallback((outcome: VerifiedGamificationOutcome) => {
     if (!ownerId || ownerRef.current !== ownerId || outcome.level !== levelForXp(counter(outcome.xp))) return;

@@ -92,7 +92,22 @@ export function PublishedListenMvp(props: PublishedListenMvpProps) {
   useEffect(() => {
     setOfflineMediaPackIdentity(trustedIdentity);
     setStatus(trustedIdentity ? 'idle' : 'error');
-  }, [trustedIdentity]);
+    const lesson = props.lesson;
+    if (!trustedIdentity || !lesson) return undefined;
+    // A pack installed in an earlier visit is already usable offline: do not offer to download it again.
+    let cancelled = false;
+    void (async () => {
+      try {
+        const cached = await manager.resolveCachedClip(lesson.clip, trustedIdentity);
+        if (cancelled || !cached) return;
+        void cached.body?.cancel().catch(() => undefined);
+        setStatus(current => current === 'idle' ? 'ready' : current);
+      } catch {
+        // An unreadable cache leaves the download offer in place.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [manager, props.lesson, trustedIdentity]);
 
   const downloadAudio = useCallback(async () => {
     if (

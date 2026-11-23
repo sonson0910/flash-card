@@ -12,7 +12,7 @@ import type { CardData } from '../../types/card';
 import { createPracticeSnapshot } from './practiceModel';
 import { createPracticeSessionLifecycle, type StudyReviewSummary } from './practiceSessionLifecycle';
 import { usePracticeGames } from './usePracticeGames';
-import type { LearningStateOutcome } from '../learning/learningStateController';
+import { reviewConflictMessage, type LearningStateOutcome } from '../learning/learningStateController';
 
 export type PracticeMode = 'study' | 'quiz' | 'spelling' | 'language-drill' | 'story' | 'match' | 'shadowing';
 export type PracticeViewMode = 'library' | PracticeMode;
@@ -669,7 +669,8 @@ export function usePracticeSession({
           const retainedIntent = studyReviewRecordsRef.current.get(intentKey);
           if (retainedIntent?.operationId === intent.operationId) studyReviewRecordsRef.current.delete(intentKey);
         }
-        throw new Error('This card was reviewed on another device.');
+        const conflictMessage = reviewConflictMessage(outcome.result.reviewConflictReason);
+        throw Object.assign(new Error(conflictMessage ?? 'This card was reviewed on another device.'), { conflictMessage });
       }
       let committedReceipt: StudyReviewReceipt | undefined;
       if (outcome?.status === 'published') {
@@ -727,7 +728,10 @@ export function usePracticeSession({
         || !lifecycle.isReviewClaimCurrent(activeCard.id, activationId)
         || !studyCardsRef.current.some(card => card.id === activeCard.id)) return 'ignored' as const;
       if (!lifecycle.settleReview(activeCard.id, 'retry', activationId)) return 'ignored' as const;
-      const message = 'Could not save this review. Choose a rating to try again.';
+      const conflictMessage = (error as { conflictMessage?: unknown } | null)?.conflictMessage;
+      const message = typeof conflictMessage === 'string'
+        ? `${conflictMessage} Choose a rating to try again.`
+        : 'Could not save this review. Choose a rating to try again.';
       setReviewFailure({ cardId: activeCard.id, message });
       reportError(message);
       console.warn('Could not save the review result.', error);
