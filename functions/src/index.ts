@@ -1231,6 +1231,7 @@ export const findVocabularyImage = onCall({
   const { word, query } = input;
   const deadline = Date.now() + IMAGE_SEARCH_DEADLINE_MS;
   let hadTransientProviderFailure = false;
+  let paidProviderBudgetRefused = false;
   const consumeImageProviderBudget = () => consumeCallableBudget(
     () => consumeRateLimitFailClosed(() => consumeOwnerAndServiceBudget(
       database,
@@ -1263,9 +1264,20 @@ export const findVocabularyImage = onCall({
         clearTimeout(timeoutId);
       }
     };
-    const response = paid
-      ? await withServiceBudget(consumeImageProviderBudget, request)
-      : await request();
+    // A paid provider whose budget is used up is skipped like an unavailable
+    // one, so the free encyclopedia below can still answer.
+    if (paid && paidProviderBudgetRefused) return null;
+    let response: Response | null;
+    try {
+      response = paid
+        ? await withServiceBudget(consumeImageProviderBudget, request)
+        : await request();
+    } catch (error) {
+      if (!paid || !(error instanceof HttpsError) || !['resource-exhausted', 'unavailable'].includes(error.code)) throw error;
+      paidProviderBudgetRefused = true;
+      hadTransientProviderFailure = true;
+      return null;
+    }
     if (response && isImageProviderUnavailable(response)) hadTransientProviderFailure = true;
     return response;
   };
