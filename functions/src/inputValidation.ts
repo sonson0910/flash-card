@@ -161,7 +161,7 @@ const asRecord = (value: unknown): Record<string, unknown> => (
 );
 
 const boundedText = (value: unknown, maximum: number) => typeof value === 'string'
-  ? value.trim().slice(0, maximum)
+  ? value.trim().slice(0, maximum).trimEnd()
   : '';
 
 const boundedConversationId = (value: unknown, label: string): string => {

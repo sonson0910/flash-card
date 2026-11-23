@@ -569,8 +569,8 @@ const validCards = (value: unknown): value is readonly unknown[] => (
   && value.every(card => isRecord(card))
 );
 
-const validCategory = (value: unknown): value is string => (
-  validBoundedString(value, 128, 1) && value === value.trim()
+const validCategory = (value: unknown, stored = false): value is string => (
+  validBoundedString(value, 128, 1) && (value === value.trim() || (stored && validStoredText(value, 128, true)))
 );
 
 const validLanguageCode = (value: unknown): value is string => (
@@ -590,6 +590,26 @@ const validExactText = (value: unknown, maximum: number, required = false): valu
   && value.length <= maximum
   && (!required || value.length > 0)
 );
+
+/**
+ * Text of a current share as the share callable stored it.  An earlier callable
+ * trimmed before it cut a long value, so a value cut at its limit may end in a
+ * space; no other value is allowed to.
+ */
+const validStoredText = (value: unknown, maximum: number, required = false): value is string => (
+  validExactText(value, maximum, required)
+  || (typeof value === 'string'
+    && value.length === maximum
+    && value === value.trimStart()
+    && value.trimEnd().length > 0)
+);
+
+const trimStoredText = (value: unknown): unknown => {
+  if (typeof value === 'string') return value.trimEnd();
+  if (Array.isArray(value)) return value.map(trimStoredText);
+  if (isRecord(value)) return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, trimStoredText(item)]));
+  return value;
+};
 
 const validTrustedUrl = (
   value: unknown,
@@ -629,14 +649,14 @@ const CURRENT_CARD_KEYS = [
 const validTextList = (value: unknown, maximum: number): value is string[] => (
   Array.isArray(value)
   && value.length <= 4
-  && value.every(item => validExactText(item, maximum, true))
+  && value.every(item => validStoredText(item, maximum, true))
 );
 
 const validWordFamily = (value: unknown): value is Record<string, string> => {
   if (!isRecord(value)) return false;
   const allowed = new Set(['noun', 'verb', 'adj', 'adv']);
   return Object.keys(value).every(key => allowed.has(key)
-    && validExactText(value[key], 100, true));
+    && validStoredText(value[key], 100, true));
 };
 
 const validLegacyCard = (value: unknown): value is DataRecord => {
@@ -661,37 +681,37 @@ const validCurrentCard = (value: unknown): value is DataRecord => {
   if (!CURRENT_CARD_KEYS.every(key => hasOwn(value, key))) return false;
   const hasCanonicalIdentity = hasOwn(value, 'lexemeId')
     || hasOwn(value, 'senseKey') || hasOwn(value, 'normalizedLemma');
-  return validExactText(value.word, 256, true)
-    && validExactText(value.translation, 256, true)
-    && validExactText(value.explanation, 2_048)
-    && validExactText(value.explanationTranslation, 2_048)
-    && validExactText(value.phonetic, 256)
-    && validExactText(value.category, 128)
-    && validExactText(value.partOfSpeech, 64)
-    && validExactText(value.cefrLevel, 8)
-    && validExactText(value.exampleSentence, 2_048)
-    && validExactText(value.exampleTranslation, 2_048)
+  return validStoredText(value.word, 256, true)
+    && validStoredText(value.translation, 256, true)
+    && validStoredText(value.explanation, 2_048)
+    && validStoredText(value.explanationTranslation, 2_048)
+    && validStoredText(value.phonetic, 256)
+    && validStoredText(value.category, 128)
+    && validStoredText(value.partOfSpeech, 64)
+    && validStoredText(value.cefrLevel, 8)
+    && validStoredText(value.exampleSentence, 2_048)
+    && validStoredText(value.exampleTranslation, 2_048)
     && validTextList(value.collocations, 100)
     && validTextList(value.synonyms, 100)
     && validTextList(value.antonyms, 100)
-    && validExactText(value.register, 64)
-    && validExactText(value.commonMistake, 2_048)
-    && validExactText(value.imageSearchQuery, 120)
-    && validExactText(value.emoji, 64)
+    && validStoredText(value.register, 64)
+    && validStoredText(value.commonMistake, 2_048)
+    && validStoredText(value.imageSearchQuery, 120)
+    && validStoredText(value.emoji, 64)
     && validTrustedUrl(value.audioUrl, SHARED_AUDIO_HOSTS)
     && validTrustedUrl(value.imageUrl, SHARED_IMAGE_HOSTS)
     && (!hasOwn(value, 'origin') || value.origin === 'ai' || value.origin === 'manual')
-    && (!hasOwn(value, 'lexemeId') || validExactText(value.lexemeId, 128, true))
+    && (!hasOwn(value, 'lexemeId') || validStoredText(value.lexemeId, 128, true))
     && (!hasOwn(value, 'language') || validLanguageCode(value.language))
-    && (!hasOwn(value, 'senseKey') || validExactText(value.senseKey, 128, true))
-    && (!hasOwn(value, 'normalizedLemma') || validExactText(value.normalizedLemma, 256, true))
-    && (!hasOwn(value, 'mnemonic') || validExactText(value.mnemonic, 2_048, true))
+    && (!hasOwn(value, 'senseKey') || validStoredText(value.senseKey, 128, true))
+    && (!hasOwn(value, 'normalizedLemma') || validStoredText(value.normalizedLemma, 256, true))
+    && (!hasOwn(value, 'mnemonic') || validStoredText(value.mnemonic, 2_048, true))
     && (!hasOwn(value, 'wordFamily') || validWordFamily(value.wordFamily))
     && (!hasCanonicalIdentity || (
-      validExactText(value.lexemeId, 128, true)
-      && validExactText(value.language, 64, true)
-      && validExactText(value.senseKey, 128, true)
-      && validExactText(value.normalizedLemma, 256, true)
+      validStoredText(value.lexemeId, 128, true)
+      && validStoredText(value.language, 64, true)
+      && validStoredText(value.senseKey, 128, true)
+      && validStoredText(value.normalizedLemma, 256, true)
       && validSharedLexemeIdentity({
         lexemeId: value.lexemeId as string,
         language: value.language as string,
@@ -909,10 +929,11 @@ const privateShape = (value: unknown): { shape: PrivateShape | null; reasonCode:
 const exactPayload = (
   value: DataRecord,
 ): { bytes: number; digest: string } | { reasonCode: LegacyShareReasonCode } => {
-  if (!validCategory(value.category) || !validCards(value.cards)) return { reasonCode: 'malformed-public' };
+  if (!validCards(value.cards)) return { reasonCode: 'malformed-public' };
   const cards = value.cards;
   const legacyCards = cards.every(validLegacyCard);
   const currentCards = cards.every(validCurrentCard);
+  if (!validCategory(value.category, currentCards)) return { reasonCode: 'malformed-public' };
   if (!legacyCards && !currentCards) return { reasonCode: 'malformed-public' };
   const hasTargetLanguage = value.targetLanguage !== undefined;
   const hasNativeLanguage = value.nativeLanguage !== undefined;
@@ -931,7 +952,7 @@ const exactPayload = (
   try {
     if (currentCards) {
       const parsed = parseCreateSharedDeckRequest(payload);
-      if (canonicalize(payload) !== canonicalize({
+      if (canonicalize(trimStoredText(payload)) !== canonicalize({
         category: parsed.category,
         cards: parsed.cards,
         ...(parsed.targetLanguage ? {

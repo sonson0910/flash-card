@@ -440,6 +440,21 @@ describe('shared deck validation', () => {
     })).toThrow(/untrusted image/i);
   });
 
+  it('stores shared card text without a trailing space when the length cut lands after a space', () => {
+    const word = `${'a'.repeat(255)} tail`;
+    const translation = `  ${'b'.repeat(255)} tail  `;
+    const shared = parseCreateSharedDeckRequest({
+      category: 'Shared',
+      cards: [{ word, translation, mnemonic: `${'c'.repeat(2_047)} tail` }],
+    });
+    expect(shared.cards[0].word).toBe('a'.repeat(255));
+    expect(shared.cards[0].translation).toBe('b'.repeat(255));
+    expect(shared.cards[0].mnemonic).toBe('c'.repeat(2_047));
+    for (const field of [shared.cards[0].word, shared.cards[0].translation]) {
+      expect(field).toBe(field.trim());
+    }
+  });
+
   it('accepts an optional complete normalized deck language pair', () => {
     expect(parseCreateSharedDeckRequest({
       category: 'Shared', targetLanguage: 'EN', nativeLanguage: 'VI',

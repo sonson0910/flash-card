@@ -361,6 +361,27 @@ describe('legacy shared-deck exact inventory', () => {
     }, ownerUid)).toMatchObject({ disposition: 'keep-current', reasonCode: 'current' });
   });
 
+  it('keeps a current share whose longest text field ends in a space an older callable stored', () => {
+    const longWord = `${'a'.repeat(255)} `;
+    const storedCard = { ...card, word: longWord };
+    const payloadBytes = calculateSharedDeckPayloadBytes({ category: 'Basics', cards: [storedCard] });
+    const share = {
+      ...current('current-trailing-space', { cards: [storedCard] }),
+      privateData: {
+        ownerUid,
+        createdAt: timestamp,
+        expiresAt: { seconds: 1_900_000_000, nanoseconds: 0 },
+        payloadBytes,
+        schemaVersion: 2,
+      },
+    };
+    expect(classifyLegacyShare(share, ownerUid)).toMatchObject({ disposition: 'keep-current', reasonCode: 'current' });
+    expect(classifyLegacyShare({
+      ...share,
+      publicData: { ...share.publicData, cards: [{ ...card, word: ` ${'a'.repeat(10)} ` }] },
+    }, ownerUid)).toMatchObject({ reasonCode: 'malformed-public' });
+  });
+
   it('blocks owner and timestamp conflicts and quarantines private orphans', () => {
     expect(classifyLegacyShare({ ...current(), privateData: privateV1('other-owner') }, ownerUid)).toMatchObject({
       disposition: 'block',
