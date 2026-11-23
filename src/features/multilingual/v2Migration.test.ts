@@ -396,4 +396,45 @@ describe('planV2CardMigration', () => {
       migratedAt,
     })).toThrow(/at least one meaning/i);
   });
+
+  it('keeps the card language pair on the lexeme and its definitions', () => {
+    const { lexeme } = planV2CardMigration({
+      ownerId: 'learner-1',
+      sourceDocumentId: 'ja-card',
+      card: {
+        ...completeLegacyCard,
+        id: 'ja-card',
+        word: '猫',
+        normalizedWord: '猫',
+        language: 'ja',
+        translationLanguage: 'en',
+        translation: 'cat',
+        explanation: '小さな動物。',
+        explanationTranslation: 'A small animal.',
+        exampleTranslation: 'The cat sleeps.',
+      },
+      migratedAt,
+    });
+    const english = planV2CardMigration({
+      ownerId: 'learner-1', sourceDocumentId: 'en-card', card: { ...completeLegacyCard, id: 'en-card' }, migratedAt,
+    }).lexeme;
+    expect(lexeme.language).toBe('ja');
+    expect(lexeme.id).not.toBe(english.id);
+    expect(lexeme.definitions).toEqual([
+      { language: 'en', text: 'cat' },
+      { language: 'ja', text: '小さな動物。' },
+      { language: 'en', text: 'A small animal.' },
+    ]);
+    expect(lexeme.examples[0]?.translations.every(entry => entry.language === 'en')).toBe(true);
+  });
+
+  it('quarantines a card whose language fields cannot be resolved', () => {
+    const result = planV2CardMigrationResult({
+      ownerId: 'learner-1',
+      sourceDocumentId: 'bad-language',
+      card: { ...completeLegacyCard, translationLanguage: 'zz' as never },
+      migratedAt,
+    });
+    expect(result.status).toBe('quarantined');
+  });
 });
