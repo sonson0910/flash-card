@@ -174,6 +174,29 @@ describe('PublishedListenMvp', () => {
     expect(html).not.toContain('Audio available offline');
   });
 
+  it('shows the pack as available offline when an earlier visit already installed it', async () => {
+    const container = installMinimalReactDom();
+    const root = createRoot(container as unknown as Element);
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    mocked.manager.resolveCachedClip.mockResolvedValue(new Response('audio'));
+
+    try {
+      await act(async () => {
+        root.render(createElement(PublishedListenMvp, { lesson: LISTEN_MVP_PILOT_LESSONS[0] }));
+        await flushReact();
+      });
+
+      expect(textContent(container)).toContain('Reviewed audio is available offline.');
+      expect(textContent(container)).toContain('Audio available offline');
+      expect(textContent(container)).not.toContain('Download audio');
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('shows a bounded retry state when manifest download fails', async () => {
     const container = installMinimalReactDom();
     const root = createRoot(container as unknown as Element);
