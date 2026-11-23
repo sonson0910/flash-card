@@ -131,8 +131,9 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(countdown.locator('.onb-weeks > span')).toHaveCount(12);
     await expect(countdown).toContainText('13 weeks until exam day.');
     await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
-    // The date field shows a day 86 days from today, so it changes every day; the countdown beside it does not.
-    const examScreenshot = await expectScreen(page, testInfo, `course-onboarding-exam-${theme.family}-${theme.mode}-${viewport.name}`, [onboarding.getByLabel('Exam date (optional)')]);
+    // The date field and the footer summary show a day 86 days from today, so they change every day; the
+    // countdown beside them does not.
+    const examScreenshot = await expectScreen(page, testInfo, `course-onboarding-exam-${theme.family}-${theme.mode}-${viewport.name}`, [onboarding.getByLabel('Exam date (optional)'), onboarding.locator('.onb-footer-note')]);
 
     await seedCourses(db, testUser.uid);
     await page.reload();
@@ -334,7 +335,8 @@ for (const theme of themes) for (const viewport of viewports) {
     const preview = onboarding.getByRole('figure', { name: 'Reminder preview' });
     await expect(preview).toContainText('5 cards are ready for review.');
     await expect(preview.locator('.onb-phone-countdown')).toHaveCount(0);
-    const reminderScreenshot = await expectScreen(page, testInfo, `course-onboarding-reminder-${theme.family}-${theme.mode}-${viewport.name}`);
+    // The lock-screen preview prints today's date.
+    const reminderScreenshot = await expectScreen(page, testInfo, `course-onboarding-reminder-${theme.family}-${theme.mode}-${viewport.name}`, [preview.locator('.onb-phone-date')]);
 
     for (const screen of [levelScreenshot, primerScreenshot, paceScreenshot, trialScreenshot, trialDoneScreenshot, reminderScreenshot]) {
       expect(screen.image).toMatchSnapshot(`${screen.name}.png`);
