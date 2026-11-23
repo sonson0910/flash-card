@@ -3,10 +3,14 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AccountProfileRecord } from '../../../functions/src/account-profile-contract';
 import { I18nProvider, useSetUiLocale } from '../../i18n/I18nProvider';
-import type { UiLocale } from '../../i18n/locales';
+import { UI_LOCALE_STORAGE_KEY, type UiLocale } from '../../i18n/locales';
 import { AccountProfileProvider } from './AccountProfileContext';
 
-const installMinimalReactDom = (storage: Record<string, string>) => {
+const installMinimalReactDom = (
+  storage: Record<string, string>,
+  languages: string[],
+  storageHandlers: Array<(event: { key: string; newValue: string | null }) => void>,
+) => {
   const documentElement: Record<string, unknown> = { lang: '', dir: '' };
   const documentLike: Record<string, unknown> = {
     nodeType: 9, activeElement: null, addEventListener: vi.fn(), removeEventListener: vi.fn(), defaultView: globalThis, documentElement,
@@ -22,10 +26,15 @@ const installMinimalReactDom = (storage: Record<string, string>) => {
   vi.stubGlobal('HTMLIFrameElement', class HTMLIFrameElement {});
   vi.stubGlobal('HTMLElement', class HTMLElement {});
   vi.stubGlobal('Node', class Node {});
-  vi.stubGlobal('addEventListener', vi.fn());
-  vi.stubGlobal('removeEventListener', vi.fn());
+  vi.stubGlobal('addEventListener', (type: string, handler: (event: { key: string; newValue: string | null }) => void) => {
+    if (type === 'storage') storageHandlers.push(handler);
+  });
+  vi.stubGlobal('removeEventListener', (type: string, handler: (event: { key: string; newValue: string | null }) => void) => {
+    const index = storageHandlers.indexOf(handler);
+    if (type === 'storage' && index >= 0) storageHandlers.splice(index, 1);
+  });
   vi.stubGlobal('location', { search: '', pathname: '/', hostname: 'example.test' });
-  vi.stubGlobal('navigator', { languages: ['vi-VN'] });
+  vi.stubGlobal('navigator', { languages });
   vi.stubGlobal('localStorage', {
     getItem: (key: string) => storage[key] ?? null,
     setItem: (key: string, value: string) => { storage[key] = value; },
@@ -42,9 +51,11 @@ const waitForLanguage = async (documentElement: Record<string, unknown>, lang: s
   expect(documentElement.lang).toBe(lang);
 };
 
-const mount = async (accountProfile: AccountProfileRecord | null) => {
+const mount = async (accountProfile: AccountProfileRecord | null, languages = ['vi-VN']) => {
   const saved: string[] = [];
-  const { container, documentElement } = installMinimalReactDom({});
+  const storage: Record<string, string> = {};
+  const storageHandlers: Array<(event: { key: string; newValue: string | null }) => void> = [];
+  const { container, documentElement } = installMinimalReactDom(storage, languages, storageHandlers);
   let choose: (locale: UiLocale) => Promise<void> = async () => undefined;
   const Chooser = () => {
     choose = useSetUiLocale();
@@ -64,6 +75,13 @@ const mount = async (accountProfile: AccountProfileRecord | null) => {
       await act(async () => { await choose(locale); });
       await waitForLanguage(documentElement, locale);
     },
+    // Another tab stores a language: the browser tells this tab, and the language changes here too.
+    otherTabChooses: async (locale: UiLocale) => {
+      await act(async () => {
+        for (const handler of [...storageHandlers]) handler({ key: UI_LOCALE_STORAGE_KEY, newValue: locale });
+      });
+      await waitForLanguage(documentElement, locale);
+    },
     unmount: () => act(async () => root.unmount()),
   };
 };
@@ -74,7 +92,7 @@ afterEach(() => {
 
 describe('account language after the profile is complete', () => {
   it('stores a language the learner chooses, once, and not the account language this device applied', async () => {
-    const app = await mount(profile('vi'));
+    const app = await mount(profile('vi'), ['en-US']);
     await waitForLanguage(app.documentElement, 'vi');
     expect(app.saved).toEqual([]);
 
@@ -94,6 +112,17 @@ describe('account language after the profile is complete', () => {
     await app.choose('en');
     await app.choose('vi');
     expect(app.saved).toEqual(['en', 'vi']);
+    await app.unmount();
+  });
+
+  it('does not store a language another open tab chose, and still stores a later choice here', async () => {
+    const app = await mount(profile('vi'));
+    await waitForLanguage(app.documentElement, 'vi');
+    await app.otherTabChooses('en');
+    expect(app.saved).toEqual([]);
+
+    await app.choose('vi');
+    expect(app.saved).toEqual(['vi']);
     await app.unmount();
   });
 

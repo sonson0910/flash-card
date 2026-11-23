@@ -126,6 +126,49 @@ describe('useAccountProfileGate', () => {
     expect(port.saveUiLocale).toHaveBeenCalledTimes(2);
   });
 
+  it('sends language saves one at a time, in order, and only the latest one waiting', async () => {
+    const { port, listeners } = fakePort();
+    const releases: Array<() => void> = [];
+    port.saveUiLocale.mockImplementation(() => new Promise<void>(resolve => { releases.push(resolve); }));
+    const { seen } = await mountGate('owner-a', port);
+    await act(async () => listeners.get('owner-a')!.onState({ status: 'complete', profile }));
+
+    await act(async () => {
+      seen.current!.saveUiLocale('en');
+      seen.current!.saveUiLocale('vi');
+      seen.current!.saveUiLocale('en');
+    });
+    expect(port.saveUiLocale).toHaveBeenCalledTimes(1);
+    expect(port.saveUiLocale).toHaveBeenLastCalledWith({ ownerId: 'owner-a', uiLocale: 'en' });
+
+    await act(async () => releases.shift()!());
+    expect(port.saveUiLocale).toHaveBeenCalledTimes(2);
+    expect(port.saveUiLocale).toHaveBeenLastCalledWith({ ownerId: 'owner-a', uiLocale: 'en' });
+
+    await act(async () => releases.shift()!());
+    expect(port.saveUiLocale).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      seen.current!.saveUiLocale('vi');
+    });
+    expect(port.saveUiLocale).toHaveBeenCalledTimes(3);
+  });
+
+  it('drops a waiting language save when the owner changed meanwhile', async () => {
+    const { port, listeners } = fakePort();
+    const releases: Array<() => void> = [];
+    port.saveUiLocale.mockImplementation(() => new Promise<void>(resolve => { releases.push(resolve); }));
+    const { seen, rerender } = await mountGate('owner-a', port);
+    await act(async () => listeners.get('owner-a')!.onState({ status: 'complete', profile }));
+    await act(async () => {
+      seen.current!.saveUiLocale('en');
+      seen.current!.saveUiLocale('vi');
+    });
+    await rerender('owner-b');
+    await act(async () => releases.shift()!());
+    expect(port.saveUiLocale).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the restricted state the server decided', async () => {
     const { port, listeners } = fakePort();
     port.complete.mockResolvedValueOnce({ status: 'restricted', restrictedAt: '2026-11-19T08:30:00.000Z' });

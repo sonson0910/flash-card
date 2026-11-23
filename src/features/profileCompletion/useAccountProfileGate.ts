@@ -110,10 +110,27 @@ export function useAccountProfileGate(
     return state;
   }, [port]);
 
+  // One save is in flight at a time and only the newest choice waits behind it, so the account never ends
+  // on an older language because two calls reached the server out of order.
+  const languageSaves = useRef<{ running: boolean; waiting: { ownerId: string; uiLocale: AccountUiLocale } | null }>(
+    { running: false, waiting: null },
+  );
   const saveUiLocale = useCallback<AccountProfileGate['saveUiLocale']>(uiLocale => {
     const ownerId = scopeRef.current.ownerId;
     if (!port || !ownerId) return;
-    port.saveUiLocale({ ownerId, uiLocale }).catch(() => undefined);
+    const saves = languageSaves.current;
+    saves.waiting = { ownerId, uiLocale };
+    if (saves.running) return;
+    saves.running = true;
+    void (async () => {
+      while (saves.waiting) {
+        const next = saves.waiting;
+        saves.waiting = null;
+        if (scopeRef.current.ownerId !== next.ownerId) continue;
+        try { await port.saveUiLocale(next); } catch { /* A failed save is not retried. */ }
+      }
+      saves.running = false;
+    })();
   }, [port]);
 
   const retry = useCallback(() => {
