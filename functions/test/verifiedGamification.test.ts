@@ -267,6 +267,47 @@ describe('verified gamification', () => {
     expect(days).toHaveProperty('2026-03-08');
   });
 
+  it('commits a review in a language beyond the activity limit and leaves the stored activity unchanged', async () => {
+    const languages = Array.from({ length: 16 }, (_, index) => `x${String.fromCharCode(97 + index)}`);
+    const reviewActivityV1 = {
+      coverageStartedOnByLanguage: Object.fromEntries(languages.map(language => [language, '2026-03-07'])),
+      daysByLanguage: Object.fromEntries(languages.map(language => [
+        language, { '2026-03-07': { reviewed: 1, again: 0, hard: 0, good: 1, easy: 0 } },
+      ])),
+    };
+    const test = harness({ 'users/owner/profile/stats': {
+      verifiedXp: 4, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'America/New_York', reviewActivityV1,
+    } });
+    const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({ targetLanguage: 'ko' }));
+    expect(prepared.outcome.xpAwarded).toBe(REVIEW_CARD_XP);
+    expect(prepared.statsPatch.reviewActivityV1).toEqual(reviewActivityV1);
+    expect(prepared.outcome).not.toHaveProperty('reviewActivity');
+  });
+
+  it('starts review activity over, and still commits the review, when the stored activity is unusable', async () => {
+    const test = harness({ 'users/owner/profile/stats': {
+      verifiedXp: 4, verifiedStreak: 5, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'America/New_York',
+      reviewActivityV1: {
+        coverageStartedOnByLanguage: { en: '2026-03-01' },
+        daysByLanguage: { en: { '2026-03-07': { reviewed: 5, again: 0, hard: 0, good: 1, easy: 0 } } },
+        fromNewerRelease: true,
+      },
+    } });
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const prepared = await prepareVerifiedGamification(test.database, test.transaction, 'owner', action({ rating: 'easy' }));
+    warning.mockRestore();
+    expect(prepared.outcome.xpAwarded).toBe(REVIEW_CARD_XP);
+    expect(prepared.outcome.reviewActivity).toMatchObject({
+      targetLanguage: 'en', coverageStartedOn: '2026-03-08', days: { '2026-03-08': { reviewed: 1, easy: 1 } },
+    });
+    const patch = prepared.statsPatch.reviewActivityV1 as Record<string, unknown>;
+    expect(patch.coverageStartedOnByLanguage).toEqual({ en: '2026-03-08' });
+    expect(isDeleteSentinel(patch.fromNewerRelease)).toBe(true);
+    const english = (patch.daysByLanguage as { en: Record<string, unknown> }).en;
+    expect(english['2026-03-08']).toEqual({ reviewed: 1, again: 0, hard: 0, good: 0, easy: 1 });
+    expect(isDeleteSentinel(english['2026-03-07'])).toBe(true);
+  });
+
   it('grants both threshold rewards in one rewards read, caps inventory and holds the 30-day freeze in the streak record', async () => {
     const test = harness({
       'users/owner/profile/stats': { verifiedXp: 14_399, verifiedStreak: 29, lastVerifiedStudyDay: '2026-03-07', rewardTimeZone: 'UTC' },

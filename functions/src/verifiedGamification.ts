@@ -49,7 +49,11 @@ export type VerifiedGamificationAction = {
     started: boolean;
     /** This review made the card mastered. */
     mastered: boolean;
-    /** Server-bounded times of every review in the card's history, this one included. */
+    /**
+     * Times of every review in the card's history, this one included. Only this review passed the
+     * server's time bounds: earlier entries may come from the legacy review callable or from history
+     * a card was created with, which the server never bounded.
+     */
     reviewTimesMs: number[];
   };
   /** Correct answers of a verified spelling session. */
@@ -196,15 +200,28 @@ const reviewActivity = (value: unknown): ReviewActivity | undefined => {
   return { coverageStartedOnByLanguage: coverageStartedOnByLanguage as Record<string, string>, daysByLanguage };
 };
 
-const nextReviewActivity = (stored: unknown, language: unknown, day: string, rating: string): ReviewActivity => {
-  if (!isLanguage(language) || !['again', 'hard', 'good', 'easy'].includes(rating)) {
-    throw new InputValidationError('Review activity target language is invalid.');
+// Review activity is display-only, so it never blocks a review: a stored value that cannot be read
+// starts over, and a review whose language has no usable slot leaves the stored activity as it was.
+const nextReviewActivity = (stored: unknown, language: unknown, day: string, rating: string): {
+  activity: ReviewActivity | undefined;
+  startedOver: boolean;
+} => {
+  if (!['again', 'hard', 'good', 'easy'].includes(rating)) {
+    throw new InputValidationError('Review activity rating is invalid.');
   }
-  const activity = reviewActivity(stored);
+  let activity: ReviewActivity | undefined;
+  let startedOver = false;
+  try {
+    activity = reviewActivity(stored);
+  } catch (error) {
+    if (!(error instanceof InputValidationError)) throw error;
+    console.warn('Stored review activity was unusable and starts over.');
+    startedOver = true;
+  }
   const coverageStartedOnByLanguage = { ...(activity?.coverageStartedOnByLanguage ?? {}) };
   const allDays: ReviewActivity['daysByLanguage'] = { ...(activity?.daysByLanguage ?? {}) };
-  if (!allDays[language] && Object.keys(allDays).length >= MAX_REVIEW_ACTIVITY_LANGUAGES) {
-    throw new InputValidationError('Review activity language limit reached.');
+  if (!isLanguage(language) || (!allDays[language] && Object.keys(allDays).length >= MAX_REVIEW_ACTIVITY_LANGUAGES)) {
+    return { activity, startedOver };
   }
   const counters = allDays[language]?.[day] ?? { reviewed: 0, again: 0, hard: 0, good: 0, easy: 0 };
   if (counters.reviewed >= MAX_REVIEW_ACTIVITY_COUNTER || counters[rating as keyof ReviewActivityCounters] >= MAX_REVIEW_ACTIVITY_COUNTER) {
@@ -218,7 +235,7 @@ const nextReviewActivity = (stored: unknown, language: unknown, day: string, rat
       .filter(([localDay]) => localDay >= windowStart));
   }
   coverageStartedOnByLanguage[language] ??= day;
-  return { coverageStartedOnByLanguage, daysByLanguage: allDays };
+  return { activity: { coverageStartedOnByLanguage, daysByLanguage: allDays }, startedOver };
 };
 
 const reviewActivityOutcome = (activity: ReviewActivity | undefined, language: unknown): VerifiedReviewActivity | undefined => {
@@ -371,9 +388,10 @@ export async function prepareVerifiedGamification(
   }
   const xpAwarded = action.kind === 'review' ? (awardSnapshot?.exists ? 0 : xpFor(action)) : xpFor(action);
   const hasXpAward = xpAwarded > 0;
-  const activity = action.kind === 'review' && storedTimeZone
+  const nextActivity = action.kind === 'review' && storedTimeZone
     ? nextReviewActivity(stats.reviewActivityV1, action.targetLanguage, studyDay, action.rating ?? '')
     : undefined;
+  const activity = nextActivity?.activity;
   const xp = counter(stats.verifiedXp);
   const oldLevel = levelForXp(xp);
   const crossesRewardLevel = (gain: number) => gain > 0 && oldLevel < 13 && levelForXp(xp + gain) >= 13;
@@ -557,7 +575,10 @@ export async function prepareVerifiedGamification(
       ...(action.kind === 'review' && (!(lastVerifiedReviewAt instanceof Timestamp)
         || action.receivedAt.getTime() > lastVerifiedReviewAt.toMillis())
         ? { lastVerifiedReviewAt: Timestamp.fromDate(action.receivedAt) } : {}),
-      ...(activity ? { reviewActivityV1: activity } : {}),
+      ...(activity ? {
+        // A merge write keeps stored keys the new value lacks, so a value that started over replaces the old one.
+        reviewActivityV1: nextActivity?.startedOver ? replacingMergePatch(stats.reviewActivityV1, { ...activity }) : activity,
+      } : {}),
       [DAILY_GOALS_FIELD]: replacingMergePatch(stats[DAILY_GOALS_FIELD], dailyGoals),
       [STREAK_FIELD]: replacingMergePatch(stats[STREAK_FIELD], { ...streakAdvance.state }),
       ...(achievements?.patch ? { [ACHIEVEMENTS_FIELD]: achievements.patch } : {}),
