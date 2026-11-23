@@ -37,6 +37,12 @@ const reviewHistory = (card: CardRecord): CardRecord[] =>
     ? card.reviewHistory.flatMap(item => record(item) ? [item as CardRecord] : [])
     : [];
 
+// A last review ahead of the clock was stored by a device with a fast clock; ts-fsrs rejects a negative interval,
+// so treat it as having just happened rather than leave the card impossible to review.
+const notAfter = (lastReview: Date | undefined, now: Date): Date | undefined => (
+  lastReview && lastReview.getTime() > now.getTime() ? now : lastReview
+);
+
 const legacyFSRSCard = (card: CardRecord, now: Date): FSRSCard => {
   const history = reviewHistory(card);
   const reviewCounter = Math.max(0, Math.floor(numberValue(card.reviews, 0)));
@@ -65,7 +71,7 @@ const legacyFSRSCard = (card: CardRecord, now: Date): FSRSCard => {
     reps: legacyReviews,
     lapses,
     state: State.Review,
-    last_review: lastReview,
+    last_review: notAfter(lastReview, now),
   };
 };
 
@@ -103,7 +109,7 @@ const toFSRSCard = (card: CardRecord, now: Date): FSRSCard => {
     reps: Number(stored.reps),
     lapses: Number(stored.lapses),
     state: Number(state) as State,
-    last_review: lastReview,
+    last_review: notAfter(lastReview, now),
   };
 };
 

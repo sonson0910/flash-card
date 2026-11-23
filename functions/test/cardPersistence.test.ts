@@ -194,6 +194,19 @@ describe('card persistence', () => {
     }
   });
 
+  it('refuses review times from the future on a restore request too', async () => {
+    const ahead = new Date(Date.now() + 24 * 3_600_000).toISOString();
+    const entry = { rating: 'good', reviewedAt: ahead, scheduledDays: 1, elapsedDays: 0 };
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+    ]));
+    await expect(createCardForOwner(harness.database, 'owner', { ...card, reviewHistory: [entry] }, {
+      libraryEpoch: 2, opId: 'restore-hello', operationCreatedAt: new Date().toISOString(), restore: true,
+    })).rejects.toBeInstanceOf(InputValidationError);
+    expect(harness.writes).toEqual([]);
+  });
+
   it('creates canonical identity documents and increments the trusted owner counter atomically', async () => {
     const harness = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],

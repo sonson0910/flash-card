@@ -24,6 +24,12 @@ const ratingMap: Record<ReviewRating, Grade> = {
   easy: Rating.Easy,
 };
 
+// A last review ahead of the clock was stored by a device with a fast clock; ts-fsrs rejects a negative interval,
+// so treat it as having just happened rather than leave the card impossible to review.
+const notAfter = (lastReview: Date | undefined, now: Date): Date | undefined => (
+  lastReview && lastReview.getTime() > now.getTime() ? now : lastReview
+);
+
 function legacyFSRSCard(card: CardData, now: Date): FSRSCard {
   const reviewCounter = typeof card.reviews === 'number' && Number.isFinite(card.reviews)
     ? Math.max(0, Math.floor(card.reviews))
@@ -57,7 +63,7 @@ function legacyFSRSCard(card: CardData, now: Date): FSRSCard {
     reps: legacyReviews,
     lapses,
     state: State.Review,
-    last_review: lastReview,
+    last_review: notAfter(lastReview, now),
   };
 }
 
@@ -95,7 +101,7 @@ function toFSRSCard(card: CardData, now: Date): FSRSCard {
     reps: stored.reps,
     lapses: stored.lapses,
     state: stored.state as State,
-    last_review: lastReview,
+    last_review: notAfter(lastReview, now),
   };
 }
 

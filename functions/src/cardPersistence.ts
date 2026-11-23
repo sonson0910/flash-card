@@ -867,8 +867,8 @@ export async function createCardForOwner(
   }
   const cardSource = asRecord(card, 'Card must be an object.');
   const normalizedCard = canonicalCard(cardSource, { imageOwnerId: ownerId });
-  // A restored card carries the history the server already wrote; a new one must not start in the future.
-  if (!restore) assertNoFutureReviewTimes(normalizedCard, verifiedCreate?.receivedAt ?? new Date());
+  // Any create, a restore included, would otherwise store a review time that blocks every later verified review.
+  assertNoFutureReviewTimes(normalizedCard, verifiedCreate?.receivedAt ?? new Date());
   const restoreCreatedAt = restore && operationCreatedAt
     ? optionalDate(operationCreatedAt, 'operationCreatedAt')
     : undefined;

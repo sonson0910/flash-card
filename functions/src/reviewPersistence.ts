@@ -402,7 +402,13 @@ export async function applyReviewForOwner(
     if (reviewedAt.getTime() > (receivedAt ?? new Date()).getTime() + REVIEW_CLOCK_SKEW_MS) {
       throw new ReviewPersistenceConflictError('future-review-clock-skew');
     }
-    if (strict && Number.isFinite(authoritativeLastReview) && reviewedAt.getTime() <= authoritativeLastReview) {
+    // A stored time past the same ceiling was written before that ceiling existed. It is not a real review, so it
+    // must not outlive the bad write by refusing every review until the server clock catches up.
+    const trustedLastReview = authoritativeLastReview
+      <= (receivedAt ?? new Date()).getTime() + REVIEW_CLOCK_SKEW_MS
+      ? authoritativeLastReview
+      : Number.NaN;
+    if (strict && Number.isFinite(trustedLastReview) && reviewedAt.getTime() <= trustedLastReview) {
       throw new ReviewPersistenceConflictError('stale-review');
     }
 

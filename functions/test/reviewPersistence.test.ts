@@ -625,6 +625,25 @@ describe('review persistence', () => {
     }
   });
 
+  it('ignores a stored review time that is ahead of the server so an old bad write cannot block verified reviews', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-23T00:00:00.000Z'));
+    try {
+      const stored = baseCard([{
+        rating: 'good', reviewedAt: '2026-11-24T00:00:00.000Z', scheduledDays: 1, elapsedDays: 0,
+      }]);
+      const now = new Date('2026-11-23T00:00:00.000Z');
+      const request = reviewRequest({
+        reviewedAt: now.toISOString(),
+        fields: scheduleReviewTransition(stored, 'good', now),
+      });
+      await expect(applyReviewForOwner(harness(stored).database, 'owner', request))
+        .resolves.toMatchObject({ applied: true, duplicate: false });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rejects a duplicate operation whose payload fingerprint changed', async () => {
     const request = reviewRequest();
     const test = harness();
