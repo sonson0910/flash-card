@@ -59,7 +59,7 @@ msgid "This date has already passed. Pick a date ahead."
 msgstr ""
 
 #: src/components/shell/DesktopNavigation.tsx:94
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:80
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:81
 msgctxt "shell.brand.mark"
 msgid "S"
 msgstr ""
@@ -922,7 +922,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr ""
 
-#: src/app/AppRuntime.tsx:653
+#: src/app/AppRuntime.tsx:654
 #: src/components/shell/CourseSwitcherControl.tsx:125
 msgctxt "course.error.read"
 msgid "Courses could not be loaded."
@@ -1291,259 +1291,264 @@ msgid "Pass {exams}"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:104
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:161
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:106
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:172
 msgid "profile-completion.account-access"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:119
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:126
 msgid "profile-completion.account-data"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:187
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:333
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:198
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:345
 msgid "profile-completion.birth-year"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:58
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
 msgid "profile-completion.birth-year.format"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:59
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
 msgid "profile-completion.birth-year.future"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:60
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:61
 msgid "profile-completion.birth-year.implausible"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:342
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:354
 msgid "profile-completion.birth-year.placeholder"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:61
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:62
 msgid "profile-completion.birth-year.rejected"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:391
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:403
 msgid "profile-completion.consent"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:398
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:410
 msgid "profile-completion.consent.required"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:236
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:248
 msgid "profile-completion.details.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:237
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:249
 msgid "profile-completion.details.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:65
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
 msgid "profile-completion.error.consent-outdated"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:163
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:174
 msgid "profile-completion.error.lede"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:66
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:67
 msgid "profile-completion.error.rate-limited"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:166
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:177
 msgid "profile-completion.error.retry"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:67
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:68
 msgid "profile-completion.error.save-failed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:162
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:173
 msgid "profile-completion.error.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:230
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:242
 msgid "profile-completion.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:121
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:128
 msgid "profile-completion.help"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:232
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:244
 msgid "profile-completion.lede"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:354
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:366
 msgid "profile-completion.locale"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:360
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:372
 msgid "profile-completion.native-language"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:402
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:414
 msgid "profile-completion.note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:203
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:241
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:214
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:253
 msgid "profile-completion.outcomes.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:252
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:264
 msgid "profile-completion.outcomes.next"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:210
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:248
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:221
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:260
 msgid "profile-completion.outcomes.return"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:49
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:50
 msgid "profile-completion.outcomes.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:50
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:51
 msgid "profile-completion.outcomes.title.crystal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:191
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:202
 msgid "profile-completion.restricted.account"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:188
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:199
 msgid "profile-completion.restricted.birth-year"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:177
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:183
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:188
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:194
 msgid "profile-completion.restricted.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:206
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:217
 msgid "profile-completion.restricted.gate"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:207
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:218
 msgid "profile-completion.restricted.gate-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:179
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:190
 msgid "profile-completion.restricted.lede"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:196
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:207
 msgid "profile-completion.restricted.note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:192
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:203
 msgid "profile-completion.restricted.paused"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:199
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:210
 msgid "profile-completion.restricted.return"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:211
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:222
 msgid "profile-completion.restricted.return-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:184
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:195
 msgid "profile-completion.restricted.status"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:45
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:46
 msgid "profile-completion.restricted.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:46
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:47
 msgid "profile-completion.restricted.title.crystal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:226
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:238
 msgid "profile-completion.return.footer"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:53
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:54
 msgid "profile-completion.return.preserved"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:54
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:55
 msgid "profile-completion.return.preserved.crystal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:253
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:408
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:265
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:420
 msgid "profile-completion.save"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:407
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:419
 msgid "profile-completion.saving"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:108
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:167
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:110
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:178
 msgid "profile-completion.sign-out"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:41
-msgid "profile-completion.title"
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:118
+msgid "profile-completion.sign-out.failed"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/profileCompletion/ProfileCompletionGate.tsx:42
+msgid "profile-completion.title"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/profileCompletion/ProfileCompletionGate.tsx:43
 msgid "profile-completion.title.crystal"
 msgstr ""
 
@@ -1899,7 +1904,7 @@ msgid "shell.language.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:642
+#: src/app/AppRuntime.tsx:643
 msgid "shell.learning-workspace"
 msgstr ""
 
@@ -2224,7 +2229,7 @@ msgid "shell.sync.paused-detail"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/app/AppRuntime.tsx:488
+#: src/app/AppRuntime.tsx:489
 msgid "shell.sync.retry-failed"
 msgstr ""
 
@@ -2311,7 +2316,7 @@ msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr ""
 
-#: src/app/AppRuntime.tsx:654
+#: src/app/AppRuntime.tsx:655
 #: src/components/shell/CourseSwitcherControl.tsx:127
 msgctxt "course.action.retry"
 msgid "Retry"
@@ -2498,7 +2503,7 @@ msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr ""
 
-#: src/app/AppRuntime.tsx:656
+#: src/app/AppRuntime.tsx:657
 #: src/app/AppViewStage.tsx:163
 msgctxt "course.loading"
 msgid "Preparing your courses…"
@@ -2672,9 +2677,4 @@ msgstr ""
 #: src/components/shell/LibraryManagementMenu.tsx:306
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/features/profileCompletion/ProfileCompletionGate.tsx:118
-msgid "profile-completion.sign-out.failed"
 msgstr ""

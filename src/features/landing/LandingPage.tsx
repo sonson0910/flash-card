@@ -38,6 +38,7 @@ import animeInstant from "../../assets/landing/anime-instant.jpg";
 import { CrystalWings } from "./CrystalWings";
 import { LandingSignInNotice } from "./LandingSignInNotice";
 import { useLandingSignInState } from "./landingSignInState";
+import { landingLanguageOffers } from "./landingLanguageOffers";
 import "./landing-page.css";
 
 interface LandingPageProps {
@@ -192,15 +193,6 @@ const extensionFeatures = [
   },
 ];
 
-// Mirrors the target-language packs in `src/features/languagePacks/types.ts`. Kept as static marketing
-// copy rather than importing that registry, since availability here is a product-status fact (wired into
-// onboarding and the course switcher) rather than the text-detection concern that module owns.
-const languageOffers = [
-  { id: "en", name: "English", available: true },
-  { id: "ko", name: "한국어 · Korean", available: false },
-  { id: "ja", name: "日本語 · Japanese", available: false },
-  { id: "zh", name: "中文 · Chinese", available: false },
-] as const;
 
 const pricingRows = [
   {
@@ -973,37 +965,33 @@ export function LandingPage({
               <LanguagesIcon size={21} />
             </div>
             <p className={brandCalloutClass}>
-              <Trans {...msg({ context: 'landing.languages.eyebrow', message: 'Where SonFlash is headed' })} />
+              <Trans {...msg({ context: 'landing.languages.eyebrow', message: 'Languages you can learn' })} />
             </p>
             <h2
               id="languages-heading"
               className={sectionTitleClass}
             >
-              <Trans {...msg({ context: 'landing.languages.title', message: 'English today. More languages on the way.' })} />
+              <Trans {...msg({ context: 'landing.languages.title', message: 'English, Korean, Japanese and Chinese.' })} />
             </h2>
             <p className="mt-4 leading-7 text-[var(--sf-text-muted)]">
               <Trans
-                {...msg({ context: 'landing.languages.description', message: 'SonFlash currently teaches English vocabulary, with meanings shown in English or Vietnamese. These vocabulary packs are in development and are not yet available to switch to.' })}
+                {...msg({ context: 'landing.languages.description', message: 'Start a course in any of these four languages, with meanings shown in English or Vietnamese. Each course keeps its own cards and progress.' })}
               />
             </p>
             <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-              {languageOffers.map(pack => (
+              {landingLanguageOffers.map(id => (
                 <li
-                  key={pack.id}
+                  key={id}
                   className="flex items-center justify-between gap-3 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-3 text-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm"
                 >
                   <span className="font-semibold">
-                    {pack.id === "en" && <Trans {...msg({ context: 'landing.languages.pack.english', message: 'English' })} />}
-                    {pack.id === "ko" && <Trans {...msg({ context: 'landing.languages.pack.korean', message: '한국어 · Korean' })} />}
-                    {pack.id === "ja" && <Trans {...msg({ context: 'landing.languages.pack.japanese', message: '日本語 · Japanese' })} />}
-                    {pack.id === "zh" && <Trans {...msg({ context: 'landing.languages.pack.chinese', message: '中文 · Chinese' })} />}
+                    {id === "en" && <Trans {...msg({ context: 'landing.languages.pack.english', message: 'English' })} />}
+                    {id === "ko" && <Trans {...msg({ context: 'landing.languages.pack.korean', message: '한국어 · Korean' })} />}
+                    {id === "ja" && <Trans {...msg({ context: 'landing.languages.pack.japanese', message: '日本語 · Japanese' })} />}
+                    {id === "zh" && <Trans {...msg({ context: 'landing.languages.pack.chinese', message: '中文 · Chinese' })} />}
                   </span>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-bold ${pack.available ? "bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)]" : "bg-[var(--sf-surface-muted)] text-[var(--sf-text-muted)]"}`}
-                  >
-                    {pack.available
-                      ? <Trans {...msg({ context: 'landing.languages.status.available', message: 'Available now' })} />
-                      : <Trans {...msg({ context: 'landing.languages.status.in-progress', message: 'In progress' })} />}
+                  <span className="rounded-full bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] px-2.5 py-1 text-xs font-bold text-[var(--sf-brand-text)]">
+                    <Trans {...msg({ context: 'landing.languages.status.available', message: 'Available now' })} />
                   </span>
                 </li>
               ))}
