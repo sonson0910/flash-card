@@ -69,6 +69,7 @@ import {
   clearCustomDeckAssignments,
   deleteCardWithTombstone,
   fetchCatalogUnitCards,
+  fetchPlainEnglishCardsByWords,
   findCardByNormalizedWord,
   findCardById,
   findCardsByNormalizedWords,
@@ -163,6 +164,54 @@ describe('catalog unit card hydration', () => {
       })).rejects.toThrow('unexpected card');
     }
     expect(firestore.getDocs).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('plain English card hydration', () => {
+  beforeEach(() => firestore.getDocs.mockReset());
+
+  it('reads the plain English cards for a unit in one server query and skips lexeme cards', async () => {
+    firestore.getDocs.mockResolvedValueOnce(snapshot([
+      { id: 'word-alpha', data: { word: 'alpha', normalizedWord: 'alpha', libraryEpoch: 2 } },
+      { id: 'lexeme-card', data: { word: 'beta', normalizedWord: 'beta', lexemeId: 'lexeme-b', language: 'en', libraryEpoch: 2 } },
+      { id: 'korean', data: { word: 'gamma', normalizedWord: 'gamma', language: 'ko', libraryEpoch: 2 } },
+      { id: 'other-epoch', data: { word: 'delta', normalizedWord: 'delta', libraryEpoch: 1 } },
+    ]));
+
+    const cards = await fetchPlainEnglishCardsByWords({} as never, 'owner-a', {
+      words: ['alpha', 'beta', 'gamma', 'delta'], libraryEpoch: 2,
+    });
+
+    expect(firestore.getDocs).toHaveBeenCalledTimes(1);
+    expect(firestore.getDocs.mock.calls[0]?.[0]).toMatchObject({
+      type: 'query',
+      args: [
+        expect.anything(),
+        { type: 'where', args: ['normalizedWord', 'in', ['alpha', 'beta', 'gamma', 'delta']] },
+        { type: 'where', args: ['libraryEpoch', '==', 2] },
+        { type: 'limit', args: [80] },
+      ],
+    });
+    expect([...cards.keys()]).toEqual(['alpha']);
+    expect(cards.get('alpha')?.id).toBe('word-alpha');
+  });
+
+  it('keeps the card with learning progress when a word has several plain cards', async () => {
+    firestore.getDocs.mockResolvedValueOnce(snapshot([
+      { id: 'fresh', data: { word: 'alpha', normalizedWord: 'alpha', libraryEpoch: 2 } },
+      { id: 'learned', data: { word: 'alpha', normalizedWord: 'alpha', libraryEpoch: 2, correctStreak: 3 } },
+    ]));
+
+    const cards = await fetchPlainEnglishCardsByWords({} as never, 'owner-a', { words: ['alpha'], libraryEpoch: 2 });
+
+    expect(cards.get('alpha')?.id).toBe('learned');
+  });
+
+  it('rejects an oversized request before reading Firestore', async () => {
+    await expect(fetchPlainEnglishCardsByWords({} as never, 'owner-a', {
+      words: Array.from({ length: 21 }, (_, index) => `word-${index}`), libraryEpoch: 0,
+    })).rejects.toThrow('Invalid plain English card request');
+    expect(firestore.getDocs).not.toHaveBeenCalled();
   });
 });
 

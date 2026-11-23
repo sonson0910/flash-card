@@ -1,4 +1,4 @@
-import { cardLogicalKey, effectiveCardTargetLanguage } from '../lib/cardIdentity';
+import { cardLogicalKey, cardWordKey, effectiveCardTargetLanguage } from '../lib/cardIdentity';
 import type { CardData } from '../types/card';
 import type { ConfirmedCatalogCardsResult } from '../features/intake/cardIntakeController';
 
@@ -10,6 +10,8 @@ export interface CatalogUnitScope {
 
 export interface CatalogUnitContinuePorts {
   readCards(lexemeIds: readonly string[], scope: CatalogUnitScope): Promise<Map<string, CardData>>;
+  /** Plain English cards (no lexeme id) the learner already holds, keyed by their normalized word. */
+  readPlainEnglishCards(words: readonly string[], scope: CatalogUnitScope): Promise<Map<string, CardData>>;
   createMissing(cards: readonly CardData[]): Promise<ConfirmedCatalogCardsResult>;
   startStudy(cards: readonly CardData[], isCurrent: () => boolean): Promise<boolean>;
   isCurrent(scope: CatalogUnitScope): boolean;
@@ -34,6 +36,16 @@ export async function continueCatalogUnitCards(
   try {
     const existing = await ports.readCards(lexemeIds as string[], scope);
     if (!ports.isCurrent(scope)) return 'stale';
+    // A plain English card already stands for its catalog word, so study it rather than add a second card.
+    const absent = candidates.filter(card => !existing.has(card.lexemeId!) && effectiveCardTargetLanguage(card) === 'en');
+    if (absent.length > 0) {
+      const plain = await ports.readPlainEnglishCards(absent.map(cardWordKey), scope);
+      if (!ports.isCurrent(scope)) return 'stale';
+      for (const card of absent) {
+        const held = plain.get(cardWordKey(card));
+        if (held && !held.lexemeId) existing.set(card.lexemeId!, held);
+      }
+    }
     const missing = candidates.filter(card => !existing.has(card.lexemeId!));
     if (missing.length > 0) {
       const created = await ports.createMissing(missing);

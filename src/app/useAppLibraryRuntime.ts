@@ -61,7 +61,7 @@ export function useAppLibraryRuntime({
   clearError,
   notify,
 }: UseAppLibraryRuntimeOptions) {
-  const { model: catalog, actions: catalogActions } = useLibraryCatalogQuery();
+  const { model: catalog, actions: catalogActions } = useLibraryCatalogQuery({ ownerId: identity.owner?.id ?? null });
   const [cards, setCards] = useState<CardData[]>([]);
   const [isLibraryMutationPending, setIsLibraryMutationPending] = useState(false);
   const [cloudTotal, setCloudTotal] = useState(0);

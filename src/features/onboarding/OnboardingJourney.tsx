@@ -24,6 +24,7 @@ import { readLumiEnabled } from '../settings/lumi-preference';
 import { useTheme } from '../theme/ThemeProvider';
 import type { StarterCardOutcome } from './createStarterCards';
 import { createOwnerStarterCards } from './createOwnerStarterCards';
+import { clearStarterClaim, createStarterTrialGate, starterClaimStore } from './starterTrialGate';
 import { HangulPrimer } from './HangulPrimer';
 import { ReminderPhonePreview } from './ReminderPhonePreview';
 import { clearOnboardingDraft, readOnboardingDraft, writeOnboardingDraft } from './onboardingDraft';
@@ -261,7 +262,8 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const [latestScore, setLatestScore] = useState<string | null>(saved.draft?.latestScore ?? null);
   const [startingTier, setStartingTier] = useState<StartingTier | null>(saved.draft?.startingTier ?? null);
   const [romanization, setRomanization] = useState<boolean | null>(saved.draft?.romanization ?? null);
-  const [ahaOutcome, setAhaOutcome] = useState<StarterCardOutcome | 'pending' | 'error' | null>(null);
+  const [ahaOutcome, setAhaOutcome] = useState<StarterCardOutcome | 'pending' | 'error' | 'already-added' | null>(null);
+  const [starterTrialGate] = useState(() => createStarterTrialGate(starterClaimStore(ownerId)));
   // The send time the reminder form holds, drawn on the phone preview; unknown until the form loads.
   const [reminderTime, setReminderTime] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -300,6 +302,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const stepIndex = steps.indexOf(step) + 1;
   const totalSteps = steps.length;
   const daysLeft = selectedGoal ? daysUntilGoalDate(goalTargetDate) : null;
+  const starterOutcome = typeof ahaOutcome === 'object' && ahaOutcome !== null ? ahaOutcome : null;
   const starterCount = targetLanguage ? starterCardsFor(targetLanguage, nativeLanguage).length : 0;
 
   const goNext = () => { const next = nextOnboardingStep(step, steps); if (next) setStep(next); };
@@ -321,8 +324,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     if (!targetLanguage) return;
     setAhaOutcome('pending');
     try {
-      const outcome = await createOwnerStarterCards(ownerId, targetLanguage, nativeLanguage);
-      setAhaOutcome(outcome);
+      setAhaOutcome(await starterTrialGate.run(targetLanguage, () => createOwnerStarterCards(ownerId, targetLanguage, nativeLanguage)));
     } catch {
       setAhaOutcome('error');
     }
@@ -345,6 +347,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     writeDailyPace(pace);
     if (startingTier) writeStartingTier(ownerId, targetLanguage, startingTier);
     clearOnboardingDraft(ownerId);
+    clearStarterClaim(ownerId);
     clearOnboardingResumeStep(ownerId);
     clearOnboardingInProgress(ownerId);
     // The journey closes as soon as the new course arrives; a failed save leaves the score to the course goals panel.
@@ -579,7 +582,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   }
 
   if (step === 'aha') {
-    const created = ahaOutcome !== null && ahaOutcome !== 'pending' && ahaOutcome !== 'error' ? ahaOutcome : null;
+    const created = starterOutcome;
     content = created && created.created.length > 0
       ? <StarterCardTrial cards={created.created} eyebrow={eyebrow} />
       : <>
@@ -590,6 +593,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
           {starterCount > 0 && <div className="onb-actions"><button type="button" className={responsivePrimaryButtonClass} onClick={() => void startAha()}><PrimaryLabel><Trans {...msg({ context: 'onboarding.aha.create', message: 'Add 5 starter cards' })} /></PrimaryLabel></button></div>}
         </>}
         {ahaOutcome === 'pending' && <p className={ahaNeutralMessageClass} role="status"><Trans {...msg({ context: 'onboarding.aha.pending', message: 'Adding your cards…' })} /></p>}
+        {ahaOutcome === 'already-added' && <p className={ahaNeutralMessageClass} role="status"><Trans {...msg({ context: 'onboarding.aha.already-added', message: 'Starter cards were already requested earlier in this setup, so no more were added. You can add cards from the library any time.' })} /></p>}
         {ahaOutcome === 'error' && <p className="onb-message" data-tone="danger" role="alert"><Trans {...msg({ context: 'onboarding.aha.error', message: 'Something went wrong adding cards. You can add them later from the library.' })} /></p>}
         {created && <p className={ahaNeutralMessageClass}><Trans {...msg({ context: 'onboarding.aha.none-added', message: 'No cards were added.' })} /></p>}
       </>;
@@ -601,7 +605,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   }
 
   if (step === 'reminder') {
-    const starterCards = ahaOutcome !== null && ahaOutcome !== 'pending' && ahaOutcome !== 'error' ? ahaOutcome.created.length : null;
+    const starterCards = starterOutcome?.created.length ?? null;
     content = <div className="onb-reminder">
       <div className="onb-reminder-form">
         {eyebrow}

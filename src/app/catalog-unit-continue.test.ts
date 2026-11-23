@@ -19,6 +19,7 @@ function ports(existing = new Map<string, CardData>()): CatalogUnitContinuePorts
   return {
     readCards: vi.fn(async () => new Map(existing)),
     createMissing: vi.fn(async (cards: readonly CardData[]) => ({ status: 'completed' as const, cards, createdCount: cards.length, reusedCount: 0 })),
+    readPlainEnglishCards: vi.fn(async () => new Map<string, CardData>()),
     startStudy: vi.fn(async () => true),
     isCurrent: vi.fn(() => true),
   };
@@ -52,6 +53,48 @@ describe('catalog unit continuation', () => {
 
     await expect(continuation).resolves.toBe('started');
     expect(dependencies.startStudy).toHaveBeenCalledWith([first, expect.objectContaining({ id: 'server-second' })], expect.any(Function));
+  });
+
+  it('studies a plain English card already held for the word instead of creating a second card', async () => {
+    const first = card('first');
+    const second = card('second');
+    const plainSecond: CardData = {
+      ...second, id: 'word-second', lexemeId: undefined, normalizedLemma: undefined, senseKey: undefined,
+      partOfSpeech: undefined, normalizedWord: 'second', difficulty: 'good', interval: 30,
+    };
+    const dependencies = ports(new Map([[first.lexemeId!, first]]));
+    vi.mocked(dependencies.readPlainEnglishCards).mockResolvedValue(new Map([['second', plainSecond]]));
+
+    await expect(continueCatalogUnitCards([first, second], scope, dependencies)).resolves.toBe('started');
+
+    expect(dependencies.readPlainEnglishCards).toHaveBeenCalledWith(['second'], scope);
+    expect(dependencies.createMissing).not.toHaveBeenCalled();
+    expect(dependencies.startStudy).toHaveBeenCalledWith([first, plainSecond], expect.any(Function));
+  });
+
+  it('creates only the words that no lexeme card or plain English card holds', async () => {
+    const first = card('first');
+    const second = card('second');
+    const plainFirst: CardData = { ...first, id: 'word-first', lexemeId: undefined, normalizedWord: 'first' };
+    const dependencies = ports();
+    vi.mocked(dependencies.readPlainEnglishCards).mockResolvedValue(new Map([['first', plainFirst]]));
+
+    await expect(continueCatalogUnitCards([first, second], scope, dependencies)).resolves.toBe('started');
+
+    expect(dependencies.createMissing).toHaveBeenCalledWith([second]);
+    expect(dependencies.startStudy).toHaveBeenCalledWith([plainFirst, second], expect.any(Function));
+  });
+
+  it('does not look for plain English cards when every lexeme card exists or the target is not English', async () => {
+    const first = card('first');
+    const complete = ports(new Map([[first.lexemeId!, first]]));
+    await continueCatalogUnitCards([first], scope, complete);
+    expect(complete.readPlainEnglishCards).not.toHaveBeenCalled();
+
+    const korean: CardData = { ...card('hello'), language: 'ko' };
+    const koreanPorts = ports();
+    await continueCatalogUnitCards([korean], { ...scope, targetLanguage: 'ko' }, koreanPorts);
+    expect(koreanPorts.readPlainEnglishCards).not.toHaveBeenCalled();
   });
 
   it('leaves partial canonical creations retryable without starting study', async () => {

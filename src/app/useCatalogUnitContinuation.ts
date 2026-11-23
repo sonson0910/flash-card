@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { fetchCatalogUnitCards } from '../lib/cardRepository';
+import { fetchCatalogUnitCards, fetchPlainEnglishCardsByWords } from '../lib/cardRepository';
 import { db } from '../lib/firebase';
 import type { CardData } from '../types/card';
 import {
@@ -28,6 +28,9 @@ export function useCatalogUnitContinuation({ scope, createMissing, startStudy }:
     return continueCatalogUnitCards(candidates, currentScope.current, {
       readCards: (lexemeIds, expectedScope) => fetchCatalogUnitCards(database, expectedScope.ownerId!, {
         lexemeIds, targetLanguage: expectedScope.targetLanguage, libraryEpoch: expectedScope.libraryEpoch!,
+      }),
+      readPlainEnglishCards: (words, expectedScope) => fetchPlainEnglishCardsByWords(database, expectedScope.ownerId!, {
+        words, libraryEpoch: expectedScope.libraryEpoch!,
       }),
       createMissing,
       startStudy,

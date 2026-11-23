@@ -675,7 +675,7 @@ export default function CatalogWorkspace({
     loadMore: () => { if (nextCursor && !isLoadingMore) void loadPage(nextCursor, true); },
     addToLibrary: cardId => {
       const card = cards.find(candidate => candidate.id === cardId);
-      if (!card || card.libraryState !== 'available') return;
+      if (!card || (card.libraryState !== 'available' && card.libraryState !== 'failed')) return;
       const pending = beginCatalogLibraryAdd(scopedOptimisticLibrary, ownerId, ownerVersion, cardId);
       setOptimisticLibrary(pending.state);
       void addToLibrary(card)

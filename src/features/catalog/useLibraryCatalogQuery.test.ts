@@ -248,4 +248,21 @@ describe('library catalog query controller', () => {
     expect(browser.listenerCount).toBe(0);
     expect(timers.pendingCount).toBe(0);
   });
+
+  it('resets to the default query and cancels pending writes without touching history', () => {
+    const { controller, timers, browser } = setup('https://sonflash.test/library?q=private&deck=A%20deck&page=3');
+    controller.actions.changeSearch('typing');
+    controller.actions.chooseDeck('Other deck');
+    expect(timers.pendingCount).toBeGreaterThan(0);
+
+    controller.reset();
+    timers.advanceBy(5_000);
+
+    expect(controller.getSnapshot()).toMatchObject({
+      search: '', debouncedSearch: '', category: 'All', deck: ALL_PRACTICE_DECK_SCOPE,
+      difficulty: 'All', starred: false, date: 'All', page: 1,
+    });
+    expect(timers.pendingCount).toBe(0);
+    expect(browser.pushes).toEqual([]);
+  });
 });

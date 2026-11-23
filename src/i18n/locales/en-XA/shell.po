@@ -2653,3 +2653,8 @@ msgstr ""
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr ""
+
+#: src/features/onboarding/OnboardingJourney.tsx:596
+msgctxt "onboarding.aha.already-added"
+msgid "Starter cards were already requested earlier in this setup, so no more were added. You can add cards from the library any time."
+msgstr ""

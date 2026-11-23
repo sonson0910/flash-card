@@ -7,6 +7,7 @@ const runtime = vi.hoisted(() => ({
   finish: vi.fn(),
   signOut: vi.fn<() => Promise<{ status: 'completed' | 'failed' }>>(),
   sessionInputs: [] as Array<{ catalog: { statsOpen: boolean } }>,
+  catalogQuery: vi.fn(),
 }));
 
 vi.mock('../features/reminders/reminderService', () => ({
@@ -15,7 +16,7 @@ vi.mock('../features/reminders/reminderService', () => ({
 }));
 
 vi.mock('../features/catalog/useLibraryCatalogQuery', () => ({
-  useLibraryCatalogQuery: () => ({
+  useLibraryCatalogQuery: (options: unknown) => (runtime.catalogQuery(options), {
     model: {
       category: 'All', deck: 'All', difficulty: 'All', partOfSpeech: 'All', starred: false,
       date: 'All', debouncedSearch: '', page: 1,
@@ -79,6 +80,27 @@ describe('useAppLibraryRuntime sign-out', () => {
     runtime.revoke.mockReset();
     runtime.finish.mockReset();
     runtime.signOut.mockReset();
+    runtime.catalogQuery.mockReset();
+  });
+
+  it('scopes the library query to the signed-in owner so another owner never inherits it', async () => {
+    const root = createRoot(installMinimalReactDom());
+    function Harness({ ownerId }: { ownerId: string | null }) {
+      useAppLibraryRuntime({
+        identity: { owner: ownerId ? { id: ownerId } : null } as never, courseScopeReady: true, viewMode: 'library' as never,
+        isStatsOpen: false, statsRefreshRequest: null, targetLanguage: 'en',
+        reportError: vi.fn(), clearError: vi.fn(), notify: vi.fn(),
+      });
+      return null;
+    }
+    try {
+      await act(async () => { root.render(<Harness ownerId="owner-b" />); });
+      expect(runtime.catalogQuery).toHaveBeenLastCalledWith({ ownerId: 'owner-b' });
+      await act(async () => { root.render(<Harness ownerId={null} />); });
+      expect(runtime.catalogQuery).toHaveBeenLastCalledWith({ ownerId: null });
+    } finally {
+      await act(async () => { root.unmount(); });
+    }
   });
 
   it('revokes reminders before signing out, clears cards after success, and releases the reminder latch', async () => {
