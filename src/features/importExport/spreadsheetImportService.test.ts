@@ -274,6 +274,51 @@ describe('spreadsheet import service', () => {
     });
   });
 
+  it.each([
+    ['a cloud usage limit', { code: 'functions/resource-exhausted' }],
+    ['a protected-call quota failure', { kind: 'quota', code: 'resource-exhausted' }],
+    ['a refused account', { kind: 'permission', code: 'permission-denied' }],
+  ])('stops generating after %s rejects a word, and skips the rest without waiting between them', async (_name, failure) => {
+    const { events, feedback, cards } = createFakePorts();
+    cards.generate = async word => {
+      events.push(`generate:${word}`);
+      throw Object.assign(new Error('rejected'), failure);
+    };
+    const delay = vi.fn(async () => undefined);
+    const importer = createSpreadsheetImportService({ cards, feedback, delay });
+
+    const result = await importer.import({
+      sizeBytes: 1024,
+      loadWorkbook: async () => ({ structuredRows: [], flatRows: [['one', 'two', 'three', 'four']] }),
+    });
+
+    expect(events.filter(event => event.startsWith('generate:'))).toEqual(['generate:one']);
+    expect(delay).not.toHaveBeenCalled();
+    expect(result.summary).toMatchObject({ total: 4, created: 0, failed: 1, skipped: 3, pending: 0 });
+    expect(result.issues).toEqual([
+      { sourceRow: 1, sourceColumn: 1, word: 'one', kind: 'generation', message: 'The card could not be generated.' },
+      ...[['two', 2], ['three', 3], ['four', 4]].map(([word, column]) => ({
+        sourceRow: 1, sourceColumn: column, word, kind: 'generation', message: 'This word was not generated because the AI limit or plan does not allow more.',
+      })),
+    ]);
+    expect(result.message).not.toMatch(/sign-in and connection/);
+    expect(events).toContain('complete:0');
+  });
+
+  it('keeps generating after a failure that is not a limit, since the next word may succeed', async () => {
+    const { events, feedback, cards } = createFakePorts();
+    cards.generate = async word => {
+      events.push(`generate:${word}`);
+      if (word === 'one') throw Object.assign(new Error('unavailable'), { code: 'functions/unavailable' });
+      return { created: true, category: 'Imported' };
+    };
+    const importer = createSpreadsheetImportService({ cards, feedback, delay: async () => undefined });
+
+    await importer.import({ sizeBytes: 1024, loadWorkbook: async () => ({ structuredRows: [], flatRows: [['one', 'two']] }) });
+
+    expect(events.filter(event => event.startsWith('generate:'))).toEqual(['generate:one', 'generate:two']);
+  });
+
   it('returns a retryable failure instead of silently completing a null workbook', async () => {
     const { events, feedback, cards } = createFakePorts();
     const importer = createSpreadsheetImportService({ cards, feedback });

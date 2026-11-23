@@ -146,7 +146,18 @@ const completedImportResult = (
   message: `Import complete: ${formatCount(summary.created)} created, ${formatCount(summary.reused)} already in your library.`,
 });
 
-const itemImportResult = (summary: SpreadsheetImportSummary): SpreadsheetImportResult => {
+/**
+ * A rejection every further word would meet too: the plan's AI allowance is used up, or the account
+ * may not generate. Retrying the remaining words only repeats it, so the import stops generating.
+ */
+const stopsFurtherGeneration = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return false;
+  const { kind, code } = error as { kind?: unknown; code?: unknown };
+  if (kind === 'quota' || kind === 'permission' || kind === 'authentication') return true;
+  return typeof code === 'string' && /(^|\/)(resource-exhausted|quota-exceeded|permission-denied|unauthenticated)$/.test(code);
+};
+
+const itemImportResult = (summary: SpreadsheetImportSummary, generationLimited = false): SpreadsheetImportResult => {
   const successful = summary.created + summary.reused;
   if (summary.failed === 0 && summary.skipped === 0 && !summary.pending) return completedImportResult(summary);
   if (summary.pending) {
@@ -164,7 +175,9 @@ const itemImportResult = (summary: SpreadsheetImportSummary): SpreadsheetImportR
       status: 'failed',
       reason: 'items',
       summary,
-      message: `No cards were imported: ${details}. Check your sign-in and connection, then try again.`,
+      message: generationLimited
+        ? `No cards were imported: ${details}. Your AI card allowance does not cover more generated cards right now.`
+        : `No cards were imported: ${details}. Check your sign-in and connection, then try again.`,
     };
   }
   return {
@@ -378,6 +391,7 @@ export function createSpreadsheetImportService({
       const settlements: Promise<void>[] = [];
       let generatedCount = 0;
       let aiSkipped = 0;
+      let generationLimited = false;
 
       for (let index = 0; index < accepted.length; index += 1) {
         const item = accepted[index];
@@ -399,7 +413,7 @@ export function createSpreadsheetImportService({
           continue;
         }
 
-        if (generatedCount >= maxAiCards) {
+        if (generatedCount >= maxAiCards || generationLimited) {
           summary.skipped += 1;
           aiSkipped += 1;
           summary.pending = (summary.pending ?? 0) - 1;
@@ -407,7 +421,10 @@ export function createSpreadsheetImportService({
           unsettled.delete(id);
           addIssue({
             sourceRow: item.sourceRow, sourceColumn: item.sourceColumn, word,
-            kind: 'generation', message: 'This word is beyond the AI generation limit.',
+            kind: 'generation',
+            message: generationLimited
+              ? 'This word was not generated because the AI limit or plan does not allow more.'
+              : 'This word is beyond the AI generation limit.',
           });
           publish(word, 'checking');
           continue;
@@ -439,8 +456,9 @@ export function createSpreadsheetImportService({
           assertActive();
           diagnostics.itemFailed?.(word, error);
           assertActive();
+          if (stopsFurtherGeneration(error)) generationLimited = true;
         }
-        if (index < accepted.length - 1 && generatedCount < maxAiCards) {
+        if (index < accepted.length - 1 && generatedCount < maxAiCards && !generationLimited) {
           await awaitStage(() => delay(2500));
         }
       }
@@ -453,7 +471,7 @@ export function createSpreadsheetImportService({
         categoryDeltas,
       }));
 
-      const result = withEvidence(itemImportResult(summary));
+      const result = withEvidence(itemImportResult(summary, generationLimited));
       if (result.status !== 'completed') {
         assertActive();
         feedback.error(result.message);
