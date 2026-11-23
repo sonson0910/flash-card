@@ -286,12 +286,15 @@ jobs:
           test "$sw_status" = "200"
           jq -e --arg revision "$REVISION" '.revision == $revision and .status == "ok"' artifacts/live-staging/health.json
           test "$(sha256sum candidate/dist/sw.js | cut -d' ' -f1)" = "$(sha256sum artifacts/live-staging/sw.js | cut -d' ' -f1)"
-          # The staging host must stay out of search indexes: every response carries noindex and
-          # /robots.txt resolves to the candidate's crawl-blocking file.
+          # The staging host must stay out of search indexes: every response carries noindex and, when
+          # the candidate ships its crawl-blocking file, /robots.txt resolves to that file. A retained
+          # candidate sealed before that file existed is staged with the noindex header only.
           curl --proto '=https' --tlsv1.2 --silent --show-error --fail --output /dev/null --dump-header artifacts/live-staging/root-headers.txt "$STAGING_ORIGIN/"
           grep -qiE '^x-robots-tag:[[:space:]]*noindex, nofollow' artifacts/live-staging/root-headers.txt
-          curl --proto '=https' --proto-redir '=https' --tlsv1.2 --silent --show-error --fail --location --max-redirs 2 --output artifacts/live-staging/robots.txt "$STAGING_ORIGIN/robots.txt"
-          grep -qxE 'Disallow:[[:space:]]*/' artifacts/live-staging/robots.txt
+          if [[ -f candidate/dist/robots-disallow.txt ]]; then
+            curl --proto '=https' --proto-redir '=https' --tlsv1.2 --silent --show-error --fail --location --max-redirs 2 --output artifacts/live-staging/robots.txt "$STAGING_ORIGIN/robots.txt"
+            grep -qxE 'Disallow:[[:space:]]*/' artifacts/live-staging/robots.txt
+          fi
           if [[ "$HOSTING_ONLY" == "true" ]]; then
             echo "Verified Hosting-only shell baseline: revision=$REVISION candidate_run_id=$CANDIDATE_RUN_ID candidate_sha256=$CANDIDATE_SHA256. No complete staging receipt was issued." >> "$GITHUB_STEP_SUMMARY"
             exit 0

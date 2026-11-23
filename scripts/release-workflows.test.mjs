@@ -213,6 +213,12 @@ describe('release workflow contracts', () => {
     expect(robotsCheck).toBeGreaterThan(-1);
     expect(headerCheck).toBeLessThan(hostingOnlyExit);
     expect(robotsCheck).toBeLessThan(hostingOnlyExit);
+    // A retained candidate sealed before the crawl-blocking file existed gets no robots redirect, so
+    // the robots check runs only for a candidate that ships the file; the header check always runs.
+    const robotsGuard = liveCheck.indexOf('if [[ -f candidate/dist/robots-disallow.txt ]]; then');
+    expect(robotsGuard).toBeGreaterThan(headerCheck);
+    expect(robotsGuard).toBeLessThan(robotsCheck);
+    expect(liveCheck.indexOf('fi', robotsCheck)).toBeLessThan(hostingOnlyExit);
     for (const relativePath of ['.github/workflows/deploy-production.yml', '.github/workflows/deploy-firestore-rules.yml']) {
       expect(read(relativePath)).not.toContain('--hosting-environment');
     }

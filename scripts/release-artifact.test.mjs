@@ -466,20 +466,27 @@ describe('sealed release artifact', () => {
       .toThrow(/Hosting environment/);
   });
 
-  it('promotes a staging config only from a candidate that ships the crawl-blocking robots file', () => {
+  it('promotes a staging config with the noindex header for every candidate and the robots redirect only when the candidate ships a crawl-blocking file', () => {
     const root = createCandidate();
-    const promote = () => execFileSync(process.execPath, [
-      path.resolve('scripts/release-artifact.mjs'), 'promote-config', '--root', root,
-      '--source', 'firebase.json', '--output', 'firebase.promoted.json', '--hosting-environment', 'staging',
-    ], { stdio: 'pipe' });
-    expect(promote).toThrow();
+    const noindexHeader = [{ source: '**', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }];
+    const promote = () => {
+      execFileSync(process.execPath, [
+        path.resolve('scripts/release-artifact.mjs'), 'promote-config', '--root', root,
+        '--source', 'firebase.json', '--output', 'firebase.promoted.json', '--hosting-environment', 'staging',
+      ], { stdio: 'pipe' });
+      return JSON.parse(fs.readFileSync(path.join(root, 'firebase.promoted.json'), 'utf8'));
+    };
+    // A retained candidate sealed before the build shipped robots-disallow.txt must still stage.
+    const legacy = promote();
+    expect(legacy.hosting.headers).toEqual(noindexHeader);
+    assert.equal(legacy.hosting.redirects, undefined);
     fs.writeFileSync(path.join(root, 'dist/robots-disallow.txt'), 'User-agent: *\nAllow: /\n');
     expect(promote).toThrow();
     fs.writeFileSync(path.join(root, 'dist/robots-disallow.txt'), 'User-agent: *\nDisallow: /\n');
-    promote();
-    const promoted = JSON.parse(fs.readFileSync(path.join(root, 'firebase.promoted.json'), 'utf8'));
-    expect(promoted.hosting.headers).toEqual([
-      { source: '**', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+    const current = promote();
+    expect(current.hosting.headers).toEqual(noindexHeader);
+    expect(current.hosting.redirects).toEqual([
+      { source: '/robots.txt', destination: '/robots-disallow.txt', type: 302 },
     ]);
   });
 });

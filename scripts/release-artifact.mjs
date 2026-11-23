@@ -486,8 +486,12 @@ const stripHooks = value => {
 const STAGING_ROBOTS_PATH = 'robots-disallow.txt';
 
 // The sealed build carries production robots and no noindex meta, because one artifact serves both
-// targets. A staging promotion therefore adds the search directives to its Hosting config.
-export function createPromotedFirebaseConfig(config, { hostingEnvironment = 'production', ...options } = {}) {
+// targets. A staging promotion therefore adds the search directives to its Hosting config: the
+// noindex header always, and the robots redirect only when the candidate ships the file it targets.
+export function createPromotedFirebaseConfig(
+  config,
+  { hostingEnvironment = 'production', stagingRobotsRedirect = true, ...options } = {},
+) {
   if (!['production', 'staging'].includes(hostingEnvironment)) {
     throw new Error('Promoted Hosting environment must be production or staging.');
   }
@@ -499,20 +503,31 @@ export function createPromotedFirebaseConfig(config, { hostingEnvironment = 'pro
       ...(hosting.headers ?? []),
       { source: '**', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
     ];
-    hosting.redirects = [
-      { source: '/robots.txt', destination: `/${STAGING_ROBOTS_PATH}`, type: 302 },
-      ...(hosting.redirects ?? []),
-    ];
+    if (stagingRobotsRedirect) {
+      hosting.redirects = [
+        { source: '/robots.txt', destination: `/${STAGING_ROBOTS_PATH}`, type: 302 },
+        ...(hosting.redirects ?? []),
+      ];
+    }
   }
   return promoted;
 }
 
-const requireStagingRobotsFile = root => {
+// A candidate sealed before the build shipped robots-disallow.txt cannot gain it without re-sealing, and a
+// retained candidate (the A/R shell) must still stage, so a missing file only drops the robots redirect.
+const stagingRobotsFileShipped = root => {
   const relativePath = `${COMPONENT_PATHS.dist.path}/${STAGING_ROBOTS_PATH}`;
+  try {
+    fs.lstatSync(path.resolve(root, relativePath));
+  } catch (error) {
+    if (error?.code === 'ENOENT') return false;
+    throw error;
+  }
   requireFile(root, relativePath, 'stagingRobots');
   if (!/^Disallow:\s*\/\s*$/m.test(fs.readFileSync(path.resolve(root, relativePath), 'utf8'))) {
     throw new Error('The candidate robots-disallow.txt must disallow all crawling.');
   }
+  return true;
 };
 
 const parseOptions = args => {
@@ -574,10 +589,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const source = path.resolve(root, options.get('--source') || 'firebase.json');
     const output = path.resolve(root, options.get('--output') || 'firebase.promoted.json');
     const hostingEnvironment = options.get('--hosting-environment') || 'production';
-    if (hostingEnvironment === 'staging') requireStagingRobotsFile(root);
+    const stagingRobotsRedirect = hostingEnvironment === 'staging' && stagingRobotsFileShipped(root);
+    if (hostingEnvironment === 'staging' && !stagingRobotsRedirect) {
+      console.log('Candidate ships no robots-disallow.txt; staging Hosting gets the noindex header without the robots redirect.');
+    }
     writeJson(output, createPromotedFirebaseConfig(JSON.parse(fs.readFileSync(source, 'utf8')), {
       expectedFirestoreDatabaseId: options.get('--database-id'),
       hostingEnvironment,
+      stagingRobotsRedirect,
     }));
     console.log(`Wrote hook-free promoted Firebase config to ${path.relative(root, output)}.`);
   } else {
