@@ -40,12 +40,12 @@ const buildReadingPlan = (card: { readonly word: string; readonly phonetic?: str
   const phonetic = card.phonetic?.trim() ?? '';
   const looksLikePinyin = phonetic.length > 0 && !HAN_PATTERN.test(phonetic) && LATIN_PATTERN.test(phonetic);
   if (!looksLikePinyin) return { readingText: null, readingLang: 'zh-Latn', kind: 'pinyin' };
-  return {
-    readingText: phonetic,
-    readingLang: 'zh-Latn',
-    kind: 'pinyin',
-    toneSyllables: parseToneSyllables(phonetic),
-  };
+  const toneSyllables = parseToneSyllables(phonetic);
+  // Unspaced pinyin ("Zhōngguó") parses into fewer syllables than the word has characters;
+  // grading a single tone for it would under-test the word, so offer no tone data instead.
+  const hanCount = Array.from(card.word).filter(character => HAN_PATTERN.test(character)).length;
+  if (hanCount > 0 && toneSyllables.length !== hanCount) return { readingText: phonetic, readingLang: 'zh-Latn', kind: 'pinyin' };
+  return { readingText: phonetic, readingLang: 'zh-Latn', kind: 'pinyin', toneSyllables };
 };
 
 export const zhLanguagePack: LanguagePack = {
