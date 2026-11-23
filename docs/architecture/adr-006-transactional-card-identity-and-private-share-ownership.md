@@ -92,11 +92,15 @@ contains at most 100 cards, is additionally bounded to 750,000 encoded bytes, an
 gets an `expiresAt` timestamp 30 days after creation. The callable returns that
 timestamp with the share ID.
 
-Revocation reads both documents before writing. Private ownership metadata is
-authoritative for current shares; `authorUid` in a legacy public document is used
-only when private metadata is absent. The transaction deletes every document that
-exists, rejects a different requester, and treats an already-absent pair as an
-idempotent no-op.
+Revocation reads both documents before writing. Private ownership metadata is the
+only authority to revoke: when it is absent or is not a valid current record, the
+transaction refuses with a migration-required error and deletes nothing, even if a
+legacy public document carries `authorUid`. That share stays until the operator
+migration gives it private metadata or its TTL removes it. Account deletion is the
+one path that still removes a legacy share by `authorUid`, because it acts for the
+owner's whole account. Otherwise the transaction deletes every document that exists,
+rejects a different requester, and treats an already-absent pair as an idempotent
+no-op.
 
 Firestore Rules deny list and all client writes for public shares, permit only a
 schema-valid unexpired current share (or the tightly shaped legacy format) to be
@@ -135,8 +139,9 @@ share even if asynchronous TTL deletion has not run yet.
   long UTF-8/multi-block inputs and malicious alternate IDs, but production
   acceptance still requires the Java-backed emulator suite. Static source matching
   is not a Rules compiler/runtime result.
-- Legacy shares retain their old public `authorUid` shape until they expire or are
-  revoked; the fallback must not be extended to new shares.
+- Legacy shares retain their old public `authorUid` shape until they expire or the
+  operator migration rewrites them; the account-deletion fallback must not be
+  extended to new shares or to revocation.
 - Operators must configure TTL for both collections. TTL is cleanup, not the access
   control; the Rules expiry comparison remains mandatory.
 
