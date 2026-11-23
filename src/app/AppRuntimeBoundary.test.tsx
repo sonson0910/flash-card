@@ -30,4 +30,22 @@ describe('AppRuntimeBoundary', () => {
 
     expect(onRetry).toHaveBeenCalledOnce();
   });
+
+  it('logs the error name and a bounded component stack without the message', () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      const error = new TypeError('card body for a learner');
+      const boundary = new AppRuntimeBoundary({ children: null, onError: vi.fn(), onRetry: vi.fn() });
+
+      boundary.componentDidCatch(error, { componentStack: 'x'.repeat(3000) } as ErrorInfo);
+
+      expect(logged).toHaveBeenCalledOnce();
+      const [, details] = logged.mock.calls[0] as [string, { name: string; componentStack: string }];
+      expect(details.name).toBe('TypeError');
+      expect(details.componentStack).toHaveLength(1000);
+      expect(JSON.stringify(logged.mock.calls)).not.toContain('learner');
+    } finally {
+      logged.mockRestore();
+    }
+  });
 });

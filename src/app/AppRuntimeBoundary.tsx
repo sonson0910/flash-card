@@ -21,7 +21,8 @@ export class AppRuntimeBoundary extends React.Component<AppRuntimeBoundaryProps,
     return { error };
   }
 
-  componentDidCatch(error: Error, _info: ErrorInfo) {
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('Unhandled workspace render error', { name: error.name, componentStack: info.componentStack?.slice(0, 1000) });
     this.props.onError(error);
   }
 
