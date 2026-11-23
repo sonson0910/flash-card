@@ -123,6 +123,10 @@ export default defineConfig(({ mode }) => {
       sourcemap: false,
       chunkSizeWarningLimit: 600,
       modulePreload: {
+        // The polyfill runs inside the entry chunk, so it starts only after the files that index.html
+        // preloads have loaded and cannot speed them up. Without it, Vite's preload helper falls back to
+        // rel="preload" for lazy chunks in browsers without modulepreload, so the initial bundle skips it.
+        polyfill: false,
         resolveDependencies(filename, dependencies) {
           if (!/AppRuntimeRetry\.virtual-[^/]+\.js$/.test(filename)) return dependencies;
           return dependencies.filter(dependency => !/(?:^|\/)AppRuntime-[^/]+\.js$/.test(dependency));
