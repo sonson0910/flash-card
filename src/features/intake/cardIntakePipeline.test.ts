@@ -1050,7 +1050,7 @@ describe('Card Intake Pipeline contract', () => {
     // so the service stores the shared card there although it created it.
     const shared = card('attention');
     repositoryRuntime.createCardV2IfAbsent.mockResolvedValueOnce({
-      card: { ...shared, id: 'word-focus', revision: 1 }, created: true, gamification: null,
+      card: { ...shared, id: 'word-focus', revision: 1 } as CardData, created: true, gamification: null,
     });
     const pipeline = createCardIntakePipeline({ getContext: createContext });
 
