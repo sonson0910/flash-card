@@ -1,3 +1,5 @@
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react';
 import { CheckCircle2, Sparkles, Star, XCircle } from 'lucide-react';
 import { detectScriptFamily } from '../../features/languagePacks/scriptDetection';
 import { segmentGraphemes, segmentWords } from '../../features/languagePacks/unicodeSegmentation';
@@ -71,6 +73,7 @@ export const getPronunciationTip = (score: number, target: string, transcript: s
 };
 
 export function SpeechMatchFeedback({ value, target }: SpeechMatchFeedbackProps) {
+  const { _ } = useLingui();
   const isWordCheck = value.type === 'word';
 
   return (
@@ -80,7 +83,11 @@ export function SpeechMatchFeedback({ value, target }: SpeechMatchFeedbackProps)
         value.score >= 80 ? 'bg-[var(--sf-success)] text-[var(--sf-on-brand)]' : value.score >= 50 ? 'bg-[var(--sf-reward)] text-[var(--sf-on-brand)]' : 'bg-[var(--sf-danger)] text-[var(--sf-on-brand)]'
       }`}>
         {value.score >= 80 ? <CheckCircle2 size={12} /> : value.score >= 50 ? <Star size={12} className="fill-current" /> : <XCircle size={12} />}
-        <span>{isWordCheck ? 'Word match' : 'Sentence match'}: {value.score}%</span>
+        <span>
+          {isWordCheck
+            ? <Trans {...msg({ context: 'flashcard.speech.word-match', message: 'Word match' })} />
+            : <Trans {...msg({ context: 'flashcard.speech.sentence-match', message: 'Sentence match' })} />}: {value.score}%
+        </span>
       </div>
 
       {/* Visual Diagnostic Display */}
@@ -98,11 +105,11 @@ export function SpeechMatchFeedback({ value, target }: SpeechMatchFeedbackProps)
 
       {/* Transcript & Feedback Tip */}
       <span className="max-w-[280px] truncate text-xs font-bold text-[var(--sf-text)]">
-        Browser recognised: “{value.transcript || '...'}”
+        {_({ ...msg({ context: 'flashcard.speech.recognised', message: 'Browser recognised: “{transcript}”' }), values: { transcript: value.transcript || '...' } })}
       </span>
       <p className="text-[11px] font-medium text-[var(--sf-brand-text)] flex items-center justify-center gap-1 max-w-[280px]">
         <Sparkles size={11} className="shrink-0" aria-hidden="true" />
-        <span>The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent.</span>
+        <span><Trans {...msg({ context: 'flashcard.speech.limitation', message: 'The browser checks whether the intended words were recognised; it does not assess individual sounds, phonemes, or accent.' })} /></span>
       </p>
     </div>
   );

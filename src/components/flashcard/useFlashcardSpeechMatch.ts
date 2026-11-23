@@ -1,5 +1,11 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { scoreSpeechMatch } from '../../lib/speechMatch';
+import {
+  SPEECH_RECOGNITION_DENIED,
+  SPEECH_RECOGNITION_FAILED,
+  SPEECH_RECOGNITION_START_FAILED,
+  SPEECH_RECOGNITION_UNSUPPORTED,
+} from '../../lib/speechMessages';
 import type { SpeechMatchFeedbackValue } from './SpeechMatchFeedback';
 
 type SpeechMatchTarget = 'word' | 'explanation';
@@ -53,11 +59,6 @@ export interface FlashcardSpeechMatchResult {
     targetType?: SpeechMatchTarget,
   ) => void;
 }
-
-const unsupportedSpeechMessage = 'This browser does not support speech recognition. Try Google Chrome.';
-const deniedSpeechMessage = 'Microphone access is blocked. Allow microphone access for this site, then try again.';
-const genericSpeechMessage = 'Speech could not be recognised. Check microphone permission and try again.';
-const startSpeechMessage = 'The microphone could not start. Check permission and try again.';
 
 const getSpeechRecognition = (): SpeechRecognitionConstructor | null => {
   if (typeof window === 'undefined') return null;
@@ -146,7 +147,7 @@ export function useFlashcardSpeechMatch({
     const sessionCardId = cardId;
     const Recognition = getSpeechRecognition();
     if (!Recognition) {
-      onPronunciationError(unsupportedSpeechMessage);
+      onPronunciationError(SPEECH_RECOGNITION_UNSUPPORTED);
       return;
     }
 
@@ -155,7 +156,7 @@ export function useFlashcardSpeechMatch({
       recognition = new Recognition();
     } catch (error) {
       console.error('Could not start speech recognition', error);
-      onPronunciationError(startSpeechMessage);
+      onPronunciationError(SPEECH_RECOGNITION_START_FAILED);
       return;
     }
 
@@ -206,8 +207,8 @@ export function useFlashcardSpeechMatch({
       const error = getSpeechError(eventValue);
       onPronunciationError(
         error === 'not-allowed' || error === 'service-not-allowed'
-          ? deniedSpeechMessage
-          : genericSpeechMessage,
+          ? SPEECH_RECOGNITION_DENIED
+          : SPEECH_RECOGNITION_FAILED,
       );
     };
 
@@ -222,7 +223,7 @@ export function useFlashcardSpeechMatch({
     } catch (error) {
       console.error('Could not start speech recognition', error);
       if (!clearSession()) return;
-      onPronunciationError(startSpeechMessage);
+      onPronunciationError(SPEECH_RECOGNITION_START_FAILED);
     }
   }, [cardId, explanation, invalidateRecognition, onPronunciationError, speechLocale, word]);
 

@@ -4,6 +4,7 @@ import { Trans, useLingui } from '@lingui/react';
 import type { Dispatch, MouseEvent, PointerEvent, ReactNode, RefObject, SetStateAction } from 'react';
 import { isAccountSignedIn } from '../../features/account/accountDataService';
 import type { LearningStateOutcome } from '../../features/learning/learningStateController';
+import { localizeSpeechMessage } from './localizeSpeechMessage';
 import { isCardDue } from '../../lib/srs';
 import type { CardData } from '../../types/card';
 import { RecoverableActionFeedback } from '../RecoverableActionFeedback';
@@ -138,7 +139,7 @@ export function CardBack({
               <Trans {...msg({ context: 'flashcard.ai-disclosure', message: 'AI-generated content may be incorrect. Please check the meaning.' })} />
             </p>
           )}
-          {pronunciationError && <p className="flashcard-back-error text-pretty" role="alert">{pronunciationError}</p>}
+          {pronunciationError && <p className="flashcard-back-error text-pretty" role="alert">{localizeSpeechMessage(pronunciationError, _)}</p>}
         </section>
 
         {(data.exampleSentence || data.exampleTranslation) && (

@@ -4,6 +4,7 @@ import { Trans, useLingui } from '@lingui/react';
 import { CheckCircle2, EyeOff, FolderOpen, FolderX, Mic, Sparkles, Volume2, X } from 'lucide-react';
 import type { Dispatch, MouseEvent, PointerEvent, ReactNode, RefObject, SetStateAction } from 'react';
 import { speechLocaleFor } from '../../lib/speechLocale';
+import { localizeSpeechMessage } from './localizeSpeechMessage';
 import { isCardDue } from '../../lib/srs';
 import type { CardData } from '../../types/card';
 import { ActiveRecallQuiz } from './ActiveRecallQuiz';
@@ -219,7 +220,7 @@ export function CardFront({
 
           {isRecording && <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[var(--sf-danger)]"><span className="size-2 rounded-full bg-[var(--sf-danger)] animate-pulse motion-reduce:animate-none" /><Trans {...msg({ context: 'flashcard.audio.listening', message: 'Listening' })} /></div>}
           {pronunciationScore && <SpeechMatchFeedback value={pronunciationScore} target={pronunciationScore.type === 'word' ? data.word : data.explanation} />}
-          {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-[var(--sf-danger)]" role="alert">{pronunciationError}</p>}
+          {pronunciationError && <p className="mt-2 text-pretty text-xs font-semibold text-[var(--sf-danger)]" role="alert">{localizeSpeechMessage(pronunciationError, _)}</p>}
 
           {isPackCard ? (
             <>
