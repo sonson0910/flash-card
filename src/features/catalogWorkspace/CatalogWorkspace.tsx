@@ -528,8 +528,10 @@ export default function CatalogWorkspace({
   const selectedUnitKey = selectedUnit ? pathUnitKey(selectedUnit.unit) : null;
   const allUnitsComplete = trackUnits.length > 0 && trackUnits.every(progress => progress.status === 'complete');
   const pace = readDailyPaceForEta();
-  const etaDays = pace && selectedUnit?.introduced != null
-    ? daysToIntroduceWords(selectedUnit.unit.total - selectedUnit.introduced, pace)
+  const daysOrNull = (remainingWords: number) => (pace && remainingWords > 0 ? daysToIntroduceWords(remainingWords, pace) : null);
+  const etaDays = selectedUnit?.introduced != null ? daysOrNull(selectedUnit.unit.total - selectedUnit.introduced) : null;
+  const trackEtaDays = trackUnits.length > 0 && trackUnits.every(progress => progress.introduced !== null)
+    ? daysOrNull(trackUnits.reduce((sum, progress) => sum + progress.unit.total - (progress.introduced ?? 0), 0))
     : null;
   const focusUnitPreview = () => globalThis.requestAnimationFrame?.(() => {
     globalThis.document?.getElementById('catalog-unit-preview')?.focus({ preventScroll: false });
@@ -643,6 +645,7 @@ export default function CatalogWorkspace({
       busy: isContinuingUnit,
       error: continueError,
       etaDays,
+      trackEtaDays,
       allComplete: allUnitsComplete,
     },
   };

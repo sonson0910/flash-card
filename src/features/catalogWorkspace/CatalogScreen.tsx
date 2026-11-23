@@ -421,7 +421,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
   const allUnitsComplete = pathUnitContinue?.allComplete
     ?? (pathUnits ? pathUnits.length > 0 && pathUnits.every(unit => unit.status === 'complete') : false);
   const continueDisabled = !progressAvailable || !featuredUnit || allUnitsComplete || Boolean(pathUnitContinue?.busy);
-  const etaDays = pathUnitContinue?.etaDays ?? null;
+  const etaDays = pathUnitContinue?.trackEtaDays ?? null;
   const unitWordsLeft = featuredUnit && featuredUnit.mastered !== null && progressAvailable
     ? Math.max(0, featuredUnit.unit.total - featuredUnit.mastered)
     : null;

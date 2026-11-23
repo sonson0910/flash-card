@@ -146,6 +146,8 @@ export interface CatalogScreenModel {
     busy: boolean;
     error: string | null;
     etaDays: number | null;
+    /** Days to introduce every word of the active track that is not introduced yet. */
+    trackEtaDays?: number | null;
     allComplete: boolean;
   };
 }
