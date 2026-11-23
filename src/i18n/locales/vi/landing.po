@@ -707,4 +707,4 @@ msgstr "Mở thư viện"
 #: src/features/landing/LandingPage.tsx:978
 msgctxt "landing.languages.description"
 msgid "Start a course in any of these four languages, with meanings shown in English or Vietnamese. Each course keeps its own cards and progress."
-msgstr "Bắt đầu khoá học bằng bất kỳ ngôn ngữ nào trong bốn ngôn ngữ này, với nghĩa hiển thị bằng tiếng Anh hoặc tiếng Việt. Mỗi khoá học có thẻ và tiến độ riêng."
+msgstr "Chọn một trong bốn ngôn ngữ này để bắt đầu khoá học; nghĩa của từ hiển thị bằng tiếng Anh hoặc tiếng Việt. Mỗi khoá học có bộ thẻ và tiến độ riêng."
