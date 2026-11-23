@@ -110,6 +110,45 @@ describeWithEmulators('learner file uploads against the emulators', () => {
     expect(await usageOf(uid)).toMatchObject({ usedBytes: 0, reservedBytes: 0 });
   });
 
+  it('keeps the stored object of a settled file when the same finalize event is delivered again', async () => {
+    const uid = owner();
+    const prepared = await prepareFileUpload(database, uid, {
+      ownerId: uid, name: 'reading.pdf', contentType: 'application/pdf', bytes: 1_000, purpose: 'source', courseId: null,
+    }, config, now);
+    const object = await upload(uid, prepared.fileId, pdf(1_200), 'application/pdf');
+    await expect(finalizeUploadedFile(database, objects, object, config, now)).resolves.toEqual({ kind: 'stored', status: 'ready' });
+    await expect(finalizeUploadedFile(database, objects, object, config, now)).resolves.toEqual({ kind: 'ignored' });
+    expect(await exists(object.name)).toBe(true);
+    expect(await usageOf(uid)).toMatchObject({ usedBytes: 1_200, reservedBytes: 0, fileCount: 1 });
+    expect((await listFiles(database, uid, config, now)).files).toEqual([expect.objectContaining({ id: prepared.fileId, status: 'ready' })]);
+  });
+
+  it('settles a file once and keeps its object when two copies of the finalize event run at the same time', async () => {
+    const uid = owner();
+    const prepared = await prepareFileUpload(database, uid, {
+      ownerId: uid, name: 'reading.pdf', contentType: 'application/pdf', bytes: 1_000, purpose: 'source', courseId: null,
+    }, config, now);
+    const object = await upload(uid, prepared.fileId, pdf(1_200), 'application/pdf');
+    const outcomes = await Promise.all([
+      finalizeUploadedFile(database, objects, object, config, now), finalizeUploadedFile(database, objects, object, config, now),
+    ]);
+    expect(outcomes.map(outcome => outcome.kind).sort()).toEqual(['ignored', 'stored']);
+    expect(await exists(object.name)).toBe(true);
+    expect(await usageOf(uid)).toMatchObject({ usedBytes: 1_200, reservedBytes: 0, fileCount: 1 });
+  });
+
+  it('still removes the object when a rejected upload is reported again', async () => {
+    const uid = owner();
+    const prepared = await prepareFileUpload(database, uid, {
+      ownerId: uid, name: 'fake.pdf', contentType: 'application/pdf', bytes: 500, purpose: 'source', courseId: null,
+    }, config, now);
+    const object = await upload(uid, prepared.fileId, Buffer.from('not a pdf'.padEnd(500, ' ')), 'application/pdf');
+    await expect(finalizeUploadedFile(database, objects, object, config, now)).resolves.toEqual({ kind: 'rejected', reason: 'signature' });
+    await bucket.file(object.name).save(Buffer.from('again'), { contentType: 'application/pdf', resumable: false });
+    await expect(finalizeUploadedFile(database, objects, object, config, now)).resolves.toEqual({ kind: 'deleted-unreserved' });
+    expect(await exists(object.name)).toBe(false);
+  });
+
   it('attaches a stored file to an existing course, then deletes it and gives the bytes back', async () => {
     const uid = owner();
     await seedCourse(uid);

@@ -314,6 +314,8 @@ export type FinalizeOutcome =
   | { kind: 'rejected'; reason: FileRejectionReason }
   | { kind: 'stored'; status: 'ready' | 'partial' };
 
+const isSettledRecord = (record: FileRecord | undefined): boolean => record?.status === 'ready' || record?.status === 'partial';
+
 export async function finalizeUploadedFile(database: Firestore, objects: FileObjectStore, object: FinalizedObject,
   config: PilotConfig, now = new Date()): Promise<FinalizeOutcome> {
   const owner = parseFileObjectPath(object.name);
@@ -329,6 +331,9 @@ export async function finalizeUploadedFile(database: Firestore, objects: FileObj
   const fileRef = refs.files.doc(owner.fileId);
   const initial = await fileRef.get();
   const initialRecord = initial.data() as FileRecord | undefined;
+  // A finalize event can be delivered more than once. The object of a file that is already settled is
+  // owned by its record and its counted bytes, so a repeat delivery must leave both alone.
+  if (isSettledRecord(initialRecord)) return { kind: 'ignored' };
   if (!initialRecord || initialRecord.status !== 'uploading') {
     await objects.deleteObject(object.name);
     return { kind: 'deleted-unreserved' };
@@ -350,6 +355,7 @@ export async function finalizeUploadedFile(database: Firestore, objects: FileObj
       transaction.get(fileRef), transaction.get(refs.usage), transaction.get(refs.plan),
     ]);
     const record = recordSnapshot.data() as FileRecord | undefined;
+    if (isSettledRecord(record)) return { kind: 'ignored' } as const;
     if (!record || record.status !== 'uploading') return { kind: 'deleted-unreserved' } as const;
     const usage = usageOf(usageSnapshot.data());
     const limits = fileLimitsFor(planSnapshot.data(), now, config);
@@ -376,7 +382,7 @@ export async function finalizeUploadedFile(database: Firestore, objects: FileObj
     });
     return { kind: 'stored', status } as const;
   });
-  if (outcome.kind !== 'stored') await objects.deleteObject(object.name);
+  if (outcome.kind === 'rejected' || outcome.kind === 'deleted-unreserved') await objects.deleteObject(object.name);
   return outcome;
 }
 
