@@ -487,6 +487,32 @@ describe('review persistence', () => {
     }
   });
 
+  it('counts every review already in the card history toward its week, not only the one the server verified', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00.000Z'));
+    try {
+      // Three entries from this week that the server never bounded: old clients on the legacy review, or
+      // history a card was created with.
+      const earlier = ['2026-09-21', '2026-09-22', '2026-09-23'].map(day => ({
+        rating: 'good', reviewedAt: `${day}T08:00:00.000Z`, scheduledDays: 1, elapsedDays: 1,
+      }));
+      const stored = { ...baseCard(earlier), reviews: 3, difficulty: 'good' };
+      const test = harness(stored);
+      test.values.set('users/owner/profile/stats', snapshot(true, {
+        rewardTimeZone: 'UTC', verifiedXp: 10, verifiedStreak: 1, lastVerifiedStudyDay: '2026-09-26',
+      }));
+      const reviewedAt = '2026-09-27T11:59:00.000Z';
+      await applyReviewForOwner(test.database, 'owner', reviewRequest({
+        reviewedAt, fields: scheduleReviewTransition(stored, 'good', new Date(reviewedAt)),
+      }));
+      expect(test.writes.find(write => write.path === 'users/owner/profile/stats')?.data.wordWeeksV1).toMatchObject({
+        wordOfWeekByLanguage: { en: { '2026-09-21': { cardId: 'word-focus', reviews: 4 } } },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('reads and writes only the documents a verified review always has once the stats records exist', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-11-19T13:00:00.000Z'));
