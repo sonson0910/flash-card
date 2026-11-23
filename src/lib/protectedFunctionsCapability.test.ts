@@ -96,6 +96,19 @@ describe('protected Firebase Functions failure classification', () => {
     expect(failure).toMatchObject({ kind: 'configuration', reason: 'intent-unavailable', retryable: false });
     expect(failure.message).toBe('Purchase registration is temporarily unavailable.');
   });
+  it.each([
+    ['operation-expired', 'unknown', /date and time/],
+    ['migration-frozen', 'network', /maintenance/],
+    ['operation-conflict', 'unknown', /clashed/],
+    ['usage-state', 'unknown', /temporarily unavailable/],
+  ])('keeps the %s share state out of the deployment-mismatch message', (reason, kind, wording) => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), { code: 'functions/failed-precondition', details: { reason } }), 'Deck sharing',
+    );
+    expect(failure).toMatchObject({ kind, reason });
+    expect(failure.message).toMatch(wording);
+    expect(failure.message).not.toMatch(/out of sync/);
+  });
   it('preserves the changed-offer reason so the learner can review new terms', () => {
     const failure = classifyProtectedFunctionError(
       Object.assign(new Error('private detail'), {

@@ -1020,6 +1020,7 @@ describe('useLearningStatePersistence bulk patching', () => {
       { kind: 'database' },
       'user-a',
       [{ cardId: card.id, baseRevision: 3, fields: { bookmarked: true }, fieldMask: ['bookmarked'] }],
+      expect.any(Number),
     );
     expect(outcomes).toEqual([{
       cardId: card.id,
@@ -1056,6 +1057,7 @@ describe('useLearningStatePersistence bulk patching', () => {
       { kind: 'database' },
       'user-a',
       [{ cardId: card.id, baseRevision: 3, fields: { customDeck: 'Deck A' }, fieldMask: ['customDeck'] }],
+      expect.any(Number),
     );
     expect(outcomes).toEqual([
       { cardId: card.id, applied: true, publication: expect.objectContaining({ kind: 'patch', cardId: card.id }) },
@@ -1089,6 +1091,19 @@ describe('useLearningStatePersistence bulk patching', () => {
     await harness.persistence.persistBulkPatch!([{ cardId: card.id, fields: { bookmarked: true } }]);
 
     expect(harness.acceptVerifiedEpoch).toHaveBeenCalledWith('user-a', 3);
+  });
+
+  it('reloads the cloud view after a stale-epoch rejection so the next attempt uses fresh revisions', async () => {
+    mocks.bulkPatchCards.mockRejectedValue(new CardMutationPreconditionError('stale-library-epoch'));
+    mocks.getLibraryEpoch.mockResolvedValue(4);
+    const harness = createHarness();
+
+    await expect(harness.persistence.persistBulkPatch!([{ cardId: card.id, fields: { bookmarked: true } }]))
+      .rejects.toBeInstanceOf(CardMutationPreconditionError);
+
+    expect(harness.acceptVerifiedEpoch).toHaveBeenCalledWith('user-a', 4);
+    expect(harness.options.resetCloudPage).toHaveBeenCalledOnce();
+    expect(harness.options.refreshCloud).toHaveBeenCalledOnce();
   });
 
   it('rejects immediately when the cloud library is not ready', async () => {

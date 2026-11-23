@@ -2,7 +2,8 @@ import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import type { CardData } from '../../types/card';
 import { withTimeout } from '../../lib/async';
-import { getProtectedFunctionUserMessage } from '../../lib/protectedFunctionsCapability';
+import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
+import { getProtectedFunctionUserMessage, ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
 import { SharedDeckCourseNativeLanguageMismatchError } from './shared-deck-course-error';
 
@@ -35,6 +36,24 @@ class InvalidSharedCardBatchError extends Error {}
 const isEndedShareLinkError = (error: unknown): boolean => {
   const code = typeof error === 'object' && error !== null ? (error as { code?: unknown }).code : undefined;
   return code === 'permission-denied' || code === 'not-found';
+};
+
+// The server answered and refused before writing a receipt, so a retry cannot be a repeat of a lost response.
+const DEFINITE_SHARE_REJECTION_CODES = new Set([
+  'invalid-argument', 'resource-exhausted', 'quota-exceeded', 'permission-denied', 'unauthenticated',
+  'failed-precondition', 'not-found',
+]);
+const isDefiniteShareRejection = (error: unknown): boolean => (
+  error instanceof ProtectedFunctionError && DEFINITE_SHARE_REJECTION_CODES.has(error.code)
+);
+
+// A recipient who opens a share link enters the app without the library catalog, so it is loaded before the message is read.
+const meaningLanguageMismatchMessage = async (): Promise<string> => {
+  await loadCatalog(getActiveUiLocale(), 'library').catch(() => undefined);
+  return i18n._(msg({
+    id: 'library.share.meaning-language-mismatch',
+    message: "This shared deck uses a different meaning language from your existing course. Change the course's Meaning language in Settings, then try again.",
+  }));
 };
 
 export interface SharedDeckAdapter {
@@ -630,10 +649,18 @@ export function createSharedDeckSessionController({
     const existing = pending.some(candidate => (
       candidate.ownerId === operation.ownerId && candidate.fingerprint === operation.fingerprint
     ));
-    const operations = pending.filter(candidate => (
+    let operations = pending.filter(candidate => (
       candidate.ownerId !== operation.ownerId || candidate.fingerprint !== operation.fingerprint
     ));
-    if (!existing && operations.length >= MAX_PENDING_SHARED_DECK_OPERATIONS) return false;
+    // The cap bounds one owner's unresolved retries; another account on this browser must not use it up.
+    // At the cap the oldest unresolved retry is dropped so a long offline spell cannot block every new share.
+    const ownerOperations = operations.filter(candidate => candidate.ownerId === operation.ownerId);
+    if (!existing && ownerOperations.length >= MAX_PENDING_SHARED_DECK_OPERATIONS) {
+      const oldest = ownerOperations.reduce((a, b) => (
+        a.operationCreatedAt < b.operationCreatedAt || (a.operationCreatedAt === b.operationCreatedAt && a.opId < b.opId) ? a : b
+      ));
+      operations = operations.filter(candidate => candidate.opId !== oldest.opId);
+    }
     return persistPendingCreates(normalizePendingCreates([...operations, operation]));
   };
 
@@ -845,6 +872,8 @@ export function createSharedDeckSessionController({
         });
         return { status: 'created', shareId, shareLink, expiresAt: result.expiresAt };
       } catch (error) {
+        // A refusal left nothing on the server, so the request must not keep occupying a retry slot.
+        if (isDefiniteShareRejection(error)) clearPendingCreate(operation);
         if (!isCurrent(operationLifecycle, owner)) return { status: 'stale' };
         publish({
           error: getProtectedFunctionUserMessage(error)
@@ -930,15 +959,14 @@ export function createSharedDeckSessionController({
         if (!isCurrent(operationLifecycle, owner) || pendingSharedDeck !== pending) {
           return { status: 'stale' };
         }
-        publish({
-          error: error instanceof SharedDeckCourseNativeLanguageMismatchError
-            ? i18n._(msg({
-              id: 'library.share.meaning-language-mismatch',
-              message: "This shared deck uses a different meaning language from your existing course. Change the course's Meaning language in Settings, then try again.",
-            }))
-            : getProtectedFunctionUserMessage(error)
-            ?? 'Could not add this shared deck safely. Please try again.',
-        });
+        const message = error instanceof SharedDeckCourseNativeLanguageMismatchError
+          ? await meaningLanguageMismatchMessage()
+          : getProtectedFunctionUserMessage(error)
+            ?? 'Could not add this shared deck safely. Please try again.';
+        if (!isCurrent(operationLifecycle, owner) || pendingSharedDeck !== pending) {
+          return { status: 'stale' };
+        }
+        publish({ error: message });
         return { status: 'failed' };
       } finally {
         if (isCurrent(operationLifecycle, owner)) {

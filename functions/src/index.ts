@@ -375,11 +375,18 @@ export const toSharedDeckHttpsError = (error: unknown): HttpsError | null => {
   if (error instanceof SharedDeckQuotaError) {
     return new HttpsError('resource-exhausted', error.message);
   }
-  if (error instanceof SharedDeckOperationConflictError || error instanceof SharedDeckOperationExpiredError) {
-    return new HttpsError('failed-precondition', error.message);
+  // Each state carries a reason so the client can say what to do instead of a generic deployment message.
+  if (error instanceof SharedDeckOperationConflictError) {
+    return new HttpsError('failed-precondition', error.message, { reason: 'operation-conflict' });
   }
-  if (error instanceof SharedDeckMigrationRequiredError || error instanceof SharedDeckUsageStateError) {
-    return new HttpsError('failed-precondition', error.message);
+  if (error instanceof SharedDeckOperationExpiredError) {
+    return new HttpsError('failed-precondition', error.message, { reason: 'operation-expired' });
+  }
+  if (error instanceof SharedDeckMigrationRequiredError) {
+    return new HttpsError('failed-precondition', error.message, { reason: 'migration-frozen' });
+  }
+  if (error instanceof SharedDeckUsageStateError) {
+    return new HttpsError('failed-precondition', error.message, { reason: 'usage-state' });
   }
   return null;
 };

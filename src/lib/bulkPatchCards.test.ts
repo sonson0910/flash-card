@@ -261,4 +261,34 @@ describe('bulkPatchCards', () => {
       { cardId: 'card-1', applied: false, reason: 'revision-conflict' },
     ]);
   });
+
+  it('rejects a batch built from an older library epoch instead of moving it to the server epoch', async () => {
+    const httpsError = Object.assign(new Error('failed-precondition'), {
+      code: 'functions/failed-precondition',
+      details: { reason: 'stale-library-epoch' },
+    });
+    const callable = vi.fn().mockRejectedValueOnce(httpsError);
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firestore.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ libraryEpoch: 4 }) });
+
+    await expect(bulkPatchCards({} as never, 'user-1', [
+      { cardId: 'card-1', baseRevision: 1, fields: { bookmarked: true }, fieldMask: ['bookmarked'] },
+    ], 3)).rejects.toMatchObject({ reason: 'stale-library-epoch' });
+    expect(callable).toHaveBeenCalledTimes(1);
+    expect(callable.mock.calls[0][0]).toMatchObject({ libraryEpoch: 3 });
+    expect(firestore.getDoc).not.toHaveBeenCalled();
+  });
+
+  it('rejects the whole batch when a per-card result reports a stale epoch for a caller-held epoch', async () => {
+    firestore.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ libraryEpoch: 4 }) });
+    const callable = vi.fn().mockResolvedValueOnce({
+      data: { results: [{ cardId: 'card-1', op: 'patch', applied: false, reason: 'stale-library-epoch' }] },
+    });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    await expect(bulkPatchCards({} as never, 'user-1', [
+      { cardId: 'card-1', baseRevision: 1, fields: { bookmarked: true }, fieldMask: ['bookmarked'] },
+    ], 3)).rejects.toMatchObject({ reason: 'stale-library-epoch' });
+    expect(callable).toHaveBeenCalledTimes(1);
+  });
 });

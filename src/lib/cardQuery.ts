@@ -94,6 +94,12 @@ export function prioritizePracticeCards<T extends { id: string }>(dueCards: T[],
   return prioritized;
 }
 
+function localDateKey(iso: string | undefined): string | null {
+  const date = new Date(iso ?? '');
+  if (Number.isNaN(date.getTime())) return null;
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+}
+
 export function cardMatchesQuery(card: CardData, filters: CardQueryState): boolean {
   if (filters.targetLanguage && effectiveCardTargetLanguage(card) !== filters.targetLanguage) return false;
   if (filters.category && card.category !== filters.category) return false;
@@ -108,7 +114,7 @@ export function cardMatchesQuery(card: CardData, filters: CardQueryState): boole
   }
   if (filters.difficulty === 'due' && !isCardDue(card)) return false;
   if (filters.bookmarkedOnly && card.bookmarked !== true) return false;
-  if (filters.createdDate && card.createdAt?.slice(0, 10) !== filters.createdDate) return false;
+  if (filters.createdDate && localDateKey(card.createdAt) !== filters.createdDate) return false;
   if (filters.wordPrefix) {
     const normalizedWord = (card.normalizedWord || card.word).trim().toLocaleLowerCase('en-US');
     if (!normalizedWord.startsWith(filters.wordPrefix.trim().toLocaleLowerCase('en-US'))) return false;

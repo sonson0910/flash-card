@@ -6,6 +6,7 @@ import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { CourseError } from '../courses/courseModel';
 import type { CardData } from '../../types/card';
 import { createLexemeId } from '../multilingual/lexemeIdentity';
+import { setActiveUiLocale } from '../../i18n/loadCatalog';
 import { createSharedDeckCoursePort } from './shareCourseMatching';
 import {
   createSharedDeckSessionController,
@@ -283,6 +284,37 @@ describe('shared deck session controller', () => {
     });
     expect(browser.url).toContain('?share=deck-native-mismatch');
     expect(browser.replacements).toEqual([]);
+  });
+
+  it('words the meaning-language mismatch in the UI language although the library catalog was not loaded yet', async () => {
+    const course = {
+      id: 'course-ko', targetLanguage: 'ko', nativeLanguage: 'en', status: 'active', goals: [],
+      preferences: { pronunciationVariant: null, showRomanization: false, zhScript: null },
+      createdAt: '2026-01-01T00:00:00.000Z',
+    } as const;
+    const coursePort = createSharedDeckCoursePort({
+      model: {
+        status: 'ready', source: 'cloud', profile: { activeCourseId: course.id, courses: [course] },
+        activeCourse: course, pending: false, errorCode: null,
+      },
+      actions: {} as never,
+    });
+    const { controller, adapter } = setup('https://sonflash.test/?share=deck-native-mismatch', undefined, coursePort);
+    vi.mocked(adapter.load).mockResolvedValue({
+      category: 'Shared', targetLanguage: 'ko', nativeLanguage: 'vi',
+      cards: [canonicalCard('resilience', 'ko', 'vi')],
+    });
+    setActiveUiLocale('vi');
+    i18n.load('vi', {});
+    i18n.activate('vi');
+    try {
+      await controller.activate('owner-1');
+      await controller.actions.acceptShared();
+      expect(controller.getSnapshot().error).toContain('ngôn ngữ nghĩa khác');
+    } finally {
+      setActiveUiLocale('en');
+      i18n.activate('en');
+    }
   });
 
   it('retries one accepted share after the intake pair converges', async () => {
@@ -1020,37 +1052,74 @@ describe('shared deck session controller', () => {
     expect(manualOperation.opId).not.toBe(aiOperation.opId);
   });
 
-  it('fails closed at the pending-operation cap without evicting unresolved retries', async () => {
+  it('keeps sharing new decks after 20 unresolved attempts by dropping the oldest retry record', async () => {
     const storage = new MemoryStorage();
     const first = setup(undefined, storage);
     await first.controller.activate('owner-1');
-    vi.mocked(first.adapter.create).mockRejectedValue(new Error('ambiguous'));
+    vi.mocked(first.adapter.create).mockRejectedValue(new Error('offline'));
     const requests = Array.from({ length: 20 }, (_, index) => ({
       category: 'IELTS', cards: [card(`word-${index}`)], total: 1, hasNext: false,
     }));
 
     for (const request of requests) {
       await expect(first.controller.actions.createShare(request)).resolves.toEqual({ status: 'failed' });
+      await new Promise(resolve => setTimeout(resolve, 2));
     }
-    const firstOperation = vi.mocked(first.adapter.create).mock.calls[0][0];
-    const stored = JSON.parse(storage.getItem('lingoflash_shared_deck_operation_v1') ?? '{}') as {
-      operations?: unknown[];
-    };
-    expect(stored.operations).toHaveLength(20);
+    const operationOf = (index: number) => vi.mocked(first.adapter.create).mock.calls[index][0];
+    const newestOperation = operationOf(19);
 
+    vi.mocked(first.adapter.create).mockResolvedValue({ shareId: 'share-new', expiresAt: '2026-08-10T00:00:00.000Z' });
     await expect(first.controller.actions.createShare({
       category: 'IELTS', cards: [card('word-overflow')], total: 1, hasNext: false,
-    })).resolves.toEqual({ status: 'failed' });
-    expect(first.adapter.create).toHaveBeenCalledTimes(20);
-    expect(first.controller.getSnapshot().error).toMatch(/too many share requests/i);
+    })).resolves.toMatchObject({ status: 'created' });
+    expect(first.adapter.create).toHaveBeenCalledTimes(21);
+
+    const stored = JSON.parse(storage.getItem('lingoflash_shared_deck_operation_v1') ?? '{}') as {
+      operations?: Array<{ opId: string }>;
+    };
+    expect(stored.operations).toHaveLength(19);
+    expect(stored.operations?.some(operation => operation.opId === operationOf(0).opId)).toBe(false);
 
     const reloaded = setup(undefined, storage);
     await reloaded.controller.activate('owner-1');
-    await expect(reloaded.controller.actions.createShare(requests[0])).resolves.toMatchObject({ status: 'created' });
+    await expect(reloaded.controller.actions.createShare(requests[19])).resolves.toMatchObject({ status: 'created' });
     expect(vi.mocked(reloaded.adapter.create).mock.calls[0][0]).toMatchObject({
-      opId: firstOperation.opId,
-      operationCreatedAt: firstOperation.operationCreatedAt,
+      opId: newestOperation.opId,
+      operationCreatedAt: newestOperation.operationCreatedAt,
     });
+  });
+
+  it('releases a request the server refused so refusals never fill the retry cap', async () => {
+    const storage = new MemoryStorage();
+    const { controller, adapter } = setup(undefined, storage);
+    await controller.activate('owner-1');
+    vi.mocked(adapter.create).mockRejectedValue(new ProtectedFunctionError({
+      message: 'limit', kind: 'quota', code: 'resource-exhausted', retryable: false,
+    }));
+    for (let index = 0; index < 21; index += 1) {
+      await expect(controller.actions.createShare({
+        category: 'IELTS', cards: [card(`refused-${index}`)], total: 1, hasNext: false,
+      })).resolves.toEqual({ status: 'failed' });
+    }
+    expect(adapter.create).toHaveBeenCalledTimes(21);
+    expect(storage.getItem('lingoflash_shared_deck_operation_v1')).toBeNull();
+  });
+
+  it('counts the retry cap per owner on a shared browser', async () => {
+    const storage = new MemoryStorage();
+    const first = setup(undefined, storage);
+    await first.controller.activate('owner-1');
+    vi.mocked(first.adapter.create).mockRejectedValue(new Error('ambiguous'));
+    for (let index = 0; index < 20; index += 1) {
+      await first.controller.actions.createShare({
+        category: 'IELTS', cards: [card(`word-${index}`)], total: 1, hasNext: false,
+      });
+    }
+    const second = setup(undefined, storage);
+    await second.controller.activate('owner-2');
+    await expect(second.controller.actions.createShare({
+      category: 'IELTS', cards: [card('other-owner')], total: 1, hasNext: false,
+    })).resolves.toMatchObject({ status: 'created' });
   });
 
   it('discards corrupt persisted operations without blocking a new share', async () => {

@@ -289,3 +289,27 @@ describe('course target filtering', () => {
     };
   }
 });
+
+describe('createdDate filter', () => {
+  const emptyFilters = (): CardQueryState => ({
+    category: null,
+    customDeck: ALL_PRACTICE_DECK_SCOPE,
+    difficulty: null,
+    partOfSpeech: null,
+    bookmarkedOnly: false,
+    createdDate: null,
+    wordPrefix: '',
+  });
+
+  it('matches the learner local calendar day, not the UTC date', () => {
+    const previous = process.env.TZ;
+    process.env.TZ = 'Asia/Ho_Chi_Minh';
+    try {
+      const card = { createdAt: '2026-11-18T20:00:00.000Z' } as CardData;
+      expect(cardMatchesQuery(card, { ...emptyFilters(), createdDate: '2026-11-19' })).toBe(true);
+      expect(cardMatchesQuery(card, { ...emptyFilters(), createdDate: '2026-11-18' })).toBe(false);
+    } finally {
+      if (previous === undefined) delete process.env.TZ; else process.env.TZ = previous;
+    }
+  });
+});

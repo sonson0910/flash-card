@@ -82,4 +82,20 @@ describe('fetchProgressEvidence', () => {
     expect(mocks.getCountFromServer).toHaveBeenCalledTimes(13);
   });
 
+  it('retries the forecast on a later call after the count queries failed', async () => {
+    const now = new Date(2026, 8, 27, 10);
+    mocks.getCountFromServer.mockRejectedValue(new Error('unavailable'));
+    await expect(fetchProgressEvidence({} as never, 'owner-g', 'en', now)).rejects.toThrow();
+    mocks.getCountFromServer.mockReset();
+    mocks.getCountFromServer.mockResolvedValue({ data: () => ({ count: 2 }) });
+    expect((await fetchProgressEvidence({} as never, 'owner-g', 'en', now)).dueForecast).toHaveLength(13);
+  });
+
+  it('retries after a reservation left by a closed tab has expired', async () => {
+    const now = new Date(2026, 8, 27, 10);
+    storage.set('sonflash_progress_forecast_owner-h:en', JSON.stringify({ date: '2026-09-27', status: 'pending', startedAt: now.getTime() - 10 * 60 * 1_000 }));
+    expect((await fetchProgressEvidence({} as never, 'owner-h', 'en', now)).dueForecast).toHaveLength(13);
+    storage.set('sonflash_progress_forecast_owner-i:en', JSON.stringify({ date: '2026-09-27', status: 'pending', startedAt: now.getTime() - 1_000 }));
+    expect((await fetchProgressEvidence({} as never, 'owner-i', 'en', now)).dueForecast).toBeUndefined();
+  });
 });
