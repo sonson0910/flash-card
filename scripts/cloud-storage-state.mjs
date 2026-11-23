@@ -1,13 +1,17 @@
 import { pathToFileURL } from 'node:url';
 
-// Reports whether a Firebase project has Cloud Storage set up, using the same default-bucket
-// lookup the pinned Firebase CLI makes before a Storage Rules deploy. Only an answer that
-// proves Storage is absent lets a release skip the Storage Rules; anything else fails closed.
+// Reports whether a Firebase project has Cloud Storage set up, using the default-bucket endpoint
+// the pinned Firebase CLI reads before a Storage Rules deploy. Only an answer that proves Storage
+// is absent on the target project lets a release skip the Storage Rules; anything else fails
+// closed. The request names the target as its user project, so a SERVICE_DISABLED answer is about
+// the target project and not about the project that owns the deploy identity.
 const FIREBASE_PROJECT_ID = /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/;
 const DEFAULT_BUCKET_ORIGIN = 'https://firebasestorage.googleapis.com/v1alpha';
+const FIREBASE_STORAGE_SERVICE = 'firebasestorage.googleapis.com';
 
-const isServiceDisabled = body => Array.isArray(body?.error?.details)
-  && body.error.details.some(detail => detail?.reason === 'SERVICE_DISABLED');
+const isStorageServiceDisabled = body => Array.isArray(body?.error?.details)
+  && body.error.details.some(detail => detail?.reason === 'SERVICE_DISABLED'
+    && detail?.metadata?.service === FIREBASE_STORAGE_SERVICE);
 
 export function classifyDefaultBucketResponse(status, body) {
   if (status === 200) {
@@ -15,7 +19,7 @@ export function classifyDefaultBucketResponse(status, body) {
     if (!bucket) throw new Error('Cloud Storage default-bucket lookup returned no default bucket name.');
     return { state: 'enabled', bucket };
   }
-  if (status === 404 || (status === 403 && isServiceDisabled(body))) return { state: 'not-enabled' };
+  if (status === 404 || (status === 403 && isStorageServiceDisabled(body))) return { state: 'not-enabled' };
   throw new Error(`Cloud Storage default-bucket lookup failed with HTTP ${status}.`);
 }
 
@@ -23,7 +27,7 @@ export async function readCloudStorageState(projectId, accessToken) {
   if (!FIREBASE_PROJECT_ID.test(projectId ?? '')) throw new Error('A valid Firebase project ID is required.');
   if (!accessToken) throw new Error('ACCESS_TOKEN is required.');
   const response = await fetch(`${DEFAULT_BUCKET_ORIGIN}/projects/${projectId}/defaultBucket`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: { Authorization: `Bearer ${accessToken}`, 'x-goog-user-project': projectId },
     signal: AbortSignal.timeout(30_000),
   });
   let body = null;
