@@ -42,9 +42,22 @@ const tierStatuses = {
   mastered: msg({ id: 'session.bridge.card.tier-status.mastered', message: 'Mastered' }),
 } as const;
 
+/**
+ * The match to bold: the whole word when the sentence has it as one, otherwise the first substring
+ * match, which keeps inflected forms and scripts written without spaces highlighted.
+ */
+function pickedOutWord(sentence: string, word: string): RegExpExecArray | null {
+  const trimmed = word.trim();
+  if (!trimmed) return null;
+  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const letters = '\\p{L}\\p{M}\\p{N}';
+  return new RegExp(`(?<![${letters}])${escaped}(?![${letters}])`, 'iu').exec(sentence)
+    ?? new RegExp(escaped, 'iu').exec(sentence);
+}
+
 /** The example with the previewed word picked out, as the AnimeBridge card quotes it. */
 function ExampleQuote({ sentence, word, language }: { readonly sentence: string; readonly word: string; readonly language: string }) {
-  const found = word.trim() ? new RegExp(word.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'iu').exec(sentence) : null;
+  const found = pickedOutWord(sentence, word);
   return (
     <span className="session-bridge-card-quote" lang={language}>
       <q>{found ? <>{sentence.slice(0, found.index)}<b>{found[0]}</b>{sentence.slice(found.index + found[0].length)}</> : sentence}</q>

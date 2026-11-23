@@ -137,4 +137,28 @@ describe('SessionBridge', () => {
     expect(classic).not.toContain('session-bridge-card-tier');
     expect(classic).not.toContain('session-bridge-card-quote');
   });
+
+  it('picks out the previewed word itself, not a fragment of an earlier word', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => ({ sonflash_theme_family: 'crystal', sonflash_lumi_enabled: 'false' })[key] ?? null,
+      setItem: () => undefined,
+    });
+    const quote = (word: string, exampleSentence: string) => {
+      const html = renderToStaticMarkup(
+        <I18nProvider i18n={i18n}><ThemeProvider>
+          <SessionBridge model={{ ...model, previewCard: { ...model.previewCard!, word, exampleSentence, tier: 'new' as const } }} actions={actions} />
+        </ThemeProvider></I18nProvider>,
+      );
+      return html.slice(html.indexOf('<q>'), html.indexOf('</q>') + 4);
+    };
+    try {
+      expect(quote('art', 'Start with the art of small talk.')).toBe('<q>Start with the <b>art</b> of small talk.</q>');
+      expect(quote('is', 'This is my brother.')).toBe('<q>This <b>is</b> my brother.</q>');
+      // An inflected form or a script written without spaces has no whole-word match and still gets a highlight.
+      expect(quote('walk', 'She walked home.')).toBe('<q>She <b>walk</b>ed home.</q>');
+      expect(quote('日本', '私は日本語を学ぶ。')).toBe('<q>私は<b>日本</b>語を学ぶ。</q>');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
