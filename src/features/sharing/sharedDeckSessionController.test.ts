@@ -537,6 +537,37 @@ describe('shared deck session controller', () => {
     });
   });
 
+  it.each(['permission-denied', 'not-found'])(
+    'tells the recipient the link is no longer available when loading fails with %s',
+    async code => {
+      const { controller, adapter, intake } = setup('https://sonflash.test/?share=deck-1');
+      vi.mocked(adapter.load).mockRejectedValue(
+        Object.assign(new Error('Missing or insufficient permissions.'), { code }),
+      );
+
+      await controller.activate('owner-1');
+
+      expect(intake.adoptShared).not.toHaveBeenCalled();
+      expect(controller.getSnapshot()).toMatchObject({
+        isLoading: false,
+        incomingPreview: null,
+        isShareDialogOpen: false,
+        error: 'This shared link is no longer available. It may have expired or been revoked; ask the sender for a new link.',
+      });
+    },
+  );
+
+  it('keeps the generic load failure for errors that do not mean the link has ended', async () => {
+    const { controller, adapter } = setup('https://sonflash.test/?share=deck-1');
+    vi.mocked(adapter.load).mockRejectedValue(
+      Object.assign(new Error('Service unavailable.'), { code: 'unavailable' }),
+    );
+
+    await controller.activate('owner-1');
+
+    expect(controller.getSnapshot().error).toBe('Could not load this shared deck safely. No cards were added.');
+  });
+
   it('leaves the busy state with a safe error when loading a shared deck times out', async () => {
     vi.useFakeTimers();
     try {
