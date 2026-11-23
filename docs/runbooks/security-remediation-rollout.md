@@ -187,7 +187,12 @@ The apply report must prove:
 - quarantine is unchanged and recoverable
 
 Any mismatch stops the rollout before Rules cutover. Do not retry with changed
-inputs; produce a new inventory and approval.
+inputs. What can follow depends on how far apply got, because a new inventory is
+refused while a migration is applying, applied or verified: if apply stopped
+before it wrote any source, `supersede` the migration, then produce a new
+inventory and approval; once a source has been written, the migration can only
+be finished with `apply` as below, and a record that keeps mismatching is
+repaired by hand before the same apply runs again.
 
 The owner's usage ledger may already exist, because the share callable creates
 it on the owner's first share. Apply replaces it with the sealed ledger when its
@@ -214,6 +219,10 @@ reaches `verified`, so an apply that stops part-way must be finished, not left:
   it was copied. A share that has not expired and is missing or changed still
   stops the run, and so does a quarantined record without an expiry that
   disappears before its copy exists.
+- A run that stopped during the cutover verification, after every source was
+  written, is also resumed by re-running `apply` with the same inputs: apply then
+  only re-checks the written records and runs the verification again. `verify`
+  mode serves only a migration that has already reached `verified`.
 - An apply that stopped before writing any source can be superseded and
   inventoried again instead.
 - A sealed inventory that was never applied is not applied from a later
@@ -244,9 +253,13 @@ separate authorization after the window.
    the protected compatible revision and sealed candidate artifact.
 3. Roll back hosting/Functions only to a revision compatible with the current
    data and Rules. Do not bypass protected revision checks.
-4. A migration rollback must compare the live record and sealed digest before
-   every write. Never overwrite a live digest mismatch or discard concurrent
-   user changes; stop and quarantine the conflict for manual recovery.
+4. The shared-deck migration has no rollback mode: an apply that has started is
+   finished, never reversed, and a conflicting record is quarantined and
+   repaired by hand. A legacy-library migration rollback
+   (`repair-legacy-libraries.yml` in `rollback` mode) must compare the live
+   record and sealed digest before every write. Never overwrite a live digest
+   mismatch or discard concurrent user changes; stop and quarantine the conflict
+   for manual recovery.
 5. Verify health, authentication, owner isolation, share availability, error
    rate, latency, App Check, provider quotas, and log delivery after rollback.
 

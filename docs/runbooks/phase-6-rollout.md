@@ -118,7 +118,9 @@ runtime dependencies still come from the candidate's sealed Functions lockfile.
    SHA-256, and reruns the canonical candidate verifier. A successful retrieval
    receipt is required before the tuple becomes an eligible retained LKG. The same
    run uploads `retrieved-candidate-<revision>-<run>` for two days. Production consumes
-   those exact bytes and re-verifies their sealed digest. If that temporary artifact
+   those exact bytes and re-verifies their sealed digest, accepts a retrieval or staging
+   run only when it ran on the default branch at a commit that main contains, and
+   rejects a candidate that holds any file outside the sealed components. If that temporary artifact
    expires, rerun WORM verification and approve the new receipt; the original Actions
    candidate is not needed for retrieval.
 4. Confirm the content gate still blocks the draft AI-assisted pilot. Publishing
@@ -250,18 +252,21 @@ receipt's HTTPS origin:
 ```sh
 STAGING_ORIGIN=https://staging.example.test \
 EXPECTED_REVISION=<full-immutable-commit-sha> \
-CATALOG_MANIFEST_PATH=/catalog/english-core/release-manifest.json npm run phase6:smoke
+CATALOG_MANIFEST_PATH=/catalog/english-core/<releaseId>/release-manifest.json npm run phase6:smoke
 ```
 
 The operator rejects redirects, a non-2xx application document, revision mismatch,
 unhealthy metadata, missing CSP/nosniff/referrer headers, a failed manifest probe and
 a release manifest whose `Cache-Control` lacks `no-cache`, `no-store` or
-`must-revalidate`. Mutable manifest pointers must never be `immutable`; reserve
+`must-revalidate`. `CATALOG_MANIFEST_PATH` is required and names the release the
+candidate ships under `public/catalog/`; the manifest probe passes only when that path
+returns a JSON release manifest for the same catalog and release, so the SPA fallback
+that Hosting serves for a missing file fails it. Mutable manifest pointers must never be `immutable`; reserve
 `public, max-age=31536000, immutable` for hashed content assets.
 
 `npm run phase6:smoke` is only an automated HTTPS/network probe. It checks the
 application document, `/health.json` revision and status, required page security
-headers, and the selected release-manifest status/cache policy. It does not inspect
+headers, and the selected release manifest's body, status and cache policy. It does not inspect
 `/sw.js`, install or update a worker, close/reopen a browser, download a real pack,
 or run the Listen journey. A passing JSON result is necessary but never sufficient
 staging evidence.
@@ -344,8 +349,10 @@ and production; deployment credentials never enter the browser artifact.
    compare required export/import document counters, delete the disposable database,
    and read back both receipt TTL policies as `ACTIVE`. Record its successful run ID
    and the SHA-256 of `receipt.json`. The hourly scheduled cleanup reconciles only
-   databases matching `release-restore-<run-id>-<attempt>` and shares the Firestore
-   mutation concurrency lock; alert on any failed or approval-waiting cleanup run.
+   databases matching `release-restore-<run-id>-<attempt>`. It runs in its own
+   concurrency group, so it never cancels a pending deploy or index preparation, and it
+   leaves any database whose owning run has not completed; alert on any failed or
+   approval-waiting cleanup run.
 2. Decide target order from the recorded compatibility review. If Hosting calls a new,
    backward-compatible Function, dispatch `Deploy production artifact` with
    `promote_functions=true` so the protected Functions job completes before Hosting.

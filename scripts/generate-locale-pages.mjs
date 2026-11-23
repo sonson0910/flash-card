@@ -83,9 +83,10 @@ const sitemap = () => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="ht
 // indexed under its own domain — that would create duplicate-content and could leak an
 // unreleased build ahead of launch. `Disallow: /` (crawling) and each page's `noindex` meta
 // (indexing of URLs discovered another way, e.g. a shared staging link) cover both vectors.
+const DISALLOW_ROBOTS = 'User-agent: *\nDisallow: /\n';
 const robotsTxt = target => target === 'production'
   ? `User-agent: *\nAllow: /\nSitemap: ${PRODUCTION_ORIGIN}/sitemap.xml\n`
-  : 'User-agent: *\nDisallow: /\n';
+  : DISALLOW_ROBOTS;
 
 export const generateLocalePages = ({ root = path.resolve('.'), target = process.env.SONFLASH_TARGET?.trim() || 'production' } = {}) => {
   const dist = path.join(root, process.env.SONFLASH_BUILD_OUT_DIR || 'dist');
@@ -98,7 +99,10 @@ export const generateLocalePages = ({ root = path.resolve('.'), target = process
   }
   fs.writeFileSync(path.join(dist, 'sitemap.xml'), sitemap(), 'utf8');
   fs.writeFileSync(path.join(dist, 'robots.txt'), robotsTxt(target), 'utf8');
-  console.log(`Generated ${LOCALES.length} localized landing pages, sitemap.xml, and robots.txt for target "${target}".`);
+  // The release pipeline seals one production build for staging and production, so the staging
+  // Hosting promotion redirects /robots.txt to this file instead of rebuilding the pages.
+  fs.writeFileSync(path.join(dist, 'robots-disallow.txt'), DISALLOW_ROBOTS, 'utf8');
+  console.log(`Generated ${LOCALES.length} localized landing pages, sitemap.xml, robots.txt and robots-disallow.txt for target "${target}".`);
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) generateLocalePages();

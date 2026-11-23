@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { afterEach as nodeAfterEach, describe as nodeDescribe, it as nodeIt } from 'node:test';
@@ -235,6 +236,49 @@ describe('sealed release artifact', () => {
     });
   });
 
+  it('rejects a candidate root that holds a file outside the sealed components', () => {
+    const root = createCandidate('a'.repeat(40));
+    const manifest = sealReleaseArtifact({
+      root,
+      revision: 'a'.repeat(40),
+      workflowRunId: '12345',
+      generatedAt: '2026-08-10T00:00:00.000Z',
+    });
+    fs.writeFileSync(path.join(root, 'artifacts/release-candidate-manifest.json'), JSON.stringify(manifest));
+    const verify = (candidateManifest = manifest) => () => verifyReleaseArtifact({
+      root,
+      manifest: candidateManifest,
+      expectedRevision: 'a'.repeat(40),
+      expectedWorkflowRunId: '12345',
+      expectedCandidateSha256: candidateManifest.candidateSha256,
+    });
+    verify()();
+    for (const extra of [
+      'functions/npm-shrinkwrap.json',
+      'functions/index.js',
+      'functions/extra/x.js',
+      'firebase.promoted.json',
+      'artifacts/other.json',
+    ]) {
+      fs.mkdirSync(path.dirname(path.join(root, extra)), { recursive: true });
+      fs.writeFileSync(path.join(root, extra), '{}\n');
+      expect(verify()).toThrow(/outside the sealed components/);
+      fs.rmSync(path.join(root, extra));
+    }
+    verify()();
+
+    const components = { ...manifest.components, extra: manifest.components.rootPackage };
+    const payload = {
+      schemaVersion: manifest.schemaVersion,
+      revision: manifest.revision,
+      workflowRunId: manifest.workflowRunId,
+      generatedAt: manifest.generatedAt,
+      components,
+    };
+    const candidateSha256 = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+    expect(verify({ ...payload, candidateSha256 })).toThrow(/components/);
+  });
+
   it('rejects a candidate sealed by a different workflow run', () => {
     const root = createCandidate('a'.repeat(40));
     const manifest = sealReleaseArtifact({
@@ -406,5 +450,43 @@ describe('sealed release artifact', () => {
       hosting: { public: 'dist' },
       storage: { rules: 'storage.rules' },
     });
+  });
+
+  it('promotes a staging Hosting config that blocks indexing and crawling, and leaves production unchanged', () => {
+    const staging = createPromotedFirebaseConfig(firebaseConfig(), { hostingEnvironment: 'staging' });
+    expect(staging.hosting).toEqual({
+      public: 'dist',
+      headers: [{ source: '**', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }],
+      redirects: [{ source: '/robots.txt', destination: '/robots-disallow.txt', type: 302 }],
+    });
+    const production = createPromotedFirebaseConfig(firebaseConfig(), { hostingEnvironment: 'production' });
+    expect(production).toEqual(createPromotedFirebaseConfig(firebaseConfig()));
+    assert.doesNotMatch(JSON.stringify(production), /X-Robots-Tag|robots/);
+    expect(() => createPromotedFirebaseConfig(firebaseConfig(), { hostingEnvironment: 'preview' }))
+      .toThrow(/Hosting environment/);
+  });
+
+  it('promotes a staging config with the noindex header for every candidate and the robots redirect only when the candidate ships a crawl-blocking file', () => {
+    const root = createCandidate();
+    const noindexHeader = [{ source: '**', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }];
+    const promote = () => {
+      execFileSync(process.execPath, [
+        path.resolve('scripts/release-artifact.mjs'), 'promote-config', '--root', root,
+        '--source', 'firebase.json', '--output', 'firebase.promoted.json', '--hosting-environment', 'staging',
+      ], { stdio: 'pipe' });
+      return JSON.parse(fs.readFileSync(path.join(root, 'firebase.promoted.json'), 'utf8'));
+    };
+    // A retained candidate sealed before the build shipped robots-disallow.txt must still stage.
+    const legacy = promote();
+    expect(legacy.hosting.headers).toEqual(noindexHeader);
+    assert.equal(legacy.hosting.redirects, undefined);
+    fs.writeFileSync(path.join(root, 'dist/robots-disallow.txt'), 'User-agent: *\nAllow: /\n');
+    expect(promote).toThrow();
+    fs.writeFileSync(path.join(root, 'dist/robots-disallow.txt'), 'User-agent: *\nDisallow: /\n');
+    const current = promote();
+    expect(current.hosting.headers).toEqual(noindexHeader);
+    expect(current.hosting.redirects).toEqual([
+      { source: '/robots.txt', destination: '/robots-disallow.txt', type: 302 },
+    ]);
   });
 });

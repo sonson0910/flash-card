@@ -113,7 +113,7 @@ jobs:
           STAGING_ORIGIN: ${{ vars.STAGING_ORIGIN }}
         run: |
           node scripts/release-artifact.mjs verify --root candidate --manifest artifacts/release-candidate-manifest.json --revision "$REVISION" --workflow-run-id "$CANDIDATE_RUN_ID" --candidate-sha256 "$CANDIDATE_SHA256" --project-id "$FIREBASE_PROJECT_ID" --database-id "$FIRESTORE_DATABASE_ID" --origin "$STAGING_ORIGIN"
-          node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID"
+          node scripts/release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json --database-id "$FIRESTORE_DATABASE_ID" --hosting-environment staging
 
       - name: Install and verify the protected Firebase CLI
         shell: bash
@@ -286,6 +286,15 @@ jobs:
           test "$sw_status" = "200"
           jq -e --arg revision "$REVISION" '.revision == $revision and .status == "ok"' artifacts/live-staging/health.json
           test "$(sha256sum candidate/dist/sw.js | cut -d' ' -f1)" = "$(sha256sum artifacts/live-staging/sw.js | cut -d' ' -f1)"
+          # The staging host must stay out of search indexes: every response carries noindex and, when
+          # the candidate ships its crawl-blocking file, /robots.txt resolves to that file. A retained
+          # candidate sealed before that file existed is staged with the noindex header only.
+          curl --proto '=https' --tlsv1.2 --silent --show-error --fail --output /dev/null --dump-header artifacts/live-staging/root-headers.txt "$STAGING_ORIGIN/"
+          grep -qiE '^x-robots-tag:[[:space:]]*noindex, nofollow' artifacts/live-staging/root-headers.txt
+          if [[ -f candidate/dist/robots-disallow.txt ]]; then
+            curl --proto '=https' --proto-redir '=https' --tlsv1.2 --silent --show-error --fail --location --max-redirs 2 --output artifacts/live-staging/robots.txt "$STAGING_ORIGIN/robots.txt"
+            grep -qxE 'Disallow:[[:space:]]*/' artifacts/live-staging/robots.txt
+          fi
           if [[ "$HOSTING_ONLY" == "true" ]]; then
             echo "Verified Hosting-only shell baseline: revision=$REVISION candidate_run_id=$CANDIDATE_RUN_ID candidate_sha256=$CANDIDATE_SHA256. No complete staging receipt was issued." >> "$GITHUB_STEP_SUMMARY"
             exit 0

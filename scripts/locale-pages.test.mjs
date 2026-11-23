@@ -77,6 +77,17 @@ describe('localized landing pages', () => {
     checkLocalePages({ root, target: 'staging' });
   });
 
+  it('ships a crawl-blocking robots file that a staging Hosting promotion can serve for any target', () => {
+    for (const target of ['production', 'staging']) {
+      const root = createFixture();
+      generateLocalePages({ root, target });
+      assert.equal(fs.readFileSync(path.join(root, 'dist/robots-disallow.txt'), 'utf8'), 'User-agent: *\nDisallow: /\n');
+      checkLocalePages({ root, target });
+      fs.writeFileSync(path.join(root, 'dist/robots-disallow.txt'), 'User-agent: *\nAllow: /\n');
+      assert.throws(() => checkLocalePages({ root, target }), /robots-disallow\.txt/);
+    }
+  });
+
   it('rejects a production build that ships a noindex meta tag', () => {
     const root = createFixture();
     generateLocalePages({ root });
