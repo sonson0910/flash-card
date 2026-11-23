@@ -250,6 +250,20 @@ describe('daily session controller', () => {
     expect(controller.getSnapshot()).toMatchObject({ phase: 'save-error', index: 0 });
   });
 
+  it('moves past a card whose review conflict is terminal instead of offering a retry', async () => {
+    const reviewCard = vi.fn(async () => ({
+      status: 'review-conflict' as const,
+      result: { reviewConflictTerminal: true } as never,
+    }));
+    const controller = createDailySessionController({ reviewCard, createOperationId: () => 'terminal-op' });
+    controller.start([exercise('card-a'), exercise('card-b')]);
+    controller.submit('word-card-a');
+
+    await expect(controller.rate('good')).resolves.toEqual({ status: 'skipped' });
+    expect(controller.getSnapshot()).toMatchObject({ phase: 'answering', index: 1, error: null, pendingReview: null });
+    expect(reviewCard).toHaveBeenCalledTimes(1);
+  });
+
   it('does not return XP when the saved review lacks an authoritative award', async () => {
     const controller = createDailySessionController({
       reviewCard: vi.fn(async () => ({ status: 'published' as const, result: {} as never })),
