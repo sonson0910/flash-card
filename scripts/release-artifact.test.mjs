@@ -375,6 +375,20 @@ describe('sealed release artifact', () => {
     })).toThrow(/Firebase deployment config/);
   });
 
+  it('rejects a firebase config that would leave the sealed Storage Rules undeployable', () => {
+    const root = createCandidate('f'.repeat(40));
+    const { storage: _storage, ...withoutStorage } = firebaseConfig();
+    fs.writeFileSync(path.join(root, 'firebase.json'), JSON.stringify(withoutStorage));
+
+    expect(() => sealReleaseArtifact({
+      root,
+      revision: 'f'.repeat(40),
+      workflowRunId: '56789',
+      generatedAt: '2026-08-10T00:00:00.000Z',
+    })).toThrow(/Storage target/);
+    expect(() => createPromotedFirebaseConfig(withoutStorage)).toThrow(/Storage target/);
+  });
+
   it('binds the promoted Firestore config to the protected evidence database', () => {
     expect(() => createPromotedFirebaseConfig(firebaseConfig(), {
       expectedFirestoreDatabaseId: 'other-production-database',

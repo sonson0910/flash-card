@@ -273,7 +273,7 @@ describe('release workflow contracts', () => {
     expect(indexJob).toContain("inputs.operation == 'promotion'");
     expect(indexJob).toContain('environment: production-hosting');
     expect(functionsJob).toContain('needs: [validate_candidate, deploy_indexes]');
-    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions]');
+    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions, deploy_storage_rules]');
     expect(workflow.indexOf('  deploy_indexes:')).toBeLessThan(workflow.indexOf('  deploy_functions:'));
     expect(workflow.indexOf('  deploy_indexes:')).toBeLessThan(workflow.indexOf('  deploy_hosting:'));
     expect(indexJob).toContain('timeout-minutes: 45');
@@ -393,7 +393,7 @@ describe('release workflow contracts', () => {
 
   it('keeps retained candidates deployable after the protected Firebase CLI pin changes', () => {
     for (const [relativePath, expectedJobs] of [
-      ['.github/workflows/deploy-production.yml', ['deploy_indexes', 'deploy_hosting', 'deploy_functions']],
+      ['.github/workflows/deploy-production.yml', ['deploy_indexes', 'deploy_hosting', 'deploy_functions', 'deploy_storage_rules']],
       ['.github/workflows/deploy-firestore-rules.yml', ['deploy_rules']],
       ['.github/workflows/deploy-staging.yml', ['deploy']],
     ]) {
@@ -424,6 +424,8 @@ describe('release workflow contracts', () => {
       'Deploy and verify candidate Firestore composite indexes',
       'Upload immutable Firestore index readiness report',
       'Deploy only sealed Firestore Rules',
+      'Check Cloud Storage setup on the target project',
+      'Deploy only sealed Storage Rules when Cloud Storage is set up',
       'Deploy only sealed Functions',
       'Upload immutable staging deployment receipt',
     ]) {
@@ -452,16 +454,12 @@ describe('release workflow contracts', () => {
     expect(releaseWorkflow).toContain('package-lock.json');
 
     for (const [relativePath, jobNames] of [
-      ['.github/workflows/deploy-production.yml', ['deploy_indexes:', 'deploy_hosting:', 'deploy_functions:']],
+      ['.github/workflows/deploy-production.yml', ['deploy_indexes:', 'deploy_hosting:', 'deploy_functions:', 'deploy_storage_rules:']],
       ['.github/workflows/deploy-firestore-rules.yml', ['deploy_rules:']],
     ]) {
       const workflow = read(relativePath);
       for (const jobName of jobNames) {
-        const start = workflow.indexOf(`  ${jobName}`);
-        const end = jobName === 'deploy_indexes:'
-          ? workflow.indexOf('  deploy_hosting:')
-          : jobName === 'deploy_hosting:' ? workflow.indexOf('  deploy_functions:') : workflow.length;
-        const job = workflow.slice(start, end);
+        const job = workflow.split(`\n  ${jobName}\n`)[1].split(/\n  [a-z_]+:\n/)[0];
         const install = job.indexOf('npm ci --ignore-scripts --no-audit --no-fund');
         const version = job.indexOf('test "$(./node_modules/.bin/firebase --version)" = "15.34.0"');
         const auth = job.indexOf('google-github-actions/auth@');
@@ -512,7 +510,8 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('actions/download-artifact@');
     expect(workflow).toContain('release-artifact.mjs verify');
     expect(workflow.match(/--workflow-run-id "\$\{\{ inputs\.candidate_run_id \}\}"/g) ?? []).toHaveLength(4);
-    expect(workflow.match(/--project-id "\$FIREBASE_PROJECT_ID" --database-id "\$FIRESTORE_DATABASE_ID"/g) ?? []).toHaveLength(3);
+    expect(workflow.match(/--workflow-run-id "\$CANDIDATE_RUN_ID"/g) ?? []).toHaveLength(1);
+    expect(workflow.match(/--project-id "\$FIREBASE_PROJECT_ID" --database-id "\$FIRESTORE_DATABASE_ID"/g) ?? []).toHaveLength(4);
     expect(workflow).toContain('test "$run_path" = ".github/workflows/release-candidate.yml"');
     expect(workflow).toContain('--only hosting');
     expect(workflow).toContain('--only functions');
@@ -520,15 +519,15 @@ describe('release workflow contracts', () => {
     expect(workflow.slice(workflow.indexOf('  deploy_indexes:'), workflow.indexOf('  deploy_hosting:'))).toContain('release-artifact.mjs promote-config');
     expect(hostingJob).toContain('release-artifact.mjs promote-config');
     expect(functionsJob).toContain('release-artifact.mjs promote-config');
-    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions]');
-    expect(hostingJob).toContain("if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_indexes.result == 'success' || (inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped')) && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) }}");
+    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions, deploy_storage_rules]');
+    expect(hostingJob).toContain("if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_indexes.result == 'success' || (inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped')) && (needs.deploy_functions.result == 'success' || (!inputs.promote_functions && needs.deploy_functions.result == 'skipped')) && needs.deploy_storage_rules.result == 'success' }}");
     expect(functionsJob).toContain('needs: [validate_candidate, deploy_indexes]');
     expect(functionsJob).not.toContain('needs: [validate_candidate, deploy_hosting]');
     expect(functionsJob).toContain('npm ci --prefix candidate/functions --omit=dev --ignore-scripts --no-audit --no-fund');
     expect(functionsJob.indexOf('npm ci --prefix candidate/functions')).toBeLessThan(
       functionsJob.indexOf('"$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only functions'),
     );
-    expect(workflow.match(/firebase_project_pattern='\^\[a-z\]\[a-z0-9-\]\{4,28\}\[a-z0-9\]\$'/g)).toHaveLength(3);
+    expect(workflow.match(/firebase_project_pattern='\^\[a-z\]\[a-z0-9-\]\{4,28\}\[a-z0-9\]\$'/g)).toHaveLength(4);
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);
     expect(workflow).not.toContain('--only firestore --');
   });
@@ -558,6 +557,78 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toMatch(/kms|migration[_-]evidence|rollback-snapshot/i);
     expect(workflow).not.toMatch(/--only firestore(?:\s|$)/);
     expect(workflow).not.toMatch(/firebase-tools@[^\n]+ deploy --non-interactive\s*$/m);
+  });
+
+  it('deploys every sealed Firebase target from the promoted config on staging and on production promotion', () => {
+    const sealedTargets = ['firestore:indexes', 'firestore:rules', 'storage', 'functions', 'hosting'];
+    const deployedTargets = source => [...source.matchAll(/firebase" deploy --only (\S+) --config firebase\.promoted\.json/g)]
+      .flatMap(([, targets]) => targets.split(','));
+    const staging = deployedTargets(read('.github/workflows/deploy-staging.yml'));
+    const promotion = deployedTargets(read('.github/workflows/deploy-production.yml'));
+    const productionRules = deployedTargets(read('.github/workflows/deploy-firestore-rules.yml'));
+    expect(sealedTargets.filter(target => !staging.includes(target)).join(',')).toBe('');
+    // Firestore Rules ship only through their own migration-bound cutover workflow.
+    expect(sealedTargets.filter(target => target !== 'firestore:rules' && !promotion.includes(target)).join(',')).toBe('');
+    expect(productionRules.join(',')).toBe('firestore:rules');
+    expect(JSON.parse(read('firebase.json')).storage.rules).toBe('storage.rules');
+    expect(read('scripts/release-artifact.mjs')).toContain("storageRules: { path: 'storage.rules', type: 'file' }");
+  });
+
+  it('deploys sealed Storage Rules before Hosting and skips only a project without Cloud Storage', () => {
+    const stepOf = (workflow, name) => workflow.split(`- name: ${name}\n`)[1]?.split('\n      - ')[0] ?? '';
+    const checkStepName = 'Check Cloud Storage setup on the target project';
+    const deployStepName = 'Deploy only sealed Storage Rules when Cloud Storage is set up';
+    const checkStorageSteps = workflow => {
+      const check = stepOf(workflow, checkStepName);
+      expect(check).toContain('id: cloud_storage');
+      expect(check).toContain('set -euo pipefail');
+      expect(check).toContain('state="$(ACCESS_TOKEN="$(gcloud auth print-access-token)" node "$GITHUB_WORKSPACE/scripts/cloud-storage-state.mjs" --project "$FIREBASE_PROJECT_ID")"');
+      expect(check).toContain('echo "state=$state" >> "$GITHUB_OUTPUT"');
+      const deploy = stepOf(workflow, deployStepName);
+      expect(deploy).toContain('STORAGE_STATE: ${{ steps.cloud_storage.outputs.state }}');
+      expect(deploy).toContain('if [[ "$STORAGE_STATE" == "not-enabled" ]]; then');
+      expect(deploy).toContain('>> "$GITHUB_STEP_SUMMARY"');
+      expect(deploy).toContain('test "$STORAGE_STATE" = "enabled"');
+      expect(deploy).toContain('"$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only storage --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive');
+      expect(deploy.indexOf('exit 0')).toBeLessThan(deploy.indexOf('deploy --only storage'));
+      expect(workflow.indexOf(`- name: ${checkStepName}`)).toBeGreaterThan(workflow.indexOf('google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db'));
+      expect(workflow.indexOf(`- name: ${checkStepName}`)).toBeLessThan(workflow.indexOf(`- name: ${deployStepName}`));
+      return { check, deploy };
+    };
+
+    // Staging reads the Storage state before its first mutation, so a denied lookup changes nothing.
+    const staging = read('.github/workflows/deploy-staging.yml');
+    const stagingSteps = checkStorageSteps(staging);
+    expect(stagingSteps.check).toContain('if: ${{ !inputs.hosting_only }}');
+    expect(stagingSteps.deploy).toContain('if: ${{ !inputs.hosting_only }}');
+    expect(stagingSteps.deploy).toContain('working-directory: candidate');
+    expect(staging.indexOf(`- name: ${checkStepName}`)).toBeLessThan(staging.indexOf('- name: Deploy and verify candidate Firestore composite indexes'));
+    const stagingDeploy = staging.indexOf(`- name: ${deployStepName}`);
+    expect(stagingDeploy).toBeGreaterThan(staging.indexOf('- name: Deploy only sealed Firestore Rules'));
+    expect(stagingDeploy).toBeLessThan(staging.indexOf('- name: Deploy only sealed Functions'));
+    expect(stagingDeploy).toBeLessThan(staging.indexOf('- name: Deploy only sealed Hosting bytes'));
+
+    // Production promotion and rollback carry the candidate's Storage Rules ahead of its Hosting.
+    const production = read('.github/workflows/deploy-production.yml');
+    const jobOf = name => production.split(`\n  ${name}:\n`)[1]?.split(/\n  [a-z_]+:\n/)[0] ?? '';
+    const storageJob = jobOf('deploy_storage_rules');
+    const hostingJob = jobOf('deploy_hosting');
+    expect(storageJob).toContain('needs: [validate_candidate, deploy_indexes]');
+    expect(storageJob).toContain("if: ${{ !cancelled() && needs.validate_candidate.result == 'success' && (needs.deploy_indexes.result == 'success' || (inputs.operation == 'rollback' && needs.deploy_indexes.result == 'skipped')) }}");
+    expect(storageJob).toContain('environment: production-hosting');
+    expect(storageJob).toContain('release-artifact.mjs promote-config --root candidate --source firebase.json --output firebase.promoted.json');
+    const productionSteps = checkStorageSteps(storageJob);
+    expect(productionSteps.deploy).toContain('working-directory: candidate');
+    expect(hostingJob).toContain('needs: [validate_candidate, deploy_indexes, deploy_functions, deploy_storage_rules]');
+    expect(hostingJob).toContain("&& needs.deploy_storage_rules.result == 'success' }}");
+
+    // An emergency Firestore Rules rollback does not depend on Storage access.
+    const rules = read('.github/workflows/deploy-firestore-rules.yml');
+    expect(rules).not.toContain('--only storage');
+    expect(rules).not.toContain('cloud-storage-state.mjs');
+
+    const scripts = JSON.parse(read('package.json')).scripts;
+    expect(scripts['staging:deploy:storage']).toBe('GOOGLE_CLOUD_QUOTA_PROJECT=sonflash-staging-20260906 npm exec --no -- firebase deploy --config firebase.staging.json --project sonflash-staging-20260906 --only storage --non-interactive');
   });
 
   it('checks the ready Pro entitlement index before promoting production Functions', () => {

@@ -230,7 +230,8 @@ hosts fail closed.
 2. [`deploy-staging.yml`](./.github/workflows/deploy-staging.yml) verifies that exact artifact
    against the protected staging target, deploys without rebuilding, and emits a target-bound receipt.
 3. [`deploy-production.yml`](./.github/workflows/deploy-production.yml) promotes the verified
-   candidate through protected Hosting and Functions environments.
+   candidate through protected Hosting and Functions environments, deploying its sealed
+   Storage Rules before Hosting when Cloud Storage is set up on the project.
 4. [`deploy-firestore-rules.yml`](./.github/workflows/deploy-firestore-rules.yml) performs the
    separately approved Firestore Rules cutover with migration and rollback evidence.
 

@@ -133,6 +133,17 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
 
+      - name: Check Cloud Storage setup on the target project
+        id: cloud_storage
+        if: ${{ !inputs.hosting_only }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          state="$(ACCESS_TOKEN="$(gcloud auth print-access-token)" node "$GITHUB_WORKSPACE/scripts/cloud-storage-state.mjs" --project "$FIREBASE_PROJECT_ID")"
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+
       - name: Deploy and verify candidate Firestore composite indexes
         if: ${{ !inputs.hosting_only }}
         shell: bash
@@ -207,6 +218,24 @@ jobs:
           "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only firestore:rules --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+
+      - name: Deploy only sealed Storage Rules when Cloud Storage is set up
+        if: ${{ !inputs.hosting_only }}
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$STORAGE_STATE" == "not-enabled" ]]; then
+            echo "::warning title=Storage Rules not deployed::Cloud Storage is not set up on $FIREBASE_PROJECT_ID, so the sealed Storage Rules were not deployed."
+            echo "Storage Rules: not deployed; Cloud Storage is not set up on $FIREBASE_PROJECT_ID." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          test "$STORAGE_STATE" = "enabled"
+          "$GITHUB_WORKSPACE/node_modules/.bin/firebase" deploy --only storage --config firebase.promoted.json --project "$FIREBASE_PROJECT_ID" --non-interactive
+          echo "Storage Rules: deployed from the sealed candidate to $FIREBASE_PROJECT_ID." >> "$GITHUB_STEP_SUMMARY"
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          STORAGE_STATE: ${{ steps.cloud_storage.outputs.state }}
 
       - name: Deploy only sealed Functions
         if: ${{ !inputs.hosting_only }}

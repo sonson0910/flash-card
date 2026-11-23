@@ -63,7 +63,7 @@ runtime dependencies still come from the candidate's sealed Functions lockfile.
    Verified readiness evidence is emitted only when that revision exactly matches
    a clean Git HEAD; a missing/mismatched revision or dirty worktree aborts before
    the evidence file is written. Ignore legacy schema-1 or `"local"` artifacts.
-2. The final step seals `dist`, compiled Functions, Firestore Rules/indexes,
+2. The final step seals `dist`, compiled Functions, Firestore Rules/indexes, Storage Rules,
    `firebase.json` and readiness evidence. Retain together:
    - candidate workflow run ID;
    - full 40/64-character revision;
@@ -161,11 +161,55 @@ retired. Rules promotion now accepts only a sealed release candidate produced by
 `Build release candidate` workflow. Provide that run ID, full revision, candidate
 SHA-256, operation and approval reference. The workflow verifies the source run,
 revision and artifact digest before approval, then verifies the protected project and
-database binding again before deploying only Firestore Rules (never indexes).
+database binding again before deploying only Firestore Rules (never indexes). Storage
+Rules do not ship here; see the next subsection.
 
 For rollback, select a retained last-known-good release candidate and use `operation:
 rollback`. Do not rebuild the revision or upload database snapshots to Actions. Data
 repair is a separate incident procedure and must not be coupled to a Rules deployment.
+
+### Storage Rules and enabling Cloud Storage
+
+`storage.rules` is sealed in every candidate and ships with the client it belongs to:
+`deploy-staging.yml` deploys it right after Firestore Rules (before Functions and
+Hosting), and `deploy-production.yml` deploys it in the `deploy_storage_rules` job on
+both promotion and rollback. Production Hosting is promoted only after that job
+succeeds, so a promoted candidate never runs against an older candidate's Storage Rules.
+The Firestore Rules workflow above never deploys Storage Rules.
+
+Both workflows read the target project's Firebase default bucket with
+`scripts/cloud-storage-state.mjs` (billed to the target project through
+`x-goog-user-project`). Staging does this before its first mutation, so a denied lookup
+leaves the project untouched. Only two answers skip the Storage Rules: no default bucket
+(HTTP 404), or the Cloud Storage for Firebase API disabled on the target project. A skip
+raises a `Storage Rules not deployed` warning with a step-summary line and the release
+continues. Any other answer, such as a denied lookup, fails the job before Hosting: the
+workflow cannot tell a missing permission from a live bucket, so it does not guess.
+
+**Before the next staging or production release that carries this check**, the owner
+grants each deployment identity, on its target project: `firebasestorage.defaultBucket.get`,
+`serviceusage.services.use` (Service Usage Consumer) and Firebase Rules release permissions
+(Firebase Rules Admin). The identities are the staging Workload Identity service account
+(`GCP_SERVICE_ACCOUNT` in the staging environment) and `GCP_SERVICE_ACCOUNT_JSON` in
+`production-hosting`. Without the grant, the staging deploy and the production Hosting
+promotion fail closed, whether or not Cloud Storage is set up.
+
+Cloud Storage is not yet enabled in production, so uploads (My files) cannot work there
+yet. To enable it, the owner:
+
+1. Confirms the grants above on the production identity.
+2. Sets up Cloud Storage in the Firebase console in **production mode** (deny all), never
+   test mode, which would let any client read or overwrite any learner's files.
+3. Promotes the next candidate (or re-promotes the current one with a fresh approval and
+   `promote_functions=false`) through `deploy-production.yml`, and confirms the step
+   summary shows Storage Rules deployed rather than the skip warning. Until then every
+   upload fails closed.
+4. Smoke-tests that a learner can upload and open their own file, and that another
+   account and a signed-out client cannot read it.
+
+Staging follows the same order: set up Cloud Storage on the staging project in production
+mode, then run `deploy-staging.yml` (or `npm run staging:deploy:storage` for the local
+staging route) and check the Storage step did not skip.
 
 ## 3. Candidate-bound staging deploy and smoke
 
@@ -328,7 +372,8 @@ and production; deployment credentials never enter the browser artifact.
    Hosting artifact is then promoted idempotently. `ENFORCE_APP_CHECK` defaults to
    true. Never deploy incompatible Functions enforcement before its Hosting client.
 5. Do not select or infer an all-target deploy. Firestore Rules use only the protected
-   candidate-bound workflow in section 2.
+   candidate-bound workflow in section 2; Storage Rules ship only in the candidate's own
+   `deploy_storage_rules` job, before its Hosting.
 
 ## 5. Canary decision (advisory only)
 
@@ -402,9 +447,10 @@ Never unregister the service worker, clear site data, delete IndexedDB, discard 
 pending queue, or delete learner/card/media-pack storage to make this rehearsal pass.
 Only the versioned shell namespace may be replaced by the normal worker lifecycle.
 
-1. **Hosting:** stop promotion, dispatch `Deploy production artifact` with the retained
+1. **Hosting and Storage Rules:** stop promotion, dispatch `Deploy production artifact` with the retained
    last-known-good candidate, `operation=rollback`, a bounded `rollback_evidence_ref`,
-   and `promote_functions=false`, then verify `/health.json`,
+   and `promote_functions=false`; it restores that candidate's Storage Rules before its
+   Hosting. Then verify `/health.json`,
    the valid `/sw.js` headers, app-shell revision, security headers and critical
    browser flows against the restored tuple revision.
 2. **Functions:** only if the last-known-good Functions are compatible with current data

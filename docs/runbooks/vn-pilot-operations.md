@@ -38,6 +38,8 @@ When the owner authorizes a **staging** deploy and Gemini billing/quota is ready
 ```sh
 npm run staging:deploy:rules
 # Verify the Rules release and run its staging checks before proceeding.
+npm run staging:deploy:storage
+# Requires Cloud Storage set up on staging in production mode; see phase-6-rollout.md.
 npm run staging:deploy:indexes
 npm run staging:verify:indexes
 # Proceed only after the required index reports READY.

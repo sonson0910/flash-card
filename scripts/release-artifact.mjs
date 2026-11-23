@@ -125,12 +125,10 @@ export function validateFirebaseDeploymentConfig(config, {
   if (!FIRESTORE_DATABASE_ID.test(firestoreTarget.database)) {
     throw new Error('Firebase deployment config requires one valid explicit Firestore database ID.');
   }
-  // Storage is optional, but a Storage target may only deploy the sealed rules file.
-  if (config.storage !== undefined) {
-    const storageTarget = requireSingleDeploymentTarget(config.storage, 'Storage');
-    if (storageTarget.rules !== COMPONENT_PATHS.storageRules.path) {
-      throw new Error('Firebase deployment config Storage Rules path must be the sealed rules file.');
-    }
+  // The sealed Storage Rules are deployed by the Rules workflows, so the config must carry them.
+  const storageTarget = requireSingleDeploymentTarget(config.storage, 'Storage');
+  if (storageTarget.rules !== COMPONENT_PATHS.storageRules.path) {
+    throw new Error('Firebase deployment config Storage Rules path must be the sealed rules file.');
   }
   if (expectedFirestoreDatabaseId !== undefined) {
     if (!FIRESTORE_DATABASE_ID.test(expectedFirestoreDatabaseId)) {
