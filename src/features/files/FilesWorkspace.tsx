@@ -99,6 +99,7 @@ export function FilesWorkspace({ port, courses = [], defaultCourseId = null, onM
       courses={courses}
       defaultCourseId={defaultCourseId}
       onRetryList={() => { void library.refresh(); }}
+      onLoadMore={() => { void library.loadMore(); }}
       onDelete={async file => {
         if (cardPhotos && canShowOnCards(file)) {
           const lookup = photoLookups.current.get(file.id);
@@ -130,6 +131,8 @@ export interface FilesWorkspaceViewProps {
   readonly courses: readonly FileCourseOption[];
   readonly defaultCourseId: string | null;
   readonly onRetryList: () => void;
+  /** Shows the next page of files when the service reports more behind the ones listed. */
+  readonly onLoadMore?: () => void;
   readonly onDelete: (file: FileSummary) => Promise<void>;
   /** Counts the cards, in every course, that show a photo; the delete confirmation states it. */
   readonly cardPhotoCount?: (fileId: string) => Promise<number>;
@@ -138,7 +141,7 @@ export interface FilesWorkspaceViewProps {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
 }
 
-export function FilesWorkspaceView({ upload, session, library, courses, defaultCourseId, onRetryList, onDelete, cardPhotoCount, onOpen, onManageFiles, headingRef }: FilesWorkspaceViewProps) {
+export function FilesWorkspaceView({ upload, session, library, courses, defaultCourseId, onRetryList, onLoadMore, onDelete, cardPhotoCount, onOpen, onManageFiles, headingRef }: FilesWorkspaceViewProps) {
   const { _ } = useLingui();
   const inputRef = useRef<HTMLInputElement>(null);
   const filesHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -219,6 +222,7 @@ export function FilesWorkspaceView({ upload, session, library, courses, defaultC
             headingRef={filesHeadingRef}
             onBrowse={() => browse()}
             onRetry={onRetryList}
+            onLoadMore={onLoadMore}
             onAskDelete={setDeleteTarget}
             onManageFiles={onManageFiles}
           />
@@ -681,11 +685,12 @@ interface FileShelfProps {
   readonly headingRef: RefObject<HTMLHeadingElement | null>;
   readonly onBrowse: () => void;
   readonly onRetry: () => void;
+  readonly onLoadMore?: () => void;
   readonly onAskDelete: (file: FileSummary) => void;
   readonly onManageFiles?: () => void;
 }
 
-function FileShelf({ library, courses, headingId, headingRef, onBrowse, onRetry, onAskDelete, onManageFiles }: FileShelfProps) {
+function FileShelf({ library, courses, headingId, headingRef, onBrowse, onRetry, onLoadMore, onAskDelete, onManageFiles }: FileShelfProps) {
   const { _, i18n } = useLingui();
   const listing = library.listing;
   const files = listing?.files ?? [];
@@ -756,6 +761,11 @@ function FileShelf({ library, courses, headingId, headingRef, onBrowse, onRetry,
               </li>
             ))}
           </ul>
+          {listing.nextCursor && onLoadMore && (
+            <button type="button" className="sf-files-button crystal-chamfer-sm" disabled={library.status === 'loading'} onClick={onLoadMore}>
+              <Trans {...msg({ id: 'files.shelf.more', message: 'Show more files' })} />
+            </button>
+          )}
         </>
       )}
       {onManageFiles && (

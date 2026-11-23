@@ -46,7 +46,7 @@ export const createFirebaseFilePort = ({ ownerId, app = defaultApp }: FirebaseFi
   };
 
   return {
-    list: () => call<FileListing>('listMyFiles', {}),
+    list: cursor => call<FileListing>('listMyFiles', cursor ? { cursor } : {}),
     prepare: input => call<PreparedUpload>('prepareFileUpload', { ...input }),
     attach: async (fileId, courseId) => (await call<{ file: FileSummary }>('updateMyFile', { fileId, courseId })).file,
     remove: async fileId => (await call<{ usage: FileUsage }>('deleteMyFile', { fileId })).usage,

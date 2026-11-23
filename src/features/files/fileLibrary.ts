@@ -8,6 +8,12 @@ export type FileLibraryState =
   | { readonly status: 'ready'; readonly listing: FileListing }
   | { readonly status: 'error'; readonly listing: FileListing | null; readonly error: FileError };
 
+/** A further page of files added behind the ones on screen; usage, limits and the cursor come from the newer page. */
+export const appendFilePage = (shown: FileListing, page: FileListing): FileListing => {
+  const known = new Set(shown.files.map(file => file.id));
+  return { ...page, files: [...shown.files, ...page.files.filter(file => !known.has(file.id))] };
+};
+
 /** The learner's stored files with usage and plan limits, as the service reports them. */
 export const useFileLibrary = (port: FilePort | null) => {
   const [state, setState] = useState<FileLibraryState>({ status: 'loading', listing: null });
@@ -36,6 +42,21 @@ export const useFileLibrary = (port: FilePort | null) => {
 
   useEffect(() => { void refresh(); }, [refresh]);
 
+  // The service lists files a page at a time; this adds the next page behind the files on screen.
+  const loadMore = useCallback(async () => {
+    const shown = shownListing.current;
+    if (!port || !shown?.nextCursor) return;
+    request.current += 1;
+    const token = request.current;
+    setState(previous => ({ status: 'loading', listing: previous.listing }));
+    try {
+      const page = await port.list(shown.nextCursor);
+      if (token === request.current) show(appendFilePage(shownListing.current ?? shown, page));
+    } catch (error) {
+      if (token === request.current) setState(previous => ({ status: 'error', listing: previous.listing, error: toFileError(error) }));
+    }
+  }, [port, show]);
+
   /**
    * Shows a change the service already reported: a listing it just returned, or an edit to the one
    * on screen. Only an edit with nothing on screen to edit lists the files again.
@@ -63,7 +84,7 @@ export const useFileLibrary = (port: FilePort | null) => {
     apply(listing => ({ ...listing, usage, files: listing.files.filter(file => file.id !== fileId) }));
   }, [port, apply]);
 
-  return { state, refresh, apply, remove };
+  return { state, refresh, loadMore, apply, remove };
 };
 
 /** What the card editor needs to put an uploaded photo on a card. */

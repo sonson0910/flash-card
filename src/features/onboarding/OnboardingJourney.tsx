@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { useSetUiLocale, useUiLocale } from '../../i18n/I18nProvider';
 import { useCourseSession } from '../courses/CourseGate';
-import { COURSE_TARGET_LANGUAGES, type CourseNativeLanguage, type CourseTargetLanguage, type CreateCourseInput } from '../courses/courseModel';
+import { canonicalGoalLevel, COURSE_TARGET_LANGUAGES, type CourseNativeLanguage, type CourseTargetLanguage, type CreateCourseInput } from '../courses/courseModel';
 import { examGoalKindsFor, goalKindsFor, isExamGoalKind } from '../courses/courseGoalCatalog';
 import { NATIVE_ENDONYM, NATIVE_LANGUAGE_LABEL, TARGET_ENDONYM, TARGET_GLYPH, TARGET_LANGUAGE_LABEL } from '../courses/courseLanguageLabels';
 import { IELTS_GOAL_KIND } from '../../../functions/src/course-profile-contract';
@@ -192,7 +192,7 @@ export const onboardingCourseInput = ({
     targetLanguage,
     nativeLanguage,
     activateOnCreate: true,
-    goals: goalKind ? [{ kind: goalKind, level: goalLevel.trim() || null, targetDate: goalTargetDate || null }] : [],
+    goals: goalKind ? [{ kind: goalKind, level: canonicalGoalLevel(goalLevel), targetDate: goalTargetDate || null }] : [],
     ...(Object.keys(preferences).length > 0 ? { preferences } : {}),
   };
 };
@@ -340,7 +340,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     const result = await actions.createCourse(onboardingCourseInput({
       targetLanguage, nativeLanguage, goalKind, goalLevel, goalTargetDate, zhScript, romanization,
     }));
-    if (!result.ok) { setError(result.error.message); return; }
+    if (!result.ok) { setError(_(msg({ context: 'course.error.generic', message: 'That course action did not go through. Please try again.' }))); return; }
     const scoreRequest = onboardingLatestScoreRequest(ownerId, result.created, goalKind, latestScore);
     writeDailyPace(pace);
     if (startingTier) writeStartingTier(ownerId, targetLanguage, startingTier);
@@ -357,7 +357,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const continueButton = (disabled = false) => <button type="button" className={responsivePrimaryButtonClass} disabled={disabled} onClick={goNext}><PrimaryLabel><Trans {...msg({ context: 'onboarding.continue', message: 'Continue' })} /></PrimaryLabel></button>;
   const goalName = selectedGoal ? _(selectedGoal.label) : '';
   const goalSummary = selectedGoal
-    ? [goalName, goalLevel.trim(), goalTargetDate].filter(Boolean).join(' · ')
+    ? [goalName, canonicalGoalLevel(goalLevel), goalTargetDate].filter(Boolean).join(' · ')
     : _(msg({ context: 'onboarding.goal.none', message: 'No specific goal yet' }));
   const selectedNote = <p className="onb-footer-note"><Trans {...msg({ context: 'onboarding.goal.selected', message: 'Selected: <0>{goal}</0>' })} values={{ goal: goalSummary }} components={{ 0: <strong /> }} /></p>;
   const eyebrowLabels: Record<OnboardingStepId, string> = {

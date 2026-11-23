@@ -23,7 +23,7 @@ const listing = (files: FileSummary[], usedBytes = files.reduce((sum, file) => s
   files, usage: { usedBytes, reservedBytes: 0, fileCount: files.length }, limits: LIMITS,
 });
 
-const render = (upload: UploadState, library: FileLibraryState, courses = [{ id: 'course-en', label: 'English · IELTS' }]) => {
+const render = (upload: UploadState, library: FileLibraryState, courses = [{ id: 'course-en', label: 'English · IELTS' }], onLoadMore?: () => void) => {
   const session = createUploadSession({ port: createMemoryFilePort({ limits: LIMITS }), limits: () => LIMITS });
   return renderToStaticMarkup(
     <I18nProvider i18n={i18n}>
@@ -34,6 +34,7 @@ const render = (upload: UploadState, library: FileLibraryState, courses = [{ id:
         courses={courses}
         defaultCourseId={null}
         onRetryList={vi.fn()}
+        onLoadMore={onLoadMore}
         onDelete={vi.fn()}
         onOpen={vi.fn()}
       />
@@ -53,6 +54,14 @@ describe('FilesWorkspaceView', () => {
     expect(html).toContain('data-kind="epub" aria-pressed="false"');
     expect(html).toContain('No files yet');
     expect(html).not.toContain('WebP');
+  });
+
+  it('offers the next page of files only when the service reports more behind the listed ones', () => {
+    const more = { ...listing([stored({})]), nextCursor: '1700000000000:AbCdEfGhIjKlMnOpQrSt' };
+    expect(render({ phase: 'select', kind: null }, { status: 'ready', listing: more }, undefined, vi.fn())).toContain('Show more files');
+    expect(render({ phase: 'select', kind: null }, { status: 'ready', listing: more })).not.toContain('Show more files');
+    expect(render({ phase: 'select', kind: null }, { status: 'ready', listing: listing([stored({})]) }, undefined, vi.fn()))
+      .not.toContain('Show more files');
   });
 
   it('mentions the browser resize once an image source is picked', () => {

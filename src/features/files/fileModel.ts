@@ -41,6 +41,8 @@ export interface FileListing {
   readonly files: readonly FileSummary[];
   readonly usage: FileUsage;
   readonly limits: FileLimits;
+  /** Passed back to `FilePort.list` for the files after this page; absent or null when this is the last page. */
+  readonly nextCursor?: string | null;
 }
 
 export interface PreparedUpload {

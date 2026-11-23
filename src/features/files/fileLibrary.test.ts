@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { FileLimits } from './fileModel';
+import type { FileLimits, FileListing, FileSummary } from './fileModel';
 import { FileError } from './filePort';
-import { createCardImageUploader } from './fileLibrary';
+import { appendFilePage, createCardImageUploader } from './fileLibrary';
 import { createMemoryFilePort } from './memoryFileAdapter';
 
 const LIMITS: FileLimits = { tier: 'free', limitBytes: 4096, maxFileBytes: 2048 };
@@ -32,5 +32,22 @@ describe('card image uploader', () => {
   it('rejects when the file service cannot be reached', async () => {
     const port = createMemoryFilePort({ limits: LIMITS, listError: () => new FileError('network') });
     await expect(createCardImageUploader(port).upload(photo(512), vi.fn()).done).rejects.toMatchObject({ kind: 'network' });
+  });
+});
+
+describe('paging through the file list', () => {
+  const file = (id: string): FileSummary => ({
+    id, name: `${id}.pdf`, kind: 'pdf', contentType: 'application/pdf', purpose: 'source', courseId: null, status: 'ready',
+    verification: 'complete', bytes: 10, declaredBytes: 10, rejectionReason: null, createdAt: null, updatedAt: null,
+  });
+  const page = (ids: string[], nextCursor: string | null, fileCount: number): FileListing => ({
+    files: ids.map(file), usage: { usedBytes: 10 * fileCount, reservedBytes: 0, fileCount }, limits: LIMITS, nextCursor,
+  });
+
+  it('adds the next page behind the files on screen and takes usage and the cursor from the newer page', () => {
+    const merged = appendFilePage(page(['a', 'b'], 'next-1', 3), page(['b', 'c'], null, 4));
+    expect(merged.files.map(item => item.id)).toEqual(['a', 'b', 'c']);
+    expect(merged.nextCursor).toBeNull();
+    expect(merged.usage.fileCount).toBe(4);
   });
 });

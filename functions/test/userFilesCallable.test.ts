@@ -119,7 +119,12 @@ describe('file callables', () => {
   it('lists, attaches and deletes through the owner', async () => {
     listFiles.mockResolvedValue({ files: [], usage: { usedBytes: 0, reservedBytes: 0, fileCount: 0 }, limits: {} });
     await endpoints.listMyFiles.run({ auth: { uid: 'owner-1' }, data: { ownerId: 'owner-1' } });
-    expect(listFiles).toHaveBeenCalledWith(expect.anything(), 'owner-1', PILOT_CONFIG_DEFAULTS);
+    expect(listFiles).toHaveBeenCalledWith(expect.anything(), 'owner-1', PILOT_CONFIG_DEFAULTS, expect.any(Date), null);
+    const cursor = `1700000000000:${fileId}`;
+    await endpoints.listMyFiles.run({ auth: { uid: 'owner-1' }, data: { ownerId: 'owner-1', cursor } });
+    expect(listFiles).toHaveBeenLastCalledWith(expect.anything(), 'owner-1', PILOT_CONFIG_DEFAULTS, expect.any(Date), cursor);
+    await expect(endpoints.listMyFiles.run({ auth: { uid: 'owner-1' }, data: { ownerId: 'owner-1', cursor: 'next' } }))
+      .rejects.toMatchObject({ code: 'invalid-argument' });
     updateFileCourse.mockResolvedValue({ id: fileId });
     await expect(endpoints.updateMyFile.run({ auth: { uid: 'owner-1' }, data: { ownerId: 'owner-1', fileId, courseId: 'c-1' } }))
       .resolves.toEqual({ file: { id: fileId } });
