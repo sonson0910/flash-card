@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { useNeedsOnboarding } from '../courses/CourseGate';
 import { hasOnboardingInProgress } from './onboardingModel';
@@ -31,10 +31,26 @@ export interface OnboardingGateProps {
  */
 export function OnboardingGate({ ownerId, suppress, libraryReady, hasCards }: OnboardingGateProps) {
   const needsOnboarding = useNeedsOnboarding();
-  const ownerState = useRef(new Map<string, 'legacy' | 'started'>());
+  const ownerState = useRef(new Map<string, 'legacy' | 'started' | 'checking'>());
+  const serverChecks = useRef(new Set<string>());
+  const [, setChecked] = useState(0);
   if (ownerId && !suppress && libraryReady && needsOnboarding && !ownerState.current.has(ownerId)) {
-    ownerState.current.set(ownerId, hasCards && !hasOnboardingInProgress(ownerId) ? 'legacy' : 'started');
+    // Cards with no local journey marker may be an existing library or starter cards written from
+    // another browser; the server record tells them apart, once per owner.
+    ownerState.current.set(ownerId, !hasCards || hasOnboardingInProgress(ownerId) ? 'started' : 'checking');
   }
-  if (!ownerId || suppress || !needsOnboarding || ownerState.current.get(ownerId) !== 'started') return null;
+  const state = ownerId ? ownerState.current.get(ownerId) : undefined;
+  useEffect(() => {
+    if (!ownerId || state !== 'checking' || serverChecks.current.has(ownerId)) return;
+    serverChecks.current.add(ownerId);
+    void import('./readOnboardingStarted')
+      .then(({ readOnboardingStarted }) => readOnboardingStarted(ownerId))
+      .catch(() => false)
+      .then(started => {
+        ownerState.current.set(ownerId, started ? 'started' : 'legacy');
+        setChecked(count => count + 1);
+      });
+  }, [ownerId, state]);
+  if (!ownerId || suppress || !needsOnboarding || state !== 'started') return null;
   return <Suspense fallback={null}><OnboardingJourney key={ownerId} ownerId={ownerId} /></Suspense>;
 }
