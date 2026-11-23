@@ -1564,7 +1564,8 @@ const scanFinalLibrary = async (
     if (
       cards.length !== 1
       || cards[0].id !== canonicalId
-      || cards[0].word !== group.normalizedWord
+      // The headword keeps the learner's casing; it only has to spell the identity.
+      || normalizeCleanupWord(cards[0].word) !== group.normalizedWord
       || cards[0].normalizedWord !== group.normalizedWord
       || cards[0].schemaVersion !== 2
       || cards[0].libraryEpoch !== currentFence.libraryEpoch

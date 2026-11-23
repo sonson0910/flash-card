@@ -251,6 +251,42 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
       .toEqual({ schemaVersion: 1, cardId: 'legacy-capital', normalizedWord: 'migrate' });
   });
 
+  it('migrates a card with its headword casing and stored learner fields intact', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const jobId = 'stored-fields-v3';
+    const stored = {
+      origin: 'ai',
+      mnemonic: 'birds migrate',
+      wordFamily: { noun: 'migration' },
+      masteredAt: '2026-05-02T10:00:00.000Z',
+      appliedReviewOperationIds: ['review-op-1', 'review-op-2'],
+      tags: ['verbs'],
+      learnerDifficulty: 'medium',
+      translationAlternatives: ['di cư'],
+    };
+    const original = { id: 'legacy-capital', word: 'Migrate', translation: 'di chuyển', ...stored };
+    await owner.collection('cards').doc('legacy-capital').set(original);
+    const store = createFirestoreLegacyLibraryDiscoveryStore(database);
+    let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 2 });
+    while (discovery.phase === 'discover') {
+      discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 2 });
+    }
+    const sourceRevision = String((await owner.collection('admin_library_migration_jobs').doc(jobId).get())
+      .data()?.sourceRevision ?? '');
+
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision }))
+      .resolves.toMatchObject({ complete: true });
+
+    expect((await owner.collection('cards').doc('word-migrate').get()).data()).toMatchObject({
+      id: 'word-migrate', word: 'Migrate', normalizedWord: 'migrate', translation: 'di chuyển', ...stored,
+    });
+    expect((await owner.collection('cards').doc('word-quite').get()).data())
+      .toMatchObject({ word: 'quite', normalizedWord: 'quite', translation: 'hoàn toàn' });
+
+    await rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, sourceRevision);
+    expect((await owner.collection('cards').doc('legacy-capital').get()).data()).toEqual(original);
+  });
+
   it('completes and rolls back when the owner still holds a reservation for a deleted card', async () => {
     const owner = database.collection('users').doc(OWNER_ID);
     const jobId = 'leftover-reservation-v3';

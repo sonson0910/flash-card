@@ -8,6 +8,7 @@ import {
   planDuplicateGroup,
   summarizeFacetCounts,
 } from '../src/duplicateCleanup.js';
+import { resolveJapanesePitchAccent } from '../src/japanesePitch.js';
 
 const card = (id: string, overrides: Record<string, unknown> = {}) => ({
   id,
@@ -47,7 +48,7 @@ describe('duplicate cleanup planner', () => {
       loserIds: ['legacy-random'],
       merged: {
         id: 'word-quite',
-        word: 'quite',
+        word: 'Quite',
         normalizedWord: 'quite',
         schemaVersion: 2,
         revision: 1,
@@ -60,6 +61,93 @@ describe('duplicate cleanup planner', () => {
     expect(plan?.merged).not.toHaveProperty('privateLegacyField');
     expect(plan?.merged.imageUrl).toBeNull();
     expect(plan?.tombstones).toHaveLength(1);
+  });
+
+  it('keeps the headword as the learner wrote it and every stored card field', () => {
+    const stored = {
+      origin: 'ai',
+      mnemonic: 'Paris rhymes with "embarrass"',
+      wordFamily: { noun: 'Parisian', adj: 'Parisian' },
+      masteredAt: '2026-05-02T10:00:00.000Z',
+      appliedReviewOperationIds: ['review-op-1', 'review-op-2'],
+      tags: ['travel', 'cities'],
+      learnerDifficulty: 'medium',
+      translationAlternatives: ['thủ đô nước Pháp'],
+    };
+    const plan = planLegacyIdentityGroup([
+      card('legacy-paris', { word: ' Paris ', normalizedWord: 'paris', translation: 'Pa-ri', ...stored }),
+    ], { jobId: 'job-1', libraryEpoch: 3 });
+
+    expect(plan.normalizedWord).toBe('paris');
+    expect(plan.merged).toMatchObject({ word: 'Paris', normalizedWord: 'paris', ...stored });
+  });
+
+  it('keeps verified Japanese pitch metadata and drops pitch that does not match the word', () => {
+    const japanese = { word: '日本', normalizedWord: '日本', phonetic: 'ニッポン', language: 'ja' };
+    const pitch = resolveJapanesePitchAccent('日本', 'ニッポン', 'ja');
+    expect(pitch).toBeDefined();
+
+    expect(planLegacyIdentityGroup([
+      card('legacy-nippon', { ...japanese, japanesePitchAccent: pitch }),
+    ], { jobId: 'job-1', libraryEpoch: 3 }).merged.japanesePitchAccent).toEqual(pitch);
+    expect(planLegacyIdentityGroup([
+      card('legacy-nippon', { ...japanese, japanesePitchAccent: { ...pitch, downstep: 1 } }),
+    ], { jobId: 'job-1', libraryEpoch: 3 }).merged).not.toHaveProperty('japanesePitchAccent');
+  });
+
+  it('keeps the review receipts of every duplicate and fills learner notes from weaker copies', () => {
+    const plan = planLegacyIdentityGroup([
+      card('learned', { reviews: 10, appliedReviewOperationIds: ['op-strong-1', 'op-shared'] }),
+      card('noted', {
+        reviews: 1,
+        appliedReviewOperationIds: ['op-weak-1', 'op-shared'],
+        mnemonic: 'quiet without the e moved',
+        tags: ['adverbs'],
+        wordFamily: { adv: 'quite' },
+        learnerDifficulty: 'hard',
+      }),
+    ], { jobId: 'job-1', libraryEpoch: 3 });
+
+    expect(plan.strongestSourceId).toBe('learned');
+    expect(plan.merged.appliedReviewOperationIds).toEqual(['op-weak-1', 'op-strong-1', 'op-shared']);
+    expect(plan.merged).toMatchObject({
+      mnemonic: 'quiet without the e moved',
+      tags: ['adverbs'],
+      wordFamily: { adv: 'quite' },
+      learnerDifficulty: 'hard',
+    });
+  });
+
+  it('bounds merged review receipts and leaves malformed optional values out', () => {
+    const receipts = (prefix: string) => Array.from({ length: 80 }, (_, index) => `${prefix}-${index}`);
+    const plan = planLegacyIdentityGroup([
+      card('learned', {
+        reviews: 10,
+        appliedReviewOperationIds: receipts('strong'),
+        origin: 'imported',
+        wordFamily: { noun: 'quiteness', slang: 'unsupported' },
+        tags: ['dup', 'dup'],
+        learnerDifficulty: 'impossible',
+        masteredAt: 'not-a-date',
+        translationAlternatives: ['only AI cards carry alternatives'],
+      }),
+      card('weaker', { reviews: 1, appliedReviewOperationIds: receipts('weak') }),
+    ], { jobId: 'job-1', libraryEpoch: 3 });
+
+    const merged = plan.merged.appliedReviewOperationIds as string[];
+    expect(merged).toHaveLength(100);
+    expect(merged.slice(-80)).toEqual(receipts('strong'));
+    for (const field of ['origin', 'wordFamily', 'tags', 'learnerDifficulty', 'masteredAt', 'translationAlternatives']) {
+      expect(plan.merged).not.toHaveProperty(field);
+    }
+  });
+
+  it('falls back to the identity when the stored headword spells a different word', () => {
+    const plan = planLegacyIdentityGroup([
+      card('mismatched', { word: 'Quiet', normalizedWord: 'quite' }),
+    ], { jobId: 'job-1', libraryEpoch: 3 });
+
+    expect(plan.merged).toMatchObject({ word: 'quite', normalizedWord: 'quite' });
   });
 
   it('uses a revision newer than every duplicate source', () => {
