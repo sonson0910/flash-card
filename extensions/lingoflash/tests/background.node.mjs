@@ -3,7 +3,7 @@ import { webcrypto } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
-import { createI18nMock } from './i18n-test-helper.mjs';
+import { createI18nMock, loadMessages } from './i18n-test-helper.mjs';
 
 const sourceFiles = [
   '../shared.js',
@@ -61,6 +61,7 @@ const createWorkerContext = async ({
   registerContentScriptError = '',
   userAgent = 'Mozilla/5.0 Chrome/127.0.0.0 Safari/537.36',
   now = null,
+  uiLanguage = '',
 } = {}) => {
   const calls = [];
   const storageValues = new Map(storageEntries);
@@ -133,6 +134,7 @@ const createWorkerContext = async ({
       getManifest() {
         return { version: '1.6.3' };
       },
+      ...(uiLanguage ? { getURL: path => `chrome-extension://test/${path}` } : {}),
       sendMessage: message => {
         calls.push({ type: 'runtime.sendMessage', message });
         return Promise.resolve();
@@ -306,12 +308,23 @@ const createWorkerContext = async ({
     clearTimeout,
     console,
     crypto: webcrypto,
-    fetch: fetchImpl ?? (() => { throw new Error('fetch should not be called by this test'); }),
+    fetch: uiLanguage
+      ? async (url, ...rest) => {
+        const packaged = /\/_locales\/([a-z]+)\/messages\.json$/.exec(String(url));
+        if (packaged) return { ok: true, json: async () => loadMessages(packaged[1]) };
+        return (fetchImpl ?? (() => { throw new Error('fetch should not be called by this test'); }))(url, ...rest);
+      }
+      : fetchImpl ?? (() => { throw new Error('fetch should not be called by this test'); }),
     setTimeout: workerSetTimeout,
     navigator: { userAgent },
     chrome,
   };
   context.globalThis = context;
+  if (uiLanguage) {
+    // Chrome resolves getMessage() against the browser language and falls back to the default locale.
+    const resolved = uiLanguage === 'en' ? 'en' : 'vi';
+    chrome.i18n = { ...createI18nMock(resolved), getUILanguage: () => uiLanguage };
+  }
   vm.createContext(context);
   for (const relativePath of sourceFiles) {
     const source = await readFile(new URL(relativePath, import.meta.url), 'utf8');
@@ -344,11 +357,13 @@ const createWorkerContext = async ({
     frameId: 0,
   });
   await flushMicrotasks();
+  const startupCalls = [...calls];
   calls.length = 0;
 
   return {
     context,
     calls,
+    startupCalls,
     events,
     storageValues,
     providerId: appPort.posted.find(message => message.type === 'LINGOFLASH_EXTENSION_PROVIDER')?.providerId ?? '',
@@ -3085,5 +3100,95 @@ test('bubble payloads name the capture mode with a token instead of Vietnamese l
   for (const payload of payloads) {
     assert.equal(payload.modeLabel, undefined);
     assert.match(String(payload.mode ?? 'save'), /^(translate-free|translate-google|save|save-ai)$/);
+  }
+});
+
+const menuTitles = calls => calls.filter(call => call.type === 'contextMenus.create').map(call => call.details.title);
+const settle = async () => { for (let round = 0; round < 20; round += 1) await flushMicrotasks(); };
+const syncCourseWithNative = (worker, nativeLanguage, scope = 'opaque_scope_native_123456') => sendRuntimeMessage(worker, {
+  type: 'SYNC_COURSE_LOCALE',
+  payload: { scope, nativeLanguage, targetLanguage: 'ko' },
+}, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+const translateRender = async worker => {
+  worker.calls.length = 0;
+  const response = await sendRuntimeMessage(worker, { type: 'TRANSLATE_SELECTION', text: '결정' });
+  assert.equal(response.ok, true);
+  return translatedRender(worker);
+};
+const enCatalog = loadMessages('en');
+const viCatalog = loadMessages('vi');
+const localizedWorker = uiLanguage => createWorkerContext({
+  uiLanguage,
+  executeScriptCaptureResult: { text: '결정', anchor: { left: 10, bottom: 20 }, context: '결정했다', pageLanguage: 'ko' },
+  fetchImpl: async () => ({ ok: true, json: async () => [[['quyết định', '결정']], null, 'ko'] }),
+});
+
+test('bubble strings follow the course native language after a sync, not the browser language', async () => {
+  const worker = await localizedWorker('vi');
+
+  assert.equal((await translateRender(worker)).messages, undefined);
+
+  assert.equal((await syncCourseWithNative(worker, 'en')).ok, true);
+  const payload = await translateRender(worker);
+  assert.equal(payload.messages.bubbleRetry.message, enCatalog.bubbleRetry.message);
+  assert.equal(payload.messages.bubbleSaveFlashcard.message, enCatalog.bubbleSaveFlashcard.message);
+  assert.equal(payload.messages.bubbleBrand.message, enCatalog.bubbleBrand.message);
+  assert.deepEqual(payload.messages.bubbleBrand.placeholders, enCatalog.bubbleBrand.placeholders);
+  assert.ok(Object.keys(payload.messages).every(name => /^bubble|^recentSpeakLabel$|^captureReason_/.test(name)));
+});
+
+test('bubble sends every key the bubble reads, and nothing from other surfaces', async () => {
+  const worker = await localizedWorker('vi');
+  assert.equal((await syncCourseWithNative(worker, 'en')).ok, true);
+  const payload = await translateRender(worker);
+  const uiSource = await readFile(new URL('../background-ui.js', import.meta.url), 'utf8');
+  const read = [...uiSource.matchAll(/\bbt\('([A-Za-z_]+)'/g)].map(match => match[1]);
+  assert.ok(read.length > 30);
+  assert.deepEqual(read.filter(name => !payload.messages[name]), []);
+  assert.ok(Object.keys(payload.messages).length < 70);
+});
+
+test('menus and worker messages are rebuilt in the course language after a sync and restored on retire', async () => {
+  const worker = await localizedWorker('vi');
+  assert.deepEqual(menuTitles(worker.startupCalls), [viCatalog.contextMenuTranslateOnly.message, viCatalog.contextMenuTranslateSave.message]);
+
+  worker.calls.length = 0;
+  assert.equal((await syncCourseWithNative(worker, 'en')).ok, true);
+  await settle();
+  assert.deepEqual(menuTitles(worker.calls), [enCatalog.contextMenuTranslateOnly.message, enCatalog.contextMenuTranslateSave.message]);
+  const missingTab = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: 'job_missing' });
+  assert.equal(missingTab.error, enCatalog.errorRetryExpired.message);
+
+  worker.calls.length = 0;
+  const cleared = await sendRuntimeMessage(worker, {
+    type: 'CLEAR_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_native_123456' },
+  }, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } });
+  assert.equal(cleared.cleared, true);
+  await settle();
+  assert.deepEqual(menuTitles(worker.calls), [viCatalog.contextMenuTranslateOnly.message, viCatalog.contextMenuTranslateSave.message]);
+
+  assert.equal((await syncCourseWithNative(worker, 'en', 'opaque_scope_native_654321')).ok, true);
+  await settle();
+  worker.calls.length = 0;
+  worker.appPort.disconnect();
+  await settle();
+  assert.deepEqual(menuTitles(worker.calls), [viCatalog.contextMenuTranslateOnly.message, viCatalog.contextMenuTranslateSave.message]);
+});
+
+test('a browser language that is neither Vietnamese nor English gets English bubbles and menus until a course is confirmed', async () => {
+  const worker = await localizedWorker('fr');
+  assert.deepEqual(menuTitles(worker.startupCalls).slice(-2), [enCatalog.contextMenuTranslateOnly.message, enCatalog.contextMenuTranslateSave.message]);
+  assert.equal((await translateRender(worker)).messages.bubbleRetry.message, enCatalog.bubbleRetry.message);
+
+  assert.equal((await syncCourseWithNative(worker, 'vi')).ok, true);
+  const payload = await translateRender(worker);
+  assert.equal(payload.messages.bubbleRetry.message, viCatalog.bubbleRetry.message);
+});
+
+test('keeps the browser language for the bubble when no course is confirmed and the browser speaks Vietnamese or English', async () => {
+  for (const language of ['vi', 'en-GB']) {
+    const worker = await localizedWorker(language);
+    assert.equal((await translateRender(worker)).messages, undefined, language);
   }
 });

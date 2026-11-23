@@ -9,7 +9,8 @@
     readSettings, writeUserSettings, updateSelectionIconSites, readRecentLookups, recordRecentLookup, clearRecentLookups, clearCreatedRecentLookups, normalizeDeckScope, normalizeDeckMetadata, normalizeRetiredDeckScopes,
     normalizeDueCountMetadata, normalizeRetiredDueCountScopes,
     COURSE_LOCALE_STORAGE_KEY, COURSE_LOCALE_RETIRED_SCOPES_STORAGE_KEY, normalizeCourseTargetLanguage, normalizeCourseLocaleMetadata, normalizeRetiredCourseLocaleScopes,
-    normalizeSelectionIconSites, selectionIconSitePatternFromUrl, isProtectedSelectionIconUrl, t,
+    normalizeSelectionIconSites, selectionIconSitePatternFromUrl, isProtectedSelectionIconUrl, t: browserMessage,
+    catalogMessage, loadLocaleMessageCatalog,
   } = globalThis.LingoFlashExtension;
   const { captureSelectionFromPage, renderInlineBubble } = globalThis.LingoFlashExtensionUi;
   const VERSION = extensionApi.runtime.getManifest().version;
@@ -327,6 +328,7 @@
       confirmedDeckScope = '';
       confirmedDueCountScope = '';
       confirmedCourseLocaleScope = '';
+      void refreshMessageLocale();
     }
     clearProviderStorage(provider);
   };
@@ -345,6 +347,7 @@
       confirmedDeckScope = '';
       confirmedDueCountScope = '';
       confirmedCourseLocaleScope = '';
+      void refreshMessageLocale();
       void withDueCountLock(async () => {
         if (providerIsCurrent(provider)) await clearDueCountActionBadge();
       }).catch(() => undefined);
@@ -446,6 +449,56 @@
       return metadata && metadata.scope === confirmedCourseLocaleScope ? metadata : null;
     } catch { return null; }
   };
+  // The worker's own messages (menus, errors) and the in-page bubble follow
+  // the confirmed course's native language, like the popup and options do.
+  // Without a confirmed course they keep the browser language, except that a
+  // browser language the extension is not translated into reads English
+  // (the packaged default locale is Vietnamese).
+  let messageCatalog = null;
+  let messageLocale = '';
+  let messageLocaleRun = 0;
+  const messageCatalogs = new Map();
+  const t = (name, substitutions, fallback = '') => catalogMessage(messageCatalog, name, substitutions) || browserMessage(name, substitutions, fallback);
+  const browserUiLanguage = () => {
+    try { return String((globalThis.browser ?? globalThis.chrome)?.i18n?.getUILanguage?.() || '').toLowerCase().split('-')[0]; } catch { return ''; }
+  };
+  const packagedMessageCatalog = async locale => {
+    if (!messageCatalogs.has(locale)) {
+      const catalog = await loadLocaleMessageCatalog(locale);
+      if (!catalog) return null;
+      messageCatalogs.set(locale, catalog);
+    }
+    return messageCatalogs.get(locale);
+  };
+  const refreshMessageLocale = async () => {
+    const run = ++messageLocaleRun;
+    try {
+      const course = await confirmedCourseLocale();
+      const ui = browserUiLanguage();
+      let locale = course?.nativeLanguage || (ui && ui !== 'vi' && ui !== 'en' ? 'en' : '');
+      if (locale === ui) locale = '';
+      const catalog = locale ? await packagedMessageCatalog(locale) : null;
+      if (run !== messageLocaleRun) return;
+      messageCatalog = catalog;
+      const effective = catalog ? locale : '';
+      if (effective === messageLocale) return;
+      messageLocale = effective;
+      installMenus();
+    } catch {}
+  };
+  // Only the keys the bubble reads, in the catalog's own shape so the page
+  // fills placeholders itself. The failure text is one key of the reason.
+  const bubbleMessages = reason => {
+    if (!messageCatalog) return undefined;
+    const keys = Object.keys(messageCatalog).filter(name => /^bubble|^recentSpeakLabel$/.test(name));
+    if (typeof reason === 'string' && reason) keys.push(`captureReason_${reason.replaceAll('-', '_')}`);
+    const messages = {};
+    for (const name of keys) {
+      const entry = messageCatalog[name];
+      if (typeof entry?.message === 'string' && entry.message) messages[name] = entry.placeholders ? { message: entry.message, placeholders: entry.placeholders } : { message: entry.message };
+    }
+    return messages;
+  };
   const clearAlarm = async id => { try { await apiCall(extensionApi.alarms,'clear',alarmName(id)); } catch {} };
   const closeTab = async id => { if (typeof id==='number') try { await apiCall(extensionApi.tabs,'remove',id); } catch {} };
   const cleanup = job => {
@@ -510,7 +563,7 @@
     try { return await work(); } finally { release(); }
   };
   const reportQuickAddFailure = async (job, error) => {
-    const message = error instanceof Error ? error.message : t('errorStartExtension', undefined, 'Không thể khởi động LingoFlash.');
+    const message = error instanceof Error ? error.message : t('errorStartExtension', undefined, 'Không thể khởi động SonFlash.');
     await saveRetry(job);
     await cleanup(job);
     const displayed = await show(job.sourceTabId,{status:'error',mode:'save',text:job.text,anchor:job.anchor,message,retryId:job.id});
@@ -539,7 +592,7 @@
         if (!(await cleanup(job))) createAlarm(job.id, job.createdAt);
         continue;
       }
-      const message = t('errorJobExpired', undefined, 'Tác vụ LingoFlash đã hết hạn. Hãy thử lại.');
+      const message = t('errorJobExpired', undefined, 'Tác vụ SonFlash đã hết hạn. Hãy thử lại.');
       const errorClaim = await claimTerminalError(job);
       if (errorClaim === null) {
         createAlarm(job.id, job.createdAt);
@@ -559,7 +612,7 @@
       const settings = await readSettings();
       const course = await confirmedCourseLocale();
       const courseFields = course ? {courseLanguage:course.targetLanguage,nativeLanguage:course.nativeLanguage} : {};
-      const result = await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:renderInlineBubble,args:[{version:VERSION,...courseFields,...payload,bubbleDurationMs:settings.bubbleDurationMs,autoSpeak:settings.autoSpeak,themeFamily:settings.themeFamily,colorScheme:settings.colorScheme}]});
+      const result = await apiCall(extensionApi.scripting,'executeScript',{target:{tabId},func:renderInlineBubble,args:[{version:VERSION,...courseFields,...payload,messages:bubbleMessages(payload.reason),bubbleDurationMs:settings.bubbleDurationMs,autoSpeak:settings.autoSpeak,themeFamily:settings.themeFamily,colorScheme:settings.colorScheme}]});
       const renderResult = Array.isArray(result) ? result[0]?.result : result;
       if (renderResult?.ok !== true) {
         return {ok:false,error:renderResult?.error || 'Không thể xác nhận kết quả đã hiển thị trên trang.'};
@@ -1033,7 +1086,7 @@
         await saveJob(job);
         const importUrl=buildImportUrl(DEFAULT_APP_URL,job.text,{id,nonce:job.nonce,mode:'silent',createdAt:job.createdAt});
         const tab=await apiCall(extensionApi.tabs,'create',{url:'about:blank',active:false});
-        if (typeof tab?.id!=='number') throw new Error(t('errorCreateBackgroundWorker', undefined, 'Không thể tạo tiến trình LingoFlash ở nền.'));
+        if (typeof tab?.id!=='number') throw new Error(t('errorCreateBackgroundWorker', undefined, 'Không thể tạo tiến trình SonFlash ở nền.'));
         job.workerTabId=tab.id; await saveJob(job); createAlarm(id, job.createdAt);
         await apiCall(extensionApi.tabs,'update',tab.id,{url:importUrl,active:false});
         notifyPopupStatus({id:job.id,status:'loading-save',text:job.text});
@@ -1179,10 +1232,14 @@
     return {url};
   };
   const invocationError = async (tabId,e,text='') => show(tabId,{status:'error',text,message:e instanceof Error?e.message:String(e)});
-  const installMenus = () => { if (!extensionApi.contextMenus) return; void (async()=>{ try{await apiCall(extensionApi.contextMenus,'removeAll');}catch{} try{await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_TRANSLATE_ID,title:t('contextMenuTranslateOnly',undefined,'SonFlash: Dịch “%s”'),contexts:['selection']}); await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_SAVE_ID,title:t('contextMenuTranslateSave',undefined,'SonFlash: Dịch + tạo flashcard'),contexts:['selection']});}catch{} })(); };
+  // Rebuilds run one after another so two quick rebuilds never interleave
+  // their remove and create calls.
+  let menuInstall = Promise.resolve();
+  const installMenus = () => { if (!extensionApi.contextMenus) return; menuInstall = menuInstall.then(async()=>{ try{await apiCall(extensionApi.contextMenus,'removeAll');}catch{} try{await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_TRANSLATE_ID,title:t('contextMenuTranslateOnly',undefined,'SonFlash: Dịch “%s”'),contexts:['selection']}); await apiCall(extensionApi.contextMenus,'create',{id:CONTEXT_SAVE_ID,title:t('contextMenuTranslateSave',undefined,'SonFlash: Dịch + tạo flashcard'),contexts:['selection']});}catch{} }); };
   extensionApi.runtime?.onInstalled?.addListener(() => { installMenus(); void sweepExpiredJobs(); void syncSelectionIconRegistration().catch(() => undefined); });
   extensionApi.runtime?.onStartup?.addListener(() => { installMenus(); void sweepExpiredJobs(); void syncSelectionIconRegistration().catch(() => undefined); });
   installMenus();
+  void refreshMessageLocale();
   void sweepExpiredJobs();
   // A worker restart loses active-scope proof. Clear any browser-owned badge
   // until the signed-in app confirms a current scope again.
@@ -1191,8 +1248,8 @@
   void readRecentLookups();
   extensionApi.permissions?.onRemoved?.addListener?.(permissions => { void handleSelectionIconPermissionRemoved(permissions); });
   extensionApi.contextMenus?.onClicked?.addListener((info,tab)=>{ const fn=info.menuItemId===CONTEXT_TRANSLATE_ID?translateOnly:info.menuItemId===CONTEXT_SAVE_ID?quickAdd:null; if(fn) void fn({tabId:tab?.id,suppliedText:info.selectionText??''}).catch(e=>invocationError(tab?.id,e,info.selectionText??'')); });
-  extensionApi.commands?.onCommand?.addListener((cmd,tab)=>{ if(![SAVE_COMMAND_ID,TRANSLATE_COMMAND_ID].includes(cmd))return; void(async()=>{const t=tab?.id?tab:await activeTab(); try{await(cmd===TRANSLATE_COMMAND_ID?translateOnly:quickAdd)({tabId:t?.id});}catch(e){await invocationError(t?.id,e);}})(); });
-  extensionApi.alarms?.onAlarm?.addListener(a=>{ if(!a?.name?.startsWith(JOB_ALARM_PREFIX))return; const id=a.name.slice(JOB_ALARM_PREFIX.length); void(async()=>{try { const pending=cleanupLocks.get(id); if(pending){if(!(await pending))createAlarm(id); return;} const j=await readJob(id); if(!j)return; if(!isExpiredJob(j)){createAlarm(id,j.createdAt); return;} if(j.resultClaimedAt||j.errorClaimedAt){if(!(await cleanup(j)))createAlarm(id,j.createdAt); return;} const message=t('errorJobIncomplete', undefined, 'LingoFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại.'); const errorClaim=await claimTerminalError(j); if(errorClaim===null){createAlarm(id,j.createdAt); return;} if(errorClaim){await show(j.sourceTabId,{status:'error',mode:'save',text:j.text,anchor:j.anchor,message,retryId:j.id}); notifyPopupStatus({id:j.id,status:'error',text:j.text,message,inlineShown:false});} if(!(await cleanup(j)))createAlarm(id,j.createdAt);} catch { createAlarm(id); }})(); });
+  extensionApi.commands?.onCommand?.addListener((cmd,tab)=>{ if(![SAVE_COMMAND_ID,TRANSLATE_COMMAND_ID].includes(cmd))return; void(async()=>{const target=tab?.id?tab:await activeTab(); try{await(cmd===TRANSLATE_COMMAND_ID?translateOnly:quickAdd)({tabId:target?.id});}catch(e){await invocationError(target?.id,e);}})(); });
+  extensionApi.alarms?.onAlarm?.addListener(a=>{ if(!a?.name?.startsWith(JOB_ALARM_PREFIX))return; const id=a.name.slice(JOB_ALARM_PREFIX.length); void(async()=>{try { const pending=cleanupLocks.get(id); if(pending){if(!(await pending))createAlarm(id); return;} const j=await readJob(id); if(!j)return; if(!isExpiredJob(j)){createAlarm(id,j.createdAt); return;} if(j.resultClaimedAt||j.errorClaimedAt){if(!(await cleanup(j)))createAlarm(id,j.createdAt); return;} const message=t('errorJobIncomplete', undefined, 'SonFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại.'); const errorClaim=await claimTerminalError(j); if(errorClaim===null){createAlarm(id,j.createdAt); return;} if(errorClaim){await show(j.sourceTabId,{status:'error',mode:'save',text:j.text,anchor:j.anchor,message,retryId:j.id}); notifyPopupStatus({id:j.id,status:'error',text:j.text,message,inlineShown:false});} if(!(await cleanup(j)))createAlarm(id,j.createdAt);} catch { createAlarm(id); }})(); });
   extensionApi.tabs?.onRemoved?.addListener(tabId=>{
     void (async () => {
       for (const job of await readJobs()) {
@@ -1201,8 +1258,8 @@
         tabRemovalLocks.set(job.id, true);
         const sourceClosed = job.sourceTabId === tabId;
         const message = sourceClosed
-          ? t('errorSourceTabClosed', undefined, 'Tab nguồn đã đóng trước khi LingoFlash hoàn tất.')
-          : t('errorBackgroundTabClosed', undefined, 'Tiến trình LingoFlash ở nền đã bị đóng trước khi hoàn tất.');
+          ? t('errorSourceTabClosed', undefined, 'Tab nguồn đã đóng trước khi SonFlash hoàn tất.')
+          : t('errorBackgroundTabClosed', undefined, 'Tiến trình SonFlash ở nền đã bị đóng trước khi hoàn tất.');
         const errorClaim = await claimTerminalError(job);
         if (errorClaim === null) {
           createAlarm(job.id, job.createdAt);
@@ -1222,8 +1279,8 @@
 
   const handle = async (m,sender) => {
     const type=m&&typeof m==='object'?m.type:'';
-    if(type==='GET_SELECTION'){const t=await activeTab(),c=await capture(t?.id);return{ok:true,text:c.text,pageLanguage:c.text?c.pageLanguage||'':''};}
-    if(type==='TRANSLATE_SELECTION'){const t=await activeTab();return{ok:true,...await translateOnly({tabId:t?.id,suppliedText:m.text??''})};}
+    if(type==='GET_SELECTION'){const tab=await activeTab(),c=await capture(tab?.id);return{ok:true,text:c.text,pageLanguage:c.text?c.pageLanguage||'':''};}
+    if(type==='TRANSLATE_SELECTION'){const tab=await activeTab();return{ok:true,...await translateOnly({tabId:tab?.id,suppliedText:m.text??''})};}
     if(type==='RETRY_QUICK_ADD'){
       // The in-page bubble is a content script and always has sender.tab. The
       // popup has no sender.tab (it is not injected into the page), so a
@@ -1247,7 +1304,7 @@
       if(!course || course.targetLanguage!==receipt.courseLanguage) throw new Error(t('errorCourseChanged', undefined, 'Khóa học đang dùng đã thay đổi. Hãy chọn lại từ.'));
       return {ok:true,...await quickAdd({tabId:sender.tab.id,suppliedText:receipt.text})};
     }
-    if(type==='ADD_SELECTION'){const t=await activeTab();return{ok:true,...await quickAdd({tabId:t?.id,suppliedText:m.text??'',requestedDeck:m.requestedDeck})};}
+    if(type==='ADD_SELECTION'){const tab=await activeTab();return{ok:true,...await quickAdd({tabId:tab?.id,suppliedText:m.text??'',requestedDeck:m.requestedDeck})};}
     if(type==='OPEN_APP')return{ok:true,...await openApp(typeof m.target==='string'?m.target:undefined)};
     if(type==='OPEN_SHORTCUTS')return{ok:true,...await openShortcutSettings()};
     if(type==='GET_SHORTCUTS')return{ok:true,shortcutSettingsAvailable,saveShortcut:await shortcut(SAVE_COMMAND_ID),translateShortcut:await shortcut(TRANSLATE_COMMAND_ID)};
@@ -1298,8 +1355,8 @@
       const confirmed = metadata && metadata.scope===scope ? metadata : null;
       return { ok: true, count: confirmed?.count ?? null, generation, scope: confirmed?.scope ?? '' };
     }
-    if(type==='SYNC_COURSE_LOCALE')return{ok:true,...await syncCourseLocale(m.payload,sender,m.providerId)};
-    if(type==='CLEAR_COURSE_LOCALE')return{ok:true,...await clearCourseLocale(m.payload,sender,m.providerId)};
+    if(type==='SYNC_COURSE_LOCALE'){const synced=await syncCourseLocale(m.payload,sender,m.providerId); await refreshMessageLocale(); return{ok:true,...synced};}
+    if(type==='CLEAR_COURSE_LOCALE'){const cleared=await clearCourseLocale(m.payload,sender,m.providerId); await refreshMessageLocale(); return{ok:true,...cleared};}
     if(type==='GET_COURSE_LOCALE'){
       const generation = providerIsCurrent(currentProvider) ? currentProvider.generation : 0;
       const scope = confirmedCourseLocaleScope;
@@ -1329,9 +1386,9 @@
       const metadata=await readDeckMetadata();
       const currentGeneration = providerIsCurrent(currentProvider) ? currentProvider.generation : 0;
       if (generation !== currentGeneration || scope !== confirmedDeckScope) {
-        return { ok: false, error: t('statusDeckNotSynced', undefined, 'Deck chưa được đồng bộ; hãy mở LingoFlash một lần.'), generation: currentGeneration, scope: confirmedDeckScope };
+        return { ok: false, error: t('statusDeckNotSynced', undefined, 'Deck chưa được đồng bộ; hãy mở SonFlash một lần.'), generation: currentGeneration, scope: confirmedDeckScope };
       }
-      if(!metadata || metadata.scope !== scope)throw new Error(t('statusDeckNotSynced', undefined, 'Deck chưa được đồng bộ; hãy mở LingoFlash một lần.'));
+      if(!metadata || metadata.scope !== scope)throw new Error(t('statusDeckNotSynced', undefined, 'Deck chưa được đồng bộ; hãy mở SonFlash một lần.'));
       return{ok:true,decks:metadata.decks,generation,scope:metadata.scope};
     }
     if(type==='UPDATE_USER_SETTINGS')return{ok:true,settings:await writeUserSettings(m.changes)};

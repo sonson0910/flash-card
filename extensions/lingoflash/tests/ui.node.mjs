@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
-import { createI18nMock } from './i18n-test-helper.mjs';
+import { createI18nMock, loadMessages } from './i18n-test-helper.mjs';
 
 const uiSource = await readFile(new URL('../background-ui.js', import.meta.url), 'utf8');
 const coreSource = await readFile(new URL('../background-core.js', import.meta.url), 'utf8');
@@ -773,6 +773,19 @@ test('writes the bubble mode chip from the locale catalog, not from worker text'
   }
   const english = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode: 'save-ai' }, 'en').nodes.find(node => node.className === 'm');
   assert.doesNotMatch(english?.textContent ?? '', /[À-ỹ]/);
+});
+
+test('writes the bubble from the strings the worker sends before the browser language', () => {
+  const en = loadMessages('en');
+  const messages = Object.fromEntries(Object.entries(en).filter(([name]) => /^bubble/.test(name)));
+  const sent = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode: 'save-ai', version: '1.6.5', messages }, 'vi').nodes;
+  const chip = sent.find(node => node.className === 'm');
+  const brand = sent.find(node => node.className === 'b' && /v1\.6\.5/i.test(node.textContent));
+  assert.equal(chip?.textContent, createI18nMock('en').getMessage('bubbleModeSaveAi'));
+  assert.equal(brand?.textContent, createI18nMock('en').getMessage('bubbleBrand', ['1.6.5']));
+
+  const browser = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode: 'save-ai', version: '1.6.5' }, 'vi').nodes;
+  assert.equal(browser.find(node => node.className === 'm')?.textContent, createI18nMock('vi').getMessage('bubbleModeSaveAi'));
 });
 
 test('sends retry and open-app requests only for a real click', () => {

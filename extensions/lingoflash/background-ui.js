@@ -155,7 +155,25 @@
     // Content scripts and executeScript-injected functions keep access to
     // chrome.i18n; this falls back to the same literal SonFlash copy outside
     // a real extension runtime (e.g. unit tests).
+    // The worker sends the catalog entries of the course's native language in
+    // payload.messages; without them the browser language applies.
+    const catalogText = (name, substitutions) => {
+      const entry = payload.messages?.[name];
+      if (!entry || typeof entry.message !== 'string' || !entry.message) return '';
+      const args = substitutions === undefined || substitutions === null
+        ? []
+        : Array.isArray(substitutions) ? substitutions : [substitutions];
+      let text = entry.message;
+      for (const [placeholder, definition] of Object.entries(entry.placeholders ?? {})) {
+        const content = String(definition?.content ?? '');
+        const positional = content.match(/^\$(\d)$/);
+        text = text.replaceAll(new RegExp(`\\$${placeholder}\\$`, 'gi'), positional ? String(args[Number(positional[1]) - 1] ?? '') : content);
+      }
+      return text;
+    };
     const bt = (name, substitutions, fallback) => {
+      const fromCatalog = catalogText(name, substitutions);
+      if (fromCatalog) return fromCatalog;
       try {
         const resolved = (globalThis.browser ?? globalThis.chrome)?.i18n?.getMessage(name, substitutions);
         return typeof resolved === 'string' && resolved ? resolved : fallback;

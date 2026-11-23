@@ -78,3 +78,17 @@ test('user-visible worker, popup and shared strings come from the catalog, not V
   }
   assert.deepEqual(offenders, []);
 });
+
+test('learner-facing messages and their fallbacks use the SonFlash product name', async () => {
+  for (const [locale, catalog] of [['vi', vi], ['en', en]]) {
+    for (const [key, entry] of Object.entries(catalog)) {
+      assert.doesNotMatch(entry.message, /LingoFlash/i, `${locale}.${key}`);
+    }
+  }
+  for (const file of ['shared.js', 'background-core.js']) {
+    const source = await readFile(new URL(`../${file}`, import.meta.url), 'utf8');
+    const fallbacks = [...source.matchAll(/\bt\('[A-Za-z_]+',\s*(?:\[[^\]]*\]|[^,)\[]*),\s*('(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)\s*\)/g)].map(match => match[1]);
+    assert.ok(fallbacks.length > 0, file);
+    assert.deepEqual(fallbacks.filter(text => /LingoFlash/i.test(text)), [], file);
+  }
+});
