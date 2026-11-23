@@ -79,7 +79,7 @@ msgctxt "onboarding.primer.block.meaning"
 msgid "Korea"
 msgstr "Hàn Quốc"
 
-#: src/features/onboarding/OnboardingJourney.tsx:585
+#: src/features/onboarding/OnboardingJourney.tsx:600
 msgctxt "onboarding.pace.try"
 msgid "Try {count} cards"
 msgstr "Thử {count} thẻ"
@@ -94,17 +94,17 @@ msgctxt "shell.practice-menu.title"
 msgid "Choose a practice mode"
 msgstr "Chọn chế độ luyện tập"
 
-#: src/features/onboarding/OnboardingJourney.tsx:458
+#: src/features/onboarding/OnboardingJourney.tsx:473
 msgctxt "onboarding.goal.subtitle"
 msgid "Pick one. You can change it any time from the course switcher."
 msgstr "Chọn một mục tiêu. Bạn có thể đổi bất cứ lúc nào từ trình chuyển khóa học."
 
-#: src/features/onboarding/OnboardingJourney.tsx:384
+#: src/features/onboarding/OnboardingJourney.tsx:398
 msgctxt "onboarding.eyebrow.reminder"
 msgid "Reminders"
 msgstr "Nhắc nhở"
 
-#: src/features/onboarding/OnboardingJourney.tsx:533
+#: src/features/onboarding/OnboardingJourney.tsx:548
 msgctxt "onboarding.level.heading"
 msgid "Where are you <0>starting from?</0>"
 msgstr "Bạn đang <0>bắt đầu từ đâu?</0>"
@@ -120,7 +120,7 @@ msgid "You can revoke this link at any time."
 msgstr "Bạn có thể thu hồi liên kết này bất cứ lúc nào."
 
 #: src/features/courses/AddCourseDialog.tsx:110
-#: src/features/onboarding/OnboardingJourney.tsx:371
+#: src/features/onboarding/OnboardingJourney.tsx:385
 msgctxt "onboarding.goal.none"
 msgid "No specific goal yet"
 msgstr "Chưa có mục tiêu cụ thể"
@@ -140,17 +140,17 @@ msgctxt "onboarding.countdown.empty"
 msgid "Pick a date to start your countdown."
 msgstr "Chọn một ngày để bắt đầu đếm ngược."
 
-#: src/features/onboarding/OnboardingJourney.tsx:535
+#: src/features/onboarding/OnboardingJourney.tsx:550
 msgctxt "onboarding.level.label"
 msgid "Starting level"
 msgstr "Trình độ bắt đầu"
 
-#: src/features/onboarding/OnboardingJourney.tsx:457
+#: src/features/onboarding/OnboardingJourney.tsx:472
 msgctxt "onboarding.goal.heading"
 msgid "What are you <0>learning for?</0>"
 msgstr "Bạn học <0>để làm gì?</0>"
 
-#: src/features/onboarding/StarterCardTrial.tsx:84
+#: src/features/onboarding/StarterCardTrial.tsx:89
 msgctxt "onboarding.trial.state.known"
 msgid "Got it"
 msgstr "Đã nhớ"
@@ -165,7 +165,7 @@ msgctxt "shell.menu.extension-privacy"
 msgid "Extension privacy"
 msgstr "Quyền riêng tư của tiện ích"
 
-#: src/features/onboarding/OnboardingJourney.tsx:619
+#: src/features/onboarding/OnboardingJourney.tsx:634
 msgctxt "onboarding.reminder.title"
 msgid "When should we <0>nudge you?</0>"
 msgstr "Khi nào mình nên <0>nhắc bạn?</0>"
@@ -225,7 +225,7 @@ msgstr "Kết nối lại mạng để bắt đầu luyện hội thoại."
 
 #: src/features/courses/CourseGoalsPanel.tsx:56
 #: src/features/courses/CourseGoalsPanel.tsx:104
-#: src/features/onboarding/OnboardingJourney.tsx:510
+#: src/features/onboarding/OnboardingJourney.tsx:525
 msgctxt "course.goal.add.level-label"
 msgid "Level or target (optional)"
 msgstr "Trình độ hoặc mức mục tiêu (không bắt buộc)"
@@ -235,7 +235,7 @@ msgctxt "onboarding.lumi.exam.title"
 msgid "When is the big day?"
 msgstr "Khi nào là ngày quan trọng?"
 
-#: src/features/onboarding/StarterCardTrial.tsx:48
+#: src/features/onboarding/StarterCardTrial.tsx:50
 msgctxt "onboarding.trial.heading"
 msgid "Flip each card, then <0>grade yourself.</0>"
 msgstr "Lật từng thẻ, rồi <0>tự chấm mình.</0>"
@@ -275,7 +275,7 @@ msgctxt "onboarding.primer.block.parts"
 msgid "first consonant + vowel + final consonant"
 msgstr "phụ âm đầu + nguyên âm + phụ âm cuối"
 
-#: src/features/onboarding/OnboardingJourney.tsx:515
+#: src/features/onboarding/OnboardingJourney.tsx:530
 msgctxt "onboarding.exam.date-label"
 msgid "Exam date (optional)"
 msgstr "Ngày thi (không bắt buộc)"
@@ -300,7 +300,7 @@ msgctxt "shell.practice-menu.kicker-count"
 msgid "Practice · {count, plural, one {# card} other {# cards}}"
 msgstr "Luyện tập · {count, plural, other {# thẻ}}"
 
-#: src/features/onboarding/OnboardingJourney.tsx:407
+#: src/features/onboarding/OnboardingJourney.tsx:429
 msgctxt "onboarding.language.switch-note"
 msgid "The app switches to {language} right away."
 msgstr "Ứng dụng chuyển sang {language} ngay lập tức."
@@ -315,7 +315,7 @@ msgctxt "shell.share.language-pair"
 msgid "{target} → {native}"
 msgstr "{target} → {native}"
 
-#: src/features/onboarding/OnboardingJourney.tsx:494
+#: src/features/onboarding/OnboardingJourney.tsx:509
 msgctxt "onboarding.exam.level-heading"
 msgid "What level, and <0>by when?</0>"
 msgstr "Trình độ nào, và <0>đến khi nào?</0>"
@@ -325,7 +325,7 @@ msgctxt "course.manage.switched"
 msgid "Switched to {language}"
 msgstr "Đã chuyển sang {language}"
 
-#: src/features/onboarding/OnboardingJourney.tsx:501
+#: src/features/onboarding/OnboardingJourney.tsx:516
 msgctxt "onboarding.exam.choice-label"
 msgid "Exam"
 msgstr "Kỳ thi"
@@ -366,7 +366,7 @@ msgctxt "course.goals.back"
 msgid "Back to courses"
 msgstr "Quay lại danh sách khóa học"
 
-#: src/features/onboarding/StarterCardTrial.tsx:85
+#: src/features/onboarding/StarterCardTrial.tsx:90
 msgctxt "onboarding.trial.state.again"
 msgid "Again"
 msgstr "Ôn lại"
@@ -401,7 +401,7 @@ msgctxt "onboarding.pace.tag.recommended"
 msgid "Recommended"
 msgstr "Khuyên dùng"
 
-#: src/features/onboarding/OnboardingJourney.tsx:565
+#: src/features/onboarding/OnboardingJourney.tsx:580
 msgctxt "onboarding.pace.unit"
 msgid "cards / day"
 msgstr "thẻ / ngày"
@@ -416,7 +416,7 @@ msgctxt "shell.share.adding"
 msgid "Adding…"
 msgstr "Đang thêm…"
 
-#: src/features/onboarding/OnboardingJourney.tsx:603
+#: src/features/onboarding/OnboardingJourney.tsx:618
 msgctxt "onboarding.aha.already-added"
 msgid "Starter cards were already requested earlier in this setup, so no more were added. You can add cards from the library any time."
 msgstr "Thẻ khởi đầu đã được yêu cầu trước đó trong lần thiết lập này nên không thêm thẻ nữa. Bạn có thể thêm thẻ từ thư viện bất cứ lúc nào."
@@ -426,7 +426,7 @@ msgctxt "shell.account.sign-out"
 msgid "Sign out of cloud sync"
 msgstr "Đăng xuất khỏi đồng bộ đám mây"
 
-#: src/features/onboarding/OnboardingJourney.tsx:379
+#: src/features/onboarding/OnboardingJourney.tsx:393
 msgctxt "onboarding.eyebrow.level"
 msgid "Your target"
 msgstr "Mục tiêu của bạn"
@@ -441,7 +441,7 @@ msgctxt "shell.footer.status"
 msgid "STATUS:"
 msgstr "TRẠNG THÁI:"
 
-#: src/features/onboarding/OnboardingJourney.tsx:648
+#: src/features/onboarding/OnboardingJourney.tsx:663
 msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr "Để sau"
@@ -461,12 +461,12 @@ msgctxt "course.add.languages-label"
 msgid "I want to learn"
 msgstr "Tôi muốn học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:628
+#: src/features/onboarding/OnboardingJourney.tsx:643
 msgctxt "onboarding.finish"
 msgid "Start learning"
 msgstr "Bắt đầu học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:599
+#: src/features/onboarding/OnboardingJourney.tsx:614
 msgctxt "onboarding.aha.subtitle"
 msgid "Five common words to get you started."
 msgstr "Năm từ thông dụng để bạn bắt đầu."
@@ -667,12 +667,12 @@ msgctxt "shell.share.outgoing-title"
 msgid "Share “{title}”"
 msgstr "Chia sẻ “{title}”"
 
-#: src/features/onboarding/OnboardingJourney.tsx:382
+#: src/features/onboarding/OnboardingJourney.tsx:396
 msgctxt "onboarding.eyebrow.pace"
 msgid "Daily pace"
 msgstr "Nhịp học mỗi ngày"
 
-#: src/features/onboarding/OnboardingJourney.tsx:374
+#: src/features/onboarding/OnboardingJourney.tsx:388
 msgctxt "onboarding.eyebrow.language"
 msgid "Your language"
 msgstr "Ngôn ngữ của bạn"
@@ -699,7 +699,7 @@ msgctxt "shell.share.cards"
 msgid "Cards"
 msgstr "Thẻ"
 
-#: src/features/onboarding/OnboardingJourney.tsx:577
+#: src/features/onboarding/OnboardingJourney.tsx:592
 msgctxt "onboarding.pace.estimate"
 msgid "About {minutes} min a day at this pace."
 msgstr "Khoảng {minutes} phút mỗi ngày với nhịp này."
@@ -719,7 +719,7 @@ msgctxt "shell.practice-menu.description"
 msgid "Choose a different way to practice with words from your library."
 msgstr "Chọn một cách khác để luyện tập với các từ trong thư viện của bạn."
 
-#: src/features/onboarding/OnboardingJourney.tsx:604
+#: src/features/onboarding/OnboardingJourney.tsx:619
 msgctxt "onboarding.aha.error"
 msgid "Something went wrong adding cards. You can add them later from the library."
 msgstr "Đã có lỗi khi thêm thẻ. Bạn có thể thêm sau trong thư viện."
@@ -744,7 +744,7 @@ msgctxt "onboarding.level.advanced.description"
 msgid "You are at ease with most topics and want precise words."
 msgstr "Bạn tự tin với hầu hết chủ đề và muốn dùng từ chính xác hơn."
 
-#: src/features/onboarding/OnboardingJourney.tsx:600
+#: src/features/onboarding/OnboardingJourney.tsx:615
 msgctxt "onboarding.aha.create"
 msgid "Add 5 starter cards"
 msgstr "Thêm 5 thẻ khởi đầu"
@@ -800,7 +800,7 @@ msgctxt "onboarding.lumi.reminder.title"
 msgid "Want a nudge?"
 msgstr "Cần mình nhắc không?"
 
-#: src/features/onboarding/OnboardingJourney.tsx:416
+#: src/features/onboarding/OnboardingJourney.tsx:438
 msgctxt "onboarding.target.subtitle"
 msgid "Each language is its own course, with its own cards and goals. You can add another later."
 msgstr "Mỗi ngôn ngữ là một khóa học riêng, với thẻ và mục tiêu riêng. Bạn có thể thêm ngôn ngữ khác sau."
@@ -810,7 +810,7 @@ msgctxt "shell.menu.card-style-zen"
 msgid "Card style: Zen Glass"
 msgstr "Kiểu thẻ: Kính Zen"
 
-#: src/features/onboarding/StarterCardTrial.tsx:52
+#: src/features/onboarding/StarterCardTrial.tsx:54
 msgctxt "onboarding.trial.result-body"
 msgid "All {total} cards are already in your library, ready for your first review."
 msgstr "Cả {total} thẻ đã có trong thư viện của bạn, sẵn sàng cho lượt ôn đầu tiên."
@@ -825,12 +825,12 @@ msgctxt "course.manage.kicker.no-active"
 msgid "My languages · {count} active"
 msgstr "Ngôn ngữ của tôi · {count} đang học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:534
+#: src/features/onboarding/OnboardingJourney.tsx:549
 msgctxt "onboarding.level.subtitle"
 msgid "Pick the level that sounds most like your {language}. It is your own answer, not a test, and it is optional."
 msgstr "Chọn mức giống với trình độ {language} của bạn nhất. Đây là câu trả lời của bạn, không phải bài kiểm tra, và bạn có thể bỏ qua."
 
-#: src/features/onboarding/StarterCardTrial.tsx:69
+#: src/features/onboarding/StarterCardTrial.tsx:74
 msgctxt "onboarding.trial.again"
 msgid "Forgot"
 msgstr "Quên rồi"
@@ -840,7 +840,7 @@ msgctxt "shell.loading.web-words"
 msgid "Preparing your web words…"
 msgstr "Đang chuẩn bị các từ trên web của bạn…"
 
-#: src/features/onboarding/OnboardingJourney.tsx:605
+#: src/features/onboarding/OnboardingJourney.tsx:620
 msgctxt "onboarding.aha.none-added"
 msgid "No cards were added."
 msgstr "Chưa thêm thẻ nào."
@@ -872,7 +872,7 @@ msgctxt "shell.share.no-cards"
 msgid "This shared deck has no cards to add."
 msgstr "Bộ thẻ được chia sẻ này không có thẻ nào để thêm."
 
-#: src/features/onboarding/StarterCardTrial.tsx:86
+#: src/features/onboarding/StarterCardTrial.tsx:91
 msgctxt "onboarding.trial.state.pending"
 msgid "Not yet"
 msgstr "Chưa chấm"
@@ -902,7 +902,7 @@ msgctxt "onboarding.countdown.weeks.goal"
 msgid "{weeks, plural, one {# week} other {# weeks}} until your target date."
 msgstr "Còn {weeks, plural, other {# tuần}} đến ngày mục tiêu."
 
-#: src/features/onboarding/OnboardingJourney.tsx:602
+#: src/features/onboarding/OnboardingJourney.tsx:617
 msgctxt "onboarding.aha.pending"
 msgid "Adding your cards…"
 msgstr "Đang thêm thẻ của bạn…"
@@ -933,12 +933,12 @@ msgctxt "course.goal.add.submit"
 msgid "Add goal"
 msgstr "Thêm mục tiêu"
 
-#: src/features/onboarding/OnboardingJourney.tsx:415
+#: src/features/onboarding/OnboardingJourney.tsx:437
 msgctxt "onboarding.target.heading"
 msgid "What are you <0>learning?</0>"
 msgstr "Bạn đang <0>học gì?</0>"
 
-#: src/features/onboarding/OnboardingJourney.tsx:560
+#: src/features/onboarding/OnboardingJourney.tsx:575
 msgctxt "onboarding.pace.heading"
 msgid "How many cards <0>each day?</0>"
 msgstr "Mỗi ngày học <0>bao nhiêu thẻ?</0>"
@@ -963,7 +963,7 @@ msgctxt "onboarding.lumi.pace.title"
 msgid "How fast shall we go?"
 msgstr "Mình học nhanh cỡ nào nhé?"
 
-#: src/features/onboarding/StarterCardTrial.tsx:73
+#: src/features/onboarding/StarterCardTrial.tsx:78
 msgctxt "onboarding.trial.known"
 msgid "Got it"
 msgstr "Đã nhớ"
@@ -1085,12 +1085,12 @@ msgctxt "onboarding.lumi.level.body"
 msgid "Pick what sounds like you. A guess is fine."
 msgstr "Chọn mức giống bạn nhất. Đoán cũng được."
 
-#: src/features/onboarding/OnboardingJourney.tsx:550
+#: src/features/onboarding/OnboardingJourney.tsx:565
 msgctxt "onboarding.primer.footer"
 msgid "Romanization stays as you choose it here until you change it in Settings."
 msgstr "Phiên âm Latin giữ như bạn chọn ở đây cho đến khi bạn đổi trong Cài đặt."
 
-#: src/features/onboarding/OnboardingJourney.tsx:440
+#: src/features/onboarding/OnboardingJourney.tsx:455
 msgctxt "settings.course.script"
 msgid "Chinese script"
 msgstr "Chữ Hán"
@@ -1120,7 +1120,7 @@ msgctxt "shell.menu.insights"
 msgid "Learning insights"
 msgstr "Thống kê học tập"
 
-#: src/features/onboarding/OnboardingJourney.tsx:383
+#: src/features/onboarding/OnboardingJourney.tsx:397
 msgctxt "onboarding.eyebrow.aha"
 msgid "First cards"
 msgstr "Những thẻ đầu tiên"
@@ -1130,7 +1130,7 @@ msgctxt "shell.share.truncation"
 msgid "This link includes {shared} of {total} cards. Create smaller decks to share the rest."
 msgstr "Liên kết này gồm {shared} trong tổng số {total} thẻ. Hãy tạo các bộ thẻ nhỏ hơn để chia sẻ phần còn lại."
 
-#: src/features/onboarding/OnboardingJourney.tsx:479
+#: src/features/onboarding/OnboardingJourney.tsx:494
 msgctxt "onboarding.goal.curious.description"
 msgid "No exam or deadline. Grow a vocabulary that feels like yours."
 msgstr "Không thi cử hay hạn chót. Xây vốn từ theo cách của riêng bạn."
@@ -1140,7 +1140,7 @@ msgctxt "onboarding.lumi.kicker"
 msgid "Lumi · online"
 msgstr "Lumi · trực tuyến"
 
-#: src/features/onboarding/OnboardingJourney.tsx:376
+#: src/features/onboarding/OnboardingJourney.tsx:390
 msgctxt "onboarding.eyebrow.goal"
 msgid "Your goal"
 msgstr "Mục tiêu của bạn"
@@ -1155,7 +1155,7 @@ msgctxt "shell.share.no-translation"
 msgid "Translation not available"
 msgstr "Chưa có bản dịch"
 
-#: src/features/onboarding/OnboardingJourney.tsx:381
+#: src/features/onboarding/OnboardingJourney.tsx:395
 msgctxt "onboarding.eyebrow.script"
 msgid "Alphabet"
 msgstr "Bảng chữ cái"
@@ -1185,7 +1185,7 @@ msgctxt "course.goals.empty"
 msgid "No goals yet. Studying without one is fine too."
 msgstr "Chưa có mục tiêu nào. Học không cần mục tiêu cũng được."
 
-#: src/features/onboarding/OnboardingJourney.tsx:375
+#: src/features/onboarding/OnboardingJourney.tsx:389
 msgctxt "onboarding.eyebrow.target"
 msgid "What to learn"
 msgstr "Học gì"
@@ -1200,22 +1200,22 @@ msgctxt "onboarding.primer.learning"
 msgid "I’m still learning to read"
 msgstr "Tôi vẫn đang học đọc"
 
-#: src/features/onboarding/OnboardingJourney.tsx:443
+#: src/features/onboarding/OnboardingJourney.tsx:458
 msgctxt "settings.course.script.traditional"
 msgid "Traditional"
 msgstr "Phồn thể"
 
-#: src/features/onboarding/OnboardingJourney.tsx:620
+#: src/features/onboarding/OnboardingJourney.tsx:635
 msgctxt "onboarding.reminder.description"
 msgid "Choose when SonFlash can remind you to review."
 msgstr "Chọn thời điểm SonFlash có thể nhắc bạn ôn tập."
 
-#: src/features/onboarding/OnboardingJourney.tsx:566
+#: src/features/onboarding/OnboardingJourney.tsx:581
 msgctxt "onboarding.pace.minutes"
 msgid "≈ {minutes} min a day"
 msgstr "≈ {minutes} phút mỗi ngày"
 
-#: src/features/onboarding/StarterCardTrial.tsx:66
+#: src/features/onboarding/StarterCardTrial.tsx:71
 msgctxt "onboarding.trial.grade-label"
 msgid "Did you know this word?"
 msgstr "Bạn có nhớ từ này không?"
@@ -1236,7 +1236,7 @@ msgid "Add a vocabulary card with a word and meaning first."
 msgstr "Hãy thêm một thẻ từ vựng có từ và nghĩa trước."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:637
+#: src/features/onboarding/OnboardingJourney.tsx:652
 msgid "onboarding.title"
 msgstr "Thiết lập khóa học"
 
@@ -1250,7 +1250,7 @@ msgctxt "shell.share.words-inside"
 msgid "A few words inside"
 msgstr "Một vài từ bên trong"
 
-#: src/features/onboarding/OnboardingJourney.tsx:366
+#: src/features/onboarding/OnboardingJourney.tsx:380
 msgctxt "onboarding.back"
 msgid "Back"
 msgstr "Quay lại"
@@ -1285,7 +1285,7 @@ msgctxt "onboarding.lumi.goal.body"
 msgid "Choose a path and your cards will follow it."
 msgstr "Chọn một hướng đi và thẻ của bạn sẽ bám theo nó."
 
-#: src/features/onboarding/OnboardingJourney.tsx:463
+#: src/features/onboarding/OnboardingJourney.tsx:478
 msgctxt "onboarding.goal.exam"
 msgid "Pass {exams}"
 msgstr "Thi đậu {exams}"
@@ -1573,12 +1573,12 @@ msgctxt "onboarding.goal.description.study-abroad"
 msgid "Words for lectures, campus life and daily errands."
 msgstr "Từ vựng cho giờ giảng, đời sống ký túc xá và việc vặt hằng ngày."
 
-#: src/features/onboarding/OnboardingJourney.tsx:575
+#: src/features/onboarding/OnboardingJourney.tsx:590
 msgctxt "onboarding.pace.plan.dated"
 msgid "cards to study by {date}: {pace} a day for {days, plural, one {# day} other {# days}}."
 msgstr "thẻ cần học đến {date}: {pace} thẻ mỗi ngày trong {days, plural, other {# ngày}}."
 
-#: src/features/onboarding/OnboardingJourney.tsx:380
+#: src/features/onboarding/OnboardingJourney.tsx:394
 msgctxt "onboarding.eyebrow.level-start"
 msgid "Your level"
 msgstr "Trình độ của bạn"
@@ -1634,12 +1634,12 @@ msgctxt "course.add.language-selected"
 msgid "Selected"
 msgstr "Đã chọn"
 
-#: src/features/onboarding/OnboardingJourney.tsx:498
+#: src/features/onboarding/OnboardingJourney.tsx:513
 msgctxt "onboarding.exam.subtitle"
 msgid "Your target and test date. Both are optional and you can change them later."
 msgstr "Mục tiêu và ngày thi của bạn. Cả hai đều không bắt buộc và có thể đổi sau."
 
-#: src/features/onboarding/OnboardingJourney.tsx:493
+#: src/features/onboarding/OnboardingJourney.tsx:508
 msgctxt "onboarding.exam.heading"
 msgid "Which test, and <0>what score?</0>"
 msgstr "Thi gì, và <0>đạt bao nhiêu?</0>"
@@ -1664,7 +1664,7 @@ msgctxt "shell.share.incoming-created"
 msgid "Shared on {date}"
 msgstr "Đã chia sẻ vào {date}"
 
-#: src/features/onboarding/StarterCardTrial.tsx:59
+#: src/features/onboarding/StarterCardTrial.tsx:64
 msgctxt "onboarding.trial.position"
 msgid "Card {position} of {total}"
 msgstr "Thẻ {position}/{total}"
@@ -1683,6 +1683,11 @@ msgstr "Tiện ích trình duyệt lưu từ mới vào khóa đang học."
 msgctxt "shell.theme.classic-dark"
 msgid "Midnight Aurora"
 msgstr "Midnight Aurora"
+
+#: src/features/onboarding/StarterCardTrial.tsx:58
+msgctxt "onboarding.trial.meanings-language-note"
+msgid "The meanings on these cards follow the language you chose when they were added."
+msgstr "Nghĩa trên các thẻ này theo ngôn ngữ bạn đã chọn lúc thêm thẻ."
 
 #: src/components/AppOverlays.tsx:323
 msgctxt "shell.share.outgoing-description"
@@ -2260,7 +2265,7 @@ msgstr "Đóng thông báo"
 msgid "shell.undo.restore-failed"
 msgstr "Không thể khôi phục thẻ này. Hãy kiểm tra thư viện rồi thử lại."
 
-#: src/features/onboarding/OnboardingJourney.tsx:609
+#: src/features/onboarding/OnboardingJourney.tsx:624
 msgctxt "onboarding.aha.quota-note"
 msgid "Your monthly Free card allowance is almost used up, so {count} card(s) were not added."
 msgstr "Hạn mức thẻ miễn phí tháng này của bạn sắp hết, nên {count} thẻ chưa được thêm."
@@ -2275,7 +2280,7 @@ msgctxt "course.switcher.heading"
 msgid "Your <0>courses</0>"
 msgstr "<0>Khóa học</0> của bạn"
 
-#: src/features/onboarding/OnboardingJourney.tsx:396
+#: src/features/onboarding/OnboardingJourney.tsx:410
 msgctxt "onboarding.language.subtitle"
 msgid "This sets the app's interface and the language your explanations will be written in."
 msgstr "Lựa chọn này đặt ngôn ngữ giao diện và ngôn ngữ dùng để giải nghĩa cho bạn."
@@ -2307,12 +2312,12 @@ msgctxt "shell.loading.practice"
 msgid "Loading practice"
 msgstr "Đang tải bài luyện tập"
 
-#: src/features/onboarding/OnboardingJourney.tsx:395
+#: src/features/onboarding/OnboardingJourney.tsx:409
 msgctxt "onboarding.language.heading"
 msgid "Choose your <0>language</0>"
 msgstr "Chọn <0>ngôn ngữ</0> của bạn"
 
-#: src/features/onboarding/OnboardingJourney.tsx:597
+#: src/features/onboarding/OnboardingJourney.tsx:612
 msgctxt "onboarding.aha.heading"
 msgid "Let's add your <0>first cards</0>"
 msgstr "Thêm <0>những thẻ đầu tiên</0> nhé"
@@ -2337,7 +2342,7 @@ msgctxt "app-overlays.text-practice-mission"
 msgid "Text practice mission"
 msgstr "Nhiệm vụ luyện hội thoại"
 
-#: src/features/onboarding/OnboardingJourney.tsx:372
+#: src/features/onboarding/OnboardingJourney.tsx:386
 msgctxt "onboarding.goal.selected"
 msgid "Selected: <0>{goal}</0>"
 msgstr "Đã chọn: <0>{goal}</0>"
@@ -2347,7 +2352,7 @@ msgctxt "course.switcher.no-active"
 msgid "Choose a course"
 msgstr "Chọn khóa học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:442
+#: src/features/onboarding/OnboardingJourney.tsx:457
 msgctxt "settings.course.script.simplified"
 msgid "Simplified"
 msgstr "Giản thể"
@@ -2372,12 +2377,12 @@ msgctxt "shell.share.add-none"
 msgid "No cards to add"
 msgstr "Không có thẻ để thêm"
 
-#: src/features/onboarding/OnboardingJourney.tsx:643
+#: src/features/onboarding/OnboardingJourney.tsx:658
 msgctxt "onboarding.header.tag"
 msgid "Hello · let’s begin"
 msgstr "Xin chào · bắt đầu thôi"
 
-#: src/features/onboarding/OnboardingJourney.tsx:464
+#: src/features/onboarding/OnboardingJourney.tsx:479
 msgctxt "onboarding.goal.exam.description"
 msgid "Set a target score and count down to your test date."
 msgstr "Đặt điểm mục tiêu và đếm ngược đến ngày thi."
@@ -2412,7 +2417,7 @@ msgctxt "course.manage.reading-aid.romanization-on"
 msgid "Romanization on"
 msgstr "Hiện phiên âm Latin"
 
-#: src/features/onboarding/OnboardingJourney.tsx:479
+#: src/features/onboarding/OnboardingJourney.tsx:494
 msgctxt "onboarding.goal.curious"
 msgid "Just curious"
 msgstr "Chỉ tò mò thôi"
@@ -2452,7 +2457,7 @@ msgctxt "shell.practice-menu.keys-unlock"
 msgid "<0>Press</0> <1/> to pick · add cards to unlock more"
 msgstr "<0>Nhấn</0> <1/> để chọn · thêm thẻ để mở khóa thêm chế độ"
 
-#: src/features/onboarding/OnboardingJourney.tsx:499
+#: src/features/onboarding/OnboardingJourney.tsx:514
 msgctxt "onboarding.exam.level-subtitle"
 msgid "Both are optional and you can change them later."
 msgstr "Cả hai đều không bắt buộc và có thể đổi sau."
@@ -2494,12 +2499,12 @@ msgctxt "onboarding.primer.subtitle"
 msgid "Hangul has 14 basic consonants and 10 basic vowels. They stack into one block per syllable, so once you know the letters you can sound out any word."
 msgstr "Hangul có 14 phụ âm cơ bản và 10 nguyên âm cơ bản. Chúng ghép thành một khối cho mỗi âm tiết, nên khi đã biết các chữ cái, bạn có thể đánh vần bất kỳ từ nào."
 
-#: src/features/onboarding/OnboardingJourney.tsx:576
+#: src/features/onboarding/OnboardingJourney.tsx:591
 msgctxt "onboarding.pace.plan.weekly"
 msgid "cards a week at {pace} a day."
 msgstr "thẻ mỗi tuần, với {pace} thẻ mỗi ngày."
 
-#: src/features/onboarding/OnboardingJourney.tsx:378
+#: src/features/onboarding/OnboardingJourney.tsx:392
 msgctxt "onboarding.eyebrow.exam"
 msgid "Your exam"
 msgstr "Kỳ thi của bạn"
@@ -2514,12 +2519,12 @@ msgctxt "shell.share.cancel"
 msgid "Cancel"
 msgstr "Hủy"
 
-#: src/features/onboarding/OnboardingJourney.tsx:516
+#: src/features/onboarding/OnboardingJourney.tsx:531
 msgctxt "onboarding.exam.target-date-label"
 msgid "Target date (optional)"
 msgstr "Ngày mục tiêu (không bắt buộc)"
 
-#: src/features/onboarding/OnboardingJourney.tsx:644
+#: src/features/onboarding/OnboardingJourney.tsx:659
 msgctxt "onboarding.progress.label"
 msgid "Setup progress"
 msgstr "Tiến độ thiết lập"
@@ -2529,7 +2534,7 @@ msgctxt "shell.share.earlier-revoke-label"
 msgid "Revoke the link for {title}"
 msgstr "Thu hồi liên kết của {title}"
 
-#: src/features/onboarding/StarterCardTrial.tsx:53
+#: src/features/onboarding/StarterCardTrial.tsx:55
 msgctxt "onboarding.trial.body"
 msgid "Turn the card to see its meaning. These cards are already in your library."
 msgstr "Lật thẻ để xem nghĩa. Những thẻ này đã có trong thư viện của bạn."
@@ -2584,7 +2589,7 @@ msgctxt "course.manage.reading-aid.traditional"
 msgid "Traditional characters"
 msgstr "Chữ phồn thể"
 
-#: src/features/onboarding/OnboardingJourney.tsx:610
+#: src/features/onboarding/OnboardingJourney.tsx:625
 msgctxt "onboarding.aha.next"
 msgid "Set my reminder"
 msgstr "Đặt lời nhắc"
@@ -2605,12 +2610,12 @@ msgctxt "course.manage.lumi.title"
 msgid "Ready for {language}?"
 msgstr "Sẵn sàng học {language} chưa?"
 
-#: src/features/onboarding/StarterCardTrial.tsx:47
+#: src/features/onboarding/StarterCardTrial.tsx:49
 msgctxt "onboarding.trial.result"
 msgid "<0>{known} of {total}</0> remembered."
 msgstr "Bạn đã nhớ <0>{known}/{total} thẻ.</0>"
 
-#: src/features/onboarding/StarterCardTrial.tsx:78
+#: src/features/onboarding/StarterCardTrial.tsx:83
 msgctxt "onboarding.trial.list-label"
 msgid "Your first {total} cards"
 msgstr "{total} thẻ đầu tiên của bạn"
@@ -2623,13 +2628,13 @@ msgstr "Crystal Star: Ban ngày"
 #: src/components/shell/CourseSwitcherControl.tsx:181
 #: src/features/courses/AddCourseDialog.tsx:117
 #: src/features/courses/CoursesSurface.tsx:225
-#: src/features/onboarding/OnboardingJourney.tsx:352
+#: src/features/onboarding/OnboardingJourney.tsx:368
 msgctxt "course.error.generic"
 msgid "That course action did not go through. Please try again."
 msgstr "Thao tác với khóa học chưa thành công. Vui lòng thử lại."
 
-#: src/features/onboarding/OnboardingJourney.tsx:367
-#: src/features/onboarding/OnboardingJourney.tsx:586
+#: src/features/onboarding/OnboardingJourney.tsx:381
+#: src/features/onboarding/OnboardingJourney.tsx:601
 msgctxt "onboarding.continue"
 msgid "Continue"
 msgstr "Tiếp tục"
@@ -2644,7 +2649,7 @@ msgctxt "shell.share.importing"
 msgid "Adding {count} cards to your new deck…"
 msgstr "Đang thêm {count} thẻ vào bộ thẻ mới…"
 
-#: src/features/onboarding/OnboardingJourney.tsx:561
+#: src/features/onboarding/OnboardingJourney.tsx:576
 msgctxt "onboarding.pace.subtitle"
 msgid "Your daily study goal, new words and reviews together. Today adds up to {limit} new words a day. You can change this any time in Settings."
 msgstr "Mục tiêu học mỗi ngày, gồm cả từ mới và thẻ ôn tập. Hôm nay thêm tối đa {limit} từ mới mỗi ngày. Bạn có thể đổi bất cứ lúc nào trong Cài đặt."

@@ -38,4 +38,14 @@ describe('StarterCardTrial', () => {
     expect(html).toContain('onb-trial-card-loading');
     expect(html).not.toContain('xin chào');
   });
+
+  it('notes that meanings follow the earlier language only when the native language changed after the cards were written', () => {
+    const render = (props: { meaningsFollowEarlierLanguage?: boolean }) => visibleText(renderToStaticMarkup(
+      <I18nProvider i18n={i18n}><StarterCardTrial cards={cards} {...props} /></I18nProvider>));
+    const note = 'The meanings on these cards follow the language you chose when they were added.';
+
+    expect(render({})).not.toContain(note);
+    expect(render({ meaningsFollowEarlierLanguage: false })).not.toContain(note);
+    expect(render({ meaningsFollowEarlierLanguage: true })).toContain(note);
+  });
 });

@@ -270,6 +270,8 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const [startingTier, setStartingTier] = useState<StartingTier | null>(saved.draft?.startingTier ?? null);
   const [romanization, setRomanization] = useState<boolean | null>(saved.draft?.romanization ?? null);
   const [ahaOutcome, setAhaOutcome] = useState<StarterCardOutcome | 'pending' | 'error' | 'already-added' | null>(null);
+  // The native language the starter cards were written with; their meanings keep it if the learner changes it later.
+  const [starterNativeLanguage, setStarterNativeLanguage] = useState<CourseNativeLanguage | null>(null);
   const [starterTrialGate] = useState(() => createStarterTrialGate(starterClaimStore(ownerId)));
   // The send time the reminder form holds, drawn on the phone preview; unknown until the form loads.
   const [reminderTime, setReminderTime] = useState<string | null>(null);
@@ -340,7 +342,9 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     if (!targetLanguage) return;
     setAhaOutcome('pending');
     try {
-      setAhaOutcome(await starterTrialGate.run(targetLanguage, () => createOwnerStarterCards(ownerId, targetLanguage, nativeLanguage)));
+      const outcome = await starterTrialGate.run(targetLanguage, () => createOwnerStarterCards(ownerId, targetLanguage, nativeLanguage));
+      if (typeof outcome === 'object' && outcome.created.length > 0) setStarterNativeLanguage(earlier => earlier ?? nativeLanguage);
+      setAhaOutcome(outcome);
     } catch {
       setAhaOutcome('error');
     }
@@ -602,7 +606,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   if (step === 'aha') {
     const created = starterOutcome;
     content = created && created.created.length > 0
-      ? <StarterCardTrial cards={created.created} eyebrow={eyebrow} />
+      ? <StarterCardTrial cards={created.created} eyebrow={eyebrow} meaningsFollowEarlierLanguage={starterNativeLanguage !== null && starterNativeLanguage !== nativeLanguage} />
       : <>
         {eyebrow}
         <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.aha.heading', message: 'Let\'s add your <0>first cards</0>' })} components={accent} /></h2>

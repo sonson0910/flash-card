@@ -18,6 +18,8 @@ export interface StarterCardTrialProps {
   readonly cards: readonly CardData[];
   /** The journey's step line, shown above the heading. */
   readonly eyebrow?: ReactNode;
+  /** True when the native language changed after these cards were written, so their meanings still follow the earlier choice. */
+  readonly meaningsFollowEarlierLanguage?: boolean;
 }
 
 const accent = { 0: <em className="onb-accent" /> };
@@ -27,7 +29,7 @@ const accent = { 0: <em className="onb-accent" /> };
  * each card and says whether they knew it. The grades only drive this summary;
  * they are the learner's own answers and are never stored as reviews.
  */
-export function StarterCardTrial({ cards, eyebrow }: StarterCardTrialProps) {
+export function StarterCardTrial({ cards, eyebrow, meaningsFollowEarlierLanguage = false }: StarterCardTrialProps) {
   const { _ } = useLingui();
   const [grades, setGrades] = useState<Readonly<Partial<Record<string, TrialGrade>>>>({});
   const graded = cards.filter(card => grades[card.id]).length;
@@ -52,6 +54,9 @@ export function StarterCardTrial({ cards, eyebrow }: StarterCardTrialProps) {
           ? <Trans {...msg({ context: 'onboarding.trial.result-body', message: 'All {total} cards are already in your library, ready for your first review.' })} values={{ total: cards.length }} />
           : <Trans {...msg({ context: 'onboarding.trial.body', message: 'Turn the card to see its meaning. These cards are already in your library.' })} />}
       </p>
+      {meaningsFollowEarlierLanguage && <p className="onb-subtitle" data-testid="starter-meanings-note">
+        <Trans {...msg({ context: 'onboarding.trial.meanings-language-note', message: 'The meanings on these cards follow the language you chose when they were added.' })} />
+      </p>}
     </div>
 
     <div className="onb-trial-deck">
