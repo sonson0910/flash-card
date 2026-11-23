@@ -215,11 +215,12 @@ const IMAGE_PROVIDER_TIMEOUT_MS = 4_000;
 const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
 const MAX_SHARED_DECK_CREATIONS_PER_SERVICE_HOUR = 200;
 const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
-const MAX_SHARED_DECK_REVOCATIONS_PER_SERVICE_HOUR = 1_200;
+// Learner writes that only touch Firestore (reviews, card creation, gamification saves, library
+// facets, share revocation and legacy library migration) are bounded per account. A service-wide
+// hourly counter on them would let a handful of accounts block every learner, and would put every
+// such write on one document.
 const MAX_GAMIFICATION_SAVES_PER_HOUR = 120;
-const MAX_GAMIFICATION_SAVES_PER_SERVICE_HOUR = 1_200;
 const MAX_CARD_CREATIONS_PER_HOUR = 120;
-const MAX_CARD_CREATIONS_PER_SERVICE_HOUR = 1_200;
 const MAX_CARD_REVIEWS_PER_HOUR = 600;
 const MAX_PRACTICE_SESSION_STARTS_PER_HOUR = 120;
 const MAX_PRACTICE_SESSION_COMPLETIONS_PER_HOUR = 600;
@@ -230,10 +231,7 @@ const MAX_CARD_HEADWORD_RENAMES_PER_HOUR = 30;
 const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
 const MAX_COURSE_PROFILE_MUTATIONS_PER_HOUR = 120;
 const MAX_ACCOUNT_PROFILE_COMPLETIONS_PER_HOUR = 20;
-const MAX_CARD_REVIEWS_PER_SERVICE_HOUR = 6_000;
-const MAX_LIBRARY_FACET_UPDATES_PER_SERVICE_HOUR = 1_200;
 const MAX_LEGACY_LIBRARY_MIGRATIONS_PER_HOUR = 30;
-const MAX_LEGACY_LIBRARY_MIGRATIONS_PER_SERVICE_HOUR = 60;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
 const adminApp = getApps()[0] ?? initializeApp();
 const database = getFirestore(adminApp, FIRESTORE_DATABASE_ID);
@@ -410,8 +408,6 @@ export const saveGamification = onCall({
     'gamification-save',
     MAX_GAMIFICATION_SAVES_PER_HOUR,
     'Gamification save limit reached. Try again later.',
-    'gamification-save-service',
-    MAX_GAMIFICATION_SAVES_PER_SERVICE_HOUR,
   );
   try {
     return await applyGamificationForOwner(database, userId, input);
@@ -450,8 +446,6 @@ export const updateLibraryFacets = onCall({
     'library-facets-update',
     MAX_LIBRARY_FACET_UPDATES_PER_HOUR,
     'Library update limit reached. Try again later.',
-    'library-facets-update-service',
-    MAX_LIBRARY_FACET_UPDATES_PER_SERVICE_HOUR,
   );
   try {
     return await applyLibraryFacetMutation(database, userId, input);
@@ -846,15 +840,9 @@ exact meaning selected above and disambiguating polysemous words. Do not request
     }
   }
 
-    await consumeBudget(
-      userId,
-      budget.scope,
-      budget.maximum,
-      budget.message,
-      'gemini',
-      MAX_GEMINI_CALLS_PER_HOUR,
-      MAX_GEMINI_CALLS_PER_OWNER_HOUR,
-    );
+    // The shared Gemini budget is spent only after the daily allowance admits the action,
+    // so a refused request cannot use up the hourly calls that every learner shares.
+    await consumeBudget(userId, budget.scope, budget.maximum, budget.message);
     let allowanceConfig;
     try { allowanceConfig = await loadPilotConfig(database); }
     catch { throw new HttpsError('unavailable', 'AI allowance is unavailable. Try again later.'); }
@@ -868,6 +856,13 @@ exact meaning selected above and disambiguating polysemous words. Do not request
       throw error;
     }
     try {
+    await consumeCallableBudget(
+      () => consumeRateLimitFailClosed(() => consumeOwnerAndServiceBudget(
+        database, userId, 'gemini-owner', MAX_GEMINI_CALLS_PER_OWNER_HOUR,
+        'gemini', MAX_GEMINI_CALLS_PER_HOUR,
+      )),
+      budget.message,
+    );
   if (input.action === 'story' && input.schemaVersion === undefined) {
     const { words, targetLanguage, translationLanguage } = input;
     const targetLanguageName = { en: 'English', ko: 'Korean', ja: 'Japanese', zh: 'Chinese' }[targetLanguage];
@@ -1333,8 +1328,6 @@ export const createCard = onCall({
     'card-create',
     MAX_CARD_CREATIONS_PER_HOUR,
     'Card creation limit reached. Try again later.',
-    'card-create-service',
-    MAX_CARD_CREATIONS_PER_SERVICE_HOUR,
   );
   try {
     const result = await createCardForOwner(database, userId, input.card, {
@@ -1380,7 +1373,7 @@ export const createCardV2 = onCall({
     throw new HttpsError('permission-denied', 'Create request owner does not match the authenticated owner.');
   }
   await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
-    'Card creation limit reached. Try again later.', 'card-create-service', MAX_CARD_CREATIONS_PER_SERVICE_HOUR);
+    'Card creation limit reached. Try again later.');
   try {
     return await createCardV2ForOwner(database, userId, input.card, {
       maximumCards: MAX_CARD_ALLOCATION,
@@ -1783,8 +1776,6 @@ export const createReviewCardHandler = (
     'card-review',
     MAX_CARD_REVIEWS_PER_HOUR,
     'Card review limit reached. Try again later.',
-    'card-review-service',
-    MAX_CARD_REVIEWS_PER_SERVICE_HOUR,
   );
   try {
     const result = await dependencies.applyReviewForOwner(database, userId, input, { strict });
@@ -2092,8 +2083,6 @@ export const revokeSharedDeck = onCall({
     'shared-deck-revoke',
     MAX_SHARED_DECK_REVOCATIONS_PER_HOUR,
  'Shared-deck revocation limit reached. Try again later.',
- 'shared-deck-revoke-service',
- MAX_SHARED_DECK_REVOCATIONS_PER_SERVICE_HOUR,
  );
 
   const document = database.collection(SHARED_DECK_COLLECTION).doc(shareId);
@@ -2126,8 +2115,6 @@ export const migrateLegacyLibrary = onCall({
  'legacy-library-migration',
  MAX_LEGACY_LIBRARY_MIGRATIONS_PER_HOUR,
  'Library migration request limit reached. Try again later.',
- 'legacy-library-migration-service',
- MAX_LEGACY_LIBRARY_MIGRATIONS_PER_SERVICE_HOUR,
  );
   try {
     return await runLegacyLibraryDiscovery(legacyLibraryMigrationStore, userId, {

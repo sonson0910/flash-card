@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 vi.mock('../src/pilotConfig.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/pilotConfig.js')>(), loadPilotConfig: vi.fn(async () => ({ analyticsEnabled: false })) }));
 vi.mock('../src/accountData.js', async importOriginal => ({ ...await importOriginal<typeof import('../src/accountData.js')>(), isAccountDeleting: vi.fn(async () => false), readAccountAccess: vi.fn(async () => ({ deleting: false, profiled: true })) }));
 import type { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Transaction } from 'firebase-admin/firestore';
@@ -35,23 +34,7 @@ const createDatabase = () => {
 };
 
 describe('service budgets', () => {
- it('applies aggregate service ceilings to every resource mutation callable', () => {
- const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8');
- for (const [callable, scope] of [
- ['saveGamification', 'gamification-save-service'],
- ['updateLibraryFacets', 'library-facets-update-service'],
- ['createCard', 'card-create-service'],
- ['revokeSharedDeck', 'shared-deck-revoke-service'],
- ['migrateLegacyLibrary', 'legacy-library-migration-service'],
- ] as const) {
- const start = source.indexOf(`export const ${callable} =`);
- const end = source.indexOf('\nexport const ', start + 1);
- expect(start).toBeGreaterThan(-1);
- expect(source.slice(start, end === -1 ? source.length : end)).toContain(`'${scope}'`);
- }
- });
-
- it('applies the aggregate review service ceiling before persistence', async () => {
+ it('applies the per-account review budget, with no shared service ceiling, before persistence', async () => {
    const consumeBudget = vi.fn(async () => undefined);
    const applyReviewForOwner = vi.fn(async () => ({ applied: true as const, duplicate: false, xpAwarded: 0, card: {} }));
    const handler = createReviewCardHandler(false, { consumeBudget, applyReviewForOwner });
@@ -88,8 +71,6 @@ describe('service budgets', () => {
      'card-review',
      expect.any(Number),
      expect.any(String),
-     'card-review-service',
-     expect.any(Number),
    );
    expect(consumeBudget.mock.invocationCallOrder[0])
      .toBeLessThan(applyReviewForOwner.mock.invocationCallOrder[0]);
@@ -100,12 +81,6 @@ describe('service budgets', () => {
     'gemini',
     'image-provider',
     'shared-deck-create-service',
-    'gamification-save-service',
-    'library-facets-update-service',
-    'card-create-service',
-    'card-review-service',
-    'shared-deck-revoke-service',
-    'legacy-library-migration-service',
     'pronunciation-assessment-service',
   ]) {
       const database = createDatabase();
