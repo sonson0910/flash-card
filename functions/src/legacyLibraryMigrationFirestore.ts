@@ -10,6 +10,11 @@ import {
 } from 'firebase-admin/firestore';
 import {
   canonicalCleanupCardId,
+  cleanupIdentityFromKey,
+  cleanupIdentityReservation,
+  cleanupIdentityStorageKey,
+  isCleanupIdentityKey,
+  legacyCardLanguage,
   normalizeCleanupWord,
   planLegacyIdentityGroup,
   summarizeFacetCounts,
@@ -40,7 +45,6 @@ import {
   type LegacyLibraryMigrationFence,
 } from './legacyLibraryMigrationOwnerScope.js';
 import {
-  isCanonicalLanguageCode,
   isSupportedCardTranslationLanguage,
   parseCardSourceMetadata,
   type CardSourceMetadata,
@@ -115,7 +119,6 @@ const assertSafeSegment = (value: string, label: string): string => {
 const DISCOVERY_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const DISCOVERY_DIGEST_RE = /^[a-f0-9]{64}$/;
 const MAX_DISCOVERY_SOURCE_ID_BYTES = 1_500;
-const MAX_DISCOVERY_IDENTITY_LENGTH = 256 + 'word:'.length;
 
 const isDiscoverySourceId = (value: unknown): value is string => (
   typeof value === 'string'
@@ -161,12 +164,15 @@ const reservationRef = (database: Firestore, ownerId: string, normalizedWord: st
     .collection('card_reservations')
     .doc(createLegacyReservationId(normalizedWord));
 
+// Both keys are the string a card create hashes into its reservation id: the
+// bare word for English, `<language>\0<word>` for another target, and the
+// whole `lexeme:<id>` identity for a lexeme card.
 const discoveryGroupKeyFromIdentity = (identity: string): string => (
-  identity.startsWith('word:') ? identity.slice('word:'.length) : identity
+  cleanupIdentityStorageKey(cleanupIdentityFromKey(identity, identity.slice(identity.indexOf(':') + 1)))
 );
 
 const reservationKey = (identity: string, normalizedWord: string): string => (
-  identity.startsWith('lexeme:') ? identity : normalizedWord
+  cleanupIdentityStorageKey(cleanupIdentityFromKey(identity, normalizedWord))
 );
 
 const libraryStateRef = (database: Firestore, ownerId: string) =>
@@ -481,11 +487,7 @@ const parseDiscoveryGroup = (value: DocumentData | undefined): LegacyLibraryIden
     || !isDiscoveryDigest(value.sourceRevision)
   ) throw new Error('Legacy library discovery group is invalid.');
   const identity = value.identity === undefined ? `word:${value.normalizedWord}` : value.identity;
-  if (
-    typeof identity !== 'string'
-    || !/^(?:word|lexeme):/.test(identity)
-    || identity.length > MAX_DISCOVERY_IDENTITY_LENGTH
-  ) throw new Error('Legacy library discovery group is invalid.');
+  if (!isCleanupIdentityKey(identity)) throw new Error('Legacy library discovery group is invalid.');
   const sources = value.sources.map(source => {
     if (!source || typeof source !== 'object' || Array.isArray(source)) {
       throw new Error('Legacy library discovery source descriptor is invalid.');
@@ -724,7 +726,7 @@ const withoutUndefined = (value: CleanupCard): CleanupCard => Object.fromEntries
 export const legacyMigrationLanguageAndSourceFields = (
   strongest: CleanupCard,
 ): { language: string; translationLanguage?: string; source?: CardSourceMetadata } => {
-  const language = isCanonicalLanguageCode(strongest.language) ? (strongest.language as string) : 'en';
+  const language = legacyCardLanguage(strongest);
   const translationLanguage = isSupportedCardTranslationLanguage(strongest.translationLanguage)
     ? strongest.translationLanguage
     : undefined;
@@ -742,9 +744,7 @@ export const legacyMigrationLanguageAndSourceFields = (
 };
 
 const matchingReservation = (cardId: string, identity: string) => (
-  identity.startsWith('lexeme:')
-    ? { schemaVersion: 2, cardId, lexemeId: identity.slice('lexeme:'.length) }
-    : { schemaVersion: 1, cardId, normalizedWord: identity.slice('word:'.length) }
+  cleanupIdentityReservation(cleanupIdentityFromKey(identity, identity.slice(identity.indexOf(':') + 1)), cardId)
 );
 
 export type LegacyLibraryMigrationApplyOptions = {
@@ -873,6 +873,7 @@ const verifyFreshManifest = (
     throw new LegacyLibraryGenerationChangedError();
   }
   const expected = new Map<string, LegacyLibrarySourceDescriptor>();
+  const groupedIdentity = new Map<string, string>();
   for (const group of groups) {
     if (group.scanId !== job.scanId || group.libraryEpoch !== job.libraryEpoch) {
       throw new LegacyLibraryDiscoveryStateChangedError();
@@ -880,6 +881,7 @@ const verifyFreshManifest = (
     for (const source of group.sources) {
       if (expected.has(source.id)) throw new LegacyLibraryDiscoveryStateChangedError();
       expected.set(source.id, source);
+      groupedIdentity.set(source.id, group.identity);
     }
   }
   if (expected.size !== job.sourceCount || fresh.descriptors.length !== expected.size) {
@@ -891,14 +893,18 @@ const verifyFreshManifest = (
       throw new LegacyLibraryGenerationChangedError();
     }
   }
+  // A manifest scanned under earlier identity rules can group an unchanged
+  // card differently than those rules do now (two target languages under one
+  // word). It no longer describes this library, so no group of it is applied.
+  for (const card of fresh.cards) {
+    if (normalizedLegacyLibraryIdentity(card) !== groupedIdentity.get(card.id)) {
+      throw new LegacyLibraryGenerationChangedError();
+    }
+  }
 };
 
 const manifestCanonicalCardId = (group: Pick<LegacyLibraryIdentityGroup, 'identity' | 'normalizedWord'>): string => (
-  canonicalCleanupCardId({
-    key: group.identity,
-    normalizedWord: group.normalizedWord,
-    ...(group.identity.startsWith('lexeme:') ? { lexemeId: group.identity.slice('lexeme:'.length) } : {}),
-  })
+  canonicalCleanupCardId(cleanupIdentityFromKey(group.identity, group.normalizedWord))
 );
 
 /**
@@ -1184,11 +1190,7 @@ const prepareGroupBackup = async (
 ): Promise<void> => {
   const sourceReferences = group.sources.map(source => cardsRef(database, ownerId).doc(source.id));
   const reservationReference = reservationRef(database, ownerId, reservationKey(group.identity, group.normalizedWord));
-  const canonicalId = canonicalCleanupCardId({
-    key: group.identity,
-    normalizedWord: group.normalizedWord,
-    ...(group.identity.startsWith('lexeme:') ? { lexemeId: group.identity.slice('lexeme:'.length) } : {}),
-  });
+  const canonicalId = manifestCanonicalCardId(group);
   const tombstoneIds = [...new Set([canonicalId, ...group.sources.map(source => source.id)])];
   const tombstoneReferences = tombstoneIds.map(cardId => tombstoneRef(database, ownerId, cardId));
   const [sourceSnapshots, reservationSnapshot, ...tombstoneSnapshots] = await Promise.all([
@@ -1328,11 +1330,7 @@ const applyMigrationGroup = async (
   group: LegacyLibraryIdentityGroup,
 ): Promise<MigrationFence> => database.runTransaction(async transaction => {
   const sourceReferences = group.sources.map(source => cardsRef(database, ownerId).doc(source.id));
-  const canonicalReference = cardsRef(database, ownerId).doc(canonicalCleanupCardId({
-    key: group.identity,
-    normalizedWord: group.normalizedWord,
-    ...(group.identity.startsWith('lexeme:') ? { lexemeId: group.identity.slice('lexeme:'.length) } : {}),
-  }));
+  const canonicalReference = cardsRef(database, ownerId).doc(manifestCanonicalCardId(group));
   const canonicalIsSource = sourceReferences.some(reference => reference.id === canonicalReference.id);
   const sourceAndCanonicalReferences = canonicalIsSource
     ? sourceReferences
@@ -1556,11 +1554,7 @@ const scanFinalLibrary = async (
   assertNoOtherReservationNamesMigratedCard(reservationsSnapshot.docs, groups, 'final-scan');
   for (const group of groups) {
     const cards = cardsByWord.get(group.identity) ?? [];
-    const canonicalId = canonicalCleanupCardId({
-      key: group.identity,
-      normalizedWord: group.normalizedWord,
-      ...(group.identity.startsWith('lexeme:') ? { lexemeId: group.identity.slice('lexeme:'.length) } : {}),
-    });
+    const canonicalId = manifestCanonicalCardId(group);
     if (
       cards.length !== 1
       || cards[0].id !== canonicalId
@@ -1950,9 +1944,7 @@ const asRollbackPlan = (value: DocumentData): RollbackPlan => {
     || typeof value.appliedDigest !== 'string'
   ) throw new LegacyLibraryRollbackConflictError(1, 1);
   const identity = value.identity === undefined ? `word:${value.normalizedWord}` : value.identity;
-  if (typeof identity !== 'string' || !/^(?:word|lexeme):/.test(identity)) {
-    throw new LegacyLibraryRollbackConflictError(1, 1);
-  }
+  if (!isCleanupIdentityKey(identity)) throw new LegacyLibraryRollbackConflictError(1, 1);
   return { ...value, identity } as RollbackPlan;
 };
 

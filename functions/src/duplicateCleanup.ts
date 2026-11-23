@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { canonicalCard } from './cardPersistence.js';
+import { canonicalCard, createReservation, targetAwareCardId } from './cardPersistence.js';
 import { isCanonicalLanguageCode } from './inputValidation.js';
 import { LegacyLibraryInvalidCardsError } from './legacyLibraryMigration.js';
 
@@ -13,7 +13,30 @@ export type CleanupIdentity = {
   readonly key: string;
   readonly normalizedWord: string;
   readonly lexemeId?: string;
+  /** Set for a plain word of a non-English target; English keeps the word-only shape. */
+  readonly targetLanguage?: string;
 };
+
+// A plain word is one identity per target language, exactly as a card create
+// scopes it: `word:<normalized>` for English (and for a card with no valid
+// language), `word-<language>:<normalized>` for every other target. A language
+// code holds no colon, so the two shapes and `lexeme:<id>` never overlap.
+const TARGET_WORD_KEY = /^word-([a-z]{2,3}(?:-[a-z0-9]{2,8})*):/;
+const CLEANUP_IDENTITY_KEY = /^(?:word(?:-[a-z]{2,3}(?:-[a-z0-9]{2,8})*)?|lexeme):/;
+const MAX_LANGUAGE_CODE_LENGTH = 16;
+
+export const MAX_CLEANUP_IDENTITY_KEY_LENGTH = 'word-'.length + MAX_LANGUAGE_CODE_LENGTH + ':'.length + 256;
+
+export const isCleanupIdentityKey = (value: unknown): value is string => (
+  typeof value === 'string'
+  && CLEANUP_IDENTITY_KEY.test(value)
+  && value.length <= MAX_CLEANUP_IDENTITY_KEY_LENGTH
+);
+
+/** The target language a migrated plain card is written with: its own valid code, else English. */
+export const legacyCardLanguage = (card: Record<string, unknown>): string => (
+  isCanonicalLanguageCode(card.language) ? card.language : 'en'
+);
 
 export type DuplicateCleanupPlan = {
   normalizedWord: string;
@@ -76,14 +99,41 @@ export const cleanupCardIdentity = (card: Record<string, unknown>): CleanupIdent
   const partOfSpeech = typeof card.partOfSpeech === 'string' ? card.partOfSpeech.trim() : '';
   const normalizedLemma = typeof card.normalizedLemma === 'string' ? card.normalizedLemma.trim() : normalizedWord;
   const hasTuple = Boolean(lexemeId || senseKey || card.normalizedLemma !== undefined);
-  if (!hasTuple) return { key: `word:${normalizedWord}`, normalizedWord };
+  if (!hasTuple) {
+    const targetLanguage = legacyCardLanguage(card);
+    return targetLanguage === 'en'
+      ? { key: `word:${normalizedWord}`, normalizedWord }
+      : { key: `word-${targetLanguage}:${normalizedWord}`, normalizedWord, targetLanguage };
+  }
   if (!lexemeId || !language || !senseKey || !partOfSpeech || !normalizedLemma
     || lexemeId !== canonicalLexemeId(language, normalizedLemma, partOfSpeech, senseKey)) return null;
   return { key: `lexeme:${lexemeId}`, normalizedWord, lexemeId };
 };
 
+/** Rebuilds the identity a manifest group or a rollback plan was stored under. */
+export const cleanupIdentityFromKey = (key: string, normalizedWord: string): CleanupIdentity => {
+  if (key.startsWith('lexeme:')) return { key, normalizedWord, lexemeId: key.slice('lexeme:'.length) };
+  const targetLanguage = TARGET_WORD_KEY.exec(key)?.[1];
+  return targetLanguage ? { key, normalizedWord, targetLanguage } : { key, normalizedWord };
+};
+
 export const canonicalCleanupCardId = (identity: CleanupIdentity): string => (
-  identity.lexemeId ?? createCanonicalCleanupCardId(identity.normalizedWord)
+  identity.lexemeId ?? (identity.targetLanguage
+    ? targetAwareCardId(identity.normalizedWord, identity.targetLanguage)
+    : createCanonicalCleanupCardId(identity.normalizedWord))
+);
+
+/** The string whose SHA-256 names the identity's reservation, as a card create derives it. */
+export const cleanupIdentityStorageKey = (identity: CleanupIdentity): string => {
+  if (identity.lexemeId) return identity.key;
+  return identity.targetLanguage
+    ? `${identity.targetLanguage}\u0000${identity.normalizedWord}`
+    : identity.normalizedWord;
+};
+
+/** The reservation document a card create writes for this identity. */
+export const cleanupIdentityReservation = (identity: CleanupIdentity, cardId: string): Record<string, unknown> => (
+  createReservation(identity.lexemeId ? identity.key : identity.normalizedWord, cardId, identity.targetLanguage)
 );
 
 const nonNegative = (value: unknown): number =>
@@ -281,11 +331,6 @@ const firstText = (cards: CleanupCard[], field: string): string | null => {
   }
   return null;
 };
-
-/** The target language a migrated plain card is written with: its own valid code, else English. */
-export const legacyCardLanguage = (card: Record<string, unknown>): string => (
-  isCanonicalLanguageCode(card.language) ? card.language : 'en'
-);
 
 const MAX_REVIEW_RECEIPTS = 100;
 

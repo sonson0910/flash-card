@@ -1,8 +1,13 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { LegacyLibraryInvalidCardsError } from '../src/legacyLibraryMigration.js';
+import { canonicalCard } from '../src/cardPersistence.js';
 import {
+  canonicalCleanupCardId,
   cleanupCardIdentity,
+  cleanupIdentityFromKey,
+  cleanupIdentityReservation,
+  cleanupIdentityStorageKey,
   normalizeCleanupWord,
   planLegacyIdentityGroup,
   planDuplicateGroup,
@@ -239,6 +244,48 @@ describe('duplicate cleanup planner', () => {
     expect(cleanupCardIdentity({ ...plan.merged, language: 'en' })).toEqual({ key: 'word:quite', normalizedWord: 'quite' });
     for (const incomplete of [{ lexemeId: 'broken' }, { senseKey: 'metal' }, { normalizedLemma: 'quite' }]) {
       expect(cleanupCardIdentity({ ...legacy, ...incomplete })).toBeNull();
+    }
+  });
+
+  it('gives the same spelling in different target languages separate identities', () => {
+    const water = (id: string, language: string) => card(id, { word: '水', normalizedWord: undefined, language });
+    const japanese = cleanupCardIdentity(water('ja-water', 'ja'));
+    const chinese = cleanupCardIdentity(water('zh-water', 'zh'));
+
+    expect(japanese?.key).not.toBe(chinese?.key);
+    expect(japanese).toMatchObject({ normalizedWord: '水', targetLanguage: 'ja' });
+    expect(() => planDuplicateGroup([water('ja-water', 'ja'), water('zh-water', 'zh')], { jobId: 'job-1', libraryEpoch: 4 }))
+      .toThrow('validated identity');
+    // An English word that merely looks like a language-tagged key stays its own identity.
+    expect(cleanupCardIdentity(card('lookalike', { word: 'ja:水', normalizedWord: undefined }))?.key)
+      .not.toBe(japanese?.key);
+  });
+
+  it('migrates a non-English word to the card id and reservation a card create would use', () => {
+    for (const [word, language] of [['水', 'ja'], ['물', 'ko'], ['Wasser', 'de'], ['quite', 'en']] as const) {
+      const legacy = card('legacy-id', { word, normalizedWord: undefined, language });
+      const identity = cleanupCardIdentity(legacy);
+      const created = canonicalCard({ word, language });
+      expect(identity).not.toBeNull();
+      if (!identity) continue;
+
+      expect(planLegacyIdentityGroup([legacy], { jobId: 'job-1', libraryEpoch: 4 }).primaryId).toBe(created.id);
+      expect(canonicalCleanupCardId(cleanupIdentityFromKey(identity.key, identity.normalizedWord))).toBe(created.id);
+      expect(cleanupIdentityStorageKey(identity)).toBe(
+        language === 'en' ? created.normalizedWord : `${language}\u0000${String(created.normalizedWord)}`,
+      );
+      expect(cleanupIdentityReservation(identity, String(created.id))).toEqual({
+        schemaVersion: 1,
+        cardId: created.id,
+        normalizedWord: created.normalizedWord,
+        ...(language === 'en' ? {} : { targetLanguage: language }),
+      });
+    }
+  });
+
+  it('treats a missing or malformed language as English, as the migrated card is written', () => {
+    for (const language of [undefined, 'en', 'KO', ' ko ', 42]) {
+      expect(cleanupCardIdentity(card('legacy', { language }))).toEqual({ key: 'word:quite', normalizedWord: 'quite' });
     }
   });
 

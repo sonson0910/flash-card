@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Timestamp } from 'firebase-admin/firestore';
 import {
   cleanupCardIdentity,
+  MAX_CLEANUP_IDENTITY_KEY_LENGTH,
 } from './duplicateCleanup.js';
 
 export const LEGACY_LIBRARY_DISCOVERY_SCHEMA_VERSION = 3;
@@ -361,7 +362,7 @@ export async function runLegacyLibraryDiscovery(
     const pageBytes = descriptors.reduce((total, source) => total + source.sourceBytes, 0);
     if (pageBytes > MAX_DISCOVERY_PAGE_BYTES) throw new LegacyLibraryDiscoveryBlockedError('page-byte-limit');
     const normalizedWords = [...new Set(page.documents.map(document => normalizedLegacyLibraryIdentity(document.data)))];
-    if (normalizedWords.some(word => !word || word.length > 256 + 'word:'.length)) {
+    if (normalizedWords.some(word => !word || word.length > MAX_CLEANUP_IDENTITY_KEY_LENGTH)) {
       throw new LegacyLibraryDiscoveryBlockedError('invalid-normalized-word');
     }
     const previousGroups = await store.readDiscoveryGroups(ownerId, options.jobId, normalizedWords);

@@ -395,7 +395,7 @@ const stableCardId = (word: string): string => {
 const targetIdentityValue = (word: string, targetLanguage: string): string =>
   `${targetLanguage}\u0000${normalizedWord(word)}`;
 
-const targetAwareCardId = (word: string, targetLanguage: string): string => {
+export const targetAwareCardId = (word: string, targetLanguage: string): string => {
   if (targetLanguage === 'en') return stableCardId(word);
   const normalized = normalizedWord(word);
   const slug = normalized
@@ -729,7 +729,7 @@ const isStrictCurrentCard = (
   && Number(value.revision) >= 1
   && value.libraryEpoch === libraryEpoch;
 
-const createReservation = (identity: string, id: string, targetLanguage?: string): CardRecord => ({
+export const createReservation = (identity: string, id: string, targetLanguage?: string): CardRecord => ({
   schemaVersion: identity.startsWith('lexeme:') ? 2 : 1,
   cardId: id,
   ...(identity.startsWith('lexeme:')

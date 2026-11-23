@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { FieldValue, getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { canonicalCard, createCardForOwner } from '../src/cardPersistence.js';
 import { runLegacyLibraryDiscovery } from '../src/legacyLibraryMigration.js';
 import {
   applyLegacyLibraryMigration,
@@ -9,6 +10,7 @@ import {
   createFirestoreLegacyLibraryDiscoveryStore,
   LegacyLibraryDiscoveryLeaseError,
   LegacyLibraryDiscoveryStateChangedError,
+  LegacyLibraryGenerationChangedError,
   LegacyLibraryRollbackConflictError,
   rollbackLegacyLibraryMigration,
 } from '../src/legacyLibraryMigrationFirestore.js';
@@ -249,6 +251,85 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     expect((await owner.collection('profile').doc('resource_usage').get()).data()).toEqual(previousResourceUsage);
     expect((await owner.collection('card_reservations').doc(createHash('sha256').update('migrate').digest('hex')).get()).data())
       .toEqual({ schemaVersion: 1, cardId: 'legacy-capital', normalizedWord: 'migrate' });
+  });
+
+  it('keeps same-spelling words of different target languages apart and matches the ids a card create uses', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const jobId = 'target-language-v3';
+    const sha = (value: string) => createHash('sha256').update(value).digest('hex');
+    const japanese = await createCardForOwner(database, OWNER_ID, { word: '水', translation: 'nước', language: 'ja' });
+    const chinese = await createCardForOwner(database, OWNER_ID, { word: '水', translation: 'water', language: 'zh' });
+    const legacyKorean = { id: 'legacy-mul', word: '물', translation: 'nước', language: 'ko' };
+    await owner.collection('cards').doc('legacy-mul').set(legacyKorean);
+    const koreanId = String(canonicalCard({ word: '물', language: 'ko' }).id);
+    const store = createFirestoreLegacyLibraryDiscoveryStore(database);
+    let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 100 });
+    while (discovery.phase === 'discover') {
+      discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 100 });
+    }
+    expect(discovery).toMatchObject({ phase: 'discovered', sourceCount: 6, groupCount: 5 });
+    const sourceRevision = String((await owner.collection('admin_library_migration_jobs').doc(jobId).get())
+      .data()?.sourceRevision ?? '');
+
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision }))
+      .resolves.toMatchObject({ complete: true, groupCount: 5 });
+
+    expect((await owner.collection('cards').orderBy('__name__').get()).docs.map(document => document.id).sort())
+      .toEqual([String(japanese.card.id), String(chinese.card.id), koreanId, 'word-migrate', 'word-quite'].sort());
+    expect((await owner.collection('cards').doc(String(japanese.card.id)).get()).data())
+      .toMatchObject({ word: '水', language: 'ja', translation: 'nước' });
+    expect((await owner.collection('cards').doc(String(chinese.card.id)).get()).data())
+      .toMatchObject({ word: '水', language: 'zh', translation: 'water' });
+    expect((await owner.collection('cards').doc(koreanId).get()).data())
+      .toMatchObject({ id: koreanId, word: '물', normalizedWord: '물', language: 'ko' });
+    expect((await owner.collection('card_reservations').doc(sha('ja\u0000水')).get()).data())
+      .toEqual({ schemaVersion: 1, cardId: japanese.card.id, normalizedWord: '水', targetLanguage: 'ja' });
+    expect((await owner.collection('card_reservations').doc(sha('zh\u0000水')).get()).data())
+      .toEqual({ schemaVersion: 1, cardId: chinese.card.id, normalizedWord: '水', targetLanguage: 'zh' });
+    expect((await owner.collection('card_reservations').doc(sha('ko\u0000물')).get()).data())
+      .toEqual({ schemaVersion: 1, cardId: koreanId, normalizedWord: '물', targetLanguage: 'ko' });
+    expect((await owner.collection('card_reservations').doc(sha('물')).get()).exists).toBe(false);
+    expect((await owner.collection('card_reservations').doc(sha('水')).get()).exists).toBe(false);
+    // Adding the same Korean word again finds the migrated card instead of making a second one.
+    await expect(createCardForOwner(database, OWNER_ID, { word: '물', translation: 'water', language: 'ko' }))
+      .resolves.toMatchObject({ created: false, card: { id: koreanId, translation: 'nước' } });
+
+    await rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, sourceRevision);
+    expect((await owner.collection('cards').doc('legacy-mul').get()).data()).toEqual(legacyKorean);
+    expect((await owner.collection('cards').doc(koreanId).get()).exists).toBe(false);
+    expect((await owner.collection('card_reservations').doc(sha('ko\u0000물')).get()).exists).toBe(false);
+    expect((await owner.collection('card_reservations').doc(sha('ja\u0000水')).get()).data())
+      .toMatchObject({ cardId: japanese.card.id, targetLanguage: 'ja' });
+  });
+
+  it('applies no group of a manifest that files an unchanged card under an identity it no longer has', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const jobId = 'earlier-identity-rules-v3';
+    await owner.collection('cards').doc('legacy-mul').set({
+      id: 'legacy-mul', word: '물', translation: 'nước', language: 'ko',
+    });
+    const store = createFirestoreLegacyLibraryDiscoveryStore(database);
+    let discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 100 });
+    while (discovery.phase === 'discover') {
+      discovery = await runLegacyLibraryDiscovery(store, OWNER_ID, { jobId, batchSize: 100 });
+    }
+    const jobReference = owner.collection('admin_library_migration_jobs').doc(jobId);
+    const sourceRevision = String((await jobReference.get()).data()?.sourceRevision ?? '');
+    // A manifest scanned before identities were scoped by target language
+    // stored the Korean word as a language-less group.
+    const sha = (value: string) => createHash('sha256').update(value).digest('hex');
+    const scoped = await jobReference.collection('groups').doc(sha('ko\u0000물')).get();
+    expect(scoped.exists).toBe(true);
+    await jobReference.collection('groups').doc(sha('물')).set({ ...scoped.data(), identity: 'word:물' });
+    await scoped.ref.delete();
+
+    await expect(applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision }))
+      .rejects.toBeInstanceOf(LegacyLibraryGenerationChangedError);
+
+    expect((await owner.collection('profile').doc('library_migration_fence').get()).exists).toBe(false);
+    expect((await owner.collection('cards').orderBy('__name__').get()).docs.map(document => document.id))
+      .toEqual(['duplicate-strong', 'duplicate-weak', 'legacy-capital', 'legacy-mul']);
+    expect((await owner.collection('card_reservations').get()).empty).toBe(true);
   });
 
   it('migrates a card with its headword casing and stored learner fields intact', async () => {
