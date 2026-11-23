@@ -169,6 +169,7 @@ export function createCloudLibraryPageController({
   let statsGeneration = 0;
   let progressEvidenceLanguage: string | null | undefined;
   let activeOwnerId: string | null = null;
+  let activeTargetLanguage: string | null = null;
   let unsubscribePage: (() => void) | null = null;
   let unsubscribeFacets: (() => void) | null = null;
   const cursors = new Map<string, Map<number, string | null>>();
@@ -180,8 +181,19 @@ export function createCloudLibraryPageController({
   };
 
   const setupOwner = (ownerId: string, targetLanguage: string | null) => {
+    if (activeOwnerId === ownerId && activeTargetLanguage !== targetLanguage) {
+      // A course switch keeps the owner but not the personal counts: show the
+      // new course's cached stats, or none, until its own stats arrive.
+      activeTargetLanguage = targetLanguage;
+      const cachedStats = safeCacheRead(() => cache.readStats(ownerId, targetLanguage), null);
+      publish({
+        stats: cachedStats?.stats ?? EMPTY_LIBRARY_STATS,
+        statsTargetLanguage: cachedStats ? targetLanguage : undefined,
+      });
+    }
     if (activeOwnerId !== ownerId) {
       activeOwnerId = ownerId;
+      activeTargetLanguage = targetLanguage;
       ownerGeneration += 1;
       statsGeneration += 1;
       progressEvidenceGeneration += 1;
@@ -427,9 +439,12 @@ export function createCloudLibraryPageController({
               const cachedStats = defaultQuery
                 ? safeCacheRead(() => cache.readStats(request.ownerId, request.query.targetLanguage ?? null), null)
                 : null;
+              // The live stats are only a base for the course they describe.
+              const requestLanguage = request.query.targetLanguage ?? null;
               const nextStats = defaultQuery
                 ? {
-                  ...(cachedStats?.stats ?? snapshot.stats),
+                  ...(cachedStats?.stats
+                    ?? (snapshot.statsTargetLanguage === requestLanguage ? snapshot.stats : EMPTY_LIBRARY_STATS)),
                   total,
                 }
                 : null;
