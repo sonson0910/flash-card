@@ -15,6 +15,7 @@ import {
   composeHangulBlocks,
   evaluateJapaneseSentenceCloze,
   findHangulFinalCorrection,
+  hangulFinalKeys,
   evaluateToneLanguagePracticeDrill,
   evaluateTypedLanguagePracticeDrill,
   languagePracticeDrillSurfaceState,
@@ -171,7 +172,9 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
   const answerGraphemes = pack?.tokenization.segmentGraphemes(hangulAnswer) ?? [];
   // The block the learner meant, spelled out jamo by jamo for the correction panel.
   const expectedBlock = hangulCorrection
-    ? decomposeHangulSyllables(card.word).find((block, index) => block.block !== answerGraphemes[index]) : undefined;
+    ? decomposeHangulSyllables(targetGraphemes.find((block, index) => block !== answerGraphemes[index]) ?? '')[0] : undefined;
+  // A multi-word answer needs a space; single words keep the keyboard without one.
+  const needsHangulSpace = model.kind === 'hangul-blocks' && /\s/u.test(card.word.trim());
   const progress = typeof currentIndex === 'number' && typeof total === 'number' && total > 0
     ? { current: Math.min(currentIndex + 1, total), total } : null;
   const packLabel = model.packId === 'ko' ? <Trans {...msg({ context: 'languagePractice.ko.pack', message: 'Korean pack · 한국어' })} />
@@ -205,7 +208,9 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
       setHangulJamo(value => Array.from(value).slice(0, -1).join(''));
       return;
     }
-    const jamo = HANGUL_KEYBOARD[event.key];
+    // Space still activates a focused button; it types a space only from the drill surface itself.
+    const jamo = event.key === ' ' ? (needsHangulSpace && event.target === event.currentTarget ? ' ' : undefined)
+      : HANGUL_KEYBOARD[event.key];
     if (!jamo) return;
     event.preventDefault();
     setHangulJamo(value => value + jamo);
@@ -277,7 +282,7 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
                   return <div key={index}>
                     <i className="language-practice-drill__hangul-label" data-hangul-fix={mismatch ? 'true' : undefined} aria-hidden="true">{label ?? ' '}</i>
                     <span className={answer ? 'language-practice-drill__hangul-filled' : undefined} data-hangul-mismatch={mismatch ? 'true' : undefined}>{answer ?? '□'}</span>
-                    {parts && <small className="language-practice-drill__hangul-parts">{parts.map((part, partIndex) => <span key={partIndex}>{partIndex > 0 && <span className="language-practice-drill__hangul-plus"> + </span>}<b data-hangul-wrong={mismatch && partIndex === 2 && part.jamo === hangulCorrection?.typed ? 'true' : undefined}>{part.jamo}</b></span>)}</small>}
+                    {parts && <small className="language-practice-drill__hangul-parts">{parts.map((part, partIndex) => <span key={partIndex}>{partIndex > 0 && <span className="language-practice-drill__hangul-plus"> + </span>}<b data-hangul-wrong={mismatch && partIndex === 2 && hangulFinalKeys(part.jamo) === hangulCorrection?.typed ? 'true' : undefined}>{part.jamo}</b></span>)}</small>}
                   </div>;
                 })}
               </div>
@@ -288,8 +293,9 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
                 <button type="button" aria-label="Shift" aria-pressed={hangulShift} onClick={() => setHangulShift(value => !value)} className="language-practice-drill__hangul-key">⇧<small>Shift</small></button>
                 {HANGUL_KEYS.map(key => {
                   const displayedKey = resolveOnScreenHangulKey(key, hangulShift);
-                  return <button key={key} type="button" onClick={() => { setHangulJamo(value => value + displayedKey); setHangulShift(false); }} className="language-practice-drill__hangul-key" data-hangul-key={displayedKey === hangulCorrection?.expected ? 'expected' : displayedKey === hangulCorrection?.typed ? 'typed' : undefined}>{displayedKey}<small>{hangulShift ? `⇧${HANGUL_KEY_LABEL[key]}` : HANGUL_KEY_LABEL[key]}</small></button>;
+                  return <button key={key} type="button" onClick={() => { setHangulJamo(value => value + displayedKey); setHangulShift(false); }} className="language-practice-drill__hangul-key" data-hangul-key={hangulCorrection?.expected.includes(displayedKey) ? 'expected' : hangulCorrection?.typed.includes(displayedKey) ? 'typed' : undefined}>{displayedKey}<small>{hangulShift ? `⇧${HANGUL_KEY_LABEL[key]}` : HANGUL_KEY_LABEL[key]}</small></button>;
                 })}
+                {needsHangulSpace && <button type="button" onClick={() => { setHangulJamo(value => `${value} `); setHangulShift(false); }} className="language-practice-drill__hangul-key"><Trans {...msg({ id: 'languagePractice.ko.space', message: 'Space' })} /></button>}
                 <button type="button" onClick={() => setHangulJamo(value => Array.from(value).slice(0, -1).join(''))} className="language-practice-drill__hangul-key"><Trans {...msg({ context: 'languagePractice.ko.backspace', message: 'Delete' })} /></button>
               </div>
               <p className="language-practice-drill__physical-help"><Trans {...msg({ context: 'languagePractice.ko.physicalKeyboard', message: 'Physical keyboard: type the 2-set keys shown on each button.' })} /></p>

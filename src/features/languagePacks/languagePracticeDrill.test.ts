@@ -11,6 +11,13 @@ import { jaLanguagePack } from './packs/ja';
 type TestElement = { readonly type: unknown; readonly props: Record<string, unknown> };
 
 const findElement = (element: unknown, matches: (element: TestElement) => boolean): TestElement | undefined => {
+  if (Array.isArray(element)) {
+    for (const item of element) {
+      const found = findElement(item, matches);
+      if (found) return found;
+    }
+    return undefined;
+  }
   if (typeof element !== 'object' || element === null || !('props' in element)) return undefined;
   const testElement = element as TestElement;
   if (matches(testElement)) return testElement;
@@ -110,6 +117,36 @@ describe('language practice drill model', () => {
     expect(composeHangulBlocks('ㄱㅏㄴ')).toBe('간');
     const model = createLanguagePracticeDrill(card('ko', '한글'), []);
     expect(evaluateTypedLanguagePracticeDrill(model, composeHangulBlocks('ㅎㅏㄴㄱㅡㄹ')).correct).toBe(true);
+  });
+
+  it.each([
+    ['ㅅㅏㄱㅗㅏ', '사과'],
+    ['ㅎㅗㅣㅅㅏ', '회사'],
+    ['ㄱㅗㅏㅇㅣㄹ', '과일'],
+    ['ㅇㅡㅣㅅㅏ', '의사'],
+    ['ㅇㅗㅐ', '왜'],
+    ['ㅁㅜㅓ', '뭐'],
+    ['ㄱㅜㅔ', '궤'],
+    ['ㅇㅜㅣ', '위'],
+    ['ㅇㅣㄹㄱㄷㅏ', '읽다'],
+    ['ㅇㅓㅂㅅㄷㅏ', '없다'],
+    ['ㅁㅏㄴㅎㄷㅏ', '많다'],
+    ['ㅇㅏㄴㅈㄷㅏ', '앉다'],
+    ['ㄱㅗㅐㄴㅊㅏㄴㅎㅇㅏㅇㅛ', '괜찮아요'],
+    ['ㄷㅏㄹㄱㅇㅣ', '닭이'],
+    ['ㄷㅏㄹㄱㅣ', '달기'],
+    ['ㅇㅣㄹㄱ', '읽'],
+    ['ㅈㅏㄹ ㅈㅣㄴㅐㅇㅛ', '잘 지내요'],
+  ])('composes the two-set key sequence %s into %s, including compound vowels, compound finals and spaces', (keys, word) => {
+    expect(composeHangulBlocks(keys)).toBe(word);
+    const model = createLanguagePracticeDrill(card('ko', word), []);
+    expect(evaluateTypedLanguagePracticeDrill(model, composeHangulBlocks(keys)).correct).toBe(true);
+  });
+
+  it('spells a compound final correction as the keys the learner presses', () => {
+    expect(findHangulFinalCorrection(composeHangulBlocks('ㅇㅣㄱㄷㅏ'), '읽다')).toEqual({ typed: 'ㄱ', expected: 'ㄹㄱ' });
+    expect(findHangulFinalCorrection('일다', '읽다')).toEqual({ typed: 'ㄹ', expected: 'ㄹㄱ' });
+    expect(findHangulFinalCorrection('없다', '업다')).toEqual({ typed: 'ㅂㅅ', expected: 'ㅂ' });
   });
 
   it('offers all shifted two-set jamo through the on-screen keyboard', () => {
@@ -215,6 +252,77 @@ describe('language practice drill model', () => {
       vi.doUnmock('@lingui/react');
       vi.doUnmock('../courses/CourseGate');
       vi.doUnmock('./registry');
+      vi.resetModules();
+    }
+  });
+
+  it('grades Korean words built from compound vowels and spaces on the on-screen keyboard as correct', async () => {
+    const state: unknown[] = [];
+    const effects: Array<() => void | (() => void)> = [];
+    let cursor = 0;
+    vi.resetModules();
+    vi.doMock('react', async importOriginal => ({
+      ...(await importOriginal<typeof import('react')>()),
+      useEffect: (effect: () => void | (() => void)) => { effects.push(effect); },
+      useMemo: <T,>(factory: () => T) => factory(),
+      useRef: <T,>(initial: T) => ({ current: initial }),
+      useState: <T,>(initial: T) => {
+        const index = cursor++;
+        if (!(index in state)) state[index] = initial;
+        return [state[index] as T, (next: T | ((current: T) => T)) => { state[index] = typeof next === 'function' ? (next as (current: T) => T)(state[index] as T) : next; }];
+      },
+    }));
+    vi.doMock('@lingui/react', () => ({
+      Trans: () => null,
+      useLingui: () => ({ i18n: { _: (descriptor: { message: string }) => descriptor.message } }),
+    }));
+    vi.doMock('../courses/CourseGate', () => ({ useCourseSession: () => ({ model: { activeCourse: null } }) }));
+
+    try {
+      const { LanguagePracticeDrill: ClientLanguagePracticeDrill } = await import('./LanguagePracticeDrill');
+      const isSpaceKey = (element: TestElement) => element.type === 'button'
+        && (element.props.children as TestElement | undefined)?.props?.id === 'languagePractice.ko.space';
+      const practise = async (word: string, keys: readonly string[]) => {
+        state.length = 0;
+        const current = { ...card('ko', word), id: `ko-${word}` };
+        const render = () => {
+          cursor = 0;
+          effects.length = 0;
+          return ClientLanguagePracticeDrill({ card: current, cards: [current], onClose: () => {}, onNext: () => {} });
+        };
+        render();
+        effects.at(-1)?.();
+        await vi.waitFor(() => {
+          expect(findElement(render(), element => element.props.className === 'language-practice-drill__hangul-keys')).toBeDefined();
+        });
+        let view = render();
+        const hasSpaceKey = findElement(view, isSpaceKey) !== undefined;
+        for (const key of keys) {
+          const button = key === ' '
+            ? findElement(view, isSpaceKey)
+            : findElement(view, element => element.type === 'button' && Array.isArray(element.props.children) && element.props.children[0] === key);
+          expect(button, `key ${JSON.stringify(key)}`).toBeDefined();
+          (button!.props.onClick as () => void)();
+          view = render();
+        }
+        const form = findElement(view, element => element.type === 'form');
+        (form!.props.onSubmit as (event: unknown) => void)({ preventDefault: () => {}, nativeEvent: {} });
+        view = render();
+        const feedback = findElement(view, element => typeof element.props.className === 'string'
+          && element.props.className.startsWith('language-practice-drill__feedback '));
+        return { hasSpaceKey, feedback: feedback?.props.className as string | undefined };
+      };
+
+      expect(await practise('사과', ['ㅅ', 'ㅏ', 'ㄱ', 'ㅗ', 'ㅏ'])).toEqual({
+        hasSpaceKey: false, feedback: expect.stringContaining('language-practice-drill__feedback--correct'),
+      });
+      expect(await practise('잘 지내요', ['ㅈ', 'ㅏ', 'ㄹ', ' ', 'ㅈ', 'ㅣ', 'ㄴ', 'ㅐ', 'ㅇ', 'ㅛ'])).toEqual({
+        hasSpaceKey: true, feedback: expect.stringContaining('language-practice-drill__feedback--correct'),
+      });
+    } finally {
+      vi.doUnmock('react');
+      vi.doUnmock('@lingui/react');
+      vi.doUnmock('../courses/CourseGate');
       vi.resetModules();
     }
   });

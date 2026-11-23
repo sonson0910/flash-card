@@ -5,6 +5,7 @@ import { getStorage } from 'firebase-admin/storage';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { exportAccountData, purgeAccountData } from '../src/accountData.js';
 import { analyticsPseudonym } from '../src/analyticsEvents.js';
+import { LEGACY_COURSE_ID } from '../src/course-profile-contract.js';
 import { PILOT_CONFIG_DEFAULTS, type PilotConfig } from '../src/pilotConfig.js';
 import {
   bucketFileObjects, deleteFile, FileServiceError, finalizeUploadedFile, listFiles, prepareFileUpload,
@@ -122,6 +123,30 @@ describeWithEmulators('learner file uploads against the emulators', () => {
     await expect(deleteFile(database, objects, uid, prepared.fileId, now)).resolves.toEqual({ usage: { usedBytes: 0, reservedBytes: 0, fileCount: 0 } });
     expect(await exists(object.name)).toBe(false);
     expect((await listFiles(database, uid, config, now)).files).toEqual([]);
+  });
+
+  it('treats an account with no stored course profile as having only its legacy course', async () => {
+    const uid = owner();
+    const prepared = await prepareFileUpload(database, uid, {
+      ownerId: uid, name: 'legacy.pdf', contentType: 'application/pdf', bytes: 500, purpose: 'source', courseId: LEGACY_COURSE_ID,
+    }, config, now);
+    const object = await upload(uid, prepared.fileId, pdf(500), 'application/pdf');
+    await finalizeUploadedFile(database, objects, object, config, now);
+    await expect(updateFileCourse(database, uid, prepared.fileId, null, now)).resolves.toMatchObject({ courseId: null });
+    await expect(updateFileCourse(database, uid, prepared.fileId, LEGACY_COURSE_ID, now))
+      .resolves.toMatchObject({ courseId: LEGACY_COURSE_ID });
+    await expect(updateFileCourse(database, uid, prepared.fileId, 'course-en', now)).rejects.toMatchObject({ reason: 'course-not-found' });
+    await expect(prepareFileUpload(database, uid, {
+      ownerId: uid, name: 'other.pdf', contentType: 'application/pdf', bytes: 10, purpose: 'source', courseId: 'course-en',
+    }, config, now)).rejects.toMatchObject({ reason: 'course-not-found' });
+  });
+
+  it('accepts the legacy course only while it is still in a stored course profile', async () => {
+    const uid = owner();
+    await seedCourse(uid);
+    await expect(prepareFileUpload(database, uid, {
+      ownerId: uid, name: 'legacy.pdf', contentType: 'application/pdf', bytes: 10, purpose: 'source', courseId: LEGACY_COURSE_ID,
+    }, config, now)).rejects.toMatchObject({ reason: 'course-not-found' });
   });
 
   it('releases a reservation that expired without an upload', async () => {

@@ -44,6 +44,7 @@ import {
   withNetworkRetry,
 } from './gemini';
 import { ProtectedFunctionError } from './protectedFunctionsCapability';
+import { parseCardTutorRequest } from '../../functions/src/cardTutor';
 import type {
   TextConversationMissionV1,
   TextConversationRequestV1,
@@ -160,6 +161,24 @@ describe('production AI protected-service capability', () => {
       cardId: 'word-123', question: 'Give an example', history: history.slice(-3), expectedOwnerId: 'owner-1',
     });
     expect(runtime.callable).not.toHaveBeenCalled();
+  });
+
+  it('sends follow-up history that the tutor callable accepts, without display-only turn fields', async () => {
+    const streamCall = vi.fn(async (_request: unknown) => ({
+      stream: (async function* () {})(),
+      data: Promise.resolve({ answer: 'Một ví dụ khác.' }),
+    }));
+    Object.assign(runtime.callable, { stream: streamCall });
+    const history = [
+      { question: 'Give me three realistic work examples for this word.', answer: 'One. Two. Three.', label: 'Work examples' },
+      { question: 'How formal is it?', answer: 'Fairly formal.', label: undefined },
+    ];
+
+    await expect(askCardTutor('word-123', 'And in a meeting?', history)).resolves.toBe('Một ví dụ khác.');
+
+    const request = streamCall.mock.calls[0]![0] as { history: Array<Record<string, unknown>> };
+    expect(request.history.map(turn => Object.keys(turn).sort())).toEqual([['answer', 'question'], ['answer', 'question']]);
+    expect(parseCardTutorRequest(request).history).toEqual(history.map(({ question, answer }) => ({ question, answer })));
   });
 
   it('passes a cancellation signal to the tutor transport', async () => {
