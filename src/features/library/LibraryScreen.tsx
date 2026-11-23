@@ -269,6 +269,7 @@ export function LibraryScreen({ model, actions }: LibraryScreenProps) {
           <Suspense fallback={<DeferredLibraryFallback label={<Trans {...msg({ context: 'library.loading.cards', message: 'Loading library cards' })} />} />}>
             <LibraryCardGrid
               isAuthenticated={model.isAuthenticated}
+              ownerId={model.ownerId ?? null}
               searchQuery={model.grid.searchQuery}
               setSearchQuery={actions.grid.changeSearch}
               legacyCardsPending={model.grid.legacyCardsPending}

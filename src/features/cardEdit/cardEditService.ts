@@ -25,12 +25,17 @@ export async function renameOwnCardHeadword(card: CardData, word: string): Promi
   return renameCardHeadword(uid, card.id, word, card.revision ?? 0, card.libraryEpoch ?? 0);
 }
 
+/** The signed-in account a card edit is made for, read when the edit starts. */
+export const cardEditOwnerId = (): string | null => auth?.currentUser?.uid ?? null;
+
 // The category->count mirror is a display aid, so a failed update is logged and
 // never surfaces to the learner; it matches the delete path's fire-and-forget.
-export function mirrorCardCategoryEdit(card: CardData, nextCategory: string): void {
+// `ownerId` is the account the edit was saved for: when another account is signed in
+// by the time the save is confirmed, the counts of that account are left alone.
+export function mirrorCardCategoryEdit(card: CardData, nextCategory: string, ownerId: string | null): void {
   const delta = buildCategoryFacetDelta(card.category, nextCategory);
   const uid = auth?.currentUser?.uid;
-  if (!delta || !uid || !db || !isFirebaseConfigured) return;
+  if (!delta || !uid || uid !== ownerId || !db || !isFirebaseConfigured) return;
   void applyCategoryDeltas(
     db,
     uid,
