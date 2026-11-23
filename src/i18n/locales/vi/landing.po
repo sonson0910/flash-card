@@ -713,3 +713,18 @@ msgstr "Ôn tập & lịch lặp lại ngắt quãng"
 msgctxt "landing.methods.open-library"
 msgid "Open your library"
 msgstr "Mở thư viện"
+
+#: src/features/landing/LandingPage.tsx:968
+msgctxt "landing.languages.eyebrow"
+msgid "Languages you can learn"
+msgstr "Ngôn ngữ bạn có thể học"
+
+#: src/features/landing/LandingPage.tsx:974
+msgctxt "landing.languages.title"
+msgid "English, Korean, Japanese and Chinese."
+msgstr "Tiếng Anh, Hàn, Nhật và Trung."
+
+#: src/features/landing/LandingPage.tsx:978
+msgctxt "landing.languages.description"
+msgid "Start a course in any of these four languages, with meanings shown in English or Vietnamese. Each course keeps its own cards and progress."
+msgstr "Bắt đầu khoá học bằng bất kỳ ngôn ngữ nào trong bốn ngôn ngữ này, với nghĩa hiển thị bằng tiếng Anh hoặc tiếng Việt. Mỗi khoá học có thẻ và tiến độ riêng."

@@ -713,3 +713,18 @@ msgstr "Reviews & spaced scheduling"
 msgctxt "landing.methods.open-library"
 msgid "Open your library"
 msgstr "Open your library"
+
+#: src/features/landing/LandingPage.tsx:968
+msgctxt "landing.languages.eyebrow"
+msgid "Languages you can learn"
+msgstr "Languages you can learn"
+
+#: src/features/landing/LandingPage.tsx:974
+msgctxt "landing.languages.title"
+msgid "English, Korean, Japanese and Chinese."
+msgstr "English, Korean, Japanese and Chinese."
+
+#: src/features/landing/LandingPage.tsx:978
+msgctxt "landing.languages.description"
+msgid "Start a course in any of these four languages, with meanings shown in English or Vietnamese. Each course keeps its own cards and progress."
+msgstr "Start a course in any of these four languages, with meanings shown in English or Vietnamese. Each course keeps its own cards and progress."

@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const PRODUCTION_ORIGIN = 'https://sonflash.app';
+// The single public origin for canonical, hreflang, Open Graph URLs, the sitemap and robots.txt. It is the
+// production Hosting default domain until a custom domain is connected; switching later is this one line.
+export const PRODUCTION_ORIGIN = 'https://encoded-hangout-433912-h2.web.app';
 export const LOCALES = [
   { code: 'en', path: '', lang: 'en' },
   { code: 'vi', path: 'vi', lang: 'vi' },

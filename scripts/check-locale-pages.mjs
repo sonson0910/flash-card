@@ -63,6 +63,7 @@ export const checkLocalePages = ({ root = path.resolve('.'), target = process.en
   if (!fs.existsSync(robotsFile)) failures.push('robots.txt: missing');
   else {
     const robots = fs.readFileSync(robotsFile, 'utf8');
+    if (target === 'production' && !robots.includes(`Sitemap: ${PRODUCTION_ORIGIN}/sitemap.xml`)) failures.push(`robots.txt: sitemap must be ${PRODUCTION_ORIGIN}/sitemap.xml`);
     if (target === 'production' && !/^Disallow:\s*$/im.test(robots) && !robots.includes('Allow: /')) failures.push('robots.txt: production build must allow crawling');
     if (target !== 'production' && !/^Disallow:\s*\/\s*$/im.test(robots)) failures.push(`robots.txt: ${target} build must disallow all crawling`);
   }

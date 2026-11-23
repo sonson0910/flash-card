@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const origin = 'https://sonflash.app';
+const origin = 'https://encoded-hangout-433912-h2.web.app';
 const locales = [
   { path: '/', language: 'en', canonical: `${origin}/` },
   { path: '/vi/', language: 'vi', canonical: `${origin}/vi/` },
@@ -37,15 +37,15 @@ for (const { path, language, canonical } of locales) {
     const expectedPacks = language === 'vi'
       ? [
         'Tiếng AnhĐã có',
-        '한국어 · Tiếng HànĐang phát triển',
-        '日本語 · Tiếng NhậtĐang phát triển',
-        '中文 · Tiếng TrungĐang phát triển',
+        '한국어 · Tiếng HànĐã có',
+        '日本語 · Tiếng NhậtĐã có',
+        '中文 · Tiếng TrungĐã có',
       ]
       : [
         'EnglishAvailable now',
-        '한국어 · KoreanIn progress',
-        '日本語 · JapaneseIn progress',
-        '中文 · ChineseIn progress',
+        '한국어 · KoreanAvailable now',
+        '日本語 · JapaneseAvailable now',
+        '中文 · ChineseAvailable now',
       ];
     await expect(languagesSection.locator('li')).toHaveText(expectedPacks);
     expect(cloudRequests).toEqual([]);
