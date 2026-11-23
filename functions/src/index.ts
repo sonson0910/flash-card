@@ -216,10 +216,11 @@ const MAX_SHARED_DECK_CREATIONS_PER_HOUR = 20;
 const MAX_SHARED_DECK_CREATIONS_PER_SERVICE_HOUR = 200;
 const MAX_SHARED_DECK_REVOCATIONS_PER_HOUR = 120;
 const MAX_SHARED_DECK_REVOCATIONS_PER_SERVICE_HOUR = 1_200;
+// Learner writes that only touch Firestore (reviews, card creation, gamification saves and
+// library facets) are bounded per account. A service-wide hourly counter on them would let a
+// handful of accounts block every learner, and would put every such write on one document.
 const MAX_GAMIFICATION_SAVES_PER_HOUR = 120;
-const MAX_GAMIFICATION_SAVES_PER_SERVICE_HOUR = 1_200;
 const MAX_CARD_CREATIONS_PER_HOUR = 120;
-const MAX_CARD_CREATIONS_PER_SERVICE_HOUR = 1_200;
 const MAX_CARD_REVIEWS_PER_HOUR = 600;
 const MAX_PRACTICE_SESSION_STARTS_PER_HOUR = 120;
 const MAX_PRACTICE_SESSION_COMPLETIONS_PER_HOUR = 600;
@@ -230,8 +231,6 @@ const MAX_CARD_HEADWORD_RENAMES_PER_HOUR = 30;
 const MAX_LIBRARY_FACET_UPDATES_PER_HOUR = 120;
 const MAX_COURSE_PROFILE_MUTATIONS_PER_HOUR = 120;
 const MAX_ACCOUNT_PROFILE_COMPLETIONS_PER_HOUR = 20;
-const MAX_CARD_REVIEWS_PER_SERVICE_HOUR = 6_000;
-const MAX_LIBRARY_FACET_UPDATES_PER_SERVICE_HOUR = 1_200;
 const MAX_LEGACY_LIBRARY_MIGRATIONS_PER_HOUR = 30;
 const MAX_LEGACY_LIBRARY_MIGRATIONS_PER_SERVICE_HOUR = 60;
 const SHARED_DECK_TTL_MS = 30 * 24 * 60 * 60 * 1_000;
@@ -410,8 +409,6 @@ export const saveGamification = onCall({
     'gamification-save',
     MAX_GAMIFICATION_SAVES_PER_HOUR,
     'Gamification save limit reached. Try again later.',
-    'gamification-save-service',
-    MAX_GAMIFICATION_SAVES_PER_SERVICE_HOUR,
   );
   try {
     return await applyGamificationForOwner(database, userId, input);
@@ -450,8 +447,6 @@ export const updateLibraryFacets = onCall({
     'library-facets-update',
     MAX_LIBRARY_FACET_UPDATES_PER_HOUR,
     'Library update limit reached. Try again later.',
-    'library-facets-update-service',
-    MAX_LIBRARY_FACET_UPDATES_PER_SERVICE_HOUR,
   );
   try {
     return await applyLibraryFacetMutation(database, userId, input);
@@ -1334,8 +1329,6 @@ export const createCard = onCall({
     'card-create',
     MAX_CARD_CREATIONS_PER_HOUR,
     'Card creation limit reached. Try again later.',
-    'card-create-service',
-    MAX_CARD_CREATIONS_PER_SERVICE_HOUR,
   );
   try {
     const result = await createCardForOwner(database, userId, input.card, {
@@ -1381,7 +1374,7 @@ export const createCardV2 = onCall({
     throw new HttpsError('permission-denied', 'Create request owner does not match the authenticated owner.');
   }
   await consumeBudget(userId, 'card-create', MAX_CARD_CREATIONS_PER_HOUR,
-    'Card creation limit reached. Try again later.', 'card-create-service', MAX_CARD_CREATIONS_PER_SERVICE_HOUR);
+    'Card creation limit reached. Try again later.');
   try {
     return await createCardV2ForOwner(database, userId, input.card, {
       maximumCards: MAX_CARD_ALLOCATION,
@@ -1784,8 +1777,6 @@ export const createReviewCardHandler = (
     'card-review',
     MAX_CARD_REVIEWS_PER_HOUR,
     'Card review limit reached. Try again later.',
-    'card-review-service',
-    MAX_CARD_REVIEWS_PER_SERVICE_HOUR,
   );
   try {
     const result = await dependencies.applyReviewForOwner(database, userId, input, { strict });
