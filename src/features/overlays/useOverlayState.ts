@@ -102,13 +102,22 @@ export function useOverlayState({
   const [undoToast, setUndoToast] = useState<UndoToastItem | null>(null);
   const previousOwnerIdRef = useRef(ownerId);
   const ownerChanged = previousOwnerIdRef.current !== ownerId;
-  if (ownerChanged) clearOpenerRef.current = null;
+  if (ownerChanged) {
+    clearOpenerRef.current = null;
+    statsOpenerRef.current = null;
+    shareOpenerRef.current = null;
+  }
 
   useEffect(() => {
     if (!ownerChanged) return;
     previousOwnerIdRef.current = ownerId;
     setShowClearConfirm(false);
+    setIsStatsOpen(false);
+    setIsPracticeMenuOpen(false);
+    setShareLink(null);
     clearOpenerRef.current = null;
+    statsOpenerRef.current = null;
+    shareOpenerRef.current = null;
   }, [ownerChanged, ownerId]);
 
   useEffect(
@@ -164,11 +173,11 @@ export function useOverlayState({
   return {
     notice,
     setNotice,
-    shareLink,
+    shareLink: ownerChanged ? null : shareLink,
     setShareLink,
-    isPracticeMenuOpen,
+    isPracticeMenuOpen: ownerChanged ? false : isPracticeMenuOpen,
     setIsPracticeMenuOpen,
-    isStatsOpen,
+    isStatsOpen: ownerChanged ? false : isStatsOpen,
     setIsStatsOpen,
     showClearConfirm: ownerChanged ? false : showClearConfirm,
     setShowClearConfirm,
