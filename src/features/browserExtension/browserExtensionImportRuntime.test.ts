@@ -944,3 +944,65 @@ describe('browser extension import runtime', () => {
     expect(storage.getItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY)).toBeNull();
   });
 });
+
+describe('a failed silent capture tells the extension why, independent of the message language', () => {
+  const resultFor = async (
+    intentExtras: Record<string, unknown>,
+    overrides: Partial<BrowserExtensionImportOptions>,
+    generate: BrowserExtensionImportOptions['generate'],
+  ) => {
+    const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+    storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+      v: 3, id: 'intent_reason_123456', nonce, text: 'resilient', createdAt: Date.now(), mode: 'silent', ...intentExtras,
+    }));
+    const posted: unknown[] = [];
+    vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+    const runtime = startBrowserExtensionImportRuntime({ ...optionsFor(generate), ...overrides }, browser);
+    await new Promise(resolve => setImmediate(resolve));
+    runtime.dispose();
+    return (posted[0] as { payload: { status: string; reason?: string; message: string } }).payload;
+  };
+  const unreachable: BrowserExtensionImportOptions['generate'] = async () => ({ status: 'failed', error: new Error('unreachable') });
+
+  it.each([
+    ['ai-card-quota', 'quota-ai-cards'],
+    ['ai-daily-allowance', 'quota-daily'],
+    ['account-daily-spend', 'quota-daily'],
+    ['service-daily-cap', 'quota-service'],
+    [undefined, 'quota'],
+  ])('reports quota reason %s as %s and keeps the legacy quota wording', async (detail, reason) => {
+    const error = classifyProtectedFunctionError(
+      { code: 'functions/resource-exhausted', details: detail ? { reason: detail } : undefined },
+      'AI generation',
+    );
+    const payload = await resultFor({}, {}, async () => ({ status: 'failed', error }));
+    expect(payload).toMatchObject({ status: 'error', reason });
+    expect(payload.message).toMatch(/hạn mức|số thẻ|lượt AI/);
+  });
+
+  it.each([
+    ['functions/unauthenticated', 'auth'],
+    ['functions/permission-denied', 'permission'],
+    ['functions/unavailable', 'network'],
+    ['functions/not-found', 'configuration'],
+    ['functions/internal', 'failed'],
+  ])('reports %s as %s', async (code, reason) => {
+    const error = classifyProtectedFunctionError({ code }, 'AI generation');
+    expect((await resultFor({}, {}, async () => ({ status: 'failed', error }))).reason).toBe(reason);
+  });
+
+  it('reports an unclassified thrown error as a generic failure', async () => {
+    expect((await resultFor({}, {}, async () => { throw new Error('boom'); })).reason).toBe('failed');
+  });
+
+  it('reports a deleted requested deck, an invalid selection and a course cancel', async () => {
+    expect(await resultFor({ requestedDeck: 'Gone' }, {}, unreachable))
+      .toMatchObject({ status: 'error', reason: 'deck-missing' });
+    expect(await resultFor({}, {}, async () => ({ status: 'invalid' })))
+      .toMatchObject({ status: 'error', reason: 'invalid-selection' });
+    expect(await resultFor({ sourceLanguage: 'en' }, { ensureCaptureCourse: async () => 'cancel' }, unreachable))
+      .toMatchObject({ status: 'error', reason: 'course-cancelled' });
+    expect(await resultFor({ sourceLanguage: 'en' }, { ensureCaptureCourse: async () => { throw new Error('x'); } }, unreachable))
+      .toMatchObject({ status: 'error', reason: 'course-unavailable' });
+  });
+});

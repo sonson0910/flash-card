@@ -575,14 +575,18 @@ const speakText = (value, button = speakSelectionButton, lang = 'en-US', label) 
   }
 };
 
-// The extension never receives a distinct "quota" wire status — status stays
-// one of the existing ['created','existing','auth-required','error'] values
-// (no new protocol identifier). The app's captureFailureMessage() guarantees
-// every AI-quota-classified error message contains one of these three
-// Vietnamese phrases, so this is a real, documented signal read from the
-// existing message field, not a guess at unstructured text.
+// The extension never receives a distinct "quota" wire status: status stays one of the existing
+// ['created','existing','auth-required','error'] values. The app names the failure in `reason`
+// (quota-ai-cards, quota-daily, quota-service, quota) and this popup picks its own text for it.
+// An app that predates `reason` marks a quota error only by these Vietnamese phrases in the
+// message, so they stay as the fallback when `reason` is absent.
 const QUOTA_MESSAGE_HINTS = ['hạn mức', 'số thẻ', 'lượt AI'];
-const isQuotaMessage = message => typeof message === 'string' && QUOTA_MESSAGE_HINTS.some(hint => message.includes(hint));
+const isQuotaFailure = payload => (typeof payload.reason === 'string'
+  ? payload.reason.startsWith('quota')
+  : typeof payload.message === 'string' && QUOTA_MESSAGE_HINTS.some(hint => payload.message.includes(hint)));
+const failureText = payload => (typeof payload.reason === 'string' && payload.reason
+  ? t(`captureReason_${payload.reason.replaceAll('-', '_')}`, undefined, payload.message || '')
+  : payload.message) || '';
 
 const hideStateCard = () => {
   if (!stateCard) return;
@@ -722,8 +726,8 @@ const applyQuickAddStatus = payload => {
     showSignInState();
   } else if (payload.status === 'error') {
     setStatus('');
-    if (isQuotaMessage(payload.message)) showQuotaState(payload.message);
-    else showErrorState(payload.message, payload.id);
+    if (isQuotaFailure(payload)) showQuotaState(failureText(payload));
+    else showErrorState(failureText(payload), payload.id);
   } else {
     return;
   }

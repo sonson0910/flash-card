@@ -161,12 +161,16 @@
         return typeof resolved === 'string' && resolved ? resolved : fallback;
       } catch { return fallback; }
     };
-    // Mirrors popup.js's QUOTA_MESSAGE_HINTS/isQuotaMessage. This function is
-    // serialized standalone into the page via executeScript, so it cannot
-    // import that module — the same substrings captureFailureMessage.ts
-    // guarantees for a quota-kind error are duplicated here instead.
-    const isQuotaMessageInPage = message => typeof message === 'string'
-      && ['hạn mức', 'số thẻ', 'lượt AI'].some(hint => message.includes(hint));
+    // Mirrors popup.js's isQuotaFailure. This function is serialized standalone into the page via
+    // executeScript, so it cannot import that module. A failure code from the app is authoritative;
+    // the Vietnamese phrases are only how an app that predates the code marks a quota error.
+    const isQuotaFailureInPage = payload => (typeof payload.reason === 'string'
+      ? payload.reason.startsWith('quota')
+      : typeof payload.message === 'string'
+        && ['hạn mức', 'số thẻ', 'lượt AI'].some(hint => payload.message.includes(hint)));
+    const failureTextInPage = payload => (typeof payload.reason === 'string' && payload.reason
+      ? bt(`captureReason_${payload.reason.replaceAll('-', '_')}`, undefined, payload.message || '')
+      : payload.message) || '';
     const speechSupportedInPage = () => Boolean(
       globalThis.speechSynthesis && typeof globalThis.speechSynthesis.speak === 'function'
         && typeof globalThis.SpeechSynthesisUtterance === 'function',
@@ -567,7 +571,7 @@
         foot.append(ok);
       }
     } else {
-      const isQuota = payload.status === 'error' && isQuotaMessageInPage(payload.message);
+      const isQuota = payload.status === 'error' && isQuotaFailureInPage(payload);
       const e = document.createElement('div'); e.className = payload.status === 'auth-required' ? 'e' : 'err';
       if (isQuota) e.dataset.tone = 'quota';
       if (payload.status === 'auth-required') {
@@ -578,7 +582,7 @@
             const link = document.createElement('a'); link.href = login.toString(); link.target = '_blank'; link.rel = 'noopener'; link.textContent = bt('bubbleAuthLink', undefined, 'Đăng nhập / mở thư viện'); e.append(link);
           }
         } catch {}
-      } else e.textContent = payload.message || bt('bubbleGenericError', undefined, 'Không thể xử lý. Hãy thử lại.');
+      } else e.textContent = failureTextInPage(payload) || bt('bubbleGenericError', undefined, 'Không thể xử lý. Hãy thử lại.');
       body.append(e);
       if (isQuota) {
         const note = document.createElement('div'); note.className = 'quota-note'; note.textContent = bt('bubbleQuotaNote', undefined, 'Dịch nhanh vẫn miễn phí, không dùng lượt AI.');

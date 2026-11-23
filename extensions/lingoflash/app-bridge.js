@@ -449,7 +449,7 @@
     if (!writeVerifiedIntent(intent)) {
       appBridgeResponded = true;
       sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text,
-        message: 'App session storage is unavailable. Allow site storage and retry; nothing was saved.' });
+        message: 'App session storage is unavailable. Allow site storage and retry; nothing was saved.', reason: 'storage-unavailable' });
       return;
     }
     notifyApp(IMPORT_READY_TYPE, intent);
@@ -508,6 +508,7 @@
       status: 'error',
       word: intent.text,
       message: `${reason} Open the app and try again.`,
+      reason: 'requires-runtime',
     });
   };
 
@@ -525,7 +526,7 @@
       if (!revokeVerifiedIntent()) return;
       appBridgeResponded = true;
       sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text,
-        message: 'The app runtime did not start in time. Open the app and retry.' });
+        message: 'The app runtime did not start in time. Open the app and retry.', reason: 'runtime-timeout' });
       return;
     }
     if (intent.requestedDeck || intent.context || intent.sourceUrl || intent.pageTitle) {
@@ -547,13 +548,13 @@
     const form = queryCardForm(input);
     const submit = querySubmitButton(form);
     if (!(form instanceof HTMLFormElement) || !(submit instanceof HTMLButtonElement)) {
-      sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text, message: 'Could not find the LingoFlash card creation form.' });
+      sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text, message: 'Could not find the LingoFlash card creation form.', reason: 'compat-failed' });
       return;
     }
 
     const readyButton = await waitFor(() => (!submit.disabled ? submit : null), 3_000);
     if (!readyButton || appBridgeResponded || !isSameRoute()) {
-      sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text, message: 'LingoFlash card creation is currently unavailable.' });
+      sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text, message: 'LingoFlash card creation is currently unavailable.', reason: 'compat-failed' });
       return;
     }
 
@@ -568,7 +569,7 @@
       sendResult(intent, { v: 1, id: intent.id, status: 'created', word: intent.text, translation: '', message: 'Saved through the LingoFlash UI compatibility bridge.' });
       return;
     }
-    sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text, message: 'LingoFlash did not finish creating this card. Open the app once to check sign-in or AI availability.' });
+    sendResult(intent, { v: 1, id: intent.id, status: 'error', word: intent.text, message: 'LingoFlash did not finish creating this card. Open the app once to check sign-in or AI availability.', reason: 'compat-failed' });
   };
 
   function scheduleFallback(intent) {
