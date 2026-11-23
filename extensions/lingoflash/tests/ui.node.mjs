@@ -758,3 +758,9 @@ test('keeps the plain translated badge when the background offers no save', () =
   });
   assert.equal(quoted.text(quoted.nodes.find(node => node.className === 'q')), '…groups demanded an immediate response from the…');
 });
+
+test('labels the auto-spoken source speaker in the active UI language', () => {
+  const { nodes } = renderBubbleForToneAssertions({ status: 'translated', text: 'apple', translation: 'quả táo', autoSpeak: true, speechLocale: 'en' }, 'en');
+  const speaker = nodes.find(node => node.dataset?.speechState === 'playing');
+  assert.equal(speaker?.attributes['aria-label'], 'Pronounce apple (playing)');
+});

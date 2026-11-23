@@ -545,7 +545,9 @@ const toggleSelectionIconSite = async () => {
 const setSpeechState = (button, state, label) => {
   if (!button) return;
   button.dataset.speechState = state;
-  const suffix = state === 'playing' ? ' (đang phát)' : state === 'error' ? ' (lỗi)' : '';
+  const suffix = state === 'playing'
+    ? t('bubbleSpeechPlayingSuffix', undefined, ' (đang phát)')
+    : state === 'error' ? t('bubbleSpeechErrorSuffix', undefined, ' (lỗi)') : '';
   button.setAttribute('aria-label', `${label}${suffix}`);
 };
 

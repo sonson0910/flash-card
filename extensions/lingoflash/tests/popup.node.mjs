@@ -386,6 +386,17 @@ test('renders a quick translation result card with a save action', async () => {
   assert.equal(popup.elements.get('result-save').hidden, false);
 });
 
+test('labels the playing and failed speaker states from the UI language catalog', async () => {
+  const popup = await createPopupContext();
+  popup.elements.get('translate-button').dispatch('click');
+  await new Promise(resolve => setImmediate(resolve));
+  const speaker = popup.elements.get('result-speak');
+  speaker.dispatch('click');
+  assert.equal(speaker.attributes['aria-label'], `Nghe phát âm resilient${loadMessages('vi').bubbleSpeechPlayingSuffix.message}`);
+  assert.match(popupSource, /t\('bubbleSpeechErrorSuffix'/);
+  assert.doesNotMatch(popupSource, /' \(đang phát\)' :|' \(lỗi\)' :/);
+});
+
 test('resets the result speaker state and accessible label when a new result replaces the old one', async () => {
   const popup = await createPopupContext();
 
