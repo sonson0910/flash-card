@@ -62,8 +62,19 @@ interface StudyViewProps {
 }
 
 type StudyKeyboardEvent = Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'defaultPrevented' | 'key' | 'metaKey' | 'preventDefault' | 'shiftKey' | 'target'> & {
+  readonly code?: string;
   readonly isComposing?: boolean;
   readonly nativeEvent?: { readonly isComposing: boolean };
+};
+
+const ALT_SHORTCUT_KEYS = new Set(['1', '2', '3', '4', 's', 'p', 'r']);
+
+/** The shortcut character of an Alt chord. Option on macOS turns the typed character into a symbol (Option+3 types a pound sign), so fall back to the physical key. */
+const altShortcutKey = (event: Pick<StudyKeyboardEvent, 'key' | 'code'>): string => {
+  const typed = event.key.toLocaleLowerCase();
+  if (ALT_SHORTCUT_KEYS.has(typed)) return typed;
+  const physical = /^(?:Digit([1-4])|Key([SPR]))$/.exec(event.code ?? '');
+  return physical ? (physical[1] ?? physical[2]).toLowerCase() : typed;
 };
 
 // Radix dialogs (Edit card, Report card, delete confirmation) render their content through a portal, so in the
@@ -342,6 +353,7 @@ export function StudyView({
 
     const noModifiers = !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
     const altShortcut = event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
+    const altKey = altShortcut ? altShortcutKey(event) : '';
     if (noModifiers && (event.key === ' ' || event.key === 'Space' || event.key === 'Spacebar' || event.key === 'Enter')) {
       event.preventDefault();
       if (!revealed) {
@@ -354,18 +366,18 @@ export function StudyView({
     } else if (noModifiers && event.key === 'ArrowLeft') {
       event.preventDefault();
       onIndex(Math.max(0, index - 1));
-    } else if (altShortcut && ['1', '2', '3', '4'].includes(event.key)) {
+    } else if (altShortcut && ['1', '2', '3', '4'].includes(altKey)) {
       event.preventDefault();
       const ratings: Record<string, ReviewRating> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
-      void handleRating(ratings[event.key]);
-    } else if (altShortcut && event.key.toLocaleLowerCase() === 's') {
+      void handleRating(ratings[altKey]);
+    } else if (altShortcut && altKey === 's') {
       event.preventDefault();
       if (!card.bookmarked) playRewardSound();
       void onBookmark(card.id);
-    } else if (altShortcut && event.key.toLocaleLowerCase() === 'p') {
+    } else if (altShortcut && altKey === 'p') {
       event.preventDefault();
       surface.querySelector<HTMLButtonElement>(`[data-study-card] [aria-label="${_(msg({ id: 'flashcard.audio.play-pronunciation', message: 'Play pronunciation' }))}"]`)?.click();
-    } else if (altShortcut && event.key.toLocaleLowerCase() === 'r') {
+    } else if (altShortcut && altKey === 'r') {
       event.preventDefault();
       surface.querySelector<HTMLButtonElement>(`[data-study-card] [aria-label="${_(msg({ id: 'flashcard.audio.check-pronunciation', message: 'Check pronunciation' }))}"]`)?.click();
     }
