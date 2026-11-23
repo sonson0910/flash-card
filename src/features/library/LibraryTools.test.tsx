@@ -51,6 +51,7 @@ const renderLibraryTools = ({
   activePartOfSpeech = 'All',
   customDecks = [],
   activeCustomDeck = ALL_PRACTICE_DECK_SCOPE,
+  languageProfile,
 }: {
   isAuthenticated: boolean;
   generationAccess: AiGenerationAccess;
@@ -58,6 +59,7 @@ const renderLibraryTools = ({
   activePartOfSpeech?: string;
   customDecks?: string[];
   activeCustomDeck?: typeof ALL_PRACTICE_DECK_SCOPE | { kind: 'unassigned' } | { kind: 'deck'; name: string };
+  languageProfile?: ReturnType<typeof languageProfileForPair>;
 }) => renderMarkup(
   <LibraryTools
     fileInputRef={{ current: null }}
@@ -95,8 +97,33 @@ const renderLibraryTools = ({
     categoryCounts={{ All: 0 }}
     activeCategory="All"
     setActiveCategory={vi.fn()}
+    languageProfile={languageProfile}
   />,
 );
+
+describe('create and search inputs follow the course language', () => {
+  it('names and tags the Korean course language instead of English', () => {
+    const html = renderLibraryTools({
+      isAuthenticated: true,
+      generationAccess: { available: true },
+      libraryCount: 3,
+      languageProfile: languageProfileForPair('ko', 'vi'),
+    });
+    expect(html).toContain('lang="ko"');
+    expect(html).not.toContain('lang="en"');
+    expect(html).toContain('Korean word');
+    expect(html).toContain('Search Korean words');
+    expect(html).not.toContain('English word');
+    expect(html).not.toContain('Search English words');
+  });
+
+  it('keeps the English wording for an English course', () => {
+    const html = renderLibraryTools({ isAuthenticated: true, generationAccess: { available: true }, libraryCount: 3 });
+    expect(html).toContain('lang="en"');
+    expect(html).toContain('English word');
+    expect(html).toContain('Search English words');
+  });
+});
 
 describe('smart-card generation access', () => {
   it('allows a signed-out user to check for an existing local card before generation', () => {

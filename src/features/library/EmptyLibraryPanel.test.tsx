@@ -5,6 +5,7 @@ import { I18nProvider } from '@lingui/react';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { EmptyLibraryPanel } from './EmptyLibraryPanel';
+import { languageProfileForPair } from '../courses/courseLanguageProfile';
 
 const appearance = vi.hoisted(() => ({ family: 'classic' as 'classic' | 'crystal', lumiEnabled: true }));
 
@@ -56,6 +57,18 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof EmptyLibrary
 }
 
 describe('EmptyLibraryPanel', () => {
+  it('labels and tags the first-run word input with the course language', () => {
+    const korean = renderPanel({ languageProfile: languageProfileForPair('ko', 'vi') });
+    const input = korean.split('<input').find(part => part.includes('id="empty-library-word"')) ?? '';
+    expect(input).toContain('lang="ko"');
+    expect(korean).toContain('Korean word</label>');
+    expect(korean).not.toContain('English word');
+
+    const english = renderPanel();
+    expect(english).toContain('English word</label>');
+    expect(english.split('<input').find(part => part.includes('id="empty-library-word"'))).toContain('lang="en"');
+  });
+
   it('uses the shared guard for its typed generation form', () => {
     const source = readFileSync(fileURLToPath(new URL('./EmptyLibraryPanel.tsx', import.meta.url)), 'utf8');
 

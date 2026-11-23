@@ -4,6 +4,7 @@ import { Trans, useLingui } from '@lingui/react';
 import { Lumi } from '../../components/lumi/Lumi';
 import { createImeSubmitGuard } from '../../lib/imeSubmitGuard';
 import type { CardData } from '../../types/card';
+import { courseWordCopy } from './courseLanguageCopy';
 import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
@@ -119,6 +120,7 @@ export function EmptyLibraryPanel({
               isGenerating={isGenerating}
               isImporting={isImporting}
               generationAccess={generationAccess}
+              languageProfile={languageProfile}
               generationHelpId={generationHelpId}
               canGenerate={canGenerate}
               submit={submit}
@@ -150,6 +152,7 @@ export function EmptyLibraryPanel({
             isGenerating={isGenerating}
             isImporting={isImporting}
             generationAccess={generationAccess}
+            languageProfile={languageProfile}
             generationHelpId={generationHelpId}
             canGenerate={canGenerate}
             submit={submit}
@@ -184,6 +187,7 @@ export function EmptyLibraryPanel({
 type ActionProps = Pick<EmptyLibraryPanelProps,
   'fileInputRef' | 'wordInput' | 'onWordInputChange' | 'onImport' | 'onOpenPaths'
   | 'isLoading' | 'isGenerating' | 'isImporting' | 'generationAccess'> & {
+    languageProfile: LanguageProfile;
     generationHelpId: string;
     canGenerate: boolean;
     submit: (event: FormEvent<HTMLFormElement>) => void;
@@ -206,6 +210,7 @@ function EmptyLibraryActions({
   isGenerating,
   isImporting,
   generationAccess,
+  languageProfile,
   generationHelpId,
   canGenerate,
   submit,
@@ -218,17 +223,18 @@ function EmptyLibraryActions({
   importStatus,
 }: ActionProps) {
   const { i18n } = useLingui();
+  const wordCopy = courseWordCopy(i18n, languageProfile);
   const isBusy = isLoading || isGenerating || isImporting;
 
   return (
     <>
       <form className="empty-library__form" onSubmit={submit} onKeyDown={onKeyDown}>
-        <label className="sr-only" htmlFor="empty-library-word"><Trans {...msg({ context: 'library.create.word-label', message: 'English word' })} /></label>
+        <label className="sr-only" htmlFor="empty-library-word">{wordCopy.wordLabel}</label>
         <input
           id="empty-library-word"
           className="empty-library__word-input"
           type="text"
-          lang="en"
+          lang={wordCopy.lang}
           inputMode="text"
           autoComplete="off"
           autoCapitalize="off"

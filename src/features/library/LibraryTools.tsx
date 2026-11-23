@@ -28,6 +28,7 @@ import {
   X,
 } from 'lucide-react';
 import type { CardData } from '../../types/card';
+import { courseWordCopy } from './courseLanguageCopy';
 import { ENGLISH_TO_VIETNAMESE_PROFILE, type LanguageProfile } from '../language/languageProfile';
 import { PART_OF_SPEECH_OPTIONS } from '../../lib/cardQuery';
 import { formatNumber } from '../../lib/format';
@@ -260,10 +261,10 @@ export function DeckCreationForm({
           type="submit"
           disabled={isCreating || !value.trim()}
           className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--sf-brand)] px-3 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label={isCreating ? 'Creating deck' : 'Create deck'}
+          aria-label={isCreating ? i18n._(msg({ id: 'library.deck.creating-aria', message: 'Creating deck' })) : i18n._(msg({ context: 'library.deck.creation-submit', message: 'Create deck' }))}
         >
           {isCreating ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}
-          <span>{isCreating ? 'Creating…' : 'Create'}</span>
+          <span>{isCreating ? i18n._(msg({ context: 'library.deck.creating', message: 'Creating…' })) : i18n._(msg({ id: 'library.deck.create-short', message: 'Create' }))}</span>
         </button>
       </form>
       {error ? <p role="alert" className="mt-2 text-xs font-semibold leading-relaxed text-[var(--sf-danger)]">{error}</p> : null}
@@ -481,6 +482,7 @@ export function LibraryTools({
   ownerId,
 }: LibraryToolsProps) {
   const { i18n: catalog } = useLingui();
+  const wordCopy = courseWordCopy(catalog, languageProfile);
   const authenticated = isAuthenticated ?? Boolean(user);
   const ownerIdRef = useRef<DeckDeletionOwnerId>(ownerId);
   ownerIdRef.current = ownerId;
@@ -682,9 +684,7 @@ export function LibraryTools({
         >
           {authenticated && <Suspense fallback={null}><PlanUsageMeter /></Suspense>}
           <div>
-            <label htmlFor="new-word" className="sr-only">
-              <Trans {...msg({ context: 'library.create.word-label', message: 'English word' })} />
-            </label>
+            <label htmlFor="new-word" className="sr-only">{wordCopy.wordLabel}</label>
             <div className="relative">
               <input
                 id="new-word"
@@ -694,13 +694,13 @@ export function LibraryTools({
                 onCompositionStart={imeSubmitGuard.onCompositionStart}
                 onCompositionEnd={imeSubmitGuard.onCompositionEnd}
                 onKeyDown={event => { if (imeSubmitGuard.shouldBlockKeyDown(event.nativeEvent)) event.preventDefault(); }}
-                lang="en"
+                lang={wordCopy.lang}
                 inputMode="text"
                 autoComplete="off"
                 autoCapitalize="off"
                 autoCorrect="off"
                 spellCheck={false}
-                placeholder={i18n._(msg({ id: 'library.create.word-placeholder', message: 'Type an English word (e.g. serendipity)…' }))}
+                placeholder={wordCopy.wordPlaceholder}
                 disabled={isLoading}
                 className={`min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-wait ${
                   isLoading ? 'border-[var(--sf-brand)]' : ''
@@ -837,7 +837,7 @@ export function LibraryTools({
             {/* Search Input */}
             <div className="relative hidden lg:block">
               <label htmlFor="library-search" className="sr-only">
-                <Trans {...msg({ context: 'library.filters.search-label', message: 'Search English words' })} />
+                {wordCopy.searchLabel}
               </label>
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--sf-text-muted)]">
                 <Search size={15} />
@@ -849,7 +849,7 @@ export function LibraryTools({
                 autoComplete="off"
                 value={searchQuery}
                 onChange={event => setSearchQuery(event.target.value)}
-                placeholder={i18n._(msg({ id: 'library.filters.search-placeholder', message: 'Search English words…' }))}
+                placeholder={wordCopy.searchPlaceholder}
                 className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] py-2 pl-9 pr-8 text-xs font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
               />
               {searchQuery && (
