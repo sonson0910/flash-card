@@ -2,8 +2,11 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CardIntakePortOptions } from './cardIntakePortContract';
+import type { CardData } from '../../types/card';
 import { createCardIntakePipeline } from './cardIntakePipeline';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
+import { languageProfileForPair } from '../courses/courseLanguageProfile';
+import { createTargetAwareCardId, createWordCardId } from '../../lib/cardIdentity';
 import { OperationTimeoutError } from '../../lib/async';
 
 const generationRuntime = vi.hoisted(() => ({
@@ -619,6 +622,102 @@ describe('Card Intake Pipeline contract', () => {
     });
     expect(generated.card.customDeck).toBe('Reading');
     expect(generated.card.origin).toBe('ai');
+  });
+
+  it('gives a generated card the id its course language is stored under', async () => {
+    const wordInfo = {
+      translation: 'quả táo', explanation: '', explanationTranslation: '', phonetic: '',
+      emoji: '🍎', category: 'Food', partOfSpeech: 'noun', cefrLevel: '',
+      exampleSentence: '', exampleTranslation: '', collocations: [], synonyms: [], antonyms: [],
+      register: '', commonMistake: '', imageSearchQuery: '',
+    };
+    generationRuntime.generateWordInfo.mockResolvedValue(wordInfo);
+    const pipeline = createCardIntakePipeline({ getContext: createContext });
+
+    const korean = await pipeline.generateCard({ term: '사과', language: languageProfileForPair('ko', 'vi') });
+    const japanese = await pipeline.generateCard({ term: 'bank', language: languageProfileForPair('ja', 'vi') });
+    const english = await pipeline.generateCard({ term: 'bank', language: ENGLISH_TO_VIETNAMESE_PROFILE });
+
+    expect(korean.card).toMatchObject({ language: 'ko', id: createTargetAwareCardId('사과', 'ko') });
+    expect(japanese.card).toMatchObject({ language: 'ja', id: createTargetAwareCardId('bank', 'ja') });
+    expect(japanese.card.id).not.toBe('word-bank');
+    // English cards keep the id shape already stored in every library.
+    expect(english.card.id).toBe('word-bank');
+    generationRuntime.generateWordInfo.mockReset();
+  });
+
+  it('patches late media onto the id a non-English card was created under', async () => {
+    const context = createContext();
+    generationRuntime.generateWordInfo.mockResolvedValueOnce({
+      translation: 'quả táo', explanation: '', explanationTranslation: '', phonetic: '',
+      emoji: '🍎', category: 'Food', partOfSpeech: 'noun', cefrLevel: '',
+      exampleSentence: '', exampleTranslation: '', collocations: [], synonyms: [], antonyms: [],
+      register: '', commonMistake: '', imageSearchQuery: '',
+    });
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+    const generated = await pipeline.generateCard({ term: '사과', language: languageProfileForPair('ko', 'vi') });
+    const storedId = createTargetAwareCardId('사과', 'ko');
+    // The service stores a non-English card under its target-aware id whatever id the request carried.
+    repositoryRuntime.createCardV2IfAbsent.mockImplementationOnce(async (...args: unknown[]) => ({
+      card: { ...(args[2] as { id: string }), id: storedId }, created: true, gamification: null,
+    }));
+
+    const [persisted] = await pipeline.persistCards([generated.card], 'generate');
+    await pipeline.applyMedia(persisted!.card, { audioUrl: null, imageUrl: 'https://images.example/apple.jpg' });
+
+    expect(vi.mocked(context.patchCard)).toHaveBeenCalledWith(
+      storedId,
+      { audioUrl: null, imageUrl: 'https://images.example/apple.jpg' },
+      expect.objectContaining({ id: storedId }),
+    );
+  });
+
+  it('moves the shown card to the id the service stored it under when an earlier claim on the word decides it', async () => {
+    // A word that was once the new headword of a renamed card stays claimed by that card id,
+    // so the service stores the recaptured word there rather than under the id derived from the word.
+    const candidate = card('attention');
+    const storedId = 'word-focus';
+    let shown: CardData[] = [];
+    const context: CardIntakePortOptions = {
+      ...createContext(),
+      getCards: () => shown,
+      publishCards: vi.fn((next: CardData[]) => { shown = next; }),
+    };
+    const stored = deferred<{ card: CardData; created: boolean; gamification: null }>();
+    repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(stored.promise);
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    const [persisted] = await pipeline.persistCards([candidate], 'generate');
+    expect(shown.map(value => value.id)).toEqual([candidate.id]);
+    stored.resolve({ card: { ...candidate, id: storedId, revision: 1 }, created: true, gamification: null });
+    await vi.waitFor(() => expect(shown.map(value => value.id)).toEqual([storedId]));
+
+    expect(vi.mocked(context.rememberPromoted)).toHaveBeenLastCalledWith(expect.objectContaining({ id: storedId, word: candidate.word }));
+    await pipeline.applyMedia(persisted!.card, { audioUrl: 'https://audio.example/attention.mp3', imageUrl: null });
+    expect(vi.mocked(context.patchCard)).toHaveBeenCalledWith(
+      storedId,
+      { audioUrl: 'https://audio.example/attention.mp3', imageUrl: null },
+      expect.objectContaining({ id: storedId }),
+    );
+  });
+
+  it('keeps a non-English card that is still stored under the earlier word-only id as the one card for its word', async () => {
+    const earlier = { ...card('사과'), id: createWordCardId('사과'), language: 'ko', revision: 4 };
+    const candidate = { ...card('사과'), id: createTargetAwareCardId('사과', 'ko'), language: 'ko' };
+    expect(candidate.id).not.toBe(earlier.id);
+    let shown: CardData[] = [];
+    const context: CardIntakePortOptions = {
+      ...createContext(),
+      getCards: () => shown,
+      publishCards: vi.fn((next: CardData[]) => { shown = next; }),
+    };
+    repositoryRuntime.createCardV2IfAbsent.mockResolvedValueOnce({ card: earlier, created: false, gamification: null });
+    const pipeline = createCardIntakePipeline({ getContext: () => context });
+
+    await pipeline.persistCards([candidate], 'generate');
+
+    await vi.waitFor(() => expect(shown.map(value => value.id)).toEqual([earlier.id]));
+    expect(vi.mocked(context.patchCard)).toHaveBeenCalledWith(earlier.id, expect.anything(), expect.objectContaining({ id: earlier.id }));
   });
 
   it('persists captured browser-extension source metadata on the generated card without leaking it into the AI request', async () => {

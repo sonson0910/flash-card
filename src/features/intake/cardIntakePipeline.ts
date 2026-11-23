@@ -1,7 +1,7 @@
 import { fetchAudioUrl } from '../../lib/audio';
 import { OperationTimeoutError, withTimeout } from '../../lib/async';
 import { mapWithConcurrency } from '../../lib/asyncPool';
-import { cardLogicalKey, createWordCardId, normalizeCardWord } from '../../lib/cardIdentity';
+import { cardLogicalKey, createTargetAwareCardId, normalizeCardWord } from '../../lib/cardIdentity';
 import { isRetryableCloudError } from '../../lib/cloudError';
 import { normalizePartOfSpeech } from '../../lib/cardQuery';
 import {
@@ -149,6 +149,21 @@ export function createCardIntakePipeline({
     if (!sessionGuard.isCurrent(token)) throw new StaleIntakeSessionError();
   };
   const mediaSessions = new WeakMap<CardData, IntakeSessionToken>();
+  // The card service decides where a card is stored: a word still claimed by an earlier card
+  // keeps that card's id. The card shown at once then takes the stored id, so later edits,
+  // reviews and media reach the document that exists.
+  const storedCardIds = new WeakMap<CardData, string>();
+  const adoptStoredCardId = (candidate: CardData, storedId: string, latest: CardIntakePortOptions) => {
+    storedCardIds.set(candidate, storedId);
+    const cards = latest.getCards();
+    const shown = cards.find(existing =>
+      existing.id === candidate.id && cardLogicalKey(existing) === cardLogicalKey(candidate));
+    const stored = { ...(shown ?? candidate), id: storedId };
+    latest.rememberPromoted(stored);
+    if (!shown) return;
+    latest.publishCards(cards.flatMap(existing =>
+      existing === shown ? [stored] : existing.id === storedId ? [] : [existing]));
+  };
   const persistedCardOperations = new Map<string, {
     operationId: string;
     promise: Promise<Array<{ card: CardData; created: boolean }>>;
@@ -304,7 +319,9 @@ export function createCardIntakePipeline({
       capturedAt: request.capturedAt || new Date().toISOString(),
     } : undefined;
     const card: IntakeCard = {
-        id: createWordCardId(normalizedWord),
+        // The same rule the card service applies, so the card shown at once and the stored
+        // document share one id: word-only for English, target-aware for every other language.
+        id: createTargetAwareCardId(normalizedWord, request.language.source.code),
         ...(source ? { source } : {}),
         origin: 'ai',
         language: request.language.source.code,
@@ -437,7 +454,10 @@ export function createCardIntakePipeline({
           if (result.created && result.gamification) {
             latest.acceptGamificationOutcome?.(result.gamification, operationId);
           }
-          if (result.created) return outcome;
+          if (result.created) {
+            if (result.card.id !== candidate.id) adoptStoredCardId(candidate, result.card.id, latest);
+            return outcome;
+          }
           // Someone else already created this word; reconcile the optimistic
           // duplicate with the authoritative card the cloud returned.
           if (!latest.getCards().some(existing => existing.id === result.card.id)) {
@@ -617,7 +637,9 @@ export function createCardIntakePipeline({
     applyMedia: async (card, media) => {
       const session = mediaSessions.get(card);
       if (!session || !sessionGuard.isCurrent(session)) return;
-      await getContext().patchCard(card.id, media, card);
+      const storedId = storedCardIds.get(card);
+      const target = storedId ? { ...card, id: storedId } : card;
+      await getContext().patchCard(target.id, media, target);
     },
     persistStructured: async ({ creates, patches }, onSettlement) => {
       const session = sessionGuard.capture();

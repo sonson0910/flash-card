@@ -5,6 +5,7 @@ import type { CardData } from '../../types/card';
 import { classifyProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
 import { languageProfileForPair } from '../courses/courseLanguageProfile';
+import { createTargetAwareCardId } from '../../lib/cardIdentity';
 import {
   createCardIntakeController,
   settleMediaBestEffort,
@@ -444,6 +445,47 @@ describe('card intake controller', () => {
     expect(persistCards).toHaveBeenCalledWith([
       expect.objectContaining({ word: 'bonjour', origin: 'manual', translation: 'xin chào' }),
     ], 'generate');
+  });
+
+  it('saves a manual card under the id its course language is stored under', async () => {
+    const { port, persistCards } = createFakePort();
+    const intake = createCardIntakeController({
+      port, language: languageProfileForPair('ja', 'vi'), now: () => '2026-09-25T00:00:00.000Z',
+    });
+    intake.cardCreator.open();
+    intake.cardCreator.createManualDraft({ word: '猫', translation: 'con mèo' });
+
+    await expect(intake.cardCreator.save()).resolves.toMatchObject({ status: 'saved' });
+
+    expect(persistCards).toHaveBeenCalledWith([
+      expect.objectContaining({ word: '猫', language: 'ja', id: createTargetAwareCardId('猫', 'ja') }),
+    ], 'generate');
+  });
+
+  it('keeps the word-only id for a manual English card', async () => {
+    const { port, persistCards } = createFakePort();
+    const intake = createCardIntakeController({ port, now: () => '2026-09-25T00:00:00.000Z' });
+    intake.cardCreator.open();
+    intake.cardCreator.createManualDraft({ word: 'bank', translation: 'ngân hàng' });
+
+    await intake.cardCreator.save();
+
+    expect(persistCards).toHaveBeenCalledWith([expect.objectContaining({ id: 'word-bank', language: 'en' })], 'generate');
+  });
+
+  it('adopts a shared card without a lexeme under the id its course language is stored under', async () => {
+    const { port, persistCards } = createFakePort();
+    const intake = createCardIntakeController({ port, language: languageProfileForPair('ko', 'vi') });
+
+    await expect(intake.adoptSharedDeck({
+      cards: [{ word: '사과', translation: 'quả táo' }, { word: 'bank', translation: 'ngân hàng' }],
+      expectedPair: { targetLanguage: 'ko', nativeLanguage: 'vi' },
+    })).resolves.toMatchObject({ status: 'completed', createdCount: 2 });
+
+    expect(persistCards.mock.calls[0]![0].map(value => value.id)).toEqual([
+      createTargetAwareCardId('사과', 'ko'),
+      createTargetAwareCardId('bank', 'ko'),
+    ]);
   });
 
   it('validates the draft before lookup and uses the active language profile for identity', async () => {
