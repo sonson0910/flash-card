@@ -389,6 +389,42 @@ describe('cloud library page controller', () => {
     expect(controller.getSnapshot()).toMatchObject({ statsTargetLanguage: 'ja', stats: { total: 30, easy: 5 } });
   });
 
+  it('does not publish an in-flight stats response for the course the learner just left', async () => {
+    const { adapter, cache } = createFakes();
+    const englishStats = deferred<FreshCloudLibraryStats>();
+    vi.mocked(adapter.loadStats).mockReturnValue(englishStats.promise);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: { ...filters, targetLanguage: 'en' }, queryKey: 'all-en', page: 1 });
+    const oldRequest = controller.requestStats('en');
+    expect(controller.getSnapshot().isStatsLoading).toBe(true);
+
+    // The learner leaves Progress and switches course: no new stats request starts.
+    controller.activate({ ownerId: 'owner-a', query: { ...filters, targetLanguage: 'ja' }, queryKey: 'all-ja', page: 1 });
+    expect(controller.getSnapshot().isStatsLoading).toBe(false);
+    englishStats.resolve({ ...freshEmptyStats(), total: 8, easy: 3, due: 4 });
+    await oldRequest;
+
+    expect(controller.getSnapshot().stats).toMatchObject({ total: 0, easy: 0, due: 0 });
+    expect(controller.getSnapshot().statsTargetLanguage).toBeUndefined();
+    expect(controller.getSnapshot().isStatsLoading).toBe(false);
+    expect(cache.writeStats).toHaveBeenCalledWith('owner-a', 'en', expect.objectContaining({ total: 8 }), expect.any(Number));
+  });
+
+  it('does not graft in-flight progress evidence of the previous course onto the new course stats', async () => {
+    const { adapter, cache } = createFakes();
+    const englishEvidence = deferred<Awaited<ReturnType<CloudLibraryPageAdapter['loadProgressEvidence']>>>();
+    vi.mocked(adapter.loadProgressEvidence).mockReturnValue(englishEvidence.promise);
+    const controller = createCloudLibraryPageController({ adapter, cache });
+    controller.activate({ ownerId: 'owner-a', query: { ...filters, targetLanguage: 'en' }, queryKey: 'all-en', page: 1 });
+    const pending = controller.requestProgressEvidence('en');
+
+    controller.activate({ ownerId: 'owner-a', query: { ...filters, targetLanguage: 'ja' }, queryKey: 'all-ja', page: 1 });
+    englishEvidence.resolve({ dueForecast: [{ date: '2026-09-29', count: 2 }] });
+    await pending;
+
+    expect(controller.getSnapshot().stats.dueForecast).toBeUndefined();
+  });
+
   it('writes an in-flight stats response to the language that started its request', async () => {
     const { adapter, cache } = createFakes();
     const englishStats = deferred<FreshCloudLibraryStats>();
@@ -409,7 +445,7 @@ describe('cloud library page controller', () => {
     await oldRequest;
     expect(saved.get('en')?.stats.total).toBe(8);
     expect(saved.has('ko')).toBe(false);
-    expect(controller.getSnapshot().statsTargetLanguage).toBe('en');
+    expect(controller.getSnapshot().statsTargetLanguage).toBeUndefined();
 
     await controller.requestStats('ko');
     expect(controller.getSnapshot()).toMatchObject({ statsTargetLanguage: 'ko', stats: { total: 2 } });

@@ -170,6 +170,8 @@ export function createCloudLibraryPageController({
   let progressEvidenceLanguage: string | null | undefined;
   let activeOwnerId: string | null = null;
   let activeTargetLanguage: string | null = null;
+  // Counts course switches within one owner, so a stats read that started for the course the learner left can be told apart.
+  let courseSwitchCount = 0;
   let unsubscribePage: (() => void) | null = null;
   let unsubscribeFacets: (() => void) | null = null;
   const cursors = new Map<string, Map<number, string | null>>();
@@ -185,10 +187,14 @@ export function createCloudLibraryPageController({
       // A course switch keeps the owner but not the personal counts: show the
       // new course's cached stats, or none, until its own stats arrive.
       activeTargetLanguage = targetLanguage;
+      courseSwitchCount += 1;
+      progressEvidenceGeneration += 1;
+      progressEvidenceLanguage = undefined;
       const cachedStats = safeCacheRead(() => cache.readStats(ownerId, targetLanguage), null);
       publish({
         stats: cachedStats?.stats ?? EMPTY_LIBRARY_STATS,
         statsTargetLanguage: cachedStats ? targetLanguage : undefined,
+        isStatsLoading: false,
       });
     }
     if (activeOwnerId !== ownerId) {
@@ -527,6 +533,8 @@ export function createCloudLibraryPageController({
     }
     const generation = ownerGeneration;
     const requestGeneration = ++statsGeneration;
+    const requestCourseSwitch = courseSwitchCount;
+    const courseSwitched = () => courseSwitchCount !== requestCourseSwitch;
     if (refresh) publish({ statsSettledRequestId: null });
     if (progressEvidenceLanguage !== targetLanguage) {
       progressEvidenceLanguage = targetLanguage;
@@ -557,7 +565,7 @@ export function createCloudLibraryPageController({
     try {
       if (!refresh && fullStatsFresh) {
         const dueStats = await adapter.loadDueStats(ownerId, targetLanguage);
-        if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
+        if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration || courseSwitched()) return;
         const stats = {
           ...(snapshot.statsTargetLanguage === targetLanguage ? snapshot.stats : cached.stats),
           ...dueStats,
@@ -568,6 +576,12 @@ export function createCloudLibraryPageController({
       }
       const stats = await adapter.loadStats(ownerId, targetLanguage);
       if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
+      if (courseSwitched()) {
+        // The learner moved to another course while this read was in flight:
+        // keep the result for the course it describes, but do not show it.
+        safeCacheWrite(() => cache.writeStats(ownerId, targetLanguage, stats, now()));
+        return;
+      }
       const publishedStats = {
         ...stats,
         ...(progressEvidenceLanguage === targetLanguage ? {
@@ -584,7 +598,7 @@ export function createCloudLibraryPageController({
       });
       safeCacheWrite(() => cache.writeStats(ownerId, targetLanguage, publishedStats, now()));
     } catch (error) {
-      if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration) return;
+      if (generation !== ownerGeneration || activeOwnerId !== ownerId || requestGeneration !== statsGeneration || courseSwitched()) return;
       publish({
         isStatsLoading: false,
         ...(refresh ? { statsSettledRequestId: refresh.requestId } : {}),
