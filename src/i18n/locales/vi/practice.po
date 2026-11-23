@@ -1064,7 +1064,7 @@ msgid "practice.error.ai-daily-allowance"
 msgstr "Bạn đã dùng hết lượt AI phụ hôm nay. Thử lại sau 00:00 (giờ Việt Nam)."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:315
+#: src/features/practice/usePracticeGames.ts:338
 msgid "practice.error.complete"
 msgstr "Không lưu được kết quả luyện tập. Hãy kiểm tra kết nối và thử lại."
 
@@ -1074,12 +1074,12 @@ msgid "practice.error.configuration"
 msgstr "Không thể tạo câu chuyện. Vui lòng thử lại sau."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:520
+#: src/features/practice/usePracticeGames.ts:543
 msgid "practice.error.language-drill-card-count"
 msgstr "Bạn cần ít nhất 1 thẻ để luyện ngôn ngữ."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:623
+#: src/features/practice/usePracticeGames.ts:646
 msgid "practice.error.match-card-count"
 msgstr "Bạn cần ít nhất 4 thẻ để chơi Ghép từ."
 
@@ -1099,12 +1099,12 @@ msgid "practice.error.permission"
 msgstr "Dịch vụ đám mây được bảo vệ đã từ chối tạo câu chuyện. Hãy tải lại và đăng nhập lại; nếu vẫn tiếp diễn, hãy liên hệ quản trị viên để kiểm tra App Check hoặc quy tắc truy cập."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:274
+#: src/features/practice/usePracticeGames.ts:277
 msgid "practice.error.prepare"
 msgstr "Không thể chuẩn bị hoạt động này. Kiểm tra kết nối rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:353
+#: src/features/practice/usePracticeGames.ts:376
 msgid "practice.error.quiz-card-count"
 msgstr "Bạn cần ít nhất 4 thẻ đã học để bắt đầu bài kiểm tra."
 
@@ -1119,7 +1119,12 @@ msgid "practice.error.service-daily-cap"
 msgstr "AI tạm dừng vì hạn mức chung hôm nay đã hết. Thử lại sau 00:00 (giờ Việt Nam)."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:681
+#: src/features/practice/usePracticeGames.ts:335
+msgid "practice.error.session-expired"
+msgstr "Vòng này đã mở quá lâu nên không lưu được kết quả. Hãy bắt đầu một vòng mới."
+
+#. js-lingui-explicit-id
+#: src/features/practice/usePracticeGames.ts:704
 msgid "practice.error.shadowing-no-cards"
 msgstr "Bạn cần có thẻ trong thư viện để luyện phát âm nhại theo."
 
@@ -1129,7 +1134,7 @@ msgid "practice.error.sign-in"
 msgstr "Hãy đăng nhập lại để tạo câu chuyện."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:432
+#: src/features/practice/usePracticeGames.ts:455
 msgid "practice.error.spelling-card-count"
 msgstr "Bạn cần ít nhất 4 thẻ đã học để luyện chính tả."
 
@@ -1139,13 +1144,13 @@ msgid "practice.error.story"
 msgstr "Hiện không thể tạo câu chuyện. Vui lòng thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/practice/usePracticeGames.ts:580
+#: src/features/practice/usePracticeGames.ts:603
 msgid "practice.error.story-no-cards"
 msgstr "Chưa có thẻ phù hợp để tạo câu chuyện bằng AI. Hãy thêm hoặc đồng bộ thẻ rồi thử lại."
 
 #. js-lingui-explicit-id
 #: src/features/practice/usePracticeGames.ts:99
-#: src/features/practice/usePracticeGames.ts:273
+#: src/features/practice/usePracticeGames.ts:276
 msgid "practice.error.timeout"
 msgstr "Chuẩn bị hoạt động này mất quá lâu. Kiểm tra kết nối rồi thử lại."
 

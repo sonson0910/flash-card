@@ -5,6 +5,7 @@ import { I18nProvider } from '@lingui/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import type { CardData } from '../../types/card';
 import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
+import { ProtectedFunctionError } from '../../lib/protectedFunctionsCapability';
 import type { LessonScreenActions, LessonScreenModel } from './dailyLearningPresentation';
 
 const screens = vi.hoisted(() => ({
@@ -36,6 +37,7 @@ import {
 } from './dailySessionStages';
 import { logicalIdentity } from './dailyPlan';
 import { promoteCardsToActiveSessionNewStage } from './webWordsSessionPriority';
+import { firebasePracticeSessionService } from '../practice/practiceSessionService';
 
 const OWNER = 'owner-a';
 const PAIR = { targetLanguage: 'en', translationLanguage: 'vi' } as const;
@@ -204,6 +206,77 @@ it('commits a loaded same-pair WebWord into a mounted session and serves it next
   expect(screens.lesson?.model.progress).toEqual({ current: 2, total: 2 });
   expect(loadPracticePool).toHaveBeenCalledTimes(1);
   expect(reviewCard).toHaveBeenCalledWith(current.id, 'good', expect.any(String), current);
+
+  await act(async () => root.unmount());
+});
+
+const textOf = (node: unknown): string => {
+  const value = node as { nodeValue?: unknown; childNodes?: unknown[] };
+  return `${typeof value.nodeValue === 'string' ? value.nodeValue : ''}${(value.childNodes ?? []).map(textOf).join(' ')}`;
+};
+
+it('stops retrying a daily Word Match completion whose practice session expired and lets the learner move on', async () => {
+  const cards = ['alpha', 'bravo', 'charlie', 'delta'].map(card);
+  const container = installMinimalReactDom();
+  const start = vi.mocked(firebasePracticeSessionService.start);
+  const complete = vi.mocked(firebasePracticeSessionService.complete);
+  start.mockReset();
+  complete.mockReset();
+  start.mockResolvedValue({
+    sessionId: 'daily-match-start-1',
+    game: 'match',
+    expiresAt: '2026-10-03T00:30:00.000Z',
+    challenge: { kind: 'match', cards: cards.map(item => ({ cardId: item.id, word: item.word, translation: item.translation })) },
+  } as never);
+  complete.mockRejectedValue(new ProtectedFunctionError({
+    message: 'This practice round expired before its result could be saved. Start a new round.',
+    kind: 'unknown', code: 'failed-precondition', retryable: false, reason: 'practice-session-expired',
+  }));
+  writeDailySessionPointer({
+    ownerId: OWNER,
+    ...PAIR,
+    stage: 'match',
+    reviewLogicalIds: [],
+    freshLogicalIds: [],
+    matchCardIds: cards.map(item => item.id),
+    matchSkipReason: null,
+    matchStartOpId: 'daily-match-start-1',
+    matchCompletionId: 'daily-match-complete-1',
+    matchCompletionPending: true,
+    stats: emptyDailySessionStats,
+    startedAt: '2026-10-03T00:00:00.000Z',
+  });
+  i18n.load('en', {});
+  i18n.activate('en');
+  const root = createRoot(container);
+
+  await act(async () => {
+    root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
+      ownerId={OWNER}
+      languageProfile={ENGLISH_TO_VIETNAMESE_PROFILE}
+      isOffline={false}
+      initialLesson="session"
+      streak={0}
+      studyXpHistory={[]}
+      loadPracticePool={vi.fn().mockResolvedValue(cards)}
+      reviewCard={vi.fn()}
+      openLesson={vi.fn()}
+      openVocabulary={vi.fn()}
+      openPaths={vi.fn()}
+      continueReview={vi.fn()}
+      openMorePractice={vi.fn()}
+      openWeeklyRecap={vi.fn()}
+      onVerifiedPracticeOutcome={vi.fn()}
+    /></I18nProvider>);
+  });
+  await act(async () => {
+    await vi.waitFor(() => expect(complete).toHaveBeenCalledTimes(1));
+  });
+
+  const shown = textOf(container);
+  expect(shown).toContain('open for too long');
+  expect(shown).not.toContain('Retry verification');
+  expect(readDailySessionPointer(OWNER)?.matchCompletionPending).toBe(false);
 
   await act(async () => root.unmount());
 });

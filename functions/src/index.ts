@@ -65,6 +65,7 @@ import {
   completePracticeSessionV1 as completePracticeSessionV1ForOwner,
   parseCompletePracticeSessionV1Request,
   parseStartPracticeSessionV1Request,
+  PracticeSessionExpiredError,
   startPracticeSessionV1 as startPracticeSessionV1ForOwner,
 } from './practiceSessionPersistence.js';
 import { equipOwnedFrame as equipOwnedFrameForOwner } from './verifiedGamification.js';
@@ -95,6 +96,12 @@ import {
   LegacyLibraryDiscoveryStateChangedError,
   LegacyLibraryGenerationChangedError,
 } from './legacyLibraryMigrationFirestore.js';
+import {
+  parseConversationOutput,
+  parseDialogueOutput,
+  parseExtractedWordsOutput,
+  parsePlainStoryOutput,
+} from './aiModelOutput.js';
 import { LegacyLibraryMigrationFenceError } from './legacyLibraryMigrationOwnerScope.js';
 import {
   isImageProviderUnavailable,
@@ -117,6 +124,7 @@ import {
   consumeRateLimitFailClosed,
   consumePersistentRateLimit,
   RateLimitExceededError,
+  RateLimitStorageTimeoutError,
   RATE_LIMIT_WINDOW_MS,
 } from './rateLimiter.js';
 import { consumeOwnerAndServiceBudget, withServiceBudget } from './serviceBudget.js';
@@ -451,7 +459,7 @@ export const updateLibraryFacets = onCall({
     return await applyLibraryFacetMutation(database, userId, input);
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     if (error instanceof LibraryFacetOwnerMismatchError) {
       throw new HttpsError('permission-denied', error.message);
@@ -492,7 +500,18 @@ export const toAccountProfileHttpsError = (error: unknown): HttpsError | null =>
   return null;
 };
 
+// The reason lets clients tell a temporary migration fence from a deployment mismatch.
+const libraryFencedHttpsError = () => new HttpsError(
+  'failed-precondition',
+  'The library is temporarily fenced for migration.',
+  { reason: 'library-migration-fenced' },
+);
+
 export const toRateLimitHttpsError = (error: unknown, message: string): HttpsError | null => {
+  // A counter that cannot be written in time is a transient failure, not a limit the learner reached.
+  if (error instanceof RateLimitStorageTimeoutError) {
+    return new HttpsError('unavailable', 'The service is busy. Try again in a moment.');
+  }
   if (!(error instanceof RateLimitExceededError)) return null;
   const retryAfterMs = Number.isFinite(error.retryAfterMs)
     ? Math.max(0, error.retryAfterMs)
@@ -570,6 +589,16 @@ const parseModelJson = (text: string | undefined) => {
     return JSON.parse(text) as unknown;
   } catch {
     throw new HttpsError('internal', 'AI returned an invalid response.');
+  }
+};
+
+const parseModelOutput = <T>(text: string | undefined, parser: (value: unknown) => T): T => {
+  const value = parseModelJson(text);
+  try {
+    return parser(value);
+  } catch (error) {
+    if (error instanceof InputValidationError) throw new HttpsError('internal', 'AI returned an invalid response.');
+    throw error;
   }
 };
 
@@ -878,7 +907,7 @@ exact meaning selected above and disambiguating polysemous words. Do not request
           required: ['story', 'translation'],
         },
       }),
-    }, response => parseModelJson(response.text));
+    }, response => parseModelOutput(response.text, parsePlainStoryOutput));
     return { result };
   }
 
@@ -896,7 +925,7 @@ exact meaning selected above and disambiguating polysemous words. Do not request
             required: ['story', 'translation'],
           },
         }),
-      }, response => parseModelJson(response.text));
+      }, response => parseModelOutput(response.text, parsePlainStoryOutput));
       return { result };
     }
     const result = await callGemini(userId, input.action, {
@@ -990,7 +1019,9 @@ exact meaning selected above and disambiguating polysemous words. Do not request
           },
         },
       }),
-    }, response => keepVerifiedExtractSurfaces(parseModelJson(response.text), text));
+    }, response => keepVerifiedExtractSurfaces(
+      parseModelOutput(response.text, parseExtractedWordsOutput), text,
+    ));
     return { result };
   }
 
@@ -1022,7 +1053,7 @@ exact meaning selected above and disambiguating polysemous words. Do not request
           required: ['title', 'context', 'turns'],
         },
       }),
-    }, response => parseModelJson(response.text));
+    }, response => parseModelOutput(response.text, parseDialogueOutput));
     return { result };
   }
 
@@ -1063,7 +1094,7 @@ the client also ends the session at its hard turn limit.`,
           required: ['reply', 'sessionComplete'],
         },
       }),
-    }, response => parseModelJson(response.text));
+    }, response => parseModelOutput(response.text, parseConversationOutput));
     return { result };
   }
 
@@ -1345,7 +1376,7 @@ export const createCard = onCall({
     return result;
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     const allocationError = toCardAllocationHttpsError(error);
     if (allocationError) throw allocationError;
@@ -1386,7 +1417,7 @@ export const createCardV2 = onCall({
     });
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     const allocationError = toCardAllocationHttpsError(error);
     if (allocationError) throw allocationError;
@@ -1436,6 +1467,9 @@ export const completePracticeSessionV1 = onCall({
   try {
     return await completePracticeSessionV1ForOwner(database, userId, input, new Date());
   } catch (error) {
+    if (error instanceof PracticeSessionExpiredError) {
+      throw new HttpsError('failed-precondition', error.message, { reason: 'practice-session-expired' });
+    }
     if (error instanceof InputValidationError) throw new HttpsError('invalid-argument', error.message);
     console.error('Practice session completion failed.', {
       errorName: error instanceof Error ? error.name : 'UnknownError',
@@ -1511,7 +1545,7 @@ export const createStarterCards = onCall({
       throw new HttpsError(code, error.message, error.details);
     }
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     const allocationError = toCardAllocationHttpsError(error);
     if (allocationError) throw allocationError;
@@ -1541,7 +1575,7 @@ export const renameCardHeadword = onCall({
     return await renameCardHeadwordForOwner(database, userId, input);
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     const renameError = toCardHeadwordRenameHttpsError(error);
     if (renameError) throw renameError;
@@ -1792,7 +1826,7 @@ export const createReviewCardHandler = (
     return result;
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     if (error instanceof ReviewPersistenceConflictError) {
       throw toReviewHttpsError(error, strict);
@@ -1950,7 +1984,7 @@ export const bulkMutateCards = onCall({
     return await applyBulkCardMutationsForOwner(database, userId, input);
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     if (error instanceof BulkMutationEpochError) {
       throw new HttpsError('failed-precondition', 'The bulk card mutation precondition failed.', { reason: error.reason });
@@ -1982,7 +2016,7 @@ export const clearLibraryCardsPage = onCall({
     return await clearLibraryCardsPageForOwner(database, userId, input);
   } catch (error) {
     if (error instanceof LegacyLibraryMigrationFenceError) {
-      throw new HttpsError('failed-precondition', 'The library is temporarily fenced for migration.');
+      throw libraryFencedHttpsError();
     }
     if (error instanceof ClearLibraryEpochError) {
       throw new HttpsError('failed-precondition', 'The clear library precondition failed.', { reason: error.reason });

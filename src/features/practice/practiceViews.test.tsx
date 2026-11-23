@@ -740,6 +740,7 @@ describe("practice view accessibility contracts", () => {
         languageDrillScopeKey: "owner-a:en:vi",
         storyLanguagePair: { targetLanguage: "en", translationLanguage: "vi" },
         openView,
+        closeView: vi.fn(),
         reportError: vi.fn(),
       });
       state.current = games;

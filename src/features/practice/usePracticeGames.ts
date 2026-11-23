@@ -125,6 +125,7 @@ export function usePracticeGames({
   storyLanguagePair,
   practicePairScopeKey = 'en:vi',
   openView,
+  closeView,
   reportError,
   practiceSessionService = firebasePracticeSessionService,
   onAuthoritativeOutcome,
@@ -140,6 +141,8 @@ export function usePracticeGames({
   practicePairScopeKey?: string;
   addXp?: (amount: number) => void;
   openView: (view: PracticeView) => void;
+  /** Leaves the active round and returns to the library. */
+  closeView: () => void;
   reportError: (message: string) => void;
   practiceSessionService?: PracticeSessionService;
   onAuthoritativeOutcome?: (outcome: PracticeGamificationOutcome, operationId: string, sessionToken: number) => void;
@@ -295,6 +298,20 @@ export function usePracticeGames({
     }
   };
 
+  const endExpiredSession = (session: object) => {
+    if (quizSessionRef.current === session) {
+      quizSessionRef.current = null;
+      clearQuiz();
+    } else if (spellingSessionRef.current === session) {
+      spellingSessionRef.current = null;
+      clearSpelling();
+    } else if (matchSessionRef.current === session) {
+      matchSessionRef.current = null;
+      lifecycle.clear('match');
+    }
+    closeView();
+  };
+
   const completeSession = async (
     session: { sessionId: string; completionId: string; sessionToken: number; pairGeneration: number; completing: boolean },
     answers: { responses: Record<string, string> } | { pairs: Array<{ cardId: string; word: string; translation: string }> },
@@ -312,6 +329,12 @@ export function usePracticeGames({
       session.completing = false;
       if (!lifecycle.isCurrent(session.sessionToken) || practicePairGenerationRef.current !== session.pairGeneration) return null;
       console.warn('Could not complete practice session.', error);
+      if (error instanceof ProtectedFunctionError && error.reason === 'practice-session-expired') {
+        // The server will never accept this session again, so retrying only repeats the failure.
+        endExpiredSession(session);
+        reportError(translate(msg({ id: 'practice.error.session-expired', message: 'This round was open for too long, so its result could not be saved. Start a new round.' })));
+        return null;
+      }
       reportError(translate(msg({ id: 'practice.error.complete', message: 'Could not save this practice result. Check your connection and try again.' })));
       return null;
     }

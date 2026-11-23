@@ -6,6 +6,7 @@ vi.mock('../src/accountData.js', async importOriginal => ({
   readAccountAccess: vi.fn(async () => ({ deleting: false, profiled: true })),
 }));
 import { createReviewCardHandler, toReviewHttpsError } from '../src/index.js';
+import { LegacyLibraryMigrationFenceError } from '../src/legacyLibraryMigrationOwnerScope.js';
 import { ReviewPersistenceConflictError } from '../src/reviewPersistence.js';
 
 const reviewData = (expectedOwnerId: string | undefined) => ({
@@ -67,5 +68,19 @@ describe('review callable rollout', () => {
     expect(legacy.code).toBe('failed-precondition');
     expect(legacy.details).toBeUndefined();
     expect(v2.details).toEqual({ reason: 'stale-review' });
+  });
+
+  it.each([false, true])('names the migration fence as the reason when it blocks a review (strict %s)', async strict => {
+    const consumeBudget = vi.fn(async () => undefined);
+    const applyReviewForOwner = vi.fn(async () => { throw new LegacyLibraryMigrationFenceError('apply'); });
+    const handler = createReviewCardHandler(strict, { consumeBudget, applyReviewForOwner });
+
+    await expect(handler({
+      auth: { uid: 'owner-1' },
+      data: reviewData('owner-1'),
+    } as never)).rejects.toMatchObject({
+      code: 'failed-precondition',
+      details: { reason: 'library-migration-fenced' },
+    });
   });
 });

@@ -24,7 +24,7 @@ export interface MemoryRateLimitStore {
   consume(userId: string, scope: string, maximum: number, now?: number): void;
 }
 
-class RateLimitStorageTimeoutError extends Error {
+export class RateLimitStorageTimeoutError extends Error {
   constructor() {
     super('Persistent rate-limit storage did not respond in time.');
     this.name = 'RateLimitStorageTimeoutError';

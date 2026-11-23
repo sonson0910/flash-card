@@ -11,6 +11,14 @@ const MAX_TEXT = 256;
 const SESSION_TTL_MS = 30 * 60 * 1000;
 const ID = /^[A-Za-z0-9:_-]{1,128}$/;
 
+/** A completion that arrives after the session's answer key expired can never succeed, so it is not retryable. */
+export class PracticeSessionExpiredError extends InputValidationError {
+  constructor() {
+    super('Practice session has expired.');
+    this.name = 'PracticeSessionExpiredError';
+  }
+}
+
 export type PracticeSessionGame = 'quiz' | 'spelling' | 'match';
 export type PracticeAnswerPayload = { responses: Record<string, string> } | {
   pairs: Array<{ cardId: string; word: string; translation: string }>;
@@ -306,7 +314,7 @@ export async function completePracticeSessionV1(
       return previous;
     }
     const expiresAt = asDate(data.expiresAt);
-    if (!expiresAt || expiresAt.getTime() <= now.getTime()) throw new InputValidationError('Practice session has expired.');
+    if (!expiresAt || expiresAt.getTime() <= now.getTime()) throw new PracticeSessionExpiredError();
     if (data.game !== 'quiz' && data.game !== 'spelling' && data.game !== 'match') throw new InputValidationError('Practice session game is invalid.');
     const cards = sessionCards(data);
     const result = score(data.game, cards, parsed.answers);
