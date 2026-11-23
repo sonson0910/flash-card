@@ -11,9 +11,12 @@ const firestore = vi.hoisted(() => ({
 
 vi.mock('firebase/firestore', () => firestore);
 vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn() }));
+const authHolder = vi.hoisted(() => ({
+  onIdTokenChanged: (_callback: (user: { uid: string } | null) => void): (() => void) => () => undefined,
+}));
 vi.mock('../../lib/firebase', () => ({
   app: null,
-  auth: null,
+  auth: { onIdTokenChanged: (callback: (user: { uid: string } | null) => void) => authHolder.onIdTokenChanged(callback) },
   getSonFlashFunctions: vi.fn(),
   protectedFunctionsCapability: { available: false },
 }));
@@ -156,6 +159,80 @@ describe('verified gamification client', () => {
       const stateAfterUnmount = captured.current;
       await act(async () => { publish('owner-b', 999, 'unmounted-frame'); });
       expect(captured.current).toBe(stateAfterUnmount);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('reports hydrated only after the stats, xp history and rewards snapshots arrived', async () => {
+    const callbacks = new Map<string, (value: ReturnType<typeof snapshot>) => void>();
+    firestore.onSnapshot.mockImplementation((reference: { path: string }, callback: (value: ReturnType<typeof snapshot>) => void) => {
+      callbacks.set(reference.path, callback);
+      return vi.fn();
+    });
+    firestore.onSnapshotsInSync.mockImplementation(() => vi.fn());
+    const captured: { current: ReturnType<typeof useVerifiedGamificationState> | null } = { current: null };
+    const database = {} as never;
+    function Harness() {
+      captured.current = useVerifiedGamificationState({ ownerId: 'owner-a', database });
+      return null;
+    }
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => { root.render(createElement(Harness)); });
+      expect(captured.current?.hydrated).toBe(false);
+      await act(async () => {
+        callbacks.get('users/owner-a/profile/stats')?.(snapshot({ verifiedXp: 10 }));
+        callbacks.get('users/owner-a/profile/xp_history')?.(snapshot({}));
+      });
+      expect(captured.current?.hydrated).toBe(false);
+      await act(async () => { captured.current?.acceptAuthoritativeOutcome({ xp: 12, level: 1, streak: 1 }); });
+      expect(captured.current?.hydrated).toBe(false);
+      await act(async () => { callbacks.get('users/owner-a/profile/rewards')?.(snapshot({})); });
+      expect(captured.current?.hydrated).toBe(true);
+    } finally {
+      act(() => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('subscribes again when the same owner signs back in after a denied listener', async () => {
+    const errors = new Map<string, (error: Error) => void>();
+    firestore.onSnapshot.mockReset();
+    firestore.onSnapshot.mockImplementation((reference: { path: string }, _callback: unknown, error: (error: Error) => void) => {
+      errors.set(reference.path, error);
+      return vi.fn();
+    });
+    firestore.onSnapshotsInSync.mockReset();
+    firestore.onSnapshotsInSync.mockImplementation(() => vi.fn());
+    let tokenChanged: ((user: { uid: string } | null) => void) | undefined;
+    const stopAuth = vi.fn();
+    const original = authHolder.onIdTokenChanged;
+    authHolder.onIdTokenChanged = callback => {
+      tokenChanged = callback;
+      callback(null);
+      return stopAuth;
+    };
+    const database = {} as never;
+    function Harness() {
+      useVerifiedGamificationState({ ownerId: 'owner-a', database });
+      return null;
+    }
+    const root = createRoot(installMinimalReactDom());
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      await act(async () => { root.render(createElement(Harness)); });
+      expect(firestore.onSnapshot).toHaveBeenCalledTimes(3);
+      await act(async () => { errors.get('users/owner-a/profile/stats')?.(new Error('permission-denied')); });
+      expect(firestore.onSnapshot).toHaveBeenCalledTimes(3);
+      await act(async () => { tokenChanged?.({ uid: 'owner-b' }); });
+      expect(firestore.onSnapshot).toHaveBeenCalledTimes(3);
+      await act(async () => { tokenChanged?.({ uid: 'owner-a' }); });
+      expect(firestore.onSnapshot).toHaveBeenCalledTimes(6);
+      expect(stopAuth).toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+      authHolder.onIdTokenChanged = original;
+      act(() => root.unmount());
       vi.unstubAllGlobals();
     }
   });
