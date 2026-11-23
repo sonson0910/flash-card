@@ -46,6 +46,10 @@ test('rejects empty and oversized selection', () => {
   assert.equal(selectionValidation('x'.repeat(MAX_TEXT_LENGTH + 1)).ok, false);
 });
 
+test('the empty-selection error does not name a language', () => {
+  assert.doesNotMatch(selectionValidation('   ').error, /tiếng Anh|English/i);
+});
+
 test('normalizes settings to safe bounded defaults', () => {
   assert.deepEqual(normalizeSettings({
     autoSpeak: 'yes',

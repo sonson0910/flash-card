@@ -3025,3 +3025,48 @@ test('permission revocation removes the allowlist, unregisters the script and di
   assert.ok(worker.calls.some(call => call.type === 'tabs.sendMessage' && call.message.type === 'FLOATING_SELECTION_DISABLED'));
   assert.ok(worker.calls.some(call => call.type === 'scripting.unregisterContentScripts'));
 });
+
+test('without session storage a restart removes expired retry and in-page save receipts and keeps live ones', async () => {
+  const live = Date.now() + 60_000;
+  const gone = Date.now() - 1_000;
+  const worker = await createWorkerContext({
+    hasSessionStorage: false,
+    storageEntries: [
+      ['lingoflash_quick_add_retry_7', { id: 'retry_expired_1', text: 'resilient', context: 'private', expiresAt: gone }],
+      ['lingoflash_quick_add_retry_8', { id: 'retry_live_123456', text: 'resilient', context: '', expiresAt: live }],
+      ['lingoflash_quick_add_retry_9', { id: 'retry_malformed_1', text: 'resilient' }],
+      ['lingoflash_inline_save_7', { id: 'inline_expired_1', text: 'resilient', courseLanguage: 'en', expiresAt: gone }],
+      ['lingoflash_inline_save_8', { id: 'inline_live_12345', text: 'resilient', courseLanguage: 'en', expiresAt: live }],
+    ],
+  });
+  for (const listener of worker.events.startup.listeners) listener();
+  await flushMicrotasks();
+
+  assert.deepEqual(
+    [...worker.storageValues.keys()].filter(name => /retry_|inline_save_/.test(name)).sort(),
+    ['lingoflash_inline_save_8', 'lingoflash_quick_add_retry_8'],
+  );
+});
+
+test('bubble payloads name the capture mode with a token instead of Vietnamese label text', async () => {
+  const worker = await createWorkerContext({
+    executeScriptCaptureResult: { text: 'resilient', anchor: null, context: 'Resilient people recover.' },
+  });
+  for (const menuItemId of ['lingoflash-translate-only', 'lingoflash-translate-save']) {
+    for (const listener of worker.events.menuClicks.listeners) {
+      listener({ menuItemId, selectionText: 'resilient' }, { id: 7 });
+    }
+    for (let round = 0; round < 20; round += 1) await flushMicrotasks();
+  }
+  const payloads = worker.calls
+    .filter(call => call.type === 'scripting.executeScript' && call.details.func?.name === 'renderInlineBubble')
+    .map(call => call.details.args[0]);
+  const modes = new Set(payloads.map(payload => payload.mode));
+
+  assert.ok(modes.has('translate-free'));
+  assert.ok(modes.has('save-ai'));
+  for (const payload of payloads) {
+    assert.equal(payload.modeLabel, undefined);
+    assert.match(String(payload.mode ?? 'save'), /^(translate-free|translate-google|save|save-ai)$/);
+  }
+});

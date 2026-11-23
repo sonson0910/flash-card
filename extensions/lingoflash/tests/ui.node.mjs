@@ -758,3 +758,102 @@ test('keeps the plain translated badge when the background offers no save', () =
   });
   assert.equal(quoted.text(quoted.nodes.find(node => node.className === 'q')), '…groups demanded an immediate response from the…');
 });
+
+test('writes the bubble mode chip from the locale catalog, not from worker text', () => {
+  for (const [locale, mode, key] of [
+    ['en', 'translate-free', 'bubbleModeTranslateFree'],
+    ['en', 'translate-google', 'bubbleModeTranslateGoogle'],
+    ['en', 'save', 'bubbleModeSave'],
+    ['vi', 'save-ai', 'bubbleModeSaveAi'],
+  ]) {
+    const { nodes } = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode }, locale);
+    const chip = nodes.find(node => node.className === 'm');
+    assert.equal(chip?.textContent, createI18nMock(locale).getMessage(key), `${locale} ${mode}`);
+    assert.ok(chip?.textContent);
+  }
+  const english = renderBubbleForToneAssertions({ status: 'error', text: 'resilient', mode: 'save-ai' }, 'en').nodes.find(node => node.className === 'm');
+  assert.doesNotMatch(english?.textContent ?? '', /[À-ỹ]/);
+});
+
+test('sends retry and open-app requests only for a real click', () => {
+  const retryBubble = renderLanguageBubble({ status: 'error', text: 'resilient', message: 'AI busy', retryId: 'job_retry_1' });
+  const retry = retryBubble.nodes.find(node => node.dataset?.kind === 'action');
+  retry.onclick({ isTrusted: false });
+  assert.deepEqual(retryBubble.sent, []);
+  assert.equal(retry.disabled, false);
+  retry.onclick({ isTrusted: true });
+  assert.equal(JSON.stringify(retryBubble.sent), JSON.stringify([{ type: 'RETRY_QUICK_ADD', id: 'job_retry_1' }]));
+
+  const quotaBubble = renderLanguageBubble({ status: 'error', text: 'resilient', reason: 'quota-ai-cards', message: 'quota', retryId: 'job_quota_9' });
+  const openApp = quotaBubble.nodes.find(node => node.dataset?.kind === 'action');
+  openApp.onclick({ isTrusted: false });
+  openApp.onclick();
+  assert.deepEqual(quotaBubble.sent, []);
+  openApp.onclick({ isTrusted: true });
+  assert.equal(JSON.stringify(quotaBubble.sent), JSON.stringify([{ type: 'OPEN_APP' }]));
+});
+
+test('an earlier bubble timer never removes a newer bubble in the reused host', () => {
+  class FakeNode {
+    constructor(tagName = '') {
+      this.tagName = tagName.toUpperCase();
+      this.children = [];
+      this.style = {};
+      this.dataset = {};
+      this.attributes = {};
+      this.isConnected = true;
+      this.textContent = '';
+    }
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    attachShadow() { this.shadowRoot = new FakeNode(); return this.shadowRoot; }
+    remove() { this.isConnected = false; }
+  }
+  let clock = 0;
+  const timers = [];
+  let host = null;
+  const isolated = {
+    Array, Intl, Math, Number, Object, String, URL,
+    document: {
+      documentElement: new FakeNode('html'),
+      getElementById: () => (host?.isConnected ? host : null),
+      createElement: tagName => {
+        const node = new FakeNode(tagName);
+        if (tagName === 'div' && !host) host = node;
+        return node;
+      },
+      createElementNS: (_namespace, tagName) => new FakeNode(tagName),
+      createTextNode: text => Object.assign(new FakeNode('#text'), { textContent: String(text) }),
+    },
+    setTimeout: (callback, delay) => { timers.push({ at: clock + delay, callback }); return timers.length; },
+    clearTimeout: id => { if (timers[id - 1]) timers[id - 1].callback = () => {}; },
+    chrome: { runtime: { sendMessage() {} } },
+    innerWidth: 1280,
+    innerHeight: 720,
+    speechSynthesis: { speak() {}, cancel() {} },
+    SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } },
+  };
+  isolated.globalThis = isolated;
+  vm.createContext(isolated);
+  const sourceContext = { globalThis: {} };
+  vm.createContext(sourceContext);
+  vm.runInContext(uiSource, sourceContext, { filename: 'background-ui.js' });
+  const renderer = vm.runInContext(`(${sourceContext.globalThis.LingoFlashExtensionUi.renderInlineBubble.toString()})`, isolated);
+  const advance = ms => {
+    clock += ms;
+    for (const timer of timers.filter(entry => entry.at <= clock)) { timers.splice(timers.indexOf(timer), 1, { at: Infinity, callback: () => {} }); timer.callback(); }
+  };
+
+  renderer({ status: 'translated', text: 'resilient', translation: 'bền bỉ', bubbleDurationMs: 12_000 });
+  const firstHost = host;
+  advance(3_000);
+  renderer({ status: 'error', text: 'resilient', message: 'AI busy', retryId: 'job_retry_2' });
+  advance(9_000);
+
+  assert.equal(firstHost.isConnected, true);
+
+  renderer({ status: 'created', text: 'resilient', translation: 'bền bỉ', bubbleDurationMs: 5_000 });
+  advance(5_000);
+  assert.equal(firstHost.isConnected, false);
+});

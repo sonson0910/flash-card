@@ -53,3 +53,9 @@ test('manifest keeps the SonFlash brand within the Chrome Web Store field limits
     assert.match(manifest[field], /SonFlash/);
   }
 });
+
+test('popup intro does not limit create and save to one language', () => {
+  for (const [locale, catalog] of [['vi', vi], ['en', en]]) {
+    assert.doesNotMatch(catalog.popupIntro.message, /English only|chỉ hỗ trợ tiếng Anh/, `${locale}.popupIntro`);
+  }
+});

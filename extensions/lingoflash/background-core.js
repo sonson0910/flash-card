@@ -513,10 +513,25 @@
     const message = error instanceof Error ? error.message : 'Không thể khởi động LingoFlash.';
     await saveRetry(job);
     await cleanup(job);
-    const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message,retryId:job.id});
+    const displayed = await show(job.sourceTabId,{status:'error',mode:'save',text:job.text,anchor:job.anchor,message,retryId:job.id});
     notifyPopupStatus({id:job.id,status:'error',text:job.text,message,inlineShown:displayed.ok});
   };
+  // Retry and in-page save receipts carry their own expiry. On browsers without
+  // storage.session they sit in persistent storage, so an unused one is removed
+  // here instead of waiting for its tab id to be reused.
+  const sweepExpiredReceipts = async () => {
+    try {
+      const now = Date.now();
+      const stored = await apiCall(transientStorage, 'get', null) ?? {};
+      for (const [name, receipt] of Object.entries(stored)) {
+        if (!name.startsWith(RETRY_KEY_PREFIX) && !name.startsWith(INLINE_SAVE_KEY_PREFIX)) continue;
+        if (Number.isSafeInteger(receipt?.expiresAt) && receipt.expiresAt > now) continue;
+        await apiCall(transientStorage, 'remove', name);
+      }
+    } catch {}
+  };
   const sweepExpiredJobs = async () => {
+    await sweepExpiredReceipts();
     const now = Date.now();
     for (const job of await readJobs()) {
       if (!isExpiredJob(job, now)) continue;
@@ -531,7 +546,7 @@
         continue;
       }
       if (errorClaim) {
-        const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message,retryId:job.id});
+        const displayed = await show(job.sourceTabId,{status:'error',mode:'save',text:job.text,anchor:job.anchor,message,retryId:job.id});
         notifyPopupStatus({id:job.id,status:'error',text:job.text,message,inlineShown:displayed.ok});
       }
       if (!(await cleanup(job))) createAlarm(job.id, job.createdAt);
@@ -937,7 +952,7 @@
     }
   };
   const translateOnly = async input => {
-    const s=await selection(input); await show(s.sourceTabId,{status:'loading-translate',modeLabel:'DỊCH NHANH • FREE',text:s.text,anchor:s.anchor});
+    const s=await selection(input); await show(s.sourceTabId,{status:'loading-translate',mode:'translate-free',text:s.text,anchor:s.anchor});
     try {
       const translated=await googleTranslate(s.text);
       const settings=await readSettings();
@@ -947,12 +962,12 @@
       const course=await confirmedCourseLocale();
       const detected=String(translated.sourceLanguage||'').split('-')[0];
       const saveId=course && detected===course.targetLanguage ? await issueInlineSave(s.sourceTabId,s.text,course.targetLanguage) : '';
-      const inline=await show(s.sourceTabId,{status:'translated',modeLabel:'DỊCH NHANH • GOOGLE',text:s.text,anchor:s.anchor,translation:bounded(translated.text,1024),speechLocale:speechLocaleForLanguage(translated.sourceLanguage),
+      const inline=await show(s.sourceTabId,{status:'translated',mode:'translate-google',text:s.text,anchor:s.anchor,translation:bounded(translated.text,1024),speechLocale:speechLocaleForLanguage(translated.sourceLanguage),
         sourceLanguage:translated.sourceLanguage,translationLanguage:settings.quickTranslateTarget,romanization:translated.romanization||'',context:bounded(s.context,500),pageLanguage:s.pageLanguage||'',
         ...(saveId?{saveId}:{})});
       return {text:s.text,translation:translated.text,sourceLanguage:translated.sourceLanguage,romanization:translated.romanization||'',inlineShown:inline.ok};
     }
-    catch(e){ await show(s.sourceTabId,{status:'error',modeLabel:'DỊCH NHANH • FREE',text:s.text,anchor:s.anchor,message:e instanceof Error?e.message:'Không thể dịch đoạn này.'}); throw e; }
+    catch(e){ await show(s.sourceTabId,{status:'error',mode:'translate-free',text:s.text,anchor:s.anchor,message:e instanceof Error?e.message:'Không thể dịch đoạn này.'}); throw e; }
   };
 
   const quickAdd = async input => {
@@ -1012,7 +1027,7 @@
         if (activeJobs.length >= MAX_ACTIVE_JOBS) {
           throw new Error('Extension đang có quá nhiều tác vụ quick-add. Hãy chờ một tác vụ hoàn tất rồi thử lại.');
         }
-        await show(job.sourceTabId,{status:'loading-save',modeLabel:'TẠO + LƯU • 1 AI REQUEST',text:job.text,anchor:job.anchor});
+        await show(job.sourceTabId,{status:'loading-save',mode:'save-ai',text:job.text,anchor:job.anchor});
         // Critical ordering: persist job first, then create about:blank, persist tab id,
         // and only then navigate. Fast app responses can no longer beat job storage.
         await saveJob(job);
@@ -1069,7 +1084,7 @@
         // The result came from the verified worker tab and the app wrote the card, so it is
         // always reported. A capture finished after another account took over stays out of that account's history.
         if (await jobOwnerIsCurrent(job)) await recordRecentLookup({text:job.text,translation:t,sourceLanguage:translated.sourceLanguage,targetLanguage:'vi',kind:'create',status:r.status,timestamp:Date.now()});
-        const displayed = await show(job.sourceTabId,{status:r.status,modeLabel:'TẠO + LƯU • 1 AI REQUEST',text:job.text,anchor:job.anchor,translation:t,speechLocale:speechLocaleForLanguage(translated.sourceLanguage),sourceLanguage:translated.sourceLanguage,phonetic:r.phonetic,explanation:r.explanation,exampleSentence:r.exampleSentence,exampleTranslation:r.exampleTranslation,aiGenerated:r.aiGenerated});
+        const displayed = await show(job.sourceTabId,{status:r.status,mode:'save-ai',text:job.text,anchor:job.anchor,translation:t,speechLocale:speechLocaleForLanguage(translated.sourceLanguage),sourceLanguage:translated.sourceLanguage,phonetic:r.phonetic,explanation:r.explanation,exampleSentence:r.exampleSentence,exampleTranslation:r.exampleTranslation,aiGenerated:r.aiGenerated});
         inlineShown = displayed.ok;
         notifyPopupStatus({
           id: job.id,
@@ -1087,12 +1102,12 @@
         });
       } else if (r.status==='auth-required') {
         await saveRetry(job);
-        const displayed = await show(job.sourceTabId,{status:'auth-required',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,loginUrl:DEFAULT_APP_URL});
+        const displayed = await show(job.sourceTabId,{status:'auth-required',mode:'save',text:job.text,anchor:job.anchor,loginUrl:DEFAULT_APP_URL});
         inlineShown = displayed.ok;
         notifyPopupStatus({id:job.id,status:'auth-required',text:job.text,inlineShown});
       } else {
         await saveRetry(job);
-        const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message:r.message||'Không thể tạo hoặc lưu flashcard này.',reason:r.reason,retryId:job.id});
+        const displayed = await show(job.sourceTabId,{status:'error',mode:'save',text:job.text,anchor:job.anchor,message:r.message||'Không thể tạo hoặc lưu flashcard này.',reason:r.reason,retryId:job.id});
         inlineShown = displayed.ok;
         notifyPopupStatus({id:job.id,status:'error',text:job.text,message:r.message||'Không thể tạo hoặc lưu flashcard này.',reason:r.reason,inlineShown});
       }
@@ -1177,7 +1192,7 @@
   extensionApi.permissions?.onRemoved?.addListener?.(permissions => { void handleSelectionIconPermissionRemoved(permissions); });
   extensionApi.contextMenus?.onClicked?.addListener((info,tab)=>{ const fn=info.menuItemId===CONTEXT_TRANSLATE_ID?translateOnly:info.menuItemId===CONTEXT_SAVE_ID?quickAdd:null; if(fn) void fn({tabId:tab?.id,suppliedText:info.selectionText??''}).catch(e=>invocationError(tab?.id,e,info.selectionText??'')); });
   extensionApi.commands?.onCommand?.addListener((cmd,tab)=>{ if(![SAVE_COMMAND_ID,TRANSLATE_COMMAND_ID].includes(cmd))return; void(async()=>{const t=tab?.id?tab:await activeTab(); try{await(cmd===TRANSLATE_COMMAND_ID?translateOnly:quickAdd)({tabId:t?.id});}catch(e){await invocationError(t?.id,e);}})(); });
-  extensionApi.alarms?.onAlarm?.addListener(a=>{ if(!a?.name?.startsWith(JOB_ALARM_PREFIX))return; const id=a.name.slice(JOB_ALARM_PREFIX.length); void(async()=>{try { const pending=cleanupLocks.get(id); if(pending){if(!(await pending))createAlarm(id); return;} const j=await readJob(id); if(!j)return; if(!isExpiredJob(j)){createAlarm(id,j.createdAt); return;} if(j.resultClaimedAt||j.errorClaimedAt){if(!(await cleanup(j)))createAlarm(id,j.createdAt); return;} const message='LingoFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại.'; const errorClaim=await claimTerminalError(j); if(errorClaim===null){createAlarm(id,j.createdAt); return;} if(errorClaim){await show(j.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:j.text,anchor:j.anchor,message,retryId:j.id}); notifyPopupStatus({id:j.id,status:'error',text:j.text,message,inlineShown:false});} if(!(await cleanup(j)))createAlarm(id,j.createdAt);} catch { createAlarm(id); }})(); });
+  extensionApi.alarms?.onAlarm?.addListener(a=>{ if(!a?.name?.startsWith(JOB_ALARM_PREFIX))return; const id=a.name.slice(JOB_ALARM_PREFIX.length); void(async()=>{try { const pending=cleanupLocks.get(id); if(pending){if(!(await pending))createAlarm(id); return;} const j=await readJob(id); if(!j)return; if(!isExpiredJob(j)){createAlarm(id,j.createdAt); return;} if(j.resultClaimedAt||j.errorClaimedAt){if(!(await cleanup(j)))createAlarm(id,j.createdAt); return;} const message='LingoFlash chưa hoàn tất. Mở extension và kiểm tra đăng nhập/AI rồi thử lại.'; const errorClaim=await claimTerminalError(j); if(errorClaim===null){createAlarm(id,j.createdAt); return;} if(errorClaim){await show(j.sourceTabId,{status:'error',mode:'save',text:j.text,anchor:j.anchor,message,retryId:j.id}); notifyPopupStatus({id:j.id,status:'error',text:j.text,message,inlineShown:false});} if(!(await cleanup(j)))createAlarm(id,j.createdAt);} catch { createAlarm(id); }})(); });
   extensionApi.tabs?.onRemoved?.addListener(tabId=>{
     void (async () => {
       for (const job of await readJobs()) {
@@ -1195,7 +1210,7 @@
         }
         if (errorClaim) {
           if (!sourceClosed) {
-            await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message,retryId:job.id});
+            await show(job.sourceTabId,{status:'error',mode:'save',text:job.text,anchor:job.anchor,message,retryId:job.id});
           }
           notifyPopupStatus({id:job.id,status:'error',text:job.text,message,inlineShown:false});
         }

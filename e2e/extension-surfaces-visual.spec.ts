@@ -245,7 +245,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.evaluate(payload => (window as any).LingoFlashExtensionUi.renderInlineBubble(payload), {
       status: 'created', text: 'immediate', translation: 'ngay lập tức', phonetic: '/ɪˈmiːdiət/', explanation: 'Xảy ra hoặc được thực hiện ngay, không chậm trễ.',
       exampleSentence: 'Neighbourhood groups demanded an immediate response.', exampleTranslation: 'Các nhóm dân cư yêu cầu phản hồi ngay lập tức.',
-      modeLabel: 'TẠO + LƯU • 1 AI REQUEST', version: '1.6.4', themeFamily: 'crystal', colorScheme: scheme, anchor: { left: 196, bottom: 364 }, bubbleDurationMs: 0,
+      mode: 'save-ai', version: '1.6.4', themeFamily: 'crystal', colorScheme: scheme, anchor: { left: 196, bottom: 364 }, bubbleDurationMs: 0,
     });
     const host = page.locator('#lingoflash-inline-translation-host');
     await expect(host).toBeVisible();
@@ -315,7 +315,7 @@ for (const { family, scheme } of languageBubbleThemes) {
     await page.evaluate(payload => (window as any).LingoFlashExtensionUi.renderInlineBubble(payload), {
       status: 'translated', text: selection.text, translation: 'quyết định', sourceLanguage: 'ko', translationLanguage: 'vi',
       pageLanguage: selection.pageLanguage, romanization: 'gyeoljeong', context: selection.context, speechLocale: 'ko-KR',
-      courseLanguage: 'ko', nativeLanguage: 'vi', saveId: 'visual_save', modeLabel: 'DỊCH NHANH • GOOGLE', version: '1.6.4',
+      courseLanguage: 'ko', nativeLanguage: 'vi', saveId: 'visual_save', mode: 'translate-google', version: '1.6.4',
       themeFamily: family, colorScheme: scheme, anchor: selection.anchor, bubbleDurationMs: 0,
     });
     const host = page.locator('#lingoflash-inline-translation-host');
