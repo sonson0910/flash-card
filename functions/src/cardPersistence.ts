@@ -1091,10 +1091,13 @@ export async function createCardForOwner(
       ? suppliedMasteredAt
       : undefined;
 
-    // Only a restore brings back the schedule a card had. Every other create is a
-    // new word: a review is the only thing that may schedule or master it.
+    // Only a restore of a card this account held brings back the schedule it had: a
+    // delete leaves a tombstone, and every card ever created leaves a reservation. Every
+    // other create, a restore flag on a word the server never saw included, is a new
+    // word: a review is the only thing that may schedule or master it.
+    const bringsBackSchedule = (restore && (hadIdentity || tombstoneSnapshot.exists)) || restoresPriorCard;
     const createdCard = {
-      ...(restore || restoresPriorCard ? normalizedCard : withoutScheduling(normalizedCard)),
+      ...(bringsBackSchedule ? normalizedCard : withoutScheduling(normalizedCard)),
       ...(restoredMasteredAt ? { masteredAt: restoredMasteredAt } : {}),
       id,
       schemaVersion: 2,

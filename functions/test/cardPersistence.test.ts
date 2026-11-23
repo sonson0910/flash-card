@@ -275,11 +275,18 @@ describe('card persistence', () => {
         learningSteps: 0, reps: 6, lapses: 0, state: 2, lastReview: '2026-06-01T00:00:00.000Z',
       },
     };
-    const createWith = async (options: Record<string, unknown>, create = createCardForOwner) => {
+    const createWith = async (
+      options: Record<string, unknown>,
+      create = createCardForOwner,
+      deletedBefore = false,
+    ) => {
       const lexemeId = canonicalLexemeId();
       const harness = transactionHarness(new Map([
         ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
         ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+        ...(deletedBefore ? [[`users/owner/card_tombstones/${lexemeId}`, snapshot(true, {
+          cardId: lexemeId, opId: 'delete-lead', libraryEpoch: 2, revision: 1, deletedAt: '2026-06-01T00:00:00.000Z',
+        })]] as [string, DocumentSnapshot][] : []),
       ]));
       await create(harness.database, 'owner', {
         ...card,
@@ -309,11 +316,20 @@ describe('card persistence', () => {
       expect(projected).toMatchObject({ status: 'active' });
     });
 
-    it('keeps the scheduling state a restore carries', async () => {
-      const { stored, projected } = await createWith({ restore: true, operationCreatedAt: new Date().toISOString() });
+    it('keeps the scheduling state a restore of a deleted card carries', async () => {
+      const { stored, projected } = await createWith(
+        { restore: true, operationCreatedAt: new Date().toISOString() }, createCardForOwner, true,
+      );
       expect(stored).toMatchObject({ difficulty: 'easy', reviews: 6, interval: 30, correctStreak: 5 });
       expect(stored).toHaveProperty('fsrs');
       expect(projected).toMatchObject({ status: 'mastered' });
+    });
+
+    it('starts a restore of a card the server never held unrated and active', async () => {
+      const { stored, projected } = await createWith({ restore: true, operationCreatedAt: new Date().toISOString() });
+      expect(stored).toMatchObject({ difficulty: 'unrated', reviews: 0, interval: 0, correctStreak: 0 });
+      expect(stored).not.toHaveProperty('fsrs');
+      expect(projected).toMatchObject({ status: 'active' });
     });
   });
 
