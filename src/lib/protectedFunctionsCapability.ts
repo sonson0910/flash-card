@@ -197,12 +197,13 @@ export function classifyProtectedFunctionError(
         kind: 'quota', code, retryable: false, reason,
       });
     }
-    // An hourly request limit names its wait; it says nothing about the plan allowance.
+    // An hourly request limit names its wait; it says nothing about the plan allowance. A shared service budget
+    // raises the same error, so the wording must not blame the learner.
     const retryAfterSeconds = details && typeof details === 'object' && 'retryAfterSeconds' in details
       ? (details as { retryAfterSeconds?: unknown }).retryAfterSeconds : null;
     if (typeof retryAfterSeconds === 'number' && Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
       return new ProtectedFunctionError({
-        message: `Bạn đã gửi quá nhiều yêu cầu trong một giờ. Hãy thử lại sau khoảng ${Math.max(1, Math.ceil(retryAfterSeconds / 60))} phút.`,
+        message: `Đã đạt giới hạn yêu cầu trong một giờ. Hãy thử lại sau khoảng ${Math.max(1, Math.ceil(retryAfterSeconds / 60))} phút.`,
         kind: 'quota', code, retryable: false, reason: 'rate-limit',
       });
     }

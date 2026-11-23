@@ -485,7 +485,7 @@ msgid "files.result.attach"
 msgstr "Attach source"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:607
+#: src/features/files/fileCopy.ts:122
 msgid "files.result.attach-failed"
 msgstr "The file could not be attached. Try again."
 

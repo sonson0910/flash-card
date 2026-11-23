@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { FileLibraryState } from './fileLibrary';
 import type { FileListing, FileSummary } from './fileModel';
 import { CardPhotoCountNote, canShowOnCards, FilesWorkspaceView, type CardPhotoCount } from './FilesWorkspace';
+import { attachFailureCopy } from './fileCopy';
 import { FileError } from './filePort';
 import { createMemoryFilePort } from './memoryFileAdapter';
 import { createUploadSession, type UploadState } from './uploadSession';
@@ -104,6 +105,12 @@ describe('FilesWorkspaceView', () => {
     expect(html).toContain('English · IELTS');
     expect(html).toContain('Attach source');
     expect(html).toContain('Open file');
+  });
+
+  it('tells the learner when a file that is still being checked cannot be attached yet', () => {
+    expect(i18n._(attachFailureCopy('not-ready'))).toContain('still being checked');
+    expect(i18n._(attachFailureCopy('not-found'))).toContain('no longer available');
+    expect(i18n._(attachFailureCopy('network'))).toContain('could not be attached');
   });
 
   it('leaves the attach box out when the learner has no courses', () => {

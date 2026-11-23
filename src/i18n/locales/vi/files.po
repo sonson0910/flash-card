@@ -485,7 +485,7 @@ msgid "files.result.attach"
 msgstr "Gắn nguồn"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:607
+#: src/features/files/fileCopy.ts:122
 msgid "files.result.attach-failed"
 msgstr "Không gắn được tệp. Hãy thử lại."
 

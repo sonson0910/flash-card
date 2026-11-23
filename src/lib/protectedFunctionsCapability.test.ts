@@ -146,6 +146,8 @@ describe('protected Firebase Functions failure classification', () => {
     expect(failure.retryAfterMs).toBeUndefined();
     expect(failure.message).toContain('20 phút');
     expect(failure.message).not.toContain('hạn mức');
+    // The shared service budget raises the same error, so the wording must not blame the learner.
+    expect(failure.message).not.toMatch(/Bạn đã/);
     const brief = classifyProtectedFunctionError(
       Object.assign(new Error('x'), { code: 'functions/resource-exhausted', details: { retryAfterSeconds: 5 } }), 'AI generation',
     );

@@ -5,7 +5,7 @@ import { AlertTriangle, BookOpen, FileText, ImageIcon, Trash2, UploadCloud } fro
 import { useFileLibrary, type FileLibraryState } from './fileLibrary';
 import {
   CHECK_CHIPS, CHECK_FAILED, CHECK_LABELS, CHECK_PENDING, KIND_LABELS, PHASE_CAPTIONS, REJECTION_DETAILS, REJECTION_FALLBACK,
-  STATUS_LABELS, formatMessage,
+  STATUS_LABELS, attachFailureCopy, formatMessage,
 } from './fileCopy';
 import type { FileCardPhotoMatch, FileCardPhotos } from './fileCardPhotos';
 import { FILE_INPUT_ACCEPT, formatBytes, type ClientCheck, type FileKind, type FileListing, type FileSummary } from './fileModel';
@@ -603,8 +603,8 @@ function ResultPanel({ upload, session, courses, defaultCourseId, onOpen }: {
           ? formatMessage(_, msg({ id: 'files.result.attached', message: 'Attached to {course}.' }), { course: course.label })
           : _(msg({ id: 'files.result.detached', message: 'Not attached to a course.' })),
       });
-    } catch {
-      setNotice({ kind: 'error', text: _(msg({ id: 'files.result.attach-failed', message: 'The file could not be attached. Try again.' })) });
+    } catch (error) {
+      setNotice({ kind: 'error', text: _(attachFailureCopy(toFileError(error).kind)) });
     } finally {
       setBusy(false);
     }

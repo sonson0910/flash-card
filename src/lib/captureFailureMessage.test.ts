@@ -24,7 +24,7 @@ describe('capture failure guidance', () => {
 
   it('shows the wait of an hourly limit instead of the plan quota text', () => {
     const error = new ProtectedFunctionError({
-      message: 'Bạn đã gửi quá nhiều yêu cầu trong một giờ. Hãy thử lại sau khoảng 20 phút.',
+      message: 'Đã đạt giới hạn yêu cầu trong một giờ. Hãy thử lại sau khoảng 20 phút.',
       kind: 'quota', code: 'resource-exhausted', retryable: false, reason: 'rate-limit',
     });
     expect(captureFailureMessage(error)).toContain('khoảng 20 phút');

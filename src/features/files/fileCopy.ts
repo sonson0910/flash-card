@@ -114,3 +114,10 @@ export const FILE_ERROR_MESSAGES: Record<FileErrorKind, MessageDescriptor> = {
   'profile-required': msg({ id: 'files.error.profile-required', message: 'Finish setting up your profile before uploading files.' }),
   unavailable: msg({ id: 'files.error.unavailable', message: 'Uploads are unavailable right now. Try again later.' }),
 };
+
+/** What the learner reads when attaching a file to a course fails: the cases they can act on, else a generic retry. */
+export const attachFailureCopy = (kind: FileErrorKind): MessageDescriptor => (
+  kind === 'not-ready' || kind === 'not-found'
+    ? FILE_ERROR_MESSAGES[kind]
+    : msg({ id: 'files.result.attach-failed', message: 'The file could not be attached. Try again.' })
+);
