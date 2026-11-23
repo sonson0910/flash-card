@@ -25,8 +25,11 @@ self.addEventListener('notificationclick', event => {
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const existing = windows.find(client => new URL(client.url).pathname === new URL(path, self.location.origin).pathname);
     if (existing) {
-      await existing.navigate(path);
-      await existing.focus();
+      // An open page can only be navigated by the worker that controls it, and this worker controls no page
+      // (the offline app shell worker holds the root scope), so fall back to a new window.
+      const navigated = await existing.navigate(path).then(() => true, () => false);
+      if (navigated) await existing.focus();
+      else await self.clients.openWindow(path);
     } else {
       await self.clients.openWindow(path);
     }

@@ -38,10 +38,15 @@ const subscribeToConnection = (notify: () => void): (() => void) => {
 };
 const readConnection = (): boolean => typeof navigator === 'undefined' || navigator.onLine !== false;
 
+// Another worker (the reminder push worker registered at the root scope by an earlier version) does not serve the app offline.
+const isShellWorker = (worker: ServiceWorker | null): worker is ServiceWorker => (
+  worker !== null && new URL(worker.scriptURL, globalThis.location?.href ?? 'https://localhost/').pathname === SERVICE_WORKER_SCRIPT
+);
+
 const statusForRegistration = (registration: ServiceWorkerRegistration): OfflineReadinessStatus => (
   registration.waiting
     ? 'update'
-    : registration.active?.state === 'activated'
+    : isShellWorker(registration.active) && registration.active.state === 'activated'
       ? 'ready'
       : 'idle'
 );

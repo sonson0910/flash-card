@@ -67,10 +67,14 @@ export const canOfferBrowserPush = async (): Promise<boolean> => {
   return isSupported();
 };
 
+// A scope holds one registration, and the offline app shell worker owns the root scope. The push worker takes the scope
+// Firebase Messaging uses by default, which no page lives under, so the two registrations never replace each other.
+const PUSH_WORKER_SCOPE = '/firebase-cloud-messaging-push-scope';
+
 const currentPushToken = async (permission: NotificationPermission): Promise<string> => {
   if (!await canOfferBrowserPush() || !app) throw new Error('Browser push is unavailable on this device.');
   if (permission !== 'granted') throw new Error('Notification permission was not granted.');
-  const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+  const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: PUSH_WORKER_SCOPE });
   const { getMessaging, getToken } = await import('firebase/messaging');
   const token = await getToken(getMessaging(app), { vapidKey, serviceWorkerRegistration: registration });
   if (!token) throw new Error('Browser push registration did not return a token.');

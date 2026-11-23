@@ -213,6 +213,26 @@ describe('reminder device token ownership', () => {
     expect(runtime.httpsCallable).not.toHaveBeenCalled();
   });
 
+  it('registers the push worker at its own scope so it never replaces the offline shell worker at the root scope', async () => {
+    vi.stubEnv('VITE_FIREBASE_VAPID_KEY', 'test-vapid-key');
+    vi.stubGlobal('isSecureContext', true);
+    vi.stubGlobal('Notification', { requestPermission: vi.fn(async () => 'granted') });
+    const pushRegistration = { scope: 'push' };
+    const register = vi.fn(async () => pushRegistration);
+    vi.stubGlobal('navigator', { serviceWorker: { register } });
+    vi.resetModules();
+    const { saveReminderSettings: saveWithPush, defaultReminderSettings: defaults } = await import('./reminderService');
+
+    await saveWithPush({ ...defaults(), channels: { push: true, emailDigest: false } });
+
+    expect(register).toHaveBeenCalledOnce();
+    const [script, options] = register.mock.calls[0] as unknown as [string, { scope: string }];
+    expect(script).toBe('/firebase-messaging-sw.js');
+    expect(options.scope).not.toBe('/');
+    expect(options.scope.startsWith('/')).toBe(true);
+    expect(runtime.getToken).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ serviceWorkerRegistration: pushRegistration }));
+  });
+
   it('keeps the previous token when rotation fails before the new token is saved', async () => {
     vi.stubEnv('VITE_FIREBASE_VAPID_KEY', 'test-vapid-key');
     vi.stubGlobal('isSecureContext', true);

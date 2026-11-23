@@ -16,7 +16,7 @@ const OfflineReadiness = (props: OfflineReadinessProps) => (
   <I18nProvider i18n={i18n}><OfflineReadinessBanner {...props} /></I18nProvider>
 );
 
-const activatedWorker = { state: 'activated' } as ServiceWorker;
+const activatedWorker = { state: 'activated', scriptURL: 'https://sonflash.app/sw.js' } as ServiceWorker;
 
 const registration = {
   active: activatedWorker,
@@ -433,6 +433,17 @@ describe('OfflineReadiness', () => {
 
     expect(html).toContain('Available offline');
     expect(html).not.toContain('app files, up to 6 MiB');
+  });
+
+  it('does not report the shell as available when another worker owns the root scope', () => {
+    const pushWorker = { state: 'activated', scriptURL: 'https://sonflash.app/firebase-messaging-sw.js' } as ServiceWorker;
+    const html = renderToStaticMarkup(<OfflineReadiness
+      production
+      registration={{ active: pushWorker, installing: null, waiting: null } as unknown as ServiceWorkerRegistration}
+      serviceWorker={undefined}
+    />);
+
+    expect(html).not.toContain('Available offline');
   });
 
   it('advises reopening after a waiting update instead of forcing activation', () => {
