@@ -1707,8 +1707,14 @@ describe('legacy shared-deck exact inventory', () => {
         },
       });
       map.delete(missing === 'public' ? `shared_decks/${shareId}` : `shared_deck_owners/${shareId}`);
-      await expect(verifyLegacySharedDeckCutover(harness.database, inventory))
+      // The share has not expired, so the TTL policy cannot have removed the missing side.
+      const beforeExpiry = { now: Timestamp.fromMillis(Date.parse(inventory.scanStartedAt) + 60_000) };
+      await expect(verifyLegacySharedDeckCutover(harness.database, inventory, beforeExpiry))
         .rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+      // Once it has, the remaining half is what the policy has yet to remove.
+      const afterExpiry = { now: Timestamp.fromMillis(Date.parse(inventory.scanStartedAt) + 31 * 24 * 60 * 60 * 1_000) };
+      await expect(verifyLegacySharedDeckCutover(harness.database, inventory, afterExpiry))
+        .resolves.toMatchObject({ verified: true });
     }
   });
 

@@ -198,6 +198,12 @@ reaches `verified`, so an apply that stops part-way must be finished, not left:
   bound to the sealing revision and inventory digest (re-signed when its
   `verifiedAt` is more than 24 hours old). The run finishes the same sealed
   inventory without rescanning, and its report is bound to the current head.
+- The TTL policy keeps removing expired shares while a job waits. A sealed share
+  whose expiry has passed may be missing one or both documents when `apply`
+  resumes or verifies, and a quarantined record that expired may be gone before
+  it was copied. A share that has not expired and is missing or changed still
+  stops the run, and so does a quarantined record without an expiry that
+  disappears before its copy exists.
 - An apply that stopped before writing any source can be superseded and
   inventoried again instead.
 - A sealed inventory that was never applied is not applied from a later

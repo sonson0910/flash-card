@@ -126,6 +126,20 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
     return documents;
   };
   const removeAsExpired = (shareId: string) => Promise.all([publicShare(shareId).delete(), privateShare(shareId).delete()]);
+  const longAgo = () => Timestamp.fromMillis(Date.now() - 40 * DAY_MS);
+  /** A share from the owner whose thirty days ran out before the scan; the TTL policy has not removed it yet. */
+  const expiredShare = (shareId: string) => share(ownerUid, shareId, longAgo());
+  /** An owner-free legacy share whose first-generation owner record has already expired. */
+  const seedExpiredLegacyShare = async (shareId: string) => {
+    await publicShare(shareId).set(legacyShareData);
+    await privateShare(shareId).set({
+      ownerUid,
+      createdAt: Timestamp.fromMillis(Date.parse(legacyShareData.createdAt)),
+      expiresAt: Timestamp.fromMillis(Date.now() - 10 * DAY_MS),
+      schemaVersion: 1,
+    });
+  };
+  const quarantineCopy = (shareId: string) => database.collection('admin_shared_deck_migration_quarantine').doc(shareId);
   const seal = (revision: string, scanStartedAt = new Date().toISOString()) => createFrozenLegacySharedDeckInventory({
     store: createFirestoreLegacySharedDeckInventoryStore(database),
     ownerUid,
@@ -356,6 +370,108 @@ describeWithEmulator('Firestore legacy shared-deck migration', () => {
       expect(await usage()).toMatchObject({ activeCount: 2, shares: { 'legacy-a': {}, 'legacy-b': {} } });
       expect((await privateShare('legacy-b').get()).data()).toMatchObject({ ownerUid, schemaVersion: 2 });
       await expect(share('another-learner', 'after-cutover')).resolves.toBeDefined();
+    }, 30_000);
+
+    it('finishes after expired shares were removed while the apply was stopped', async () => {
+      await seedLegacyShares('a-live', 'f-live');
+      await expiredShare('b-expired-current');
+      await publicShare('c-expired-transitional').set({
+        authorUid: ownerUid,
+        category: 'Basics',
+        cards: [legacyCard],
+        createdAt: longAgo(),
+        expiresAt: Timestamp.fromMillis(Date.now() - 10 * DAY_MS),
+        schemaVersion: 1,
+      });
+      await seedExpiredLegacyShare('d-expired-legacy');
+      await privateShare('e-expired-orphan').set({
+        ownerUid, createdAt: longAgo(), expiresAt: Timestamp.fromMillis(Date.now() - 10 * DAY_MS), schemaVersion: 1,
+      });
+      const inventory = await seal(sealingRevision);
+      expect(inventory.applyEligible).toBe(true);
+      expect(inventory.entries.map(entry => entry.shareId)).toEqual([
+        'a-live', 'b-expired-current', 'c-expired-transitional', 'd-expired-legacy', 'e-expired-orphan', 'f-live',
+      ]);
+      // Ledger preflight, six source checks, the sealed -> applying step and the first source commit.
+      await expect(applyLegacySharedDeckMigration(stoppingAfterTransactions(database, 9), inventory, applyOptions(inventory)))
+        .rejects.toThrow('apply job stopped');
+      expect(await state()).toMatchObject({ phase: 'applying', progress: { nextEntry: 1 } });
+
+      // While the job waits for its next approval the TTL policy removes expired records, one document at a time.
+      await removeAsExpired('b-expired-current');
+      await publicShare('c-expired-transitional').delete();
+      await privateShare('d-expired-legacy').delete();
+      await privateShare('e-expired-orphan').delete();
+
+      const report = JSON.parse(await applyOperator(sealingRevision, laterRevision, inventory)) as Record<string, unknown>;
+
+      expect(report).toMatchObject({ revision: laterRevision, migrationRevision: sealingRevision, verified: true });
+      expect(await state()).toMatchObject({ phase: 'verified', ledgerReady: true, verificationProgress: { active: false } });
+      expect(Object.keys((await usage())!.shares as object).sort()).toEqual(['a-live', 'f-live']);
+      // The legacy record that outlived its owner record is still rewritten, so the TTL policy can remove it.
+      expect((await publicShare('d-expired-legacy').get()).data()).toMatchObject({ schemaVersion: 2 });
+      expect((await privateShare('d-expired-legacy').get()).data()).toMatchObject({ ownerUid, schemaVersion: 2 });
+      expect((await publicShare('b-expired-current').get()).exists).toBe(false);
+      expect((await quarantineCopy('e-expired-orphan').get()).exists).toBe(false);
+      await expect(share('another-learner', 'after-cutover')).resolves.toBeDefined();
+    }, 30_000);
+
+    it('verifies after expired shares were removed between the apply and its verification', async () => {
+      await seedLegacyShares('a-live');
+      await expiredShare('b-expired-current');
+      await seedExpiredLegacyShare('d-expired-legacy');
+      await privateShare('e-expired-orphan').set({
+        ownerUid, createdAt: longAgo(), expiresAt: Timestamp.fromMillis(Date.now() - 10 * DAY_MS), schemaVersion: 1,
+      });
+      const inventory = await seal(sealingRevision);
+      await applyLegacySharedDeckMigration(database, inventory, applyOptions(inventory));
+      expect(await state()).toMatchObject({ phase: 'applied' });
+      await expect(share('another-learner', 'while-fenced')).rejects.toBeInstanceOf(SharedDeckMigrationRequiredError);
+      expect((await quarantineCopy('e-expired-orphan').get()).data()).toMatchObject({ reasonCode: 'orphan-private' });
+
+      await removeAsExpired('b-expired-current');
+      await privateShare('d-expired-legacy').delete();
+      await privateShare('e-expired-orphan').delete();
+
+      const report = JSON.parse(await applyOperator(sealingRevision, laterRevision, inventory)) as Record<string, unknown>;
+
+      expect(report).toMatchObject({ revision: laterRevision, migrationRevision: sealingRevision, verified: true });
+      expect(await state()).toMatchObject({ phase: 'verified', verificationProgress: { active: false } });
+      expect((await quarantineCopy('e-expired-orphan').get()).exists).toBe(true);
+      await expect(share('another-learner', 'after-cutover')).resolves.toBeDefined();
+    }, 30_000);
+
+    it('still stops when a quarantined record that has no expiry disappears before it was copied', async () => {
+      await seedLegacyShares('a-live');
+      await publicShare('b-empty').set({ category: 'Basics', cards: [], createdAt: legacyShareData.createdAt });
+      const inventory = await seal(sealingRevision);
+      await expect(applyLegacySharedDeckMigration(stoppingAfterTransactions(database, 5), inventory, applyOptions(inventory)))
+        .rejects.toThrow('apply job stopped');
+      expect(await state()).toMatchObject({ phase: 'applying', progress: { nextEntry: 1 } });
+      await publicShare('b-empty').delete();
+
+      await expect(applyOperator(sealingRevision, laterRevision, inventory)).rejects.toThrow('Quarantined source changed for b-empty.');
+    }, 30_000);
+
+    it('still stops when a share that has not expired disappears while the apply is stopped', async () => {
+      await seedLegacyShares('a-live', 'f-live');
+      const inventory = await seal(sealingRevision);
+      await expect(applyLegacySharedDeckMigration(stoppingAfterTransactions(database, 5), inventory, applyOptions(inventory)))
+        .rejects.toThrow('apply job stopped');
+      await publicShare('f-live').delete();
+
+      await expect(applyOperator(sealingRevision, laterRevision, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+      expect(await state()).toMatchObject({ phase: 'applying', progress: { nextEntry: 1 } });
+    }, 30_000);
+
+    it('still stops verification when a migrated share that has not expired lost one side', async () => {
+      await seedLegacyShares('a-live', 'f-live');
+      const inventory = await seal(sealingRevision);
+      await applyLegacySharedDeckMigration(database, inventory, applyOptions(inventory));
+      await privateShare('f-live').delete();
+
+      await expect(verifyLegacySharedDeckCutover(database, inventory)).rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+      expect(await state()).toMatchObject({ phase: 'applied' });
     }, 30_000);
 
     it('does not apply a sealed inventory that never started from a later revision', async () => {
