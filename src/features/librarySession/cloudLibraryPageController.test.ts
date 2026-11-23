@@ -754,6 +754,34 @@ describe('cloud library page controller', () => {
     expect(cache.writePage).toHaveBeenLastCalledWith(expect.objectContaining({ total: 10, countedAt: null }));
   });
 
+  it('counts again on the next confirmed page after a failed recount and lowers the total', async () => {
+    const { adapter, cache, subscriptions } = createFakes();
+    const now = 1_700_000_000_000;
+    vi.mocked(cache.readCount).mockReturnValue({ total: 10, cachedAt: now });
+    vi.mocked(adapter.countCards).mockRejectedValueOnce(new Error('unavailable')).mockResolvedValue(9);
+    const controller = createCloudLibraryPageController({ adapter, cache, now: () => now });
+
+    controller.activate({ ownerId: 'owner-a', query: filters, queryKey: 'all', page: 1 });
+    await subscriptions[0].page({
+      items: [card('a')], hasNext: false, cursor: null,
+      changeTypes: [], fromCache: false, hasPendingWrites: false,
+    });
+    await subscriptions[0].page({
+      items: [card('a')], hasNext: false, cursor: null,
+      changeTypes: ['removed'], fromCache: false, hasPendingWrites: false,
+    });
+    expect(adapter.countCards).toHaveBeenCalledOnce();
+    expect(controller.getSnapshot().total).toBe(10);
+
+    await subscriptions[0].page({
+      items: [card('a')], hasNext: false, cursor: null,
+      changeTypes: ['modified'], fromCache: false, hasPendingWrites: false,
+    });
+
+    expect(adapter.countCards).toHaveBeenCalledTimes(2);
+    expect(controller.getSnapshot().total).toBe(9);
+  });
+
   it('unsubscribes the old query and ignores its late page/count publication', async () => {
     const { adapter, cache, subscriptions } = createFakes();
     const oldCount = deferred<number>();

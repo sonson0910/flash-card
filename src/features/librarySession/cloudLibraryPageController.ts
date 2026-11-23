@@ -375,6 +375,9 @@ export function createCloudLibraryPageController({
       let initialPage = true;
       // 0 = idle, 1 = counting, 2 = recount requested while counting.
       let countRefreshState = 0;
+      // Set when a count failed, so the next server-confirmed page emission counts again instead of
+      // leaving a possibly inflated total on screen for the rest of the session.
+      let countFailed = false;
       let activeTotal = continuesSameQuery ? snapshot.total : 0;
       const defaultQuery = request.page === 1
         && request.query.wordPrefix === ''
@@ -407,7 +410,8 @@ export function createCloudLibraryPageController({
             && !page.fromCache
             && !page.hasPendingWrites
             && shouldRefreshCountForRealtimeChanges(false, page.changeTypes);
-          const requestsCountRefresh = refreshInitialCount || refreshRealtimeCount;
+          const refreshAfterFailure = countFailed && !page.fromCache && !page.hasPendingWrites;
+          const requestsCountRefresh = refreshInitialCount || refreshRealtimeCount || refreshAfterFailure;
           const shouldRefreshCount = requestsCountRefresh && countRefreshState === 0;
           if (requestsCountRefresh) countRefreshState = countRefreshState === 0 ? 1 : 2;
           if (generation !== pageGeneration) return;
@@ -449,6 +453,7 @@ export function createCloudLibraryPageController({
               const countedTotal = await adapter.countCards(request.ownerId, request.query).catch(() => null);
               if (generation !== pageGeneration) break;
               if (countedTotal === null) {
+                countFailed = true;
                 // The cached total may be stale now. Leaving it undated makes the next activation count again
                 // instead of trusting it for the rest of the count TTL.
                 await safeCacheWriteAsync(() => cache.writePage({
@@ -460,6 +465,7 @@ export function createCloudLibraryPageController({
                 }));
                 continue;
               }
+              countFailed = false;
               const refreshedAt = now();
               const currentItems = snapshot.items.slice(0, boundedPageSize);
               total = Math.max(
