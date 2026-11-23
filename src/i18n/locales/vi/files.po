@@ -240,7 +240,12 @@ msgid "files.error.not-found"
 msgstr "Tệp đó không còn nữa."
 
 #. js-lingui-explicit-id
-#: src/features/files/fileCopy.ts:113
+#: src/features/files/fileCopy.ts:112
+msgid "files.error.not-ready"
+msgstr "Tệp vẫn đang được kiểm tra. Hãy thử lại sau giây lát."
+
+#. js-lingui-explicit-id
+#: src/features/files/fileCopy.ts:114
 msgid "files.error.profile-required"
 msgstr "Hãy hoàn tất hồ sơ trước khi tải tệp lên."
 
@@ -250,7 +255,7 @@ msgid "files.error.quota"
 msgstr "Bộ nhớ của bạn đã đầy. Hãy xóa những tệp không còn cần, rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/files/fileCopy.ts:112
+#: src/features/files/fileCopy.ts:113
 msgid "files.error.rate-limited"
 msgstr "Bạn tải lên quá nhiều trong thời gian ngắn. Hãy đợi một lát rồi thử lại."
 
@@ -270,7 +275,7 @@ msgid "files.error.type"
 msgstr "Hãy chọn ảnh PNG, JPEG hoặc WebP."
 
 #. js-lingui-explicit-id
-#: src/features/files/fileCopy.ts:114
+#: src/features/files/fileCopy.ts:115
 msgid "files.error.unavailable"
 msgstr "Hiện chưa thể tải lên. Hãy thử lại sau."
 
@@ -480,7 +485,7 @@ msgid "files.result.attach"
 msgstr "Gắn nguồn"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:607
+#: src/features/files/fileCopy.ts:122
 msgid "files.result.attach-failed"
 msgstr "Không gắn được tệp. Hãy thử lại."
 

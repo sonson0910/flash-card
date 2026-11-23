@@ -109,7 +109,15 @@ export const FILE_ERROR_MESSAGES: Record<FileErrorKind, MessageDescriptor> = {
   network: msg({ id: 'files.error.network', message: 'The upload did not finish. Check your connection and try again.' }),
   rejected: msg({ id: 'files.error.rejected', message: 'The service did not accept this image.' }),
   'not-found': msg({ id: 'files.error.not-found', message: 'That file is no longer available.' }),
+  'not-ready': msg({ id: 'files.error.not-ready', message: 'The file is still being checked. Try again in a moment.' }),
   'rate-limited': msg({ id: 'files.error.rate-limited', message: 'Too many uploads in a short time. Wait a moment, then try again.' }),
   'profile-required': msg({ id: 'files.error.profile-required', message: 'Finish setting up your profile before uploading files.' }),
   unavailable: msg({ id: 'files.error.unavailable', message: 'Uploads are unavailable right now. Try again later.' }),
 };
+
+/** What the learner reads when attaching a file to a course fails: the cases they can act on, else a generic retry. */
+export const attachFailureCopy = (kind: FileErrorKind): MessageDescriptor => (
+  kind === 'not-ready' || kind === 'not-found'
+    ? FILE_ERROR_MESSAGES[kind]
+    : msg({ id: 'files.result.attach-failed', message: 'The file could not be attached. Try again.' })
+);

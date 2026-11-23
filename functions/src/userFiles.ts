@@ -126,11 +126,11 @@ export const parsePrepareFileUploadRequest = (value: unknown): PrepareFileUpload
   const source = plainObject(value, 'request');
   onlyKeys(source, ['ownerId', 'name', 'contentType', 'bytes', 'purpose', 'courseId'], 'request');
   const contentType = typeof source.contentType === 'string' ? source.contentType.trim().toLowerCase() : '';
-  if (!FILE_CONTENT_TYPES[contentType]) fail('contentType', 'is not supported');
+  if (!FILE_CONTENT_TYPES[contentType]) throw new FileServiceError('type');
   if (!Number.isSafeInteger(source.bytes) || Number(source.bytes) <= 0) fail('bytes', 'must be a positive integer');
   const purpose = source.purpose ?? 'source';
   if (!FILE_PURPOSES.includes(purpose as FilePurpose)) fail('purpose', 'is not supported');
-  if (purpose === 'card-image' && FILE_CONTENT_TYPES[contentType] !== 'image') fail('contentType', 'must be an image for a card image');
+  if (purpose === 'card-image' && FILE_CONTENT_TYPES[contentType] !== 'image') throw new FileServiceError('type');
   return {
     ownerId: ownerIdAt(source.ownerId),
     name: cleanFileName(source.name),
@@ -222,13 +222,30 @@ export interface PreparedFileUpload {
   readonly expiresAt: string;
 }
 
+/**
+ * A released record no longer owns its object: if the finalize run never settled it, the object would stay
+ * in Storage outside every quota. Removing it is best effort because the release is already committed.
+ */
+const deleteReleasedObjects = async (objects: FileObjectStore | null, uid: string, released: readonly DocumentReference[]) => {
+  if (!objects) return;
+  for (const ref of released) {
+    try {
+      await objects.deleteObject(fileObjectPath(uid, ref.id));
+    } catch (error) {
+      console.warn('A released upload object could not be removed.', { errorName: error instanceof Error ? error.name : 'UnknownError' });
+    }
+  }
+};
+
 export async function prepareFileUpload(database: Firestore, uid: string, request: PrepareFileUploadRequest,
-  config: PilotConfig, now = new Date()): Promise<PreparedFileUpload> {
+  config: PilotConfig, now = new Date(), objects: FileObjectStore | null = configuredAccountFileObjects()): Promise<PreparedFileUpload> {
   const refs = ownerRefs(database, uid);
+  let releasedRecords: DocumentReference[] = [];
   const fileId = newFileId();
   const fileRef = refs.files.doc(fileId);
   const expiresAt = new Date(now.getTime() + FILE_RESERVATION_TTL_MS);
-  return database.runTransaction(async transaction => {
+  const prepared = await database.runTransaction(async transaction => {
+    releasedRecords = [];
     const [planSnapshot, usageSnapshot, coursesSnapshot] = await Promise.all([
       transaction.get(refs.plan), transaction.get(refs.usage),
       request.courseId ? transaction.get(refs.courses) : Promise.resolve(null),
@@ -245,6 +262,7 @@ export async function prepareFileUpload(database: Firestore, uid: string, reques
       throw new FileServiceError('quota', { limitBytes: limits.limitBytes, usedBytes: usage.usedBytes, reservedBytes: usage.reservedBytes });
     }
     for (const ref of released) transaction.delete(ref);
+    releasedRecords = released;
     transaction.set(refs.usage, {
       usedBytes: usage.usedBytes,
       reservedBytes: usage.reservedBytes + request.bytes,
@@ -271,6 +289,8 @@ export async function prepareFileUpload(database: Firestore, uid: string, reques
     });
     return { fileId, path: fileObjectPath(uid, fileId), maxFileBytes: limits.maxFileBytes, expiresAt: expiresAt.toISOString() };
   });
+  await deleteReleasedObjects(objects, uid, releasedRecords);
+  return prepared;
 }
 
 /** An account without a stored course profile has the implicit legacy profile, as course reads assume. */
@@ -446,7 +466,7 @@ export interface FileListing {
  * shown; otherwise old rejections would fill every page ahead of the files that are still stored.
  */
 export async function listFiles(database: Firestore, uid: string, config: PilotConfig, now = new Date(),
-  cursor: string | null = null): Promise<FileListing> {
+  cursor: string | null = null, objects: FileObjectStore | null = configuredAccountFileObjects()): Promise<FileListing> {
   const refs = ownerRefs(database, uid);
   const after = cursor === null ? null : FILE_LIST_CURSOR_PATTERN.exec(cursor);
   if (cursor !== null && !after) throw new InputValidationError('cursor must come from a file list.');
@@ -483,12 +503,15 @@ export async function listFiles(database: Firestore, uid: string, config: PilotC
     await batch.commit();
   }
   if (expiredReservation) {
+    let releasedRecords: DocumentReference[] = [];
     await database.runTransaction(async transaction => {
       const current = usageOf((await transaction.get(refs.usage)).data());
       const { usage: next, released } = await releaseExpired(transaction, refs, current, now);
       for (const ref of released) transaction.delete(ref);
       if (released.length) transaction.set(refs.usage, { ...next, updatedAt: now });
+      releasedRecords = released;
     });
+    await deleteReleasedObjects(objects, uid, releasedRecords);
   }
   return {
     files,

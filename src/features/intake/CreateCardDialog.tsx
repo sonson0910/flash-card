@@ -294,6 +294,11 @@ export const cardCreatorErrorMessage = (error: unknown): string => {
   const code = nestedErrorField(error, 'code').toLowerCase();
   if (code === 'offline') return translate(CREATE_CARD_MESSAGES.errors.offline);
   if (details.includes('operation-attempts-exhausted')) return translate(CREATE_CARD_MESSAGES.errors.attemptsExhausted);
+  // An hourly request limit carries its own wait; the plan-allowance text would hide it.
+  if (nestedErrorField(error, 'reason') === 'rate-limit') {
+    const wait = readErrorField(error, 'message');
+    if (wait) return wait;
+  }
   if (details.includes('quota') || details.includes('allowance')) return translate(CREATE_CARD_MESSAGES.errors.quota);
   if (code.includes('requested_deck_unavailable') || details.includes('requested_deck_unavailable')) {
     const deck = nestedErrorField(error, 'deck');

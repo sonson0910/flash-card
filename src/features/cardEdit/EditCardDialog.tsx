@@ -59,7 +59,7 @@ export interface EditCardDialogProps {
 
 export type { CardImageUploader };
 
-type ImageUploadFailure = 'quota' | 'type' | 'failed';
+type ImageUploadFailure = 'quota' | 'type' | 'profile-required' | 'failed';
 
 export interface EditCardDialogContext {
   kind: 'review';
@@ -314,7 +314,8 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
     } catch (failure) {
       if (imageUploadTaskRef.current !== task) return;
       const kind = (failure as { kind?: unknown } | null)?.kind;
-      if (kind !== 'canceled') setImageUploadFailure(kind === 'quota' ? 'quota' : kind === 'type' || kind === 'size' ? 'type' : 'failed');
+      if (kind !== 'canceled') setImageUploadFailure(kind === 'quota' ? 'quota'
+        : kind === 'type' || kind === 'size' ? 'type' : kind === 'profile-required' ? 'profile-required' : 'failed');
     } finally {
       if (imageUploadTaskRef.current === task) {
         imageUploadTaskRef.current = null;
@@ -832,6 +833,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
       {imageSearchFailed && <p role="alert" className="edit-sheet-field-error">{imageSearchFailedMessage}</p>}
       {imageUploadFailure === 'quota' && <p role="alert" className="edit-sheet-field-error"><Trans {...msg({ id: 'library.edit-card.upload-image-quota', message: 'Your storage is full. Delete files you no longer need, then try again.' })} /></p>}
       {imageUploadFailure === 'type' && <p role="alert" className="edit-sheet-field-error"><Trans {...msg({ id: 'library.edit-card.upload-image-type', message: 'Choose a PNG, JPEG, or WebP photo within your plan’s size limit.' })} /></p>}
+      {imageUploadFailure === 'profile-required' && <p role="alert" className="edit-sheet-field-error"><Trans {...msg({ id: 'library.edit-card.upload-image-profile-required', message: 'Finish setting up your profile before uploading photos.' })} /></p>}
       {imageUploadFailure === 'failed' && <p role="alert" className="edit-sheet-field-error"><Trans {...msg({ id: 'library.edit-card.upload-image-failed', message: 'The photo could not be uploaded. Try again.' })} /></p>}
     </div>
   );

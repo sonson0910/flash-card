@@ -137,6 +137,23 @@ describe('protected Firebase Functions failure classification', () => {
     expect(failure.message).toContain('00:00');
   });
 
+  it('tells the learner how long an hourly limit lasts instead of saying a quota ran out', () => {
+    const failure = classifyProtectedFunctionError(
+      Object.assign(new Error('private detail'), { code: 'functions/resource-exhausted', details: { retryAfterSeconds: 1_200 } }),
+      'AI generation',
+    );
+    expect(failure).toMatchObject({ kind: 'quota', reason: 'rate-limit', retryable: false });
+    expect(failure.retryAfterMs).toBeUndefined();
+    expect(failure.message).toContain('20 phút');
+    expect(failure.message).not.toContain('hạn mức');
+    // The shared service budget raises the same error, so the wording must not blame the learner.
+    expect(failure.message).not.toMatch(/Bạn đã/);
+    const brief = classifyProtectedFunctionError(
+      Object.assign(new Error('x'), { code: 'functions/resource-exhausted', details: { retryAfterSeconds: 5 } }), 'AI generation',
+    );
+    expect(brief.message).toContain('1 phút');
+  });
+
   it.each([
     ['functions/unauthenticated', 'authentication', false, 'Sign in again'],
     ['permission-denied', 'permission', false, 'App Check or access rules'],

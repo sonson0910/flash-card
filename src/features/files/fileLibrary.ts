@@ -124,6 +124,10 @@ export const startCardImageUpload = (
     if (state.phase === 'results' || state.phase === 'partial') return port.downloadUrl(state.file.id);
     if (state.phase === 'quota-exceeded') throw new FileError('quota');
     if (state.phase === 'rejected') throw new FileError(state.check === 'type' ? 'type' : state.check === 'size' ? 'size' : 'unavailable');
+    if (state.phase === 'upload-rejected') {
+      // The service's own reason survives, so the editor can tell the learner to finish their profile.
+      throw new FileError(state.reason === 'signature' || state.reason === 'expired' ? 'rejected' : state.reason);
+    }
     if (state.phase === 'canceled') throw new FileError('canceled');
     if (state.phase === 'retry' || state.phase === 'upload-incomplete') throw new FileError('network');
     throw new FileError('rejected');

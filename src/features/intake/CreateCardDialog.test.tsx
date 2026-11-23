@@ -405,4 +405,23 @@ describe('cardCreatorErrorMessage', () => {
     expect(cardCreatorErrorMessage({ code: 'offline', message: 'Offline.' })).toContain('You’re offline');
     expect(cardCreatorErrorMessage({ code: 'generation', cause: { reason: 'operation-attempts-exhausted' } })).toContain('used all of its retries');
   });
+
+  it('shows the wait of an hourly request limit instead of the plan allowance text', () => {
+    const waitMessage = 'Đã đạt giới hạn yêu cầu trong một giờ. Hãy thử lại sau khoảng 20 phút.';
+    const error = {
+      code: 'generation' as const,
+      message: waitMessage,
+      cause: { kind: 'quota', reason: 'rate-limit', code: 'resource-exhausted', message: waitMessage },
+    };
+    expect(cardCreatorErrorMessage(error)).toBe(waitMessage);
+    expect(cardCreatorErrorMessage(error)).not.toContain('allowance');
+    const html = renderDialog(createModel({
+      open: true,
+      stage: 'error',
+      draft: { word: 'resilient', context: '', partOfSpeech: '', deck: '' },
+      error,
+    }));
+    expect(html).toContain('khoảng 20 phút');
+    expect(html).toContain('Add manually');
+  });
 });

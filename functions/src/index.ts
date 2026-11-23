@@ -2371,7 +2371,13 @@ export const toFileHttpsError = (error: unknown): HttpsError | null => {
 };
 
 const fileOwnerRequest = <T extends { ownerId: string }>(parser: () => T, userId: string): T => {
-  const parsed = parseOrInvalidArgument(parser);
+  // A refused file type keeps its stable reason; every other malformed field is a plain invalid-argument.
+  let parsed: T;
+  try {
+    parsed = parser();
+  } catch (error) {
+    throw toFileHttpsError(error) ?? error;
+  }
   if (parsed.ownerId !== userId) {
     throw new HttpsError('permission-denied', 'File request owner does not match the authenticated owner.');
   }

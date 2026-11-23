@@ -18,6 +18,8 @@ const QUOTA_REASONS: Record<string, CaptureFailureReason> = {
   'ai-daily-allowance': 'quota-daily',
   'account-daily-spend': 'quota-daily',
   'service-daily-cap': 'quota-service',
+  // A wait of up to an hour is not an allowance the learner has used up.
+  'rate-limit': 'failed',
 };
 
 export const captureFailureReason = (error: unknown): CaptureFailureReason => {
@@ -36,6 +38,7 @@ export const captureFailureReason = (error: unknown): CaptureFailureReason => {
 export const captureFailureMessage = (error: unknown): string => {
   if (error instanceof ProtectedFunctionError) {
     if (error.retryAfterMs !== undefined) return error.message;
+    if (error.kind === 'quota' && error.reason === 'rate-limit') return error.message;
     if (error.kind === 'quota') return error.message.includes('hạn mức') || error.message.includes('số thẻ') || error.message.includes('lượt AI')
       ? error.message : 'Dịch vụ AI đã hết hạn mức. Từ đã chọn vẫn được giữ lại; hãy thử lại sau.';
     if (error.kind === 'authentication') return 'Bạn cần đăng nhập Google để tạo thẻ. Từ đã chọn vẫn được giữ lại; đăng nhập rồi thử lại.';

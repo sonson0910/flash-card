@@ -29,6 +29,14 @@ describe('card image uploader', () => {
     await expect(createCardImageUploader(port).upload(photo(512), vi.fn()).done).rejects.toMatchObject({ kind: 'quota' });
   });
 
+  it('keeps the service reason when the upload is refused before it starts', async () => {
+    for (const kind of ['profile-required', 'not-found', 'rate-limited'] as const) {
+      const port = createMemoryFilePort({ limits: LIMITS });
+      port.prepare = async () => { throw new FileError(kind); };
+      await expect(createCardImageUploader(port).upload(photo(512), vi.fn()).done).rejects.toMatchObject({ kind });
+    }
+  });
+
   it('rejects when the file service cannot be reached', async () => {
     const port = createMemoryFilePort({ limits: LIMITS, listError: () => new FileError('network') });
     await expect(createCardImageUploader(port).upload(photo(512), vi.fn()).done).rejects.toMatchObject({ kind: 'network' });

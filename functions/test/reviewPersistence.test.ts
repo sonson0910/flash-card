@@ -600,6 +600,50 @@ describe('review persistence', () => {
       .rejects.toMatchObject({ reason: 'stale-review' });
   });
 
+  it('refuses a legacy review dated far ahead of the server so it cannot block the next verified review', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-23T00:00:00.000Z'));
+    try {
+      const stored = baseCard();
+      const ahead = new Date('2026-11-24T00:00:00.000Z');
+      const request = reviewRequest({
+        reviewedAt: ahead.toISOString(),
+        fields: scheduleReviewTransition(stored, 'good', ahead),
+      });
+      const test = harness(stored);
+      await expect(applyReviewForOwner(test.database, 'owner', request, { strict: false }))
+        .rejects.toMatchObject({ reason: 'future-review-clock-skew' });
+      expect(test.writes).toEqual([]);
+
+      const nearby = new Date('2026-11-23T00:04:00.000Z');
+      await expect(applyReviewForOwner(harness(stored).database, 'owner', reviewRequest({
+        reviewedAt: nearby.toISOString(),
+        fields: scheduleReviewTransition(stored, 'good', nearby),
+      }), { strict: false })).resolves.toMatchObject({ applied: true });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ignores a stored review time that is ahead of the server so an old bad write cannot block verified reviews', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-23T00:00:00.000Z'));
+    try {
+      const stored = baseCard([{
+        rating: 'good', reviewedAt: '2026-11-24T00:00:00.000Z', scheduledDays: 1, elapsedDays: 0,
+      }]);
+      const now = new Date('2026-11-23T00:00:00.000Z');
+      const request = reviewRequest({
+        reviewedAt: now.toISOString(),
+        fields: scheduleReviewTransition(stored, 'good', now),
+      });
+      await expect(applyReviewForOwner(harness(stored).database, 'owner', request))
+        .resolves.toMatchObject({ applied: true, duplicate: false });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rejects a duplicate operation whose payload fingerprint changed', async () => {
     const request = reviewRequest();
     const test = harness();

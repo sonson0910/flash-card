@@ -35,6 +35,8 @@ const CAPTURE_XP_ONCE_PER_IDENTITY = true;
 // card that was renamed to another word.
 const MAX_RELOCATED_CARD_ID_ATTEMPTS = 8;
 const MAX_PROTOCOL_COUNTER = Number.MAX_SAFE_INTEGER;
+/** How far ahead of the server clock a learner's review time may be. */
+export const REVIEW_CLOCK_SKEW_MS = 5 * 60 * 1000;
 const RESOURCE_USAGE_SCHEMA_VERSION = 1 as const;
 
 export class CardAllocationLimitError extends Error {
@@ -840,6 +842,16 @@ const currentTombstoneRevision = (
   return Number(value.revision);
 };
 
+const assertNoFutureReviewTimes = (card: CardRecord, now: Date): void => {
+  const ceiling = now.getTime() + REVIEW_CLOCK_SKEW_MS;
+  const fsrs = card.fsrs as CardRecord | undefined;
+  const history = Array.isArray(card.reviewHistory) ? card.reviewHistory as Array<Record<string, unknown>> : [];
+  const times = [fsrs?.lastReview, ...history.map(entry => entry.reviewedAt)];
+  if (times.some(time => typeof time === 'string' && Date.parse(time) > ceiling)) {
+    throw new InputValidationError('Card review times must not be in the future.');
+  }
+};
+
 export async function createCardForOwner(
   database: Firestore,
   ownerId: string,
@@ -860,6 +872,8 @@ export async function createCardForOwner(
   }
   const cardSource = asRecord(card, 'Card must be an object.');
   const normalizedCard = canonicalCard(cardSource, { imageOwnerId: ownerId });
+  // Any create, a restore included, would otherwise store a review time that blocks every later verified review.
+  assertNoFutureReviewTimes(normalizedCard, verifiedCreate?.receivedAt ?? new Date());
   const restoreCreatedAt = restore && operationCreatedAt
     ? optionalDate(operationCreatedAt, 'operationCreatedAt')
     : undefined;

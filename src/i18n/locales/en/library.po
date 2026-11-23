@@ -74,7 +74,7 @@ msgctxt "library.insights.xp"
 msgid "XP · recent activity"
 msgstr "XP · recent activity"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1002
+#: src/features/cardEdit/EditCardDialog.tsx:1004
 msgctxt "library.edit-card.save"
 msgid "Save changes"
 msgstr "Save changes"
@@ -158,7 +158,7 @@ msgctxt "library.import.progress"
 msgid "Importing {current, number} of {total, number}"
 msgstr "Importing {current, number} of {total, number}"
 
-#: src/features/cardEdit/EditCardDialog.tsx:996
+#: src/features/cardEdit/EditCardDialog.tsx:998
 msgctxt "library.edit-card.back-to-card"
 msgid "back to card"
 msgstr "back to card"
@@ -224,12 +224,12 @@ msgctxt "library.grid.no-match-description"
 msgid "Clear the active filters to return to your complete vocabulary library."
 msgstr "Clear the active filters to return to your complete vocabulary library."
 
-#: src/features/cardEdit/EditCardDialog.tsx:950
+#: src/features/cardEdit/EditCardDialog.tsx:952
 msgctxt "library.edit-card.more-fields"
 msgid "Definition, translations and memory hook"
 msgstr "Definition, translations and memory hook"
 
-#: src/features/cardEdit/EditCardDialog.tsx:868
+#: src/features/cardEdit/EditCardDialog.tsx:870
 msgctxt "library.edit-card.editing-badge"
 msgid "· editing"
 msgstr "· editing"
@@ -311,7 +311,7 @@ msgctxt "library.grid.clear-filters"
 msgid "Clear filters"
 msgstr "Clear filters"
 
-#: src/features/cardEdit/EditCardDialog.tsx:765
+#: src/features/cardEdit/EditCardDialog.tsx:766
 msgctxt "library.edit-card.find-another-photo"
 msgid "Find another photo"
 msgstr "Find another photo"
@@ -341,7 +341,7 @@ msgctxt "library.import.failed-hint"
 msgid "needs attention"
 msgstr "needs attention"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1002
+#: src/features/cardEdit/EditCardDialog.tsx:1004
 msgctxt "library.edit-card.saving"
 msgid "Saving changes…"
 msgstr "Saving changes…"
@@ -366,7 +366,7 @@ msgctxt "library.insights.no-xp"
 msgid "Complete a review to start your activity chart."
 msgstr "Complete a review to start your activity chart."
 
-#: src/features/cardEdit/EditCardDialog.tsx:1019
+#: src/features/cardEdit/EditCardDialog.tsx:1021
 #: src/features/library/LibraryCardGrid.tsx:452
 msgctxt "library.delete.title"
 msgid "Delete card?"
@@ -387,7 +387,7 @@ msgctxt "library.grid.page-loaded"
 msgid "Page {page} loaded with {count, plural, one {# card} other {# cards}}."
 msgstr "Page {page} loaded with {count, plural, one {# card} other {# cards}}."
 
-#: src/features/cardEdit/EditCardDialog.tsx:996
+#: src/features/cardEdit/EditCardDialog.tsx:998
 msgctxt "library.edit-card.esc-key"
 msgid "Esc"
 msgstr "Esc"
@@ -417,7 +417,7 @@ msgctxt "library.insights.category"
 msgid "By category"
 msgstr "By category"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1036
+#: src/features/cardEdit/EditCardDialog.tsx:1038
 msgctxt "library.edit-card.deleting"
 msgid "Deleting card…"
 msgstr "Deleting card…"
@@ -437,7 +437,7 @@ msgctxt "library.insights.kicker"
 msgid "Stats · last 30 days"
 msgstr "Stats · last 30 days"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1032
+#: src/features/cardEdit/EditCardDialog.tsx:1034
 #: src/features/library/LibraryCardGrid.tsx:452
 #: src/features/library/LibraryDialogOverlays.tsx:211
 msgctxt "common.cancel"
@@ -464,7 +464,7 @@ msgctxt "library.grid.import-progress"
 msgid "Creating {current} of {total}"
 msgstr "Creating {current} of {total}"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1036
+#: src/features/cardEdit/EditCardDialog.tsx:1038
 msgctxt "library.edit-card.discard-confirm"
 msgid "Discard changes"
 msgstr "Discard changes"
@@ -474,7 +474,7 @@ msgctxt "library.import.skipped"
 msgid "Skipped"
 msgstr "Skipped"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1032
+#: src/features/cardEdit/EditCardDialog.tsx:1034
 msgctxt "library.edit-card.keep-editing"
 msgid "Keep editing"
 msgstr "Keep editing"
@@ -494,7 +494,7 @@ msgctxt "library.import.download-errors"
 msgid "Download error report"
 msgstr "Download error report"
 
-#: src/features/cardEdit/EditCardDialog.tsx:998
+#: src/features/cardEdit/EditCardDialog.tsx:1000
 msgctxt "library.edit-card.cancel"
 msgid "Cancel"
 msgstr "Cancel"
@@ -509,7 +509,7 @@ msgctxt "library.clear.try-again"
 msgid "Try again"
 msgstr "Try again"
 
-#: src/features/cardEdit/EditCardDialog.tsx:892
+#: src/features/cardEdit/EditCardDialog.tsx:894
 msgctxt "library.edit-card.kicker"
 msgid "Card editor"
 msgstr "Card editor"
@@ -524,7 +524,7 @@ msgctxt "library.import.failure-size"
 msgid "Choose a smaller spreadsheet, then try again."
 msgstr "Choose a smaller spreadsheet, then try again."
 
-#: src/features/cardEdit/EditCardDialog.tsx:1027
+#: src/features/cardEdit/EditCardDialog.tsx:1029
 msgctxt "library.edit-card.delete-failed"
 msgid "This card could not be deleted. Try again."
 msgstr "This card could not be deleted. Try again."
@@ -544,7 +544,7 @@ msgctxt "library.deck.delete"
 msgid "Delete deck"
 msgstr "Delete deck"
 
-#: src/features/cardEdit/EditCardDialog.tsx:898
+#: src/features/cardEdit/EditCardDialog.tsx:900
 msgctxt "library.edit-card.description"
 msgid "Changes update this card while its review history stays intact."
 msgstr "Changes update this card while its review history stays intact."
@@ -600,7 +600,7 @@ msgctxt "library.tools.more"
 msgid "More library tools"
 msgstr "More library tools"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1036
+#: src/features/cardEdit/EditCardDialog.tsx:1038
 msgctxt "library.edit-card.retry-delete"
 msgid "Retry delete"
 msgstr "Retry delete"
@@ -656,7 +656,7 @@ msgid "library.card.bookmark"
 msgstr "Bookmark card"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:842
+#: src/features/cardEdit/EditCardDialog.tsx:844
 #: src/features/library/LibraryCardGrid.tsx:426
 msgid "library.card.delete"
 msgstr "Delete card"
@@ -730,7 +730,7 @@ msgstr "Close clear library dialog"
 #. js-lingui-explicit-id
 #: src/features/importExport/SpreadsheetImportDialog.tsx:99
 #: src/features/intake/CreateCardDialog.tsx:60
-#: src/features/intake/CreateCardDialog.tsx:1107
+#: src/features/intake/CreateCardDialog.tsx:1112
 #: src/features/library/AiDialogueModal.tsx:156
 #: src/features/library/LibraryDialogOverlays.tsx:116
 #: src/features/library/LibraryTools.tsx:332
@@ -740,9 +740,9 @@ msgstr "Close"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:95
-#: src/features/intake/CreateCardDialog.tsx:1074
-#: src/features/intake/CreateCardDialog.tsx:1105
-#: src/features/intake/CreateCardDialog.tsx:1113
+#: src/features/intake/CreateCardDialog.tsx:1079
+#: src/features/intake/CreateCardDialog.tsx:1110
+#: src/features/intake/CreateCardDialog.tsx:1118
 msgid "library.create-card.add-manually"
 msgstr "Add manually"
 
@@ -753,7 +753,7 @@ msgstr "Play pronunciation for {word}"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:68
-#: src/features/intake/CreateCardDialog.tsx:452
+#: src/features/intake/CreateCardDialog.tsx:457
 msgid "library.create-card.cefr"
 msgstr "CEFR level"
 
@@ -779,19 +779,19 @@ msgstr "Plan limit"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:71
-#: src/features/intake/CreateCardDialog.tsx:476
+#: src/features/intake/CreateCardDialog.tsx:481
 msgid "library.create-card.definition"
 msgstr "Definition"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:58
-#: src/features/intake/CreateCardDialog.tsx:901
+#: src/features/intake/CreateCardDialog.tsx:906
 msgid "library.create-card.description.ai"
 msgstr "SonFlash drafts the card — you decide what stays."
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:59
-#: src/features/intake/CreateCardDialog.tsx:901
+#: src/features/intake/CreateCardDialog.tsx:906
 msgid "library.create-card.description.manual"
 msgstr "Add the details you already know, then save the card."
 
@@ -807,7 +807,7 @@ msgstr "A card for {word} already exists in your library. Choose another word or
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:88
-#: src/features/intake/CreateCardDialog.tsx:1044
+#: src/features/intake/CreateCardDialog.tsx:1049
 msgid "library.create-card.empty-preview"
 msgstr "Your generated card preview will appear here."
 
@@ -908,7 +908,7 @@ msgstr "The AI service is unavailable. Your word is still here; try again."
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:72
-#: src/features/intake/CreateCardDialog.tsx:491
+#: src/features/intake/CreateCardDialog.tsx:496
 msgid "library.create-card.example"
 msgstr "Example"
 
@@ -929,7 +929,7 @@ msgstr "Examples"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:102
-#: src/features/intake/CreateCardDialog.tsx:1117
+#: src/features/intake/CreateCardDialog.tsx:1122
 msgid "library.create-card.generate-preview"
 msgstr "Generate preview"
 
@@ -940,25 +940,25 @@ msgstr "Generating…"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:55
-#: src/features/intake/CreateCardDialog.tsx:898
+#: src/features/intake/CreateCardDialog.tsx:903
 msgid "library.create-card.kicker.ai"
 msgstr "NEW CARD"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:56
-#: src/features/intake/CreateCardDialog.tsx:898
+#: src/features/intake/CreateCardDialog.tsx:903
 msgid "library.create-card.kicker.manual"
 msgstr "MANUAL CARD"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:79
-#: src/features/intake/CreateCardDialog.tsx:1030
+#: src/features/intake/CreateCardDialog.tsx:1035
 msgid "library.create-card.manual-details"
 msgstr "MANUAL DETAILS"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:70
-#: src/features/intake/CreateCardDialog.tsx:464
+#: src/features/intake/CreateCardDialog.tsx:469
 msgid "library.create-card.meaning"
 msgstr "Meaning"
 
@@ -969,7 +969,7 @@ msgstr "optional"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:49
-#: src/features/intake/CreateCardDialog.tsx:979
+#: src/features/intake/CreateCardDialog.tsx:984
 msgid "library.create-card.part-of-speech"
 msgstr "Part of speech"
 
@@ -1005,31 +1005,31 @@ msgstr "SonFlash is preparing your card…"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:61
-#: src/features/intake/CreateCardDialog.tsx:431
+#: src/features/intake/CreateCardDialog.tsx:436
 msgid "library.create-card.preview.ai-draft"
 msgstr "AI draft"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:63
-#: src/features/intake/CreateCardDialog.tsx:432
+#: src/features/intake/CreateCardDialog.tsx:437
 msgid "library.create-card.preview.edit-generated"
 msgstr "Edit the generated details below"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:64
-#: src/features/intake/CreateCardDialog.tsx:432
+#: src/features/intake/CreateCardDialog.tsx:437
 msgid "library.create-card.preview.edit-manual"
 msgstr "Edit your card details below"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:62
-#: src/features/intake/CreateCardDialog.tsx:431
+#: src/features/intake/CreateCardDialog.tsx:436
 msgid "library.create-card.preview.manual-draft"
 msgstr "Manual draft"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:66
-#: src/features/intake/CreateCardDialog.tsx:440
+#: src/features/intake/CreateCardDialog.tsx:445
 msgid "library.create-card.pronunciation"
 msgstr "Pronunciation"
 
@@ -1040,13 +1040,13 @@ msgstr "/pronunciation/"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:93
-#: src/features/intake/CreateCardDialog.tsx:1057
+#: src/features/intake/CreateCardDialog.tsx:1062
 msgid "library.create-card.ready-after-saving"
 msgstr "Ready after saving"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:97
-#: src/features/intake/CreateCardDialog.tsx:1115
+#: src/features/intake/CreateCardDialog.tsx:1120
 msgid "library.create-card.regenerate"
 msgstr "Regenerate"
 
@@ -1057,13 +1057,13 @@ msgstr "Regenerate selected card details"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:84
-#: src/features/intake/CreateCardDialog.tsx:1014
+#: src/features/intake/CreateCardDialog.tsx:1019
 msgid "library.create-card.regenerate-hint"
 msgstr "Each generation that returns details uses one AI request"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:83
-#: src/features/intake/CreateCardDialog.tsx:1014
+#: src/features/intake/CreateCardDialog.tsx:1019
 msgid "library.create-card.regenerate-selected"
 msgstr "Regenerate selected details"
 
@@ -1074,7 +1074,7 @@ msgstr "Regenerating…"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:96
-#: src/features/intake/CreateCardDialog.tsx:1112
+#: src/features/intake/CreateCardDialog.tsx:1117
 msgid "library.create-card.request-count"
 msgstr "{count, plural, one {# AI request completed} other {# AI requests completed}}"
 
@@ -1085,9 +1085,9 @@ msgstr "Reserving your AI request…"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:101
-#: src/features/intake/CreateCardDialog.tsx:1103
-#: src/features/intake/CreateCardDialog.tsx:1117
-#: src/features/intake/CreateCardDialog.tsx:1117
+#: src/features/intake/CreateCardDialog.tsx:1108
+#: src/features/intake/CreateCardDialog.tsx:1122
+#: src/features/intake/CreateCardDialog.tsx:1122
 msgid "library.create-card.save"
 msgstr "Save card"
 
@@ -1113,7 +1113,7 @@ msgstr "{step} ready, {ready} of {total}"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:117
-#: src/features/intake/CreateCardDialog.tsx:1102
+#: src/features/intake/CreateCardDialog.tsx:1107
 msgid "library.create-card.stream.cancel"
 msgstr "Cancel"
 
@@ -1153,7 +1153,7 @@ msgid "library.create-card.stream.note"
 msgstr "You can edit any field as soon as it appears — the AI keeps writing the rest."
 
 #. js-lingui-explicit-id
-#: src/features/intake/CreateCardDialog.tsx:1080
+#: src/features/intake/CreateCardDialog.tsx:1085
 msgid "library.create-card.stream.ready"
 msgstr "<0>{ready} of {total}</0> ready"
 
@@ -1234,20 +1234,20 @@ msgstr "Generation stopped."
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:118
-#: src/features/intake/CreateCardDialog.tsx:1109
 #: src/features/intake/CreateCardDialog.tsx:1114
+#: src/features/intake/CreateCardDialog.tsx:1119
 msgid "library.create-card.stream.try-again"
 msgstr "Try again"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:57
-#: src/features/intake/CreateCardDialog.tsx:899
+#: src/features/intake/CreateCardDialog.tsx:904
 msgid "library.create-card.title"
 msgstr "Add a word"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:75
-#: src/features/intake/CreateCardDialog.tsx:504
+#: src/features/intake/CreateCardDialog.tsx:509
 msgid "library.create-card.translation"
 msgstr "Translation"
 
@@ -1263,7 +1263,7 @@ msgstr "Unavailable"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:81
-#: src/features/intake/CreateCardDialog.tsx:1031
+#: src/features/intake/CreateCardDialog.tsx:1036
 msgid "library.create-card.use-ai-draft"
 msgstr "Use AI draft"
 
@@ -1274,7 +1274,7 @@ msgstr "Word or phrase"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:77
-#: src/features/intake/CreateCardDialog.tsx:519
+#: src/features/intake/CreateCardDialog.tsx:524
 msgid "library.create-card.word-family"
 msgstr "Word family"
 
@@ -1305,7 +1305,7 @@ msgstr "verb"
 
 #. js-lingui-explicit-id
 #: src/features/intake/CreateCardDialog.tsx:80
-#: src/features/intake/CreateCardDialog.tsx:1030
+#: src/features/intake/CreateCardDialog.tsx:1035
 msgid "library.create-card.your-card"
 msgstr "Your card"
 
@@ -1564,42 +1564,42 @@ msgid "library.dialogue.title"
 msgstr "Practice in context"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:594
+#: src/features/cardEdit/EditCardDialog.tsx:595
 msgid "library.edit-card.add-suggested-tag"
 msgstr "Add tag {tag}"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:552
+#: src/features/cardEdit/EditCardDialog.tsx:553
 msgid "library.edit-card.add-tag"
 msgstr "Add tag"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:557
+#: src/features/cardEdit/EditCardDialog.tsx:558
 msgid "library.edit-card.add-tag-placeholder"
 msgstr "Add a tag"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:393
+#: src/features/cardEdit/EditCardDialog.tsx:394
 msgid "library.edit-card.added-on"
 msgstr "Added {date}"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:471
+#: src/features/cardEdit/EditCardDialog.tsx:472
 msgid "library.edit-card.ai-suggested"
 msgstr "AI suggested"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:931
+#: src/features/cardEdit/EditCardDialog.tsx:933
 msgid "library.edit-card.card-fields"
 msgstr "Card fields"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:903
+#: src/features/cardEdit/EditCardDialog.tsx:905
 msgid "library.edit-card.close"
 msgstr "Close editor"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:411
+#: src/features/cardEdit/EditCardDialog.tsx:412
 msgid "library.edit-card.deck"
 msgstr "Deck"
 
@@ -1609,27 +1609,27 @@ msgid "library.edit-card.deck-missing"
 msgstr "This deck no longer exists. Choose another deck."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:424
+#: src/features/cardEdit/EditCardDialog.tsx:425
 msgid "library.edit-card.deck-not-listed"
 msgstr "{name} (not in your deck list)"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:419
+#: src/features/cardEdit/EditCardDialog.tsx:420
 msgid "library.edit-card.deck-unassigned"
 msgstr "Unassigned"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:618
+#: src/features/cardEdit/EditCardDialog.tsx:619
 msgid "library.edit-card.difficulty"
 msgstr "Difficulty"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:644
+#: src/features/cardEdit/EditCardDialog.tsx:645
 msgid "library.edit-card.difficulty-clear"
 msgstr "Clear"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:640
+#: src/features/cardEdit/EditCardDialog.tsx:641
 msgid "library.edit-card.difficulty-clear-label"
 msgstr "Clear difficulty"
 
@@ -1644,7 +1644,7 @@ msgid "library.edit-card.difficulty-hard"
 msgstr "Hard"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:649
+#: src/features/cardEdit/EditCardDialog.tsx:650
 msgid "library.edit-card.difficulty-helper"
 msgstr "Your own label. It does not change when this card is due."
 
@@ -1654,7 +1654,7 @@ msgid "library.edit-card.difficulty-medium"
 msgstr "Medium"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:914
+#: src/features/cardEdit/EditCardDialog.tsx:916
 msgid "library.edit-card.draft-preview"
 msgstr "Draft preview"
 
@@ -1704,46 +1704,46 @@ msgid "library.edit-card.last-review-hard"
 msgstr "Last review: Hard"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:715
-#: src/features/cardEdit/EditCardDialog.tsx:719
+#: src/features/cardEdit/EditCardDialog.tsx:716
+#: src/features/cardEdit/EditCardDialog.tsx:720
 msgid "library.edit-card.part-of-speech"
 msgstr "Part of speech"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:658
-#: src/features/cardEdit/EditCardDialog.tsx:965
+#: src/features/cardEdit/EditCardDialog.tsx:659
+#: src/features/cardEdit/EditCardDialog.tsx:967
 msgid "library.edit-card.phonetic"
 msgstr "IPA"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:868
-#: src/features/cardEdit/EditCardDialog.tsx:922
+#: src/features/cardEdit/EditCardDialog.tsx:870
+#: src/features/cardEdit/EditCardDialog.tsx:924
 msgid "library.edit-card.preview-fallback"
 msgstr "Card preview"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:804
-#: src/features/cardEdit/EditCardDialog.tsx:817
+#: src/features/cardEdit/EditCardDialog.tsx:805
+#: src/features/cardEdit/EditCardDialog.tsx:818
 msgid "library.edit-card.remove-image"
 msgstr "Remove image"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:539
+#: src/features/cardEdit/EditCardDialog.tsx:540
 msgid "library.edit-card.remove-tag"
 msgstr "Remove tag {tag}"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:898
+#: src/features/cardEdit/EditCardDialog.tsx:900
 msgid "library.edit-card.review-description"
 msgstr "This review stays paused while you edit. Your review history stays intact."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:892
+#: src/features/cardEdit/EditCardDialog.tsx:894
 msgid "library.edit-card.review-kicker"
 msgstr "Card {current} of {total}"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:394
+#: src/features/cardEdit/EditCardDialog.tsx:395
 msgid "library.edit-card.reviewed-count"
 msgstr "{count, plural, one {Reviewed # time} other {Reviewed # times}}"
 
@@ -1753,43 +1753,43 @@ msgid "library.edit-card.save-failed"
 msgstr "Your changes could not be saved. This card may have changed elsewhere. Try again."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:1002
+#: src/features/cardEdit/EditCardDialog.tsx:1004
 msgid "library.edit-card.save-resume"
 msgstr "Save & resume"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:700
+#: src/features/cardEdit/EditCardDialog.tsx:701
 msgid "library.edit-card.save-word"
 msgstr "Save word"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:443
+#: src/features/cardEdit/EditCardDialog.tsx:444
 msgid "library.edit-card.starred"
 msgstr "Starred"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:521
+#: src/features/cardEdit/EditCardDialog.tsx:522
 msgid "library.edit-card.tag-duplicate"
 msgstr "Already added"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:525
-#: src/features/cardEdit/EditCardDialog.tsx:582
+#: src/features/cardEdit/EditCardDialog.tsx:526
+#: src/features/cardEdit/EditCardDialog.tsx:583
 msgid "library.edit-card.tag-limit"
 msgstr "Up to {max} tags"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:523
+#: src/features/cardEdit/EditCardDialog.tsx:524
 msgid "library.edit-card.tag-too-long"
 msgstr "Tags can be up to {max} characters"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:529
+#: src/features/cardEdit/EditCardDialog.tsx:530
 msgid "library.edit-card.tags"
 msgstr "Tags"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:588
+#: src/features/cardEdit/EditCardDialog.tsx:589
 msgid "library.edit-card.tags-from-card"
 msgstr "From this card:"
 
@@ -1799,58 +1799,63 @@ msgid "library.edit-card.translation"
 msgstr "Translation"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:791
+#: src/features/cardEdit/EditCardDialog.tsx:792
 msgid "library.edit-card.upload-image"
 msgstr "Upload a photo from this device"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:783
+#: src/features/cardEdit/EditCardDialog.tsx:784
 msgid "library.edit-card.upload-image-cancel"
 msgstr "Cancel upload"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:828
+#: src/features/cardEdit/EditCardDialog.tsx:829
 msgid "library.edit-card.upload-image-checking"
 msgstr "Checking the photo…"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:835
+#: src/features/cardEdit/EditCardDialog.tsx:837
 msgid "library.edit-card.upload-image-failed"
 msgstr "The photo could not be uploaded. Try again."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:775
+#: src/features/cardEdit/EditCardDialog.tsx:776
 msgid "library.edit-card.upload-image-input"
 msgstr "Upload a photo"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:829
+#: src/features/cardEdit/EditCardDialog.tsx:836
+msgid "library.edit-card.upload-image-profile-required"
+msgstr "Finish setting up your profile before uploading photos."
+
+#. js-lingui-explicit-id
+#: src/features/cardEdit/EditCardDialog.tsx:830
 msgid "library.edit-card.upload-image-progress"
 msgstr "Uploading photo… {percent}%"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:833
+#: src/features/cardEdit/EditCardDialog.tsx:834
 msgid "library.edit-card.upload-image-quota"
 msgstr "Your storage is full. Delete files you no longer need, then try again."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:794
+#: src/features/cardEdit/EditCardDialog.tsx:795
 msgid "library.edit-card.upload-image-short"
 msgstr "Upload"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:834
+#: src/features/cardEdit/EditCardDialog.tsx:835
 msgid "library.edit-card.upload-image-type"
 msgstr "Choose a PNG, JPEG, or WebP photo within your plan’s size limit."
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:495
+#: src/features/cardEdit/EditCardDialog.tsx:496
 msgid "library.edit-card.use-meaning"
 msgstr "Use meaning: {meaning}"
 
 #. js-lingui-explicit-id
-#: src/features/cardEdit/EditCardDialog.tsx:670
-#: src/features/cardEdit/EditCardDialog.tsx:675
+#: src/features/cardEdit/EditCardDialog.tsx:671
+#: src/features/cardEdit/EditCardDialog.tsx:676
 msgid "library.edit-card.word"
 msgstr "Word"
 
@@ -2321,7 +2326,7 @@ msgctxt "library.deck.progress-kept"
 msgid "Review schedules and mastery are kept for every card."
 msgstr "Review schedules and mastery are kept for every card."
 
-#: src/features/cardEdit/EditCardDialog.tsx:848
+#: src/features/cardEdit/EditCardDialog.tsx:850
 msgctxt "library.edit-card.source-label"
 msgid "Captured from"
 msgstr "Captured from"
@@ -2341,8 +2346,8 @@ msgctxt "library.overview.due"
 msgid "due today"
 msgstr "due today"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1025
-#: src/features/cardEdit/EditCardDialog.tsx:1025
+#: src/features/cardEdit/EditCardDialog.tsx:1027
+#: src/features/cardEdit/EditCardDialog.tsx:1027
 msgctxt "library.edit-card.discard-description"
 msgid "Your remaining draft will be removed."
 msgstr "Your remaining draft will be removed."
@@ -2417,7 +2422,7 @@ msgctxt "library.grid.page"
 msgid "Page {current} / {total}"
 msgstr "Page {current} / {total}"
 
-#: src/features/cardEdit/EditCardDialog.tsx:736
+#: src/features/cardEdit/EditCardDialog.tsx:737
 msgctxt "library.edit-card.category"
 msgid "Category"
 msgstr "Category"
@@ -2489,7 +2494,7 @@ msgctxt "library.import.mapping-required"
 msgid "Required"
 msgstr "Required"
 
-#: src/features/cardEdit/EditCardDialog.tsx:1025
+#: src/features/cardEdit/EditCardDialog.tsx:1027
 #: src/features/library/LibraryCardGrid.tsx:452
 msgctxt "library.delete.description"
 msgid "This will permanently remove {word} from your library."
@@ -2557,7 +2562,7 @@ msgctxt "library.insights.no-category"
 msgid "No category data yet."
 msgstr "No category data yet."
 
-#: src/features/cardEdit/EditCardDialog.tsx:1036
+#: src/features/cardEdit/EditCardDialog.tsx:1038
 #: src/features/library/LibraryCardGrid.tsx:452
 msgctxt "library.delete.confirm"
 msgid "Delete card"
@@ -2598,7 +2603,7 @@ msgctxt "library.bulk.deck-label"
 msgid "Move selected cards to deck"
 msgstr "Move selected cards to deck"
 
-#: src/features/cardEdit/EditCardDialog.tsx:986
+#: src/features/cardEdit/EditCardDialog.tsx:988
 msgctxt "library.edit-card.history-note"
 msgid "Your review history is kept. Changes appear on this card right away."
 msgstr "Your review history is kept. Changes appear on this card right away."
@@ -2639,7 +2644,7 @@ msgctxt "library.deck.created"
 msgid "Deck created. Your cards can be assigned to it from the library."
 msgstr "Deck created. Your cards can be assigned to it from the library."
 
-#: src/features/cardEdit/EditCardDialog.tsx:1019
+#: src/features/cardEdit/EditCardDialog.tsx:1021
 msgctxt "library.edit-card.discard-title"
 msgid "Discard unsaved changes?"
 msgstr "Discard unsaved changes?"
@@ -2711,7 +2716,7 @@ msgctxt "library.insights.empty"
 msgid "There is not enough learning data to show insights yet."
 msgstr "There is not enough learning data to show insights yet."
 
-#: src/features/cardEdit/EditCardDialog.tsx:749
+#: src/features/cardEdit/EditCardDialog.tsx:750
 msgctxt "library.edit-card.image"
 msgid "Image"
 msgstr "Image"
@@ -2721,12 +2726,12 @@ msgctxt "library.clear.mastered"
 msgid "mastered words"
 msgstr "mastered words"
 
-#: src/features/cardEdit/EditCardDialog.tsx:728
+#: src/features/cardEdit/EditCardDialog.tsx:729
 msgctxt "library.edit-card.part-of-speech-locked"
 msgid "Locked to this card's published sense."
 msgstr "Locked to this card's published sense."
 
-#: src/features/cardEdit/EditCardDialog.tsx:1002
+#: src/features/cardEdit/EditCardDialog.tsx:1004
 msgctxt "library.edit-card.retry-save"
 msgid "Retry save"
 msgstr "Retry save"
@@ -2751,8 +2756,8 @@ msgctxt "library.import.pending-hint"
 msgid "save not confirmed"
 msgstr "save not confirmed"
 
-#: src/features/cardEdit/EditCardDialog.tsx:873
-#: src/features/cardEdit/EditCardDialog.tsx:923
+#: src/features/cardEdit/EditCardDialog.tsx:875
+#: src/features/cardEdit/EditCardDialog.tsx:925
 msgctxt "library.edit-card.unsaved-badge"
 msgid "Unsaved"
 msgstr "Unsaved"
@@ -2772,8 +2777,8 @@ msgctxt "library.import.retry-guidance"
 msgid "Retry failed or skipped words after checking the source rows."
 msgstr "Retry failed or skipped words after checking the source rows."
 
-#: src/features/cardEdit/EditCardDialog.tsx:807
-#: src/features/cardEdit/EditCardDialog.tsx:820
+#: src/features/cardEdit/EditCardDialog.tsx:808
+#: src/features/cardEdit/EditCardDialog.tsx:821
 msgctxt "library.edit-card.remove-image-short"
 msgid "Remove"
 msgstr "Remove"
@@ -2849,7 +2854,7 @@ msgctxt "library.clear.description-scope"
 msgid "This permanently deletes every card, deck and review history on all your synced devices."
 msgstr "This permanently deletes every card, deck and review history on all your synced devices."
 
-#: src/features/cardEdit/EditCardDialog.tsx:895
+#: src/features/cardEdit/EditCardDialog.tsx:897
 msgctxt "library.edit-card.title"
 msgid "Edit card"
 msgstr "Edit card"
@@ -2874,7 +2879,7 @@ msgctxt "library.overview.across-decks"
 msgid "across {count, plural, one {# deck} other {# decks}}"
 msgstr "across {count, plural, one {# deck} other {# decks}}"
 
-#: src/features/cardEdit/EditCardDialog.tsx:998
+#: src/features/cardEdit/EditCardDialog.tsx:1000
 msgctxt "library.edit-card.discard"
 msgid "Discard"
 msgstr "Discard"
