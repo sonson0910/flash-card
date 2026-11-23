@@ -8,8 +8,11 @@ on:
 permissions:
   contents: read
 
+# Dispatched runs hold the production Firestore mutation lock. Scheduled runs only reconcile restore
+# databases, and GitHub cancels a pending run whenever another run queues in the same group, so the
+# hourly schedule keeps its own group instead of cancelling a pending deploy or index preparation.
 concurrency:
-  group: firestore-production-mutations
+  group: ${{ github.event_name == 'schedule' && 'firestore-release-restore-cleanup' || 'firestore-production-mutations' }}
   cancel-in-progress: false
 
 jobs:
@@ -277,6 +280,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment: production-shared-deck-index-preparation
+    permissions:
+      actions: read
+      contents: read
     env:
       FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
       FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
@@ -311,6 +317,7 @@ jobs:
       - name: Remove any surviving disposable restore database
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           VERIFY_RESULT: ${{ needs.verify.result }}
         run: |
           set -euo pipefail
@@ -355,6 +362,19 @@ jobs:
           for restore_database_id in "${targets[@]}"; do
             [[ "$restore_database_id" =~ ^release-restore-[1-9][0-9]{0,19}-[1-9][0-9]{0,9}$ ]]
             test "$restore_database_id" != "$FIRESTORE_DATABASE_ID"
+            if [[ "$CLEANUP_MODE" == scheduled ]]; then
+              # The schedule runs outside the mutation lock: leave a database whose run is still going.
+              owner_run_id="${restore_database_id#release-restore-}"
+              owner_run_id="${owner_run_id%-*}"
+              if ! owner_run_status="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$owner_run_id" --jq .status)"; then
+                cleanup_failures+=("run-status:$restore_database_id")
+                continue
+              fi
+              if [[ "$owner_run_status" != completed ]]; then
+                echo "Skipping $restore_database_id while run $owner_run_id is $owner_run_status."
+                continue
+              fi
+            fi
             mapfile -t active_operations < <(gcloud firestore operations list \
               --project="$FIREBASE_PROJECT_ID" \
               --database="$restore_database_id" \

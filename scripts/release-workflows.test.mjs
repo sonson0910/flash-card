@@ -853,6 +853,39 @@ describe('release workflow contracts', () => {
     expect(deployIndex).toBeGreaterThan(receiptIndex);
   });
 
+  it('keeps scheduled runs out of the production Firestore mutation concurrency group', () => {
+    // GitHub keeps one pending run per concurrency group and cancels it when another run queues,
+    // so a scheduled run in this group would cancel a pending deploy, index preparation or safety run.
+    const mutationGroup = 'firestore-production-mutations';
+    const scheduledGroup = workflow => {
+      const group = /^concurrency:\n {2}group: (.+)$/m.exec(workflow)?.[1] ?? '';
+      const byEvent = /^\$\{\{ github\.event_name == 'schedule' && '([^']+)' \|\| '([^']+)' \}\}$/.exec(group);
+      return byEvent ? byEvent[1] : group;
+    };
+    const workflowDirectory = new URL('../.github/workflows/', import.meta.url);
+    const scheduled = fs.readdirSync(workflowDirectory)
+      .filter(name => /^ {2}schedule:$/m.test(read(`.github/workflows/${name}`)));
+    expect(scheduled.length).toBeGreaterThan(0);
+    for (const name of scheduled) {
+      expect(scheduledGroup(read(`.github/workflows/${name}`))).not.toContain(mutationGroup);
+    }
+    expect(scheduledGroup(read('.github/workflows/deploy-production.yml'))).toBe(mutationGroup);
+
+    const safety = read('.github/workflows/verify-firestore-release-safety.yml');
+    const cleanup = safety.slice(safety.indexOf('  cleanup:'));
+    expect(safety).toContain(
+      "group: ${{ github.event_name == 'schedule' && 'firestore-release-restore-cleanup' || 'firestore-production-mutations' }}",
+    );
+    // Outside the lock, the scheduled reconciler must leave the database of a run that has not finished.
+    expect(cleanup).toContain('actions: read');
+    expect(cleanup).toContain('GH_TOKEN: ${{ github.token }}');
+    expect(cleanup).toContain('gh api "repos/$GITHUB_REPOSITORY/actions/runs/$owner_run_id" --jq .status');
+    expect(cleanup).toContain('cleanup_failures+=("run-status:$restore_database_id")');
+    const statusIndex = cleanup.indexOf('actions/runs/$owner_run_id');
+    expect(statusIndex).toBeGreaterThan(-1);
+    expect(statusIndex).toBeLessThan(cleanup.indexOf('gcloud firestore operations cancel'));
+  });
+
   it('validates the gcloud TTL snapshot state from ttlConfig', () => {
     const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
     const ttlStepStart = workflow.indexOf('name: Verify required Firestore TTL policies');
@@ -950,7 +983,7 @@ describe('release workflow contracts', () => {
     expect(workflow).toContain('always() && env.RESTORE_DATABASE_ID !=');
     expect(workflow).toContain('needs: verify');
     expect(workflow).toContain('if: ${{ always() }}');
-    expect(workflow).toContain('group: firestore-production-mutations');
+    expect(workflow).toContain("|| 'firestore-production-mutations' }}");
     expect(workflow).toContain("cron: '17 * * * *'");
     expect(workflow).toContain("if: ${{ github.event_name == 'workflow_dispatch' }}");
     expect(workflow.slice(workflow.indexOf('  cleanup:'))).toContain('timeout-minutes: 60');

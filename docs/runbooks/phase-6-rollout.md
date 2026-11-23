@@ -347,8 +347,10 @@ and production; deployment credentials never enter the browser artifact.
    compare required export/import document counters, delete the disposable database,
    and read back both receipt TTL policies as `ACTIVE`. Record its successful run ID
    and the SHA-256 of `receipt.json`. The hourly scheduled cleanup reconciles only
-   databases matching `release-restore-<run-id>-<attempt>` and shares the Firestore
-   mutation concurrency lock; alert on any failed or approval-waiting cleanup run.
+   databases matching `release-restore-<run-id>-<attempt>`. It runs in its own
+   concurrency group, so it never cancels a pending deploy or index preparation, and it
+   leaves any database whose owning run has not completed; alert on any failed or
+   approval-waiting cleanup run.
 2. Decide target order from the recorded compatibility review. If Hosting calls a new,
    backward-compatible Function, dispatch `Deploy production artifact` with
    `promote_functions=true` so the protected Functions job completes before Hosting.
