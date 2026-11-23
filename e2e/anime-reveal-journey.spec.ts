@@ -105,7 +105,8 @@ test('level reward retries the real equip callable after an ownership error and 
   const rewards = db.collection('users').doc(testUser.uid).collection('profile').doc('rewards');
   await rewards.delete();
   await page.getByRole('button', { name: 'Use frame' }).click();
-  await expect(page.getByRole('alert')).toHaveText('Could not use this reward. Try again.');
+  // On WebKit in the test runner the refused equip call takes longer than the default five seconds to come back.
+  await expect(page.getByRole('alert')).toHaveText('Could not use this reward. Try again.', { timeout: 20_000 });
 
   await rewards.set({ ownedFrameIds: ['crimson-wing'] });
   await page.getByRole('button', { name: 'Use frame' }).click();

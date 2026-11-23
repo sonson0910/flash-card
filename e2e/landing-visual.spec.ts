@@ -232,7 +232,8 @@ test('Crystal light keeps text as the final LCP after Lumi loads', async ({ page
   await page.bringToFront();
   await page.goto('/');
   const lumi = page.locator('[data-lumi-pose="hero"]');
-  await expect(lumi).toBeVisible();
+  // WebKit in the test runner can take longer than the default five seconds to mount the landing and show Lumi.
+  await expect(lumi).toBeVisible({ timeout: 20_000 });
   await page.waitForFunction(() => {
     const image = document.querySelector<HTMLImageElement>('[data-lumi-pose="hero"]');
     return image?.complete && image.naturalWidth > 0;

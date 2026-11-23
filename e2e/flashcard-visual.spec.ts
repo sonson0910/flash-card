@@ -121,6 +121,14 @@ test.beforeEach(async ({ page, seedCards, blockExternalNetwork }) => {
   await seedCards([card]);
 });
 
+// A screenshot comparison has to see two animation frames inside its own timeout before it accepts the
+// card as still. WebKit in the test runner can go several seconds without drawing a frame after the
+// card dialog opens or the card flips, so wait for the browser to draw before the timed comparison.
+async function expectCardScreenshot(shell: Locator, name: string) {
+  await shell.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await expect(shell).toHaveScreenshot(name, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
+}
+
 async function expectCardPhotoReady(shell: Locator) {
   const image = shell.locator('.flashcard-face img');
   await expect(image).toBeVisible();
@@ -171,9 +179,7 @@ for (const theme of themes) {
       await expect(shell.locator('.flashcard-face')).toBeVisible();
       await expectPaintedSurface(shell.locator('.flashcard-face'));
       await expectCardPhotoReady(shell);
-      await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-front.png`, {
-        animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
-      });
+      await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-front.png`);
       await expectNoBlockingViolations(page);
 
       const moreTools = shell.locator('summary[aria-label="More card tools"]');
@@ -191,9 +197,7 @@ for (const theme of themes) {
       await expect(shell.getByText('Mặt số phát sáng vẫn nhìn thấy được vào ban đêm.', { exact: true })).toBeVisible();
       await expect(shell.getByRole('button', { name: 'Memory hook' })).toBeVisible();
       await expect(shell.getByRole('button', { name: 'Ask AI Tutor' })).toBeVisible();
-      await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-back.png`, {
-        animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
-      });
+      await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-back.png`);
       await expectNoBlockingViolations(page);
     });
   }
@@ -219,9 +223,7 @@ for (const tier of cardTiers) {
         await expect(shell.locator('[data-card-tier-label]')).toHaveText(tier.label[theme.family]);
         await expect(shell.getByText('New card', { exact: true })).toHaveCount(0);
         await expectCardPhotoReady(shell);
-        await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-${tier.name}-front.png`, {
-          animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
-        });
+        await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-${tier.name}-front.png`);
       });
     }
   }
@@ -290,9 +292,7 @@ for (const state of canvasCardStates) {
           await expect(shell.locator('.flashcard-star-selected')).toBeVisible();
         }
 
-        await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-${state}.png`, {
-          animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
-        });
+        await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-${state}.png`);
       });
     }
   }
@@ -313,6 +313,10 @@ for (const theme of themes) {
       // See the first loop above: the full flashcard only renders inside
       // the detail dialog.
       await page.locator('.library-word-open').click();
+      // The pointer still rests where the row was clicked, which at mobile width is inside the card.
+      // Whether the browser has applied :hover by the first screenshot is a race, and the hover foil
+      // changes the dark Zen slab visibly, so park the pointer outside the card.
+      await page.mouse.move(0, 0);
 
       const root = page.locator('html');
       const shell = page.getByRole('group', { name: /luminous flashcard/i });
@@ -324,9 +328,7 @@ for (const theme of themes) {
       await expect(front).toBeVisible();
       await expectReadableZenGlass(front);
       await expectNoMetadataControlOverlap(shell, [front.locator('[data-card-tier-label]')]);
-      await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-zen-front.png`, {
-        animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
-      });
+      await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-zen-front.png`);
       await expectNoBlockingViolations(page);
 
       await shell.getByRole('button', { name: 'Reveal meaning' }).click();
@@ -337,9 +339,7 @@ for (const theme of themes) {
         back.getByText('Vietnamese', { exact: true }),
         back.locator('[data-card-tier-label]'),
       ]);
-      await expect(shell).toHaveScreenshot(`flashcard-${theme.family}-${theme.mode}-${viewport.name}-zen-back.png`, {
-        animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
-      });
+      await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-zen-back.png`);
       await expectNoBlockingViolations(page);
     });
   }
@@ -380,9 +380,7 @@ test('reduced motion changes the card face without spatial animation', async ({ 
   await expect(shell.locator('.flashcard-back')).toHaveCSS('transform', 'none');
   const transitionDuration = await shell.locator('.flashcard-back').evaluate(element => parseFloat(getComputedStyle(element).transitionDuration));
   expect(transitionDuration).toBeLessThanOrEqual(0.001);
-  await expect(shell).toHaveScreenshot('flashcard-crystal-dark-mobile-reduced-motion-back.png', {
-    animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
-  });
+  await expectCardScreenshot(shell, 'flashcard-crystal-dark-mobile-reduced-motion-back.png');
 });
 
 for (const theme of themes) {
@@ -424,7 +422,7 @@ for (const theme of themes) {
         const screenshot = testInfo.outputPath(name);
         await shell.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
         await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
-        await expect(shell).toHaveScreenshot(name, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
+        await expectCardScreenshot(shell, name);
       };
       const face = shell.locator('.flashcard-face');
       const spotlight = shell.locator('[data-card-effect="spotlight"]');
