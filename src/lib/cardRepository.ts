@@ -888,6 +888,7 @@ export async function fetchPracticeCards(
       try {
         const newSnapshot = await getDocs(query(
           cardsCollection(db, userId),
+          ...languageConstraint,
           ...deckConstraints,
           where('difficulty', '==', 'unrated'),
           orderBy('createdAt', 'desc'),
@@ -910,6 +911,7 @@ export async function fetchPracticeCards(
     try {
       const weakSnapshot = await getDocs(query(
         cardsCollection(db, userId),
+        ...languageConstraint,
         ...deckConstraints,
         where('difficulty', '==', 'hard'),
         orderBy('createdAt', 'desc'),
@@ -948,6 +950,7 @@ export async function fetchPracticeCards(
     try {
       const reviewedSnapshot = await getDocs(query(
         cardsCollection(db, userId),
+        ...languageConstraint,
         ...deckConstraints,
         where('difficulty', 'in', ['good', 'easy']),
         orderBy('createdAt', 'desc'),
