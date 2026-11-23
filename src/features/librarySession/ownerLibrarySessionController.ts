@@ -28,7 +28,8 @@ export interface OwnerLibrarySessionAdapter {
 
 export interface OwnerLibrarySessionSnapshot {
   ownerId: string | null;
-  decks: string[];
+  /** `null` until the first deck profile snapshot arrives; an empty list means the profile is loaded and has no decks. */
+  decks: string[] | null;
   coverPresets: Record<string, CoverPreset>;
   legacyPending: number;
   legacyIssue: LegacyMigrationIssue | null;
@@ -145,7 +146,7 @@ export function createOwnerLibrarySessionController({
     const activationGeneration = generation;
     publish({
       ownerId,
-      decks: [],
+      decks: null,
       coverPresets: {},
       legacyPending: 0,
       legacyIssue: null,

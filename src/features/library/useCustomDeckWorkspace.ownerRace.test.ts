@@ -293,6 +293,17 @@ describe('useCustomDeckWorkspace owner isolation', () => {
     expect(render('owner-b', null).model.decks).toEqual(['Owner B private deck']);
   });
 
+  it('keeps the owner deck cache and shows its decks until the profile has loaded', () => {
+    const { cacheWrites, render } = createWorkspaceHarness();
+    render('owner-a', null);
+    flushEffects();
+    const view = render('owner-a', null);
+    flushEffects();
+
+    expect(view.model.decks).toEqual(['Owner A private deck']);
+    expect(cacheWrites).toEqual([]);
+  });
+
   it('refuses deck creation without remote writes or local success while owner mutation access is paused', async () => {
     const { cacheWrites, mutations, ports, render } = createWorkspaceHarness();
     const decks = ['Owner A private deck'];

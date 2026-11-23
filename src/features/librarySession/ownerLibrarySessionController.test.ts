@@ -50,6 +50,23 @@ describe('owner library session controller', () => {
     expect(controller.getSnapshot()).toMatchObject({ ownerId: 'owner-a', decks: ['IELTS'] });
   });
 
+  it('does not publish an empty deck list before the deck profile has loaded', async () => {
+    const adapter = fakeAdapter();
+    const controller = createOwnerLibrarySessionController({ adapter });
+
+    controller.activate({ ownerId: 'owner-a', libraryEpoch: 7, cloudTotal: 0 });
+    expect(controller.getSnapshot()).toMatchObject({ ownerId: 'owner-a', decks: null });
+    await vi.waitFor(() => expect(controller.getSnapshot().status).toBe('ready'));
+    adapter.emitDecks('owner-a', null);
+    adapter.emitDeckError('owner-a', Object.assign(new Error('Quota limit exceeded.'), {
+      code: 'firestore/resource-exhausted',
+    }));
+
+    expect(controller.getSnapshot().decks).toBeNull();
+    adapter.emitDecks('owner-a', { decks: [] });
+    expect(controller.getSnapshot().decks).toEqual([]);
+  });
+
   it('keeps only valid presets for active deck names', async () => {
     const adapter = fakeAdapter();
     const controller = createOwnerLibrarySessionController({ adapter });
