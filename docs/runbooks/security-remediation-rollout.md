@@ -26,7 +26,7 @@ workflow summary, logs, or downloaded artifacts.
 2. Confirm GitHub environments require reviewers and prevent self-approval:
    `production`, `production-hosting`, `production-functions`,
    `production-legacy-library-dry-run`, `production-legacy-library-apply`,
-   `production-legacy-library-rollback`,
+   `production-legacy-library-rollback`, `production-legacy-library-catalog-progress`,
    `production-shared-deck-inventory`, `production-shared-deck-apply`,
    `production-shared-deck-index-preparation`, `production-shared-deck-supersede`,
    `production-rules-cutover`, and `production-rules-rollback`.

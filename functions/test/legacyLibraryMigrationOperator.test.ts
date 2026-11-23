@@ -10,6 +10,20 @@ import runtimeTarget from '../src/runtime-target.json';
 const state = vi.hoisted(() => ({
   ownerIds: [] as string[],
   jobs: new Map<string, Record<string, unknown>>(),
+  fencedOwnerIds: new Set<string>(),
+  repairedOwnerIds: [] as string[],
+}));
+
+vi.mock('../src/catalogProgressPersistence.js', () => ({
+  repairCatalogProgressForOwner: async (_database: unknown, ownerId: string) => {
+    if (state.fencedOwnerIds.has(ownerId)) {
+      // Imported on use, so the error comes from the module instance the operator loaded.
+      const { LegacyLibraryMigrationFenceError } = await import('../src/legacyLibraryMigrationOwnerScope.js');
+      throw new LegacyLibraryMigrationFenceError();
+    }
+    state.repairedOwnerIds.push(ownerId);
+    return { scanned: 4, repaired: 2 };
+  },
 }));
 
 vi.mock('firebase-admin/app', () => ({
@@ -75,9 +89,11 @@ const terminalJob = (
   lastPageDigest: 'd'.repeat(64), leaseOwner: null, leaseExpiresAt: null, ...extra,
 });
 
-const runDryRun = async () => {
+const runOperator = async (mode: string, confirmation?: string) => {
   vi.resetModules();
-  process.env.MIGRATION_MODE = 'dry-run';
+  process.env.MIGRATION_MODE = mode;
+  if (confirmation) process.env.MIGRATION_CONFIRMATION = confirmation;
+  else delete process.env.MIGRATION_CONFIRMATION;
   process.env.FIREBASE_PROJECT_ID = 'encoded-hangout-433912-h2';
   process.env.FIRESTORE_DATABASE_ID = runtimeTarget.firestoreDatabaseId;
   delete process.env.MIGRATION_REPORT_FILE;
@@ -101,6 +117,7 @@ const runDryRun = async () => {
   vi.restoreAllMocks();
   return { exitCodes, errors, report: stdout ? JSON.parse(stdout) as { reports: Array<Record<string, unknown>> } : null };
 };
+const runDryRun = () => runOperator('dry-run');
 
 describe('legacy library operator dry-run', () => {
   beforeEach(() => {
@@ -130,5 +147,38 @@ describe('legacy library operator dry-run', () => {
     expect(fresh).toMatchObject({ phase: 'discovered', complete: false });
     expect(fresh.sourceRevision).toMatch(/^[a-f0-9]{64}$/);
     expect(JSON.stringify(report)).not.toContain('owner-');
+  });
+});
+
+describe('legacy library operator catalog progress repair', () => {
+  beforeEach(() => {
+    state.ownerIds = ['owner-a', 'owner-b'];
+    state.jobs.clear();
+    state.fencedOwnerIds = new Set(['owner-b']);
+    state.repairedOwnerIds = [];
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.MIGRATION_MODE;
+    delete process.env.MIGRATION_CONFIRMATION;
+  });
+
+  it('repairs every owner and reports an owner under a migration fence as left for a later run', async () => {
+    const { exitCodes, errors, report } = await runOperator('catalog-progress', 'REPAIR_CATALOG_PROGRESS');
+
+    expect(errors).toEqual([]);
+    expect(exitCodes).toEqual([0]);
+    expect(state.repairedOwnerIds).toEqual(['owner-a']);
+    expect(report?.reports).toEqual([
+      expect.objectContaining({ mode: 'catalog-progress', scanned: 4, repaired: 2 }),
+      expect.objectContaining({ mode: 'catalog-progress', skipped: 'migration-fence' }),
+    ]);
+    expect(JSON.stringify(report)).not.toContain('owner-');
+  });
+
+  it('refuses to run without its confirmation', async () => {
+    await expect(runOperator('catalog-progress')).rejects
+      .toThrow('Catalog progress repair requires MIGRATION_CONFIRMATION=REPAIR_CATALOG_PROGRESS.');
+    expect(state.repairedOwnerIds).toEqual([]);
   });
 });

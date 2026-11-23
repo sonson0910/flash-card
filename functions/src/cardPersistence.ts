@@ -13,7 +13,7 @@ import {
 } from './inputValidation.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
 import { ownStorageImageOwner } from './ownFileImageUrl.js';
-import { catalogProgressMatchesCard, catalogProgressReferenceForCard, upsertCatalogProgressForCard } from './catalogProgressPersistence.js';
+import { upsertCatalogProgressForCard } from './catalogProgressPersistence.js';
 import {
   applyLibraryFacetMutationInTransaction,
   libraryFacetRestoreOperationId,
@@ -973,15 +973,10 @@ export async function createCardForOwner(
       const normalizedExisting = isStrictCurrent
         ? existingCard
         : canonicalExistingCard(existingCard, id, identity, currentEpoch);
-      // A lexeme card written before its catalog progress existed gets it now.
-      const progress = isStrictCurrent ? catalogProgressReferenceForCard(database, ownerId, existingCard) : null;
-      const progressSnapshot = progress ? await transaction.get(progress) : undefined;
       const result = await complete({ created: false, card: serializeCardResponse(normalizedExisting) });
-      if (!isStrictCurrent || !catalogProgressMatchesCard(progressSnapshot?.data(), normalizedExisting)) {
-        upsertCatalogProgressForCard(database, transaction, ownerId, normalizedExisting);
-      }
       if (!isStrictCurrent) {
         transaction.set(canonical, normalizedExisting, { merge: false });
+        upsertCatalogProgressForCard(database, transaction, ownerId, normalizedExisting);
       }
       if (!existingReservation) transaction.create(reservation, expectedReservation);
       return result;

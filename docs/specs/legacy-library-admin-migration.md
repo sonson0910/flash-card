@@ -18,6 +18,11 @@ card searchable/pageable under schema v2 without losing the strongest learning s
   apply (`discovered`) or rollback (`verify`, `apply`, `complete`, `rollback`) accepts
 - Operator apply/rollback: dispatched only after selecting exactly one owner key from
   a clean dry-run for the same revision and target
+- Operator catalog-progress repair (`MIGRATION_CONFIRMATION=REPAIR_CATALOG_PROGRESS`):
+  writes the missing or outdated `catalog_progress` projection of every lexeme card in
+  each owner's current library, which cards written before the projection existed lack.
+  Idempotent; a fenced owner is reported as `skipped: migration-fence` and left for a
+  later run. Reports owner keys with scanned and repaired counts only
 - Library changed after the dry-run: apply fails without migrating anything, releases
   the fence and reopens discovery for that owner; dispatch dry-run again and approve
   the new revision it reports. The earlier revision is never applied
