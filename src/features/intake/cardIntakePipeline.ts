@@ -153,6 +153,10 @@ export function createCardIntakePipeline({
   // keeps that card's id. The card shown at once then takes the stored id, so later edits,
   // reviews and media reach the document that exists.
   const storedCardIds = new WeakMap<CardData, string>();
+  // What the card service stored for each card shown at once, or null when saving it failed. Media that
+  // arrives later patches that card: it carries the epoch and revision the patch is checked against,
+  // which the card shown at once does not have.
+  const storedCards = new WeakMap<CardData, Promise<CardData | null>>();
   const adoptStoredCardId = (candidate: CardData, storedId: string, latest: CardIntakePortOptions) => {
     const cards = latest.getCards();
     const shown = cards.find(existing =>
@@ -402,8 +406,10 @@ export function createCardIntakePipeline({
       index: number;
     }> = [];
 
+    const storedSettled = new Map<CardData, (stored: CardData | null) => void>();
     for (const [index, candidate] of candidates.entries()) {
       mediaSessions.set(candidate, session);
+      storedCards.set(candidate, new Promise<CardData | null>(resolve => storedSettled.set(candidate, resolve)));
       const operationId = operationIds[index]!;
       cloudSettlements.push({
         settle: () => withTimeout(
@@ -454,6 +460,7 @@ export function createCardIntakePipeline({
     const settlements = mapWithConcurrency(cloudSettlements, source === 'shared' ? 1 : 6, async ({ settle, candidate, operationId, index }) => {
       try {
         const result = await settle();
+        storedSettled.get(candidate)?.(result.card);
         const outcome: SpreadsheetSaveOutcome = result.created ? 'created' : 'reused';
         const storedElsewhere = result.card.id !== candidate.id;
         if (storedElsewhere) storedCardIds.set(candidate, result.card.id);
@@ -484,6 +491,7 @@ export function createCardIntakePipeline({
         }
         return outcome;
       } catch (cause) {
+        storedSettled.get(candidate)?.(null);
         if (onSettlement && cause instanceof OperationTimeoutError) {
           onSettlement?.(index, 'pending');
           return 'pending' as const;
@@ -655,8 +663,12 @@ export function createCardIntakePipeline({
     applyMedia: async (card, media) => {
       const session = mediaSessions.get(card);
       if (!session || !sessionGuard.isCurrent(session)) return;
+      const pending = storedCards.get(card);
+      const stored = pending ? await pending : undefined;
+      // A card that could not be saved has nothing to enrich; the owner may also have changed while waiting.
+      if (stored === null || !sessionGuard.isCurrent(session)) return;
       const storedId = storedCardIds.get(card);
-      const target = storedId ? { ...card, id: storedId } : card;
+      const target = stored ?? (storedId ? { ...card, id: storedId } : card);
       await getContext().patchCard(target.id, media, target);
     },
     persistStructured: async ({ creates, patches }, onSettlement) => {

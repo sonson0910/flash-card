@@ -9,6 +9,7 @@ import { ENGLISH_TO_VIETNAMESE_PROFILE } from '../language/languageProfile';
 import { languageProfileForPair } from '../courses/courseLanguageProfile';
 import { createTargetAwareCardId, createWordCardId } from '../../lib/cardIdentity';
 import { OperationTimeoutError } from '../../lib/async';
+import { createLearningStateController, type LearningStateMutation } from '../learning/learningStateController';
 
 const generationRuntime = vi.hoisted(() => ({
   generateWordInfo: vi.fn(),
@@ -687,6 +688,76 @@ describe('Card Intake Pipeline contract', () => {
       { audioUrl: null, imageUrl: 'https://images.example/apple.jpg' },
       expect.objectContaining({ id: storedId }),
     );
+  });
+
+  describe('late media for a card that was just created', () => {
+    const created = (candidate: CardData, epoch: number): { card: CardData; created: true; gamification: null } => ({
+      card: { ...candidate, libraryEpoch: epoch, revision: 1 }, created: true, gamification: null,
+    });
+
+    it('patches with the card as stored, so the patch carries the epoch and revision it was created under', async () => {
+      const context = { ...createContext(), libraryEpoch: 1 };
+      const pipeline = createCardIntakePipeline({ getContext: () => context });
+      const candidate = card('attention');
+      repositoryRuntime.createCardV2IfAbsent.mockImplementationOnce(async (...args: unknown[]) => created(args[2] as CardData, 1));
+
+      const [persisted] = await pipeline.persistCards([candidate], 'generate');
+      await pipeline.applyMedia(persisted!.card, { audioUrl: 'https://audio.example/attention.mp3', imageUrl: null });
+
+      const [, fields, source] = vi.mocked(context.patchCard).mock.calls[0]!;
+      expect(source).toMatchObject({ id: candidate.id, libraryEpoch: 1, revision: 1 });
+
+      // The learning state builds its precondition from that source: it must not be the unsaved epoch 0, revision 0.
+      const persistedMutations: LearningStateMutation[] = [];
+      const controller = createLearningStateController({
+        port: {
+          activeOwner: () => 'owner-a',
+          activeOwnerId: () => 'owner-a',
+          findCard: () => source as CardData,
+          persist: async mutation => {
+            persistedMutations.push(mutation);
+            return { ownerKey: 'owner-a', operationId: mutation.operationId, publication: mutation.publication };
+          },
+        },
+        snapshots: { library: { apply: () => undefined }, practice: { apply: () => undefined } },
+      });
+      await controller.patch(candidate.id, fields as Partial<CardData>, Object.keys(fields) as Array<keyof CardData>, 'op-media');
+      expect(persistedMutations[0]).toMatchObject({ operation: 'patch', libraryEpoch: 1, baseRevision: 1 });
+    });
+
+    it('waits for the save to settle before patching a card that is still being created', async () => {
+      const context = { ...createContext(), libraryEpoch: 1 };
+      const pipeline = createCardIntakePipeline({ getContext: () => context });
+      const candidate = card('attention');
+      const stored = deferred<{ card: CardData; created: boolean; gamification: null }>();
+      repositoryRuntime.createCardV2IfAbsent.mockReturnValueOnce(stored.promise);
+
+      const [persisted] = await pipeline.persistCards([candidate], 'generate');
+      const applied = pipeline.applyMedia(persisted!.card, { audioUrl: 'https://audio.example/attention.mp3', imageUrl: null });
+      await new Promise(resolve => setTimeout(resolve, 10));
+      expect(context.patchCard).not.toHaveBeenCalled();
+
+      stored.resolve(created(candidate, 1));
+      await applied;
+      expect(context.patchCard).toHaveBeenCalledWith(
+        candidate.id,
+        { audioUrl: 'https://audio.example/attention.mp3', imageUrl: null },
+        expect.objectContaining({ libraryEpoch: 1, revision: 1 }),
+      );
+    });
+
+    it('does not patch a card whose save failed', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const context = { ...createContext(), libraryEpoch: 1 };
+      const pipeline = createCardIntakePipeline({ getContext: () => context });
+      repositoryRuntime.createCardV2IfAbsent.mockRejectedValueOnce(new Error('offline'));
+
+      const [persisted] = await pipeline.persistCards([card('attention')], 'generate');
+      await pipeline.applyMedia(persisted!.card, { audioUrl: 'https://audio.example/attention.mp3', imageUrl: null });
+
+      expect(context.patchCard).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
   });
 
   it('moves the shown card to the id the service stored it under when an earlier claim on the word decides it', async () => {
