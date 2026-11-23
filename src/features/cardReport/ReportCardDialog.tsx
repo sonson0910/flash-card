@@ -7,7 +7,7 @@ import { useState, type FormEvent } from 'react';
 import { reportCardFailureMessage, submitCardReport, CARD_REPORT_REASONS, type CardReportReason } from './cardReportService';
 
 const reasonLabels: Record<CardReportReason, MessageDescriptor> = {
-  'wrong-meaning': msg({ id: 'cardReport.reason.wrong-meaning', message: 'The Vietnamese meaning is wrong' }),
+  'wrong-meaning': msg({ id: 'cardReport.reason.wrong-meaning', message: 'The meaning or translation is wrong' }),
   'wrong-example': msg({ id: 'cardReport.reason.wrong-example', message: 'The example is not a good fit' }),
   'wrong-pronunciation': msg({ id: 'cardReport.reason.wrong-pronunciation', message: 'The phonetics or pronunciation is wrong' }),
   'wrong-image': msg({ id: 'cardReport.reason.wrong-image', message: 'The illustration is not a good fit' }),

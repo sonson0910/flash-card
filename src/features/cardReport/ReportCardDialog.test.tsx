@@ -99,6 +99,15 @@ describe('ReportCardDialog', () => {
     expect(view.submitButton?.props?.disabled).toBe(false);
   });
 
+  it('words the meaning reason without naming a language, since the translation language is the learner\'s own', () => {
+    const view = render(baseProps);
+    const options = findAllByType(view.select, 'option');
+    const meaning = options.find(option => option.props?.value === 'wrong-meaning');
+
+    expect(meaning?.props?.children).toBe('The meaning or translation is wrong');
+    expect(String(meaning?.props?.children)).not.toMatch(/vietnamese|english/i);
+  });
+
   it('disables the submit button while the report is working, then shows the success state', async () => {
     let resolveSubmit: () => void = () => {};
     service.submitCardReport.mockReturnValue(new Promise<void>(resolve => { resolveSubmit = resolve; }));
