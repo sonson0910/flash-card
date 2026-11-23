@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, it } from 'vitest';
 import { checkLocalePages } from './check-locale-pages.mjs';
-import { generateLocalePages } from './generate-locale-pages.mjs';
+import { PRODUCTION_ORIGIN, generateLocalePages } from './generate-locale-pages.mjs';
 
 const roots = [];
 const createFixture = () => {
@@ -26,6 +26,39 @@ const createFixture = () => {
 
 afterEach(() => roots.splice(0).forEach(root => fs.rmSync(root, { recursive: true, force: true })));
 
+describe('public origin', () => {
+  const read = file => fs.readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+
+  it('is the Hosting origin the deployed app and the reminder links use', () => {
+    const config = JSON.parse(read('firebase-applet-config.json'));
+    const hosts = JSON.stringify(config);
+    assert.ok(hosts.includes(new URL(PRODUCTION_ORIGIN).host), 'firebase-applet-config.json must allow the public origin host');
+    assert.ok(read('functions/src/reminderAppOrigin.ts').includes(`'${PRODUCTION_ORIGIN}'`), 'reminder links must use the public origin');
+  });
+
+  it('is the only host named by canonical, hreflang, Open Graph, sitemap and robots output', () => {
+    const root = createFixture();
+    generateLocalePages({ root });
+    const output = ['index.html', 'vi/index.html', 'sitemap.xml', 'robots.txt']
+      .map(file => fs.readFileSync(path.join(root, 'dist', file), 'utf8')).join('\n');
+    const origins = new Set(output.match(/https?:\/\/[^/"<\s]+/g));
+    assert.deepEqual([...origins].filter(origin => origin !== PRODUCTION_ORIGIN && !origin.startsWith('http://www.sitemaps.org') && !origin.startsWith('http://www.w3.org')), []);
+    assert.ok(output.includes(`Sitemap: ${PRODUCTION_ORIGIN}/sitemap.xml`));
+  });
+
+  it('is the host the checked-in robots.txt names, so the dev server and the build agree', () => {
+    assert.equal(read('public/robots.txt').match(/^Sitemap: (https?:\/\/[^/\s]+)\//m)?.[1], PRODUCTION_ORIGIN);
+  });
+
+  it('is rejected by the page check when robots.txt names another host', () => {
+    const root = createFixture();
+    generateLocalePages({ root });
+    const robots = path.join(root, 'dist/robots.txt');
+    fs.writeFileSync(robots, fs.readFileSync(robots, 'utf8').replace(PRODUCTION_ORIGIN, 'https://example.com'));
+    assert.throws(() => checkLocalePages({ root }), /robots\.txt: sitemap must be/);
+  });
+});
+
 describe('localized landing pages', () => {
   it('generates catalog-owned metadata without changing the inline boot script', () => {
     const root = createFixture();
@@ -36,7 +69,7 @@ describe('localized landing pages', () => {
     assert.match(vietnamese, /<title>Nhớ từ tiếng Anh cùng SonFlash<\/title>/);
     assert.match(vietnamese, /<html lang="vi">/);
     assert.match(vietnamese, /<script>const boot = true;<\/script>/);
-    assert.match(fs.readFileSync(path.join(root, 'dist/sitemap.xml'), 'utf8'), /https:\/\/sonflash\.app\/vi\//);
+    assert.match(fs.readFileSync(path.join(root, 'dist/sitemap.xml'), 'utf8'), new RegExp(`${PRODUCTION_ORIGIN.replaceAll('.', '\\.')}/vi/`));
     checkLocalePages({ root });
   });
 
@@ -53,7 +86,7 @@ describe('localized landing pages', () => {
     generateLocalePages({ root });
     const vietnamese = path.join(root, 'dist/vi/index.html');
     fs.writeFileSync(vietnamese, fs.readFileSync(vietnamese, 'utf8')
-      .replace('https://sonflash.app/vi/', 'https://example.com/vi/')
+      .replace(`${PRODUCTION_ORIGIN}/vi/`, 'https://example.com/vi/')
       .replace('<html lang="vi">', '<html lang="en">'));
     assert.throws(() => checkLocalePages({ root }), /expected html lang=vi/);
     assert.throws(() => checkLocalePages({ root }), /self canonical is missing or incorrect/);
@@ -63,7 +96,7 @@ describe('localized landing pages', () => {
     const root = createFixture();
     generateLocalePages({ root });
     const sitemap = path.join(root, 'dist/sitemap.xml');
-    fs.writeFileSync(sitemap, fs.readFileSync(sitemap, 'utf8').replace('hreflang="vi" href="https://sonflash.app/vi/"', 'hreflang="vi" href="https://example.com/vi/"'));
+    fs.writeFileSync(sitemap, fs.readFileSync(sitemap, 'utf8').replace(`hreflang="vi" href="${PRODUCTION_ORIGIN}/vi/"`, 'hreflang="vi" href="https://example.com/vi/"'));
     assert.throws(() => checkLocalePages({ root }), /sitemap\.xml: missing alternate vi for en/);
   });
 

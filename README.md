@@ -156,7 +156,7 @@ RELEASE_REVISION="$(git rev-parse HEAD)" npm run verify
 `npm run verify` covers application and Functions type checks, unit tests, Firestore Rules,
 the production build, secret and bundle scans, Chromium and WebKit desktop and mobile journeys, dependency
 audits, and release-readiness evidence. `npm run build` also generates the English and Vietnamese
-landing pages and sitemap for `https://sonflash.app` from the landing catalogs; `npm run verify`
+landing pages and sitemap for the public origin (`PRODUCTION_ORIGIN` in `scripts/generate-locale-pages.mjs`, currently `https://encoded-hangout-433912-h2.web.app` until a custom domain is connected) from the landing catalogs; `npm run verify`
 checks their canonical and reciprocal language links. For release-grade evidence, run it from a clean
 checkout and bind it to the exact 40- or 64-character source revision.
 
