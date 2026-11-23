@@ -406,11 +406,11 @@ export const startBrowserExtensionImportRuntime = (
         } else if (result.status === 'invalid') {
           publishSilentResult(intent, {
             status: 'error',
-            message: 'Select an English word or short phrase of at most 80 characters.',
+            message: 'Select a word or short phrase of at most 80 characters.',
             reason: 'invalid-selection',
           });
           if (intent.mode !== 'silent') {
-            options.reportError('The selected text could not be added. Select an English word or short phrase.');
+            options.reportError('The selected text could not be added. Select a word or short phrase.');
           }
         } else if (result.status === 'failed') {
           publishSilentResult(intent, {

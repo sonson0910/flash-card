@@ -1083,6 +1083,8 @@ describe('a failed silent capture tells the extension why, independent of the me
       .toMatchObject({ status: 'error', reason: 'deck-missing' });
     expect(await resultFor({}, {}, async () => ({ status: 'invalid', reason: 'empty' as const })))
       .toMatchObject({ status: 'error', reason: 'invalid-selection' });
+    expect(await resultFor({}, {}, async () => ({ status: 'invalid', reason: 'empty' as const })))
+      .toMatchObject({ message: expect.not.stringMatching(/English/) });
     expect(await resultFor({ sourceLanguage: 'en' }, { ensureCaptureCourse: async () => 'cancel' }, unreachable))
       .toMatchObject({ status: 'error', reason: 'course-cancelled' });
     expect(await resultFor({ sourceLanguage: 'en' }, { ensureCaptureCourse: async () => { throw new Error('x'); } }, unreachable))

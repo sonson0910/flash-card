@@ -147,7 +147,7 @@
   const selectionValidation = value => {
     const text = normalizeSelectedText(value);
     if (!text) {
-      return { ok: false, error: 'Hãy bôi đen một từ hoặc cụm từ tiếng Anh trước.' };
+      return { ok: false, error: 'Hãy bôi đen một từ hoặc cụm từ trước.' };
     }
     if (text.length > MAX_TEXT_LENGTH) {
       return {

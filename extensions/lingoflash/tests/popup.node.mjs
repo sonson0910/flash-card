@@ -508,7 +508,7 @@ test('connects the speech support explanation to the button and keeps focus visi
 test('declares data-flow disclosure and reduced-motion support in the popup', () => {
   assert.match(popupHtmlSource, /Google Translate/);
   assert.match(popupHtmlSource, /SonFlash\/Gemini/);
-  assert.match(popupHtmlSource, /chỉ hỗ trợ tiếng Anh/);
+  assert.doesNotMatch(popupHtmlSource, /chỉ hỗ trợ tiếng Anh/);
   assert.match(popupHtmlSource, /id="speak-selection"[\s\S]*<svg/);
   assert.match(popupHtmlSource, /id="result-close"[\s\S]*<svg/);
   assert.match(popupHtmlSource, /id="result-speak"[\s\S]*<svg/);
