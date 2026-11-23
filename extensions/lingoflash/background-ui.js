@@ -347,6 +347,10 @@
     if (!root) return { ok: false, error: 'Inline result host has no shadow root.' };
     host.style.cssText = `all:initial;position:fixed;z-index:2147483647;width:min(${bubbleWidth}px,calc(100vw - 24px));pointer-events:auto`;
     root.replaceChildren();
+    // The host is reused, so a timer from an earlier render must not remove
+    // whatever this render puts in it: only the latest render owns the host.
+    const renderToken = `${Date.now()}-${Math.random()}`;
+    host.dataset.renderToken = renderToken;
     const style = document.createElement('style');
     style.textContent = [
       '*{box-sizing:border-box}',
@@ -589,7 +593,8 @@
         body.append(note);
         const openApp = document.createElement('button');
         openApp.type = 'button'; openApp.className = 'speak'; openApp.dataset.kind = 'action'; openApp.textContent = bt('bubbleQuotaAction', undefined, 'Mở SonFlash · Nâng cấp Pro');
-        openApp.onclick = () => {
+        openApp.onclick = event => {
+          if (event?.isTrusted !== true) return;
           const runtime = (globalThis.browser ?? globalThis.chrome)?.runtime;
           if (!runtime?.sendMessage) return;
           const message = { type: 'OPEN_APP' };
@@ -600,7 +605,8 @@
       } else if (payload.status === 'error' && typeof payload.retryId === 'string') {
         const retry = document.createElement('button');
         retry.type = 'button'; retry.className = 'speak'; retry.dataset.kind = 'action'; retry.textContent = bt('bubbleRetry', undefined, 'Thử lại từ này');
-        retry.onclick = () => {
+        retry.onclick = event => {
+          if (event?.isTrusted !== true || retry.disabled) return;
           const runtime = (globalThis.browser ?? globalThis.chrome)?.runtime;
           if (!runtime?.sendMessage) return;
           retry.disabled = true;
@@ -674,7 +680,7 @@
     // The caret points back at the selection only while the bubble sits directly below it.
     caret.hidden = !(a && top === desiredTop);
     const duration = Number.isSafeInteger(payload.bubbleDurationMs) ? Math.max(0, payload.bubbleDurationMs) : 12_000;
-    if (duration > 0 && ['translated','created','existing'].includes(payload.status)) setTimeout(() => host.isConnected && host.remove(), duration);
+    if (duration > 0 && ['translated','created','existing'].includes(payload.status)) setTimeout(() => host.isConnected && host.dataset.renderToken === renderToken && host.remove(), duration);
     return { ok: true };
   };
 
