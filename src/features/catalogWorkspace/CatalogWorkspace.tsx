@@ -514,9 +514,11 @@ export default function CatalogWorkspace({
         ? 'adding' as const
         : scopedOptimisticLibrary.addedCardIds.has(card.id) || isInLibrary(card)
           ? 'added' as const
-          : scopedOptimisticLibrary.failedCardIds.has(card.id)
-            ? 'failed' as const
-            : 'available' as const,
+          : card.language !== targetLanguage
+            ? 'other-language' as const
+            : scopedOptimisticLibrary.failedCardIds.has(card.id)
+              ? 'failed' as const
+              : 'available' as const,
     };
   });
   const pathUnits = projectCatalogPathUnits(summary, progressAvailable);

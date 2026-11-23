@@ -370,6 +370,8 @@ function VocabularyCard({ card, onAdd }: { card: CatalogVocabularyPresentation; 
     ? i18n._(msg({ id: 'catalog.card.in-library', message: 'In your library' }))
     : libraryState === 'adding'
       ? i18n._(msg({ id: 'catalog.card.adding', message: 'Adding…' }))
+      : libraryState === 'other-language'
+        ? i18n._(msg({ id: 'catalog.card.other-language', message: 'Not in your course language' }))
       : addFailed
         ? i18n._(msg({ id: 'catalog.card.try-adding-again', message: 'Try adding again' }))
         : i18n._(msg({ id: 'catalog.card.add-to-library', message: 'Add to library' }));
@@ -394,7 +396,7 @@ function VocabularyCard({ card, onAdd }: { card: CatalogVocabularyPresentation; 
         <p className="mt-2"><strong className="text-[var(--sf-text)]"><Trans {...msg({ context: 'catalog.card.review', message: 'Review:' })} /></strong> {evidenceLabel(card.provenance.reviewerLabel, i18n._(msg({ id: 'catalog.card.review-missing', message: 'Human review not recorded' })))}</p>
         {(card.topics.length > 0 || card.skills.length > 0) && <p className="mt-2"><strong className="text-[var(--sf-text)]"><Trans {...msg({ context: 'catalog.card.learning-context', message: 'Learning context:' })} /></strong> {[...card.topics, ...card.skills].join(' · ')}</p>}
         {addFailed && <p id={addErrorId} className="catalog-note catalog-note--danger mt-4 font-semibold" role="alert"><Trans {...msg({ context: 'catalog.card.add-failed', message: 'Could not add “{lemma}” to your library. Check your connection or sign in, then try again.' })} values={{ lemma: card.lemma }} /></p>}
-        <button type="button" onClick={onAdd} disabled={libraryState === 'adding' || libraryState === 'added'} aria-describedby={addFailed ? addErrorId : undefined} className={`${ctaClass} mt-4 w-full disabled:cursor-default`} aria-label={i18n._(msg({ id: 'catalog.card.add-action', message: '{action} {lemma}' }).id, { action: addLabel, lemma: card.lemma })}>
+        <button type="button" onClick={onAdd} disabled={libraryState === 'adding' || libraryState === 'added' || libraryState === 'other-language'} aria-describedby={addFailed ? addErrorId : undefined} className={`${ctaClass} mt-4 w-full disabled:cursor-default`} aria-label={i18n._(msg({ id: 'catalog.card.add-action', message: '{action} {lemma}' }).id, { action: addLabel, lemma: card.lemma })}>
           {libraryState === 'adding' ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : libraryState === 'added' ? <Check className="size-4" aria-hidden="true" /> : addFailed ? <RefreshCw className="size-4" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
           {addLabel}
         </button>

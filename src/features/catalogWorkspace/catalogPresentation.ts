@@ -116,7 +116,7 @@ export interface CatalogVocabularyPresentation {
     licenseLabel: string;
     reviewerLabel: string;
   };
-  libraryState?: 'available' | 'adding' | 'added' | 'failed';
+  libraryState?: 'available' | 'adding' | 'added' | 'failed' | 'other-language';
 }
 
 export interface CatalogScreenModel {

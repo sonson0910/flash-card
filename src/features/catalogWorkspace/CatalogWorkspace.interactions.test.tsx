@@ -200,6 +200,20 @@ describe('CatalogWorkspace Continue in another course language', () => {
     expect(workspace.model.pathUnitContinue?.error).toMatch(/different language than your course/);
     expect(workspace.model.pathUnitContinue?.busy).toBe(false);
   });
+
+  it('does not add a word from another language into the course', async () => {
+    const adoptCards = vi.fn();
+    seedCatalogPage();
+
+    let workspace = render({ targetLanguage: 'ko', adoptCards });
+    expect(workspace.model.cards[0]?.libraryState).toBe('other-language');
+    workspace.actions.addToLibrary('lexeme-1');
+    await Promise.resolve();
+    workspace = render({ targetLanguage: 'ko', adoptCards });
+
+    expect(adoptCards).not.toHaveBeenCalled();
+    expect(workspace.model.cards[0]?.libraryState).toBe('other-language');
+  });
 });
 
 describe('CatalogWorkspace inlined interactions', () => {
