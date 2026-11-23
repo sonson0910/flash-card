@@ -219,6 +219,22 @@ describe('outstandingItems', () => {
     const outstanding = outstandingItems(snapshotIds, freshPlan.items);
     expect(outstanding.map(item => item.card.id)).toEqual(['due-2']);
   });
+
+  it('drops a committed card that is still weak after its rating', () => {
+    const plan = buildDailyPlan([
+      card('due-1', { reviews: 1, nextReviewDate: '2026-08-01T00:00:00.000Z' }),
+      card('due-2', { reviews: 1, nextReviewDate: '2026-08-01T00:00:00.000Z' }),
+    ], { now });
+    const freshPlan = buildDailyPlan([
+      card('due-1', { reviews: 2, correctStreak: 0, difficulty: 'hard', nextReviewDate: '2026-09-01T00:00:00.000Z' }),
+      card('due-2', { reviews: 1, nextReviewDate: '2026-08-01T00:00:00.000Z' }),
+    ], { now });
+    expect(freshPlan.items.find(item => item.card.id === 'due-1')?.reason).toBe('weak');
+
+    const outstanding = outstandingItems(logicalIdsOf(plan.items), freshPlan.items, ['due-1']);
+    expect(outstanding.map(item => item.card.id)).toEqual(['due-2']);
+    expect(outstandingItems(logicalIdsOf(plan.items), freshPlan.items).map(item => item.card.id)).toContain('due-1');
+  });
 });
 
 describe('applyRatingToStats', () => {
@@ -280,6 +296,15 @@ describe('applyRatingToStats', () => {
   it('keeps promotions recorded earlier when a later rating lands', () => {
     const promoted = applyTierChangeToStats(emptyDailySessionStats, 'a', 'new', 'learning');
     expect(applyRatingToStats(promoted, 'b', 'good', 0, 'review').promotions).toEqual([{ cardId: 'a', from: 'new', to: 'learning' }]);
+  });
+});
+
+describe('committed review ids', () => {
+  it('records the logical id of each card rated in the review stage and ignores other stages', () => {
+    const afterReview = applyRatingToStats(emptyDailySessionStats, 'a', 'again', 0, 'review', 0, 'logical-a');
+    const again = applyRatingToStats(afterReview, 'a', 'good', 0, 'review', 0, 'logical-a');
+    const afterNew = applyRatingToStats(again, 'b', 'good', 0, 'new', 0, 'logical-b');
+    expect(afterNew.committedReviewLogicalIds).toEqual(['logical-a']);
   });
 });
 

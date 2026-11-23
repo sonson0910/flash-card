@@ -100,6 +100,8 @@ export interface VerifiedGamificationState extends AuthoritativeGamification {
   readonly lastStudyDay?: string;
   /** Absent until the server has counted, or when the stored map is malformed. */
   readonly dailyGoals?: DailyGoalCounts;
+  /** Set when the first load of the verified documents failed: every other field is then the empty default, not a server value. */
+  readonly hydrationFailed?: true;
   /** Freezes, repair, milestones and best streak; absent until the server writes the record. */
   readonly streakState?: StreakStateV1;
   /** Badge and title dates; absent until the server records them, or while the map is malformed. */
@@ -296,10 +298,13 @@ export function acceptAuthoritativeGamificationOutcome(
     ...(isNewer && rewardTimeZone ? { rewardTimeZone } : {}),
     ...(isNewer && typeof outcome.studyDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(outcome.studyDay) ? {
       studyDay: outcome.studyDay,
-      xpHistory: {
-        ...current.xpHistory,
-        [outcome.studyDay]: (current.xpHistory[outcome.studyDay] ?? 0) + (outcomeXp - current.xp),
-      },
+      // Without a loaded baseline the XP difference is the learner's whole lifetime XP, not one day's.
+      ...(current.hydrationFailed ? {} : {
+        xpHistory: {
+          ...current.xpHistory,
+          [outcome.studyDay]: (current.xpHistory[outcome.studyDay] ?? 0) + (outcomeXp - current.xp),
+        },
+      }),
     } : {}),
     rewards: {
       ...rewards,
@@ -440,6 +445,7 @@ export function useVerifiedGamificationState({ ownerId, database }: UseVerifiedG
       hydrationPendingRef.current = false;
       console.error('Failed to hydrate verified gamification.', error);
       stopAll();
+      if (!hydrated) setState(current => ({ ...current, hydrationFailed: true }));
     };
     addSubscription(onSnapshot(doc(database, ...profile, 'stats'), snapshot => {
       statsValue = snapshot.exists() ? snapshot.data() : undefined;

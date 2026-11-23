@@ -762,12 +762,23 @@ export default function DailyLearningWorkspace({
     ? buildTodayAdaptiveRecommendation({
       ownerId,
       plan,
-      cards: activePool.cards,
+      cards: currentPairCards,
       skillStatesByLexeme,
       isOffline,
       now: new Date(),
+      contentLanguage: targetLanguage,
+      supportLanguage: translationLanguage,
     })
-    : null, [activePool.cards, activePool.status, isOffline, ownerId, plan, skillStatesByLexeme]);
+    : null, [activePool.status, currentPairCards, isOffline, ownerId, plan, skillStatesByLexeme, targetLanguage, translationLanguage]);
+  const recommendationReasonLabel = (kind: NonNullable<typeof recommendation>['reason']['kind']) => {
+    switch (kind) {
+      case 'due': return _(msg({ id: 'today.recommended.reason.due', message: 'Review due' }));
+      case 'weak': return _(msg({ id: 'today.recommended.reason.weak', message: 'Strengthen a weak item' }));
+      case 'new': return _(msg({ id: 'today.recommended.reason.new', message: 'Learn a new item' }));
+      case 'skill-gap': return _(msg({ id: 'today.recommended.reason.skill-gap', message: 'Practice an unobserved skill' }));
+      case 'next': return _(msg({ id: 'today.recommended.reason.next', message: 'Continue the scenario' }));
+    }
+  };
   const availablePlacement = useMemo(() => buildPlacementCheck(placementCandidates), [placementCandidates]);
   const navigateLesson = useCallback((mode: DailyLessonMode | null, focusDestination = true) => {
     setRouteLesson(mode);
@@ -804,7 +815,7 @@ export default function DailyLearningWorkspace({
     lessonScopeRef.current = { ownerId: ownerRef.current, targetLanguage, translationLanguage };
     session.start(steps);
     navigateLesson(mode, focusDestination);
-  }, [currentPairCards, navigateLesson, plan, session, targetLanguage, translationLanguage]);
+  }, [currentPairCards, isOffline, navigateLesson, plan, session, targetLanguage, translationLanguage]);
 
   const startStageExercises = useCallback((items: readonly DailyPlanItem[]) => {
     lessonScopeRef.current = { ownerId: ownerRef.current, targetLanguage, translationLanguage };
@@ -932,7 +943,7 @@ export default function DailyLearningWorkspace({
       // is marked finished, so the retry goes from this lesson straight back to the recap, which still
       // offers the round as an optional replay.
       stagePlan: { review: items, fresh: [], match: { ...current.stagePlan.match, skipReason: null, finished: true } },
-      stats: { ...current.stats, weakCardIds: [] },
+      stats: { ...current.stats, weakCardIds: [], committedReviewLogicalIds: [] },
       phase: { kind: 'lesson', stage: 'review' },
     });
   }, [finishMultiStageSession, isCurrentSession, startStageExercises]);
@@ -982,7 +993,7 @@ export default function DailyLearningWorkspace({
     const now = new Date();
     const freshPlan = buildDailyPlan(currentPairCards, { now, freshPriorityLogicalIds: pointer.freshLogicalIds });
     const stagePlan: SessionStagePlan = {
-      review: outstandingItems(pointer.reviewLogicalIds, freshPlan.items.filter(item => item.reason === 'due' || item.reason === 'weak')),
+      review: outstandingItems(pointer.reviewLogicalIds, freshPlan.items.filter(item => item.reason === 'due' || item.reason === 'weak'), pointer.stats.committedReviewLogicalIds),
       fresh: freshItemsForResume(pointer.freshLogicalIds, currentPairCards, now),
       match: {
         ...restoredSessionMatchStage(activePool.cards, pointer.matchCardIds, { targetLanguage, translationLanguage }, Boolean(pointer.matchStartOpId)),
@@ -1143,7 +1154,8 @@ export default function DailyLearningWorkspace({
         ...(preview.partOfSpeech ? { partOfSpeech: preview.partOfSpeech } : {}),
         ...(previewSite ? { sourceSite: previewSite } : {}),
         ...(preview.exampleSentence ? { exampleSentence: preview.exampleSentence } : {}),
-        tier: getLibraryCardTier(preview),
+        // The preview object is the session-start copy; a tier reached by a committed review lives in the stats.
+        tier: sessionStats.promotions?.find(entry => entry.cardId === preview.id)?.to ?? getLibraryCardTier(preview),
       } } : {}),
       ...(skipReason ? { skipReason } : {}),
       canSkipNextStage: nextStage === 'match' && nextCount > 0,
@@ -1309,7 +1321,7 @@ export default function DailyLearningWorkspace({
         : undefined;
       setMultiStage(current => {
         if (!isCurrentSession(current)) return current;
-        const rated = applyRatingToStats(current.stats, cardId, rating, result.xpAwarded, current.phase.kind === 'lesson' ? current.phase.stage : undefined, result.studyTimeMs ?? 0);
+        const rated = applyRatingToStats(current.stats, cardId, rating, result.xpAwarded, current.phase.kind === 'lesson' ? current.phase.stage : undefined, result.studyTimeMs ?? 0, before && logicalIdentity(before));
         const stats = before && reviewed ? applyTierChangeToStats(rated, cardId, getLibraryCardTier(before), getLibraryCardTier(reviewed)) : rated;
         return { ...current, stats };
       });
@@ -1500,7 +1512,7 @@ export default function DailyLearningWorkspace({
       recommendation: {
         activityId: recommendation.activityId,
         mode: recommendation.mode,
-        reason: recommendation.reason.label,
+        reason: recommendationReasonLabel(recommendation.reason.kind),
       },
     } : {}),
     listenPilotAvailable: listenPilotOffered(targetLanguage),

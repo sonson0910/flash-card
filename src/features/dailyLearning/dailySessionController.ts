@@ -11,6 +11,8 @@ import {
 
 export type DailySessionPersistenceResult =
   | { readonly status: 'advanced' | 'completed'; readonly xpAwarded: number; readonly studyTimeMs?: number; readonly publication?: LearningStatePublication }
+  /** The card changed or was removed elsewhere and the rating can never be applied; the lesson moved on. */
+  | { readonly status: 'skipped' }
   | { readonly status: 'stale-session' | 'not-ready' }
   | { readonly status: 'failed'; readonly error: string };
 
@@ -73,6 +75,15 @@ export function createDailySessionController({
     operation = (async () => {
       try {
         const outcome = await reviewCard(review.itemId, review.rating, review.operationId);
+        if (outcome?.status === 'review-conflict' && outcome.result.reviewConflictTerminal) {
+          // The card was changed or deleted on another device, so this rating can never be saved and a
+          // retry would only repeat the conflict. Move on without counting the rating.
+          if (generation !== sessionGeneration || !snapshot) return { status: 'stale-session' };
+          const skipped = reduceLessonState(snapshot, { type: 'persisted', operationId: review.operationId });
+          if (skipped === snapshot) return { status: 'stale-session' };
+          publish(skipped);
+          return { status: 'skipped' };
+        }
         if (outcome?.status !== 'published') {
           throw new Error(`The review was not saved (${outcome?.status ?? 'missing outcome'}).`);
         }

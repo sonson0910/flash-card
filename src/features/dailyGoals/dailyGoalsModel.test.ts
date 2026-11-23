@@ -128,4 +128,9 @@ describe('daily goals model', () => {
   it('counts down to the end of the study day', () => {
     expect(buildDailyGoals(input()).resetsIn).toEqual({ hours: 9, minutes: 0 });
   });
+
+  it('shows every goal as not counted when the verified figures never loaded', () => {
+    const model = buildDailyGoals(input({ hydrationFailed: true, dailyGoals: undefined }));
+    expect(model.goals.map(item => item.progress.state)).toEqual(['unknown', 'unknown', 'unknown']);
+  });
 });
