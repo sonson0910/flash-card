@@ -899,3 +899,37 @@ describe('production AI protected-service capability', () => {
     expect(runtime.callable).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('AI retry keeps the owner the request was queued for', () => {
+  const unavailable = () => Object.assign(new Error('unavailable'), { code: 'functions/unavailable' });
+  const switchAccountThenFail = () => async () => {
+    runtime.auth.currentUser = { uid: 'owner-2' };
+    throw unavailable();
+  };
+  const cards = [{ word: 'hello', translation: 'xin chao' }];
+  const conversation = {
+    sessionId: 'session-1',
+    mission: { schemaVersion: 1, id: 'm1', title: 'Cafe', goal: 'Order a coffee', cards: [{ id: 'c1', word: 'coffee', translation: 'ca phe' }] },
+    turn: 1, history: [], userMessage: 'Hello',
+  } as unknown as Parameters<typeof sendTextConversationTurn>[0];
+  const attempts: Array<[string, () => Promise<unknown>]> = [
+    ['mnemonic', () => generateMnemonic(cards[0]!)],
+    ['tutor', () => askVocabularyTutor({ ...cards[0]!, question: 'How is it used?' })],
+    ['extract', () => extractVocabulary('Some text to read')],
+    ['dialogue', () => generateDialogue(cards)],
+    ['conversation', () => sendTextConversationTurn(conversation)],
+  ];
+
+  it.each(attempts)('does not re-dispatch a %s request under the account that switched in during its retry', async (_name, run) => {
+    vi.useFakeTimers();
+    runtime.callable.mockImplementationOnce(switchAccountThenFail()).mockResolvedValue({ data: { result: 'late' } });
+
+    const settled = expect(run()).rejects.toMatchObject({ code: 'owner-mismatch' });
+    await vi.runAllTimersAsync();
+    await settled;
+
+    expect(runtime.callable).toHaveBeenCalledOnce();
+    const owners = runtime.callable.mock.calls.map(([request]) => (request as { expectedOwnerId: string }).expectedOwnerId);
+    expect(owners).toEqual(['owner-1']);
+  });
+});
