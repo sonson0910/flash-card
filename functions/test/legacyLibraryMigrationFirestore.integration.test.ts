@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
-import { FieldValue, getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { DocumentReference, FieldValue, getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { canonicalCard, createCardForOwner } from '../src/cardPersistence.js';
 import { runLegacyLibraryDiscovery } from '../src/legacyLibraryMigration.js';
@@ -1135,6 +1135,51 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
     await expect(rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, sourceRevision))
       .rejects.toBeInstanceOf(LegacyLibraryRollbackConflictError);
 
+    expect(await snapshotLibrary()).toEqual(libraryBefore);
+    expect((await fenceReference.get()).exists).toBe(false);
+    expect((await jobReference.get()).data()).toMatchObject({ phase: 'complete' });
+  });
+
+  it('refuses a rollback that read the backup before the migration completed once the learner has added a card', async () => {
+    const owner = database.collection('users').doc(OWNER_ID);
+    const jobId = 'rollback-read-before-completion-v3';
+    const jobReference = owner.collection('admin_library_migration_jobs').doc(jobId);
+    const fenceReference = owner.collection('profile').doc('library_migration_fence');
+    const rootReference = owner.collection('admin_library_migration_backups').doc(jobId);
+    const { sourceRevision } = await discoverToEnd(jobId);
+    await applyLegacyLibraryMigration(database, OWNER_ID, { jobId, sourceRevision });
+    // The rollback read the backup root while the apply was still sealing it,
+    // so what it read says the migration had not completed yet.
+    const { complete: _complete, finalAggregateDigest: _digest, finalCardCount: _count, ...unsealed } =
+      (await rootReference.get()).data() ?? {};
+    // Then the apply completed and the learner added a word no migrated group covers.
+    await createCardForOwner(database, OWNER_ID, { word: 'banana', translation: 'chuối' });
+    const snapshotLibrary = async () => ({
+      cards: (await owner.collection('cards').orderBy('__name__').get()).docs
+        .map(document => [document.id, document.data()]),
+      facets: (await owner.collection('profile').doc('library_facets').get()).data(),
+      resourceUsage: (await owner.collection('profile').doc('resource_usage').get()).data(),
+    });
+    const libraryBefore = await snapshotLibrary();
+
+    const prototype = DocumentReference.prototype as unknown as { get: (...args: unknown[]) => Promise<unknown> };
+    const get = prototype.get;
+    let staleReads = 0;
+    prototype.get = function (this: DocumentReference, ...args: unknown[]) {
+      if (this.path === rootReference.path && staleReads === 0) {
+        staleReads += 1;
+        return Promise.resolve({ exists: true, id: this.id, ref: this, data: () => ({ ...unsealed, complete: false }) });
+      }
+      return get.apply(this, args);
+    };
+    try {
+      await expect(rollbackLegacyLibraryMigration(database, OWNER_ID, jobId, sourceRevision))
+        .rejects.toBeInstanceOf(LegacyLibraryRollbackConflictError);
+    } finally {
+      prototype.get = get;
+    }
+
+    expect(staleReads).toBe(1);
     expect(await snapshotLibrary()).toEqual(libraryBefore);
     expect((await fenceReference.get()).exists).toBe(false);
     expect((await jobReference.get()).data()).toMatchObject({ phase: 'complete' });

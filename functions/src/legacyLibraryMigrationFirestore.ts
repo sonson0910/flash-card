@@ -2330,12 +2330,17 @@ export async function rollbackLegacyLibraryMigration(
   const fenceOptions: LegacyLibraryMigrationApplyOptions = { jobId, sourceRevision };
   const fence = await beginMigrationFence(database, ownerId, fenceOptions, 'rollback');
   let current = fence;
+  // Whether the migration completed is read again once the fence is held: the
+  // read above can predate a completion that committed before the fence did.
+  const readSealed = async () => (await root.get()).data()?.complete === true;
+  let sealed: boolean | undefined;
   try {
     await ensureBackupRoot(database, ownerId, current);
+    sealed = await readSealed();
     // Until the first group is restored the library must still be the sealed
     // result of the migration. The backup root says whether it was sealed; the
     // job phase does not, because an interrupted attempt leaves it 'rollback'.
-    if (current.rollbackGroupCount === 0 && rootData.complete === true) {
+    if (current.rollbackGroupCount === 0 && sealed) {
       await verifySealedFinalLibrary(database, ownerId, current);
     }
     const preflight = await preflightRollback(database, ownerId, current);
@@ -2357,9 +2362,9 @@ export async function rollbackLegacyLibraryMigration(
         throw new LegacyLibraryRollbackConflictError(1, 1);
       }
       const currentJob = validDiscoveryJob(jobSnapshot.data());
-      restoreProfileDocument(transaction as never, migrationProgressRef(database, ownerId), rootData.previousProgress);
-      restoreProfileDocument(transaction as never, facetsRef(database, ownerId), rootData.previousFacets);
-      restoreProfileDocument(transaction as never, resourceUsageRef(database, ownerId), rootData.previousResourceUsage);
+      restoreProfileDocument(transaction as never, migrationProgressRef(database, ownerId), activeRoot.previousProgress);
+      restoreProfileDocument(transaction as never, facetsRef(database, ownerId), activeRoot.previousFacets);
+      restoreProfileDocument(transaction as never, resourceUsageRef(database, ownerId), activeRoot.previousResourceUsage);
       transaction.set(root, {
         rolledBackAt: stableTimestamp(active),
         complete: false,
@@ -2382,7 +2387,7 @@ export async function rollbackLegacyLibraryMigration(
     // job phase cannot tell a completed migration from a half-applied one. The
     // backup root can: it stays complete until a rollback has finished.
     if (current.rollbackGroupCount === 0
-        && (rootData.complete === true || current.appliedGroupCount === 0)) {
+        && ((sealed ?? await readSealed().catch(() => false)) || current.appliedGroupCount === 0)) {
       await clearZeroProgressFence(database, ownerId, current, 'complete');
     }
     throw error;
