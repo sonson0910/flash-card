@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { extensionCapturePreview } from '../../app/app-runtime-shared';
 import { BROWSER_EXTENSION_IMPORT_STORAGE_KEY, type BrowserExtensionImportBrowser, type BrowserExtensionImportStorage } from './browserExtensionImport';
 import { startBrowserExtensionImportRuntime } from './browserExtensionImportRuntime';
 import { activeCourseNativeLanguage, languageProfileForCourse } from '../courses/courseLanguageProfile';
@@ -9,6 +8,7 @@ import { createCourseSessionController } from '../courses/courseSessionControlle
 import type { CardIntakeControllerPort, CardIntakeDraftPort } from '../intake/cardIntakeController';
 import { createCardIntakeBindingOwner, type CardIntakeBindingOptions } from '../intake/useCardIntake';
 import { createSharedDeckCoursePort, resolveShareCourseAction } from '../sharing/shareCourseMatching';
+import type { SharedDeckIncomingPreview } from '../sharing/sharedDeckSessionController';
 import type { CardData } from '../../types/card';
 
 class MemoryStorage implements BrowserExtensionImportStorage {
@@ -111,10 +111,13 @@ describe('silent extension capture that needs a course switch', () => {
     // course session publishes.
     courses.subscribe(() => intake.replace(bindingOptions()));
 
-    // The ensureExtensionCaptureCourse gate from AppRuntime; the learner accepts the confirm.
+    // A capture gate that switches to the matching course before it lets the capture proceed.
     const ensureCaptureCourse = async (targetLanguage: Course['targetLanguage']) => {
       const session = { model: courses.getSnapshot(), actions: courses.actions };
-      const preview = extensionCapturePreview(targetLanguage, activeCourseNativeLanguage(session.model.activeCourse));
+      const preview: SharedDeckIncomingPreview = {
+        shareId: '', category: '', cardCount: 0, sampleWords: [], createdAt: null, expiresAt: null, containsAiGeneratedCards: false,
+        languagePairs: [{ targetLanguage, translationLanguage: activeCourseNativeLanguage(session.model.activeCourse) }],
+      };
       const decision = resolveShareCourseAction(preview, session.model.profile);
       if (!decision || decision.action === 'none') return 'proceed' as const;
       await createSharedDeckCoursePort(session).ensureCourseForIncomingShare(preview);
