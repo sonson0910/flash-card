@@ -137,3 +137,22 @@ export const daysUntilGoalDate = (isoDate: string, today: Date = new Date()): nu
 export const MAX_COUNTDOWN_WEEKS = 12;
 
 export const countdownWeeks = (days: number): number => Math.max(1, Math.ceil(days / 7));
+
+/**
+ * Runs the course creation after the learner's device-local answers (daily pace, starting level) are
+ * saved. The course profile listener can close the journey before the create call settles, or the create
+ * response can be lost after the server committed it, so those answers must not wait for a success result.
+ */
+export async function createCourseAfterSavingPreferences<Result>(
+  savePreferences: () => void,
+  createCourse: () => Promise<Result>,
+): Promise<Result> {
+  savePreferences();
+  return createCourse();
+}
+
+/** The onboarding target options never include the native language, so a native change can invalidate the target. */
+export const targetAfterNativeLanguageChange = <Language extends string>(
+  target: Language | null,
+  nativeLanguage: string,
+): Language | null => (target === nativeLanguage ? null : target);

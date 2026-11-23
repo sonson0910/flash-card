@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { targetAfterNativeLanguageChange } from './onboardingModel';
 import { clearOnboardingDraft, readOnboardingDraft, writeOnboardingDraft } from './onboardingDraft';
 
 class FakeStorage {
@@ -53,5 +54,15 @@ describe('onboarding draft', () => {
       goalTargetDate: '', zhScript: null, pace: 10,
     }));
     expect(readOnboardingDraft('owner-1', storage)).toBeNull();
+  });
+
+  it('stays readable after a native language change that would equal the target', () => {
+    const storage = new FakeStorage();
+    const nativeLanguage = 'en';
+    writeOnboardingDraft('owner-1', {
+      nativeLanguage, targetLanguage: targetAfterNativeLanguageChange('en', nativeLanguage), goalKind: null,
+      goalLevel: '', goalTargetDate: '', zhScript: null, pace: 10, latestScore: null, startingTier: 'core', romanization: null,
+    }, storage);
+    expect(readOnboardingDraft('owner-1', storage)).toMatchObject({ nativeLanguage: 'en', targetLanguage: null, startingTier: 'core' });
   });
 });
