@@ -852,6 +852,11 @@ const assertNoFutureReviewTimes = (card: CardRecord, now: Date): void => {
   }
 };
 
+const withoutScheduling = (card: CardRecord): CardRecord => {
+  const { fsrs: _fsrs, nextReviewDate: _nextReviewDate, ...rest } = card;
+  return { ...rest, difficulty: 'unrated', reviews: 0, interval: 0, easeFactor: 2.5, correctStreak: 0, reviewHistory: [] };
+};
+
 export async function createCardForOwner(
   database: Firestore,
   ownerId: string,
@@ -1086,8 +1091,10 @@ export async function createCardForOwner(
       ? suppliedMasteredAt
       : undefined;
 
+    // Only a restore brings back the schedule a card had. Every other create is a
+    // new word: a review is the only thing that may schedule or master it.
     const createdCard = {
-      ...normalizedCard,
+      ...(restore || restoresPriorCard ? normalizedCard : withoutScheduling(normalizedCard)),
       ...(restoredMasteredAt ? { masteredAt: restoredMasteredAt } : {}),
       id,
       schemaVersion: 2,
