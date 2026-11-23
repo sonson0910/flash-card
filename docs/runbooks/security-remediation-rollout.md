@@ -206,6 +206,9 @@ new approval.
 Sharing is closed for every learner from the inventory until the migration
 reaches `verified`, so an apply that stops part-way must be finished, not left:
 
+- An inventory run that stopped before it sealed (the job is still `frozen` or
+  `sealing`) wrote no share and was never approved: re-run `inventory`. A run from
+  a later head of the default branch starts a fresh scan in its place.
 - Re-run `apply` with the same inputs to resume from the last committed source.
 - If the default branch has advanced, run `apply` from the current head with
   `source_revision` set to the revision that sealed the inventory. It needs a
