@@ -263,14 +263,26 @@ const renderCourseChrome = () => {
   renderDueSuffix();
 };
 
+// The deck status line is state, not static copy: it is rendered from a key so
+// a locale change re-renders the same state in the new language.
+let deckStatusState = { key: 'deckSyncing', substitutions: undefined, fallback: 'Đang đồng bộ deck…', tone: 'busy' };
+const renderDeckStatus = () => {
+  if (!deckStatus) return;
+  const { key, substitutions, fallback, tone } = deckStatusState;
+  deckStatus.textContent = t(key, substitutions, fallback);
+  if (tone) deckStatus.dataset.tone = tone;
+  else delete deckStatus.dataset.tone;
+};
+const setDeckStatus = (key, substitutions, fallback, tone) => {
+  deckStatusState = { key, substitutions, fallback, tone };
+  renderDeckStatus();
+};
+
 const clearDeckMetadataView = () => {
   decksReady = false;
   requestedDeckSelect?.replaceChildren();
   if (requestedDeckSelect) requestedDeckSelect.disabled = true;
-  if (deckStatus) {
-    deckStatus.textContent = t('deckSyncError', undefined, 'Chưa đồng bộ được deck; hãy mở SonFlash một lần.');
-    deckStatus.dataset.tone = 'error';
-  }
+  setDeckStatus('deckSyncError', undefined, 'Chưa đồng bộ được deck; hãy mở SonFlash một lần.', 'error');
   updateInputState();
 };
 
@@ -307,6 +319,8 @@ const handleMetadataInvalidation = message => {
     invalidateExtensionMetadata?.(message);
     localizeDocument(document);
     renderCourseChrome();
+    renderDeckStatus();
+    if (selectionIconSite) renderSelectionIconSite(selectionIconSite);
   }
 };
 
@@ -485,6 +499,7 @@ const renderSelectionIconSite = state => {
 
 const loadSelectionIconSite = async () => {
   if (!selectionIconToggle) return;
+  selectionIconToggle.textContent = t('floatingIconOff', undefined, 'Tắt');
   try {
     const response = await sendMessage({ type: 'GET_ACTIVE_SITE' });
     if (!response?.ok) throw new Error(response?.error || t('errorReadActiveSite', undefined, 'Không thể đọc trạng thái website.'));
@@ -884,7 +899,7 @@ const loadDecks = async () => {
   const requestEpoch = metadataInvalidationEpoch;
   decksReady = false;
   requestedDeckSelect.disabled = true;
-  if (deckStatus) deckStatus.dataset.tone = 'busy';
+  setDeckStatus('deckSyncing', undefined, 'Đang đồng bộ deck…', 'busy');
   updateInputState();
   try {
     const response = await sendMessage({ type: 'GET_DECKS' });
@@ -910,19 +925,12 @@ const loadDecks = async () => {
     requestedDeckSelect.value = '';
     requestedDeckSelect.disabled = false;
     decksReady = true;
-    if (deckStatus) {
-      deckStatus.textContent = decks.length
-        ? t('deckSyncedCount', [decks.length], `${decks.length} deck đã đồng bộ.`)
-        : t('deckSyncEmpty', undefined, 'Chưa có deck tùy chỉnh; đang dùng Thư viện chung.');
-      delete deckStatus.dataset.tone;
-    }
+    if (decks.length) setDeckStatus('deckSyncedCount', [decks.length], `${decks.length} deck đã đồng bộ.`);
+    else setDeckStatus('deckSyncEmpty', undefined, 'Chưa có deck tùy chỉnh; đang dùng Thư viện chung.');
   } catch {
     decksReady = false;
     requestedDeckSelect.disabled = true;
-    if (deckStatus) {
-      deckStatus.textContent = t('deckSyncError', undefined, 'Chưa đồng bộ được deck; hãy mở SonFlash một lần.');
-      deckStatus.dataset.tone = 'error';
-    }
+    setDeckStatus('deckSyncError', undefined, 'Chưa đồng bộ được deck; hãy mở SonFlash một lần.', 'error');
   } finally {
     updateInputState();
   }
