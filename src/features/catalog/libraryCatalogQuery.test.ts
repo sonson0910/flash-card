@@ -29,6 +29,14 @@ describe('libraryCatalogQuery', () => {
     expect(cardQueryDifficulty('unrated')).toBe('unrated');
   });
 
+  it('reads the learning tier from the URL and serves it with the good and hard ratings together', () => {
+    const query = readLibraryQuery('?difficulty=learning');
+
+    expect(query.difficulty).toBe('learning');
+    expect(createLibraryLocation('/app', query)).toBe('/app?difficulty=learning');
+    expect(cardQueryDifficulty('learning')).toBe('learning');
+  });
+
   it('keeps search and due mutually compatible with other filters', () => {
     const current: LibraryCatalogQuery = {
       search: 'hello',

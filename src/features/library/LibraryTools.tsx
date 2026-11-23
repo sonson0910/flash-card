@@ -942,6 +942,7 @@ export function LibraryTools({
                     <option value="All">{i18n._(msg({ id: 'library.filters.all-statuses', message: 'All statuses' }))}</option>
                     <option value="due">{i18n._(msg({ id: 'library.filters.due', message: 'Due for review' }))}</option>
                     <option value="easy">{i18n._(msg({ id: 'library.filters.mastered', message: 'Mastered' }))}</option>
+                    <option value="learning">{i18n._(msg({ id: 'library.filters.learning-all', message: 'Learning and needs practice' }))}</option>
                     <option value="good">{i18n._(msg({ id: 'library.filters.learning', message: 'Learning' }))}</option>
                     <option value="hard">{i18n._(msg({ id: 'library.filters.needs-practice', message: 'Needs practice' }))}</option>
                     <option value="unrated">{i18n._(msg({ id: 'library.filters.not-reviewed', message: 'Not reviewed' }))}</option>

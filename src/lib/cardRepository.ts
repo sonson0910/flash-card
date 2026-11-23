@@ -282,7 +282,9 @@ function filterConstraints(filters: CardQueryState): QueryConstraint[] {
   if (filters.partOfSpeech) constraints.push(where('partOfSpeech', '==', filters.partOfSpeech));
   constraints.push(...customDeckConstraints(filters.customDeck));
   if (filters.difficulty && filters.difficulty !== 'due') {
-    constraints.push(where('difficulty', '==', filters.difficulty));
+    constraints.push(filters.difficulty === 'learning'
+      ? where('difficulty', 'in', ['good', 'hard'])
+      : where('difficulty', '==', filters.difficulty));
   }
   if (filters.difficulty === 'due') {
     constraints.push(where('nextReviewDate', '<=', new Date().toISOString()));

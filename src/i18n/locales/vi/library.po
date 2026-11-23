@@ -114,7 +114,7 @@ msgctxt "library.deck.delete-effect-uncounted"
 msgid "The deck goes away, but its cards stay in your library and move to <0>Unassigned</0>. Nothing you have learned is lost."
 msgstr "Bộ thẻ sẽ bị xóa, nhưng các thẻ của nó vẫn ở trong thư viện và chuyển sang <0>Chưa phân bộ</0>. Những gì bạn đã học không bị mất."
 
-#: src/features/library/LibraryScreen.tsx:312
+#: src/features/library/LibraryScreen.tsx:287
 msgctxt "library.loading.tools"
 msgid "Loading library tools"
 msgstr "Đang tải công cụ thư viện"
@@ -178,7 +178,7 @@ msgctxt "library.overview.deck-count"
 msgid "// {count, plural, one {# deck} other {# decks}}"
 msgstr "// {count, plural, other {# deck}}"
 
-#: src/features/library/LibraryTools.tsx:1012
+#: src/features/library/LibraryTools.tsx:1013
 msgctxt "library.deck.cancel"
 msgid "Cancel"
 msgstr "Hủy"
@@ -199,7 +199,7 @@ msgctxt "library.deck.create-again"
 msgid "Try again"
 msgstr "Thử lại"
 
-#: src/features/library/LibraryScreen.tsx:396
+#: src/features/library/LibraryScreen.tsx:371
 msgctxt "library.filters.all"
 msgid "All"
 msgstr "Tất cả"
@@ -427,7 +427,7 @@ msgctxt "library.insights.xp-total"
 msgid "{count, number} XP"
 msgstr "{count, number} XP"
 
-#: src/features/library/LibraryTools.tsx:999
+#: src/features/library/LibraryTools.tsx:1000
 msgctxt "library.decks.title"
 msgid "Decks ({count, number})"
 msgstr "Bộ thẻ ({count, number})"
@@ -555,7 +555,7 @@ msgid "Rows needing attention"
 msgstr "Các dòng cần xem lại"
 
 #: src/features/library/LibraryCardGrid.tsx:431
-#: src/features/library/LibraryScreen.tsx:269
+#: src/features/library/LibraryScreen.tsx:244
 msgctxt "library.loading.cards"
 msgid "Loading library cards"
 msgstr "Đang tải thẻ thư viện"
@@ -595,7 +595,7 @@ msgctxt "library.insights.title"
 msgid "Learning insights"
 msgstr "Thống kê học tập"
 
-#: src/features/library/LibraryScreen.tsx:310
+#: src/features/library/LibraryScreen.tsx:285
 msgctxt "library.tools.more"
 msgid "More library tools"
 msgstr "Thêm công cụ thư viện"
@@ -605,7 +605,7 @@ msgctxt "library.edit-card.retry-delete"
 msgid "Retry delete"
 msgstr "Thử xóa lại"
 
-#: src/features/library/LibraryTools.tsx:1012
+#: src/features/library/LibraryTools.tsx:1013
 msgctxt "library.deck.new"
 msgid "New deck"
 msgstr "Bộ thẻ mới"
@@ -668,19 +668,19 @@ msgstr "Đến hạn"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:334
-#: src/features/library/LibraryScreen.tsx:399
+#: src/features/library/LibraryScreen.tsx:374
 msgid "library.card.grade.learning"
 msgstr "Nở"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:335
-#: src/features/library/LibraryScreen.tsx:400
+#: src/features/library/LibraryScreen.tsx:375
 msgid "library.card.grade.mastered"
 msgstr "Sao"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:332
-#: src/features/library/LibraryScreen.tsx:398
+#: src/features/library/LibraryScreen.tsx:373
 msgid "library.card.grade.new"
 msgstr "Nụ"
 
@@ -707,7 +707,7 @@ msgstr "Thành thạo"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:327
-#: src/features/library/LibraryScreen.tsx:398
+#: src/features/library/LibraryScreen.tsx:373
 msgid "library.card.tier.new"
 msgstr "Mới"
 
@@ -718,7 +718,7 @@ msgid "library.card.unseen"
 msgstr "Chưa ôn"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1089
+#: src/features/library/LibraryTools.tsx:1090
 msgid "library.categories.all"
 msgstr "Tất cả"
 
@@ -1417,12 +1417,12 @@ msgstr "Tím"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryDialogOverlays.tsx:148
-#: src/features/library/LibraryTools.tsx:1142
+#: src/features/library/LibraryTools.tsx:1143
 msgid "library.deck.create-error"
 msgstr "Không thể tạo bộ thẻ này. Kiểm tra kết nối và thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1061
+#: src/features/library/LibraryTools.tsx:1062
 msgid "library.deck.delete-action"
 msgstr "Xóa bộ thẻ {deck}"
 
@@ -1432,7 +1432,7 @@ msgid "library.deck.delete-error"
 msgstr "Không thể xóa xong bộ thẻ này. Đang làm mới dữ liệu đám mây mới nhất; hãy thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1060
+#: src/features/library/LibraryTools.tsx:1061
 msgid "library.deck.delete-this"
 msgstr "Xóa bộ thẻ này"
 
@@ -1462,18 +1462,18 @@ msgid "library.deck.suggestions"
 msgstr "Gợi ý tên deck"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:385
-#: src/features/library/LibraryTools.tsx:1017
+#: src/features/library/LibraryScreen.tsx:360
+#: src/features/library/LibraryTools.tsx:1018
 msgid "library.decks.all"
 msgstr "Tất cả bộ thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:384
+#: src/features/library/LibraryScreen.tsx:359
 msgid "library.decks.nav-label"
 msgstr "Bộ thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1022
+#: src/features/library/LibraryTools.tsx:1023
 msgid "library.decks.unassigned"
 msgstr "Chưa thuộc bộ thẻ"
 
@@ -2004,17 +2004,17 @@ msgid "library.filters.all-word-types"
 msgstr "Tất cả loại từ"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:971
+#: src/features/library/LibraryTools.tsx:972
 msgid "library.filters.clear-date"
 msgstr "Xóa bộ lọc ngày"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:961
+#: src/features/library/LibraryTools.tsx:962
 msgid "library.filters.cloud-date-label"
 msgstr "Lọc thẻ đám mây theo ngày tạo"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:978
+#: src/features/library/LibraryTools.tsx:979
 msgid "library.filters.date-label"
 msgstr "Lọc thẻ theo ngày tạo"
 
@@ -2024,13 +2024,18 @@ msgid "library.filters.due"
 msgstr "Đến hạn ôn"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:399
-#: src/features/library/LibraryTools.tsx:945
+#: src/features/library/LibraryScreen.tsx:374
+#: src/features/library/LibraryTools.tsx:946
 msgid "library.filters.learning"
 msgstr "Đang học"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:400
+#: src/features/library/LibraryTools.tsx:945
+msgid "library.filters.learning-all"
+msgstr "Đang học và cần luyện thêm"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryScreen.tsx:375
 #: src/features/library/LibraryTools.tsx:944
 msgid "library.filters.mastered"
 msgstr "Đã thuộc"
@@ -2041,12 +2046,12 @@ msgid "library.filters.memory-status-label"
 msgstr "Lọc theo trạng thái ghi nhớ"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:946
+#: src/features/library/LibraryTools.tsx:947
 msgid "library.filters.needs-practice"
 msgstr "Cần luyện thêm"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:947
+#: src/features/library/LibraryTools.tsx:948
 msgid "library.filters.not-reviewed"
 msgstr "Chưa ôn"
 
@@ -2275,17 +2280,17 @@ msgid "library.upgrade.upgrading"
 msgstr "Đang nâng cấp…"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:404
+#: src/features/library/LibraryScreen.tsx:379
 msgid "library.view.grid"
 msgstr "Xem dạng lưới"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:403
+#: src/features/library/LibraryScreen.tsx:378
 msgid "library.view.label"
 msgstr "Chế độ xem"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:405
+#: src/features/library/LibraryScreen.tsx:380
 msgid "library.view.list"
 msgstr "Xem dạng danh sách"
 
@@ -2417,7 +2422,7 @@ msgid "Clearing your library…"
 msgstr "Đang xóa thư viện…"
 
 #: src/features/library/LibraryCardGrid.tsx:397
-#: src/features/library/LibraryScreen.tsx:397
+#: src/features/library/LibraryScreen.tsx:372
 msgctxt "library.filters.due-short"
 msgid "Due"
 msgstr "Đến hạn"
@@ -2602,7 +2607,7 @@ msgctxt "library.deck.deleting"
 msgid "Deleting…"
 msgstr "Đang xóa…"
 
-#: src/features/library/LibraryTools.tsx:1074
+#: src/features/library/LibraryTools.tsx:1075
 msgctxt "library.categories.title"
 msgid "Categories"
 msgstr "Danh mục"
@@ -2633,7 +2638,7 @@ msgctxt "library.edit-card.discard-title"
 msgid "Discard unsaved changes?"
 msgstr "Bỏ các thay đổi chưa lưu?"
 
-#: src/features/library/LibraryScreen.tsx:401
+#: src/features/library/LibraryScreen.tsx:376
 #: src/features/library/LibraryTools.tsx:882
 msgctxt "library.filters.starred"
 msgid "Starred"
@@ -2813,7 +2818,7 @@ msgctxt "library.import.partial-chip-detail"
 msgid "Some rows will not be imported."
 msgstr "Một số dòng sẽ không được nhập."
 
-#: src/features/library/LibraryTools.tsx:955
+#: src/features/library/LibraryTools.tsx:956
 msgctxt "library.filters.date-created"
 msgid "Date created"
 msgstr "Ngày tạo"

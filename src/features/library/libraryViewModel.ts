@@ -145,7 +145,9 @@ const matchesLocalQuery = (card: CardData, query: LibraryViewQuery): boolean => 
         ? isCardDue(card)
         : query.difficulty === 'mastered'
           ? card.difficulty === MASTERED_CARD_DIFFICULTY
-          : card.difficulty === query.difficulty);
+          : query.difficulty === 'learning'
+            ? getLibraryCardTier(card) === 'learning'
+            : card.difficulty === query.difficulty);
   const matchPartOfSpeech = query.partOfSpeech === 'All'
     || normalizePartOfSpeech(card.partOfSpeech) === query.partOfSpeech;
   const matchStarred = !query.starredOnly || card.bookmarked === true;

@@ -114,7 +114,7 @@ msgctxt "library.deck.delete-effect-uncounted"
 msgid "The deck goes away, but its cards stay in your library and move to <0>Unassigned</0>. Nothing you have learned is lost."
 msgstr "The deck goes away, but its cards stay in your library and move to <0>Unassigned</0>. Nothing you have learned is lost."
 
-#: src/features/library/LibraryScreen.tsx:312
+#: src/features/library/LibraryScreen.tsx:287
 msgctxt "library.loading.tools"
 msgid "Loading library tools"
 msgstr "Loading library tools"
@@ -178,7 +178,7 @@ msgctxt "library.overview.deck-count"
 msgid "// {count, plural, one {# deck} other {# decks}}"
 msgstr "// {count, plural, one {# deck} other {# decks}}"
 
-#: src/features/library/LibraryTools.tsx:1012
+#: src/features/library/LibraryTools.tsx:1013
 msgctxt "library.deck.cancel"
 msgid "Cancel"
 msgstr "Cancel"
@@ -199,7 +199,7 @@ msgctxt "library.deck.create-again"
 msgid "Try again"
 msgstr "Try again"
 
-#: src/features/library/LibraryScreen.tsx:396
+#: src/features/library/LibraryScreen.tsx:371
 msgctxt "library.filters.all"
 msgid "All"
 msgstr "All"
@@ -427,7 +427,7 @@ msgctxt "library.insights.xp-total"
 msgid "{count, number} XP"
 msgstr "{count, number} XP"
 
-#: src/features/library/LibraryTools.tsx:999
+#: src/features/library/LibraryTools.tsx:1000
 msgctxt "library.decks.title"
 msgid "Decks ({count, number})"
 msgstr "Decks ({count, number})"
@@ -555,7 +555,7 @@ msgid "Rows needing attention"
 msgstr "Rows needing attention"
 
 #: src/features/library/LibraryCardGrid.tsx:431
-#: src/features/library/LibraryScreen.tsx:269
+#: src/features/library/LibraryScreen.tsx:244
 msgctxt "library.loading.cards"
 msgid "Loading library cards"
 msgstr "Loading library cards"
@@ -595,7 +595,7 @@ msgctxt "library.insights.title"
 msgid "Learning insights"
 msgstr "Learning insights"
 
-#: src/features/library/LibraryScreen.tsx:310
+#: src/features/library/LibraryScreen.tsx:285
 msgctxt "library.tools.more"
 msgid "More library tools"
 msgstr "More library tools"
@@ -605,7 +605,7 @@ msgctxt "library.edit-card.retry-delete"
 msgid "Retry delete"
 msgstr "Retry delete"
 
-#: src/features/library/LibraryTools.tsx:1012
+#: src/features/library/LibraryTools.tsx:1013
 msgctxt "library.deck.new"
 msgid "New deck"
 msgstr "New deck"
@@ -668,19 +668,19 @@ msgstr "Due now"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:334
-#: src/features/library/LibraryScreen.tsx:399
+#: src/features/library/LibraryScreen.tsx:374
 msgid "library.card.grade.learning"
 msgstr "Bloom"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:335
-#: src/features/library/LibraryScreen.tsx:400
+#: src/features/library/LibraryScreen.tsx:375
 msgid "library.card.grade.mastered"
 msgstr "Star"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:332
-#: src/features/library/LibraryScreen.tsx:398
+#: src/features/library/LibraryScreen.tsx:373
 msgid "library.card.grade.new"
 msgstr "Bud"
 
@@ -707,7 +707,7 @@ msgstr "Mastered"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryCardGrid.tsx:327
-#: src/features/library/LibraryScreen.tsx:398
+#: src/features/library/LibraryScreen.tsx:373
 msgid "library.card.tier.new"
 msgstr "New"
 
@@ -718,7 +718,7 @@ msgid "library.card.unseen"
 msgstr "Unseen"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1089
+#: src/features/library/LibraryTools.tsx:1090
 msgid "library.categories.all"
 msgstr "All"
 
@@ -1417,12 +1417,12 @@ msgstr "Violet"
 
 #. js-lingui-explicit-id
 #: src/features/library/LibraryDialogOverlays.tsx:148
-#: src/features/library/LibraryTools.tsx:1142
+#: src/features/library/LibraryTools.tsx:1143
 msgid "library.deck.create-error"
 msgstr "Could not create this deck. Check your connection and try again."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1061
+#: src/features/library/LibraryTools.tsx:1062
 msgid "library.deck.delete-action"
 msgstr "Delete {deck} deck"
 
@@ -1432,7 +1432,7 @@ msgid "library.deck.delete-error"
 msgstr "Could not finish deleting this deck. Refreshing the latest cloud state; try again."
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1060
+#: src/features/library/LibraryTools.tsx:1061
 msgid "library.deck.delete-this"
 msgstr "Delete this deck"
 
@@ -1462,18 +1462,18 @@ msgid "library.deck.suggestions"
 msgstr "Deck name suggestions"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:385
-#: src/features/library/LibraryTools.tsx:1017
+#: src/features/library/LibraryScreen.tsx:360
+#: src/features/library/LibraryTools.tsx:1018
 msgid "library.decks.all"
 msgstr "All decks"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:384
+#: src/features/library/LibraryScreen.tsx:359
 msgid "library.decks.nav-label"
 msgstr "Decks"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:1022
+#: src/features/library/LibraryTools.tsx:1023
 msgid "library.decks.unassigned"
 msgstr "Unassigned"
 
@@ -2004,17 +2004,17 @@ msgid "library.filters.all-word-types"
 msgstr "All word types"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:971
+#: src/features/library/LibraryTools.tsx:972
 msgid "library.filters.clear-date"
 msgstr "Clear date filter"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:961
+#: src/features/library/LibraryTools.tsx:962
 msgid "library.filters.cloud-date-label"
 msgstr "Filter cloud cards by date created"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:978
+#: src/features/library/LibraryTools.tsx:979
 msgid "library.filters.date-label"
 msgstr "Filter cards by date created"
 
@@ -2024,13 +2024,18 @@ msgid "library.filters.due"
 msgstr "Due for review"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:399
-#: src/features/library/LibraryTools.tsx:945
+#: src/features/library/LibraryScreen.tsx:374
+#: src/features/library/LibraryTools.tsx:946
 msgid "library.filters.learning"
 msgstr "Learning"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:400
+#: src/features/library/LibraryTools.tsx:945
+msgid "library.filters.learning-all"
+msgstr "Learning and needs practice"
+
+#. js-lingui-explicit-id
+#: src/features/library/LibraryScreen.tsx:375
 #: src/features/library/LibraryTools.tsx:944
 msgid "library.filters.mastered"
 msgstr "Mastered"
@@ -2041,12 +2046,12 @@ msgid "library.filters.memory-status-label"
 msgstr "Filter by memory status"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:946
+#: src/features/library/LibraryTools.tsx:947
 msgid "library.filters.needs-practice"
 msgstr "Needs practice"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryTools.tsx:947
+#: src/features/library/LibraryTools.tsx:948
 msgid "library.filters.not-reviewed"
 msgstr "Not reviewed"
 
@@ -2275,17 +2280,17 @@ msgid "library.upgrade.upgrading"
 msgstr "Upgrading…"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:404
+#: src/features/library/LibraryScreen.tsx:379
 msgid "library.view.grid"
 msgstr "Grid view"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:403
+#: src/features/library/LibraryScreen.tsx:378
 msgid "library.view.label"
 msgstr "View"
 
 #. js-lingui-explicit-id
-#: src/features/library/LibraryScreen.tsx:405
+#: src/features/library/LibraryScreen.tsx:380
 msgid "library.view.list"
 msgstr "List view"
 
@@ -2417,7 +2422,7 @@ msgid "Clearing your library…"
 msgstr "Clearing your library…"
 
 #: src/features/library/LibraryCardGrid.tsx:397
-#: src/features/library/LibraryScreen.tsx:397
+#: src/features/library/LibraryScreen.tsx:372
 msgctxt "library.filters.due-short"
 msgid "Due"
 msgstr "Due"
@@ -2602,7 +2607,7 @@ msgctxt "library.deck.deleting"
 msgid "Deleting…"
 msgstr "Deleting…"
 
-#: src/features/library/LibraryTools.tsx:1074
+#: src/features/library/LibraryTools.tsx:1075
 msgctxt "library.categories.title"
 msgid "Categories"
 msgstr "Categories"
@@ -2633,7 +2638,7 @@ msgctxt "library.edit-card.discard-title"
 msgid "Discard unsaved changes?"
 msgstr "Discard unsaved changes?"
 
-#: src/features/library/LibraryScreen.tsx:401
+#: src/features/library/LibraryScreen.tsx:376
 #: src/features/library/LibraryTools.tsx:882
 msgctxt "library.filters.starred"
 msgid "Starred"
@@ -2813,7 +2818,7 @@ msgctxt "library.import.partial-chip-detail"
 msgid "Some rows will not be imported."
 msgstr "Some rows will not be imported."
 
-#: src/features/library/LibraryTools.tsx:955
+#: src/features/library/LibraryTools.tsx:956
 msgctxt "library.filters.date-created"
 msgid "Date created"
 msgstr "Date created"

@@ -17,7 +17,7 @@ export const LIBRARY_QUERY_KEYS = [
   'page',
 ] as const;
 
-export type LibraryDifficulty = 'All' | 'due' | 'easy' | 'good' | 'hard' | 'unrated' | 'mastered';
+export type LibraryDifficulty = 'All' | 'due' | 'easy' | 'good' | 'hard' | 'learning' | 'unrated' | 'mastered';
 
 export interface LibraryCatalogQuery {
   search: string;
@@ -36,6 +36,7 @@ const allowedDifficulties = new Set<LibraryDifficulty>([
   'easy',
   'good',
   'hard',
+  'learning',
   'unrated',
   'mastered',
 ]);
@@ -50,7 +51,11 @@ const allowedDifficulties = new Set<LibraryDifficulty>([
  */
 export const MASTERED_CARD_DIFFICULTY = 'easy' as const;
 
-/** The card query difficulty that serves a Vocabulary filter value, `null` for no filter. */
+/**
+ * The card query difficulty that serves a Vocabulary filter value, `null` for no filter. The "learning" tier
+ * is the stored ratings Good and Hard together, served by one `in` filter over the same `difficulty` index,
+ * so the page, its total and the page count all follow it instead of narrowing a loaded page.
+ */
 export function cardQueryDifficulty(difficulty: LibraryDifficulty): CardQueryState['difficulty'] {
   if (difficulty === 'All') return null;
   if (difficulty === 'mastered') return MASTERED_CARD_DIFFICULTY;
