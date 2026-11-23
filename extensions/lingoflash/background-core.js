@@ -21,6 +21,9 @@
   const RETRY_KEY_PREFIX = 'lingoflash_quick_add_retry_';
   const INLINE_SAVE_KEY_PREFIX = 'lingoflash_inline_save_';
   const INLINE_SAVE_TTL_MS = 30 * 60_000;
+  // Marks a retry receipt whose capture had no confirmed course language, so a
+  // retry keeps it unknown instead of treating the receipt as ambiguous.
+  const UNKNOWN_CAPTURE_LANGUAGE = 'unknown';
   const JOB_ALARM_PREFIX = 'lingoflash_quick_add_timeout_';
   // Keep the background job alive through the bridge's full two-attempt AI
   // budget, including all bounded pre-submit waits and final cleanup.
@@ -101,7 +104,7 @@
       await apiCall(transientStorage, 'set', { [retryKey(job.sourceTabId)]: {
         id: job.id, text: job.text, context: job.context || '', anchor: job.anchor,
         requestedDeck: job.requestedDeck || '', sourceUrl: job.sourceUrl || '', pageTitle: job.pageTitle || '',
-        ...(sourceLanguage ? { sourceLanguage } : {}),
+        sourceLanguage: sourceLanguage || UNKNOWN_CAPTURE_LANGUAGE,
         ...(binding ?? {}),
         expiresAt: Date.now() + 86_400_000,
       } });
@@ -370,12 +373,13 @@
       && provider.generation === binding.providerGeneration
       && currentScope === binding.providerScope;
   };
-  // The target language a fresh capture is assumed to be studying: the
-  // confirmed active course's target language when the app has synced one,
-  // else the 'en' fallback every capture used before this existed.
+  // The target language a fresh capture is studying: the confirmed active
+  // course's target language when the app has synced one, else '' (unknown).
+  // An unknown language is never guessed; the app then saves the word into
+  // whatever course is active instead of asking to switch to a guessed one.
   const activeCaptureSourceLanguage = async () => {
     const metadata = await readCourseLocaleMetadata();
-    return metadata && metadata.scope === confirmedCourseLocaleScope ? metadata.targetLanguage : 'en';
+    return metadata && metadata.scope === confirmedCourseLocaleScope ? metadata.targetLanguage : '';
   };
   // The confirmed active course, or null while no app session has confirmed
   // one. The in-page bubble names it; it never guesses a course.
@@ -909,21 +913,23 @@
     if (retry?.providerId && !providerBinding) {
       throw new Error('Không thể xác minh phiên app của lượt thử lại. Hãy chọn lại văn bản và tạo flashcard mới.');
     }
-    // A retry must preserve a validated captured course language. Receipts
-    // without one are ambiguous, so require the user to capture again. A new
-    // capture with no provider at its start keeps the historical English
-    // fallback even if a provider appears while selection is being read;
-    // otherwise that later provider could lend its locale to an unbound job.
+    // A retry must preserve the captured course language, including a
+    // language recorded as unknown. Receipts with neither are ambiguous, so
+    // require the user to capture again. A new capture with no provider at its
+    // start stays unknown even if a provider appears while selection is being
+    // read; otherwise that later provider could lend its locale to an unbound
+    // job.
+    const retryLanguageUnknown = retry?.sourceLanguage === UNKNOWN_CAPTURE_LANGUAGE;
     const sourceLanguage = retry
-      ? normalizeCourseTargetLanguage(retry.sourceLanguage)
+      ? (retryLanguageUnknown ? '' : normalizeCourseTargetLanguage(retry.sourceLanguage))
       : providerBinding
         ? await activeCaptureSourceLanguage()
-        : 'en';
-    if (retry && !sourceLanguage) throw new Error('Không thể xác minh ngôn ngữ của lượt thử lại. Hãy chọn lại văn bản và tạo flashcard mới.');
+        : '';
+    if (retry && !sourceLanguage && !retryLanguageUnknown) throw new Error('Không thể xác minh ngôn ngữ của lượt thử lại. Hãy chọn lại văn bản và tạo flashcard mới.');
     if (!retry && providerBinding && !jobProviderBindingIsCurrent(providerBinding)) {
       throw providerError();
     }
-    const job={v:IMPORT_PROTOCOL_VERSION,id,nonce,text:s.text,context:bounded(s.context,MAX_CONTEXT_LENGTH),sourceLanguage,mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now(),sourceUrl:s.sourceUrl||'',pageTitle:s.pageTitle||'',...(providerBinding ?? {}),...(requestedDeck ? { requestedDeck } : {})};
+    const job={v:IMPORT_PROTOCOL_VERSION,id,nonce,text:s.text,context:bounded(s.context,MAX_CONTEXT_LENGTH),...(sourceLanguage ? { sourceLanguage } : {}),mode:'silent',sourceTabId:s.sourceTabId,workerTabId:null,anchor:s.anchor,createdAt:Date.now(),sourceUrl:s.sourceUrl||'',pageTitle:s.pageTitle||'',...(providerBinding ?? {}),...(requestedDeck ? { requestedDeck } : {})};
     if (quickAddSourceLocks.has(job.sourceTabId)) throw new Error('Đã có một tác vụ quick-add đang chạy trên tab này.');
     quickAddSourceLocks.add(job.sourceTabId);
     try {
@@ -962,7 +968,7 @@
 
   const normalizeResult = p => {
     if (!p||typeof p!=='object'||Array.isArray(p)||typeof p.id!=='string'||!/^[A-Za-z0-9_-]{8,128}$/.test(p.id)||!isValidImportNonce(p.nonce)||!['created','existing','auth-required','error'].includes(p.status)) return null;
-    return {id:p.id,nonce:p.nonce,status:p.status,word:bounded(p.word,80),translation:bounded(p.translation,256),phonetic:bounded(p.phonetic,256),explanation:bounded(p.explanation,1024),exampleSentence:bounded(p.exampleSentence,1024),exampleTranslation:bounded(p.exampleTranslation,1024),aiGenerated:p.aiGenerated===true,message:bounded(p.message,512)};
+    return {id:p.id,nonce:p.nonce,status:p.status,word:bounded(p.word,80),translation:bounded(p.translation,256),phonetic:bounded(p.phonetic,256),explanation:bounded(p.explanation,1024),exampleSentence:bounded(p.exampleSentence,1024),exampleTranslation:bounded(p.exampleTranslation,1024),aiGenerated:p.aiGenerated===true,language:normalizeCourseTargetLanguage(p.language),message:bounded(p.message,512)};
   };
   const appResult = async (payload,sender) => {
     const r=normalizeResult(payload); if (!r) throw new Error('Kết quả LingoFlash không hợp lệ.');
@@ -987,7 +993,9 @@
       let inlineShown = true;
       if (r.status==='created'||r.status==='existing') {
         await clearRetry(job.sourceTabId);
-        let translated = { text: r.translation, sourceLanguage: job.sourceLanguage || 'en' };
+        // The saved card's language is the truth: a capture sent without a language is saved in the
+        // learner's active course, whatever language that is. Leave the label empty rather than guess.
+        let translated = { text: r.translation, sourceLanguage: r.language || normalizeCourseTargetLanguage(job.sourceLanguage) || '' };
         if (!translated.text) try { translated = await googleTranslate(job.text); } catch {}
         const t=bounded(translated.text,256);
         await recordRecentLookup({text:job.text,translation:t,sourceLanguage:translated.sourceLanguage,targetLanguage:'vi',kind:'create',status:r.status,timestamp:Date.now()});
@@ -1057,7 +1065,7 @@
       await saveJob(job);
       return {
         verified:true,
-        intent: { v: IMPORT_PROTOCOL_VERSION, id: job.id, nonce: job.nonce, text: job.text, context: bounded(job.context,MAX_CONTEXT_LENGTH), createdAt: job.createdAt, mode: 'silent', sourceLanguage: normalizeCourseTargetLanguage(job.sourceLanguage) || 'en', ...(typeof job.requestedDeck === 'string' && job.requestedDeck ? { requestedDeck: job.requestedDeck.slice(0, 128) } : {}), ...(typeof job.sourceUrl === 'string' && job.sourceUrl ? { sourceUrl: sanitizeSourceUrl(job.sourceUrl) } : {}), ...(typeof job.pageTitle === 'string' && job.pageTitle ? { pageTitle: boundedPageTitle(job.pageTitle) } : {}) },
+        intent: { v: IMPORT_PROTOCOL_VERSION, id: job.id, nonce: job.nonce, text: job.text, context: bounded(job.context,MAX_CONTEXT_LENGTH), createdAt: job.createdAt, mode: 'silent', ...(normalizeCourseTargetLanguage(job.sourceLanguage) ? { sourceLanguage: normalizeCourseTargetLanguage(job.sourceLanguage) } : {}), ...(typeof job.requestedDeck === 'string' && job.requestedDeck ? { requestedDeck: job.requestedDeck.slice(0, 128) } : {}), ...(typeof job.sourceUrl === 'string' && job.sourceUrl ? { sourceUrl: sanitizeSourceUrl(job.sourceUrl) } : {}), ...(typeof job.pageTitle === 'string' && job.pageTitle ? { pageTitle: boundedPageTitle(job.pageTitle) } : {}) },
       };
     })();
     verifyLocks.set(lockKey, verification);

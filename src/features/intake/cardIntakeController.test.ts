@@ -486,6 +486,53 @@ describe('card intake controller', () => {
     }));
   });
 
+  it.each([
+    ['with a context sentence', { context: 'The lead actor arrived.' }],
+    ['without a context sentence', {}],
+  ])('forwards the captured page url, page title and capture time to generation (%s)', async (_label, extra) => {
+    const { port } = createFakePort();
+    const intake = createCardIntakeController({ port });
+    intake.setDraft('lead');
+
+    await intake.generateDraft({
+      operationId: '123e4567-e89b-42d3-a456-426614174000',
+      surface: 'extension',
+      ...extra,
+      sourceUrl: 'https://example.com/a',
+      pageTitle: 'A',
+      capturedAt: '2026-11-20T10:00:00.000Z',
+    });
+
+    expect(port.generateCard).toHaveBeenCalledWith(expect.objectContaining({
+      sourceUrl: 'https://example.com/a',
+      pageTitle: 'A',
+      capturedAt: '2026-11-20T10:00:00.000Z',
+    }));
+  });
+
+  it('drops or bounds captured page metadata the server would reject', async () => {
+    const { port } = createFakePort();
+    const intake = createCardIntakeController({ port });
+    intake.setDraft('lead');
+
+    await intake.generateDraft({
+      surface: 'extension',
+      sourceUrl: 'javascript:alert(1)',
+      pageTitle: `  An\n${'x'.repeat(400)}  `,
+      capturedAt: 'not a date',
+    });
+
+    const [request] = vi.mocked(port.generateCard).mock.calls[0]!;
+    expect(request).not.toHaveProperty('sourceUrl');
+    expect(request).not.toHaveProperty('capturedAt');
+    expect(request.pageTitle).toBe(`An ${'x'.repeat(253)}`);
+
+    vi.mocked(port.generateCard).mockClear();
+    intake.setDraft('lead');
+    await intake.generateDraft({ surface: 'extension', sourceUrl: `https://example.com/${'p'.repeat(2_100)}` });
+    expect(vi.mocked(port.generateCard).mock.calls[0]![0]).not.toHaveProperty('sourceUrl');
+  });
+
   it('keeps a verified extension operation ID through a failed manual retry', async () => {
     const { port } = createFakePort();
     vi.mocked(port.generateCard).mockRejectedValueOnce(new Error('Temporary network error'));

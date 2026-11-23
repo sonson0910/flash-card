@@ -486,6 +486,7 @@ describe('browser extension import runtime', () => {
       text: 'resilient',
       createdAt: now,
       mode: 'silent',
+      sourceLanguage: 'en',
     }));
     const posted: unknown[] = [];
     vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
@@ -552,6 +553,35 @@ describe('browser extension import runtime', () => {
       .toMatchObject({ partOfSpeech: 'x'.repeat(40), reading: '' });
   });
 
+  it('returns the language of the saved card so the extension can label a capture it sent without one', async () => {
+    const languageOf = async (card: Partial<CardData>) => {
+      const posted: unknown[] = [];
+      vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
+      const { browser, storage } = createBrowser('https://app.example.test/?view=library');
+      storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
+        v: 3, id: 'intent_language_123', nonce, text: '회복력', createdAt: Date.now(), mode: 'silent',
+      }));
+      const runtime = startBrowserExtensionImportRuntime(optionsFor(async () => ({
+        status: 'created' as const,
+        card: {
+          id: 'card-1', word: '회복력', translation: 'khả năng phục hồi', explanation: '', phonetic: '', emoji: '',
+          category: '', audioUrl: null, imageUrl: null, origin: 'ai' as const, ...card,
+        },
+        mediaTask: Promise.resolve(),
+      })), browser);
+      await new Promise(resolve => setImmediate(resolve));
+      runtime.dispose();
+      vi.unstubAllGlobals();
+      const result = posted.find(message => (message as { type?: unknown }).type === 'LINGOFLASH_EXTENSION_RESULT') as
+        { payload: Record<string, unknown> } | undefined;
+      return result?.payload.language;
+    };
+
+    expect(await languageOf({ language: 'ko' })).toBe('ko');
+    expect(await languageOf({ language: 'zh-CN' })).toBe('zh');
+    expect(await languageOf({})).toBe('');
+  });
+
   it('generates once ensureCaptureCourse resolves proceed', async () => {
     const now = Date.now();
     const { browser, storage } = createBrowser('https://app.example.test/?view=library');
@@ -562,6 +592,7 @@ describe('browser extension import runtime', () => {
       text: 'resilient',
       createdAt: now,
       mode: 'silent',
+      sourceLanguage: 'en',
     }));
     let generated = 0;
     let gateCalls = 0;
@@ -582,7 +613,7 @@ describe('browser extension import runtime', () => {
     expect(generated).toBe(1);
   });
 
-  it('passes the extension\'s captured target language to ensureCaptureCourse, defaulting to en when the extension reported none', async () => {
+  it('generates in the active course without a course prompt when the extension reported no language', async () => {
     const now = Date.now();
     const { browser, storage } = createBrowser('https://app.example.test/?view=library');
     storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
@@ -594,17 +625,22 @@ describe('browser extension import runtime', () => {
       mode: 'silent',
     }));
     const seenTargetLanguages: string[] = [];
+    let generated = 0;
     const runtime = startBrowserExtensionImportRuntime({
-      ...optionsFor(async () => ({ status: 'failed' as const, error: new Error('expected test failure') })),
+      ...optionsFor(async () => {
+        generated += 1;
+        return { status: 'failed' as const, error: new Error('expected test failure') };
+      }),
       ensureCaptureCourse: async targetLanguage => {
         seenTargetLanguages.push(targetLanguage);
-        return 'proceed' as const;
+        return 'cancel' as const;
       },
     }, browser);
     await new Promise(resolve => setImmediate(resolve));
     runtime.dispose();
 
-    expect(seenTargetLanguages).toEqual(['en']);
+    expect(seenTargetLanguages).toEqual([]);
+    expect(generated).toBe(1);
   });
 
   it('passes the extension\'s synced course target language to ensureCaptureCourse when the extension reported one', async () => {
@@ -643,6 +679,7 @@ describe('browser extension import runtime', () => {
       text: 'resilient',
       createdAt: now,
       mode: 'silent',
+      sourceLanguage: 'en',
     }));
     const posted: unknown[] = [];
     vi.stubGlobal('postMessage', (message: unknown) => posted.push(message));
@@ -886,7 +923,7 @@ describe('browser extension import runtime', () => {
     const now = Date.now();
     const { browser, storage } = createBrowser('https://app.example.test/?view=library');
     storage.setItem(BROWSER_EXTENSION_IMPORT_STORAGE_KEY, JSON.stringify({
-      v: 3, id: 'intent_owner_course_123', nonce, text: 'deferred', createdAt: now, mode: 'silent',
+      v: 3, id: 'intent_owner_course_123', nonce, text: 'deferred', createdAt: now, mode: 'silent', sourceLanguage: 'en',
     }));
     let release: ((decision: 'proceed') => void) | undefined;
     let generated = 0;

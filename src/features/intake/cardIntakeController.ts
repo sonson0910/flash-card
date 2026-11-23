@@ -75,6 +75,33 @@ export class RequestedDeckUnavailableError extends Error {
   }
 }
 
+// The server's card source limits (parseCardSourceMetadata). A value it would
+// reject is dropped here so a bad page URL or title never fails the save.
+const CAPTURE_SOURCE_URL_MAX_LENGTH = 2_048;
+const CAPTURE_PAGE_TITLE_MAX_LENGTH = 256;
+
+/** The page a browser-extension capture came from, bounded to what the server accepts. */
+const boundedCaptureSource = (
+  options: CardGenerationOptions,
+): Pick<CardGenerationOptions, 'sourceUrl' | 'pageTitle' | 'capturedAt'> => {
+  let sourceUrl = '';
+  if (typeof options.sourceUrl === 'string' && options.sourceUrl.length <= CAPTURE_SOURCE_URL_MAX_LENGTH) {
+    try {
+      const url = new URL(options.sourceUrl.trim());
+      if (url.protocol === 'http:' || url.protocol === 'https:') sourceUrl = options.sourceUrl.trim();
+    } catch { /* not a URL: keep the card without one */ }
+  }
+  const pageTitle = typeof options.pageTitle === 'string'
+    ? options.pageTitle.replace(/\s+/g, ' ').trim().slice(0, CAPTURE_PAGE_TITLE_MAX_LENGTH).trim()
+    : '';
+  const capturedTime = typeof options.capturedAt === 'string' ? Date.parse(options.capturedAt) : Number.NaN;
+  return {
+    ...(sourceUrl ? { sourceUrl } : {}),
+    ...(pageTitle ? { pageTitle } : {}),
+    ...(Number.isNaN(capturedTime) ? {} : { capturedAt: new Date(capturedTime).toISOString() }),
+  };
+};
+
 export interface CardIntakeControllerPort extends SpreadsheetCardIntakePort {
   captureSession?(): () => boolean;
   /** Resolves true when the request was refunded, false when it still counts, null when unknown. */
@@ -706,6 +733,7 @@ export function createCardIntakeController({
         ? generationOptions.context.replace(/\s+/g, ' ').trim().slice(0, 500)
         : '';
       const partOfSpeechHint = normalizePartOfSpeech(generationOptions.partOfSpeechHint);
+      const captureSource = boundedCaptureSource(generationOptions);
       const suppliedId = generationOptions.operationId;
       const validSuppliedId = typeof suppliedId === 'string'
         && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(suppliedId);
@@ -734,6 +762,7 @@ export function createCardIntakeController({
         language,
         operationId: draftOperation.id,
         ...(context ? { context } : {}),
+        ...captureSource,
         ...(partOfSpeechHint ? { partOfSpeechHint } : {}),
         ...(requestedDeck ? { requestedDeck } : {}),
         ...(requestedDeck && generationOptions.requestedDeckAvailable
