@@ -8,9 +8,32 @@ import {
   readCachedCloudStats, readCachedCloudTotal, readLocalJson, writeLocalValue,
   type CachedCloudPage, type CachedCloudStats,
 } from '../library/libraryStorage';
-import { createCloudLibraryPageController, type CloudLibraryCachePort } from './cloudLibraryPageController';
+import {
+  createCloudLibraryPageController, EMPTY_LIBRARY_STATS,
+  type CloudLibraryCachePort, type CloudLibraryPageSnapshot,
+} from './cloudLibraryPageController';
 import { createCloudLibraryPageFirebaseAdapter } from './cloudLibraryPageFirebaseAdapter';
 import { db, isFirebaseConfigured } from '../../lib/firebase';
+
+/** What a render sees until the controller has set up the owner it is asked for. */
+const NO_OWNER_SNAPSHOT: CloudLibraryPageSnapshot = {
+  ownerId: null,
+  queryKey: '',
+  page: 1,
+  items: [],
+  total: 0,
+  hasNext: false,
+  isLoading: false,
+  cloudUnavailable: false,
+  serverConfirmed: false,
+  cacheOnly: false,
+  canRetryAutomatically: false,
+  error: null,
+  stats: EMPTY_LIBRARY_STATS,
+  isStatsLoading: false,
+  facets: {},
+  facetsComplete: false,
+};
 
 const localDateKey = () => {
   const now = new Date();
@@ -128,7 +151,10 @@ export function useCloudLibraryPage({
     return createCloudLibraryPageController({ adapter, cache, pageSize });
   }, [pageSize, transformLivePage, transformPage]);
 
-  const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  const controllerSnapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  // The controller keeps the last owner's data until it activates the next one, which happens after the
+  // render that first names that owner; those figures must never be read as the new owner's.
+  const snapshot = controllerSnapshot.ownerId === ownerId ? controllerSnapshot : NO_OWNER_SNAPSHOT;
 
   useEffect(() => {
     if (!ownerId) { controller.stop(); return; }

@@ -378,3 +378,41 @@ it('refreshes recap stats after the intent arrives without treating the initial 
 
   await act(async () => root.unmount());
 });
+
+it('never returns the previous owner total, stats or facets for another owner', async () => {
+  installLocalStorage();
+  localStorageValues.set('lingoflash_cloud_facets_user-a', JSON.stringify({ categories: { 'Work - client X': 12 }, complete: true }));
+  localStorageValues.set(cloudStatsCacheKey('user-a'), JSON.stringify({
+    stats: { total: 240, reviewed: 0, easy: 0, good: 0, hard: 0, unrated: 240, bookmarked: 0, due: 17, dueAsOfDate: '2026-09-28', legacyUnindexed: 0 },
+    updatedAt: new Date().toISOString(),
+  }));
+  writeCachedPage('user-a', 'all', 1, [card('a-1')], 240);
+  const renders: Array<{ ownerId: string | null; snapshot: ReturnType<typeof useCloudLibraryPage> }> = [];
+  const container = installMinimalReactDom();
+  const root = createRoot(container);
+
+  function Harness({ ownerId }: { ownerId: string | null }) {
+    const snapshot = useCloudLibraryPage({
+      ownerId, query, queryKey: 'all', page: 1, pageSize: 9, refreshKey: 0,
+      statsOpen: false, progressEvidenceOpen: false, getPromotedCards: () => [],
+    });
+    renders.push({ ownerId, snapshot });
+    return null;
+  }
+
+  await act(async () => { root.render(<Harness ownerId="user-a" />); });
+  expect(renders.at(-1)?.snapshot.facets).toEqual({ 'Work - client X': 12 });
+  await act(async () => { root.render(<Harness ownerId={null} />); });
+  await act(async () => { root.render(<Harness ownerId="user-b" />); });
+
+  const forOtherOwner = renders.filter(entry => entry.ownerId !== 'user-a');
+  expect(forOtherOwner.length).toBeGreaterThan(0);
+  for (const { snapshot } of forOtherOwner) {
+    expect(snapshot.total).toBe(0);
+    expect(snapshot.items).toEqual([]);
+    expect(snapshot.facets).toEqual({});
+    expect(snapshot.stats.total).toBe(0);
+    expect(snapshot.ownerId).not.toBe('user-a');
+  }
+  await act(async () => root.unmount());
+});
