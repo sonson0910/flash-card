@@ -2220,7 +2220,12 @@ msgid "library.part-of-speech.verb"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/sharing/sharedDeckSessionController.ts:922
+#: src/features/sharing/sharedDeckSessionController.ts:750
+msgid "library.share.link-ended"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/sharing/sharedDeckSessionController.ts:933
 msgid "library.share.meaning-language-mismatch"
 msgstr ""
 

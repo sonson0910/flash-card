@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import {
+  BROWSER_EXTENSION_IMPORT_APP_SOURCE,
   BROWSER_EXTENSION_IMPORT_BRIDGE_SOURCE,
   BROWSER_EXTENSION_IMPORT_READY_MESSAGE,
   BROWSER_EXTENSION_IMPORT_UNVERIFIED_STORAGE_KEY,
@@ -76,7 +77,7 @@ const normalizeDecksForExtension = (value: readonly string[]): string[] => {
 // same-origin relay through extensions/lingoflash/app-bridge.js.
 const postExtensionBridgeMessage = (type: string, payload: unknown): void => {
   try {
-    globalThis.postMessage?.({ source: 'lingoflash-web-app', type, payload }, globalThis.location?.origin || '*');
+    globalThis.postMessage?.({ source: BROWSER_EXTENSION_IMPORT_APP_SOURCE, type, payload }, globalThis.location?.origin || '*');
   } catch { /* The optional bridge may race navigation. */ }
 };
 

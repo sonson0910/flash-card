@@ -777,18 +777,17 @@ service cloud.firestore {
       )
       && (
         !changed.hasAny([
-          'emoji', 'audioUrl', 'createdAt', 'lastOpenedAt', 'sortTouchedAt',
+          'emoji', 'audioUrl', 'lastOpenedAt', 'sortTouchedAt',
           'cefrLevel', 'register', 'commonMistake', 'wordFamily',
           'nextReviewDate', 'difficulty', 'reviews', 'interval', 'easeFactor', 'correctStreak',
           'collocations', 'synonyms', 'antonyms', 'reviewHistory', 'fsrs'
         ])
         || (
           (
-            !changed.hasAny(['emoji', 'audioUrl', 'createdAt', 'lastOpenedAt', 'sortTouchedAt', 'cefrLevel', 'register', 'commonMistake', 'wordFamily'])
+            !changed.hasAny(['emoji', 'audioUrl', 'lastOpenedAt', 'sortTouchedAt', 'cefrLevel', 'register', 'commonMistake', 'wordFamily'])
             || (
               (!changed.hasAny(['emoji']) || isBoundedText(data.get('emoji', ''), 64))
               && (!changed.hasAny(['audioUrl']) || data.get('audioUrl', null) == null || isTrustedAudioUrl(data.audioUrl))
-              && (!changed.hasAny(['createdAt']) || isBoundedText(data.get('createdAt', ''), 128))
               && (!changed.hasAny(['lastOpenedAt']) || isOptionalBoundedText(data, 'lastOpenedAt', 128))
               && (!changed.hasAny(['sortTouchedAt']) || isOptionalBoundedText(data, 'sortTouchedAt', 128))
               && (!changed.hasAny(['cefrLevel']) || isOptionalBoundedText(data, 'cefrLevel', 8))
@@ -860,11 +859,11 @@ service cloud.firestore {
             'reviewHistory'
           ])
         )
-        // Server-owned origin, capture, mastery, pitch, AI meaning alternatives
-        // and canonical lexeme identity cannot be introduced, removed or
-        // changed by a client update.
+        // Server-owned origin, capture, creation time, mastery, pitch, AI meaning
+        // alternatives and canonical lexeme identity cannot be introduced,
+        // removed or changed by a client update.
         && !changed.hasAny([
-          'origin', 'source', 'masteredAt', 'japanesePitchAccent', 'translationAlternatives',
+          'origin', 'source', 'createdAt', 'masteredAt', 'japanesePitchAccent', 'translationAlternatives',
           'lexemeId', 'language', 'translationLanguage', 'senseKey', 'normalizedLemma'
         ])
         // language/translationLanguage are immutable after creation (the

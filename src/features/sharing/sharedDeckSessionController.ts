@@ -29,6 +29,12 @@ const UNKNOWN_SHARED_DECK_LANGUAGE_MESSAGE = 'This shared deck does not say whic
 
 class InvalidSharedCardBatchError extends Error {}
 
+/** Rules deny the read of an expired, revoked or removed share, so those arrive as these codes. */
+const isEndedShareLinkError = (error: unknown): boolean => {
+  const code = typeof error === 'object' && error !== null ? (error as { code?: unknown }).code : undefined;
+  return code === 'permission-denied' || code === 'not-found';
+};
+
 export interface SharedDeckAdapter {
   load(shareId: string): Promise<unknown>;
   create(request: {
@@ -740,7 +746,12 @@ export function createSharedDeckSessionController({
       publish({
         error: error instanceof InvalidSharedCardBatchError
           ? INVALID_SHARED_CARD_BATCH_MESSAGE
-          : 'Could not load this shared deck safely. No cards were added.',
+          : isEndedShareLinkError(error)
+            ? i18n._(msg({
+              id: 'library.share.link-ended',
+              message: 'This shared link is no longer available. It may have expired or been revoked; ask the sender for a new link.',
+            }))
+            : 'Could not load this shared deck safely. No cards were added.',
       });
     } finally {
       if (isCurrent(operationLifecycle, owner)) {

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 export const PRODUCTION_ORIGIN = 'https://sonflash.app';
 export const LOCALES = [
@@ -105,4 +106,6 @@ export const generateLocalePages = ({ root = path.resolve('.'), target = process
   console.log(`Generated ${LOCALES.length} localized landing pages, sitemap.xml, robots.txt and robots-disallow.txt for target "${target}".`);
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) generateLocalePages();
+// The entry path is resolved the way Node resolved the module URL: symlinks followed and the path
+// percent-encoded, so a checkout under a path with spaces, non-ASCII characters or a link still runs.
+if (process.argv[1] && import.meta.url === pathToFileURL(fs.realpathSync(path.resolve(process.argv[1]))).href) generateLocalePages();

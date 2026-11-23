@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -107,5 +108,34 @@ describe('localized landing pages', () => {
     generateLocalePages({ root: restaged, target: 'staging' });
     fs.writeFileSync(path.join(restaged, 'dist/robots.txt'), 'User-agent: *\nAllow: /\n');
     assert.throws(() => checkLocalePages({ root: restaged, target: 'staging' }), /must disallow all crawling/);
+  });
+
+  it('runs the generator and the checker from a path with spaces, non-ASCII characters and a symlink', () => {
+    const fixture = createFixture();
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'sonflash entry guard \u0111\u01b0\u1eddng d\u1eabn-'));
+    roots.push(base);
+    const checkout = path.join(base, 'real checkout \u0111');
+    fs.mkdirSync(path.join(checkout, 'scripts'), { recursive: true });
+    for (const name of ['generate-locale-pages.mjs', 'check-locale-pages.mjs']) {
+      fs.copyFileSync(new URL(`./${name}`, import.meta.url), path.join(checkout, 'scripts', name));
+    }
+    fs.cpSync(path.join(fixture, 'src'), path.join(checkout, 'src'), { recursive: true });
+    fs.cpSync(path.join(fixture, 'dist'), path.join(checkout, 'dist'), { recursive: true });
+    fs.writeFileSync(path.join(checkout, 'dist/robots.txt'), 'User-agent: *\nAllow: /\n');
+    const linked = path.join(base, 'linked checkout');
+    fs.symlinkSync(checkout, linked);
+    const run = script => execFileSync(process.execPath, [path.join(linked, 'scripts', script)], {
+      cwd: linked,
+      encoding: 'utf8',
+      env: { ...process.env, SONFLASH_TARGET: 'staging' },
+    });
+
+    assert.match(run('generate-locale-pages.mjs'), /Generated 2 localized landing pages/);
+    assert.match(fs.readFileSync(path.join(checkout, 'dist/robots.txt'), 'utf8'), /^Disallow: \/$/m);
+    assert.ok(fs.existsSync(path.join(checkout, 'dist/vi/index.html')));
+    assert.match(run('check-locale-pages.mjs'), /Validated 2 localized landing pages/);
+
+    fs.writeFileSync(path.join(checkout, 'dist/robots.txt'), 'User-agent: *\nAllow: /\n');
+    assert.throws(() => run('check-locale-pages.mjs'), /must disallow all crawling/);
   });
 });

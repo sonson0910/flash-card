@@ -1168,6 +1168,24 @@ describe('release workflow contracts', () => {
     ]);
   });
 
+  it('declares every composite index once after the implicit document name is appended', () => {
+    const manifest = JSON.parse(read('firestore.indexes.json'));
+    const signature = index => {
+      const fields = index.fields.map(({ fieldPath, order, arrayConfig }) => [fieldPath, order ?? arrayConfig]);
+      const last = fields.at(-1);
+      if (last?.[0] !== '__name__') fields.push(['__name__', last?.[1] ?? 'ASCENDING']);
+      return JSON.stringify([index.collectionGroup, index.queryScope, fields]);
+    };
+    const seen = new Map();
+    const duplicates = [];
+    manifest.indexes.forEach((index, position) => {
+      const key = signature(index);
+      if (seen.has(key)) duplicates.push(`${index.collectionGroup}: entries ${seen.get(key)} and ${position}`);
+      else seen.set(key, position);
+    });
+    assert.deepEqual(duplicates, []);
+  });
+
   it('only seals an index report after active field and operation readback', () => {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lingoflash-index-report-'));
     try {
