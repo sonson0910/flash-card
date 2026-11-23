@@ -844,7 +844,9 @@ describe('useLearningStatePersistence patch reconciliation', () => {
 
     await expect(harness.persistence.persist(deleteMutation)).rejects.toThrow(/clear has not finished/);
     expect(harness.acceptVerifiedEpoch).toHaveBeenCalledWith('user-a', 3);
-    expect(harness.reportError).toHaveBeenLastCalledWith(expect.stringMatching(/clear of your library has not finished/));
+    expect(harness.reportError).toHaveBeenLastCalledWith(expect.stringMatching(
+      /clear of your library has not finished.*or clear the library again/,
+    ));
     expect(harness.updateCategoryFacets).not.toHaveBeenCalled();
   });
 

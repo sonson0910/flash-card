@@ -70,7 +70,7 @@ const resultFor = (
 
 const MAX_RETAINED_RESTORE_STATS_OPERATIONS = 500;
 const UNFINISHED_CLEAR_DELETE_MESSAGE =
-  'An earlier clear of your library has not finished, so this card is still stored. Reload the app to finish the clear.';
+  'An earlier clear of your library has not finished, so this card is still stored. Reload the app to finish the clear, or clear the library again.';
 const MAX_RETAINED_REVIEW_COMMANDS = 500;
 
 function cacheCloudBackoff(ownerId: string): void {
@@ -599,7 +599,7 @@ export function useLearningStatePersistence(options: LearningPersistenceOptions)
               epochAdvanced = true;
               current.acceptVerifiedEpoch(ownerId, epoch);
             },
-            deleteCards: epoch => deleteAllCards(database, ownerId, epoch),
+            deleteCards: async epoch => { await deleteAllCards(database, ownerId, epoch); },
           });
           cardDeletionCompleted = true;
           await clearLibraryFacets(database, ownerId, mutation.operationId);

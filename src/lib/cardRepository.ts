@@ -2553,7 +2553,11 @@ export async function streamAllCardsInBatches(
   return loaded;
 }
 
-export async function deleteAllCards(db: Firestore, userId: string, libraryEpoch: number): Promise<void> {
+/**
+ * Deletes every card older than libraryEpoch through the trusted callable and
+ * returns the category counts of the current-generation cards it kept.
+ */
+export async function deleteAllCards(db: Firestore, userId: string, libraryEpoch: number): Promise<Record<string, number>> {
   const app = firebaseApp;
   if (!isFirebaseConfigured || !app) {
     throw new ProtectedFunctionError({
@@ -2561,7 +2565,8 @@ export async function deleteAllCards(db: Firestore, userId: string, libraryEpoch
       kind: 'configuration', code: 'firebase-unconfigured', retryable: false,
     });
   }
-  await runProtectedFunction(protectedFunctionsCapability, 'Clear library', async () => {
+  return runProtectedFunction(protectedFunctionsCapability, 'Clear library', async () => {
+    const keptCategories: Record<string, number> = {};
     const assertActiveOwner = () => {
       if (auth?.currentUser?.uid !== userId) {
         throw new ProtectedFunctionError({
@@ -2618,12 +2623,19 @@ export async function deleteAllCards(db: Firestore, userId: string, libraryEpoch
         ...(cursor ? [startAfter(cursor)] : []),
         limit(249),
       ));
-      if (page.empty) return;
+      if (page.empty) break;
       for (const cardIds of plannedPages(page.docs)) {
         assertActiveOwner();
         await clearPage(cardIds);
       }
+      for (const card of page.docs) {
+        const data = card.data() as Record<string, unknown>;
+        if (!Number.isSafeInteger(data.libraryEpoch) || Number(data.libraryEpoch) < libraryEpoch) continue;
+        const category = typeof data.category === 'string' && data.category ? data.category : 'Other';
+        keptCategories[category] = (keptCategories[category] ?? 0) + 1;
+      }
       cursor = page.docs.length === 249 ? page.docs[page.docs.length - 1] : null;
     } while (cursor);
+    return keptCategories;
   });
 }
