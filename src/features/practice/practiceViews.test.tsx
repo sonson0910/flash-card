@@ -255,6 +255,32 @@ describe("practice view accessibility contracts", () => {
     expect(studyHtml).toContain('0 / 1 saved');
   });
 
+  it('renders no card, and so no edit sheet, once the session has no cards after an owner change', () => {
+    // The session reports no study cards in the render that follows an owner change, so a sheet
+    // opened for the earlier owner's card is unmounted instead of saving against the new owner.
+    const studyHtml = renderToStaticMarkup(
+      <StudyView
+        cards={[]}
+        index={0}
+        recallMode="target-to-native"
+        revealed
+        needsIntroduction={false}
+        reviewedCardId={null}
+        customDecks={[]}
+        onClose={vi.fn()}
+        onRecallMode={vi.fn()}
+        onReveal={vi.fn()}
+        onBookmark={vi.fn()}
+        onAssignDeck={vi.fn()}
+        onUpdateCard={vi.fn()}
+        onRate={vi.fn()}
+        onIndex={vi.fn()}
+      />,
+    );
+
+    expect(studyHtml).toBe('');
+  });
+
   it('introduces an unreviewed card before recall and rating', () => {
     const studyHtml = renderToStaticMarkup(
       <StudyView
