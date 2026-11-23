@@ -714,6 +714,38 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('functions/lib/legacySharedDeckMigrationOperator.js --');
   });
 
+  it('lets verification name the release itself as the revision that owns the migration', () => {
+    const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
+    const verifyChecks = workflow.slice(
+      workflow.indexOf('if [[ "$MIGRATION_MODE" = verify ]]; then'),
+      workflow.indexOf('if [[ "$MIGRATION_MODE" = apply ]]; then'),
+    );
+    expect(verifyChecks).toContain('[[ "$MIGRATION_SOURCE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]');
+    expect(verifyChecks).not.toContain('test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"');
+  });
+
+  it('lets a protected apply finish a shared-deck migration sealed at an earlier revision', () => {
+    const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
+    const applyChecks = workflow.slice(
+      workflow.indexOf('if [[ "$MIGRATION_MODE" = apply ]]; then'),
+      workflow.indexOf('if [[ "$MIGRATION_MODE" = supersede ]]; then'),
+    );
+    expect(applyChecks).toContain([
+      '            if [[ -n "$MIGRATION_SOURCE_REVISION" ]]; then',
+      '              [[ "$MIGRATION_SOURCE_REVISION" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]',
+      '              test "$MIGRATION_SOURCE_REVISION" != "$INVENTORY_REVISION"',
+      '            fi',
+    ].join('\n'));
+    // The head still has to be the default branch head, and the sealing
+    // revision one of its ancestors, before any credential is loaded.
+    expect(applyChecks).toContain('test "$APPLY_CONFIRMATION" = "APPLY_SHARED_DECK_V2"');
+    const ancestry = workflow.indexOf('git merge-base --is-ancestor "$MIGRATION_SOURCE_REVISION" "$INVENTORY_REVISION"');
+    expect(ancestry).toBeGreaterThan(-1);
+    expect(ancestry).toBeLessThan(workflow.indexOf('google-github-actions/auth@'));
+    expect(workflow.slice(workflow.indexOf('- name: Run the redacted inventory')))
+      .toContain('MIGRATION_SOURCE_REVISION: ${{ inputs.source_revision }}');
+  });
+
   it('requires an authenticated read-only TTL policy snapshot for both shared-deck collections', () => {
     const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
     const setupGcloudIndex = workflow.indexOf('google-github-actions/setup-gcloud@');

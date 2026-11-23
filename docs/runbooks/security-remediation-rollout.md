@@ -142,18 +142,37 @@ artifact and its SHA-256. Review only redacted counters and digests:
 
 Stop if the scan is incomplete, quota is exceeded, the backup is unsealed, a
 valid deck lacks an owner, or any digest/counter is unstable between identical
-inventory runs. Invalid records remain recoverable; do not delete them.
+inventory runs. Invalid records remain recoverable; do not delete them. An
+expired current-format share whose owner record the TTL policy has already
+removed does not block the inventory: it is sealed as expired, never rewritten
+or charged to the owner, and left for the policy to remove. A share that has not
+expired and has no owner record still blocks.
 
 If the migration is already in the durable `verified` phase, run the workflow in
 `verify` mode with the immutable `source_revision` that owns that migration. This
 reruns the live cutover checks and emits a report bound to the current release
-revision without rescanning, reapplying, or replacing the sealed migration state.
+revision without a new inventory, reapplying, or replacing the sealed migration
+state. `source_revision` may equal the release revision: that is how the report
+for the revision that sealed the migration is issued again once its artifact has
+expired, because `apply` no longer completes after learners have used sharing.
+The run only reads: sharing stays open while it runs and if it fails.
+Shares that learners created after the cutover, shares the owner revoked, and
+shares that expired are expected, and so is a migration owner who has deleted
+their account, which removes the ledger and the quarantine copies. The run fails
+when a record is not in the current format, when what the TTL policy left of an
+expired share is not the migrated or current-format record, or when a migrated
+share that is still live disagrees with its sealed entry or its ledger entry. If
+an interrupted earlier run left sharing closed on a verified migration, this run
+reopens it. It reads every share once per collection, so watch the 30-minute job
+limit as the share count grows.
 
 If the report requires index preparation, run `prepare-indexes` under its separate
 approval with the same `firestore_safety_run_id` and
 `firestore_safety_receipt_sha256`, then bind `indexes_run_id` and
 `indexes_report_sha256` to the later apply. Never use `supersede` without a separate
 incident/change approval and the exact sealed ineligible-inventory and root digests.
+`supersede` accepts a sealed inventory, or one whose apply stopped before it wrote
+any source; once a source has been written the migration can only be finished.
 
 ### 5. Apply migration
 
@@ -169,6 +188,36 @@ The apply report must prove:
 
 Any mismatch stops the rollout before Rules cutover. Do not retry with changed
 inputs; produce a new inventory and approval.
+
+The owner's usage ledger may already exist, because the share callable creates
+it on the owner's first share. Apply replaces it with the sealed ledger when its
+counters are consistent and every share it counts as live at the scan is the
+same share in the inventory. A share the owner created after the workflow
+stamped the scan time is kept, with its expiry cut to thirty days from the scan
+like every migrated share. Apply still stops before any write when that ledger
+counts a live share the inventory does not hold; repair that by hand before a
+new approval.
+
+Sharing is closed for every learner from the inventory until the migration
+reaches `verified`, so an apply that stops part-way must be finished, not left:
+
+- Re-run `apply` with the same inputs to resume from the last committed source.
+- If the default branch has advanced, run `apply` from the current head with
+  `source_revision` set to the revision that sealed the inventory. It needs a
+  `prepare-indexes` run for the current head and the backup manifest that is
+  bound to the sealing revision and inventory digest (re-signed when its
+  `verifiedAt` is more than 24 hours old). The run finishes the same sealed
+  inventory without rescanning, and its report is bound to the current head.
+- The TTL policy keeps removing expired shares while a job waits. A sealed share
+  whose expiry has passed may be missing one or both documents when `apply`
+  resumes or verifies, and a quarantined record that expired may be gone before
+  it was copied. A share that has not expired and is missing or changed still
+  stops the run, and so does a quarantined record without an expiry that
+  disappears before its copy exists.
+- An apply that stopped before writing any source can be superseded and
+  inventoried again instead.
+- A sealed inventory that was never applied is not applied from a later
+  revision: supersede it and produce a new inventory and approval.
 
 ### 6. Cut over Firestore Rules
 

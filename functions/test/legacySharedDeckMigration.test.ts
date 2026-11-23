@@ -384,6 +384,21 @@ describe('legacy shared-deck exact inventory', () => {
     });
   });
 
+  it('leaves an expired current share whose owner record is already gone to the TTL policy', () => {
+    const scan = { scanStartedAt: '2026-08-24T00:00:00.000Z' };
+    const expired = current('expired-half-removed', { expiresAt: { seconds: 1_700_000_100, nanoseconds: 0 } });
+    expect(classifyLegacyShare(expired, ownerUid, scan)).toMatchObject({
+      action: 'keep',
+      disposition: 'keep-current',
+      expired: true,
+    });
+    // Without its owner record a share that is still live belongs to nobody the scan can name.
+    expect(classifyLegacyShare(current('live-half-removed'), ownerUid, scan)).toMatchObject({
+      disposition: 'block',
+      reasonCode: 'private-missing',
+    });
+  });
+
   it('normalizes pre-epoch timestamps with floor semantics and blocks out-of-range timestamps', () => {
     const preEpoch = { seconds: '-1', nanoseconds: 999_000_000 };
     expect(classifyLegacyShare(legacy('pre-epoch', {
@@ -1616,7 +1631,11 @@ describe('legacy shared-deck exact inventory', () => {
     const verification = await verifyLegacySharedDeckCutover(database, duplicate);
     expect(verification).toMatchObject({ verified: true, validLegacyPublicCount: 0, activeLedgerCount: 2 });
     const firstReport = buildLegacySharedDeckMigrationOperatorReport(duplicate, verification);
-    const rerunVerification = await verifyLegacySharedDeckCutover(database, duplicate);
+    // A verified migration is re-checked against the live ledger, so the
+    // second pass is pinned to a moment at which these shares are still live.
+    const rerunVerification = await verifyLegacySharedDeckCutover(database, duplicate, {
+      now: Timestamp.fromMillis(Date.parse(duplicate.scanStartedAt) + 60_000),
+    });
     expect(rerunVerification).toEqual(verification);
     expect(buildLegacySharedDeckMigrationOperatorReport(duplicate, rerunVerification)).toBe(firstReport);
     expect(JSON.parse(firstReport)).toMatchObject({
@@ -1703,8 +1722,14 @@ describe('legacy shared-deck exact inventory', () => {
         },
       });
       map.delete(missing === 'public' ? `shared_decks/${shareId}` : `shared_deck_owners/${shareId}`);
-      await expect(verifyLegacySharedDeckCutover(harness.database, inventory))
+      // The share has not expired, so the TTL policy cannot have removed the missing side.
+      const beforeExpiry = { now: Timestamp.fromMillis(Date.parse(inventory.scanStartedAt) + 60_000) };
+      await expect(verifyLegacySharedDeckCutover(harness.database, inventory, beforeExpiry))
         .rejects.toBeInstanceOf(LegacySharedDeckApplyError);
+      // Once it has, the remaining half is what the policy has yet to remove.
+      const afterExpiry = { now: Timestamp.fromMillis(Date.parse(inventory.scanStartedAt) + 31 * 24 * 60 * 60 * 1_000) };
+      await expect(verifyLegacySharedDeckCutover(harness.database, inventory, afterExpiry))
+        .resolves.toMatchObject({ verified: true });
     }
   });
 
@@ -1799,7 +1824,11 @@ describe('legacy shared-deck exact inventory', () => {
     const resumedVerification = await verifyLegacySharedDeckCutover(verifyHarness.database, inventory);
     const resumedReport = buildLegacySharedDeckMigrationOperatorReport(inventory, resumedVerification);
     expect(resumedVerification).toMatchObject({ verified: true });
-    const resumedAgain = await verifyLegacySharedDeckCutover(verifyHarness.database, inventory);
+    // A verified migration is re-checked against the live ledger, so the
+    // second pass is pinned to a moment at which these shares are still live.
+    const resumedAgain = await verifyLegacySharedDeckCutover(verifyHarness.database, inventory, {
+      now: Timestamp.fromMillis(Date.parse(inventory.scanStartedAt) + 60_000),
+    });
     expect(buildLegacySharedDeckMigrationOperatorReport(inventory, resumedAgain)).toBe(resumedReport);
     expect(map.get('admin_shared_deck_migration_jobs/shared_deck_v2')).toMatchObject({
       phase: 'verified', verificationProgress: { active: false },
