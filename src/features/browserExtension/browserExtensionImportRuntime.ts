@@ -35,17 +35,17 @@ export interface BrowserExtensionImportOptions {
    * language in its own popup/options UI and to tag a fresh capture with the
    * course's target language. Omitting either field (or passing `null`)
    * sends no course-locale sync at all, so the extension keeps its today's
-   * Chrome-i18n UI locale and fixed English capture assumption unchanged.
+   * Chrome-i18n UI locale and reports no language for its captures.
    */
   courseNativeLanguage?: string | null;
   courseTargetLanguage?: string | null;
   /**
    * Runs immediately before a silent (one-click, no-review) capture is
-   * generated. Receives the target language the extension captured this
-   * word under — the active course's target language when the extension had
-   * one synced (07.5), else `'en'`, the extension's original fixed
-   * assumption for a build (or a not-yet-synced session) that never reports
-   * one. When the active course targets a different language, this is the
+   * generated, and only when the extension reported the target language it
+   * captured this word under (the active course's target language it had
+   * confirmed). A capture with no reported language is generated in the
+   * active course without calling this: the language is unknown, so there is
+   * no mismatch to resolve. When the active course targets a different language, this is the
    * only point where a human ever sees the mismatch — manual (non-silent)
    * captures instead land in the library view, where the real course
    * switcher is already visible before the user generates anything.
@@ -391,11 +391,12 @@ export const startBrowserExtensionImportRuntime = (
     };
 
     const ensureCaptureCourse = options.ensureCaptureCourse;
-    if (!ensureCaptureCourse) {
+    const capturedLanguage = intent.sourceLanguage;
+    if (!ensureCaptureCourse || !capturedLanguage) {
       runGeneration();
       return;
     }
-    void ensureCaptureCourse(intent.sourceLanguage ?? 'en').then(decision => {
+    void ensureCaptureCourse(capturedLanguage).then(decision => {
       if (!isCurrent()) return;
       if (decision === 'cancel') {
         // No half-done side effects: nothing was generated, the pending

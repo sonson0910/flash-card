@@ -1157,7 +1157,7 @@ test('binds a capture to the current provider before deck metadata is ready', as
   assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).importClaimedAt, undefined);
 });
 
-test('keeps the legacy locale when a provider appears during an unbound capture', async () => {
+test('leaves the language of an unbound capture unknown even when a provider appears during it', async () => {
   let releaseCapture;
   const captureSelectionGate = new Promise(resolve => { releaseCapture = resolve; });
   const worker = await createWorkerContext({ captureSelectionGate });
@@ -1185,13 +1185,13 @@ test('keeps the legacy locale when a provider appears during an unbound capture'
   releaseCapture();
   const started = await pendingCapture;
   const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
-  assert.equal(job.sourceLanguage, 'en');
+  assert.equal(job.sourceLanguage, undefined);
   assert.equal(job.providerId, undefined);
   assert.equal(job.providerScope, undefined);
 
   const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
   assert.equal(verified.verified, true);
-  assert.equal(verified.intent.sourceLanguage, 'en');
+  assert.equal('sourceLanguage' in verified.intent, false);
 });
 
 test('rejects a capture after the same app port rotates its confirmed owner scope', async () => {
@@ -1448,7 +1448,7 @@ test('never leaks a previous account course locale after reconnect/account switc
   restarted.appPort.disconnect();
   await flushMicrotasks();
   const freshCapture = await startQuickAdd(restarted);
-  assert.equal(restarted.storageValues.get(`lingoflash_quick_add_job_${freshCapture.id}`).sourceLanguage, 'en');
+  assert.equal(restarted.storageValues.get(`lingoflash_quick_add_job_${freshCapture.id}`).sourceLanguage, undefined);
 
   // A retired scope can never resurface a course locale even if replayed.
   const replay = await sendRuntimeMessage(restarted, {
@@ -1487,10 +1487,10 @@ test('a fresh capture assumes the synced course target language instead of the f
   assert.equal(statusCall?.message.payload?.speechLocale, 'ko-KR');
 });
 
-test('a fresh capture keeps the fixed English default when no course locale has ever been synced (07.5)', async () => {
+test('a fresh capture reports no language when no course locale has ever been synced', async () => {
   const worker = await createWorkerContext();
   const started = await startQuickAdd(worker);
-  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).sourceLanguage, 'en');
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`).sourceLanguage, undefined);
 
   const intent = readStartedIntent(worker, started.id);
   const verified = await verifyIntent(worker, intent, {
@@ -1498,6 +1498,63 @@ test('a fresh capture keeps the fixed English default when no course locale has 
     tab: { id: 99 },
     frameId: 0,
   });
+  assert.equal(verified.verified, true);
+  assert.equal('sourceLanguage' in verified.intent, false);
+});
+
+test('a context-menu save with no app tab open reports no language instead of English', async () => {
+  const worker = await createWorkerContext({
+    executeScriptCaptureResult: { text: '회복력', anchor: null, context: '회복력이 중요하다.' },
+  });
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_korean_learner_123456', nativeLanguage: 'vi', targetLanguage: 'ko' },
+  }, sender);
+  worker.appPort.disconnect();
+  await flushMicrotasks();
+
+  for (const listener of worker.events.menuClicks.listeners) {
+    listener({ menuItemId: 'lingoflash-translate-save', selectionText: '회복력' }, { id: 12 });
+  }
+  for (let round = 0; round < 20; round += 1) await flushMicrotasks();
+  const jobs = [...worker.storageValues.entries()]
+    .filter(([key]) => key.startsWith('lingoflash_quick_add_job_'))
+    .map(([, value]) => value);
+  assert.equal(jobs.length, 1);
+  assert.equal(jobs[0].sourceLanguage, undefined);
+
+  const verified = await verifyIntent(worker, {
+    v: jobs[0].v, id: jobs[0].id, nonce: jobs[0].nonce, text: jobs[0].text, createdAt: jobs[0].createdAt, mode: 'silent',
+  }, appSender(worker));
+  assert.equal(verified.verified, true);
+  assert.equal('sourceLanguage' in verified.intent, false);
+});
+
+test('a capture bound only through the due-count channel reports no language', async () => {
+  const worker = await createWorkerContext();
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_DUE_COUNT',
+    payload: { scope: 'opaque_scope_due_only_owner_123456', count: 3 },
+  }, { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 }, frameId: 0 });
+
+  const started = await startQuickAdd(worker);
+  const job = worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`);
+  assert.equal(job.providerScopeChannel, 'due');
+  assert.equal(job.sourceLanguage, undefined);
+
+  const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
+  assert.equal(verified.verified, true);
+  assert.equal('sourceLanguage' in verified.intent, false);
+});
+
+test('still delivers the language a job queued by the previous extension version was stored with', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const key = `lingoflash_quick_add_job_${started.id}`;
+  worker.storageValues.set(key, { ...worker.storageValues.get(key), sourceLanguage: 'en' });
+
+  const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
   assert.equal(verified.verified, true);
   assert.equal(verified.intent.sourceLanguage, 'en');
 });
@@ -1771,6 +1828,31 @@ test('retries a failed capture with its original source language after the activ
   const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
   assert.equal(verified.verified, true);
   assert.equal(verified.intent.sourceLanguage, 'ko');
+});
+
+test('retries a failed capture whose language was unknown without inventing one', async () => {
+  const worker = await createWorkerContext();
+  const started = await startQuickAdd(worker);
+  const failed = await sendRuntimeMessage(worker, {
+    type: 'APP_IMPORT_RESULT',
+    bridgeType: 'LINGOFLASH_EXTENSION_RESULT',
+    payload: appResultPayload(worker, started.id, { status: 'error', message: 'Dịch vụ AI đang bận.' }),
+  }, appSender(worker));
+  assert.equal(failed.ok, true);
+  assert.equal(worker.storageValues.get('lingoflash_quick_add_retry_7')?.id, started.id);
+
+  const sender = { url: worker.context.LingoFlashExtension.DEFAULT_APP_URL, tab: { id: 7 } };
+  await sendRuntimeMessage(worker, {
+    type: 'SYNC_COURSE_LOCALE',
+    payload: { scope: 'opaque_scope_ko_123456', nativeLanguage: 'vi', targetLanguage: 'ko' },
+  }, sender);
+  const retried = await sendRuntimeMessage(worker, { type: 'RETRY_QUICK_ADD', id: started.id }, { tab: { id: 7 } });
+  assert.equal(retried.ok, true);
+  assert.equal(worker.storageValues.get(`lingoflash_quick_add_job_${started.id}`)?.sourceLanguage, undefined);
+
+  const verified = await verifyIntent(worker, readStartedIntent(worker, started.id), appSender(worker));
+  assert.equal(verified.verified, true);
+  assert.equal('sourceLanguage' in verified.intent, false);
 });
 
 test('rejects retry receipts without a captured source language', async () => {

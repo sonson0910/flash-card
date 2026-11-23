@@ -36,10 +36,10 @@ export interface BrowserExtensionImportIntent {
   pageTitle?: string;
   /**
    * The active course's target language at capture time, when the extension
-   * had one synced (background-core.js `activeCaptureSourceLanguage`).
-   * Absent on an older extension build or when no course locale was ever
-   * synced (signed out, or the app hasn't loaded yet) — callers must treat a
-   * missing value as the extension's original fixed English assumption.
+   * had one confirmed (background-core.js `activeCaptureSourceLanguage`).
+   * Absent on an older extension build or when no course locale was confirmed
+   * (signed out, no app tab open, or the app hasn't loaded yet) — callers must
+   * treat a missing value as unknown and keep the active course.
    */
   sourceLanguage?: CourseTargetLanguage;
 }
