@@ -80,6 +80,10 @@ const harness = (
         writes.push({ operation: 'update', path: value.path });
         docs.set(value.path, { ...docs.get(value.path), ...patch });
       },
+      set: (value: DocumentReference, data: DocumentData) => {
+        writes.push({ operation: 'set', path: value.path });
+        docs.set(value.path, data);
+      },
       create: (value: DocumentReference, data: DocumentData) => {
         if (docs.has(value.path)) throw new Error('ALREADY_EXISTS');
         writes.push({ operation: 'create', path: value.path });
@@ -100,6 +104,21 @@ describe('push reminder delivery', () => {
     expect(test.docs.get(statePath)?.nextEligibleLocalDay).toBe('2026-10-07');
     await expect(claimDuePushReminder(test.database, test.stateRef, now)).resolves.toBeNull();
     expect(test.writes.filter(write => write.operation === 'create' && write.path === receiptPath)).toHaveLength(1);
+  });
+
+  it('treats a receipt written before zones were recorded as the claim of that date in any zone', async () => {
+    const test = harness();
+    test.docs.set(receiptPath, { claimedAt: Timestamp.fromDate(new Date('2026-09-30T01:00:00Z')), channel: 'push' });
+    await expect(claimDuePushReminder(test.database, test.stateRef, now)).resolves.toBeNull();
+    expect(test.writes.filter(write => write.path === receiptPath)).toEqual([]);
+  });
+
+  it('replaces the receipt of another zone for the same date and records its own zone', async () => {
+    const test = harness();
+    test.docs.set(receiptPath, { claimedAt: Timestamp.fromDate(new Date('2026-09-29T20:00:00Z')),
+      channel: 'push', timezone: 'Asia/Tokyo' });
+    await expect(claimDuePushReminder(test.database, test.stateRef, now)).resolves.toMatchObject({ scheduledDay: '2026-09-30' });
+    expect(test.docs.get(receiptPath)).toMatchObject({ channel: 'push', timezone: 'UTC' });
   });
 
   it('suppresses a missing verified timestamp or a review on the delivery day', async () => {

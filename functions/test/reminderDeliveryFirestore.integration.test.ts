@@ -303,6 +303,103 @@ describeWithEmulator('reminder delivery in Firestore', () => {
     }
   });
 
+  describe('a time zone change after a push was claimed', () => {
+    const everyDay = [0, 1, 2, 3, 4, 5, 6];
+    const seedZone = async (uid: string, zone: string, savedAt: Date) => {
+      const owner = database.collection('users').doc(uid);
+      await owner.collection('profile').doc('stats').set({
+        lastVerifiedReviewAt: new Date('2026-11-05T08:00:00.000Z'), verifiedStreak: 4,
+      });
+      await owner.collection('cards').doc('card-1').set({ nextReviewDate: '2026-11-01T00:00:00.000Z' });
+      await saveZone(uid, zone, savedAt);
+      return owner;
+    };
+    const token = `${randomUUID()}${randomUUID()}`;
+    const saveZone = (uid: string, zone: string, at: Date) => updateReminderSettingsForOwner(database, uid, {
+      days: everyDay, sendAtLocal: '08:00', timezone: zone, locale: 'en', quietHours: null,
+      onlyIfNotStudiedToday: true, channels: { push: true, emailDigest: false }, pushToken: token,
+    }, at);
+
+    it('sends the push of the new local day after a move west, although the old zone claimed the same date', async () => {
+      const uid = `zone-west-${randomUUID()}`;
+      const owner = await seedZone(uid, 'Asia/Ho_Chi_Minh', new Date('2026-11-09T12:00:00.000Z'));
+      try {
+        const send = vi.fn(async () => 1);
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T01:00:00.000Z')))
+          .toEqual({ claimed: 1, sent: 1 });
+        await saveZone(uid, 'America/Los_Angeles', new Date('2026-11-10T03:00:00.000Z'));
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T16:00:00.000Z')))
+          .toEqual({ claimed: 1, sent: 1 });
+        expect(send).toHaveBeenCalledTimes(2);
+        expect((await owner.collection('reminderReceipts').doc('2026-11-10_push').get()).data())
+          .toMatchObject({ timezone: 'America/Los_Angeles' });
+      } finally { await database.recursiveDelete(owner); }
+    }, 30_000);
+
+    it('sends one push on a local day of the new zone after a move east', async () => {
+      const uid = `zone-east-${randomUUID()}`;
+      const owner = await seedZone(uid, 'America/Los_Angeles', new Date('2026-11-09T20:00:00.000Z'));
+      try {
+        const send = vi.fn(async () => 1);
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T16:00:00.000Z')))
+          .toEqual({ claimed: 1, sent: 1 });
+        await saveZone(uid, 'Asia/Tokyo', new Date('2026-11-10T17:00:00.000Z'));
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T23:00:00.000Z')))
+          .toEqual({ claimed: 0, sent: 0 });
+        expect(send).toHaveBeenCalledTimes(1);
+        expect((await owner.collection('reminderState').doc('current').get()).data())
+          .toMatchObject({ nextEligibleLocalDay: '2026-11-12' });
+      } finally { await database.recursiveDelete(owner); }
+    }, 30_000);
+
+    it('sends the push of the new local day after a short move west that left less than twelve hours since the claim', async () => {
+      const uid = `zone-short-west-${randomUUID()}`;
+      const owner = await seedZone(uid, 'Asia/Ho_Chi_Minh', new Date('2026-11-09T12:00:00.000Z'));
+      try {
+        const send = vi.fn(async () => 1);
+        // 01:00Z is 22:00 on 9 November in Sao Paulo, so 08:00 on 10 November there is a new local day.
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T01:00:00.000Z')))
+          .toEqual({ claimed: 1, sent: 1 });
+        await saveZone(uid, 'America/Sao_Paulo', new Date('2026-11-10T03:00:00.000Z'));
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T11:00:00.000Z')))
+          .toEqual({ claimed: 1, sent: 1 });
+        expect(send).toHaveBeenCalledTimes(2);
+      } finally { await database.recursiveDelete(owner); }
+    }, 30_000);
+
+    it('sends no second push on a local day of the new zone when push was switched off and on after a move east', async () => {
+      const uid = `zone-east-toggle-${randomUUID()}`;
+      const owner = await seedZone(uid, 'America/Los_Angeles', new Date('2026-11-09T20:00:00.000Z'));
+      try {
+        const send = vi.fn(async () => 1);
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T16:00:00.000Z')))
+          .toEqual({ claimed: 1, sent: 1 });
+        await updateReminderSettingsForOwner(database, uid, {
+          days: everyDay, sendAtLocal: '08:00', timezone: 'Asia/Tokyo', locale: 'en', quietHours: null,
+          onlyIfNotStudiedToday: true, channels: { push: false, emailDigest: false },
+        }, new Date('2026-11-10T17:00:00.000Z'));
+        await saveZone(uid, 'Asia/Tokyo', new Date('2026-11-10T17:30:00.000Z'));
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T23:00:00.000Z')))
+          .toEqual({ claimed: 0, sent: 0 });
+        expect(send).toHaveBeenCalledTimes(1);
+      } finally { await database.recursiveDelete(owner); }
+    }, 30_000);
+
+    it('still sends one push per local day when the zone stays the same', async () => {
+      const uid = `zone-same-${randomUUID()}`;
+      const owner = await seedZone(uid, 'Asia/Ho_Chi_Minh', new Date('2026-11-09T12:00:00.000Z'));
+      try {
+        const send = vi.fn(async () => 1);
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-10T01:00:00.000Z')))
+          .toEqual({ claimed: 1, sent: 1 });
+        await saveZone(uid, 'Asia/Ho_Chi_Minh', new Date('2026-11-10T02:00:00.000Z'));
+        expect(await sweepDuePushReminders(database, send, new Date('2026-11-11T01:00:00.000Z')))
+          .toEqual({ claimed: 1, sent: 1 });
+        expect(send).toHaveBeenCalledTimes(2);
+      } finally { await database.recursiveDelete(owner); }
+    }, 30_000);
+  });
+
   describe('an account under the age rule', () => {
     const seedReminders = async (uid: string, token: string) => {
       const owner = database.collection('users').doc(uid);

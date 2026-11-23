@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { DocumentReference, Firestore } from 'firebase-admin/firestore';
 import type { PilotConfig } from './pilotConfig.js';
 import { dayKey } from './aiCostLedger.js';
+import { PRO_START_CLOCK_SKEW_TOLERANCE_MS } from './plan-clock-rules.js';
 
 type Plan = { tier: 'free' | 'pro'; periodKey: string; startsAt: Date; endsAt: Date; limit: number };
 export type AiOperationRecord = {
@@ -54,7 +55,7 @@ export function resolvePlan(value: unknown, now: Date, config: PilotConfig): Pla
   const startsAt = asAiQuotaDate(data.startsAt);
   const endsAt = asAiQuotaDate(data.expiresAt);
   if (data.tier === 'pro' && typeof data.entitlementId === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(data.entitlementId)
-    && startsAt && endsAt && startsAt <= now && now < endsAt) {
+    && startsAt && endsAt && startsAt.getTime() - PRO_START_CLOCK_SKEW_TOLERANCE_MS <= now.getTime() && now < endsAt) {
     return { tier: 'pro', periodKey: `pro-${data.entitlementId}`, startsAt, endsAt, limit: config.proMonthlyAiCards };
   }
   return freePeriod(now, config);

@@ -6,6 +6,7 @@ import {
   cancelWordOperation, freePeriod, markWordOperationDelivered, refundNonCardAction, reserveNonCardAction,
   reserveWordOperation, settleWordOperation, sweepExpiredWordOperations, WORD_OPERATION_MAX_ATTEMPTS,
 } from '../src/aiQuota.js';
+import { grantPro } from '../src/entitlements.js';
 import { PILOT_CONFIG_DEFAULTS } from '../src/pilotConfig.js';
 
 const describeWithEmulator = process.env.FIRESTORE_EMULATOR_HOST ? describe : describe.skip;
@@ -62,6 +63,19 @@ describeWithEmulator('Firestore account AI quota', () => {
       .rejects.toMatchObject({ reason: 'ai-card-quota', details: { used: 2, limit: 1 } });
     expect((await usageRef.get()).data()).toMatchObject({ used: 2, limit: 1, enforced: true });
   }, 15_000);
+
+  it('charges the Pro unit right after a grant stamped by an operator clock a few minutes ahead', async () => {
+    const uid = `u-${randomUUID()}`;
+    const serverNow = new Date();
+    const free = freePeriod(serverNow, config);
+    await database.collection('users').doc(uid).collection('ai_usage').doc(free.periodKey)
+      .set({ periodKey: free.periodKey, tier: 'free', used: 30, limit: 30 });
+    const grant = await grantPro(database, uid, config,
+      { pidKey: 'x'.repeat(32), target: 'staging', operator: 'tester', reason: 'Pilot access' },
+      new Date(serverNow.getTime() + 3 * 60_000));
+    await expect(reserveWordOperation(database, uid, randomUUID(), 'hash', serverNow, config))
+      .resolves.toMatchObject({ kind: 'reserved', periodKey: `pro-${grant.entitlementId}` });
+  });
 
   it('allows one concurrent reservation, takes over stale work, and ignores the old attempt', async () => {
     const uid = `concurrent-${randomUUID()}`;

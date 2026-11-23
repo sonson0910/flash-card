@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PRO_START_CLOCK_SKEW_TOLERANCE_MS } from '../../../functions/src/plan-clock-rules';
 import { readPlanUsageCounters, resolvePlanPeriod } from './usePlanUsage';
 
 const timestamp = (date: Date) => ({ toDate: () => date });
@@ -70,6 +71,17 @@ describe('resolvePlanPeriod', () => {
     expect(resolvePlanPeriod(undefined, now).tier).toBe('free');
     expect(resolvePlanPeriod({ tier: 'pro' }, now).tier).toBe('free');
     expect(resolvePlanPeriod(undefined, now).key).toBe('free-2026-09');
+  });
+
+  it('accepts a Pro start ahead of the device clock by exactly the tolerance the server accepts', () => {
+    const now = new Date('2026-09-24T10:00:00.000Z');
+    const plan = (aheadMs: number) => ({
+      tier: 'pro', entitlementId: 'ent-1',
+      startsAt: timestamp(new Date(now.getTime() + aheadMs)),
+      expiresAt: timestamp(new Date('2026-10-24T00:00:00.000Z')),
+    });
+    expect(resolvePlanPeriod(plan(PRO_START_CLOCK_SKEW_TOLERANCE_MS), now).tier).toBe('pro');
+    expect(resolvePlanPeriod(plan(PRO_START_CLOCK_SKEW_TOLERANCE_MS + 1), now).tier).toBe('free');
   });
 });
 

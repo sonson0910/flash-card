@@ -83,7 +83,7 @@ After a written go, deploy in compatibility order **Firestore Rules → Function
 | G1 | Owner-accepted per-key quota exception: prove the $5/day app cap and account share on staging, verify the monthly budget alert on the Gemini billing project, and record that other keys bypass the app cap and the alert does not stop charges; `ai_operations`, `ai_cost_ledger` and `card_reports` TTL evidence; measured Pro quota and non-card allowances; owner-reviewed privacy page. |
 | G2 | Operator grant/revoke on the authorized owner production account; the explicitly approved production `purchase_intent`; accountant-confirmed `displayPriceVnd`; owner-reviewed terms; unknown-target refusal. |
 | G2b | `analytics_events` TTL; `_serviceConfig/pilotExclusions`; inspect 20 staging analytics events for private text. |
-| G3 | Throwaway-account deletion with a second signed-in browser; current and previous Hosting clients must still persist review/XP once; `account_tombstones` TTL; 20-card owner phone review. |
+| G3 | Throwaway-account deletion with a second signed-in browser; current and previous Hosting clients must still persist review/XP once; `account_tombstones` TTL; `_functionRateLimitBudgets` TTL (its field is `expireAt`, so pass `expireAt` instead of `expiresAt` to the command below); 20-card owner phone review. |
 
 For each TTL gate, use the exact project and named database (never rely on the default database):
 

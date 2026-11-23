@@ -64,9 +64,9 @@ export function quietHoursEndAfter(schedule: ReminderSchedule, now: Date): Date 
   return endAt;
 }
 
-/** Compare server review time with the delivery day in the learner's time zone. */
-export function studiedOnLocalDay(lastReviewAt: Date, now: Date, timezone: string): boolean {
-  if (![lastReviewAt, now].every(date => date instanceof Date && Number.isFinite(date.getTime()))
+/** The calendar day of an instant in a time zone, as YYYY-MM-DD. */
+export function localDayOf(instant: Date, timezone: string): string {
+  if (!(instant instanceof Date) || !Number.isFinite(instant.getTime())
     || typeof timezone !== 'string' || !timezone || timezone.length > 128) {
     throw new InputValidationError('Reminder study day is invalid.');
   }
@@ -78,11 +78,16 @@ export function studiedOnLocalDay(lastReviewAt: Date, now: Date, timezone: strin
   } catch {
     throw new InputValidationError('Reminder time zone is invalid.');
   }
-  const localDay = (instant: Date) => {
-    const { year, month, day } = localParts(formatter, instant);
-    return `${year}-${month}-${day}`;
-  };
-  return localDay(lastReviewAt) === localDay(now);
+  const { year, month, day } = localParts(formatter, instant);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** Compare server review time with the delivery day in the learner's time zone. */
+export function studiedOnLocalDay(lastReviewAt: Date, now: Date, timezone: string): boolean {
+  if (![lastReviewAt, now].every(date => date instanceof Date && Number.isFinite(date.getTime()))) {
+    throw new InputValidationError('Reminder study day is invalid.');
+  }
+  return localDayOf(lastReviewAt, timezone) === localDayOf(now, timezone);
 }
 
 /** Exact matches choose the next occurrence in a repeated DST hour; missing times shift forward by the gap. */

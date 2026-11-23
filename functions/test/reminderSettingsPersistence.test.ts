@@ -49,6 +49,17 @@ describe('reminder settings persistence', () => {
     });
   });
 
+  it('keeps the latest push claim when push is switched off and on again', () => {
+    const lastPushClaim = { claimedAt: new Date('2026-09-27T01:00:00Z'), timezone: 'America/Los_Angeles' };
+    const off = reminderStateForSettings(
+      parseReminderSettingsRequest({ ...settings(), channels: { push: false, emailDigest: false } }),
+      new Date('2026-09-27T02:00:00Z'), { channels: { push: true }, lastPushClaim });
+    expect(off.lastPushClaim).toBe(lastPushClaim);
+    const on = reminderStateForSettings(parseReminderSettingsRequest(settings()), new Date('2026-09-27T03:00:00Z'), off);
+    expect(on.lastPushClaim).toBe(lastPushClaim);
+    expect(on.lastPushReceiptId).toBeNull();
+  });
+
   it('writes owner-scoped state and retains backoff while push stays enabled', async () => {
     const path = 'users/owner/reminderState/current';
     const pushToken = 'e'.repeat(64);

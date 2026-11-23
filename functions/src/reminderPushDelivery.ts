@@ -1,9 +1,9 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { Timestamp, type DocumentReference, type Firestore } from 'firebase-admin/firestore';
+import { Timestamp, type DocumentData, type DocumentReference, type Firestore } from 'firebase-admin/firestore';
 import { AGE_RESTRICTION_DOCUMENT_ID } from './account-profile-contract.js';
 import { InputValidationError } from './inputValidation.js';
 import { disablePush } from './reminderSettingsPersistence.js';
-import { nextReminderAfterScheduledDay, quietHoursEndAfter, studiedOnLocalDay, type ReminderSchedule } from './reminderSchedule.js';
+import { localDayOf, nextReminderAfterScheduledDay, quietHoursEndAfter, studiedOnLocalDay, type ReminderSchedule } from './reminderSchedule.js';
 
 export type PushReminderClaim = {
   readonly ownerId: string;
@@ -28,6 +28,18 @@ export async function currentPushTokensForClaim(
 }
 
 const asTime = (value: unknown): number | null => value instanceof Timestamp ? value.toMillis() : null;
+
+// A receipt is keyed by the schedule day alone, so it cannot tell two zones apart. The state keeps the instant
+// and zone of the latest push claim (it survives a settings save), and a push claimed in another zone that
+// falls on the new schedule day in the new zone already is that day's push.
+const lastPushClaimOf = (
+  state: DocumentData, previousReceipt: DocumentData | undefined,
+): { claimedAt: number; timezone: string } | null => {
+  const stored = state.lastPushClaim;
+  const source = stored && typeof stored === 'object' ? stored : previousReceipt;
+  const claimedAt = asTime(source?.claimedAt);
+  return claimedAt !== null && typeof source?.timezone === 'string' ? { claimedAt, timezone: source.timezone } : null;
+};
 
 const ownerFromStatePath = (path: string): string => {
   const match = /^users\/([^/]+)\/reminderState\/current$/.exec(path);
@@ -95,13 +107,20 @@ export async function claimDuePushReminder(
 
     const receiptId = `${state.nextEligibleLocalDay}_push`;
     const receiptRef = owner.collection('reminderReceipts').doc(receiptId);
-    const duplicate = (await transaction.get(receiptRef)).exists;
+    const existingReceipt = await transaction.get(receiptRef);
+    // A receipt without a zone predates zone changes and stands for every zone; one from another zone stands
+    // only for that zone's own local day, so the same date in a new zone is a different day.
+    const receiptZone = existingReceipt.data()?.timezone;
+    const duplicate = existingReceipt.exists && (typeof receiptZone !== 'string' || receiptZone === schedule.timezone);
+    const lastClaim = lastPushClaimOf(state, previousReceipt);
+    const claimedOnScheduledDayInOtherZone = lastClaim !== null && lastClaim.timezone !== schedule.timezone
+      && localDayOf(new Date(lastClaim.claimedAt), schedule.timezone) === state.nextEligibleLocalDay;
     const studiedToday = studiedAt && state.onlyIfNotStudiedToday !== false
       ? studiedOnLocalDay(studiedAt.toDate(), now, schedule.timezone) : false;
     const stale = now.getTime() - eligibleAt > 60 * 60_000;
     const backoffSkip = ignored >= 3 && ignored < 7 && skipNext;
     const canSend = Boolean(studiedAt) && dueCount > 0 && !studiedToday && !stale
-      && ignored < 7 && !backoffSkip && !duplicate;
+      && ignored < 7 && !backoffSkip && !duplicate && !claimedOnScheduledDayInOtherZone;
     // Read only when a send is otherwise due. A restricted account keeps no push schedule.
     if (canSend && (await transaction.get(owner.collection('profile').doc(AGE_RESTRICTION_DOCUMENT_ID))).exists) {
       disablePush(transaction, stateRef, now);
@@ -129,11 +148,17 @@ export async function claimDuePushReminder(
       consecutiveIgnored: ignored,
       lastEvaluatedSentAt: nextEvaluatedAt === null ? null : Timestamp.fromMillis(nextEvaluatedAt),
       backoffSkipNext: ignored >= 3 && ignored < 7 ? (claim ? true : backoffSkip ? false : skipNext) : false,
-      ...(claim ? { lastPushReceiptId: receiptId } : {}),
+      ...(claim ? { lastPushReceiptId: receiptId,
+        lastPushClaim: { claimedAt: Timestamp.fromDate(now), timezone: schedule.timezone } } : {}),
       updatedAt: Timestamp.fromDate(now),
     });
     if (!claim) return null;
-    transaction.create(receiptRef, { claimedAt: Timestamp.fromDate(now), channel: 'push', opId: randomUUID() });
+    const receipt = {
+      claimedAt: Timestamp.fromDate(now), channel: 'push', opId: randomUUID(), timezone: schedule.timezone,
+    };
+    // The same date can already hold the receipt of another zone; the new zone's claim replaces it.
+    if (existingReceipt.exists) transaction.set(receiptRef, receipt);
+    else transaction.create(receiptRef, receipt);
     return { ownerId, scheduledDay: state.nextEligibleLocalDay, dueCount,
       locale: state.locale === 'vi' ? 'vi' : 'en', tokens, receiptRef };
   });

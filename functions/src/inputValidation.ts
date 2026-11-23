@@ -756,16 +756,31 @@ export const parseVocabularyRequest = (value: unknown): VocabularyRequest => {
   throw new InputValidationError('Unsupported AI action.');
 };
 
+// The client already cuts these two fields to the same bounds, so a longer value is a contract error.
+const withinBound = (value: unknown, maximum: number, message: string): string => {
+  const text = typeof value === 'string' ? value.trim() : '';
+  if (text.length > maximum) throw new InputValidationError(message);
+  return text;
+};
+
 export const parseImageRequest = (value: unknown): ImageRequest => {
   const data = asRecord(value);
-  const word = boundedText(data.word, 80);
+  assertAllowedFields(data, ['word', 'query'], 'Unsupported image request field.');
+  const word = withinBound(data.word, 80, 'The image word is too long.');
   if (!word) throw new InputValidationError('A word is required.');
-  const query = boundedText(data.query, 160) || word;
+  const query = withinBound(data.query, 160, 'The image query is too long.') || word;
   return { word, query };
 };
 
+// Only the request itself has an exact field list. A card keeps dropping fields it does not know, because
+// earlier clients also sent per-card language fields and the public copy must never carry them.
+const SHARED_DECK_REQUEST_FIELDS = [
+  'expectedOwnerId', 'category', 'cards', 'opId', 'operationCreatedAt', 'targetLanguage', 'nativeLanguage',
+] as const;
+
 export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRequest => {
   const data = asRecord(value);
+  assertAllowedFields(data, SHARED_DECK_REQUEST_FIELDS, 'Unsupported shared-deck request field.');
   if (!Array.isArray(data.cards) || data.cards.length === 0) {
     throw new InputValidationError('A shared deck must contain at least one card.');
   }
@@ -871,7 +886,9 @@ export const parseCreateSharedDeckRequest = (value: unknown): CreateSharedDeckRe
 };
 
 export const parseRevokeSharedDeckRequest = (value: unknown): { shareId: string } => {
-  const shareId = boundedText(asRecord(value).shareId, 128);
+  const data = asRecord(value);
+  assertAllowedFields(data, ['shareId'], 'Unsupported shared-deck revoke field.');
+  const shareId = withinBound(data.shareId, 128, 'A valid share ID is required.');
   if (!shareId || !/^[a-zA-Z0-9_-]+$/.test(shareId)) {
     throw new InputValidationError('A valid share ID is required.');
   }
