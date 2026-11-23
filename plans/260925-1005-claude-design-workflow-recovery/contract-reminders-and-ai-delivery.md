@@ -47,7 +47,10 @@ theo lịch kế tiếp, không hồi sinh thông báo cũ. Giờ kết thúc đ
 timezone IANA, kể cả khi quiet hours qua nửa đêm hoặc DST đổi giờ.
 "Not-studied-today":
 Function đọc `lastVerifiedReviewAt` từ `users/{uid}/profile/stats` cho từng candidate
-đến lịch, rồi đổi timestamp sang ngày local theo `reminderState.timezone`. Field này
+đến lịch, rồi đổi timestamp sang ngày học theo `stats.rewardTimeZone` (múi giờ đã ghim
+cho streak và phần thưởng); nếu chưa ghim hoặc giá trị không hợp lệ thì dùng
+`reminderState.timezone`. Múi giờ nhắc học vẫn quyết định giờ gửi, ngày trong lịch và
+quiet hours. Field này
 đã được thêm vào `statsPatch` của verified review trong transaction `reviewCardV2`
 (`functions/src/verifiedGamification.ts`); stats doc đã được đọc/ghi ở đó. Chỉ
 review thành công, không phải request trùng, lỗi hoặc hành động AI, mới cập nhật
