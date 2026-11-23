@@ -19,10 +19,11 @@ export class CardEditSignedOutError extends Error {
   }
 }
 
-export async function renameOwnCardHeadword(card: CardData, word: string): Promise<CardData> {
-  const uid = auth?.currentUser?.uid;
-  if (!uid) throw new CardEditSignedOutError();
-  return renameCardHeadword(uid, card.id, word, card.revision ?? 0, card.libraryEpoch ?? 0);
+// `ownerId` is the account the editor was opened for, not whoever is signed in now: the
+// repository refuses to run the rename when another account has signed in since.
+export async function renameOwnCardHeadword(card: CardData, word: string, ownerId: string | null): Promise<CardData> {
+  if (!ownerId) throw new CardEditSignedOutError();
+  return renameCardHeadword(ownerId, card.id, word, card.revision ?? 0, card.libraryEpoch ?? 0);
 }
 
 /** The signed-in account a card edit is made for, read when the edit starts. */

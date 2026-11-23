@@ -1517,6 +1517,12 @@ describe('renameCardHeadwordForOwner', () => {
     expect(parseRenameCardHeadwordRequest({
       cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0,
     })).toEqual({ cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0 });
+    expect(parseRenameCardHeadwordRequest({
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0, expectedOwnerId: 'owner',
+    })).toEqual({ cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0, expectedOwnerId: 'owner' });
+    expect(() => parseRenameCardHeadwordRequest({
+      cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0, expectedOwnerId: 'a/b',
+    })).toThrow(/expectedOwnerId/i);
     expect(() => parseRenameCardHeadwordRequest({
       cardId: 'word-hello', word: 'Goodbye', baseRevision: 5, libraryEpoch: 0, extra: true,
     })).toThrow(/unsupported field/i);
