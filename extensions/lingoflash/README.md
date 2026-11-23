@@ -1,4 +1,4 @@
-# SonFlash Browser Extension v1.6.4
+# SonFlash Browser Extension v1.6.5
 
 A Manifest V3 WebExtension for Chrome-compatible browsers and Safari. The
 folder, storage keys, and internal protocol identifiers are still named
@@ -85,7 +85,7 @@ npm run extension:build
 Output:
 
 - `artifacts/browser-extension/lingoflash/`
-- `artifacts/browser-extension/lingoflash-extension-v1.6.4.zip`
+- `artifacts/browser-extension/lingoflash-extension-v1.6.5.zip`
 
 ## Chrome installation
 
