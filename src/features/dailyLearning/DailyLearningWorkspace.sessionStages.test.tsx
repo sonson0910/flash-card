@@ -404,3 +404,49 @@ it('opens a listening lesson route in a course that has no English pilot', async
   expect(screens.lesson).not.toBeNull();
   await act(async () => root.unmount());
 }, 30_000);
+
+it('shows the Word Match preview word at the tier it reached in this session', async () => {
+  const fresh = card('fresh-word');
+  const due = card('due-word', { reviews: 1, difficulty: 'good', nextReviewDate: '2026-10-01T00:00:00.000Z' } as Partial<CardData>);
+  const m1 = card('match-one', { reviews: 2, difficulty: 'good', nextReviewDate: '2099-01-01T00:00:00.000Z' } as Partial<CardData>);
+  const m2 = card('match-two', { reviews: 2, difficulty: 'good', nextReviewDate: '2099-01-01T00:00:00.000Z' } as Partial<CardData>);
+  // The new word comes first in the pool, so it is also the first Word Match card of the resumed session.
+  const pool = [fresh, due, m1, m2];
+  const loadPracticePool = vi.fn().mockResolvedValue(pool);
+  const reviewCard = vi.fn(async (cardId: string) => ({
+    status: 'published',
+    result: {
+      xpAwarded: 10,
+      publication: { kind: 'patch', cardId, fields: { reviews: 1, difficulty: 'good', nextReviewDate: '2026-10-04T00:00:00.000Z' } },
+    },
+  }));
+  const container = installMinimalReactDom();
+  writeDailySessionPointer({
+    ownerId: OWNER, targetLanguage: 'en', translationLanguage: 'vi', stage: 'review',
+    reviewLogicalIds: [logicalIdentity(due)], freshLogicalIds: [logicalIdentity(fresh)],
+    matchCardIds: pool.map(entry => entry.id), matchSkipReason: null,
+    matchStartOpId: null, matchCompletionId: null, matchCompletionPending: false,
+    stats: emptyDailySessionStats, startedAt: '2026-10-03T00:00:00.000Z',
+  });
+  i18n.load('en', {}); i18n.activate('en');
+  const root = createRoot(container);
+  await act(async () => {
+    root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
+      ownerId={OWNER} database={null} languageProfile={ENGLISH_TO_VIETNAMESE_PROFILE} isOffline={false} initialLesson="session"
+      streak={0} studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={reviewCard as never}
+      openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
+      openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
+    /></I18nProvider>);
+  });
+  await act(async () => { await vi.waitFor(() => expect(screens.lesson?.model.prompt).toBe(due.word)); });
+  await rateCurrent('good');
+  expect(screens.bridge.model.nextStage).toBe('new');
+  screens.lesson = null;
+  await act(async () => { screens.bridge.actions.continue(); });
+  await act(async () => { await vi.waitFor(() => expect(screens.lesson?.model.prompt).toBe(fresh.word)); });
+  screens.bridge = null;
+  await rateCurrent('good');
+  expect(screens.bridge.model.nextStage).toBe('match');
+  expect(screens.bridge.model.previewCard).toMatchObject({ word: fresh.word, tier: 'learning' });
+  await act(async () => root.unmount());
+}, 30_000);

@@ -1154,7 +1154,8 @@ export default function DailyLearningWorkspace({
         ...(preview.partOfSpeech ? { partOfSpeech: preview.partOfSpeech } : {}),
         ...(previewSite ? { sourceSite: previewSite } : {}),
         ...(preview.exampleSentence ? { exampleSentence: preview.exampleSentence } : {}),
-        tier: getLibraryCardTier(preview),
+        // The preview object is the session-start copy; a tier reached by a committed review lives in the stats.
+        tier: sessionStats.promotions?.find(entry => entry.cardId === preview.id)?.to ?? getLibraryCardTier(preview),
       } } : {}),
       ...(skipReason ? { skipReason } : {}),
       canSkipNextStage: nextStage === 'match' && nextCount > 0,
