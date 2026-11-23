@@ -516,7 +516,22 @@
     const displayed = await show(job.sourceTabId,{status:'error',modeLabel:'TẠO + LƯU',text:job.text,anchor:job.anchor,message,retryId:job.id});
     notifyPopupStatus({id:job.id,status:'error',text:job.text,message,inlineShown:displayed.ok});
   };
+  // Retry and in-page save receipts carry their own expiry. On browsers without
+  // storage.session they sit in persistent storage, so an unused one is removed
+  // here instead of waiting for its tab id to be reused.
+  const sweepExpiredReceipts = async () => {
+    try {
+      const now = Date.now();
+      const stored = await apiCall(transientStorage, 'get', null) ?? {};
+      for (const [name, receipt] of Object.entries(stored)) {
+        if (!name.startsWith(RETRY_KEY_PREFIX) && !name.startsWith(INLINE_SAVE_KEY_PREFIX)) continue;
+        if (Number.isSafeInteger(receipt?.expiresAt) && receipt.expiresAt > now) continue;
+        await apiCall(transientStorage, 'remove', name);
+      }
+    } catch {}
+  };
   const sweepExpiredJobs = async () => {
+    await sweepExpiredReceipts();
     const now = Date.now();
     for (const job of await readJobs()) {
       if (!isExpiredJob(job, now)) continue;
