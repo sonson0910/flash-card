@@ -29,6 +29,14 @@ describe('catalog workspace URL state', () => {
     });
   });
 
+  it('keeps a CEFR range label offered by a track and still drops an unknown level', () => {
+    const current = readCatalogWorkspaceQuery('?view=catalog&track=ielts');
+    expect(patchCatalogWorkspaceQuery(current, { cefrLevel: 'B2-C1' }).cefrLevel).toBe('B2-C1');
+    expect(readCatalogWorkspaceQuery('?view=catalog&track=ielts&cefr=B2-C1').cefrLevel).toBe('B2-C1');
+    expect(readCatalogWorkspaceQuery('?view=catalog&cefr=B2-X9').cefrLevel).toBeNull();
+    expect(readCatalogWorkspaceQuery('?view=catalog&cefr=C1-B2-A1').cefrLevel).toBeNull();
+  });
+
   it('retains a known unavailable language but never assigns it a catalog or track', () => {
     expect(readCatalogWorkspaceQuery('?view=catalog&lang=ja&track=ielts&tier=advanced'))
       .toMatchObject({

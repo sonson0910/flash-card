@@ -163,10 +163,56 @@ describe('catalog IndexedDB cache', () => {
 
     const database = await openCatalogCacheDatabase();
 
-    expect(database.version).toBe(3);
+    expect(database.version).toBe(4);
     expect(database.objectStoreNames.contains(LEXEME_STORE)).toBe(true);
     const transaction = database.transaction(LEXEME_STORE, 'readonly');
     expect(transaction.objectStore(LEXEME_STORE).indexNames.contains('releaseKey')).toBe(true);
+  });
+
+  it('re-keys the lemma index on upgrade so a capitalised cached lemma is found by its lowercase form', async () => {
+    const legacy = await openSchemaV2Database();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = legacy.transaction('entries', 'readwrite');
+      transaction.objectStore('entries').put({
+        entryKey: 'r\u0000m1', releaseKey: 'r', membershipId: 'm1', language: 'en', trackId: 'ielts',
+        rank: 1, normalizedLemma: 'Monday', lemma: 'Monday',
+      });
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    legacy.close();
+
+    const database = await openCatalogCacheDatabase();
+    const index = database.transaction('entries', 'readonly').objectStore('entries').index('releaseLanguageTrackLemma');
+    const matches = await new Promise<unknown[]>((resolve, reject) => {
+      const request = index.getAll(IDBKeyRange.bound(['r', 'en', 'ielts', 'mon'], ['r', 'en', 'ielts', 'mon\uffff', 99, '\uffff']));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    expect(matches).toHaveLength(1);
+  });
+
+  it('re-indexes entries staged without a search key by an older tab', async () => {
+    const first = await openCatalogCacheDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = first.transaction('entries', 'readwrite');
+      transaction.objectStore('entries').put({
+        entryKey: 'r\u0000m1', releaseKey: 'r', membershipId: 'm1', language: 'en', trackId: 'ielts',
+        rank: 1, normalizedLemma: 'Monday', lemma: 'Monday',
+      });
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    closeCatalogCacheForTests();
+
+    const database = await openCatalogCacheDatabase();
+    const index = database.transaction('entries', 'readonly').objectStore('entries').index('releaseLanguageTrackLemma');
+    const matches = await new Promise<unknown[]>((resolve, reject) => {
+      const request = index.getAll(IDBKeyRange.bound(['r', 'en', 'ielts', 'mon'], ['r', 'en', 'ielts', 'mon\uffff', 99, '\uffff']));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    expect(matches).toHaveLength(1);
   });
 
   it('rejects a blocked upgrade with recovery guidance and clears the cached open for retry', async () => {
@@ -193,7 +239,7 @@ describe('catalog IndexedDB cache', () => {
       message: 'Catalog storage is blocked by another SonFlash tab. Close older SonFlash tabs, then try again.',
     });
     expect(retryOpen).not.toBe(firstOpen);
-    expect(database.version).toBe(3);
+    expect(database.version).toBe(4);
   });
 
   it('times out an IndexedDB open request that never settles', async () => {

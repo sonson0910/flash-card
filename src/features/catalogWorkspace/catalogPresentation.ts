@@ -116,7 +116,7 @@ export interface CatalogVocabularyPresentation {
     licenseLabel: string;
     reviewerLabel: string;
   };
-  libraryState?: 'available' | 'adding' | 'added' | 'failed';
+  libraryState?: 'available' | 'adding' | 'added' | 'failed' | 'other-language';
 }
 
 export interface CatalogScreenModel {
@@ -146,6 +146,8 @@ export interface CatalogScreenModel {
     busy: boolean;
     error: string | null;
     etaDays: number | null;
+    /** Days to introduce every word of the active track that is not introduced yet. */
+    trackEtaDays?: number | null;
     allComplete: boolean;
   };
 }

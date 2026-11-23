@@ -36,6 +36,22 @@ const ids = (() => {
 })();
 
 describe('bounded course profile contract', () => {
+  it('activates the new course when asked and replaces an unchosen legacy course, like the server', () => {
+    const clock = () => '2026-09-25T00:00:00.000Z';
+    let n = 0;
+    const ids = () => `id-${++n}`;
+    const korean = createCourseInProfile(profile, { targetLanguage: 'ko', nativeLanguage: 'vi', activateOnCreate: true }, ids, clock);
+    expect(korean.activeCourseId).toBe(korean.courses.find(course => course.targetLanguage === 'ko')?.id);
+    const kept = createCourseInProfile(profile, { targetLanguage: 'ko', nativeLanguage: 'vi' }, ids, clock);
+    expect(kept.activeCourseId).toBe('legacy-en-vi');
+
+    const replaced = createCourseInProfile(profile, { targetLanguage: 'en', nativeLanguage: 'vi' }, ids, clock, false);
+    expect(replaced.courses).toHaveLength(1);
+    expect(replaced.courses[0].id).not.toBe('legacy-en-vi');
+    expect(replaced.activeCourseId).toBe(replaced.courses[0].id);
+    expect(() => createCourseInProfile(profile, { targetLanguage: 'en', nativeLanguage: 'vi' }, ids, clock)).toThrow();
+  });
+
   it('accepts the exact profile shape and materializes all preference keys', () => {
     expect(parseCourseProfile(profile)).toEqual(profile);
     expect(Object.keys(profile)).toEqual(['courses', 'activeCourseId']);

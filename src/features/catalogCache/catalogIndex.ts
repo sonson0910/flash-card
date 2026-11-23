@@ -9,6 +9,7 @@ import {
   publicCatalogEntry,
   type CatalogCacheEntry,
   type HydratedCatalogEntry,
+  catalogSearchLemma,
   type StoredCatalogEntry,
 } from './catalogCache';
 import { parseLexemeV3 } from '../multilingual/schemaV3Validation';
@@ -276,7 +277,7 @@ const matches = (
   && (query.topic === undefined || entry.topic === query.topic)
   && (query.partOfSpeech === undefined || entry.partOfSpeech === query.partOfSpeech)
   && (query.skill === undefined || entry.skills.includes(query.skill))
-  && (lemmaPrefix === undefined || entry.normalizedLemma.startsWith(lemmaPrefix))
+  && (lemmaPrefix === undefined || catalogSearchLemma(entry.normalizedLemma).startsWith(lemmaPrefix))
   && entry.rank >= minimumRank
   && entry.rank <= maximumRank
 );

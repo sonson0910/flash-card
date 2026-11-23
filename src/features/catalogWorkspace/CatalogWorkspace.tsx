@@ -46,6 +46,7 @@ import {
   settleCatalogLibraryAdd,
   catalogEntryToLibraryCard,
 } from './catalogLearningFlow';
+import { catalogAddNotice } from './useCatalogLibraryActions';
 import {
   createPersonalLibraryPathPresentation,
   type PersonalLibraryPathInput,
@@ -120,6 +121,7 @@ const copy = {
   updating: msg({ id: 'catalog.workspace.updating', message: 'Updating vocabulary…' }),
   emptyResults: msg({ id: 'catalog.workspace.empty-results', message: 'No words match all selected filters.' }),
   unitUnavailable: msg({ id: 'paths.unit.continue-scope-unavailable', message: 'This unit is unavailable. Reopen Paths and try again.' }),
+  unitOtherLanguage: msg({ id: 'paths.unit.continue-other-language', message: 'This unit is in a different language than your course, so it cannot be continued here. Switch to a course in this language first.' }),
   unitPartial: msg({ id: 'paths.unit.continue-partial', message: 'Some words could not be confirmed. Try again to continue this unit.' }),
   unitReadError: msg({ id: 'paths.unit.continue-read-error', message: 'This unit could not be prepared. Check your connection and try again.' }),
   resultSummary: msg({ id: 'catalog.workspace.result-summary', message: 'Showing {count, number}{more} {track} {tier} {count, plural, one {word} other {words}}.' }),
@@ -188,9 +190,7 @@ export default function CatalogWorkspace({
     const result = await adoptCards([catalogEntryToLibraryCard(entry)]);
     if (result.status !== 'completed') return 'failed' as const;
     const created = result.createdCount > 0;
-    notify(created
-      ? `“${entry.lemma}” was added to your library and today’s plan.`
-      : `“${entry.lemma}” is already in your library.`);
+    notify(catalogAddNotice(created, entry.lemma));
     return created ? 'created' as const : 'existing' as const;
   }, [adoptCards, notify]);
   const service = useMemo(() => createCatalogWorkspaceService({
@@ -514,9 +514,11 @@ export default function CatalogWorkspace({
         ? 'adding' as const
         : scopedOptimisticLibrary.addedCardIds.has(card.id) || isInLibrary(card)
           ? 'added' as const
-          : scopedOptimisticLibrary.failedCardIds.has(card.id)
-            ? 'failed' as const
-            : 'available' as const,
+          : card.language !== targetLanguage
+            ? 'other-language' as const
+            : scopedOptimisticLibrary.failedCardIds.has(card.id)
+              ? 'failed' as const
+              : 'available' as const,
     };
   });
   const pathUnits = projectCatalogPathUnits(summary, progressAvailable);
@@ -528,8 +530,10 @@ export default function CatalogWorkspace({
   const selectedUnitKey = selectedUnit ? pathUnitKey(selectedUnit.unit) : null;
   const allUnitsComplete = trackUnits.length > 0 && trackUnits.every(progress => progress.status === 'complete');
   const pace = readDailyPaceForEta();
-  const etaDays = pace && selectedUnit?.introduced != null
-    ? daysToIntroduceWords(selectedUnit.unit.total - selectedUnit.introduced, pace)
+  const daysOrNull = (remainingWords: number) => (pace && remainingWords > 0 ? daysToIntroduceWords(remainingWords, pace) : null);
+  const etaDays = selectedUnit?.introduced != null ? daysOrNull(selectedUnit.unit.total - selectedUnit.introduced) : null;
+  const trackEtaDays = trackUnits.length > 0 && trackUnits.every(progress => progress.introduced !== null)
+    ? daysOrNull(trackUnits.reduce((sum, progress) => sum + progress.unit.total - (progress.introduced ?? 0), 0))
     : null;
   const focusUnitPreview = () => globalThis.requestAnimationFrame?.(() => {
     globalThis.document?.getElementById('catalog-unit-preview')?.focus({ preventScroll: false });
@@ -569,6 +573,10 @@ export default function CatalogWorkspace({
     setIsContinuingUnit(true);
     setContinueError(null);
     try {
+      if (query.languageCode !== targetLanguage) {
+        setContinueError(i18n._(copy.unitOtherLanguage));
+        return;
+      }
       const result = await service.readUnit({
         catalogId: query.catalogId,
         releaseId: query.releaseId,
@@ -643,6 +651,7 @@ export default function CatalogWorkspace({
       busy: isContinuingUnit,
       error: continueError,
       etaDays,
+      trackEtaDays,
       allComplete: allUnitsComplete,
     },
   };

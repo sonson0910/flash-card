@@ -21,6 +21,7 @@ import {
   languagePracticeDrillSurfaceState,
   shouldRevealLanguagePracticeReading,
   shouldStartJapaneseSentenceCloze,
+  toneSyllableLabel,
   type LanguagePracticeDrillResult,
 } from './languagePracticeDrill';
 import type { HeadwordReadingPlan, LanguagePack } from './types';
@@ -261,7 +262,7 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
               <div className="language-practice-drill__tone-grid">
                 {reading?.toneSyllables?.map((syllable, index) => (
                   <div key={`${syllable.text}-${index}`} className="language-practice-drill__tone-card">
-                    <p lang="zh-Latn" className="language-practice-drill__syllable">{syllable.text.replace(/[\u0300-\u036fāēīōūǖáéíóúǘǎěǐǒǔǚàèìòùǜ]/gu, character => character.normalize('NFD').replace(/[\u0300-\u036f]/gu, ''))}</p>
+                    <p lang="zh-Latn" className="language-practice-drill__syllable">{toneSyllableLabel(syllable.text)}</p>
                     {showHanziSyllables && <p lang={card.language || 'zh'} className="language-practice-drill__hanzi">{hanziSyllables[index]}</p>}
                     <div className="language-practice-drill__tone-options">
                       {TONES.map(tone => <button key={tone} type="button" onClick={() => selectTone(index, tone)} aria-pressed={selectedTones[index] === tone} className={`language-practice-drill__tone-option language-practice-drill__tone-option--${tone}`}><span aria-hidden="true">{TONE_MARKS[tone - 1]}</span><small>{tone}</small></button>)}

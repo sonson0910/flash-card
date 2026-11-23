@@ -74,9 +74,17 @@ export const createCourseInProfile = (
   input: CreateCourseInput,
   factory: IdFactory,
   clock: Clock = canonicalNow,
+  /** False when the profile was synthesized from a legacy account and never stored. */
+  stored = true,
 ): CourseProfile => {
-  const current = normalizedProfile(profile);
   const normalized = normalizeCreateCourseInput(input);
+  const parsed = normalizedProfile(profile);
+  // A synthesized legacy course was never chosen, so a create for its language replaces it.
+  const unchosenReplaced = !stored
+    && parsed.courses.some(course => course.targetLanguage === normalized.targetLanguage);
+  const current = unchosenReplaced
+    ? { courses: parsed.courses.filter(course => course.targetLanguage !== normalized.targetLanguage), activeCourseId: null }
+    : parsed;
   const existing = current.courses.find(course => course.targetLanguage === normalized.targetLanguage);
   if (existing) {
     if (normalized.operationId === existing.id) return current;
@@ -108,7 +116,7 @@ export const createCourseInProfile = (
   });
   return parseCourseProfile({
     courses: [...current.courses, course],
-    activeCourseId: current.activeCourseId ?? course.id,
+    activeCourseId: normalized.activateOnCreate ? course.id : current.activeCourseId ?? course.id,
   });
 };
 
