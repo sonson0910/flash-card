@@ -47,7 +47,7 @@ describeWithEmulator('Firestore AI spend accounting', () => {
     const report = await readAiCostReport(database, day, day, 'x'.repeat(32));
     expect(report.days).toEqual([{
       day, calls: 1, spendUsdMicros: 700, wordMeanUsdMicros: 700,
-      wordP50UsdMicros: 700, wordP95UsdMicros: 700, timeoutShare: 0,
+      wordP50UsdMicros: 700, wordP95UsdMicros: 700, timeoutShare: 0, clientAbortShare: 0, providerErrorShare: 0,
     }]);
     expect(report.topAccounts[0]?.pid).toMatch(/^[a-f0-9]{32}$/);
   });

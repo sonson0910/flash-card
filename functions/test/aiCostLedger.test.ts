@@ -112,6 +112,36 @@ describe('AI cost ledger and reservations', () => {
       .toBe(state.ledger[0]?.reservedUsdMicros);
   });
 
+  it('books a learner stop as its own outcome and keeps the worst-case reservation', async () => {
+    const state = fixture();
+    const client = new AbortController();
+    const pending = runMeteredGemini({
+      database: state.database, uid: 'learner', action: 'word', operationId: null,
+      model: 'gemini-3.1-flash-lite', contents: 'A word', config: { ...PILOT_CONFIG_DEFAULTS },
+      now: () => time, isClientAbort: () => client.signal.aborted,
+      generate: signal => new Promise<{ usageMetadata?: unknown }>((_resolve, reject) => {
+        AbortSignal.any([signal, client.signal]).addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+        setTimeout(() => client.abort(), 5);
+      }),
+      parse: () => 'never',
+    });
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(state.ledger[0]).toMatchObject({ outcome: 'client-abort' });
+    expect(state.documents.get('_serviceBudgets/gemini-spend-2026-09-24')?.usdMicros)
+      .toBe(state.ledger[0]?.reservedUsdMicros);
+  });
+
+  it('still books a provider failure that is not a learner stop as provider-error', async () => {
+    const state = fixture();
+    await expect(runMeteredGemini({
+      database: state.database, uid: 'learner', action: 'word', operationId: null,
+      model: 'gemini-3.1-flash-lite', contents: 'A word', config: { ...PILOT_CONFIG_DEFAULTS },
+      now: () => time, isClientAbort: () => false,
+      generate: async () => { throw new Error('provider failed'); }, parse: () => 'never',
+    })).rejects.toThrow('provider failed');
+    expect(state.ledger[0]).toMatchObject({ outcome: 'provider-error' });
+  });
+
   it('does not fail the learner on a ledger failure, but fails closed before a reservation', async () => {
     const state = fixture();
     state.failLedger();

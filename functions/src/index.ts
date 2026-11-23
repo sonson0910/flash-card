@@ -645,6 +645,8 @@ const callGemini = async <T>(
       model: MODEL,
       contents: JSON.stringify(request),
       config,
+      // A cancelled card stream surfaces from onField as an 'aborted' HttpsError.
+      isClientAbort: error => clientSignal?.aborted === true || (error instanceof HttpsError && error.code === 'aborted'),
       generate: async signal => {
         const abortSignal = clientSignal ? AbortSignal.any([signal, clientSignal]) : signal;
         const parameters = { ...request, config: { ...request.config, abortSignal } };

@@ -26,6 +26,7 @@ type LedgerRow = {
   day?: unknown;
   action?: unknown;
   outcome?: unknown;
+  usageMissing?: unknown;
   estimatedUsdMicros?: unknown;
 };
 
@@ -33,10 +34,10 @@ const percentile = (sorted: number[], fraction: number): number | null => sorted
   ? sorted[Math.ceil(sorted.length * fraction) - 1] ?? null : null;
 
 export function summarizeAiCosts(rows: LedgerRow[], key: string): {
-  days: Array<{ day: string; calls: number; spendUsdMicros: number; wordMeanUsdMicros: number | null; wordP50UsdMicros: number | null; wordP95UsdMicros: number | null; timeoutShare: number }>;
+  days: Array<{ day: string; calls: number; spendUsdMicros: number; wordMeanUsdMicros: number | null; wordP50UsdMicros: number | null; wordP95UsdMicros: number | null; timeoutShare: number; clientAbortShare: number; providerErrorShare: number }>;
   topAccounts: Array<{ pid: string; calls: number; spendUsdMicros: number }>;
 } {
-  const days = new Map<string, { calls: number; spendUsdMicros: number; wordCosts: number[]; timeouts: number }>();
+  const days = new Map<string, { calls: number; spendUsdMicros: number; wordCosts: number[]; timeouts: number; clientAborts: number; providerErrors: number }>();
   const accounts = new Map<string, { calls: number; spendUsdMicros: number }>();
   for (const row of rows) {
     if (typeof row.day !== 'string' || !DATE.test(row.day)
@@ -45,11 +46,14 @@ export function summarizeAiCosts(rows: LedgerRow[], key: string): {
       throw new Error('Cost ledger contains an invalid row.');
     }
     const cost = Number(row.estimatedUsdMicros);
-    const daily = days.get(row.day) ?? { calls: 0, spendUsdMicros: 0, wordCosts: [], timeouts: 0 };
+    const daily = days.get(row.day) ?? { calls: 0, spendUsdMicros: 0, wordCosts: [], timeouts: 0, clientAborts: 0, providerErrors: 0 };
     daily.calls += 1;
     daily.spendUsdMicros += cost;
-    if (row.action === 'word') daily.wordCosts.push(cost);
+    // Failed and stopped calls keep their worst-case reservation as cost; only measured usage describes a word call.
+    if (row.action === 'word' && row.usageMissing === false) daily.wordCosts.push(cost);
     if (row.outcome === 'timeout') daily.timeouts += 1;
+    if (row.outcome === 'client-abort') daily.clientAborts += 1;
+    if (row.outcome === 'provider-error') daily.providerErrors += 1;
     days.set(row.day, daily);
 
     const pid = createHmac('sha256', key).update(row.uid).digest('hex').slice(0, 32);
@@ -70,6 +74,8 @@ export function summarizeAiCosts(rows: LedgerRow[], key: string): {
         wordP50UsdMicros: percentile(daily.wordCosts, 0.5),
         wordP95UsdMicros: percentile(daily.wordCosts, 0.95),
         timeoutShare: daily.timeouts / daily.calls,
+        clientAbortShare: daily.clientAborts / daily.calls,
+        providerErrorShare: daily.providerErrors / daily.calls,
       };
     }),
     topAccounts: [...accounts].map(([pid, value]) => ({ pid, ...value }))
