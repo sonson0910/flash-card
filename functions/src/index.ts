@@ -1308,6 +1308,7 @@ export const findVocabularyImage = onCall({
 
 export const assessPronunciation = onCall({
   region: REGION,
+  secrets: [analyticsPseudonymKey],
   enforceAppCheck,
   timeoutSeconds: 35,
   memory: '256MiB',
