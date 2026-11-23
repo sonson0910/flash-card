@@ -103,7 +103,8 @@ describe('AppViewStage courses page', () => {
     expect(html).toContain('<h1 tabindex="-1" class="course-manage__title">Your <em>languages</em></h1>');
     expect(html).toContain('Start <span lang="en">English</span> lesson');
     expect(html).not.toContain('Close courses');
-  });
+    // The first render loads the whole courses page; beside the rest of the suite that import alone can pass five seconds.
+  }, 20_000);
 
   it('opens on the goals of the course a goals link names', async () => {
     const html = await renderStage(stageProps({ viewMode: 'courses', openToday: vi.fn(), goalsCourseId: 'course-en' }), courseSession());
