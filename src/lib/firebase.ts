@@ -9,6 +9,7 @@ import {
   connectAuthEmulator,
   getAuth,
   GoogleAuthProvider,
+  onIdTokenChanged,
   signInWithCustomToken,
   type Auth,
 } from 'firebase/auth';
@@ -25,7 +26,7 @@ import {
 // runtime module (and its weight) into any bundle, including the initial one.
 import type { Functions } from 'firebase/functions';
 import productionFirebaseConfig from '../../firebase-applet-config.json';
-import { resolveProtectedFunctionsCapability } from './protectedFunctionsCapability';
+import { resolveProtectedFunctionsCapability, type ProtectedFunctionsCapability } from './protectedFunctionsCapability';
 
 // The sealed artifact serves both approved live hosts; emulator builds stay isolated.
 const isE2eEmulatorBuild = import.meta.env.VITE_SONFLASH_E2E_EMULATOR === 'true';
@@ -64,26 +65,6 @@ function isSafariBrowser(): boolean {
 if (isFirebaseConfigured) {
   try {
     appInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    // The emulator suite runs with App Check enforcement off; initializing it
-    // there would send the local site key and a debug token to Google.
-    if (appCheckSiteKey && !isE2eEmulatorBuild) {
-      try {
-        const isLocalhost = typeof location !== 'undefined'
-          && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
-        if (isLocalhost && import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG === 'true') {
-          (globalThis as typeof globalThis & { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-        }
-        appCheckInstance = initializeAppCheck(appInstance, {
-          // Provider and site key travel together with the sealed host target.
-          provider: selectedFirebaseConfig.appCheckProvider === 'v3'
-            ? new ReCaptchaV3Provider(appCheckSiteKey)
-            : new ReCaptchaEnterpriseProvider(appCheckSiteKey),
-          isTokenAutoRefreshEnabled: true,
-        });
-      } catch (appCheckError) {
-        console.error('Firebase App Check could not initialize; protected calls may be unavailable.', appCheckError);
-      }
-    }
     const dbId = 'firestoreDatabaseId' in firebaseConfig && typeof firebaseConfig.firestoreDatabaseId === 'string'
       ? firebaseConfig.firestoreDatabaseId
       : undefined;
@@ -138,6 +119,7 @@ let functionsEmulatorConnected = false;
  * page.
  */
 export async function getSonFlashFunctions(targetApp: FirebaseApp, region = 'asia-southeast1'): Promise<Functions> {
+  ensureAppCheck();
   const { getFunctions, connectFunctionsEmulator } = await import('firebase/functions');
   const functionsInstance = getFunctions(targetApp, region);
   if (isE2eEmulatorBuild && !functionsEmulatorConnected) {
@@ -159,14 +141,71 @@ export async function getSonFlashFunctions(targetApp: FirebaseApp, region = 'asi
 // real callable path end to end. `isE2eEmulatorBuild` is a compile-time
 // literal `false` in every non-e2e build, so this branch is dead code there
 // and production/staging behaviour is unchanged.
-export const protectedFunctionsCapability = isE2eEmulatorBuild
-  ? { available: true } as const
+const resolveCapability = (appCheckInitialized: boolean): ProtectedFunctionsCapability => (isE2eEmulatorBuild
+  ? { available: true }
   : resolveProtectedFunctionsCapability({
     firebaseConfigured: isFirebaseConfigured,
     firebaseInitialized: appInstance !== null,
     appCheckSiteKeyConfigured: appCheckSiteKey.length > 0,
-    appCheckInitialized: appCheckInstance !== null,
-  });
+    appCheckInitialized,
+  }));
+
+// Until App Check starts only the build configuration is known; a start that fails makes this unavailable.
+export let protectedFunctionsCapability = resolveCapability(true);
+let appCheckStarted = false;
+
+/**
+ * Starts App Check once and returns the resulting capability. reCAPTCHA bills each assessment, so it starts at
+ * the first protected use (a signed-in session, a sign-in, a public shared-deck read or a callable), never on
+ * load: a visitor who only browses costs nothing. Firestore, Auth, Storage and Functions read the App Check
+ * token per request and wait for it, so a start made synchronously before a request covers that request.
+ */
+export function ensureAppCheck(): ProtectedFunctionsCapability {
+  if (appCheckStarted) return protectedFunctionsCapability;
+  appCheckStarted = true;
+  // The emulator suite runs with App Check enforcement off; initializing it
+  // there would send the local site key and a debug token to Google.
+  if (!appInstance || !appCheckSiteKey || isE2eEmulatorBuild) return protectedFunctionsCapability;
+  try {
+    const isLocalhost = typeof location !== 'undefined'
+      && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+    if (isLocalhost && import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG === 'true') {
+      (globalThis as typeof globalThis & { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    }
+    appCheckInstance = initializeAppCheck(appInstance, {
+      // Provider and site key travel together with the sealed host target.
+      provider: selectedFirebaseConfig.appCheckProvider === 'v3'
+        ? new ReCaptchaV3Provider(appCheckSiteKey)
+        : new ReCaptchaEnterpriseProvider(appCheckSiteKey),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (appCheckError) {
+    console.error('Firebase App Check could not initialize; protected calls may be unavailable.', appCheckError);
+  }
+  protectedFunctionsCapability = resolveCapability(appCheckInstance !== null);
+  return protectedFunctionsCapability;
+}
+
+// A redirect sign-in finishes inside Auth start-up on the page it returns to, before any app code runs.
+const APP_CHECK_REDIRECT_RETURN_KEY = 'sonflash.appCheck.redirectSignIn';
+
+/** Starts App Check before a sign-in request; a redirect also starts it on the page the sign-in returns to. */
+export function ensureAppCheckForSignIn(flow: 'popup' | 'redirect'): void {
+  if (flow === 'redirect') {
+    try { sessionStorage.setItem(APP_CHECK_REDIRECT_RETURN_KEY, '1'); } catch { /* storage blocked: the session observer still starts it */ }
+  }
+  ensureAppCheck();
+}
+
+try {
+  if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(APP_CHECK_REDIRECT_RETURN_KEY)) {
+    sessionStorage.removeItem(APP_CHECK_REDIRECT_RETURN_KEY);
+    ensureAppCheck();
+  }
+} catch { /* storage blocked */ }
+// Registered before any other Auth observer (this module loads first), so a restored or new session starts
+// App Check before the app makes its first Firestore, Storage or callable request.
+if (authInstance) onIdTokenChanged(authInstance, user => { if (user) ensureAppCheck(); });
 
 export {
   appInstance as app,

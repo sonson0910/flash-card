@@ -30,12 +30,16 @@ const mocks = vi.hoisted(() => {
     installCatalog: vi.fn(),
     readCatalogPage: vi.fn(),
     useIdentitySession: vi.fn(() => ({ kind: 'identity-session' })),
+    ensureAppCheck: vi.fn(),
+    ensureAppCheckForSignIn: vi.fn(),
   };
 });
 
 vi.mock('../lib/firebase', () => ({
   app: mocks.firebaseApp,
   db: mocks.database,
+  ensureAppCheck: mocks.ensureAppCheck,
+  ensureAppCheckForSignIn: mocks.ensureAppCheckForSignIn,
   isFirebaseConfigured: true,
 }));
 
@@ -82,6 +86,9 @@ vi.mock('./catalogRuntime', () => ({
 }));
 
 import { appDependencies } from './appDependencies';
+
+// Adapters are built when the module loads, before each test clears the recorded calls.
+const sharedDeckAdapterOptions = (mocks.createSharedDeck.mock.calls as unknown[][])[0]?.[0];
 
 describe('app dependency composition', () => {
   beforeEach(() => {
@@ -162,6 +169,13 @@ describe('app dependency composition', () => {
       app: mocks.firebaseApp,
       database: mocks.database,
       configured: true,
+      beforeSignIn: mocks.ensureAppCheckForSignIn,
+    });
+    expect(sharedDeckAdapterOptions).toEqual({
+      app: mocks.firebaseApp,
+      database: mocks.database,
+      configured: true,
+      beforeRead: mocks.ensureAppCheck,
     });
   });
 

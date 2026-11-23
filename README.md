@@ -130,8 +130,10 @@ secrets from `VITE_*` variables or ships them in the browser bundle.
 | `VITE_FIREBASE_APP_CHECK_DEBUG` | Local development only | Enables the Firebase App Check debug-token flow |
 | `ENFORCE_APP_CHECK` | Functions deployment | Controls callable App Check enforcement; defaults to enabled |
 
-When using App Check locally, set `VITE_FIREBASE_APP_CHECK_DEBUG=true`, start the app, and
-safelist the debug token printed in the browser console. Never commit that token.
+When using App Check locally, set `VITE_FIREBASE_APP_CHECK_DEBUG=true`, start the app, sign in,
+and safelist the debug token printed in the browser console. Never commit that token. App Check
+starts at the first protected use (a signed-in session, a sign-in, a shared-deck link or a callable),
+not on page load, so a visitor who only browses never triggers a reCAPTCHA assessment.
 
 ## Quality gates
 
