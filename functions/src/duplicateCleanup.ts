@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { canonicalCard, createReservation, targetAwareCardId } from './cardPersistence.js';
 import { isCanonicalLanguageCode } from './inputValidation.js';
 import { LegacyLibraryInvalidCardsError } from './legacyLibraryMigration.js';
+import { ownStorageImageOwner } from './ownFileImageUrl.js';
 
 export type CleanupCard = Record<string, unknown> & {
   id: string;
@@ -217,6 +218,20 @@ const firstTrustedUrl = (
 ): string | null => {
   for (const card of cards) {
     const url = trustedUrl(card[field], hosts);
+    if (url) return url;
+  }
+  return null;
+};
+
+/**
+ * A stock photo, or a photo from the learner's own files. A stored own-file
+ * address is kept as it is, the way a card create keeps one it reads back.
+ */
+const firstCardImageUrl = (cards: CleanupCard[]): string | null => {
+  for (const card of cards) {
+    const value = card.imageUrl;
+    if (typeof value === 'string' && ownStorageImageOwner(value) !== null) return value;
+    const url = trustedUrl(value, trustedImageHosts);
     if (url) return url;
   }
   return null;
@@ -472,7 +487,7 @@ export function planLegacyIdentityGroup(
     category: boundedText(strongest.category, 128, 'Other') || 'Other',
     emoji: boundedText(strongest.emoji, 64, '📝') || '📝',
     audioUrl: firstTrustedUrl(ranked, 'audioUrl', trustedAudioHosts),
-    imageUrl: firstTrustedUrl(ranked, 'imageUrl', trustedImageHosts),
+    imageUrl: firstCardImageUrl(ranked),
     imageSearchQuery: boundedText(firstText(ranked, 'imageSearchQuery'), 120),
     createdAt: earliestCreatedAt,
     ...(masteredAt ? { masteredAt } : {}),

@@ -155,6 +155,27 @@ describe('duplicate cleanup planner', () => {
     expect(plan.merged).toMatchObject({ word: 'quite', normalizedWord: 'quite' });
   });
 
+  it('keeps a photo the learner uploaded to their own files', () => {
+    const ownPhoto = 'https://firebasestorage.googleapis.com/v0/b/encoded-hangout-433912-h2.firebasestorage.app/o/users%2Fowner%2Ffiles%2FAbCdEfGhIjKlMnOpQrSt?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d';
+    const context = { jobId: 'job-1', libraryEpoch: 3 };
+
+    expect(planLegacyIdentityGroup([card('pictured', { imageUrl: ownPhoto })], context).merged.imageUrl)
+      .toBe(ownPhoto);
+    // A weaker copy's photo fills in when the strongest copy has none.
+    expect(planLegacyIdentityGroup([
+      card('learned', { reviews: 10 }),
+      card('pictured', { imageUrl: ownPhoto }),
+    ], context).merged.imageUrl).toBe(ownPhoto);
+    // Any other address on the storage host is not a learner file.
+    for (const imageUrl of [
+      `${ownPhoto}&download=1`,
+      ownPhoto.replace('users%2Fowner%2Ffiles', 'public'),
+      ownPhoto.replace('encoded-hangout-433912-h2.firebasestorage.app', 'another-project.firebasestorage.app'),
+    ]) {
+      expect(planLegacyIdentityGroup([card('pictured', { imageUrl })], context).merged.imageUrl).toBeNull();
+    }
+  });
+
   it('uses a revision newer than every duplicate source', () => {
     const plan = planLegacyIdentityGroup([
       card('learned', { reviews: 10, revision: 2 }),

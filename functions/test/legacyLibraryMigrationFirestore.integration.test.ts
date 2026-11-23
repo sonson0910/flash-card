@@ -344,6 +344,8 @@ describeWithEmulator('Firestore Admin legacy library migration', () => {
       tags: ['verbs'],
       learnerDifficulty: 'medium',
       translationAlternatives: ['di cư'],
+      // A photo from the learner's own files.
+      imageUrl: `https://firebasestorage.googleapis.com/v0/b/encoded-hangout-433912-h2.firebasestorage.app/o/users%2F${OWNER_ID}%2Ffiles%2FAbCdEfGhIjKlMnOpQrSt?alt=media&token=0b0f1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d`,
     };
     const original = { id: 'legacy-capital', word: 'Migrate', translation: 'di chuyển', ...stored };
     await owner.collection('cards').doc('legacy-capital').set(original);
