@@ -25,6 +25,8 @@ export interface DailySessionLanguagePair {
 export interface SessionMatchStage {
   readonly cards: readonly CardData[];
   readonly skipReason: MatchSkipReason | null;
+  /** The round was already played this session, so it is no longer outstanding work and is only offered again as an optional replay. */
+  readonly finished?: boolean;
 }
 
 export type MatchPair = { cardId: string; word: string; translation: string };
@@ -56,7 +58,7 @@ export interface SessionStagePlan {
 export const sessionStageItemCount = (stagePlan: SessionStagePlan, stage: SessionStageId): number => (
   stage === 'review' ? stagePlan.review.length
     : stage === 'new' ? stagePlan.fresh.length
-      : stage === 'match' ? stagePlan.match.cards.length : 0
+      : stage === 'match' ? (stagePlan.match.finished ? 0 : stagePlan.match.cards.length) : 0
 );
 
 const matchStageFor = (cards: readonly CardData[]): SessionMatchStage => (
@@ -256,6 +258,8 @@ export interface DailySessionPointer {
   /** Server operation metadata for replaying the frozen Word Match challenge. */
   readonly matchStartOpId?: string | null;
   readonly matchCompletionId?: string | null;
+  /** The Word Match round was already played, so a retry of the weak cards must not replay it. */
+  readonly matchFinished?: boolean;
   readonly matchTimeZone?: string;
   /** A locally won round whose server completion must be replayed before recap. */
   readonly matchCompletionPending?: boolean;
@@ -330,6 +334,7 @@ const isDailySessionPointer = (value: unknown): value is DailySessionPointer => 
     && (candidate.matchSkipReason === null || candidate.matchSkipReason === 'insufficient-pairs')
     && (candidate.matchStartOpId === undefined || candidate.matchStartOpId === null || typeof candidate.matchStartOpId === 'string')
     && (candidate.matchCompletionId === undefined || candidate.matchCompletionId === null || typeof candidate.matchCompletionId === 'string')
+    && (candidate.matchFinished === undefined || typeof candidate.matchFinished === 'boolean')
     && (candidate.matchTimeZone === undefined || typeof candidate.matchTimeZone === 'string')
     && (candidate.matchCompletionPending === undefined || typeof candidate.matchCompletionPending === 'boolean')
     && isDailySessionStats(candidate.stats)
@@ -349,6 +354,35 @@ export function writeDailySessionPointer(pointer: DailySessionPointer): void {
 
 export function clearDailySessionPointer(ownerId: string): void {
   writeStoredJson(storageKeyFor(ownerId));
+}
+
+const PARKED_KEY_PREFIX = 'sonflash:daily-session-parked:';
+const parkedKeyFor = (ownerId: string, pair: DailySessionLanguagePair): string => (
+  `${PARKED_KEY_PREFIX}${ownerId}:${pair.targetLanguage}:${pair.translationLanguage}`
+);
+
+/**
+ * Moves a won Word Match round that is still waiting for its server completion out of the learner's
+ * single session pointer and into a slot of its own for its course. The pointer then belongs to
+ * whatever the learner does next, and the round is not lost when another course starts or ends a session.
+ * Returns whether a pointer was parked; any other pointer of the owner is left alone.
+ */
+export function parkPendingDailySessionPointer(ownerId: string): boolean {
+  const pointer = readDailySessionPointer(ownerId);
+  if (!pointer?.matchCompletionPending) return false;
+  writeStoredJson(parkedKeyFor(ownerId, pointer), pointer);
+  clearDailySessionPointer(ownerId);
+  return true;
+}
+
+/** Puts the round parked for this course back as the owner's session pointer, so Today resumes it. */
+export function restoreParkedDailySessionPointer(ownerId: string, pair: DailySessionLanguagePair): boolean {
+  const parked = readStoredJson(parkedKeyFor(ownerId, pair));
+  if (!isDailySessionPointer(parked) || parked.ownerId !== ownerId
+    || parked.targetLanguage !== pair.targetLanguage || parked.translationLanguage !== pair.translationLanguage) return false;
+  writeDailySessionPointer(parked);
+  writeStoredJson(parkedKeyFor(ownerId, pair));
+  return true;
 }
 
 const PENDING_PRIORITY_KEY_PREFIX = 'sonflash:pending-fresh-priority:';

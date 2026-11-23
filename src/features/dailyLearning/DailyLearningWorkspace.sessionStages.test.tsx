@@ -201,8 +201,8 @@ it('switching course while a Word Match completion is pending keeps the pending 
   // Same owner switches course in the top-bar switcher while the workspace stays mounted.
   await act(async () => { render(KOREAN_PROFILE); });
   await settle();
-  const afterSwitch = readDailySessionPointer(OWNER);
-  expect(afterSwitch).toMatchObject({ matchCompletionPending: true, matchCompletionId: 'complete-op', targetLanguage: 'en' });
+  // The earned round waits for its course and leaves the learner's session pointer free.
+  expect(readDailySessionPointer(OWNER)).toBeNull();
   // Back in the original course the pending completion is retried with the same id.
   practice.complete = vi.fn(async () => ({
     sessionId: 'start-op', correct: 4, total: 4, awardedXp: 20,
@@ -280,6 +280,8 @@ it('retrying weak cards from the recap reviews only the weak cards and does not 
   await act(async () => { screens.recap.onRetryWeak(); });
   screens.recap = null;
   await act(async () => { await vi.waitFor(() => expect(screens.lesson?.model.prompt).toBe(due.word)); });
+  // A reload during the retry still knows the finished round, so the recap can offer it again.
+  expect(readDailySessionPointer(OWNER)).toMatchObject({ stage: 'review', matchCardIds: pool.map(entry => entry.id), matchFinished: true });
   await rateCurrent('good');
   const nextStageAfterRetry = screens.bridge.model.nextStage;
 
@@ -313,6 +315,7 @@ it('retrying weak cards from the recap reviews only the weak cards and does not 
     matchCompletionCalls: practice.complete.mock.calls.length,
     finalRecapXp: screens.recap?.xpEarned,
     finalRecapStudyTimeMs: screens.recap?.studyTimeMs,
+    recapStillOffersWordMatch: typeof screens.recap?.onPlayWordMatch === 'function' && screens.recap?.wordMatchCount === 4,
   };
   expect(observed).toEqual({
     nextStageAfterRetry: 'recap',
@@ -320,6 +323,84 @@ it('retrying weak cards from the recap reviews only the weak cards and does not 
     matchCompletionCalls: 1,
     finalRecapXp: firstRecapXp + 10,
     finalRecapStudyTimeMs: firstRecapStudyTime,
+    recapStillOffersWordMatch: true,
   });
+  await act(async () => root.unmount());
+}, 30_000);
+
+const pendingMatchPointer = (pool: readonly CardData[]) => ({
+  ownerId: OWNER, targetLanguage: 'en', translationLanguage: 'vi', stage: 'match' as const,
+  reviewLogicalIds: [], freshLogicalIds: [],
+  matchCardIds: pool.map(entry => entry.id), matchSkipReason: null,
+  matchStartOpId: 'start-op', matchCompletionId: 'complete-op', matchTimeZone: 'UTC', matchCompletionPending: true,
+  stats: emptyDailySessionStats, startedAt: '2026-10-03T00:00:00.000Z',
+});
+
+it('a session in another course does not discard a Word Match completion that is waiting in the first course', async () => {
+  const englishPool = ['one', 'two', 'three', 'four'].map(id => card(`pair-${id}`, { reviews: 2, difficulty: 'good', nextReviewDate: '2099-01-01T00:00:00.000Z' } as Partial<CardData>));
+  const koreanDue = card('ko-due', { language: 'ko', reviews: 1, difficulty: 'good', nextReviewDate: '2026-10-01T00:00:00.000Z' } as Partial<CardData>);
+  const pool = [...englishPool, koreanDue];
+  const byId = new Map(pool.map(entry => [entry.id, entry]));
+  const loadPracticePool = vi.fn().mockResolvedValue(pool);
+  practice.start = vi.fn(async ({ cardIds }: { cardIds: string[] }) => ({
+    sessionId: 'start-op', game: 'match', expiresAt: '2099-01-01T00:00:00.000Z',
+    challenge: { kind: 'match', cards: cardIds.map(id => ({ cardId: id, word: byId.get(id)!.word, translation: byId.get(id)!.translation })) },
+  }));
+  practice.complete = vi.fn(async () => { throw new Error('unavailable'); });
+  const container = installMinimalReactDom();
+  writeDailySessionPointer(pendingMatchPointer(englishPool));
+  i18n.load('en', {}); i18n.activate('en');
+  const root = createRoot(container);
+  const render = (profile: typeof ENGLISH_TO_VIETNAMESE_PROFILE, initialLesson: 'session' | null) => root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
+    ownerId={OWNER} database={null} languageProfile={profile} isOffline={false} initialLesson={initialLesson}
+    streak={0} studyXpHistory={[]} loadPracticePool={loadPracticePool} reviewCard={vi.fn()}
+    openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
+    openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
+  /></I18nProvider>);
+  await act(async () => { render(ENGLISH_TO_VIETNAMESE_PROFILE, 'session'); });
+  await settle();
+  expect(practice.complete).toHaveBeenCalledTimes(1);
+
+  // The learner switches to Korean and starts a session there, which writes its own pointer.
+  await act(async () => { render(KOREAN_PROFILE, null); });
+  await settle();
+  await act(async () => { screens.today.actions.startSession(); });
+  await settle();
+  expect(screens.lesson).not.toBeNull();
+  expect(readDailySessionPointer(OWNER)).toMatchObject({ targetLanguage: 'ko' });
+
+  // Back in English the earned completion is retried with its original ids.
+  practice.complete = vi.fn(async () => ({
+    sessionId: 'start-op', correct: 4, total: 4, awardedXp: 20,
+    outcome: { xp: 500, level: 3, streak: 1, events: [], studyTimeMs: 60_000 },
+  }));
+  await act(async () => { render(ENGLISH_TO_VIETNAMESE_PROFILE, null); });
+  await settle();
+  await act(async () => { screens.today.actions.startSession(); });
+  await settle();
+  expect(practice.complete).toHaveBeenCalledTimes(1);
+  expect(practice.complete).toHaveBeenCalledWith(expect.objectContaining({ sessionId: 'start-op', completionId: 'complete-op' }));
+  await act(async () => root.unmount());
+}, 30_000);
+
+it('opens a listening lesson route in a course that has no English pilot', async () => {
+  const koreanDue = card('ko-listen', { language: 'ko', reviews: 1, difficulty: 'good', nextReviewDate: '2026-10-01T00:00:00.000Z' } as Partial<CardData>);
+  const container = installMinimalReactDom();
+  vi.stubGlobal('window', Object.assign(globalThis, {
+    location: { href: 'https://app.example.com/today?lesson=listening' },
+    addEventListener: vi.fn(), removeEventListener: vi.fn(),
+  }));
+  i18n.load('en', {}); i18n.activate('en');
+  const root = createRoot(container);
+  await act(async () => {
+    root.render(<I18nProvider i18n={i18n}><DailyLearningWorkspace
+      ownerId={OWNER} database={null} languageProfile={KOREAN_PROFILE} isOffline={false} initialLesson="listening"
+      streak={0} studyXpHistory={[]} loadPracticePool={vi.fn().mockResolvedValue([koreanDue])} reviewCard={vi.fn()}
+      openLesson={vi.fn()} openVocabulary={vi.fn()} openPaths={vi.fn()} continueReview={vi.fn()}
+      openMorePractice={vi.fn()} openWeeklyRecap={vi.fn()} onVerifiedPracticeOutcome={vi.fn()}
+    /></I18nProvider>);
+  });
+  await settle();
+  expect(screens.lesson).not.toBeNull();
   await act(async () => root.unmount());
 }, 30_000);
