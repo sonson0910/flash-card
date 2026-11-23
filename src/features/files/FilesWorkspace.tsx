@@ -7,7 +7,7 @@ import {
   CHECK_CHIPS, CHECK_FAILED, CHECK_LABELS, CHECK_PENDING, KIND_LABELS, PHASE_CAPTIONS, REJECTION_DETAILS, REJECTION_FALLBACK,
   STATUS_LABELS, formatMessage,
 } from './fileCopy';
-import type { FileCardPhotoMatch, FileCardPhotos } from './fileCardPhotos';
+import { clearFileCardPhotos, type FileCardPhotoMatch, type FileCardPhotos } from './fileCardPhotos';
 import { FILE_INPUT_ACCEPT, formatBytes, type ClientCheck, type FileKind, type FileListing, type FileSummary } from './fileModel';
 import { toFileError, type FilePort } from './filePort';
 import { StorageUsageMeter } from './StorageUsageMeter';
@@ -104,10 +104,8 @@ export function FilesWorkspace({ port, courses = [], defaultCourseId = null, onM
         if (cardPhotos && canShowOnCards(file)) {
           const lookup = photoLookups.current.get(file.id);
           photoLookups.current.delete(file.id);
-          // A lookup that failed or never ran runs now: the file goes only once no card shows it.
-          const match = await (lookup?.catch(() => cardPhotos.find(file.id)) ?? cardPhotos.find(file.id));
           // Cards first: if the file then fails to delete it is still there to put back on a card.
-          await match.clear();
+          await clearFileCardPhotos(cardPhotos, file.id, lookup);
         }
         await library.remove(file.id);
       }}

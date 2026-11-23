@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createFileCardPhotos, type FileCardPhotoCard, type FileCardPhotoStore, type LoadedCardPhotos } from './fileCardPhotos';
+import { clearFileCardPhotos, createFileCardPhotos, type FileCardPhotoCard, type FileCardPhotoStore, type LoadedCardPhotos } from './fileCardPhotos';
 
 const fileA = 'a'.repeat(24);
 const found: readonly FileCardPhotoCard[] = [
@@ -58,5 +58,52 @@ describe('cards that show a stored photo', () => {
   it('rejects when a card in another course could not be saved', async () => {
     const store = storeWith(found, false);
     await expect((await createFileCardPhotos(store, openLibrary()).find(fileA)).clear()).rejects.toThrow();
+  });
+
+  describe('clearing before a file is deleted', () => {
+    it('clears a card that gained the photo after the confirmation counted the cards', async () => {
+      const lookups = [[{ id: 'card-open-1', revision: 3 }], [{ id: 'card-open-1', revision: 3 }, { id: 'card-other-course', revision: 2 }]];
+      const store = {
+        find: vi.fn(async (_fileId: string) => lookups.shift() ?? []),
+        clear: vi.fn(async (_fileId: string, _cards: readonly FileCardPhotoCard[]) => true),
+      } satisfies FileCardPhotoStore;
+      const photos = createFileCardPhotos(store, openLibrary());
+      const counted = photos.find(fileA);
+
+      await clearFileCardPhotos(photos, fileA, counted);
+
+      expect(store.find).toHaveBeenCalledTimes(2);
+      expect(store.clear).toHaveBeenCalledExactlyOnceWith(fileA, [{ id: 'card-other-course', revision: 2 }]);
+    });
+
+    it('rejects, so the file is kept, when a card found late could not be saved', async () => {
+      const lookups = [[], [{ id: 'card-other-course', revision: 2 }]];
+      const store = {
+        find: vi.fn(async (_fileId: string) => lookups.shift() ?? []),
+        clear: vi.fn(async (_fileId: string, _cards: readonly FileCardPhotoCard[]) => false),
+      } satisfies FileCardPhotoStore;
+      const photos = createFileCardPhotos(store, openLibrary());
+
+      await expect(clearFileCardPhotos(photos, fileA, photos.find(fileA))).rejects.toThrow();
+    });
+
+    it('looks the cards up once when no confirmation counted them, since that lookup is current', async () => {
+      const store = storeWith([{ id: 'card-other-course', revision: 2 }]);
+
+      await clearFileCardPhotos(createFileCardPhotos(store, openLibrary()), fileA, undefined);
+
+      expect(store.find).toHaveBeenCalledTimes(1);
+      expect(store.clear).toHaveBeenCalledTimes(1);
+    });
+
+    it('looks the cards up now when the confirmation lookup failed', async () => {
+      const find = vi.fn()
+        .mockRejectedValueOnce(new Error('offline'))
+        .mockResolvedValue({ count: 0, clear: async () => undefined });
+
+      await clearFileCardPhotos({ find }, fileA, find(fileA));
+
+      expect(find).toHaveBeenCalledTimes(2);
+    });
   });
 });

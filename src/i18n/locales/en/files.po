@@ -14,32 +14,32 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:374
+#: src/features/files/FilesWorkspace.tsx:372
 msgid "files.check.another"
 msgstr "Choose another"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:357
+#: src/features/files/FilesWorkspace.tsx:355
 msgid "files.check.attention"
 msgstr "Needs attention"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:373
+#: src/features/files/FilesWorkspace.tsx:371
 msgid "files.check.back"
 msgstr "Back"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:386
+#: src/features/files/FilesWorkspace.tsx:384
 msgid "files.check.continue"
 msgstr "Continue"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:368
+#: src/features/files/FilesWorkspace.tsx:366
 msgid "files.check.footnote"
 msgstr "Checks here give quick feedback. The service has the final say on type, size, plan, and ownership."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:355
+#: src/features/files/FilesWorkspace.tsx:353
 msgid "files.check.passed"
 msgstr "Passed"
 
@@ -84,7 +84,7 @@ msgid "files.check.plan-row"
 msgstr "Checking plan"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:356
+#: src/features/files/FilesWorkspace.tsx:354
 msgid "files.check.service"
 msgstr "Service decides"
 
@@ -104,7 +104,7 @@ msgid "files.check.size-chip"
 msgstr "Size check"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:330
+#: src/features/files/FilesWorkspace.tsx:328
 msgid "files.check.size-empty"
 msgstr "This file is empty or could not be read."
 
@@ -134,7 +134,7 @@ msgid "files.check.size-row"
 msgstr "Checking size"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:336
+#: src/features/files/FilesWorkspace.tsx:334
 msgid "files.check.title"
 msgstr "Check before sending"
 
@@ -179,47 +179,47 @@ msgid "files.check.type-row"
 msgstr "Checking type"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:356
+#: src/features/files/FilesWorkspace.tsx:354
 msgid "files.check.waiting"
 msgstr "Waiting"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:794
+#: src/features/files/FilesWorkspace.tsx:792
 msgid "files.delete.card-photos"
 msgstr "{count, plural, one {# card shows this photo; it will be removed from that card.} other {# cards show this photo; it will be removed from those cards.}}"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:791
+#: src/features/files/FilesWorkspace.tsx:789
 msgid "files.delete.card-photos-checking"
 msgstr "Checking which cards show this photo…"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:792
+#: src/features/files/FilesWorkspace.tsx:790
 msgid "files.delete.card-photos-unknown"
 msgstr "The cards that show this photo could not be counted. Deleting checks them again and removes the photo from them first."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:868
+#: src/features/files/FilesWorkspace.tsx:866
 msgid "files.delete.confirm"
 msgstr "Delete"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:844
+#: src/features/files/FilesWorkspace.tsx:842
 msgid "files.delete.detail"
 msgstr "<0>{name}</0> will be removed from My files after confirmation."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:847
+#: src/features/files/FilesWorkspace.tsx:845
 msgid "files.delete.failed"
 msgstr "The file could not be deleted. Try again."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:850
+#: src/features/files/FilesWorkspace.tsx:848
 msgid "files.delete.keep"
 msgstr "Keep file"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:842
+#: src/features/files/FilesWorkspace.tsx:840
 msgid "files.delete.title"
 msgstr "Delete this file?"
 
@@ -235,7 +235,7 @@ msgstr "The upload did not finish. Check your connection and try again."
 
 #. js-lingui-explicit-id
 #: src/features/files/fileCopy.ts:111
-#: src/features/files/FilesWorkspace.tsx:622
+#: src/features/files/FilesWorkspace.tsx:620
 msgid "files.error.not-found"
 msgstr "That file is no longer available."
 
@@ -290,22 +290,22 @@ msgid "files.kind.pdf"
 msgstr "PDF"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:191
+#: src/features/files/FilesWorkspace.tsx:189
 msgid "files.page.kicker"
 msgstr "Source files"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:192
+#: src/features/files/FilesWorkspace.tsx:190
 msgid "files.page.kicker-flow"
 msgstr "Upload flow"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:198
+#: src/features/files/FilesWorkspace.tsx:196
 msgid "files.page.lead"
 msgstr "Select a PDF, EPUB, or image, then keep its status visible while it becomes part of your study shelf."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:195
+#: src/features/files/FilesWorkspace.tsx:193
 msgid "files.page.title"
 msgstr "Bring in a <0>source.</0>"
 
@@ -370,42 +370,42 @@ msgid "files.phase.validating"
 msgstr "Checking"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:482
+#: src/features/files/FilesWorkspace.tsx:480
 msgid "files.quota.detail"
 msgstr "This file needs {needed}, and {free} of your {limit} is free. Delete files you no longer need, then try again."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:487
+#: src/features/files/FilesWorkspace.tsx:485
 msgid "files.quota.detail-unknown"
 msgstr "Your storage allowance is used up. Delete files you no longer need, then try again."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:506
+#: src/features/files/FilesWorkspace.tsx:504
 msgid "files.quota.heading"
 msgstr "Your storage is full"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:498
+#: src/features/files/FilesWorkspace.tsx:496
 msgid "files.quota.label"
 msgstr "Storage full"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:518
+#: src/features/files/FilesWorkspace.tsx:516
 msgid "files.quota.manage"
 msgstr "Manage files"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:496
+#: src/features/files/FilesWorkspace.tsx:494
 msgid "files.quota.subtitle"
 msgstr "{name} · storage checked by the service"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:493
+#: src/features/files/FilesWorkspace.tsx:491
 msgid "files.quota.title"
 msgstr "Storage allowance reached"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:514
+#: src/features/files/FilesWorkspace.tsx:512
 msgid "files.rejected.another"
 msgstr "Choose another file"
 
@@ -420,12 +420,12 @@ msgid "files.rejected.expired"
 msgstr "The upload took too long to finish. Choose the file again to retry."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:507
+#: src/features/files/FilesWorkspace.tsx:505
 msgid "files.rejected.heading"
 msgstr "The service did not accept this file"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:498
+#: src/features/files/FilesWorkspace.tsx:496
 msgid "files.rejected.label"
 msgstr "Rejected"
 
@@ -440,7 +440,7 @@ msgid "files.rejected.rate-limited"
 msgstr "Too many uploads in a short time. Wait a moment, then try again."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:519
+#: src/features/files/FilesWorkspace.tsx:517
 msgid "files.rejected.review"
 msgstr "Review My files"
 
@@ -455,12 +455,12 @@ msgid "files.rejected.size"
 msgstr "The file is larger than your plan accepts. Choose a smaller file."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:497
+#: src/features/files/FilesWorkspace.tsx:495
 msgid "files.rejected.subtitle"
 msgstr "{name} · checked by the service"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:494
+#: src/features/files/FilesWorkspace.tsx:492
 msgid "files.rejected.title"
 msgstr "Upload rejected"
 
@@ -470,184 +470,184 @@ msgid "files.rejected.type"
 msgstr "This file type is not accepted. Choose another file or review My files."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:673
+#: src/features/files/FilesWorkspace.tsx:671
 msgid "files.result.another"
 msgstr "Upload another"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:669
+#: src/features/files/FilesWorkspace.tsx:667
 msgid "files.result.attach"
 msgstr "Attach source"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:607
+#: src/features/files/FilesWorkspace.tsx:605
 msgid "files.result.attach-failed"
 msgstr "The file could not be attached. Try again."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:659
+#: src/features/files/FilesWorkspace.tsx:657
 msgid "files.result.attach-note"
 msgstr "Attached files appear with that course in My files."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:653
+#: src/features/files/FilesWorkspace.tsx:651
 msgid "files.result.attach-to"
 msgstr "Attach to"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:603
+#: src/features/files/FilesWorkspace.tsx:601
 msgid "files.result.attached"
 msgstr "Attached to {course}."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:586
+#: src/features/files/FilesWorkspace.tsx:584
 msgid "files.result.complete"
 msgstr "Complete"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:604
+#: src/features/files/FilesWorkspace.tsx:602
 msgid "files.result.detached"
 msgstr "Not attached to a course."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:655
+#: src/features/files/FilesWorkspace.tsx:653
 msgid "files.result.no-course"
 msgstr "No course"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:665
+#: src/features/files/FilesWorkspace.tsx:663
 msgid "files.result.open"
 msgstr "Open file"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:623
+#: src/features/files/FilesWorkspace.tsx:621
 msgid "files.result.open-failed"
 msgstr "The file could not be opened. Try again."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:578
+#: src/features/files/FilesWorkspace.tsx:576
 msgid "files.result.partial"
 msgstr "Saved with a partial result"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:580
+#: src/features/files/FilesWorkspace.tsx:578
 msgid "files.result.partial-label"
 msgstr "Partial"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:581
+#: src/features/files/FilesWorkspace.tsx:579
 msgid "files.result.partial-status"
 msgstr "Partial"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:579
+#: src/features/files/FilesWorkspace.tsx:577
 msgid "files.result.partial-subtitle"
 msgstr "The file is stored; some checks could not finish."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:587
+#: src/features/files/FilesWorkspace.tsx:585
 msgid "files.result.partial-value"
 msgstr "Partial"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:585
-#: src/features/files/FilesWorkspace.tsx:589
+#: src/features/files/FilesWorkspace.tsx:583
+#: src/features/files/FilesWorkspace.tsx:587
 msgid "files.result.pending"
 msgstr "Pending"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:566
+#: src/features/files/FilesWorkspace.tsx:564
 msgid "files.result.processing"
 msgstr "Checking the file"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:568
+#: src/features/files/FilesWorkspace.tsx:566
 msgid "files.result.processing-label"
 msgstr "Processing"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:569
+#: src/features/files/FilesWorkspace.tsx:567
 msgid "files.result.processing-status"
 msgstr "Pending"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:567
+#: src/features/files/FilesWorkspace.tsx:565
 msgid "files.result.processing-subtitle"
 msgstr "The service is confirming the upload."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:572
+#: src/features/files/FilesWorkspace.tsx:570
 msgid "files.result.ready"
 msgstr "Ready to attach"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:574
+#: src/features/files/FilesWorkspace.tsx:572
 msgid "files.result.ready-label"
 msgstr "Ready"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:575
+#: src/features/files/FilesWorkspace.tsx:573
 msgid "files.result.ready-status"
 msgstr "Ready"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:573
+#: src/features/files/FilesWorkspace.tsx:571
 msgid "files.result.ready-subtitle"
 msgstr "Attach it to a course or open it from My files."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:589
+#: src/features/files/FilesWorkspace.tsx:587
 msgid "files.result.record"
 msgstr "File record"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:591
+#: src/features/files/FilesWorkspace.tsx:589
 msgid "files.result.size"
 msgstr "Size"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:589
+#: src/features/files/FilesWorkspace.tsx:587
 msgid "files.result.stored"
 msgstr "Stored"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:590
+#: src/features/files/FilesWorkspace.tsx:588
 msgid "files.result.verification"
 msgstr "Verification"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:300
+#: src/features/files/FilesWorkspace.tsx:298
 msgid "files.select.browse"
 msgstr "Browse files"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:295
+#: src/features/files/FilesWorkspace.tsx:293
 msgid "files.select.drop-detail"
 msgstr "PDF, EPUB, and images go through the same checks. Drop a file here or browse your device."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:294
+#: src/features/files/FilesWorkspace.tsx:292
 msgid "files.select.drop-title"
 msgstr "Select a source"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:297
-#: src/features/files/FilesWorkspace.tsx:350
+#: src/features/files/FilesWorkspace.tsx:295
+#: src/features/files/FilesWorkspace.tsx:348
 msgid "files.select.image-note"
 msgstr "Images are resized in your browser and saved as WebP."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:180
+#: src/features/files/FilesWorkspace.tsx:178
 msgid "files.select.input"
 msgstr "Choose a PDF, EPUB, or image"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:284
+#: src/features/files/FilesWorkspace.tsx:282
 msgid "files.select.subtitle"
 msgstr "Quick checks run here first; the service confirms the file after it arrives."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:283
+#: src/features/files/FilesWorkspace.tsx:281
 msgid "files.select.title"
 msgstr "Choose a file"
 
@@ -692,82 +692,82 @@ msgid "files.settings.title"
 msgstr "Storage and files"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:739
+#: src/features/files/FilesWorkspace.tsx:737
 msgid "files.shelf.all-courses"
 msgstr "All courses"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:710
+#: src/features/files/FilesWorkspace.tsx:708
 msgid "files.shelf.count"
 msgstr "{count, plural, one {# file} other {# files}}"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:756
+#: src/features/files/FilesWorkspace.tsx:754
 msgid "files.shelf.delete"
 msgstr "Delete {name}"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:730
+#: src/features/files/FilesWorkspace.tsx:728
 msgid "files.shelf.empty-detail"
 msgstr "Upload a PDF, EPUB, or image to start your source shelf."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:729
+#: src/features/files/FilesWorkspace.tsx:727
 msgid "files.shelf.empty-title"
 msgstr "No files yet"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:719
+#: src/features/files/FilesWorkspace.tsx:717
 msgid "files.shelf.error-detail"
 msgstr "Check your connection, then retry the list."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:718
+#: src/features/files/FilesWorkspace.tsx:716
 msgid "files.shelf.error-title"
 msgstr "My files could not load"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:738
+#: src/features/files/FilesWorkspace.tsx:736
 msgid "files.shelf.files"
 msgstr "Files"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:705
+#: src/features/files/FilesWorkspace.tsx:703
 msgid "files.shelf.kicker"
 msgstr "Library"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:725
+#: src/features/files/FilesWorkspace.tsx:723
 msgid "files.shelf.loading"
 msgstr "Loading your files…"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:773
+#: src/features/files/FilesWorkspace.tsx:771
 msgid "files.shelf.manage"
 msgstr "Manage all files"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:766
+#: src/features/files/FilesWorkspace.tsx:764
 msgid "files.shelf.more"
 msgstr "Show more files"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:699
+#: src/features/files/FilesWorkspace.tsx:697
 msgid "files.shelf.no-course"
 msgstr "No course"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:721
+#: src/features/files/FilesWorkspace.tsx:719
 msgid "files.shelf.retry"
 msgstr "Retry list"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:706
+#: src/features/files/FilesWorkspace.tsx:704
 msgid "files.shelf.title"
 msgstr "My files"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:732
+#: src/features/files/FilesWorkspace.tsx:730
 msgid "files.shelf.upload"
 msgstr "Upload a source"
 
@@ -792,123 +792,123 @@ msgid "files.status.uploading"
 msgstr "Uploading"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:465
+#: src/features/files/FilesWorkspace.tsx:463
 msgid "files.transfer.cancel"
 msgstr "Cancel upload"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:406
+#: src/features/files/FilesWorkspace.tsx:404
 msgid "files.transfer.canceled"
 msgstr "Upload canceled"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:410
+#: src/features/files/FilesWorkspace.tsx:408
 msgid "files.transfer.canceled-helper"
 msgstr "No bytes are being sent"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:407
+#: src/features/files/FilesWorkspace.tsx:405
 msgid "files.transfer.canceled-label"
 msgstr "Canceled"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:409
+#: src/features/files/FilesWorkspace.tsx:407
 msgid "files.transfer.canceled-note"
 msgstr "The upload stopped and nothing was saved. Retry starts a new attempt."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:408
+#: src/features/files/FilesWorkspace.tsx:406
 msgid "files.transfer.canceled-status"
 msgstr "Upload stopped"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:420
+#: src/features/files/FilesWorkspace.tsx:418
 msgid "files.transfer.incomplete"
 msgstr "Upload incomplete"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:421
+#: src/features/files/FilesWorkspace.tsx:419
 msgid "files.transfer.incomplete-label"
 msgstr "Incomplete"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:423
+#: src/features/files/FilesWorkspace.tsx:421
 msgid "files.transfer.incomplete-note"
 msgstr "The transfer ended, but the service did not confirm the file. Retry starts a new attempt."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:422
+#: src/features/files/FilesWorkspace.tsx:420
 msgid "files.transfer.incomplete-status"
 msgstr "Completion was not confirmed"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:417
-#: src/features/files/FilesWorkspace.tsx:424
+#: src/features/files/FilesWorkspace.tsx:415
+#: src/features/files/FilesWorkspace.tsx:422
 msgid "files.transfer.kept-helper"
 msgstr "Selected file kept"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:448
+#: src/features/files/FilesWorkspace.tsx:446
 msgid "files.transfer.progress"
 msgstr "Upload progress"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:545
+#: src/features/files/FilesWorkspace.tsx:543
 msgid "files.transfer.resized"
 msgstr "resized to WebP"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:413
+#: src/features/files/FilesWorkspace.tsx:411
 msgid "files.transfer.retry"
 msgstr "Try the upload again"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:469
+#: src/features/files/FilesWorkspace.tsx:467
 msgid "files.transfer.retry-action"
 msgstr "Retry upload"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:414
+#: src/features/files/FilesWorkspace.tsx:412
 msgid "files.transfer.retry-label"
 msgstr "Retry"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:416
+#: src/features/files/FilesWorkspace.tsx:414
 msgid "files.transfer.retry-note"
 msgstr "The connection dropped before the upload finished. Retry starts a new attempt."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:415
+#: src/features/files/FilesWorkspace.tsx:413
 msgid "files.transfer.retry-status"
 msgstr "The upload was interrupted"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:428
+#: src/features/files/FilesWorkspace.tsx:426
 msgid "files.transfer.sizes"
 msgstr "{sent} of {total}"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:399
+#: src/features/files/FilesWorkspace.tsx:397
 msgid "files.transfer.uploading"
 msgstr "Uploading source"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:403
+#: src/features/files/FilesWorkspace.tsx:401
 msgid "files.transfer.uploading-helper"
 msgstr "Connection required"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:400
+#: src/features/files/FilesWorkspace.tsx:398
 msgid "files.transfer.uploading-label"
 msgstr "In progress"
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:402
+#: src/features/files/FilesWorkspace.tsx:400
 msgid "files.transfer.uploading-note"
 msgstr "Keep this page open while the file uploads. The service confirms it after the transfer."
 
 #. js-lingui-explicit-id
-#: src/features/files/FilesWorkspace.tsx:401
+#: src/features/files/FilesWorkspace.tsx:399
 msgid "files.transfer.uploading-status"
 msgstr "Sending bytes"
 

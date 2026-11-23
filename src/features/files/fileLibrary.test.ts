@@ -35,6 +35,63 @@ describe('card image uploader', () => {
   });
 });
 
+describe('canceling a card photo', () => {
+  it('stops a photo the service is still settling, and gives the stored file back', async () => {
+    const port = createMemoryFilePort({ limits: LIMITS, finalize: () => ({ status: 'pending' }) });
+    port.downloadUrl = vi.fn(async fileId => `https://files.example/${fileId}`);
+    const task = createCardImageUploader(port).upload(photo(512), vi.fn());
+    await vi.waitFor(async () => { expect((await port.list()).files).toHaveLength(1); });
+
+    task.cancel();
+
+    await expect(task.done).rejects.toMatchObject({ kind: 'canceled' });
+    await vi.waitFor(async () => { expect((await port.list()).usage).toEqual({ usedBytes: 0, reservedBytes: 0, fileCount: 0 }); });
+  });
+
+  it('stops a photo while the service is reserving space, and gives the reservation back', async () => {
+    const port = createMemoryFilePort({ limits: LIMITS });
+    const prepare = port.prepare.bind(port);
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    port.prepare = async input => { await gate; return prepare(input); };
+    const task = createCardImageUploader(port).upload(photo(512), vi.fn());
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    task.cancel();
+    release();
+
+    await expect(task.done).rejects.toMatchObject({ kind: 'canceled' });
+    await vi.waitFor(async () => { expect((await port.list()).usage).toEqual({ usedBytes: 0, reservedBytes: 0, fileCount: 0 }); });
+  });
+});
+
+describe('canceling a card photo that is already stored', () => {
+  it('removes the stored file when Cancel lands while its download link is being made', async () => {
+    vi.useFakeTimers();
+    try {
+      const port = createMemoryFilePort({ limits: LIMITS });
+      let reached!: () => void;
+      const asked = new Promise<void>(resolve => { reached = resolve; });
+      let release!: () => void;
+      const gate = new Promise<void>(resolve => { release = resolve; });
+      port.downloadUrl = async fileId => { reached(); await gate; return `https://files.example/${fileId}`; };
+      const task = createCardImageUploader(port).upload(photo(512), vi.fn());
+      const outcome = task.done.then(() => 'resolved', error => (error as { kind?: string }).kind);
+      // The session waits before each check that the service has settled the upload.
+      await vi.advanceTimersByTimeAsync(2_000);
+      await asked;
+
+      task.cancel();
+      release();
+
+      expect(await outcome).toBe('canceled');
+      expect((await port.list()).usage).toEqual({ usedBytes: 0, reservedBytes: 0, fileCount: 0 });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe('paging through the file list', () => {
   const file = (id: string): FileSummary => ({
     id, name: `${id}.pdf`, kind: 'pdf', contentType: 'application/pdf', purpose: 'source', courseId: null, status: 'ready',

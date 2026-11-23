@@ -96,6 +96,15 @@ export const createUploadSession = (options: UploadSessionOptions): UploadSessio
     );
   };
 
+  /** What the learner sees once the service has settled an upload: the file, or why it refused it. */
+  const settledState = (selection: UploadSelection, file: FileSummary): UploadState => (
+    file.status === 'rejected'
+      ? file.rejectionReason === 'quota'
+        ? { phase: 'quota-exceeded', selection }
+        : { phase: 'upload-rejected', selection, reason: file.rejectionReason ?? 'rejected' }
+      : { phase: file.status === 'partial' ? 'partial' : 'results', selection, file }
+  );
+
   const confirm = async (token: number, selection: UploadSelection, fileId: string) => {
     for (let index = 0; index < pollAttempts; index += 1) {
       // The service settles an upload only after Cloud Storage reports the stored object, which takes
@@ -105,7 +114,9 @@ export const createUploadSession = (options: UploadSessionOptions): UploadSessio
       let listing: FileListing;
       try {
         listing = await port.list();
-      } catch {
+      } catch (error) {
+        // Every further check would be refused too and spend the same budget; the stored file stays.
+        if (toFileError(error).kind === 'rate-limited') break;
         continue;
       }
       if (!current(token)) return;
@@ -114,11 +125,7 @@ export const createUploadSession = (options: UploadSessionOptions): UploadSessio
       set(!file
         // The reservation expired before the service saw the object.
         ? { phase: 'upload-incomplete', selection, sent: selection.bytes }
-        : file.status === 'rejected'
-          ? file.rejectionReason === 'quota'
-            ? { phase: 'quota-exceeded', selection }
-            : { phase: 'upload-rejected', selection, reason: file.rejectionReason ?? 'rejected' }
-          : { phase: file.status === 'partial' ? 'partial' : 'results', selection, file });
+        : settledState(selection, file));
       // The listing that settled the upload is the host's next listing too.
       options.onChanged?.(listing);
       return;
@@ -147,7 +154,14 @@ export const createUploadSession = (options: UploadSessionOptions): UploadSessio
       else set({ phase: 'upload-rejected', selection, reason: failure.kind });
       return;
     }
-    if (!current(token)) return;
+    if (!current(token)) {
+      // The attempt was canceled or replaced while the service reserved space for it.
+      void port.remove(prepared.fileId).then(
+        usage => options.onChanged?.(listing => ({ ...listing, usage, files: listing.files.filter(file => file.id !== prepared.fileId) })),
+        () => undefined,
+      );
+      return;
+    }
     reservedFileId = prepared.fileId;
     // The service now holds the bytes in reserve; the record itself is listed once it settles.
     options.onChanged?.(listing => ({
@@ -251,15 +265,46 @@ export const createUploadSession = (options: UploadSessionOptions): UploadSessio
       await send(pending.selection);
     },
     cancel() {
-      if (state.phase !== 'uploading') return;
-      if (transfer) transfer.cancel();
+      if (state.phase === 'uploading') {
+        if (transfer) transfer.cancel();
+      } else if (state.phase === 'validating') {
+        // Whatever is still resizing or reserving space is ignored when it answers; a reservation
+        // made in the meantime is given back there.
+        attempt += 1;
+        set(pending && state.check === 'plan' ? { phase: 'canceled', selection: pending.selection, sent: 0 } : { phase: 'select', kind: null });
+      } else if (state.phase === 'processing') {
+        attempt += 1;
+        // The bytes are stored and counted; a canceled upload must not leave them behind.
+        reservedFileId = unconfirmedFileId;
+        unconfirmedFileId = null;
+        releaseReservation();
+        set({ phase: 'canceled', selection: state.selection, sent: state.selection.bytes });
+      }
     },
     async retry() {
       if (state.phase !== 'canceled' && state.phase !== 'retry' && state.phase !== 'upload-incomplete') return;
       const { selection } = state;
       if (state.phase === 'upload-incomplete' && unconfirmedFileId) {
+        // The service may well have stored the file and only the confirmation failed (a refused
+        // listing, for one), so look before replacing it; a file that cannot be checked is kept.
+        const fileId = unconfirmedFileId;
+        const token = attempt;
+        let listing: FileListing;
+        try {
+          listing = await port.list();
+        } catch {
+          return;
+        }
+        if (!current(token) || state.phase !== 'upload-incomplete' || unconfirmedFileId !== fileId) return;
+        const file = listing.files.find(candidate => candidate.id === fileId);
+        if (file && file.status !== 'uploading') {
+          unconfirmedFileId = null;
+          set(settledState(selection, file));
+          options.onChanged?.(listing);
+          return;
+        }
         // A new attempt replaces the unconfirmed one, so it cannot be stored twice.
-        reservedFileId = unconfirmedFileId;
+        reservedFileId = fileId;
         releaseReservation();
       }
       unconfirmedFileId = null;
