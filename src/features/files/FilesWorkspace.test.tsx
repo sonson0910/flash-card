@@ -127,6 +127,17 @@ describe('FilesWorkspaceView', () => {
     expect(html).toContain('4 MB of 100 MB used');
   });
 
+  it('names the archived course of a stored file without offering it as an attach target', () => {
+    const courses = [{ id: 'course-en', label: 'English' }, { id: 'course-ko', label: 'Korean', archived: true }];
+    const file = stored({ name: 'hangul.pdf', courseId: 'course-ko' });
+    const shelf = render({ phase: 'select', kind: null }, { status: 'ready', listing: listing([file]) }, courses);
+    expect(shelf).toContain('PDF · Korean (archived)');
+    expect(shelf).not.toContain('PDF · No course');
+    const result = render({ phase: 'results', selection, file }, { status: 'ready', listing: listing([file]) }, courses);
+    expect(result).toContain('<option value="course-en">English</option>');
+    expect(result).not.toContain('<option value="course-ko">');
+  });
+
   it('shows the list error with a retry', () => {
     const html = render({ phase: 'select', kind: null }, { status: 'error', listing: null, error: new FileError('network') });
     expect(html).toContain('My files could not load');

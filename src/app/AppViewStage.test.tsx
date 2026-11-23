@@ -75,10 +75,11 @@ describe('AppViewStage My files', () => {
     expect(html).toContain('Open My files');
   });
 
-  it('offers the active courses, named by the language they teach, as attach targets', () => {
+  it('names every course by the language it teaches and marks the archived ones, which are not attach targets', () => {
     const courses = [course('course-ko', 'ko', 'active'), course('course-ja', 'ja', 'archived'), course('course-en', 'en', 'active')];
     expect(fileCourseOptions(courses, i18n._.bind(i18n))).toEqual([
       { id: 'course-ko', label: 'Korean' },
+      { id: 'course-ja', label: 'Japanese', archived: true },
       { id: 'course-en', label: 'English' },
     ]);
   });
