@@ -90,6 +90,25 @@ export function studiedOnLocalDay(lastReviewAt: Date, now: Date, timezone: strin
   return localDayOf(lastReviewAt, timezone) === localDayOf(now, timezone);
 }
 
+/**
+ * Whether the last verified review fell on today's study day. The study day is counted in the zone pinned
+ * for rewards, so that zone decides; the reminder zone stands in until one is pinned or when the stored
+ * value is not a usable zone. The reminder zone still owns send time, schedule days and quiet hours.
+ */
+export function studiedOnStudyDay(
+  lastReviewAt: Date, now: Date, rewardTimeZone: unknown, reminderTimeZone: string,
+): boolean {
+  if (typeof rewardTimeZone === 'string') {
+    try {
+      return studiedOnLocalDay(lastReviewAt, now, rewardTimeZone);
+    } catch (error) {
+      // A bad date fails again below; only an unusable zone falls back.
+      if (!(error instanceof InputValidationError)) throw error;
+    }
+  }
+  return studiedOnLocalDay(lastReviewAt, now, reminderTimeZone);
+}
+
 /** Exact matches choose the next occurrence in a repeated DST hour; missing times shift forward by the gap. */
 const instantForLocal = (formatter: Intl.DateTimeFormat, day: Date, minute: number, after: Date): Date | null => {
   const naive = day.getTime() + minute * MINUTE_MS;

@@ -130,6 +130,23 @@ describe('push reminder delivery', () => {
     }
   });
 
+  it('decides whether the learner studied today in the zone that sets the study day', async () => {
+    // 01:00 UTC is still the previous evening in Sao Paulo and already the next morning in Auckland.
+    const cases = [
+      { rewardTimeZone: 'America/Sao_Paulo', review: '2026-09-30T01:00:00Z', claims: true },
+      { rewardTimeZone: 'Pacific/Auckland', review: '2026-09-29T20:00:00Z', claims: false },
+      { rewardTimeZone: undefined, review: '2026-09-30T01:00:00Z', claims: false },
+      { rewardTimeZone: 'Not/AZone', review: '2026-09-30T01:00:00Z', claims: false },
+    ];
+    for (const { rewardTimeZone, review, claims } of cases) {
+      const test = harness(new Date(review));
+      test.docs.set(statsPath, { lastVerifiedReviewAt: Timestamp.fromDate(new Date(review)),
+        ...(rewardTimeZone ? { rewardTimeZone } : {}) });
+      const claim = await claimDuePushReminder(test.database, test.stateRef, now);
+      expect(claim !== null, `${rewardTimeZone} ${review}`).toBe(claims);
+    }
+  });
+
   it('does not claim or send a push when no cards are due', async () => {
     const test = harness(new Date('2026-09-29T08:00:00Z'), 0);
     const send = vi.fn(async () => 1);

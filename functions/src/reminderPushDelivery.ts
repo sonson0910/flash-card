@@ -3,7 +3,7 @@ import { Timestamp, type DocumentData, type DocumentReference, type Firestore } 
 import { AGE_RESTRICTION_DOCUMENT_ID } from './account-profile-contract.js';
 import { InputValidationError } from './inputValidation.js';
 import { disablePush } from './reminderSettingsPersistence.js';
-import { localDayOf, nextReminderAfterScheduledDay, quietHoursEndAfter, studiedOnLocalDay, type ReminderSchedule } from './reminderSchedule.js';
+import { localDayOf, nextReminderAfterScheduledDay, quietHoursEndAfter, studiedOnStudyDay, type ReminderSchedule } from './reminderSchedule.js';
 
 export type PushReminderClaim = {
   readonly ownerId: string;
@@ -116,7 +116,7 @@ export async function claimDuePushReminder(
     const claimedOnScheduledDayInOtherZone = lastClaim !== null && lastClaim.timezone !== schedule.timezone
       && localDayOf(new Date(lastClaim.claimedAt), schedule.timezone) === state.nextEligibleLocalDay;
     const studiedToday = studiedAt && state.onlyIfNotStudiedToday !== false
-      ? studiedOnLocalDay(studiedAt.toDate(), now, schedule.timezone) : false;
+      ? studiedOnStudyDay(studiedAt.toDate(), now, stats?.rewardTimeZone, schedule.timezone) : false;
     const stale = now.getTime() - eligibleAt > 60 * 60_000;
     const backoffSkip = ignored >= 3 && ignored < 7 && skipNext;
     const canSend = Boolean(studiedAt) && dueCount > 0 && !studiedToday && !stale

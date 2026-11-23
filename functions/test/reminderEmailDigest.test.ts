@@ -184,6 +184,26 @@ describe('weekly email digest', () => {
     }
   });
 
+  it('decides whether the learner studied today in the zone that sets the study day', async () => {
+    // 01:00 UTC is still the previous evening in Sao Paulo and already the next morning in Auckland.
+    const cases = [
+      { rewardTimeZone: 'America/Sao_Paulo', review: '2026-10-04T01:00:00Z', queues: true },
+      { rewardTimeZone: 'Pacific/Auckland', review: '2026-10-03T20:00:00Z', queues: false },
+      { rewardTimeZone: undefined, review: '2026-10-04T01:00:00Z', queues: false },
+      { rewardTimeZone: 'Not/AZone', review: '2026-10-04T01:00:00Z', queues: false },
+    ];
+    for (const { rewardTimeZone, review, queues } of cases) {
+      const test = harness();
+      test.docs.set('users/owner/profile/stats', {
+        lastVerifiedReviewAt: Timestamp.fromDate(new Date(review)), verifiedStreak: 4,
+        ...(rewardTimeZone ? { rewardTimeZone } : {}),
+      });
+      const queued = await enqueueWeeklyDigest(test.database, test.stateRef,
+        async () => 'learner@example.com', 'demo-lingoflash', now);
+      expect(queued, `${rewardTimeZone} ${review}`).toBe(queues);
+    }
+  });
+
   it('evaluates the tail of a due cohort larger than ten pages', async () => {
     const test = harness(0, 1_001);
     await expect(sweepDueWeeklyDigests(test.database, async () => null, 'demo-lingoflash', now))
