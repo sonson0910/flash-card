@@ -281,7 +281,7 @@ msgstr "The illustration is not a good fit"
 #. js-lingui-explicit-id
 #: src/features/cardReport/ReportCardDialog.tsx:10
 msgid "cardReport.reason.wrong-meaning"
-msgstr "The Vietnamese meaning is wrong"
+msgstr "The meaning or translation is wrong"
 
 #. js-lingui-explicit-id
 #: src/features/cardReport/ReportCardDialog.tsx:12

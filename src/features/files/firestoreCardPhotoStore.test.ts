@@ -24,6 +24,7 @@ vi.mock('../../lib/cardRepository', () => ({
 
 import { or, query, where } from 'firebase/firestore';
 import { OWN_STORAGE_BUCKETS } from '../../lib/mediaUrlPolicy';
+import { cloudPageCacheKey } from '../library/libraryStorage';
 import { fileDownloadUrlPrefixes, firestoreCardPhotoStore } from './firestoreCardPhotoStore';
 
 const db = {} as never;
@@ -71,6 +72,25 @@ describe('card photos in Firestore', () => {
       expect(where).toHaveBeenCalledWith('imageUrl', '<', `${prefix}\uf8ff`);
     }
     expect(or).toHaveBeenCalledTimes(buckets.length > 1 ? 1 : 0);
+  });
+
+  it('drops the cached library page after saving cards behind the open library, so it cannot show the old photo', async () => {
+    const stored = new Map([[cloudPageCacheKey(owner), '{"items":[]}'], ['unrelated', 'kept']]);
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => stored.get(key) ?? null,
+      setItem: (key: string, value: string) => { stored.set(key, value); },
+      removeItem: (key: string) => { stored.delete(key); },
+    });
+    try {
+      mocks.applyCardPatchIfCurrent.mockResolvedValue({ applied: true, revision: 9 });
+
+      await expect(firestoreCardPhotoStore(db, owner).clear(fileA, [{ id: 'card-ko', revision: 2 }])).resolves.toBe(true);
+
+      expect(stored.has(cloudPageCacheKey(owner))).toBe(false);
+      expect(stored.get('unrelated')).toBe('kept');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('removes the photo from each card with the card edit transaction at the revision it was read', async () => {

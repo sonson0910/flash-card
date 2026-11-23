@@ -1361,12 +1361,19 @@ export type RenameCardHeadwordRequest = {
   word: string;
   baseRevision: number;
   libraryEpoch: number;
+  /** The account the rename was prepared for; absent from a client one release old. */
+  expectedOwnerId?: string;
 };
 
 export const parseRenameCardHeadwordRequest = (value: unknown): RenameCardHeadwordRequest => {
   const source = asRecord(value, 'Card headword rename request must be an object.');
-  if (Object.keys(source).some(key => !new Set(['cardId', 'word', 'baseRevision', 'libraryEpoch']).has(key))) {
+  if (Object.keys(source).some(key => !new Set(['cardId', 'word', 'baseRevision', 'libraryEpoch', 'expectedOwnerId']).has(key))) {
     throw new InputValidationError('Card headword rename request contains an unsupported field.');
+  }
+  const expectedOwnerId = source.expectedOwnerId;
+  if (expectedOwnerId !== undefined && (typeof expectedOwnerId !== 'string' || expectedOwnerId.length < 1
+    || expectedOwnerId.length > 128 || expectedOwnerId.includes('/'))) {
+    throw new InputValidationError('Card headword rename expectedOwnerId is invalid.');
   }
   const cardId = requiredText(source.cardId, 'cardId', 128);
   if (!/^[a-zA-Z0-9_-]+$/.test(cardId)) {
@@ -1377,6 +1384,7 @@ export const parseRenameCardHeadwordRequest = (value: unknown): RenameCardHeadwo
     word: requiredText(source.word, 'word', 256),
     baseRevision: nonNegativeInteger(source.baseRevision, 'baseRevision', 0),
     libraryEpoch: nonNegativeInteger(source.libraryEpoch, 'libraryEpoch', 0),
+    ...(expectedOwnerId === undefined ? {} : { expectedOwnerId }),
   };
 };
 

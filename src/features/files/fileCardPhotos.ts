@@ -57,3 +57,22 @@ export const createFileCardPhotos = (store: FileCardPhotoStore, loaded: LoadedCa
     };
   },
 });
+
+/**
+ * Takes the photo off every card before its file is deleted: the cards the confirmation counted,
+ * then a second look, because a card in another tab or on another device can have gained the photo
+ * while the confirmation was open. A lookup that failed or never ran is made now, and needs no
+ * second look. Rejects when a card could not be saved, so the file is kept.
+ */
+export const clearFileCardPhotos = async (
+  photos: FileCardPhotos,
+  fileId: string,
+  counted: Promise<FileCardPhotoMatch> | undefined,
+): Promise<void> => {
+  let match: FileCardPhotoMatch | null = null;
+  if (counted) match = await counted.catch(() => null);
+  const lookedUpEarlier = match !== null;
+  match ??= await photos.find(fileId);
+  await match.clear();
+  if (lookedUpEarlier) await (await photos.find(fileId)).clear();
+};

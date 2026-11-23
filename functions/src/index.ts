@@ -1607,6 +1607,9 @@ export const renameCardHeadword = onCall({
 }, async request => {
   const userId = await requireProfiledUser(request.auth);
   const input = parseOrInvalidArgument(() => parseRenameCardHeadwordRequest(request.data));
+  if (input.expectedOwnerId !== undefined && input.expectedOwnerId !== userId) {
+    throw new HttpsError('permission-denied', 'The library account changed.');
+  }
   await consumeBudget(userId, 'card-headword-rename', MAX_CARD_HEADWORD_RENAMES_PER_HOUR,
     'Card rename limit reached. Try again later.');
   try {

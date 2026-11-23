@@ -281,7 +281,7 @@ msgstr "Hình minh họa chưa phù hợp"
 #. js-lingui-explicit-id
 #: src/features/cardReport/ReportCardDialog.tsx:10
 msgid "cardReport.reason.wrong-meaning"
-msgstr "Nghĩa tiếng Việt chưa đúng"
+msgstr "Nghĩa hoặc bản dịch chưa đúng"
 
 #. js-lingui-explicit-id
 #: src/features/cardReport/ReportCardDialog.tsx:12

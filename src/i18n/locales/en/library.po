@@ -2888,3 +2888,8 @@ msgstr "across {count, plural, one {# deck} other {# decks}}"
 msgctxt "library.edit-card.discard"
 msgid "Discard"
 msgstr "Discard"
+
+#: src/features/library/LibraryTools.tsx:198
+msgctxt "library.import.failure-limited"
+msgid "Your AI card allowance does not cover more generated cards right now."
+msgstr "Your AI card allowance does not cover more generated cards right now."

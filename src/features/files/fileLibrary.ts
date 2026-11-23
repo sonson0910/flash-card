@@ -104,12 +104,15 @@ export const startCardImageUpload = (
 ): CardImageUploadTask => {
   let limits: FileListing['limits'] | null = null;
   const session = createUploadSession({ port, limits: () => limits, purpose: 'card-image' });
+  // Canceling works in every step: the session ends the ones it is in, and this stops the ones before it.
+  let canceled = false;
   const done = (async () => {
     try {
       limits = (await port.list()).limits;
     } catch (error) {
       throw toFileError(error);
     }
+    if (canceled) throw new FileError('canceled');
     const unsubscribe = session.subscribe(() => {
       const state = session.getState();
       if (state.phase === 'uploading') onProgress(state.selection.bytes > 0 ? state.sent / state.selection.bytes : null);
@@ -121,7 +124,17 @@ export const startCardImageUpload = (
       unsubscribe();
     }
     const state = session.getState();
-    if (state.phase === 'results' || state.phase === 'partial') return port.downloadUrl(state.file.id);
+    if (state.phase === 'results' || state.phase === 'partial') {
+      const fileId = state.file.id;
+      const url = canceled ? null : await port.downloadUrl(fileId);
+      if (canceled || url === null) {
+        // Canceled after the file was stored: it is of no use to anyone, and it counts against the allowance.
+        await port.remove(fileId).catch(() => undefined);
+        throw new FileError('canceled');
+      }
+      return url;
+    }
+    if (canceled) throw new FileError('canceled');
     if (state.phase === 'quota-exceeded') throw new FileError('quota');
     if (state.phase === 'rejected') throw new FileError(state.check === 'type' ? 'type' : state.check === 'size' ? 'size' : 'unavailable');
     if (state.phase === 'upload-rejected') {
@@ -135,6 +148,7 @@ export const startCardImageUpload = (
   return {
     done,
     cancel: () => {
+      canceled = true;
       session.cancel();
     },
   };

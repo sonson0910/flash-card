@@ -814,6 +814,20 @@ describe('EditCardDialog', () => {
       expect(findByProp(view.tree, 'role')).toBeNull();
     });
 
+    it('renames for the account the editor was opened for, even when another account is signed in by the time of the save', async () => {
+      cardRepositoryMocks.renameCardHeadword.mockResolvedValueOnce({ ...card, word: 'guide', normalizedWord: 'guide', revision: 2 });
+      let view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+      (findByProp(view.tree, 'data-edit-word-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'guide' } },
+      );
+      firebaseMocks.auth.currentUser = { uid: 'user-2' };
+      view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
+
+      await (findByProp(view.tree, 'data-edit-word-save')!.props.onClick as () => Promise<void>)();
+
+      expect(cardRepositoryMocks.renameCardHeadword).toHaveBeenCalledWith('user-1', 'card-1', 'guide', 0, 0);
+    });
+
     it('surfaces a duplicate-word message when another card already uses the requested word', async () => {
       cardRepositoryMocks.renameCardHeadword.mockRejectedValueOnce(new MockCardHeadwordRenameError('duplicate-word'));
       let view = render({ card, open: true, onOpenChange: vi.fn(), onSave: vi.fn() });
@@ -914,6 +928,65 @@ describe('EditCardDialog', () => {
 
       expect(onSave).toHaveBeenCalledWith('card-1', { category: 'Business' });
       expect(cardRepositoryMocks.applyCategoryDeltas).not.toHaveBeenCalled();
+    });
+
+    it('does not mirror a save that changed nothing because the live card already has the requested category', async () => {
+      // Another device already moved the card to "Business" and mirrored that; this device opened it in "Nature".
+      const onSave = vi.fn(async (): Promise<LearningStateOutcome> => ({ status: 'noop' }));
+      let view = render({ card: { ...card, category: 'Nature' }, open: true, onOpenChange: vi.fn(), onSave });
+      (findByProp(view.tree, 'data-edit-category-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'Business' } },
+      );
+      view = render({ card: { ...card, category: 'Nature' }, open: true, onOpenChange: vi.fn(), onSave });
+
+      await view.submit({ preventDefault: vi.fn() });
+
+      expect(onSave).toHaveBeenCalledWith('card-1', { category: 'Business' });
+      expect(cardRepositoryMocks.applyCategoryDeltas).not.toHaveBeenCalled();
+    });
+
+    it('moves the count away from the category the live card had, not the one the editor opened with', async () => {
+      const onSave = vi.fn(async (): Promise<LearningStateOutcome> =>
+        ({ status: 'published', result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } }));
+      let view = render({ card: { ...card, category: 'Nature' }, open: true, onOpenChange: vi.fn(), onSave });
+      (findByProp(view.tree, 'data-edit-category-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'Science' } },
+      );
+      // Another device moved the card to "Business" while the editor stayed open.
+      view = render({ card: { ...card, category: 'Business' }, open: true, onOpenChange: vi.fn(), onSave });
+
+      await view.submit({ preventDefault: vi.fn() });
+
+      expect(onSave).toHaveBeenCalledWith('card-1', { category: 'Science' });
+      expect(cardRepositoryMocks.applyCategoryDeltas).toHaveBeenCalledWith(
+        {},
+        'user-1',
+        { Business: -1, Science: 1 },
+        'card-edit:card-1:0:category-edit',
+      );
+    });
+
+    it('moves the count away from the category the save replaced when the card prop is the snapshot the editor opened with', async () => {
+      // The library keeps the card it was opened from; another device moved it to "Business" meanwhile.
+      const onSave = vi.fn(async (): Promise<LearningStateOutcome> => ({
+        status: 'published',
+        result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } },
+        replaced: { ...card, category: 'Business' },
+      }));
+      let view = render({ card: { ...card, category: 'Nature' }, open: true, onOpenChange: vi.fn(), onSave });
+      (findByProp(view.tree, 'data-edit-category-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'Science' } },
+      );
+      view = render({ card: { ...card, category: 'Nature' }, open: true, onOpenChange: vi.fn(), onSave });
+
+      await view.submit({ preventDefault: vi.fn() });
+
+      expect(cardRepositoryMocks.applyCategoryDeltas).toHaveBeenCalledWith(
+        {},
+        'user-1',
+        { Business: -1, Science: 1 },
+        'card-edit:card-1:0:category-edit',
+      );
     });
 
     it('never fires a facets delta call when the category is untouched', async () => {
@@ -1039,6 +1112,26 @@ describe('EditCardDialog', () => {
       expect(held.cancel).toHaveBeenCalled();
       expect(findByProp(view.tree, 'role')).toBeNull();
       expect(findAllByType(view.tree, 'img').some(image => image.props?.src === 'https://images.pexels.com/old.jpg')).toBe(true);
+    });
+
+    it('does not put a photo on the draft that finished after the learner pressed Cancel', async () => {
+      // A task whose cancel does not reject at once, as when the service is still settling the file.
+      let finish!: (url: string) => void;
+      const cancel = vi.fn();
+      const uploader = { upload: vi.fn(() => ({ done: new Promise<string>(resolve => { finish = resolve; }), cancel })) };
+      const props = { card, open: true, onOpenChange: vi.fn(), onSave: vi.fn(), imageUpload: uploader };
+      pick(render(props).tree);
+      (findByProp(render(props).tree, 'data-edit-image-upload-cancel')!.props.onClick as () => void)();
+
+      expect(cancel).toHaveBeenCalledTimes(1);
+      const afterCancel = render(props);
+      expect(findByProp(afterCancel.tree, 'data-edit-image-upload-cancel')).toBeNull();
+
+      finish('https://firebasestorage.googleapis.com/v0/b/demo/o/photo.webp?alt=media&token=t');
+      await flush();
+      const view = render(props);
+      expect(findAllByType(view.tree, 'img').some(image => String(image.props?.src).startsWith('https://firebasestorage.googleapis.com/'))).toBe(false);
+      expect(findByProp(view.tree, 'data-edit-image-remove')).toBeNull();
     });
 
     it('explains a full storage allowance without offering a plan', async () => {

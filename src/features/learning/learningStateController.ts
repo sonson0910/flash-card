@@ -116,7 +116,8 @@ export interface LearningStateSnapshotsPort {
 }
 
 export type LearningStateOutcome =
-  | { status: 'published'; result: LearningStateMutationResult }
+  /** `replaced` is the card a field patch was planned against: what the edit changed from. */
+  | { status: 'published'; result: LearningStateMutationResult; replaced?: CardData }
   | { status: 'review-conflict'; result: LearningStateMutationResult }
   | { status: 'undo-conflict'; result: LearningStateMutationResult }
   | { status: 'noop' }
@@ -256,6 +257,7 @@ export function createLearningStateController({
         }
       }
 
+      const replaced = plan.operation === 'patch' && plan.intent === 'patch' ? port.findCard(plan.cardId) : undefined;
       let result = await port.persist(plan);
       if (result.ownerKey !== ownerKey || result.operationId !== normalizedOperationId) {
         throw new Error('Learning state persistence returned a result for a different owner or operation.');
@@ -340,7 +342,7 @@ export function createLearningStateController({
       snapshots.library.apply(result.publication);
       snapshots.practice.apply(result.publication);
       if (plan.operation === 'review') reviewPlans.delete(operationKey);
-      return { status: 'published', result };
+      return replaced ? { status: 'published', result, replaced } : { status: 'published', result };
     };
 
     const promise = run()

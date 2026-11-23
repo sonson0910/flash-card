@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { FileLimits } from './fileModel';
 import { FileError, type UploadTransfer } from './filePort';
+import type { ResizedImage } from './imageResize';
 import { createMemoryFilePort, type MemoryFilePortOptions } from './memoryFileAdapter';
 import { createUploadSession, type UploadSessionOptions } from './uploadSession';
 
@@ -302,6 +303,87 @@ describe('upload session', () => {
     const { files, usage } = await port.list();
     expect(files).toHaveLength(1);
     expect(usage).toEqual({ usedBytes: 300, reservedBytes: 0, fileCount: 1 });
+  });
+
+  it('stops confirming when the listing is rate limited, and retry keeps the file the service stored', async () => {
+    const { port, session } = setup({}, { pollAttempts: 5 });
+    const realList = port.list.bind(port);
+    let refuse = true;
+    const list = vi.fn(async () => {
+      if (refuse) throw new FileError('rate-limited');
+      return realList();
+    });
+    port.list = list;
+    const remove = vi.spyOn(port, 'remove');
+
+    await session.choose(named('reading.pdf', 'application/pdf', 300));
+
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(session.getState().phase).toBe('upload-incomplete');
+    const [stored] = (await realList()).files;
+    expect(stored).toMatchObject({ status: 'ready' });
+
+    await session.retry();
+    expect(remove).not.toHaveBeenCalled();
+    expect(session.getState().phase).toBe('upload-incomplete');
+
+    refuse = false;
+    await session.retry();
+    expect(remove).not.toHaveBeenCalled();
+    expect(session.getState()).toMatchObject({ phase: 'results', file: { id: stored!.id } });
+    expect((await realList()).files).toHaveLength(1);
+  });
+
+  it('cancels a photo while the service is settling it, and gives the stored file back', async () => {
+    const { port, session } = setup({ finalize: () => ({ status: 'pending' }) }, { wait: () => new Promise<void>(() => undefined) });
+    const done = session.choose(named('reading.pdf', 'application/pdf', 300));
+    await flush();
+    expect(session.getState().phase).toBe('processing');
+    expect((await port.list()).files).toHaveLength(1);
+
+    session.cancel();
+    await flush();
+
+    expect(session.getState()).toMatchObject({ phase: 'canceled' });
+    expect((await port.list()).usage).toEqual({ usedBytes: 0, reservedBytes: 0, fileCount: 0 });
+    void done;
+  });
+
+  it('cancels while the service is reserving space, and gives the reservation back once it answers', async () => {
+    const { port, session } = setup();
+    const prepare = port.prepare.bind(port);
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    port.prepare = async input => { await gate; return prepare(input); };
+    const done = session.choose(named('reading.pdf', 'application/pdf', 300));
+    await flush();
+    expect(session.getState().phase).toBe('validating');
+
+    session.cancel();
+    release();
+    await done;
+    await flush();
+
+    expect(session.getState().phase).not.toBe('uploading');
+    expect((await port.list()).usage).toEqual({ usedBytes: 0, reservedBytes: 0, fileCount: 0 });
+  });
+
+  it('cancels while an image is being resized, and never reserves space', async () => {
+    let finishResize!: () => void;
+    const resize = vi.fn((blob: Blob) => new Promise<ResizedImage>(resolve => {
+      finishResize = () => resolve({ blob, contentType: 'image/webp', width: 10, height: 10 });
+    }));
+    const { port, session } = setup({}, { resize });
+    const prepare = vi.spyOn(port, 'prepare');
+    const done = session.choose(named('photo.png', 'image/png', 300));
+    await flush();
+
+    session.cancel();
+    finishResize();
+    await done;
+
+    expect(prepare).not.toHaveBeenCalled();
+    expect(session.getState().phase).toBe('select');
   });
 
   it('resizes images before sending and keeps the encoded type in the name', async () => {

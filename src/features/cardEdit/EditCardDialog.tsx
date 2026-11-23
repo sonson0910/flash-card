@@ -144,6 +144,8 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
   const [imageUploadProgress, setImageUploadProgress] = useState<number | null | undefined>(undefined);
   const [imageUploadFailure, setImageUploadFailure] = useState<ImageUploadFailure | null>(null);
   const imageUploadTaskRef = useRef<{ cancel(): void } | null>(null);
+  // The account the sheet was opened for; a headword rename is made for it, never for whoever is signed in later.
+  const openedOwnerIdRef = useRef(cardEditOwnerId());
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const firstFieldRef = useRef<HTMLTextAreaElement | null>(null);
   const wasOpenRef = useRef(open);
@@ -158,6 +160,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
     const cardChanged = cardIdRef.current !== card.id;
     if (reopened || cardChanged) {
       setOpenedCard(card);
+      openedOwnerIdRef.current = cardEditOwnerId();
       setDraft(createEditCardDraft(card));
       setError(null);
       setConfirmation(null);
@@ -246,7 +249,7 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
     setRenamingWord(true);
     setWordError(null);
     try {
-      const renamed = await renameOwnCardHeadword(openedCard, nextWord);
+      const renamed = await renameOwnCardHeadword(openedCard, nextWord, openedOwnerIdRef.current);
       setOpenedCard(renamed);
       setWordDraft(renamed.word);
       return renamed;
@@ -324,8 +327,13 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
     }
   };
 
+  // Whatever step the upload is in, Cancel ends it now: the task is let go before it answers, so a
+  // photo that finishes anyway is never put on the draft.
   const cancelImageUpload = () => {
-    imageUploadTaskRef.current?.cancel();
+    const task = imageUploadTaskRef.current;
+    imageUploadTaskRef.current = null;
+    setImageUploadProgress(undefined);
+    task?.cancel();
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -348,10 +356,13 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
     const ownerId = cardEditOwnerId();
     try {
       let cardToSave = openedCard;
+      // The category the card has now; the opened snapshot can be older than a change made elsewhere.
+      let liveCard = card;
       if (wordDirty) {
         const renamed = await saveWord(true);
         if (!renamed) return;
         cardToSave = renamed;
+        liveCard = renamed;
         patch = editCardPatch(cardToSave, draft, patchOptions);
       }
       if (Object.keys(patch).length === 0) {
@@ -363,9 +374,12 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
         setError('save-failed');
         return;
       }
-      // The facets mirror must never gate the save the learner is waiting on.
-      if (Object.prototype.hasOwnProperty.call(patch, 'category')) {
-        mirrorCardCategoryEdit(cardToSave, patch.category as string, ownerId);
+      // The facets mirror must never gate the save the learner is waiting on. A save that changed
+      // nothing means the card already had the category, so its count was moved by whoever changed it.
+      if (outcome?.status !== 'noop' && Object.prototype.hasOwnProperty.call(patch, 'category')) {
+        // The card the save replaced is the live one; the prop can be the snapshot the library opened the editor from.
+        const replaced = outcome?.status === 'published' ? outcome.replaced : undefined;
+        mirrorCardCategoryEdit(replaced ?? liveCard, patch.category as string, ownerId);
       }
       closeSheet(true);
     } catch {

@@ -2196,21 +2196,26 @@ export async function renameCardHeadword(
 ): Promise<CardData> {
   return runProtectedFunction(protectedFunctionsCapability, 'Card headword rename', async () => {
     if (!firebaseApp) throw new Error('Firebase is not initialized.');
-    if (auth?.currentUser?.uid !== userId) {
-      throw new ProtectedFunctionError({
-        message: 'Card headword rename stopped because the active account changed. Retry after sign-in settles.',
-        kind: 'authentication',
-        code: 'owner-mismatch',
-        retryable: false,
-      });
-    }
+    // The rename acts on whoever is signed in; one prepared for another account must never run as them.
+    const assertActiveOwner = () => {
+      if (auth?.currentUser?.uid !== userId) {
+        throw new ProtectedFunctionError({
+          message: 'Card headword rename stopped because the active account changed. Retry after sign-in settles.',
+          kind: 'authentication',
+          code: 'owner-mismatch',
+          retryable: false,
+        });
+      }
+    };
+    assertActiveOwner();
     const { httpsCallable } = await import('firebase/functions');
     const callable = httpsCallable<
-      { cardId: string; word: string; baseRevision: number; libraryEpoch: number },
+      { cardId: string; word: string; baseRevision: number; libraryEpoch: number; expectedOwnerId: string },
       unknown
     >(await getSonFlashFunctions(firebaseApp), 'renameCardHeadword');
+    assertActiveOwner();
     try {
-      const response = await callable({ cardId, word, baseRevision, libraryEpoch });
+      const response = await callable({ cardId, word, baseRevision, libraryEpoch, expectedOwnerId: userId });
       return parseHeadwordRenameResponse(response.data, cardId);
     } catch (error) {
       const reason = readHeadwordRenameReason(error);
