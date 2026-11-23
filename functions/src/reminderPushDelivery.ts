@@ -1,6 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { Timestamp, type DocumentReference, type Firestore } from 'firebase-admin/firestore';
+import { AGE_RESTRICTION_DOCUMENT_ID } from './account-profile-contract.js';
 import { InputValidationError } from './inputValidation.js';
+import { disablePush } from './reminderSettingsPersistence.js';
 import { nextReminderAfterScheduledDay, quietHoursEndAfter, studiedOnLocalDay, type ReminderSchedule } from './reminderSchedule.js';
 
 export type PushReminderClaim = {
@@ -100,6 +102,11 @@ export async function claimDuePushReminder(
     const backoffSkip = ignored >= 3 && ignored < 7 && skipNext;
     const canSend = Boolean(studiedAt) && dueCount > 0 && !studiedToday && !stale
       && ignored < 7 && !backoffSkip && !duplicate;
+    // Read only when a send is otherwise due. A restricted account keeps no push schedule.
+    if (canSend && (await transaction.get(owner.collection('profile').doc(AGE_RESTRICTION_DOCUMENT_ID))).exists) {
+      disablePush(transaction, stateRef, now);
+      return null;
+    }
     const tokenSnapshot = canSend ? await transaction.get(owner.collection('pushTokens').limit(20)) : null;
     const tokenCandidates = tokenSnapshot?.docs.flatMap(doc => {
       const token = doc.data().token;

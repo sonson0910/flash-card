@@ -48,8 +48,10 @@ const snapshot = (data?: DocumentData): DocumentSnapshot => ({
 const harness = (initial: Record<string, DocumentData> = {}) => {
   const values = new Map<string, DocumentData>(Object.entries(initial));
   const writes: Array<{ path: string; data: DocumentData }> = [];
+  const updates: Array<{ path: string; data: DocumentData }> = [];
   const transaction = {
-    get: vi.fn(async (reference: DocumentReference) => snapshot(values.get(reference.path))),
+    get: vi.fn(async (reference: DocumentReference | { query: string }) => 'query' in reference
+      ? { docs: [] } : snapshot(values.get(reference.path))),
     create: vi.fn((reference: DocumentReference, data: DocumentData) => {
       if (values.has(reference.path)) throw new Error('already exists');
       values.set(reference.path, data);
@@ -57,19 +59,24 @@ const harness = (initial: Record<string, DocumentData> = {}) => {
       return transaction;
     }),
     set: vi.fn(() => { throw new Error('the account profile is only ever created'); }),
-    update: vi.fn(() => { throw new Error('the account profile is never updated'); }),
+    update: vi.fn((reference: DocumentReference, data: DocumentData) => {
+      if (!reference.path.endsWith('/reminderState/current')) throw new Error('the account profile is never updated');
+      updates.push({ path: reference.path, data });
+      return transaction;
+    }),
   } as unknown as Transaction;
   const database = {
     collection: (name: string) => ({
       doc: (ownerId: string) => ({
         collection: (subcollection: string) => ({
           doc: (id: string) => ({ path: `${name}/${ownerId}/${subcollection}/${id}` }),
+          limit: () => ({ query: `${name}/${ownerId}/${subcollection}` }),
         }),
       }),
     }),
     runTransaction: vi.fn(async (callback: (value: Transaction) => Promise<unknown>) => callback(transaction)),
   } as unknown as Firestore;
-  return { database, values, writes };
+  return { database, values, writes, updates };
 };
 
 describe('account profile request contract', () => {
@@ -193,6 +200,27 @@ describe('account profile completion', () => {
       .resolves.toEqual({ status: 'restricted', restrictedAt: '2026-11-19T08:30:00.000Z' });
     expect(writes).toEqual([{ path: markerPath, data: { restrictedAt: '2026-11-19T08:30:00.000Z' } }]);
     expect(JSON.stringify(writes)).not.toContain('2010');
+  });
+
+  it('turns off the reminder channels a restricted account already had on', async () => {
+    const statePath = 'users/owner/reminderState/current';
+    const { database, writes, updates } = harness({ [statePath]: { channels: { push: true, emailDigest: true } } });
+    const request = parseCompleteAccountProfileRequest(validRequest({ birthYear: 2010 }));
+
+    await completeAccountProfile(database, 'owner', request, clock);
+    expect(writes.map(write => write.path)).toEqual([markerPath]);
+    expect(updates).toEqual([{ path: statePath, data: expect.objectContaining({
+      'channels.push': false, 'channels.emailDigest': false,
+      nextEligibleSendAt: null, nextWeeklyDigestAt: null,
+    }) }]);
+  });
+
+  it('keeps the reminder channels as they are when an adult completes the profile', async () => {
+    const statePath = 'users/owner/reminderState/current';
+    const { database, updates } = harness({ [statePath]: { channels: { push: true, emailDigest: true } } });
+
+    await completeAccountProfile(database, 'owner', parseCompleteAccountProfileRequest(validRequest()), clock);
+    expect(updates).toEqual([]);
   });
 
   it('keeps a restricted account restricted when a later call sends an adult year', async () => {

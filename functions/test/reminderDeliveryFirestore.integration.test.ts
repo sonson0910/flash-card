@@ -2,6 +2,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { getFirestore, Query, Timestamp, Transaction, type Firestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from '../src/account-profile-contract.js';
+import { completeAccountProfile } from '../src/account-profile-persistence.js';
 import { sweepDueWeeklyDigests } from '../src/reminderEmailDigest.js';
 import { sweepDuePushReminders } from '../src/reminderPushDelivery.js';
 import { endPushSessionForOwner, revokePushTokenForOwner, updateReminderSettingsForOwner } from '../src/reminderSettingsPersistence.js';
@@ -299,5 +301,69 @@ describeWithEmulator('reminder delivery in Firestore', () => {
       await database.recursiveDelete(owner);
       await registryRef.delete();
     }
+  });
+
+  describe('an account under the age rule', () => {
+    const seedReminders = async (uid: string, token: string) => {
+      const owner = database.collection('users').doc(uid);
+      await owner.collection('profile').doc('stats').set({
+        lastVerifiedReviewAt: new Date('2026-10-02T08:00:00.000Z'), verifiedStreak: 4,
+      });
+      await owner.collection('cards').doc('card-1').set({ nextReviewDate: '2026-10-01T00:00:00.000Z' });
+      await updateReminderSettingsForOwner(database, uid, {
+        days: [0], sendAtLocal: '08:00', timezone: 'UTC', locale: 'en', quietHours: null,
+        onlyIfNotStudiedToday: true, channels: { push: true, emailDigest: true }, pushToken: token,
+      }, new Date('2026-10-02T08:00:00.000Z'));
+      return owner;
+    };
+    const dueAt = new Date('2026-10-04T08:01:00.000Z');
+    const expectNoOutreach = async (uid: string) => {
+      const owner = database.collection('users').doc(uid);
+      const send = vi.fn(async () => 1);
+      expect(await sweepDuePushReminders(database, send, dueAt)).toEqual({ claimed: 0, sent: 0 });
+      const email = vi.fn(async () => 'learner@example.test');
+      expect(await sweepDueWeeklyDigests(database, email, 'demo-lingoflash', dueAt)).toBe(0);
+      expect(send).not.toHaveBeenCalled();
+      expect((await database.collection('mail').doc(`${uid}_2026-10-04_emailDigest`).get()).exists).toBe(false);
+      expect((await owner.collection('reminderReceipts').get()).empty).toBe(true);
+      expect((await owner.collection('reminderState').doc('current').get()).data()).toMatchObject({
+        channels: { push: false, emailDigest: false },
+        nextEligibleSendAt: null, nextEligibleLocalDay: null,
+        nextWeeklyDigestAt: null, nextWeeklyDigestLocalDay: null,
+      });
+    };
+
+    it('turns both reminder channels off when the profile step restricts a learner who had them on', async () => {
+      const uid = `reminder-restricted-${randomUUID()}`;
+      const token = 'f'.repeat(64);
+      const registryRef = database.collection('pushTokenOwners').doc(createHash('sha256').update(token).digest('hex'));
+      try {
+        const owner = await seedReminders(uid, token);
+        await expect(completeAccountProfile(database, uid, {
+          ownerId: uid, birthYear: 2014, uiLocale: 'en', nativeLanguage: 'vi',
+          consent: { accepted: true, termsVersion: CURRENT_TERMS_VERSION, privacyVersion: CURRENT_PRIVACY_VERSION },
+        } as never, () => new Date('2026-10-03T09:00:00.000Z'))).resolves.toMatchObject({ status: 'restricted' });
+        await expectNoOutreach(uid);
+        expect((await owner.collection('pushTokens').get()).empty).toBe(true);
+        expect((await registryRef.get()).exists).toBe(false);
+      } finally {
+        await database.recursiveDelete(database.collection('users').doc(uid));
+        await registryRef.delete();
+      }
+    });
+
+    it('sends nothing and clears the schedules for a restriction recorded before reminders were checked', async () => {
+      const uid = `reminder-restricted-marker-${randomUUID()}`;
+      const token = '1'.repeat(64);
+      const registryRef = database.collection('pushTokenOwners').doc(createHash('sha256').update(token).digest('hex'));
+      try {
+        const owner = await seedReminders(uid, token);
+        await owner.collection('profile').doc('age_restriction').set({ restrictedAt: '2026-10-03T09:00:00.000Z' });
+        await expectNoOutreach(uid);
+      } finally {
+        await database.recursiveDelete(database.collection('users').doc(uid));
+        await registryRef.delete();
+      }
+    });
   });
 });
