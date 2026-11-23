@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import {
   deriveCatalogReleaseId,
+  fingerprintCatalogApproval,
   fingerprintCatalogReviewContent,
   fingerprintCatalogSourceBundle,
 } from '../src/features/catalogPipeline/catalogBuilder';
@@ -103,7 +104,7 @@ async function main(): Promise<void> {
       previousReleaseId: null,
       reviewerAuthority: {
         reviewerId: REVIEWER_ID,
-        approvedDigest: await fingerprintCatalogSourceBundle(approved),
+        approvedDigest: await fingerprintCatalogApproval(approved, trustedAssetRegistry),
         reviewedAt: REVIEWED_AT,
       },
     }),

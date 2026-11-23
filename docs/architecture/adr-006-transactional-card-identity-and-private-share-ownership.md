@@ -99,8 +99,10 @@ exists, rejects a different requester, and treats an already-absent pair as an
 idempotent no-op.
 
 Firestore Rules deny list and all client writes for public shares, permit only a
-schema-valid unexpired current share (or the tightly shaped legacy format) to be
-read by ID, and deny all reads and writes to ownership metadata. Firestore TTL must
+schema-valid unexpired current share to be read by ID, and deny all reads and
+writes to ownership metadata. After the Rules cutover only schema 2 is readable:
+a legacy owner-free share, a transitional schema-1 share, and a blocked or
+quarantined share are all denied, so an unmigrated legacy link stops working. Firestore TTL must
 be enabled on `expiresAt` for both collection groups. Rules deny an expired current
 share even if asynchronous TTL deletion has not run yet.
 
@@ -135,8 +137,9 @@ share even if asynchronous TTL deletion has not run yet.
   long UTF-8/multi-block inputs and malicious alternate IDs, but production
   acceptance still requires the Java-backed emulator suite. Static source matching
   is not a Rules compiler/runtime result.
-- Legacy shares retain their old public `authorUid` shape until they expire or are
-  revoked; the fallback must not be extended to new shares.
+- Legacy shares retain their old public `authorUid` shape in storage until they
+  expire or are revoked, but Rules no longer serve them; the revocation fallback
+  must not be extended to new shares.
 - Operators must configure TTL for both collections. TTL is cleanup, not the access
   control; the Rules expiry comparison remains mandatory.
 

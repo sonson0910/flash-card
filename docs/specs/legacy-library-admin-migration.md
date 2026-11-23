@@ -79,6 +79,7 @@ type MigrationResult = {
 ## Rollback
 
 Disable the callable/deploy the previous Functions artifact, then dispatch protected
-`rollback` with the selected owner key and `ROLLBACK_QUERY_V2`. Restoration proceeds
+`rollback` with the selected owner key, job `query-v3` and
+`MIGRATION_CONFIRMATION=ROLLBACK_QUERY_V3` (apply needs `APPLY_QUERY_V3`). Restoration proceeds
 only when owner epoch, final card count and migrated revisions still match the recorded
 job, and none of the removed source IDs has been recreated.

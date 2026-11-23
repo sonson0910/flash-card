@@ -33,8 +33,10 @@ An independent editor must check every English sense, Vietnamese definition,
 example translation, unit title, unit assignment, and track fit. The rights
 holder must establish and record the applicable permission or license for the
 final content. After edits, the trusted catalog operator must bind review
-evidence to the exact final content digest and approve the source digest using
-its protected reviewer authority. `scripts/catalog-cli.ts` and
+evidence to the exact final content digest and record the `sourceDigest` as the
+content-approval record. The protected build input is different: provide the
+`approvalDigest` printed by `validate --rights` as `CATALOG_APPROVED_DIGEST`,
+together with the protected reviewer authority. `scripts/catalog-cli.ts` and
 `src/features/catalogPipeline/catalogBuilder.ts` enforce this gate. Any edit
 after review requires a new review. Release creation or deployment is outside
 this draft's scope.
