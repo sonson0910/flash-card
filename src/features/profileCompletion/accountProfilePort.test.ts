@@ -4,8 +4,8 @@ import { AccountProfileError, accountProfileErrorFrom, accountProfileStateFrom }
 
 const record = {
   birthYear: 1990,
-  uiLocale: 'vi',
-  nativeLanguage: 'vi',
+  uiLocale: 'vi' as const,
+  nativeLanguage: 'vi' as const,
   termsVersion: CURRENT_TERMS_VERSION,
   privacyVersion: CURRENT_PRIVACY_VERSION,
   consentAcceptedAt: '2026-11-19T08:30:00.000Z',
@@ -29,6 +29,18 @@ describe('account profile gate state', () => {
   it('treats a stored record as complete, even when it came from the offline cache', () => {
     expect(accountProfileStateFrom(absentFromCache, { exists: true, confirmed: false, data: record }))
       .toEqual({ status: 'complete', profile: record });
+  });
+
+  it('answers from the device copy only when both documents were read and the cache held neither', () => {
+    expect(accountProfileStateFrom(absentFromCache, absentFromCache, record)).toEqual({ status: 'complete', profile: record });
+    expect(accountProfileStateFrom(absentFromCache, null, record)).toBeNull();
+    expect(accountProfileStateFrom(null, absentFromCache, record)).toBeNull();
+  });
+
+  it('lets the server answer win over the device copy', () => {
+    expect(accountProfileStateFrom(absentFromServer, absentFromServer, record)).toEqual({ status: 'required' });
+    const marker = { exists: true, confirmed: false, data: { restrictedAt: '2026-11-19T08:30:00.000Z' } };
+    expect(accountProfileStateFrom(marker, absentFromCache, record)).toMatchObject({ status: 'restricted' });
   });
 
   it('lets the restriction marker win over a record', () => {

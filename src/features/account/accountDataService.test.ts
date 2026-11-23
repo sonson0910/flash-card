@@ -29,6 +29,8 @@ describe('account deletion local cleanup', () => {
       ['sonflash_progress_forecast_owner-a_ko:en', 'keep'],
       ['sonflash_progress_forecast_owner-b:en', 'keep'],
       ['lingoflash_shared_deck_operation_v1', 'private'],
+      ['sonflash_account_profile_v1_owner-a', 'private'],
+      ['sonflash_account_profile_v1_owner-b', 'keep'],
     ]);
     const session = new Map([['lingoflash_word_draft', 'private'], ['lingoflash_word_operation', 'private']]);
     const storage = {
@@ -46,6 +48,8 @@ describe('account deletion local cleanup', () => {
     expect(values.get('sonflash_progress_forecast_owner-b:en')).toBe('keep');
     expect(values.get('lingoflash_cloud_stats_owner-ab_ko')).toBe('keep');
     expect(values.has('lingoflash_shared_deck_operation_v1')).toBe(false);
+    expect(values.has('sonflash_account_profile_v1_owner-a')).toBe(false);
+    expect(values.get('sonflash_account_profile_v1_owner-b')).toBe('keep');
     expect(values.get('lingoflash_cloud_page_owner-b')).toBe('keep');
     expect(values.get(gamificationStorageKeys(null).snapshot)).toBe('anonymous');
     expect(session.size).toBe(0);

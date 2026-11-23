@@ -1,5 +1,6 @@
 import { auth, app, db, getSonFlashFunctions } from '../../lib/firebase';
 import { gamificationStorageKeys } from '../gamification/gamificationStorage';
+import { accountProfileCopyKey } from '../profileCompletion/accountProfileDeviceCopy';
 import {
   cloudBackoffCacheKey, cloudFacetsCacheKey, cloudPageCacheKey, cloudStatsCacheKey, progressEvidenceCachePrefix,
 } from '../library/libraryStorage';
@@ -31,6 +32,7 @@ export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeI
     ...Object.values(gamificationStorageKeys(uid)),
     cloudPageCacheKey(uid), cloudStatsCacheKey(uid), cloudFacetsCacheKey(uid), cloudBackoffCacheKey(uid),
     `lingoflash_library_epoch_${encodeURIComponent(uid)}`,
+    accountProfileCopyKey(uid),
   ];
   if (clearSharedState) keys.push('lingoflash_shared_deck_operation_v1');
   for (const key of keys) storage.removeItem(key);

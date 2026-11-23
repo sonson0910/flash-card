@@ -10,6 +10,7 @@ import {
   type CompleteAccountProfileRequest,
   type CompleteAccountProfileResponse,
 } from '../../../functions/src/account-profile-contract';
+import { clearAccountProfileCopy, readAccountProfileCopy, writeAccountProfileCopy } from './accountProfileDeviceCopy';
 
 export type AccountProfileState =
   | { readonly status: 'required' }
@@ -47,14 +48,19 @@ const read = (snapshot: DocumentSnapshot): DocumentRead => ({
  * Derives the gate state from the two server-written documents. A marker wins over a record, as on the
  * server. Absence only counts once the server confirmed it, so a cold cache never shows the profile step
  * to an account that already completed it, while a cached record keeps the app usable offline.
+ * `deviceCopy` is this device's own copy of a completed profile. It answers only after both documents
+ * were read and the cache held neither, which is every offline start on a browser whose Firestore cache
+ * does not outlive the page.
  */
 export const accountProfileStateFrom = (
   marker: DocumentRead | null,
   record: DocumentRead | null,
+  deviceCopy: AccountProfileRecord | null = null,
 ): AccountProfileState | null => {
   if (marker?.exists) return { status: 'restricted', restrictedAt: parseAgeRestrictionMarker(marker.data).restrictedAt };
   if (record?.exists) return { status: 'complete', profile: parseAccountProfileRecord(record.data) };
   if (marker?.confirmed && record?.confirmed) return { status: 'required' };
+  if (marker && record && deviceCopy) return { status: 'complete', profile: deviceCopy };
   return null;
 };
 
@@ -85,8 +91,12 @@ export const createFirebaseAccountProfilePort = (app: FirebaseApp, database: Fir
     const publish = () => {
       if (stopped) return;
       try {
-        const state = accountProfileStateFrom(marker, record);
-        if (state) onState(state);
+        const state = accountProfileStateFrom(marker, record, readAccountProfileCopy(ownerId));
+        if (!state) return;
+        // Only what the two documents say is remembered; an answer taken from the copy changes nothing.
+        if (state.status !== 'complete') clearAccountProfileCopy(ownerId);
+        else if (record?.exists) writeAccountProfileCopy(ownerId, state.profile);
+        onState(state);
       } catch (error) {
         onError(new AccountProfileError('read-failed', { cause: error }));
       }
