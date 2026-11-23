@@ -34,7 +34,38 @@ const ACCOUNT_DELETION_VALIDATION_CODES = new Set(['invalid-argument', 'failed-p
 const isAccountDeletionValidationError = (error: unknown): boolean =>
   ACCOUNT_DELETION_VALIDATION_CODES.has(callableErrorCode(error));
 
-export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeItem' | 'length' | 'key'>,
+const SHARED_DECK_OPERATION_KEY = 'lingoflash_shared_deck_operation_v1';
+const SHARED_DECK_LINKS_KEY = 'lingoflash_shared_deck_links_v1';
+
+const recordOwnedBy = (record: unknown, uid: string): boolean => (
+  Boolean(record) && typeof record === 'object' && (record as { ownerId?: unknown }).ownerId === uid
+);
+
+// These two stores keep records of every learner who used this device inside one key. Drop only the deleted
+// owner's records and leave the rest; a value that cannot be read as records is removed whole.
+function removeOwnerRecords(
+  storage: Pick<Storage, 'getItem' | 'removeItem' | 'setItem'>, key: string, uid: string,
+): void {
+  const raw = storage.getItem(key);
+  if (raw === null) return;
+  let next: unknown = null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const kept = parsed.filter(record => !recordOwnedBy(record, uid));
+      next = kept.length > 0 ? kept : null;
+    } else if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { operations?: unknown }).operations)) {
+      const kept = (parsed as { operations: unknown[] }).operations.filter(record => !recordOwnedBy(record, uid));
+      next = kept.length > 0 ? { ...parsed, operations: kept } : null;
+    } else if (parsed && typeof parsed === 'object' && !recordOwnedBy(parsed, uid)) {
+      next = parsed;
+    }
+  } catch { /* an unreadable value is removed below */ }
+  if (next === null) storage.removeItem(key);
+  else storage.setItem(key, JSON.stringify(next));
+}
+
+export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeItem' | 'setItem' | 'length' | 'key'>,
   session: Pick<Storage, 'removeItem'>, uid: string, clearSharedState: boolean = true): void {
   const keys = [
     ...Object.values(gamificationStorageKeys(uid)),
@@ -44,10 +75,12 @@ export function removeOwnerLocalKeys(storage: Pick<Storage, 'getItem' | 'removeI
     skillEvidenceStorageKey(uid), pushTokenKey(uid),
     onboardingDraftKey(uid), onboardingStepKey(uid), onboardingStartedKey(uid),
   ];
-  // Unlike the per-owner keys, these hold one slot for whichever learner used the device last, and the facet
-  // operation log carries no owner at all, so only a still-signed-in deleted owner may clear them.
+  // The facet operation log carries no owner at all, and the share stores below hold records of every learner on
+  // the device, so only a still-signed-in deleted owner may clear the log or touch those stores.
   if (clearSharedState) {
-    keys.push('lingoflash_shared_deck_operation_v1', 'lingoflash_library_facet_operation_times_v1', 'lingoflash_shared_deck_links_v1');
+    keys.push('lingoflash_library_facet_operation_times_v1');
+    removeOwnerRecords(storage, SHARED_DECK_OPERATION_KEY, uid);
+    removeOwnerRecords(storage, SHARED_DECK_LINKS_KEY, uid);
   }
   for (const key of keys) storage.removeItem(key);
   // The deck cache is a single slot keyed by the owner stored inside it, so another learner's slot stays.

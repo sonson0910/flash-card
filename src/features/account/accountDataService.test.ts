@@ -37,6 +37,7 @@ describe('account deletion local cleanup', () => {
     const storage = {
       getItem: (key: string) => values.get(key) ?? null,
       removeItem: (key: string) => { values.delete(key); },
+      setItem: (key: string, value: string) => { values.set(key, value); },
       get length() { return values.size; },
       key: (index: number) => [...values.keys()][index] ?? null,
     };
@@ -77,6 +78,7 @@ describe('account deletion local cleanup', () => {
     const storage = {
       getItem: (key: string) => values.get(key) ?? null,
       removeItem: (key: string) => { values.delete(key); },
+      setItem: (key: string, value: string) => { values.set(key, value); },
       get length() { return values.size; },
       key: (index: number) => [...values.keys()][index] ?? null,
     };
@@ -85,6 +87,29 @@ describe('account deletion local cleanup', () => {
       'lingoflash_skill_evidence_v4_u2', 'sonflash_onboarding_draft_v1_u2', 'sonflash_push_token_u2',
     ]);
     expect(session.size).toBe(0);
+  });
+
+  it('removes only the deleted owner\'s share links and pending share operations', () => {
+    const link = (ownerId: string, shareId: string) => ({ ownerId, shareId, expiresAt: '2099-01-01T00:00:00.000Z' });
+    const operation = (ownerId: string, opId: string) => ({ ownerId, opId, fingerprint: 'v1-abcdef01' });
+    const values = new Map<string, string>([
+      ['lingoflash_shared_deck_links_v1', JSON.stringify([link('u1', 'a'), link('u2', 'b'), link('u1', 'c')])],
+      ['lingoflash_shared_deck_operation_v1', JSON.stringify({ operations: [operation('u1', 'x'), operation('u2', 'y')] })],
+    ]);
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      removeItem: (key: string) => { values.delete(key); },
+      setItem: (key: string, value: string) => { values.set(key, value); },
+      get length() { return values.size; },
+      key: (index: number) => [...values.keys()][index] ?? null,
+    };
+    removeOwnerLocalKeys(storage, { removeItem: () => {} }, 'u1');
+    expect(JSON.parse(values.get('lingoflash_shared_deck_links_v1') ?? 'null')).toEqual([link('u2', 'b')]);
+    expect(JSON.parse(values.get('lingoflash_shared_deck_operation_v1') ?? 'null'))
+      .toEqual({ operations: [operation('u2', 'y')] });
+    removeOwnerLocalKeys(storage, { removeItem: () => {} }, 'u2');
+    expect(values.has('lingoflash_shared_deck_links_v1')).toBe(false);
+    expect(values.has('lingoflash_shared_deck_operation_v1')).toBe(false);
   });
 
   it('keeps another learner\'s deck cache and the shared slots when the deleted owner is no longer signed in', () => {
@@ -96,6 +121,7 @@ describe('account deletion local cleanup', () => {
     const storage = {
       getItem: (key: string) => values.get(key) ?? null,
       removeItem: (key: string) => { values.delete(key); },
+      setItem: (key: string, value: string) => { values.set(key, value); },
       get length() { return values.size; },
       key: (index: number) => [...values.keys()][index] ?? null,
     };
