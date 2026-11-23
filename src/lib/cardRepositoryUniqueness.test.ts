@@ -28,6 +28,7 @@ const functionsRuntime = vi.hoisted(() => ({
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn((...args: unknown[]) => ({ type: 'collection', args })),
+  deleteField: vi.fn(() => ({ type: 'deleteField' })),
   doc: vi.fn((...args: unknown[]) => ({ type: 'doc', args })),
   documentId: vi.fn(() => 'documentId'),
   endAt: vi.fn((...args: unknown[]) => ({ type: 'endAt', args })),
@@ -75,7 +76,9 @@ import {
   findCardsByNormalizedWords,
   getLegacyCardQueryMigrationProgress,
   getLibraryEpoch,
+  getLibraryState,
   incrementLibraryEpoch,
+  settleLibraryClear,
   migrateLegacyCardQueryFields,
   streamAllCardsInBatches,
 } from './cardRepository';
@@ -2506,6 +2509,31 @@ describe('library epoch', () => {
     await expect(getLibraryEpoch({} as never, 'invalid-user')).resolves.toBe(0);
   });
 
+  it('reads the generation of an unfinished clear with the epoch, ignoring an invalid marker', async () => {
+    firestore.getDoc
+      .mockResolvedValueOnce({ exists: () => true, data: () => ({ libraryEpoch: 4, clearPendingEpoch: 4 }) })
+      .mockResolvedValueOnce({ exists: () => true, data: () => ({ libraryEpoch: 4 }) })
+      .mockResolvedValueOnce({ exists: () => true, data: () => ({ libraryEpoch: 4, clearPendingEpoch: 'x' }) });
+
+    await expect(getLibraryState({} as never, 'user-1')).resolves.toEqual({ libraryEpoch: 4, clearPendingEpoch: 4 });
+    await expect(getLibraryState({} as never, 'user-1')).resolves.toEqual({ libraryEpoch: 4, clearPendingEpoch: null });
+    await expect(getLibraryState({} as never, 'user-1')).resolves.toEqual({ libraryEpoch: 4, clearPendingEpoch: null });
+  });
+
+  it('removes the pending clear marker only for the generation whose clear finished', async () => {
+    const update = vi.fn();
+    const stored = { libraryEpoch: 6, clearPendingEpoch: 6 };
+    firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
+      get: vi.fn().mockResolvedValue({ exists: () => true, data: () => stored }),
+      update,
+    }));
+
+    await settleLibraryClear({} as never, 'user-1', 5);
+    expect(update).not.toHaveBeenCalled();
+    await settleLibraryClear({} as never, 'user-1', 6);
+    expect(update).toHaveBeenCalledWith(expect.anything(), { clearPendingEpoch: { type: 'deleteField' } });
+  });
+
   it('increments the epoch atomically and returns the new generation', async () => {
     const set = vi.fn();
     firestore.runTransaction.mockImplementation(async (_db, callback) => callback({
@@ -2519,7 +2547,7 @@ describe('library epoch', () => {
     await expect(incrementLibraryEpoch({} as never, 'user-reset')).resolves.toBe(9);
     expect(set).toHaveBeenCalledWith(
       expect.anything(),
-      { libraryEpoch: 9, schemaVersion: 2 },
+      { libraryEpoch: 9, schemaVersion: 2, clearPendingEpoch: 9 },
       { merge: true },
     );
   });

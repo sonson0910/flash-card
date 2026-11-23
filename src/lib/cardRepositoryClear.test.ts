@@ -38,9 +38,11 @@ vi.mock('firebase/functions', () => functionsRuntime);
 
 import { deleteAllCards } from './cardRepository';
 
-const page = (...ids: string[]) => ({
-  empty: ids.length === 0,
-  docs: ids.map(id => ({ id, data: () => ({ word: id }) })),
+const page = (...ids: string[]) => cardPage(...ids.map(id => ({ id, data: { word: id } })));
+
+const cardPage = (...cards: { id: string; data: Record<string, unknown> }[]) => ({
+  empty: cards.length === 0,
+  docs: cards.map(card => ({ id: card.id, data: () => card.data })),
 });
 
 describe('deleteAllCards protected clear', () => {
@@ -97,5 +99,18 @@ describe('deleteAllCards protected clear', () => {
     expect(callable.mock.calls.map(([request]) => request.cardIds)).toEqual([
       ['card-a', 'card-b'], ['card-a'], ['card-b'],
     ]);
+  });
+
+  it('reports the categories of the current-generation cards it keeps', async () => {
+    const callable = vi.fn().mockResolvedValue({ data: { deletedCardIds: [], deletedProjectionLexemeIds: [] } });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    firestore.getDocsFromServer.mockResolvedValue(cardPage(
+      { id: 'old-food', data: { word: 'old', category: 'Food', libraryEpoch: 2 } },
+      { id: 'legacy', data: { word: 'legacy', category: 'Food' } },
+      { id: 'new-food', data: { word: 'apple', category: 'Food', libraryEpoch: 3 } },
+      { id: 'new-plain', data: { word: 'go', category: '', libraryEpoch: 3 } },
+    ));
+
+    await expect(deleteAllCards({} as never, 'owner-a', 3)).resolves.toEqual({ Food: 1, Other: 1 });
   });
 });

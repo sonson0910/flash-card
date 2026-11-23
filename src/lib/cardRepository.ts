@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteField,
   doc,
   documentId,
   endAt,
@@ -1378,18 +1379,35 @@ const cardTombstoneRef = (db: Firestore, userId: string, cardId: string) =>
   doc(db, 'users', userId, 'card_tombstones', cardId);
 
 /**
+ * Reads the server-owned library generation and the generation of a clear that has
+ * not finished yet. Missing v1 state is epoch zero with no clear pending.
+ */
+export async function getLibraryState(
+  db: Firestore,
+  userId: string,
+): Promise<{ libraryEpoch: number; clearPendingEpoch: number | null }> {
+  const snapshot = await getDoc(libraryStateRef(db, userId));
+  const data = snapshot.exists() ? snapshot.data() as Record<string, unknown> : {};
+  const pending = data.clearPendingEpoch;
+  return {
+    libraryEpoch: normalizedLibraryEpoch(data.libraryEpoch),
+    clearPendingEpoch: Number.isSafeInteger(pending) && Number(pending) >= 0 ? Number(pending) : null,
+  };
+}
+
+/**
  * Reads the server-owned library generation. Missing v1 state is epoch zero.
  */
 export async function getLibraryEpoch(db: Firestore, userId: string): Promise<number> {
-  const snapshot = await getDoc(libraryStateRef(db, userId));
-  return snapshot.exists()
-    ? normalizedLibraryEpoch((snapshot.data() as Record<string, unknown>).libraryEpoch)
-    : 0;
+  return (await getLibraryState(db, userId)).libraryEpoch;
 }
 
 /**
  * Atomically advances the library generation before a destructive reset.
  * Flushers can reject every pending operation carrying an older epoch.
+ * The new generation is also recorded as a pending clear until
+ * settleLibraryClear removes it, so a clear that stops after this point can
+ * be finished later.
  */
 export async function incrementLibraryEpoch(db: Firestore, userId: string): Promise<number> {
   const stateRef = libraryStateRef(db, userId);
@@ -1401,10 +1419,23 @@ export async function incrementLibraryEpoch(db: Firestore, userId: string): Prom
     const next = nextProtocolCounter(current, 'libraryEpoch');
     transaction.set(
       stateRef,
-      { libraryEpoch: next, schemaVersion: 2 },
+      { libraryEpoch: next, schemaVersion: 2, clearPendingEpoch: next },
       { merge: true },
     );
     return next;
+  });
+}
+
+/**
+ * Marks the clear of one library generation as finished. A newer clear keeps
+ * its own pending marker.
+ */
+export async function settleLibraryClear(db: Firestore, userId: string, libraryEpoch: number): Promise<void> {
+  const stateRef = libraryStateRef(db, userId);
+  await runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(stateRef);
+    if (!snapshot.exists() || (snapshot.data() as Record<string, unknown>).clearPendingEpoch !== libraryEpoch) return;
+    transaction.update(stateRef, { clearPendingEpoch: deleteField() });
   });
 }
 
@@ -2557,7 +2588,11 @@ export async function streamAllCardsInBatches(
   return loaded;
 }
 
-export async function deleteAllCards(db: Firestore, userId: string, libraryEpoch: number): Promise<void> {
+/**
+ * Deletes every card older than libraryEpoch through the trusted callable and
+ * returns the category counts of the current-generation cards it kept.
+ */
+export async function deleteAllCards(db: Firestore, userId: string, libraryEpoch: number): Promise<Record<string, number>> {
   const app = firebaseApp;
   if (!isFirebaseConfigured || !app) {
     throw new ProtectedFunctionError({
@@ -2565,7 +2600,8 @@ export async function deleteAllCards(db: Firestore, userId: string, libraryEpoch
       kind: 'configuration', code: 'firebase-unconfigured', retryable: false,
     });
   }
-  await runProtectedFunction(protectedFunctionsCapability, 'Clear library', async () => {
+  return runProtectedFunction(protectedFunctionsCapability, 'Clear library', async () => {
+    const keptCategories: Record<string, number> = {};
     const assertActiveOwner = () => {
       if (auth?.currentUser?.uid !== userId) {
         throw new ProtectedFunctionError({
@@ -2622,12 +2658,19 @@ export async function deleteAllCards(db: Firestore, userId: string, libraryEpoch
         ...(cursor ? [startAfter(cursor)] : []),
         limit(249),
       ));
-      if (page.empty) return;
+      if (page.empty) break;
       for (const cardIds of plannedPages(page.docs)) {
         assertActiveOwner();
         await clearPage(cardIds);
       }
+      for (const card of page.docs) {
+        const data = card.data() as Record<string, unknown>;
+        if (!Number.isSafeInteger(data.libraryEpoch) || Number(data.libraryEpoch) < libraryEpoch) continue;
+        const category = typeof data.category === 'string' && data.category ? data.category : 'Other';
+        keptCategories[category] = (keptCategories[category] ?? 0) + 1;
+      }
       cursor = page.docs.length === 249 ? page.docs[page.docs.length - 1] : null;
     } while (cursor);
+    return keptCategories;
   });
 }
