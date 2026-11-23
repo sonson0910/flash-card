@@ -376,7 +376,9 @@ export function EditCardDialog({ card, open, onOpenChange, onSave, onDelete, con
       // The facets mirror must never gate the save the learner is waiting on. A save that changed
       // nothing means the card already had the category, so its count was moved by whoever changed it.
       if (outcome?.status !== 'noop' && Object.prototype.hasOwnProperty.call(patch, 'category')) {
-        mirrorCardCategoryEdit(liveCard, patch.category as string, ownerId);
+        // The card the save replaced is the live one; the prop can be the snapshot the library opened the editor from.
+        const replaced = outcome?.status === 'published' ? outcome.replaced : undefined;
+        mirrorCardCategoryEdit(replaced ?? liveCard, patch.category as string, ownerId);
       }
       closeSheet(true);
     } catch {

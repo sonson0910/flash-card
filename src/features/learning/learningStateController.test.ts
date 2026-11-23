@@ -352,6 +352,16 @@ describe('learning state controller', () => {
     expect(events).toEqual([]);
   });
 
+  it('names the card a patch replaced, so a caller can tell what changed from', async () => {
+    const { controller } = createFake();
+
+    await expect(controller.patch(card.id, { category: 'Science' }, ['category'], 'patch-replaced')).resolves.toMatchObject({
+      status: 'published',
+      replaced: { id: card.id, category: card.category },
+    });
+    await expect(controller.toggleBookmark(card.id, 'bookmark-replaced')).resolves.not.toHaveProperty('replaced');
+  });
+
   it('undoes a delete once with the original card and stable operation request', async () => {
     const { controller, persisted, publications } = createUndoFake();
     const deleted = await controller.delete(card.id, 'delete-offline');

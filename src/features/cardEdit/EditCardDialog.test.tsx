@@ -966,6 +966,29 @@ describe('EditCardDialog', () => {
       );
     });
 
+    it('moves the count away from the category the save replaced when the card prop is the snapshot the editor opened with', async () => {
+      // The library keeps the card it was opened from; another device moved it to "Business" meanwhile.
+      const onSave = vi.fn(async (): Promise<LearningStateOutcome> => ({
+        status: 'published',
+        result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } },
+        replaced: { ...card, category: 'Business' },
+      }));
+      let view = render({ card: { ...card, category: 'Nature' }, open: true, onOpenChange: vi.fn(), onSave });
+      (findByProp(view.tree, 'data-edit-category-input')!.props.onChange as (event: { target: { value: string } }) => void)(
+        { target: { value: 'Science' } },
+      );
+      view = render({ card: { ...card, category: 'Nature' }, open: true, onOpenChange: vi.fn(), onSave });
+
+      await view.submit({ preventDefault: vi.fn() });
+
+      expect(cardRepositoryMocks.applyCategoryDeltas).toHaveBeenCalledWith(
+        {},
+        'user-1',
+        { Business: -1, Science: 1 },
+        'card-edit:card-1:0:category-edit',
+      );
+    });
+
     it('never fires a facets delta call when the category is untouched', async () => {
       const onSave = vi.fn(async (): Promise<LearningStateOutcome> =>
         ({ status: 'published', result: { ownerKey: 'o', operationId: 'op', publication: { kind: 'patch', cardId: card.id, fields: {} } } }));
