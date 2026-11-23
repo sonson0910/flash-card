@@ -18,6 +18,7 @@ vi.mock('../../lib/firebase', () => ({
 }));
 
 import { migrateLegacyLibraryWithAdmin } from './legacyLibraryMigrationService';
+import { getLegacyMigrationIssue } from './ownerLibrarySessionController';
 
 describe('legacyLibraryMigrationService', () => {
   beforeEach(() => {
@@ -26,6 +27,18 @@ describe('legacyLibraryMigrationService', () => {
     delete functions.capability.reason;
     functions.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
     functions.httpsCallable.mockReturnValue(functions.callable);
+  });
+
+  it('reports a blocked discovery as a repair that needs an administrator, not as a retryable network failure', async () => {
+    functions.callable.mockResolvedValueOnce({
+      data: { migrated: 0, merged: 0, scanned: 0, complete: false, remaining: 0, invalid: 1, phase: 'blocked' },
+    });
+
+    const failure = await migrateLegacyLibraryWithAdmin({} as never).then(() => null, (error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Error);
+    expect(getLegacyMigrationIssue(failure)).toMatchObject({ kind: 'trusted-migration', retryable: false });
+    expect(functions.callable).toHaveBeenCalledOnce();
   });
 
   it('continues bounded Admin chunks until final verification is complete', async () => {

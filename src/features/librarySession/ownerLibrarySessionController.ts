@@ -66,9 +66,12 @@ const errorField = (error: unknown, field: 'code' | 'reason'): string => {
   return typeof value === 'string' ? value.toLowerCase() : '';
 };
 
+/** Error reason for a migration the server has stopped until an administrator repairs the library. */
+export const ADMINISTRATOR_REVIEW_REASON = 'administrator-review';
+
 export function getLegacyMigrationIssue(error: unknown): LegacyMigrationIssue {
   const reason = errorField(error, 'reason');
-  if (reason === 'identity-conflict') {
+  if (reason === 'identity-conflict' || reason === ADMINISTRATOR_REVIEW_REASON) {
     return {
       kind: 'trusted-migration',
       retryable: false,

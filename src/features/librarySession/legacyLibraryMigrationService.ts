@@ -1,6 +1,7 @@
 import type { FirebaseApp } from 'firebase/app';
 import { getSonFlashFunctions, protectedFunctionsCapability } from '../../lib/firebase';
 import { runProtectedFunction } from '../../lib/protectedFunctionsCapability';
+import { ADMINISTRATOR_REVIEW_REASON } from './ownerLibrarySessionController';
 
 const REGION = 'asia-southeast1';
 const BATCH_SIZE = 100;
@@ -70,7 +71,11 @@ export async function migrateLegacyLibraryWithAdmin(
   for (let batch = 0; batch < MAX_BATCHES_PER_ACTION; batch += 1) {
     const result = await invokeMigrationBatch(app);
     if (result.invalid > 0) {
-      throw new Error('Library migration found a malformed card that needs administrator review.');
+      // The server stops a blocked discovery for good, so a retry would only spend its hourly budget.
+      throw Object.assign(
+        new Error('Library migration found a malformed card that needs administrator review.'),
+        { reason: ADMINISTRATOR_REVIEW_REASON },
+      );
     }
     if (result.complete) return { migrated, scanned, complete: true };
     const nextMigrated = migrated + result.migrated;
