@@ -1,5 +1,5 @@
 import { createWordCardId } from '../../lib/cardIdentity';
-import { normalizeCardData } from '../../lib/cardNormalization';
+import { effectiveCardLanguagePair, normalizeCardData } from '../../lib/cardNormalization';
 import type { CardData } from '../../types/card';
 import { createLexemeId, createTrackMembershipId } from './lexemeIdentity';
 import type {
@@ -43,7 +43,7 @@ export interface V2RollbackTrustedContext {
   readonly expectedSourceFingerprint: string;
 }
 
-export type V2MigrationQuarantineReason = 'missing-word' | 'missing-meaning';
+export type V2MigrationQuarantineReason = 'missing-word' | 'missing-meaning' | 'invalid-language';
 
 export type V2MigrationPlanResult =
   | { readonly status: 'migratable'; readonly bundle: V2MigrationBundle }
@@ -205,6 +205,11 @@ export function planV2CardMigrationResult(input: V2MigrationInput): V2MigrationP
   if (!normalizedCard.translation && !normalizedCard.explanation && !normalizedCard.explanationTranslation) {
     reasons.push('missing-meaning');
   }
+  try {
+    effectiveCardLanguagePair(normalizedCard);
+  } catch {
+    reasons.push('invalid-language');
+  }
   return reasons.length > 0
     ? { status: 'quarantined', source, reasons, rollback }
     : { status: 'migratable', bundle: planV2CardMigration(input) };
@@ -220,13 +225,14 @@ export function planV2CardMigration(input: V2MigrationInput): V2MigrationBundle 
     throw new TypeError('A legacy card requires at least one meaning before migration.');
   }
   const normalizedLemma = requireText('normalizedWord', normalizedCard.normalizedWord || lemma);
+  const { language, translationLanguage } = effectiveCardLanguagePair(normalizedCard);
   const partOfSpeech = normalizedCard.partOfSpeech || 'unknown';
   const senseKey = input.senseKey
     ? normalizeSenseKey(input.senseKey)
     : defaultSenseKey(sourceDocumentId);
   const sourceFingerprint = createMigrationFingerprint('v2', { sourceDocumentId, card: normalizedCard });
   const lexemeId = createLexemeId({
-    language: 'en',
+    language,
     normalizedLemma,
     partOfSpeech,
     senseKey,
@@ -236,21 +242,21 @@ export function planV2CardMigration(input: V2MigrationInput): V2MigrationBundle 
   const lexeme: LexemeV3 = {
     schemaVersion: 3,
     id: lexemeId,
-    language: 'en',
+    language,
     lemma,
     normalizedLemma,
     partOfSpeech,
     senseKey,
     definitions: [
-      ...optionalLocalizedText('vi', normalizedCard.translation),
-      ...optionalLocalizedText('en', normalizedCard.explanation),
-      ...optionalLocalizedText('vi', normalizedCard.explanationTranslation || ''),
+      ...optionalLocalizedText(translationLanguage, normalizedCard.translation),
+      ...optionalLocalizedText(language, normalizedCard.explanation),
+      ...optionalLocalizedText(translationLanguage, normalizedCard.explanationTranslation || ''),
     ],
     phonetics: normalizedCard.phonetic ? [normalizedCard.phonetic] : [],
     examples: normalizedCard.exampleSentence
       ? [{
           text: normalizedCard.exampleSentence,
-          translations: optionalLocalizedText('vi', normalizedCard.exampleTranslation || ''),
+          translations: optionalLocalizedText(translationLanguage, normalizedCard.exampleTranslation || ''),
         }]
       : [],
     collocations: [...(normalizedCard.collocations || [])],

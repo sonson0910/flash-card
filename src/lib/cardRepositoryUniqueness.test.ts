@@ -3466,6 +3466,23 @@ describe('starter card batch response', () => {
     firebaseRuntime.isFirebaseConfigured = true;
     firebaseRuntime.protectedFunctionsCapability.available = true;
     functionsRuntime.httpsCallable.mockReset();
+    firebaseRuntime.auth.currentUser = { uid: 'owner-1' };
+  });
+
+  it('names the owner in the call and refuses to send when the account changes while the functions client loads', async () => {
+    const callable = vi.fn().mockResolvedValue({ data: { kind: 'created', cardIds: ['word-hello'], createdCardIds: ['word-hello'] } });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+    await createStarterCardBatch({} as never, 'owner-1', 'starter-en-vi', batch as never);
+    expect(callable).toHaveBeenCalledWith(expect.objectContaining({ expectedOwnerId: 'owner-1', operationId: 'starter-en-vi' }));
+
+    callable.mockClear();
+    functionsRuntime.getFunctions.mockImplementationOnce(() => {
+      firebaseRuntime.auth.currentUser = { uid: 'owner-2' };
+      return { region: 'asia-southeast1' };
+    });
+    await expect(createStarterCardBatch({} as never, 'owner-1', 'starter-en-vi', batch as never))
+      .rejects.toMatchObject({ code: 'owner-mismatch' });
+    expect(callable).not.toHaveBeenCalled();
   });
 
   it('reports only the starter cards the server says the learner holds', async () => {

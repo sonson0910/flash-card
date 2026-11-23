@@ -21,4 +21,10 @@ describe('zhLanguagePack.rendering.buildReadingPlan', () => {
     expect(zhLanguagePack.rendering.buildReadingPlan({ word: '你好', phonetic: '' }).readingText).toBeNull();
     expect(zhLanguagePack.rendering.buildReadingPlan({ word: '你好', phonetic: '你好' }).readingText).toBeNull();
   });
+
+  it('offers no tone data when the pinyin is not spaced per syllable of the word', () => {
+    const plan = zhLanguagePack.rendering.buildReadingPlan({ word: '中国', phonetic: 'Zhōngguó' });
+    expect(plan.readingText).toBe('Zhōngguó');
+    expect(plan.toneSyllables).toBeUndefined();
+  });
 });

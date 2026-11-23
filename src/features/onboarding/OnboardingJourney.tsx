@@ -35,8 +35,8 @@ import { useAccountProfileNativeLanguage } from '../profileCompletion/AccountPro
 import './onboarding-journey.css';
 import {
   MAX_COUNTDOWN_WEEKS, clearOnboardingInProgress, clearOnboardingResumeStep, countdownWeeks, daysUntilGoalDate,
-  markOnboardingInProgress, nextOnboardingStep, onboardingStepsFor, previousOnboardingStep, readOnboardingResumeStep,
-  SCRIPT_PRIMER_LANGUAGES, writeOnboardingResumeStep, type OnboardingStepId,
+  createCourseAfterSavingPreferences, markOnboardingInProgress, nextOnboardingStep, onboardingStepsFor, previousOnboardingStep, readOnboardingResumeStep,
+  SCRIPT_PRIMER_LANGUAGES, targetAfterNativeLanguageChange, writeOnboardingResumeStep, type OnboardingStepId,
 } from './onboardingModel';
 
 const primaryButtonClass = 'onb-primary';
@@ -319,6 +319,15 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     if (previous) setStep(previous);
   };
 
+  const resetTargetChoices = () => {
+    setGoalKind(null);
+    setGoalLevel('');
+    setGoalTargetDate('');
+    setLatestScore(null);
+    setRomanization(null);
+    setAhaOutcome(null);
+  };
+
   const chooseGoal = (kind: string | null) => {
     if (kind !== goalKind && (kind === IELTS_GOAL_KIND || goalKind === IELTS_GOAL_KIND)) {
       setGoalLevel('');
@@ -346,13 +355,14 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const finish = async () => {
     if (!targetLanguage || reminderSaveLocked) return;
     setError(null);
-    const result = await actions.createCourse(onboardingCourseInput({
+    const result = await createCourseAfterSavingPreferences(() => {
+      writeDailyPace(pace);
+      if (startingTier) writeStartingTier(ownerId, targetLanguage, startingTier);
+    }, () => actions.createCourse(onboardingCourseInput({
       targetLanguage, nativeLanguage, goalKind, goalLevel, goalTargetDate, zhScript, romanization,
-    }));
+    })));
     if (!result.ok) { setError(_(msg({ context: 'course.error.generic', message: 'That course action did not go through. Please try again.' }))); return; }
     const scoreRequest = onboardingLatestScoreRequest(ownerId, result.created, goalKind, latestScore);
-    writeDailyPace(pace);
-    if (startingTier) writeStartingTier(ownerId, targetLanguage, startingTier);
     clearOnboardingDraft(ownerId);
     clearStarterClaim(ownerId);
     clearOnboardingResumeStep(ownerId);
@@ -396,7 +406,15 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
       <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.language.subtitle', message: 'This sets the app\'s interface and the language your explanations will be written in.' })} /></p>
       <div className="onb-language-grid">
         {(['vi', 'en'] as const).map(locale => <button key={locale} type="button" aria-pressed={nativeLanguage === locale} className={optionButtonClass}
-          onClick={() => { setNativeLanguage(locale); void setUiLocale(locale); }}>
+          onClick={() => {
+            setNativeLanguage(locale);
+            void setUiLocale(locale);
+            if (targetLanguage !== null && targetAfterNativeLanguageChange(targetLanguage, locale) === null) {
+              resetTargetChoices();
+              setTargetLanguage(null);
+              setZhScript(null);
+            }
+          }}>
           <span lang={locale} className="onb-option-name">{NATIVE_ENDONYM[locale]}</span>
           {_(NATIVE_LANGUAGE_LABEL[locale]) !== NATIVE_ENDONYM[locale] && <span className="onb-option-sub">{_(NATIVE_LANGUAGE_LABEL[locale])}</span>}
           <SelectionMark on={nativeLanguage === locale} />
@@ -418,14 +436,7 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
         {targetOptions.map(language => {
           const exam = goalKindsFor(language)[0];
           return <button key={language} type="button" aria-pressed={targetLanguage === language} className={`${optionButtonClass} onb-target-card`} onClick={() => {
-            if (language !== targetLanguage) {
-              setGoalKind(null);
-              setGoalLevel('');
-              setGoalTargetDate('');
-              setLatestScore(null);
-              setRomanization(null);
-              setAhaOutcome(null);
-            }
+            if (language !== targetLanguage) resetTargetChoices();
             setTargetLanguage(language);
             if (language !== 'zh') setZhScript(null);
           }}>

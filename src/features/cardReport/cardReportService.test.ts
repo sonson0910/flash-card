@@ -6,6 +6,7 @@ i18n.activate('en');
 
 const runtime = vi.hoisted(() => ({
   app: { name: 'test-app' },
+  auth: { currentUser: null as { uid: string } | null },
   capability: { available: true } as { available: boolean; reason?: string },
   getFunctions: vi.fn(),
   httpsCallable: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock('firebase/functions', () => ({
 
 vi.mock('../../lib/firebase', () => ({
   app: runtime.app,
+  auth: runtime.auth,
   protectedFunctionsCapability: runtime.capability,
   getSonFlashFunctions: (app: unknown, region: string = 'asia-southeast1') => runtime.getFunctions(app, region),
 }));
@@ -29,6 +31,7 @@ import { reportCardFailureMessage, submitCardReport } from './cardReportService'
 describe('cardReportService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    runtime.auth.currentUser = null;
     runtime.capability.available = true;
     delete runtime.capability.reason;
     runtime.getFunctions.mockReturnValue({ region: 'asia-southeast1' });
@@ -44,6 +47,22 @@ describe('cardReportService', () => {
       reason: 'wrong-meaning',
       note: 'Nghĩa sai.',
     });
+  });
+
+  it('names the signed-in reporter so the server can refuse a different account', async () => {
+    runtime.auth.currentUser = { uid: 'owner-a' };
+    await submitCardReport({ cardId: 'word-focus', reason: 'other' });
+    expect(runtime.callable).toHaveBeenCalledWith({ expectedOwnerId: 'owner-a', cardId: 'word-focus', reason: 'other' });
+  });
+
+  it('does not send a report when the account changes while the functions client loads', async () => {
+    runtime.auth.currentUser = { uid: 'owner-a' };
+    runtime.getFunctions.mockImplementation(() => {
+      runtime.auth.currentUser = { uid: 'owner-b' };
+      return { region: 'asia-southeast1' };
+    });
+    await expect(submitCardReport({ cardId: 'word-focus', reason: 'other' })).rejects.toMatchObject({ code: 'owner-mismatch' });
+    expect(runtime.callable).not.toHaveBeenCalled();
   });
 
   it('rejects invalid reports before calling the backend', async () => {

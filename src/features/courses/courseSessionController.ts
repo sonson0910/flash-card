@@ -182,7 +182,13 @@ export function createCourseSessionController(
     try {
       const port = await resolvePort();
       const profile = await run(port, owner);
-      if (!isCurrent(operationLifecycle, owner)) return { ok: false, error: new CourseError('owner-changed', 'The owner changed mid-operation.') };
+      if (!isCurrent(operationLifecycle, owner)) {
+        // Re-activating the same owner (Retry after a listener error) restarts the session but the server
+        // already committed this change, so it is not an owner change.
+        return !disposed && ownerId === owner
+          ? { ok: true }
+          : { ok: false, error: new CourseError('owner-changed', 'The owner changed mid-operation.') };
+      }
       pendingMutationCount -= 1;
       // A callable response can arrive after a newer listener snapshot.
       publish(hasProfileSubscription

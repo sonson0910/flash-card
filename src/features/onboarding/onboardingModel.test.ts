@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   MAX_COUNTDOWN_WEEKS, ONBOARDING_STEPS, clearOnboardingInProgress, clearOnboardingResumeStep, countdownWeeks,
-  daysUntilGoalDate, firstOnboardingStep, hasOnboardingInProgress, isOnboardingStepId, markOnboardingInProgress,
-  nextOnboardingStep, onboardingStepsFor, previousOnboardingStep, readOnboardingResumeStep, writeOnboardingResumeStep,
+  createCourseAfterSavingPreferences, daysUntilGoalDate, firstOnboardingStep, hasOnboardingInProgress, isOnboardingStepId, markOnboardingInProgress,
+  nextOnboardingStep, onboardingStepsFor, previousOnboardingStep, readOnboardingResumeStep, targetAfterNativeLanguageChange,
+  writeOnboardingResumeStep,
 } from './onboardingModel';
 
 class FakeStorage {
@@ -117,5 +118,25 @@ describe('goal countdown', () => {
     expect(countdownWeeks(8)).toBe(2);
     expect(countdownWeeks(86)).toBe(13);
     expect(MAX_COUNTDOWN_WEEKS).toBe(12);
+  });
+});
+
+describe('onboarding course creation', () => {
+  it('saves the device-local answers before the create call, even when the create fails', async () => {
+    const calls: string[] = [];
+    const result = await createCourseAfterSavingPreferences(
+      () => { calls.push('preferences'); },
+      async () => { calls.push('create'); return { ok: false as const }; },
+    );
+    expect(calls).toEqual(['preferences', 'create']);
+    expect(result).toEqual({ ok: false });
+  });
+});
+
+describe('target language after a native language change', () => {
+  it('clears a target that equals the new native language and keeps any other', () => {
+    expect(targetAfterNativeLanguageChange('en', 'en')).toBeNull();
+    expect(targetAfterNativeLanguageChange('ko', 'en')).toBe('ko');
+    expect(targetAfterNativeLanguageChange(null, 'en')).toBeNull();
   });
 });

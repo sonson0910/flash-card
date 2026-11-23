@@ -469,3 +469,44 @@ describe('createCourseSessionController', () => {
     expect(controller.getSnapshot().status).toBe('idle');
   });
 });
+
+describe('createCourseSessionController same-owner retry during a create', () => {
+  it('reports a create that succeeds across a same-owner retry as ok, not as an owner change', async () => {
+    const created = makeProfile('ko-1', [makeCourse('ko-1', { targetLanguage: 'ko' })]);
+    const create = deferred<CreateCourseResult>();
+    const port = createFakePort(async () => ({ source: 'absent', profile: makeProfile('legacy-en-vi') }));
+    port.createCourse = vi.fn(() => create.promise);
+    let failListener!: (error: CourseError) => void;
+    port.subscribe = vi.fn((_owner, onProfile, onError) => {
+      failListener = onError;
+      onProfile({ source: 'absent', profile: makeProfile('legacy-en-vi') });
+      return vi.fn();
+    });
+    const controller = createCourseSessionController(async () => port);
+    await controller.activate('owner-1');
+
+    const pending = controller.actions.createCourse({ targetLanguage: 'ko', nativeLanguage: 'vi' });
+    await vi.waitFor(() => expect(port.createCourse).toHaveBeenCalledOnce());
+    failListener(new CourseError('cloud-read-failed', 'listener failed'));
+    expect(controller.getSnapshot().status).toBe('error');
+    await controller.actions.retry();
+    create.resolve({ profile: created, created: { courseId: 'ko-1', goals: [] } } as CreateCourseResult);
+
+    await expect(pending).resolves.toMatchObject({ ok: true });
+  });
+
+  it('still reports an owner change when another owner takes over mid-create', async () => {
+    const create = deferred<CreateCourseResult>();
+    const port = createFakePort(async () => ({ source: 'absent', profile: makeProfile('legacy-en-vi') }));
+    port.createCourse = vi.fn(() => create.promise);
+    const controller = createCourseSessionController(async () => port);
+    await controller.activate('owner-1');
+
+    const pending = controller.actions.createCourse({ targetLanguage: 'ko', nativeLanguage: 'vi' });
+    await vi.waitFor(() => expect(port.createCourse).toHaveBeenCalledOnce());
+    await controller.activate('owner-2');
+    create.resolve({ profile: makeProfile('ko-1'), created: { courseId: 'ko-1', goals: [] } } as CreateCourseResult);
+
+    await expect(pending).resolves.toMatchObject({ ok: false, error: { code: 'owner-changed' } });
+  });
+});
