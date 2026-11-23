@@ -156,6 +156,22 @@ describe('catalog cache indexed query', () => {
     expect(result.scanned).toBeLessThanOrEqual(3);
   });
 
+  it('finds a capitalised lemma from a lowercase or capitalised prefix', async () => {
+    await install([
+      item(1, { normalizedLemma: 'Monday', lemma: 'Monday' }),
+      item(2, { normalizedLemma: 'money', lemma: 'money' }),
+      item(3, { normalizedLemma: 'zebra', lemma: 'zebra' }),
+    ]);
+    for (const prefix of ['mon', 'Mon', 'MONDAY']) {
+      const result = await queryCatalogCache({
+        catalogId: 'english-core', language: 'en', trackId: 'ielts', normalizedLemmaPrefix: prefix, pageSize: 10,
+      });
+      expect(result.items.map(entry => entry.normalizedLemma).sort()).toEqual(
+        prefix === 'mon' || prefix === 'Mon' ? ['Monday', 'money'] : ['Monday'],
+      );
+    }
+  });
+
   it('returns membership and lexeme content from one release while activation races the page read', async () => {
     const releaseA = await stageContentRelease('release-a', 'nghĩa từ bản A');
     await activateCatalogInstall(releaseA);
