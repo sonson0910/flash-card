@@ -37,7 +37,8 @@ export interface CatalogWorkspaceQuery {
 
 export type CatalogWorkspaceQueryPatch = Partial<Omit<CatalogWorkspaceQuery, 'view' | 'catalogId'>>;
 
-const CEFR_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
+/** A CEFR level or a level range such as B2-C1, the shapes a catalog release can carry. */
+const CEFR_LABEL = /^(?:A1|A2|B1|B2|C1|C2)(?:-(?:A1|A2|B1|B2|C1|C2))?$/;
 const MAXIMUM_CURSOR_LENGTH = 4_096;
 
 const bounded = (value: string | null | undefined, maximum: number): string | null => {
@@ -84,7 +85,7 @@ const normalizeQuery = ({
     languageCode: selection.languageCode,
     trackId: personal ? null : selection.trackId,
     tier: personal ? null : selection.tierId,
-    cefrLevel: safeCefr && CEFR_LEVELS.has(safeCefr) ? safeCefr : null,
+    cefrLevel: safeCefr && CEFR_LABEL.test(safeCefr) ? safeCefr : null,
     topic: bounded(topic, 128),
     partOfSpeech: bounded(partOfSpeech, 64),
     skill: bounded(skill, 64),
