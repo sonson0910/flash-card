@@ -135,7 +135,8 @@ describeWithEmulators('learner file uploads against the emulators', () => {
     expect(outcomes.map(outcome => outcome.kind).sort()).toEqual(['ignored', 'stored']);
     expect(await exists(object.name)).toBe(true);
     expect(await usageOf(uid)).toMatchObject({ usedBytes: 1_200, reservedBytes: 0, fileCount: 1 });
-  });
+    // The losing transaction waits for the emulator's lock and retries: about 3 s alone, longer beside other suites.
+  }, 20_000);
 
   it('still removes the object when a rejected upload is reported again', async () => {
     const uid = owner();
