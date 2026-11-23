@@ -617,6 +617,33 @@ describe('offline service worker', () => {
     expect(handler.shouldHandleFetch({ method: 'POST', mode: 'navigate', url: 'https://app.test/library' })).toBe(false);
   });
 
+  it('serves a locale landing path from its own cached page and every other route from the root shell', async () => {
+    const api = loadWorkerApi();
+    const storage = new MemoryCacheStorage();
+    const cache = await storage.open(api.shellCacheName(appDescriptor.fingerprint));
+    const html = { headers: { 'content-type': 'text/html' } };
+    await cache.put('https://app.test/index.html', new Response('root shell', html));
+    await cache.put('https://app.test/vi/index.html', new Response('vi shell', html));
+    const handler = api.createServiceWorkerHandlers({
+      descriptor: {
+        ...appDescriptor,
+        assets: [...appDescriptor.assets, { url: '/vi/index.html', sha256: digest('vi shell'), bytes: 8 }],
+      },
+      cacheStorage: storage,
+      origin: 'https://app.test',
+      fetcher: async () => new Response('network'),
+    });
+    const navigate = (path: string) => ({ method: 'GET', mode: 'navigate', url: `https://app.test${path}` });
+    const served = async (path: string) => (await handler.handleFetch(navigate(path)))?.text();
+
+    expect(await served('/vi')).toBe('vi shell');
+    expect(await served('/vi/')).toBe('vi shell');
+    expect(await served('/vi?view=today')).toBe('vi shell');
+    expect(await served('/')).toBe('root shell');
+    expect(await served('/library')).toBe('root shell');
+    expect(await served('/vi/library')).toBe('root shell');
+  });
+
   it('rejects private documents from a worker descriptor', () => {
     const api = loadWorkerApi();
 

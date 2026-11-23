@@ -254,6 +254,13 @@ const createServiceWorkerHandlers = options => {
     }
   };
 
+  // A locale landing path (/vi, /vi/) has its own prerendered page with that language's title and meta tags,
+  // which the network would return online; every other app route boots from the root shell.
+  const navigationShellUrl = pathname => {
+    const localePage = `${pathname.replace(/\/+$/, '')}/index.html`;
+    return allowedUrls.has(localePage) ? localePage : '/index.html';
+  };
+
   const shouldHandleFetch = request => {
     if (request?.method !== 'GET') return false;
     const url = requestUrl(request, origin);
@@ -269,7 +276,7 @@ const createServiceWorkerHandlers = options => {
     const url = requestUrl(request, origin);
     if (!url) return undefined;
     const cache = await cacheStorage.open(currentCacheName);
-    const targetUrl = request.mode === 'navigate' ? '/index.html' : url.pathname;
+    const targetUrl = request.mode === 'navigate' ? navigationShellUrl(url.pathname) : url.pathname;
     const cached = await cache.match(requestFor(targetUrl, origin), { ignoreSearch: false });
     if (cached) return cached;
     throw fail('cache-miss', targetUrl);
