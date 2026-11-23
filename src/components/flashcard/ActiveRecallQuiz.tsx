@@ -12,8 +12,9 @@ interface ActiveRecallQuizProps {
   className?: string;
 }
 
-const DISTRACTORS_FALLBACK: Record<string, string[]> = {
-  default: [
+// Wrong options come from the card's own translation language, so the right one never stands out by language.
+const DISTRACTORS_BY_LANGUAGE: Record<string, string[]> = {
+  vi: [
     'sự ngẫu nhiên may mắn',
     'sự kiên trì bền bỉ',
     'sự hoài niệm sâu sắc',
@@ -22,6 +23,16 @@ const DISTRACTORS_FALLBACK: Record<string, string[]> = {
     'sự nhạy bén tinh tế',
     'sự nhiệt huyết đam mê',
     'trạng thái cân bằng',
+  ],
+  en: [
+    'good fortune',
+    'quiet persistence',
+    'deep nostalgia',
+    'quick recovery',
+    'generous spirit',
+    'keen insight',
+    'passionate enthusiasm',
+    'a state of balance',
   ],
 };
 
@@ -37,14 +48,17 @@ export const ActiveRecallQuiz = React.memo(function ActiveRecallQuiz({
   // Generate 3 choices: 1 correct + 2 distractors
   const options = useMemo(() => {
     const correct = card.translation.trim();
-    const pool = DISTRACTORS_FALLBACK.default.filter(item => item !== correct.toLowerCase());
-    
+    const pool = (DISTRACTORS_BY_LANGUAGE[translationLanguage] ?? []).filter(item => item !== correct.toLowerCase());
+
     // Pick 2 random distractors
     const shuffledPool = [...pool].sort(() => 0.5 - Math.random());
     const distractors = shuffledPool.slice(0, 2);
 
     return [correct, ...distractors].sort(() => 0.5 - Math.random());
-  }, [card.translation]);
+  }, [card.translation, translationLanguage]);
+
+  // No distractors in this language: a quiz with one option would test nothing.
+  if (options.length < 3) return null;
 
   const handleSelect = (e: React.MouseEvent, option: string) => {
     e.stopPropagation();
