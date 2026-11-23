@@ -1093,11 +1093,20 @@ export const classifyLegacyShare = (
         reasonCode: 'quarantine-too-large',
         issue: issueFor('quarantine-too-large'),
       };
+      // A record with an expiry is removed by the TTL policy once it passes,
+      // so the expiry travels with it and apply knows the removal is expected.
+      const quarantineExpiresAt = isRecord(extracted.publicData)
+        ? timestampCanonical(extracted.publicData.expiresAt)
+        : null;
+      const quarantineExpiryMillis = millisFromTimestamp(quarantineExpiresAt);
       return {
         ...empty,
         action: 'quarantine',
         disposition: 'quarantine-candidate',
         reasonCode,
+        existingExpiresAt: quarantineExpiresAt,
+        expired: quarantineExpiryMillis !== null && options.scanStartedAt !== undefined
+          && quarantineExpiryMillis <= Date.parse(options.scanStartedAt),
         issue: issueFor(reasonCode),
       };
     }
@@ -2911,7 +2920,18 @@ export async function applyLegacySharedDeckMigration(
           }
           continue;
         }
-        if (shareState === 'applied' || shareState === 'expired') continue;
+        if (shareState === 'applied') continue;
+        if (shareState === 'expired') {
+          // The TTL policy removed the public record first. An owner record left
+          // in its first-generation form would never be migrated, and both the
+          // cutover report and the owner's revoke refuse it, so it goes now the
+          // way the policy would take it.
+          if (publicData === undefined && privateData !== undefined
+            && !isAppliedPrivate(entry, privateData, options.ownerUid, inventory.scanStartedAt)) {
+            transaction.delete(database.collection('shared_deck_owners').doc(entry.shareId));
+          }
+          continue;
+        }
         if (shareState === 'changed') {
           throw new LegacySharedDeckApplyError(`Source digest changed for ${entry.shareId}.`);
         }
