@@ -825,6 +825,40 @@ describe('release workflow contracts', () => {
     expect(workflow).not.toContain('functions/lib/legacySharedDeckMigrationOperator.js --');
   });
 
+  it('runbook migration recovery steps name only operator modes that exist', () => {
+    const modes = relativePath => {
+      const options = /\n {8}options:\n((?: {10}- [a-z-]+\n)+)/.exec(read(relativePath))?.[1] ?? '';
+      return [...options.matchAll(/- ([a-z-]+)/g)].map(match => match[1]);
+    };
+    const sharedDeckModes = modes('.github/workflows/migrate-legacy-shared-decks.yml');
+    const libraryModes = modes('.github/workflows/repair-legacy-libraries.yml');
+    expect(sharedDeckModes.join(',')).toBe('inventory,verify,apply,supersede,prepare-indexes');
+    expect(libraryModes.join(',')).toBe('dry-run,apply,rollback');
+
+    const runbook = read('docs/runbooks/security-remediation-rollout.md');
+    const migration = runbook.slice(
+      runbook.indexOf('### 4. Inventory and dry-run shared decks'),
+      runbook.indexOf('### 6. Cut over Firestore Rules'),
+    );
+    const rollback = runbook.slice(runbook.indexOf('## Rollback'));
+    const flat = text => text.replace(/\s+/g, ' ');
+    const sentences = text => flat(text).split(/(?<=[.:])\s+(?=[A-Z-])/);
+    // Shared-deck recovery names only modes the shared-deck workflow offers.
+    for (const [, mode] of flat(migration).matchAll(/(?:[Rr]e-run|[Rr]un|use|in) `([a-z-]+)`/g)) {
+      expect(sharedDeckModes).toContain(mode);
+    }
+    // Once apply has started, beginFreeze refuses a new inventory; only supersede reopens one.
+    for (const sentence of sentences(migration).filter(text => /produce a new inventory|inventoried again/.test(text))) {
+      expect(sentence).toMatch(/supersede/);
+    }
+    // There is no shared-deck rollback mode, so a migration rollback names the workflow that has one.
+    expect(sharedDeckModes).not.toContain('rollback');
+    const migrationRollback = sentences(rollback).filter(text => /migration rollback/i.test(text));
+    expect(migrationRollback.length).toBeGreaterThan(0);
+    for (const sentence of migrationRollback) expect(sentence).toContain('`repair-legacy-libraries.yml`');
+    expect(flat(rollback)).toContain('The shared-deck migration has no rollback mode');
+  });
+
   it('lets verification name the release itself as the revision that owns the migration', () => {
     const workflow = read('.github/workflows/migrate-legacy-shared-decks.yml');
     const verifyChecks = workflow.slice(
