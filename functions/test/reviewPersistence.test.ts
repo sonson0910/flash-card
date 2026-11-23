@@ -600,6 +600,31 @@ describe('review persistence', () => {
       .rejects.toMatchObject({ reason: 'stale-review' });
   });
 
+  it('refuses a legacy review dated far ahead of the server so it cannot block the next verified review', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-23T00:00:00.000Z'));
+    try {
+      const stored = baseCard();
+      const ahead = new Date('2026-11-24T00:00:00.000Z');
+      const request = reviewRequest({
+        reviewedAt: ahead.toISOString(),
+        fields: scheduleReviewTransition(stored, 'good', ahead),
+      });
+      const test = harness(stored);
+      await expect(applyReviewForOwner(test.database, 'owner', request, { strict: false }))
+        .rejects.toMatchObject({ reason: 'future-review-clock-skew' });
+      expect(test.writes).toEqual([]);
+
+      const nearby = new Date('2026-11-23T00:04:00.000Z');
+      await expect(applyReviewForOwner(harness(stored).database, 'owner', reviewRequest({
+        reviewedAt: nearby.toISOString(),
+        fields: scheduleReviewTransition(stored, 'good', nearby),
+      }), { strict: false })).resolves.toMatchObject({ applied: true });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rejects a duplicate operation whose payload fingerprint changed', async () => {
     const request = reviewRequest();
     const test = harness();

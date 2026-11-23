@@ -21,6 +21,7 @@ import {
   renameCardHeadwordForOwner,
 } from '../src/cardPersistence.js';
 import { createHash } from 'node:crypto';
+import { InputValidationError } from '../src/inputValidation.js';
 import { OWN_STORAGE_BUCKETS, ownStorageImageOwner } from '../src/ownFileImageUrl.js';
 import { libraryFacetRestoreOperationId } from '../src/libraryFacetPersistence.js';
 import {
@@ -175,6 +176,24 @@ const concurrentAllocationHarness = (seed: ReadonlyMap<string, DocumentSnapshot>
 };
 
 describe('card persistence', () => {
+  it('refuses a new card that carries review times from the future', async () => {
+    const ahead = new Date(Date.now() + 24 * 3_600_000).toISOString();
+    const entry = { rating: 'good', reviewedAt: ahead, scheduledDays: 1, elapsedDays: 0 };
+    const fsrs = {
+      due: ahead, stability: 2, difficulty: 5, elapsedDays: 0, scheduledDays: 1, learningSteps: 0,
+      reps: 1, lapses: 0, state: 2, lastReview: ahead,
+    };
+    for (const carried of [{ reviewHistory: [entry] }, { fsrs }]) {
+      const harness = transactionHarness(new Map([
+        ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],
+        ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 0 })],
+      ]));
+      await expect(createCardForOwner(harness.database, 'owner', { ...card, ...carried }, { libraryEpoch: 2 }))
+        .rejects.toBeInstanceOf(InputValidationError);
+      expect(harness.writes).toEqual([]);
+    }
+  });
+
   it('creates canonical identity documents and increments the trusted owner counter atomically', async () => {
     const harness = transactionHarness(new Map([
       ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 2 })],

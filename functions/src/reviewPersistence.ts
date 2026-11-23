@@ -3,7 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { InputValidationError } from './inputValidation.js';
 import { REVIEW_CARD_XP } from './xp-rules.js';
-import { canonicalCard, serializeCardResponse, type CardRecord } from './cardPersistence.js';
+import { canonicalCard, REVIEW_CLOCK_SKEW_MS, serializeCardResponse, type CardRecord } from './cardPersistence.js';
 import { scheduleReviewTransition } from './reviewScheduler.js';
 import { assertOwnerLibraryWriteAllowed } from './legacyLibraryMigrationOwnerScope.js';
 import { upsertCatalogProgressForCard } from './catalogProgressPersistence.js';
@@ -396,14 +396,14 @@ export async function applyReviewForOwner(
     }
     if (revision >= MAX_PROTOCOL_COUNTER) throw new ReviewPersistenceConflictError('identity-conflict');
 
-    if (strict) {
-      const reviewedAt = new Date(request.reviewedAt);
-      if (reviewedAt.getTime() > receivedAt!.getTime() + 5 * 60 * 1000) {
-        throw new ReviewPersistenceConflictError('future-review-clock-skew');
-      }
-      if (Number.isFinite(authoritativeLastReview) && reviewedAt.getTime() <= authoritativeLastReview) {
-        throw new ReviewPersistenceConflictError('stale-review');
-      }
+    // A review time stored ahead of the server clock would become the floor that every later verified review
+    // is compared against, so no path may store one.
+    const reviewedAt = new Date(request.reviewedAt);
+    if (reviewedAt.getTime() > (receivedAt ?? new Date()).getTime() + REVIEW_CLOCK_SKEW_MS) {
+      throw new ReviewPersistenceConflictError('future-review-clock-skew');
+    }
+    if (strict && Number.isFinite(authoritativeLastReview) && reviewedAt.getTime() <= authoritativeLastReview) {
+      throw new ReviewPersistenceConflictError('stale-review');
     }
 
     const fields = reviewPatch(request.fields);
