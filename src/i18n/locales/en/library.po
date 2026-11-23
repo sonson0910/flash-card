@@ -1880,6 +1880,11 @@ msgid "library.empty.word-placeholder"
 msgstr "Type a word or phrase…"
 
 #. js-lingui-explicit-id
+#: src/features/importExport/useLibraryExport.ts:66
+msgid "library.export.completed"
+msgstr "{count, plural, one {Exported # card from all your courses.} other {Exported # cards from all your courses.}}"
+
+#. js-lingui-explicit-id
 #: src/features/library/WordExtractorModal.tsx:357
 msgid "library.extract.already-owned"
 msgstr "{count, plural, one {# already in your library} other {# already in your library}}"

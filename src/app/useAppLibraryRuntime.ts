@@ -87,6 +87,7 @@ export function useAppLibraryRuntime({
     cards,
     minimumExpectedCards: exportMinimum,
     loadAllCards: appDependencies.library.loadAllCards,
+    countAllCards: appDependencies.library.countOwnerCards,
     reportError,
     notify,
   });

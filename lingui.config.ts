@@ -22,7 +22,7 @@ const areas = {
   library: [
     'src/features/library', 'src/features/cardEdit/EditCardDialog.tsx',
     'src/features/intake', 'src/features/sharing', 'src/features/importExport/SpreadsheetImportDialog.tsx',
-    'src/features/importExport/spreadsheetWorkbook.ts',
+    'src/features/importExport/spreadsheetWorkbook.ts', 'src/features/importExport/useLibraryExport.ts',
   ],
   catalog: ['src/features/catalogWorkspace', 'src/features/catalog'],
   progress: ['src/components/stats', 'src/features/weeklyRecap'],
