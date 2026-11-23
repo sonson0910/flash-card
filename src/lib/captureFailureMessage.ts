@@ -7,7 +7,7 @@ import { ProtectedFunctionError } from './protectedFunctionsCapability';
  * older than this field detects, so keep 'hạn mức', 'số thẻ' or 'lượt AI' in every quota message.
  */
 export const CAPTURE_FAILURE_REASONS = [
-  'quota-ai-cards', 'quota-daily', 'quota-service', 'quota',
+  'quota-ai-cards', 'quota-daily', 'quota-service', 'quota', 'in-flight',
   'auth', 'permission', 'network', 'configuration', 'timeout', 'failed',
   'deck-missing', 'course-cancelled', 'course-unavailable', 'invalid-selection', 'account-changed', 'not-verified',
 ] as const;
@@ -20,10 +20,9 @@ const QUOTA_REASONS: Record<string, CaptureFailureReason> = {
   'service-daily-cap': 'quota-service',
 };
 
-/** No reason for a message that carries its own retry guidance, so the extension shows that message. */
-export const captureFailureReason = (error: unknown): CaptureFailureReason | undefined => {
+export const captureFailureReason = (error: unknown): CaptureFailureReason => {
   if (error instanceof ProtectedFunctionError) {
-    if (error.retryAfterMs !== undefined) return undefined;
+    if (error.retryAfterMs !== undefined) return 'in-flight';
     if (error.kind === 'quota') return QUOTA_REASONS[error.reason ?? ''] ?? 'quota';
     if (error.kind === 'authentication') return 'auth';
     if (error.kind === 'permission') return 'permission';

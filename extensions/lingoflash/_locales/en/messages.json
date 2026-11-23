@@ -224,6 +224,7 @@
   "captureReason_quota_daily": { "message": "You have used up today's AI turns. Try again after 00:00 (Vietnam time)." },
   "captureReason_quota_service": { "message": "AI is paused because today's shared limit is used up. Try again after 00:00 (Vietnam time)." },
   "captureReason_quota": { "message": "The AI service has hit its quota. The selected word is kept; try again later." },
+  "captureReason_in_flight": { "message": "The AI card for this word is still being created. The selected word is kept; try again in a few seconds." },
   "captureReason_auth": { "message": "Sign in with Google to create cards. The selected word is kept; sign in and try again." },
   "captureReason_permission": { "message": "AI access was denied. The selected word is kept; sign in again and retry." },
   "captureReason_network": { "message": "The connection or the AI service was interrupted. The selected word is kept; try again." },

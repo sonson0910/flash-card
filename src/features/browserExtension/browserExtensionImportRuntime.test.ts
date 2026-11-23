@@ -991,6 +991,15 @@ describe('a failed silent capture tells the extension why, independent of the me
     expect((await resultFor({}, {}, async () => ({ status: 'failed', error }))).reason).toBe(reason);
   });
 
+  it('reports a generation that is still running as its own reason so the extension shows its own text', async () => {
+    const error = classifyProtectedFunctionError(
+      { code: 'functions/unavailable', details: { reason: 'operation-in-flight', retryAfterMs: 2_000 } },
+      'AI generation',
+    );
+    expect(await resultFor({}, {}, async () => ({ status: 'failed', error })))
+      .toMatchObject({ status: 'error', reason: 'in-flight' });
+  });
+
   it('reports an unclassified thrown error as a generic failure', async () => {
     expect((await resultFor({}, {}, async () => { throw new Error('boom'); })).reason).toBe('failed');
   });

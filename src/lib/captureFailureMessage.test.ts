@@ -29,12 +29,12 @@ describe('capture failure guidance', () => {
       .toContain('Thử lại sau vài giây');
   });
 
-  it('names a bounded reason for every failure kind and none for a message with its own retry guidance', () => {
+  it('names a bounded reason for every failure kind, including a generation that is still running', () => {
     expect(captureFailureReason(protectedFailure('authentication'))).toBe('auth');
     expect(captureFailureReason(protectedFailure('quota'))).toBe('quota');
     expect(captureFailureReason(new OperationTimeoutError('English timeout'))).toBe('timeout');
     expect(captureFailureReason(new Error('English save failure'))).toBe('failed');
-    expect(captureFailureReason(protectedFailure('network', 'Thẻ AI đang được tạo.', 5_000))).toBeUndefined();
+    expect(captureFailureReason(protectedFailure('network', 'Thẻ AI đang được tạo.', 5_000))).toBe('in-flight');
     for (const kind of ['authentication', 'permission', 'quota', 'network', 'configuration', 'unknown'] as const) {
       expect(CAPTURE_FAILURE_REASONS).toContain(captureFailureReason(protectedFailure(kind)));
     }
