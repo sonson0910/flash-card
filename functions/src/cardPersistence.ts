@@ -1357,9 +1357,12 @@ export async function createStarterCardsForOwner(
         periodKey, tier: plan.tier, used: used + requestedUnits, limit: plan.limit,
         periodStartsAt: plan.startsAt, periodEndsAt: plan.endsAt, updatedAt: now,
       }, { merge: true });
+      // onboardingStartedAt lets another browser tell starter-only cards from an
+      // existing library; the first batch's time is kept on later batches.
       transaction.set(resourceUsage, {
         schemaVersion: RESOURCE_USAGE_SCHEMA_VERSION,
         cardCount: currentCount + requestedUnits,
+        onboardingStartedAt: usageSnapshot.data()?.onboardingStartedAt ?? now,
       }, { merge: true });
     }
     transaction.set(operationRef, {

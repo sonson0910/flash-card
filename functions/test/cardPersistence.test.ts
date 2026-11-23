@@ -1507,6 +1507,51 @@ describe('starter card allocation', () => {
     expect(reservationWrites).toHaveLength(5);
   });
 
+  it('records when onboarding started on the usage document the batch already writes', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+    ]));
+
+    await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-1', starterBatch, now, config);
+
+    const usageWrites = harness.writes.filter(write => write.path === 'users/owner/profile/resource_usage');
+    expect(usageWrites).toHaveLength(1);
+    expect(usageWrites[0].data).toMatchObject({ cardCount: 5, onboardingStartedAt: now });
+  });
+
+  it('keeps the first onboarding start time when a later batch creates more cards', async () => {
+    const first = new Date('2026-09-20T04:00:00.000Z');
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 1, onboardingStartedAt: first })],
+    ]));
+
+    await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-2', starterBatch, now, config);
+
+    expect(harness.writes.find(write => write.path === 'users/owner/profile/resource_usage')?.data)
+      .toMatchObject({ onboardingStartedAt: first });
+  });
+
+  it('does not mark onboarding as started when every starter word was already claimed', async () => {
+    const harness = transactionHarness(new Map([
+      ['users/owner/profile/library_state', snapshot(true, { libraryEpoch: 0 })],
+      ['users/owner/profile/resource_usage', snapshot(true, { schemaVersion: 1, cardCount: 5 })],
+      ...starterBatch.flatMap(item => {
+        const id = canonicalCard(item).id;
+        return [
+          [`users/owner/card_reservations/${reservationFor(item.word)}`, snapshot(true, {
+            schemaVersion: 1, cardId: id, normalizedWord: item.word,
+          })],
+          [`users/owner/cards/${id}`, snapshot(true, ownedStarterCard(item))],
+        ] as const;
+      }),
+    ]));
+
+    await createStarterCardsForOwner(harness.database, 'owner', 'onboarding-op-3', starterBatch, now, config);
+
+    expect(harness.writes.some(write => write.path === 'users/owner/profile/resource_usage')).toBe(false);
+  });
+
   it('replays an already-completed operation without spending quota or writing cards again', async () => {
     const cardIds = starterBatch.map(item => canonicalCard(item).id);
     const harness = transactionHarness(new Map([

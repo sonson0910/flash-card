@@ -6,6 +6,8 @@ import { markOnboardingInProgress, writeOnboardingResumeStep } from './onboardin
 
 const journey = vi.fn((_props: { ownerId: string }) => null);
 vi.mock('./OnboardingJourney', () => ({ OnboardingJourney: journey }));
+const readOnboardingStarted = vi.fn(async (_ownerId: string) => false);
+vi.mock('./readOnboardingStarted', () => ({ readOnboardingStarted }));
 
 const { OnboardingGate } = await import('./OnboardingGate');
 
@@ -48,7 +50,11 @@ const installMinimalReactDom = () => {
 };
 
 describe('OnboardingGate has-cards latch', () => {
-  beforeEach(() => journey.mockClear());
+  beforeEach(() => {
+    journey.mockClear();
+    readOnboardingStarted.mockReset();
+    readOnboardingStarted.mockResolvedValue(false);
+  });
 
   it('waits for the first library result before classifying a legacy owner', async () => {
     journey.mockClear();
@@ -189,6 +195,86 @@ describe('OnboardingGate has-cards latch', () => {
       await render('legacy-b', true);
       await render('legacy-a', false);
       expect(journey).not.toHaveBeenCalled();
+    } finally {
+      act(() => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+  it('starts onboarding in a browser with no local marker when the server says the starter cards came from onboarding', async () => {
+    readOnboardingStarted.mockResolvedValue(true);
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => {
+        root.render(<CourseContext.Provider value={absentProfile}>
+          <OnboardingGate ownerId="second-browser" suppress={false} libraryReady hasCards />
+        </CourseContext.Provider>);
+      });
+      await act(async () => { await vi.waitFor(() => expect(journey).toHaveBeenCalled()); });
+      expect(journey.mock.calls.at(-1)?.[0]).toEqual({ ownerId: 'second-browser' });
+      expect(readOnboardingStarted).toHaveBeenCalledTimes(1);
+      expect(readOnboardingStarted).toHaveBeenCalledWith('second-browser');
+    } finally {
+      act(() => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps an existing library out of onboarding when the server has no onboarding record, reading it once', async () => {
+    const root = createRoot(installMinimalReactDom());
+    const render = async (hasCards: boolean) => act(async () => {
+      root.render(<CourseContext.Provider value={absentProfile}>
+        <OnboardingGate ownerId="existing-learner" suppress={false} libraryReady hasCards={hasCards} />
+      </CourseContext.Provider>);
+    });
+    try {
+      await render(true);
+      await act(async () => { await vi.waitFor(() => expect(readOnboardingStarted).toHaveBeenCalled()); });
+      await render(true);
+      await render(false);
+      expect(journey).not.toHaveBeenCalled();
+      expect(readOnboardingStarted).toHaveBeenCalledTimes(1);
+    } finally {
+      act(() => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('treats an unreadable server record as no record and keeps an existing library out of onboarding', async () => {
+    readOnboardingStarted.mockRejectedValue(new Error('offline'));
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => {
+        root.render(<CourseContext.Provider value={absentProfile}>
+          <OnboardingGate ownerId="offline-learner" suppress={false} libraryReady hasCards />
+        </CourseContext.Provider>);
+      });
+      await act(async () => { await vi.waitFor(() => expect(readOnboardingStarted).toHaveBeenCalled()); });
+      await act(async () => {});
+      expect(journey).not.toHaveBeenCalled();
+    } finally {
+      act(() => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('does not read the server record for an empty library or an unfinished local journey', async () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+    });
+    markOnboardingInProgress('local-owner');
+    const root = createRoot(installMinimalReactDom());
+    const render = async (ownerId: string, hasCards: boolean) => act(async () => {
+      root.render(<CourseContext.Provider value={absentProfile}>
+        <OnboardingGate ownerId={ownerId} suppress={false} libraryReady hasCards={hasCards} />
+      </CourseContext.Provider>);
+    });
+    try {
+      await render('empty-owner', false);
+      await render('local-owner', true);
+      await act(async () => { await vi.waitFor(() => expect(journey).toHaveBeenCalled()); });
+      expect(readOnboardingStarted).not.toHaveBeenCalled();
     } finally {
       act(() => root.unmount());
       vi.unstubAllGlobals();

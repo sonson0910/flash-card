@@ -1138,9 +1138,12 @@ service cloud.firestore {
     }
 
     // Card allocation accounting is trusted server state. Admin SDK writes
-    // bypass Rules after the callable's transaction checks the owner cap.
+    // bypass Rules after the callable's transaction checks the owner cap. The
+    // owner may read it: onboardingStartedAt tells a second browser that the
+    // library holds starter cards, not an existing learner's cards.
     match /users/{userId}/profile/resource_usage {
-      allow read, write: if false;
+      allow get: if isOwner(userId);
+      allow list, write: if false;
     }
 
     // Unsupported profile names are deny-only. Explicit matches above are the

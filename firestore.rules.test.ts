@@ -1877,6 +1877,27 @@ describe('Firestore security rules', () => {
     }
     await assertFails(getDoc(doc(owner, 'users/owner/ai_operations/operation')));
     await assertFails(setDoc(doc(owner, 'users/owner/ai_daily/2026-09-24'), { nonCardActions: 0 }));
+  });
+
+  it('lets only the owner get the card usage document, with no client write or list', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users/owner/profile/resource_usage'), {
+        schemaVersion: 1, cardCount: 5, onboardingStartedAt: new Date('2026-09-27T04:00:00.000Z'),
+      });
+    });
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
+    const other = testEnvironment.authenticatedContext('other').firestore();
+    const anonymous = testEnvironment.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(owner, 'users/owner/profile/resource_usage')));
+    await assertFails(getDoc(doc(other, 'users/owner/profile/resource_usage')));
+    await assertFails(getDoc(doc(anonymous, 'users/owner/profile/resource_usage')));
+    await assertFails(setDoc(doc(owner, 'users/owner/profile/resource_usage'), { schemaVersion: 1, cardCount: 0 }));
+    await assertFails(updateDoc(doc(owner, 'users/owner/profile/resource_usage'), { cardCount: 0 }));
+    await assertFails(deleteDoc(doc(owner, 'users/owner/profile/resource_usage')));
+  });
+
+  it('keeps the other server-only usage and entitlement documents closed', async () => {
+    const owner = testEnvironment.authenticatedContext('owner').firestore();
     for (const path of [
       'users/owner/entitlements/grant', 'operator_audit/audit', 'analytics_events/intent',
     ]) {
