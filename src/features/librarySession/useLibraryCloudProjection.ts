@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { CardData } from '../../types/card';
 import type { LibrarySessionModel } from './useLibrarySession';
+import { isCloudPageAwaitingServer } from './cloudLibraryPageController';
 
 export interface LibraryCloudProjectionValue {
   items: CardData[];
@@ -8,7 +9,8 @@ export interface LibraryCloudProjectionValue {
   hasNext: boolean;
   isLoading: boolean;
   unavailable: boolean;
-  serverConfirmed: boolean;
+  /** The shown page is not yet backed by a server answer. */
+  awaitingServer: boolean;
   stats: LibrarySessionModel['cloud']['stats'];
   facets: Record<string, number>;
   facetsComplete: boolean;
@@ -108,7 +110,7 @@ export function createLibraryCloudProjectionController({
       hasNext: cloud.hasNext,
       isLoading: cloud.isLoading,
       unavailable: cloud.cloudUnavailable,
-      serverConfirmed: Boolean(cloud.serverConfirmed),
+      awaitingServer: isCloudPageAwaitingServer(cloud),
       stats: cloud.stats,
       facets: cloud.facets,
       facetsComplete: cloud.facetsComplete,

@@ -19,10 +19,6 @@ export interface ShellSyncStatus {
   canRetry: boolean;
 }
 
-export function isAwaitingCloudConfirmation(page: { signedIn: boolean; serverConfirmed: boolean; isLoading: boolean }): boolean {
-  return page.signedIn && !page.isLoading && !page.serverConfirmed;
-}
-
 export function getShellSyncStatus(input: ShellSyncStatusInput): ShellSyncStatus {
   const errorMessage = input.error?.trim();
   if (errorMessage) {

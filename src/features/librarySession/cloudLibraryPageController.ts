@@ -105,6 +105,8 @@ export interface CloudLibraryPageSnapshot {
   isLoading: boolean;
   cloudUnavailable: boolean;
   serverConfirmed?: boolean;
+  /** The device cache answered with an empty page and the server has not answered yet. */
+  cacheOnly?: boolean;
   canRetryAutomatically: boolean;
   error: string | null;
   stats: CloudLibraryStats;
@@ -114,6 +116,16 @@ export interface CloudLibraryPageSnapshot {
   facets: Record<string, number>;
   facetsComplete: boolean;
 }
+
+/**
+ * True while the page the learner sees is not backed by a server answer: a
+ * loaded page that only the device cache or a queued write supports, or a
+ * load that the device cache could not answer and the server has not either.
+ * A load that has not heard from either source yet is just loading.
+ */
+export const isCloudPageAwaitingServer = (
+  page: Pick<CloudLibraryPageSnapshot, 'isLoading'> & { serverConfirmed?: boolean; cacheOnly?: boolean },
+): boolean => Boolean(page.cacheOnly) || (!page.isLoading && !page.serverConfirmed);
 
 const fallbackCategories = (cards: readonly CardData[]) => cards.reduce<Record<string, number>>((counts, card) => {
   const category = card.category || 'Other';
@@ -155,6 +167,7 @@ export function createCloudLibraryPageController({
     isLoading: false,
     cloudUnavailable: false,
     serverConfirmed: false,
+    cacheOnly: false,
     canRetryAutomatically: false,
     error: null,
     stats: EMPTY_LIBRARY_STATS,
@@ -348,6 +361,7 @@ export function createCloudLibraryPageController({
       isLoading: true,
       cloudUnavailable: false,
       serverConfirmed: false,
+      cacheOnly: false,
       canRetryAutomatically: false,
       error: null,
     });
@@ -377,6 +391,7 @@ export function createCloudLibraryPageController({
           const emission = ++pageEmissionSequence;
           // An empty SDK cache cannot invalidate the last confirmed device page.
           if (page.fromCache && !page.hasPendingWrites && page.items.length === 0) {
+            publish({ cacheOnly: true });
             await applyFallback(request, generation, new Error('Cloud page is not yet confirmed.'), emission);
             return;
           }
@@ -416,6 +431,7 @@ export function createCloudLibraryPageController({
             isLoading: awaitingServerForEmptyCache,
             cloudUnavailable: false,
             serverConfirmed: !page.fromCache && !page.hasPendingWrites,
+            cacheOnly: awaitingServerForEmptyCache,
             canRetryAutomatically: false,
             error: null,
           });

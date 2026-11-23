@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getShellSyncStatus, isAwaitingCloudConfirmation } from './shellSyncStatus';
+import { getShellSyncStatus } from './shellSyncStatus';
 
 describe('shell sync status', () => {
   it('treats owner verification as a quiet loading state instead of a cloud error', () => {
@@ -49,13 +49,6 @@ describe('shell sync status', () => {
     expect(getShellSyncStatus({ isOnline: false, cloudUnavailable: false, awaitingCloudConfirmation }).kind).toBe('offline');
     expect(getShellSyncStatus({ isOnline: true, cloudUnavailable: true, awaitingCloudConfirmation }).kind).toBe('cloud-paused');
     expect(getShellSyncStatus({ isOnline: true, cloudUnavailable: false, error: 'Boom', awaitingCloudConfirmation }).kind).toBe('needs-attention');
-  });
-
-  it('waits for the cloud only for a signed-in learner whose loaded page is not server confirmed', () => {
-    expect(isAwaitingCloudConfirmation({ signedIn: true, serverConfirmed: false, isLoading: false })).toBe(true);
-    expect(isAwaitingCloudConfirmation({ signedIn: true, serverConfirmed: true, isLoading: false })).toBe(false);
-    expect(isAwaitingCloudConfirmation({ signedIn: true, serverConfirmed: false, isLoading: true })).toBe(false);
-    expect(isAwaitingCloudConfirmation({ signedIn: false, serverConfirmed: false, isLoading: false })).toBe(false);
   });
 
   it('keeps the offline indicator visible while the browser is disconnected', () => {

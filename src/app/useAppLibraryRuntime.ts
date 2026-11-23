@@ -11,7 +11,6 @@ import { useLibraryCloudProjection } from '../features/librarySession/useLibrary
 import { useLibrarySession, type IdentitySessionBinding } from '../features/librarySession/useLibrarySession';
 import { useLibrarySessionPorts, type LibrarySessionPortStats } from '../features/librarySession/useLibrarySessionPorts';
 import type { AppViewMode } from '../features/navigation/useAppNavigation';
-import { isAwaitingCloudConfirmation } from '../components/shell/shellSyncStatus';
 import { appDependencies } from './appDependencies';
 
 interface PracticePublication {
@@ -72,7 +71,7 @@ export function useAppLibraryRuntime({
   const [, setHasNextCloudPage] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [cloudReadUnavailable, setCloudReadUnavailable] = useState(false);
-  const [cloudServerConfirmed, setCloudServerConfirmed] = useState(true);
+  const [cloudAwaitingServer, setCloudAwaitingServer] = useState(false);
   const [cloudRefresh, setCloudRefresh] = useState(0);
   const [browserOwnerKey, setBrowserOwnerKey] = useState<string | null>(null);
   const cardsRef = useRef(cards);
@@ -179,15 +178,15 @@ export function useAppLibraryRuntime({
     isCheckingCloud: Boolean(user && !identitySession.canPublishMutations && !identitySession.error),
     error: identitySession.error,
     cloudUnavailable: cloudReadUnavailable,
-    awaitingCloudConfirmation: isAwaitingCloudConfirmation({ signedIn: Boolean(user), serverConfirmed: cloudServerConfirmed, isLoading: isPageLoading }),
+    awaitingCloudConfirmation: Boolean(user) && cloudAwaitingServer,
   };
   cardsRef.current = cards;
   const cloudProjectionPublication = useMemo(() => ({
     presentCards: setCards,
-    presentCloud: (value: { total: number; hasNext: boolean; isLoading: boolean; unavailable: boolean; serverConfirmed: boolean;
+    presentCloud: (value: { total: number; hasNext: boolean; isLoading: boolean; unavailable: boolean; awaitingServer: boolean;
       stats: LibrarySessionPortStats; facets: Record<string, number>; facetsComplete: boolean }) => {
       setCloudTotal(value.total); setHasNextCloudPage(value.hasNext);
-      setCloudServerConfirmed(value.serverConfirmed);
+      setCloudAwaitingServer(value.awaitingServer);
       setIsPageLoading(value.isLoading);
       setCloudReadUnavailable(value.unavailable);
       setCloudStats(value.stats);
