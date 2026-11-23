@@ -168,28 +168,33 @@ describeWithEmulators('learner file uploads against the emulators', () => {
     it('reaches every ready file through the cursor, newest first, and can delete the oldest', async () => {
       const uid = owner();
       const rows: Array<[string, ReturnType<typeof record>]> = [];
-      for (let index = 0; index < 210; index += 1) {
-        rows.push([fileId('ready', index), record(uid, 'ready', new Date(now.getTime() - (210 - index) * 1_000), 1_000)]);
+      for (let index = 0; index < 198; index += 1) {
+        rows.push([fileId('ready', index), record(uid, 'ready', new Date(now.getTime() - (1 + index) * 1_000), 1_000)]);
       }
-      // Two files created in the same millisecond must not hide each other across the page boundary.
-      rows.push([fileId('tie-a', 0), record(uid, 'ready', new Date(now.getTime() - 500_000), 1_000)]);
-      rows.push([fileId('tie-b', 0), record(uid, 'ready', new Date(now.getTime() - 500_000), 1_000)]);
+      // Four files created in the same millisecond straddle the page boundary (two end the first page, two
+      // start the second): a cursor that only carried the time would skip the pair left over.
+      for (let index = 0; index < 4; index += 1) {
+        rows.push([fileId('tie', index), record(uid, 'ready', new Date(now.getTime() - 1_000_000), 1_000)]);
+      }
+      for (let index = 0; index < 10; index += 1) {
+        rows.push([fileId('old', index), record(uid, 'ready', new Date(now.getTime() - 2_000_000 - index * 1_000), 1_000)]);
+      }
       await seed(uid, rows);
       await database.collection('users').doc(uid).collection('file_usage').doc('current')
         .set({ usedBytes: 212_000, reservedBytes: 0, fileCount: 212 });
 
       const first = await listFiles(database, uid, config, now);
       expect(first.files).toHaveLength(200);
+      expect(first.files.slice(-2).map(file => file.id)).toEqual([fileId('tie', 3), fileId('tie', 2)]);
       expect(first.nextCursor).toEqual(expect.any(String));
       const second = await listFiles(database, uid, config, now, first.nextCursor);
       expect(second.files).toHaveLength(12);
+      expect(second.files.slice(0, 2).map(file => file.id)).toEqual([fileId('tie', 1), fileId('tie', 0)]);
       expect(second.nextCursor).toBeNull();
       const ids = [...first.files, ...second.files].map(file => file.id);
       expect(new Set(ids).size).toBe(212);
-      expect(ids).toContain(fileId('ready', 0));
-      expect(ids).toContain(fileId('tie-a', 0));
-      expect(ids).toContain(fileId('tie-b', 0));
-      await expect(deleteFile(database, objects, uid, fileId('ready', 0), now))
+      expect(ids).toContain(fileId('old', 9));
+      await expect(deleteFile(database, objects, uid, fileId('old', 9), now))
         .resolves.toEqual({ usage: { usedBytes: 211_000, reservedBytes: 0, fileCount: 211 } });
     });
 
