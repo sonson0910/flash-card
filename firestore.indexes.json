@@ -1925,24 +1925,6 @@
       ]
     },
     {
-      "collectionGroup": "track_memberships",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "lexemeId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "editorialStatus",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "schemaVersion",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "account_tombstones",
       "queryScope": "COLLECTION",
       "fields": [
