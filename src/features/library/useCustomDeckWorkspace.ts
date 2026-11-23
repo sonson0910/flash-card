@@ -73,6 +73,16 @@ interface ScopedDeckState {
 
 const deckCreationFailureMessage = 'The deck could not be created. Check your connection and try again.';
 const deckDeletionFailureMessage = 'The deck could not be deleted. Check your connection and try again.';
+const deckCloudNotReadyMessage = 'Cloud library storage is not ready yet. Try again in a moment.';
+
+// A signed-in learner's decks live in the cloud profile. While owner writes are
+// paused nothing can deliver a change, so refuse instead of reporting a success
+// the next profile snapshot would undo.
+const refuseWhileOwnerWritesPaused = (current: CustomDeckWorkspaceOptions): void => {
+  if (!current.owner.id || current.owner.remoteAvailable) return;
+  current.ports.reportError(deckCloudNotReadyMessage);
+  throw new Error(deckCloudNotReadyMessage);
+};
 
 const browserCache: CustomDeckCachePort = {
   read: () => {
@@ -225,6 +235,7 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
         current.ports.reportError('You can create up to 100 custom decks. Delete an existing deck before adding another.');
         return;
       }
+      refuseWhileOwnerWritesPaused(current);
       if (current.owner.id && current.owner.remoteAvailable) {
         try {
           await current.mutations.add(current.owner.id, plan.name, preset);
@@ -258,6 +269,7 @@ export function useCustomDeckWorkspace(options: CustomDeckWorkspaceOptions): {
         && ownerLifecycleRef.current.ownerScope === ownerScope
       );
       if (!isCurrentOwner()) return;
+      refuseWhileOwnerWritesPaused(current);
       const updated = decks.filter(deck => deck !== deckName);
       const changedCards: CardData[] = current.cards
         .filter(card => card.customDeck === deckName)
