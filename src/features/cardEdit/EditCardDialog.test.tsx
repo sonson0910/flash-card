@@ -909,6 +909,8 @@ describe('EditCardDialog', () => {
         'user-1',
         { Nature: -1, Business: 1 },
         'card-edit:card-1:0:category-edit',
+        undefined,
+        undefined,
       );
     });
 
@@ -963,6 +965,8 @@ describe('EditCardDialog', () => {
         'user-1',
         { Business: -1, Science: 1 },
         'card-edit:card-1:0:category-edit',
+        undefined,
+        undefined,
       );
     });
 
@@ -986,6 +990,8 @@ describe('EditCardDialog', () => {
         'user-1',
         { Business: -1, Science: 1 },
         'card-edit:card-1:0:category-edit',
+        undefined,
+        undefined,
       );
     });
 

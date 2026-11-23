@@ -51,6 +51,36 @@ describeWithEmulator('Firestore library facet receipts', () => {
     });
   });
 
+  it('keeps a cleared library at zero when a delta from before the clear arrives late', async () => {
+    const ownerId = `facet-clear-${randomUUID()}`;
+    const owner = database.collection('users').doc(ownerId);
+    const operation = () => {
+      const operationCreatedAt = new Date().toISOString();
+      return {
+        ownerId,
+        operationCreatedAt,
+        opId: libraryFacetV2OperationId(Date.parse(operationCreatedAt), randomUUID().replaceAll('-', '')),
+      };
+    };
+    await owner.collection('profile').doc('library_facets').set({
+      categories: { IELTS: 2 }, complete: true, version: 1, updatedAt: new Date().toISOString(),
+    });
+    await owner.collection('profile').doc('library_state').set({ libraryEpoch: 1, schemaVersion: 2 });
+
+    await expect(applyLibraryFacetMutation(database, ownerId, { op: 'clear', ...operation() }))
+      .resolves.toEqual({ categories: {}, complete: true });
+    await expect(applyLibraryFacetMutation(database, ownerId, {
+      op: 'delta', ...operation(), libraryEpoch: 0, delta: { IELTS: 1 },
+    })).resolves.toEqual({ categories: {}, complete: true });
+    await expect(applyLibraryFacetMutation(database, ownerId, {
+      op: 'delta', ...operation(), libraryEpoch: 1, delta: { TOEIC: 1 },
+    })).resolves.toEqual({ categories: { TOEIC: 1 }, complete: true });
+
+    expect((await owner.collection('profile').doc('library_facets').get()).data()).toMatchObject({
+      categories: { TOEIC: 1 }, complete: true, clearedLibraryEpoch: 1,
+    });
+  });
+
   it('creates a restored card and increments its canonical category facet exactly once', async () => {
     const ownerId = `facet-restore-${randomUUID()}`;
     const owner = database.collection('users').doc(ownerId);

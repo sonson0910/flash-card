@@ -30,7 +30,8 @@ export interface LearningPersistenceOptions {
   canPublishPatch(cardId: string): boolean;
   acceptVerifiedEpoch(ownerId: string, epoch: number): void;
   updateCloudStats(update: (current: LearningPersistenceStats) => LearningPersistenceStats): void;
-  updateCategoryFacets(deltas: Record<string, number>, operationId?: string): Promise<void>;
+  /** `libraryEpoch` is the library generation the card change was made under. */
+  updateCategoryFacets(deltas: Record<string, number>, operationId?: string, libraryEpoch?: number): Promise<void>;
   resetCloudState(facetsComplete: boolean): void;
   resetCloudPage(): void;
   refreshCloud(): void;

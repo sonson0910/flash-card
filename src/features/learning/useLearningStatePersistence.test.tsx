@@ -839,9 +839,11 @@ describe('useLearningStatePersistence patch reconciliation', () => {
         deletedAt: '2026-08-09T00:00:05.000Z',
       },
     });
+    // Tagged with the generation the card was deleted under, so a late arrival after a library clear is ignored.
     expect(harness.updateCategoryFacets).toHaveBeenCalledWith(
       { Study: -1 },
       expect.stringContaining('delete'),
+      2,
     );
   });
 
@@ -863,6 +865,7 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     expect(harness.updateCategoryFacets).toHaveBeenCalledWith(
       { Study: -1 },
       deriveLibraryFacetOperationId('other-device-cleanup', 'delete'),
+      2,
     );
   });
 
@@ -883,8 +886,8 @@ describe('useLearningStatePersistence patch reconciliation', () => {
     await expect(harness.persistence.persist(deleteMutation)).resolves.toMatchObject({
       deleteReceipt: { finality: 'committed', card: latest },
     });
-    expect(harness.updateCategoryFacets).toHaveBeenCalledWith({ Travel: -1 }, expect.stringContaining('delete'));
-    expect(harness.updateCategoryFacets).not.toHaveBeenCalledWith({ Study: -1 }, expect.anything());
+    expect(harness.updateCategoryFacets).toHaveBeenCalledWith({ Travel: -1 }, expect.stringContaining('delete'), 2);
+    expect(harness.updateCategoryFacets).not.toHaveBeenCalledWith({ Study: -1 }, expect.anything(), expect.anything());
   });
 
   it('refreshes the epoch without a receipt when a delete is stale', async () => {

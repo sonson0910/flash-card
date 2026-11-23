@@ -83,6 +83,17 @@ describe('card repository library facets', () => {
     expect(firestore.runTransaction).not.toHaveBeenCalled();
   });
 
+  it('tags a delta with the library generation its card change was made under', async () => {
+    const callable = vi.fn().mockResolvedValue({ data: { categories: { IELTS: 2 }, complete: true } });
+    functionsRuntime.httpsCallable.mockReturnValue(callable);
+
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'tagged-create-operation', undefined, 3);
+    await applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 }, 'untagged-create-operation');
+
+    expect(callable.mock.calls[0][0]).toMatchObject({ op: 'delta', delta: { IELTS: 1 }, libraryEpoch: 3 });
+    expect(callable.mock.calls[1][0]).not.toHaveProperty('libraryEpoch');
+  });
+
   it('does not call the service after the active owner changes', async () => {
     firebaseRuntime.auth.currentUser = { uid: 'other-owner' };
     await expect(applyCategoryDeltas({} as never, 'owner-1', { IELTS: 1 })).rejects.toMatchObject({

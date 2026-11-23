@@ -51,8 +51,10 @@ const updateCategoryFacets = async (
   ownerId: string | null,
   deltas: Record<string, number>,
   operationId?: string,
+  libraryEpoch?: number,
 ): Promise<LibraryFacets | null> => {
   if (!cloudAvailable || !db || !ownerId || Object.keys(deltas).length === 0) return null;
+  if (libraryEpoch !== undefined) return applyCategoryDeltas(db, ownerId, deltas, operationId, undefined, libraryEpoch);
   return operationId === undefined
     ? applyCategoryDeltas(db, ownerId, deltas)
     : applyCategoryDeltas(db, ownerId, deltas, operationId);
