@@ -33,6 +33,8 @@ export const CardMnemonicSection = React.memo(function CardMnemonicSection({
       word: card.word,
       translation: card.translation,
       partOfSpeech: card.partOfSpeech,
+      targetLanguage: card.language,
+      translationLanguage: card.translationLanguage,
     });
 
       if (onUpdateCard) {

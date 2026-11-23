@@ -291,10 +291,26 @@ export async function generateStoryContext(
   return options ? parsePlainStoryInfo(result) : parseStoryInfo(result, safeWords);
 }
 
-export async function translateText(text: string): Promise<string> {
+export interface CardLanguagePair {
+  targetLanguage?: string;
+  translationLanguage?: string;
+}
+
+const SUPPORTED_TARGET_LANGUAGES: readonly string[] = ['en', 'ko', 'ja', 'zh'];
+const SUPPORTED_TRANSLATION_LANGUAGES: readonly string[] = ['vi', 'en'];
+
+/** Keeps only codes the server accepts; a card without them is read as English explained in Vietnamese. */
+const supportedLanguagePair = ({ targetLanguage, translationLanguage }: CardLanguagePair = {}) => ({
+  ...(targetLanguage && SUPPORTED_TARGET_LANGUAGES.includes(targetLanguage) ? { targetLanguage } : {}),
+  ...(translationLanguage && SUPPORTED_TRANSLATION_LANGUAGES.includes(translationLanguage) ? { translationLanguage } : {}),
+});
+
+export async function translateText(text: string, language?: CardLanguagePair): Promise<string> {
   const expectedOwnerId = auth?.currentUser?.uid ?? null;
   const safeText = text.trim().slice(0, 2048);
-  const translated = await withNetworkRetry(() => callProductionAI<unknown>('translate', safeText, expectedOwnerId));
+  const pair = supportedLanguagePair(language);
+  const input = Object.keys(pair).length > 0 ? { text: safeText, ...pair } : safeText;
+  const translated = await withNetworkRetry(() => callProductionAI<unknown>('translate', input, expectedOwnerId));
   return typeof translated === 'string' ? translated.trim().slice(0, 2048) : '';
 }
 
@@ -328,8 +344,8 @@ export async function askVocabularyTutor(input: VocabularyTutorInput): Promise<s
   );
 }
 
-export async function generateMnemonic(input: VocabularyCardInput): Promise<string> {
-  const card = normalizeVocabularyCard(input);
+export async function generateMnemonic(input: VocabularyCardInput & CardLanguagePair): Promise<string> {
+  const card = { ...normalizeVocabularyCard(input), ...supportedLanguagePair(input) };
   return parseMnemonic(await withNetworkRetry(() => callProductionAI<unknown>('mnemonic', card)));
 }
 
