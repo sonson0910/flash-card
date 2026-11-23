@@ -474,6 +474,7 @@ export default function AppRuntime({
     openClearOverlay(focusReturnTarget, canClearLibrary);
   const handleSignIn = async () => { await libraryActions.signIn(); };
   const handleSignOut = async () => { await libraryActions.signOut(); };
+  const handleGateSignOut = () => libraryActions.signOut();
   const handleRetrySync = async () => {
     if (isRetryingSync) return;
     setIsRetryingSync(true);
@@ -576,7 +577,7 @@ export default function AppRuntime({
         submit={accountProfile.submit}
         retry={accountProfile.retry}
         returnLabel={_(APP_VIEW_HEADINGS[viewMode])}
-        onSignOut={handleSignOut}
+        onSignOut={handleGateSignOut}
       />
     ) : (
     <AccountProfileProvider profile={accountProfile.profile}>
