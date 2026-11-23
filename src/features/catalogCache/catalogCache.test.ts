@@ -192,6 +192,29 @@ describe('catalog IndexedDB cache', () => {
     expect(matches).toHaveLength(1);
   });
 
+  it('re-indexes entries staged without a search key by an older tab', async () => {
+    const first = await openCatalogCacheDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = first.transaction('entries', 'readwrite');
+      transaction.objectStore('entries').put({
+        entryKey: 'r\u0000m1', releaseKey: 'r', membershipId: 'm1', language: 'en', trackId: 'ielts',
+        rank: 1, normalizedLemma: 'Monday', lemma: 'Monday',
+      });
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    closeCatalogCacheForTests();
+
+    const database = await openCatalogCacheDatabase();
+    const index = database.transaction('entries', 'readonly').objectStore('entries').index('releaseLanguageTrackLemma');
+    const matches = await new Promise<unknown[]>((resolve, reject) => {
+      const request = index.getAll(IDBKeyRange.bound(['r', 'en', 'ielts', 'mon'], ['r', 'en', 'ielts', 'mon\uffff', 99, '\uffff']));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    expect(matches).toHaveLength(1);
+  });
+
   it('rejects a blocked upgrade with recovery guidance and clears the cached open for retry', async () => {
     const blocker = await openSchemaV2Database();
     blocker.onversionchange = () => undefined;

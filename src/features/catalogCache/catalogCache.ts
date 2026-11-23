@@ -386,6 +386,40 @@ const rebuildLemmaIndex = (transaction: IDBTransaction): void => {
   };
 };
 
+/**
+ * A tab still running an older release can stage entries without a search key after the
+ * upgrade. Those entries are absent from the lemma index, so a count mismatch triggers a
+ * one-off backfill. The two counts are cheap; the scan runs only when they differ.
+ */
+const repairUnindexedLemmas = async (database: IDBDatabase): Promise<void> => {
+  const countOf = (request: IDBRequest<number>) => new Promise<number>((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const probe = database.transaction(ENTRY_STORE, 'readonly').objectStore(ENTRY_STORE);
+  const [stored, indexed] = await Promise.all([
+    countOf(probe.count()),
+    countOf(probe.index('releaseLanguageTrackLemma').count()),
+  ]);
+  if (stored === indexed) return;
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(ENTRY_STORE, 'readwrite');
+    const cursorRequest = transaction.objectStore(ENTRY_STORE).openCursor();
+    cursorRequest.onsuccess = () => {
+      const cursor = cursorRequest.result;
+      if (!cursor) return;
+      const value = cursor.value as StoredCatalogEntry;
+      if (typeof value.searchLemma !== 'string') {
+        cursor.update({ ...value, searchLemma: catalogSearchLemma(value.normalizedLemma) });
+      }
+      cursor.continue();
+    };
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+};
+
 const createLexemeStore = (database: IDBDatabase): void => {
   if (database.objectStoreNames.contains(LEXEME_STORE)) return;
   const lexemes = database.createObjectStore(LEXEME_STORE, { keyPath: 'lexemeKey' });
@@ -499,7 +533,10 @@ export function openCatalogCacheDatabase(
     safeTimeout,
     registerDatabase,
     () => openForwardCompatibleDatabase(safeTimeout),
-  );
+  ).then(async database => {
+    await repairUnindexedLemmas(database).catch(() => undefined);
+    return database;
+  });
   databasePromise = opening;
   void opening.catch(() => {
     if (databasePromise === opening) databasePromise = null;
