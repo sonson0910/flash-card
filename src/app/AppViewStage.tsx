@@ -83,7 +83,6 @@ interface AppViewStageProps {
   readonly stats: LibraryStatsViewModel;
   readonly cloudStats: CloudLibraryStats;
   readonly cloudStatsTargetLanguage?: string | null;
-  readonly streak: number;
   readonly isStatsLoading: boolean;
   readonly statsError: string | null;
   readonly rewardTimeZone?: string;
@@ -137,7 +136,7 @@ interface AppViewStageProps {
 const fallback = (message: ReactNode) => <WorkspaceLoadingPanel>{message}</WorkspaceLoadingPanel>;
 
 export function AppViewStage({
-  viewMode, ownerId, database, verifiedLibraryEpoch, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, cloudStats, cloudStatsTargetLanguage, streak, isStatsLoading, statsError, rewardTimeZone, learner, learnerLevel, loadPracticePool, reviewCard,
+  viewMode, ownerId, database, verifiedLibraryEpoch, languageProfile, isOffline, isDarkMode, headingRef, focusIntent, stats, cloudStats, cloudStatsTargetLanguage, isStatsLoading, statsError, rewardTimeZone, learner, learnerLevel, loadPracticePool, reviewCard,
   catalogCards, adoptCatalogCards, notifyCatalog,
   openVocabulary, openMasteredVocabulary, openPaths, continueReview, continueCatalogUnit, openMorePractice, openWeeklyRecap, onVerifiedPracticeOutcome, weeklyRecapRequestOwnerId, weeklyRecapRequestSettled, onWeeklyRecapRequestConsumed, onPracticePhrase, onListenScopeChange, settingsSection, openSettings, webWordsReturnView, returnFromWebWords, filePort, fileCourses, fileCardPhotos, activeCourseId, openFiles, openToday, goalsCourseId, openCourseGoals, libraryContent, practiceContent,
 }: AppViewStageProps) {
@@ -150,7 +149,7 @@ export function AppViewStage({
       else window.history.replaceState({}, '', location);
     };
     return <Suspense fallback={fallback(<Trans {...msg({ context: 'shell.loading.today', message: 'Preparing today’s learning plan…' })} />)}><div className="async-content-enter" data-async-content="today"><DailyLearningWorkspace
-      ownerId={ownerId} database={database} verifiedLibraryEpoch={verifiedLibraryEpoch} languageProfile={languageProfile} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson} streak={streak} studyXpHistory={stats.xpChartData} rewardTimeZone={rewardTimeZone} {...(learner ? { learner } : {})}
+      ownerId={ownerId} database={database} verifiedLibraryEpoch={verifiedLibraryEpoch} languageProfile={languageProfile} isOffline={isOffline} headingRef={headingRef} focusIntent={focusIntent} initialLesson={route.lesson} studyXpHistory={stats.xpChartData} rewardTimeZone={rewardTimeZone} {...(learner ? { learner } : {})}
       loadPracticePool={loadPracticePool} reviewCard={(cardId, rating, operationId, source) => reviewCard(cardId, rating, operationId, source)}
       openLesson={openLesson} openVocabulary={openVocabulary} openPaths={openPaths} openCourseGoals={openCourseGoals} continueReview={continueReview} openMorePractice={openMorePractice} openWeeklyRecap={openWeeklyRecap} onVerifiedPracticeOutcome={onVerifiedPracticeOutcome}
       adoptCatalogCards={adoptCatalogCards} onPracticePhrase={onPracticePhrase} onListenScopeChange={onListenScopeChange}

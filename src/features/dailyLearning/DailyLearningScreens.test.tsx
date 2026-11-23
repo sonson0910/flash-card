@@ -25,7 +25,7 @@ import type {
   TodayScreenActions,
   TodayScreenModel,
 } from './dailyLearningPresentation';
-import { evidencedStudyStreak, reviewFeedbackCue } from './dailyLearningPresentation';
+import { reviewFeedbackCue } from './dailyLearningPresentation';
 
 i18n.load('en', enToday);
 i18n.activate('en');
@@ -803,23 +803,6 @@ describe('ProgressScreen', () => {
 });
 
 describe('daily learning presentation boundaries', () => {
-  it('shows a study streak only with activity recorded on the current day', () => {
-    const now = new Date('2026-10-03T00:30:00.000Z');
-    const today = '2026-10-03';
-    const yesterday = '2026-10-02';
-    expect(evidencedStudyStreak(1, [], now)).toBe(0);
-    expect(evidencedStudyStreak(4, [{ date: yesterday, XP: 20 }], now)).toBe(0);
-    expect(evidencedStudyStreak(4, [{ date: today, XP: 0 }], now)).toBe(0);
-    expect(evidencedStudyStreak(4, [{ date: today, XP: 20 }], now)).toBe(4);
-  });
-
-  it('uses the learner reward timezone for ISO XP history dates', () => {
-    const now = new Date('2026-10-03T00:30:00.000Z');
-    const history = [{ date: '2026-10-02', XP: 20 }];
-    expect(evidencedStudyStreak(4, history, now, 'America/Los_Angeles')).toBe(4);
-    expect(evidencedStudyStreak(4, history, now)).toBe(0);
-  });
-
   it('rewards a correct reveal with sound and a success haptic, and a wrong one with a haptic nudge only', () => {
     expect(reviewFeedbackCue('correct')).toEqual({ playSound: true, haptic: 'success' });
     expect(reviewFeedbackCue('incorrect')).toEqual({ playSound: false, haptic: 'warning' });

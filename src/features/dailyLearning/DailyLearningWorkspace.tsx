@@ -235,8 +235,6 @@ export interface DailyLearningWorkspaceProps {
   readonly headingRef?: RefObject<HTMLHeadingElement | null>;
   readonly focusIntent?: number;
   readonly initialLesson: DailyLessonMode | null;
-  /** The stored run; Today and the recap read the server's streak projection instead, so this is not shown. */
-  readonly streak: number;
   readonly studyXpHistory: readonly { readonly date: string; readonly XP: number }[];
   readonly rewardTimeZone?: string;
   /** Firestore for the reads Today and the recap make themselves; the configured client when absent. */

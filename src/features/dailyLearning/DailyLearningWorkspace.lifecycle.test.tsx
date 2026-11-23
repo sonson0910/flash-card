@@ -167,7 +167,7 @@ describe('DailyLearningWorkspace audio lifecycle', () => {
     try {
       await act(async () => {
         root.render(createElement(I18nProvider, { i18n }, createElement(DailyLearningWorkspace, {
-        languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE, streak: 0, studyXpHistory: [], openWeeklyRecap: () => undefined, onVerifiedPracticeOutcome: () => undefined,
+        languageProfile: ENGLISH_TO_VIETNAMESE_PROFILE, studyXpHistory: [], openWeeklyRecap: () => undefined, onVerifiedPracticeOutcome: () => undefined,
           ownerId: null,
           isOffline: false,
           initialLesson: 'listening',

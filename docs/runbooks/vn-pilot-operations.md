@@ -145,6 +145,12 @@ Record only the pid and status, never the deleted UID or exported
 JSON. A real two-browser Google/Auth smoke and a production throwaway-account
 test remain G3 owner-gated actions.
 
+### Practice XP and progress counters (accepted limits)
+
+Practice XP is scored by the server from a practice session: 5 XP per correct quiz or spelling answer and 20 XP for a match win. It has no per-card, per-day or per-session cap beyond the hourly start and complete budgets, and the quiz answer key is the first option the server returns, so practice XP is not unforgeable. This is accepted because progress is private to the account and there is no leaderboard or shared ranking.
+
+The reviewed-word, mastered-word and weekly started or mastered counters derive from the stored card. A word the learner deletes and adds again is counted again, so these counters count word additions, not distinct words. Do not describe them as distinct words in support answers or release notes.
+
 ## Production operator credential source
 
 For an explicitly authorized production operator action, use refreshed Application Default Credentials with access to the sealed production project and named database. The operator pseudonym key is `ANALYTICS_PSEUDONYM_KEY` in that same project's Secret Manager. Load an enabled secret version directly into the operator process environment without logging or writing its value; do not substitute a staging key or create a replacement merely because a local environment variable is absent. The operator target checks still apply.
