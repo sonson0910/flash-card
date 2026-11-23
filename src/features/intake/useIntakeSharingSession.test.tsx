@@ -285,6 +285,60 @@ describe('useIntakeSharingSession', () => {
     }
   });
 
+  it('drops the typed word and stored operation of the previous owner when another account signs in', async () => {
+    const store = new Map<string, string>([['word', 'apple'], ['operation', 'op']]);
+    const draft = {
+      read: vi.fn(() => store.get('word') ?? null),
+      write: vi.fn((value: string) => { store.set('word', value); }),
+      clear: vi.fn(() => { store.delete('word'); }),
+      clearOperation: vi.fn(() => { store.delete('operation'); }),
+    };
+    const sharing = {
+      adapter: {
+        load: vi.fn(async () => ({ cards: [] })),
+        create: vi.fn(async () => ({ shareId: 'share-1', expiresAt: '2026-09-01T00:00:00.000Z' })),
+        revoke: vi.fn(async () => undefined),
+      },
+      browser: { getCurrentUrl: () => 'https://example.test/library', replaceLocation: vi.fn() },
+      loadCards: vi.fn(async () => ({ cards: [], total: 0, hasNext: false })),
+    };
+    const intake = intakeOptions();
+    const resetSpreadsheetSource = vi.fn();
+    let latestModel: IntakeSharingSessionModel | null = null;
+
+    function Harness({ ownerKey }: { ownerKey: string | null }) {
+      const session = useIntakeSharingSession({
+        ownerKey,
+        intake,
+        draft,
+        resetSpreadsheetSource,
+        sharing,
+      }, { useIntakePort: useCardIntakePort });
+      latestModel = session.model;
+      return null;
+    }
+
+    const root = createRoot(installMinimalReactDom());
+    try {
+      await act(async () => { root.render(<Harness ownerKey={null} />); });
+      await act(async () => { root.render(<Harness ownerKey="owner-a" />); });
+      // A reload signs the same owner back in: the typed word survives it.
+      expect(latestModel).toMatchObject({ draft: 'apple' });
+      expect(draft.clear).not.toHaveBeenCalled();
+      draft.clearOperation.mockClear();
+
+      await act(async () => { root.render(<Harness ownerKey={null} />); });
+      await act(async () => { root.render(<Harness ownerKey="owner-b" />); });
+
+      expect(latestModel).toMatchObject({ draft: '' });
+      expect(store.has('word')).toBe(false);
+      expect(draft.clearOperation).toHaveBeenCalled();
+    } finally {
+      await act(async () => { root.unmount(); });
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('stales an import during the render-to-effect owner transition', async () => {
     const workbook = deferred<{ structuredRows: Array<Record<string, string>>; flatRows: string[][] }>();
     const renderedOwnerB = deferred<void>();

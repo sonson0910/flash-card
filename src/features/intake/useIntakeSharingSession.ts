@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { withTimeout } from '../../lib/async';
 import type { PracticeDeckScope } from '../../lib/practiceScope';
 import type {
@@ -198,6 +198,17 @@ dependencies: IntakeSharingSessionDependencies,
   } | null>(null);
   const [preparingShareGeneration, setPreparingShareGeneration] = useState<number | null>(null);
   const isPreparingShare = preparingShareGeneration === ownerSessionGeneration;
+  // The typed word and its stored request belong to the learner who typed them: when the signed-in
+  // owner leaves or changes, they go before the next owner's controller reads them. A reload only
+  // moves from no owner to the same owner, so it keeps them.
+  const previousOwnerKeyRef = useRef(ownerKey);
+  useLayoutEffect(() => {
+    const previous = previousOwnerKeyRef.current;
+    previousOwnerKeyRef.current = ownerKey;
+    if (previous === null || previous === ownerKey) return;
+    try { draft.clear(); } catch { /* storage is optional */ }
+    try { draft.clearOperation?.(); } catch { /* storage is optional */ }
+  }, [draft, ownerKey]);
   const cardPort = dependencies.useIntakePort(intake);
   const cardIntake = useCardIntake({
     ownerKey,
