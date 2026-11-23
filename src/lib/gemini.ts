@@ -86,7 +86,7 @@ const callableResult = <T,>(payload: { result: T } | WordStreamFailure): T => {
 };
 
 const callProductionAI = async <T,>(
-  action: keyof typeof protectedOperationLabel, input: unknown, expectedOwnerId: string | null = auth?.currentUser?.uid ?? null,
+  action: keyof typeof protectedOperationLabel, input: unknown, expectedOwnerId: string | null,
   operationId?: string,
   onProgress?: (progress: WordGenerationProgress) => void,
   signal?: AbortSignal,
@@ -323,17 +323,20 @@ export async function askVocabularyTutor(input: VocabularyTutorInput): Promise<s
   const card = normalizeVocabularyCard(input);
   const question = input.question.trim().slice(0, 500);
   if (!question) throw new Error('A tutor question is required.');
+  const expectedOwnerId = auth?.currentUser?.uid ?? null;
   return parseTutorAnswer(
-    await withNetworkRetry(() => callProductionAI<unknown>('tutor', { ...card, question })),
+    await withNetworkRetry(() => callProductionAI<unknown>('tutor', { ...card, question }, expectedOwnerId)),
   );
 }
 
 export async function generateMnemonic(input: VocabularyCardInput): Promise<string> {
   const card = normalizeVocabularyCard(input);
-  return parseMnemonic(await withNetworkRetry(() => callProductionAI<unknown>('mnemonic', card)));
+  const expectedOwnerId = auth?.currentUser?.uid ?? null;
+  return parseMnemonic(await withNetworkRetry(() => callProductionAI<unknown>('mnemonic', card, expectedOwnerId)));
 }
 
-export async function extractVocabulary(text: string, language?: { targetLanguage: string; translationLanguage: string }, expectedOwnerId?: string | null): Promise<ExtractedWordItem[]> {
+export async function extractVocabulary(text: string, language?: { targetLanguage: string; translationLanguage: string }, queuedOwnerId?: string | null): Promise<ExtractedWordItem[]> {
+  const expectedOwnerId = queuedOwnerId === undefined ? auth?.currentUser?.uid ?? null : queuedOwnerId;
   const safeText = text.trim().slice(0, 2_000);
   if (!safeText) throw new Error('Vocabulary text is required.');
   return parseExtractedWords(
@@ -343,8 +346,9 @@ export async function extractVocabulary(text: string, language?: { targetLanguag
 
 export async function generateDialogue(
   cards: VocabularyCardInput[],
-  expectedOwnerId?: string | null,
+  queuedOwnerId?: string | null,
 ): Promise<DialogueResult> {
+  const expectedOwnerId = queuedOwnerId === undefined ? auth?.currentUser?.uid ?? null : queuedOwnerId;
   const safeCards = cards.slice(0, 5).map(normalizeVocabularyCard).map(({ word, translation }) => ({
     word,
     translation,
@@ -357,8 +361,9 @@ export async function generateDialogue(
 
 export async function sendTextConversationTurn(
   input: TextConversationRequestV1,
-  expectedOwnerId?: string | null,
+  queuedOwnerId?: string | null,
 ): Promise<TextConversationResponseV1> {
+  const expectedOwnerId = queuedOwnerId === undefined ? auth?.currentUser?.uid ?? null : queuedOwnerId;
   const safeInput = {
     sessionId: input.sessionId,
     mission: {
