@@ -1108,6 +1108,39 @@ export async function fetchCatalogUnitCards(
   return cards;
 }
 
+/**
+ * Reads the plain English cards (no lexeme id) the learner holds for up to 20 words, in one server
+ * query. A catalog word the learner already holds this way is studied as that card, not added again.
+ */
+export async function fetchPlainEnglishCardsByWords(
+  db: Firestore,
+  userId: string,
+  { words, libraryEpoch }: { words: readonly string[]; libraryEpoch: number },
+): Promise<Map<string, CardData>> {
+  const normalizedWords = [...new Set(words.map(normalizePrefixSearch).filter(Boolean))];
+  if (!userId || !Number.isSafeInteger(libraryEpoch) || libraryEpoch < 0 || normalizedWords.length > 20) {
+    throw new TypeError('Invalid plain English card request.');
+  }
+  const cards = new Map<string, CardData>();
+  if (normalizedWords.length === 0) return cards;
+  const snapshot = await getDocsFromServer(query(
+    cardsCollection(db, userId),
+    where('normalizedWord', 'in', normalizedWords),
+    where('libraryEpoch', '==', libraryEpoch),
+    limit(normalizedWords.length * CARD_MATCHES_PER_WORD_LIMIT),
+  ));
+  for (const document of snapshot.docs) {
+    const raw = document.data() as Partial<CardData>;
+    if (raw.lexemeId || !cardHasExplicitLibraryEpoch(raw, libraryEpoch) || !cardMatchesTargetLanguage(raw, 'en')) continue;
+    const card = normalizeCardData(raw, document.id);
+    const key = cardWordKey(card);
+    if (!normalizedWords.includes(key)) continue;
+    const existing = cards.get(key);
+    cards.set(key, existing ? preferCardWithLearningProgress(existing, card) : card);
+  }
+  return cards;
+}
+
 export async function findCardByNormalizedWord(
   db: Firestore,
   userId: string,
