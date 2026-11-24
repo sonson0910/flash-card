@@ -31,6 +31,8 @@ SHARED_CSS = review_css + '''
 .sf-lift:hover{transform:translateY(-6px) rotate(-.6deg)}
 @keyframes sf-fall-k{0%{transform:translate3d(0,-20px,0) rotate(0)}100%{transform:translate3d(40px,960px,0) rotate(540deg)}}
 .sf-fall{animation-name:sf-fall-k;animation-timing-function:linear;animation-iteration-count:infinite}
+/* A celebration that settles: the confetti falls twice and stays below the frame. */
+.sf-fall-once{animation-name:sf-fall-k;animation-timing-function:linear;animation-iteration-count:2;animation-fill-mode:forwards}
 @keyframes sf-rise-k{from{opacity:0;transform:translate3d(0,14px,0)}to{opacity:1;transform:none}}
 .sf-rise{animation:sf-rise-k 600ms cubic-bezier(.16,1,.3,1) both}
 .sf-rise-2{animation:sf-rise-k 600ms cubic-bezier(.16,1,.3,1) 120ms both}
@@ -41,8 +43,8 @@ SHARED_CSS = review_css + '''
 .sf-deal-3{animation:sf-deal-k 700ms cubic-bezier(.16,1,.3,1) 510ms both}
 @keyframes sf-sheen-k{0%,100%{background-position:100% 0}50%{background-position:0 0}}
 .sf-sheen{animation:sf-sheen-k 3.6s ease-in-out infinite}
-@keyframes sf-grow-k{from{transform:scaleX(.2)}to{transform:scaleX(1)}}
-.sf-grow{transform-origin:left;animation:sf-grow-k 1.1s cubic-bezier(.16,1,.3,1) 800ms both}
+@keyframes sf-grow-k{from{scale:.2 1}}
+.sf-grow{transform-origin:left;animation:sf-grow-k 900ms cubic-bezier(.16,1,.3,1) 400ms backwards}
 @keyframes sf-bob-k{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}}
 .sf-bob-a{animation:sf-bob-k 5s ease-in-out infinite}
 .sf-bob-b{animation:sf-bob-k 6s ease-in-out 1s infinite}
@@ -53,7 +55,9 @@ SHARED_CSS = review_css + '''
 @keyframes sf-wave-k{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
 .sf-wave{transform-origin:center;animation:sf-wave-k 900ms ease-in-out infinite}
 @keyframes sf-shimmer-k{from{background-position:200% 0}to{background-position:-200% 0}}
-.sf-shimmer{background-size:200% 100%;animation:sf-shimmer-k 1.6s linear infinite}
+/* The sheen is an image over the block's own background-color, and exists only while motion is allowed, so a
+   reduced-motion skeleton stays flat. Give shimmer blocks background-color, not the background shorthand. */
+@media (prefers-reduced-motion: no-preference){.sf-shimmer{background-image:linear-gradient(90deg,transparent 0 50%,rgb(255 255 255 / .2) 75%,transparent 100%);background-size:200% 100%;animation:sf-shimmer-k 1.6s linear infinite}}
 @keyframes sf-spin-k{to{transform:rotate(360deg)}}
 .sf-spin{animation:sf-spin-k 900ms linear infinite}
 @keyframes sf-shake-k{0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
@@ -62,8 +66,9 @@ SHARED_CSS = review_css + '''
 .nk-pop{animation:nk-pop-k 520ms cubic-bezier(.34,1.56,.64,1) both}
 .nk-pop-2{animation:nk-pop-k 520ms cubic-bezier(.34,1.56,.64,1) 140ms both}
 .nk-pop-3{animation:nk-pop-k 520ms cubic-bezier(.34,1.56,.64,1) 280ms both}
-@keyframes nk-stamp-k{0%{opacity:0;transform:scale(2.6) rotate(-32deg)}60%{opacity:1;transform:scale(.92) rotate(-10deg)}100%{opacity:1;transform:scale(1) rotate(-12deg)}}
-.nk-stamp{animation:nk-stamp-k 620ms cubic-bezier(.34,1.56,.64,1) 400ms both}
+/* The stamp rests tilted. The tilt is the element's own rotate, so the still and the settled motion agree. */
+@keyframes nk-stamp-k{0%{opacity:0;transform:scale(2.6) rotate(-20deg)}60%{opacity:1;transform:scale(.92) rotate(2deg)}100%{opacity:1;transform:none}}
+.nk-stamp{rotate:-12deg;animation:nk-stamp-k 620ms cubic-bezier(.34,1.56,.64,1) 400ms both}
 @keyframes nk-spark-k{0%,100%{opacity:0;transform:scale(0) rotate(0)}50%{opacity:1;transform:scale(1) rotate(45deg)}}
 .nk-spark{animation:nk-spark-k 1.8s ease-in-out infinite}
 @keyframes nk-speed-k{0%,100%{opacity:.55}50%{opacity:.9}}
@@ -78,6 +83,7 @@ SHARED_CSS = review_css + '''
 .nk-slide-2{animation:nk-slide-k 480ms cubic-bezier(.16,1,.3,1) 90ms both}
 .nk-slide-3{animation:nk-slide-k 480ms cubic-bezier(.16,1,.3,1) 180ms both}
 .nk-slide-4{animation:nk-slide-k 480ms cubic-bezier(.16,1,.3,1) 270ms both}
+.nk-slide-5{animation:nk-slide-k 480ms cubic-bezier(.16,1,.3,1) 360ms both}
 @keyframes nk-flash-k{0%{opacity:.85}100%{opacity:0}}
 .nk-flash{animation:nk-flash-k 700ms ease-out both}
 @keyframes nk-bar-k{0%,100%{transform:scaleY(.3)}33%{transform:scaleY(1)}66%{transform:scaleY(.6)}}
@@ -107,8 +113,10 @@ SHARED_CSS = review_css + '''
 .nk-lift:active{translate:0 0;scale:.97}
 @keyframes nk-flare-k{0%,100%{opacity:.55;transform:scale(.8) rotate(0)}50%{opacity:1;transform:scale(1.1) rotate(8deg)}}
 .nk-flare{animation:nk-flare-k 3.4s ease-in-out infinite}
-@keyframes nk-beam-k{0%,100%{opacity:.5;translate:0 0}50%{opacity:1;translate:40px 0}}
-.nk-beam{animation:nk-beam-k 9s ease-in-out infinite}
+/* Beams sit behind translucent panels, so they stay under full strength: at rest and at their peak the copy on a
+   panel they cross keeps its contrast. */
+@keyframes nk-beam-k{0%,100%{opacity:.3;translate:0 0}50%{opacity:.62;translate:40px 0}}
+.nk-beam{opacity:.45;animation:nk-beam-k 9s ease-in-out infinite}
 @keyframes nk-starfield-k{0%,100%{opacity:.75}50%{opacity:1}}
 .nk-starfield{animation:nk-starfield-k 4s ease-in-out infinite}
 @keyframes nk-unfold-k{from{opacity:0;transform:scale(.4) rotate(-14deg)}to{opacity:1;transform:none}}
@@ -119,8 +127,8 @@ SHARED_CSS = review_css + '''
 .nk-banner{animation:nk-banner-k 520ms cubic-bezier(.2,1.4,.4,1) both}
 @media (prefers-reduced-motion: reduce){.nk-flare,.nk-beam,.nk-starfield,.nk-unfold,.nk-pillar,.nk-banner{animation:none}}
 @media (prefers-reduced-motion: reduce){.nk-meteor{animation:none;opacity:0}.nk-twinkle,.nk-drift,.nk-drift-b,.nk-rise,.nk-rise-2,.nk-rise-3{animation:none}.nk-lift,.nk-press{transition:none}}
-@media (prefers-reduced-motion: reduce){.nk-pop,.nk-pop-2,.nk-pop-3,.nk-stamp,.nk-spark,.nk-speed,.nk-rim-spin,.nk-float,.nk-slide,.nk-slide-2,.nk-slide-3,.nk-slide-4,.nk-flash,.nk-bar,.nk-shine,.nk-marquee{animation:none}.nk-press{transition:none}}
-@media (prefers-reduced-motion: reduce){.sf-fall,.sf-rise,.sf-rise-2,.sf-rise-3,.sf-deal-1,.sf-deal-2,.sf-deal-3,.sf-sheen,.sf-grow,.sf-bob-a,.sf-bob-b,.sf-pop,.sf-pulse,.sf-wave,.sf-shimmer,.sf-spin,.sf-shake{animation:none}.sf-fall{display:none}.sf-press,.sf-lift{transition:none}}
+@media (prefers-reduced-motion: reduce){.nk-pop,.nk-pop-2,.nk-pop-3,.nk-stamp,.nk-spark,.nk-speed,.nk-rim-spin,.nk-float,.nk-slide,.nk-slide-2,.nk-slide-3,.nk-slide-4,.nk-slide-5,.nk-flash,.nk-bar,.nk-shine,.nk-marquee{animation:none}.nk-press{transition:none}}
+@media (prefers-reduced-motion: reduce){.sf-fall,.sf-rise,.sf-rise-2,.sf-rise-3,.sf-deal-1,.sf-deal-2,.sf-deal-3,.sf-sheen,.sf-grow,.sf-bob-a,.sf-bob-b,.sf-pop,.sf-pulse,.sf-wave,.sf-shimmer,.sf-spin,.sf-shake{animation:none}.sf-fall,.sf-fall-once{display:none}.sf-press,.sf-lift{transition:none}}
 /* Classic motion system. A board picks the class through t.fx.* so each look keeps its own signature:
    Midnight Aurora resolves light out of blur and glows on touch, Ink & Paper lays ink and presses like a stamp. */
 /* Entrances use the individual translate property and fill backwards, so nothing stays pinned afterwards and the
@@ -172,13 +180,20 @@ SHARED_CSS = review_css + '''
 /* The ink wipe ends outside the text box and does not hold its end state, so descenders and italic overhang of a
    settled headline are never clipped. */
 @keyframes ip-ink{from{clip-path:inset(-.3em calc(100% + .1em) -.35em -.1em)}to{clip-path:inset(-.3em -.1em -.35em -.1em)}}
-.ip-ink{animation:ip-ink 700ms cubic-bezier(.65,0,.35,1) 260ms backwards}
+/* The headline leads: it starts with the first entrance step, so the copy below never appears before it. */
+.ip-ink{animation:ip-ink 700ms cubic-bezier(.65,0,.35,1) 60ms backwards}
 .au-correct.sf-late,.ip-correct.sf-late{animation-delay:560ms}
+/* Data inside a panel that enters late waits for the panel; sf-late moves only the delay. */
+.sf-draw.sf-late{animation-delay:700ms}
+.sf-tick.sf-late{animation-delay:640ms}
+.sf-bars.sf-late>*{animation-delay:400ms}.sf-bars.sf-late>:nth-child(2){animation-delay:440ms}.sf-bars.sf-late>:nth-child(3){animation-delay:480ms}.sf-bars.sf-late>:nth-child(4){animation-delay:520ms}.sf-bars.sf-late>:nth-child(5){animation-delay:560ms}.sf-bars.sf-late>:nth-child(6){animation-delay:600ms}.sf-bars.sf-late>:nth-child(7){animation-delay:640ms}.sf-bars.sf-late>:nth-child(n+8){animation-delay:680ms}
+.sf-cells.sf-late>*{animation-delay:400ms}.sf-cells.sf-late>:nth-child(7n+2){animation-delay:430ms}.sf-cells.sf-late>:nth-child(7n+3){animation-delay:460ms}.sf-cells.sf-late>:nth-child(7n+4){animation-delay:490ms}.sf-cells.sf-late>:nth-child(7n+5){animation-delay:520ms}.sf-cells.sf-late>:nth-child(7n+6){animation-delay:550ms}.sf-cells.sf-late>:nth-child(7n){animation-delay:580ms}
+.sf-ease-filter{transition:filter 300ms ease}
 .sf-focus:focus-visible{outline:2px solid var(--sf-focus,currentColor);outline-offset:2px}
 /* A ring or line that draws up to the value it already shows: set stroke-dasharray:1 and the resting
    stroke-dashoffset inline, with pathLength="1" on the shape. */
 @keyframes sf-draw-to-k{from{stroke-dashoffset:1}}
-.sf-draw-to{animation:sf-draw-to-k 1.2s cubic-bezier(.65,0,.35,1) 300ms backwards}
+.sf-draw-to{animation:sf-draw-to-k 1s cubic-bezier(.65,0,.35,1) 300ms backwards}
 @keyframes sf-drain-k{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 .sf-drain{transform-origin:left;animation:sf-drain-k 6s linear both}
 .ip-press{transition:transform 160ms cubic-bezier(.16,1,.3,1), filter 160ms ease}
@@ -203,11 +218,11 @@ SHARED_CSS = review_css + '''
 .sf-bars>:nth-child(2){animation-delay:40ms}.sf-bars>:nth-child(3){animation-delay:80ms}.sf-bars>:nth-child(4){animation-delay:120ms}.sf-bars>:nth-child(5){animation-delay:160ms}.sf-bars>:nth-child(6){animation-delay:200ms}.sf-bars>:nth-child(7){animation-delay:240ms}.sf-bars>:nth-child(n+8){animation-delay:280ms}
 /* Line draw for sparklines and rings: the path needs pathLength="1". */
 @keyframes sf-draw-k{from{stroke-dasharray:1;stroke-dashoffset:1}to{stroke-dasharray:1;stroke-dashoffset:0}}
-.sf-draw{animation:sf-draw-k 1.2s cubic-bezier(.65,0,.35,1) 300ms both}
+.sf-draw{animation:sf-draw-k 1s cubic-bezier(.65,0,.35,1) 300ms both}
 @keyframes sf-cells-k{from{opacity:0;scale:.6}to{opacity:1;scale:1}}
 .sf-cells>*{animation:sf-cells-k 360ms cubic-bezier(.16,1,.3,1) both}
 .sf-cells>:nth-child(7n+2){animation-delay:30ms}.sf-cells>:nth-child(7n+3){animation-delay:60ms}.sf-cells>:nth-child(7n+4){animation-delay:90ms}.sf-cells>:nth-child(7n+5){animation-delay:120ms}.sf-cells>:nth-child(7n+6){animation-delay:150ms}.sf-cells>:nth-child(7n){animation-delay:180ms}
-@media (prefers-reduced-motion: reduce){.sf-drain,.sf-draw-to,.au-in,.au-in-2,.au-in-3,.au-in-4,.ip-in,.ip-in-2,.ip-in-3,.ip-in-4,.au-stagger>*,.ip-stagger>*,.au-dialog,.ip-dialog,.sf-scrim,.sf-sheet-r,.sf-sheet-b,.sf-toast,.au-glint::after,.au-correct,.ip-correct,.au-pop,.ip-stamp,.sf-tick,.sf-bars>*,.sf-draw,.sf-cells>*{animation:none}.au-lift,.ip-lift,.au-press,.ip-press,.sf-ease{transition:none}}
+@media (prefers-reduced-motion: reduce){.sf-ease-filter{transition:none}.sf-drain,.sf-draw-to,.au-in,.au-in-2,.au-in-3,.au-in-4,.ip-in,.ip-in-2,.ip-in-3,.ip-in-4,.au-stagger>*,.ip-stagger>*,.au-dialog,.ip-dialog,.sf-scrim,.sf-sheet-r,.sf-sheet-b,.sf-toast,.au-glint::after,.au-correct,.ip-correct,.au-pop,.ip-stamp,.sf-tick,.sf-bars>*,.sf-draw,.sf-cells>*{animation:none}.au-lift,.ip-lift,.au-press,.ip-press,.sf-ease{transition:none}}
 '''
 COMPONENTS = sorted(f.name[:-len('.dc.html')] for f in SRC.glob('*.dc.html'))
 for name in COMPONENTS:
@@ -222,6 +237,9 @@ for name in COMPONENTS:
     s = s.replace('<!--#AMBIENT-->\n', parts['AMBIENT']).replace('<!--#NAV-->\n', parts['NAV'])
     s = s.replace('//#TOKENS\n', tokens_js)
     s = s.replace('<style>body{margin:0}</style>', '<style>body{margin:0}button{font-family:inherit}\n' + SHARED_CSS + '</style>')
+    # The board runtime reads an attribute that both starts and ends with a token as one expression, so a class
+    # made only of two or more tokens would render no class at all. A leading literal makes it interpolate.
+    s = re.sub(r'class="(\{\{[^"{}]+\}\}(?:\s+\{\{[^"{}]+\}\})+)"', r'class="sf-cls \1"', s)
     assert '<!--#' not in s and '//#' not in s, name
     assert s.count('<sc-if') == s.count('</sc-if>') and s.count('<sc-for') == s.count('</sc-for>'), name
     (OUT / f'{name}.dc.html').write_text(s)

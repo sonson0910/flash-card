@@ -65,6 +65,14 @@ Rules that keep the boards calm and the stills stable:
 - One loop per screen at most, and only for something live (a recording dot, a timer, a sound wave). A call to action does not pulse.
 - Nothing moves inside a card while the learner is reading it.
 - `fx.glint` sets `position:relative` and `overflow:hidden`; use it on a bar fill, not on an element whose shadow must show.
+- `fx.glint` also changes paint order: a fill that sits under a translucent sibling renders brighter with it, so such a fill goes without the glint.
+- Data inside a panel that itself enters late (`enter2` and later) takes `sf-late` as well (`sf-bars sf-late`, `sf-cells sf-late`, `sf-draw sf-late`, `sf-tick sf-late`), so it plays after the panel is visible. `sf-late` moves only the delay.
+- `fx.title` starts with the first entrance step in both looks; the copy below a headline never appears before it.
+- Everything settles within about a second and a half: `sf-grow` uses the individual `scale` property (so it composes with a skewed fill) and ends at 1.3 s, `sf-draw` at 1.3 s.
+- Confetti uses `sf-fall-once`: it falls twice and stays below the frame. `sf-fall` loops and is kept only for boards that document the loop.
+- A skeleton block takes `sf-shimmer` with `background-color`, not the `background` shorthand: the moving sheen is a background image that exists only while motion is allowed, so the reduced-motion still stays flat.
+- `sf-ease-filter` is the transition for reading aids that fade through `filter`.
+- The board runtime reads an attribute that starts and ends with a token as one expression, so `class="{{a}} {{b}}"` would render no class. `build.py` prefixes such a class with the literal `sf-cls`; in a seed board, join the classes in the script instead.
 - One reduced-motion rule switches all of these off. References are rendered with reduced motion, so a motion-only change leaves every still identical.
 
 ## Crystal Star shared tokens and partials
@@ -79,7 +87,7 @@ Every Crystal Star board inlines `src/anime-tokens.js` and the partials in `src/
 - The `ABG` partial follows what the app keeps over the painting. Flags on the board's `bg` data:
   - default: veil + painting + the twinkling `nk-starfield`, which is the signed-in app shell.
   - `bg.art: true`: the full painting with no veil and no starfield, which is the landing hero, the practice recap and the reveal. Pair it with `wings: false` unless the app screen draws its own shards.
-  - `bg.flares: true` (default off): the two light beams and three lens flares, which only onboarding keeps in the app. A board hides one flare that would sit under its copy by setting `--nk-flare1`, `--nk-flare2` or `--nk-flare3` to `none` on its root element.
+  - `bg.flares: true` (default off): the two light beams and three lens flares, which only onboarding keeps in the app. The beams stay under full strength (rest .45, peak .62) so copy on a translucent panel they cross keeps its contrast; `nk-stamp` rests at its -12deg tilt in the still too. A board hides one flare that would sit under its copy by setting `--nk-flare1`, `--nk-flare2` or `--nk-flare3` to `none` on its root element.
   - `bg.wings` (default on): the two corner crystal wings, which the app keeps on lesson, placement, the session bridge, onboarding and the review session, and not on Today.
 - Text that sits directly on the painting, not on a panel, takes `text-shadow: {{t.onArtHalo}}` (the app's `--sf-on-art-halo`): page kickers and eyebrows, page subtitles and ledes, counts, back links, footer and keyboard hints, text-only links and buttons, inactive rail and segmented items, and Lumi's line when it has no bubble panel.
 - Lumi has 14 poses in `t.lumi`: hero, idle, happy, hint, oops, proud, chibi, sleepy, thinking, sad, cheer, study, wave and focus. They are the redrawn app art from `src/assets/lumi/`; `assets/blob/MAP.txt` records each source.
