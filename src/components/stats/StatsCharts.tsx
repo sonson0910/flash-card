@@ -4,7 +4,7 @@ import { Trans, useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { formatNumber } from '../../lib/format';
 import { useTheme } from '../../features/theme/ThemeProvider';
-import { ActivityHeatmap, dayInTimeZone, formatHeatmapDate } from './ActivityHeatmap';
+import { ActivityHeatmap, dayInTimeZone, formatHeatmapDate, HeatmapLegend } from './ActivityHeatmap';
 import { allTimeReviewStart, ReviewRangeToggle, type ReviewRange } from './ReviewRangeToggle';
 import { useProgressStudyFacts } from './ProgressStudyFacts';
 import { studyDaysBetween } from '../../../functions/src/study-day-rules';
@@ -13,7 +13,8 @@ import type { ReviewActivity, ReviewActivityDay } from '../../features/gamificat
 
 interface StatsChartsProps {
   darkMode: boolean;
-  section?: 'primary' | 'secondary' | 'all';
+  /** 'mastery' draws the mastery panel alone, for the Crystal Progress board before the first review. */
+  section?: 'primary' | 'secondary' | 'mastery' | 'all';
   /** The page's review range. When set, the page draws the range switch and the activity panel follows it. */
   reviewRangeDays?: ReviewRange;
   data: {
@@ -67,6 +68,10 @@ const memoryColors: Record<string, string> = {
   'Not reviewed': 'var(--st-new)',
 };
 const memoryKinds: Record<string, 'mastered' | 'learning' | 'new'> = { Mastered: 'mastered', Learning: 'learning', 'Not reviewed': 'new' };
+const memoryOrder = ['Mastered', 'Learning', 'Not reviewed'] as const;
+
+/** The Crystal board always lists the three tiers in rank order; a tier the library has no card in counts 0. */
+const crystalMemoryRows = (rows: Array<{ name: string; value: number }>) => memoryOrder.map(name => rows.find(row => row.name === name) ?? { name, value: 0 });
 
 function XpChart({ entries, locale, noHistory }: { entries: Array<{ date: string; XP: number }>; locale: string; noHistory: string }) {
   if (entries.length === 0) return <div className={emptyChartClass}>{noHistory}</div>;
@@ -93,11 +98,12 @@ const RING = { classic: { size: 150, radius: 62, stroke: 14 }, crystal: { size: 
 
 function MemoryChart({ entries, noData, masteredLabel, isCrystal }: { entries: MemoryEntry[]; noData: string; masteredLabel: string; isCrystal: boolean }) {
   const total = entries.reduce((sum, entry) => sum + Math.max(0, entry.value), 0);
-  if (total === 0) return <div className={emptyChartClass}>{noData}</div>;
+  // Crystal keeps the ring and its tier list at zero, so an empty library still reads as the board's mastery panel.
+  if (total === 0 && !isCrystal) return <div className={emptyChartClass}>{noData}</div>;
   const ring = isCrystal ? RING.crystal : RING.classic;
   const center = ring.size / 2;
   const mastered = Math.max(0, entries.find(entry => entry.kind === 'mastered')?.value ?? 0);
-  const masteredPercent = Math.round(mastered / total * 100);
+  const masteredPercent = total > 0 ? Math.round(mastered / total * 100) : 0;
   let consumed = 0;
   return <div className="stats-mastery-body">
     <div className="stats-ring" style={{ width: ring.size, height: ring.size }}>
@@ -106,10 +112,10 @@ function MemoryChart({ entries, noData, masteredLabel, isCrystal }: { entries: M
         {isCrystal && <polygon className="stats-ring-hex" points={`${center},6 ${ring.size - 16},${center - 37} ${ring.size - 16},${center + 37} ${center},${ring.size - 6} 16,${center + 37} 16,${center - 37}`} fill="none" strokeWidth="1.5" />}
         <circle className="stats-ring-track" cx={center} cy={center} r={ring.radius} fill="none" strokeWidth={ring.stroke} />
         {entries.map((entry, index) => {
-          const percentage = Math.max(0, entry.value) / total * 100;
+          const percentage = total > 0 ? Math.max(0, entry.value) / total * 100 : 0;
           const offset = -consumed;
           consumed += percentage;
-          if (entry.kind === 'new') return null;
+          if (entry.kind === 'new' || percentage === 0) return null;
           const stroke = isCrystal && entry.kind === 'mastered' ? 'url(#stats-ring-mastered)' : entry.color;
           return <circle key={`${entry.name}-${index}`} data-chart-motion="ring" className="chart-ring-reveal" cx={center} cy={center} r={ring.radius} fill="none" pathLength="100" stroke={stroke} strokeDasharray={`${percentage} ${100 - percentage}`} strokeDashoffset={offset} strokeWidth={ring.stroke} transform={`rotate(-90 ${center} ${center})`}><title>{`${entry.name}: ${formatNumber(entry.value)}`}</title></circle>;
         })}
@@ -149,7 +155,7 @@ export default function StatsCharts({ data, section = 'all', reviewRangeDays: pa
   const noHistory = _(text.noHistory); const noData = _(text.noData);
   const memoryLabels: Record<string, string> = { Mastered: _(text.mastered), Learning: _(text.learning), 'Not reviewed': _(text.notReviewed) };
   const memoryGrades: Record<string, string> = { Mastered: _(text.gradeMastered), Learning: _(text.gradeLearning), 'Not reviewed': _(text.gradeNew) };
-  const memoryEntries = data.difficultyChart.map(entry => ({ ...entry, name: memoryLabels[entry.name] ?? entry.name, color: memoryColors[entry.name] ?? 'var(--st-new)', kind: memoryKinds[entry.name], grade: memoryGrades[entry.name] }));
+  const memoryEntries = (isCrystal ? crystalMemoryRows(data.difficultyChart) : data.difficultyChart).map(entry => ({ ...entry, name: memoryLabels[entry.name] ?? entry.name, color: memoryColors[entry.name] ?? 'var(--st-new)', kind: memoryKinds[entry.name], grade: memoryGrades[entry.name] }));
   const rangeStart = todayKey ? new Date(`${todayKey}T12:00:00`) : new Date();
   rangeStart.setHours(0, 0, 0, 0);
   rangeStart.setDate(rangeStart.getDate() - (reviewRangeDays === 'all' ? 0 : reviewRangeDays) + 1);
@@ -164,14 +170,16 @@ export default function StatsCharts({ data, section = 'all', reviewRangeDays: pa
   const gradedReviews = recallTotals.again + recallTotals.hard + recallTotals.good + recallTotals.easy;
   const recallPercent = gradedReviews > 0 ? Math.round((gradedReviews - recallTotals.again) / gradedReviews * 100) : null;
   const bestStreak = studyFacts?.bestStreak ?? null;
-  const showPrimary = section !== 'secondary';
-  const showSecondary = section !== 'primary';
+  const showPrimary = section === 'primary' || section === 'all';
+  const showSecondary = section === 'secondary' || section === 'all';
+  const masteryPanel = <section className={`${primaryChartPanelClass} stats-mastery`} aria-labelledby="mastery-chart-title"><h2 id="mastery-chart-title" className={panelTitleClass}>{_(text.masteryTitle)}</h2><AccessibleChartTable caption={_(text.memoryData)} firstColumn={_(text.memoryStatus)} valueLabel={_(text.value)} rows={memoryEntries.map(entry => ({ label: entry.name, value: entry.value }))} emptyMessage={noData} /><div className="stats-mastery-chart min-h-44 w-full" role="img" aria-label={_(text.memoryChart)} data-native-chart="memory"><MemoryChart entries={memoryEntries} noData={noData} masteredLabel={_(text.ringMastered)} isCrystal={isCrystal} /></div>{(recallPercent !== null || bestStreak !== null) && <dl className="stats-mastery-foot">{recallPercent !== null && <div className="stats-mastery-fact crystal-chamfer-sm" data-fact="recall" title={_(text.recallRateHint)}><dt>{_(text.recallRate)}</dt><dd>{formatNumber(recallPercent)}%</dd></div>}{bestStreak !== null && <div className="stats-mastery-fact crystal-chamfer-sm" data-fact="best-streak" title={_(text.bestStreakHint)}><dt>{_(text.bestStreak)}</dt><dd>{_({ ...text.bestStreakDays, values: { count: bestStreak } })}</dd></div>}</dl>}</section>;
+  if (section === 'mastery') return <div className="stats-canvas stats-canvas--mastery">{masteryPanel}</div>;
   return <div className={`stats-canvas${section === 'primary' ? ' stats-canvas--primary' : ''}`}>
     {showPrimary && <div className={chartGridClass}>
       <section className={`${primaryChartPanelClass} stats-activity`} aria-labelledby="review-activity-title">
-        <div className="stats-panel-head"><h2 id="review-activity-title" className={panelTitleClass}>{_(text.activityTitle)}</h2>{reviewActivity && <span className={panelNoteClass}>{rangeNote}</span>}{reviewActivity && pageRangeDays === undefined && <ReviewRangeToggle value={reviewRangeDays} onChange={setOwnRangeDays} allTime={allTimeStart !== null} />}</div>
-        {reviewActivity ? <><ActivityHeatmap entries={[]} reviewActivity={reviewActivity} rangeDays={heatmapDays} todayKey={todayKey ?? ''} selectedDate={selectedReviewDate} onDaySelect={setSelectedReviewDate} /><div className="stats-inspect"><label className="stats-inspect-label"><span className="block">{_(text.inspectDay)}</span><input type="date" min={availableStartKey} max={todayKey} value={selectedReviewDay ? selectedReviewDate : ''} disabled={availableStartKey > (todayKey ?? '')} onChange={event => { const date = event.target.value; setSelectedReviewDate(date && todayKey && reviewDayInRange(reviewActivity, date, rangeStartKey, todayKey) ? date : ''); }} className="glass-field stats-inspect-input mt-1 min-h-11 px-3 focus-visible:outline-2 focus-visible:outline-offset-2" /></label>{selectedReviewDay && <button type="button" onClick={() => setSelectedReviewDate('')} className="stats-quiet-button min-h-11 px-3 focus-visible:outline-2 focus-visible:outline-offset-2">{_(text.showRangeTotals)}</button>}<dl className="stats-recall grid grid-cols-2 gap-2 sm:grid-cols-4"><div><dt className={mutedTextClass}>{_(text.again)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).again)}</dd></div><div><dt className={mutedTextClass}>{_(text.hard)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).hard)}</dd></div><div><dt className={mutedTextClass}>{_(text.good)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).good)}</dd></div><div><dt className={mutedTextClass}>{_(text.easy)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).easy)}</dd></div></dl></div>{selectedReviewDay && <p className="stats-selected-day" role="status">{formatHeatmapDate(selectedReviewDate, locale)}: {formatNumber(selectedReviewDay.reviewed)} {_(text.reviews)}</p>}{partialCoverage && <p className="stats-footnote"><Trans {...msg({ context: 'stats.review-activity-partial', message: 'Coverage begins {date}; this range is partial.' })} values={{ date: formatHeatmapDate(reviewActivity.coverageStartedOn, locale) }} /></p>}</> : <p className="stats-footnote">{_(text.activityUnavailable)}</p>}</section>
-      <section className={`${primaryChartPanelClass} stats-mastery`} aria-labelledby="mastery-chart-title"><h2 id="mastery-chart-title" className={panelTitleClass}>{_(text.masteryTitle)}</h2><AccessibleChartTable caption={_(text.memoryData)} firstColumn={_(text.memoryStatus)} valueLabel={_(text.value)} rows={memoryEntries.map(entry => ({ label: entry.name, value: entry.value }))} emptyMessage={noData} /><div className="stats-mastery-chart min-h-44 w-full" role="img" aria-label={_(text.memoryChart)} data-native-chart="memory"><MemoryChart entries={memoryEntries} noData={noData} masteredLabel={_(text.ringMastered)} isCrystal={isCrystal} /></div>{(recallPercent !== null || bestStreak !== null) && <dl className="stats-mastery-foot">{recallPercent !== null && <div className="stats-mastery-fact crystal-chamfer-sm" data-fact="recall" title={_(text.recallRateHint)}><dt>{_(text.recallRate)}</dt><dd>{formatNumber(recallPercent)}%</dd></div>}{bestStreak !== null && <div className="stats-mastery-fact crystal-chamfer-sm" data-fact="best-streak" title={_(text.bestStreakHint)}><dt>{_(text.bestStreak)}</dt><dd>{_({ ...text.bestStreakDays, values: { count: bestStreak } })}</dd></div>}</dl>}</section>
+        <div className="stats-panel-head"><h2 id="review-activity-title" className={panelTitleClass}>{_(text.activityTitle)}</h2>{reviewActivity && <span className={panelNoteClass}>{rangeNote}</span>}{reviewActivity && isCrystal && <HeatmapLegend />}{reviewActivity && pageRangeDays === undefined && <ReviewRangeToggle value={reviewRangeDays} onChange={setOwnRangeDays} allTime={allTimeStart !== null} />}</div>
+        {reviewActivity ? <><ActivityHeatmap entries={[]} reviewActivity={reviewActivity} rangeDays={heatmapDays} todayKey={todayKey ?? ''} selectedDate={selectedReviewDate} onDaySelect={setSelectedReviewDate} showLegend={!isCrystal} /><div className="stats-inspect"><label className="stats-inspect-label"><span className="block">{_(text.inspectDay)}</span><input type="date" min={availableStartKey} max={todayKey} value={selectedReviewDay ? selectedReviewDate : ''} disabled={availableStartKey > (todayKey ?? '')} onChange={event => { const date = event.target.value; setSelectedReviewDate(date && todayKey && reviewDayInRange(reviewActivity, date, rangeStartKey, todayKey) ? date : ''); }} className="glass-field stats-inspect-input mt-1 min-h-11 px-3 focus-visible:outline-2 focus-visible:outline-offset-2" /></label>{selectedReviewDay && <button type="button" onClick={() => setSelectedReviewDate('')} className="stats-quiet-button min-h-11 px-3 focus-visible:outline-2 focus-visible:outline-offset-2">{_(text.showRangeTotals)}</button>}<dl className="stats-recall grid grid-cols-2 gap-2 sm:grid-cols-4"><div><dt className={mutedTextClass}>{_(text.again)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).again)}</dd></div><div><dt className={mutedTextClass}>{_(text.hard)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).hard)}</dd></div><div><dt className={mutedTextClass}>{_(text.good)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).good)}</dd></div><div><dt className={mutedTextClass}>{_(text.easy)}</dt><dd className="font-bold tabular-nums">{formatNumber((selectedReviewDay ?? recallTotals).easy)}</dd></div></dl></div>{selectedReviewDay && <p className="stats-selected-day" role="status">{formatHeatmapDate(selectedReviewDate, locale)}: {formatNumber(selectedReviewDay.reviewed)} {_(text.reviews)}</p>}{partialCoverage && <p className="stats-footnote"><Trans {...msg({ context: 'stats.review-activity-partial', message: 'Coverage begins {date}; this range is partial.' })} values={{ date: formatHeatmapDate(reviewActivity.coverageStartedOn, locale) }} /></p>}</> : <p className="stats-footnote">{_(text.activityUnavailable)}</p>}</section>
+      {masteryPanel}
     </div>}
     {showSecondary && <div className={chartGridClass}>
     <section className={secondaryChartPanelClass} aria-labelledby="xp-chart-title">

@@ -33,7 +33,6 @@ html:not([data-theme-family=crystal]) .course-add { background: var(--sf-dialog-
 }
 html[data-theme-family=crystal] .course-add {
   --sf-chamfer-fill: var(--sf-dialog-bg);
-  --sf-chamfer-edge: var(--sf-edge-highlight);
   border-color: var(--sf-edge-highlight);
   border-radius: 0;
   box-shadow: none;
@@ -125,7 +124,6 @@ html[data-theme-family=crystal] .course-add__label--caps { color: var(--sf-brand
    the whole background image and leaves the card see-through. Every card sits on the opaque panel colour. */
 html[data-theme-family=crystal] .course-target-card { --sf-chamfer-fill: linear-gradient(var(--sf-surface), var(--sf-surface)); border-radius: 0; background-color: transparent; }
 html[data-theme-family=crystal] .course-target-card[data-state='selected'] {
-  --sf-chamfer-edge: var(--sf-brand);
   --sf-chamfer-fill: linear-gradient(color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)), color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)));
   border-color: var(--sf-brand);
   box-shadow: none;
@@ -177,7 +175,7 @@ html[data-theme-family=crystal] .course-target-card[data-state='selected'] .cour
 .course-add__select select option { background: var(--sf-surface); color: var(--sf-text); }
 .course-add__select-hint { position: absolute; right: 38px; color: var(--sf-text-muted); font-size: 12px; font-weight: 500; pointer-events: none; }
 .course-add__select-icon { position: absolute; right: 14px; color: var(--sf-text-muted); pointer-events: none; }
-html[data-theme-family=crystal] .course-add__select { --sf-chamfer-edge: var(--sf-edge-highlight); border-radius: 0; }
+html[data-theme-family=crystal] .course-add__select { border-radius: 0; }
 html[data-theme-family=crystal] .course-add__select select:focus-visible { outline-offset: -4px; }
 
 .course-add__error { margin: 14px 0 0; color: var(--sf-danger); font-size: 13px; font-weight: 600; }
@@ -207,11 +205,10 @@ html[data-theme-family=crystal] .course-add__select select:focus-visible { outli
 html[data-theme-family=crystal] :is(.course-add__primary, .course-add__secondary) { border-radius: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 html[data-theme-family=crystal] .course-add__primary {
   --sf-chamfer-fill: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover));
-  --sf-chamfer-edge: transparent;
   color: var(--sf-on-brand);
   box-shadow: none;
 }
-html[data-theme-family=crystal] .course-add__secondary { --sf-chamfer-edge: var(--sf-edge-highlight); border-color: var(--sf-edge-highlight); background-color: var(--sf-surface-control); }
+html[data-theme-family=crystal] .course-add__secondary { border-color: var(--sf-edge-highlight); background-color: var(--sf-surface-control); }
 html[data-theme-family=crystal] :is(.course-add__primary, .course-add__secondary):focus-visible { outline-offset: -4px; }
 
 @media (max-width: 767px) {

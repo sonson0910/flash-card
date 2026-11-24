@@ -86,7 +86,7 @@ function revealSection(headingId: string) {
   heading.focus({ preventScroll: true });
 }
 
-function AvailabilityPanel({ status, actions, hasPersonalLibrary = true }: { status: CatalogAvailabilityStatus; actions: CatalogScreenActions; hasPersonalLibrary?: boolean }) {
+function AvailabilityPanel({ status, actions, hasPersonalLibrary = true, isCrystal = false, showLumi = false }: { status: CatalogAvailabilityStatus; actions: CatalogScreenActions; hasPersonalLibrary?: boolean; isCrystal?: boolean; showLumi?: boolean }) {
   if (status.kind === 'ready') {
     return (
       <div className="catalog-note catalog-note--success" role="status" aria-live="polite" aria-atomic="true">
@@ -125,7 +125,8 @@ function AvailabilityPanel({ status, actions, hasPersonalLibrary = true }: { sta
 
   if (status.kind === 'unavailable') {
     return (
-      <section className="catalog-note catalog-note--warning flex-col items-stretch" aria-labelledby="catalog-unavailable-title" aria-live="polite">
+      <section className="catalog-note catalog-note--warning catalog-note--unavailable flex-col items-stretch" aria-labelledby="catalog-unavailable-title" aria-live="polite">
+        {isCrystal && <span aria-hidden="true" className="paths-hero-art"><CrystalPathWings /></span>}
         <div className="flex items-start gap-3">
           <WifiOff className="catalog-note-icon" aria-hidden="true" />
           <div className="min-w-0"><h2 id="catalog-unavailable-title" className="catalog-note-title"><Trans {...msg({ context: 'catalog.status.unavailable-title', message: 'Catalog unavailable' })} /></h2><p className="catalog-note-copy">{status.message}</p><p className="catalog-note-copy font-semibold"><Trans {...msg({ context: 'catalog.status.no-drafts', message: 'Draft vocabulary is never shown here.' })} /></p></div>
@@ -137,6 +138,7 @@ function AvailabilityPanel({ status, actions, hasPersonalLibrary = true }: { sta
         ) : (
           <p className="catalog-note-copy mt-4 font-semibold"><Trans {...msg({ context: 'catalog.status.release-pending', message: 'A download will appear after a reviewed release is published.' })} /></p>
         )}
+        {isCrystal && showLumi && <Lumi pose="thinking" className="catalog-unavailable-lumi" />}
       </section>
     );
   }
@@ -207,7 +209,7 @@ function PersonalLibraryPaths({
               <span><Trans {...msg({ id: 'paths.personal.due-count', message: '{count} due for review today' })} values={{ count: formatNumber(library.dueToday) }} /></span>
             </p>
             <div className="paths-hero-actions">
-              {library.total > 0 && <button type="button" onClick={actions.continueReview} className="catalog-feature-continue paths-cta brand-action"><span className="paths-btn-label"><Trans {...msg({ context: 'catalog.action.continue-review', message: 'Continue review' })} /></span></button>}
+              {library.total > 0 && <button type="button" onClick={actions.continueReview} className="catalog-feature-continue paths-cta brand-action"><span className="paths-cta-shine" aria-hidden="true" /><span className="paths-btn-label"><Trans {...msg({ context: 'catalog.action.continue-review', message: 'Continue review' })} /></span></button>}
               <button type="button" onClick={actions.openVocabulary} className="paths-ghost"><span className="paths-btn-label"><Trans {...msg({ context: 'catalog.action.open-vocabulary', message: 'Open vocabulary' })} /></span></button>
             </div>
           </div>
@@ -455,7 +457,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
         </div>
       </header>
 
-      <AvailabilityPanel status={model.status} actions={actions} hasPersonalLibrary={Boolean(model.personalLibrary)} />
+      <AvailabilityPanel status={model.status} actions={actions} hasPersonalLibrary={Boolean(model.personalLibrary)} isCrystal={isCrystal} showLumi={showLumi} />
 
       {isPersonal && model.personalLibrary && <PersonalLibraryPaths library={model.personalLibrary} actions={actions} isCrystal={isCrystal} showLumi={showLumi} />}
 
@@ -489,7 +491,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
               {pathUnits && pathUnits.length > 0 && <div className="paths-hero-actions">
                 {allUnitsComplete
                   ? <p className="paths-hero-done"><Trans {...msg({ context: 'paths.unit.all-complete', message: 'All units in this path are complete.' })} /></p>
-                  : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className="catalog-feature-continue paths-cta brand-action"><span className="paths-btn-label">{featuredUnit
+                  : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className="catalog-feature-continue paths-cta brand-action"><span className="paths-cta-shine" aria-hidden="true" /><span className="paths-btn-label">{featuredUnit
                     ? <Trans {...msg({ id: 'paths.hero.continue-unit', message: 'Continue unit {ordinal}' })} values={{ ordinal: featuredUnit.unit.ordinal }} />
                     : <Trans {...msg({ context: 'paths.action.continue', message: 'Continue' })} />}</span></button>}
                 <button type="button" onClick={() => revealSection('catalog-units-heading')} className="paths-ghost"><span className="paths-btn-label"><Trans {...msg({ id: 'paths.hero.see-all-units', message: 'See all units' })} /></span></button>

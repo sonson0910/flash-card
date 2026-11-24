@@ -256,7 +256,7 @@ interface UploadPanelProps {
   readonly onOpen: (fileId: string) => Promise<string>;
 }
 
-function PanelHead({ title, subtitle, chip, tone, mono = false }: { title: ReactNode; subtitle: ReactNode; chip?: ReactNode; tone?: Tone; mono?: boolean }) {
+function PanelHead({ title, subtitle, chip, tone, mono = false, icon }: { title: ReactNode; subtitle: ReactNode; chip?: ReactNode; tone?: Tone; mono?: boolean; icon?: ReactNode }) {
   return (
     <div className="sf-files-panel__head">
       <div className="sf-files-panel__heading">
@@ -264,6 +264,7 @@ function PanelHead({ title, subtitle, chip, tone, mono = false }: { title: React
         <p data-mono={mono || undefined}>{subtitle}</p>
       </div>
       {chip && <span className="sf-files__chip sf-files__chip--small crystal-chamfer-sm" data-tone={tone}>{chip}</span>}
+      {icon && <span className="sf-files-panel__icon crystal-chamfer-sm" aria-hidden="true">{icon}</span>}
     </div>
   );
 }
@@ -283,6 +284,7 @@ function UploadPanel({ upload, session, listing, courses, defaultCourseId, onBro
         <PanelHead
           title={<Trans {...msg({ id: 'files.select.title', message: 'Choose a file' })} />}
           subtitle={<Trans {...msg({ id: 'files.select.subtitle', message: 'Quick checks run here first; the service confirms the file after it arrives.' })} />}
+          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>}
         />
         <div
           className="sf-files-drop crystal-chamfer"

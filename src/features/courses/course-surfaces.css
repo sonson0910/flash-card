@@ -17,7 +17,6 @@
   font-weight: 700;
   line-height: 1;
   --sf-chamfer-fill: var(--course-tile-bg, var(--sf-surface-control));
-  --sf-chamfer-edge: transparent;
 }
 .course-tile[data-course-language='en'] { font-family: var(--sf-font-display); }
 .course-tile[data-course-language='ko'] { --course-tile-bg: var(--sf-text); --course-tile-fg: var(--sf-surface); }

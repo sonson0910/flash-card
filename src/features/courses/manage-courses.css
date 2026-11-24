@@ -44,13 +44,17 @@ html[data-theme-family=crystal] .course-manage__title {
   text-transform: uppercase;
 }
 html[data-theme-family=crystal] .course-manage__title em {
+  /* The classic dark rule sets the accent upright; the crystal title is one italic display line. */
+  font-style: italic;
   background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 55%, white), var(--sf-brand) 55%, var(--sf-brand-hover));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 html[data-theme-family=crystal] :is(.course-manage__close, .course-manage__switched-badge) { border-radius: 0; }
-html[data-theme-family=crystal] .course-manage__switched-badge { background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover)); color: var(--sf-on-brand); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+/* The board's switched banner rests at skewX(-16deg) with its text set upright; motion slides it in from that pose. */
+html[data-theme-family=crystal] .course-manage__switched-badge { min-height: 50px; padding: 0 22px; background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover)); box-shadow: 0 0 30px rgb(255 42 77 / .6); color: var(--sf-on-brand); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; transform: skewX(-16deg); }
+html[data-theme-family=crystal] .course-manage__switched-text { display: inline-block; transform: skewX(16deg); }
 
 /* Cards */
 .course-manage__body { display: grid; flex: 1; align-items: end; gap: 20px; grid-template-columns: minmax(0, 1fr); }
@@ -74,7 +78,7 @@ html:not([data-theme-family=crystal]) .course-card[data-active='true'] { --cours
 html:not([data-theme-family=crystal]).dark .course-card[data-active='true'] { --course-card-edge: color-mix(in srgb, var(--sf-brand) 55%, transparent); box-shadow: 0 0 32px -10px color-mix(in srgb, var(--sf-brand) 60%, transparent); }
 .course-card[data-status='archived'] { opacity: .72; }
 
-html[data-theme-family=crystal] .course-card { --sf-chamfer-fill: var(--sf-card-bg); --sf-chamfer-edge: var(--course-card-edge); border-width: 2px; border-radius: 0; }
+html[data-theme-family=crystal] .course-card { --sf-chamfer-fill: var(--sf-card-bg); border-width: 2px; border-radius: 0; }
 html[data-theme-family=crystal] .course-card[data-course-language='ko'] { --course-card-edge: color-mix(in srgb, var(--sf-brand) 70%, transparent); }
 html[data-theme-family=crystal] .course-card[data-course-language='ja'] { --course-card-edge: color-mix(in srgb, var(--sf-brand) 35%, var(--sf-text-muted)); }
 html[data-theme-family=crystal] .course-card[data-course-language='en'] { --course-card-edge: color-mix(in srgb, var(--sf-second) 70%, transparent); }
@@ -197,12 +201,116 @@ html[data-theme-family=crystal] .course-chip { border: 0; border-radius: 0; box-
 html:not([data-theme-family=crystal]) .course-manage__loadout { background: var(--sf-surface-glass); }
 .course-manage__loadout dt { color: var(--sf-brand-text); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .course-manage__loadout dd { margin: 4px 0 0; font-size: 14px; font-weight: 600; }
-html[data-theme-family=crystal] .course-manage__cta { --sf-chamfer-fill: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover)); --sf-chamfer-edge: transparent; min-width: 380px; border-radius: 0; color: var(--sf-on-brand); }
+html[data-theme-family=crystal] .course-manage__cta { --sf-chamfer-fill: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover)); min-width: 380px; border-radius: 0; color: var(--sf-on-brand); }
 html[data-theme-family=crystal] .course-manage__cta-title { font-family: var(--sf-font-display); font-size: 26px; font-style: italic; font-weight: 900; text-transform: uppercase; }
+/* The board's light band rests at the CTA's left edge under the copy; motion sweeps it across. */
+.course-manage__cta-shine { display: none; }
+html[data-theme-family=crystal] .course-manage__cta { position: relative; overflow: hidden; }
+html[data-theme-family=crystal] .course-manage__cta-shine { position: absolute; top: 0; bottom: 0; left: 0; display: block; width: 70px; background: rgb(255 255 255 / .4); pointer-events: none; }
+html[data-theme-family=crystal] :is(.course-manage__cta-title, .course-manage__cta-sub) { position: relative; }
 html[data-theme-family=crystal] .course-manage__loadout { --sf-chamfer-fill: var(--sf-surface-glass); border-radius: 0; }
 html[data-theme-family=crystal] .course-manage__loadout dt { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
-html[data-theme-family=crystal] .course-manage__loadout div:nth-child(2) dt { color: var(--sf-reward); }
-html[data-theme-family=crystal] .course-manage__loadout div:nth-child(3) dt { color: var(--sf-second); }
+/* Board loadout: a small-cut panel edged in cyan along its straight sides, every label in the holo text colour
+   (the dark cyan twin on Prism Day, which keeps AA on the pale glass). */
+html[data-theme-family=crystal] .course-manage__loadout { gap: 22px; padding: 12px 18px; border: 0; clip-path: var(--nk-chamfer-sm); box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2); }
+html[data-theme-family=crystal] .course-manage__loadout dt { color: var(--sf-second-text); font-size: 11px; letter-spacing: .14em; }
+html[data-theme-family=crystal] .course-manage__loadout dd { margin-top: 2px; color: var(--sf-text-strong, var(--sf-text)); font-size: 14.5px; font-weight: 800; white-space: nowrap; }
+
+/* Crystal at the board frame (AnimeLangCourses) */
+html[data-theme-family=crystal] .course-manage__kicker { margin-bottom: 4px; }
+html[data-theme-family=crystal] .course-manage__title { background: var(--sf-metal); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 3px 0 var(--sf-star-shade)); letter-spacing: 0; line-height: .95; }
+html[data-theme-family=crystal] .course-manage__title em { background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 22px rgb(255 42 77 / .8)); }
+
+/* Cards: a 3px rim gradient (2px striped for the new-language card) around a chamfered face, as the board layers
+   them; the face is the ::before so the content stays one element. The wrapper item carries the glow because the
+   card's own clip-path would cut a filter on the card. */
+html[data-theme-family=crystal] .course-manage__cards > .course-manage__item > .course-card {
+  --course-card-rim: var(--sf-rim-new);
+  --course-card-face: var(--sf-card-bg);
+  border: 0;
+  --sf-chamfer-fill: var(--course-card-rim);
+}
+html[data-theme-family=crystal]:not(.dark) .course-manage__cards > .course-manage__item > .course-card { --course-card-face: var(--sf-solid-card); }
+html[data-theme-family=crystal] .course-manage__cards > .course-manage__item > .course-card:is([data-course-language='ko'], [data-course-language='zh']) { --course-card-rim: var(--sf-gold-rim); }
+html[data-theme-family=crystal] .course-manage__cards > .course-manage__item > .course-card[data-course-language='ja'] { --course-card-rim: var(--sf-rim-learning); }
+html[data-theme-family=crystal] .course-manage__cards > .course-manage__item > .course-card[data-active='true'] {
+  --course-card-rim: linear-gradient(150deg, #ffe3ea, #ff2a4d 45%, #7a0820);
+  --course-card-face: radial-gradient(ellipse 80% 50% at 50% 0%, rgb(255 42 77 / .3), transparent 70%), var(--sf-card-bg);
+}
+html[data-theme-family=crystal]:not(.dark) .course-manage__cards > .course-manage__item > .course-card[data-active='true'] { --course-card-face: radial-gradient(ellipse 80% 50% at 50% 0%, rgb(255 84 112 / .22), transparent 70%), var(--sf-solid-card); }
+html[data-theme-family=crystal] .course-manage__cards > .course-manage__item > .course-card[data-status='archived'] { --course-card-rim: linear-gradient(var(--sf-edge-highlight), var(--sf-edge-highlight)); }
+html[data-theme-family=crystal] .course-manage__cards > .course-manage__item > .course-card--new { --course-card-rim: repeating-linear-gradient(135deg, var(--sf-edge-highlight) 0 2px, transparent 2px 12px); --course-card-face: var(--sf-surface-glass); }
+html[data-theme-family=crystal] .course-manage__cards > .course-manage__item > .course-card::before { position: absolute; inset: 3px; clip-path: var(--nk-chamfer); background: var(--course-card-face); content: ''; pointer-events: none; }
+html[data-theme-family=crystal] .course-manage__cards > .course-manage__item > .course-card--new::before { inset: 2px; }
+html[data-theme-family=crystal] .course-manage__cards > .course-manage__item > .course-card > * { position: relative; }
+/* Custom properties inherit: the card's rim must not become the fill of the chamfered buttons inside it. */
+html[data-theme-family=crystal] .course-card :is(.course-card__action, .course-chip) { --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control)); }
+html[data-theme-family=crystal] .course-manage__item[data-active='false'] { filter: drop-shadow(0 18px 24px rgb(0 0 0 / .5)); }
+html[data-theme-family=crystal]:not(.dark) .course-manage__item[data-active='false'] { filter: drop-shadow(0 18px 24px rgb(0 0 0 / .18)); }
+html[data-theme-family=crystal] .course-manage__item[data-active='true'] { filter: drop-shadow(0 0 26px rgb(255 42 77 / .75)); }
+
+html[data-theme-family=crystal] .course-card__select { padding: 21px 23px 12px; }
+html[data-theme-family=crystal] .course-card__actions { padding: 0 23px 21px; }
+html[data-theme-family=crystal] .course-card__index { color: var(--sf-text-tertiary); font-size: 12.5px; letter-spacing: .14em; }
+html[data-theme-family=crystal] .course-card__tag { height: 24px; background: var(--sf-primary-bg); color: var(--sf-on-primary); font-size: 11.5px; letter-spacing: .1em; }
+html[data-theme-family=crystal] .course-card__tag[data-tone='muted'] { background: var(--sf-surface-control); color: var(--sf-text-muted); }
+html[data-theme-family=crystal] .course-card__tag-text { display: inline-block; transform: skewX(14deg); }
+/* The active glyph is the hot white-to-crimson fill with a crimson glow, the others the cool cyan fill. */
+html[data-theme-family=crystal] .course-card__glyph.course-tile { margin-top: 14px; font-style: normal; font-weight: 900; line-height: 1; background: linear-gradient(180deg, #ffffff 0%, #bff8ff 45%, #5ef2ff 70%, #1aa7c9 100%); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 16px rgb(94 242 255 / .5)); }
+html[data-theme-family=crystal]:not(.dark) .course-card__glyph.course-tile { background: linear-gradient(180deg, #0d1a33 0%, #0d1a33 45%, #0a7d99 100%); -webkit-background-clip: text; background-clip: text; filter: none; }
+html[data-theme-family=crystal] .course-card[data-active='true'] .course-card__glyph.course-tile { background: linear-gradient(180deg, #ffffff 0%, #ffe3ea 40%, #ff5470 62%, #b30f33 100%); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 22px rgb(255 42 77 / .8)); }
+html[data-theme-family=crystal] .course-card__name { margin-top: 12px; color: var(--sf-text-strong, var(--sf-text)); font-style: normal; line-height: 1.1; }
+html[data-theme-family=crystal] .course-card__from { margin-top: 3px; letter-spacing: .1em; }
+/* Board stats sit low in the card, above the goal line. */
+html[data-theme-family=crystal] .course-card__stats { gap: 6px; margin-top: auto; padding-top: 16px; }
+html[data-theme-family=crystal] .course-card__stats + .course-card__goal { margin-top: 12px; padding-top: 0; }
+html[data-theme-family=crystal] .course-card__stat { gap: 3px; padding: 7px 8px 6px; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-border); }
+html[data-theme-family=crystal] .course-card__stat[data-stat] .course-card__stat-value { font-size: 19px; font-weight: 900; line-height: 1; }
+html[data-theme-family=crystal] .course-card__stat-label { color: var(--sf-text-tertiary); font-family: var(--sf-font-display); font-size: 10.5px; font-weight: 700; }
+html[data-theme-family=crystal] .course-card__goal { gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; }
+html[data-theme-family=crystal] .course-card__bar { height: 8px; background: rgb(255 255 255 / .1); box-shadow: none; transform: skewX(-24deg); }
+html[data-theme-family=crystal]:not(.dark) .course-card__bar { background: rgb(13 40 80 / .12); }
+html[data-theme-family=crystal] .course-card__bar-fill { background: linear-gradient(90deg, #5ef2ff, #1aa7c9); }
+html[data-theme-family=crystal] .course-card[data-active='true'] .course-card__bar-fill { background: var(--sf-primary-bg); }
+html[data-theme-family=crystal] .course-card__new { gap: 16px; padding: 22px 20px; }
+html[data-theme-family=crystal] .course-card__chips { gap: 6px; padding: 0 20px 22px; }
+html[data-theme-family=crystal] .course-chip { justify-content: center; gap: 6px; padding: 0 6px; background-color: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-border); color: var(--sf-text-tertiary); letter-spacing: .08em; }
+html[data-theme-family=crystal] .course-chip__glyph { color: var(--sf-text-strong, var(--sf-text)); font-size: 20px; font-style: normal; font-weight: 900; }
+
+/* Lumi: the line sits just above her in the bubble, and both rest at the foot of the column. */
+html[data-theme-family=crystal] .course-manage__bubble { position: relative; top: auto; padding: 14px 16px 16px; border: 0; clip-path: var(--nk-chamfer); box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2); }
+html[data-theme-family=crystal] .course-manage__bubble::before { position: absolute; top: 16px; bottom: 16px; left: 0; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d); content: ''; }
+html[data-theme-family=crystal] .course-manage__bubble-kicker { color: var(--sf-second-text); font-size: 12.5px; letter-spacing: .12em; }
+html[data-theme-family=crystal] .course-manage__bubble-title { margin-top: 3px; color: var(--sf-text-strong, var(--sf-text)); font-size: 17px; font-weight: 900; line-height: 1.3; }
+html[data-theme-family=crystal] .course-manage__bubble-body { line-height: 1.45; }
+/* Lumi stands at the foot of the board's 250 by 330 stage under the bubble. */
+.course-manage__lumi-stage { display: flex; height: 330px; margin-top: 8px; align-items: flex-end; justify-content: center; }
+
+/* Start and loadout share one row under the cards. */
+html[data-theme-family=crystal] .course-manage__footer { align-items: center; gap: 18px; }
+html[data-theme-family=crystal] .course-manage__cta { min-height: 72px; }
+html[data-theme-family=crystal] .course-manage__cta-title { font-size: 25px; letter-spacing: .04em; line-height: 1.05; white-space: nowrap; }
+html[data-theme-family=crystal] .course-manage__cta-sub { margin-top: 0; font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 700; letter-spacing: .14em; line-height: 1.05; text-transform: uppercase; opacity: .9; }
+
+@media (min-width: 768px) {
+  html[data-theme-family=crystal] .course-manage__cards > .course-manage__item > .course-card { min-height: 450px; }
+  html[data-theme-family=crystal] .course-manage__cards > .course-manage__item > .course-card[data-active='true'] { min-height: 500px; }
+}
+
+/* At the board's width the page is the board's two columns: the cards and the start row on the left, Lumi on the
+   right from the top of the page to its foot, the switched banner at the top of her column. The page fills the
+   view below the shell header (78px) inside the shell's 10px top and 30px bottom, as the board's frame does. */
+@media (min-width: 1100px) {
+  html[data-theme-family=crystal] .course-manage-page .course-manage__frame { min-height: min(782px, calc(100dvh - 118px)); padding: 0; }
+  html[data-theme-family=crystal] .course-manage__frame:has(> .course-manage__body[data-lumi='true']) { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 250px; grid-template-rows: auto auto auto minmax(0, 1fr); column-gap: 20px; row-gap: 0; }
+  html[data-theme-family=crystal] .course-manage__frame:has(> .course-manage__body[data-lumi='true']) > .course-manage__header { grid-column: 1; grid-row: 1; }
+  html[data-theme-family=crystal] .course-manage__frame:has(> .course-manage__body[data-lumi='true']) > .course-manage__error { grid-column: 1; grid-row: 2; margin-top: 16px; }
+  html[data-theme-family=crystal] .course-manage__frame > .course-manage__body[data-lumi='true'] { display: contents; }
+  html[data-theme-family=crystal] .course-manage__body[data-lumi='true'] > .course-manage__cards { grid-column: 1; grid-row: 3; margin-top: 34px; }
+  html[data-theme-family=crystal] .course-manage__body[data-lumi='true'] > .course-manage__lumi { grid-column: 2; grid-row: 1 / -1; min-height: 0; }
+  html[data-theme-family=crystal] .course-manage__frame:has(> .course-manage__body[data-lumi='true']) > .course-manage__footer { grid-column: 1; grid-row: 4; align-self: end; margin-top: 22px; }
+  html[data-theme-family=crystal] .course-manage__frame:has(> .course-manage__body[data-lumi='true']) .course-manage__switched { position: absolute; top: 24px; right: 0; z-index: 2; }
+}
 
 /* Goals of one course, opened from a card */
 .course-manage__goals { width: min(100%, 640px); padding: 20px; border: 1px solid var(--sf-border); }
@@ -238,4 +346,12 @@ html[data-theme-family=crystal] .course-manage__goals { --sf-chamfer-fill: var(-
 
 @media (prefers-reduced-motion: no-preference) {
   .course-card__action, .course-chip, .course-manage__close { transition: color 160ms ease, border-color 160ms ease; }
+}
+
+/* The board's start button lifts on hover (nk-lift: 3px up, springy settle; pressed shrinks). Its inline glow
+   filter overrides nk-lift's brightness on the board, so the lift does not brighten. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html[data-theme-family=crystal] .course-manage__cta { transition: transform 220ms cubic-bezier(.34, 1.56, .64, 1), box-shadow 220ms ease, filter 220ms ease; }
+  html[data-theme-family=crystal] .course-manage__cta:hover:not(:disabled) { transform: translateY(-3px); }
+  html[data-theme-family=crystal] .course-manage__cta:active:not(:disabled) { transform: scale(.97); }
 }

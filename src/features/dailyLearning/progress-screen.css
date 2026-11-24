@@ -57,7 +57,13 @@
   backdrop-filter: var(--st-blur);
 }
 :root:not([data-theme-family='crystal']) .progress-evidence > div { background: var(--st-panel-bg); }
-:root[data-theme-family='crystal'] .progress-evidence > div { --sf-chamfer-fill: var(--st-panel-bg); --sf-chamfer-edge: var(--st-line-strong); }
+:root[data-theme-family='crystal'] .progress-evidence > div {
+  --sf-chamfer-fill: var(--st-panel-bg);
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--st-panel-edge);
+}
 .progress-panel-empty { margin-top: 12px; font-size: 13px; color: var(--st-text2); }
 .progress-accent { font-style: italic; color: var(--st-mastered); }
 
@@ -159,11 +165,20 @@
   :root:not([data-theme-family='crystal']) .progress-board-cta:not(:disabled):hover { background: var(--sf-brand-hover); color: var(--sf-on-brand-hover); }
 }
 
-.progress-board-error { border-color: var(--sf-danger); --sf-chamfer-edge: var(--sf-danger); }
+.progress-board-error { border-color: var(--sf-danger); }
 :root:not([data-theme-family='crystal']) .progress-board .progress-board-error { background: color-mix(in srgb, var(--sf-danger) 8%, var(--sf-surface)); }
 
 /* Crystal */
 :root[data-theme-family='crystal'] .progress-board.progress-board > header.progress-board-header { min-height: 88px; gap: 0 22px; }
+/* The board: header, then 16px, then the panel grid whose rows are 18px apart. */
+:root[data-theme-family='crystal'] .progress-board.progress-board > :not(:last-child) { margin-block-end: 18px; }
+:root[data-theme-family='crystal'] .progress-board.progress-board > header.progress-board-header:not(:last-child) { margin-block-end: 16px; }
+:root[data-theme-family='crystal'] .progress-board-insights > div > :not(:last-child) { margin-block-end: 18px; }
+:root[data-theme-family='crystal'] .progress-board-insights > div > section { gap: 18px 22px; }
+@media (min-width: 1024px) {
+  :root[data-theme-family='crystal'] .progress-board-insights > div > section { grid-template-columns: minmax(0, 1fr) 410px; }
+}
+:root[data-theme-family='crystal'] .progress-learning-since-sep { color: var(--st-text3); }
 :root[data-theme-family='crystal'] .progress-board-kicker {
   font-family: var(--st-display);
   font-style: italic;
@@ -175,6 +190,8 @@
 }
 :root[data-theme-family='crystal'] .progress-board.progress-board > header h1.progress-board-title {
   margin-top: 4px;
+  background-image: var(--sf-metal);
+  filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .6));
   font-family: var(--st-display);
   font-style: italic;
   font-weight: 900;
@@ -185,7 +202,7 @@
 :root[data-theme-family='crystal'] .progress-board-subtitle { flex-basis: auto; margin: 0 0 6px; }
 :root[data-theme-family='crystal'] .progress-board.progress-board > header > .progress-board-range { margin-bottom: 6px; }
 :root[data-theme-family='crystal'] .progress-board-stat { color: var(--st-text2); }
-:root[data-theme-family='crystal'] .progress-board-stat strong { font-family: var(--st-display); font-weight: 600; color: var(--st-title); }
+:root[data-theme-family='crystal'] .progress-board-stat strong { font-family: var(--st-mono); font-weight: 600; color: var(--st-title); }
 :root[data-theme-family='crystal'] .progress-board-lumi { margin-left: auto; display: flex; align-items: flex-end; gap: 4px; }
 :root[data-theme-family='crystal'] .progress-board-lumi-figure { width: 84px; height: 84px; flex-shrink: 0; object-fit: contain; }
 :root[data-theme-family='crystal'] .progress-board-lumi-bubble {
@@ -194,9 +211,10 @@
   width: 250px;
   box-sizing: border-box;
   padding: 8px 14px 9px;
-  clip-path: var(--nk-chamfer-sm);
+  clip-path: var(--nk-chamfer);
   background: var(--st-panel-bg);
-  box-shadow: inset 0 0 0 1px var(--st-line-strong);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
+  line-height: normal;
 }
 :root[data-theme-family='crystal'] .progress-board-lumi-bubble::before {
   content: '';
@@ -220,7 +238,10 @@
 :root[data-theme-family='crystal'] .progress-board-lumi-message { display: block; margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: var(--st-title); }
 
 /* Unlayered rules outrank the chamfer utility, so the corner radius and fills are set per family. */
-:root[data-theme-family='crystal'] .progress-evidence > div { padding: 18px 22px; border-radius: 0; }
+:root[data-theme-family='crystal'] .progress-evidence > div { border-radius: 0; }
+:root[data-theme-family='crystal'] .progress-forecast { --st-panel-edge: var(--st-line-strong); padding: 18px 24px 14px; }
+:root[data-theme-family='crystal'] .progress-mastered { --st-panel-edge: var(--sf-panel-edge); padding: 18px 22px; }
+:root[data-theme-family='crystal'] .progress-mastered > .stats-panel-head { align-items: baseline; gap: 10px; }
 :root[data-theme-family='crystal'] .progress-evidence .stats-panel-title {
   font-style: italic;
   font-weight: 800;
@@ -235,29 +256,41 @@
   font-family: var(--st-display);
   font-style: italic;
   font-weight: 800;
-  letter-spacing: .1em;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 :root[data-theme-family='crystal'] .progress-forecast-bar { height: 150px; }
 :root[data-theme-family='crystal'] .progress-forecast-bar > span { border-radius: 0; transform: skewX(-12deg); background: var(--st-bar); }
 :root[data-theme-family='crystal'] .progress-forecast-days > li[data-forecast-day='today'] .progress-forecast-bar > span { background: var(--st-primary); box-shadow: 0 0 18px color-mix(in srgb, var(--sf-brand) 80%, transparent); }
 :root[data-theme-family='crystal'] .progress-forecast-days > li[data-forecast-day='tomorrow'] .progress-forecast-bar > span { background: var(--st-tomorrow); }
-:root[data-theme-family='crystal'] .progress-forecast-count { font-family: var(--st-display); font-style: italic; font-weight: 900; font-size: 15px; color: var(--st-text2); }
+:root[data-theme-family='crystal'] .progress-forecast-count { font-family: var(--st-display); font-style: italic; font-weight: 900; font-size: 15px; color: var(--st-text3); }
 :root[data-theme-family='crystal'] .progress-forecast-days > li[data-forecast-day='tomorrow'] .progress-forecast-count { color: var(--st-pink-text); }
+:root[data-theme-family='crystal'] .progress-forecast-days > li[data-forecast-day='today'] .progress-forecast-count { font-weight: 900; }
 :root[data-theme-family='crystal'] .progress-forecast-days time { font-family: var(--st-display); font-style: italic; font-weight: 700; font-size: 12px; letter-spacing: .04em; }
 :root[data-theme-family='crystal'] .progress-forecast-days > li[data-forecast-day='today'] time { font-weight: 900; }
+:root[data-theme-family='crystal'] .progress-mastered-cards { margin-top: 12px; flex-grow: 1; grid-auto-rows: minmax(92px, 1fr); }
+/* A star card is the board's rim card: the gold rim (--st-rim-mastered, which the motion layer turns) cut to the small
+   chamfer, the card face 2px inside it, and a crimson glow around the whole cut shape. */
 :root[data-theme-family='crystal'] .progress-mastered-cards > li {
+  isolation: isolate;
   min-height: 92px;
   padding: 10px 14px 10px 16px;
-  border: 2px solid transparent;
+  border: 0;
   border-radius: 0;
-  clip-path: var(--nk-chamfer-sm);
-  background: linear-gradient(var(--st-panel-solid), var(--st-panel-solid)) padding-box, var(--st-rim-mastered) border-box;
+  background: none;
   box-shadow: none;
+  justify-content: center;
+  filter: drop-shadow(0 0 12px rgb(255 42 77 / .45));
 }
-:root[data-theme-family='crystal'] .progress-mastered-word { font-style: italic; font-weight: 900; font-size: 21px; }
-:root[data-theme-family='crystal'] .progress-mastered-meaning { font-size: 13px; font-weight: 700; color: var(--st-text2); }
-:root[data-theme-family='crystal'] .progress-mastered-chip { position: absolute; top: 10px; right: 10px; width: auto; height: 20px; padding: 0 9px; font-size: 11.5px; }
+:root[data-theme-family='crystal'] .progress-mastered-cards > li::before,
+:root[data-theme-family='crystal'] .progress-mastered-cards > li::after { content: ''; position: absolute; z-index: -1; clip-path: var(--nk-chamfer-sm); }
+:root[data-theme-family='crystal'] .progress-mastered-cards > li::before { inset: 0; background: var(--st-rim-mastered); }
+:root[data-theme-family='crystal'] .progress-mastered-cards > li::after { inset: 2px; background: var(--sf-card-front); }
+:root[data-theme-family='crystal'] .progress-mastered-word { padding-right: 40px; font-style: italic; font-weight: 900; font-size: 21px; }
+:root[data-theme-family='crystal'] .progress-mastered-meaning { margin-top: 3px; font-size: 13px; font-weight: 700; color: var(--st-text2); }
+:root[data-theme-family='crystal'] .progress-mastered-date { margin-top: 4px; }
+/* The board pins the chip 10px inside the face, and the face sits 2px inside the rim. */
+:root[data-theme-family='crystal'] .progress-mastered-chip { position: absolute; top: 12px; right: 12px; width: auto; height: 20px; padding: 0 9px; font-size: 11.5px; }
 
 :root[data-theme-family='crystal'] .progress-summary-kicker { font-family: var(--st-display); font-style: italic; font-weight: 800; letter-spacing: .12em; }
 :root[data-theme-family='crystal'] .progress-board .progress-metric.progress-metric {
@@ -273,7 +306,6 @@
 :root[data-theme-family='crystal'] .progress-metric-value--brand { color: var(--st-crimson-text); }
 :root[data-theme-family='crystal'] .progress-board-cta {
   --sf-chamfer-fill: var(--st-primary);
-  --sf-chamfer-edge: transparent;
   color: #ffffff;
   font-family: var(--st-display);
   font-style: italic;
@@ -282,6 +314,60 @@
   text-transform: uppercase;
   box-shadow: none;
 }
+/* The CTA's own radius and flat fill sit outside any layer and would hide the chamfer utility's cut and gradient. */
+:root[data-theme-family='crystal'] .progress-board-cta { border-radius: 0; background: revert-layer; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 55%, transparent)); }
+
+/* Crystal forecast: each count rides on top of its bar, as on the AnimeProgress board, instead of floating at the
+   top of a fixed box. --forecast-ratio is the bar's share of the busiest day (0..1). An all-zero fortnight shrinks to
+   a short baseline of ghost stubs so a new account sees a quiet, finished chart rather than an empty frame. */
+:root[data-theme-family='crystal'] .progress-forecast-days { --forecast-bar-h: 150px; }
+:root[data-theme-family='crystal'] .progress-forecast-days { margin-top: auto; padding-top: 14px; }
+:root[data-theme-family='crystal'] .progress-forecast-days[data-forecast-empty] { --forecast-bar-h: 44px; }
+:root[data-theme-family='crystal'] .progress-forecast-days > li { position: relative; justify-content: flex-start; padding-top: 24px; }
+:root[data-theme-family='crystal'] .progress-forecast-bar { height: var(--forecast-bar-h); }
+:root[data-theme-family='crystal'] .progress-forecast-bar > span { min-height: 4px; }
+:root[data-theme-family='crystal'] .progress-forecast-days time { height: 16px; line-height: 16px; overflow: visible; text-overflow: clip; }
+:root[data-theme-family='crystal'] .progress-forecast-count { position: absolute; left: 0; right: 0; bottom: calc(16px + 6px + 4px + var(--forecast-bar-h) * var(--forecast-ratio, 0)); line-height: 18px; text-align: center; }
+:root[data-theme-family='crystal'] .progress-forecast-days[data-forecast-empty] .progress-forecast-bar > span,
+:root[data-theme-family='crystal'] .progress-forecast-days[data-forecast-empty] > li[data-forecast-day] .progress-forecast-bar > span { background: var(--st-track); box-shadow: none; opacity: .9; }
+:root[data-theme-family='crystal'] .progress-forecast-days[data-forecast-empty] .progress-forecast-count { color: var(--st-text3); }
+
+/* No mastered card yet: the message sits in an empty star slot shaped like the cards that will fill it. */
+:root[data-theme-family='crystal'] .progress-mastered .progress-panel-empty { display: grid; place-items: center; align-content: center; gap: 8px; flex-grow: 1; min-height: 128px; margin-top: 12px; padding: 18px; clip-path: var(--nk-chamfer-sm); background: color-mix(in srgb, var(--sf-reward) 6%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-reward) 32%, transparent); color: var(--st-text2); font-size: 13.5px; font-weight: 700; text-align: center; }
+:root[data-theme-family='crystal'] .progress-mastered .progress-panel-empty::before { content: "\2726"; color: var(--st-gold-text); font-size: 22px; line-height: 1; }
+
+/* Crystal before the first review. The activity panel keeps the board's heatmap with every day at rest, and the
+   first step is written across its middle on a soft veil of the panel colour so the grid still reads behind it. */
+:root[data-theme-family='crystal'] .progress-empty-grid > * { min-width: 0; }
+:root[data-theme-family='crystal'] .progress-empty-grid .stats-canvas--mastery,
+:root[data-theme-family='crystal'] .progress-empty-grid .stats-canvas--mastery > .stats-mastery { height: 100%; }
+:root[data-theme-family='crystal'] .progress-ghost-stage { position: relative; flex-grow: 1; display: flex; flex-direction: column; }
+:root[data-theme-family='crystal'] .progress-ghost-call {
+  position: absolute;
+  inset: 14px 0 24px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 24px;
+  text-align: center;
+  background: radial-gradient(ellipse 50% 62% at 50% 50%, color-mix(in srgb, var(--st-panel-solid) 94%, transparent) 40%, color-mix(in srgb, var(--st-panel-solid) 70%, transparent) 70%, transparent 100%);
+}
+:root[data-theme-family='crystal'] .progress-ghost-heading {
+  margin: 0;
+  max-width: 34rem;
+  font-family: var(--st-display);
+  font-style: italic;
+  font-weight: 900;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: var(--st-title);
+}
+:root[data-theme-family='crystal'] .progress-ghost-call .progress-summary-copy { max-width: 30rem; margin: 0; font-size: 14px; color: var(--st-text2); }
+:root[data-theme-family='crystal'] .progress-ghost-call .progress-board-cta { margin-top: 8px; width: auto; }
 
 @media (max-width: 639px) {
   :root:not([data-theme-family='crystal']) .progress-board.progress-board > header.progress-board-header:has(> .progress-board-range) { grid-template-columns: minmax(0, 1fr); }
@@ -290,8 +376,23 @@
   .progress-board.progress-board > header h1.progress-board-title,
   :root[data-theme-family='crystal'] .progress-board.progress-board > header h1.progress-board-title { font-size: 44px !important; }
   .progress-evidence > div { padding: 18px; }
+  /* Seven phone columns are about 39px wide; the tracked day labels would collide with their neighbours. */
+  :root[data-theme-family='crystal'] .progress-forecast-days time { font-size: 10.5px; letter-spacing: 0; }
   :root[data-theme-family='crystal'] .progress-board-subtitle { flex-basis: 100%; margin: 8px 0 0; }
   :root[data-theme-family='crystal'] .progress-board-lumi { margin-left: 0; margin-top: 10px; flex-basis: 100%; }
   :root[data-theme-family='crystal'] .progress-board-lumi-figure { width: 64px; height: 64px; }
   :root[data-theme-family='crystal'] .progress-board-lumi-bubble { flex: 1 1 auto; width: auto; }
+  /* A phone shows the latest twelve weeks of the empty grid; the call sits under the grid instead of over it. */
+  :root[data-theme-family='crystal'] .stats-heatmap--ghost .stats-heat-week:nth-last-child(n + 13),
+  :root[data-theme-family='crystal'] .stats-heatmap--ghost .stats-heat-month:nth-last-child(n + 13) { display: none; }
+  :root[data-theme-family='crystal'] .progress-ghost-call { position: static; margin-top: 14px; padding: 0; background: none; }
+  :root[data-theme-family='crystal'] .progress-ghost-heading { font-size: 21px; }
+  :root[data-theme-family='crystal'] .progress-summary--ghost .stats-panel-head > .stats-heat-legend { display: none; }
+}
+
+/* The board's new-star cards lift on hover (nk-lift: 3px up, springy settle); their glow filter stays, as on the
+   board, where the inline drop-shadow overrides nk-lift's brightness. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :root[data-theme-family='crystal'] .progress-mastered-cards > li { transition: transform 220ms cubic-bezier(.34, 1.56, .64, 1), box-shadow 220ms ease, filter 220ms ease; }
+  :root[data-theme-family='crystal'] .progress-mastered-cards > li:hover { transform: translateY(-3px); }
 }

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type RefObject } from 'react';
+import { lazy, Suspense, useEffect, useState, type CSSProperties, type RefObject } from 'react';
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
@@ -46,6 +46,11 @@ const forecastWeekday = (dateKey: string, locale: string): string => {
 
 const localDateKey = (date: Date): string => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
 
+/** Bar height as a percent of the busiest day; a non-empty day keeps a visible sliver. */
+function forecastShare(count: number, maximum: number) {
+  return count ? Math.max(8, count / maximum * 100) : 0;
+}
+
 function ChartsFallback() {
   return <div className="crystal-chamfer skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)]" role="status"><span className="sr-only"><Trans {...msg({ context: 'progress.charts.loading', message: 'Loading progress charts…' })} /></span></div>;
 }
@@ -86,19 +91,19 @@ export default function ProgressWorkspace({ ownerId, targetLanguage, darkMode, i
   };
   const message = isStatsLoading ? i18n._(msg({ id: 'progress.message.loading', message: 'Refreshing progress; saved metrics remain visible.' }).id) : statsError ? i18n._(msg({ id: 'progress.message.error', message: 'Showing saved progress. {error}' }).id, { error: statsError }) : i18n._(msg({ id: 'progress.message.ready', message: 'Progress is calculated from your learning history.' }).id);
   if (isAchievementsOpen && hasActivity) return <AchievementsMatrix stats={stats} onBackToProgress={() => showAchievements(false)} />;
-  return <><ProgressScreen model={{ headingRef, focusIntent, status: isStatsLoading ? 'loading' : statsError && !hasActivity ? 'error' : hasActivity ? 'ready' : 'empty', message, reviewed: stats.reviewed, mastered: stats.learned, dueToday, isOffline, hasVocabulary: stats.total > 0, ...(showsReviewRange ? { reviewRangeDays } : {}) }} actions={{ startReview: () => { if (!isOffline) void continueReview(); }, openVocabulary, changeReviewRange: setReviewRangeDays }}>
+  return <><ProgressScreen model={{ headingRef, focusIntent, status: isStatsLoading ? 'loading' : statsError && !hasActivity ? 'error' : hasActivity ? 'ready' : 'empty', message, reviewed: stats.reviewed, mastered: stats.learned, dueToday, isOffline, hasVocabulary: stats.total > 0, ...(showsReviewRange ? { reviewRangeDays } : {}) }} actions={{ startReview: () => { if (!isOffline) void continueReview(); }, openVocabulary, changeReviewRange: setReviewRangeDays }} emptyAside={family === 'crystal' ? <Suspense fallback={<ChartsFallback />}><div className="async-content-enter min-w-0" data-async-content="progress-mastery"><StatsCharts key={`${ownerId ?? 'signed-out'}:${targetLanguage ?? 'en'}`} darkMode={darkMode} data={stats} section="mastery" /></div></Suspense> : undefined}>
     {showsInsights && <div className="space-y-6">
       {showsCharts && <Suspense fallback={<ChartsFallback />}><div className="async-content-enter" data-async-content="progress-charts"><StatsCharts key={`${ownerId ?? 'signed-out'}:${targetLanguage ?? 'en'}`} darkMode={darkMode} data={stats} section="primary" reviewRangeDays={reviewRangeDays} /></div></Suspense>}
       {(stats.dueForecast || stats.recentlyMastered) && <section className="progress-evidence grid grid-cols-1" aria-label={i18n._(msg({ id: 'progress.evidence.forecast-and-mastery', message: 'Forecast and recently mastered cards' }))}>
-        <div className="progress-forecast crystal-chamfer-sm min-w-0">
+        <div className="progress-forecast crystal-chamfer min-w-0">
           <div className="stats-panel-head"><h2 className="stats-panel-title"><Trans {...msg({ context: 'progress.forecast.title', message: 'Coming up' })} /></h2><span className="stats-panel-note"><Trans {...msg({ context: 'progress.forecast.note', message: 'Cards due, next 14 days' })} /></span></div>
-          {dueTimeline ? <ol data-due-timeline className="progress-forecast-days">{dueTimeline.map((day, index) => <li key={day.date} data-forecast-day={index === 0 ? 'today' : index === 1 ? 'tomorrow' : undefined}>
+          {dueTimeline ? <ol data-due-timeline data-forecast-empty={dueTimeline.every(day => day.count === 0) ? 'true' : undefined} className="progress-forecast-days">{dueTimeline.map((day, index) => <li key={day.date} data-forecast-day={index === 0 ? 'today' : index === 1 ? 'tomorrow' : undefined} style={{ '--forecast-ratio': forecastShare(day.count, forecastMaximum) / 100 } as CSSProperties}>
             <time dateTime={day.date}>{index === 0 ? <Trans {...msg({ context: 'progress.forecast.today', message: 'Today' })} /> : forecastWeekday(day.date, locale)}</time>
-            <span className="progress-forecast-bar" aria-hidden="true"><span style={{ height: `${day.count ? Math.max(8, day.count / forecastMaximum * 100) : 0}%` }} /></span>
+            <span className="progress-forecast-bar" aria-hidden="true"><span style={{ height: `${forecastShare(day.count, forecastMaximum)}%` }} /></span>
             <strong className="progress-forecast-count">{day.count}</strong>
           </li>)}</ol> : <p className="progress-panel-empty"><Trans {...msg({ context: 'progress.forecast.unavailable', message: 'Forecast is unavailable while saved progress is loading.' })} /></p>}
         </div>
-        <div className="progress-mastered crystal-chamfer-sm min-w-0">
+        <div className="progress-mastered crystal-chamfer min-w-0">
           <div className="stats-panel-head">
             <h2 className="stats-panel-title">{family === 'crystal'
               ? <Trans {...msg({ context: 'progress.mastered.crystal-title', message: 'New stars' })} />

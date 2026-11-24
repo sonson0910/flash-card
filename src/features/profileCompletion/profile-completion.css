@@ -138,7 +138,6 @@
     border-radius: var(--sf-card-radius);
     background-color: var(--sf-surface);
     box-shadow: var(--sf-panel-shadow);
-    --sf-chamfer-edge: var(--pg-edge);
   }
 
   .profile-gate__panel-title {
@@ -286,7 +285,6 @@
     padding: 10px 14px;
     border: 1px solid var(--pg-warning-line);
     border-radius: 999px;
-    --sf-chamfer-edge: var(--pg-warning-edge);
   }
 
   .profile-gate__fact dt { color: var(--sf-text-muted); font-size: 11px; font-weight: 700; }
@@ -306,7 +304,6 @@
     border-radius: 12px;
     background-color: var(--sf-surface-muted);
     font-size: 13px;
-    --sf-chamfer-edge: var(--sf-border);
   }
 
   .profile-gate__tile strong { font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
@@ -327,7 +324,6 @@
   .profile-gate__tile--next {
     border-color: color-mix(in srgb, var(--sf-brand) 35%, transparent);
     background-color: color-mix(in srgb, var(--sf-brand) 10%, var(--sf-surface));
-    --sf-chamfer-edge: color-mix(in srgb, var(--sf-brand) 55%, transparent);
   }
 
   .profile-gate__tile--next strong,
@@ -336,7 +332,6 @@
   .profile-gate__tile--warning {
     border-color: var(--pg-warning-line);
     background-color: color-mix(in srgb, var(--sf-reward) 12%, var(--sf-surface));
-    --sf-chamfer-edge: var(--pg-warning-edge);
   }
 
   .profile-gate__tile--warning strong,
@@ -454,7 +449,6 @@
   html[data-theme-family=crystal] .profile-gate__control {
     border-color: transparent;
     background-color: var(--sf-surface-raised);
-    --sf-chamfer-edge: var(--pg-edge);
   }
 
   html[data-theme-family=crystal] .profile-gate__checkbox { border-radius: 0; }
@@ -467,7 +461,6 @@
 
   html[data-theme-family=crystal] .profile-gate__note--warning {
     border-color: var(--pg-warning-line);
-    --sf-chamfer-edge: var(--pg-warning-edge);
     background-color: color-mix(in srgb, var(--sf-reward) 12%, transparent);
   }
 
@@ -489,7 +482,6 @@
   /* The fill only lightens towards the top so the dark on-brand text keeps its contrast. */
   html[data-theme-family=crystal] .profile-gate__primary {
     --sf-chamfer-fill: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 72%, var(--sf-surface)), var(--sf-brand) 55%);
-    --sf-chamfer-edge: transparent;
     background-color: var(--sf-brand);
     box-shadow: none;
     color: var(--sf-on-brand);
@@ -536,7 +528,6 @@
       border-radius: var(--sf-card-radius);
       background-color: var(--sf-surface);
       box-shadow: var(--sf-panel-shadow);
-      --sf-chamfer-edge: var(--pg-edge);
     }
 
     .profile-gate__sheet--single { max-width: none; }

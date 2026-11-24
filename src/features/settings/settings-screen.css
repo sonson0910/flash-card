@@ -2,7 +2,8 @@
    AnimeSettings boards). The workspace already pads 12px/44px at desktop; the extra padding brings the
    page to the board's 30px 56px. */
 .settings-screen { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 40px; width: 100%; box-sizing: border-box; padding: 18px 12px 48px; }
-:root[data-theme-family="crystal"] .settings-screen { grid-template-columns: 200px minmax(0, 1fr); gap: 36px; padding-top: 2px; }
+/* In Crystal the shell pads the workspace to the board frame (14px 56px 24px), so the page adds nothing. */
+:root[data-theme-family="crystal"] .settings-screen { grid-template-columns: 200px minmax(0, 1fr); gap: 36px; padding: 0; }
 .settings-screen[data-settings-section="language"] { gap: 36px; padding-top: 14px; grid-template-columns: 200px minmax(0, 1fr); }
 .ss-content { min-width: 0; }
 .ss-single { max-width: 640px; }
@@ -49,13 +50,16 @@
 .ss-theme-option__name { display: block; font-size: 14px; font-weight: 650; color: var(--ss-text-strong); }
 .ss-theme-option__sub { display: block; margin-top: 2px; font-size: 12px; line-height: 1.4; color: var(--ss-text2); }
 .ss-theme-option__check { flex-shrink: 0; color: var(--ss-accent-text); }
-:root[data-theme-family="crystal"] .ss-theme-option { border-radius: 0; border-color: var(--sf-edge-highlight); background-color: transparent; box-shadow: none; --sf-chamfer-edge: var(--sf-edge-highlight); --sf-chamfer-fill: var(--sf-surface-control); }
-:root[data-theme-family="crystal"] .ss-theme-option[data-checked="true"] { border-color: var(--ss-panel-edge); --sf-chamfer-edge: var(--ss-panel-edge); --sf-chamfer-fill: linear-gradient(160deg, rgb(255 42 77 / .18), rgb(255 42 77 / .04)); }
+/* The chamfer fill is a background-image layer: a bare colour there invalidates the whole background-image,
+   which drops both the fill and the lines that close the cut corners. Colours go in as one-stop gradients. */
+:root[data-theme-family="crystal"] .ss-theme-option { border-radius: 0; border-color: var(--sf-edge-highlight); background-color: transparent; box-shadow: none; --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control)); }
+:root[data-theme-family="crystal"] .ss-theme-option[data-checked="true"] { border-color: var(--ss-panel-edge); --sf-chamfer-fill: linear-gradient(160deg, rgb(255 42 77 / .18), rgb(255 42 77 / .04)); }
 :root[data-theme-family="crystal"] .ss-theme-option__name { font-weight: 900; }
 .settings-preview-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .ss-crystal-mode { margin: 14px 0 0; padding: 0; border: 0; }
 .ss-crystal-mode__options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
-.ss-crystal-mode__option { display: flex; min-height: 44px; align-items: center; gap: 10px; padding: 0 14px; border: 1px solid var(--sf-edge-highlight); --sf-chamfer-edge: var(--sf-edge-highlight); --sf-chamfer-fill: var(--sf-surface-control); color: var(--ss-text-strong); font-weight: 800; cursor: pointer; }
+.ss-crystal-mode__option { display: flex; min-height: 44px; align-items: center; gap: 10px; padding: 0 14px; border: 1px solid var(--sf-edge-highlight); --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control)); color: var(--ss-text-strong); font-weight: 800; cursor: pointer; }
+.ss-crystal-mode__option:has(input:checked) { border-color: var(--ss-panel-edge); }
 .ss-crystal-mode__option input { accent-color: var(--sf-brand); }
 .ss-crystal-mode__option:focus-within { outline: 2px solid var(--ss-text-strong); outline-offset: 2px; }
 .settings-theme-picker { margin: 0; padding: 0; border: 0; }
@@ -71,6 +75,7 @@
 
 /* Sounds & haptics tiles. */
 .ss-sound-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+:root[data-theme-family="crystal"] .ss-sound-grid { gap: 10px; }
 .ss-sound-tile { display: flex; min-height: 48px; box-sizing: border-box; align-items: center; gap: 8px; padding: 0 14px 0 2px; border: 1px solid var(--ss-line); border-radius: 14px; background-color: var(--ss-chip-bg); }
 .ss-sound-tile__play { display: grid; flex-shrink: 0; width: 44px; height: 44px; place-items: center; padding: 0; border: 0; background: transparent; color: var(--ss-accent-text); cursor: pointer; }
 .ss-sound-tile__dot { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: var(--ss-accent-soft); }
@@ -82,7 +87,8 @@
 .ss-sound-tile input[role="switch"] { width: 36px; height: 20px; padding: 2px; }
 .ss-sound-tile input[role="switch"]::before { width: 16px; height: 16px; }
 .ss-sound-tile input[role="switch"]:checked::before { transform: translateX(16px); }
-:root[data-theme-family="crystal"] .ss-sound-tile { min-height: 50px; border-radius: 0; background-color: transparent; border-color: var(--sf-edge-highlight); --sf-chamfer-edge: var(--sf-edge-highlight); --sf-chamfer-fill: var(--ss-panel); }
+/* Board tile: 50px, an 8px lead to the play hex and 12px to the label (the 44px play target adds 5px each side). */
+:root[data-theme-family="crystal"] .ss-sound-tile { min-height: 50px; gap: 7px; padding: 0 14px 0 3px; border: 0; border-radius: 0; background-color: transparent; box-shadow: inset 0 0 0 1px var(--ss-line-strong); --sf-chamfer-fill: var(--ss-panel); }
 :root[data-theme-family="crystal"] .ss-sound-tile__play { color: #fff; }
 :root[data-theme-family="crystal"] .ss-sound-tile__dot { width: 34px; height: 36px; border-radius: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--ss-primary-bg); }
 :root[data-theme-family="crystal"] .ss-sound-tile__name { font-weight: 800; font-size: 14.5px; }
@@ -130,8 +136,8 @@
 :root[data-theme-family="crystal"] .ss-lang-meaning__option,
 :root[data-theme-family="crystal"] .ss-lang-preview,
 :root[data-theme-family="crystal"] .ss-lang-note { border-radius: 0; }
-:root[data-theme-family="crystal"] .ss-lang-meaning__option { border-color: var(--sf-edge-highlight); background-color: transparent; --sf-chamfer-edge: var(--sf-edge-highlight); --sf-chamfer-fill: var(--sf-surface-control); }
-:root[data-theme-family="crystal"] .ss-lang-meaning__option[data-checked="true"] { color: #fff; box-shadow: var(--ss-primary-shadow); --sf-chamfer-edge: transparent; --sf-chamfer-fill: var(--ss-primary-bg); }
+:root[data-theme-family="crystal"] .ss-lang-meaning__option { border-color: var(--sf-edge-highlight); background-color: transparent; --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control)); }
+:root[data-theme-family="crystal"] .ss-lang-meaning__option[data-checked="true"] { color: #fff; box-shadow: var(--ss-primary-shadow); --sf-chamfer-fill: var(--ss-primary-bg); }
 :root[data-theme-family="crystal"] .ss-lang-preview__meaning { font-style: italic; font-weight: 800; }
 
 .ss-courses { display: flex; flex-direction: column; gap: 12px; }
@@ -142,7 +148,7 @@
 :root[data-theme-family="crystal"] .ss-courses__add { border-radius: 0; }
 .ss-course-active { position: relative; padding: 18px 20px 14px; border: var(--ss-card-border); border-radius: var(--ss-card-radius); box-shadow: var(--ss-card-shadow); }
 :root:not([data-theme-family="crystal"]) .ss-course-active { background: var(--ss-card-bg); }
-:root[data-theme-family="crystal"] .ss-course-active { padding: 18px 22px 14px; --sf-chamfer-edge: var(--ss-panel-edge); --sf-chamfer-fill: var(--ss-panel); }
+:root[data-theme-family="crystal"] .ss-course-active { padding: 18px 22px 14px; --sf-chamfer-fill: var(--ss-panel); }
 .ss-course-active__head { display: flex; align-items: flex-start; gap: 14px; }
 .ss-course-glyph { display: grid; flex-shrink: 0; width: 54px; height: 54px; place-items: center; border-radius: 16px; background: var(--ss-accent-soft); color: var(--ss-accent-text); font-size: 28px; font-weight: 700; }
 .ss-course-glyph--small { width: 44px; height: 44px; border: 1px solid var(--ss-line); border-radius: 14px; background: var(--ss-chip-bg); color: var(--ss-text-strong); font-size: 22px; }
@@ -166,7 +172,7 @@
 .ss-course-other { display: flex; width: 100%; min-height: 72px; box-sizing: border-box; align-items: center; gap: 14px; padding: 14px 18px; border: 1px solid var(--ss-line); border-radius: var(--ss-radius); background-color: var(--ss-surface); box-shadow: var(--ss-surface-shadow); color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .ss-course-other:focus-visible { outline: 2px solid var(--ss-text-strong); outline-offset: 2px; }
 .ss-course-other:disabled { cursor: not-allowed; opacity: .6; }
-:root[data-theme-family="crystal"] .ss-course-other { border-color: var(--ss-panel-edge2); --sf-chamfer-edge: var(--ss-panel-edge2); --sf-chamfer-fill: var(--ss-panel); }
+:root[data-theme-family="crystal"] .ss-course-other { border-color: var(--ss-panel-edge2); --sf-chamfer-fill: var(--ss-panel); }
 .ss-course-other__text { min-width: 0; flex: 1; }
 .ss-course-other__name { display: block; font-size: 16px; font-weight: 650; color: var(--ss-text-strong); }
 .ss-course-other__meta { display: block; margin-top: 1px; font-size: 12.5px; color: var(--ss-text2); }
@@ -182,7 +188,7 @@
 :root[data-theme-family="crystal"] .ss-course-add,
 :root[data-theme-family="crystal"] .ss-course-add__option { border-radius: 0; }
 /* These options sit on the page backdrop, so they take the glass fill. The fill is a background-image layer and must be an image. */
-:root[data-theme-family="crystal"] .ss-course-add__option { border-color: var(--sf-edge-highlight); background-color: transparent; --sf-chamfer-edge: var(--sf-edge-highlight); --sf-chamfer-fill: linear-gradient(var(--sf-glass-surface), var(--sf-glass-surface)); }
+:root[data-theme-family="crystal"] .ss-course-add__option { border-color: var(--sf-edge-highlight); background-color: transparent; --sf-chamfer-fill: linear-gradient(var(--sf-glass-surface), var(--sf-glass-surface)); }
 .ss-course-hint { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ss-text2); }
 .ss-lang-serif { font-family: var(--sf-font-display); font-weight: 400; }
 :root[data-theme-family="crystal"] .ss-lang-serif { font-style: italic; font-weight: 800; }
@@ -229,6 +235,16 @@ html[data-lumi="off"] [data-settings-lumi] { visibility: hidden; }
 }
 @media (max-width: 520px) {
   .ss-sound-grid { grid-template-columns: minmax(0, 1fr); }
+  /* Two half-width options wrap "Starry Night" onto two lines on a phone; a single column keeps each label on one line. */
+  .ss-crystal-mode__options { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .ss-crystal-mode__option span { white-space: nowrap; }
   .ss-panel { padding: 14px 16px; }
   :root[data-theme-family="crystal"] .ss-panel { padding: 14px 16px; }
+}
+
+/* The board's sound play hexes lift on hover (nk-lift: 3px up, brighter, springy settle; pressed shrinks). */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :root[data-theme-family="crystal"] .ss-sound-tile__dot { transition: transform 220ms cubic-bezier(.34, 1.56, .64, 1), box-shadow 220ms ease, filter 220ms ease; }
+  :root[data-theme-family="crystal"] .ss-sound-tile__play:hover:not(:disabled) .ss-sound-tile__dot { transform: translateY(-3px); filter: brightness(1.06); }
+  :root[data-theme-family="crystal"] .ss-sound-tile__play:active:not(:disabled) .ss-sound-tile__dot { transform: scale(.97); }
 }

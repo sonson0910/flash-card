@@ -97,8 +97,9 @@
   --fl-panel: var(--sf-surface-glass);
   --fl-panel-solid: var(--sf-surface);
   --fl-panel-shadow: none;
-  --fl-panel-edge: color-mix(in srgb, var(--sf-brand) 55%, transparent);
-  --fl-panel-edge2: color-mix(in srgb, var(--sf-second) 40%, transparent);
+  /* The board's panel edges (panelEdge / panelEdge2) in both modes. */
+  --fl-panel-edge: var(--sf-panel-edge);
+  --fl-panel-edge2: var(--sf-panel-edge-2);
   --fl-track: color-mix(in srgb, var(--sf-text) 10%, transparent);
   --fl-holo: color-mix(in srgb, var(--sf-success) 85%, var(--sf-text));
   --fl-gold: var(--sf-reward);
@@ -137,8 +138,6 @@
 :root[data-theme-family="crystal"]:not(.dark) .sf-files-tokens {
   --fl-text-strong: color-mix(in srgb, var(--sf-text) 80%, black);
   --fl-text3: color-mix(in srgb, var(--sf-text-muted) 88%, var(--sf-text));
-  --fl-panel-edge: color-mix(in srgb, var(--sf-brand-text) 55%, transparent);
-  --fl-panel-edge2: color-mix(in srgb, var(--sf-success) 45%, transparent);
   /* Small holo caps sit on the pale canvas and the info chip; this mix reaches 4.5:1 on both. */
   --fl-holo: color-mix(in srgb, var(--sf-success) 70%, var(--sf-text));
   /* The board's gold text on the light panel and the warn chip; the reward token is too light for small text. */
@@ -193,6 +192,8 @@
 .sf-files-panel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .sf-files-panel__head { display: flex; align-items: flex-start; gap: 12px; }
 .sf-files-panel__heading { flex: 1 1 auto; min-width: 0; }
+/* The upload glyph tile beside the select heading is drawn only by the Crystal board. */
+.sf-files-panel__icon { display: none; }
 .sf-files-panel__heading h2 { margin: 0; color: var(--fl-text-strong); font-weight: 700; font-size: 21px; line-height: 1.15; }
 .sf-files-panel__heading p { margin: 4px 0 0; overflow-wrap: anywhere; color: var(--fl-text2); font-size: 13px; line-height: 1.4; }
 .sf-files-panel__heading p[data-mono] { font-size: 12px; }
@@ -431,32 +432,58 @@
 :root[data-theme-family="crystal"] :is(.sf-files__chip, .sf-files-button, .sf-files-kind, .sf-files-checks__label, .sf-files-status__state, .sf-files-pill, .sf-files-tile strong, .sf-files-usage__label, .sf-files-shelf__list-head > span:first-child, .sf-files-attach__row label) {
   font-family: var(--sf-font-display); font-style: italic; text-transform: uppercase;
 }
-:root[data-theme-family="crystal"] .sf-files__chip { height: 24px; padding: 0 8px; border-color: var(--fl-line-strong); --sf-chamfer-edge: var(--fl-line-strong); font-weight: 800; font-size: 10px; }
-:root[data-theme-family="crystal"] .sf-files__chip[data-tone="info"] { --sf-chamfer-edge: var(--fl-info-line); }
-:root[data-theme-family="crystal"] .sf-files__chip[data-tone="warn"] { --sf-chamfer-edge: var(--fl-warn-line); }
-:root[data-theme-family="crystal"] .sf-files__chip[data-tone="danger"] { --sf-chamfer-edge: var(--fl-danger-line); }
-:root[data-theme-family="crystal"] .sf-files__chip[data-tone="ok"] { --sf-chamfer-edge: var(--fl-ok-line); }
-:root[data-theme-family="crystal"] .sf-files__card { border-color: var(--fl-panel-edge2); --sf-chamfer-edge: var(--fl-panel-edge2); --sf-chamfer-fill: var(--fl-panel); backdrop-filter: none; }
-:root[data-theme-family="crystal"] .sf-files__aside { border-color: var(--fl-panel-edge); --sf-chamfer-edge: var(--fl-panel-edge); background-color: transparent; --sf-chamfer-fill: var(--fl-panel); }
+/* Board state chip: a small-cut tag filled with its tone and edged by a 1px inset line along the straight sides.
+   The base pill radius and background shorthand are dropped so the chamfer is the only shape. */
+:root[data-theme-family="crystal"] .sf-files__chip {
+  --fl-chip-fill: var(--fl-chip-bg); --fl-chip-line: var(--fl-line-strong);
+  height: 24px; padding: 0 8px; border: 0; border-radius: 0; background: revert-layer;
+  --sf-chamfer-fill: linear-gradient(var(--fl-chip-fill), var(--fl-chip-fill));
+  box-shadow: inset 0 0 0 1px var(--fl-chip-line); font-weight: 800; font-size: 10px; line-height: 1;
+}
+:root[data-theme-family="crystal"] .sf-files__chip[data-tone="info"] { --fl-chip-fill: var(--fl-info-bg); --fl-chip-line: var(--fl-info-line); }
+:root[data-theme-family="crystal"] .sf-files__chip[data-tone="warn"] { --fl-chip-fill: var(--fl-warn-bg); --fl-chip-line: var(--fl-warn-line); }
+:root[data-theme-family="crystal"] .sf-files__chip[data-tone="danger"] { --fl-chip-fill: var(--fl-danger-bg); --fl-chip-line: var(--fl-danger-line); }
+:root[data-theme-family="crystal"] .sf-files__chip[data-tone="ok"] { --fl-chip-fill: var(--fl-ok-bg); --fl-chip-line: var(--fl-ok-line); }
+:root[data-theme-family="crystal"] .sf-files-shelf__head .sf-files__chip { height: 22px; padding: 0 7px; font-size: 9px; color: var(--fl-text2); box-shadow: none; }
+/* The offline-access row above the page (app-only, so it follows the board's panel language): a chamfered glass
+   panel edged cyan, display caps for its heading and a chamfered primary button. */
+:root[data-theme-family="crystal"] [data-offline-readiness] {
+  border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-glass);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
+}
+:root[data-theme-family="crystal"] [data-offline-readiness] h2 { color: var(--sf-second-text); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: .14em; }
+:root[data-theme-family="crystal"] [data-offline-readiness] button {
+  border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-primary-bg); color: var(--sf-on-primary);
+  font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 13px; text-transform: uppercase;
+}
+/* The base panel rules set the background shorthand outside any layer, which hides the crystal-chamfer utility
+   (glass fill plus the redrawn cut edges); revert-layer hands the background back to the utility. */
+:root[data-theme-family="crystal"] .sf-files__card { border-color: var(--fl-panel-edge2); --sf-chamfer-fill: var(--fl-panel); backdrop-filter: none; background: revert-layer; }
+:root[data-theme-family="crystal"] .sf-files__aside { border-color: var(--fl-panel-edge); background: revert-layer; --sf-chamfer-fill: var(--fl-panel); }
 :root[data-theme-family="crystal"] .sf-files-panel__heading h2 { font-size: 20px; }
+:root[data-theme-family="crystal"] .sf-files-panel__icon { display: flex; flex: none; width: 32px; height: 32px; align-items: center; justify-content: center; border: 0; border-radius: 0; box-shadow: none; --sf-chamfer-fill: linear-gradient(var(--fl-chip-bg), var(--fl-chip-bg)); color: var(--fl-holo); }
 :root[data-theme-family="crystal"] .sf-files-panel__heading p { font-size: 11.5px; }
 :root[data-theme-family="crystal"] .sf-files-drop {
-  margin-top: 12px; border: 1.5px solid var(--fl-panel-edge2); background-color: var(--fl-chip-bg); --sf-chamfer-edge: var(--fl-panel-edge2);
+  margin-top: 12px; border: 1.5px solid var(--fl-panel-edge2); background-color: var(--fl-chip-bg); 
 }
-:root[data-theme-family="crystal"] .sf-files-drop__tile { width: 54px; height: 54px; border: 0; background: var(--fl-primary-bg); color: var(--fl-primary-text); --sf-chamfer-fill: var(--fl-primary-bg); }
+/* The upload glyph is a graphic (3:1 on the crimson fill), so it takes the board's white; the button labels keep the
+   dark on-brand text, which is what passes AA at their 11.5px size. */
+:root[data-theme-family="crystal"] .sf-files-drop__tile { width: 54px; height: 54px; border: 0; border-radius: 0; background: var(--fl-primary-bg); color: var(--sf-on-primary); --sf-chamfer-fill: var(--fl-primary-bg); }
 :root[data-theme-family="crystal"] .sf-files-drop h3 { margin-top: 12px; font-size: 23px; }
 :root[data-theme-family="crystal"] .sf-files-drop p { font-size: 12px; }
 :root[data-theme-family="crystal"] .sf-files-drop .sf-files-drop__note { color: var(--fl-gold); font-size: 10px; text-transform: uppercase; }
-:root[data-theme-family="crystal"] .sf-files-button { min-height: 44px; padding: 0 14px; border-color: var(--fl-line-strong); --sf-chamfer-edge: var(--fl-line-strong); background-color: var(--fl-chip-bg); font-weight: 800; font-size: 11.5px; }
-:root[data-theme-family="crystal"] .sf-files-button--primary { border-color: transparent; --sf-chamfer-edge: transparent; --sf-chamfer-fill: var(--fl-primary-bg); font-weight: 900; }
-:root[data-theme-family="crystal"] .sf-files-button--danger { border-color: transparent; --sf-chamfer-edge: transparent; --sf-chamfer-fill: var(--fl-primary-bg); }
+:root[data-theme-family="crystal"] .sf-files-button { min-height: 44px; padding: 0 14px; border-color: var(--fl-line-strong); background-color: var(--fl-chip-bg); font-weight: 800; font-size: 11.5px; }
+:root[data-theme-family="crystal"] .sf-files-button--primary { border-color: transparent; --sf-chamfer-fill: var(--fl-primary-bg); font-weight: 900; }
+/* The board's primary buttons carry no border and no outer glow (the chamfer clip would cut a glow off anyway). */
+:root[data-theme-family="crystal"] .sf-files-button--primary { border-width: 0; box-shadow: none; }
+:root[data-theme-family="crystal"] .sf-files-button--danger { border-color: transparent; --sf-chamfer-fill: var(--fl-primary-bg); }
 :root[data-theme-family="crystal"] .sf-files-kinds { margin-top: 10px; gap: 7px; }
-:root[data-theme-family="crystal"] .sf-files-kind { min-height: 44px; border-color: var(--fl-line-strong); --sf-chamfer-edge: var(--fl-line-strong); background-color: var(--fl-chip-bg); font-family: var(--sf-font-display); font-weight: 800; font-size: 11px; }
-:root[data-theme-family="crystal"] .sf-files-kind[aria-pressed="true"] { border-color: var(--fl-panel-edge2); --sf-chamfer-edge: var(--fl-panel-edge2); }
-:root[data-theme-family="crystal"] .sf-files-kind__icon { width: auto; height: auto; background: none !important; }
+:root[data-theme-family="crystal"] .sf-files-kind { min-height: 44px; border-color: var(--fl-line-strong); background-color: var(--fl-chip-bg); font-family: var(--sf-font-display); font-weight: 800; font-size: 11px; }
+:root[data-theme-family="crystal"] .sf-files-kind[aria-pressed="true"] { border-color: var(--fl-panel-edge2); }
+:root[data-theme-family="crystal"] .sf-files-kind__icon { width: auto; height: auto; background: none !important; border-radius: 0; clip-path: none; }
 :root[data-theme-family="crystal"] .sf-files-kind__icon svg { display: none; }
 :root[data-theme-family="crystal"] .sf-files-kind__icon::before { content: "\25C6"; font-style: normal; }
-:root[data-theme-family="crystal"] .sf-files-status { margin-top: 14px; padding: 13px; --sf-chamfer-edge: var(--tone-line); }
+:root[data-theme-family="crystal"] .sf-files-status { margin-top: 14px; padding: 13px; }
 :root[data-theme-family="crystal"] .sf-files-status--transfer { margin-top: 18px; padding: 16px; }
 :root[data-theme-family="crystal"] .sf-files-status--decision { margin-top: 18px; padding: 14px; }
 :root[data-theme-family="crystal"] .sf-files-status--result { padding: 12px; }
@@ -467,40 +494,50 @@
 :root[data-theme-family="crystal"] :is(.sf-files-progress, .sf-files-usage__meter) { height: 8px; border-radius: 0; transform: skewX(-18deg); }
 :root[data-theme-family="crystal"] .sf-files-usage__meter { height: 7px; }
 :root[data-theme-family="crystal"] .sf-files-progress > span { border-radius: 0; }
-:root[data-theme-family="crystal"] .sf-files-checks { margin-top: 10px; border-color: var(--fl-line-strong); --sf-chamfer-edge: var(--fl-line-strong); background-color: var(--fl-chip-bg); }
+:root[data-theme-family="crystal"] .sf-files-checks { margin-top: 10px; border-color: var(--fl-line-strong); background-color: var(--fl-chip-bg); }
 :root[data-theme-family="crystal"] .sf-files-checks li { min-height: 42px; padding: 0 12px; gap: 8px; }
 :root[data-theme-family="crystal"] .sf-files-checks__dot { width: 7px; height: 7px; border-radius: 0; transform: rotate(45deg); box-shadow: 0 0 5px currentColor; }
 :root[data-theme-family="crystal"] .sf-files-checks__label { font-weight: 800; font-size: 12px; }
 :root[data-theme-family="crystal"] .sf-files-checks__detail { font-size: 10.5px; }
 :root[data-theme-family="crystal"] .sf-files-panel__footnote { font-size: 11px; }
-:root[data-theme-family="crystal"] .sf-files-panel__box { margin-top: 12px; padding: 11px 12px; border-color: var(--fl-line-strong); --sf-chamfer-edge: var(--fl-line-strong); background-color: var(--fl-chip-bg); font-size: 11.5px; }
+:root[data-theme-family="crystal"] .sf-files-panel__box { margin-top: 12px; padding: 11px 12px; border-color: var(--fl-line-strong); background-color: var(--fl-chip-bg); font-size: 11.5px; }
 :root[data-theme-family="crystal"] .sf-files-badge { width: 25px; height: 29px; }
 :root[data-theme-family="crystal"] .sf-files-badge svg { display: none; }
 :root[data-theme-family="crystal"] .sf-files-badge::before { content: "\25C6"; font-size: 12px; }
 :root[data-theme-family="crystal"] .sf-files-tiles { margin-top: 10px; gap: 7px; }
-:root[data-theme-family="crystal"] .sf-files-tile { min-height: 0; padding: 9px 8px; border-color: var(--fl-line-strong); --sf-chamfer-edge: var(--fl-line-strong); background-color: var(--fl-chip-bg); }
+:root[data-theme-family="crystal"] .sf-files-tile { min-height: 0; padding: 9px 8px; border-color: var(--fl-line-strong); background-color: var(--fl-chip-bg); }
 :root[data-theme-family="crystal"] .sf-files-tile span { font-size: 9.5px; font-weight: 600; }
 :root[data-theme-family="crystal"] .sf-files-tile strong { margin-top: 4px; font-weight: 800; font-size: 12px; }
 :root[data-theme-family="crystal"] .sf-files-attach__row select { border-radius: 0; background: var(--fl-chip-bg); }
-:root[data-theme-family="crystal"] .sf-files-usage { margin-top: 12px; padding: 11px 12px; border-color: var(--fl-line-strong); --sf-chamfer-edge: var(--fl-line-strong); background-color: var(--fl-chip-bg); }
+:root[data-theme-family="crystal"] .sf-files-usage { margin-top: 12px; padding: 11px 12px; border-color: var(--fl-line-strong); background-color: var(--fl-chip-bg); }
 :root[data-theme-family="crystal"] .sf-files-usage__label { font-weight: 800; font-size: 11.5px; }
 :root[data-theme-family="crystal"] .sf-files-shelf__head h2 { margin-top: 4px; font-size: 20px; }
 :root[data-theme-family="crystal"] .sf-files-shelf__list-head { margin-top: 12px; font-weight: 800; font-size: 11px; }
-:root[data-theme-family="crystal"] .sf-files-list { margin-top: 6px; border-color: var(--fl-line-strong); --sf-chamfer-edge: var(--fl-line-strong); background-color: var(--fl-chip-bg); }
+:root[data-theme-family="crystal"] .sf-files-list { margin-top: 6px; border-color: var(--fl-line-strong); background-color: var(--fl-chip-bg); }
 :root[data-theme-family="crystal"] .sf-files-list li { min-height: 56px; padding: 8px 4px 8px 9px; gap: 7px; }
 :root[data-theme-family="crystal"] .sf-files-list__text strong { font-size: 10.5px; }
 :root[data-theme-family="crystal"] .sf-files-list__text span { font-size: 9px; }
 :root[data-theme-family="crystal"] .sf-files-pill { height: auto; padding: 0; align-self: flex-start; margin-top: 2px; background: none !important; font-weight: 800; font-size: 9px; }
 :root[data-theme-family="crystal"] .sf-files-list__delete { border-radius: 0; }
-:root[data-theme-family="crystal"] .sf-files-shelf__state { margin-top: 14px; padding: 22px 12px; border: 1px solid var(--fl-line-strong); --sf-chamfer-edge: var(--fl-line-strong); background-color: var(--fl-chip-bg); }
-:root[data-theme-family="crystal"] .sf-files-shelf__state[data-tone="danger"] { --sf-chamfer-edge: var(--fl-danger-line); }
-:root[data-theme-family="crystal"] .sf-files-shelf__state-icon { width: auto; height: auto; background: none !important; color: var(--fl-holo); font-family: var(--sf-font-display); font-size: 30px; }
+:root[data-theme-family="crystal"] .sf-files-shelf__state { margin-top: 14px; padding: 22px 12px; border: 1px solid var(--fl-line-strong); background-color: var(--fl-chip-bg); }
+:root[data-theme-family="crystal"] .sf-files-shelf__state-icon { width: auto; height: auto; background: none !important; border-radius: 0; clip-path: none; color: var(--fl-holo); font-family: var(--sf-font-display); font-size: 30px; }
 :root[data-theme-family="crystal"] .sf-files-shelf__state-icon svg { display: none; }
 :root[data-theme-family="crystal"] .sf-files-shelf__state:not([data-tone="danger"]) .sf-files-shelf__state-icon::before { content: "\25C7"; }
 :root[data-theme-family="crystal"] .sf-files-shelf__state[data-tone="danger"] .sf-files-shelf__state-icon { color: var(--sf-brand-text); }
 :root[data-theme-family="crystal"] .sf-files-shelf__state strong { margin-top: 7px; font-size: 15px; }
 :root[data-theme-family="crystal"] .sf-files-shelf__state p { font-size: 10.5px; }
-:root[data-theme-family="crystal"] .sf-files-dialog__card { padding: 16px; text-align: center; border-color: var(--fl-panel-edge); --sf-chamfer-edge: var(--fl-panel-edge); }
+:root[data-theme-family="crystal"] .sf-files-dialog__card { padding: 16px; text-align: center; border-color: var(--fl-panel-edge); }
+/* Board edges: every box the board draws carries its line as an inset shadow along the straight sides, so its cut
+   corners stay open; the border and the redrawn diagonal edges give way to it. --fl-edge holds each box's line colour. */
+:root[data-theme-family="crystal"] :is(.sf-files__card, .sf-files-drop) { --fl-edge: var(--fl-panel-edge2); }
+:root[data-theme-family="crystal"] :is(.sf-files__aside, .sf-files-dialog__card) { --fl-edge: var(--fl-panel-edge); }
+:root[data-theme-family="crystal"] :is(.sf-files-kind, .sf-files-usage, .sf-files-list, .sf-files-shelf__state, .sf-files-panel__box, .sf-files-tile, .sf-files-checks) { --fl-edge: var(--fl-line-strong); }
+:root[data-theme-family="crystal"] :is(.sf-files__card, .sf-files-drop, .sf-files__aside, .sf-files-dialog__card, .sf-files-kind, .sf-files-usage, .sf-files-list, .sf-files-shelf__state, .sf-files-panel__box, .sf-files-tile, .sf-files-checks) {
+  border-width: 0; border-radius: 0; box-shadow: inset 0 0 0 1px var(--fl-edge);
+}
+:root[data-theme-family="crystal"] .sf-files-drop { box-shadow: inset 0 0 0 1.5px var(--fl-edge); }
+:root[data-theme-family="crystal"] .sf-files-kind[aria-pressed="true"] { --fl-edge: var(--fl-panel-edge2); }
+:root[data-theme-family="crystal"] .sf-files-shelf__state[data-tone="danger"] { --fl-edge: var(--fl-danger-line); }
 :root[data-theme-family="crystal"] .sf-files-dialog__icon { display: none; }
 :root[data-theme-family="crystal"] .sf-files-dialog__card h3 { margin-top: 0; font-size: 20px; }
 :root[data-theme-family="crystal"] .sf-files-dialog__card p { margin-top: 7px; font-size: 11px; }
@@ -587,3 +624,13 @@
 .sf-files-settings__meter { display: block; }
 .sf-files-settings__meter .sf-files-usage { margin-top: 0; }
 .sf-files-settings__note { margin: 8px 2px 0; color: var(--fl-text3); font-size: 12px; line-height: 1.45; }
+
+/* Crystal phone layout, from the board's mobile frame: the drop zone takes the small 10px cut with a 1px edge, the
+   usage meter sits bare in the shelf, the empty-state box is a filled chip with no edge, and the count reads as
+   quiet body text rather than a chip. */
+@media (max-width: 720px) {
+  :root[data-theme-family="crystal"] .sf-files-drop { clip-path: var(--nk-chamfer-sm); box-shadow: inset 0 0 0 1px var(--fl-panel-edge2); }
+  :root[data-theme-family="crystal"] .sf-files-usage { padding: 0; clip-path: none; background: none; box-shadow: none; --sf-chamfer-fill: linear-gradient(transparent, transparent); }
+  :root[data-theme-family="crystal"] .sf-files-shelf__state { box-shadow: none; }
+  :root[data-theme-family="crystal"] .sf-files-shelf__head .sf-files__chip { padding: 0; clip-path: none; box-shadow: none; --fl-chip-fill: transparent; color: var(--fl-text3); font-family: inherit; font-style: normal; font-weight: 600; font-size: 9px; letter-spacing: 0; text-transform: none; }
+}

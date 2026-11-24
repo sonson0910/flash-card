@@ -236,9 +236,10 @@
   margin-left: auto;
   margin-bottom: 4px;
   padding: 0 18px;
-  border: 1px solid var(--st-line-strong);
+  /* Board controls draw their edge as a 1px inset line that the chamfer clips; no border box. */
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--st-line-strong);
   --sf-chamfer-fill: linear-gradient(var(--st-chip), var(--st-chip));
-  --sf-chamfer-edge: var(--st-line-strong);
   font-family: var(--sf-font-display);
   font-style: italic;
   font-weight: 800;
@@ -254,10 +255,13 @@
 .ach-lumi-card {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--st-line-strong);
+  border: 0;
+  /* Board panels: a 1px inset edge in the panel's colour along the straight sides; the cut corners stay open.
+     The learner and Lumi cards are edged crimson, the bloom card cyan. */
+  box-shadow: inset 0 0 0 1px var(--ach-panel-edge, var(--sf-panel-edge));
   --sf-chamfer-fill: var(--st-panel-bg);
-  --sf-chamfer-edge: var(--st-line-strong);
 }
+.ach-bloom-card { --ach-panel-edge: var(--sf-panel-edge-2); }
 .ach-emblem-card { padding: 22px 24px; }
 .ach-emblem-card::before {
   content: '';
@@ -347,6 +351,12 @@
 
 /* Crystal featured badge */
 .ach-feature-wrap { position: relative; min-height: 560px; }
+/* The board's lens flare on the featured badge's top-right: a white cross with a glowing centre; motion pulses it. */
+.ach-feature-flare { position: absolute; z-index: 2; top: 18px; right: 0; width: 110px; height: 110px; pointer-events: none; }
+.ach-feature-flare > span { position: absolute; }
+.ach-feature-flare > span:nth-child(1) { top: 50%; right: 0; left: 0; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, var(--sf-flare), transparent); }
+.ach-feature-flare > span:nth-child(2) { top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, var(--sf-flare), transparent); }
+.ach-feature-flare > span:nth-child(3) { top: 50%; left: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--sf-flare); box-shadow: 0 0 16px 6px color-mix(in srgb, var(--sf-star-face) 70%, transparent); }
 .ach-feature-wings {
   position: absolute;
   left: -120px;
@@ -539,6 +549,8 @@
 }
 .ach-tab:hover .ach-tab-label { color: var(--sf-text-strong); }
 .ach-tab[aria-selected='true'] .ach-tab-face { background: var(--sf-primary-bg); box-shadow: 0 0 18px -4px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
+/* The board's selected tab carries the shared primary glow (0 0 30px -4px of the brand). */
+.achievements-board--crystal .ach-tab[aria-selected='true'] .ach-tab-face { box-shadow: var(--st-primary-glow); }
 .ach-tab[aria-selected='true'] .ach-tab-label { color: var(--sf-on-primary); }
 .ach-unlocked-count { margin: 0 0 0 auto; padding-bottom: 12px; font-weight: 800; font-size: 14px; color: var(--sf-text-muted); }
 .achievements-board--crystal .ach-unlocked-count + .ach-back { margin-left: 0; }

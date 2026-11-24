@@ -354,6 +354,7 @@ export function AchievementsMatrix({ stats, onBackToProgress, now: nowProp }: Ac
             </div>
           </article>
         </div>
+        <span className="ach-feature-flare" aria-hidden="true"><span /><span /><span /></span>
       </div>
       <div className="min-w-0"><h2 className="sr-only">{_(text.badges)}</h2>{grid}</div>
     </>;

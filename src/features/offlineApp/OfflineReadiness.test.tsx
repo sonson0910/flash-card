@@ -482,6 +482,20 @@ describe('OfflineReadiness', () => {
     expect(html).not.toContain('Available offline');
   });
 
+  it('shows nothing outside My Files until an update is waiting', () => {
+    expect(renderToStaticMarkup(<OfflineReadiness production serviceWorker={undefined} updatesOnly />)).toBe('');
+    expect(renderToStaticMarkup(<OfflineReadiness production registration={registration} serviceWorker={undefined} updatesOnly />)).toBe('');
+    expect(renderToStaticMarkup(<OfflineReadiness production={false} serviceWorker={undefined} updatesOnly />)).toBe('');
+
+    const waitingRegistration = {
+      active: activatedWorker,
+      installing: null,
+      waiting: { state: 'installed' },
+    } as unknown as ServiceWorkerRegistration;
+    const html = renderToStaticMarkup(<OfflineReadiness production registration={waitingRegistration} serviceWorker={undefined} updatesOnly />);
+    expect(html).toContain('Update available');
+  });
+
   it('advises reopening after a waiting update instead of forcing activation', () => {
     const waitingRegistration = {
       active: activatedWorker,

@@ -15,6 +15,8 @@ export interface OfflineReadinessProps {
   readonly registration?: ServiceWorkerRegistration | null;
   /** Runs before the shell worker takes the root scope; a failure does not stop the preparation. */
   readonly beforePrepare?: () => Promise<void>;
+  /** Outside My Files the card appears only for a waiting update; preparing offline lives in My Files. */
+  readonly updatesOnly?: boolean;
 }
 
 const statusMessage = (status: OfflineReadinessStatus): MessageDescriptor => {
@@ -140,6 +142,7 @@ export function OfflineReadiness({
   serviceWorker: suppliedServiceWorker,
   registration: suppliedRegistration,
   beforePrepare,
+  updatesOnly = false,
 }: OfflineReadinessProps) {
   const [status, setStatus] = useState<OfflineReadinessStatus>(() => (
     !production
@@ -320,6 +323,8 @@ export function OfflineReadiness({
   const message = needsConnection
     ? _(msg({ id: 'shell.offline.needs-connection', message: 'You are offline. Reconnect to prepare the app files.' }))
     : _(statusMessage(status));
+
+  if (updatesOnly && status !== 'update') return null;
 
   return (
     // One compact row: the banner stays available on every workspace view without

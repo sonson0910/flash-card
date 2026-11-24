@@ -54,7 +54,6 @@
   --ig-dim: color-mix(in srgb, var(--sf-text-muted) 85%, var(--sf-canvas));
   --ig-edge: color-mix(in srgb, var(--sf-success) 42%, transparent);
   --ig-track: var(--sf-border);
-  --sf-chamfer-edge: var(--ig-edge);
   --sf-chamfer-fill: var(--sf-surface-glass);
   padding: 16px 22px 18px;
   border-color: var(--ig-edge);

@@ -49,7 +49,8 @@
   --ss-input-bg: var(--sf-surface-control); --ss-chip-bg: var(--sf-surface-control);
   --ss-primary-bg: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%); --ss-primary-text: #fff; --ss-primary-shadow: 0 0 30px -4px rgb(255 42 77 / .85); --ss-btn-radius: 0;
   --ss-track: rgb(255 255 255 / .1); --ss-switch-on: var(--ss-primary-bg); --ss-knob-on: #fff; --ss-knob-off: #7a8397;
-  --ss-crimson-text: #ff6b85; --ss-holo-text: #5ef2ff; --ss-gold: #ffd166;
+  --ss-crimson-text: #ff6b85; --ss-holo-text: #5ef2ff; --ss-gold: #ffd166; --ss-crimson: #ff2a4d;
+  --ss-suggest-bg: rgb(94 242 255 / .08);
   --ss-tier-new: linear-gradient(150deg, #e9feff, #5ef2ff 40%, #1aa7c9 75%, #e9feff);
   --ss-metal: linear-gradient(180deg, #fff 0%, #ffe3ea 45%, #ff8fa3 60%, #fff 100%);
   --ss-focus-ring: 0 0 0 3px rgb(94 242 255 / .25);
@@ -64,7 +65,7 @@
   --ss-track: rgb(13 40 80 / .12); --ss-knob-off: #fff;
   --ss-crimson-text: #c40f35; --ss-holo-text: #0a7d99; --ss-gold: #ffd166;
   --ss-metal: linear-gradient(180deg, #0d1a33 0%, #0d1a33 45%, #b30f33 62%, #ff2a4d 100%);
-  --ss-accent-soft: rgb(255 255 255 / .6);
+  --ss-accent-soft: rgb(255 255 255 / .6); --ss-suggest-bg: rgb(255 255 255 / .6);
 }
 
 /* Page title: Fraunces with an accent word in classic, heavy italic capitals with a metal accent in Crystal. */
@@ -85,15 +86,20 @@
 
 /* Panels. Crystal panels add the crystal-chamfer utility in markup; the fill comes from --sf-chamfer-fill. */
 .ss-panel { position: relative; padding: 18px 20px; border: 1px solid var(--ss-line); border-radius: var(--ss-radius); background-color: var(--ss-surface); box-shadow: var(--ss-surface-shadow); backdrop-filter: var(--ss-blur); }
-:root[data-theme-family="crystal"] .ss-panel { padding: 18px 22px; border-color: var(--ss-panel-edge); --sf-chamfer-edge: var(--ss-panel-edge); --sf-chamfer-fill: var(--ss-panel); }
-:root[data-theme-family="crystal"] .ss-panel--holo { border-color: var(--ss-panel-edge2); --sf-chamfer-edge: var(--ss-panel-edge2); }
+/* The board draws a Crystal panel's edge as a 1px inset line, which the chamfer cuts away at the two corners, so
+   the cut corners stay open and the utility's corner lines are switched off. */
+:root[data-theme-family="crystal"] .ss-panel { padding: 18px 22px; border: 0; box-shadow: inset 0 0 0 1px var(--ss-panel-edge); --sf-chamfer-fill: var(--ss-panel); }
+:root[data-theme-family="crystal"] .ss-panel--holo { box-shadow: inset 0 0 0 1px var(--ss-panel-edge2); }
 
 /* Rows inside panels. */
 .ss-row { display: flex; min-height: 52px; box-sizing: border-box; align-items: center; gap: 14px; padding: 11px 0; border-top: 1px solid var(--ss-line); }
 .ss-row__text { min-width: 0; flex: 1; }
 .ss-row__title { display: block; font-size: 14px; font-weight: 600; color: var(--ss-text-strong); }
 .ss-row__sub { display: block; margin-top: 1px; font-size: 12.5px; line-height: 1.4; color: var(--ss-text2); }
-:root[data-theme-family="crystal"] .ss-row__title { font-size: 14.5px; font-weight: 900; }
+/* Board rows are 52px with the title and description centred; longer text still grows the row. */
+:root[data-theme-family="crystal"] .ss-row { padding: 7px 0; }
+:root[data-theme-family="crystal"] .ss-row__title { font-size: 14.5px; font-weight: 900; line-height: normal; }
+:root[data-theme-family="crystal"] .ss-row__sub { line-height: normal; }
 
 /* Switches keep native checkbox semantics with the board track and knob. */
 .sf-settings-scope input[role="switch"] { appearance: none; position: relative; flex-shrink: 0; width: 42px; height: 24px; box-sizing: border-box; margin: 0; padding: 3px; border: 0; border-radius: 999px; background: var(--ss-track); box-shadow: inset 0 0 0 1px var(--ss-line); cursor: pointer; }
@@ -102,7 +108,7 @@
 .sf-settings-scope input[role="switch"]:checked::before { background: var(--ss-knob-on); transform: translateX(18px); }
 .sf-settings-scope input[role="switch"]:disabled { cursor: not-allowed; opacity: .5; }
 .sf-settings-scope input[role="switch"]:focus-visible { outline: 2px solid var(--ss-text-strong); outline-offset: 3px; }
-:root[data-theme-family="crystal"] .sf-settings-scope input[role="switch"] { width: 48px; border-radius: 0; transform: skewX(-14deg); }
+:root[data-theme-family="crystal"] .sf-settings-scope input[role="switch"] { width: 48px; border-radius: 0; box-shadow: none; transform: skewX(-14deg); }
 :root[data-theme-family="crystal"] .sf-settings-scope input[role="switch"]::before { border-radius: 0; box-shadow: none; }
 :root[data-theme-family="crystal"] .sf-settings-scope input[role="switch"]:checked::before { transform: translateX(24px); }
 @media (prefers-reduced-motion: no-preference) {
@@ -133,6 +139,7 @@
 .ss-secondary { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 6px; padding: 0 16px; border: 1px solid var(--ss-line-strong); border-radius: var(--ss-btn-radius); background: transparent; color: var(--ss-text-strong); font: inherit; font-size: 13.5px; font-weight: 650; cursor: pointer; }
 .ss-secondary:focus-visible { outline: 2px solid var(--ss-text-strong); outline-offset: 2px; }
 .ss-secondary:disabled { cursor: not-allowed; opacity: .55; }
+:root[data-theme-family="crystal"] .ss-secondary { border-radius: 0; }
 
 .ss-alert { margin: 12px 0 0; padding: 8px 12px; border: 1px solid var(--ss-danger); border-radius: 12px; color: var(--ss-danger); font-size: 13px; font-weight: 600; }
 .ss-status { margin: 0; color: var(--ss-text2); font-size: 13px; font-weight: 600; }
@@ -142,6 +149,6 @@
 .ss-lumi { display: none; }
 :root[data-theme-family="crystal"] .ss-lumi { display: flex; align-items: flex-end; gap: 8px; }
 html[data-lumi="off"] .ss-lumi { display: none; }
-.ss-lumi__bubble { position: relative; flex: 1; margin-bottom: 14px; padding: 10px 14px; border: 1px solid var(--ss-panel-edge2); --sf-chamfer-edge: var(--ss-panel-edge2); --sf-chamfer-fill: var(--ss-panel); }
-.ss-lumi__tag { margin: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: .12em; color: var(--ss-holo-text); }
+.ss-lumi__bubble { position: relative; flex: 1; margin-bottom: 14px; padding: 10px 14px; border: 0; box-shadow: inset 0 0 0 1px var(--ss-panel-edge2); --sf-chamfer-fill: var(--ss-panel); }
+.ss-lumi__tag { margin: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ss-holo-text); }
 .ss-lumi__text { margin: 2px 0 0; font-weight: 800; font-size: 13.5px; line-height: 1.4; color: var(--ss-text-strong); }

@@ -83,8 +83,8 @@ function CourseCard({ course, index, active, due, cards, pending, onSwitch, onMa
     <button type="button" className="course-card__select" aria-current={active ? 'true' : undefined} disabled={pending || archived} onClick={() => { if (!active) onSwitch(); }}>
       <span className="course-card__top">
         <span className="course-card__index"><Trans {...msg({ context: 'course.manage.card-index', message: 'Course {number}' })} values={{ number: String(index + 1).padStart(2, '0') }} /></span>
-        {active && <span className="course-card__tag"><Trans {...msg({ context: 'course.manage.active-tag', message: 'Active' })} /></span>}
-        {archived && <span className="course-card__tag" data-tone="muted"><Trans {...msg({ context: 'course.status.archived', message: 'Archived' })} /></span>}
+        {active && <span className="course-card__tag"><span className="course-card__tag-text"><Trans {...msg({ context: 'course.manage.active-tag', message: 'Active' })} /></span></span>}
+        {archived && <span className="course-card__tag" data-tone="muted"><span className="course-card__tag-text"><Trans {...msg({ context: 'course.status.archived', message: 'Archived' })} /></span></span>}
       </span>
       <span className="course-tile course-card__glyph" data-course-language={course.targetLanguage} lang={course.targetLanguage} aria-hidden="true">{TARGET_GLYPH[course.targetLanguage]}</span>
       <span className="course-card__name" lang={course.targetLanguage}>{TARGET_ENDONYM[course.targetLanguage]}</span>
@@ -214,8 +214,8 @@ export function CoursesSurface({
         {renderTitle ? renderTitle(title) : <h1 className="course-manage__title">{title}</h1>}
       </div>
       <p className="course-manage__switched" role="status">
-        {switched && <span className="course-manage__switched-badge crystal-chamfer-sm">
-          <Trans {...msg({ context: 'course.manage.switched', message: 'Switched to {language}' })} values={{ language: <span lang={switched.to}>{TARGET_ENDONYM[switched.to]}</span> }} />
+        {switched && <span className="course-manage__switched-badge">
+          <span className="course-manage__switched-text"><Trans {...msg({ context: 'course.manage.switched', message: 'Switched to {language}' })} values={{ language: <span lang={switched.to}>{TARGET_ENDONYM[switched.to]}</span> }} /></span>
         </span>}
       </p>
       {renderClose
@@ -239,11 +239,12 @@ export function CoursesSurface({
               <p className="course-manage__bubble-title"><Trans {...msg({ context: 'course.manage.lumi.title', message: 'Ready for {language}?' })} values={{ language: <span lang={activeCourse.targetLanguage}>{TARGET_ENDONYM[activeCourse.targetLanguage]}</span> }} /></p>
               {activeDue !== undefined && <p className="course-manage__bubble-body"><Trans {...msg({ context: 'course.manage.lumi.due', message: '{count, plural, one {# card is due right now.} other {# cards are due right now.}}' })} values={{ count: activeDue }} /></p>}
             </div>
-            <Lumi pose="happy" size={250} className="crystal-ornament course-manage__lumi-figure" />
+            <div className="course-manage__lumi-stage"><Lumi pose="happy" size={250} className="crystal-ornament course-manage__lumi-figure" /></div>
           </aside>}
         </div>
         {activeCourse && <div className="course-manage__footer">
           {onStudy && <button type="button" className="course-manage__cta crystal-chamfer" onClick={onStudy}>
+            <span className="course-manage__cta-shine" aria-hidden="true" />
             <span className="course-manage__cta-title"><Trans {...msg({ context: 'course.manage.study', message: 'Start {language} lesson' })} values={{ language: <span lang={activeCourse.targetLanguage}>{TARGET_ENDONYM[activeCourse.targetLanguage]}</span> }} /></span>
             {activeDue !== undefined && <span className="course-manage__cta-sub"><Trans {...msg({ context: 'course.due-count', message: '{count} due' })} values={{ count: activeDue }} /></span>}
           </button>}

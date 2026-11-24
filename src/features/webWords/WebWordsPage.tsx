@@ -203,7 +203,7 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
           </div>
           <div className="ww-lumi" data-web-words-lumi>
             <Lumi pose="hint" size={92} />
-            <div className="ww-lumi__bubble crystal-chamfer-sm">
+            <div className="ww-lumi__bubble crystal-chamfer">
               <p className="ww-lumi__tag"><Trans {...msg({ context: 'webWords.lumi.tag', message: 'Lumi · Link' })} /></p>
               <p className="ww-lumi__text"><Trans {...msg({ context: 'webWords.lumi.text', message: 'I keep the whole sentence, so you remember the context.' })} /></p>
             </div>
