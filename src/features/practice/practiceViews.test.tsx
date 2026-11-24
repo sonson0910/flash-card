@@ -166,6 +166,9 @@ const installMinimalReactDom = () => {
   documentLike.documentElement = container;
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("window", globalThis);
+  // A browser window is an event target; components subscribe to settings changes on it.
+  vi.stubGlobal("addEventListener", () => {});
+  vi.stubGlobal("removeEventListener", () => {});
   vi.stubGlobal("self", globalThis);
   vi.stubGlobal("top", globalThis);
   vi.stubGlobal("document", documentLike);
