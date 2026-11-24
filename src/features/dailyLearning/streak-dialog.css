@@ -1,6 +1,6 @@
 /* Streak details: classic DlgStreak and Crystal AnimeStreak boards. Colours come from the --sf-* theme
-   tokens; board tones without a token are mixed from them. Text tones that fall under AA on the dialog
-   surface are darkened or lightened. */
+   tokens. Classic mixes the board tones that have no token from them; Crystal takes them as the board's
+   literal values per mode. Text tones that fall under AA on the dialog surface are darkened or lightened. */
 
 .today-streak-flame { color: var(--sf-reward); }
 /* Classic light has no ice token; this is the board's ice blue, and the rest of the ice set mixes from it. */
@@ -170,38 +170,44 @@
 .streak-dialog-primary:hover, .streak-dialog-secondary:hover { filter: brightness(1.05); }
 .streak-dialog-primary:active, .streak-dialog-secondary:active { transform: scale(.98); }
 
-/* Crystal Star (AnimeStreak). */
+/* Crystal Star (AnimeStreak). The board's values per mode: the ice set for an active or frozen streak, then
+   the state rules pick from it. Small text the board sets in a tone under AA on the light card (text3, holoText)
+   takes the nearest board tone that passes; graphics keep the board tone. */
 .streak-dialog[data-family="crystal"] {
-  --cs-rim: var(--sf-rim-new); --cs-rim-glow: color-mix(in srgb, var(--sf-tier-bud) 50%, transparent);
-  --cs-emblem-rim: var(--sf-rim-new); --cs-emblem-fg: var(--sf-holo-text); --cs-emblem-glow: drop-shadow(0 0 24px color-mix(in srgb, var(--sf-second) 70%, transparent));
-  --cs-emblem-bg: radial-gradient(circle at 40% 30%, color-mix(in srgb, var(--sf-second) 20%, var(--sf-surface)), var(--sf-surface) 70%);
-  --cs-eyebrow: var(--sf-holo-text); --cs-em-glow: color-mix(in srgb, var(--sf-second) 50%, transparent);
-  --cs-em: linear-gradient(180deg, color-mix(in srgb, var(--sf-second) 15%, var(--sf-text-strong)) 0%, var(--sf-second) 60%, color-mix(in srgb, var(--sf-second) 70%, var(--sf-surface)) 100%);
+  --cs-ice-fg: #5ef2ff; --cs-ice-bg: radial-gradient(circle at 40% 30%, #16384a, #081420 70%);
+  --cs-ice-em: linear-gradient(180deg, #e9feff 0%, #5ef2ff 60%, #1aa7c9 100%);
+  --cs-ended-bg: #0b0e18; --cs-gold-text: #ffd166; --cs-holo: #5ef2ff; --cs-text3: #7a8397; --cs-small-text3: #7a8397;
+  --cs-today-bg: rgb(94 242 255 / .22); --cs-missed-bg: rgb(255 42 77 / .18); --cs-sec-bg: rgb(255 255 255 / .06); --cs-sec-ink: #ffffff;
+  --cs-rim: var(--sf-rim-new); --cs-rim-glow: rgb(94 242 255 / .5);
+  --cs-emblem-rim: var(--sf-rim-new); --cs-emblem-fg: var(--cs-ice-fg); --cs-emblem-bg: var(--cs-ice-bg);
+  --cs-emblem-glow: drop-shadow(0 0 24px rgb(94 242 255 / .7));
+  --cs-eyebrow: var(--sf-holo-text); --cs-em: var(--cs-ice-em); --cs-em-glow: rgb(94 242 255 / .5);
   --cs-hot: var(--sf-metal-em);
-  --cs-gold-text: var(--sf-reward);
   width: min(600px, calc(100% - 24px)); max-height: calc(100dvh - 32px);
   padding: 26px 34px 30px; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible;
-  color: var(--sf-text); font-family: var(--sf-font-body);
-  filter: drop-shadow(0 0 22px var(--cs-rim-glow)) drop-shadow(0 30px 40px color-mix(in srgb, var(--sf-shadow) 45%, transparent));
+  color: var(--sf-text); font-family: var(--sf-font-body); line-height: normal;
+  filter: drop-shadow(0 0 22px var(--cs-rim-glow)) drop-shadow(0 30px 40px rgb(0 0 0 / .4));
 }
-:root[data-theme-family="crystal"]:not(.dark) .streak-dialog {
-  --cs-emblem-bg: radial-gradient(circle at 40% 30%, var(--sf-surface), color-mix(in srgb, var(--sf-second) 16%, var(--sf-surface)) 80%);
-  --cs-em: linear-gradient(180deg, color-mix(in srgb, var(--sf-holo-text) 70%, var(--sf-second)) 0%, var(--sf-holo-text) 60%, color-mix(in srgb, var(--sf-holo-text) 70%, var(--sf-text-strong)) 100%);
-  --cs-gold-text: color-mix(in srgb, var(--sf-reward) 45%, var(--sf-text-strong));
+:root[data-theme-family="crystal"]:not(.dark) .streak-dialog[data-family="crystal"] {
+  --cs-ice-fg: #0a7d99; --cs-ice-bg: radial-gradient(circle at 40% 30%, #ffffff, #cdeaff 80%);
+  --cs-ice-em: linear-gradient(180deg, #1aa7c9 0%, #0a7d99 60%, #06566b 100%);
+  --cs-ended-bg: #e6f2fb; --cs-gold-text: #8a5a00; --cs-holo: #0a7d99; --cs-text3: #627392; --cs-small-text3: #3f5272;
+  --cs-today-bg: rgb(10 125 153 / .18); --cs-missed-bg: rgb(209 18 58 / .14); --cs-sec-bg: #e6f5ff; --cs-sec-ink: #081329;
 }
 .streak-dialog[data-family="crystal"]:is([data-streak-state="repair"], [data-streak-state="ended"]) {
-  --cs-rim: var(--sf-rim-learning); --cs-rim-glow: color-mix(in srgb, var(--sf-tier-bloom) 55%, transparent);
-  --cs-emblem-rim: var(--sf-edge-highlight); --cs-emblem-bg: var(--sf-surface); --cs-emblem-fg: var(--sf-text-tertiary); --cs-emblem-glow: none;
-  --cs-eyebrow: var(--sf-brand-text); --cs-em: var(--cs-hot); --cs-em-glow: color-mix(in srgb, var(--sf-brand) 40%, transparent);
+  --cs-rim: var(--sf-rim-learning); --cs-rim-glow: rgb(255 143 182 / .55);
+  --cs-emblem-rim: var(--sf-edge-highlight); --cs-emblem-bg: var(--cs-ended-bg); --cs-emblem-fg: var(--cs-text3); --cs-emblem-glow: none;
+  --cs-eyebrow: var(--sf-brand-text); --cs-em: var(--cs-hot); --cs-em-glow: rgb(255 42 77 / .4);
 }
 .streak-dialog[data-family="crystal"][data-streak-state="milestone"] {
-  --cs-rim: var(--sf-gold-rim); --cs-rim-glow: color-mix(in srgb, var(--sf-tier-star) 60%, transparent);
-  --cs-emblem-glow: drop-shadow(0 0 30px color-mix(in srgb, var(--sf-tier-star) 90%, transparent));
-  --cs-eyebrow: var(--cs-gold-text); --cs-em: var(--cs-hot); --cs-em-glow: color-mix(in srgb, var(--sf-reward) 50%, transparent);
+  --cs-rim: var(--sf-gold-rim); --cs-rim-glow: rgb(255 42 77 / .6);
+  --cs-emblem-glow: drop-shadow(0 0 30px rgb(255 42 77 / .9));
+  --cs-eyebrow: var(--cs-gold-text); --cs-em: var(--cs-hot); --cs-em-glow: rgb(255 209 102 / .5);
 }
-/* The repair and milestone words stay in the emphasis metal on Prism Day too, past the light page's ice emphasis. */
-:root[data-theme-family="crystal"] .streak-dialog[data-family="crystal"]:is([data-streak-state="repair"], [data-streak-state="ended"], [data-streak-state="milestone"]) { --cs-em: var(--cs-hot); }
-[data-family="crystal"] .streak-dialog-rim { position: absolute; inset: 0; z-index: 0; display: block; clip-path: var(--nk-chamfer); background: var(--cs-rim); }
+/* The rim colour sits on a layer twice the card's size inside the chamfered clip, as on the board: the card shows
+   the middle of the gradient, and the layer can turn without its edges ever showing. */
+[data-family="crystal"] .streak-dialog-rim { position: absolute; inset: 0; z-index: 0; display: block; overflow: hidden; clip-path: var(--nk-chamfer); }
+[data-family="crystal"] .streak-dialog-rim-spin { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: var(--cs-rim); }
 [data-family="crystal"] .streak-dialog-rim::after { content: ''; position: absolute; inset: 3px; clip-path: inherit; background: var(--sf-card-front); }
 [data-family="crystal"] .streak-dialog-confetti { clip-path: var(--nk-chamfer); }
 .streak-dialog[data-family="crystal"] > :not(.streak-dialog-rim, .streak-dialog-confetti) { position: relative; z-index: 1; }
@@ -211,7 +217,15 @@
 }
 [data-family="crystal"] .streak-dialog-head { padding: 0; }
 [data-family="crystal"] .streak-dialog-hero { align-self: stretch; align-items: center; height: 156px; }
-[data-family="crystal"] .streak-dialog-lumi { position: absolute; left: -14px; bottom: -6px; width: 140px; height: 158px; object-fit: contain; }
+/* Lumi stands at the hero's left edge in the board's frame: a holo glow, fading out at her feet. */
+[data-family="crystal"] .streak-dialog-mascot {
+  position: absolute; left: -14px; bottom: -6px; display: block; width: 140px; height: 158px;
+  filter: drop-shadow(0 0 16px rgb(94 242 255 / .35)); pointer-events: none;
+}
+[data-family="crystal"] .streak-dialog-mascot .streak-dialog-lumi {
+  display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%;
+  -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%);
+}
 [data-family="crystal"] .streak-dialog-emblem {
   width: 132px; height: 148px; border: 0; border-radius: 0; background: none; box-shadow: none; color: var(--cs-emblem-fg); filter: var(--cs-emblem-glow);
 }
@@ -226,14 +240,17 @@
 [data-family="crystal"]:is([data-streak-state="repair"], [data-streak-state="ended"]) .streak-dialog-emblem-flame { opacity: .55; }
 [data-family="crystal"] .streak-dialog-badge {
   right: -8px; bottom: 14px; width: 46px; height: 52px; border: 0; border-radius: 0;
-  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--sf-rim-new); color: var(--sf-on-brand);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--sf-rim-new); color: #031820;
 }
 .streak-dialog-crack { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .streak-dialog-crack path { fill: none; stroke: var(--sf-brand-text); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
-.streak-dialog-star { position: absolute; inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px); fill: var(--sf-star-face); stroke: var(--sf-reward); stroke-width: 2; stroke-linejoin: round; }
-.streak-dialog-star-count {
-  position: relative; padding-top: 22px; color: var(--sf-on-primary); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 46px;
-  text-shadow: 0 3px 0 var(--sf-star-shade);
+/* The milestone emblem is the board's faceted star, a little past the emblem box, with the count set low on it. */
+[data-family="crystal"] .streak-dialog-star { position: absolute; inset: -6px; display: block; }
+[data-family="crystal"] .streak-dialog-star svg { display: block; width: 100%; height: 100%; overflow: visible; }
+[data-family="crystal"] .streak-dialog-star-count {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-top: 22px;
+  color: #ffffff; font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 46px; line-height: normal;
+  text-shadow: 0 3px 0 #7a0820;
 }
 [data-family="crystal"] .streak-dialog-eyebrow { margin-top: 10px; color: var(--cs-eyebrow); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 13.5px; letter-spacing: .16em; }
 [data-family="crystal"] .streak-dialog-title { margin-top: 6px; color: var(--sf-text-strong); font-style: italic; font-weight: 900; font-size: 32px; line-height: 1.05; letter-spacing: 0; }
@@ -245,26 +262,26 @@
 [data-family="crystal"] .streak-dialog-body { gap: 20px; padding: 18px 0 0; }
 [data-family="crystal"] .streak-dialog-week { display: flex; justify-content: center; gap: 10px; }
 [data-family="crystal"] .streak-dialog-week li { gap: 6px; }
-[data-family="crystal"] .streak-dialog-day-label { color: var(--sf-text-tertiary); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+[data-family="crystal"] .streak-dialog-day-label { color: var(--cs-small-text3); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
 [data-family="crystal"] .streak-dialog-week li[data-today] .streak-dialog-day-label { color: var(--sf-text-strong); }
 [data-family="crystal"] .streak-dialog-day-mark {
-  width: 48px; height: 54px; border: 0; border-radius: 0; background: var(--sf-border); box-shadow: none; color: var(--sf-text-tertiary);
+  width: 48px; height: 54px; border: 0; border-radius: 0; background: var(--sf-border); box-shadow: none; color: var(--cs-text3);
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
 }
 [data-family="crystal"] .streak-dialog-day-mark svg { width: 20px; height: 20px; }
 [data-family="crystal"] .streak-dialog-dot { width: 8px; height: 8px; border-radius: 0; transform: rotate(45deg); }
-[data-family="crystal"] [data-state="done"] > .streak-dialog-day-mark { border: 0; background: var(--sf-primary-bg); box-shadow: none; color: var(--sf-reward); }
+[data-family="crystal"] [data-state="done"] > .streak-dialog-day-mark { border: 0; background: var(--sf-primary-bg); box-shadow: none; color: #ffd166; }
 [data-family="crystal"][data-streak-state="milestone"] [data-state="done"] > .streak-dialog-day-mark { background: var(--sf-gold-rim); color: var(--sf-on-primary); }
-[data-family="crystal"] :is([data-state="frozen"], [data-state="repaired"]) > .streak-dialog-day-mark { border: 0; background: var(--sf-rim-new); box-shadow: none; color: var(--sf-on-brand); }
-[data-family="crystal"] [data-state="missed"] > .streak-dialog-day-mark { border: 0; background: color-mix(in srgb, var(--sf-brand) 16%, transparent); color: var(--sf-brand-text); }
-[data-family="crystal"] [data-state="today"] > .streak-dialog-day-mark { border: 0; background: color-mix(in srgb, var(--sf-holo-text) 20%, transparent); box-shadow: none; color: var(--sf-holo-text); }
+[data-family="crystal"] :is([data-state="frozen"], [data-state="repaired"]) > .streak-dialog-day-mark { border: 0; background: var(--sf-rim-new); box-shadow: none; color: #031820; }
+[data-family="crystal"] [data-state="missed"] > .streak-dialog-day-mark { border: 0; background: var(--cs-missed-bg); color: var(--sf-brand-text); }
+[data-family="crystal"] [data-state="today"] > .streak-dialog-day-mark { border: 0; background: var(--cs-today-bg); box-shadow: none; color: var(--cs-holo); }
 
 [data-family="crystal"] .streak-dialog-freezes {
   height: 76px; box-sizing: border-box; padding: 0 18px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer);
   background: var(--sf-surface-control); box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge-2);
 }
 [data-family="crystal"] .streak-dialog-freeze-slot { width: 32px; height: 36px; border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--sf-border); opacity: 1; }
-[data-family="crystal"] .streak-dialog-freeze-slot[data-held] { border: 0; background: var(--sf-rim-new); color: var(--sf-on-brand); }
+[data-family="crystal"] .streak-dialog-freeze-slot[data-held] { border: 0; background: var(--sf-rim-new); color: #031820; }
 [data-family="crystal"] .streak-dialog-freeze-copy strong { font-weight: 900; font-size: 15px; }
 [data-family="crystal"] .streak-dialog-freeze-copy span { font-size: 13px; }
 [data-family="crystal"] .streak-dialog-repair { border: 0; border-radius: 0; clip-path: var(--nk-chamfer); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge-2); }
@@ -274,27 +291,37 @@
 [data-family="crystal"] .streak-dialog-repair-track > span { height: 8px; border-radius: 0; transform: skewX(-30deg); }
 [data-family="crystal"] .streak-dialog-repair-track > span > span { background: var(--sf-second); }
 [data-family="crystal"] .streak-dialog-repair > .streak-dialog-repair-meta { margin-top: 8px; font-size: 12.5px; }
-[data-family="crystal"] .streak-dialog-window { margin-top: -8px; font-size: 13px; }
-[data-family="crystal"] .streak-dialog-window-left { gap: 6px; font-weight: 700; }
-[data-family="crystal"] .streak-dialog-window-time { color: var(--sf-brand-text); font-weight: 700; }
-[data-family="crystal"] .streak-dialog-window > span:last-child { color: var(--sf-text-tertiary); }
+[data-family="crystal"] .streak-dialog-window { gap: 10px; margin-top: -8px; color: var(--sf-text); font-size: 13px; }
+[data-family="crystal"] .streak-dialog-window-left { gap: 6px; color: var(--sf-text-muted); font-weight: 700; }
+[data-family="crystal"] .streak-dialog-window-time { margin-left: 0; color: var(--sf-brand-text); font-weight: 700; }
+[data-family="crystal"] .streak-dialog-window > span:last-child { color: var(--cs-small-text3); }
 [data-family="crystal"] .streak-dialog-stats > div {
   border: 0; border-radius: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm);
 }
 [data-family="crystal"] .streak-dialog-stats dt { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; }
 [data-family="crystal"] .streak-dialog-stats dd { margin-top: 4px; font-style: italic; font-weight: 900; font-size: 28px; line-height: 1; }
 [data-family="crystal"] .streak-dialog-stats > div:nth-child(2) dd { color: var(--sf-brand-text); }
-[data-family="crystal"] .streak-dialog-stats > div:nth-child(3) dd { color: var(--sf-holo-text); }
+[data-family="crystal"] .streak-dialog-stats > div:nth-child(3) dd { color: var(--cs-holo); }
 /* The dialog is as tall as its content: the actions follow the last block at a fixed gap, never pushed down. */
 [data-family="crystal"] .streak-dialog-footer { gap: 12px; margin-top: 30px; padding: 0; border-top: 0; }
-[data-family="crystal"] .streak-dialog-footer p { flex-grow: 1; font-weight: 700; }
+[data-family="crystal"] .streak-dialog-footer p { flex-grow: 1; color: var(--cs-small-text3); font-weight: 700; }
 [data-family="crystal"] :is(.streak-dialog-primary, .streak-dialog-secondary) { height: 50px; border: 0; border-radius: 0; transform: skewX(-12deg); }
 [data-family="crystal"] :is(.streak-dialog-primary, .streak-dialog-secondary) > span { display: block; transform: skewX(12deg); font-family: var(--sf-font-display); font-style: italic; text-transform: uppercase; }
 [data-family="crystal"] .streak-dialog-primary { padding: 0 24px; color: var(--sf-on-primary); }
 [data-family="crystal"] .streak-dialog-primary > span { font-weight: 900; font-size: 15.5px; letter-spacing: .04em; }
-[data-family="crystal"] .streak-dialog-secondary { padding: 0 20px; box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-strong); }
+[data-family="crystal"] .streak-dialog-secondary { padding: 0 20px; background: var(--cs-sec-bg); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--cs-sec-ink); }
 [data-family="crystal"] .streak-dialog-secondary > span { font-weight: 800; font-size: 14.5px; }
 [data-family="crystal"] :is(.streak-dialog-primary, .streak-dialog-secondary):active { transform: skewX(-12deg) scale(.97); }
+
+/* Milestone ceremony: the board's beam and wings on its 720x780 stage, centred like the dialog and behind it. */
+:root[data-theme-family="crystal"] .streak-dialog-ceremony { position: fixed; inset: 0; z-index: 50; overflow: hidden; line-height: normal; pointer-events: none; }
+:root[data-theme-family="crystal"] .streak-dialog-beam {
+  position: absolute; left: 50%; top: -10%; width: 260px; height: 120%; margin-left: -130px;
+  background: linear-gradient(115deg, #ffd6ec 0%, #d6ecff 24%, #bfe9ff 48%, #d0fbf2 66%, #ffe3f1 84%, #ffd6ec 100%); opacity: .4; filter: blur(22px);
+}
+:root[data-theme-family="crystal"] .streak-dialog-stage { position: absolute; left: 50%; top: 50%; width: 720px; height: 780px; margin: -390px 0 0 -360px; }
+:root[data-theme-family="crystal"] .streak-dialog-wing { position: absolute; top: 40px; left: -160px; width: 480px; height: 330px; filter: drop-shadow(0 0 24px rgb(255 42 77 / .8)); }
+:root[data-theme-family="crystal"] .streak-dialog-wing[data-mirrored] { left: auto; right: -160px; transform: scaleX(-1); }
 
 @media (max-width: 560px) {
   .streak-dialog-head { padding: 32px 20px 6px; }
@@ -311,7 +338,7 @@
   .streak-dialog[data-family="crystal"] { padding: 22px 18px; }
   [data-family="crystal"] .streak-dialog-head { padding: 0; }
   [data-family="crystal"] .streak-dialog-hero { height: 132px; }
-  [data-family="crystal"] .streak-dialog-lumi { left: -6px; bottom: -4px; width: 96px; height: 108px; }
+  [data-family="crystal"] .streak-dialog-mascot { left: -6px; bottom: -4px; width: 96px; height: 108px; }
   [data-family="crystal"] .streak-dialog-emblem { width: 110px; height: 124px; }
   [data-family="crystal"] .streak-dialog-star-count { font-size: 38px; }
   [data-family="crystal"] .streak-dialog-title { font-size: 27px; }

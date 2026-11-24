@@ -1,7 +1,7 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { ArrowRight, Moon, SkipForward, Sparkles, Sun, Vibrate, VibrateOff, Volume2, VolumeX, X } from 'lucide-react';
-import { useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { Lumi } from '../../components/lumi/Lumi';
 import { useHapticsSettings } from '../../lib/haptics';
@@ -65,6 +65,21 @@ function ExampleQuote({ sentence, word, language }: { readonly sentence: string;
   );
 }
 
+/** The board sets the separator between the finished stage and its count in the quiet ink. */
+function EyebrowText({ text }: { readonly text: string }) {
+  const at = text.indexOf(' · ');
+  if (at < 0) return <>{text}</>;
+  return <>{text.slice(0, at)} <span className="session-bridge-eyebrow-sep">·</span> {text.slice(at + 3)}</>;
+}
+
+/** The board's speaker with one wave and its phone between two buzz lines, used while sound and haptics are on. */
+function CrystalSoundIcon() {
+  return <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /></svg>;
+}
+function CrystalHapticsIcon() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M3 8v8M21 8v8" /></svg>;
+}
+
 /** The board sets the first word of the stage name in the accent ink and breaks the rest onto a second line. */
 function StageTitle({ label }: { readonly label: string }) {
   const space = label.indexOf(' ');
@@ -72,12 +87,13 @@ function StageTitle({ label }: { readonly label: string }) {
   return <><em>{label.slice(0, space)}</em><br /><span>{label.slice(space + 1)}</span></>;
 }
 
-function PreviewCard({ card, flipped, crystal }: { readonly card: SessionBridgePreviewCard; readonly flipped: boolean; readonly crystal: boolean }) {
+function PreviewCard({ card, flipped, turning, crystal }: { readonly card: SessionBridgePreviewCard; readonly flipped: boolean; readonly turning: boolean; readonly crystal: boolean }) {
   const { _ } = useLingui();
   const meta = [card.phonetic, card.partOfSpeech].filter(Boolean).join(' · ');
   return (
-    <span className="session-bridge-card-rotor" data-flipped={flipped || undefined}>
+    <span className="session-bridge-card-rotor" data-flipped={flipped || undefined} data-turning={turning || undefined}>
       <span className="session-bridge-card-face session-bridge-card-front" aria-hidden={flipped || undefined}>
+        {crystal && <span className="session-bridge-card-beam" aria-hidden="true"><span /></span>}
         <span className="session-bridge-card-chips">
           {crystal && card.tier && (
             <span className="session-bridge-card-tier" data-tier={card.tier}>
@@ -93,6 +109,7 @@ function PreviewCard({ card, flipped, crystal }: { readonly card: SessionBridgeP
         {meta && <span className="session-bridge-card-phonetic">{meta}</span>}
         {crystal && card.exampleSentence && <ExampleQuote sentence={card.exampleSentence} word={card.word} language={card.language} />}
         <span className="session-bridge-card-hint"><Trans {...msg({ id: 'session.bridge.card.flip', message: 'Tap or press <0>Space</0> to flip' })} components={{ 0: <kbd /> }} /></span>
+        {crystal && <span className="session-bridge-card-spot" aria-hidden="true"><span className="session-bridge-card-cross"><span /><span /></span></span>}
       </span>
       <span className="session-bridge-card-face session-bridge-card-back" aria-hidden={flipped ? undefined : true}>
         <span className="session-bridge-card-kind"><Trans {...msg({ id: 'session.bridge.card.meaning', message: 'Meaning' })} /></span>
@@ -111,7 +128,32 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
   const { isSoundEnabled } = useSoundSettings();
   const { isHapticsEnabled } = useHapticsSettings();
   const [flipped, setFlipped] = useState(false);
+  const [turning, setTurning] = useState(false);
+  const turnTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(turnTimer.current), []);
   const crystal = family === 'crystal';
+  /** A flip turns slower than the hover tilt, as on the board; the slow turn lasts for one flip. */
+  const flip = () => {
+    setFlipped(value => !value);
+    setTurning(true);
+    window.clearTimeout(turnTimer.current);
+    turnTimer.current = window.setTimeout(() => setTurning(false), 640);
+  };
+  /** Crystal tilts the card toward a mouse pointer and lights the spot under it; touch and pen leave it still. */
+  const tilt = (event: PointerEvent<HTMLButtonElement>) => {
+    if (!crystal || event.pointerType !== 'mouse') return;
+    const box = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - box.left) / box.width;
+    const y = (event.clientY - box.top) / box.height;
+    const style = event.currentTarget.style;
+    style.setProperty('--sb-mx', `${(x * 100).toFixed(2)}%`);
+    style.setProperty('--sb-my', `${(y * 100).toFixed(2)}%`);
+    style.setProperty('--sb-rx', `${(-(y - 0.5) * 10).toFixed(2)}deg`);
+    style.setProperty('--sb-ry', `${((x - 0.5) * 10).toFixed(2)}deg`);
+  };
+  const untilt = (event: PointerEvent<HTMLButtonElement>) => {
+    for (const name of ['--sb-mx', '--sb-my', '--sb-rx', '--sb-ry']) event.currentTarget.style.removeProperty(name);
+  };
   const showLumi = crystal && readLumiEnabled();
   const showCombo = !focusModeEnabled && model.comboCount >= 2;
   const showXp = !focusModeEnabled && model.xpEarned > 0;
@@ -125,7 +167,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
     const target = event.target as HTMLElement;
     if (target.closest('button, a, input, textarea, select, [contenteditable="true"]')) return;
     event.preventDefault();
-    setFlipped(value => !value);
+    flip();
   };
 
   return (
@@ -150,9 +192,9 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
           ))}
         </ol>
         <span className="session-bridge-feedback" role="img" aria-label={feedbackLabel} title={feedbackLabel}>
-          {isSoundEnabled ? <Volume2 size={15} aria-hidden="true" /> : <VolumeX size={15} aria-hidden="true" />}
+          {isSoundEnabled ? (crystal ? <CrystalSoundIcon /> : <Volume2 size={15} aria-hidden="true" />) : <VolumeX size={crystal ? 17 : 15} aria-hidden="true" />}
           {isSoundEnabled && <span className="session-bridge-wave" aria-hidden="true"><span /><span /><span /></span>}
-          {isHapticsEnabled ? <Vibrate size={15} aria-hidden="true" /> : <VibrateOff size={15} aria-hidden="true" />}
+          {isHapticsEnabled ? (crystal ? <CrystalHapticsIcon /> : <Vibrate size={15} aria-hidden="true" />) : <VibrateOff size={crystal ? 16 : 15} aria-hidden="true" />}
         </span>
         {crystal && (
           <button type="button" className="session-bridge-theme" onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')} aria-pressed={mode === 'dark'} aria-label={_(msg({ id: 'shell.theme.quick-toggle', message: 'Switch light and dark mode' }))}>
@@ -163,7 +205,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
 
       <GsapEntrance variant="view" className="session-bridge-main">
         <div className="session-bridge-result">
-          <p className="session-bridge-eyebrow">{model.completedLabel}</p>
+          <p className="session-bridge-eyebrow">{crystal ? <EyebrowText text={model.completedLabel} /> : model.completedLabel}</p>
           {showCombo ? (
             <div className="session-bridge-combo" data-session-combo={model.comboCount}>
               <span className="session-bridge-combo-banner" aria-hidden="true" />
@@ -194,7 +236,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
           {showXp && <p className="session-bridge-xp"><Trans {...msg({ id: 'session.bridge.xp', message: '+{xp} XP this session' })} values={{ xp: model.xpEarned }} /></p>}
           {showLumi && (
             <div className="session-bridge-companion">
-              <Lumi pose="happy" className="session-bridge-lumi" />
+              <span className="session-bridge-mascot"><Lumi pose="happy" className="session-bridge-lumi" /></span>
               <div className="session-bridge-speech">
                 <span className="session-bridge-speech-name"><Trans {...msg({ id: 'session.bridge.lumi.name', message: 'Lumi' })} /></span>
                 <strong><Trans {...msg({ id: 'session.bridge.lumi.title', message: 'Nice rhythm!' })} /></strong>
@@ -210,8 +252,12 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
             <>
               <span className="session-bridge-ghosts" aria-hidden="true"><span /><span /><span /></span>
               <span className="session-bridge-trails" aria-hidden="true"><span /><span /></span>
-              <button type="button" className="session-bridge-card" aria-pressed={flipped} onClick={() => setFlipped(value => !value)}>
-                <PreviewCard card={card} flipped={flipped} crystal={crystal} />
+              <button type="button" className="session-bridge-card" data-tier={crystal ? card.tier : undefined} aria-pressed={flipped} onClick={flip} onPointerMove={tilt} onPointerLeave={untilt}>
+                {crystal && <>
+                  <span className="session-bridge-card-wing session-bridge-card-wing--start crystal-wing-art" aria-hidden="true" />
+                  <span className="session-bridge-card-wing session-bridge-card-wing--end crystal-wing-art" aria-hidden="true" />
+                </>}
+                <PreviewCard card={card} flipped={flipped} turning={turning} crystal={crystal} />
               </button>
             </>
           ) : <Sparkles className="session-bridge-finale" size={92} aria-hidden="true" />}

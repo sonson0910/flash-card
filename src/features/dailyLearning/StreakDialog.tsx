@@ -4,6 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Check, X } from 'lucide-react';
 import { STREAK_FREEZE_EARN_EVERY_DAYS, STREAK_MILESTONE_XP, STREAK_MILESTONES, type StreakMilestone } from '../../../functions/src/streak-rules';
 import { Lumi, type LumiPose } from '../../components/lumi/Lumi';
+import { CrystalStar } from '../../components/stats/CrystalStar';
 import type { StreakView, StreakWeekDayState } from '../gamification/streakView';
 import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
@@ -283,9 +284,19 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="streak-dialog-overlay" />
+        {crystal && state === 'milestone' && (
+          // Crystal Star marks a milestone with the board's light beam and crimson wings behind the dialog.
+          <span className="streak-dialog-ceremony" aria-hidden="true">
+            <span className="streak-dialog-beam" />
+            <span className="streak-dialog-stage">
+              <span className="streak-dialog-wing crystal-wing-art" />
+              <span className="streak-dialog-wing crystal-wing-art" data-mirrored="" />
+            </span>
+          </span>
+        )}
         <Dialog.Content className="streak-dialog" data-family={family} data-streak-state={state}>
-          <span className="streak-dialog-rim" aria-hidden="true" />
-          {state === 'milestone' && (
+          <span className="streak-dialog-rim" aria-hidden="true">{crystal && <span className="streak-dialog-rim-spin" />}</span>
+          {state === 'milestone' && !crystal && (
             <span className="streak-dialog-confetti" aria-hidden="true">
               {confetti.map((piece, index) => <span key={index} style={piece} />)}
             </span>
@@ -295,11 +306,11 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
           </Dialog.Close>
           <div className="streak-dialog-head">
             <div className="streak-dialog-hero">
-              {showLumi && <Lumi pose={lumiPose} size={140} className="streak-dialog-lumi" />}
+              {showLumi && <span className="streak-dialog-mascot"><Lumi pose={lumiPose} size="100%" className="streak-dialog-lumi" /></span>}
               <span className="streak-dialog-emblem" aria-hidden="true">
                 {crystal && state === 'milestone' ? (
                   <>
-                    <svg className="streak-dialog-star" viewBox="0 0 100 100"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" /></svg>
+                    <span className="streak-dialog-star"><CrystalStar /></span>
                     <span className="streak-dialog-star-count">{number(length)}</span>
                   </>
                 ) : (

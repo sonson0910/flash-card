@@ -709,48 +709,133 @@ html:not([data-theme-family='crystal']).dark .onb-countdown {
 .onb-trial-word[data-state='again'] .onb-trial-word-state { color: var(--sf-danger); }
 
 /* Crystal -------------------------------------------------------------------------------- */
-/* The light pillar falls through the gutter between the third and fourth goal card, clear of the heading and
-   the card copy; on Midnight it is dimmer still so it never greys light text. */
+/* Ported value by value from the AnimeOnboarding (goal, first cards) and AnimeLangOnboarding (language, level)
+   boards. Board colours resolve to the --sf-* tokens; the board literals that have no token (the prism pillar,
+   the beams, the idle card rim, the emblem tint, the chosen card face and the secondary fill) are set here per
+   mode. Every card draws the board's two layers: the rim on ::before and the face 2px inside it on ::after. */
 html[data-theme-family='crystal'] .claude-onboarding-journey {
-  --onb-primary-bg: linear-gradient(100deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 40%, color-mix(in srgb, var(--sf-brand) 75%, black));
-  --onb-primary-text: white;
-  --onb-accent-glow: 0 0 18px color-mix(in srgb, var(--sf-brand) 55%, transparent);
-  --onb-title-ink: linear-gradient(180deg, white 0%, color-mix(in srgb, var(--sf-brand) 14%, white) 46%, color-mix(in srgb, var(--sf-brand) 50%, white) 54%, white 100%);
-  --onb-title-shadow: drop-shadow(0 3px 0 color-mix(in srgb, var(--sf-brand) 50%, black)) drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 55%, transparent));
-  --onb-panel-edge: color-mix(in srgb, var(--sf-second) 34%, transparent);
-  background:
-    radial-gradient(ellipse 760px 560px at 88% 12%, color-mix(in srgb, var(--sf-brand) 26%, transparent), transparent 70%),
-    radial-gradient(ellipse 640px 520px at 6% 96%, color-mix(in srgb, var(--sf-brand) 20%, transparent), transparent 70%),
-    linear-gradient(100deg, transparent 62.5%, color-mix(in srgb, var(--sf-text) 5%, transparent) 67%, transparent 71.5%),
-    var(--sf-canvas, var(--sf-surface));
+  --onb-beam: rgb(255 255 255 / .08);
+  --onb-pillar-opacity: .2;
+  --onb-core-opacity: .5;
+  --onb-title-ink: var(--sf-metal);
+  --onb-idle-rim: linear-gradient(150deg, rgb(94 242 255 / .55), rgb(255 255 255 / .08) 50%, rgb(255 143 182 / .4));
+  --onb-emblem-tint: rgb(94 242 255 / .14);
+  --onb-retry-tint: rgb(94 242 255 / .18);
+  --onb-secondary-bg: rgb(255 255 255 / .06);
+  --onb-chosen-face: linear-gradient(180deg, #ff5470 0%, #e0173f 45%, #7a0820 100%);
+  --onb-hex: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  --onb-text3: #7a8397;
+  background: var(--sf-space-veil, none), var(--sf-space), var(--sf-canvas);
+  font-family: var(--sf-font-body);
 }
 
 html[data-theme-family='crystal']:not(.dark) .claude-onboarding-journey {
-  --onb-title-ink: linear-gradient(180deg, var(--sf-text) 0%, var(--sf-text) 44%, var(--sf-brand-text) 56%, color-mix(in srgb, var(--sf-brand-text) 70%, black) 100%);
-  --onb-title-shadow: drop-shadow(0 2px 0 rgb(255 255 255 / .8)) drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 26%, transparent));
-  --onb-panel-edge: color-mix(in srgb, var(--sf-second) 55%, transparent);
-  background:
-    radial-gradient(ellipse 720px 520px at 86% 10%, color-mix(in srgb, var(--sf-brand) 18%, transparent), transparent 70%),
-    radial-gradient(ellipse 680px 520px at 30% 100%, color-mix(in srgb, var(--sf-second) 26%, transparent), transparent 70%),
-    linear-gradient(100deg, transparent 62.5%, rgb(255 255 255 / .55) 67%, transparent 71.5%),
-    var(--sf-canvas, var(--sf-surface));
+  --onb-beam: rgb(255 255 255 / .5);
+  --onb-pillar-opacity: .7;
+  --onb-core-opacity: .7;
+  --onb-title-ink: linear-gradient(180deg, #2a1040 0%, #150a28 45%, #b30f33 60%, #ff2a4d 100%);
+  --onb-idle-rim: linear-gradient(150deg, rgb(26 167 201 / .6), rgb(28 16 48 / .08) 50%, rgb(255 143 182 / .45));
+  --onb-emblem-tint: rgb(26 167 201 / .12);
+  --onb-retry-tint: rgb(26 167 201 / .14);
+  --onb-secondary-bg: #e6f5ff;
+  --onb-text3: #627392;
 }
 
-html[data-theme-family='crystal'] .onb-shard {
+/* The goal and first-cards boards brighten the prism; the language and level boards keep it dimmer. */
+html[data-theme-family='crystal'] .claude-onboarding-journey:is([data-onboarding-step='goal'], [data-onboarding-step='aha']) { --onb-pillar-opacity: .24; }
+html[data-theme-family='crystal']:not(.dark) .claude-onboarding-journey:is([data-onboarding-step='goal'], [data-onboarding-step='aha']) { --onb-pillar-opacity: .85; }
+
+/* A chosen card's wings reach past the screen edge on the outer columns; they are cut there, never scrolled to. */
+html[data-theme-family='crystal'] .onb-frame { overflow-x: clip; }
+
+/* Backdrop: starfield, two light beams, the two crimson wings, three lens flares, then the prism pillar. */
+html[data-theme-family='crystal'] .onb-backdrop {
   position: fixed;
   z-index: 0;
-  width: 470px;
-  height: 320px;
-  background: linear-gradient(150deg, color-mix(in srgb, var(--sf-brand) 25%, white), var(--sf-brand) 45%, color-mix(in srgb, var(--sf-brand) 45%, black));
-  clip-path: polygon(100% 52%, 0 0, 38% 40%, 4% 30%, 46% 56%, 0 74%, 52% 66%, 30% 100%);
-  opacity: var(--nk-wing-opacity, .5);
+  inset: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 
-html[data-theme-family='crystal'] .onb-shard--left { bottom: -60px; left: -150px; transform: rotate(-12deg); }
-html[data-theme-family='crystal'] .onb-shard--right { top: 30px; right: -130px; transform: scaleX(-1) rotate(-18deg); }
+html[data-theme-family='crystal'] .onb-backdrop > span { position: absolute; }
+html[data-theme-family='crystal'] .onb-starfield { inset: 0; background: var(--nk-stars); }
 
-html[data-theme-family='crystal'] .onb-header { height: 84px; gap: 22px; padding: 0 44px; }
+html[data-theme-family='crystal'] .onb-beam {
+  top: -20%;
+  height: 140%;
+  background: linear-gradient(90deg, transparent, var(--onb-beam), transparent);
+  transform: rotate(24deg);
+}
+
+html[data-theme-family='crystal'] .onb-beam--left { left: 18%; width: 160px; filter: blur(4px); }
+html[data-theme-family='crystal'] .onb-beam--right { left: 58%; width: 90px; filter: blur(3px); animation-delay: -3s; }
+
+html[data-theme-family='crystal'] .onb-shard {
+  width: 640px;
+  height: 430px;
+  opacity: var(--nk-wing-opacity);
+  filter: drop-shadow(0 0 30px rgb(255 42 77 / .55));
+}
+
+html[data-theme-family='crystal'] .onb-shard--left { bottom: -120px; left: -150px; transform: rotate(-12deg); }
+html[data-theme-family='crystal'] .onb-shard--right { top: -60px; right: -150px; transform: scaleX(-1) rotate(-18deg); }
+
+html[data-theme-family='crystal'] .onb-flare {
+  background:
+    linear-gradient(90deg, transparent, #fff, transparent) center / 100% 2px no-repeat,
+    linear-gradient(180deg, transparent, #fff, transparent) center / 2px 100% no-repeat;
+}
+
+html[data-theme-family='crystal'] .onb-flare::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 16px 6px rgb(255 84 112 / .7);
+  content: '';
+}
+
+html[data-theme-family='crystal'] .onb-flare--1 { top: 16%; left: 12%; width: 90px; height: 90px; }
+html[data-theme-family='crystal'] .onb-flare--2 { top: 62%; left: 84%; width: 120px; height: 120px; animation-delay: 1.3s; }
+html[data-theme-family='crystal'] .onb-flare--3 { top: 6%; left: 46%; width: 60px; height: 60px; animation-delay: 2.1s; }
+
+html[data-theme-family='crystal'] .onb-pillar {
+  top: -40px;
+  bottom: -40px;
+  left: 50%;
+  width: 460px;
+  margin-left: -150px;
+  background: linear-gradient(115deg, #ffd6ec 0%, #d6ecff 24%, #bfe9ff 48%, #d0fbf2 66%, #ffe3f1 84%, #ffd6ec 100%);
+  opacity: var(--onb-pillar-opacity);
+  filter: blur(18px);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
+}
+
+html[data-theme-family='crystal'] .onb-pillar-core {
+  display: none;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  margin-left: 403px;
+  background: linear-gradient(180deg, transparent, #fff 30%, #fff 70%, transparent);
+  box-shadow: 0 0 30px 8px rgb(255 255 255 / .5);
+  opacity: var(--onb-core-opacity);
+  filter: blur(1px);
+}
+
+/* On the goal and first-cards boards the pillar falls through the gutter between the third and fourth card and
+   carries its white core line. */
+html[data-theme-family='crystal'] :is([data-onboarding-step='goal'], [data-onboarding-step='aha']) .onb-pillar { margin-left: 175px; }
+html[data-theme-family='crystal'] :is([data-onboarding-step='goal'], [data-onboarding-step='aha']) .onb-pillar-core { display: block; }
+
+/* Header */
+html[data-theme-family='crystal'] .onb-header { position: relative; z-index: 5; height: 84px; gap: 22px; padding: 0 44px; }
 
 html[data-theme-family='crystal'] .onb-logo {
   width: 34px;
@@ -758,17 +843,11 @@ html[data-theme-family='crystal'] .onb-logo {
   border-radius: 0;
   background: none;
   box-shadow: none;
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--sf-brand) 70%, transparent));
+  filter: drop-shadow(0 0 10px rgb(255 42 77 / .7));
 }
 
-html[data-theme-family='crystal'] .onb-logo-star {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--sf-brand) 55%, white), var(--sf-brand) 50%, color-mix(in srgb, var(--sf-brand) 60%, black));
-  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-}
-
-html[data-theme-family='crystal'] .onb-wordmark { font-size: 24px; font-style: italic; font-weight: 900; letter-spacing: 0; text-transform: uppercase; }
+html[data-theme-family='crystal'] .onb-logo-star { display: block; width: 100%; height: 100%; }
+html[data-theme-family='crystal'] .onb-wordmark { color: var(--sf-text-strong); font-size: 24px; font-style: italic; font-weight: 900; letter-spacing: 0; text-transform: uppercase; }
 html[data-theme-family='crystal'] .onb-wordmark em { color: var(--sf-brand-text); font-style: italic; }
 
 html[data-theme-family='crystal'] .onb-tag {
@@ -776,12 +855,12 @@ html[data-theme-family='crystal'] .onb-tag {
   height: 30px;
   align-items: center;
   padding: 0 16px;
-  background: color-mix(in srgb, var(--sf-brand) 85%, black);
+  background: var(--sf-primary-bg);
   transform: skewX(-16deg);
 }
 
 html[data-theme-family='crystal'] .onb-tag > span {
-  color: white;
+  color: #fff;
   font-family: var(--sf-font-display);
   font-size: 14px;
   font-style: italic;
@@ -792,17 +871,21 @@ html[data-theme-family='crystal'] .onb-tag > span {
   white-space: nowrap;
 }
 
-html[data-theme-family='crystal'] .onb-dots > span { width: 46px; height: 10px; border-radius: 0; transform: skewX(-30deg); }
-html[data-theme-family='crystal'] .onb-dots > [data-state='done'] { background: linear-gradient(90deg, var(--sf-second), color-mix(in srgb, var(--sf-second) 60%, white)); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 60%, transparent); }
-html[data-theme-family='crystal'] .onb-dots > [data-state='current'] { width: 46px; background: var(--sf-brand); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
+/* The app has seven to nine steps, so the segments take the six-step language board's 48px width. */
+html[data-theme-family='crystal'] .onb-progress { gap: 6px; }
+html[data-theme-family='crystal'] .onb-dots > span { width: 48px; height: 10px; border-radius: 0; background: var(--sf-border); transform: skewX(-30deg); }
+html[data-theme-family='crystal'] .onb-dots > [data-state='done'] { background: linear-gradient(90deg, #5ef2ff, #9fe9ff); box-shadow: 0 0 8px rgb(94 242 255 / .5); }
+html[data-theme-family='crystal'] .onb-dots > [data-state='current'] { width: 48px; background: #ff2a4d; box-shadow: 0 0 14px rgb(255 42 77 / .9); }
 
-html[data-theme-family='crystal'] .onb-count { margin-left: 6px; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 22px; font-style: italic; font-weight: 900; }
+html[data-theme-family='crystal'] .onb-count { margin-left: 12px; color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 22px; font-style: italic; font-weight: 900; }
 html[data-theme-family='crystal'] .onb-count b { font-weight: 900; }
-html[data-theme-family='crystal'] .onb-count span { color: var(--sf-text-muted); font-size: 14px; }
+html[data-theme-family='crystal'] .onb-count span { color: var(--onb-text3); font-size: 14px; }
 
 html[data-theme-family='crystal'] .onb-skip {
-  padding: 0 4px;
+  padding: 0;
   border: 0;
+  border-radius: 0;
+  color: var(--sf-text-muted);
   font-family: var(--sf-font-display);
   font-size: 14px;
   font-style: italic;
@@ -811,52 +894,72 @@ html[data-theme-family='crystal'] .onb-skip {
   text-transform: uppercase;
 }
 
-html[data-theme-family='crystal'] .onb-skip::after { margin-left: .4em; content: '›'; }
+html[data-theme-family='crystal'] .onb-skip::after { content: ' ›'; }
+html[data-theme-family='crystal'] .onb-skip:focus-visible { outline-color: var(--sf-holo-ink); }
 
+/* Lumi's column: the speech bubble 190px from the top of the page, the figure under it. */
 html[data-theme-family='crystal'] .onb-body[data-lumi='true'] {
   grid-template-areas: 'lumi main' 'lumi foot';
   grid-template-columns: 380px minmax(0, 1fr);
 }
 
 html[data-theme-family='crystal'] .onb-lumi {
+  position: relative;
+  z-index: 4;
   display: block;
   grid-area: lumi;
   padding: 106px 34px 0 56px;
 }
 
-.onb-lumi-bubble {
+html[data-theme-family='crystal'] .onb-lumi-bubble {
   position: relative;
   padding: 16px 20px 18px;
   background: var(--sf-surface-glass);
-  box-shadow: inset 0 0 0 1px var(--onb-panel-edge);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
   clip-path: var(--nk-chamfer);
 }
 
-.onb-lumi-bubble::before {
+html[data-theme-family='crystal'] .onb-lumi-bubble::before {
   position: absolute;
   top: 18px;
   bottom: 18px;
   left: 0;
   width: 3px;
-  background: linear-gradient(180deg, var(--sf-second), var(--sf-brand));
+  background: linear-gradient(180deg, #5ef2ff, #ff2a4d);
   content: '';
 }
 
-.onb-lumi-kicker { margin: 0; color: var(--sf-second); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-html[data-theme-family='crystal']:not(.dark) .onb-lumi-kicker { color: color-mix(in srgb, var(--sf-second) 45%, var(--sf-text)); }
-.onb-lumi-title { margin: 4px 0 0; color: var(--sf-text); font-size: 18px; font-weight: 900; line-height: 1.3; }
-.onb-lumi-body { margin: 4px 0 0; color: var(--sf-text-muted); font-size: 13.5px; line-height: 1.5; }
-.onb-lumi-figure { display: block; width: 290px; height: auto; margin: 18px 0 0 -10px; filter: drop-shadow(0 0 22px color-mix(in srgb, var(--sf-brand) 40%, transparent)); }
+html[data-theme-family='crystal'] .onb-lumi-kicker { margin: 0; color: var(--sf-holo-text); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+html[data-theme-family='crystal'] .onb-lumi-title { margin: 4px 0 0; color: var(--sf-text-strong); font-size: 18px; font-weight: 900; line-height: 1.3; }
+html[data-theme-family='crystal'] .onb-lumi-body { margin: 4px 0 0; color: var(--sf-text-muted); font-size: 13.5px; line-height: 1.5; }
 
-html[data-theme-family='crystal'] .onb-main { justify-content: flex-start; padding: 22px 44px 24px; }
-html[data-theme-family='crystal'] .onb-body[data-lumi='true'] .onb-main { padding: 22px 60px 24px 0; }
+html[data-theme-family='crystal'] .onb-lumi-art {
+  display: block;
+  width: 290px;
+  height: 310px;
+  margin: 18px 0 0 -10px;
+  filter: drop-shadow(0 0 16px rgb(94 242 255 / .35));
+}
+
+html[data-theme-family='crystal'] .onb-lumi-figure {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-position: 50% 100%;
+  -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%);
+  mask-image: linear-gradient(180deg, #000 80%, transparent 99%);
+}
+
+/* Main column: 380px from the left with Lumi, 60px clear of the right edge, 6px under the header. */
+html[data-theme-family='crystal'] .onb-main { position: relative; z-index: 3; justify-content: flex-start; padding: 6px 44px 24px; }
+html[data-theme-family='crystal'] .onb-body[data-lumi='true'] .onb-main { padding: 6px 60px 24px 0; }
 html[data-theme-family='crystal'] .onb-content,
 html[data-theme-family='crystal'] .onb-main[data-layout='center'] .onb-content { width: min(1000px, 100%); margin: 0; text-align: left; }
 html[data-theme-family='crystal'] .onb-body[data-lumi='false'] .onb-content { margin: 0 auto; }
 html[data-theme-family='crystal'] .onb-main[data-layout='center'] .onb-subtitle { margin-inline: 0; }
 
 html[data-theme-family='crystal'] .onb-eyebrow { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 700; letter-spacing: .16em; }
-html[data-theme-family='crystal'] .onb-eyebrow-sep::before { content: '//'; }
+html[data-theme-family='crystal'] .onb-eyebrow-sep::before { margin: 0; content: ' // '; }
 
 html[data-theme-family='crystal'] .onb-title {
   margin-top: 4px;
@@ -864,98 +967,97 @@ html[data-theme-family='crystal'] .onb-title {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: var(--onb-title-shadow);
-  font-size: clamp(36px, 4.7vw, 68px);
+  filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .55));
+  font-size: clamp(36px, 4.31vw, 62px);
   font-style: italic;
   font-weight: 900;
   letter-spacing: .01em;
   line-height: 1;
   text-transform: uppercase;
+  text-wrap: wrap;
 }
 
+html[data-theme-family='crystal'] [data-onboarding-step='goal'] .onb-title { font-size: clamp(36px, 4.72vw, 68px); }
+html[data-theme-family='crystal'] .onb-title--compact { font-size: clamp(34px, 3.61vw, 52px); }
 html[data-theme-family='crystal'] .onb-accent { color: inherit; font-style: inherit; text-shadow: none; }
-html[data-theme-family='crystal'] .onb-subtitle { max-width: 620px; margin-top: 10px; color: var(--sf-text); opacity: .86; }
 
-html[data-theme-family='crystal'] :is(.onb-option, .onboarding-journey__goal-card) {
-  --sf-chamfer-edge: var(--onb-panel-edge);
-  --sf-chamfer-fill: var(--sf-surface-glass);
+html[data-theme-family='crystal'] .onb-subtitle { max-width: 680px; margin-top: 8px; color: var(--sf-text-body); font-size: 15.5px; line-height: 1.55; }
+html[data-theme-family='crystal'] [data-onboarding-step='goal'] .onb-subtitle { max-width: 700px; margin-top: 10px; font-size: 16px; }
+html[data-theme-family='crystal'] [data-onboarding-step='aha'] .onb-subtitle { max-width: 520px; margin-top: 12px; font-size: 16px; }
+
+/* Cards: the board's rim layer and the face 2px inside it, both cut by the same chamfer. */
+html[data-theme-family='crystal'] :is(.onb-option, .onboarding-journey__goal-card, .onb-trial-word) {
+  --onb-card-cut: var(--nk-chamfer);
+  --onb-card-rim: var(--onb-idle-rim);
+  --onb-card-face: var(--sf-card-front);
+  --onb-card-fg: var(--sf-text-strong);
+  --onb-card-sub: var(--sf-text-muted);
+  --onb-emblem-bg: var(--onb-emblem-tint);
+  --onb-emblem-fg: var(--sf-holo-ink);
+  --onb-check-bg: var(--sf-surface-control);
+  --onb-check-fg: var(--onb-text3);
+  --onb-card-rule: var(--sf-border);
+  --onb-rim-glow: 0 0 0 transparent;
+  --onb-tag-bg: var(--sf-surface-control);
+  --onb-tag-fg: var(--sf-holo-text);
+  position: relative;
+  isolation: isolate;
   border: 0;
   border-radius: 0;
-  background-color: transparent;
-  box-shadow: inset 0 0 0 1.5px var(--onb-panel-edge);
+  background: none;
+  box-shadow: none;
+  clip-path: none;
+  color: var(--onb-card-fg);
 }
 
+html[data-theme-family='crystal'] :is(.onb-option, .onboarding-journey__goal-card, .onb-trial-word)::before,
+html[data-theme-family='crystal'] :is(.onb-option, .onboarding-journey__goal-card, .onb-trial-word)::after {
+  position: absolute;
+  z-index: -1;
+  clip-path: var(--onb-card-cut);
+  content: '';
+  pointer-events: none;
+}
+
+html[data-theme-family='crystal'] :is(.onb-option, .onboarding-journey__goal-card, .onb-trial-word)::before { inset: 0; background: var(--onb-card-rim); }
+/* The goal and language boards also put a glow filter on the rim layer; the rim's own chamfer clips it, so it adds nothing visible. */
+html[data-theme-family='crystal'] :is(.onboarding-journey__goal-card, .onb-target-card)::before { filter: drop-shadow(var(--onb-rim-glow)); }
+html[data-theme-family='crystal'] :is(.onb-option, .onboarding-journey__goal-card, .onb-trial-word)::after { inset: 2px; background: var(--onb-card-face); }
+
+/* The chosen card: gold rim, crimson face, white type. The board's 85% white description reads at 3.7:1 on the
+   face's upper half, so it takes the board's full white. */
 html[data-theme-family='crystal'] :is(.onb-option, .onboarding-journey__goal-card)[aria-pressed='true'] {
-  --sf-chamfer-edge: var(--sf-reward);
-  --sf-chamfer-fill: linear-gradient(160deg, color-mix(in srgb, var(--sf-brand) 78%, white), var(--sf-brand) 42%, color-mix(in srgb, var(--sf-brand) 58%, black));
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sf-reward) 70%, transparent), 0 0 30px -6px color-mix(in srgb, var(--sf-brand) 70%, transparent);
-  color: white;
+  --onb-card-rim: var(--sf-gold-rim);
+  --onb-card-face: var(--onb-chosen-face);
+  --onb-card-fg: #fff;
+  --onb-card-sub: #fff;
+  --onb-rim-glow: 0 0 26px rgb(255 42 77 / .75);
+  --onb-emblem-bg: #fff;
+  --onb-emblem-fg: #b30f33;
+  --onb-check-bg: #ffd166;
+  --onb-check-fg: #4a2a00;
+  --onb-card-rule: rgb(255 255 255 / .3);
+  --onb-tag-bg: #ffd166;
+  --onb-tag-fg: #4a2a00;
 }
 
-html[data-theme-family='crystal'] :is(.onb-option, .onboarding-journey__goal-card):focus-visible { outline-offset: -5px; }
-html[data-theme-family='crystal'] [aria-pressed='true'] :is(.onb-option-name, .onb-goal-title, .onb-pace-number) { color: white; }
-html[data-theme-family='crystal'] [aria-pressed='true'] :is(.onb-option-sub, .onb-goal-description, .onb-option-tag) { color: rgb(255 255 255 / .86); }
-html[data-theme-family='crystal'] .onb-pace-card[aria-pressed='true'] .onb-pace-tag { background: color-mix(in srgb, white 20%, transparent); color: white; }
+html[data-theme-family='crystal'] :is(.onb-option, .onboarding-journey__goal-card):focus-visible { outline: 2px solid var(--sf-holo-ink); outline-offset: 3px; }
+html[data-theme-family='crystal'] :is(.onb-option-name, .onb-goal-title, .onb-pace-number) { color: var(--onb-card-fg); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; }
+html[data-theme-family='crystal'] :is(.onb-option-sub, .onb-goal-description) { color: var(--onb-card-sub); }
 
-html[data-theme-family='crystal'] :is(.onb-option-name, .onb-goal-title, .onb-pace-number) { font-family: var(--sf-font-display); font-style: italic; font-weight: 900; }
-html[data-theme-family='crystal'] .onb-goal-title { font-size: 26px; line-height: 1.05; }
-html[data-theme-family='crystal'] .onb-goal-description { font-size: 14px; line-height: 1.5; }
-html[data-theme-family='crystal'] .onb-option-sub { font-family: var(--sf-font-display); font-style: italic; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
-
-html[data-theme-family='crystal'] .onb-goal-icon,
-html[data-theme-family='crystal'] .onb-glyph {
+/* Hexagonal emblem: the goal icon and the language glyph. */
+html[data-theme-family='crystal'] :is(.onb-goal-icon, .onb-glyph) {
   display: flex;
-  width: 60px;
-  height: 60px;
+  flex: none;
   align-items: center;
   justify-content: center;
   border-radius: 0;
-  background: color-mix(in srgb, var(--sf-second) 18%, transparent);
-  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-  color: color-mix(in srgb, var(--sf-second) 70%, var(--sf-text));
-  font-family: var(--sf-font-display);
-  font-size: 24px;
-  font-style: italic;
-  font-weight: 900;
+  background: var(--onb-emblem-bg);
+  clip-path: var(--onb-hex);
+  color: var(--onb-emblem-fg);
 }
 
-html[data-theme-family='crystal'] [aria-pressed='true'] > :is(.onb-goal-icon, .onb-glyph) { background: white; color: var(--sf-brand); }
-
-html[data-theme-family='crystal'] .onb-goal-text { margin-top: 16px; padding-top: 0; }
-html[data-theme-family='crystal'] .onboarding-journey__goal-card { min-height: 288px; padding: 22px 22px 20px; }
-
-html[data-theme-family='crystal'] .onboarding-journey__goal-grid,
-html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count] {
-  width: 100%;
-  margin: 34px 0 0;
-  gap: 22px;
-  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
-}
-
-html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='6'] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-html[data-theme-family='crystal'] .onboarding-journey__goal-card { min-width: 0; }
-html[data-theme-family='crystal'] .onb-goal-title { overflow-wrap: break-word; hyphens: auto; }
-html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='5'] .onboarding-journey__goal-card { padding-inline: 18px; }
-html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='5'] .onb-goal-title { font-size: 21px; }
-html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='6'] .onboarding-journey__goal-card { min-height: 208px; }
-
-html[data-theme-family='crystal'] .onb-target-grid { margin-top: 28px; gap: 22px; }
-html[data-theme-family='crystal'] .onb-target-card { min-height: 208px; justify-content: flex-start; padding: 22px 22px 20px; }
-html[data-theme-family='crystal'] .onb-target-card .onb-option-name { margin-top: 14px; font-size: 30px; }
-
-html[data-theme-family='crystal'] .onb-target-card .onb-option-tag {
-  position: absolute;
-  top: 22px;
-  right: 22px;
-  margin: 0;
-  color: var(--sf-reward);
-  font-family: var(--sf-font-display);
-  font-style: italic;
-  font-weight: 900;
-}
-
-html[data-theme-family='crystal']:not(.dark) .onb-target-card:not([aria-pressed='true']) .onb-option-tag { color: color-mix(in srgb, var(--sf-reward) 55%, var(--sf-text)); }
-
+/* The selection check: a small chamfered chip, shown on every card as the board draws it. */
 html[data-theme-family='crystal'] .onb-mark {
   top: auto;
   right: 18px;
@@ -964,26 +1066,337 @@ html[data-theme-family='crystal'] .onb-mark {
   width: 28px;
   height: 28px;
   border-radius: 0;
-  background: color-mix(in srgb, var(--sf-text) 10%, transparent);
-  clip-path: var(--nk-chamfer-sm);
+  background: var(--onb-check-bg);
   box-shadow: none;
+  clip-path: var(--nk-chamfer-sm);
+  color: var(--onb-check-fg);
 }
 
-html[data-theme-family='crystal'] .onb-mark[data-on='false'] { color: var(--sf-text-muted); }
-html[data-theme-family='crystal'] .onb-mark[data-on='true'] { background: var(--sf-reward); color: color-mix(in srgb, var(--sf-reward) 25%, black); }
-html[data-theme-family='crystal'] .onboarding-journey__goal-card .onb-mark { top: auto; right: 18px; bottom: 16px; }
+/* Goal cards, 230 x 288: emblem, name, description; the check sits where the board's footer row puts it. */
+html[data-theme-family='crystal'] .onboarding-journey__goal-grid,
+html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count] {
+  width: 100%;
+  margin: 32px 0 0;
+  gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+}
 
+html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='4'] { grid-template-columns: repeat(auto-fill, 230px); }
+html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='6'] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+html[data-theme-family='crystal'] .onboarding-journey__goal-card { min-width: 0; min-height: 288px; padding: 24px 24px 68px; }
+html[data-theme-family='crystal'] .onb-goal-icon { width: 64px; height: 64px; }
+html[data-theme-family='crystal'] .onb-goal-text { margin-top: 18px; padding-top: 0; }
+html[data-theme-family='crystal'] .onb-goal-title { font-size: 28px; line-height: 1.05; overflow-wrap: break-word; hyphens: auto; }
+html[data-theme-family='crystal'] .onb-goal-description { margin-top: 8px; font-size: 14px; line-height: 1.5; }
+html[data-theme-family='crystal'] .onboarding-journey__goal-card .onb-mark { top: auto; right: 24px; bottom: 25px; }
+html[data-theme-family='crystal'] .onboarding-journey__goal-card .onb-mark > svg { width: 15px; height: 15px; }
+/* The board's footer row above the check: 1px rule, 12px padding, 34.5px row, inside the 2px rim and the face's 22/20px padding. */
+html[data-theme-family='crystal'] .onb-goal-rule {
+  position: absolute;
+  right: 24px;
+  bottom: 22px;
+  left: 24px;
+  height: 47.5px;
+  border-top: 1px solid var(--onb-card-rule);
+  pointer-events: none;
+}
+
+/* Five real goal cards share the 1000px the board's four fill, so their names step down to fit 134px of copy. */
+@media (min-width: 640px) {
+  html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='5'] .onb-goal-title { font-size: 22px; }
+}
+
+html[data-theme-family='crystal'] .onboarding-journey__goal-grid[data-goal-count='6'] .onboarding-journey__goal-card { min-height: 208px; }
+
+/* The chosen goal card's wings, unfolding behind its rim. */
+html[data-theme-family='crystal'] .onb-card-wings {
+  position: absolute;
+  z-index: -2;
+  top: -40px;
+  right: -150px;
+  left: -150px;
+  height: 330px;
+  opacity: .95;
+  filter: drop-shadow(0 0 22px rgb(255 42 77 / .7));
+}
+
+/* Language cards, 230 x 236: glyph and exam tag, endonym, name, greeting, check. */
+html[data-theme-family='crystal'] .onb-target-grid { margin-top: 22px; gap: 18px 22px; }
+html[data-theme-family='crystal'] .onb-target-card { min-height: 236px; justify-content: flex-start; padding: 20px 22px 18px; }
+html[data-theme-family='crystal'] .onb-glyph { width: 56px; height: 56px; font-family: var(--sf-font-display); font-size: 26px; font-style: italic; font-weight: 900; }
+html[data-theme-family='crystal'] .onb-target-card .onb-option-name { margin-top: 14px; font-size: 30px; line-height: 1.05; white-space: nowrap; }
+
+html[data-theme-family='crystal'] .onb-target-card .onb-option-sub {
+  margin-top: 4px;
+  font-family: var(--sf-font-display);
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: .12em;
+  line-height: normal;
+  text-transform: uppercase;
+}
+
+html[data-theme-family='crystal'] .onb-target-card .onb-option-tag {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  display: flex;
+  height: 24px;
+  align-items: center;
+  margin: 0;
+  padding: 0 10px;
+  background: var(--onb-tag-bg);
+  clip-path: var(--nk-chamfer-sm);
+  color: var(--onb-tag-fg);
+  font-family: var(--sf-font-display);
+  font-size: 11.5px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .06em;
+  line-height: normal;
+}
+
+html[data-theme-family='crystal'] .onb-greeting { margin: auto 0 30px; color: var(--onb-card-fg); font-size: 16px; font-weight: 700; line-height: normal; }
+html[data-theme-family='crystal'] .onb-target-card .onb-mark { top: auto; right: 22px; bottom: 18px; width: 26px; height: 26px; }
+
+/* Korean, Japanese and Chinese text is set upright in its Noto face, as the boards set it. */
+html[data-theme-family='crystal'] :is(.onb-glyph, .onb-option-name, .onb-greeting, .onb-trial-word-text):lang(ko) { font-family: 'Noto Sans KR', var(--sf-font-body); font-style: normal; }
+html[data-theme-family='crystal'] :is(.onb-glyph, .onb-option-name, .onb-greeting, .onb-trial-word-text):lang(ja) { font-family: 'Noto Sans JP', var(--sf-font-body); font-style: normal; }
+html[data-theme-family='crystal'] :is(.onb-glyph, .onb-option-name, .onb-greeting, .onb-trial-word-text):lang(zh) { font-family: 'Noto Sans SC', var(--sf-font-body); font-style: normal; }
+
+/* Language choice (no board of its own): the language cards' type on the shared card layers. */
+html[data-theme-family='crystal'] .onb-language-grid { margin-top: 22px; gap: 18px 22px; }
+html[data-theme-family='crystal'] .onb-language-grid > .onb-option { min-height: 120px; padding: 20px 52px 18px 22px; }
+html[data-theme-family='crystal'] .onb-language-grid .onb-option-name { font-size: 30px; line-height: 1.05; }
+html[data-theme-family='crystal'] .onb-language-grid .onb-option-sub { margin-top: 4px; font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 700; letter-spacing: .12em; line-height: normal; text-transform: uppercase; }
+
+/* Starting level, 82px rows: the level name in the board's 146px grade column, its description beside it. */
+html[data-theme-family='crystal'] .onb-level-list { max-width: 608px; margin-top: 24px; gap: 14px; }
+html[data-theme-family='crystal'] .onb-level-option { --onb-card-cut: var(--nk-chamfer-sm); min-height: 82px; gap: 16px; padding: 0 20px; }
+html[data-theme-family='crystal'] .onb-level-option[data-tier='foundation'] { --onb-card-rim: var(--sf-rim-new); --onb-grade: #5ef2ff; }
+html[data-theme-family='crystal'] .onb-level-option[data-tier='core'] { --onb-card-rim: var(--sf-rim-learning); --onb-grade: #ff8fb6; }
+html[data-theme-family='crystal'] .onb-level-option[data-tier='advanced'] { --onb-card-rim: var(--sf-gold-rim); --onb-grade: #ff2a4d; }
+html[data-theme-family='crystal']:not(.dark) .onb-level-option { --onb-grade: var(--sf-brand-text); }
+
+html[data-theme-family='crystal'] .onb-level-option[aria-pressed='true'] {
+  --onb-card-rim: var(--sf-gold-rim);
+  --onb-card-face: linear-gradient(90deg, #ff5470 0%, #e0173f 50%, #7a0820 100%);
+  --onb-grade: #fff;
+}
+
+html[data-theme-family='crystal'] .onb-level-index,
+html[data-theme-family='crystal'] .onb-level-option .onb-mark { display: none; }
+html[data-theme-family='crystal'] .onb-level-text { flex: 1; flex-direction: row; align-items: center; gap: 16px; }
+html[data-theme-family='crystal'] .onb-level-option .onb-option-name { width: 146px; flex: none; color: var(--onb-grade); font-size: 24px; line-height: normal; }
+html[data-theme-family='crystal'] .onb-level-option[aria-pressed='true'] .onb-option-name { text-shadow: 0 3px 0 #7a0820; }
+html[data-theme-family='crystal'] .onb-level-option .onb-option-sub { min-width: 0; flex: 1; margin: 0; font-size: 13px; line-height: normal; }
+
+/* Reading-aid choice on the script step: the level rows' cut and type. */
+html[data-theme-family='crystal'] .onb-primer-choice { --onb-card-cut: var(--nk-chamfer-sm); padding: 16px 52px 16px 20px; }
+html[data-theme-family='crystal'] .onb-primer-choice .onb-option-name { font-size: 19px; font-weight: 800; }
+html[data-theme-family='crystal'] .onb-primer-choice .onb-option-sub { margin-top: 1px; font-size: 13px; }
+html[data-theme-family='crystal'] .onb-primer-choice .onb-mark { top: 50%; right: 18px; bottom: auto; transform: translateY(-50%); }
+
+/* Pace (no board of its own): the shared card layers, the language cards' tag. */
+html[data-theme-family='crystal'] .onb-pace-grid { margin-inline: 0; }
+html[data-theme-family='crystal'] .onb-pace-card .onb-pace-number { color: var(--onb-card-fg); }
+html[data-theme-family='crystal'] .onb-pace-card .onb-pace-minutes { color: var(--onb-card-sub); }
+
+html[data-theme-family='crystal'] .onb-pace-card .onb-pace-tag {
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 0;
+  background: var(--onb-tag-bg);
+  clip-path: var(--nk-chamfer-sm);
+  color: var(--onb-tag-fg);
+  font-family: var(--sf-font-display);
+  font-size: 11.5px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+html[data-theme-family='crystal'] .onb-projection {
+  margin-inline: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-glass);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge);
+  clip-path: var(--nk-chamfer);
+}
+
+html[data-theme-family='crystal'] .onb-projection-number {
+  background: var(--sf-crimson-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 16px rgb(255 42 77 / .5));
+  font-style: italic;
+  font-weight: 900;
+}
+
+/* Exam step: the level board's exam chips, and its BIG DAY panel for the countdown. */
+html[data-theme-family='crystal'] .onb-chip-row { margin-top: 24px; gap: 8px; }
+
+html[data-theme-family='crystal'] .onb-chip {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  clip-path: none;
+  color: var(--sf-text-strong);
+  transform: skewX(-12deg);
+}
+
+html[data-theme-family='crystal'] .onb-chip > span {
+  display: block;
+  font-family: var(--sf-font-display);
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  transform: skewX(12deg);
+}
+
+html[data-theme-family='crystal'] .onb-chip[aria-pressed='true'] { background: var(--sf-primary-bg); box-shadow: var(--sf-primary-shadow); color: #fff; }
+html[data-theme-family='crystal'] .onb-chip:focus-visible { outline: 2px solid var(--sf-holo-ink); outline-offset: 3px; }
+html[data-theme-family='crystal'] .onb-goal-fields { margin-inline: 0; }
+
+html[data-theme-family='crystal'] :is(.onb-field, .onb-starter-card) {
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  clip-path: var(--nk-chamfer-sm);
+  color: var(--sf-text-strong);
+}
+
+html[data-theme-family='crystal'] .onb-field:focus-visible { outline: 2px solid var(--sf-holo-ink); outline-offset: -3px; }
+
+html[data-theme-family='crystal'] .onb-countdown {
+  min-height: 0;
+  align-self: start;
+  margin-top: 30px;
+  padding: 24px 24px 22px;
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-glass);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge);
+  clip-path: var(--nk-chamfer);
+}
+
+html[data-theme-family='crystal'] .onb-countdown::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d);
+  content: '';
+}
+
+html[data-theme-family='crystal'] .onb-countdown .onb-kicker { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; }
+html[data-theme-family='crystal'] .onb-countdown-days { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 10px; margin: 16px 0 0; }
+
+html[data-theme-family='crystal'] .onb-countdown-number {
+  background: var(--sf-crimson-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 16px rgb(255 42 77 / .5));
+  font-size: 96px;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: .9;
+}
+
+html[data-theme-family='crystal'] .onb-countdown-unit { margin: 0; color: var(--sf-text-strong); font-size: 20px; font-style: italic; font-weight: 800; text-transform: uppercase; }
+
+/* The weeks left as the board's level hexagons, six to a row. */
+html[data-theme-family='crystal'] .onb-weeks { display: grid; margin-top: 16px; gap: 6px; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+html[data-theme-family='crystal'] .onb-weeks > span { height: 34px; border-radius: 0; background: var(--sf-border); clip-path: var(--onb-hex); }
+html[data-theme-family='crystal'] .onb-weeks > [data-week='now'] { background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); }
+html[data-theme-family='crystal'] .onb-weeks > [data-week='goal'] { background: var(--sf-reward); }
+html[data-theme-family='crystal'] .onb-countdown-note { margin-top: 16px; color: var(--sf-text-muted); font-size: 13px; }
+html[data-theme-family='crystal'] .onb-countdown-empty { margin: 8px 0 0; color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 24px; font-style: italic; font-weight: 900; }
+
+/* First cards: the board's 104 x 138 mini cards, state badge on top and the word at the foot. */
+html[data-theme-family='crystal'] .onb-trial-count { color: var(--sf-holo-text); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+html[data-theme-family='crystal'] .onb-trial-list { margin-top: 26px; gap: 12px; }
+
+html[data-theme-family='crystal'] .onb-trial-word {
+  --onb-card-cut: var(--nk-chamfer-sm);
+  width: 104px;
+  min-height: 138px;
+  flex: none;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 14px 12px;
+  text-align: left;
+}
+
+html[data-theme-family='crystal'] .onb-trial-word[data-state='known'] { --onb-card-rim: var(--sf-gold-rim); background: none; }
+html[data-theme-family='crystal'] .onb-trial-word[data-state='again'] { --onb-card-rim: var(--sf-rim-new); background: none; }
+
+html[data-theme-family='crystal'] .onb-trial-word-state {
+  display: flex;
+  height: 22px;
+  align-items: center;
+  order: -1;
+  padding: 0 8px;
+  background: var(--sf-surface-control);
+  clip-path: var(--nk-chamfer-sm);
+  color: var(--sf-text-subtle);
+  font-family: var(--sf-font-display);
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* White on the dark board's crimson reads at 3.7:1, so the badge takes the light board's deeper crimson (4.8:1). */
+html[data-theme-family='crystal'] .onb-trial-word[data-state='known'] .onb-trial-word-state { background: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%); color: #fff; }
+html[data-theme-family='crystal'] .onb-trial-word[data-state='again'] .onb-trial-word-state { background: var(--onb-retry-tint); color: var(--sf-holo-text); }
+html[data-theme-family='crystal'] .onb-trial-word-text { margin-top: auto; color: var(--sf-text-strong); font-size: 17px; font-style: italic; font-weight: 800; line-height: 1.05; }
+
+/* Grade buttons: Got it in the board's crimson, Forgot in its secondary fill. */
+html[data-theme-family='crystal'] .onb-trial-grade > button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  font-family: var(--sf-font-display);
+  font-size: 16px;
+  font-style: italic;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+html[data-theme-family='crystal'] .onb-trial-known { background: var(--sf-primary-bg); color: #fff; font-weight: 900; }
+html[data-theme-family='crystal'] .onb-trial-again { background: var(--onb-secondary-bg); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-strong); font-weight: 700; }
+html[data-theme-family='crystal'] .onb-trial-grade > button:focus-visible { outline: 2px solid var(--sf-holo-ink); outline-offset: -5px; }
+
+/* Buttons: the board's chamfered crimson call to action with its light band and play mark, and its secondary. */
 html[data-theme-family='crystal'] .onb-primary {
   position: relative;
   min-height: 60px;
+  gap: 12px;
   padding: 0 44px;
   overflow: hidden;
+  border: 0;
   border-radius: 0;
-  background: var(--onb-primary-bg);
+  background: var(--sf-primary-bg);
   box-shadow: none;
   clip-path: var(--nk-chamfer);
-  color: white;
-  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-brand) 55%, transparent));
+  color: #fff;
   font-family: var(--sf-font-display);
   font-size: 21px;
   font-style: italic;
@@ -992,89 +1405,56 @@ html[data-theme-family='crystal'] .onb-primary {
   text-transform: uppercase;
 }
 
+html[data-theme-family='crystal'] .onb-primary > :not(.onb-primary-shine) { position: relative; }
+html[data-theme-family='crystal'] .onb-primary-shine { position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / .4); pointer-events: none; }
 html[data-theme-family='crystal'] .onb-primary-icon { display: none; }
-
-html[data-theme-family='crystal'] .onb-primary::after {
-  width: 14px;
-  height: 16px;
-  background: currentColor;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-  content: '';
-}
-
-html[data-theme-family='crystal'] .onb-primary:focus-visible { outline-color: var(--sf-reward); outline-offset: -5px; }
+/* The chamfer clips anything drawn outside the button, so its focus ring is drawn inside, in gold. */
+html[data-theme-family='crystal'] .onb-primary:focus-visible { outline: 2px solid var(--sf-reward); outline-offset: -5px; }
 
 html[data-theme-family='crystal'] .onb-secondary {
-  min-height: 52px;
+  min-height: 48px;
+  padding: 0 22px;
   border: 0;
   border-radius: 0;
-  background: var(--sf-surface-glass);
-  box-shadow: inset 0 0 0 1px var(--onb-panel-edge);
+  background: var(--onb-secondary-bg);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
   clip-path: var(--nk-chamfer-sm);
-  color: var(--sf-text);
+  color: var(--sf-text-strong);
   font-family: var(--sf-font-display);
+  font-size: 16px;
   font-style: italic;
-  font-weight: 800;
-  letter-spacing: .08em;
+  font-weight: 700;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 
-html[data-theme-family='crystal'] .onb-secondary:focus-visible { outline-offset: -4px; }
+html[data-theme-family='crystal'] .onb-secondary:hover:not(:disabled) { color: var(--sf-text-strong); }
+html[data-theme-family='crystal'] .onb-secondary:focus-visible { outline: 2px solid var(--sf-holo-ink); outline-offset: -5px; }
 
-html[data-theme-family='crystal'] .onboarding-journey__footer {
-  min-height: 0;
-  gap: 18px;
-  padding: 16px 44px 44px;
-  border-top: 0;
-}
-
+/* Footer: the call to action 36px above the page's foot, the note after it. */
+html[data-theme-family='crystal'] .onboarding-journey__footer { min-height: 0; gap: 18px; margin-bottom: 20px; padding: 16px 44px 16px; border-top: 0; }
 html[data-theme-family='crystal'] .onb-body[data-lumi='true'] .onboarding-journey__footer { padding-left: 0; }
 html[data-theme-family='crystal'] .onboarding-journey__footer > .onb-primary { margin-left: 0; }
-html[data-theme-family='crystal'] .onb-footer-note { order: 3; margin: 0; font-size: 14px; }
+html[data-theme-family='crystal'] .onb-footer-note { order: 3; margin: 0; color: var(--sf-text-muted); font-size: 14px; }
+html[data-theme-family='crystal'] .onb-footer-note strong { color: var(--sf-text-strong); font-weight: 700; }
 
-/* On a wide screen the goal step sits in the middle of the page, with Continue 40px under the cards
-   (the main's bottom padding plus the footer's top padding) instead of pinned to the bottom edge. */
+/* Exam and level boards lay the form beside its 360px panel; the first-cards board centres its column. */
+@media (min-width: 1024px) {
+  html[data-theme-family='crystal'] .onb-exam { width: 100%; align-items: start; gap: 36px; grid-template-columns: minmax(0, 1fr) 360px; }
+}
+
 @media (min-width: 1100px) {
-  html[data-theme-family='crystal'] [data-onboarding-step='goal'] .onb-body { grid-template-areas: '.' 'main' 'foot' '.'; grid-template-rows: 1fr auto auto 1fr; padding-bottom: 40px; }
+  html[data-theme-family='crystal'] .onb-target-grid { grid-template-columns: repeat(4, minmax(0, 230px)); }
+  /* Five mini cards of 104px with 12px gaps make the tally column 568px; the card deck keeps the rest. */
+  html[data-theme-family='crystal'] .onb-trial { column-gap: 40px; grid-template-columns: minmax(0, 1fr) 568px; }
+
+  /* The goal board centres its block in the space under the header, 40px clear of the foot, with Continue 40px
+     under the cards (the main's bottom padding plus the footer's top padding). */
+  html[data-theme-family='crystal'] [data-onboarding-step='goal'] .onb-body { grid-template-areas: '.' 'main' 'foot' '.'; grid-template-rows: 1fr auto auto 1fr; padding-bottom: 24px; }
   html[data-theme-family='crystal'] [data-onboarding-step='goal'] .onb-body[data-lumi='true'] { grid-template-areas: 'lumi .' 'lumi main' 'lumi foot' 'lumi .'; }
+  html[data-theme-family='crystal'] [data-onboarding-step='goal'] .onb-main { padding-top: 0; }
+  html[data-theme-family='crystal'] [data-onboarding-step='goal'] .onboarding-journey__footer { margin-bottom: 0; }
 }
-
-html[data-theme-family='crystal'] :is(.onb-field, .onb-starter-card) {
-  border: 0;
-  border-radius: 0;
-  background: var(--sf-surface-glass);
-  box-shadow: inset 0 0 0 1px var(--onb-panel-edge);
-  clip-path: var(--nk-chamfer-sm);
-}
-
-html[data-theme-family='crystal'] .onb-field:focus-visible { outline-offset: -3px; }
-html[data-theme-family='crystal'] .onb-goal-fields { margin-inline: 0; }
-html[data-theme-family='crystal'] .onb-pace-grid { margin-inline: 0; }
-html[data-theme-family='crystal'] .onb-kicker { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 700; letter-spacing: .16em; }
-
-html[data-theme-family='crystal'] :is(.onb-chip, .onb-trial-grade > button, .onb-trial-word, .onb-projection, .onb-pace-tag) { border-radius: 0; }
-html[data-theme-family='crystal'] .onb-chip { border: 0; background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--onb-panel-edge); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-html[data-theme-family='crystal'] .onb-chip[aria-pressed='true'] { background: var(--onb-primary-bg); box-shadow: none; color: white; }
-html[data-theme-family='crystal'] :is(.onb-chip, .onb-trial-grade > button):focus-visible { outline-offset: -4px; }
-
-html[data-theme-family='crystal'] .onb-countdown {
-  border: 0;
-  border-radius: 0;
-  background: var(--sf-surface-glass);
-  box-shadow: inset 0 0 0 1px var(--onb-panel-edge);
-}
-
-html[data-theme-family='crystal'] .onb-countdown-number { font-style: italic; font-weight: 900; }
-html[data-theme-family='crystal'] .onb-countdown-unit { color: var(--sf-brand-text); font-style: italic; font-weight: 800; text-transform: uppercase; }
-html[data-theme-family='crystal'] .onb-weeks > span { border-radius: 0; transform: skewX(-20deg); }
-html[data-theme-family='crystal'] .onb-projection { clip-path: var(--nk-chamfer-sm); }
-html[data-theme-family='crystal'] .onb-projection-number { font-style: italic; font-weight: 900; }
-/* Crystal's gold is paler than Classic's; on the light glass it needs more of the text colour to reach 3:1. */
-html[data-theme-family='crystal']:not(.dark) .onb-projection-number { color: color-mix(in srgb, var(--sf-reward) 50%, var(--sf-text)); }
-html[data-theme-family='crystal'] .onb-trial-known { background: var(--onb-primary-bg); color: white; font-family: var(--sf-font-display); font-style: italic; font-weight: 900; text-transform: uppercase; }
-html[data-theme-family='crystal'] .onb-trial-again { border: 0; background: var(--sf-surface-glass); box-shadow: inset 0 0 0 1px var(--onb-panel-edge); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; text-transform: uppercase; }
-html[data-theme-family='crystal'] .onb-trial-word { border: 0; box-shadow: inset 0 0 0 1px var(--onb-panel-edge); }
-html[data-theme-family='crystal'] .onb-trial-word-text { font-style: italic; font-weight: 800; }
 
 /* Narrow screens --------------------------------------------------------------------------- */
 @media (max-width: 1279px) {
@@ -1136,8 +1516,9 @@ html[data-theme-family='crystal'] .onb-trial-word-text { font-style: italic; fon
   .onb-main[data-layout='center'] .onb-subtitle { margin-inline: 0; }
   .onb-eyebrow { font-size: 11.5px; }
   .onb-title { margin-top: 10px; font-size: 34px; letter-spacing: -.03em; }
-  html[data-theme-family='crystal'] .onb-title { font-size: 34px; }
+  html[data-theme-family='crystal'] :is(.onb-title, [data-onboarding-step] .onb-title) { font-size: 34px; }
   .onb-subtitle { margin-top: 8px; font-size: 14px; }
+  html[data-theme-family='crystal'] :is(.onb-subtitle, [data-onboarding-step] .onb-subtitle) { margin-top: 8px; font-size: 14px; }
 
   .onb-language-grid,
   .onb-target-grid { margin-top: 24px; gap: 10px; grid-template-columns: minmax(0, 1fr); }
@@ -1147,6 +1528,10 @@ html[data-theme-family='crystal'] .onb-trial-word-text { font-style: italic; fon
   html[data-theme-family='crystal'] .onb-target-card .onb-glyph { display: none; }
   html[data-theme-family='crystal'] .onb-target-card .onb-option-name { margin-top: 0; font-size: 22px; }
   html[data-theme-family='crystal'] .onb-target-card .onb-option-tag { position: static; margin-top: 6px; }
+  /* Phone rows carry the name, the language and the exam tag; the greeting and the chosen card's wings need the
+     desktop card's height. */
+  html[data-theme-family='crystal'] :is(.onb-greeting, .onb-card-wings, .onb-goal-rule) { display: none; }
+  html[data-theme-family='crystal'] :is(.onb-language-grid, .onb-target-grid) { margin-top: 24px; gap: 10px; }
 
   .onboarding-journey__goal-grid,
   .onboarding-journey__goal-grid[data-goal-count],
@@ -1177,7 +1562,8 @@ html[data-theme-family='crystal'] .onb-trial-word-text { font-style: italic; fon
   .onb-mark,
   .onboarding-journey__goal-card .onb-mark,
   html[data-theme-family='crystal'] .onb-mark,
-  html[data-theme-family='crystal'] .onboarding-journey__goal-card .onb-mark {
+  html[data-theme-family='crystal'] .onboarding-journey__goal-card .onb-mark,
+  html[data-theme-family='crystal'] .onb-target-card .onb-mark {
     top: 50%;
     right: 16px;
     bottom: auto;
@@ -1191,7 +1577,8 @@ html[data-theme-family='crystal'] .onb-trial-word-text { font-style: italic; fon
 
   .onb-mark[data-on='false'] > svg { display: none; }
   .onb-mark[data-on='true'] { border-color: transparent; background: var(--onb-primary-bg); color: var(--onb-primary-text); }
-  html[data-theme-family='crystal'] .onb-mark[data-on='true'] { border-color: transparent; background: var(--sf-reward); color: color-mix(in srgb, var(--sf-reward) 25%, black); }
+  /* Crystal keeps its chamfered check chip on phones: empty on an idle row, gold with the check on the chosen one. */
+  html[data-theme-family='crystal'] .onb-mark { border: 0; background: var(--onb-check-bg); color: var(--onb-check-fg); }
   .onb-goal-fields { margin-inline: 0; grid-template-columns: minmax(0, 1fr); }
 
   .onb-pace-grid { margin-top: 24px; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }

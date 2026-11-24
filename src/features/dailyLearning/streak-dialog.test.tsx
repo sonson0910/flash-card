@@ -181,6 +181,20 @@ describe('StreakChip from the server streak record', () => {
     expect(html).not.toMatch(forbiddenCopy);
   });
 
+  it('stages the Crystal milestone like its board and leaves classic on its confetti', () => {
+    theme.family = 'crystal';
+    const crystal = renderFixture(streakFixtures.safeAtMilestone);
+    theme.family = 'classic';
+    expect(crystal).toContain('<span class="streak-dialog-ceremony" aria-hidden="true"><span class="streak-dialog-beam"></span><span class="streak-dialog-stage"><span class="streak-dialog-wing crystal-wing-art"></span><span class="streak-dialog-wing crystal-wing-art" data-mirrored=""></span></span></span>');
+    expect(crystal).toContain('<span class="streak-dialog-rim" aria-hidden="true"><span class="streak-dialog-rim-spin"></span></span>');
+    expect(crystal).toMatch(/<span class="streak-dialog-star"><svg viewBox="0 0 100 100"[^>]*>(<polygon [^>]*><\/polygon>)+<\/svg><\/span><span class="streak-dialog-star-count">30<\/span>/);
+    expect(crystal).toMatch(/<span class="streak-dialog-mascot"><img [^>]*class="streak-dialog-lumi"[^>]*data-lumi-pose="cheer"/);
+    expect(crystal).not.toContain('streak-dialog-confetti');
+    const classic = renderFixture(streakFixtures.safeAtMilestone);
+    expect(classic).not.toMatch(/streak-dialog-(ceremony|rim-spin|star|mascot)/);
+    expect(classic).toContain('<span class="streak-dialog-rim" aria-hidden="true"></span>');
+  });
+
   it('shows the run totals on a milestone when the review counters cover the run', () => {
     const fixture = streakFixtures.safeAtMilestone;
     const html = render(<StreakChip view={viewOf(fixture)} runStats={{ reviews: 1_284, newWords: 312, recallPercent: 91, xp: 3_310 }} now={fixture.now} streak={0} className="chip" />);

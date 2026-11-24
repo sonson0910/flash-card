@@ -35,7 +35,7 @@ const ladder: readonly { readonly tier: PlacementTier; readonly rung: number; re
 ];
 const tierRank: Record<PlacementTier, number> = { foundation: 1, core: 2, advanced: 3 };
 
-function PlacementLadder({ estimate, mode }: { readonly estimate?: PlacementEstimate; readonly mode: 'estimate' | 'result' | 'preview' }) {
+function PlacementLadder({ estimate, mode, ascending = false }: { readonly estimate?: PlacementEstimate; readonly mode: 'estimate' | 'result' | 'preview'; readonly ascending?: boolean }) {
   const { _ } = useLingui();
   const title = mode === 'result'
     ? _(msg({ id: 'daily.placement.ladder.result-title', message: 'Where you start' }))
@@ -50,7 +50,7 @@ function PlacementLadder({ estimate, mode }: { readonly estimate?: PlacementEsti
     <p id="placement-ladder-title" className="placement-ladder-title">{title}</p>
     <p className="placement-ladder-note">{note}</p>
     <ol className="placement-rungs">
-      {ladder.map(rung => {
+      {(ascending ? [...ladder].reverse() : ladder).map(rung => {
         const state = !estimate ? 'idle' : rung.tier === estimate.tier ? 'likely' : tierRank[rung.tier] < tierRank[estimate.tier] ? 'below' : 'above';
         return <li key={rung.tier} className="placement-rung" data-rung-state={state}>
           <span className="placement-rung-code" aria-hidden="true">{rung.rung}</span>
@@ -62,7 +62,7 @@ function PlacementLadder({ estimate, mode }: { readonly estimate?: PlacementEsti
       })}
     </ol>
     {mode !== 'preview' && <div className="placement-confidence">
-      <span className="placement-confidence-track" aria-hidden="true">{[1, 2, 3].map(step => <span key={step} data-filled={step <= steps ? 'true' : 'false'} />)}</span>
+      <span className="placement-confidence-track" data-steps={steps} aria-hidden="true">{[1, 2, 3].map(step => <span key={step} data-filled={step <= steps ? 'true' : 'false'} />)}</span>
       <span className="placement-confidence-label">{estimate ? _(confidenceLabels[estimate.confidence]) : _(msg({ id: 'daily.placement.ladder.no-confidence', message: 'Not enough answers yet' }))}</span>
     </div>}
   </aside>;
@@ -71,7 +71,7 @@ function PlacementLadder({ estimate, mode }: { readonly estimate?: PlacementEsti
 function Shell({ children, model, actions, crystal }: { readonly children: ReactNode; readonly model: PlacementModel; readonly actions: PlacementActions; readonly crystal: boolean }) {
   const { _ } = useLingui();
   return <section aria-labelledby="daily-placement-heading" className="daily-canvas placement-canvas" data-session-shell="placement" data-learning-canvas="placement" data-placement-status={model.status}>
-    {crystal && <><span className="lesson-shard lesson-shard--left crystal-wing crystal-ornament" aria-hidden="true" /><span className="lesson-shard lesson-shard--right crystal-wing crystal-ornament" aria-hidden="true" /></>}
+    {crystal && <><span className="lesson-shard lesson-shard--left crystal-wing crystal-wing-art crystal-ornament" aria-hidden="true" /><span className="lesson-shard lesson-shard--right crystal-wing crystal-wing-art crystal-ornament" aria-hidden="true" /></>}
     <header className="placement-header lesson-topbar">
       <button type="button" onClick={actions.exit} aria-label={i18n._(msg({ id: 'daily.placement.exit', message: 'Exit placement check' }).id)} className="lesson-round placement-exit"><X size={18} aria-hidden="true" /></button>
       <div className="lesson-topbar-title min-w-0"><h1 id="daily-placement-heading" ref={model.headingRef} tabIndex={-1} className="lesson-title placement-title">
@@ -100,21 +100,35 @@ function LumiNote({ show, pose, children }: { readonly show: boolean; readonly p
   const { _ } = useLingui();
   if (!show) return null;
   return <aside className="placement-lumi" aria-label={i18n._(msg({ id: 'daily.placement.lumi-label', message: 'Lumi’s note' }).id)}>
-    <Lumi pose={pose} size={168} className="crystal-ornament placement-lumi-figure" />
+    <Lumi pose={pose} className="crystal-ornament placement-lumi-figure" />
     <div className="lesson-lumi-bubble"><p className="lesson-lumi-label">{_(msg({ id: 'daily.placement.lumi-label', message: 'Lumi’s note' }))}</p><p className="lesson-lumi-copy">{children}</p></div>
   </aside>;
+}
+
+// With Lumi shown (Crystal only), the ladder and Lumi stack in one side column, as on the Crystal board;
+// otherwise the ladder is the layout's second column on its own.
+function SideColumn({ ladder, lumi }: { readonly ladder: ReactNode; readonly lumi: ReactNode }) {
+  return lumi ? <div className="placement-side">{ladder}{lumi}</div> : <>{ladder}</>;
 }
 
 function Headline({ id }: { readonly id?: string }) {
   const { _ } = useLingui();
   return <h2 id={id} className="placement-question-title">
-    {_(msg({ id: 'daily.placement.headline.lead', message: 'Find your' }))}{' '}<em className="placement-accent">{_(msg({ id: 'daily.placement.headline.accent', message: 'starting level.' }))}</em>
+    <span className="placement-title-lead">{_(msg({ id: 'daily.placement.headline.lead', message: 'Find your' }))}</span>{' '}<em className="placement-accent">{_(msg({ id: 'daily.placement.headline.accent', message: 'starting level.' }))}</em>
   </h2>;
 }
 
-function Question({ model, actions, showLumi }: { readonly model: Extract<PlacementModel, { status: 'question' }>; readonly actions: PlacementActions; readonly showLumi: boolean }) {
+function Question({ model, actions, showLumi, crystal }: { readonly model: Extract<PlacementModel, { status: 'question' }>; readonly actions: PlacementActions; readonly showLumi: boolean; readonly crystal: boolean }) {
   const { _ } = useLingui();
   const lumiCopy = _(msg({ id: 'daily.placement.lumi-copy', message: 'There is no score here. Choose what feels most familiar.' }));
+  // The Crystal board marks the word with a "?" chip on a chamfered card, plays it with its own triangle
+  // glyph and gives the primary button a resting light band; Classic hides the mark and the band.
+  const wordContent = <>
+    <span className="placement-word-mark" aria-hidden="true">{crystal ? '?' : <CircleHelp size={18} />}</span>
+    <h3 className="placement-word" lang={model.promptLanguage}>{model.word ?? model.prompt}</h3>
+    {model.word && model.phonetic && <span className="placement-phonetic font-mono">{model.phonetic}</span>}
+    {model.canPlayAudio && actions.playAudio && <button type="button" onClick={actions.playAudio} className="placement-play" aria-label={i18n._(msg({ id: 'daily.lesson.play-audio', message: 'Play audio' }).id)}>{crystal ? <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg> : <Play size={12} fill="currentColor" aria-hidden="true" />}</button>}
+  </>;
   return <>
     <div className="placement-layout">
       <div className="placement-question-card">
@@ -122,10 +136,7 @@ function Question({ model, actions, showLumi }: { readonly model: Extract<Placem
         <Headline />
         <p className="placement-question-note">{_(msg({ id: 'daily.placement.question-note', message: 'No score, no pressure. Your answers only shape where your learning starts.' }))}</p>
         <div className="placement-word-block">
-          <span className="placement-word-mark" aria-hidden="true"><CircleHelp size={18} /></span>
-          <h3 className="placement-word" lang={model.promptLanguage}>{model.word ?? model.prompt}</h3>
-          {model.word && model.phonetic && <span className="placement-phonetic font-mono">{model.phonetic}</span>}
-          {model.canPlayAudio && actions.playAudio && <button type="button" onClick={actions.playAudio} className="placement-play" aria-label={i18n._(msg({ id: 'daily.lesson.play-audio', message: 'Play audio' }).id)}><Play size={12} fill="currentColor" aria-hidden="true" /></button>}
+          {crystal ? <div className="placement-word-face"><span className="placement-word-beam" aria-hidden="true" />{wordContent}</div> : wordContent}
         </div>
         <fieldset className="placement-choices">
           <legend className="placement-field-label">{model.word ? model.prompt : _(msg({ id: 'daily.placement.choose-answer', message: 'Choose one answer' }))}</legend>
@@ -137,14 +148,13 @@ function Question({ model, actions, showLumi }: { readonly model: Extract<Placem
           </div>
         </fieldset>
         <div className="placement-action-row">
-          <button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className="lesson-primary placement-submit">{_(msg({ id: 'daily.placement.next-question', message: 'Next question' }))}</button>
+          <button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className="lesson-primary placement-submit">{crystal && <span className="placement-submit-shine crystal-shine" aria-hidden="true" />}{_(msg({ id: 'daily.placement.next-question', message: 'Next question' }))}</button>
           {actions.markUnsure && <button type="button" onClick={actions.markUnsure} className="lesson-link">{_(msg({ id: 'daily.placement.unsure', message: 'I’m not sure' }))}</button>}
         </div>
         {!showLumi && <p className="placement-guidance-copy">{lumiCopy}</p>}
       </div>
-      <PlacementLadder estimate={model.estimate} mode="estimate" />
+      <SideColumn ladder={<PlacementLadder estimate={model.estimate} mode="estimate" ascending={crystal} />} lumi={showLumi && <LumiNote show pose="hint">{lumiCopy}</LumiNote>} />
     </div>
-    <LumiNote show={showLumi} pose="hint">{lumiCopy}</LumiNote>
     <p className="sr-only" role="status">{model.message}</p>
   </>;
 }
@@ -165,11 +175,10 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
         <p className="placement-count-note"><strong>{_({ ...msg({ id: 'daily.placement.eligible-count', message: '{count, plural, one {# eligible word} other {# eligible words}}' }), values: { count: model.eligibleCount } })}</strong>{' '}{_(msg({ id: 'daily.placement.intro-note', message: 'are available. This check is diagnostic and does not change learning history.' }))}</p>
         <div className="placement-action-row"><button type="button" onClick={actions.start} className="lesson-primary">{_(msg({ id: 'daily.placement.start', message: 'Start placement check' }))}</button>{backToToday}</div>
       </div>
-      <PlacementLadder mode="preview" />
+      <SideColumn ladder={<PlacementLadder mode="preview" ascending={crystal} />} lumi={showLumi && <LumiNote show pose="hint">{_(msg({ id: 'daily.placement.lumi-copy', message: 'There is no score here. Choose what feels most familiar.' }))}</LumiNote>} />
     </div>
-    <LumiNote show={showLumi} pose="hint">{_(msg({ id: 'daily.placement.lumi-copy', message: 'There is no score here. Choose what feels most familiar.' }))}</LumiNote>
   </Shell>;
-  if (model.status === 'question') return <Shell model={model} actions={actions} crystal={crystal}><Question model={model} actions={actions} showLumi={showLumi} /></Shell>;
+  if (model.status === 'question') return <Shell model={model} actions={actions} crystal={crystal}><Question model={model} actions={actions} showLumi={showLumi} crystal={crystal} /></Shell>;
   if (model.status === 'insufficient') return <Shell model={model} actions={actions} crystal={crystal}>
     <div className="placement-layout">
       <div className="placement-question-card">
@@ -205,8 +214,7 @@ export function PlacementScreen({ model, actions }: PlacementScreenProps) {
         <p className="placement-guidance-copy">{_(msg({ id: 'daily.placement.result-note', message: 'This is a diagnostic guide, not an official exam score. It does not change your review history, mastery, XP, or path access.' }))}</p>
         <div className="placement-action-row"><button type="button" onClick={actions.openPaths} className="lesson-primary">{_(msg({ id: 'daily.placement.open-paths', message: 'Open Paths' }))}</button>{backToToday}</div>
       </div>
-      <PlacementLadder estimate={{ tier: model.recommendation, confidence: model.confidence }} mode="result" />
+      <SideColumn ladder={<PlacementLadder estimate={{ tier: model.recommendation, confidence: model.confidence }} mode="result" ascending={crystal} />} lumi={showLumi && <LumiNote show pose="happy">{_(msg({ id: 'today.placement.result', message: 'Your answers suggest starting here.' }))}</LumiNote>} />
     </div>
-    <LumiNote show={showLumi} pose="happy">{_(msg({ id: 'today.placement.result', message: 'Your answers suggest starting here.' }))}</LumiNote>
   </Shell>;
 }

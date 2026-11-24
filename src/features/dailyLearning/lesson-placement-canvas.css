@@ -647,15 +647,41 @@ html[data-theme-family='crystal'] :is(.lesson-canvas, .placement-canvas, .lesson
   --lp-chip-bg: var(--sf-surface-control);
   --lp-panel-bg: var(--sf-surface-glass);
   --lp-accent-text: var(--sf-brand-text);
-  --lp-primary-bg: linear-gradient(100deg, var(--sf-brand), var(--sf-brand-hover));
+  --lp-primary-bg: var(--sf-primary-bg);
   --lp-primary-text: white;
-  --lp-primary-shadow: 0 0 22px color-mix(in srgb, var(--sf-brand) 55%, transparent);
+  /* Every Crystal button is cut by a chamfer clip, which would clip an outer glow anyway. */
+  --lp-primary-shadow: none;
   --lp-kbd-bg: rgb(0 0 0 / .2);
   --lp-display-weight: 900;
   --lp-em-style: italic;
   --lp-card-radius: 0;
   --lp-input-radius: 0;
   --lp-button-radius: 0;
+}
+
+/* AnimeLesson board colours that have no theme token: its text3, the card beam and the Bloom (learning) tier
+   rim the card wears while the learner types. Text keeps WCAG AA with the nearest board colour that passes,
+   measured on the rendered page. Light text3 #627392 is 3.8 to 4.4:1 on the card face and the header, so it
+   steps to text2 #3f5272. Text straight on the painted backdrop steps further where text3 fails there: the
+   dark footer (4.1:1) and dark exercise chips at the board's .85 opacity (3.8:1) take text2 #aab3c5, and the
+   light chips, still 4.3:1 with text2, take body #243553. The light holo kicker uses the theme's holo text,
+   since the board's #0a7d99 is 4.2:1 on the light bubble. AnimePlacement uses the same text3, holo and beam. */
+html[data-theme-family='crystal'] :is(.lesson-canvas, .placement-canvas) {
+  --lp-text3: #7a8397;
+  --lp-text3-art: var(--sf-text-muted);
+  --lp-chip-other: var(--sf-text-muted);
+  --lp-holo: var(--sf-holo-text);
+  --lp-beam: rgb(255 255 255 / .08);
+  --lp-rim: var(--sf-rim-learning);
+  --lp-rim-soft: rgb(255 143 182 / .55);
+  --lp-panel-solid: #0e111c;
+}
+
+html[data-theme-family='crystal']:not(.dark) :is(.lesson-canvas, .placement-canvas) {
+  --lp-text3: var(--sf-text-muted);
+  --lp-chip-other: var(--sf-text-body);
+  --lp-beam: rgb(255 255 255 / .5);
+  --lp-panel-solid: #e6f5ff;
 }
 
 html[data-theme-family='crystal'] :is(.lesson-canvas, .placement-canvas)::before {
@@ -665,20 +691,19 @@ html[data-theme-family='crystal'] :is(.lesson-canvas, .placement-canvas)::before
     radial-gradient(ellipse 60% 50% at 30% 30%, color-mix(in srgb, var(--sf-second) 12%, transparent), transparent 72%);
 }
 
+/* The boards' backdrop wings: one rising from the bottom-left corner, one hanging from the top-right corner
+   behind the header. The art and its opacity come from .crystal-wing-art and .crystal-wing. */
 html[data-theme-family='crystal'] .lesson-shard {
   position: absolute;
   z-index: 0;
-  width: 470px;
-  height: 320px;
-  background: linear-gradient(150deg, color-mix(in srgb, var(--sf-brand) 25%, white), var(--sf-brand) 45%, color-mix(in srgb, var(--sf-brand) 45%, black));
-  clip-path: polygon(100% 52%, 0 0, 38% 40%, 4% 30%, 46% 56%, 0 74%, 52% 66%, 30% 100%);
-  filter: drop-shadow(0 0 24px color-mix(in srgb, var(--sf-brand) 70%, transparent));
+  width: 640px;
+  height: 430px;
+  filter: drop-shadow(0 0 30px rgb(255 42 77 / .55));
   pointer-events: none;
 }
 
-html[data-theme-family='crystal'] .lesson-shard--left { left: -150px; bottom: -40px; transform: rotate(-12deg); }
-/* Both shards sit in the bottom corners, so the top-right corner stays clear for the header and the combo plate. */
-html[data-theme-family='crystal'] .lesson-shard--right { right: -150px; bottom: -40px; transform: scaleX(-1) rotate(-12deg); }
+html[data-theme-family='crystal'] .lesson-shard--left { left: -150px; bottom: -120px; transform: rotate(-12deg); }
+html[data-theme-family='crystal'] .lesson-shard--right { top: -60px; right: -150px; transform: scaleX(-1) rotate(-18deg); }
 
 html[data-theme-family='crystal'] .lesson-topbar { height: 84px; }
 
@@ -701,6 +726,9 @@ html[data-theme-family='crystal'] .lesson-title {
   text-transform: uppercase;
 }
 
+/* The shared Crystal heading rule in daily-learning-canvas.css sets 900 weight and its own tracking on every
+   h1; the board's header line is 800 with .08em tracking, so this rule carries one more class. */
+html[data-theme-family='crystal'] :is(.lesson-canvas, .placement-canvas) .lesson-topbar .lesson-title { font-weight: 800; letter-spacing: .08em; line-height: normal; }
 html[data-theme-family='crystal'] .lesson-title-context { color: inherit; font-weight: inherit; }
 html[data-theme-family='crystal'] .lesson-title-sep { color: var(--sf-brand-text); font-size: 0; }
 html[data-theme-family='crystal'] .lesson-title-sep::before { content: ' // '; font-size: 16px; white-space: pre; }
@@ -709,12 +737,27 @@ html[data-theme-family='crystal'] .placement-title-kicker .lesson-title-sep { fo
 html[data-theme-family='crystal'] .placement-title-kicker .lesson-title-sep::before { content: none; }
 html[data-theme-family='crystal'] .lesson-segments { gap: 4px; }
 html[data-theme-family='crystal'] .lesson-segments > span { width: 36px; height: 10px; flex-basis: 36px; border-radius: 0; transform: skewX(-30deg); }
-html[data-theme-family='crystal'] .lesson-segments > [data-segment-state='complete'] { background: linear-gradient(90deg, var(--sf-second), color-mix(in srgb, var(--sf-second) 60%, white)); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 60%, transparent); }
-html[data-theme-family='crystal'] .lesson-segments > [data-segment-state='current'] { background: var(--sf-brand); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
+/* Segment and count colours are the board's literal values in both modes. */
+html[data-theme-family='crystal'] .lesson-segments > span { background: var(--sf-border); }
+html[data-theme-family='crystal'] .lesson-segments > [data-segment-state='complete'] { background: linear-gradient(90deg, #5ef2ff, #9fe9ff); box-shadow: 0 0 8px rgb(94 242 255 / .5); }
+html[data-theme-family='crystal'] .lesson-segments > [data-segment-state='current'] { background: #ff2a4d; box-shadow: 0 0 14px rgb(255 42 77 / .9); }
 html[data-theme-family='crystal'] .lesson-count,
 html[data-theme-family='crystal'] .placement-count { display: inline; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 900; }
 html[data-theme-family='crystal'] .lesson-count strong { font-size: 24px; font-weight: 900; }
 html[data-theme-family='crystal'] .lesson-count span { color: var(--sf-text-muted); }
+/* AnimeLesson: the count follows the segments as one centred group (4 px gap plus 12 px), in the board's
+   24 px strong figure over a 15 px total. */
+html[data-theme-family='crystal'] .lesson-canvas .lesson-progress { margin: 0 0 0 auto; }
+html[data-theme-family='crystal'] .lesson-canvas .lesson-count { margin-right: auto; color: var(--sf-text-strong); font-size: 24px; line-height: normal; }
+html[data-theme-family='crystal'] .lesson-canvas .lesson-count span { color: var(--lp-text3); font-size: 15px; }
+
+/* The header's theme control is the board's 44 px chamfered chip with a 1 px edge. */
+html[data-theme-family='crystal'] :is(.lesson-canvas, .placement-canvas) .lesson-topbar-actions .claude-theme-quick-toggle {
+  width: 44px;
+  height: 44px;
+  clip-path: var(--nk-chamfer-sm);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+}
 
 html[data-theme-family='crystal'] .lesson-stages ol { gap: 10px; }
 
@@ -734,11 +777,17 @@ html[data-theme-family='crystal'] .lesson-stage-chip {
 }
 
 html[data-theme-family='crystal'] .lesson-stage-chip > * { transform: skewX(16deg); }
-html[data-theme-family='crystal'] .lesson-stage-dot { width: 7px; height: 7px; border-radius: 0; background: var(--sf-second); transform: rotate(45deg); }
-html[data-theme-family='crystal'] .lesson-stage-chip[data-stage-state='current'] { background: var(--lp-primary-bg); box-shadow: 0 0 18px color-mix(in srgb, var(--sf-brand) 55%, transparent); color: white; }
-html[data-theme-family='crystal'] .lesson-stage-chip[data-stage-state='current'] .lesson-stage-dot { background: white; transform: rotate(45deg); }
+/* The dot sits upright inside the slanted chip, as on the board where it lives in the counter-skewed label. */
+html[data-theme-family='crystal'] .lesson-stage-dot { width: 7px; height: 7px; border-radius: 0; background: var(--sf-second); transform: skewX(16deg) rotate(45deg); }
+html[data-theme-family='crystal'] .lesson-stage-chip[data-stage-state='current'] { background: var(--lp-primary-bg); box-shadow: 0 0 18px rgb(255 42 77 / .6); color: white; }
+html[data-theme-family='crystal'] .lesson-stage-chip[data-stage-state='current'] .lesson-stage-dot { background: #ffd166; }
+/* The app does not track which exercise types this lesson has finished, so every other type takes the
+   board's not-yet state rather than claiming progress: no fill, a hairline edge and a track-coloured dot. */
+html[data-theme-family='crystal'] .lesson-canvas .lesson-stages { margin-top: 0; }
+html[data-theme-family='crystal'] .lesson-canvas .lesson-stage-chip { gap: 7px; }
+html[data-theme-family='crystal'] .lesson-canvas .lesson-stage-chip[data-stage-state='other'] { background: transparent; box-shadow: inset 0 0 0 1px var(--sf-border); color: var(--lp-chip-other); opacity: .85; }
+html[data-theme-family='crystal'] .lesson-canvas .lesson-stage-chip[data-stage-state='other'] .lesson-stage-dot { background: var(--sf-border); }
 
-html[data-theme-family='crystal'] .lesson-card,
 html[data-theme-family='crystal'] .lesson-complete-card {
   border: 3px solid transparent;
   border-radius: 0;
@@ -747,9 +796,54 @@ html[data-theme-family='crystal'] .lesson-complete-card {
   clip-path: var(--nk-chamfer);
 }
 
-html[data-theme-family='crystal']:not(.dark) .lesson-card,
 html[data-theme-family='crystal']:not(.dark) .lesson-complete-card { background: var(--sf-surface-glass) padding-box, linear-gradient(150deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 30%, transparent) 45%, var(--sf-second)) border-box; }
-html[data-theme-family='crystal'] .lesson-card { padding: 32px 44px 30px; }
+
+/* AnimeLesson card: an unclipped wrapper carries the drop shadows, a chamfered rim layer twice the card's
+   size shows the middle of the tier gradient, and the face sits 3 px inside it with its own chamfer. */
+html[data-theme-family='crystal'] .lesson-card {
+  isolation: isolate;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 30px 40px rgb(0 0 0 / .35)) drop-shadow(0 0 26px var(--lp-rim-soft));
+}
+
+html[data-theme-family='crystal'] .lesson-card::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  clip-path: var(--nk-chamfer);
+  background: var(--lp-rim) center / 200% 200% no-repeat;
+  content: '';
+}
+
+html[data-theme-family='crystal'] .lesson-card-face {
+  position: relative;
+  overflow: hidden;
+  margin: 3px;
+  padding: 32px 44px 30px;
+  clip-path: var(--nk-chamfer);
+  background: var(--sf-card-front);
+}
+
+html[data-theme-family='crystal'] .lesson-card-face > :not(.lesson-card-beam) { position: relative; }
+
+html[data-theme-family='crystal'] .lesson-card-beam {
+  position: absolute;
+  top: -40%;
+  right: 12%;
+  width: 90px;
+  height: 180%;
+  background: linear-gradient(90deg, transparent, var(--lp-beam), transparent);
+  filter: blur(3px);
+  transform: rotate(22deg);
+  pointer-events: none;
+}
+
+html[data-theme-family='crystal'] .lesson-card-meta { gap: 12px; }
 
 html[data-theme-family='crystal'] .lesson-chip {
   height: 30px;
@@ -776,21 +870,30 @@ html[data-theme-family='crystal'] :is(.lesson-prompt, .lesson-card-title, .place
 }
 
 html[data-theme-family='crystal'] .lesson-prompt { margin-top: 28px; font-size: clamp(26px, 3.2vw, 42px); line-height: 1.32; }
-html[data-theme-family='crystal'] .lesson-blank { padding: 0 10px 4px; border-bottom-width: 4px; border-bottom-color: var(--sf-brand); box-shadow: 0 12px 20px -14px var(--sf-brand); color: var(--sf-brand-text); }
-html[data-theme-family='crystal'] .lesson-caret { width: 4px; background: var(--sf-brand); box-shadow: 0 0 10px var(--sf-brand); }
+/* The shared Crystal heading rule in daily-learning-canvas.css sets 900 weight and its own tracking on every
+   h2; the board's prompt is 800 with normal tracking in its strongest text colour. */
+html[data-theme-family='crystal'] .lesson-canvas .lesson-card .lesson-prompt { color: var(--sf-text-strong); font-weight: 800; letter-spacing: normal; }
+/* The blank is the board's 250 px line plus its padding; its line and ink are the board's literal values. */
+html[data-theme-family='crystal'] .lesson-blank { box-sizing: content-box; min-width: 250px; padding: 0 10px 4px; border-bottom-width: 4px; border-bottom-color: #ff5470; box-shadow: 0 12px 20px -14px #ff5470; color: inherit; }
+html[data-theme-family='crystal'] .lesson-blank-ink { background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* The board's caret is 40 px beside 42 px type; as a fraction of the prompt size it keeps that ratio when the
+   prompt shrinks on smaller screens. */
+html[data-theme-family='crystal'] .lesson-caret { width: 4px; height: calc(40em / 42); margin-left: 4px; border-radius: 0; background: #ff2a4d; box-shadow: 0 0 10px #ff2a4d; }
 
 html[data-theme-family='crystal'] .lesson-input-row {
   height: 62px;
+  gap: 12px;
+  margin-top: 24px;
   padding: 0 8px 0 22px;
   border: 0;
   border-radius: 0;
   background: var(--sf-surface-control);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--sf-brand) 55%, transparent);
+  box-shadow: inset 0 0 0 2px var(--sf-panel-edge);
   clip-path: var(--nk-chamfer);
 }
 
 html[data-theme-family='crystal'] .lesson-input-row:focus-within { box-shadow: inset 0 0 0 2px var(--sf-brand); }
-html[data-theme-family='crystal'] .lesson-text-input { font-family: inherit; font-weight: 900; }
+html[data-theme-family='crystal'] .lesson-text-input { color: var(--sf-text-strong); font-family: inherit; font-weight: 900; }
 
 html[data-theme-family='crystal'] .lesson-primary {
   min-height: 46px;
@@ -804,7 +907,7 @@ html[data-theme-family='crystal'] .lesson-primary {
   text-transform: uppercase;
 }
 
-html[data-theme-family='crystal'] .lesson-kbd { border-radius: 0; font-style: normal; letter-spacing: 0; text-transform: none; }
+html[data-theme-family='crystal'] .lesson-kbd { display: inline-flex; height: 22px; align-items: center; padding: 0 7px; border-radius: 0; font-style: normal; letter-spacing: 0; text-transform: none; }
 html[data-theme-family='crystal'] .lesson-secondary { border: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; }
 
 html[data-theme-family='crystal'] .lesson-pill {
@@ -818,6 +921,12 @@ html[data-theme-family='crystal'] .lesson-pill {
 
 html[data-theme-family='crystal']:not(.dark) .lesson-pill { color: var(--sf-text); }
 html[data-theme-family='crystal'] .lesson-link { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .04em; }
+/* AnimeLesson aux row: 14 px under the answer row. The text link keeps a 40 px hit area, the height of the
+   board's aux buttons, instead of the board's bare 23 px text box. */
+html[data-theme-family='crystal'] .lesson-canvas .lesson-aux-row { margin-top: 14px; }
+html[data-theme-family='crystal'] .lesson-canvas .lesson-link { min-height: 40px; padding: 1px 6px; font-size: 14px; }
+/* Inside the card the link sits on the opaque card face, so it needs no backdrop halo (the board has none). */
+html[data-theme-family='crystal'] .lesson-canvas .lesson-card .lesson-link { text-shadow: none; }
 
 html[data-theme-family='crystal'] :is(.lesson-choice, .lesson-token, .lesson-rating, .placement-rung, .lesson-word-panel, .lesson-sentence-output, .placement-count-note, .placement-status-panel, .lesson-feedback, .lesson-audio-error) {
   border-radius: 0;
@@ -829,9 +938,14 @@ html[data-theme-family='crystal'] .lesson-choice[data-selected='true'] { border:
 html[data-theme-family='crystal'] .lesson-choice-index { border: 0; border-radius: 0; background: var(--sf-surface-raised); clip-path: var(--nk-chamfer-sm); color: var(--sf-text); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; }
 html[data-theme-family='crystal'] .lesson-choice[data-selected='true'] .lesson-choice-index { background: var(--sf-second); color: var(--sf-canvas); }
 html[data-theme-family='crystal'] .lesson-footer { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+html[data-theme-family='crystal'] .lesson-canvas .lesson-footer { margin-top: 18px; color: var(--lp-text3-art); font-size: 14px; font-weight: 700; letter-spacing: .06em; }
 
-html[data-theme-family='crystal'] .lesson-lumi,
-html[data-theme-family='crystal'] .placement-lumi {
+/* AnimeLesson column: 940 px wide, centred in the space under the exercise chips with the board's 30 px
+   bottom padding; the canvas keeps only the safe-area inset at its foot. */
+html[data-theme-family='crystal'] .lesson-canvas { padding-bottom: env(safe-area-inset-bottom, 0px); }
+html[data-theme-family='crystal'] .lesson-canvas .lesson-stage { width: min(940px, calc(100% - 32px)); padding: 0 0 30px; }
+
+html[data-theme-family='crystal'] .lesson-lumi {
   position: absolute;
   z-index: 3;
   display: flex;
@@ -840,8 +954,9 @@ html[data-theme-family='crystal'] .placement-lumi {
   pointer-events: none;
 }
 
-html[data-theme-family='crystal'] .lesson-lumi { left: max(-222px, calc(-1 * (100vw - 960px) / 2 + 16px)); bottom: -250px; flex-direction: column; align-items: flex-start; }
-html[data-theme-family='crystal'] .placement-lumi { right: 40px; bottom: 24px; }
+/* AnimeLesson: Lumi stands in the canvas's bottom-left corner, 20 px in and 14 px up, 214 px wide. On
+   narrower screens the column narrows to the gap beside the 940 px card, keeping 16 px clear of it. */
+html[data-theme-family='crystal'] .lesson-lumi { left: 20px; bottom: 14px; width: min(214px, calc((100% - 940px) / 2 - 36px)); flex-direction: column; align-items: stretch; }
 
 html[data-theme-family='crystal'] .lesson-lumi-bubble {
   max-width: 190px;
@@ -855,58 +970,320 @@ html[data-theme-family='crystal'] .lesson-lumi-bubble {
 html[data-theme-family='crystal'] .lesson-lumi-label { margin: 0; color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 11px; font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 html[data-theme-family='crystal'] .lesson-lumi-copy { margin: 4px 0 0; color: var(--sf-text); font-size: 13px; font-weight: 700; line-height: 1.4; }
 
-/* Crystal placement */
-html[data-theme-family='crystal'] .placement-skip { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-html[data-theme-family='crystal'] .placement-layout { grid-template-columns: minmax(0, 720px) 340px; width: min(1220px, calc(100% - 64px)); padding-top: 4px; }
-html[data-theme-family='crystal'] .placement-card-kicker { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; }
-html[data-theme-family='crystal'] .placement-question-title { font-size: clamp(34px, 4.4vw, 64px); font-weight: 900; line-height: 1; text-transform: uppercase; }
-html[data-theme-family='crystal'] .placement-accent { background: linear-gradient(100deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 60%, white)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* AnimeLesson and AnimePlacement bubble: a chamfered panel with a holo edge and a holo-to-crimson bar down
+   its left side. */
+html[data-theme-family='crystal'] :is(.lesson-lumi, .placement-lumi) .lesson-lumi-bubble { position: relative; max-width: none; padding: 12px 14px 14px; border-left: 0; box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2); clip-path: var(--nk-chamfer); }
+html[data-theme-family='crystal'] :is(.lesson-lumi, .placement-lumi) .lesson-lumi-bubble::before { position: absolute; top: 14px; bottom: 14px; left: 0; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d); content: ''; }
+html[data-theme-family='crystal'] :is(.lesson-lumi, .placement-lumi) .lesson-lumi-label { color: var(--lp-holo); font-size: 12px; letter-spacing: .12em; }
+html[data-theme-family='crystal'] :is(.lesson-lumi, .placement-lumi) .lesson-lumi-copy { margin-top: 3px; color: var(--sf-text-strong); font-size: 15px; font-weight: 900; line-height: 1.3; }
+html[data-theme-family='crystal'] .lesson-lumi-figure { width: 196px; max-width: 100%; height: auto; aspect-ratio: 1; }
 
-html[data-theme-family='crystal'] .placement-word-block {
-  margin-top: 30px;
-  padding: 18px 24px;
-  border: 0;
-  background: var(--sf-surface-glass);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--sf-second) 70%, transparent), 0 0 24px color-mix(in srgb, var(--sf-second) 30%, transparent);
-  clip-path: var(--nk-chamfer);
+/* AnimePlacement ------------------------------------------------------------------------------------------
+   Values are the board's. The canvas keeps only the safe-area inset at its foot; the layout carries the
+   board's main padding. */
+html[data-theme-family='crystal'] .placement-canvas { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Header: 40 px segments, then the count as one centred group (4 px gap plus 12 px), a 24 px strong figure
+   over a 15 px total. The skip link ends in the board's chevron, which is decoration only. */
+html[data-theme-family='crystal'] .placement-canvas .lesson-segments > span { width: 40px; flex-basis: 40px; }
+html[data-theme-family='crystal'] .placement-canvas .placement-progress { margin: 0 0 0 auto; }
+html[data-theme-family='crystal'] .placement-canvas .placement-count { margin-right: auto; color: var(--sf-text-strong); font-size: 24px; line-height: normal; }
+html[data-theme-family='crystal'] .placement-canvas .placement-count strong { font-size: 24px; font-weight: 900; }
+html[data-theme-family='crystal'] .placement-canvas .placement-count span { color: var(--lp-text3); font-size: 15px; }
+html[data-theme-family='crystal'] .placement-canvas .placement-skip { padding: 0; color: var(--sf-text-muted); font-size: 14px; letter-spacing: .06em; text-transform: uppercase; }
+html[data-theme-family='crystal'] .placement-canvas .placement-skip::after { content: ' ›' / ''; }
+
+/* Main: the question column beside a 400 px side column, filling the height under the header so Lumi can sit
+   at the foot of the side column. */
+html[data-theme-family='crystal'] .placement-layout {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  align-items: stretch;
+  gap: 60px;
+  margin: 0;
+  padding: 8px 64px 30px 110px;
 }
 
-html[data-theme-family='crystal'] .placement-word-mark { display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center; background: var(--sf-second); clip-path: var(--nk-chamfer-sm); color: var(--sf-canvas); }
-html[data-theme-family='crystal'] .placement-word { font-size: clamp(30px, 4vw, 52px); font-weight: 900; }
-html[data-theme-family='crystal'] .placement-play { margin-left: auto; border: 0; border-radius: 0; background: var(--sf-brand); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); color: white; }
-html[data-theme-family='crystal'] .placement-field-label { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+html[data-theme-family='crystal'] .placement-layout:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
+html[data-theme-family='crystal'] .placement-question-card { display: flex; flex-direction: column; }
+html[data-theme-family='crystal'] .placement-card-kicker { margin: 0; color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 14px; font-style: italic; font-weight: 800; letter-spacing: .16em; }
+
+/* The shared Crystal heading rule in daily-learning-canvas.css sets its own weight and tracking on every h2
+   and h3, so the headline and the word carry one more class. The lead wears the board's title metal; the
+   accent is the crimson ink of the board's second line. */
+html[data-theme-family='crystal'] .placement-canvas .placement-question-card .placement-question-title {
+  margin: 8px 0 0;
+  color: var(--sf-text);
+  font-size: clamp(34px, 4.2vw, 60px);
+  font-weight: 900;
+  letter-spacing: normal;
+  line-height: .98;
+  text-transform: uppercase;
+}
+
+html[data-theme-family='crystal'] .placement-canvas .placement-title-lead {
+  background: linear-gradient(180deg, #fff 0%, #ffe3ea 46%, #ff8fa3 54%, #fff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / .6));
+}
+
+html[data-theme-family='crystal']:not(.dark) .placement-canvas .placement-title-lead {
+  background: linear-gradient(180deg, #13306b 0%, #1f4d9c 46%, #0d1a33 54%, #1f4d9c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 3px 0 rgb(255 255 255 / .9));
+}
+
+html[data-theme-family='crystal'] .placement-accent {
+  background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-style: italic;
+  filter: drop-shadow(0 0 22px rgb(255 42 77 / .8));
+}
+
+html[data-theme-family='crystal'] .placement-question-note { margin: 10px 0 0; color: var(--sf-text-body); font-size: 16px; line-height: normal; }
+
+/* Word card: an unclipped wrapper carries the New tier glow, a chamfered rim layer shows the tier gradient
+   and the face sits 3 px inside it with its own chamfer and light beam. */
+html[data-theme-family='crystal'] .placement-word-block {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  margin-top: 22px;
+  filter: drop-shadow(0 0 20px rgb(94 242 255 / .5));
+}
+
+html[data-theme-family='crystal'] .placement-word-block::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  clip-path: var(--nk-chamfer);
+  background: var(--sf-rim-new);
+  content: '';
+}
+
+html[data-theme-family='crystal'] .placement-word-face {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+  gap: 18px;
+  margin: 3px;
+  padding: 18px 26px;
+  clip-path: var(--nk-chamfer);
+  background: var(--sf-card-front);
+}
+
+html[data-theme-family='crystal'] .placement-word-face > :not(.placement-word-beam) { position: relative; }
+
+html[data-theme-family='crystal'] .placement-word-beam {
+  position: absolute;
+  top: -60%;
+  right: 18%;
+  width: 80px;
+  height: 220%;
+  background: linear-gradient(90deg, transparent, var(--lp-beam), transparent);
+  filter: blur(3px);
+  transform: rotate(22deg);
+  pointer-events: none;
+}
+
+html[data-theme-family='crystal'] .placement-word-mark {
+  display: flex;
+  height: 30px;
+  flex: none;
+  align-items: center;
+  padding: 0 10px;
+  background: var(--sf-rim-new);
+  clip-path: var(--nk-chamfer-sm);
+  color: #fff;
+  font-family: var(--sf-font-display);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 900;
+  text-shadow: 0 2px 0 #0a4a5e;
+}
+
+html[data-theme-family='crystal'] .placement-canvas .placement-word-face .placement-word { min-width: 0; color: var(--sf-text-strong); font-size: clamp(30px, 4vw, 56px); font-weight: 900; letter-spacing: normal; line-height: 1; }
+html[data-theme-family='crystal'] .placement-phonetic { color: var(--sf-text-body); font-size: 16px; }
+
+html[data-theme-family='crystal'] .placement-play {
+  display: flex;
+  width: 50px;
+  height: 50px;
+  flex: none;
+  margin-left: auto;
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-primary-bg);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  color: #fff;
+}
+
+/* The board's play button is an nk-lift with no transform or filter of its own: it rises 3 px and brightens on
+   hover and settles to 97% while pressed, easing over 220 ms unless motion is reduced. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme-family='crystal']:not([data-motion='reduced']) .placement-play {
+    transition: transform 220ms cubic-bezier(.34, 1.56, .64, 1), box-shadow 220ms ease, filter 220ms ease;
+  }
+}
+@media (hover: hover) {
+  html[data-theme-family='crystal'] .placement-play:hover:not(:disabled) { transform: translateY(-3px); filter: brightness(1.06); }
+}
+html[data-theme-family='crystal'] .placement-play:active:not(:disabled) { transform: translateY(0) scale(.97); }
+
+/* Answers: the board's question label, then a two-column grid of 64 px chamfered options. A chosen option
+   wears the board's picked style (holo edge, holo key); the check does not judge an answer before it is
+   submitted, so the board's verdict marks are not shown. */
+html[data-theme-family='crystal'] .placement-choices { margin: 22px 0 0; }
+html[data-theme-family='crystal'] .placement-field-label { width: 100%; margin-bottom: 10px; color: var(--lp-holo); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+
+html[data-theme-family='crystal'] .placement-choices .placement-choice {
+  height: 64px;
+  min-height: 64px;
+  box-sizing: border-box;
+  gap: 14px;
+  padding: 0 18px;
+  background: var(--sf-surface-glass);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  clip-path: var(--nk-chamfer);
+  color: var(--sf-text);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+html[data-theme-family='crystal'] .placement-choices .placement-choice[data-selected='true'] {
+  padding: 0 18px;
+  background: linear-gradient(90deg, rgb(94 242 255 / .22), rgb(14 17 28 / .9));
+  box-shadow: inset 0 0 0 2px #5ef2ff;
+  color: var(--sf-text-strong);
+}
+
+html[data-theme-family='crystal']:not(.dark) .placement-choices .placement-choice[data-selected='true'] { background: linear-gradient(90deg, rgb(94 242 255 / .22), rgb(238 249 255 / .9)); }
+html[data-theme-family='crystal'] .placement-choice .lesson-choice-index { width: 32px; height: 32px; background: var(--sf-surface-control); color: var(--sf-text-muted); font-size: 16px; }
+html[data-theme-family='crystal'] .placement-choice[data-selected='true'] .lesson-choice-index { background: linear-gradient(180deg, #7ff6ff, #1aa7c9); color: #031820; }
+
+/* Actions: the board's 58 px chamfered primary with its glow and resting light band, then the plain text
+   link. The band sits under the label inside the button's own stacking context. */
+html[data-theme-family='crystal'] .placement-action-row { gap: 20px; margin-top: 22px; }
+
+html[data-theme-family='crystal'] .placement-action-row .lesson-primary {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: 58px;
+  min-height: 58px;
+  gap: 12px;
+  padding: 0 30px;
+  clip-path: var(--nk-chamfer);
+  color: #fff;
+  font-size: 19px;
+  letter-spacing: .06em;
+  filter: drop-shadow(0 0 16px rgb(255 42 77 / .6));
+}
+
+html[data-theme-family='crystal'] .placement-submit-shine { position: absolute; z-index: -1; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / .4); pointer-events: none; }
+html[data-theme-family='crystal'] .placement-action-row .lesson-secondary { height: 58px; min-height: 58px; padding: 0 26px; font-size: 16px; text-transform: uppercase; }
+html[data-theme-family='crystal'] .placement-action-row .lesson-link { padding: 0; color: var(--sf-text-muted); font-size: 15px; }
+html[data-theme-family='crystal'] .placement-guidance-copy { color: var(--sf-text-muted); }
+
+/* Side column: the ladder panel on top, Lumi at the foot. */
+html[data-theme-family='crystal'] .placement-side { display: flex; min-width: 0; flex-direction: column; gap: 14px; }
 
 html[data-theme-family='crystal'] .placement-ladder {
-  padding: 18px 16px;
+  padding: 18px 20px;
   border: 0;
   border-radius: 0;
   background: var(--sf-surface-glass);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-brand) 45%, transparent);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge);
   clip-path: var(--nk-chamfer);
 }
 
-html[data-theme-family='crystal'] .placement-ladder-title { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-/* Each tier is a rising meter instead of a code: one bar for Foundation, three for Advanced. The bars take
-   the row's ink: crimson for the likely tier, holo for tiers below it, a quiet ink for tiers above it. */
-html[data-theme-family='crystal'] .placement-rung { min-height: 58px; gap: 16px; padding: 6px 16px; border: 0; background: var(--sf-surface); box-shadow: inset 0 0 0 1px var(--sf-border); --placement-meter-ink: var(--sf-text-muted); }
+html[data-theme-family='crystal'] .placement-ladder-title { margin: 0; color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 14px; font-style: italic; font-weight: 800; letter-spacing: .14em; line-height: normal; text-transform: uppercase; }
+html[data-theme-family='crystal'] .placement-ladder-note { margin: 2px 0 0; color: var(--sf-text-muted); font-size: 13px; }
+html[data-theme-family='crystal'] .placement-rungs { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 0; }
+
+/* Each rung is two chamfered layers, as on the board: the rim (::before) and the face inset 1 px, or 2 px on
+   the likely tier (::after). The row itself stays unclipped so the likely tier's glow shows. The meter rises
+   one bar per tier and takes the row's ink: crimson for the likely tier, holo for tiers below it, text3 for
+   tiers above it and before any estimate. The plain rungs use the board's opaque panelSolid face; the app's
+   --sf-surface is a slightly translucent near-black that tokenParity keeps for other panels. */
+html[data-theme-family='crystal'] .placement-rungs .placement-rung {
+  --pl-rung-rim: var(--sf-border);
+  --pl-rung-face: var(--lp-panel-solid);
+  --pl-rung-inset: 1px;
+  --pl-rung-ink: var(--lp-text3);
+  --pl-rung-name: var(--lp-text3);
+  position: relative;
+  isolation: isolate;
+  height: 60px;
+  min-height: 0;
+  gap: 16px;
+  padding: 0 17px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  clip-path: none;
+}
+
+html[data-theme-family='crystal'] .placement-rungs .placement-rung::before,
+html[data-theme-family='crystal'] .placement-rungs .placement-rung::after {
+  position: absolute;
+  z-index: -1;
+  clip-path: var(--nk-chamfer-sm);
+  content: '';
+}
+
+html[data-theme-family='crystal'] .placement-rungs .placement-rung::before { inset: 0; background: var(--pl-rung-rim); }
+html[data-theme-family='crystal'] .placement-rungs .placement-rung::after { inset: var(--pl-rung-inset); background: var(--pl-rung-face); }
+html[data-theme-family='crystal'] .placement-rungs .placement-rung[data-rung-state='below'] { --pl-rung-rim: var(--sf-panel-edge-2); --pl-rung-ink: var(--lp-holo); --pl-rung-name: var(--sf-text-muted); }
+
+html[data-theme-family='crystal'] .placement-rungs .placement-rung[data-rung-state='likely'] {
+  --pl-rung-rim: var(--sf-rim-learning);
+  --pl-rung-face: var(--sf-card-front);
+  --pl-rung-inset: 2px;
+  --pl-rung-ink: var(--sf-brand-text);
+  --pl-rung-name: var(--sf-text-strong);
+  height: 70px;
+  padding: 0 18px;
+  filter: drop-shadow(0 0 16px rgb(255 143 182 / .55));
+}
+
 html[data-theme-family='crystal'] .placement-rung-code { display: none; }
 html[data-theme-family='crystal'] .placement-rung-meter { display: flex; width: 38px; height: 26px; flex: none; align-items: flex-end; gap: 4px; }
 html[data-theme-family='crystal'] .placement-rung-meter > i { width: 8px; height: 10px; background: var(--sf-border); transform: skewX(-16deg); }
 html[data-theme-family='crystal'] .placement-rung-meter > i:nth-child(2) { height: 18px; }
 html[data-theme-family='crystal'] .placement-rung-meter > i:nth-child(3) { height: 26px; }
-html[data-theme-family='crystal'] .placement-rung-meter > i[data-on='true'] { background: var(--placement-meter-ink); }
-html[data-theme-family='crystal'] .placement-rung[data-rung-state='below'] { --placement-meter-ink: var(--sf-holo-text); }
-html[data-theme-family='crystal'] .placement-rung[data-rung-state='above'] { --placement-meter-ink: var(--sf-text-subtle); }
-html[data-theme-family='crystal'] .placement-rung[data-rung-state='likely'] { min-height: 66px; border: 0; padding: 6px 16px; background: color-mix(in srgb, var(--sf-brand) 10%, var(--sf-surface)); box-shadow: inset 0 0 0 2px var(--sf-brand), 0 0 18px color-mix(in srgb, var(--sf-brand) 40%, transparent); --placement-meter-ink: var(--sf-brand-text); }
-html[data-theme-family='crystal'] .placement-rung-name { color: var(--sf-text); font-family: var(--sf-font-display); font-size: 19px; font-style: italic; font-weight: 900; line-height: 1.15; }
-html[data-theme-family='crystal'] .placement-rung[data-rung-state='likely'] .placement-rung-name { color: var(--sf-text-strong); }
-html[data-theme-family='crystal'] .placement-rung[data-rung-state='below'] .placement-rung-name { color: var(--sf-text-muted); }
-html[data-theme-family='crystal'] .placement-rung[data-rung-state='above'] .placement-rung-name { color: var(--sf-text-subtle); }
-html[data-theme-family='crystal'] .placement-rung-flag { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
-html[data-theme-family='crystal'] .placement-confidence-track { gap: 0; }
-html[data-theme-family='crystal'] .placement-confidence-track > span { height: 6px; border-radius: 0; }
-html[data-theme-family='crystal'] .placement-confidence-track > [data-filled='true'] { background: linear-gradient(90deg, var(--sf-second), var(--sf-brand)); }
-html[data-theme-family='crystal'] .placement-confidence-label { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+html[data-theme-family='crystal'] .placement-rung-meter > i[data-on='true'] { background: var(--pl-rung-ink); }
+html[data-theme-family='crystal'] .placement-rung-copy { flex: 0 1 auto; }
+/* One more class than the base likely-row name rule, which would otherwise keep the plain text colour. */
+html[data-theme-family='crystal'] .placement-rungs .placement-rung-name { color: var(--pl-rung-name); font-family: var(--sf-font-display); font-size: 19px; font-style: italic; font-weight: 900; line-height: 1.15; }
+html[data-theme-family='crystal'] .placement-rung-note { margin-top: 0; color: var(--lp-text3); font-size: 12.5px; line-height: normal; }
+html[data-theme-family='crystal'] .placement-rung-flag { margin-left: auto; color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+html[data-theme-family='crystal'] .placement-rung-check { margin-left: auto; color: var(--lp-holo); }
+
+/* Confidence: one slanted 10 px track whose fill runs a third, two thirds or the whole way for low, medium
+   and high confidence, in the board's holo-to-crimson ink and glow. */
+html[data-theme-family='crystal'] .placement-confidence { gap: 12px; margin-top: 14px; color: var(--sf-text-muted); font-family: var(--sf-font-display); font-size: 14px; font-style: italic; font-weight: 800; }
+html[data-theme-family='crystal'] .placement-confidence-track { overflow: hidden; height: 10px; gap: 0; background: var(--sf-border); transform: skewX(-24deg); }
+html[data-theme-family='crystal'] .placement-confidence-track > span { display: none; }
+html[data-theme-family='crystal'] .placement-confidence-track::before { display: block; width: 0; height: 100%; flex: none; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / .7); content: ''; }
+html[data-theme-family='crystal'] .placement-confidence-track[data-steps='1']::before { width: calc(100% / 3); }
+html[data-theme-family='crystal'] .placement-confidence-track[data-steps='2']::before { width: calc(200% / 3); }
+html[data-theme-family='crystal'] .placement-confidence-track[data-steps='3']::before { width: 100%; }
+html[data-theme-family='crystal'] .placement-confidence-label { color: inherit; font-size: inherit; letter-spacing: normal; text-transform: uppercase; }
+
+/* Lumi: the 180 x 186 figure beside the bubble at the foot of the side column. */
+html[data-theme-family='crystal'] .placement-side .placement-lumi { display: flex; align-items: flex-end; gap: 10px; margin-top: auto; }
+html[data-theme-family='crystal'] .placement-lumi-figure { width: 180px; height: 186px; flex: none; object-position: 50% 100%; filter: drop-shadow(0 0 16px rgb(94 242 255 / .35)); }
+html[data-theme-family='crystal'] .placement-lumi .lesson-lumi-bubble { box-sizing: border-box; min-width: 0; flex: 1 1 auto; margin-bottom: 20px; }
+
 html[data-theme-family='crystal'] .placement-fact { border: 0; border-radius: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-border); clip-path: var(--nk-chamfer-sm); }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -923,11 +1300,19 @@ html[data-theme-family='crystal'] .placement-fact { border: 0; border-radius: 0;
 @keyframes lesson-caret-blink { to { visibility: hidden; } }
 
 /* Tablet and phone ---------------------------------------------------------------------- */
+/* Below 1280 px the gap beside the lesson card is too narrow for Lumi's column. */
+@media (max-width: 1279px) {
+  html[data-theme-family='crystal'] .lesson-lumi { display: none; }
+}
+
 @media (max-width: 1100px) {
   .placement-layout,
   html[data-theme-family='crystal'] .placement-layout { width: calc(100% - 48px); grid-template-columns: minmax(0, 1fr) 260px; gap: 32px; }
   html[data-theme-family='crystal'] .lesson-lumi { display: none; }
-  html[data-theme-family='crystal'] .placement-lumi { display: none; }
+  /* The board's side padding and 400 px side column need the full desktop width; Lumi steps out and the
+     ladder keeps a column wide enough for its likely row. */
+  html[data-theme-family='crystal'] .placement-layout { grid-template-columns: minmax(0, 1fr) 320px; margin: 0 auto; padding: 8px 0 30px; }
+  html[data-theme-family='crystal'] .placement-side .placement-lumi { display: none; }
 }
 
 @media (max-width: 760px) {
@@ -947,7 +1332,12 @@ html[data-theme-family='crystal'] .placement-fact { border: 0; border-radius: 0;
   html[data-theme-family='crystal'] .lesson-stage-chip { height: 28px; padding: 0 10px; font-size: 11.5px; letter-spacing: .02em; }
   .lesson-stage { width: calc(100% - 32px); margin: 0 auto; padding-top: 20px; }
   .lesson-card,
-  html[data-theme-family='crystal'] .lesson-card { padding: 22px 18px 20px; }
+  html[data-theme-family='crystal'] .lesson-card-face { padding: 22px 18px 20px; }
+  html[data-theme-family='crystal'] .lesson-canvas .lesson-stage { padding-top: 20px; }
+  html[data-theme-family='crystal'] .lesson-blank { min-width: 120px; }
+  /* Phones hide the Enter hint, as the base rule below and the Crystal mobile board do; the Crystal kbd
+     rule sets its own display, so it repeats the hide at Crystal specificity. */
+  html[data-theme-family='crystal'] .lesson-kbd { display: none; }
   .lesson-prompt { margin-top: 20px; font-size: 28px; }
   .lesson-blank { min-width: 120px; }
   .lesson-input-row { height: 56px; margin-top: 24px; padding: 0 6px 0 14px; }
@@ -967,12 +1357,12 @@ html[data-theme-family='crystal'] .placement-fact { border: 0; border-radius: 0;
   .placement-layout,
   html[data-theme-family='crystal'] .placement-layout { width: calc(100% - 32px); grid-template-columns: minmax(0, 1fr); gap: 28px; margin: 0 auto; padding-top: 16px; }
   .placement-word-block { margin-top: 28px; }
-  html[data-theme-family='crystal'] .placement-word-block { padding: 14px 16px; }
+  html[data-theme-family='crystal'] .placement-word-face { flex-wrap: wrap; gap: 8px 14px; padding: 14px 16px; }
   .placement-action-row > .lesson-primary,
   .placement-action-row > .lesson-secondary { width: 100%; }
-  html[data-theme-family='crystal'] .lesson-shard { opacity: .35; transform: scale(.6); }
-  html[data-theme-family='crystal'] .lesson-shard--left { left: -220px; bottom: -80px; }
-  html[data-theme-family='crystal'] .lesson-shard--right { right: -220px; bottom: -80px; }
+  html[data-theme-family='crystal'] .lesson-shard { width: 470px; height: 320px; opacity: .35; }
+  html[data-theme-family='crystal'] .lesson-shard--left { left: -220px; bottom: -80px; transform: scale(.6) rotate(-12deg); }
+  html[data-theme-family='crystal'] .lesson-shard--right { top: auto; right: -220px; bottom: -80px; transform: scaleX(-1) scale(.6) rotate(-18deg); }
   html[data-theme-family='crystal'] .lesson-title { font-size: 13px; }
   html[data-theme-family='crystal'] .lesson-title-sep::before { font-size: 13px; }
   html[data-theme-family='crystal'] .placement-title-kicker { display: none; }

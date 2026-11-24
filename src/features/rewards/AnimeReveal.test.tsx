@@ -78,10 +78,35 @@ describe('AnimeReveal', () => {
     expect(render('tierup', true, move)).toContain('<b><span>Learning</span> <i>→</i> <em data-tier="mastered">Mastered</em></b>');
     theme.family = 'crystal';
     try {
-      expect(render('tierup', true, move)).toContain('<b><span>Bloom</span> <i>→</i> <em data-tier="mastered">Star</em></b>');
+      // The arrow is drawn; its text stays for assistive tech and for the tier move read as text.
+      expect(render('tierup', true, move)).toMatch(/<b class="anime-reveal__tier-move"><span>Bloom<\/span> <i><svg [^>]*>.*?<\/svg><span class="sr-only">→<\/span><\/i> <em data-tier="mastered"><span>Star<\/span><\/em><\/b>/);
     } finally {
       theme.family = 'classic';
     }
+  });
+
+  it('stages Crystal Star like its board and leaves classic on its own art', () => {
+    const payload = { previousValue: 'learning', currentValue: 'mastered', headword: 'Instant', translation: 'Khoảnh khắc' };
+    theme.family = 'crystal';
+    try {
+      const tier = render('tierup', true, payload);
+      expect(tier).toContain('class="anime-reveal__backdrop"');
+      expect(tier).toContain('<div class="anime-reveal__beam" data-beam="left"></div>');
+      expect(tier.match(/class="anime-reveal__wing crystal-wing-art"/g)).toHaveLength(2);
+      expect(tier).toContain('<div class="anime-reveal__tier-art" data-tier="mastered" aria-hidden="true"><span class="anime-reveal__tier-rim"><span class="anime-reveal__tier-rim-spin"></span></span>');
+      expect(tier).toContain('<strong>Instant</strong><span>Khoảnh khắc</span>');
+      expect(tier).toMatch(/<p class="anime-reveal__kicker"><span>Tier up<\/span><\/p>/);
+      const streak = render('streak', true, { streak: { length: 30, freezesEarned: 0 } });
+      expect(streak).toMatch(/<span class="anime-reveal__streak-star"><svg viewBox="0 0 100 100"/);
+      expect(streak).toMatch(/fill="url\(#[^)]*-flame\)"/);
+      expect(render('levelup')).toMatch(/<span class="anime-reveal__level-star"><svg viewBox="0 0 100 100"/);
+    } finally {
+      theme.family = 'classic';
+    }
+    const classic = render('tierup', true, payload);
+    expect(classic).not.toContain('anime-reveal__backdrop');
+    expect(classic).not.toContain('anime-reveal__tier-rim');
+    expect(render('levelup')).not.toContain('anime-reveal__level-star');
   });
 
   it('does not mount while closed', () => expect(render('tierup', false)).toBe(''));

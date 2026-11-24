@@ -167,7 +167,7 @@ export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSa
   return <Dialog.Root open={open} onOpenChange={onOpenChange}>
     <Dialog.Portal>
       <Dialog.Overlay className="weekly-recap-dialog-overlay" />
-      <Dialog.Content className="weekly-recap-dialog crystal-chamfer">
+      <Dialog.Content className="weekly-recap-dialog">
         <div className="weekly-recap-dialog__header">
           <Dialog.Title className="weekly-recap-dialog__title"><Trans {...msg({ id: 'weeklyRecap.dialog.title', message: 'Your weekly recap' })} /></Dialog.Title>
           <Dialog.Close aria-label={_(msg({ id: 'weeklyRecap.dialog.close', message: 'Close' }))} className="weekly-recap-dialog__close liquid-control"><X size={18} /></Dialog.Close>

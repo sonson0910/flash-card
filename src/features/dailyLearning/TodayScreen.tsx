@@ -21,6 +21,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import './daily-learning-canvas.css';
 import './today-caught-up.css';
+import './today-sections.css';
 import type { LessonMode, TodayScreenActions, TodayScreenModel } from './dailyLearningPresentation';
 import { TodayReadyHero } from './TodayReadyHero';
 import { StreakChip } from './StreakDialog';
@@ -413,7 +414,8 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
       />
       <div className="daily-canvas daily-canvas-today today-below mx-auto max-w-6xl space-y-5 sm:space-y-6">
       <LearningJourney model={model} actions={actions} />
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]">
+      {/* The side column exists only for the placement invite; without it the practice panel takes the full row. */}
+      <div className={`grid gap-5${model.placementAvailable ? ' lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]' : ''}`}>
         <PracticeModes model={model} actions={actions} />
         {model.placementAvailable && (
           <aside aria-labelledby="placement-invite-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 sm:p-6">
