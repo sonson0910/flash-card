@@ -271,9 +271,9 @@ for (const theme of themes) {
 
       await signIn(page, '/?view=today&locale=en');
       await expect(page.locator('#daily-today-heading')).toBeVisible();
-      // Desktop states the planned size in the session card, the phone composition in the
-      // heading and Crystal in its lede; each reads the same real plan count.
-      await expect(page.getByText(new RegExp(`^${cards.length} (cards planned|words ready to remember\\.|cards are waiting)`)).first()).toBeVisible();
+      // Desktop states the planned size in the session card, the phone composition in the heading, Crystal in
+      // its lede and the Crystal phone in Lumi's bubble, which replaces the lede; each reads the same real plan count.
+      await expect(page.getByText(new RegExp(`^(Hi[^!]*! )?${cards.length} (cards planned|words ready to remember\\.|cards are waiting)`)).filter({ visible: true }).first()).toBeVisible();
       await page.evaluate(() => {
         let seed = 0x51f1a5;
         Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 0x100000000);

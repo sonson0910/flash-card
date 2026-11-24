@@ -579,6 +579,9 @@
   html[data-theme-family=crystal] .practice-topbar__title strong { font-weight: 800; }
   html[data-theme-family=crystal] .practice-topbar__slashes { color: var(--sf-brand-text); }
   html[data-theme-family=crystal] .practice-topbar__detail { color: var(--sf-text-subtle); }
+  /* On the light sky the board's subtle ink reads 4.14:1; the muted ink keeps the header at AA. */
+  html[data-theme-family=crystal]:not(.dark) .practice-topbar__detail,
+  html[data-theme-family=crystal]:not(.dark) .practice-topbar__count > span { color: var(--sf-text-muted); }
   html[data-theme-family=crystal] .practice-topbar__close,
   html[data-theme-family=crystal] .practice-topbar__theme {
     width: 44px;

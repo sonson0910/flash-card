@@ -19,6 +19,7 @@ import { playFlipSound, playRewardSound } from '../../lib/interactionSounds';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { buildDailyGoals } from '../dailyGoals/dailyGoalsModel';
 import { resolveStudyTimeZone } from '../dailyGoals/studyDayCountdown';
+import { useMinuteClock } from '../dailyGoals/useMinuteClock';
 import { buildStreakView } from '../gamification/streakView';
 import { readDailyPace } from '../settings/dailyPacePreference';
 import { readLumiEnabled } from '../settings/lumi-preference';
@@ -793,10 +794,12 @@ function StudyDailyGoal() {
   const { _ } = useLingui();
   const verifiedState = useVerifiedStats()?.state ?? null;
   const pace = useMemo(() => readDailyPace(), []);
+  // A session left open past midnight moves to the new study day's goal.
+  const now = useMinuteClock();
   // The goal wording lives with the Today screen's messages; load them when the study screen opens first.
   useEffect(() => { void loadCatalog(getActiveUiLocale(), 'today').catch(() => undefined); }, []);
   const goal = buildDailyGoals({
-    now: new Date(),
+    now,
     timeZone: resolveStudyTimeZone(verifiedState?.rewardTimeZone),
     dailyPace: pace,
     planHasMatch: false,

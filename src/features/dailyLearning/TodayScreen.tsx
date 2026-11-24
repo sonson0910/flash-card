@@ -414,8 +414,8 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
       />
       <div className="daily-canvas daily-canvas-today today-below mx-auto max-w-6xl space-y-5 sm:space-y-6">
       <LearningJourney model={model} actions={actions} />
-      {/* The side column exists only for the placement invite; without it the practice panel takes the full row. */}
-      <div className={`grid gap-5${model.placementAvailable ? ' lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]' : ''}`}>
+      {/* On the Crystal board the side column exists only for the placement invite; without it the practice panel takes the full row. */}
+      <div className={`grid gap-5${model.placementAvailable || family !== 'crystal' ? ' lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]' : ''}`}>
         <PracticeModes model={model} actions={actions} />
         {model.placementAvailable && (
           <aside aria-labelledby="placement-invite-heading" className="liquid-glass rounded-[28px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] p-5 sm:p-6">

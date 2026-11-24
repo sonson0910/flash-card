@@ -71,13 +71,15 @@ const localDateKey = (date: Date): string => `${date.getFullYear()}-${String(dat
 
 /** The heatmap's shape for an account with no review history yet: the latest weeks at rest, today marked, the days
     after today left open. It carries no values, so it is hidden from assistive technology. */
-export function GhostHeatmap({ weeks = 26 }: { readonly weeks?: number }) {
+export function GhostHeatmap({ weeks = 26, timeZone }: { readonly weeks?: number; readonly timeZone?: string }) {
   const { i18n } = useLingui();
   const locale = i18n.locale || 'en';
   const labels = useMemo(() => weekdayLabels(locale), [locale]);
   const { columns, months } = useMemo(() => {
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // "Today" is the study day when the caller knows its time zone, so the mark agrees with the real heatmap.
+    const zoned = timeZone ? localDate(dayInTimeZone(now, timeZone)) : now;
+    const today = new Date(zoned.getFullYear(), zoned.getMonth(), zoned.getDate());
     const start = new Date(today);
     start.setDate(today.getDate() - ((today.getDay() - HEATMAP_WEEK_START + 7) % 7) - (weeks - 1) * 7);
     const formatter = new Intl.DateTimeFormat(locale === 'pseudo' ? 'en' : locale, { month: 'short' });
@@ -100,7 +102,7 @@ export function GhostHeatmap({ weeks = 26 }: { readonly weeks?: number }) {
     const nextMonthLabel = labelsByWeek.findIndex((label, index) => index > 0 && label !== null);
     if (labelsByWeek[0] && nextMonthLabel > 0 && nextMonthLabel <= 2) labelsByWeek[0] = null;
     return { columns: generated, months: labelsByWeek };
-  }, [locale, weeks]);
+  }, [locale, timeZone, weeks]);
   return <div className="stats-heatmap stats-heatmap--ghost w-full" aria-hidden="true">
     <div className="stats-heat-grid grid grid-cols-[auto_1fr]">
       <div className="stats-heat-weekdays">{labels.map((label, index) => <span key={label} className="stats-heat-weekday">{index % 2 === 0 ? label : ''}</span>)}</div>

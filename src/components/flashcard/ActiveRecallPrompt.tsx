@@ -17,7 +17,7 @@ import { CardHeadword } from './CardHeadword';
 import { CardTierName, CardTierStatus, CrystalBlindBand } from './CardFront';
 import { crystalTiltMotion } from './crystalCardMotion';
 import { useReducedMotion } from '../../lib/motionPreferenceHooks';
-import { getZenGlassMode } from '../../lib/useZenGlassMode';
+import { useZenGlassMode } from '../../lib/useZenGlassMode';
 import { playRewardSound } from '../../lib/interactionSounds';
 import { triggerHaptic } from '../../lib/haptics';
 import './flashcard-canvas.css';
@@ -35,8 +35,8 @@ export function ActiveRecallPrompt({ card, mode, onReveal, onImageUnavailable, o
   const { _, i18n } = useLingui();
   const { model: courseModel } = useCourseSession();
   const look = useCardLook();
-  // Read on each render, as the study screen reads it; the zen glass card keeps the earlier recall panel.
-  const zenGlass = getZenGlassMode();
+  // The zen glass card keeps the earlier recall panel; the prompt follows the setting when it changes while open.
+  const [zenGlass] = useZenGlassMode();
   const resolvedMode = resolveRecallMode(card, mode);
   const targetLanguage = card.language || 'en';
   const translationLanguage = card.translationLanguage || 'vi';

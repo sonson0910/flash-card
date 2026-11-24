@@ -169,10 +169,17 @@ for (const theme of themes) for (const viewport of viewports) {
       element.append(probe);
       const expected = getComputedStyle(probe).backgroundColor;
       probe.remove();
-      return { actual: getComputedStyle(element).backgroundColor, expected };
+      return { actual: getComputedStyle(element).backgroundColor, expected, face: getComputedStyle(element, '::after').backgroundImage };
     });
-    expect(surface.actual, 'course overlay hides text underneath it').toBe(surface.expected);
-    expect(surface.actual).toMatch(/^rgb\(/);
+    if (theme.family === 'crystal' && viewport.name === 'desktop') {
+      // The Crystal desktop popover draws its face on a chamfered layer inside the gradient rim, so that layer,
+      // not the popover box, is what must be opaque.
+      expect(surface.face, 'course overlay hides text underneath it').toMatch(/^linear-gradient\(/);
+      expect(surface.face, 'course overlay hides text underneath it').not.toMatch(/rgba\(|transparent/);
+    } else {
+      expect(surface.actual, 'course overlay hides text underneath it').toBe(surface.expected);
+      expect(surface.actual).toMatch(/^rgb\(/);
+    }
     await expect(courses.getByRole('button', { name: /Korean.*Vietnamese/ })).toHaveAttribute('aria-current', 'true');
     const coursesBox = await expectBox(courses, 'course switcher');
     if (viewport.name === 'desktop') {

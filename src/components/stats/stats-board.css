@@ -261,9 +261,26 @@
   text-transform: uppercase;
 }
 :root[data-theme-family='crystal'] .stats-range-button[aria-pressed='true'] { background: var(--sf-primary-bg); box-shadow: var(--sf-primary-shadow); color: var(--sf-on-primary); }
-/* The board's range buttons are 36px tall; touch screens keep the 44px target. */
+/* The board's range plates are 36px tall. With a mouse the plate is drawn 36px inside a button that
+   keeps the 44px target and gives the extra 8px back to the row; touch screens show the 44px plate. */
 @media (pointer: fine) {
-  :root[data-theme-family='crystal'] .stats-range-button { min-height: 36px; height: 36px; padding: 0 16px; }
+  :root[data-theme-family='crystal'] .stats-range-button {
+    position: relative;
+    margin-block: -4px;
+    padding: 0 16px;
+    background: transparent;
+    box-shadow: none;
+  }
+  :root[data-theme-family='crystal'] .stats-range-button::before {
+    content: '';
+    position: absolute;
+    inset: 4px 0;
+    background: var(--st-chip);
+    box-shadow: inset 0 0 0 1px var(--st-line-strong);
+  }
+  :root[data-theme-family='crystal'] .stats-range-button[aria-pressed='true'] { background: transparent; box-shadow: none; }
+  :root[data-theme-family='crystal'] .stats-range-button[aria-pressed='true']::before { background: var(--sf-primary-bg); box-shadow: var(--sf-primary-shadow); }
+  :root[data-theme-family='crystal'] .stats-range-button > span { position: relative; }
 }
 
 :root[data-theme-family='crystal'] .stats-heatmap { --heat-row: 26px; --heat-gap: 4px; margin-top: 14px; }

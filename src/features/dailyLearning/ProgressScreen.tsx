@@ -8,6 +8,8 @@ import { useTheme } from '../theme/ThemeProvider';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import { ReviewRangeToggle } from '../../components/stats/ReviewRangeToggle';
 import { GhostHeatmap, HeatmapLegend } from '../../components/stats/ActivityHeatmap';
+import { useVerifiedStats } from '../../components/stats/VerifiedStatsContext';
+import { resolveStudyTimeZone } from '../dailyGoals/studyDayCountdown';
 import { ProgressLearningSince, ProgressStudiedTime } from '../../components/stats/ProgressStudyFacts';
 import './daily-learning-canvas.css';
 import '../../components/stats/stats-board.css';
@@ -46,10 +48,11 @@ function EmptyAction({ model, actions }: Omit<ProgressScreenProps, 'children'>) 
 /** Crystal before the first review: the board's activity panel with every day at rest, and the first step written
     across it. The zero counters of the plain summary are left out; the grid already says there is nothing yet. */
 function EmptyActivity({ model, actions }: Omit<ProgressScreenProps, 'children'>) {
+  const timeZone = resolveStudyTimeZone(useVerifiedStats()?.state?.rewardTimeZone);
   return <section aria-labelledby="progress-summary-heading" className="progress-summary progress-summary--ghost stats-panel stats-activity crystal-chamfer relative min-w-0 overflow-hidden">
     <div className="stats-panel-head"><p className="stats-panel-title"><Trans {...msg({ id: 'stats.activity-title', message: 'Activity' })} /></p><span className="stats-panel-note"><Trans {...msg({ id: 'stats.activity-note-26-weeks', message: 'Reviews per day, last 26 weeks' })} /></span><HeatmapLegend /></div>
     <div className="progress-ghost-stage">
-      <GhostHeatmap />
+      <GhostHeatmap timeZone={timeZone} />
       <div className="progress-ghost-call">
         <h2 id="progress-summary-heading" className="progress-ghost-heading text-balance"><Trans {...msg({ context: 'progress.empty.title', message: 'Your learning story starts here' })} /></h2>
         <p className="progress-summary-copy text-pretty"><Trans {...msg({ context: 'progress.empty.description', message: 'Complete a review to begin your progress history.' })} /></p>

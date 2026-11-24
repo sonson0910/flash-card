@@ -324,8 +324,10 @@ export function LibraryManagementMenu({
               )}
               {canSignOut && (
                 <button type="button" role="menuitem" className={`${menuItemClass} account-menu-signout-action`} onClick={() => { setIsOpen(false); void onSignOut?.(); }}>
-                  {/* Crystal draws sign-out as the boards' arrow into the bracket. */}
-                  {family === 'crystal' ? <LogIn size={17} aria-hidden="true" /> : <LogOut size={17} aria-hidden="true" />}
+                  {/* Crystal draws the boards' sign-out glyph: the arrow leaves the bracket. */}
+                  {family === 'crystal'
+                    ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" /></svg>
+                    : <LogOut size={17} aria-hidden="true" />}
                   <Trans {...msg({ context: 'shell.account.sign-out', message: 'Sign out of cloud sync' })} />
                 </button>
               )}
