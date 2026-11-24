@@ -258,6 +258,13 @@ test('placement is diagnostic and Progress is a real URL-backed lazy workspace',
 test('Today and legacy Vocabulary routes satisfy serious WCAG checks', async ({ page, signIn }) => {
   await signIn(page, '/?view=today');
   await expect(page.locator('#daily-today-heading')).toBeVisible();
+  // The Today hero fades in; a scan taken mid-entrance reads the half-transparent session card as low contrast,
+  // so the scan waits for the finite entrance animations to end.
+  await page.evaluate(async () => {
+    await Promise.all(document.getAnimations()
+      .filter(animation => animation.effect?.getComputedTiming().endTime !== Infinity)
+      .map(animation => animation.finished.catch(() => undefined)));
+  });
   const today = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(today.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
 
