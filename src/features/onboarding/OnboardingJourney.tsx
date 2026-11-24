@@ -645,7 +645,10 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     </>;
   }
 
-  return <div className="claude-onboarding-journey fixed inset-0 z-[70] overflow-y-auto" data-onboarding-step={step}>
+  // A full-screen modal takeover, layered like the runtime error screen: above the shell notification stack
+  // (z-70), so a toast raised by the workspace behind it never covers the setup actions, and below portaled
+  // dialogs (z-100 and up).
+  return <div className="claude-onboarding-journey fixed inset-0 z-[80] overflow-y-auto" data-onboarding-step={step}>
     {crystal && <>
       <span className="onb-shard onb-shard--left crystal-wing crystal-ornament" aria-hidden="true" />
       <span className="onb-shard onb-shard--right crystal-wing crystal-ornament" aria-hidden="true" />
