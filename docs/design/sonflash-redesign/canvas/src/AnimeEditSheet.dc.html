@@ -11,7 +11,7 @@
   </header>
 
   <main style="position: absolute; z-index: 3; left: 0; top: 84px; width: 900px; bottom: 0; display: flex; flex-direction: column; align-items: center;">
-    <span class="nk-rise" style="margin-top: 4px; height: 34px; padding: 0 16px; transform: skewX(-16deg); background: linear-gradient(90deg, #fff0b8, #ffd166); display: flex; align-items: center;"><span style="transform: skewX(16deg); display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; letter-spacing: 0.1em; color: #4a2a00;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"></rect><rect x="14" y="5" width="4" height="14"></rect></svg>SESSION PAUSED · TIMER STOPPED</span></span>
+    <div class="nk-rise" style="margin-top: 4px; display: flex;"><span style="height: 34px; padding: 0 16px; transform: skewX(-16deg); background: linear-gradient(90deg, #fff0b8, #ffd166); display: flex; align-items: center;"><span style="transform: skewX(16deg); display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; letter-spacing: 0.1em; color: #4a2a00;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"></rect><rect x="14" y="5" width="4" height="14"></rect></svg>SESSION PAUSED · TIMER STOPPED</span></span></div>
 
     <div style="position: relative; margin-top: 22px; width: 380px; height: 520px;">
       <div aria-hidden="true" style="position: absolute; inset: -30px; filter: blur(40px); background: radial-gradient(ellipse at 50% 45%, {{t.tier.learning.soft}}, transparent 70%); opacity: 0.6;"></div>
@@ -58,7 +58,7 @@
     </div>
   </main>
 
-  <aside role="dialog" aria-modal="false" aria-labelledby="sheet-title" class="nk-slide" style="position: absolute; z-index: 6; right: 0; top: 0; bottom: 0; width: 540px; box-sizing: border-box; background: {{t.sheet}}; box-shadow: {{t.sheetShadow}}; display: flex; flex-direction: column;">
+  <aside role="dialog" aria-modal="false" aria-labelledby="sheet-title" class="sf-sheet-r" style="position: absolute; z-index: 6; right: 0; top: 0; bottom: 0; width: 540px; box-sizing: border-box; background: {{t.sheet}}; box-shadow: {{t.sheetShadow}}; display: flex; flex-direction: column;">
     <span aria-hidden="true" style="position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d 50%, #ffd166); box-shadow: 0 0 16px rgb(255 42 77 / 0.7);"></span>
     <header style="flex-shrink: 0; padding: 24px 30px 16px 34px; display: flex; align-items: flex-start; gap: 12px; border-bottom: 1px solid {{t.lineStrong}};">
       <div>
@@ -88,7 +88,7 @@
           <img src="{{image}}" alt="Current card image" style="width: 112px; height: 76px; object-fit: cover; clip-path: {{t.chamferSm}}; display: block;">
           <div style="display: flex; flex-direction: column; gap: 8px;">
             <button class="nk-lift" style="height: 36px; padding: 0 14px; border: 0; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #7ff6ff, #1aa7c9); color: #031820; font-size: 13.5px; font-weight: 900; display: flex; align-items: center; gap: 7px; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.8 9.2L24 12l-9.2 2.8L12 24l-2.8-9.2L0 12l9.2-2.8z"></path></svg>New image with AI</button>
-            <button style="height: 28px; padding: 0; border: 0; background: transparent; color: {{t.text2}}; font-size: 13px; font-weight: 800; text-align: left; cursor: pointer; font-family: inherit;">Upload · Remove</button>
+            <button class="nk-press" style="height: 28px; padding: 0; border: 0; background: transparent; color: {{t.text2}}; font-size: 13px; font-weight: 800; text-align: left; cursor: pointer; font-family: inherit;">Upload · Remove</button>
           </div>
         </div>
       </div>

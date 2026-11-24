@@ -16,9 +16,9 @@
       <sc-for list="{{steps}}" as="st" hint-placeholder-count="5">
         <span style="width: 56px; height: 10px; transform: skewX(-30deg); background: {{st.bg}}; box-shadow: {{st.glow}};"></span>
       </sc-for>
-      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.textStrong}};">{{stepNo}}<span style="font-size: 14px; color: {{t.text3}};"> / 5</span></span>
+      <span style="margin-left: 12px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.textStrong}}; text-shadow: {{t.onArtHalo}};">{{stepNo}}<span style="font-size: 14px; color: {{t.text3}};"> / 5</span></span>
     </div>
-    <a href="#" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; color: {{t.text2}}; text-decoration: none;">SKIP ›</a>
+    <a href="#" class="nk-press" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; letter-spacing: 0.1em; color: {{t.text2}}; text-decoration: none; text-shadow: {{t.onArtHalo}};">SKIP ›</a>
   </header>
 
   <aside style="position: absolute; z-index: 4; left: 56px; top: 190px; width: 290px;">
@@ -36,14 +36,14 @@
   <sc-if value="{{isGoal}}" hint-placeholder-val="{{true}}">
     <main style="position: relative; z-index: 3; flex-grow: 1; margin-left: 380px; margin-right: 60px; padding-bottom: 40px; display: flex; flex-direction: column; justify-content: center;">
       <div class="nk-rise">
-        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}};">STEP 1 // YOUR GOAL</div>
+        <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}}; text-shadow: {{t.onArtHalo}};">STEP 1 // YOUR GOAL</div>
         <h1 style="margin: 4px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 68px; line-height: 1; letter-spacing: 0.01em; background: {{titleGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.55));">CHOOSE YOUR PATH</h1>
-        <p style="margin: 10px 0 0; max-width: 700px; font-size: 16px; line-height: 1.55; color: {{t.body}};">Each path opens its own card set and study pace. You can switch any time in Settings.</p>
+        <p style="margin: 10px 0 0; max-width: 700px; font-size: 16px; line-height: 1.55; color: {{t.body}}; text-shadow: {{t.onArtHalo}};">Each path opens its own card set and study pace. You can switch any time in Settings.</p>
       </div>
 
       <div style="margin-top: 32px; display: grid; grid-template-columns: repeat(4, 230px); gap: 22px;">
         <sc-for list="{{paths}}" as="p" hint-placeholder-count="4">
-          <button class="{{p.cls}}" aria-pressed="{{p.selected}}" style="position: relative; width: 230px; height: 288px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; font-family: inherit;">
+          <div class="{{p.enter}}" style="display: flex;"><button class="nk-lift" aria-pressed="{{p.selected}}" style="position: relative; width: 230px; height: 288px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; font-family: inherit;">
             <sc-if value="{{p.selected}}" hint-placeholder-val="{{false}}">
               <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -150px; right: -150px; top: -40px; height: 330px; pointer-events: none; opacity: 0.95; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.7));">
 <!--#WINGS-->
@@ -59,17 +59,17 @@
                 <span style="width: 28px; height: 28px; flex-shrink: 0; clip-path: {{t.chamferSm}}; background: {{p.checkBg}}; color: {{p.checkFg}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
               </div>
             </div>
-          </button>
+          </button></div>
         </sc-for>
       </div>
 
-      <div style="margin-top: 40px; display: flex; align-items: center; gap: 18px;">
+      <div class="nk-rise-3" style="margin-top: 40px; display: flex; align-items: center; gap: 18px;">
         <button class="nk-lift" style="position: relative; height: 60px; padding: 0 44px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-size: 21px; font-weight: 900; letter-spacing: 0.08em; display: flex; align-items: center; gap: 12px; cursor: pointer;">
           <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / 0.4);"></span>
           <span style="position: relative;">CONTINUE</span>
           <svg style="position: relative;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"></path></svg>
         </button>
-        <span style="font-size: 14px; color: {{t.text2}};">Selected: <strong style="color: {{t.textStrong}};">IELTS</strong> · target band 7.0 · exam on 14 Dec</span>
+        <span style="font-size: 14px; color: {{t.text2}}; text-shadow: {{t.onArtHalo}};">Selected: <strong style="color: {{t.textStrong}};">IELTS</strong> · target band 7.0 · exam on 14 Dec</span>
       </div>
     </main>
   </sc-if>
@@ -87,10 +87,10 @@
           <div class="nk-pop-2" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-top: 22px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 40px; line-height: 1; letter-spacing: 0.02em; color: #ffffff; text-shadow: 0 3px 0 #7a0820, 0 0 18px rgb(255 255 255 / 0.55);">{{ahaTier}}</div>
         </div>
         <h1 class="nk-pop-3" style="margin: 14px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 52px; line-height: 1; background: {{titleGrad}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.55));">4/5 CARDS REMEMBERED!</h1>
-        <p style="margin: 12px 0 0; max-width: 520px; font-size: 16px; line-height: 1.55; color: {{t.body}};">You remembered 4 of your first 5 words. The one you missed comes back in tomorrow’s session, just before you would forget it.</p>
+        <p style="margin: 12px 0 0; max-width: 520px; font-size: 16px; line-height: 1.55; color: {{t.body}}; text-shadow: {{t.onArtHalo}};">You remembered 4 of your first 5 words. The one you missed comes back in tomorrow’s session, just before you would forget it.</p>
         <div style="margin-top: 26px; display: flex; gap: 12px;">
           <sc-for list="{{minis}}" as="m" hint-placeholder-count="5">
-            <div class="nk-rise-2" style="position: relative; width: 104px; height: 138px;">
+            <div class="{{m.cls}}" style="position: relative; width: 104px; height: 138px;">
               <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{m.rim}};"></div>
               <div style="position: absolute; inset: 2px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{t.cardFront}}; padding: 12px 10px; display: flex; flex-direction: column; align-items: flex-start; text-align: left;">
                 <span style="height: 22px; padding: 0 8px; clip-path: {{t.chamferSm}}; background: {{m.badgeBg}}; color: {{m.badgeFg}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; display: flex; align-items: center;">{{m.state}}</span>
@@ -146,11 +146,11 @@ class Component extends DCLogic {
       { key: 'abroad', name: 'Study abroad', desc: 'Academic life, campus living and paperwork.', cards: '2,400 cards', span: 'Core → Advanced' },
     ];
     const paths = pathDefs.map((p, i) => p.selected ? {
-      ...p, icon: icons[p.key], selected: true, cls: 'nk-lift nk-pop',
+      ...p, icon: icons[p.key], selected: true, enter: 'nk-pop',
       rim: t.tier.mastered.rim, glow: '0 0 26px rgb(255 42 77 / 0.75)', bg: 'linear-gradient(180deg, #ff5470 0%, #e0173f 45%, #7a0820 100%)',
       emblemBg: '#ffffff', emblemFg: '#b30f33', fg: '#ffffff', sub: 'rgb(255 255 255 / 0.85)', rule: 'rgb(255 255 255 / 0.3)', checkBg: '#ffd166', checkFg: '#4a2a00',
     } : {
-      ...p, icon: icons[p.key], selected: false, cls: 'nk-lift ' + (i === 1 ? 'nk-rise' : i === 2 ? 'nk-rise-2' : 'nk-rise-3'),
+      ...p, icon: icons[p.key], selected: false, enter: i === 1 ? 'nk-rise' : i === 2 ? 'nk-rise-2' : 'nk-rise-3',
       rim: dark ? 'linear-gradient(150deg, rgb(94 242 255 / 0.55), rgb(255 255 255 / 0.08) 50%, rgb(255 143 182 / 0.4))' : 'linear-gradient(150deg, rgb(26 167 201 / 0.6), rgb(28 16 48 / 0.08) 50%, rgb(255 143 182 / 0.45))',
       glow: '0 0 0 transparent', bg: t.cardFront,
       emblemBg: dark ? 'rgb(94 242 255 / 0.14)' : 'rgb(26 167 201 / 0.12)', emblemFg: t.holoText, fg: t.textStrong, sub: t.text2, rule: t.line, checkBg: t.chip, checkFg: t.text3,
@@ -161,10 +161,10 @@ class Component extends DCLogic {
       { word: 'Spelling', vi: 'chính tả', ok: true },
       { word: 'Council', vi: 'hội đồng', ok: false },
       { word: 'Barrier', vi: 'rào chắn', ok: true },
-    ].map(m => m.ok ? { ...m, state: 'GOT IT', rim: t.tier.mastered.rim, badgeBg: t.primaryBg, badgeFg: '#ffffff' }
+    ].map((m, i) => ({ ...m, cls: ['nk-slide', 'nk-slide-2', 'nk-slide-3', 'nk-slide-4', 'nk-slide-4'][i] })).map(m => m.ok ? { ...m, state: 'GOT IT', rim: t.tier.mastered.rim, badgeBg: t.primaryBg, badgeFg: '#ffffff' }
       : { ...m, state: 'RETRY', rim: t.tier.new.rim, badgeBg: dark ? 'rgb(94 242 255 / 0.18)' : 'rgb(26 167 201 / 0.14)', badgeFg: t.holoText });
     return {
-      t, bg: { wings: true },
+      t, bg: { wings: true, flares: true },
       isGoal, isAha: !isGoal, stepNo,
       // The light pillar falls through the gutter between the third and fourth path card, clear of the copy.
       pillarOpacity: dark ? 0.24 : 0.85, coreOpacity: dark ? 0.5 : 0.7,
@@ -174,7 +174,7 @@ class Component extends DCLogic {
         bg: i < stepNo - 1 ? 'linear-gradient(90deg, #5ef2ff, #9fe9ff)' : i === stepNo - 1 ? '#ff2a4d' : t.track,
         glow: i === stepNo - 1 ? '0 0 14px rgb(255 42 77 / 0.9)' : i < stepNo ? '0 0 8px rgb(94 242 255 / 0.5)' : 'none',
       })),
-      lumiSrc: t.lumi[isGoal ? 'happy' : 'proud'],
+      lumiSrc: t.lumi[isGoal ? 'happy' : 'study'],
       mascotLine: isGoal ? 'The crystal is awake!' : 'Not bad at all!',
       mascotSub: isGoal ? 'Pick your path. I’ll set your cards and review pace to fit your goal.' : 'In bloom on your first try. Want every AI feature for 7 days?',
       paths, minis,

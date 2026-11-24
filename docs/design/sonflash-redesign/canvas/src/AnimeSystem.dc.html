@@ -4,20 +4,20 @@
 
   <div style="position: relative; z-index: 2; height: 100%; box-sizing: border-box; padding: 40px 56px 36px; display: flex; flex-direction: column;">
     <header class="nk-slide">
-      <div style="display: flex; align-items: center; gap: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.2em; color: {{t.crimsonText}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: {{t.crimson}}; box-shadow: 0 0 10px {{t.crimson}};"></span>SPECIMEN // WHEN THINGS ARE NOT NORMAL</div>
+      <div style="display: flex; align-items: center; gap: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.2em; color: {{t.crimsonText}}; text-shadow: {{t.onArtHalo}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: {{t.crimson}}; box-shadow: 0 0 10px {{t.crimson}};"></span>SPECIMEN // WHEN THINGS ARE NOT NORMAL</div>
       <h1 style="margin: 6px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 54px; line-height: 1; letter-spacing: 0.01em; background: {{titleFill}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: {{titleShadow}};">ERRORS, EMPTIES &amp; LOADING</h1>
     </header>
 
     <div style="margin-top: 26px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px 24px;">
       <!-- Error boundary -->
-      <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="nk-rise-2" style="display: flex; flex-direction: column; gap: 8px;">
         <div style="{{cap}}">Error boundary</div>
         <div style="position: relative; height: 300px; filter: drop-shadow(0 0 20px rgb(255 42 77 / 0.25));">
           <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{rimDanger}};"></div>
           <div style="position: absolute; inset: 1.5px; clip-path: {{t.chamfer}}; background: {{tileBg}}; padding: 20px 22px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;">
             <svg aria-hidden="true" width="210" height="120" viewBox="0 0 210 120" style="position: absolute; right: 0; bottom: 0; transform: scaleY(-1); filter: drop-shadow(0 0 5px rgb(255 42 77 / 0.9));"><path d="M210 10 L170 30 L182 44 L130 66 L142 82 L96 104" fill="none" stroke="{{t.crimson}}" stroke-width="2"></path><path d="M170 30 L156 12 M130 66 L112 52 M142 82 L166 104" fill="none" stroke="{{t.crimson}}" stroke-width="1.2" opacity="0.8"></path></svg>
             <div style="display: flex; align-items: flex-end; gap: 12px;">
-              <div style="width: 104px; height: 104px; flex-shrink: 0;">
+              <div class="nk-float" style="width: 104px; height: 104px; flex-shrink: 0;">
 <!--#MASCOT sad-->
               </div>
               <div style="padding-bottom: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 27px; line-height: 1.05; color: {{t.textStrong}};">Something went <span style="color: {{t.crimsonText}};">sideways.</span></div>
@@ -25,14 +25,14 @@
             <p style="margin: 12px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">This screen hit an error. Your cards are stored on this device — reloading is safe.</p>
             <div style="margin-top: auto; display: flex; gap: 10px;">
               <button class="nk-press" style="{{btnP}}">Reload</button>
-              <button style="{{btnS}}">Report issue</button>
+              <button class="nk-press" style="{{btnS}}">Report issue</button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Runtime error -->
-      <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="nk-rise-2" style="display: flex; flex-direction: column; gap: 8px;">
         <div style="{{cap}}">Runtime error · sync crash</div>
         <div style="position: relative; height: 300px; filter: drop-shadow(0 0 20px rgb(255 42 77 / 0.2));">
           <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{rimDanger}};"></div>
@@ -46,14 +46,14 @@
             <div style="margin-top: 10px; padding: 9px 12px; clip-path: {{t.chamferSm}}; background: {{codeBg}}; box-shadow: inset 3px 0 0 {{t.crimson}}; font-family: {{t.fMono}}; font-size: 12px; line-height: 1.6; color: {{t.crimsonText}};">FirestoreError: resource-exhausted<br><span style="color: {{t.text2}};">retries 5/5 · pending writes 3</span></div>
             <div style="margin-top: auto; display: flex; gap: 10px;">
               <button class="nk-press" style="{{btnP}}">Retry sync</button>
-              <button style="{{btnS}}">Return home</button>
+              <button class="nk-press" style="{{btnS}}">Return home</button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Offline -->
-      <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="nk-rise-2" style="display: flex; flex-direction: column; gap: 8px;">
         <div style="{{cap}}">Offline · still usable</div>
         <div style="position: relative; height: 300px; filter: drop-shadow(0 0 20px rgb(255 209 102 / 0.15));">
           <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{rimWarn}};"></div>
@@ -72,7 +72,7 @@
                 </div>
               </sc-for>
             </div>
-            <div style="position: absolute; right: 6px; bottom: 50px; width: 96px; height: 96px;">
+            <div class="nk-float" style="position: absolute; right: 6px; bottom: 50px; width: 96px; height: 96px;">
 <!--#MASCOT oops-->
             </div>
             <div style="margin-top: auto; display: flex; align-items: center; gap: 12px;">
@@ -84,7 +84,7 @@
       </div>
 
       <!-- Empty library -->
-      <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="nk-rise-3" style="display: flex; flex-direction: column; gap: 8px;">
         <div style="{{cap}}">Empty library · first run</div>
         <div style="position: relative; height: 300px; filter: drop-shadow(0 0 20px rgb(94 242 255 / 0.18));">
           <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{rimHolo}};"></div>
@@ -104,7 +104,7 @@
             </div>
             <div style="margin-top: auto; display: flex; gap: 8px;">
               <sc-for list="{{emptyLinks}}" as="l" hint-placeholder-count="3">
-                <a href="#" style="height: 32px; padding: 0 12px; transform: skewX(-12deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.textStrong}}; text-decoration: none; display: flex; align-items: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px;">{{l}}</span></a>
+                <a href="#" class="sf-ease" style="height: 32px; padding: 0 12px; transform: skewX(-12deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.textStrong}}; text-decoration: none; display: flex; align-items: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px;">{{l}}</span></a>
               </sc-for>
             </div>
           </div>
@@ -112,7 +112,7 @@
       </div>
 
       <!-- Today: all caught up -->
-      <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="nk-rise-3" style="display: flex; flex-direction: column; gap: 8px;">
         <div style="{{cap}}">Today · all caught up</div>
         <div style="position: relative; height: 300px; filter: drop-shadow(0 0 24px rgb(255 209 102 / 0.2));">
           <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{rimGold}};"></div>
@@ -121,7 +121,7 @@
               <div class="nk-pop" style="width: 82px; height: 82px; flex-shrink: 0; filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.8));">
 <!--#STAR5-->
               </div>
-              <div style="width: 108px; height: 108px; flex-shrink: 0; margin-left: auto;">
+              <div class="nk-float" style="width: 108px; height: 108px; flex-shrink: 0; margin-left: auto;">
 <!--#MASCOT happy-->
               </div>
             </div>
@@ -129,26 +129,26 @@
             <p style="margin: 6px 0 0; font-size: 13.5px; color: {{t.text2}};">Next review <strong style="color: {{t.textStrong}};">tomorrow, 08:00</strong> · 8 cards</p>
             <div style="margin-top: auto; display: flex; gap: 10px;">
               <button class="nk-press" style="{{btnP}}">Learn 5 new</button>
-              <button style="{{btnS}}">Browse paths</button>
+              <button class="nk-press" style="{{btnS}}">Browse paths</button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Loading -->
-      <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="nk-rise-3" style="display: flex; flex-direction: column; gap: 8px;">
         <div style="{{cap}}">Loading · skeleton</div>
         <div aria-busy="true" style="position: relative; height: 300px;">
           <div aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: {{rimMuted}};"></div>
           <div style="position: absolute; inset: 1.5px; clip-path: {{t.chamfer}}; background: {{tileBg}}; padding: 20px 22px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; overflow: hidden;">
-            <div class="sf-shimmer" style="height: 22px; width: 58%; transform: skewX(-12deg); background: {{t.track}};"></div>
-            <div class="sf-shimmer" style="height: 12px; width: 82%; transform: skewX(-12deg); background: {{t.track}};"></div>
+            <div class="sf-shimmer" style="height: 22px; width: 58%; transform: skewX(-12deg); background-color: {{t.track}};"></div>
+            <div class="sf-shimmer" style="height: 12px; width: 82%; transform: skewX(-12deg); background-color: {{t.track}};"></div>
             <div style="display: flex; gap: 10px;">
-              <div class="sf-shimmer" style="width: 92px; height: 104px; clip-path: {{t.chamferSm}}; background: {{t.track}};"></div>
-              <div class="sf-shimmer" style="width: 92px; height: 104px; clip-path: {{t.chamferSm}}; background: {{t.track}};"></div>
-              <div class="sf-shimmer" style="width: 92px; height: 104px; clip-path: {{t.chamferSm}}; background: {{t.track}};"></div>
+              <div class="sf-shimmer" style="width: 92px; height: 104px; clip-path: {{t.chamferSm}}; background-color: {{t.track}};"></div>
+              <div class="sf-shimmer" style="width: 92px; height: 104px; clip-path: {{t.chamferSm}}; background-color: {{t.track}};"></div>
+              <div class="sf-shimmer" style="width: 92px; height: 104px; clip-path: {{t.chamferSm}}; background-color: {{t.track}};"></div>
             </div>
-            <div class="sf-shimmer" style="height: 12px; width: 44%; transform: skewX(-12deg); background: {{t.track}};"></div>
+            <div class="sf-shimmer" style="height: 12px; width: 44%; transform: skewX(-12deg); background-color: {{t.track}};"></div>
             <div role="status" style="margin-top: auto; display: flex; align-items: center; gap: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.06em; color: {{t.holoText}};"><span class="sf-spin" style="width: 16px; height: 16px; box-sizing: border-box; border-radius: 50%; border: 2.5px solid {{t.track}}; border-top-color: {{t.holo}};"></span>Loading workspace…</div>
             <div class="nk-float" style="position: absolute; right: 8px; bottom: 6px; width: 110px; height: 110px;">
 <!--#MASCOT thinking-->
@@ -169,7 +169,7 @@ class Component extends DCLogic {
     const btn = 'height: 44px; border: 0; cursor: pointer; font-family: ' + t.fDisplay + '; font-style: italic; font-size: 15px; letter-spacing: 0.04em;';
     return {
       t, bg: { wings: true },
-      cap: 'font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: ' + t.text2 + ';',
+      cap: 'font-family: ' + t.fDisplay + '; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: ' + t.text2 + '; text-shadow: ' + t.onArtHalo + ';',
       titleFill: dark ? 'linear-gradient(180deg, #ffffff 0%, #ffe3ea 46%, #ff8fa3 54%, #ffffff 100%)' : 'linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #8a0a26 100%)',
       titleShadow: dark ? 'drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.6))' : 'drop-shadow(0 2px 0 rgb(255 255 255 / 0.9))',
       tileBg: dark ? 'linear-gradient(170deg, #151b2c, #0a0d17)' : 'linear-gradient(170deg, #f7fcff, #dcefff)',

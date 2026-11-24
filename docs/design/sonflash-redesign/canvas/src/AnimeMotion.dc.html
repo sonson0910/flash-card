@@ -26,7 +26,7 @@
         <div style="position: absolute; left: 50%; top: 26px; width: 92px; height: 120px; margin-left: -46px; clip-path: {{t.chamferSm}}; background: {{learn.rim}};"></div>
         <div style="position: absolute; left: 50%; bottom: 20px; width: 180px; height: 36px; margin-left: -90px; transform: skewX(-12deg) scale(0.97); background: {{t.primaryBg}}; box-shadow: 0 0 0 6px rgb(255 42 77 / 0.18), {{t.primaryGlow}}; display: flex; align-items: center; justify-content: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 14px; color: #ffffff; letter-spacing: 0.06em;">START LESSON</span></div>
       </div>
-      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">01</span>TAP START</div><div style="{{capSpec}}">0–120 ms · press scale .97 · snap</div></figcaption>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">01</span>TAP START</div><div style="{{capSpec}}">nk-lift · hover −3 px · press scale .97 · 220 ms pop curve</div></figcaption>
     </figure>
 
     <figure style="{{fig}}">
@@ -53,15 +53,15 @@
         <div style="position: absolute; left: 50%; top: 22px; width: 110px; height: 146px; margin-left: -55px; filter: drop-shadow(0 0 22px {{learn.soft}});">
           <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{learn.rim}};"></div>
           <div style="position: absolute; inset: 2px; clip-path: {{t.chamferSm}}; background: {{t.cardFront}};"></div>
-          <span class="nk-flare" style="position: absolute; left: 58px; top: 40px; width: 44px; height: 44px;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, {{t.flare}}, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, {{t.flare}}, transparent);"></span></span>
+          <span style="position: absolute; left: 58px; top: 40px; width: 44px; height: 44px;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, {{t.flare}}, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, {{t.flare}}, transparent);"></span></span>
         </div>
       </div>
-      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">03</span>WINGS UNFOLD · HOVER</div><div style="{{capSpec}}">wings scale 0→1.15, opacity →{{t.wingOpacity}} · 520 ms snap · tilt ±8° · flare follows cursor</div></figcaption>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">03</span>WINGS UNFOLD</div><div style="{{capSpec}}">nk-unfold 520 ms snap · scale .4→1, rotate −14°→0 · opacity {{t.wingOpacity}} · plays once</div></figcaption>
     </figure>
 
     <figure style="{{fig}}">
       <div style="{{stage}}">
-        <div class="nk-pillar" style="position: absolute; left: 50%; top: 0; bottom: 0; width: 90px; margin-left: -45px; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.85), transparent); animation-iteration-count: infinite; animation-duration: 1.6s;"></div>
+        <div class="nk-pillar" style="position: absolute; left: 50%; top: 0; bottom: 0; width: 90px; margin-left: -45px; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.85), transparent);"></div>
         <div style="position: absolute; left: 50%; top: 22px; width: 110px; height: 146px; margin-left: -55px; perspective: 500px;">
           <div style="position: absolute; inset: 0; transform: rotateY(62deg); transform-origin: center; filter: drop-shadow(0 0 16px {{learn.soft}});">
             <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{learn.rim}};"></div>
@@ -70,7 +70,7 @@
         </div>
         <span style="position: absolute; right: 14px; top: 14px; font-family: {{t.fMono}}; font-size: 11px; color: {{t.text3}};">rotateY 62°</span>
       </div>
-      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">04</span>TRANSFORM FLIP</div><div style="{{capSpec}}">Space · pillar flash 800 ms · rotateY 180° 600 ms expo · back face at 300 ms</div></figcaption>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">04</span>TRANSFORM FLIP</div><div style="{{capSpec}}">Space · nk-pillar 800 ms, once · rotateY 180° 600 ms expo · back face at 300 ms</div></figcaption>
     </figure>
 
     <div style="{{rowHead}} margin-top: 6px;"><h2 style="{{h2}}"><span style="{{h2dot}}"></span>REWARD LOOP</h2><span style="{{h2sub}}">Every grade answers back: combo, XP, tier, and Lumi.</span></div>
@@ -78,23 +78,23 @@
       <div style="{{stage}}">
         <div style="position: absolute; left: 22px; right: 22px; top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <sc-for list="{{grades}}" as="g" hint-placeholder-count="4">
-            <span class="{{g.cls}}" style="height: 44px; transform: skewX(-12deg); background: {{g.bg}}; box-shadow: {{g.glow}}; display: flex; align-items: center; justify-content: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; color: {{g.fg}};">{{g.label}}</span></span>
+            <span class="{{g.cls}}" style="display: flex;"><span style="flex-grow: 1; height: 44px; transform: skewX(-12deg); background: {{g.bg}}; box-shadow: {{g.glow}}; display: flex; align-items: center; justify-content: center;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; color: {{g.fg}};">{{g.label}}</span></span></span>
           </sc-for>
         </div>
-        <span style="position: absolute; left: 22px; bottom: 16px; font-family: {{t.fMono}}; font-size: 11px; color: {{t.text3}};">+0 · +120 · +240 · +360 ms</span>
+        <span style="position: absolute; left: 22px; bottom: 16px; font-family: {{t.fMono}}; font-size: 11px; color: {{t.text3}};">+0 · +90 · +180 · +270 ms</span>
       </div>
-      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">05</span>GRADES RISE</div><div style="{{capSpec}}">flip end · nk-rise 700 ms expo · stagger 120 ms · keys 1–4</div></figcaption>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">05</span>GRADES SLIDE IN</div><div style="{{capSpec}}">after the flip · nk-slide…-4, 480 ms expo, 90 ms apart · keys 1–4</div></figcaption>
     </figure>
 
     <figure style="{{fig}}">
       <div style="{{stage}}">
-        <div class="nk-banner" style="position: absolute; left: 24px; top: 44px; height: 64px; padding: 0 26px; transform: skewX(-16deg); background: {{t.crimsonGrad}}; box-shadow: {{t.primaryGlow}}; display: flex; align-items: center; animation-iteration-count: infinite; animation-duration: 2.4s;">
+        <div class="nk-banner" style="position: absolute; left: 24px; top: 44px; height: 64px; padding: 0 26px; transform: skewX(-16deg); background: {{t.crimsonGrad}}; box-shadow: {{t.primaryGlow}}; display: flex; align-items: center;">
           <span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 36px; line-height: 1; background: {{t.metalHot}}; -webkit-background-clip: text; background-clip: text; color: transparent;">LOVELY</span>
         </div>
         <span class="nk-pop-2" style="position: absolute; right: 30px; top: 120px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 26px; color: {{t.goldText}}; text-shadow: 0 0 14px rgb(255 209 102 / 0.5);">+10 XP</span>
         <span style="position: absolute; left: 24px; top: 118px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.text2}};">COMBO ×3</span>
       </div>
-      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">06</span>COMBO BANNER</div><div style="{{capSpec}}">after GOOD · x −80→6→0 · 520 ms snap · XP pop +140 ms · AGAIN resets</div></figcaption>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">06</span>COMBO BANNER</div><div style="{{capSpec}}">after GOOD · nk-banner x −80→6→0, 520 ms snap, once · XP nk-pop-2 +140 ms</div></figcaption>
     </figure>
 
     <figure style="{{fig}}">
@@ -106,7 +106,7 @@
         <span class="nk-stamp" style="position: absolute; left: 50%; top: 76px; margin-left: -40px; width: 80px; text-align: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1; color: #ffffff; text-shadow: 0 3px 0 #7a0820, 0 0 16px rgb(255 209 102 / 0.8);">STAR</span>
         <span style="position: absolute; left: 16px; bottom: 14px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.text2}};"><span style="color: {{t.pinkText}};">Bloom</span> → <span style="color: {{t.crimsonText}};">Star</span></span>
       </div>
-      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">07</span>TIER UP · STAMP</div><div style="{{capSpec}}">stamp scale 2.6→.92→1, rotate −32° · 620 ms, delay 400 · rim spin 6 s</div></figcaption>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">07</span>TIER UP · STAMP</div><div style="{{capSpec}}">nk-stamp 620 ms, delay 400 · scale 2.6→.92→1, rotate −32°→−12° · rim spin 6 s</div></figcaption>
     </figure>
 
     <figure style="{{fig}}">
@@ -120,16 +120,20 @@
         </div>
         <span style="position: absolute; right: 14px; bottom: 14px; font-family: {{t.fMono}}; font-size: 11px; color: {{t.text3}};">idle → happy</span>
       </div>
-      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">08</span>LUMI REACTS</div><div style="{{capSpec}}">pose swap on grade · crossfade 240 ms · float 3.2 s loop · hint on flip</div></figcaption>
+      <figcaption style="{{cap}}"><div style="{{capTitle}}"><span style="{{num}}">08</span>LUMI REACTS</div><div style="{{capSpec}}">pose swap on grade, crossfade 240 ms · <span style="white-space: nowrap;">nk-float 3.2 s</span>, one loop · line nk-pop-2</div></figcaption>
     </figure>
   </div>
 
-  <footer style="position: absolute; z-index: 3; left: 48px; right: 48px; bottom: 30px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 14px 22px; display: flex; align-items: center; gap: 22px;">
+  <footer style="position: absolute; z-index: 3; left: 48px; right: 48px; bottom: 30px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 12px 22px; display: grid; grid-template-columns: auto minmax(0, 1fr) 360px; column-gap: 22px; row-gap: 6px; align-items: baseline;">
     <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; letter-spacing: 0.08em; color: {{t.crimsonText}};">TIMING</span>
-    <sc-for list="{{durations}}" as="d" hint-placeholder-count="5">
-      <span style="display: flex; align-items: baseline; gap: 6px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; color: {{t.textStrong}};">{{d.name}}</span><span style="font-family: {{t.fMono}}; font-size: 12.5px; color: {{t.holoText}};">{{d.ms}}</span></span>
-    </sc-for>
-    <span style="margin-left: auto; max-width: 380px; font-size: 12.5px; line-height: 1.45; color: {{t.text2}};"><strong style="color: {{t.textStrong}};">Reduced motion:</strong> every nk-* animation stops; flip becomes a 120 ms crossfade, wings and pillar are skipped.</span>
+    <div style="display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 20px; row-gap: 2px;">
+      <sc-for list="{{durations}}" as="d" hint-placeholder-count="6">
+        <span style="display: flex; align-items: baseline; gap: 6px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; color: {{t.textStrong}};">{{d.name}}</span><span style="font-family: {{t.fMono}}; font-size: 12.5px; color: {{t.holoText}};">{{d.ms}}</span></span>
+      </sc-for>
+    </div>
+    <span style="grid-row: span 2; align-self: center; font-size: 12.5px; line-height: 1.45; color: {{t.text2}};"><strong style="color: {{t.textStrong}};">Reduced motion:</strong> every nk-* and sf-* animation stops and the still frame is the whole design; the flip becomes a 120 ms crossfade, wings and pillar are skipped.</span>
+    <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; letter-spacing: 0.08em; color: {{t.crimsonText}};">RESTRAINT</span>
+    <span style="font-size: 12.5px; line-height: 1.45; color: {{t.text2}};">One entrance per element: the wrapper enters, the item lifts or presses. One nk-shine, on the primary action. Two loops per region at most. Nothing moves in the study card while it is read. A screen settles in about one second.</span>
   </footer>
 </div>
 </x-dc>
@@ -158,13 +162,13 @@ class Component extends DCLogic {
       num: 'height: 22px; padding: 0 7px; transform: skewX(-12deg); background: ' + t.primaryBg + '; color: #ffffff; font-size: 12px; display: inline-flex; align-items: center;',
       capSpec: 'margin-top: 3px; font-family: ' + t.fMono + '; font-size: 11.5px; line-height: 1.45; color: ' + t.text2 + ';',
       grades: [
-        { label: 'AGAIN', bg: t.again, fg: '#ffffff', cls: 'nk-rise', glow: 'none' },
-        { label: 'HARD', bg: t.hard, fg: '#ffffff', cls: 'nk-rise-2', glow: 'none' },
-        { label: 'GOOD', bg: dark ? 'linear-gradient(180deg, #9ff9ff, #5ef2ff 50%, #1aa7c9)' : 'linear-gradient(180deg, #2bc4e0, #0a8fb0)', fg: dark ? '#031820' : '#ffffff', cls: 'nk-rise-3', glow: '0 0 18px -4px rgb(94 242 255 / 0.85)' },
-        { label: 'EASY', bg: t.easy, fg: t.easyInk, cls: 'nk-rise-3', glow: 'none' },
+        { label: 'AGAIN', bg: t.again, fg: '#ffffff', cls: 'nk-slide', glow: 'none' },
+        { label: 'HARD', bg: t.hard, fg: '#ffffff', cls: 'nk-slide-2', glow: 'none' },
+        { label: 'GOOD', bg: dark ? 'linear-gradient(180deg, #9ff9ff, #5ef2ff 50%, #1aa7c9)' : 'linear-gradient(180deg, #2bc4e0, #0a8fb0)', fg: dark ? '#031820' : '#ffffff', cls: 'nk-slide-3', glow: '0 0 18px -4px rgb(94 242 255 / 0.85)' },
+        { label: 'EASY', bg: t.easy, fg: t.easyInk, cls: 'nk-slide-4', glow: 'none' },
       ],
       durations: [
-        { name: 'press', ms: '120 ms' }, { name: 'fade', ms: '240 ms' }, { name: 'snap', ms: '520 ms' }, { name: 'flip', ms: '600 ms' }, { name: 'ceremony', ms: '800 ms' },
+        { name: 'press', ms: '160 ms' }, { name: 'lift', ms: '220 ms' }, { name: 'slide', ms: '480 ms' }, { name: 'pop · unfold', ms: '520 ms' }, { name: 'rise', ms: '700 ms' }, { name: 'stamp', ms: '400 + 620 ms' },
       ],
     };
   }

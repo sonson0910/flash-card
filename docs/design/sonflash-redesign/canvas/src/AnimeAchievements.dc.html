@@ -18,7 +18,7 @@
             <div style="margin-top: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; color: {{t.holoText}};">LV 12 <span style="color: {{t.text3}}; font-weight: 700;">· 2,340 / 3,600 XP</span></div>
           </div>
         </div>
-        <div style="position: relative; margin-top: 16px; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: 65%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.7);"></div></div>
+        <div style="position: relative; margin-top: 16px; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 65%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.7);"></div></div>
       </div>
 
       <div style="clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 18px 22px;">
@@ -29,7 +29,7 @@
               <span style="width: 66px; height: 30px; flex-shrink: 0; clip-path: {{markClip}}; background: {{g.flat}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; color: #ffffff; text-shadow: 0 2px 0 {{g.shadow}};">{{g.grade}}</span>
               <div style="flex-grow: 1; min-width: 0;">
                 <div style="display: flex; justify-content: space-between; font-size: 13.5px;"><span style="font-weight: 800; color: {{t.textStrong}};">{{g.label}}</span><span style="font-weight: 900; color: {{t.textStrong}};">{{g.count}}</span></div>
-                <div style="margin-top: 5px; height: 6px; transform: skewX(-24deg); background: {{t.track}};"><div style="width: {{g.pct}}%; height: 100%; background: {{g.rim}};"></div></div>
+                <div style="margin-top: 5px; height: 6px; transform: skewX(-24deg); background: {{t.track}};"><div class="sf-grow" style="width: {{g.pct}}%; height: 100%; background: {{g.rim}};"></div></div>
               </div>
             </div>
           </sc-for>
@@ -53,10 +53,10 @@
         <h1 style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 50px; line-height: 1; letter-spacing: 0.01em; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 18px rgb(255 42 77 / 0.6));">COLLECTION</h1>
         <nav aria-label="Collection" style="display: flex; gap: 4px; padding-bottom: 6px;">
           <sc-for list="{{tabs}}" as="tb" hint-placeholder-count="3">
-            <a href="#" aria-current="{{tb.current}}" style="height: 36px; padding: 0 20px; transform: skewX(-16deg); background: {{tb.bg}}; box-shadow: {{tb.edge}}; display: flex; align-items: center; text-decoration: none;"><span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.08em; color: {{tb.color}};">{{tb.label}}</span></a>
+            <a href="#" aria-current="{{tb.current}}" class="sf-ease" style="height: 36px; padding: 0 20px; transform: skewX(-16deg); background: {{tb.bg}}; box-shadow: {{tb.edge}}; display: flex; align-items: center; text-decoration: none;"><span style="transform: skewX(16deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.08em; color: {{tb.color}};">{{tb.label}}</span></a>
           </sc-for>
         </nav>
-        <span style="margin-left: auto; padding-bottom: 12px; font-weight: 800; font-size: 14px; color: {{t.text2}};">18 / 40 unlocked</span>
+        <span style="margin-left: auto; padding-bottom: 12px; font-weight: 800; font-size: 14px; color: {{t.text2}}; text-shadow: {{t.onArtHalo}};">18 / 40 unlocked</span>
       </div>
 
       <div style="margin-top: 22px; display: grid; grid-template-columns: 340px 1fr; gap: 22px; flex-grow: 1; min-height: 0;">
@@ -80,13 +80,13 @@
               <div style="width: 100%;">
                 <div style="display: flex; align-items: baseline; justify-content: space-between;">
                   <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.text2}};">PROGRESS</span>
-                  <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.text2}};"><span style="padding-right: 2px; font-size: 52px; line-height: 1; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820);">312</span> / 350</span>
+                  <span class="sf-tick" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 22px; color: {{t.text2}};"><span style="padding-right: 2px; font-size: 52px; line-height: 1; background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820);">312</span> / 350</span>
                 </div>
-                <div style="margin-top: 10px; height: 12px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: 89%; height: 100%; background: {{t.primaryBg}}; box-shadow: 0 0 12px rgb(255 42 77 / 0.8);"></div></div>
+                <div style="margin-top: 10px; height: 12px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 89%; height: 100%; background: {{t.primaryBg}}; box-shadow: 0 0 12px rgb(255 42 77 / 0.8);"></div></div>
               </div>
             </div>
           </div>
-          <span class="nk-flare" aria-hidden="true" style="position: absolute; right: 0; top: 18px; width: 110px; height: 110px; pointer-events: none;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 16px 6px rgb(255 84 112 / 0.7);"></span></span>
+          <span aria-hidden="true" style="position: absolute; right: 0; top: 18px; width: 110px; height: 110px; pointer-events: none;"><span style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: linear-gradient(180deg, transparent, #ffffff, transparent);"></span><span style="position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 16px 6px rgb(255 84 112 / 0.7);"></span></span>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: 14px; min-height: 0;">
