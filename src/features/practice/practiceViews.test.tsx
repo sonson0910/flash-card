@@ -614,7 +614,7 @@ describe("practice view accessibility contracts", () => {
     expect(typingHtml).toContain("0.6× slow");
 
     expect(wrongHtml.match(/data-state="correct"/g)?.length).toBeGreaterThanOrEqual(4);
-    expect(wrongHtml).toMatch(/data-state="missing"[^>]*>l</);
+    expect(wrongHtml).toMatch(/data-state="missing"[^>]*><span class="practice-tile__glyph">l</);
     expect(wrongHtml).toContain("Missing letter");
     expect(wrongHtml).not.toContain(">Reveal</button>");
     expect(wrongHtml).toMatch(/<input[^>]*disabled=""/);

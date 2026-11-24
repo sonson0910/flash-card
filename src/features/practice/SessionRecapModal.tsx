@@ -513,7 +513,7 @@ export function SessionRecapModal({
               )}
 
               <div className="practice-recap-next">
-                {showLumi && <Lumi pose="proud" size={112} className="practice-recap-lumi" />}
+                {showLumi && <span className="practice-recap-mascot" aria-hidden="true"><Lumi pose="proud" className="practice-recap-lumi" /></span>}
                 <p className="practice-recap-next-label"><Trans {...msg({ context: 'recap.what-next', message: 'What next' })} /></p>
                 <div className="practice-recap-next-chips">
                   {canRetry && (

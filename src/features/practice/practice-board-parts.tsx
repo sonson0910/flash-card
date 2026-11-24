@@ -156,7 +156,7 @@ interface LumiCoachProps {
 export function LumiCoach({ pose, heading, children, label, className = '' }: LumiCoachProps) {
   return (
     <div className={`practice-lumi ${className}`} data-practice-lumi>
-      <div className="practice-lumi__bubble crystal-chamfer-sm">
+      <div className="practice-lumi__bubble crystal-chamfer">
         <span className="practice-lumi__label">{label ?? <Trans {...msg({ context: 'practice.lumi.label', message: 'Lumi · Link' })} />}</span>
         <p className="practice-lumi__heading">{heading}</p>
         {children && <div className="practice-lumi__body">{children}</div>}

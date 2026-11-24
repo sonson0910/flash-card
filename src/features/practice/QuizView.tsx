@@ -2,6 +2,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react";
 import { ArrowRight, Check, Trophy, X, Zap } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
+import { CardTierName, CardTierStatus } from "../../components/flashcard/CardFront";
 import { headwordStressParts } from "../../components/flashcard/CardHeadword";
 import { GsapEntrance } from "../../components/motion/GsapEntrance";
 import { Lumi } from "../../components/lumi/Lumi";
@@ -189,6 +190,7 @@ export function QuizView({
   if (outcomes) for (let index = answeredCount - 1; index >= 0 && outcomes[index] === true; index -= 1) streak += 1;
   const segments = practiceSegments(questions.length, answeredCount, outcomes);
   const card = question?.card;
+  const cardTier = card ? getLibraryCardTier(card) : "new";
   const example = card?.exampleSentence?.trim() ? card.exampleSentence.trim() : "";
   const exampleParts = card && example ? splitExample(example, card.word) : null;
   const syllables = card && targetLanguage === "en" ? parseSyllables(card.word, card.phonetic) : null;
@@ -300,8 +302,10 @@ export function QuizView({
             progressValue={answeredCount}
             chip={!focusModeEnabled && answeredCount >= 2 ? (
               <span data-practice-combo={answeredCount} className="practice-chip">
-                <Zap size={14} aria-hidden="true" />
-                <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} />
+                <span className="practice-chip__text">
+                  <Zap size={14} aria-hidden="true" />
+                  <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} />
+                </span>
               </span>
             ) : undefined}
             count={<PracticeCount current={answeredCount} total={questions.length} />}
@@ -330,8 +334,12 @@ export function QuizView({
               </LumiCoach>
             )}
             <span className="practice-quiz__wing crystal-wing-art" aria-hidden="true" />
-            <section data-quiz-question-panel className="practice-prompt crystal-chamfer" aria-label={_(msg({ id: "practice.quiz.prompt-card", message: "Prompt card" }))}>
+            <section data-quiz-question-panel data-tier={cardTier} className="practice-prompt" aria-label={_(msg({ id: "practice.quiz.prompt-card", message: "Prompt card" }))}>
               <div className="practice-prompt__top">
+                <span className="practice-prompt__tier" aria-hidden="true">
+                  <span className="practice-prompt__tier-grade"><CardTierName tier={cardTier} /></span>
+                  <span className="practice-prompt__tier-name"><CardTierStatus tier={cardTier} /></span>
+                </span>
                 <p className="practice-prompt__direction">
                   <span>{targetToNative ? targetLanguageName : nativeLanguageName}</span>
                   <ArrowRight size={13} aria-hidden="true" />
@@ -432,7 +440,7 @@ export function QuizView({
                       disabled={answered}
                       aria-pressed={selected}
                       data-state={state}
-                      className="practice-option crystal-chamfer min-w-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                      className="practice-option min-w-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                     >
                       <span aria-hidden="true" className="practice-option__key">
                         {optionIndex + 1}
@@ -461,7 +469,7 @@ export function QuizView({
                 </button>
               )}
               {answered && hasExplanation && (
-                <div className="practice-explain crystal-chamfer-sm">
+                <div className="practice-explain crystal-chamfer">
                   <span className="practice-explain__icon" aria-hidden="true" />
                   <p>
                     <b lang={targetLanguage}>{explanationWord}</b>
@@ -496,7 +504,7 @@ export function QuizView({
                     onClick={onNext}
                     disabled={savingResult}
                     aria-busy={savingResult}
-                    className="practice-primary crystal-chamfer-sm min-h-14 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                    className="practice-primary crystal-chamfer min-h-14 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                   >
                     {savingResult ? (
                       <Trans {...msg({ context: 'practice.actions.saving-result', message: 'Saving result…' })} />

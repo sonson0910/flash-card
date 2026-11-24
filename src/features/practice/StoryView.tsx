@@ -3,6 +3,7 @@ import { i18n } from "@lingui/core";
 import { Trans, useLingui } from "@lingui/react";
 import { CircleAlert, Loader2, Play, RefreshCw, Square, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { CardTierName, CardTierStatus } from "../../components/flashcard/CardFront";
 import { headwordStressParts } from "../../components/flashcard/CardHeadword";
 import { GsapEntrance } from "../../components/motion/GsapEntrance";
 import { cancelSpeech, playWordAudio, type WordAudioPlayback } from "../../lib/audio";
@@ -114,7 +115,7 @@ function StoryGloss({ card, onListen, onReview }: StoryGlossProps) {
     <>
       <span className="practice-story__gloss-head">
         <span className="practice-story__gloss-word" lang={card.language}>
-          {stress ? <>{stress.stressed}<em>{stress.rest}</em></> : card.word}
+          {stress ? <><span className="practice-story__gloss-stress">{stress.stressed}</span><em>{stress.rest}</em></> : card.word}
         </span>
         <button
           type="button"
@@ -294,6 +295,7 @@ export function StoryView({ story, loading, error = null, onGenerate, onClose, o
         type="button"
         data-story-word
         data-tier={getLibraryCardTier(card)}
+        data-current={crystal && glossCard?.id === card.id ? "true" : undefined}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? POPOVER_ID : undefined}
@@ -360,7 +362,7 @@ export function StoryView({ story, loading, error = null, onGenerate, onClose, o
               className="practice-topbar__action crystal-chamfer-sm min-h-11 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
               data-variant="accent"
             >
-              {playing === "story" ? <Square size={12} fill="currentColor" aria-hidden="true" /> : <Play size={12} fill="currentColor" aria-hidden="true" />}
+              {playing === "story" ? <Square size={12} fill="currentColor" aria-hidden="true" /> : <Play size={crystal ? 13 : 12} fill="currentColor" aria-hidden="true" />}
               <span className="practice-topbar__action-label">
                 <Trans {...msg({ context: "practice.story.listen", message: "Listen" })} />
               </span>
@@ -427,14 +429,16 @@ export function StoryView({ story, loading, error = null, onGenerate, onClose, o
         >
           <article className="practice-story__article">
             <p className="practice-story__meta">
-              <span className="practice-story__chip crystal-chamfer-sm">
-                <Trans {...msg({ context: "practice.story.target-language", message: "{languageName}" })} values={{ languageName: languageName(language, locale) }} />
+              <span className="practice-story__chip">
+                <span className="practice-story__chip-text">
+                  <Trans {...msg({ context: "practice.story.target-language", message: "{languageName}" })} values={{ languageName: languageName(language, locale) }} />
+                </span>
               </span>
               <span>
                 {cards.length > 0 && (
                   <>
                     <Trans {...msg({ context: "practice.story.word-count", message: "{count} of your words" })} values={{ count: cards.length }} />
-                    <span className="practice-story__sep" aria-hidden="true"> · </span>
+                    <span className="practice-story__sep" aria-hidden="true">{crystal ? " // " : " · "}</span>
                   </>
                 )}
                 <Trans {...msg({ context: "practice.story.read-time", message: "{minutes} min read" })} values={{ minutes: storyReadMinutes(storyText, language) }} />
@@ -513,9 +517,15 @@ export function StoryView({ story, loading, error = null, onGenerate, onClose, o
           </article>
           <aside className="practice-story__aside">
             {crystal && glossCard && (
-              <section data-story-pop className="practice-story__gloss-panel crystal-chamfer" aria-labelledby="story-gloss-heading" aria-live="polite" data-tier={getLibraryCardTier(glossCard)}>
-                <p id="story-gloss-heading" className="practice-story__gloss-label">
-                  <Trans {...msg({ context: "practice.story.gloss", message: "Lumi gloss" })} />
+              <section data-story-pop className="practice-story__gloss-panel" aria-labelledby="story-gloss-heading" aria-live="polite" data-tier={getLibraryCardTier(glossCard)}>
+                <p className="practice-story__gloss-top">
+                  <span className="practice-story__tier" aria-hidden="true">
+                    <span className="practice-story__tier-grade"><CardTierName tier={getLibraryCardTier(glossCard)} /></span>
+                    <span className="practice-story__tier-name"><CardTierStatus tier={getLibraryCardTier(glossCard)} /></span>
+                  </span>
+                  <span id="story-gloss-heading" className="practice-story__gloss-label">
+                    <Trans {...msg({ context: "practice.story.gloss", message: "Lumi gloss" })} />
+                  </span>
                 </p>
                 <StoryGloss
                   card={glossCard}
@@ -537,7 +547,9 @@ export function StoryView({ story, loading, error = null, onGenerate, onClose, o
                       <li key={card.id}>
                         {wordTrigger(card, anchor, (
                           <>
-                            <span aria-hidden="true" className="practice-story__dot" />
+                            {crystal
+                              ? <span aria-hidden="true" className="practice-story__row-tier"><CardTierName tier={getLibraryCardTier(card)} /></span>
+                              : <span aria-hidden="true" className="practice-story__dot" />}
                             <span className="practice-story__row-word" lang={card.language}>{card.word}</span>
                             <span className="practice-story__row-meaning" lang={card.translationLanguage}>{card.translation}</span>
                           </>
@@ -550,16 +562,24 @@ export function StoryView({ story, loading, error = null, onGenerate, onClose, o
               </section>
             )}
             {cards.length > 0 && (onReviewCards || !showLumi) ? (
-              <div className="practice-story__tip crystal-chamfer">
+              <div className="practice-story__tip">
                 {!showLumi && <p>{tip}</p>}
                 {onReviewCards && (
                   <button
                     type="button"
                     data-color-role="primary"
                     onClick={() => reviewCards([...cards])}
-                    className="practice-primary crystal-chamfer-sm min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                    className="practice-primary crystal-chamfer min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                   >
-                    <Trans {...msg({ context: "practice.story.review-all", message: "{count, plural, one {Review this word} other {Review these # words}}" })} values={{ count: cards.length }} />
+                    {crystal && (
+                      <>
+                        <span aria-hidden="true" className="practice-story__shine crystal-shine" />
+                        <svg className="practice-story__star" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l3 7.1 7.7.6-5.9 5 1.8 7.5L12 17.7l-6.6 4 1.8-7.5-5.9-5 7.7-.6z" fill="currentColor" /><path d="M12 1.5l3 7.1-3 9.1z" fill="var(--sf-reward)" /></svg>
+                      </>
+                    )}
+                    <span className="practice-story__review-label">
+                      <Trans {...msg({ context: "practice.story.review-all", message: "{count, plural, one {Review this word} other {Review these # words}}" })} values={{ count: cards.length }} />
+                    </span>
                   </button>
                 )}
               </div>

@@ -12,6 +12,10 @@ import { speechLocaleFor } from '../../lib/speechLocale';
 import { scoreSpeechMatch, type SpeechMatchResult } from '../../lib/speechMatch';
 import type { CardData } from '../../types/card';
 import { useCourseSession } from '../courses/CourseGate';
+import { getLibraryCardTier } from '../library/libraryViewModel';
+import { useTheme } from '../theme/ThemeProvider';
+import { headwordStressParts } from '../../components/flashcard/CardHeadword';
+import { CardTierName } from '../../components/flashcard/CardFront';
 import { PronunciationVideo } from '../../components/flashcard/PronunciationVideo';
 import { WordContextVideo, contextForWord } from '../../components/flashcard/WordContextVideo';
 import { LumiCoach, PracticeCount, PracticeTopBar, useCrystalLumi, type PracticeSegmentState } from './practice-board-parts';
@@ -32,6 +36,7 @@ type Descriptor = ReturnType<typeof msg>;
 
 export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
   const { _ } = useLingui();
+  const crystal = useTheme().family === 'crystal';
   const t = (descriptor: Descriptor, values?: Record<string, unknown>) => _({ ...descriptor, values });
   const { model: courseModel } = useCourseSession();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -231,6 +236,8 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
   const model = modelAudio && modelAudio.url === audioUrl ? modelAudio.peaks : null;
   const hasTake = takeNumber > 0 && (isListening || takeSamples > 0 || Boolean(transcript) || Boolean(matchResult));
   const isLast = currentIndex === cards.length - 1;
+  const spaced = !/^(ja|zh|th)/.test(targetLanguage);
+  const stress = headwordStressParts(card);
 
   return (
     <div className="practice-board practice-board--shadowing practice-stage" data-practice-mode="shadowing">
@@ -247,14 +254,18 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
       />
 
       <section className="practice-shadowing" aria-labelledby="shadowing-sentence">
-        <p className="practice-shadowing__focus crystal-chamfer-sm">
-          <span><Trans {...msg({ context: 'practice.shadowing.focus-word', message: 'Focus word' })} /></span>{' '}
-          <span lang={targetLanguage} className="practice-shadowing__focus-word">{card.word}</span>
-          {card.phonetic && <span lang={targetLanguage} className="practice-shadowing__ipa">{card.phonetic}</span>}
+        <p className="practice-shadowing__focus">
+          <span className="practice-shadowing__focus-text">
+            <span><Trans {...msg({ context: 'practice.shadowing.focus-word', message: 'Focus word' })} /></span>{' '}
+            <span lang={targetLanguage} className="practice-shadowing__focus-word">
+              {crystal && stress ? <><span className="practice-shadowing__focus-stress">{stress.stressed}</span>{stress.rest}</> : card.word}
+            </span>
+            {card.phonetic && <span lang={targetLanguage} className="practice-shadowing__ipa">{card.phonetic}</span>}
+          </span>
         </p>
-        <h2 id="shadowing-sentence" lang={targetLanguage} className="practice-shadowing__sentence">
+        <h2 id="shadowing-sentence" lang={targetLanguage} className="practice-shadowing__sentence" data-spaced={spaced || undefined}>
           {words.map((word, index) => (
-            <SentenceWord key={index} word={word} space={index > 0 && !/^(ja|zh|th)/.test(targetLanguage)} />
+            <SentenceWord key={index} word={word} space={index > 0 && spaced} />
           ))}
         </h2>
         {!practiceWord && !practiceContext && card.exampleTranslation && (
@@ -294,7 +305,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
                 className="practice-shadowing__play focus-visible:outline-2 focus-visible:outline-offset-2"
                 aria-label={t(msg({ id: 'practice.shadowing.play-pronunciation', message: 'Play pronunciation for {word}' }), { word: card.word })}
               >
-                <span className="crystal-chamfer-sm"><Play size={13} fill="currentColor" aria-hidden="true" /></span>
+                <span><Play size={crystal ? 12 : 13} fill="currentColor" aria-hidden="true" /></span>
               </button>
               <span className="practice-shadowing__track-label"><Trans {...msg({ context: 'practice.shadowing.model', message: 'Model' })} /></span>
               {model && <span className="practice-shadowing__clock">{formatTakeClock(model.duration)}</span>}
@@ -338,6 +349,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
                   <span>
                     <Trans {...msg({ context: 'practice.shadowing.match-take', message: '% match · take {take}' })} values={{ take: takeNumber }} />
                   </span>
+                  {crystal && <span className="practice-shadowing__tier" data-tier={getLibraryCardTier(card)}><CardTierName tier={getLibraryCardTier(card)} /></span>}
                 </p>
                 <div
                   className="practice-shadowing__meter"
@@ -371,8 +383,9 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
             className="practice-shadowing__mic focus-visible:outline-2 focus-visible:outline-offset-4"
             aria-label={isListening ? _(msg({ id: 'practice.shadowing.stop-recording', message: 'Stop recording' })) : _(msg({ id: 'practice.shadowing.start-reading', message: 'Start reading' }))}
           >
+            {crystal && <span className="practice-shadowing__mic-ring" aria-hidden="true"><span className="practice-shadowing__mic-ring-spin" /></span>}
             <span className="practice-shadowing__mic-face">
-              {isListening ? <span className="practice-shadowing__stop" aria-hidden="true" /> : <Mic size={34} aria-hidden="true" />}
+              {isListening ? <span className="practice-shadowing__stop" aria-hidden="true" /> : <Mic size={crystal ? 30 : 34} aria-hidden="true" />}
             </span>
           </button>
 
@@ -381,13 +394,13 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
               type="button"
               onClick={() => move(Math.max(0, currentIndex - 1))}
               disabled={currentIndex === 0}
-              className="practice-shadowing__prev practice-secondary crystal-chamfer-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="practice-shadowing__prev practice-secondary crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2"
               aria-label={_(msg({ id: 'practice.shadowing.previous', message: 'Previous word' }))}
             >
               <ChevronLeft size={20} aria-hidden="true" />
             </button>
             {(matchResult || transcript) && !isListening && (
-              <button type="button" onClick={startListening} className="practice-secondary crystal-chamfer-sm focus-visible:outline-2 focus-visible:outline-offset-2">
+              <button type="button" onClick={startListening} className="practice-secondary crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2">
                 <RotateCcw size={16} aria-hidden="true" />
                 <Trans {...msg({ context: 'practice.shadowing.try-again', message: 'Try again' })} />
               </button>
@@ -396,10 +409,11 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
               type="button"
               onClick={() => move(Math.min(cards.length - 1, currentIndex + 1))}
               disabled={isLast}
-              className="practice-primary crystal-chamfer-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="practice-primary crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2"
               aria-label={_(msg({ id: 'practice.shadowing.next', message: 'Next word' }))}
             >
-              <Trans {...msg({ context: 'practice.shadowing.next-short', message: 'Next' })} />
+              {crystal && <span aria-hidden="true" className="practice-shadowing__shine crystal-shine" />}
+              <span className="practice-shadowing__next-label"><Trans {...msg({ context: 'practice.shadowing.next-short', message: 'Next' })} /></span>
               <ChevronRight size={18} aria-hidden="true" />
             </button>
           </div>
@@ -443,7 +457,7 @@ function SentenceWord({ word, space }: { word: ShadowingWord; space: boolean }) 
     <>
       {space && ' '}
       <span className="practice-shadowing__word" data-mark={word.mark} data-focus={word.focus || undefined}>
-        {word.text}
+        <span className="practice-shadowing__word-text">{word.text}</span>
         <span aria-hidden="true" className="practice-shadowing__bar" />
       </span>
     </>

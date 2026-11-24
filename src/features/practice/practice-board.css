@@ -170,10 +170,10 @@
 .practice-recap-primary:active, .practice-recap-secondary:active { transform: scale(.98); }
 
 /* Crystal Star (AnimeRecap). */
-[data-family="crystal"] {
+.practice-recap-board[data-family="crystal"] {
   --rk-text: #f3f5fa; --rk-strong: #fff; --rk-text2: #aab3c5; --rk-text3: #7a8397; --rk-crimson: #ff6b85; --rk-holo: var(--sf-second); --rk-gold: var(--sf-reward); --rk-violet: #ff9ec0;
   --rk-chip: rgb(255 255 255 / .06); --rk-line-strong: rgb(255 255 255 / .22); --rk-track: rgb(255 255 255 / .1);
-  --rk-panel: linear-gradient(160deg, rgb(22 26 40 / .9), rgb(8 10 18 / .94)); --rk-edge: rgb(255 84 112 / .55); --rk-edge2: color-mix(in srgb, var(--sf-second) 40%, transparent);
+  --rk-panel: linear-gradient(160deg, rgb(22 26 40 / .9), rgb(8 10 18 / .94)); --rk-edge: var(--sf-panel-edge); --rk-edge2: var(--sf-panel-edge-2);
   --rk-card-front: linear-gradient(180deg, #121624 0%, #080a12 100%); --rk-beam: rgb(255 255 255 / .08);
   --rk-primary: linear-gradient(180deg, #ff5470 0%, var(--sf-brand) 45%, #b30f33 100%); --rk-primary-glow: drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 70%, transparent));
   --rk-cheer: var(--sf-metal); --rk-cheer-shadow: drop-shadow(0 5px 0 var(--sf-star-shade)) drop-shadow(0 0 26px color-mix(in srgb, var(--sf-brand) 85%, transparent));
@@ -181,12 +181,12 @@
   background: radial-gradient(ellipse 55% 45% at 18% 18%, rgb(16 42 92 / .55), transparent 70%), radial-gradient(ellipse 50% 45% at 85% 72%, rgb(10 50 110 / .5), transparent 70%), radial-gradient(ellipse 45% 35% at 62% 8%, rgb(179 15 51 / .3), transparent 70%), radial-gradient(ellipse 40% 30% at 30% 95%, rgb(122 8 32 / .35), transparent 70%), var(--sf-canvas);
   color: var(--rk-text); font-family: var(--sf-font-body);
 }
-:root[data-theme-family="crystal"]:not(.dark) [data-family="crystal"] {
-  --rk-text: var(--sf-text); --rk-strong: var(--sf-text-strong); --rk-text2: var(--sf-text-muted); --rk-text3: var(--sf-text-muted); --rk-crimson: var(--sf-brand-text); --rk-holo: #065a6e; --rk-gold: #8a5a00; --rk-violet: #b3265a;
+:root[data-theme-family="crystal"]:not(.dark) .practice-recap-board[data-family="crystal"] {
+  --rk-text: var(--sf-text); --rk-strong: var(--sf-text-strong); --rk-text2: var(--sf-text-muted); --rk-text3: var(--sf-text-muted); --rk-crimson: var(--sf-brand-text); --rk-holo: var(--sf-holo-text); --rk-gold: #8a5a00; --rk-violet: #b3265a;
   --rk-chip: var(--sf-surface-raised); --rk-line-strong: var(--sf-edge-highlight); --rk-track: var(--sf-border);
   --rk-panel: var(--sf-surface-glass); --rk-edge: var(--sf-panel-edge); --rk-edge2: var(--sf-panel-edge-2);
   --rk-card-front: var(--sf-card-front); --rk-beam: rgb(255 255 255 / .5);
-  --rk-primary: var(--sf-primary-bg); --rk-primary-glow: drop-shadow(0 12px 20px rgb(224 23 63 / .45));
+  --rk-primary: var(--sf-primary-bg); --rk-primary-glow: drop-shadow(0 0 18px rgb(255 42 77 / .7));
   /* The white cheer metal disappears on Prism Day; the theme metal is a navy-to-crimson ink there. */
   --rk-cheer: var(--sf-metal);
   --rc-accent: #a30c2d;
@@ -198,19 +198,21 @@
   background: linear-gradient(90deg, transparent, var(--rk-beam), rgb(255 255 255 / .12), var(--rk-beam), transparent); filter: blur(6px);
 }
 .practice-recap-board[data-family="crystal"]::after { position: absolute; z-index: -1; inset: 0; background: var(--nk-stars, none); content: ''; pointer-events: none; }
-[data-family="crystal"] :is(button, a):focus-visible { outline-color: var(--rk-holo); }
-[data-family="crystal"] .practice-recap-header { height: 70px; gap: 10px; padding: 0 44px; }
-.practice-recap-kicker { margin: 0; color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.practice-recap-board[data-family="crystal"] :is(button, a):focus-visible { outline-color: var(--rk-holo); }
+.practice-recap-board[data-family="crystal"] .practice-recap-header { height: 70px; gap: 14px; padding: 0 44px; }
+.practice-recap-kicker { margin: 0; color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; line-height: normal; letter-spacing: .14em; text-transform: uppercase; }
 .practice-recap-kicker i { color: var(--rk-crimson); font-style: inherit; }
-[data-family="crystal"] .practice-recap-theme { margin-left: auto; }
-[data-family="crystal"] .practice-recap-icon-button { width: 42px; height: 42px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--rk-chip); box-shadow: inset 0 0 0 1px var(--rk-line-strong); color: var(--rk-text); }
-[data-family="crystal"] .practice-recap-main { padding: 0 56px 30px; }
+.practice-recap-board[data-family="crystal"] .practice-recap-theme { margin-left: auto; }
+.practice-recap-board[data-family="crystal"] .practice-recap-icon-button { width: 42px; height: 42px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--rk-chip); box-shadow: inset 0 0 0 1px var(--rk-line-strong); color: var(--rk-text); }
+.practice-recap-board[data-family="crystal"] .practice-recap-main { padding: 0 56px 30px; }
 .practice-recap-hero { position: relative; display: flex; width: min(1000px, 100%); height: 300px; flex-shrink: 0; justify-content: center; }
 .practice-recap-burst { position: absolute; inset: 0; pointer-events: none; }
 .practice-recap-wing { position: absolute; top: -20px; left: 50px; width: 460px; height: 310px; overflow: visible; filter: drop-shadow(0 0 26px rgb(255 42 77 / .75)); }
 .practice-recap-wing[data-mirrored] { right: 50px; left: auto; transform: scaleX(-1); }
 .practice-recap-star { position: absolute; top: 0; left: 50%; width: 230px; height: 230px; margin-left: -115px; filter: drop-shadow(0 0 30px rgb(255 42 77 / .9)); }
 .practice-recap-star svg { display: block; width: 100%; height: 100%; overflow: visible; }
+/* The board's star rests stamped at -12deg (where its stamp entrance ends), its grade word turning with it. */
+.practice-recap-board[data-family="crystal"] .practice-recap-star { transform: rotate(-12deg); }
 .practice-recap-star-text {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-top: 18px;
   background: linear-gradient(180deg, #fff 0%, #fff3c4 45%, #ffd166 55%, #fff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -222,51 +224,60 @@
   position: absolute; right: 0; bottom: 0; left: 0; margin: 0; background: var(--rk-cheer); -webkit-background-clip: text; background-clip: text; color: transparent;
   font-family: var(--sf-font-display); font-size: 92px; font-style: italic; font-weight: 900; line-height: 1; letter-spacing: .02em; text-transform: uppercase; filter: var(--rk-cheer-shadow);
 }
-[data-family="crystal"] .practice-recap-stats {
+.practice-recap-board[data-family="crystal"] .practice-recap-stats {
   width: 100%; grid-auto-columns: auto; grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 14px; margin-top: 22px;
   border: 0; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
 }
-[data-family="crystal"] .practice-recap-stat {
-  --rk-bar: var(--rk-holo); position: relative; padding: 14px 20px 16px; border: 0; clip-path: var(--nk-chamfer); background: var(--rk-panel); box-shadow: inset 0 0 0 1px var(--rk-edge2);
+/* The stat bars are the board's literal accents in both modes; study time pairs the cyan edge with a gold bar. */
+.practice-recap-board[data-family="crystal"] .practice-recap-stat {
+  --rk-bar: #5ef2ff; position: relative; padding: 14px 20px 16px; border: 0; clip-path: var(--nk-chamfer); background: var(--rk-panel); box-shadow: inset 0 0 0 1px var(--rk-edge2);
 }
-[data-family="crystal"] .practice-recap-stat::before { position: absolute; top: 0; bottom: 0; left: 0; width: 4px; background: var(--rk-bar); content: ''; }
-[data-family="crystal"] .practice-recap-stat[data-tone="crimson"] { --rk-bar: var(--sf-brand); box-shadow: inset 0 0 0 1px var(--rk-edge); }
-[data-family="crystal"] .practice-recap-stat[data-tone="gold"] { --rk-bar: var(--sf-reward); box-shadow: inset 0 0 0 1px var(--rk-edge); }
-[data-family="crystal"] .practice-recap-stat dt { color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-[data-family="crystal"] .practice-recap-stat-value { margin-top: 2px; gap: 0; color: var(--rk-strong); font-size: 44px; font-style: italic; font-weight: 900; line-height: 1.05; }
-[data-family="crystal"] .practice-recap-stat[data-tone="crimson"] .practice-recap-stat-value { color: var(--rk-crimson); }
-[data-family="crystal"] .practice-recap-stat[data-tone="gold"] .practice-recap-stat-value { color: var(--rk-gold); }
-[data-family="crystal"] .practice-recap-pct { align-self: auto; margin: 0; font-size: inherit; }
-[data-family="crystal"] .practice-recap-stat-sub { margin: 0; color: var(--rk-text2); font-size: 12.5px; }
-[data-family="crystal"] .practice-recap-progress { color: var(--rk-text2); }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat::before { position: absolute; top: 0; bottom: 0; left: 0; width: 4px; background: var(--rk-bar); content: ''; }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat[data-tone="crimson"] { --rk-bar: #ff2a4d; box-shadow: inset 0 0 0 1px var(--rk-edge); }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat[data-tone="gold"] { --rk-bar: #ffd166; box-shadow: inset 0 0 0 1px var(--rk-edge); }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat:has([data-recap-duration]) { --rk-bar: #ffd166; }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat dt { color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; line-height: normal; letter-spacing: .14em; text-transform: uppercase; }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat-value { margin-top: 2px; gap: normal; color: var(--rk-strong); font-size: 44px; font-style: italic; font-weight: 900; line-height: 1.05; }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat[data-tone="crimson"] .practice-recap-stat-value { color: var(--rk-crimson); }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat[data-tone="gold"] .practice-recap-stat-value { color: var(--rk-gold); }
+.practice-recap-board[data-family="crystal"] .practice-recap-pct { align-self: auto; margin: 0; font-size: inherit; }
+.practice-recap-board[data-family="crystal"] .practice-recap-stat-sub { margin: 0; color: var(--rk-text3); font-size: 12.5px; line-height: normal; }
+.practice-recap-board[data-family="crystal"] .practice-recap-progress { color: var(--rk-text2); }
 .practice-recap-panels { display: grid; width: 100%; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; margin-top: 16px; text-align: left; }
 .practice-recap-panels:has(> :nth-child(2)) { grid-template-columns: 1.3fr 1fr; }
 .practice-recap-panel { min-width: 0; padding: 16px 22px 18px; clip-path: var(--nk-chamfer); background: var(--rk-panel); box-shadow: inset 0 0 0 1px var(--rk-edge); }
 .practice-recap-panel--revisit { box-shadow: inset 0 0 0 1px var(--rk-edge2); }
-.practice-recap-panel-heading { margin: 0; color: var(--rk-crimson); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.practice-recap-panel-heading { margin: 0; color: var(--rk-crimson); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; line-height: normal; letter-spacing: .14em; text-transform: uppercase; }
 .practice-recap-panel--revisit .practice-recap-panel-heading { color: var(--rk-holo); }
 .practice-recap-panel-heading span { color: var(--rk-text3); }
 /* "Cards glowed up" fills the row the goal panel sets: the card grid grows and the cards stretch with it. */
-[data-family="crystal"] .practice-recap-panel--up { display: flex; flex-direction: column; }
-[data-family="crystal"] .practice-recap-cards { display: grid; flex-grow: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 12px; margin: 12px 0 0; }
-[data-family="crystal"] .practice-recap-card { --rk-rim: linear-gradient(150deg, #ffe3f1, #ff8fb6 35%, #ff5470 65%, var(--sf-second)); --rk-to: var(--rk-violet); display: block; filter: drop-shadow(0 0 14px rgb(155 107 255 / .55)); }
-[data-family="crystal"] .practice-recap-card[data-tier="mastered"] { --rk-rim: conic-gradient(from 200deg, #fff3c4, var(--sf-reward), var(--sf-brand), var(--sf-star-shade), #ff5470, #fff, var(--sf-reward), #fff3c4); --rk-to: var(--rk-crimson); filter: drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 80%, transparent)); }
+.practice-recap-board[data-family="crystal"] .practice-recap-panel--up { display: flex; flex-direction: column; }
+.practice-recap-board[data-family="crystal"] .practice-recap-cards { display: grid; flex-grow: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 12px; margin: 12px 0 0; }
+.practice-recap-board[data-family="crystal"] .practice-recap-card { --rk-rim: linear-gradient(150deg, #ffe3f1, #ff8fb6 35%, #ff5470 65%, var(--sf-second)); --rk-to: var(--rk-violet); display: block; filter: drop-shadow(0 0 14px rgb(155 107 255 / .55)); }
+.practice-recap-board[data-family="crystal"] .practice-recap-card[data-tier="mastered"] { --rk-rim: conic-gradient(from 200deg, #fff3c4, var(--sf-reward), var(--sf-brand), var(--sf-star-shade), #ff5470, #fff, var(--sf-reward), #fff3c4); --rk-to: var(--rk-crimson); filter: drop-shadow(0 0 18px color-mix(in srgb, var(--sf-brand) 80%, transparent)); }
 .practice-recap-board[data-family="crystal"] .practice-recap-card-face {
   width: auto; height: 100%; min-height: 92px; padding: 2px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--rk-rim); box-shadow: none; transform: none;
 }
-[data-family="crystal"] .practice-recap-card-body { height: 100%; box-sizing: border-box; padding: 10px 12px; clip-path: var(--nk-chamfer-sm); background: var(--rk-card-front); }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-body { height: 100%; box-sizing: border-box; padding: 10px 12px; clip-path: var(--nk-chamfer-sm); background: var(--rk-card-front); }
 .practice-recap-board[data-family="crystal"] .practice-recap-card-word { color: var(--rk-strong); font-size: 20px; font-style: italic; font-weight: 900; line-height: 1.15; letter-spacing: 0; }
-[data-family="crystal"] .practice-recap-card-meaning { margin-top: 0; color: var(--rk-text2); font-size: 12.5px; }
-[data-family="crystal"] .practice-recap-card-move { padding: 0; color: var(--rk-text3); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 900; letter-spacing: 0; text-transform: none; }
-[data-family="crystal"] .practice-recap-card-move svg { color: var(--rk-text2); }
-[data-family="crystal"] .practice-recap-card-from { text-decoration: none; }
-[data-family="crystal"] .practice-recap-card-to { color: var(--rk-to); }
-[data-family="crystal"] .practice-recap-card-foil { display: none; }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-meaning { margin-top: 0; color: var(--rk-text2); font-size: 12.5px; }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-move { padding: 0; color: var(--rk-text3); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 900; letter-spacing: 0; text-transform: none; }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-move svg { color: var(--rk-text2); }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-from { text-decoration: none; }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-to { color: var(--rk-to); }
+.practice-recap-board[data-family="crystal"] .practice-recap-card-foil { display: none; }
 .practice-recap-weak { display: flex; flex-wrap: wrap; gap: 8px; max-height: 92px; margin: 12px 0 0; padding: 0; overflow-y: auto; list-style: none; }
 .practice-recap-weak li { padding: 6px 12px; clip-path: var(--nk-chamfer-sm); background: var(--rk-chip); box-shadow: inset 0 0 0 1px var(--rk-line-strong); color: var(--rk-strong); font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; }
-.practice-recap-next { display: flex; width: 100%; align-items: center; gap: 12px; margin-top: auto; padding-top: 20px; text-align: left; }
-.practice-recap-lumi { width: 112px; height: 108px; flex-shrink: 0; object-fit: contain; }
-.practice-recap-next-label { margin: 0 6px 0 0; color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+/* The footer sits at the bottom of the board; the block above it keeps it at least 20px away when the board scrolls. */
+.practice-recap-next { display: flex; width: 100%; align-items: center; gap: 12px; margin-top: auto; text-align: left; }
+.practice-recap-main > :has(+ .practice-recap-next) { margin-bottom: 20px; }
+/* The board's mascot: the glow sits on the frame and the fade on the image, so the glow follows the faded outline. */
+.practice-recap-mascot { display: block; width: 112px; height: 108px; flex-shrink: 0; filter: drop-shadow(0 0 16px rgb(94 242 255 / .35)); pointer-events: none; }
+.practice-recap-lumi {
+  display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%;
+  -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%);
+}
+.practice-recap-next-label { margin: 0 6px 0 0; color: var(--rk-text2); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; line-height: normal; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
 .practice-recap-next-chips { display: flex; min-width: 0; flex-wrap: wrap; gap: 12px; }
 .practice-recap-chip { display: flex; min-height: 52px; align-items: center; padding: 0 22px; border: 0; background: var(--rk-chip); box-shadow: inset 0 0 0 1px var(--rk-line-strong); color: var(--rk-strong); transform: skewX(-14deg); }
 button.practice-recap-chip { cursor: pointer; transition: transform .15s ease, filter .15s ease; }
@@ -274,11 +285,11 @@ button.practice-recap-chip:hover { filter: brightness(1.08); }
 .practice-recap-chip > span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; transform: skewX(14deg); }
 .practice-recap-chip strong { font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .practice-recap-chip small { color: var(--rk-text2); font-size: 12px; }
-[data-family="crystal"] .practice-recap-primary {
-  min-height: 60px; margin-left: auto; padding: 0 34px; border-radius: 0; clip-path: var(--nk-chamfer); background: var(--rk-primary); box-shadow: none; color: #fff;
-  font-family: var(--sf-font-display); font-size: 20px; font-style: italic; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+.practice-recap-board[data-family="crystal"] .practice-recap-primary {
+  min-height: 60px; margin-left: auto; gap: normal; padding: 0 34px; border-radius: 0; clip-path: var(--nk-chamfer); background: var(--rk-primary); box-shadow: none; color: #fff;
+  font-family: var(--sf-font-display); font-size: 20px; font-style: italic; font-weight: 900; line-height: normal; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
 }
-[data-family="crystal"] .practice-recap-next > .practice-recap-primary { filter: var(--rk-primary-glow); }
+.practice-recap-board[data-family="crystal"] .practice-recap-next > .practice-recap-primary { filter: var(--rk-primary-glow); }
 
 @media (max-width: 760px) {
   .practice-recap-header { height: 64px; gap: 12px; padding: 0 16px; }
@@ -305,9 +316,9 @@ button.practice-recap-chip:hover { filter: brightness(1.08); }
   .practice-recap-actions { width: 100%; flex-direction: column; align-items: stretch; gap: 10px; margin-top: 22px; }
   .practice-recap-primary, .practice-recap-secondary { min-height: 52px; }
 
-  [data-family="crystal"] .practice-recap-header { height: 60px; padding: 0 16px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-header { height: 60px; padding: 0 16px; }
   .practice-recap-kicker { font-size: 12px; letter-spacing: .12em; }
-  [data-family="crystal"] .practice-recap-main { padding: 0 16px 20px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-main { padding: 0 16px 20px; }
   .practice-recap-hero { width: 100%; height: 220px; }
   .practice-recap-wing { top: 10px; left: calc(50% - 215px); width: 230px; height: 155px; opacity: .85; }
   .practice-recap-wing[data-mirrored] { right: calc(50% - 215px); left: auto; }
@@ -315,25 +326,26 @@ button.practice-recap-chip:hover { filter: brightness(1.08); }
   .practice-recap-star-text { padding-top: 12px; font-size: 40px; }
   .practice-recap-flare { width: 240px; margin-left: -120px; }
   .practice-recap-cheer { font-size: 54px; }
-  [data-family="crystal"] .practice-recap-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
-  [data-family="crystal"] .practice-recap-stat { padding: 12px 14px; clip-path: var(--nk-chamfer-sm); }
-  [data-family="crystal"] .practice-recap-stat dt { font-size: 11px; letter-spacing: .12em; }
-  [data-family="crystal"] .practice-recap-stat-value { font-size: 30px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-stat { padding: 12px 14px; clip-path: var(--nk-chamfer-sm); }
+  .practice-recap-board[data-family="crystal"] .practice-recap-stat dt { font-size: 11px; letter-spacing: .12em; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-stat-value { font-size: 30px; }
   .practice-recap-panels, .practice-recap-panels:has(> :nth-child(2)) { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 12px; }
   .practice-recap-panel { padding: 12px 14px 14px; clip-path: var(--nk-chamfer-sm); }
-  [data-family="crystal"] .practice-recap-cards { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-cards { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .practice-recap-board[data-family="crystal"] .practice-recap-card-face { height: auto; min-height: 0; }
-  [data-family="crystal"] .practice-recap-card-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; padding: 8px 12px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-card-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; padding: 8px 12px; }
   .practice-recap-board[data-family="crystal"] .practice-recap-card-word { font-size: 17px; }
-  [data-family="crystal"] .practice-recap-card-meaning { grid-row: 2; }
-  [data-family="crystal"] .practice-recap-card-move { grid-row: 1 / span 2; grid-column: 2; margin: 0; font-size: 13px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-card-meaning { grid-row: 2; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-card-move { grid-row: 1 / span 2; grid-column: 2; margin: 0; font-size: 13px; }
   .practice-recap-next { flex-wrap: wrap; gap: 10px; padding-top: 16px; }
-  .practice-recap-lumi { display: none; }
+  .practice-recap-main > :has(+ .practice-recap-next) { margin-bottom: 0; }
+  .practice-recap-mascot { display: none; }
   .practice-recap-next-label { width: 100%; }
   .practice-recap-next-chips { width: 100%; flex-direction: column; gap: 8px; }
   .practice-recap-chip { min-height: 48px; justify-content: flex-start; padding: 0 18px; clip-path: var(--nk-chamfer-sm); transform: none; }
   .practice-recap-chip > span { transform: none; }
-  [data-family="crystal"] .practice-recap-primary { width: 100%; min-height: 56px; margin-left: 0; font-size: 18px; }
+  .practice-recap-board[data-family="crystal"] .practice-recap-primary { width: 100%; min-height: 56px; margin-left: 0; font-size: 18px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .practice-recap-confetti { display: none; }
@@ -346,9 +358,10 @@ button.practice-recap-chip:hover { filter: brightness(1.08); }
   background: radial-gradient(ellipse at 50% 10%, color-mix(in srgb, var(--sf-brand) 17%, transparent), transparent 64%), radial-gradient(ellipse at 72% 48%, rgb(68 141 255 / .13), transparent 70%);
 }
 :root[data-theme-family='crystal'] .practice-board :is(h1, h2, h3) { font-family: var(--sf-font-display, Kanit, sans-serif); font-style: italic; }
-/* The story page is an unframed reading column that hosts the word meaning sheet; clipping it cuts the sheet off. */
-:root[data-theme-family='crystal'] .practice-board:not(.practice-stage) :is(article:not(.practice-story__article), aside, [aria-labelledby$='question-heading']),
-:root[data-theme-family='crystal'] .practice-board :is(article:not(.practice-story__article), aside, [aria-labelledby$='question-heading']) { clip-path: var(--sf-chamfer, none); }
+/* The story page and its side column are unframed: the reading column hosts the word meaning sheet and the side
+   column holds the gloss card's glow, and clipping either cuts them off. */
+:root[data-theme-family='crystal'] .practice-board:not(.practice-stage) :is(article:not(.practice-story__article), aside:not(.practice-story__aside), [aria-labelledby$='question-heading']),
+:root[data-theme-family='crystal'] .practice-board :is(article:not(.practice-story__article), aside:not(.practice-story__aside), [aria-labelledby$='question-heading']) { clip-path: var(--sf-chamfer, none); }
 @media (max-width: 640px) {
   .practice-board:not(.practice-stage) { min-height: auto; padding-inline: 12px; }
   .practice-board:not(.practice-stage)::before { inset-inline: 0; top: 36px; height: 230px; }

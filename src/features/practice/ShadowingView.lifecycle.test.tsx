@@ -36,6 +36,7 @@ vi.mock('@lingui/react', () => ({
 
 vi.mock('../../lib/audio', () => ({ playWordAudio: vi.fn(() => ({ cancel: vi.fn() })) }));
 vi.mock('../courses/CourseGate', () => ({ useCourseSession: () => ({ model: { activeCourse: null } }) }));
+vi.mock('../theme/ThemeProvider', () => ({ useTheme: () => ({ family: 'classic' }) }));
 vi.mock('../../lib/confetti', () => ({ triggerConfetti: vi.fn() }));
 vi.mock('../../lib/haptics', () => ({ triggerHaptic: vi.fn() }));
 const playRewardSound = vi.hoisted(() => vi.fn());

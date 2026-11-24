@@ -1,7 +1,7 @@
 /* Board styling shared by the practice modes (quiz, spelling, story, shadowing, match).
    The rules live in the components layer so the crystal-chamfer utilities on the same
-   elements still win in Crystal: they square the corners, clip the cut and redraw its edge
-   from --sf-chamfer-edge, with the panel fill passed through --sf-chamfer-fill. */
+   elements still win in Crystal: they square the corners and clip the cut, with the panel
+   fill passed through --sf-chamfer-fill. */
 @layer components {
   /* Focus moved by script after a pointer press keeps no ring until the next key press;
      see practice-focus.ts. The outline stays in place so forced-colors mode still draws it. */
@@ -75,8 +75,8 @@
     --pr-radius-btn: 0;
     --pr-panel-bg: var(--sf-surface-glass);
     --pr-opt-bg: color-mix(in srgb, var(--sf-surface) 70%, transparent);
-    --pr-primary-bg: linear-gradient(100deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 72%, var(--sf-brand-hover)));
-    --pr-primary-text: var(--sf-on-brand);
+    --pr-primary-bg: var(--sf-primary-bg);
+    --pr-primary-text: var(--sf-on-primary);
     --pr-good: var(--sf-success);
     --pr-again: var(--sf-brand);
     --pr-display-weight: 900;
@@ -107,7 +107,6 @@
     border-radius: 999px;
     background: var(--pr-chip-bg);
     color: var(--sf-text-muted);
-    --sf-chamfer-edge: var(--pr-line-strong);
     --sf-chamfer-fill: var(--pr-chip-img);
   }
   .practice-topbar__close:hover,
@@ -187,7 +186,6 @@
     font-size: 16px;
     font-weight: 700;
     --sf-chamfer-fill: var(--pr-primary-bg);
-    --sf-chamfer-edge: transparent;
   }
   .practice-primary:hover:not(:disabled) { filter: brightness(1.06); }
   .practice-primary:disabled { cursor: progress; opacity: .7; }
@@ -205,7 +203,6 @@
     font-size: 15px;
     font-weight: 600;
     --sf-chamfer-fill: var(--pr-opt-img);
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
   .practice-secondary:hover:not(:disabled) { border-color: var(--pr-accent-line); }
   .practice-link {
@@ -238,7 +235,6 @@
     background: var(--pr-panel-bg);
     box-shadow: var(--sf-panel-shadow);
     --sf-chamfer-fill: var(--pr-panel-bg);
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
   html.dark:not([data-theme-family=crystal]) .practice-prompt {
     border-color: var(--pr-accent-line);
@@ -339,7 +335,6 @@
     color: var(--sf-text);
     text-align: left;
     --sf-chamfer-fill: var(--pr-opt-img);
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
   .practice-option[data-state='idle']:hover { border-color: var(--pr-accent-line); }
   .practice-option:disabled { cursor: default; }
@@ -368,14 +363,12 @@
     background: var(--pr-danger-bg);
     color: var(--pr-danger);
     --sf-chamfer-fill: var(--pr-danger-img);
-    --sf-chamfer-edge: var(--pr-again);
   }
   .practice-option[data-state='wrong'] .practice-option__key { border-color: var(--pr-danger-line); color: var(--pr-danger); }
   .practice-option[data-state='correct'] {
     border-color: var(--pr-good);
     background: var(--pr-ok-bg);
     --sf-chamfer-fill: var(--pr-ok-img);
-    --sf-chamfer-edge: var(--pr-good);
   }
   .practice-option[data-state='correct'] .practice-option__key { border-color: var(--pr-ok-line); color: var(--pr-good); }
   .practice-option[data-state='correct'] .practice-option__tag { color: var(--pr-good); }
@@ -423,7 +416,6 @@
     border-left: 3px solid var(--sf-brand);
     background: var(--sf-surface-glass);
     --sf-chamfer-fill: var(--sf-surface-glass);
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
   .practice-lumi__label { display: block; color: var(--pr-cyan-text); font-family: var(--sf-font-display); font-size: 11px; font-style: italic; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
   .practice-lumi__heading { margin-top: 4px; color: var(--sf-text); font-size: 15px; font-weight: 800; }
@@ -465,12 +457,18 @@
   .practice-results__note { max-width: 28rem; margin: 0 auto 24px; padding: 16px; border: 1px solid var(--pr-line); border-radius: 16px; background: var(--pr-chip-bg); color: var(--sf-text-muted); font-size: 14px; }
   .practice-results__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 
-  /* Crystal Star dressing. */
+  /* Board-only parts: the tier ribbon on the prompt card is drawn by Crystal alone, and the combo text
+     wrapper only exists so Crystal can counter-skew it. */
+  .practice-prompt__tier { display: none; }
+  .practice-chip__text { display: contents; }
+
+  /* Crystal Star dressing, ported value by value from the AnimeQuiz board. The header row is shared by
+     every practice board: close, title, a centred progress run with its count, then the chip and theme. */
   html[data-theme-family=crystal] .practice-topbar__kicker { display: inline; }
   html[data-theme-family=crystal] .practice-topbar__title {
     color: var(--sf-text-muted);
     font-family: var(--sf-font-display);
-    font-size: 13px;
+    font-size: 16px;
     font-style: italic;
     font-weight: 800;
     letter-spacing: .08em;
@@ -478,30 +476,43 @@
   }
   html[data-theme-family=crystal] .practice-topbar__title strong { font-weight: 800; }
   html[data-theme-family=crystal] .practice-topbar__slashes { color: var(--sf-brand-text); }
+  html[data-theme-family=crystal] .practice-topbar__detail { color: var(--sf-text-subtle); }
   html[data-theme-family=crystal] .practice-topbar__close,
-  html[data-theme-family=crystal] .practice-topbar__theme { width: 40px; height: 40px; min-height: 44px; min-width: 44px; }
+  html[data-theme-family=crystal] .practice-topbar__theme {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+    color: var(--sf-text);
+    --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control));
+  }
   html[data-theme-family=crystal] .practice-topbar__segments { gap: 4px; }
-  html[data-theme-family=crystal] .practice-topbar__segments > i { height: 8px; border-radius: 0; transform: skewX(-30deg); }
-  html[data-theme-family=crystal] .practice-topbar__segments > i[data-state='correct'],
-  html[data-theme-family=crystal] .practice-topbar__segments > i[data-state='done'] { background: var(--sf-second); box-shadow: 0 0 8px color-mix(in srgb, var(--sf-second) 60%, transparent); }
-  html[data-theme-family=crystal] .practice-topbar__segments > i[data-state='wrong'] { background: var(--sf-brand); }
-  html[data-theme-family=crystal] .practice-topbar__segments > i[data-state='current'] { background: color-mix(in srgb, var(--sf-second) 40%, transparent); }
-  html[data-theme-family=crystal] .practice-topbar__count { font-family: var(--sf-font-display); font-size: 20px; font-style: italic; font-weight: 900; }
-  html[data-theme-family=crystal] .practice-topbar__count b { font-weight: 900; }
-  html[data-theme-family=crystal] .practice-topbar__count > span { font-size: 13px; color: var(--sf-text-muted); }
+  html[data-theme-family=crystal] .practice-topbar__segments > i { height: 10px; border-radius: 0; background: var(--sf-border); transform: skewX(-30deg); }
+  html[data-theme-family=crystal] .practice-topbar__segments > i[data-state='current'] { background: var(--sf-edge-highlight); }
+  html[data-theme-family=crystal] .practice-topbar__segments > i:is([data-state='correct'], [data-state='done']) { background: linear-gradient(90deg, #5ef2ff, #9fe9ff); box-shadow: 0 0 8px rgb(94 242 255 / .5); }
+  html[data-theme-family=crystal] .practice-topbar__segments > i[data-state='wrong'] { background: #ff2a4d; box-shadow: 0 0 10px rgb(255 42 77 / .8); }
+  html[data-theme-family=crystal] .practice-topbar__count { color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 24px; font-style: italic; font-weight: 900; }
+  html[data-theme-family=crystal] .practice-topbar__count b { color: inherit; font-weight: 900; }
+  html[data-theme-family=crystal] .practice-topbar__count > span { color: var(--sf-text-subtle); font-size: 15px; }
+  /* The combo plate is skewed and its words are skewed back upright. */
   html[data-theme-family=crystal] .practice-chip {
+    min-height: 44px;
+    padding: 0 16px;
     border: 0;
     border-radius: 0;
-    background: linear-gradient(100deg, var(--sf-brand-hover), color-mix(in srgb, var(--sf-brand) 80%, var(--sf-brand-hover)));
-    color: var(--sf-text);
+    background: linear-gradient(90deg, #b30f33, #ff2a4d);
+    box-shadow: 0 0 22px -4px rgb(255 42 77 / .8);
+    color: #fff;
     font-family: var(--sf-font-display);
+    font-size: 19px;
     font-style: italic;
     font-weight: 900;
-    letter-spacing: .06em;
+    letter-spacing: .04em;
     text-transform: uppercase;
-    transform: skewX(-12deg);
+    transform: skewX(-14deg);
   }
-  html[data-theme-family=crystal]:not(.dark) .practice-chip { color: var(--sf-surface); }
+  html[data-theme-family=crystal] .practice-chip__text { display: inline-flex; align-items: center; gap: 8px; transform: skewX(14deg); }
   html[data-theme-family=crystal] .practice-primary,
   html[data-theme-family=crystal] .practice-secondary {
     font-family: var(--sf-font-display);
@@ -510,44 +521,222 @@
     letter-spacing: .08em;
     text-transform: uppercase;
   }
-  html[data-theme-family=crystal] .practice-prompt {
-    border-color: color-mix(in srgb, var(--sf-brand) 72%, transparent);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--sf-brand) 18%, transparent), 0 0 34px -10px color-mix(in srgb, var(--sf-brand) 55%, transparent), var(--sf-panel-shadow);
-    --sf-chamfer-edge: var(--sf-second);
-  }
-  html[data-theme-family=crystal] .practice-prompt__badge {
-    border: 0;
+  /* The board's primary buttons cast no box shadow: their chamfer would cut it off anyway. */
+  html[data-theme-family=crystal] .practice-primary { box-shadow: none; }
+  /* The chamfer clips an outside focus outline, so chamfered controls draw their ring inside. */
+  html[data-theme-family=crystal] :is(.practice-primary, .practice-secondary, .practice-topbar__close, .practice-topbar__theme):focus-visible { box-shadow: inset 0 0 0 2px var(--sf-holo-text); }
+  html[data-theme-family=crystal] .practice-primary .practice-kbd {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 8px;
     border-radius: 0;
-    background: linear-gradient(100deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 25%, transparent));
-    color: var(--sf-text);
+    background: rgb(0 0 0 / .22);
+    font-style: normal;
+  }
+
+  /* Prompt card: a tier rim with the card face inset 3px, both cut by the same chamfer. The frame is drawn
+     by the pseudo-elements so the card itself stays unclipped and keeps the board's drop shadow and glow. */
+  html[data-theme-family=crystal] .practice-prompt {
+    --pr-tier-rim: var(--sf-rim-learning);
+    --pr-tier-ink: var(--sf-tier-bloom);
+    --pr-tier-soft: rgb(255 143 182 / .55);
+    isolation: isolate;
+    padding: 29px 33px;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    filter: drop-shadow(0 30px 40px rgb(0 0 0 / .4)) drop-shadow(0 0 22px var(--pr-tier-soft));
+  }
+  html[data-theme-family=crystal] .practice-prompt[data-tier='new'] { --pr-tier-rim: var(--sf-rim-new); --pr-tier-ink: var(--sf-tier-bud); --pr-tier-soft: rgb(94 242 255 / .5); }
+  html[data-theme-family=crystal] .practice-prompt[data-tier='mastered'] { --pr-tier-rim: var(--sf-gold-rim); --pr-tier-ink: var(--sf-tier-star); --pr-tier-soft: rgb(255 42 77 / .6); }
+  html[data-theme-family=crystal] .practice-prompt::before,
+  html[data-theme-family=crystal] .practice-prompt::after { position: absolute; z-index: -1; clip-path: var(--nk-chamfer); content: ''; pointer-events: none; }
+  html[data-theme-family=crystal] .practice-prompt::before { inset: 0; background: var(--pr-tier-rim); }
+  html[data-theme-family=crystal] .practice-prompt::after { inset: 3px; background: var(--sf-card-front); }
+  html[data-theme-family=crystal] .practice-prompt__top { flex-wrap: wrap; align-items: center; gap: 8px; }
+  html[data-theme-family=crystal] .practice-prompt__tier {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 32px;
+    padding: 0 12px;
+    clip-path: var(--nk-chamfer-sm);
+    background: var(--pr-tier-rim);
     font-family: var(--sf-font-display);
     font-style: italic;
-    transform: skewX(-10deg);
   }
-  html[data-theme-family=crystal]:not(.dark) .practice-prompt__badge { color: var(--sf-surface); background: linear-gradient(100deg, var(--sf-brand-hover), color-mix(in srgb, var(--sf-brand) 70%, transparent)); }
-  html[data-theme-family=crystal] .practice-prompt__direction,
-  html[data-theme-family=crystal] .practice-quiz__question {
+  html[data-theme-family=crystal] .practice-prompt__tier-grade { color: #fff; font-size: 19px; font-weight: 900; text-shadow: 0 2px 0 #7a0820, 0 0 10px rgb(0 0 0 / .4); }
+  html[data-theme-family=crystal] .practice-prompt__tier-name { color: #1a0610; font-size: 12.5px; font-weight: 700; }
+  /* The board's star button sits at the top right; the app keeps its category there as a chip. */
+  html[data-theme-family=crystal] .practice-prompt__badge {
+    order: 1;
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    margin-left: auto;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 0;
+    clip-path: var(--nk-chamfer-sm);
+    background: var(--sf-surface-control);
+    box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+    color: var(--sf-text);
     font-family: var(--sf-font-display);
     font-size: 12px;
     font-style: italic;
     font-weight: 800;
-    letter-spacing: .12em;
+    letter-spacing: .08em;
+  }
+  html[data-theme-family=crystal] .practice-prompt__direction {
+    order: 2;
+    flex-basis: 100%;
+    gap: 10px;
+    margin-top: 24px;
+    color: var(--sf-text-subtle);
+    font-family: var(--sf-font-display);
+    font-size: 13px;
+    font-style: italic;
+    font-weight: 800;
+    letter-spacing: .14em;
+  }
+  html[data-theme-family=crystal] .practice-quiz__question {
+    margin-bottom: 2px;
+    color: var(--sf-text-muted);
+    font-family: var(--sf-font-display);
+    font-size: 14px;
+    font-style: italic;
+    font-weight: 800;
+    letter-spacing: .14em;
     text-transform: uppercase;
   }
-  html[data-theme-family=crystal] .practice-prompt__word { font-style: italic; letter-spacing: -.01em; }
-  html[data-theme-family=crystal] .practice-prompt__example { border: 1px solid var(--pr-line-strong); padding: 14px 16px; background: color-mix(in srgb, var(--sf-surface) 60%, transparent); }
-  html[data-theme-family=crystal] .practice-prompt__example mark { border-bottom-color: var(--sf-brand); color: var(--pr-cyan-text); }
-  html[data-theme-family=crystal] .practice-prompt__dot { width: 8px; height: 8px; border-radius: 0; transform: rotate(45deg); }
-  html[data-theme-family=crystal] .practice-option__text { font-size: 26px; font-style: italic; letter-spacing: -.01em; }
+  html[data-theme-family=crystal] .practice-prompt__word { padding-top: 16px; color: var(--sf-text-strong); font-style: italic; font-weight: 900; letter-spacing: 0; line-height: 1; }
+  html[data-theme-family=crystal] .practice-prompt__word em {
+    background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 16px rgb(255 42 77 / .6));
+    text-shadow: none;
+  }
+  html[data-theme-family=crystal] .practice-prompt__meta { margin-top: 10px; font-size: 14.5px; }
+  html[data-theme-family=crystal] .practice-prompt__example {
+    margin-top: 24px;
+    padding: 14px 16px;
+    border: 0;
+    clip-path: var(--nk-chamfer-sm);
+    background: var(--sf-surface-control);
+    box-shadow: inset 0 0 0 1px var(--sf-border);
+    color: var(--sf-text-body);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  html[data-theme-family=crystal] .practice-prompt__blank { width: 88px; border-bottom: 3px solid var(--sf-brand-text); }
+  html[data-theme-family=crystal] .practice-prompt__example mark {
+    display: inline-block;
+    min-width: 88px;
+    border-bottom: 3px solid var(--sf-brand-text);
+    color: var(--sf-holo-text);
+    font-style: normal;
+    font-weight: 900;
+    text-align: center;
+  }
+  html[data-theme-family=crystal] .practice-prompt__foot { margin-top: 18px; }
+  html[data-theme-family=crystal] .practice-prompt__state { color: var(--sf-text-subtle); font-size: 12.5px; font-weight: 700; }
+  html[data-theme-family=crystal] .practice-prompt__state .practice-prompt__dot { width: 8px; height: 8px; border-radius: 0; background: var(--pr-tier-ink); box-shadow: 0 0 8px var(--pr-tier-ink); transform: rotate(45deg); }
+  html[data-theme-family=crystal] .practice-prompt__progress { color: var(--sf-text-subtle); }
+
+  /* Answer rows: a 2px edge gradient under an opaque fill, both chamfered. Drawn by the pseudo-elements so
+     the row's own drop-shadow glow is not clipped away. */
+  html[data-theme-family=crystal] .practice-option {
+    --pr-option-edge: linear-gradient(150deg, var(--sf-edge-highlight), var(--sf-border));
+    --pr-option-fill: var(--sf-surface);
+    position: relative;
+    isolation: isolate;
+    min-height: 76px;
+    gap: 18px;
+    padding: 0 24px;
+    border: 0;
+    background: none;
+    color: var(--sf-text-strong);
+  }
+  html[data-theme-family=crystal] .practice-option::before,
+  html[data-theme-family=crystal] .practice-option::after { position: absolute; z-index: -1; clip-path: var(--nk-chamfer); content: ''; pointer-events: none; }
+  html[data-theme-family=crystal] .practice-option::before { inset: 0; background: var(--pr-option-edge); }
+  html[data-theme-family=crystal] .practice-option::after { inset: 2px; background: var(--pr-option-fill); }
   html[data-theme-family=crystal] .practice-option__key {
+    width: 34px;
+    height: 34px;
     border: 0;
     border-radius: 0;
-    background: var(--pr-track);
     clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-    font-family: var(--sf-font-display);
+    background: var(--sf-surface-control);
+    color: var(--sf-text-muted);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  html[data-theme-family=crystal] .practice-option__text { font-size: 30px; font-style: italic; font-weight: 800; letter-spacing: .01em; }
+  html[data-theme-family=crystal] .practice-option__tag { color: var(--sf-text-subtle); font-family: var(--sf-font-display); font-size: 14px; font-style: italic; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-option[data-state='correct'] {
+    --pr-option-edge: linear-gradient(150deg, #e9feff, #5ef2ff 45%, #1aa7c9);
+    --pr-option-fill: linear-gradient(90deg, rgb(94 242 255 / .2), rgb(8 10 18 / .96) 70%), #0e111c;
+    filter: drop-shadow(0 0 18px rgb(94 242 255 / .6));
+  }
+  html:not(.dark)[data-theme-family=crystal] .practice-option[data-state='correct'] { --pr-option-fill: linear-gradient(90deg, rgb(94 242 255 / .35), #eef9ff 70%), #eef9ff; }
+  html[data-theme-family=crystal] .practice-option[data-state='correct'] .practice-option__key { background: linear-gradient(180deg, #9ff9ff, #1aa7c9); color: #031820; }
+  html[data-theme-family=crystal] .practice-option[data-state='correct'] .practice-option__tag { color: var(--sf-holo-text); }
+  html[data-theme-family=crystal] .practice-option[data-state='wrong'] {
+    --pr-option-edge: linear-gradient(150deg, #ff8fa3, #ff2a4d 50%, #7a0820);
+    --pr-option-fill: linear-gradient(90deg, rgb(255 42 77 / .24), rgb(8 10 18 / .96) 70%), #0e111c;
+    color: var(--sf-brand-text);
+    filter: drop-shadow(0 0 14px rgb(255 42 77 / .45));
+  }
+  html:not(.dark)[data-theme-family=crystal] .practice-option[data-state='wrong'] { --pr-option-fill: linear-gradient(90deg, rgb(255 84 112 / .16), #fff1f4 70%), #fff1f4; color: #a30c2d; }
+  html[data-theme-family=crystal] .practice-option[data-state='wrong'] .practice-option__key { background: var(--sf-primary-bg); color: #fff; }
+  html[data-theme-family=crystal] .practice-option[data-state='wrong'] .practice-option__tag { color: inherit; }
+  html[data-theme-family=crystal] .practice-option[data-state='dim'] { opacity: .45; }
+
+  html[data-theme-family=crystal] .practice-explain {
+    position: relative;
+    align-items: flex-start;
+    margin-top: 8px;
+    padding: 14px 18px 14px 22px;
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
+    color: var(--sf-text-body);
+    font-size: 14px;
+    line-height: 1.55;
+    --sf-chamfer-fill: var(--sf-surface-glass);
+  }
+  html[data-theme-family=crystal] .practice-explain::before { position: absolute; top: 14px; bottom: 14px; left: 0; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d); content: ''; }
+  html[data-theme-family=crystal] .practice-explain b { color: var(--sf-text-strong); font-weight: 900; }
+  html[data-theme-family=crystal] .practice-explain__icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 0;
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+    background: linear-gradient(180deg, #7ff6ff, #1aa7c9);
+    color: #031820;
+    font-size: 16px;
     font-weight: 900;
   }
-  html[data-theme-family=crystal] .practice-option__tag { font-family: var(--sf-font-display); font-size: 11px; font-style: italic; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-explain__ipa { color: var(--sf-text-muted); font-size: inherit; }
+  html[data-theme-family=crystal] .practice-quiz__continue { margin-top: 8px; }
+  html[data-theme-family=crystal] .practice-quiz__continue .practice-primary { height: 58px; padding: 0 30px; gap: 12px; font-size: 19px; }
+
+  /* Lumi's speech panel: chamfered glass with a crimson-to-holo strip on its left edge. */
+  html[data-theme-family=crystal] .practice-lumi__bubble {
+    position: relative;
+    padding: 14px 18px 16px;
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
+  }
+  html[data-theme-family=crystal] .practice-lumi__bubble::before { position: absolute; top: 16px; bottom: 16px; left: 0; width: 3px; background: linear-gradient(180deg, #ff2a4d, #5ef2ff); content: ''; }
+  html[data-theme-family=crystal] .practice-lumi__label { color: var(--sf-holo-text); font-size: 12.5px; letter-spacing: .12em; }
+  html[data-theme-family=crystal] .practice-lumi__heading { color: var(--sf-text-strong); font-size: 17px; font-weight: 900; line-height: 1.3; }
+  html[data-theme-family=crystal] .practice-lumi__body { font-size: 13px; line-height: 1.5; }
+
   /* Answer rows and match tiles sit on an opaque base: each state tint is mixed into the panel colour, so
      the page never shows through behind the text. The wrong state's light base is a pale rose. */
   html[data-theme-family=crystal] .practice-stage {
@@ -564,24 +753,19 @@
     --pr-row-bad-base: color-mix(in srgb, var(--sf-blush) 50%, #fff);
     --pr-row-bad-ink: var(--sf-brand-hover);
   }
-  html[data-theme-family=crystal] .practice-option { --sf-chamfer-fill: var(--pr-surface-img); }
-  html[data-theme-family=crystal] .practice-option[data-state='wrong'] {
-    color: var(--pr-row-bad-ink);
-    --sf-chamfer-fill: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) var(--pr-row-bad-tint), var(--pr-row-bad-base)), var(--pr-row-bad-base) 70%);
-    --sf-chamfer-edge: var(--sf-brand);
+
+  /* Board header geometry: 84px tall, 40px side padding; the progress run and its count are centred in the
+     space between the title and the chip, as the board's `margin: 0 auto` does. */
+  @media (min-width: 641px) {
+    html[data-theme-family=crystal] .practice-topbar { display: flex; gap: 16px; height: 84px; min-height: 84px; margin-bottom: 0; padding: 0 40px; }
+    html[data-theme-family=crystal] .practice-topbar__start { flex: 0 1 auto; gap: 16px; }
+    html[data-theme-family=crystal] .practice-topbar__end { display: contents; }
+    html[data-theme-family=crystal] .practice-topbar__end > * { order: 3; }
+    html[data-theme-family=crystal] .practice-topbar__segments { order: 1; flex: 0 1 auto; width: auto; min-width: 0; margin-left: auto; }
+    /* A set width, not only a flex basis: the run's own width is measured from its segments' widths. */
+    html[data-theme-family=crystal] .practice-topbar__segments > i { flex: 0 1 auto; width: 38px; min-width: 6px; }
+    html[data-theme-family=crystal] .practice-topbar__end > .practice-topbar__count { order: 2; margin-left: -4px; margin-right: auto; }
   }
-  html[data-theme-family=crystal] .practice-option[data-state='wrong'] .practice-option__key { background: var(--sf-brand-hover); color: var(--sf-text); }
-  html[data-theme-family=crystal]:not(.dark) .practice-option[data-state='wrong'] .practice-option__key { color: var(--sf-surface); }
-  html[data-theme-family=crystal] .practice-option[data-state='wrong'] .practice-option__tag { color: var(--pr-row-bad-ink); }
-  html[data-theme-family=crystal] .practice-option[data-state='correct'] {
-    border-color: var(--sf-second);
-    --sf-chamfer-fill: linear-gradient(90deg, color-mix(in srgb, var(--sf-second) var(--pr-row-ok-tint), var(--sf-surface)), var(--sf-surface) 70%);
-    --sf-chamfer-edge: var(--sf-second);
-  }
-  html[data-theme-family=crystal] .practice-option[data-state='correct'] .practice-option__key { background: var(--sf-second); color: var(--sf-on-brand); }
-  html[data-theme-family=crystal] .practice-option[data-state='correct'] .practice-option__tag { color: var(--sf-holo-text); }
-  html[data-theme-family=crystal] .practice-explain { border-left: 3px solid var(--sf-brand); }
-  html[data-theme-family=crystal] .practice-explain__icon { border-radius: 0; background: var(--sf-success); color: var(--sf-on-brand); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
 
   @media (min-width: 1024px) {
     .practice-quiz[data-lumi] { grid-template-columns: minmax(0, 200px) minmax(0, 330px) minmax(0, 1fr); gap: 32px; width: min(100%, 1120px); }
@@ -590,6 +774,45 @@
   @media (min-width: 1360px) {
     .practice-quiz[data-lumi] { grid-template-columns: minmax(0, 250px) minmax(0, 330px) minmax(0, 1fr); width: min(100%, 1170px); }
     .practice-quiz__lumi .practice-lumi__art { width: 250px; }
+  }
+  /* At the board's width the quiz takes the board's grid: 250 / 410 / 1fr with 40px gaps, centred in the
+     height under the header, with the 410x580 card and its 64px headword. */
+  @media (min-width: 1360px) {
+    html[data-theme-family=crystal] .practice-board--quiz { padding-bottom: 0; }
+    html[data-theme-family=crystal] .practice-quiz {
+      grid-template-columns: 410px minmax(0, 596px);
+      gap: 40px;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      min-height: calc(100dvh - 84px);
+      padding: 10px 56px 70px 48px;
+    }
+    html[data-theme-family=crystal] .practice-quiz[data-lumi] { grid-template-columns: 250px 410px minmax(0, 1fr); }
+    html[data-theme-family=crystal] .practice-quiz .practice-prompt { min-height: 580px; }
+    html[data-theme-family=crystal] .practice-quiz .practice-prompt__word { font-size: 64px; }
+    html[data-theme-family=crystal] .practice-quiz__lumi { padding-top: 60px; }
+    html[data-theme-family=crystal] .practice-quiz[data-lumi] > .practice-quiz__wing { top: calc(50% - 200px); }
+  }
+  /* AnimeMobile's quiz screen: 20px gutters, a 50px header with an 18px count, a 2px card rim, 58px answer
+     rows cut by the small chamfer with body-font answers, 10px apart. */
+  @media (max-width: 640px) {
+    /* The shell gives practice views no padding, so the board keeps its own 20px gutters. */
+    html[data-theme-family=crystal] .practice-stage { padding-inline: 20px; }
+    html[data-theme-family=crystal] .practice-board--quiz .practice-topbar { gap: 10px; min-height: 50px; margin-bottom: 8px; }
+    html[data-theme-family=crystal] .practice-topbar__count { font-size: 18px; }
+    html[data-theme-family=crystal] .practice-topbar__count > span { font-size: 12px; }
+    html[data-theme-family=crystal] .practice-topbar__segments > i { height: 9px; transform: skewX(-24deg); }
+    html[data-theme-family=crystal] .practice-chip { min-height: 30px; padding: 0 9px 0 7px; font-size: 14px; }
+    html[data-theme-family=crystal] .practice-prompt { padding: 18px 20px 20px; filter: drop-shadow(0 20px 26px rgb(0 0 0 / .35)) drop-shadow(0 0 16px var(--pr-tier-soft)); }
+    html[data-theme-family=crystal] .practice-prompt::after { inset: 2px; }
+    html[data-theme-family=crystal] .practice-prompt__word { font-size: 42px; }
+    html[data-theme-family=crystal] .practice-quiz__options { gap: 10px; }
+    html[data-theme-family=crystal] .practice-option { min-height: 58px; gap: 12px; padding: 0 16px 0 12px; }
+    html[data-theme-family=crystal] .practice-option::before,
+    html[data-theme-family=crystal] .practice-option::after { clip-path: var(--nk-chamfer-sm); }
+    html[data-theme-family=crystal] .practice-option__key { width: 32px; height: 32px; font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 900; }
+    html[data-theme-family=crystal] .practice-option__text { font-family: var(--sf-font-body); font-size: 15px; font-style: normal; font-weight: 800; letter-spacing: 0; }
   }
   @media (max-width: 1023px) {
     .practice-lumi { display: none; }
@@ -745,16 +968,16 @@
     line-height: 1;
     --pr-tile-bar: transparent;
     --sf-chamfer-fill: var(--pr-surface-img);
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
+  .practice-tile__glyph { display: contents; }
   .practice-tile::after { position: absolute; right: 18px; bottom: 8px; left: 18px; height: 3px; border-radius: 3px; background: var(--pr-tile-bar); content: ''; }
   .practice-tile[data-state='typed'] { border-color: var(--pr-line-strong); --pr-tile-bar: var(--pr-accent-line); }
   .practice-tile[data-state='empty'] { border-style: dashed; background: transparent; box-shadow: none; --sf-chamfer-fill: none; }
-  .practice-tiles:has(.practice-tiles__input:focus) .practice-tile[data-next] { border-style: solid; border-color: var(--sf-brand); --pr-tile-bar: var(--sf-brand); --sf-chamfer-edge: var(--sf-brand); }
+  .practice-tiles:has(.practice-tiles__input:focus) .practice-tile[data-next] { border-style: solid; border-color: var(--sf-brand); --pr-tile-bar: var(--sf-brand); }
   .practice-tile[data-state='correct'] { --pr-tile-bar: var(--pr-good); }
-  .practice-tile[data-state='wrong'] { border: 1.5px solid var(--pr-again); background: var(--pr-danger-bg); box-shadow: none; color: var(--pr-danger); --pr-tile-bar: var(--pr-again); --sf-chamfer-fill: var(--pr-danger-img); --sf-chamfer-edge: var(--pr-again); }
-  .practice-tile[data-state='missing'] { border: 1.5px dashed var(--pr-tile-missing); background: transparent; box-shadow: none; color: var(--pr-tile-missing); --pr-tile-bar: var(--pr-tile-missing); --sf-chamfer-fill: linear-gradient(color-mix(in srgb, var(--pr-tile-missing) 10%, transparent), color-mix(in srgb, var(--pr-tile-missing) 10%, transparent)); --sf-chamfer-edge: var(--pr-tile-missing); }
-  .practice-tile[data-space] { width: 20px; border-color: transparent; background: transparent; box-shadow: none; --pr-tile-bar: transparent; --sf-chamfer-fill: none; --sf-chamfer-edge: transparent; }
+  .practice-tile[data-state='wrong'] { border: 1.5px solid var(--pr-again); background: var(--pr-danger-bg); box-shadow: none; color: var(--pr-danger); --pr-tile-bar: var(--pr-again); --sf-chamfer-fill: var(--pr-danger-img); }
+  .practice-tile[data-state='missing'] { border: 1.5px dashed var(--pr-tile-missing); background: transparent; box-shadow: none; color: var(--pr-tile-missing); --pr-tile-bar: var(--pr-tile-missing); --sf-chamfer-fill: linear-gradient(color-mix(in srgb, var(--pr-tile-missing) 10%, transparent), color-mix(in srgb, var(--pr-tile-missing) 10%, transparent)); }
+  .practice-tile[data-space] { width: 20px; border-color: transparent; background: transparent; box-shadow: none; --pr-tile-bar: transparent; --sf-chamfer-fill: none; }
   .practice-tiles__input {
     position: absolute;
     inset: 0;
@@ -789,13 +1012,14 @@
   html[data-theme-family=crystal] .practice-listen { width: 210px; height: 210px; }
   html[data-theme-family=crystal] .practice-listen::before {
     border: 0;
-    background: conic-gradient(from 0deg, var(--sf-second), transparent 30%, var(--sf-brand) 50%, transparent 80%, var(--sf-second));
+    background: conic-gradient(from 0deg, #5ef2ff, transparent 30%, #ff2a4d 50%, transparent 80%, #5ef2ff);
     -webkit-mask: radial-gradient(circle, transparent 62%, black 63%);
     mask: radial-gradient(circle, transparent 62%, black 63%);
   }
-  html[data-theme-family=crystal] .practice-listen::after { inset: 22px; border-color: var(--pr-line-strong); }
+  html[data-theme-family=crystal] .practice-listen::after { inset: 22px; border-color: var(--sf-edge-highlight); }
   html[data-theme-family=crystal] .practice-listen__button { width: 128px; height: 128px; border-radius: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); box-shadow: none; }
   html[data-theme-family=crystal] .practice-listen__button > i { border-radius: 0; }
+  /* Speed chips are the board's slanted tabs. The slant is drawn by the face's backing so the label stays upright. */
   html[data-theme-family=crystal] .practice-speed { gap: 10px; }
   html[data-theme-family=crystal] .practice-speed__face {
     position: relative;
@@ -811,57 +1035,135 @@
     letter-spacing: .06em;
     text-transform: uppercase;
   }
+  html[data-theme-family=crystal] .practice-speed__face > svg { display: none; }
   html[data-theme-family=crystal] .practice-speed__face::before {
     position: absolute;
     z-index: -1;
     inset: 0;
-    background: var(--pr-chip-bg);
-    box-shadow: inset 0 0 0 1px var(--pr-line-strong);
+    background: var(--sf-surface-control);
+    box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
     content: '';
     transform: skewX(-14deg);
   }
-  html[data-theme-family=crystal] .practice-speed__chip[aria-pressed='true'] .practice-speed__face { color: var(--sf-on-brand); }
+  html[data-theme-family=crystal] .practice-speed__chip[aria-pressed='true'] .practice-speed__face { color: #031820; }
   html[data-theme-family=crystal] .practice-speed__chip[aria-pressed='true'] .practice-speed__face::before {
-    background: linear-gradient(90deg, var(--sf-second), color-mix(in srgb, var(--sf-second) 62%, var(--sf-surface)));
-    box-shadow: 0 0 18px -4px color-mix(in srgb, var(--sf-second) 80%, transparent);
+    background: linear-gradient(90deg, #5ef2ff, #1aa7c9);
+    box-shadow: 0 0 18px -4px rgb(94 242 255 / .8);
   }
-  html[data-theme-family=crystal]:not(.dark) .practice-speed__chip[aria-pressed='true'] .practice-speed__face { color: var(--sf-surface); }
-  html[data-theme-family=crystal]:not(.dark) .practice-speed__chip[aria-pressed='true'] .practice-speed__face::before { background: linear-gradient(90deg, var(--sf-success), color-mix(in srgb, var(--sf-success) 70%, var(--sf-text))); }
-  html[data-theme-family=crystal] .practice-spelling__meaning { font-size: 24px; font-style: italic; font-weight: 800; }
+  html[data-theme-family=crystal] .practice-spelling__meaning { color: var(--sf-text-strong); font-size: 24px; font-style: italic; font-weight: 800; line-height: normal; }
+  html[data-theme-family=crystal] .practice-spelling__meta { color: var(--sf-text-subtle); }
+  html[data-theme-family=crystal] .practice-tiles { border-radius: 0; }
+  html[data-theme-family=crystal] .practice-tiles:has(.practice-tiles__input:focus-visible) { outline-color: var(--sf-holo-text); }
+  /* A letter tile is the board's two-layer cut: the edge gradient behind and the face inset 2px above it, both
+     clipped by the small chamfer. The tile itself is not clipped, so a judged tile keeps its glow. */
   html[data-theme-family=crystal] .practice-tile {
+    isolation: isolate;
     height: 80px;
-    border-width: 2px;
-    border-color: color-mix(in srgb, var(--sf-second) 70%, transparent);
+    border: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--sf-text-strong);
     font-style: italic;
     font-weight: 900;
-    --sf-chamfer-fill: var(--pr-surface-img);
-    --sf-chamfer-edge: var(--sf-second);
+    --pr-tile-edge: linear-gradient(150deg, var(--sf-edge-highlight), var(--sf-border));
+    --pr-tile-fill: var(--sf-surface);
+    --pr-tile-bar: var(--sf-edge-highlight);
+  }
+  html[data-theme-family=crystal] .practice-tile::before { position: absolute; z-index: -1; inset: 0; background: var(--pr-tile-edge); clip-path: var(--nk-chamfer-sm); content: ''; }
+  html[data-theme-family=crystal] .practice-tile__glyph {
+    position: absolute;
+    z-index: -1;
+    inset: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--pr-tile-fill);
+    clip-path: var(--nk-chamfer-sm);
   }
   html[data-theme-family=crystal] .practice-tile::after { right: 16px; bottom: 9px; left: 16px; height: 4px; border-radius: 0; box-shadow: 0 0 8px var(--pr-tile-bar); transform: skewX(-24deg); }
-  html[data-theme-family=crystal] .practice-tile[data-state='correct'] { border-color: var(--sf-second); --pr-tile-bar: var(--sf-second); }
-  html[data-theme-family=crystal] .practice-tile[data-state='empty'] { border-color: var(--pr-line-strong); --sf-chamfer-edge: var(--pr-line-strong); }
-  html[data-theme-family=crystal] .practice-tile[data-state='wrong'] { border: 2px solid var(--sf-brand); color: var(--sf-brand-text); filter: drop-shadow(0 0 12px color-mix(in srgb, var(--sf-brand) 60%, transparent)); --pr-tile-bar: var(--sf-brand); --sf-chamfer-fill: linear-gradient(color-mix(in srgb, var(--sf-brand) 18%, var(--sf-surface)), color-mix(in srgb, var(--sf-brand) 18%, var(--sf-surface))); --sf-chamfer-edge: var(--sf-brand); }
-  html[data-theme-family=crystal] .practice-tile[data-state='missing'] { border-width: 2px; filter: drop-shadow(0 0 12px color-mix(in srgb, var(--pr-tile-missing) 50%, transparent)); --sf-chamfer-fill: linear-gradient(color-mix(in srgb, var(--pr-tile-missing) 14%, var(--sf-surface)), color-mix(in srgb, var(--pr-tile-missing) 14%, var(--sf-surface))); }
+  html[data-theme-family=crystal] .practice-tile[data-state='empty'] { --pr-tile-edge: var(--sf-border); --pr-tile-fill: color-mix(in srgb, var(--sf-surface) 55%, transparent); --pr-tile-bar: transparent; }
+  html[data-theme-family=crystal] .practice-tiles:has(.practice-tiles__input:focus) .practice-tile[data-next] { --pr-tile-edge: linear-gradient(150deg, var(--sf-edge-highlight), var(--sf-brand)); --pr-tile-bar: var(--sf-brand); }
+  html[data-theme-family=crystal] .practice-tile[data-state='correct'] { --pr-tile-edge: linear-gradient(150deg, #e9feff, #5ef2ff 45%, #1aa7c9); --pr-tile-bar: #5ef2ff; }
+  html[data-theme-family=crystal] .practice-tile[data-state='wrong'] {
+    color: var(--sf-brand-text);
+    filter: drop-shadow(0 0 12px rgb(255 42 77 / .6));
+    --pr-tile-edge: linear-gradient(150deg, #ff8fa3, #ff2a4d 50%, #7a0820);
+    --pr-tile-bar: #ff2a4d;
+  }
+  html.dark[data-theme-family=crystal] .practice-tile[data-state='wrong'] { --pr-tile-fill: rgb(60 8 20); }
+  html:not(.dark)[data-theme-family=crystal] .practice-tile[data-state='wrong'] { --pr-tile-fill: #ffe8ed; }
+  html[data-theme-family=crystal] .practice-tile[data-state='missing'] {
+    color: var(--pr-tile-missing);
+    filter: drop-shadow(0 0 12px rgb(255 138 61 / .5));
+    --pr-tile-edge: repeating-linear-gradient(135deg, var(--pr-tile-missing) 0 6px, transparent 6px 12px);
+    --pr-tile-bar: var(--pr-tile-missing);
+  }
+  html.dark[data-theme-family=crystal] .practice-tile[data-state='missing'] { --pr-tile-fill: rgb(40 20 8); }
+  html:not(.dark)[data-theme-family=crystal] .practice-tile[data-state='missing'] { --pr-tile-fill: #fff3e6; }
+  html[data-theme-family=crystal] .practice-tile[data-space] { filter: none; --pr-tile-edge: none; --pr-tile-fill: none; --pr-tile-bar: transparent; }
   html[data-theme-family=crystal] .practice-ghost { font-family: var(--sf-font-display); font-size: 16px; font-style: italic; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
   html[data-theme-family=crystal] .practice-spelling__legend li::before { width: 22px; height: 6px; border-radius: 0; box-shadow: 0 0 8px currentColor; transform: skewX(-24deg); }
-  html[data-theme-family=crystal] .practice-spelling__legend li[data-state='correct']::before { background: var(--sf-second); color: var(--sf-second); }
-  html[data-theme-family=crystal] .practice-spelling__legend li[data-state='wrong']::before { background: var(--sf-brand); color: var(--sf-brand); }
+  html[data-theme-family=crystal] .practice-spelling__legend li[data-state='correct']::before { background: #5ef2ff; color: #5ef2ff; }
+  html[data-theme-family=crystal] .practice-spelling__legend li[data-state='wrong']::before { background: #ff2a4d; color: #ff2a4d; }
   html[data-theme-family=crystal] .practice-spelling__legend li[data-state='missing']::before { color: var(--pr-tile-missing); }
+  html[data-theme-family=crystal] .practice-spelling__feedback { color: var(--sf-text-body); font-size: 15.5px; line-height: normal; }
+  html[data-theme-family=crystal] .practice-spelling__feedback b { color: var(--sf-text-strong); }
+  html[data-theme-family=crystal] .practice-spelling__feedback[data-outcome='correct'] {
+    color: var(--sf-holo-text);
+    font-family: var(--sf-font-display);
+    font-size: 22px;
+    font-style: italic;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  html[data-theme-family=crystal] .practice-spelling__actions { gap: 14px; }
+  html[data-theme-family=crystal] .practice-spelling__actions .practice-primary { min-height: 58px; padding: 0 34px; gap: 12px; font-size: 19px; }
+  /* The board's secondary button draws a 1px inset edge, so the chamfer's diagonal edge lines are turned off. */
+  html[data-theme-family=crystal] .practice-spelling__actions .practice-secondary {
+    min-height: 58px;
+    padding: 0 26px;
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+    color: var(--sf-text-strong);
+    font-size: 17px;
+    font-weight: 800;
+  }
+  html.dark[data-theme-family=crystal] .practice-spelling__actions .practice-secondary { background: var(--sf-surface-control); --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control)); }
+  html:not(.dark)[data-theme-family=crystal] .practice-spelling__actions .practice-secondary { background: var(--sf-surface); --sf-chamfer-fill: linear-gradient(var(--sf-surface), var(--sf-surface)); }
+  html[data-theme-family=crystal] .practice-spelling__actions .practice-secondary:focus-visible { box-shadow: inset 0 0 0 2px var(--sf-holo-text); }
+  html[data-theme-family=crystal] .practice-spelling__actions .practice-ghost { min-height: 58px; }
+  /* Desktop rhythm of the board's main column. The speed buttons keep a 44px hit area around the 36px tab,
+     so their margins place the tab itself 12px under the dial and 22px above the meaning line. */
+  @media (min-width: 641px) {
+    html[data-theme-family=crystal] .practice-board--spelling .practice-topbar__segments > i { width: 30px; }
+    html[data-theme-family=crystal] .practice-speed { margin: 8px 0 -4px; }
+    html[data-theme-family=crystal] .practice-spelling__hint { margin-top: 22px; }
+    html[data-theme-family=crystal] .practice-tiles { margin-top: 28px; }
+    html[data-theme-family=crystal] .practice-spelling__feedback { margin-top: 22px; }
+    html[data-theme-family=crystal] .practice-spelling__actions { margin-top: 28px; }
+    /* A set height: the buttons' 56px minimum comes from a utility that a component rule cannot lower or raise. */
+    html[data-theme-family=crystal] .practice-spelling__actions > :is(.practice-primary, .practice-secondary, .practice-ghost) { height: 58px; }
+  }
+  /* Side panels only render in Crystal. They are the board's glass cards: a 1px inset edge inside the chamfer,
+     with no diagonal edge line, crimson for the score card and cyan for the letter key. */
   .practice-side-panel {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 8px;
     padding: 16px 20px 18px;
-    border: 1px solid var(--pr-line-strong);
+    border: 0;
     background: var(--sf-surface-glass);
+    box-shadow: inset 0 0 0 1px var(--sf-panel-edge);
+    line-height: normal;
     text-align: left;
     --sf-chamfer-fill: var(--sf-surface-glass);
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
+  .practice-side-panel + .practice-side-panel { gap: 9px; padding: 14px 20px 16px; box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2); }
   .practice-side-panel__label { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-  .practice-side-panel + .practice-side-panel .practice-side-panel__label { color: var(--pr-cyan-text); }
-  .practice-side-panel__value { color: var(--sf-text); font-family: var(--sf-font-display); font-size: 56px; font-style: italic; font-weight: 900; line-height: 1; text-shadow: 0 3px 0 color-mix(in srgb, var(--sf-brand-hover) 70%, transparent); }
+  .practice-side-panel + .practice-side-panel .practice-side-panel__label { color: var(--sf-holo-text); }
+  .practice-side-panel__value { margin-top: 2px; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 56px; font-style: italic; font-weight: 900; line-height: 1; text-shadow: 0 3px 0 color-mix(in srgb, var(--sf-brand-hover) 70%, transparent); }
+  .practice-side-panel__unit { font-size: 28px; }
   /* Score, count and accuracy numbers are cut from the theme metal so they read on both Prism Day and Midnight.
      A drop-shadow filter keeps the crimson offset, because a text-shadow would paint over the clipped fill. */
   html[data-theme-family=crystal] .practice-side-panel__value,
@@ -874,18 +1176,20 @@
     text-shadow: none;
     filter: drop-shadow(0 3px 0 var(--sf-star-shade));
   }
-  .practice-side-panel__bar { display: block; height: 9px; overflow: hidden; background: var(--pr-track); transform: skewX(-24deg); }
-  .practice-side-panel__bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--sf-second), var(--sf-brand)); }
-  .practice-side-panel__note { color: var(--sf-text-muted); font-size: 13px; }
-  .practice-side-panel .practice-spelling__legend { flex-direction: column; align-items: flex-start; gap: 9px; margin: 0; color: var(--sf-text); font-size: 13.5px; font-weight: 800; }
+  .practice-side-panel__bar { display: block; height: 9px; margin-top: 10px; overflow: hidden; background: var(--sf-border); transform: skewX(-24deg); }
+  .practice-side-panel__bar > i { display: block; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); }
+  .practice-side-panel__note { margin-top: 8px; color: var(--sf-text-muted); font-size: 13px; }
+  .practice-side-panel .practice-spelling__legend { flex-direction: column; align-items: flex-start; gap: 9px; margin: 0; color: var(--sf-text-strong); font-size: 13.5px; font-weight: 800; }
   .practice-side-panel .practice-spelling__legend li { gap: 10px; }
 
   @media (min-width: 1180px) {
-    .practice-spelling[data-side] { grid-template-columns: minmax(0, 270px) minmax(0, 1fr) minmax(0, 250px); gap: 32px; align-items: start; }
-    .practice-spelling[data-side] .practice-spelling__lumi { grid-row: 1; grid-column: 1; justify-self: stretch; margin-top: 40px; }
-    .practice-spelling[data-side] .practice-spelling__lumi .practice-lumi__art { width: 260px; }
+    /* The board's asides sit 56px from the page edges and its main column is centred on the page, so both side
+       tracks are 270px wide and the narrower score panels sit at the end of theirs. */
+    .practice-spelling[data-side] { grid-template-columns: minmax(0, 270px) minmax(0, 1fr) minmax(0, 270px); gap: 32px; align-items: start; width: min(100%, 1328px); padding-top: 28px; }
+    .practice-spelling[data-side] .practice-spelling__lumi { grid-row: 1; grid-column: 1; align-self: start; justify-self: stretch; margin-top: 58px; }
+    .practice-spelling[data-side] .practice-spelling__lumi .practice-lumi__art { width: 260px; align-self: flex-start; }
     .practice-spelling[data-side] .practice-spelling__main { grid-row: 1; grid-column: 2; }
-    .practice-spelling[data-side] .practice-spelling__side { display: flex; flex-direction: column; gap: 14px; grid-row: 1; grid-column: 3; width: 100%; margin-top: 90px; }
+    .practice-spelling[data-side] .practice-spelling__side { display: flex; flex-direction: column; gap: 14px; grid-row: 1; grid-column: 3; justify-self: end; width: min(100%, 250px); margin-top: 78px; }
     .practice-spelling[data-side] .practice-spelling__form > .practice-spelling__legend { display: none; }
     html[data-theme-family=crystal] .practice-stage:has(.practice-spelling[data-side]) .practice-topbar__accuracy { display: none; }
   }
@@ -930,7 +1234,6 @@
     font-weight: 600;
     white-space: nowrap;
     --sf-chamfer-fill: var(--pr-opt-img);
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
   .practice-topbar__action:hover { border-color: var(--pr-line-strong); }
   .practice-topbar__action[data-variant='accent'] {
@@ -938,22 +1241,28 @@
     background: var(--pr-accent-soft);
     color: var(--sf-brand-text);
     --sf-chamfer-fill: var(--pr-accent-soft-img);
-    --sf-chamfer-edge: var(--pr-accent-line);
   }
+  /* The board's chip buttons: a 1px inset rim that the corner cut leaves open, and the crimson primary with no rim. */
   html[data-theme-family=crystal] .practice-topbar__action {
+    gap: 9px;
+    padding: 0 18px;
+    border: 0;
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+    color: var(--sf-text-strong);
     font-family: var(--sf-font-display);
     font-size: 15px;
     font-style: italic;
     font-weight: 800;
     letter-spacing: .06em;
     text-transform: uppercase;
+    --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control));
   }
   html[data-theme-family=crystal] .practice-topbar__action[data-variant='accent'] {
-    border-color: transparent;
-    background: var(--pr-primary-bg);
-    color: var(--pr-primary-text);
-    --sf-chamfer-fill: var(--pr-primary-bg);
-    --sf-chamfer-edge: transparent;
+    gap: 10px;
+    box-shadow: none;
+    color: var(--sf-on-primary);
+    --sf-chamfer-fill: var(--sf-primary-bg);
   }
 
   .practice-board--story {
@@ -988,7 +1297,6 @@
     border: 1px solid var(--pr-line);
     color: var(--sf-text);
     font-weight: 700;
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
   .practice-story__spinner { color: var(--sf-brand-text); }
   .practice-story__error {
@@ -998,7 +1306,6 @@
     color: var(--sf-text);
     text-align: center;
     --sf-chamfer-fill: var(--pr-danger-img);
-    --sf-chamfer-edge: var(--pr-danger-line);
   }
   .practice-story__error-icon { margin: 0 auto 14px; color: var(--pr-danger); }
   .practice-story__error h2 { font-size: 18px; font-weight: 800; }
@@ -1026,7 +1333,6 @@
     background: var(--pr-chip-bg);
     color: var(--sf-text);
     --sf-chamfer-fill: var(--pr-chip-img);
-    --sf-chamfer-edge: var(--pr-line);
   }
   .practice-story__title {
     margin-top: 18px;
@@ -1051,7 +1357,6 @@
     font: inherit;
     cursor: pointer;
     --sf-chamfer-fill: linear-gradient(transparent 62%, var(--pr-story-mark) 62%);
-    --sf-chamfer-edge: transparent;
   }
   .practice-story__word:hover { background: var(--pr-story-mark); }
   .practice-story__word[aria-expanded='true'] {
@@ -1082,7 +1387,6 @@
     text-align: left;
     white-space: normal;
     --sf-chamfer-fill: var(--pr-pop-bg);
-    --sf-chamfer-edge: var(--pr-accent-line);
   }
   .practice-story__caret {
     position: absolute;
@@ -1201,7 +1505,6 @@
     font-size: 13.5px;
     font-weight: 600;
     --sf-chamfer-fill: none;
-    --sf-chamfer-edge: transparent;
   }
   .practice-story__scene-listen:hover { background: var(--pr-accent-soft); }
 
@@ -1218,7 +1521,6 @@
     font-size: 14px;
     font-weight: 600;
     --sf-chamfer-fill: var(--pr-chip-img);
-    --sf-chamfer-edge: var(--pr-line);
   }
   .practice-story__question { margin-top: 8px; font-weight: 700; }
   .practice-story__choices { display: grid; gap: 8px; margin-top: 12px; }
@@ -1233,14 +1535,13 @@
     background: var(--pr-opt-bg);
     cursor: pointer;
     --sf-chamfer-fill: var(--pr-opt-img);
-    --sf-chamfer-edge: var(--pr-line);
   }
-  .practice-story__choice:has(input:checked) { border-color: var(--sf-brand); --sf-chamfer-edge: var(--sf-brand); }
+  .practice-story__choice:has(input:checked) { border-color: var(--sf-brand); }
   .practice-story__choice input { flex: none; width: 18px; height: 18px; accent-color: var(--sf-brand); }
   .practice-story__result { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; font-size: 14px; font-weight: 700; }
   .practice-story__result[data-outcome='correct'] { color: var(--pr-cyan-text); }
   .practice-story__note { margin-top: 8px; color: var(--sf-text-muted); font-size: 13px; line-height: 1.5; }
-  .practice-story__source { margin-top: 12px; padding: 12px 14px; border-radius: var(--pr-radius-opt); background: var(--pr-chip-bg); font-weight: 600; --sf-chamfer-fill: var(--pr-chip-img); --sf-chamfer-edge: transparent; }
+  .practice-story__source { margin-top: 12px; padding: 12px 14px; border-radius: var(--pr-radius-opt); background: var(--pr-chip-bg); font-weight: 600; --sf-chamfer-fill: var(--pr-chip-img); }
   .practice-story__form { display: grid; justify-items: start; gap: 10px; margin-top: 14px; }
   .practice-story__label { display: block; margin-top: 8px; font-size: 14px; font-weight: 700; }
   .practice-story__field {
@@ -1253,7 +1554,6 @@
     color: var(--sf-text);
     font: inherit;
     --sf-chamfer-fill: var(--pr-surface-img);
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
 
   .practice-story__aside { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-top: 8px; }
@@ -1265,7 +1565,6 @@
     background: var(--pr-panel-bg);
     box-shadow: var(--sf-panel-shadow);
     --sf-chamfer-fill: var(--pr-panel-bg);
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
   .practice-story__words-title { display: flex; align-items: baseline; justify-content: space-between; color: var(--sf-text); font-size: 13px; font-weight: 650; }
   .practice-story__words-count { color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; font-weight: 500; }
@@ -1294,52 +1593,76 @@
     font-size: 13px;
     line-height: 1.55;
     --sf-chamfer-fill: none;
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
   .practice-story__tip .practice-primary { width: 100%; min-height: 46px; font-size: 14.5px; }
   .practice-story__tip p + .practice-primary { margin-top: 12px; }
   .practice-story__lumi { display: none; }
 
-  /* Crystal: a bolder reading page, Lumi narrating below it and the meaning pinned to the side. */
+  /* Crystal: a bolder reading page, Lumi narrating below it and the meaning pinned to the side. The board's
+     tier colours are literal and the same in both modes: a rim for frames and chips, a soft wash for marks. */
+  html[data-theme-family=crystal] .practice-board--story [data-tier] { --st-rim: var(--sf-rim-learning); --st-soft: rgb(255 143 182 / .55); --st-wash: rgb(255 143 182 / .18); }
+  html[data-theme-family=crystal] .practice-board--story [data-tier='new'] { --st-rim: var(--sf-rim-new); --st-soft: rgb(94 242 255 / .5); --st-wash: rgb(94 242 255 / .18); }
+  html[data-theme-family=crystal] .practice-board--story [data-tier='mastered'] { --st-rim: var(--sf-gold-rim); --st-soft: rgb(255 42 77 / .6); --st-wash: rgb(255 42 77 / .18); }
+  html.dark[data-theme-family=crystal] .practice-board--story { --st-text3: #7a8397; }
+  /* The board's faint ink fails AA on the light panel, so light uses its next ink up. */
+  html:not(.dark)[data-theme-family=crystal] .practice-board--story { --st-text3: var(--sf-text-muted); }
   html[data-theme-family=crystal] .practice-story { grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: 56px; width: min(100%, 1270px); padding-top: 6px; }
-  html[data-theme-family=crystal] .practice-story__meta { color: var(--sf-text-muted); font-family: var(--sf-font-display); font-size: 14px; font-style: italic; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-story__meta { gap: 12px; color: var(--sf-text-muted); font-family: var(--sf-font-display); font-size: 14px; font-style: italic; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-story__sep { color: var(--sf-brand-text); }
+  /* The level chip is a cyan parallelogram; its label is skewed back upright. */
   html[data-theme-family=crystal] .practice-story__chip {
     height: 28px;
     padding: 0 12px;
     border: 0;
-    background: var(--sf-second);
-    color: var(--sf-on-brand);
+    border-radius: 0;
+    background: linear-gradient(90deg, #5ef2ff, #1aa7c9);
+    color: #031820;
     font-size: 13px;
     font-weight: 800;
-    --sf-chamfer-fill: var(--pr-second-img);
-    --sf-chamfer-edge: transparent;
+    transform: skewX(-14deg);
   }
-  html[data-theme-family=crystal] .practice-story__title { margin-top: 14px; font-size: clamp(36px, 4.4vw, 64px); font-style: italic; letter-spacing: -.005em; line-height: 1; text-transform: uppercase; }
-  html[data-theme-family=crystal] .practice-story__text { margin-top: 24px; font-family: var(--font-sans); font-size: 19px; }
+  html[data-theme-family=crystal] .practice-story__chip-text { transform: skewX(14deg); }
+  html[data-theme-family=crystal] .practice-story__title { margin-top: 14px; font-size: clamp(36px, 4.45vw, 64px); font-style: italic; letter-spacing: -.005em; line-height: 1; text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-story__text { margin-top: 24px; color: var(--sf-text-body); font-family: var(--font-sans); font-size: 19px; }
   html[data-theme-family=crystal] .practice-story__para + .practice-story__para { margin-top: 16px; }
   html[data-theme-family=crystal] .practice-story__word {
     padding: 0 4px;
     border-radius: 0;
-    background: linear-gradient(transparent 58%, color-mix(in srgb, var(--pr-tier) 50%, transparent) 58%);
+    color: var(--sf-text-strong);
     font-weight: 800;
-    --sf-chamfer-fill: linear-gradient(transparent 58%, color-mix(in srgb, var(--pr-tier) 50%, transparent) 58%);
+    --sf-chamfer-fill: linear-gradient(transparent 58%, var(--st-soft) 58%);
   }
   html[data-theme-family=crystal] .practice-story__word[aria-expanded='true'] {
-    background: var(--pr-primary-bg);
-    color: var(--pr-primary-text);
-    --sf-chamfer-fill: var(--pr-primary-bg);
+    box-shadow: 0 0 18px rgb(255 42 77 / .7);
+    color: var(--sf-on-primary);
+    --sf-chamfer-fill: var(--sf-primary-bg);
   }
-  html[data-theme-family=crystal] .practice-story__gloss-word { font-size: 38px; font-style: italic; }
-  html[data-theme-family=crystal] .practice-story__gloss-meaning { color: var(--pr-cyan-text); font-size: 24px; font-style: italic; font-weight: 800; }
+  html[data-theme-family=crystal] .practice-story__gloss-word { color: var(--sf-text-strong); font-size: 38px; font-style: italic; letter-spacing: normal; }
+  /* The board lights the stressed syllable, not the rest of the word. */
+  html[data-theme-family=crystal] .practice-story__gloss-stress { background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  html[data-theme-family=crystal] .practice-story__gloss-word em { color: inherit; font-style: inherit; text-shadow: none; }
+  html[data-theme-family=crystal] .practice-story__gloss-meaning { margin-top: 8px; color: var(--sf-holo-text); font-size: 24px; font-style: italic; font-weight: 800; line-height: normal; }
+  html[data-theme-family=crystal] .practice-story__gloss-meta { margin-top: 4px; font-size: 13px; }
+  html[data-theme-family=crystal] .practice-story__gloss-foot { gap: 8px; padding-top: 10px; border-top-color: var(--sf-edge-highlight); font-size: 13px; line-height: normal; }
   html[data-theme-family=crystal] .practice-story__review-now,
-  html[data-theme-family=crystal] .practice-story__gloss-label { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-  html[data-theme-family=crystal] .practice-story__words,
-  html[data-theme-family=crystal] .practice-story__gloss-panel { border-radius: 0; box-shadow: none; }
-  html[data-theme-family=crystal] .practice-story__words { padding: 14px 18px 8px; }
+  html[data-theme-family=crystal] .practice-story__gloss-label { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-story__gloss-label { letter-spacing: .14em; }
+  /* The link keeps a 32px target; its negative margins hold the foot to the board's height. */
+  html[data-theme-family=crystal] .practice-story__review-now { min-height: 32px; margin: -6px -8px -6px auto; font-size: 13px; letter-spacing: .06em; }
+  html[data-theme-family=crystal] .practice-story__review-now::after { content: '\00a0\203a' / ''; }
+  html[data-theme-family=crystal] .practice-story__words {
+    padding: 14px 18px 8px;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px var(--sf-panel-edge);
+    --sf-chamfer-fill: var(--sf-surface-glass);
+  }
   html[data-theme-family=crystal] .practice-story__words-title {
+    justify-content: flex-start;
     align-items: center;
     gap: 8px;
-    color: var(--pr-cyan-text);
+    color: var(--sf-holo-text);
     font-family: var(--sf-font-display);
     font-size: 13px;
     font-style: italic;
@@ -1347,32 +1670,85 @@
     letter-spacing: .14em;
     text-transform: uppercase;
   }
-  html[data-theme-family=crystal] .practice-story__words-count { margin-left: auto; }
-  html[data-theme-family=crystal] .practice-story__row { min-height: 44px; padding: 0 6px; }
-  html[data-theme-family=crystal] .practice-story__row-word { font-family: inherit; font-size: 16px; font-weight: 900; }
+  html[data-theme-family=crystal] .practice-story__words-title::before { flex: none; width: 8px; height: 8px; background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff; content: ''; transform: rotate(45deg); }
+  html[data-theme-family=crystal] .practice-story__words-count { margin-left: auto; color: var(--st-text3); font: inherit; letter-spacing: inherit; }
+  html[data-theme-family=crystal] .practice-story__words ul { margin-top: 6px; }
+  html[data-theme-family=crystal] .practice-story__words li { border-top: 0; }
+  html[data-theme-family=crystal] .practice-story__row { min-height: 40px; padding: 0 6px; border-top: 1px solid var(--sf-border); }
+  html[data-theme-family=crystal] .practice-story__row-tier {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 54px;
+    height: 22px;
+    padding: 0 6px;
+    clip-path: var(--nk-chamfer-sm);
+    background: var(--st-rim);
+    color: #1a0610;
+    font-family: var(--sf-font-display);
+    font-size: 12.5px;
+    font-style: italic;
+    font-weight: 900;
+  }
+  html[data-theme-family=crystal] .practice-story__row-word { color: var(--sf-text-strong); font-family: inherit; font-size: 16px; font-weight: 900; }
   html[data-theme-family=crystal] .practice-story__row-meaning { font-size: 13px; }
   html[data-theme-family=crystal] .practice-story__tip { padding: 0; border: 0; }
-  html[data-theme-family=crystal] .practice-story__tip .practice-primary { min-height: 60px; font-size: 19px; }
+  /* A fixed height: the button's 48px minimum comes from a utility class that a component rule cannot lower or raise. */
+  html[data-theme-family=crystal] .practice-story__tip .practice-primary { position: relative; gap: 10px; height: 60px; overflow: hidden; padding: 0 18px; font-size: 19px; letter-spacing: .06em; }
+  html[data-theme-family=crystal] .practice-story__shine { position: absolute; top: 0; bottom: 0; left: 0; width: 60px; background: rgb(255 255 255 / .4); pointer-events: none; }
+  html[data-theme-family=crystal] .practice-story__star,
+  html[data-theme-family=crystal] .practice-story__review-label { position: relative; flex: none; }
   html[data-theme-family=crystal] .practice-story__exercise-title { color: var(--pr-cyan-text); font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
   .practice-story__gloss-label { color: var(--sf-brand-text); font-size: 12px; }
 
   @media (min-width: 1180px) {
+    /* The board's columns sit 110px from the left edge and 60px from the right. */
+    html[data-theme-family=crystal] .practice-story { width: min(100%, 1320px); padding-left: clamp(0px, calc(100% - 1270px), 50px); }
     html[data-theme-family=crystal] .practice-story[data-side] .practice-story__pop { display: none; }
     html[data-theme-family=crystal] .practice-story[data-side] .practice-story__word-wrap,
     html[data-theme-family=crystal] .practice-story[data-side] .practice-story__words li { position: static; }
-    html[data-theme-family=crystal] .practice-story__gloss-panel {
-      display: block;
-      padding: 16px 20px;
-      border: 1px solid var(--pr-accent-line);
-      background: var(--pr-pop-bg);
-      filter: drop-shadow(0 0 22px color-mix(in srgb, var(--sf-brand) 25%, transparent));
-      --sf-chamfer-fill: var(--pr-pop-bg);
-      --sf-chamfer-edge: var(--sf-brand);
+    /* The word the side gloss explains is marked in the text and in the list, as the board's active word. */
+    html[data-theme-family=crystal] .practice-story[data-side] .practice-story__word[data-current] {
+      box-shadow: 0 0 18px rgb(255 42 77 / .7);
+      color: var(--sf-on-primary);
+      --sf-chamfer-fill: var(--sf-primary-bg);
     }
-    html[data-theme-family=crystal] .practice-story__gloss-panel .practice-story__gloss-head { margin-top: 6px; }
+    html[data-theme-family=crystal] .practice-story[data-side] .practice-story__row[data-current] { background: var(--st-wash); }
+    html[data-theme-family=crystal] .practice-story__aside { gap: 16px; padding-top: 0; }
+    /* The gloss frame is drawn by its pseudo-elements, a tier rim with the card face 2px inside it, so the
+       panel stays unclipped and keeps its tier glow. */
+    html[data-theme-family=crystal] .practice-story__gloss-panel {
+      position: relative;
+      display: block;
+      isolation: isolate;
+      padding: 18px 22px;
+      filter: drop-shadow(0 0 22px var(--st-soft));
+    }
+    html[data-theme-family=crystal] .practice-story__gloss-panel::before,
+    html[data-theme-family=crystal] .practice-story__gloss-panel::after { position: absolute; z-index: -1; clip-path: var(--nk-chamfer); content: ''; pointer-events: none; }
+    html[data-theme-family=crystal] .practice-story__gloss-panel::before { inset: 0; background: var(--st-rim); }
+    html[data-theme-family=crystal] .practice-story__gloss-panel::after { inset: 2px; background: var(--sf-card-front); }
+    html[data-theme-family=crystal] .practice-story__gloss-top { display: flex; align-items: center; gap: 8px; }
+    html[data-theme-family=crystal] .practice-story__tier {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 26px;
+      padding: 0 10px;
+      clip-path: var(--nk-chamfer-sm);
+      background: var(--st-rim);
+      font-family: var(--sf-font-display);
+      font-style: italic;
+    }
+    html[data-theme-family=crystal] .practice-story__tier-grade { color: #fff; font-size: 15px; font-weight: 900; text-shadow: 0 2px 0 #7a0820; }
+    html[data-theme-family=crystal] .practice-story__tier-name { color: #1a0610; font-size: 12px; font-weight: 700; }
+    html[data-theme-family=crystal] .practice-story__gloss-panel .practice-story__gloss-head { gap: 10px; margin-top: 8px; }
+    html[data-theme-family=crystal] .practice-story__gloss-panel .practice-story__gloss-listen { margin: -3px -3px -3px auto; }
     .practice-story__lumi {
       display: flex;
       flex-direction: row-reverse;
+      align-self: stretch;
       align-items: flex-end;
       justify-content: flex-end;
       gap: 14px;
@@ -1380,6 +1756,10 @@
       padding-top: 28px;
     }
     .practice-story__lumi .practice-lumi__bubble { width: min(100%, 440px); margin-bottom: 18px; }
+    html[data-theme-family=crystal] .practice-story__lumi .practice-lumi__bubble::before { background: linear-gradient(180deg, #5ef2ff, #ff2a4d); }
+    html[data-theme-family=crystal] .practice-story__lumi :is(.practice-lumi__label, .practice-lumi__heading) { line-height: normal; }
+    html[data-theme-family=crystal] .practice-story__lumi :is(.practice-lumi__heading, .practice-lumi__body) { margin-top: 3px; }
+    html[data-theme-family=crystal] .practice-story__lumi .practice-lumi__body { font-size: 13.5px; line-height: 1.45; }
     .practice-story__lumi .practice-lumi__art { width: 176px; margin-bottom: -24px; }
   }
 
@@ -1450,8 +1830,8 @@
     font-size: 12.5px;
     font-weight: 600;
     --sf-chamfer-fill: var(--pr-chip-img);
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
+  .practice-shadowing__focus-text { display: inline-flex; align-items: center; gap: 8px; }
   .practice-shadowing__focus-word { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 15px; font-style: var(--pr-em-style); }
   .practice-shadowing__ipa { color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; font-weight: 400; }
   .practice-shadowing__sentence {
@@ -1498,7 +1878,6 @@
     border-radius: var(--pr-radius-card);
     box-shadow: var(--sf-panel-shadow);
     text-align: left;
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
   .practice-shadowing__track { min-width: 0; }
   .practice-shadowing__track-head { display: flex; align-items: center; gap: 10px; min-height: 30px; color: var(--sf-text-muted); font-size: 12.5px; font-weight: 600; }
@@ -1523,7 +1902,6 @@
     border-radius: 999px;
     background: var(--pr-accent-soft);
     --sf-chamfer-fill: var(--pr-accent-soft-img);
-    --sf-chamfer-edge: transparent;
   }
   .practice-shadowing__rec { flex: none; width: 10px; height: 10px; border-radius: 999px; background: var(--pr-track); }
   .practice-shadowing__rec[data-live] { background: var(--pr-again); box-shadow: 0 0 10px var(--pr-again); }
@@ -1600,59 +1978,219 @@
   .practice-shadowing > [class*='space-y'] { width: min(100%, 900px); }
   .practice-shadowing__lumi { display: none; }
 
+  /* Crystal: AnimeShadowing. The board's text3 grey misses AA on the light panel, so light uses the muted text. */
+  html[data-theme-family=crystal] .practice-board--shadowing {
+    --sh-text3: #7a8397;
+    --pr-model-bar: rgb(255 255 255 / .26);
+    --pr-take-bar: #5ef2ff;
+  }
+  html[data-theme-family=crystal]:not(.dark) .practice-board--shadowing {
+    --sh-text3: var(--sf-text-muted);
+    --pr-model-bar: rgb(13 40 80 / .24);
+    --pr-take-bar: #0a8fb0;
+  }
+  html[data-theme-family=crystal] .practice-board--shadowing .practice-topbar__segments > i { flex-basis: 46px; }
+  /* The focus chip is a slanted tab; its text is slanted back upright. */
   html[data-theme-family=crystal] .practice-shadowing__focus {
-    min-height: 32px;
+    display: flex;
+    min-height: 0;
+    height: 34px;
+    padding: 0 14px;
+    border: 0;
     border-radius: 0;
+    background: var(--sf-surface-control);
+    box-shadow: inset 0 0 0 1px var(--sf-panel-edge);
+    transform: skewX(-14deg);
+  }
+  html[data-theme-family=crystal] .practice-shadowing__focus-text {
+    gap: 10px;
     color: var(--sf-text-muted);
     font-family: var(--sf-font-display);
-    font-size: 12px;
+    font-size: 13px;
     font-style: italic;
     font-weight: 800;
-    letter-spacing: .1em;
-    text-transform: uppercase;
+    letter-spacing: .12em;
+    line-height: normal;
+    transform: skewX(14deg);
   }
-  html[data-theme-family=crystal] .practice-shadowing__focus-word { font-size: 17px; font-weight: 900; letter-spacing: 0; text-transform: none; }
-  html[data-theme-family=crystal] .practice-shadowing__sentence { font-size: clamp(30px, 3.9vw, 56px); font-style: italic; font-weight: 900; letter-spacing: -.01em; line-height: 1.3; }
-  html[data-theme-family=crystal] .practice-shadowing__bar { height: 5px; border-radius: 0; box-shadow: 0 0 10px color-mix(in srgb, var(--pr-mark) 60%, transparent); transform: skewX(-24deg); }
-  html[data-theme-family=crystal] .practice-shadowing__waves { border-radius: 0; box-shadow: none; }
-  html[data-theme-family=crystal] .practice-shadowing__track-label { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-shadowing__focus-text > span:first-child { text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-shadowing__focus-word { color: var(--sf-text-strong); font-size: 18px; font-style: italic; letter-spacing: .02em; }
+  html[data-theme-family=crystal] .practice-shadowing__focus-stress { color: var(--sf-brand-text); }
+  html[data-theme-family=crystal] .practice-shadowing__ipa { letter-spacing: 0; }
+  html[data-theme-family=crystal] .practice-shadowing__sentence {
+    margin-top: 20px;
+    color: var(--sf-text-strong);
+    font-size: clamp(30px, 3.34vw, 48px);
+    font-style: italic;
+    font-weight: 800;
+    letter-spacing: normal;
+    line-height: 1.2;
+  }
+  html[data-theme-family=crystal] .practice-shadowing__sentence[data-spaced] { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 16px; }
+  html[data-theme-family=crystal] .practice-shadowing__word { margin: 0; padding-bottom: 10px; }
+  html[data-theme-family=crystal] .practice-shadowing__word[data-focus] { color: inherit; font-style: inherit; text-shadow: none; }
+  html[data-theme-family=crystal] .practice-shadowing__word[data-focus] .practice-shadowing__word-text {
+    background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 14px rgb(255 42 77 / .6));
+  }
+  html[data-theme-family=crystal] .practice-shadowing__word[data-focus][data-mark='pending'] { --pr-mark: #5ef2ff; }
+  html[data-theme-family=crystal] .practice-shadowing__bar { right: 2px; left: 2px; height: 5px; border-radius: 0; box-shadow: 0 0 10px var(--pr-mark); transform: skewX(-24deg); }
+  html[data-theme-family=crystal] .practice-shadowing__translation { margin-top: 12px; line-height: normal; }
+  /* The target switch is the app's own; it takes the board's chamfered chip with an inset edge. */
+  html[data-theme-family=crystal] .practice-shadowing__target {
+    border: 0;
+    border-radius: 0;
+    background: var(--sf-surface-control);
+    box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+    clip-path: var(--nk-chamfer-sm);
+    font-family: var(--sf-font-display);
+    font-style: italic;
+    font-weight: 800;
+    letter-spacing: .06em;
+  }
+  html[data-theme-family=crystal] .practice-shadowing__target[aria-pressed='true'] { background: var(--pr-accent-soft); box-shadow: inset 0 0 0 1px var(--sf-panel-edge); }
+  html[data-theme-family=crystal] .practice-shadowing__target:focus-visible { box-shadow: inset 0 0 0 2px var(--sf-holo-text); }
+  /* The chamfer utility draws the fill; the board's 1px edge is an inset line, so the diagonal edge lines are off. */
+  html[data-theme-family=crystal] .practice-shadowing__waves {
+    gap: 28px;
+    margin-top: 28px;
+    padding: 20px 26px 22px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
+    line-height: normal;
+    --sf-chamfer-fill: var(--sf-surface-glass);
+  }
+  html[data-theme-family=crystal] .practice-shadowing__track-head {
+    min-height: 34px;
+    color: var(--sf-text-muted);
+    font-family: var(--sf-font-display);
+    font-size: 13px;
+    font-style: italic;
+    font-weight: 800;
+    letter-spacing: .12em;
+    line-height: normal;
+  }
+  html[data-theme-family=crystal] .practice-shadowing__track-label { text-transform: uppercase; }
+  /* The 44px hit area keeps the 34px hexagon flush with the track's left edge. */
+  html[data-theme-family=crystal] .practice-shadowing__play { margin: -5px; }
   html[data-theme-family=crystal] .practice-shadowing__play > span {
     width: 34px;
     height: 34px;
     border-radius: 0;
-    background: var(--sf-second);
-    color: var(--sf-on-brand);
+    background: linear-gradient(180deg, #9ff9ff, #1aa7c9);
+    color: #031820;
     clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   }
-  html[data-theme-family=crystal] .practice-shadowing__rec { border-radius: 0; transform: rotate(45deg); }
+  html[data-theme-family=crystal] .practice-shadowing__clock { color: var(--sh-text3); font-style: normal; letter-spacing: 0; }
+  html[data-theme-family=crystal] .practice-shadowing__rec { width: 12px; height: 12px; border-radius: 0; transform: rotate(45deg); }
+  html[data-theme-family=crystal] .practice-shadowing__rec[data-live] { background: #ff2a4d; box-shadow: 0 0 10px #ff2a4d; }
+  html[data-theme-family=crystal] .practice-shadowing__wave { height: 66px; }
   html[data-theme-family=crystal] .practice-shadowing__wave-bar { border-radius: 0; }
-  html[data-theme-family=crystal] .practice-shadowing__wave[data-kind='take'] .practice-shadowing__wave-bar { box-shadow: 0 0 8px color-mix(in srgb, var(--pr-take-bar) 55%, transparent); }
-  html[data-theme-family=crystal] .practice-shadowing__score-line { font-family: var(--sf-font-display); font-size: 16px; font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-  html[data-theme-family=crystal] .practice-shadowing__score-value { font-size: 60px; font-weight: 900; letter-spacing: -.02em; filter: drop-shadow(0 3px 0 var(--sf-star-shade)) drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 55%, transparent)); }
-  html[data-theme-family=crystal] .practice-shadowing__meter { border-radius: 0; transform: skewX(-24deg); }
-  html[data-theme-family=crystal] .practice-shadowing__meter > span { background: linear-gradient(90deg, var(--sf-second), var(--sf-brand)); }
-  html[data-theme-family=crystal] .practice-shadowing__legend li::before { border-radius: 0; transform: skewX(-24deg); }
-  html[data-theme-family=crystal] .practice-shadowing__mic-face {
+  html[data-theme-family=crystal] .practice-shadowing__wave[data-kind='take'] .practice-shadowing__wave-bar { box-shadow: 0 0 6px rgb(94 242 255 / .45); }
+  html[data-theme-family=crystal] .practice-shadowing__wave[data-live] .practice-shadowing__wave-bar:last-of-type { background: #ff2a4d; box-shadow: 0 0 8px rgb(255 42 77 / .7); }
+  /* Room not yet recorded: the board's flat 6px track bars. */
+  html[data-theme-family=crystal] .practice-shadowing__wave-rest { height: 6px; border-top: 0; background: repeating-linear-gradient(90deg, var(--pr-track) 0 5.6px, transparent 5.6px 8.6px); }
+  html[data-theme-family=crystal] .practice-shadowing__controls { gap: 28px; margin-top: 28px; }
+  html[data-theme-family=crystal] .practice-shadowing__score-line { gap: 10px; font-family: var(--sf-font-display); font-size: 16px; font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-shadowing__score-value {
+    background: var(--sf-metal);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-size: 60px;
+    font-weight: 900;
+    letter-spacing: normal;
+    filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 14px rgb(255 42 77 / .55));
+  }
+  html[data-theme-family=crystal] .practice-shadowing__tier {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    height: 26px;
+    margin-left: 4px;
+    padding: 0 10px;
+    background: var(--sf-rim-learning);
+    clip-path: var(--nk-chamfer-sm);
+    color: #1a0610;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: .06em;
+  }
+  html[data-theme-family=crystal] .practice-shadowing__tier[data-tier='new'] { background: var(--sf-rim-new); }
+  html[data-theme-family=crystal] .practice-shadowing__tier[data-tier='mastered'] { background: var(--sf-gold-rim); }
+  html[data-theme-family=crystal] .practice-shadowing__meter { height: 10px; border-radius: 0; transform: skewX(-24deg); }
+  html[data-theme-family=crystal] .practice-shadowing__meter > span { border-radius: 0; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / .6); }
+  html[data-theme-family=crystal] .practice-shadowing__legend { gap: 16px; color: var(--sf-text-muted); font-size: 13px; font-weight: 700; line-height: normal; }
+  html[data-theme-family=crystal] .practice-shadowing__legend li { gap: 7px; }
+  html[data-theme-family=crystal] .practice-shadowing__legend li::before { width: 16px; height: 5px; border-radius: 0; transform: skewX(-24deg); }
+  /* A 116px ring around the 92px hexagon. The board's glow sits under the hexagon's clip, so it never shows. */
+  html[data-theme-family=crystal] .practice-shadowing__mic { position: relative; width: 116px; height: 116px; border-radius: 0; }
+  html[data-theme-family=crystal] .practice-shadowing__mic-ring {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 50%;
+    opacity: .35;
+    -webkit-mask: radial-gradient(circle, transparent 60%, #000 61%);
+    mask: radial-gradient(circle, transparent 60%, #000 61%);
+    pointer-events: none;
+  }
+  html[data-theme-family=crystal] .practice-shadowing__mic[data-listening] .practice-shadowing__mic-ring { opacity: 1; }
+  html[data-theme-family=crystal] .practice-shadowing__mic-ring-spin { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, #ff2a4d, transparent 35%, #5ef2ff 55%, transparent 85%, #ff2a4d); }
+  html[data-theme-family=crystal] .practice-shadowing__mic-face,
+  html[data-theme-family=crystal] .practice-shadowing__mic[data-listening] .practice-shadowing__mic-face {
+    position: relative;
+    width: 92px;
+    height: 92px;
     border-radius: 0;
+    background: var(--sf-primary-bg);
     box-shadow: none;
+    color: #fff;
     clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   }
-  html[data-theme-family=crystal] .practice-shadowing__mic { border-radius: 0; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 45%, transparent)); }
-  html[data-theme-family=crystal] .practice-shadowing__stop { border-radius: 0; clip-path: polygon(30% 0, 100% 0, 100% 70%, 70% 100%, 0 100%, 0 30%); }
+  html[data-theme-family=crystal] .practice-shadowing__stop { width: 28px; height: 28px; border-radius: 0; clip-path: var(--nk-chamfer-sm); }
+  html[data-theme-family=crystal] .practice-shadowing__actions { gap: 12px; }
+  html[data-theme-family=crystal] .practice-shadowing__actions .practice-primary { position: relative; min-height: 56px; overflow: hidden; padding: 0 26px; font-size: 17px; letter-spacing: .08em; }
+  html[data-theme-family=crystal] .practice-shadowing__shine { position: absolute; top: 0; bottom: 0; left: 0; width: 50px; background: rgb(255 255 255 / .4); pointer-events: none; }
+  html[data-theme-family=crystal] .practice-shadowing__actions .practice-primary > :not(.practice-shadowing__shine) { position: relative; }
+  html[data-theme-family=crystal] .practice-shadowing__actions .practice-secondary {
+    min-height: 56px;
+    padding: 0 22px;
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+    color: var(--sf-text-strong);
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: .08em;
+  }
+  html.dark[data-theme-family=crystal] .practice-shadowing__actions .practice-secondary { background: var(--sf-surface-control); --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control)); }
+  html:not(.dark)[data-theme-family=crystal] .practice-shadowing__actions .practice-secondary { background: var(--sf-surface); --sf-chamfer-fill: linear-gradient(var(--sf-surface), var(--sf-surface)); }
+  html[data-theme-family=crystal] .practice-shadowing__actions .practice-secondary:focus-visible { box-shadow: inset 0 0 0 2px var(--sf-holo-text); }
+  html[data-theme-family=crystal] .practice-shadowing__prev.practice-secondary { width: 56px; padding: 0; }
 
   @media (min-width: 1180px) {
     html[data-theme-family=crystal] .practice-board--shadowing { padding-bottom: 24px; }
+    html[data-theme-family=crystal] .practice-shadowing { width: min(100%, 940px); margin-top: 22px; }
     /* Lumi sits in the gutter beside the 900px column and never reaches the score. */
     .practice-shadowing__lumi {
       position: absolute;
-      bottom: 0;
-      left: 16px;
+      bottom: 34px;
+      left: 28px;
       display: flex;
-      width: min(206px, calc(50% - 474px));
+      gap: 10px;
+      width: min(206px, calc(50% - 486px));
       pointer-events: none;
     }
-    .practice-shadowing__lumi .practice-lumi__bubble { pointer-events: auto; }
-    .practice-shadowing__lumi .practice-lumi__art { width: 180px; margin-bottom: -12px; }
+    html[data-theme-family=crystal] .practice-shadowing__lumi .practice-lumi__bubble { padding: 12px 16px 14px; pointer-events: auto; }
+    html[data-theme-family=crystal] .practice-shadowing__lumi .practice-lumi__bubble::before { top: 14px; bottom: 14px; }
+    html[data-theme-family=crystal] .practice-shadowing__lumi .practice-lumi__label { font-size: 12px; line-height: normal; }
+    html[data-theme-family=crystal] .practice-shadowing__lumi .practice-lumi__heading { margin-top: 3px; font-size: 15.5px; }
+    html[data-theme-family=crystal] .practice-shadowing__lumi .practice-lumi__body { margin-top: 3px; font-size: 12.5px; }
+    html[data-theme-family=crystal] .practice-shadowing__lumi .practice-lumi__art { width: 206px; height: 240px; margin-bottom: 0; object-fit: contain; object-position: bottom; }
   }
   @media (max-width: 760px) {
     .practice-shadowing { margin-top: 8px; }
@@ -1692,7 +2230,6 @@
     color: var(--sf-text);
     text-align: left;
     --sf-chamfer-fill: var(--pr-opt-img);
-    --sf-chamfer-edge: var(--pr-line-strong);
   }
   button.practice-match__tile:hover { border-color: var(--pr-accent-line); }
   .practice-match__text { min-width: 0; font-size: 17px; font-weight: 550; line-height: 1.3; overflow-wrap: anywhere; }
@@ -1704,7 +2241,6 @@
     --tw-ring-color: color-mix(in srgb, var(--sf-brand) 55%, transparent);
     --tw-shadow: 0 0 36px -8px color-mix(in srgb, var(--sf-brand) 70%, transparent);
     --sf-chamfer-fill: var(--pr-accent-soft-img);
-    --sf-chamfer-edge: var(--sf-brand);
   }
   html:not(.dark) .practice-match__tile[data-state='selected'] { --tw-shadow: 0 0 0 4px color-mix(in srgb, var(--sf-brand) 12%, transparent); }
   .practice-match__tile[data-state='selected'] .practice-match__tag { color: var(--sf-brand-text); }
@@ -1714,7 +2250,6 @@
     box-shadow: none;
     color: var(--pr-danger);
     --sf-chamfer-fill: var(--pr-danger-img);
-    --sf-chamfer-edge: var(--pr-again);
   }
   .practice-match__tile[data-state='wrong'] .practice-match__tag { color: var(--pr-danger); }
   .practice-match__tile[data-state='matched'] {
@@ -1750,7 +2285,6 @@
     font-size: 12.5px;
     font-weight: 650;
     --sf-chamfer-fill: linear-gradient(var(--pr-warm-soft), var(--pr-warm-soft));
-    --sf-chamfer-edge: var(--pr-warm);
   }
   .practice-match__hint { margin-top: 26px; color: var(--sf-text-muted); font-size: 13px; text-align: center; }
 
@@ -1765,7 +2299,6 @@
     background: var(--pr-primary-bg);
     color: var(--pr-primary-text);
     --sf-chamfer-fill: var(--pr-primary-bg);
-    --sf-chamfer-edge: transparent;
   }
   .practice-match__result[data-outcome='time-up'] .practice-match__result-icon { background: var(--pr-danger-bg); color: var(--pr-danger); --sf-chamfer-fill: var(--pr-danger-img); }
   .practice-match__result-title { margin-top: 16px; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 30px; font-weight: var(--pr-display-weight); }
@@ -1788,45 +2321,100 @@
   }
   .practice-match__result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; }
 
-  html[data-theme-family=crystal] .practice-match { grid-template-columns: minmax(0, 1fr) 230px minmax(0, 1fr); gap: 28px; }
-  html[data-theme-family=crystal] .practice-match__column { gap: 10px; }
-  html[data-theme-family=crystal] .practice-match__tile { min-height: 62px; padding: 8px 20px; box-shadow: none; }
-  html[data-theme-family=crystal] button.practice-match__tile { --sf-chamfer-fill: var(--pr-surface-img); }
-  html[data-theme-family=crystal] .practice-match__tile[data-kind='word'] .practice-match__text { font-size: 24px; font-style: italic; font-weight: 900; letter-spacing: -.01em; }
-  html[data-theme-family=crystal] .practice-match__tag { font-family: var(--sf-font-display); font-size: 12px; font-style: italic; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-  html[data-theme-family=crystal] .practice-match__tile[data-state='selected'] {
-    --pr-sel: linear-gradient(90deg, color-mix(in srgb, var(--sf-second) var(--pr-row-sel-tint), var(--sf-surface)), var(--sf-surface) 75%);
-    border-color: var(--sf-second);
-    background: var(--pr-sel);
-    color: var(--sf-text);
+  /* Crystal Star dressing, ported from the AnimeMatch board. The hex face and gradient ring of the timer and
+     the combo text wrapper exist only for Crystal. */
+  .practice-match__hex { display: none; }
+  .practice-match__combo-text { display: contents; }
+  html[data-theme-family=crystal] .practice-match { grid-template-columns: minmax(0, 1fr) 270px minmax(0, 1fr); gap: 34px; width: min(100%, 1200px); }
+  html[data-theme-family=crystal] .practice-match__column { gap: 12px; }
+  /* Tiles: a 2px edge gradient under an opaque fill, both chamfered, drawn by the pseudo-elements so the
+     selected and wrong glows are not clipped away. */
+  html[data-theme-family=crystal] .practice-match__tile {
+    --pr-tile-edge: linear-gradient(150deg, var(--sf-edge-highlight), var(--sf-border));
+    --pr-tile-fill: var(--sf-surface);
+    position: relative;
+    isolation: isolate;
+    min-height: 82px;
+    gap: 12px;
+    padding: 0 24px;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--sf-text-strong);
     --tw-ring-color: transparent;
-    --tw-shadow: 0 0 24px -6px var(--sf-second);
-    --sf-chamfer-fill: var(--pr-sel);
-    --sf-chamfer-edge: var(--sf-second);
   }
+  html[data-theme-family=crystal] .practice-match__tile::before,
+  html[data-theme-family=crystal] .practice-match__tile::after { position: absolute; z-index: -1; clip-path: var(--nk-chamfer); content: ''; pointer-events: none; }
+  html[data-theme-family=crystal] .practice-match__tile::before { inset: 0; background: var(--pr-tile-edge); }
+  html[data-theme-family=crystal] .practice-match__tile::after { inset: 2px; background: var(--pr-tile-fill); }
+  html[data-theme-family=crystal] .practice-match__text { font-size: 18px; font-weight: 800; line-height: 1.3; }
+  html[data-theme-family=crystal] .practice-match__tile[data-kind='word'] .practice-match__text { font-size: 30px; font-style: italic; font-weight: 800; letter-spacing: .01em; line-height: 1.1; }
+  html[data-theme-family=crystal] .practice-match__tag { color: var(--sf-text-subtle); font-family: var(--sf-font-display); font-size: 14px; font-style: italic; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-match__tile[data-state='selected'] {
+    --pr-tile-edge: linear-gradient(150deg, #e9feff, #5ef2ff 40%, #ff5470);
+    --pr-tile-fill: linear-gradient(90deg, rgb(94 242 255 / .16), rgb(8 10 18 / .96) 75%), #0e111c;
+    background: none;
+    color: var(--sf-text-strong);
+    filter: drop-shadow(0 0 16px rgb(94 242 255 / .55));
+  }
+  html:not(.dark)[data-theme-family=crystal] .practice-match__tile[data-state='selected'] { --pr-tile-fill: linear-gradient(90deg, rgb(94 242 255 / .28), #eef9ff 75%), #eef9ff; }
   html[data-theme-family=crystal] .practice-match__tile[data-state='selected'] .practice-match__tag { color: var(--sf-holo-text); }
   html[data-theme-family=crystal] .practice-match__tile[data-state='wrong'] {
-    --pr-bad: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) var(--pr-row-bad-tint), var(--pr-row-bad-base)), var(--pr-row-bad-base) 75%);
-    background: var(--pr-bad);
-    color: var(--pr-row-bad-ink);
-    --sf-chamfer-fill: var(--pr-bad);
+    --pr-tile-edge: linear-gradient(150deg, #ff8fa3, #ff2a4d 50%, #7a0820);
+    --pr-tile-fill: linear-gradient(90deg, rgb(255 42 77 / .24), rgb(8 10 18 / .96) 75%), #0e111c;
+    background: none;
+    color: var(--sf-brand-text);
+    filter: drop-shadow(0 0 14px rgb(255 42 77 / .5));
   }
-  html[data-theme-family=crystal] .practice-match__tile[data-state='wrong'] .practice-match__tag { color: var(--pr-row-bad-ink); }
-  html[data-theme-family=crystal] .practice-match__timer { width: 170px; height: 190px; }
-  html[data-theme-family=crystal] .practice-match__timer::before {
-    position: absolute;
-    inset: 14px 6px;
-    border: 1px solid var(--pr-line-strong);
-    background: var(--sf-surface-glass);
-    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-    content: '';
+  html:not(.dark)[data-theme-family=crystal] .practice-match__tile[data-state='wrong'] { --pr-tile-fill: linear-gradient(90deg, rgb(255 84 112 / .16), #fff1f4 75%), #fff1f4; color: #a30c2d; }
+  html[data-theme-family=crystal] .practice-match__tile[data-state='wrong'] .practice-match__tag { color: inherit; }
+  html[data-theme-family=crystal] .practice-match__tile[data-state='matched'] {
+    --pr-tile-edge: linear-gradient(150deg, var(--sf-border), var(--sf-border));
+    --pr-tile-fill: var(--sf-surface-control);
+    color: var(--sf-text-subtle);
+    opacity: .45;
   }
-  html[data-theme-family=crystal] .practice-match__clock { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 46px; font-style: italic; font-weight: 900; letter-spacing: 0; text-shadow: var(--pr-em-glow); }
-  html[data-theme-family=crystal] .practice-match__clock-label,
-  html[data-theme-family=crystal] .practice-match__pairs-label { font-family: var(--sf-font-display); font-size: 11px; font-style: italic; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-  html[data-theme-family=crystal] .practice-match__pairs-count { font-size: 56px; font-style: italic; font-weight: 900; filter: drop-shadow(0 3px 0 var(--sf-star-shade)) drop-shadow(0 0 16px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
-  html[data-theme-family=crystal] .practice-match__combo { border-radius: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-match__tile[data-state='matched'] .practice-match__tag { color: var(--sf-holo-text); }
+  html[data-theme-family=crystal] .practice-match__center { gap: 12px; }
+  html[data-theme-family=crystal] .practice-match__timer { width: 200px; height: 200px; filter: drop-shadow(0 0 16px rgb(255 42 77 / .55)); }
+  /* The timer draws in a 220-unit box shown at 200px: the hex keeps the board's 2px edge, and the dial is
+     scaled so its ring sits at the board's 78px radius with a 10px stroke. */
+  html[data-theme-family=crystal] .practice-match__hex { display: inline; fill: var(--sf-surface); stroke: var(--sf-edge-highlight); stroke-width: 2.2; }
+  html[data-theme-family=crystal] .practice-match__dial { transform: scale(.858); transform-origin: 110px 110px; }
+  html[data-theme-family=crystal] .practice-match__ring-track { stroke: var(--sf-border); stroke-width: 12.82; }
+  html[data-theme-family=crystal] .practice-match__ring,
+  html[data-theme-family=crystal] .practice-match__timer[data-low] .practice-match__ring { stroke: url(#practice-match-ring-crystal); stroke-linecap: butt; stroke-width: 12.82; }
+  html[data-theme-family=crystal] .practice-match__clock { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 54px; font-style: italic; font-weight: 900; letter-spacing: 0; line-height: 1; text-shadow: none; }
+  html[data-theme-family=crystal] .practice-match__clock-label { margin-top: 4px; color: var(--sf-text-subtle); font-family: var(--sf-font-display); font-size: 12px; font-style: italic; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+  html[data-theme-family=crystal] .practice-match__pairs-count { font-size: 72px; font-style: italic; font-weight: 900; line-height: .95; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 16px rgb(255 42 77 / .6)); }
+  html[data-theme-family=crystal] .practice-match__pairs-label { margin-top: 0; color: var(--sf-text-muted); font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+  /* The combo shows as the board's skewed crimson banner, its words skewed back upright. */
+  html[data-theme-family=crystal] .practice-match__combo {
+    min-height: 44px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 0;
+    background: linear-gradient(90deg, rgb(179 15 51 / .95), rgb(255 42 77 / .85) 70%, rgb(255 42 77 / .2));
+    box-shadow: 0 0 26px -6px rgb(255 42 77 / .8);
+    color: #fff;
+    font-family: var(--sf-font-display);
+    font-size: 26px;
+    font-style: italic;
+    font-weight: 900;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    transform: skewX(-16deg);
+  }
+  html[data-theme-family=crystal] .practice-match__combo-text { display: inline-flex; align-items: center; gap: 8px; transform: skewX(16deg); }
+  html[data-theme-family=crystal] .practice-match__hint { color: var(--sf-text-muted); font-size: 13.5px; font-weight: 700; }
   html[data-theme-family=crystal] .practice-match__result-icon { border-radius: 0; }
+  /* At the board's width the tiles sit centred in the height between the header and the hint, which keeps
+     30px off the bottom edge. */
+  @media (min-width: 1360px) {
+    html[data-theme-family=crystal] .practice-board--match.practice-stage { display: flex; flex-direction: column; min-height: 100dvh; padding-bottom: 30px; }
+    html[data-theme-family=crystal] .practice-board--match .practice-match { margin: auto; }
+    html[data-theme-family=crystal] .practice-board--match .practice-match__hint { margin-top: 0; }
+  }
 
   @media (max-width: 900px) {
     .practice-match,
@@ -1834,7 +2422,6 @@
     .practice-match__center { grid-column: 1 / -1; grid-row: 1; flex-direction: row; justify-content: center; gap: 18px; margin-bottom: 6px; }
     .practice-match__timer,
     html[data-theme-family=crystal] .practice-match__timer { width: 112px; height: 112px; }
-    html[data-theme-family=crystal] .practice-match__timer::before { inset: 6px 4px; }
     .practice-match__clock,
     html[data-theme-family=crystal] .practice-match__clock { font-size: 28px; }
     .practice-match__clock-label { margin-top: 2px; font-size: 10px; }
@@ -1844,10 +2431,14 @@
     html[data-theme-family=crystal] .practice-match__column { gap: 8px; }
     .practice-match__tile,
     html[data-theme-family=crystal] .practice-match__tile { min-height: 64px; padding: 8px 12px; }
-    .practice-match__text { font-size: 14px; }
+    .practice-match__text,
+    html[data-theme-family=crystal] .practice-match__text { font-size: 14px; }
     .practice-match__tile[data-kind='word'] .practice-match__text,
     html[data-theme-family=crystal] .practice-match__tile[data-kind='word'] .practice-match__text { font-size: 20px; }
-    .practice-match__tag { font-size: 11px; }
+    .practice-match__tag,
+    html[data-theme-family=crystal] .practice-match__tag { font-size: 11px; }
+    html[data-theme-family=crystal] .practice-match__clock-label { margin-top: 2px; font-size: 10px; letter-spacing: .14em; }
+    html[data-theme-family=crystal] .practice-match__combo { min-height: 32px; padding: 0 12px; font-size: 15px; }
     .practice-match__hint { margin-top: 16px; }
   }
   @media (prefers-reduced-motion: reduce) {

@@ -154,7 +154,7 @@ export function SpellingView({
       <li data-state="missing"><Trans {...msg({ context: "practice.spelling.legend.missing", message: "Missing letter" })} /></li>
     </ul>
   );
-  const actionClass = "crystal-chamfer-sm min-h-14 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none";
+  const actionClass = "crystal-chamfer min-h-14 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none";
   return (
     <div className="practice-board practice-board--spelling practice-stage" data-practice-mode="spelling">
       {showResults ? (
@@ -247,8 +247,10 @@ export function SpellingView({
             ) : undefined}
             chip={!focusModeEnabled && answeredCount >= 2 ? (
               <span data-practice-combo={answeredCount} className="practice-chip">
-                <Zap size={14} aria-hidden="true" />
-                <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} />
+                <span className="practice-chip__text">
+                  <Zap size={14} aria-hidden="true" />
+                  <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: answeredCount }} />
+                </span>
               </span>
             ) : undefined}
             count={<PracticeCount current={answeredCount} total={cards.length} />}
@@ -301,12 +303,12 @@ export function SpellingView({
               </div>
               <div className="practice-speed" role="group" aria-label={_(msg({ id: "practice.spelling.speed", message: "Playback speed" }))}>
                 <button type="button" aria-pressed={speed === 1} onClick={() => chooseSpeed(1)} className="practice-speed__chip min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2">
-                  <span className="practice-speed__face crystal-chamfer-sm transition-colors motion-reduce:transition-none">
+                  <span className="practice-speed__face transition-colors motion-reduce:transition-none">
                     <Trans {...msg({ context: 'practice.spelling.speed-normal', message: '1× normal' })} />
                   </span>
                 </button>
                 <button type="button" aria-pressed={speed === 0.6} onClick={() => chooseSpeed(0.6)} className="practice-speed__chip min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2">
-                  <span className="practice-speed__face crystal-chamfer-sm transition-colors motion-reduce:transition-none">
+                  <span className="practice-speed__face transition-colors motion-reduce:transition-none">
                     <Timer size={14} aria-hidden="true" />
                     <Trans {...msg({ context: 'practice.spelling.speed-slow', message: '0.6× slow' })} />
                   </span>
@@ -364,12 +366,12 @@ export function SpellingView({
                     {tiles.map((tile, index) => (
                       <li
                         key={index}
-                        className="practice-tile crystal-chamfer-sm"
+                        className="practice-tile"
                         data-state={tile.state}
                         data-space={tile.char === " " ? "true" : undefined}
                         data-next={!checked && index === typedCount ? "true" : undefined}
                       >
-                        {tile.char === " " ? " " : tile.char}
+                        <span className="practice-tile__glyph">{tile.char === " " ? " " : tile.char}</span>
                       </li>
                     ))}
                   </ol>
@@ -471,15 +473,15 @@ export function SpellingView({
             </div>
             {crystal && (
               <div className="practice-spelling__side">
-                <div className="practice-side-panel crystal-chamfer-sm">
+                <div className="practice-side-panel crystal-chamfer">
                   <span className="practice-side-panel__label"><Trans {...msg({ context: 'practice.results.accuracy', message: 'Accuracy' })} /></span>
-                  <b className="practice-side-panel__value">{runningAccuracy === null ? "—" : `${runningAccuracy}%`}</b>
+                  <b className="practice-side-panel__value">{runningAccuracy === null ? "—" : <>{runningAccuracy}<span className="practice-side-panel__unit">%</span></>}</b>
                   <span className="practice-side-panel__bar" aria-hidden="true"><i style={{ width: `${runningAccuracy ?? 0}%` }} /></span>
                   <span className="practice-side-panel__note">
                     <Trans {...msg({ context: 'practice.spelling.words-right', message: '{score} of {answered} words right' })} values={{ score, answered: answeredCount }} />
                   </span>
                 </div>
-                <div className="practice-side-panel crystal-chamfer-sm">
+                <div className="practice-side-panel crystal-chamfer">
                   <span className="practice-side-panel__label"><Trans {...msg({ context: 'practice.spelling.letter-key', message: 'Letter key' })} /></span>
                   {legend}
                 </div>

@@ -260,7 +260,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
     // A matched pair stays in its place, dimmed, so the board does not reshuffle under the learner.
     if (isMatched) {
       return (
-        <div key={tile.id} className="practice-match__tile crystal-chamfer" data-kind={tile.type} data-state="matched">
+        <div key={tile.id} className="practice-match__tile" data-kind={tile.type} data-state="matched">
           <span lang={language} className="practice-match__text">{tile.text}</span>
           <span className="practice-match__tag">
             <Check size={15} aria-hidden="true" />
@@ -280,7 +280,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
         aria-pressed={isSelected}
         data-kind={tile.type}
         data-state={state}
-        className={`practice-match__tile crystal-chamfer transition-[border-color,background-color,box-shadow,transform] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${
+        className={`practice-match__tile transition-[border-color,background-color,box-shadow,transform] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${
           isMismatched ? 'motion-safe:animate-shake' : isSelected ? 'ring-2' : ''
         }`}
       >
@@ -321,15 +321,24 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
             <div className="practice-match__center">
               <div className="practice-match__timer" data-low={timeLeft <= 10 || undefined} role="timer" aria-label={_({ ...msg({ id: 'practice.match.seconds-left', message: '{seconds, plural, one {# second left} other {# seconds left}}' }), values: { seconds: timeLeft } })}>
                 <svg viewBox="0 0 220 220" aria-hidden="true">
-                  <circle className="practice-match__ring-track" cx="110" cy="110" r={TIMER_RADIUS} />
-                  <circle
-                    className="practice-match__ring"
-                    cx="110"
-                    cy="110"
-                    r={TIMER_RADIUS}
-                    strokeDasharray={`${ringLength * timeFraction} ${ringLength}`}
-                    transform="rotate(-90 110 110)"
-                  />
+                  <defs>
+                    <linearGradient id="practice-match-ring-crystal" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stopColor="#ff8fa3" />
+                      <stop offset="1" stopColor="#ff2a4d" />
+                    </linearGradient>
+                  </defs>
+                  <polygon className="practice-match__hex" points="110,6.6 199.1,58.3 199.1,161.7 110,213.4 20.9,161.7 20.9,58.3" />
+                  <g className="practice-match__dial">
+                    <circle className="practice-match__ring-track" cx="110" cy="110" r={TIMER_RADIUS} />
+                    <circle
+                      className="practice-match__ring"
+                      cx="110"
+                      cy="110"
+                      r={TIMER_RADIUS}
+                      strokeDasharray={`${ringLength * timeFraction} ${ringLength}`}
+                      transform="rotate(-90 110 110)"
+                    />
+                  </g>
                 </svg>
                 <span className="practice-match__clock" aria-hidden="true">{clock}</span>
                 <span className="practice-match__clock-label" aria-hidden="true"><Trans {...msg({ context: 'practice.match.left', message: 'left' })} /></span>
@@ -339,9 +348,11 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
                 <span className="practice-match__pairs-label"><Trans {...msg({ context: 'practice.match.pairs-matched', message: 'pairs matched' })} /></span>
               </p>
               {!focusModeEnabled && matchesCount >= 2 && (
-                <span data-practice-combo={matchesCount} className="practice-match__combo crystal-chamfer-sm">
-                  <Flame size={14} aria-hidden="true" />
-                  <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: matchesCount }} />
+                <span data-practice-combo={matchesCount} className="practice-match__combo">
+                  <span className="practice-match__combo-text">
+                    <Flame size={14} aria-hidden="true" />
+                    <Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: matchesCount }} />
+                  </span>
                 </span>
               )}
             </div>
