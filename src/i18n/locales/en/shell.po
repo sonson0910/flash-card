@@ -2036,7 +2036,7 @@ msgstr "You are offline. Reconnect to prepare the app files."
 #. js-lingui-explicit-id
 #: src/features/offlineApp/OfflineReadiness.tsx:357
 msgid "shell.offline.size"
-msgstr "app files, up to 6 MiB"
+msgstr "app files, up to 7 MiB"
 
 #. js-lingui-explicit-id
 #: src/features/offlineApp/OfflineReadiness.tsx:27

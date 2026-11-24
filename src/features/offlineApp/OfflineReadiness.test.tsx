@@ -149,7 +149,7 @@ describe('OfflineReadiness', () => {
     const html = renderToStaticMarkup(<OfflineReadiness production serviceWorker={undefined} />);
 
     expect(html).toContain('Prepare offline');
-    expect(html).toContain('app files, up to 6 MiB');
+    expect(html).toContain('app files, up to 7 MiB');
     expect(html).toContain('aria-live="polite"');
     expect(html).toContain('aria-busy="false"');
   });
@@ -468,7 +468,7 @@ describe('OfflineReadiness', () => {
     />);
 
     expect(html).toContain('Available offline');
-    expect(html).not.toContain('app files, up to 6 MiB');
+    expect(html).not.toContain('app files, up to 7 MiB');
   });
 
   it('does not report the shell as available when another worker owns the root scope', () => {

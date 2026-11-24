@@ -354,7 +354,7 @@ export function OfflineReadiness({
         <div className="min-w-0">
           <h2 id="offline-readiness-heading" className="text-xs font-black uppercase tracking-[0.08em]">{_(msg({ id: 'shell.offline.heading', message: 'Offline access' }))}</h2>
           {status === 'idle' || status === 'error' ? (
-            <p className="text-xs text-[var(--sf-text-muted)]">{_(msg({ id: 'shell.offline.size', message: 'app files, up to 6 MiB' }))}</p>
+            <p className="text-xs text-[var(--sf-text-muted)]">{_(msg({ id: 'shell.offline.size', message: 'app files, up to 7 MiB' }))}</p>
           ) : null}
         </div>
         {status !== 'unsupported' ? (

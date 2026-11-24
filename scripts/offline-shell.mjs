@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const OFFLINE_SHELL_MAX_BYTES = 6 * 1024 * 1024;
+export const OFFLINE_SHELL_MAX_BYTES = 7 * 1024 * 1024;
 export const OFFLINE_SHELL_DESCRIPTOR_MARKER = '/* SONFLASH_OFFLINE_SHELL_DESCRIPTOR */ null';
 const OFFLINE_SHELL_TEST_API_PATTERN = /\/\* SONFLASH_TEST_API_START \*\/[\s\S]*?\/\* SONFLASH_TEST_API_END \*\//;
 

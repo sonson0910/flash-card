@@ -2036,7 +2036,7 @@ msgstr "Bạn đang offline. Hãy kết nối lại để chuẩn bị tệp ứ
 #. js-lingui-explicit-id
 #: src/features/offlineApp/OfflineReadiness.tsx:357
 msgid "shell.offline.size"
-msgstr "tệp ứng dụng, tối đa 6 MiB"
+msgstr "tệp ứng dụng, tối đa 7 MiB"
 
 #. js-lingui-explicit-id
 #: src/features/offlineApp/OfflineReadiness.tsx:27

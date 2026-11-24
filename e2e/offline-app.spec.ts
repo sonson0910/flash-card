@@ -127,7 +127,7 @@ test('a prepared shell recovers the cached learner workspace during an app-serve
     await expect(page.getByText('resilient', { exact: true }).first()).toBeVisible();
     // Preparing offline lives in My Files; the other views show the card only for a waiting update.
     await page.goto(`${fixture.origin}/?view=files&locale=en`);
-    await expect(page.getByText('app files, up to 6 MiB', { exact: true })).toBeVisible();
+    await expect(page.getByText('app files, up to 7 MiB', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Prepare offline', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Available offline', exact: true })).toBeDisabled();
     await expect(page.getByText('Available offline.', { exact: true })).toBeVisible();
