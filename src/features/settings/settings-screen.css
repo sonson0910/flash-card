@@ -19,13 +19,18 @@
 .ss-menu__label { display: flex; flex: 1; align-items: center; gap: 11px; }
 .ss-menu__item:hover { color: var(--ss-text-strong); }
 .ss-menu__item[aria-current="page"] { background-color: var(--ss-surface); box-shadow: var(--ss-surface-shadow), inset 0 0 0 1px var(--ss-line); color: var(--ss-text-strong); }
-:root.dark:not([data-theme-family="crystal"]) .ss-menu__item[aria-current="page"] { background-color: rgb(255 255 255 / .035); }
 .ss-menu__item:focus-visible { outline: 2px solid var(--ss-text-strong); outline-offset: 2px; }
 :root[data-theme-family="crystal"] .ss-menu__title { margin: 0 0 8px; font-family: var(--sf-font-display); font-style: italic; font-weight: 900; font-size: 24px; letter-spacing: .04em; color: var(--ss-text-strong); }
 :root[data-theme-family="crystal"] .ss-menu__list { gap: 6px; }
 :root[data-theme-family="crystal"] .ss-menu__item { padding: 0 14px; border-radius: 0; transform: skewX(-12deg); }
 :root[data-theme-family="crystal"] .ss-menu__label { transform: skewX(12deg); gap: 10px; font-weight: 800; font-size: 14.5px; }
 :root[data-theme-family="crystal"] .ss-menu__item[aria-current="page"] { background: var(--ss-primary-bg); box-shadow: var(--ss-primary-shadow); color: #fff; }
+/* Board items are 42px on a 4px gap, and the gap also follows the title. Each 44px target paints the 42px item
+   inside 1px transparent borders, so the list gap is 2px and the list starts 3px under the title (padding, since a
+   margin would collapse into the title's). */
+:where(html:not([data-theme-family=crystal])) .ss-menu__list { gap: 2px; padding-top: 3px; }
+:where(html:not([data-theme-family=crystal])) .ss-menu__item { border-block: 1px solid transparent; background-clip: padding-box; }
+:where(html:not([data-theme-family=crystal])) .ss-menu__item svg { stroke-width: 1.8; }
 
 /* Two-column section bodies: the form on the left, preview or courses on the right. */
 .ss-split { display: grid; grid-template-columns: minmax(0, 640px) minmax(0, 1fr); gap: 40px; align-items: start; }
@@ -97,6 +102,14 @@
 :root[data-theme-family="crystal"] .ss-sound-tile input[role="switch"]::before { width: 18px; height: 18px; }
 :root[data-theme-family="crystal"] .ss-sound-tile input[role="switch"]:checked::before { transform: translateX(24px); }
 :root:not([data-theme-family="crystal"]) .ss-sound-tile__icon { display: none; }
+/* Board tile: an 8px lead to the 32px play dot and 10px to the label; the 44px play target adds 6px each side.
+   The board's play glyph is an unstroked 5x6px triangle (11px box, M8 5.5v13l11-6.5z); the icon here is drawn
+   unstroked at 8px to land on that size. The small switch is 36x20 on a 3px inset with a 14px knob. */
+:where(html:not([data-theme-family=crystal])) .ss-sound-tile { gap: 4px; padding: 0 12px 0 2px; }
+:where(html:not([data-theme-family=crystal])) .ss-sound-tile__dot svg { width: 8px; height: 8px; stroke-width: 0; }
+:where(html:not([data-theme-family=crystal])) .ss-sound-tile__name { color: var(--sf-text); }
+:where(html:not([data-theme-family=crystal])) .ss-sound-tile input[role="switch"] { padding: 3px; }
+:where(html:not([data-theme-family=crystal])) .ss-sound-tile input[role="switch"]::before { width: 14px; height: 14px; }
 
 /* Language & courses (LangSettings). */
 .ss-lang-card { margin-top: 0; padding: 16px 18px; }
@@ -133,13 +146,25 @@
 .ss-lang-note { display: flex; gap: 10px; margin-top: 12px; padding: 12px 14px; border: 1px solid var(--ss-info-line); border-radius: 14px; background: var(--ss-info-bg); color: var(--ss-body); font-size: 12.5px; line-height: 1.5; }
 .ss-lang-note strong { font-weight: 650; color: var(--ss-text-strong); }
 .ss-lang-note svg { flex-shrink: 0; margin-top: 2px; color: var(--ss-accent-text); }
-:root:not([data-theme-family="crystal"]) .ss-lang-note svg { color: var(--sf-info, var(--ss-accent-text)); }
+:root:not([data-theme-family="crystal"]) .ss-lang-note svg { margin-top: 1px; color: var(--sf-info, var(--ss-accent-text)); }
 :root[data-theme-family="crystal"] .ss-lang-meaning__option,
 :root[data-theme-family="crystal"] .ss-lang-preview,
 :root[data-theme-family="crystal"] .ss-lang-note { border-radius: 0; }
 :root[data-theme-family="crystal"] .ss-lang-meaning__option { border-color: var(--sf-edge-highlight); background-color: transparent; --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control)); }
 :root[data-theme-family="crystal"] .ss-lang-meaning__option[data-checked="true"] { color: #fff; box-shadow: var(--ss-primary-shadow); --sf-chamfer-fill: var(--ss-primary-bg); }
 :root[data-theme-family="crystal"] .ss-lang-preview__meaning { font-style: italic; font-weight: 800; }
+/* Board select: globe, label and chevron on a 10px gap inside 14px padding; the chevron is drawn in text2. */
+:where(html:not([data-theme-family=crystal])) .ss-lang-select__globe { stroke-width: 1.8; }
+:where(html:not([data-theme-family=crystal])) .ss-lang-select .ss-select { padding-right: 38px; background-image: none; }
+:where(html:not([data-theme-family=crystal])) .ss-lang-select::after { position: absolute; top: 50%; right: 15px; width: 14px; height: 14px; content: ""; background-color: var(--ss-text2); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat; pointer-events: none; transform: translateY(-50%); }
+/* Board chips are 26px plus their borders, 8px under the row and 16px over the meaning block; each 44px target
+   holds the chip 8px from its top and bottom. */
+:where(html:not([data-theme-family=crystal])) .ss-lang-chips { margin-top: 0; }
+:where(html:not([data-theme-family=crystal])) .ss-lang-chip__face { height: 28px; }
+:where(html:not([data-theme-family=crystal])) .ss-lang-chips + .ss-lang-meaning { margin-top: 8px; }
+/* Board: three equal columns. A narrow card drops to the columns that still fit 140px. */
+:where(html:not([data-theme-family=crystal])) .ss-lang-meaning__options { grid-template-columns: repeat(auto-fill, minmax(max(140px, calc((100% - 12px) / 3)), 1fr)); }
+:where(html:not([data-theme-family=crystal])) .ss-lang-meaning__option { color: var(--sf-text); }
 
 .ss-courses { display: flex; flex-direction: column; gap: 12px; }
 .ss-courses__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -147,12 +172,19 @@
 .ss-courses__add { display: inline-flex; min-height: 44px; align-items: center; gap: 6px; padding: 0 14px; border: 1px solid var(--ss-accent-line); border-radius: 999px; background: var(--ss-accent-soft); color: var(--ss-accent-text); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
 .ss-courses__add:focus-visible { outline: 2px solid var(--ss-text-strong); outline-offset: 2px; }
 :root[data-theme-family="crystal"] .ss-courses__add { border-radius: 0; }
+/* Board button: 36px. The 44px target paints it inside 4px transparent borders with the line drawn inset, and the
+   head gives the extra 8px back so the course card starts where the board's does. */
+:where(html:not([data-theme-family=crystal])) .ss-courses__head { margin-block: -4px; }
+:where(html:not([data-theme-family=crystal])) .ss-courses__add { padding: 0 15px; border-width: 4px 0; border-color: transparent; background-clip: padding-box; box-shadow: inset 0 0 0 1px var(--ss-accent-line); }
+:where(html:not([data-theme-family=crystal])) .ss-courses__add svg { stroke-width: 2.4; }
 .ss-course-active { position: relative; padding: 18px 20px 14px; border: var(--ss-card-border); border-radius: var(--ss-card-radius); box-shadow: var(--ss-card-shadow); }
 :root:not([data-theme-family="crystal"]) .ss-course-active { background: var(--ss-card-bg); }
 :root[data-theme-family="crystal"] .ss-course-active { padding: 18px 22px 14px; --sf-chamfer-fill: var(--ss-panel); }
 .ss-course-active__head { display: flex; align-items: flex-start; gap: 14px; }
 .ss-course-glyph { display: grid; flex-shrink: 0; width: 54px; height: 54px; place-items: center; border-radius: 16px; background: var(--ss-accent-soft); color: var(--ss-accent-text); font-size: 28px; font-weight: 700; }
 .ss-course-glyph--small { width: 44px; height: 44px; border: 1px solid var(--ss-line); border-radius: 14px; background: var(--ss-chip-bg); color: var(--ss-text-strong); font-size: 22px; }
+/* Board other-course glyph: 44px plus its borders, Fraunces at regular weight. */
+:where(html:not([data-theme-family=crystal])) .ss-course-glyph--small { width: 46px; height: 46px; font-weight: 400; }
 :root[data-theme-family="crystal"] .ss-course-glyph { border-radius: 0; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); background: var(--ss-tier-new); color: #031820; }
 .ss-course-active__title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ss-course-active__name { font-size: 22px; font-weight: 700; color: var(--ss-text-strong); }
@@ -170,6 +202,8 @@
 .ss-link-button:hover { color: var(--ss-text-strong); }
 .ss-link-button:focus-visible { outline: 2px solid var(--ss-text-strong); outline-offset: 2px; }
 .ss-link-button:disabled { cursor: not-allowed; opacity: .55; }
+/* The foot's links keep 44px targets without growing the board's foot. */
+:where(html:not([data-theme-family=crystal])) .ss-course-active__foot .ss-link-button { margin-block: calc((1lh - 44px) / 2); }
 .ss-course-other { display: flex; width: 100%; min-height: 72px; box-sizing: border-box; align-items: center; gap: 14px; padding: 14px 18px; border: 1px solid var(--ss-line); border-radius: var(--ss-radius); background-color: var(--ss-surface); box-shadow: var(--ss-surface-shadow); color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .ss-course-other:focus-visible { outline: 2px solid var(--ss-text-strong); outline-offset: 2px; }
 .ss-course-other:disabled { cursor: not-allowed; opacity: .6; }
@@ -178,6 +212,7 @@
 .ss-course-other__name { display: block; font-size: 16px; font-weight: 650; color: var(--ss-text-strong); }
 .ss-course-other__meta { display: block; margin-top: 1px; font-size: 12.5px; color: var(--ss-text2); }
 .ss-course-other__chevron { flex-shrink: 0; color: var(--ss-text3); }
+:where(html:not([data-theme-family=crystal])) .ss-course-other__chevron { width: 16px; height: 16px; color: var(--ss-text2); }
 .ss-course-add { padding: 14px 18px; border: 1px dashed var(--ss-line-strong); border-radius: var(--ss-radius); }
 .ss-course-add .ss-eyebrow { margin: 0; }
 .ss-course-add__options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
@@ -190,6 +225,18 @@
 :root[data-theme-family="crystal"] .ss-course-add__option { border-radius: 0; }
 /* These options sit on the page backdrop, so they take the glass fill. The fill is a background-image layer and must be an image. */
 :root[data-theme-family="crystal"] .ss-course-add__option { border-color: var(--sf-edge-highlight); background-color: transparent; --sf-chamfer-fill: linear-gradient(var(--sf-glass-surface), var(--sf-glass-surface)); }
+:where(html:not([data-theme-family=crystal])) .ss-course-add__option { color: var(--sf-text); text-align: left; }
+/* A busy (disabled) option does not lift on hover. */
+:where(html:not([data-theme-family=crystal])) .ss-course-add__option.sf-lift:disabled:hover { transform: none; }
+/* Course names and sample words take the board's endonym faces: Fraunces for Latin script, Noto Sans (dark) or
+   Noto Serif (light, where the device has it) for Korean, Japanese and Chinese. */
+:where(html:not([data-theme-family=crystal])) .sf-settings-scope :is(.ss-course-glyph, .ss-course-add__name) { font-family: var(--sf-font-display); }
+:where(html:not([data-theme-family=crystal])) .sf-settings-scope :is(.ss-lang-preview__word, .ss-course-glyph, .ss-course-active__name, .ss-course-other__name, .ss-course-add__name):lang(ko) { font-family: "Noto Sans KR", "Noto Sans CJK KR", sans-serif; }
+:where(html:not([data-theme-family=crystal])) .sf-settings-scope :is(.ss-lang-preview__word, .ss-course-glyph, .ss-course-active__name, .ss-course-other__name, .ss-course-add__name):lang(ja) { font-family: "Noto Sans JP", "Noto Sans CJK JP", sans-serif; }
+:where(html:not([data-theme-family=crystal])) .sf-settings-scope :is(.ss-lang-preview__word, .ss-course-glyph, .ss-course-active__name, .ss-course-other__name, .ss-course-add__name):lang(zh) { font-family: "Noto Sans SC", "Noto Sans CJK SC", sans-serif; }
+:where(html:not([data-theme-family=crystal]):not(.dark)) .sf-settings-scope :is(.ss-lang-preview__word, .ss-course-glyph, .ss-course-active__name, .ss-course-other__name, .ss-course-add__name):lang(ko) { font-family: "Noto Serif KR", "Noto Serif CJK KR", "Noto Sans KR", serif; }
+:where(html:not([data-theme-family=crystal]):not(.dark)) .sf-settings-scope :is(.ss-lang-preview__word, .ss-course-glyph, .ss-course-active__name, .ss-course-other__name, .ss-course-add__name):lang(ja) { font-family: "Noto Serif JP", "Noto Serif CJK JP", "Noto Sans JP", serif; }
+:where(html:not([data-theme-family=crystal]):not(.dark)) .sf-settings-scope :is(.ss-lang-preview__word, .ss-course-glyph, .ss-course-active__name, .ss-course-other__name, .ss-course-add__name):lang(zh) { font-family: "Noto Serif SC", "Noto Serif CJK SC", "Noto Sans SC", serif; }
 .ss-course-hint { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ss-text2); }
 .ss-lang-serif { font-family: var(--sf-font-display); font-weight: 400; }
 :root[data-theme-family="crystal"] .ss-lang-serif { font-style: italic; font-weight: 800; }
@@ -213,6 +260,8 @@
 .settings-preview__copy { width: 82%; height: 3px; border-radius: 99px; background: var(--preview-muted); opacity: .7; }
 .settings-preview__action { width: 31%; height: 11px; margin-top: 2px; border-radius: var(--preview-radius); background: var(--preview-brand); box-shadow: 0 3px 8px -5px var(--preview-text); }
 html[data-lumi="off"] [data-settings-lumi] { visibility: hidden; }
+/* LangSettings puts its first panel 18px under the subtitle (ReminderSettings 20px). */
+:where(html:not([data-theme-family=crystal])) .ss-split--language > .ss-split__head .ss-page-heading { margin-bottom: 18px; }
 
 @media (max-width: 1180px) {
   .ss-split, :root[data-theme-family="crystal"] .ss-split, .ss-split--language, :root[data-theme-family="crystal"] .ss-split--language { grid-template-columns: minmax(0, 1fr); gap: 24px; }

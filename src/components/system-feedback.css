@@ -141,13 +141,16 @@ html.dark .application-error-panel h1 {
 }
 
 html[data-theme-family='classic'] .application-error-actions button {
+  border-block: 1px solid transparent;
   background: #28d3f4;
+  background-clip: padding-box;
   color: #04141c;
   box-shadow: 0 16px 40px -14px rgb(40 211 244 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.5);
 }
 
 html[data-theme-family='classic']:not(.dark) .application-error-actions button {
   background: #1d1a16;
+  background-clip: padding-box;
   color: #fbf6ec;
   box-shadow: 0 14px 28px -14px rgb(29 26 22 / 0.9);
 }
@@ -531,16 +534,6 @@ html[data-theme-family='crystal'] .workspace-loading-spinner {
   border-top-color: var(--loading-accent);
 }
 
-html[data-theme-family='classic'] .workspace-loading-panel .skeleton-sheen {
-  background: linear-gradient(90deg, rgb(29 26 22 / 0.05), rgb(29 26 22 / 0.1), rgb(29 26 22 / 0.05));
-  background-size: 240% 100%;
-}
-
-html[data-theme-family='classic'].dark .workspace-loading-panel .skeleton-sheen {
-  background: linear-gradient(90deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.04));
-  background-size: 240% 100%;
-}
-
 :is(html[data-theme-family='classic'], html:not([data-theme-family])) .application-error-panel {
   border-radius: var(--sf-panel-radius, 18px);
   background: var(--sf-surface-glass);
@@ -548,7 +541,11 @@ html[data-theme-family='classic'].dark .workspace-loading-panel .skeleton-sheen 
   backdrop-filter: var(--sf-panel-blur, none);
 }
 
+/* SystemStates boxes are content-box: the 56px warning disc plus its 1px line is 58px, and the 14px spinner
+   plus its 2px ring is 18px. */
 :is(html[data-theme-family='classic'], html:not([data-theme-family])) .application-error-warning-icon {
+  width: 58px;
+  height: 58px;
   border-color: var(--sf-danger-line, color-mix(in srgb, var(--sf-danger) 28%, var(--sf-border)));
   background: var(--sf-danger-soft, color-mix(in srgb, var(--sf-danger) 8%, var(--sf-surface)));
 }
@@ -566,9 +563,19 @@ html[data-theme-family='classic'].dark .workspace-loading-panel .skeleton-sheen 
   color: var(--sf-text-body, var(--sf-text-muted));
 }
 
-:is(html[data-theme-family='classic'], html:not([data-theme-family])) .application-error-actions a {
-  background: var(--sf-surface-control);
-  box-shadow: var(--sf-secondary-shadow, none);
+:where(html:not([data-theme-family=crystal])) .application-error-actions a {
+  padding-inline: 19px;
+  border-width: 1px 0;
+  border-color: transparent;
+  background: var(--sf-surface-control) padding-box;
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+}
+
+/* The board's actions are 42px; the app keeps 44px targets and paints the 42px button between transparent
+   1px top and bottom borders. The secondary's line is an inset ring at the painted edge, so its side padding
+   takes the board's 18px plus that 1px line. */
+:where(html:not([data-theme-family=crystal])):not(.dark) .application-error-actions a {
+  box-shadow: var(--sf-secondary-shadow), inset 0 0 0 1px var(--sf-border);
 }
 
 :is(html[data-theme-family='classic'], html:not([data-theme-family])) .workspace-loading-panel {
@@ -578,9 +585,97 @@ html[data-theme-family='classic'].dark .workspace-loading-panel .skeleton-sheen 
   backdrop-filter: var(--sf-panel-blur, none);
 }
 
-:is(html[data-theme-family='classic'], html:not([data-theme-family])) .workspace-loading-card {
-  border-radius: calc(var(--sf-panel-radius, 18px) - 4px);
+/* SystemStates motion: the skeleton bars shimmer with the board's sf-shimmer (the skeleton token over a
+   200% field, linear), the spinner turns in 900ms and the primary action takes sf-press. */
+:where(html:not([data-theme-family=crystal])) .workspace-loading-panel .skeleton-sheen {
+  background: var(--sf-skeleton, var(--sf-surface-raised));
+  background-size: 200% 100%;
+  animation: sf-shimmer-k 1.6s linear infinite;
 }
+
+:where(html:not([data-theme-family=crystal])) .workspace-loading-spinner {
+  width: 18px;
+  height: 18px;
+  animation-duration: 900ms;
+}
+
+/* The loading tile carries the board's text colour; its label stays text2. */
+:where(html:not([data-theme-family=crystal])) .workspace-loading-panel {
+  color: var(--sf-text);
+}
+
+:where(html:not([data-theme-family=crystal])) .workspace-loading-label {
+  color: var(--sf-text-muted);
+  line-height: normal;
+}
+
+:where(html:not([data-theme-family=crystal])) .application-error-actions button {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), filter 180ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .application-error-actions button:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+}
+
+:where(html:not([data-theme-family=crystal])) .application-error-actions button:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+/* The error screen stands outside the shell, so it draws the board's AMBIENT itself: SystemStates places the
+   violet glow at (800, 20) and the cyan one at (1260, 780) of its 1440x900 frame (Midnight Aurora), and Ink &
+   Paper's dot grid fades out from the middle. The glows use the shell's soft falloff for the 120px blur. */
+:where(html:not([data-theme-family=crystal])).dark .application-error-screen {
+  background:
+    radial-gradient(circle at 55.5% 2.2%, color-mix(in srgb, var(--sf-second) 40%, transparent) 0, color-mix(in srgb, var(--sf-second) 34%, transparent) 140px, color-mix(in srgb, var(--sf-second) 19%, transparent) 270px, color-mix(in srgb, var(--sf-second) 4%, transparent) 420px, transparent 520px),
+    radial-gradient(circle at 87.5% 86.7%, color-mix(in srgb, var(--sf-brand) 32%, transparent) 0, color-mix(in srgb, var(--sf-brand) 23%, transparent) 180px, color-mix(in srgb, var(--sf-brand) 14%, transparent) 265px, color-mix(in srgb, var(--sf-brand) 8%, transparent) 330px, color-mix(in srgb, var(--sf-brand) 3%, transparent) 440px, transparent 520px),
+    var(--sf-canvas);
+}
+
+:where(html:not([data-theme-family=crystal])):not(.dark) .application-error-screen::before {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  background-image: radial-gradient(color-mix(in srgb, var(--sf-text) 8%, transparent) 1px, transparent 1.2px);
+  background-size: 28px 28px;
+  -webkit-mask-image: radial-gradient(ellipse 60% 70% at 60% 45%, #000 10%, transparent 75%);
+  mask-image: radial-gradient(ellipse 60% 70% at 60% 45%, #000 10%, transparent 75%);
+}
+
+/* SystemStates runtime tile, used for the course-load failure inside the shell: a glass tile whose message
+   takes the tile's display title and whose retry is the primary button (the shared glass control is unlayered,
+   so the retry rule names it to win). */
+:where(html:not([data-theme-family=crystal])) .app-course-error {
+  background: var(--sf-surface-glass, var(--sf-surface));
+  box-shadow: var(--sf-panel-shadow);
+  -webkit-backdrop-filter: var(--sf-panel-blur, none);
+  backdrop-filter: var(--sf-panel-blur, none);
+}
+
+:where(html:not([data-theme-family=crystal])) .app-course-error-title {
+  color: var(--sf-text-strong, var(--sf-text));
+  font-family: var(--sf-font-display);
+  font-size: 26px;
+  font-weight: var(--sf-display-weight, 380);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+:where(html:not([data-theme-family=crystal])) .app-course-error .app-course-error-retry.liquid-control {
+  padding: 0 18px;
+  border-width: 1px 0;
+  border-style: solid;
+  border-color: transparent;
+  background: var(--sf-primary-bg) padding-box;
+  color: var(--sf-on-primary);
+  box-shadow: var(--sf-primary-shadow, none);
+  font-size: 14px;
+  font-weight: 650;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
 
 @keyframes system-feedback-spin {
   to { transform: rotate(360deg); }
@@ -593,6 +688,10 @@ html[data-theme-family='classic'].dark .workspace-loading-panel .skeleton-sheen 
 
   .workspace-loading-spinner,
   .workspace-loading-lumi {
+    animation: none;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .workspace-loading-panel .skeleton-sheen {
     animation: none;
   }
 }

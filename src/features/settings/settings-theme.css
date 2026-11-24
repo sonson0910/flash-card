@@ -25,10 +25,10 @@
 }
 :where(html:not([data-theme-family=crystal])) .sf-settings-scope {
   --ss-text-strong: var(--sf-text-strong); --ss-text2: var(--sf-text-muted);
-  /* The board uses #8a8072 (3.8:1); this is the nearest tone that keeps AA on the surfaces. */
-  --ss-text3: #756b5e; --ss-body: var(--sf-text-body);
+  /* The board's text3 (#8a8072 / #6f808a) is under 4.5:1 on these surfaces; the theme's tertiary text keeps AA. */
+  --ss-text3: var(--sf-text-tertiary); --ss-body: var(--sf-text-body);
   --ss-line: var(--sf-border); --ss-line-strong: var(--sf-edge-highlight); --ss-nav-line: var(--sf-nav-line, rgb(29 26 22 / .08));
-  --ss-surface: var(--sf-surface); --ss-surface-shadow: var(--sf-panel-shadow); --ss-blur: var(--sf-panel-blur, none); --ss-radius: var(--sf-panel-radius, 18px);
+  --ss-surface: var(--sf-surface); --ss-surface-shadow: var(--sf-panel-shadow); --ss-radius: var(--sf-panel-radius, 18px);
   --ss-accent: var(--sf-brand); --ss-accent-text: var(--sf-brand-text); --ss-accent-soft: var(--sf-accent-soft, rgb(180 70 26 / .08)); --ss-accent-line: var(--sf-accent-line, rgb(151 64 13 / .25));
   --ss-input-bg: var(--sf-surface-control); --ss-chip-bg: var(--sf-surface-raised);
   --ss-primary-bg: var(--sf-primary-bg); --ss-primary-text: var(--sf-on-primary); --ss-primary-shadow: var(--sf-primary-shadow); --ss-btn-radius: var(--sf-button-radius, 999px);
@@ -41,18 +41,19 @@
   --ss-card-shadow: 0 0 0 4px rgb(180 70 26 / .08), inset 0 1px 0 #fff, inset 0 0 0 1px rgb(29 26 22 / .06), 0 10px 20px -10px rgb(60 40 20 / .18), 0 50px 70px -40px rgb(60 40 20 / .45);
   --ss-mono: 'Geist Mono', ui-monospace, monospace;
   --ss-body-font: var(--font-sans);
-  color: var(--ss-text-strong);
+  /* The boards set text in their own colour (t.text) at the font's normal leading. */
+  color: var(--sf-text);
   font-family: var(--ss-body-font);
+  line-height: normal;
 }
 :root.dark:not([data-theme-family="crystal"]) .sf-settings-scope {
-  /* The board tone sits under 4.5:1 on the dark glass, so small labels take the lighter step web words uses. */
-  --ss-text3: #8494a0; --ss-body: var(--sf-text-body); --ss-text-strong: var(--sf-text-strong);
+  --ss-text3: var(--sf-text-tertiary); --ss-body: var(--sf-text-body); --ss-text-strong: var(--sf-text-strong);
   --ss-line-strong: var(--sf-edge-highlight); --ss-nav-line: var(--sf-nav-line, rgb(255 255 255 / .06));
-  --ss-surface: var(--sf-surface-glass); --ss-blur: var(--sf-panel-blur, blur(18px)); --ss-radius: var(--sf-panel-radius, 22px);
+  --ss-surface: var(--sf-surface-glass); --ss-radius: var(--sf-panel-radius, 22px);
   --ss-accent-soft: var(--sf-accent-soft, rgb(40 211 244 / .12)); --ss-accent-line: var(--sf-accent-line, rgb(40 211 244 / .35));
   --ss-input-bg: var(--sf-surface-control); --ss-chip-bg: var(--sf-surface-raised);
   --ss-primary-bg: var(--sf-primary-bg); --ss-primary-text: var(--sf-on-primary); --ss-primary-shadow: var(--sf-primary-shadow); --ss-btn-radius: var(--sf-button-radius, 16px);
-  --ss-track: var(--sf-track, rgb(255 255 255 / .08)); --ss-switch-on: var(--sf-brand); --ss-knob-on: var(--sf-on-brand); --ss-knob-off: #99a7b0;
+  --ss-track: var(--sf-track, rgb(255 255 255 / .08)); --ss-switch-on: var(--sf-brand); --ss-knob-on: var(--sf-on-brand); --ss-knob-off: var(--sf-text-muted);
   --ss-em-color: var(--sf-brand); --ss-em-style: var(--sf-em-style, normal); --ss-em-glow: var(--sf-em-glow, 0 0 36px rgb(40 211 244 / .5)); --ss-display-weight: var(--sf-display-weight, 440);
   --ss-focus-ring: 0 0 0 4px rgb(40 211 244 / .12);
   --ss-info-bg: var(--sf-info-bg); --ss-info-line: var(--sf-info-line);
@@ -94,6 +95,7 @@
 .ss-title em { font-style: var(--ss-em-style); color: var(--ss-em-color); text-shadow: var(--ss-em-glow); }
 .ss-title:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 4px; border-radius: 4px; }
 .ss-subtitle { margin: 8px 0 0; font-size: 14px; line-height: 1.45; color: var(--ss-text2); }
+:where(html:not([data-theme-family=crystal])) .ss-subtitle { line-height: normal; }
 :root[data-theme-family="crystal"] .ss-title { font-style: italic; font-weight: 900; font-size: 44px; letter-spacing: 0; text-transform: uppercase; }
 :root[data-theme-family="crystal"] .ss-title em { font-style: italic; background: var(--ss-metal); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 14px rgb(255 42 77 / .5)); }
 :root[data-theme-family="crystal"] .ss-subtitle { font-size: 14.5px; }
@@ -107,7 +109,8 @@
 
 /* Panels. Crystal panels add the crystal-chamfer utility in markup; the fill comes from --sf-chamfer-fill. */
 :where(html[data-theme-family=crystal]) .ss-panel { position: relative; padding: 18px 20px; border: 1px solid var(--ss-line); border-radius: var(--ss-radius); background-color: var(--ss-surface); box-shadow: var(--ss-surface-shadow); backdrop-filter: var(--ss-blur); }
-:where(html:not([data-theme-family=crystal])) .ss-panel { position: relative; padding: 18px 20px; border: 1px solid var(--ss-line); border-radius: var(--ss-radius); background-color: var(--ss-surface); box-shadow: var(--ss-surface-shadow); -webkit-backdrop-filter: var(--ss-blur); backdrop-filter: var(--ss-blur); }
+/* The settings boards draw their classic panels without a backdrop blur. */
+:where(html:not([data-theme-family=crystal])) .ss-panel { position: relative; padding: 18px 20px; border: 1px solid var(--ss-line); border-radius: var(--ss-radius); background-color: var(--ss-surface); box-shadow: var(--ss-surface-shadow); }
 /* The board draws a Crystal panel's edge as a 1px inset line, which the chamfer cuts away at the two corners, so
    the cut corners stay open and the utility's corner lines are switched off. */
 :root[data-theme-family="crystal"] .ss-panel { padding: 18px 22px; border: 0; box-shadow: inset 0 0 0 1px var(--ss-panel-edge); --sf-chamfer-fill: var(--ss-panel); }
@@ -122,6 +125,7 @@
 :root[data-theme-family="crystal"] .ss-row { padding: 7px 0; }
 :root[data-theme-family="crystal"] .ss-row__title { font-size: 14.5px; font-weight: 900; line-height: normal; }
 :root[data-theme-family="crystal"] .ss-row__sub { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .ss-row__sub { line-height: normal; }
 
 /* Switches keep native checkbox semantics with the board track and knob. */
 .sf-settings-scope input[role="switch"] { appearance: none; position: relative; flex-shrink: 0; width: 42px; height: 24px; box-sizing: border-box; margin: 0; padding: 3px; border: 0; border-radius: 999px; background: var(--ss-track); box-shadow: inset 0 0 0 1px var(--ss-line); cursor: pointer; }
@@ -133,6 +137,11 @@
 :root[data-theme-family="crystal"] .sf-settings-scope input[role="switch"] { width: 48px; border-radius: 0; box-shadow: none; transform: skewX(-14deg); }
 :root[data-theme-family="crystal"] .sf-settings-scope input[role="switch"]::before { border-radius: 0; box-shadow: none; }
 :root[data-theme-family="crystal"] .sf-settings-scope input[role="switch"]:checked::before { transform: translateX(24px); }
+/* Board switches draw no line round the track. The reminder board's knobs cast a small shadow; the language and
+   sound boards' knobs cast none. */
+:where(html:not([data-theme-family=crystal])) .sf-settings-scope input[role="switch"] { box-shadow: none; }
+:where(html:not([data-theme-family=crystal])) .sf-settings-scope input[role="switch"]::before { box-shadow: 0 1px 3px rgb(0 0 0 / .3); }
+:where(html:not([data-theme-family=crystal])) .sf-settings-scope :is(.ss-course-rows, .ss-sound-tile) input[role="switch"]::before { box-shadow: none; }
 @media (prefers-reduced-motion: no-preference) {
   html:not([data-motion="reduced"]) .sf-settings-scope input[role="switch"] { transition: background-color 160ms ease; }
   html:not([data-motion="reduced"]) .sf-settings-scope input[role="switch"]::before { transition: transform 160ms ease; }

@@ -18,6 +18,17 @@
   white-space: nowrap;
 }
 .claude-course-switcher-trigger:hover { border-color: var(--sf-edge-highlight); }
+/* LangCourses chip (L9): 42px painted inside the 44px target. The 1px transparent border keeps the target, the
+   fill stops at the padding box and the board's line is an inset ring at the painted edge; the padding adds the
+   board's 1px border, and outer shadows take 1px off their spread so they match a 42px box. */
+:where(html:not([data-theme-family=crystal])) .claude-course-switcher-trigger {
+  padding: 0 13px 0 6px;
+  line-height: normal;
+  border-color: transparent;
+  background-clip: padding-box;
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+}
+:where(html:not([data-theme-family=crystal])) .claude-course-switcher-trigger:hover { border-color: transparent; box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
 :where(html[data-theme-family=crystal]) .claude-course-switcher-trigger[aria-expanded='true'] {
   border-color: var(--sf-text);
   box-shadow: inset 0 0 0 .5px var(--sf-text), 0 6px 16px -10px var(--sf-shadow);
@@ -27,19 +38,46 @@
   border-color: var(--sf-brand);
   box-shadow: inset 0 0 0 .5px var(--sf-brand), 0 0 24px -6px color-mix(in srgb, var(--sf-brand) 60%, transparent);
 }
+/* LangCourses chip, state open (L229-L230): the accent ring and its shadow. */
 :where(html:not([data-theme-family=crystal])) .claude-course-switcher-trigger[aria-expanded='true'] {
-  border-color: var(--sf-text);
-  box-shadow: inset 0 0 0 .5px var(--sf-text), 0 6px 16px -10px rgb(60 40 20 / .5);
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--sf-text), 0 6px 16px -11px rgb(60 40 20 / .5);
   background-color: var(--sf-surface);
 }
 .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .claude-course-switcher-trigger[aria-expanded='true'] {
-  border-color: var(--sf-brand);
-  box-shadow: inset 0 0 0 .5px var(--sf-brand), 0 0 24px -6px rgb(40 211 244 / .6);
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--sf-brand), 0 0 24px -7px rgb(40 211 244 / .6);
+}
+/* LangCourses chip, state switched (L231-L232): while the switched toast shows, the chip takes the new course's
+   tile hue (the board draws 日本語: second in dark, the ja tile colour in light). */
+:where(html:not([data-theme-family=crystal])) .claude-course-switcher-trigger[data-course-language='ko'] { --course-switch-hue: var(--sf-text); }
+:where(html:not([data-theme-family=crystal])) .claude-course-switcher-trigger[data-course-language='ja'] { --course-switch-hue: var(--sf-brand); }
+:where(html:not([data-theme-family=crystal])) .claude-course-switcher-trigger[data-course-language='en'] { --course-switch-hue: var(--sf-success); }
+:where(html:not([data-theme-family=crystal])) .claude-course-switcher-trigger[data-course-language='zh'] { --course-switch-hue: var(--sf-rating-easy); }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .claude-course-switcher-trigger[data-course-language='ko'] { --course-switch-hue: var(--sf-brand); }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .claude-course-switcher-trigger[data-course-language='ja'] { --course-switch-hue: var(--sf-second); }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .claude-course-switcher-trigger[data-course-language='en'] { --course-switch-hue: var(--sf-reward); }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .claude-course-switcher-trigger[data-course-language='zh'] { --course-switch-hue: var(--sf-success); }
+:where(html:not([data-theme-family=crystal])) .claude-course-switcher-trigger[data-switched='true']:not([aria-expanded='true']) {
+  box-shadow: inset 0 0 0 1.5px var(--course-switch-hue), 0 0 0 3px color-mix(in srgb, var(--course-switch-hue) 14%, transparent);
+  background-color: var(--sf-surface);
+}
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .claude-course-switcher-trigger[data-switched='true']:not([aria-expanded='true']) {
+  box-shadow: inset 0 0 0 1.5px var(--course-switch-hue), 0 0 26px -5px color-mix(in srgb, var(--course-switch-hue) 80%, transparent);
+}
+/* LangMobile chip (L8, chipBorder L147): 40px painted inside the 44px target, and the open chip has the accent ring
+   without a glow. The repeated class outranks the phone header's padding in shell.css. */
+@media (max-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .claude-topbar .claude-course-switcher-trigger.claude-course-switcher-trigger { border-width: 2px; padding: 0 12px 0 5px; }
+  :where(html:not([data-theme-family=crystal])) .claude-course-switcher-trigger[aria-expanded='true'] { box-shadow: inset 0 0 0 1.5px var(--sf-text); }
+  .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .claude-course-switcher-trigger[aria-expanded='true'] { box-shadow: inset 0 0 0 1.5px var(--sf-brand); }
 }
 .course-tile.course-trigger__glyph { --course-tile-size: 32px; border-radius: 999px; font-size: 16px; }
 :where(html[data-theme-family=crystal]) .course-trigger__name { font-size: 15px; font-weight: 700; }
 :where(html:not([data-theme-family=crystal])) .course-trigger__name { color: var(--sf-text-strong, var(--sf-text)); font-size: 15px; font-weight: 700; }
 .course-trigger__from { color: var(--sf-text-muted); font-size: 12px; }
+/* LangCourses chip "from" line and the panel's quiet lines are text3: the AA tertiary text. */
+:where(html:not([data-theme-family=crystal])) .course-trigger__from { color: var(--sf-text-tertiary); }
 .course-trigger__chevron { flex: none; color: var(--sf-text-muted); }
 .claude-course-switcher-trigger[aria-expanded='true'] .course-trigger__chevron { transform: rotate(180deg); }
 
@@ -91,6 +129,7 @@ html[data-theme-family=crystal] .course-trigger__from { font-style: italic; font
   background-color: var(--sf-surface);
   color: var(--sf-text);
   box-shadow: var(--sf-dialog-shadow);
+  line-height: normal;
 }
 html:not([data-theme-family=crystal]) .claude-course-switcher-panel,
 html:not([data-theme-family=crystal]) .claude-topbar[data-mobile-course] .claude-course-switcher-panel { background-image: var(--sf-dialog-bg); }
@@ -105,9 +144,10 @@ html[data-theme-family=crystal] .claude-course-switcher-panel {
 :where(html[data-theme-family=crystal]) .course-panel__title { margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 26px; font-weight: 400; letter-spacing: -.01em; line-height: 1.1; }
 :where(html[data-theme-family=crystal]) .course-panel__title em { color: var(--sf-brand); font-style: italic; }
 .dark:where(html[data-theme-family=crystal], html[data-theme-family=crystal] *) .course-panel__title em { font-style: normal; }
-:where(html:not([data-theme-family=crystal])) .course-panel__title { margin: 0; color: var(--sf-text-strong, var(--sf-text)); font-family: var(--sf-font-display); font-size: 26px; font-weight: var(--sf-display-weight, 380); letter-spacing: -.01em; line-height: 1.1; }
+:where(html:not([data-theme-family=crystal])) .course-panel__title { margin: 0; color: var(--sf-text-strong, var(--sf-text)); font-family: var(--sf-font-display); font-size: 26px; font-weight: var(--sf-display-weight, 380); }
 :where(html:not([data-theme-family=crystal])) .course-panel__title em { color: var(--sf-brand); font-style: var(--sf-em-style, italic); }
 .course-panel__subline { flex: 1; margin: 0; color: var(--sf-text-muted); font-size: 12px; text-align: right; }
+:where(html:not([data-theme-family=crystal])) .course-panel__subline { color: var(--sf-text-tertiary); }
 .course-panel__close {
   display: grid;
   width: 44px;
@@ -164,6 +204,7 @@ html:not([data-theme-family=crystal]):not(.dark) .course-row[aria-current='true'
 :where(html[data-theme-family=crystal]) .course-row__name { display: flex; min-width: 0; align-items: baseline; gap: 8px; color: var(--sf-text); font-size: 17px; font-weight: 700; }
 :where(html:not([data-theme-family=crystal])) .course-row__name { display: flex; min-width: 0; align-items: baseline; gap: 8px; color: var(--sf-text-strong, var(--sf-text)); font-size: 17px; font-weight: 700; }
 .course-row__translated { color: var(--sf-text-muted); font-size: 12.5px; font-weight: 400; }
+:where(html:not([data-theme-family=crystal])) .course-row__translated { color: var(--sf-text-tertiary); }
 .course-row__meta { overflow: hidden; margin-top: 2px; color: var(--sf-text-muted); font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
 .course-row__from { position: absolute; overflow: hidden; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; clip-path: inset(50%); white-space: nowrap; }
 .course-row__sep { display: none; }
@@ -209,6 +250,7 @@ html[data-theme-family=crystal] :is(.course-panel__add, .course-panel__manage):f
 
 .course-panel__extension { display: none; align-items: center; gap: 8px; margin: 10px 4px 4px; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.4; }
 .course-panel__extension > svg { flex: none; }
+:where(html:not([data-theme-family=crystal])) .course-panel__extension { line-height: normal; }
 
 .course-panel__languages {
   display: flex;
@@ -224,6 +266,10 @@ html[data-theme-family=crystal] :is(.course-panel__add, .course-panel__manage):f
 :where(html:not([data-theme-family=crystal])) .course-panel__languages p { display: flex; min-width: 0; flex: 1; flex-direction: column; margin: 0; color: var(--sf-text-strong, var(--sf-text)); font-size: 14.5px; font-weight: 600; }
 .course-panel__languages-label { color: var(--sf-text-muted); font-size: 12px; font-weight: 400; }
 .course-panel__change { min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--sf-brand-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+/* LangMobile language box (L47-L50): the values sit 1px under their labels, and the 44px "Change" target overhangs
+   the box padding so the box keeps the board's 36px content height and the text keeps its right edge. */
+:where(html:not([data-theme-family=crystal])) .course-panel__languages-label + span { margin-top: 1px; }
+:where(html:not([data-theme-family=crystal])) .course-panel__change { margin: -14px -4px -14px 0; }
 html[data-theme-family=crystal] .course-panel__languages { border-radius: 0; background-color: transparent; --sf-chamfer-fill: var(--sf-surface-raised); }
 html[data-theme-family=crystal] .course-panel__languages-label { font-style: italic; letter-spacing: .06em; text-transform: uppercase; }
 
@@ -233,6 +279,9 @@ html[data-theme-family=crystal] .course-panel__languages-label { font-style: ita
   html:not([data-theme-family=crystal]) .claude-course-switcher-trigger { background-color: var(--sf-surface); }
   html:not([data-theme-family=crystal]) .course-row:not([aria-current='true']) { border-color: var(--sf-border); }
   .course-trigger__from { display: none; }
+  /* The app's close button keeps its target (45px in the header, index.css) but takes the head's 32px line
+     (LangMobile L30-L33). */
+  :where(html:not([data-theme-family=crystal])) .course-panel__close { margin-block: -6.5px; }
 }
 
 @media (min-width: 1024px) {
@@ -274,6 +323,8 @@ html[data-theme-family=crystal] .course-panel__languages-label { font-style: ita
   .dark .course-panel__title em { color: inherit; font-style: normal; }
   html[data-theme-family=crystal] .course-panel__title { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 13px; font-weight: 800; letter-spacing: .16em; }
   .course-panel__close { width: 44px; height: 44px; align-self: center; margin: -10px -6px -10px 0; }
+  /* The board's popover head (L99-L102) is 34px; the app's 45px close button overhangs it instead of growing it. */
+  :where(html:not([data-theme-family=crystal])) .course-panel__close { margin-block: -14.5px; }
 
   .claude-course-list { gap: 4px; margin-top: 0; }
   .course-row { gap: 14px; border-radius: 14px; }
@@ -319,13 +370,14 @@ html[data-theme-family=crystal] .course-panel__languages-label { font-style: ita
   display: flex;
   min-height: 52px;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 8px;
   border: var(--sf-dialog-border, 1px solid var(--sf-border));
   border-radius: 26px;
   background-color: var(--sf-surface);
   color: var(--sf-text);
   box-shadow: var(--sf-dialog-shadow);
+  line-height: normal;
 }
 html:not([data-theme-family=crystal]) .course-switched-toast { background-image: var(--sf-dialog-bg); }
 html[data-theme-family=crystal] .course-switched-toast { --sf-chamfer-fill: var(--sf-dialog-bg); border-radius: 0; }
@@ -349,6 +401,20 @@ html[data-theme-family=crystal] .course-switched-toast .course-tile { border-rad
   white-space: nowrap;
   cursor: pointer;
 }
+/* LangCourses switched toast (L164-L167): 12px between the tile pair, the text and the button; the board's 22px arrow
+   sits 4px from each tile in text3 and the new course's glyph is 16px; the 36px "Back" chip is painted inside the
+   44px target with its line as an inset ring, and overhangs its slot so the painted chip keeps the board's gap and
+   the toast's 8px end padding. */
+:where(html:not([data-theme-family=crystal])) .course-switched-toast__arrow { margin: 0 -8px; color: var(--sf-text-tertiary); }
+:where(html:not([data-theme-family=crystal])) .course-switched-toast .course-switched-toast__to { font-size: 16px; }
+:where(html:not([data-theme-family=crystal])) .course-switched-toast__text { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .course-switched-toast__back {
+  margin: 0 -4px;
+  padding: 0 15px;
+  border: 4px solid transparent;
+  background-clip: padding-box;
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+}
 html[data-theme-family=crystal] .course-switched-toast__back { border-radius: 0; }
 html[data-theme-family=crystal] .course-switched-toast__back:focus-visible { outline-offset: -4px; }
 
@@ -361,6 +427,12 @@ html[data-theme-family=crystal] .course-switched-toast__back:focus-visible { out
   .course-trigger__chevron { transition: transform 160ms ease; }
   .claude-course-switcher-trigger { transition: border-color 160ms ease, box-shadow 160ms ease; }
   .claude-course-switcher-panel, .course-switched-toast { animation: course-switcher-rise 180ms ease-out; }
+  /* LangCourses pops its course popover and switched toast in (.sf-pop, canvas shared.css L73-L74). */
+  :where(html:not([data-theme-family=crystal])) :is(.claude-course-switcher-panel, .course-switched-toast) { animation: sf-pop-k 380ms cubic-bezier(.16, 1, .3, 1) both; transform-origin: 120px 0; }
+}
+/* LangMobile raises its course sheet (.sf-rise, canvas shared.css L58-L59). */
+@media (prefers-reduced-motion: no-preference) and (max-width: 1023px) {
+  :where(html:not([data-theme-family=crystal])) .claude-course-switcher-panel { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) both; }
 }
 
 @keyframes course-switcher-rise {

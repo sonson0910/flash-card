@@ -27,9 +27,11 @@
   font-weight: 700;
 }
 
+/* The board's open avatar: a 1px accent line on the 40px circle and a 4px accent ring around it. The 2px band of
+   the 44px target carries the ring's inner half, the spread its outer half. */
 html:not([data-theme-family="crystal"]) .claude-app-shell .account-menu-trigger[aria-expanded="true"]:not([data-equipped-frame="crimson-wing"]) {
-  border-color: transparent;
-  box-shadow: inset 0 0 0 1px var(--sf-accent-line, var(--sf-brand)), 0 0 0 4px var(--sf-accent-soft, transparent);
+  border-color: var(--sf-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--sf-accent-line), 0 0 0 2px var(--sf-accent-soft);
 }
 
 .account-menu-trigger img,
@@ -300,6 +302,25 @@ html:not([data-theme-family="crystal"]) .account-menu-panel {
   box-shadow: var(--sf-dialog-shadow, var(--sf-panel-shadow));
 }
 
+/* The board's menu hangs from the painted avatar edge, 2px inside the 44px target, and opens with sf-pop. */
+:where(html:not([data-theme-family=crystal])) .account-menu-panel {
+  right: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .account-menu-panel {
+    transform-origin: 120px 0;
+    animation: sf-pop-k 380ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+}
+
+/* The board's 42px avatar with its 1px line outside it (the board boxes are content-box). */
+:where(html:not([data-theme-family=crystal])) .account-menu-avatar {
+  width: 44px;
+  height: 44px;
+  flex-basis: 44px;
+}
+
 html:not([data-theme-family="crystal"]) .account-menu-avatar:not([data-equipped-frame="crimson-wing"]) {
   background: var(--sf-avatar-bg, color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)));
   color: var(--sf-avatar-text, var(--sf-brand-text));
@@ -312,12 +333,61 @@ html:not([data-theme-family="crystal"]) .account-menu-name {
 }
 
 html:not([data-theme-family="crystal"]) .account-menu-email {
+  margin-top: 0;
   font-size: 12px;
 }
 
+/* The board's status row is one 12.5px line (it is not a control, so it keeps the board height): the dot or icon,
+   the label and its detail joined by " · ", and the card count pushed right. */
 html:not([data-theme-family="crystal"]) .account-menu-status {
+  min-height: 0;
   padding: 9px 12px;
   font-size: 12.5px;
+  line-height: normal;
+}
+
+:where(html:not([data-theme-family=crystal])) .account-menu-status-copy { display: block; }
+
+:where(html:not([data-theme-family=crystal])) .account-menu-status-label { white-space: normal; }
+
+:where(html:not([data-theme-family=crystal])) .account-menu-status-detail {
+  display: inline;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+:where(html:not([data-theme-family=crystal])) .account-menu-status-detail::before { content: " · " / ""; }
+
+:where(html:not([data-theme-family=crystal])) .account-menu-status-icon > svg { width: 14px; height: 14px; }
+
+/* Synced draws the board's 7px glowing dot instead of an icon. */
+:where(html:not([data-theme-family=crystal])) .account-menu-status[data-status-kind="synced"]:not([aria-busy="true"]) .account-menu-status-icon {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sf-success);
+  box-shadow: 0 0 8px var(--sf-success);
+}
+
+/* Work in progress draws the board's ring spinner: 11px inside a 2px ring in the row's line colour. */
+:where(html:not([data-theme-family=crystal])) .account-menu-status[aria-busy="true"] .account-menu-status-icon {
+  box-sizing: border-box;
+  width: 15px;
+  height: 15px;
+  border: 2px solid;
+  border-color: inherit;
+  border-top-color: currentColor;
+  border-radius: 50%;
+}
+
+:where(html:not([data-theme-family=crystal])) .account-menu-status:is([data-status-kind="synced"], [aria-busy="true"]) .account-menu-status-icon > svg { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .account-menu-status[aria-busy="true"] .account-menu-status-icon {
+    animation: sf-spin-k 900ms linear infinite;
+  }
 }
 
 html:not([data-theme-family="crystal"]) .account-menu-status[data-status-kind="synced"] {
@@ -345,15 +415,33 @@ html:not([data-theme-family="crystal"]) .account-menu-status:is([data-status-kin
 }
 
 html:not([data-theme-family="crystal"]) .account-menu-count {
-  font-size: 11px;
+  gap: normal;
+  margin-left: auto;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
 }
+
+:where(html:not([data-theme-family=crystal])) .account-menu-count svg { display: none; }
 
 html:not([data-theme-family="crystal"]) .account-menu-divider {
   margin: 4px 8px;
 }
 
+/* The board's divider above the library's danger row sits 5px off. */
+:where(html:not([data-theme-family=crystal])) .account-menu-divider.account-menu-divider:has(+ .account-menu-danger-action) {
+  margin: 5px 8px;
+}
+
+/* The board's 40px rows are painted inside the 44px targets by 2px transparent bands; the vertical radius grows by
+   the band so the painted corners stay 10px. */
 html:not([data-theme-family="crystal"]) .account-menu-item {
-  padding: 4px 12px;
+  gap: 11px;
+  padding: 0 12px;
+  border: solid transparent;
+  border-width: 2px 0;
+  border-radius: 10px / 12px;
+  background-clip: padding-box;
   color: var(--sf-text);
   font-size: 13.5px;
   font-weight: 550;
@@ -366,11 +454,12 @@ html:not([data-theme-family="crystal"]) .account-menu-item > svg {
 }
 
 html:not([data-theme-family="crystal"]) .account-menu-item:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--sf-text-strong) 5%, transparent);
+  background: color-mix(in srgb, var(--sf-text-strong) 5%, transparent) padding-box;
+  filter: none;
 }
 
 html.dark:not([data-theme-family="crystal"]) .account-menu-item:hover:not(:disabled) {
-  background: rgb(255 255 255 / 0.06);
+  background: rgb(255 255 255 / 0.06) padding-box;
 }
 
 html:not([data-theme-family="crystal"]) .account-menu-signout-action {
@@ -382,13 +471,13 @@ html:not([data-theme-family="crystal"]) .account-menu-primary-action > svg {
 }
 
 html:not([data-theme-family="crystal"]) .account-menu-danger-action {
-  background: var(--sf-danger-soft);
+  background: var(--sf-danger-soft) padding-box;
   color: var(--sf-danger);
   font-weight: 600;
 }
 
 html:not([data-theme-family="crystal"]) .account-menu-danger-action:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--sf-danger) 14%, transparent);
+  background: color-mix(in srgb, var(--sf-danger) 14%, transparent) padding-box;
 }
 
 /* ANAV avatar: a flat crimson hex with the deep end in both modes; it glows only while its menu is open. */

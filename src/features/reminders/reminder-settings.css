@@ -22,7 +22,7 @@
 .rm-inline-time .rm-time__face { font: inherit; letter-spacing: 0; text-decoration: underline dotted var(--ss-text3); text-underline-offset: 4px; }
 .rm-quiet__title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .rm-zone { display: flex; min-height: 56px; min-width: 0; box-sizing: border-box; flex: 1; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px 14px; border: 1px dashed var(--ss-line-strong); border-radius: 12px; font-size: 12.5px; line-height: 1.45; color: var(--ss-text2); }
-:root:not([data-theme-family="crystal"]) .rm-zone { border-color: var(--ss-accent-line); }
+:root:not([data-theme-family="crystal"]) .rm-zone { padding: 10px 14px; border-color: var(--ss-accent-line); }
 .rm-zone__field { display: flex; min-width: 0; flex: 1 1 180px; align-items: center; gap: 8px; }
 .rm-zone__label { flex-shrink: 0; font-weight: 700; color: var(--ss-accent-text); }
 .rm-zone__input { min-width: 0; min-height: 44px; flex: 1; padding: 0 4px; border: 0; border-bottom: 1px dashed transparent; background: transparent; color: var(--ss-text-strong); font: inherit; font-size: 13px; font-weight: 600; }
@@ -61,20 +61,20 @@
 
 /* Live preview. */
 :where(html[data-theme-family=crystal]) .rm-preview { display: flex; flex-direction: column; gap: 12px; --rm-os-bg: #fff; --rm-os-text: #1f1f1f; --rm-os-muted: #5f6368; --rm-mail-bg: #fffcf5; --rm-mail-text: #1d1a16; --rm-mail-muted: #6b6255; --rm-mail-hero: #1c2a21; --rm-mail-link: #b4461a; --rm-bar-bg: #efe9dd; --rm-bar-url: #fffcf5; --rm-mark-bg: #1d1a16; --rm-mark-text: #fbf6ec; --rm-badge-bg: #d93025; --rm-badge-text: #fff; }
-:where(html:not([data-theme-family=crystal])) .rm-preview { display: flex; flex-direction: column; gap: 12px; --rm-os-bg: #fff; --rm-os-line: rgb(29 26 22 / .1); --rm-os-shadow: 0 24px 44px -24px rgb(60 40 20 / .5); --rm-os-text: #1f1f1f; --rm-os-muted: #5f6368; --rm-mail-bg: #fffcf5; --rm-mail-text: #1d1a16; --rm-mail-muted: #6b6255; --rm-mail-hero: #1c2a21; --rm-mail-hero-text: #fbf6ec; --rm-mail-link: #97400d; --rm-bar-bg: #efe9dd; --rm-bar-url: #fffcf5; --rm-bar-icon: #8a8072; --rm-mark-bg: var(--sf-logo-bg, #1d1a16); --rm-mark-text: var(--sf-logo-text, #fbf6ec); --rm-badge-bg: #d93025; --rm-badge-text: #fff; }
+:where(html:not([data-theme-family=crystal])) .rm-preview { display: flex; flex-direction: column; gap: 18px; --rm-os-bg: #fff; --rm-os-line: rgb(29 26 22 / .1); --rm-os-shadow: 0 24px 44px -24px rgb(60 40 20 / .5); --rm-os-text: #1f1f1f; --rm-os-muted: #5f6368; --rm-mail-bg: #fffcf5; --rm-mail-text: #1d1a16; --rm-mail-muted: #6b6255; --rm-mail-hero: #1c2a21; --rm-mail-hero-text: #fbf6ec; --rm-mail-link: #97400d; --rm-bar-bg: #efe9dd; --rm-bar-url: #fffcf5; --rm-bar-icon: #8a8072; --rm-mark-bg: var(--sf-logo-bg, #1d1a16); --rm-mark-text: var(--sf-logo-text, #fbf6ec); --rm-badge-bg: #d93025; --rm-badge-text: #fff; }
 :root.dark:not([data-theme-family="crystal"]) .rm-preview { --rm-os-bg: rgb(32 36 40 / .96); --rm-os-line: rgb(255 255 255 / .1); --rm-os-shadow: 0 24px 50px -20px rgb(0 0 0 / .9); --rm-os-text: #f1f3f4; --rm-os-muted: #b4bac0; --rm-mail-hero: linear-gradient(135deg, #0a1a22, #102733 60%, #2a2150); --rm-mail-hero-text: #e5ecf1; --rm-mail-link: #97400d; --rm-bar-bg: #202428; --rm-bar-url: #2d3237; --rm-bar-icon: #80868b; --rm-mark-bg: var(--sf-logo-bg, #28d3f4); --rm-mark-text: var(--sf-logo-text, #04141c); }
 .rm-preview__title { margin: 0 0 2px; }
 .rm-os, .rm-mail, .rm-toolbar { overflow: hidden; border: 1px solid var(--ss-line); border-radius: 16px; box-shadow: 0 14px 30px -18px rgb(0 0 0 / .35); }
 :root:not([data-theme-family="crystal"]) :is(.rm-mail, .rm-toolbar) { box-shadow: var(--ss-surface-shadow); }
 .rm-os { padding: 13px 16px 15px; background-color: var(--rm-os-bg); color: var(--rm-os-text); }
-:root:not([data-theme-family="crystal"]) .rm-os { padding: 14px 16px; border-color: var(--rm-os-line); box-shadow: var(--rm-os-shadow); }
+:root:not([data-theme-family="crystal"]) .rm-os { padding: 14px 16px; border-color: var(--rm-os-line); box-shadow: var(--rm-os-shadow); font-family: system-ui, 'Segoe UI', sans-serif; }
 .rm-os__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--rm-os-muted); }
 .rm-os__app { display: inline-flex; min-width: 0; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rm-os__title { margin: 8px 0 0; font-size: 14px; font-weight: 700; }
 :root:not([data-theme-family="crystal"]) .rm-os__title { font-weight: 650; }
 .rm-os__body { margin: 3px 0 0; font-size: 13px; color: var(--rm-os-muted); }
 .rm-mark { display: inline-grid; flex-shrink: 0; width: 18px; height: 18px; place-items: center; border-radius: 5px; background: var(--rm-mark-bg); color: var(--rm-mark-text); font-family: var(--sf-font-display); font-size: 11px; font-style: italic; font-weight: 700; }
-:root:not([data-theme-family="crystal"]) .rm-mark { font-weight: 500; }
+:root:not([data-theme-family="crystal"]) .rm-mark { font-weight: 400; }
 .rm-mail { background-color: var(--rm-mail-bg); color: var(--rm-mail-text); }
 .rm-mail__head { display: flex; justify-content: space-between; gap: 8px; padding: 10px 14px 9px; font-size: 12px; color: var(--rm-mail-muted); }
 :root:not([data-theme-family="crystal"]) .rm-mail__head { padding: 10px 14px; border-bottom: 1px solid rgb(29 26 22 / .08); font-size: 11.5px; }
@@ -82,14 +82,15 @@
 .rm-mail__hero { padding: 14px 16px 16px; background: var(--rm-mail-hero); color: #fff; }
 :root:not([data-theme-family="crystal"]) .rm-mail__hero { padding: 14px 16px; color: var(--rm-mail-hero-text, #fff); }
 .rm-mail__eyebrow { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgb(255 255 255 / .72); }
-:root:not([data-theme-family="crystal"]) .rm-mail__eyebrow { color: inherit; opacity: .75; font-size: 11px; letter-spacing: .08em; }
+:root:not([data-theme-family="crystal"]) .rm-mail__eyebrow { color: inherit; opacity: .75; font-size: 11px; font-weight: 400; letter-spacing: .08em; }
 .rm-mail__big { margin: 4px 0 0; font-family: var(--sf-font-display); font-size: 19px; line-height: 1.2; }
-:root:not([data-theme-family="crystal"]) .rm-mail__big { font-size: 20px; line-height: 1; }
+:root:not([data-theme-family="crystal"]) .rm-mail__big { font-size: 30px; line-height: 1; }
 .rm-mail__num { font-size: 32px; font-weight: 500; }
 :root:not([data-theme-family="crystal"]) .rm-mail__num { font-size: 30px; font-weight: 400; }
 .rm-mail__big em { font-style: italic; }
+:where(html:not([data-theme-family=crystal])) .rm-mail__big em { font-size: 20px; }
 .rm-mail__foot { display: flex; justify-content: flex-end; padding: 10px 14px; font-size: 12.5px; }
-:root:not([data-theme-family="crystal"]) .rm-mail__foot { padding: 10px 16px 12px; font-size: 12px; }
+:root:not([data-theme-family="crystal"]) .rm-mail__foot { padding: 10px 16px 12px; color: #3d372f; font-size: 12px; }
 .rm-mail__link { font-weight: 650; color: var(--rm-mail-link); }
 .rm-toolbar { padding: 10px 14px 12px; background-color: var(--ss-surface); }
 :root:not([data-theme-family="crystal"]) .rm-toolbar { padding: 12px 14px; }
@@ -97,14 +98,40 @@
 :root:not([data-theme-family="crystal"]) .rm-toolbar__bar { height: 38px; box-sizing: border-box; padding: 0 10px; border-radius: 10px; }
 .rm-toolbar__url { height: 24px; flex: 1; border-radius: 999px; background-color: var(--rm-bar-url); }
 .rm-toolbar__ext { width: 18px; height: 18px; border: 1.5px solid var(--ss-text3); border-radius: 4px; opacity: .6; }
-:root:not([data-theme-family="crystal"]) .rm-toolbar__ext { border-color: var(--rm-bar-icon, var(--ss-text3)); opacity: 1; }
+:root:not([data-theme-family="crystal"]) .rm-toolbar__ext { box-sizing: content-box; border-color: var(--rm-bar-icon, var(--ss-text3)); opacity: 1; }
 .rm-toolbar__icon { position: relative; display: inline-grid; }
 .rm-toolbar__icon .rm-mark { width: 22px; height: 22px; font-size: 13px; }
 :root:not([data-theme-family="crystal"]) .rm-toolbar__icon .rm-mark { width: 24px; height: 24px; border-radius: 7px; font-size: 14px; }
 .rm-toolbar__badge { position: absolute; right: -7px; bottom: -6px; display: grid; min-width: 16px; height: 15px; box-sizing: border-box; place-items: center; padding: 0 3px; border-radius: 4px; background: var(--rm-badge-bg); color: var(--rm-badge-text); font-size: 9.5px; font-weight: 700; }
-:root:not([data-theme-family="crystal"]) .rm-toolbar__badge { right: -9px; min-width: 18px; height: 16px; border-radius: 5px; font-size: 10.5px; }
+:root:not([data-theme-family="crystal"]) .rm-toolbar__badge { right: -9px; min-width: 18px; height: 16px; border-radius: 5px; font-family: system-ui, sans-serif; font-size: 10.5px; }
 .rm-toolbar__caption { margin: 8px 2px 0; font-size: 12.5px; color: var(--ss-text2); }
 .rm-lumi { margin-top: auto; padding-top: 24px; }
+
+/* Classic values from the ReminderSettings board. */
+:where(html:not([data-theme-family=crystal])) .rm-card { padding-bottom: 18px; }
+:where(html:not([data-theme-family=crystal])) .rm-schedule { align-items: center; }
+/* Time: Geist Mono 30px, the hours, colon, minutes and chevron on a 10px gap inside 16px padding. */
+:where(html:not([data-theme-family=crystal])) .rm-time { padding: 0 16px; color: var(--ss-text-strong); font-family: var(--ss-mono); font-size: 30px; }
+:where(html:not([data-theme-family=crystal])) .rm-time .rm-time__face { gap: 10px; font-weight: 400; letter-spacing: normal; }
+:where(html:not([data-theme-family=crystal])) .rm-time .rm-time__colon { margin: 0; }
+:where(html:not([data-theme-family=crystal])) .rm-time__chevron { width: 14px; height: 14px; padding-left: 0; }
+:where(html:not([data-theme-family=crystal])) :is(.rm-zone__label, .rm-zone__use) { font-weight: 650; }
+:where(html:not([data-theme-family=crystal])) .rm-days { margin: 14px 0; }
+:where(html:not([data-theme-family=crystal])) .rm-days__list { gap: 6px; }
+:where(html:not([data-theme-family=crystal])) .rm-day__face { background-color: transparent; font-weight: 650; }
+:where(html:not([data-theme-family=crystal])) .rm-days__count { color: var(--ss-text3); }
+:where(html:not([data-theme-family=crystal])) .rm-card .ss-row { gap: 12px; }
+:where(html:not([data-theme-family=crystal])) .rm-layout .ss-panel + .ss-eyebrow,
+:where(html:not([data-theme-family=crystal])) .rm-embedded .ss-panel + .ss-eyebrow { margin-top: 20px; }
+:where(html:not([data-theme-family=crystal])) .rm-layout .ss-split__main > .ss-eyebrow:last-of-type { margin-top: 20px; }
+/* Channel: the title 10px under the icon row, 14px; the description 12px. */
+:where(html:not([data-theme-family=crystal])) .rm-channel__top { margin-bottom: 0; }
+:where(html:not([data-theme-family=crystal])) .rm-channel__icon svg { width: 16px; height: 16px; stroke-width: 1.9; }
+:where(html:not([data-theme-family=crystal])) .rm-channel__title { margin-top: 10px; font-size: 14px; }
+:where(html:not([data-theme-family=crystal])) .rm-channel__sub { margin-top: 2px; font-size: 12px; }
+:where(html:not([data-theme-family=crystal])) .rm-preview__title { margin: 0; }
+:where(html:not([data-theme-family=crystal])) .rm-os__body { line-height: 1.45; }
+:where(html:not([data-theme-family=crystal])) .rm-toolbar__caption { margin: 8px 0 0; }
 
 /* Crystal Star (AnimeSettings board). Chamfered parts take the board's 1px inset edge, which the chamfer cuts away
    at the two corners, so the utility's corner lines are switched off. */

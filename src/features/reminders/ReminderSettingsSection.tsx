@@ -249,7 +249,7 @@ export function ReminderSettingsSection({ initialOwnerId, embedded = false, onSa
     </div>
     <aside aria-label={_(msg({ id: 'settings.reminders.preview.label', message: 'Live preview' }))} className="ss-split__aside rm-preview">
       <h2 className="ss-eyebrow rm-preview__title"><Trans {...msg({ context: 'settings.reminders.preview.title', message: 'Live preview' })} /></h2>
-      <div className="rm-os">
+      <div className="rm-os sf-pop">
         <div className="rm-os__head"><span className="rm-os__app"><span className="rm-mark" aria-hidden="true">S</span>SonFlash{host && <> · {host}</>}</span><span>{settings.sendAtLocal}</span></div>
         <p className="rm-os__title">SonFlash</p>
         <p className="rm-os__body">{dueCount === null

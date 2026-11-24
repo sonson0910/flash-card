@@ -39,7 +39,8 @@
 .claude-nav-item { display: flex; min-height: 45px; align-items: center; justify-content: center; padding: 0 16px; border-block: 3.5px solid transparent; border-radius: 999px; background-clip: padding-box; color: var(--sf-text-muted); font-size: 14px; font-weight: 550; line-height: 1; text-decoration: none; white-space: nowrap; }
 .claude-nav-item:hover { color: var(--sf-text); background-color: var(--sf-surface-raised); }
 .claude-nav-item[data-shell-active=true] { color: var(--sf-text); background-color: color-mix(in srgb, var(--sf-text) 8%, transparent); }
-:is(html[data-theme-family=classic], html:not([data-theme-family])):not(.dark) .claude-nav-item[data-shell-active=true] { color: var(--sf-on-brand); background-color: var(--sf-text); }
+/* NAV: the current page is a navActiveBg pill with navActiveText in both looks. */
+:where(html:not([data-theme-family=crystal])) .claude-nav-item[data-shell-active=true] { color: var(--sf-nav-active-text); background-color: var(--sf-nav-active-bg); }
 .claude-shell-actions { flex: none; gap: 10px; }
 /* The board's 40px theme toggle, drawn inside the 45px hit box. */
 .claude-theme-menu { gap: 4px; }
@@ -63,6 +64,22 @@
 .account-menu-preferences { display: none; }
 .claude-workspace-inner { min-height: 100%; }
 .claude-app-shell .app-footer-bar { display: none; }
+/* NAV sizes as the board renders them: its heights are content heights, so the header is 76px plus its
+   1px rule and the chips are 38px plus their 1px line. The 44px targets paint the board's 38px tab and
+   40px round button inside whole-pixel transparent borders (3px and 2px), at every pixel ratio. */
+:where(html:not([data-theme-family=crystal])) .claude-topbar { height: 77px; }
+:where(html:not([data-theme-family=crystal])) .claude-nav-item { min-height: 44px; border-block-width: 3px; }
+:where(html:not([data-theme-family=crystal])) :is(.claude-theme-quick-toggle, .claude-theme-picker, .claude-language-menu > button) { width: 44px; height: 44px; min-height: 44px; border-width: 2px; }
+:where(html:not([data-theme-family=crystal])) :is(.claude-streak, .claude-level) { height: 40px; min-height: 40px; }
+:where(html:not([data-theme-family=crystal])) .claude-level-label { font-weight: 600; line-height: normal; }
+/* NAV logo link: the mark and the wordmark sit 10px apart, and the wordmark keeps the board's normal line height. */
+:where(html:not([data-theme-family=crystal])) .claude-brand { gap: 10px; }
+:where(html:not([data-theme-family=crystal])) .claude-brand-name { line-height: normal; }
+/* LangCourses is the board that draws the header with the course chip; with the chip its items sit 22px apart
+   (the NAV partial without a chip uses 28px). Narrower rails keep their own gaps below. */
+@media (min-width: 1280px) {
+  :where(html:not([data-theme-family=crystal])) .claude-topbar:has(.claude-course-switcher-slot) .claude-topbar-inner { gap: 22px; }
+}
 
 :is(html[data-theme-family=classic], html:not([data-theme-family])) :is(.claude-theme-menu-popover, .claude-language-menu-popover) {
   padding: 6px;
@@ -78,6 +95,14 @@
   background: var(--sf-accent-soft, transparent);
   color: var(--sf-brand-text);
 }
+/* The header's own menus take the LangLanding interface-language picker: an 8px sheet with an 18px corner,
+   10px rows, and the selected row in accentSoft with the text colour (the check stays accentText); the language
+   sheet is the board's 250px, 8px below the painted 40px button (6px below the 44px target). Row text keeps the board's normal line height, and rows keep the 44px
+   target where the board draws 38px. The copies inside the account menu keep its own layout. */
+:is(html[data-theme-family=classic], html:not([data-theme-family])) :is(.claude-theme-menu-popover, .claude-language-menu-popover):not(.account-menu-preferences *) { margin-top: 6px; padding: 8px; border-radius: 18px; }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) :is(.claude-theme-menu-popover, .claude-language-menu-popover):not(.account-menu-preferences *) > :is([role=menuitemradio], [role=menuitem]) { padding-inline: 10px; border-radius: 10px; line-height: normal; }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) :is(.claude-theme-menu-popover, .claude-language-menu-popover):not(.account-menu-preferences *) > [role=menuitemradio][aria-checked=true] { color: var(--sf-text); }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-language-menu-popover:not(.account-menu-preferences *) { width: 250px; }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-menu-divider {
   display: block;
   height: 1px;
@@ -96,6 +121,19 @@
   background: var(--sf-primary-bg);
   color: var(--sf-on-primary);
   box-shadow: var(--sf-primary-shadow, none);
+}
+
+/* Board page inset. TodaySession, ProgressScreen and PathsScreen (line 5 or 6: `padding: 34px 56px 0`) and
+   AchievementsScreen (line 6: `padding: 30px 56px 0`) start the page 56px in from the window edge and that far under the
+   77px top bar; MobileToday (line 11: `padding: 14px 20px 0`) keeps Today 20px from the edges on a phone, 14px under the
+   header as the shell already does. Every other view keeps the shell's own inset. These come before the session rules
+   below, which win at equal specificity, so an active session still takes the whole workspace. */
+@media (min-width: 1024px) {
+  :where(html:not([data-theme-family=crystal])) .claude-app-shell:has(:is([aria-labelledby="daily-today-heading"], [aria-labelledby="daily-progress-heading"], [aria-labelledby="catalog-heading"])) .claude-workspace-inner { padding-inline: 56px; padding-top: 34px; }
+  :where(html:not([data-theme-family=crystal])) .claude-app-shell:has([aria-labelledby="achievements-heading"]) .claude-workspace-inner { padding-inline: 56px; padding-top: 30px; }
+}
+@media (max-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .claude-app-shell:has([aria-labelledby="daily-today-heading"]) .claude-workspace-inner { padding-inline: 20px; }
 }
 
 /* Active sessions own the viewport while the regular app navigation stays mounted. */
@@ -193,8 +231,8 @@ html[data-theme-family=crystal] .claude-workspace-inner { --sf-shell-gutter: 44p
 /* MobileToday: classic floats a rounded glass tab bar above the page; the active tab tints a
    pill behind its icon instead of filling the whole tab. The icon is either a bare svg or a
    .claude-mobile-nav-icon wrapper around it. */
-:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav { left: 14px; right: 14px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); height: 68px; gap: 0; padding: 0; border: 1px solid var(--sf-border); border-radius: 22px; background: var(--sf-tab-bg); box-shadow: var(--sf-tab-shadow); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
-:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item { gap: 4px; border-radius: 22px; font-size: 11px; font-weight: 600; }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav { left: 14px; right: 14px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); height: 70px; gap: 0; padding: 0; border: 1px solid var(--sf-border); border-radius: 22px; background: var(--sf-tab-bg); box-shadow: var(--sf-tab-shadow); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+:is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item { gap: 4px; border-radius: 22px; font-size: 11px; font-weight: 600; line-height: normal; }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item > :is(svg, .claude-mobile-nav-icon) { display: grid; place-items: center; box-sizing: content-box; width: 18px; height: 18px; padding: 5px 13px; border-radius: 14px; }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item:hover { background: transparent; }
 :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav-item:hover > :is(svg, .claude-mobile-nav-icon) { background: color-mix(in srgb, var(--sf-text) 6%, transparent); }
@@ -272,6 +310,12 @@ html[data-theme-family=crystal] .claude-mobile-nav-item[data-shell-active=true] 
   .claude-streak { height: 34px; min-height: 34px; gap: 6px; padding: 0 12px 0 10px; }
   .claude-streak-flame { width: 14px; height: 14px; }
   html[data-theme-family=crystal] .claude-streak { height: 34px; min-height: 34px; gap: 5px; padding: 0 12px 0 9px; font-size: 15px; }
+  /* MobileToday and LangMobile: the phone header has no rule, the logo letter is regular weight and sits on
+     the 20px rail at the start of its target, and the streak chip is 34px plus its 1px line. */
+  :where(html:not([data-theme-family=crystal])) .claude-topbar { border-bottom-width: 0; }
+  :where(html:not([data-theme-family=crystal])) .claude-brand-classic { font-weight: 400; }
+  :where(html:not([data-theme-family=crystal])) .claude-streak { height: 36px; min-height: 36px; }
+  :where(html:not([data-theme-family=crystal])) .claude-brand { justify-content: flex-start; }
   .claude-app-shell .account-menu-trigger { font-size: 12px; }
   /* AnimeMobile's 36px hexagon, centred in the 44px target. */
   html[data-theme-family=crystal] .claude-app-shell .account-menu-trigger { clip-path: polygon(50% 4px, calc(100% - 4px) 13px, calc(100% - 4px) calc(100% - 13px), 50% calc(100% - 4px), 4px calc(100% - 13px), 4px 13px); font-size: 13px; font-weight: 800; }
@@ -303,8 +347,8 @@ html[data-theme-family=crystal] .claude-app-shell[data-view=files] .claude-works
 }
 @media (max-width: 1023px) {
   .claude-app-shell[data-view=files] .claude-workspace-inner,html[data-theme-family=crystal] .claude-app-shell[data-view=files] .claude-workspace-inner { --sf-files-gutter: 20px; padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
-  /* The classic bar floats 18px above the edge, so its top sits higher than the docked Crystal bar. */
-  :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-app-shell[data-view=files] .claude-workspace-inner { padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+  /* The classic bar (68px plus its 1px line) floats 18px above the edge, so its top sits higher than the docked Crystal bar. */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-app-shell[data-view=files] .claude-workspace-inner { padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (max-width: 640px) {
   .claude-app-shell[data-view=files] .claude-workspace-inner,html[data-theme-family=crystal] .claude-app-shell[data-view=files] .claude-workspace-inner { --sf-files-gutter: 16px; }

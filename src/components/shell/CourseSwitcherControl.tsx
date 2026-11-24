@@ -69,7 +69,11 @@ function SwitchedToast({ record, dueCounts, canGoBack, pending, onBack, onDismis
   return <div className="course-switched-toast crystal-chamfer-sm" role="status"
     onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)}
     onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
-    {record.from && <><CourseTile language={record.from} className="course-switched-toast__from" /><ArrowRight size={14} aria-hidden="true" className="course-switched-toast__arrow" /></>}
+    {record.from && <><CourseTile language={record.from} className="course-switched-toast__from" />
+      <ArrowRight size={14} aria-hidden="true" className="course-switched-toast__arrow [html:not([data-theme-family=crystal])_&]:hidden" />
+      {/* LangCourses draws its own long arrow between the two tiles. */}
+      <svg width="22" height="14" viewBox="0 0 22 14" aria-hidden="true" className="course-switched-toast__arrow hidden [html:not([data-theme-family=crystal])_&]:block">
+        <path d="M1 7h18M14 2l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></>}
     <CourseTile language={record.to} className="course-switched-toast__to" />
     <p className="course-switched-toast__text">
       <Trans {...msg({ context: 'course.switcher.switched', message: 'Switched to {language}' })} values={{ language: <strong lang={record.to}>{TARGET_ENDONYM[record.to]}</strong> }} />
@@ -159,7 +163,8 @@ export function CourseSwitcherControl({ onOpenLanguageSettings, onStudyActiveCou
     style={{ '--course-scrim-top': `${scrimTop}px` } as CSSProperties}>
     <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-expanded={popoverOpen}
       onClick={() => setView(current => current === 'popover' ? 'closed' : 'popover')}
-      className="claude-course-switcher-trigger" data-course-language={activeCourse?.targetLanguage}>
+      className="claude-course-switcher-trigger" data-course-language={activeCourse?.targetLanguage}
+      data-switched={switched && view !== 'manage' ? 'true' : undefined}>
       {activeCourse ? <>
         <CourseTile language={activeCourse.targetLanguage} className="course-trigger__glyph" />
         <span className="course-trigger__name truncate" lang={activeCourse.targetLanguage}>{TARGET_ENDONYM[activeCourse.targetLanguage]}</span>

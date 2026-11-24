@@ -13,7 +13,6 @@ import {
   Settings2,
   Shield,
   Sparkles,
-  Trash2,
   WifiOff,
 } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
@@ -391,7 +390,7 @@ export function LibraryManagementMenu({
                     }}
                     className={`${menuItemClass} account-menu-danger-action`}
                   >
-                    {family === 'crystal' ? <AlertTriangle size={17} aria-hidden="true" className="shrink-0" /> : <Trash2 size={17} aria-hidden="true" className="shrink-0" />}
+                    <AlertTriangle size={17} aria-hidden="true" className="shrink-0" />
                     <span className="truncate"><Trans {...msg({ context: 'shell.menu.clear-library', message: 'Clear the entire library' })} /></span>
                   </button>
                 </>

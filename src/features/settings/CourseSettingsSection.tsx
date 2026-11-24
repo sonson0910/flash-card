@@ -11,6 +11,7 @@ import { goalKindLabel } from '../courses/courseGoalCatalog';
 import { NATIVE_LANGUAGE_LABEL, TARGET_LANGUAGE_LABEL } from '../courses/courseLanguageLabels';
 import { COURSE_NATIVE_LANGUAGES, COURSE_TARGET_LANGUAGES, type CourseNativeLanguage, type CourseTargetLanguage } from '../courses/courseModel';
 import { useAccountProfileNativeLanguage } from '../profileCompletion/AccountProfileContext';
+import { loadScriptFont } from '../theme/loadThemeAssets';
 import { DAILY_PACE_OPTIONS, readDailyPace, writeDailyPace, type DailyPace } from './dailyPacePreference';
 import './settings-theme.css';
 
@@ -80,6 +81,14 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
       synthesis.removeEventListener?.('voiceschanged', refreshVoices);
     };
   }, [model.ownerId, model.activeCourse?.id, model.activeCourse?.targetLanguage]);
+
+  const coursesReady = model.status === 'ready';
+  useEffect(() => {
+    // Classic sets course names in their script's Noto face. Every course language shows on this page, as a
+    // course or as one to add, so all three script subsets are requested once the courses load.
+    if (!coursesReady || typeof document === 'undefined' || document.documentElement.dataset.themeFamily === 'crystal') return;
+    for (const script of ['ko', 'ja', 'zh-Hans'] as const) void loadScriptFont(script).catch(() => undefined);
+  }, [coursesReady]);
 
   const appLanguageLabel = _(msg({ id: 'settings.course.ui-language.label', message: 'App language' }));
   const appLanguage = <div className="ss-lang-row">
@@ -160,7 +169,7 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
     <aside aria-label={_(msg({ id: 'settings.course.list.label', message: 'Your courses' }))} className="ss-split__aside ss-courses">
       <div className="ss-courses__head">
         <h2 className="ss-eyebrow"><Trans {...msg({ context: 'settings.course.list.title', message: 'Your courses · {count}' })} values={{ count: courses.filter(course => course.status === 'active').length }} /></h2>
-        {addableTargets.length > 0 && <button type="button" className="ss-courses__add" onClick={() => { addLanguageRef.current?.scrollIntoView?.({ block: 'nearest' }); addLanguageRef.current?.querySelector('button')?.focus(); }}><Plus size={14} aria-hidden="true" /><Trans {...msg({ context: 'settings.course.add', message: 'Add a language' })} /></button>}
+        {addableTargets.length > 0 && <button type="button" className="ss-courses__add sf-press" onClick={() => { addLanguageRef.current?.scrollIntoView?.({ block: 'nearest' }); addLanguageRef.current?.querySelector('button')?.focus(); }}><Plus size={14} aria-hidden="true" /><Trans {...msg({ context: 'settings.course.add', message: 'Add a language' })} /></button>}
       </div>
 
       {activeCourse && <div data-settings-active-course className="ss-course-active crystal-chamfer">
@@ -221,7 +230,7 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
       {archivedCourses.length > 0 && <div className="ss-course-add crystal-chamfer">
         <h3 className="ss-eyebrow"><Trans {...msg({ context: 'settings.course.archived', message: 'Archived courses' })} /></h3>
         <div className="ss-course-add__options">
-          {archivedCourses.map(course => <button key={course.id} type="button" disabled={model.pending} onClick={() => runCourseAction(() => actions.reopenCourse(course.id))} className="ss-course-add__option crystal-chamfer-sm">
+          {archivedCourses.map(course => <button key={course.id} type="button" disabled={model.pending} onClick={() => runCourseAction(() => actions.reopenCourse(course.id))} className="ss-course-add__option crystal-chamfer-sm sf-lift">
             <span className="ss-course-add__name" lang={course.targetLanguage}>{TARGET_ENDONYM[course.targetLanguage].name}</span>
             <span className="ss-course-add__sub">{_(TARGET_LANGUAGE_LABEL[course.targetLanguage])} · <Trans {...msg({ context: 'settings.course.reopen', message: 'Reopen' })} /> <RotateCcw size={11} aria-hidden="true" className="inline" /></span>
           </button>)}
@@ -231,7 +240,7 @@ export function CourseSettingsSection(props: CourseSettingsSectionProps = {}) {
       {addableTargets.length > 0 && <div ref={addLanguageRef} className="ss-course-add crystal-chamfer">
         <h3 className="ss-eyebrow"><Trans {...msg({ context: 'settings.course.add.title', message: 'Start another language' })} /></h3>
         <div className="ss-course-add__options">
-          {addableTargets.map(language => <button key={language} type="button" disabled={model.pending} onClick={() => runCourseAction(() => actions.createCourse({ targetLanguage: language, nativeLanguage: newCourseNative }))} className="ss-course-add__option crystal-chamfer-sm">
+          {addableTargets.map(language => <button key={language} type="button" disabled={model.pending} onClick={() => runCourseAction(() => actions.createCourse({ targetLanguage: language, nativeLanguage: newCourseNative }))} className="ss-course-add__option crystal-chamfer-sm sf-lift">
             <span className="ss-course-add__name" lang={language}>{TARGET_ENDONYM[language].name}</span>
             <span className="ss-course-add__sub">{courseMeta(language, newCourseNative)}</span>
           </button>)}

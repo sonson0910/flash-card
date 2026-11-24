@@ -500,7 +500,9 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
             <span lang={language} className="onb-option-name">{TARGET_ENDONYM[language]}</span>
             <span className="onb-option-sub">{_(TARGET_LANGUAGE_LABEL[language])}</span>
             {exam && <span className="onb-option-tag">{_(exam.label)}</span>}
-            {crystal && <span className="onb-greeting" lang={language} aria-hidden="true">{TARGET_GREETING[language]}{language === 'ja' || language === 'zh' ? '！' : '!'}</span>}
+            {crystal
+              ? <span className="onb-greeting" lang={language} aria-hidden="true">{TARGET_GREETING[language]}{language === 'ja' || language === 'zh' ? '！' : '!'}</span>
+              : <span className="onb-greeting" lang={language} aria-hidden="true">{TARGET_GREETING[language]}</span>}
             <SelectionMark on={targetLanguage === language} />
           </button>;
         })}
@@ -719,6 +721,10 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     </div>}
     <div className="onb-frame" role="dialog" aria-modal="true" aria-label={_(msg({ id: 'onboarding.title', message: 'Set up your course' }))}>
       <header className="onb-header">
+        {/* Classic phones carry Back as the header's round button; wider screens and Crystal keep it in the footer. */}
+        {!crystal && step !== steps[0] && <button type="button" className="onb-header-back" disabled={step === 'reminder' && reminderSaveLocked} onClick={goBack} aria-label={_(msg({ context: 'onboarding.back', message: 'Back' }))}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>}
         <span className="onb-brand">
           <span className="onb-logo" aria-hidden="true">{crystal ? <span className="onb-logo-star crystal-star-art" /> : 'S'}</span>
           <span className="onb-wordmark">Son<em>Flash</em></span>

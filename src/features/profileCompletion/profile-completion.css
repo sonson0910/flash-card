@@ -34,9 +34,8 @@
     height: 76px;
     flex: none;
     align-items: center;
-    gap: 16px;
+    gap: 24px;
     padding: 0 56px;
-    border-bottom: 1px solid var(--sf-nav-line, var(--sf-border));
   }
 
   .profile-gate__star path:first-child { fill: var(--sf-brand); }
@@ -187,14 +186,14 @@
   }
 :where(html:not([data-theme-family=crystal])) .profile-gate__control {
     width: 100%;
-    min-height: 44px;
+    min-height: 50px;
     padding: 0 16px;
-    border: 1px solid var(--sf-edge-highlight);
-    border-radius: var(--sf-input-radius, 999px);
+    border: 1px solid var(--sf-accent-line, var(--sf-edge-highlight));
+    border-radius: 14px;
     background-color: var(--sf-surface-control);
-    color: var(--sf-text);
+    color: var(--sf-text-strong, var(--sf-text));
     font: inherit;
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .profile-gate__control::placeholder { color: var(--sf-text-muted); opacity: 1; }
@@ -560,6 +559,16 @@
   }
   html:not([data-theme-family=crystal]) .profile-gate__tile--next strong,
   html:not([data-theme-family=crystal]) .profile-gate__tile--next span { color: var(--sf-info); }
+
+  /* The gate has no board of its own: its kickers, page title, field labels, inputs and buttons take the Onboarding
+     board's step eyebrow, exam-step h1, date field and footer buttons; the panel keeps the surface tokens. */
+  :where(html:not([data-theme-family=crystal])) :is(.profile-gate__eyebrow, .profile-gate__panel-eyebrow) { font-size: 12px; font-weight: 600; letter-spacing: .12em; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .profile-gate__panel-eyebrow { color: var(--sf-text-muted); }
+  :where(html:not([data-theme-family=crystal])) .profile-gate__field > label { font-size: 13px; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) :is(.profile-gate__primary, .profile-gate__secondary) { min-height: 50px; gap: 10px; padding: 0 26px; font-weight: 650; }
+  @media (min-width: 768px) {
+    :where(html:not([data-theme-family=crystal])) .profile-gate__title { margin-top: 12px; font-size: clamp(34px, 3.75vw, 54px); letter-spacing: -.035em; line-height: 1.04; }
+  }
 
   @media (max-width: 767px) {
     .profile-gate__bar { height: 64px; gap: 10px; padding: 0 16px; border-bottom: 0; }

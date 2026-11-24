@@ -40,7 +40,6 @@
   --onb-nav-line: var(--sf-nav-line, var(--sf-border));
   --onb-line: var(--sf-border);
   --onb-card: var(--sf-surface-glass);
-  --onb-card-on-layer: var(--sf-card-bg);
   --onb-rim: var(--sf-rim-learning);
   --onb-card-on-shadow: 0 0 44px -14px rgb(40 211 244 / .6), 0 30px 60px -30px rgb(0 0 0 / .9);
   --onb-icon-bg: var(--sf-surface-raised);
@@ -51,9 +50,11 @@
   --onb-display-weight: var(--sf-display-weight, 440);
   --onb-em-style: var(--sf-em-style, normal);
   isolation: isolate;
+  /* The board's AMBIENT glows (Midnight Aurora; Ink & Paper sets its own page below): violet centred at
+     (100, 20) and cyan at (1220, 680) of the 1440x900 frame, the 120px blur drawn as the shell's soft falloff. */
   background:
-    radial-gradient(ellipse 640px 480px at 120px -80px, color-mix(in srgb, var(--sf-second) 34%, transparent), transparent 72%),
-    radial-gradient(ellipse 760px 560px at 78% 88%, color-mix(in srgb, var(--sf-brand) 20%, transparent), transparent 70%),
+    radial-gradient(circle at 100px 20px, color-mix(in srgb, var(--sf-second) 40%, transparent) 0, color-mix(in srgb, var(--sf-second) 34%, transparent) 140px, color-mix(in srgb, var(--sf-second) 19%, transparent) 270px, color-mix(in srgb, var(--sf-second) 4%, transparent) 420px, transparent 520px),
+    radial-gradient(circle at 84.7% 75.6%, color-mix(in srgb, var(--sf-brand) 32%, transparent) 0, color-mix(in srgb, var(--sf-brand) 23%, transparent) 180px, color-mix(in srgb, var(--sf-brand) 14%, transparent) 265px, color-mix(in srgb, var(--sf-brand) 8%, transparent) 330px, color-mix(in srgb, var(--sf-brand) 3%, transparent) 440px, transparent 520px),
     var(--sf-canvas, var(--sf-surface));
   color: var(--sf-text);
 }
@@ -66,8 +67,6 @@ html:not([data-theme-family='crystal']):not(.dark) .claude-onboarding-journey {
   --onb-accent-line: var(--sf-accent-line, rgb(151 64 13 / .25));
   --onb-accent-glow: none;
   --onb-card: var(--sf-surface);
-  --onb-card-on-layer: linear-gradient(var(--sf-surface), var(--sf-surface));
-  --onb-rim: linear-gradient(var(--sf-text), var(--sf-text));
   --onb-card-on-shadow: 0 0 0 4px rgb(180 70 26 / .1), 0 20px 36px -20px rgb(60 40 20 / .5);
   --onb-icon-bg: var(--sf-surface-raised);
   --onb-radius: var(--sf-panel-radius, 18px);
@@ -88,6 +87,23 @@ html:not([data-theme-family='crystal']):not(.dark) .claude-onboarding-journey::b
   mask-image: radial-gradient(ellipse 60% 70% at 60% 45%, #000 10%, transparent 75%);
   content: '';
   pointer-events: none;
+}
+
+/* The AMBIENT grain over the page and under the content: warm ink noise multiplied on Ink & Paper, faint white
+   noise overlaid on Midnight Aurora (the shell's grain sits under this full-screen layer). */
+:where(html:not([data-theme-family=crystal])) .claude-onboarding-journey::after {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  opacity: var(--sf-grain-opacity, .2);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3e%3cfilter id='n'%3e%3cfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3e%3cfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .2 0 0 0 .9 0'/%3e%3c/filter%3e%3crect width='100%25' height='100%25' filter='url(%23n)'/%3e%3c/svg%3e");
+  content: '';
+  mix-blend-mode: var(--sf-grain-blend, multiply);
+  pointer-events: none;
+}
+
+.dark:where(html:not([data-theme-family=crystal])) .claude-onboarding-journey::after {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3e%3cfilter id='n'%3e%3cfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3e%3cfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3e%3c/filter%3e%3crect width='100%25' height='100%25' filter='url(%23n)'/%3e%3c/svg%3e");
 }
 
 .onb-frame {
@@ -181,6 +197,9 @@ html:not([data-theme-family='crystal']).dark .onb-dots > [data-state='current'] 
 
 .onb-count b { font-weight: 400; }
 
+/* The board's wordmark and step count keep the normal line height of their fonts. */
+:where(html:not([data-theme-family=crystal])) :is(.onb-wordmark, .onb-count) { line-height: normal; }
+
 .onb-skip {
   min-height: 44px;
   flex: none;
@@ -196,6 +215,19 @@ html:not([data-theme-family='crystal']).dark .onb-dots > [data-state='current'] 
 
 .onb-skip:hover:not(:disabled) { color: var(--sf-text); }
 .onb-skip:disabled { opacity: .6; }
+
+/* The board's 38px Skip pill (13.5/550, 16px padding inside its 1px line), painted inside the 44px target
+   between whole-pixel transparent bands; the line is drawn at the painted edge. */
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .onb-skip {
+    padding: 0 17px;
+    border: 0 solid transparent;
+    border-block-width: 3px;
+    background-clip: padding-box;
+    box-shadow: inset 0 0 0 1px var(--onb-line);
+    font-weight: 550;
+  }
+}
 
 /* Body ------------------------------------------------------------------------------------ */
 .onb-body {
@@ -222,6 +254,15 @@ html:not([data-theme-family='crystal']).dark .onb-dots > [data-state='current'] 
 .onb-content { width: min(1120px, 100%); margin: 0 auto; }
 .onb-main[data-layout='center'] .onb-content { width: min(1180px, 100%); text-align: center; }
 
+/* The board's main column starts right under the header and centres every step in the height left; the
+   LangOnboarding steps keep 24px under them instead of 40px. */
+:where(html:not([data-theme-family=crystal])) .onb-main { padding-top: 0; }
+
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .onb-main[data-layout='start'] { justify-content: center; padding-top: 0; }
+  :where(html:not([data-theme-family=crystal])) :is([data-onboarding-step=language], [data-onboarding-step=target], [data-onboarding-step=level], [data-onboarding-step=script]) .onb-main { padding-bottom: 24px; }
+}
+
 .onb-eyebrow {
   margin: 0;
   color: var(--sf-text-muted);
@@ -232,6 +273,7 @@ html:not([data-theme-family='crystal']).dark .onb-dots > [data-state='current'] 
 }
 
 .onb-eyebrow-sep::before { margin: 0 .55em; content: '·'; }
+:where(html:not([data-theme-family=crystal])) .onb-eyebrow { line-height: normal; }
 
 :where(html[data-theme-family=crystal]) .onb-title {
   margin: 12px 0 0;
@@ -276,6 +318,20 @@ html:not([data-theme-family='crystal']).dark .onb-dots > [data-state='current'] 
 
 .onb-main[data-layout='center'] .onb-subtitle { margin-inline: auto; }
 
+/* The board's display size and leading per step at its 1440px frame (the h1 of each Onboarding and LangOnboarding
+   step), scaled with the viewport below it; the trial's compact heading keeps its own size. */
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) :is([data-onboarding-step=goal], [data-onboarding-step=pace], [data-onboarding-step=aha], [data-onboarding-step=language]) .onb-title { line-height: 1.02; }
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=goal] .onb-title { font-size: clamp(34px, 4.17vw, 60px); }
+  :where(html:not([data-theme-family=crystal])) :is([data-onboarding-step=exam], [data-onboarding-step=reminder]) .onb-title { font-size: clamp(34px, 3.75vw, 54px); }
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=pace] .onb-title { font-size: clamp(34px, 4.03vw, 58px); }
+  :where(html:not([data-theme-family=crystal])) :is([data-onboarding-step=aha], [data-onboarding-step=target]) .onb-title:not(.onb-title--compact) { font-size: clamp(34px, 3.89vw, 56px); }
+  :where(html:not([data-theme-family=crystal])) :is([data-onboarding-step=language], [data-onboarding-step=level], [data-onboarding-step=script]) .onb-title { font-size: clamp(34px, 3.62vw, 52px); }
+  /* The goal step is a 1040px column whose subtitle runs its full width; six goal cards keep their wider grid. */
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=goal] .onb-main .onb-content:not(:has(> [data-goal-count='6'])) { width: min(1040px, 100%); }
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=goal] .onb-subtitle { max-width: none; line-height: normal; }
+}
+
 /* Options (language, target and pace) ----------------------------------------------------- */
 .onb-language-grid,
 .onb-target-grid {
@@ -306,10 +362,20 @@ html:not([data-theme-family='crystal']) :is(.onb-option, .onboarding-journey__go
 }
 
 html:not([data-theme-family='crystal']) .onb-language-grid > .onb-option { border-radius: 16px; }
+/* The board's speak cards: 74px rows of a 10px-gap grid, 0 16px padding, the endonym 21/500 on one line and the
+   check mark centred 16px from the edge (the selected card keeps room for it). */
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .onb-language-grid { margin-top: 16px; gap: 10px; }
+  :where(html:not([data-theme-family=crystal])) .onb-language-grid > .onb-option { min-height: 74px; padding: 0 16px; }
+  :where(html:not([data-theme-family=crystal])) .onb-language-grid > .onb-option[aria-pressed='true'] { padding-right: 54px; }
+  :where(html:not([data-theme-family=crystal])) .onb-language-grid .onb-mark { top: calc(50% - 13px); right: 16px; }
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=language] .onb-subtitle { max-width: 620px; }
+}
+:where(html:not([data-theme-family=crystal])) .onb-language-grid .onb-option-name { overflow: hidden; align-self: stretch; font-size: 21px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+:where(html:not([data-theme-family=crystal])) .onb-language-grid .onb-option-sub { line-height: normal; }
 html:not([data-theme-family='crystal']) .onb-target-card { border-radius: var(--onb-radius); }
 
 :where(html[data-theme-family=crystal]) .onb-option:hover { border-color: color-mix(in srgb, var(--onb-accent) 40%, var(--onb-line)); }
-:where(html:not([data-theme-family=crystal])) .onb-option:hover { border-color: color-mix(in srgb, var(--onb-em-color) 40%, var(--onb-line)); }
 
 .onb-option:focus-visible,
 .onboarding-journey__goal-card:focus-visible,
@@ -321,13 +387,15 @@ html:not([data-theme-family='crystal']) .onb-target-card { border-radius: var(--
   outline-offset: 2px;
 }
 
+/* The board's selected card: an ink line on paper (Ink & Paper), a learning rim around the glass (Midnight Aurora). */
 html:not([data-theme-family='crystal']) :is(.onb-option, .onboarding-journey__goal-card)[aria-pressed='true'] {
-  border: 1.5px solid transparent;
-  background: var(--onb-card-on-layer) padding-box, var(--onb-rim) border-box;
+  border: 1.5px solid var(--sf-text);
+  background: var(--sf-surface);
   box-shadow: var(--onb-card-on-shadow);
 }
 
 html:not([data-theme-family='crystal']).dark :is(.onb-option, .onboarding-journey__goal-card)[aria-pressed='true'] {
+  border-color: transparent;
   background:
     radial-gradient(ellipse 90% 70% at 100% 0%, rgb(150 108 215 / .25), transparent 70%) padding-box,
     linear-gradient(180deg, #10293a, #0a1a22) padding-box,
@@ -368,6 +436,70 @@ html:not([data-theme-family='crystal']).dark :is(.onb-option, .onboarding-journe
 .onb-glyph { display: none; }
 .onb-target-card { min-height: 120px; padding: 18px 48px 18px 20px; }
 .onb-target-card .onb-option-name { font-size: 24px; }
+
+/* The board's learn step: a 1180px column, the side note 380px to the right of the heading, and 234px cards that
+   start with the greeting (38px) and end with the endonym (20/600) beside its translated name and an exam chip. */
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=target] .onb-main .onb-content { display: grid; width: min(1180px, 100%); align-items: end; column-gap: 40px; grid-template-columns: minmax(0, 1fr) 380px; }
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=target] .onb-content > * { grid-column: 1 / -1; }
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=target] .onb-content > .onb-eyebrow { grid-column: 1; grid-row: 1; }
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=target] .onb-content > .onb-title { grid-column: 1; grid-row: 2; }
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=target] .onb-content > .onb-subtitle { max-width: none; margin: 0; grid-column: 2; grid-row: 1 / 3; font-size: 14.5px; }
+  :where(html:not([data-theme-family=crystal])) .onb-target-grid { margin-top: 30px; gap: 14px; }
+  :where(html:not([data-theme-family=crystal])) .onb-target-grid > .onb-target-card {
+    display: grid;
+    min-height: 234px;
+    align-items: baseline;
+    justify-items: start;
+    padding: 20px 20px 18px;
+    column-gap: 8px;
+    grid-template-areas: 'sample sample' '. .' 'name sub' 'tags tags';
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto auto;
+  }
+  :where(html:not([data-theme-family=crystal])) .onb-target-grid .onb-mark { top: 16px; right: 16px; }
+  :where(html:not([data-theme-family=crystal])) .onb-target-card .onb-greeting {
+    grid-area: sample;
+    color: var(--sf-text-strong, var(--sf-text));
+    font-family: var(--sf-font-display);
+    font-size: 38px;
+    font-weight: 400;
+    letter-spacing: -.01em;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+  :where(html:not([data-theme-family=crystal])) .onb-target-card[aria-pressed='true'] .onb-greeting { color: var(--onb-em-color); }
+  .dark:where(html:not([data-theme-family=crystal])) .onb-target-card[aria-pressed='true'] .onb-greeting { color: var(--onb-accent); }
+  .dark:where(html:not([data-theme-family=crystal])) .onb-target-card .onb-greeting { font-weight: 440; }
+  :where(html:not([data-theme-family=crystal])) .onb-target-card .onb-greeting:is(:lang(ko), :lang(ja), :lang(zh)) { font-weight: 700; }
+  :where(html:not([data-theme-family=crystal])) .onb-target-card .onb-greeting:lang(ko) { font-family: 'Noto Sans KR', var(--sf-font-body); }
+  :where(html:not([data-theme-family=crystal])) .onb-target-card .onb-greeting:lang(ja) { font-family: 'Noto Sans JP', var(--sf-font-body); }
+  :where(html:not([data-theme-family=crystal])) .onb-target-card .onb-greeting:lang(zh) { font-family: 'Noto Sans SC', var(--sf-font-body); }
+  :where(html:not([data-theme-family=crystal])) .onb-target-grid > .onb-target-card .onb-option-name { grid-area: name; font-family: var(--sf-font-body); font-size: 20px; font-weight: 600; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .onb-target-grid > .onb-target-card .onb-option-name:lang(ko) { font-family: 'Noto Sans KR', var(--sf-font-body); }
+  :where(html:not([data-theme-family=crystal])) .onb-target-grid > .onb-target-card .onb-option-name:lang(ja) { font-family: 'Noto Sans JP', var(--sf-font-body); }
+  :where(html:not([data-theme-family=crystal])) .onb-target-grid > .onb-target-card .onb-option-name:lang(zh) { font-family: 'Noto Sans SC', var(--sf-font-body); }
+  :where(html:not([data-theme-family=crystal])) .onb-target-card .onb-option-sub { margin: 0; grid-area: sub; font-size: 13px; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .onb-target-card .onb-option-tag {
+    display: inline-flex;
+    height: 26px;
+    align-items: center;
+    margin-top: 10px;
+    padding: 0 9px;
+    border: 1px solid var(--onb-line);
+    border-radius: 999px;
+    grid-area: tags;
+    background: var(--sf-surface-raised);
+    color: var(--sf-text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+}
+@media (max-width: 639px) {
+  :where(html:not([data-theme-family=crystal])) .onb-target-card .onb-greeting { display: none; }
+}
 
 .onb-mark {
   position: absolute;
@@ -475,6 +607,16 @@ html:not([data-theme-family='crystal']) .onb-projection-number { color: var(--sf
 :where(html:not([data-theme-family=crystal])) .onb-projection-text { color: var(--sf-text-body, var(--sf-text)); font-size: 15px; line-height: 1.5; }
 .onb-pace-card .onb-mark { display: none; }
 
+/* The board's pace step: a 1000px column whose four 200px cards fill it; the card is a bare <button>
+   (UA padding 1px 6px), the minute figure keeps the face's own spacing and the unit its normal line height. */
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=pace] .onb-main .onb-content { width: min(1000px, 100%); }
+  :where(html:not([data-theme-family=crystal])) .onb-pace-grid { max-width: none; }
+  :where(html:not([data-theme-family=crystal])) .onb-pace-card { padding: 1px 6px; }
+}
+:where(html:not([data-theme-family=crystal])) .onb-pace-number { letter-spacing: normal; }
+:where(html:not([data-theme-family=crystal])) .onb-pace-card .onb-option-sub { line-height: normal; }
+
 /* Goal cards ----------------------------------------------------------------------------- */
 .onboarding-journey__goal-grid {
   display: grid;
@@ -504,7 +646,6 @@ html:not([data-theme-family='crystal']) .onb-projection-number { color: var(--sf
 }
 
 :where(html[data-theme-family=crystal]) .onboarding-journey__goal-card:hover { border-color: color-mix(in srgb, var(--onb-accent) 40%, var(--onb-line)); }
-:where(html:not([data-theme-family=crystal])) .onboarding-journey__goal-card:hover { border-color: color-mix(in srgb, var(--onb-em-color) 40%, var(--onb-line)); }
 
 .onb-goal-icon {
   display: flex;
@@ -535,7 +676,7 @@ html:not([data-theme-family='crystal']) .onb-projection-number { color: var(--sf
   color: var(--sf-text-strong, var(--sf-text));
   font-family: var(--sf-font-display);
   font-size: 23px;
-  font-weight: 450;
+  font-weight: 400;
   line-height: 1.1;
 }
 
@@ -559,6 +700,7 @@ html:not([data-theme-family='crystal']) .onb-projection-number { color: var(--sf
 }
 
 .onb-field-label { display: flex; flex-direction: column; gap: 8px; color: var(--sf-text-muted); font-size: 13px; font-weight: 600; }
+:where(html:not([data-theme-family=crystal])) .onb-field-label { line-height: normal; }
 
 /* IELTS band chips take the whole row; the date field follows underneath. */
 .onb-goal-band { grid-column: 1 / -1; min-width: 0; }
@@ -576,14 +718,14 @@ html:not([data-theme-family='crystal']) .onb-projection-number { color: var(--sf
   font-weight: 500;
 }
 :where(html:not([data-theme-family=crystal])) .onb-field {
-  min-height: 48px;
-  padding: 0 14px;
+  min-height: 50px;
+  padding: 0 16px;
   border: 1px solid var(--onb-line);
   border-radius: 14px;
   background: var(--sf-surface-control);
   color: var(--sf-text-strong, var(--sf-text));
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 400;
 }
 
 html:not([data-theme-family='crystal']) input[type='date'].onb-field { border-color: var(--onb-accent-line); }
@@ -664,12 +806,13 @@ html:not([data-theme-family='crystal']) input[type='date'].onb-field { border-co
   padding: 16px 56px;
   border-top: 1px solid var(--onb-line);
 }
+/* The board bar is 88px tall plus its 1px top line. */
 :where(html:not([data-theme-family=crystal])) .onboarding-journey__footer {
   display: flex;
-  min-height: 88px;
+  min-height: 89px;
   grid-area: foot;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 16px 56px;
   border-top: 1px solid var(--onb-nav-line, var(--onb-line));
 }
@@ -677,6 +820,8 @@ html:not([data-theme-family='crystal']) input[type='date'].onb-field { border-co
 .onboarding-journey__footer > .onb-primary { margin-left: auto; }
 .onb-footer-note { min-width: 0; margin: 0 0 0 8px; color: var(--sf-text-muted); font-size: 13.5px; }
 .onb-footer-note strong { color: var(--sf-text); font-weight: 650; }
+/* The board's footer summary sits 16px after Back (the bar's gap) at the normal line height. */
+:where(html:not([data-theme-family=crystal])) .onb-footer-note { margin: 0; line-height: normal; }
 
 .onb-lumi { display: none; }
 
@@ -684,6 +829,26 @@ html:not([data-theme-family='crystal']) input[type='date'].onb-field { border-co
   .onb-option,
   .onboarding-journey__goal-card { transition: none; }
 }
+
+/* The board's motion (canvas shared.css): each step rises in, the choice cards lift on hover and the primary
+   action presses; the level list and the chips stay still, as drawn. */
+:where(html:not([data-theme-family=crystal])) .onb-content { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) backwards; }
+:where(html:not([data-theme-family=crystal])) :is(.onboarding-journey__goal-card, .onb-option:not(.onb-level-option)) { transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease; }
+:where(html:not([data-theme-family=crystal])) .onb-primary { transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
+:where(html:not([data-theme-family=crystal])) .onb-primary:active:not(:disabled) { transform: translateY(0) scale(.97); }
+
+@media (hover: hover) and (pointer: fine) {
+  :where(html:not([data-theme-family=crystal])) :is(.onboarding-journey__goal-card, .onb-option:not(.onb-level-option)):hover { transform: translateY(-6px) rotate(-.6deg); }
+  :where(html:not([data-theme-family=crystal])) .onb-primary:hover:not(:disabled):not(:active) { transform: translateY(-2px); filter: brightness(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(html:not([data-theme-family=crystal])) .onb-content { animation: none; }
+  :where(html:not([data-theme-family=crystal])) :is(.onboarding-journey__goal-card, .onb-option:not(.onb-level-option), .onb-primary) { transition: none; }
+}
+
+:where(html[data-motion=reduced]:not([data-theme-family=crystal])) .onb-content { animation: none; }
+:where(html[data-motion=reduced]:not([data-theme-family=crystal])) :is(.onboarding-journey__goal-card, .onb-option:not(.onb-level-option), .onb-primary) { transition: none; }
 
 /* Shared step pieces ---------------------------------------------------------------------- */
 .onb-kicker {
@@ -709,6 +874,10 @@ html:not([data-theme-family='crystal']) input[type='date'].onb-field { border-co
 }
 
 .onb-exam .onb-goal-fields { max-width: 560px; margin: 30px 0 0; }
+/* The board's exam date field is 320px wide under the full-width band rows. */
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .onb-exam .onb-goal-fields[data-goal-kind='ielts'] { grid-template-columns: 320px minmax(0, 1fr); }
+}
 
 .onb-chip-row { display: flex; flex-wrap: wrap; margin-top: 30px; gap: 8px; }
 
@@ -794,6 +963,9 @@ html:not([data-theme-family='crystal']).dark .onb-countdown {
 .onb-weeks > [data-week='now'] { background: var(--sf-brand); }
 .onb-weeks > [data-week='goal'] { background: var(--sf-reward); }
 .onb-countdown-note { margin: 12px 0 0; color: var(--sf-text-muted); font-size: 13px; }
+
+/* The board's kicker, countdown unit and note keep the normal line height of their fonts. */
+:where(html:not([data-theme-family=crystal])) :is(.onb-kicker, .onb-countdown-unit, .onb-countdown-note) { line-height: normal; }
 
 .onb-countdown-empty {
   margin: auto 0 0;
@@ -899,6 +1071,66 @@ html:not([data-theme-family='crystal']).dark .onb-countdown {
 :where(html[data-theme-family=crystal]) .onb-trial-word[data-state='known'] .onb-trial-word-state { color: var(--sf-success); }
 :where(html:not([data-theme-family=crystal])) .onb-trial-word[data-state='known'] .onb-trial-word-state { color: var(--sf-success-text, var(--sf-success)); }
 .onb-trial-word[data-state='again'] .onb-trial-word-state { color: var(--sf-danger); }
+
+/* The board's aha step (Onboarding L97-L135): a 1160 grid, the deck 600 tall with a blurred aura and two dealt cards
+   behind the live card, the right column centred beside it; the card deals in and the column rises after it. */
+@media (min-width: 1024px) {
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=aha] .onb-main .onb-content { width: min(1160px, 100%); }
+  :where(html:not([data-theme-family=crystal])) .onb-trial { grid-template-areas: 'deck .' 'deck head' 'deck list' 'deck .'; grid-template-rows: 1fr auto auto 1fr; }
+  :where(html:not([data-theme-family=crystal])) .onb-trial-head { align-self: auto; }
+  :where(html:not([data-theme-family=crystal])) .onb-trial-deck { position: relative; min-height: 600px; justify-content: center; isolation: isolate; }
+  :where(html:not([data-theme-family=crystal])) .onb-trial-deck::before {
+    position: absolute;
+    z-index: -1;
+    top: calc(50% - 260px);
+    left: calc(50% - 260px);
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgb(180 70 26 / .16), transparent 65%);
+    content: '';
+    filter: blur(70px);
+    pointer-events: none;
+  }
+  .dark:where(html:not([data-theme-family=crystal])) .onb-trial-deck::before { background: radial-gradient(circle, rgb(40 211 244 / .45), rgb(150 108 215 / .3) 50%, transparent 70%); }
+  :where(html:not([data-theme-family=crystal])) .onb-trial-card { position: relative; isolation: isolate; }
+  :where(html:not([data-theme-family=crystal])) .onb-trial-card::before,
+  :where(html:not([data-theme-family=crystal])) .onb-trial-card::after {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border-radius: var(--sf-card-radius);
+    background: var(--sf-card-bg);
+    box-shadow: var(--sf-card-shadow);
+    content: '';
+    pointer-events: none;
+  }
+  :where(html:not([data-theme-family=crystal])) .onb-trial-card::before { opacity: .55; transform: translate(34px, 20px) rotate(6deg); }
+  :where(html:not([data-theme-family=crystal])) .onb-trial-card::after { opacity: .8; transform: translate(18px, 10px) rotate(3deg); }
+  /* Onboarding lines 102-103 and 236-238: the live card has the same card radius as the two dealt behind it (30px dark,
+     20px light). In dark it draws the learning rim and the cyan glow (card.bg, card.shadow); in light the card shadow
+     (t.cardShadow). The card's surface already is the board's (#0f2430 -> #0a1a22 dark, #fffcf5 light). */
+  :where(html:not([data-theme-family=crystal])) .onb-trial-deck .onb-trial-card .flashcard-shell[data-card-look][data-card-tier][data-card-mode] { --flashcard-radius: var(--sf-card-radius); }
+  :where(html.dark:not([data-theme-family=crystal])) .onb-trial-deck .onb-trial-card .flashcard-shell[data-card-look][data-card-tier][data-card-mode] {
+    --flashcard-tier-rim: var(--sf-rim-learning);
+    --flashcard-tier-shadow: 0 0 60px -14px rgb(40 211 244 / .6), 0 40px 80px -30px rgb(0 0 0 / .95);
+    --flashcard-back-shadow: var(--flashcard-tier-shadow);
+  }
+  :where(html:not(.dark):not([data-theme-family=crystal])) .onb-trial-deck .onb-trial-card .flashcard-shell[data-card-look][data-card-tier] .flashcard-face { box-shadow: var(--sf-card-shadow); }
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=aha] .onb-content { animation: none; }
+  :where(html:not([data-theme-family=crystal])) .onb-trial-card > * { animation: sf-deal-k 700ms cubic-bezier(.16, 1, .3, 1) 250ms both; }
+  :where(html:not([data-theme-family=crystal])) :is(.onb-trial-head, .onb-trial-list) { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) 120ms both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(html:not([data-theme-family=crystal])) :is(.onb-trial-card > *, .onb-trial-head, .onb-trial-list) { animation: none; }
+}
+:where(html[data-motion=reduced]:not([data-theme-family=crystal])) :is(.onb-trial-card > *, .onb-trial-head, .onb-trial-list) { animation: none; }
+:where(html:not([data-theme-family=crystal])) .onb-trial-head .onb-subtitle { margin-top: 16px; }
+:where(html:not([data-theme-family=crystal])) .onb-trial-grade > button { min-height: 44px; font-size: 13px; }
+:where(html:not([data-theme-family=crystal])) .onb-trial-grade > .onb-trial-again { font-weight: 600; }
+:where(html:not([data-theme-family=crystal])) .onb-trial-known { border: 1px solid transparent; background-clip: padding-box; }
+:where(html:not([data-theme-family=crystal])) .onb-trial-word { min-height: 64px; padding: 0; }
+:where(html:not([data-theme-family=crystal])) :is(.onb-trial-word-text, .onb-trial-word-state) { line-height: normal; }
 
 /* Crystal -------------------------------------------------------------------------------- */
 /* Ported value by value from the AnimeOnboarding (goal, first cards) and AnimeLangOnboarding (language, level)
@@ -1840,8 +2072,49 @@ html[data-theme-family='crystal'] .onb-target-card .onb-mark {
   .onboarding-journey__footer > .onb-primary { margin-left: 0; }
   .onb-footer-note { display: none; }
   .onb-primary { min-height: 56px; }
-  html:not([data-theme-family='crystal']).dark .onb-primary { border-radius: 16px; }
   html[data-theme-family='crystal'] .onb-primary { min-height: 56px; font-size: 18px; }
+}
+
+/* The phone board (MobileOnboard): a 52px header with a round Back (40px painted inside a 44px target), 5px
+   progress segments, a 36/1.05 title, 9px-apart goal rows with a 38px icon and a 20px radio, and a 16px Continue. */
+:where(html:not([data-theme-family=crystal])) .onb-header-back { display: none; }
+@media (max-width: 639px) {
+  :where(html:not([data-theme-family=crystal])) .onb-header { height: 52px; gap: 12px; }
+  :where(html:not([data-theme-family=crystal])) .onb-header-back {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    place-items: center;
+    margin: 0 -2px;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    background: var(--sf-surface-raised) padding-box;
+    box-shadow: inset 0 0 0 1px var(--onb-line);
+    color: var(--sf-text-muted);
+  }
+  :where(html:not([data-theme-family=crystal])) .onb-header-back:disabled { opacity: .6; }
+  :where(html:not([data-theme-family=crystal])) .onb-header-back:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 0; }
+  :where(html:not([data-theme-family=crystal])) .onboarding-journey__footer > .onb-secondary:first-child { display: none; }
+  :where(html:not([data-theme-family=crystal])) .onb-dots > [data-state] { height: 5px; border-radius: 5px; }
+  :where(html:not([data-theme-family=crystal])) .onb-dots > [data-state='current'] { background: var(--onb-em-color); box-shadow: none; }
+  :where(html:not([data-theme-family=crystal])) .onb-skip { font-size: 14px; }
+  :where(html:not([data-theme-family=crystal])) .onb-main { padding: 18px 20px 0; }
+  :where(html:not([data-theme-family=crystal])) .onb-eyebrow { font-size: 12px; letter-spacing: .08em; }
+  :where(html:not([data-theme-family=crystal])) .onb-title { font-size: 36px; line-height: 1.05; }
+  :where(html:not([data-theme-family=crystal])) :is(.onboarding-journey__goal-grid, .onboarding-journey__goal-grid[data-goal-count]) { margin-top: 20px; gap: 9px; }
+  :where(html:not([data-theme-family=crystal])) .onboarding-journey__goal-card { gap: 12px; padding-right: 46px; }
+  :where(html:not([data-theme-family=crystal])) .onb-goal-icon { width: 38px; height: 38px; }
+  :where(html:not([data-theme-family=crystal])) .onb-goal-title { line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .onb-goal-description { margin-top: 2px; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .onboarding-journey__goal-card .onb-mark { width: 20px; height: 20px; right: 14px; }
+  :where(html:not([data-theme-family=crystal])) .onboarding-journey__goal-card .onb-mark[data-on='true'] { border: 6px solid var(--onb-em-color); background: var(--sf-surface); }
+  .dark:where(html:not([data-theme-family=crystal])) .onboarding-journey__goal-card .onb-mark[data-on='true'] { background: var(--onb-primary-text); }
+  :where(html:not([data-theme-family=crystal])) .onboarding-journey__goal-card .onb-mark > svg { display: none; }
+  :where(html:not([data-theme-family=crystal])) .onboarding-journey__footer { padding-top: 14px; }
+  :where(html:not([data-theme-family=crystal])) .onboarding-journey__footer .onb-footer-note { display: block; color: var(--sf-text-tertiary, var(--sf-text-muted)); font-size: 12px; text-align: center; }
+  :where(html:not([data-theme-family=crystal])) .onb-primary { gap: 8px; padding: 1px 6px; font-size: 16px; }
 }
 
 /* Latest score, starting level, script primer, pace estimate, reminder preview ------------ */
@@ -1879,6 +2152,19 @@ html[data-theme-family='crystal'] .onb-target-card .onb-mark {
 .onb-level-text { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
 .onb-level-option .onb-option-name { font-size: 17px; }
 .onb-level-option .onb-mark { top: 50%; right: 18px; transform: translateY(-50%); }
+/* The board's level step: the 664px left column of its 1140px grid, 60px rows 8px apart (14px radius, 0 16px,
+   14px gap), a 34px Geist Mono 13/500 number tile, the name 15/650 over its 12.5px line, and no check mark. */
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=level] .onb-main .onb-content { width: min(1140px, 100%); }
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=level] .onb-content > :is(.onb-eyebrow, .onb-title, .onb-subtitle) { max-width: 664px; }
+  :where(html:not([data-theme-family=crystal])) .onb-level-list { max-width: 664px; margin-top: 24px; gap: 8px; }
+  :where(html:not([data-theme-family=crystal])) .onb-level-list > .onb-level-option { min-height: 60px; gap: 14px; padding: 0 16px; }
+}
+:where(html:not([data-theme-family=crystal])) .onb-level-index { width: 34px; height: 34px; font-size: 13px; font-weight: 500; }
+:where(html:not([data-theme-family=crystal])) .onb-level-text { flex: 1; gap: 0; }
+:where(html:not([data-theme-family=crystal])) .onb-level-option .onb-option-name { font-family: var(--sf-font-body); font-size: 15px; font-weight: 650; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .onb-level-option .onb-option-sub { margin-top: 1px; font-size: 12.5px; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .onb-level-option .onb-mark { display: none; }
 
 .onb-primer {
   display: grid;
@@ -1922,7 +2208,7 @@ html:not([data-theme-family='crystal']).dark .onb-primer-board {
 }
 :where(html:not([data-theme-family=crystal])) .onb-primer-block + .onb-primer-set {
   padding-top: 18px;
-  border-top: 1px dashed var(--sf-edge-highlight);
+  border-top: 1px dashed var(--sf-panel-edge-2, var(--sf-edge-highlight));
 }
 .onb-primer-set-head {
   display: flex;
@@ -1956,7 +2242,7 @@ html:not([data-theme-family='crystal']).dark .onb-primer-board {
 :where(html[data-theme-family=crystal]) .onb-primer-result { width: 56px; min-height: 64px; }
 :where(html:not([data-theme-family=crystal])) .onb-primer-jamo {
   display: flex;
-  min-height: 58px;
+  min-height: 60px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -1974,14 +2260,14 @@ html:not([data-theme-family='crystal']).dark .onb-primer-board {
 :where(html:not([data-theme-family=crystal])) .onb-primer-equation { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 :where(html:not([data-theme-family=crystal])) .onb-primer-part { display: inline-flex; align-items: center; gap: 10px; }
 :where(html:not([data-theme-family=crystal])) .onb-primer-part .onb-primer-jamo {
-  width: 72px;
-  min-height: 72px;
+  width: 76px;
+  min-height: 76px;
   border-radius: 18px;
   box-shadow: var(--sf-panel-shadow);
 }
 :where(html:not([data-theme-family=crystal])) .onb-primer-result {
-  width: 88px;
-  min-height: 88px;
+  width: 96px;
+  min-height: 96px;
   border-radius: 18px;
   border: 1.5px solid var(--sf-text);
   background: var(--sf-surface);
@@ -1995,7 +2281,7 @@ html:not([data-theme-family='crystal']).dark .onb-primer-result {
 .onb-primer-op { color: var(--sf-text-muted); font-size: 20px; }
 :where(html[data-theme-family=crystal]) .onb-primer-result { border-color: var(--onb-accent); background: var(--onb-accent-soft); box-shadow: var(--onb-accent-glow); }
 :where(html[data-theme-family=crystal]) .onb-primer-result .onb-primer-jamo-glyph { color: var(--onb-accent); font-size: 30px; }
-:where(html:not([data-theme-family=crystal])) .onb-primer-result .onb-primer-jamo-glyph { color: var(--onb-em-color); font-size: 46px; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-result .onb-primer-jamo-glyph { color: var(--onb-em-color); font-size: 56px; }
 html:not([data-theme-family='crystal']).dark .onb-primer-result .onb-primer-jamo-glyph { color: var(--onb-accent); }
 .onb-primer-word { display: flex; margin-left: 6px; flex-direction: column; }
 :where(html[data-theme-family=crystal]) .onb-primer-word-text { color: var(--sf-text); font-size: 22px; }
@@ -2003,6 +2289,35 @@ html:not([data-theme-family='crystal']).dark .onb-primer-result .onb-primer-jamo
 :where(html:not([data-theme-family=crystal])) .onb-primer-word-text { color: var(--sf-text-strong, var(--sf-text)); font-size: 28px; font-weight: 700; }
 :where(html:not([data-theme-family=crystal])) .onb-primer-word-sound { color: var(--sf-text-muted); font-family: var(--sf-font-mono, ui-monospace, monospace); font-size: 13px; }
 .onb-primer-word-meaning { color: var(--onb-accent); font-size: 13px; }
+
+/* The board's script step (LangOnboarding L136-L190, blocks and jamo at L299-L310): a 430px copy column beside the
+   board panel, 76px part tiles and a 96px result tile with the sound under each, no plus signs, a 40px equals sign,
+   then the jamo sets 24px and 16px apart under 12px heads. */
+@media (min-width: 1024px) {
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=script] .onb-main .onb-content { width: min(1180px, 100%); }
+  :where(html:not([data-theme-family=crystal])) .onb-primer { gap: 56px; grid-template-columns: 430px minmax(0, 1fr); }
+}
+:where(html:not([data-theme-family=crystal])) .onb-primer-copy .onb-subtitle { font-size: 15.5px; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-board { gap: 0; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-block + .onb-primer-set { margin-top: 24px; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-set + .onb-primer-set { margin-top: 16px; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-set-head { align-items: baseline; font-size: 12px; font-weight: 600; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-block .onb-primer-set-head { margin-bottom: 18px; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-block .onb-primer-set-head > span:first-child { letter-spacing: .12em; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-set-head > span:last-child { color: var(--sf-text-tertiary, var(--sf-text-muted)); font-size: 12px; font-weight: 400; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-block .onb-primer-set-head > span:last-child { font-size: 12.5px; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-equation { gap: 14px; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-part > .onb-primer-op { display: none; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-equation > .onb-primer-op { width: 40px; margin-bottom: 22px; color: var(--sf-text-tertiary, var(--sf-text-muted)); font-size: 30px; text-align: center; }
+:where(html:not([data-theme-family=crystal])) :is(.onb-primer-part .onb-primer-jamo, .onb-primer-result) { position: relative; margin-bottom: 22px; }
+:where(html:not([data-theme-family=crystal])) :is(.onb-primer-part .onb-primer-jamo, .onb-primer-result) .onb-primer-jamo-sound { position: absolute; top: calc(100% + 6px); color: var(--sf-text-muted); font-family: var(--sf-font-body); font-size: 12px; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-jamo { gap: 1px; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-word { gap: 2px; margin-left: 8px; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-word-text { font-size: 30px; }
+:where(html:not([data-theme-family=crystal])) .onb-primer-word-sound { font-size: 14px; }
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .onb-primer-part .onb-primer-jamo-glyph { font-size: 38px; }
+}
 
 :where(html[data-theme-family=crystal]) .onb-reminder {
   display: grid;
@@ -2014,11 +2329,11 @@ html:not([data-theme-family='crystal']).dark .onb-primer-result .onb-primer-jamo
 }
 :where(html:not([data-theme-family=crystal])) .onb-reminder {
   display: grid;
-  width: min(1180px, 100%);
+  width: min(1120px, 100%);
   margin: 0 auto;
-  align-items: start;
-  gap: 48px;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: center;
+  gap: 64px;
+  grid-template-columns: minmax(0, 1fr) 440px;
 }
 .onb-phone { display: flex; margin: 0; flex-direction: column; gap: 10px; }
 :where(html[data-theme-family=crystal]) .onb-phone-screen {
@@ -2110,18 +2425,38 @@ html:not([data-theme-family='crystal']).dark .onb-phone-screen {
   font-family: var(--sf-font-display);
   font-size: 20px;
   font-style: italic;
-  font-weight: 500;
+  font-weight: 400;
 }
 .onb-phone-note-text { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
 :where(html[data-theme-family=crystal]) .onb-phone-note-head { display: flex; justify-content: space-between; color: var(--sf-text-muted); font-size: 11.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
 :where(html[data-theme-family=crystal]) .onb-phone-note-body { color: var(--sf-text); font-size: 14px; font-weight: 600; }
 :where(html[data-theme-family=crystal]) .onb-phone-countdown { width: 100%; margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--onb-icon-bg); color: var(--sf-text-muted); font-size: 12.5px; }
-:where(html:not([data-theme-family=crystal])) .onb-phone-note-head { display: flex; justify-content: space-between; color: #4d443a; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+:where(html:not([data-theme-family=crystal])) .onb-phone-note-head { display: flex; justify-content: space-between; color: #4d443a; font-size: 12px; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .onb-phone-note-head > span:first-child { font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .onb-phone-note-head { color: var(--sf-text-body, var(--sf-text-muted)); }
-:where(html:not([data-theme-family=crystal])) .onb-phone-note-body { color: var(--sf-text-strong, var(--sf-text)); font-size: 14.5px; font-weight: 650; }
+:where(html:not([data-theme-family=crystal])) .onb-phone-note-text { gap: 3px; }
+:where(html:not([data-theme-family=crystal])) .onb-phone-note-body { color: var(--sf-text-strong, var(--sf-text)); font-size: 14.5px; font-weight: 650; line-height: normal; }
 :where(html:not([data-theme-family=crystal])) .onb-phone-countdown { width: 100%; margin: 2px 0 0; padding: 12px 16px; border-radius: 20px; background: rgb(255 252 245 / .5); color: #4d443a; font-size: 13px; }
 .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .onb-phone-countdown { background: rgb(255 255 255 / .06); color: var(--sf-text-body, var(--sf-text-muted)); }
 .onb-phone-caption { color: var(--sf-text-muted); font-size: 12.5px; text-align: center; }
+/* The board's reminder phone (Onboarding L137, L164-L173): 560px of screen under 60px of top padding, the clock and
+   date in full-width centred lines, the notification 40px below the date and the calendar line 10px below it. */
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) [data-onboarding-step=reminder] .onb-reminder-form .onb-subtitle { max-width: none; font-size: 15.5px; }
+}
+@media (min-width: 1024px) {
+  :where(html:not([data-theme-family=crystal])) .onb-phone-screen { min-height: 622px; align-items: stretch; gap: 0; padding: 60px 18px 0; text-align: center; }
+}
+:where(html:not([data-theme-family=crystal])) .onb-phone-time { font-size: 64px; letter-spacing: normal; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .onb-phone-date { margin: 0; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) :is(.onb-phone-note, .onb-phone-date + .onb-phone-countdown) { margin-top: 40px; }
+:where(html:not([data-theme-family=crystal])) .onb-phone-note { animation: sf-pop-k 380ms cubic-bezier(.16, 1, .3, 1) both; transform-origin: 120px 0; }
+:where(html:not([data-theme-family=crystal])) .onb-phone-note + .onb-phone-countdown { margin-top: 10px; }
+:where(html:not([data-theme-family=crystal])) .onb-phone-countdown { line-height: normal; }
+@media (prefers-reduced-motion: reduce) {
+  :where(html:not([data-theme-family=crystal])) .onb-phone-note { animation: none; }
+}
+:where(html[data-motion=reduced]:not([data-theme-family=crystal])) .onb-phone-note { animation: none; }
 
 @media (max-width: 1023px) {
   .onb-primer,

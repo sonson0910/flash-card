@@ -131,6 +131,8 @@
   --sf-due-text: #97400d;
   --sf-due-line: rgb(151 64 13 / 0.25);
   --sf-pulse: rgb(29 26 22 / 0.25);
+  /* The board's raw text3, for decorative marks only; text keeps --sf-text-subtle (AA). */
+  --sf-text-mark: #8a8072;
 }
 
 :root.dark:not([data-theme-family="crystal"]) {
@@ -163,4 +165,5 @@
   --sf-due-text: #7ee6fa;
   --sf-due-line: rgb(126 230 250 / 0.35);
   --sf-pulse: rgb(40 211 244 / 0.45);
+  --sf-text-mark: #6f808a;
 }

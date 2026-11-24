@@ -9,7 +9,7 @@ import {
 } from './courseModel';
 import { goalKindsFor } from './courseGoalCatalog';
 import { NATIVE_ENDONYM, TARGET_ENDONYM, TARGET_GLYPH, TARGET_GREETING } from './courseLanguageLabels';
-import { translatedTargetName } from './CourseVisuals';
+import { translatedTargetName, useCourseScriptFonts } from './CourseVisuals';
 import './add-course-dialog.css';
 
 /**
@@ -41,6 +41,7 @@ export interface AddCourseDialogProps {
 
 function AddCourseForm({ courses, pending, initialTarget, defaultNativeLanguage, profileNativeLanguage, onCreate, onDone }: Omit<AddCourseDialogProps, 'open' | 'onOpenChange' | 'onCloseAutoFocus'> & { readonly onDone: () => void }) {
   const { _ } = useLingui();
+  useCourseScriptFonts(COURSE_TARGET_LANGUAGES);
   const groupName = useId();
   const nativeHintId = useId();
   const takenTargets = new Set(courses.map(course => course.targetLanguage));

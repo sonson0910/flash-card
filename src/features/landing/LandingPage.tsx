@@ -1188,10 +1188,11 @@ export function LandingPage({
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <p>
             {family === "crystal" && <svg className="landing-footer-mark" viewBox="0 0 100 100" width="26" height="26" aria-hidden="true"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" fill="#ff5470"/><path d="M50 4 62 36 96 37 69 59 78 91 50 72Z" fill="#7a0820"/></svg>}
+            {family !== "crystal" && <span className="landing-footer-classic-mark" aria-hidden="true"><Trans {...msg({ context: 'landing.brand.mark', message: 'S' })} /></span>}
             <span className="landing-footer-brand font-bold text-[var(--sf-text)]">
               {family === "crystal"
                 ? <Trans {...msg({ context: 'landing.brand.crystal-wordmark', message: 'SON<0>FLASH</0>' })} components={{ 0: <em /> }} />
-                : <Trans {...msg({ context: 'landing.brand.plain', message: 'SonFlash' })} />}
+                : <Trans {...msg({ context: 'landing.brand.classic-wordmark', message: 'Son<0>Flash</0>' })} components={{ 0: <em /> }} />}
             </span>{" "}
             <span className="landing-footer-tagline">
               <Trans

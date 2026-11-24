@@ -27,6 +27,13 @@
 .dark .course-tile[data-course-language='ja'] { --course-tile-bg: linear-gradient(145deg, color-mix(in srgb, var(--sf-second) 45%, white), var(--sf-second)); --course-tile-fg: var(--sf-on-brand); }
 .dark .course-tile[data-course-language='en'] { --course-tile-bg: linear-gradient(145deg, color-mix(in srgb, var(--sf-reward) 45%, white), var(--sf-reward)); --course-tile-fg: var(--sf-on-brand); }
 .dark .course-tile[data-course-language='zh'] { --course-tile-bg: linear-gradient(145deg, color-mix(in srgb, var(--sf-success) 45%, white), var(--sf-success)); --course-tile-fg: var(--sf-on-brand); }
+/* LangCourses tiles (script L182-L186): each language has its own ink on Ink & Paper, and the 日本語 and English
+   tiles on Midnight Aurora run from the board's light tint to the hue with a dark ink of the same hue. */
+:where(html:not([data-theme-family=crystal])) .course-tile[data-course-language='ko'] { --course-tile-fg: var(--sf-on-primary); }
+:where(html:not([data-theme-family=crystal])) .course-tile[data-course-language='ja'] { --course-tile-fg: #fff8f0; }
+:where(html:not([data-theme-family=crystal])) .course-tile[data-course-language='en'] { --course-tile-fg: #f4fbf2; }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .course-tile[data-course-language='ja'] { --course-tile-bg: linear-gradient(145deg, #d8c4ff, var(--sf-second)); --course-tile-fg: #140a26; }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .course-tile[data-course-language='en'] { --course-tile-bg: linear-gradient(145deg, #ffe0a3, var(--sf-reward)); --course-tile-fg: #1f1302; }
 html[data-theme-family=crystal] .course-tile[data-course-language='ko'] { --course-tile-bg: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 55%, var(--sf-brand-hover)); --course-tile-fg: var(--sf-on-brand); }
 html[data-theme-family=crystal] .course-tile[data-course-language='ja'] { --course-tile-bg: linear-gradient(180deg, color-mix(in srgb, var(--sf-second) 55%, white), var(--sf-second)); --course-tile-fg: var(--sf-on-brand); }
 html[data-theme-family=crystal] .course-tile[data-course-language='en'] { --course-tile-bg: linear-gradient(180deg, color-mix(in srgb, var(--sf-reward) 55%, white), var(--sf-reward)); --course-tile-fg: var(--sf-on-brand); }
@@ -51,3 +58,9 @@ html[data-theme-family=crystal] .course-tile { border-radius: 0; font-family: va
 :where(html:not([data-theme-family=crystal])) .course-due-pill[data-active='true'] { background: var(--sf-primary-bg, var(--sf-text)); color: var(--sf-on-primary, var(--sf-surface)); }
 html[data-theme-family=crystal] .course-due-pill { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; font-weight: 700; letter-spacing: .04em; }
 html[data-theme-family=crystal] .course-due-pill[data-active='true'] { background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover)); color: var(--sf-on-brand); }
+
+/* LangCourses sets course names and tile glyphs in their script's Noto Sans face (its script's KR, JP and SC
+   fonts, lines 179-193 and 212-216). The faces are the app's own subsets, loaded by useCourseScriptFonts. */
+:where(html:not([data-theme-family=crystal])) :is(.course-tile, .course-trigger__name, .course-row__name > [lang], .course-switched-toast__text strong, .course-target-card__glyph, .course-target-card__name):lang(ko) { font-family: "Noto Sans KR", "Noto Sans CJK KR", sans-serif; }
+:where(html:not([data-theme-family=crystal])) :is(.course-tile, .course-trigger__name, .course-row__name > [lang], .course-switched-toast__text strong, .course-target-card__glyph, .course-target-card__name):lang(ja) { font-family: "Noto Sans JP", "Noto Sans CJK JP", sans-serif; }
+:where(html:not([data-theme-family=crystal])) :is(.course-tile, .course-trigger__name, .course-row__name > [lang], .course-switched-toast__text strong, .course-target-card__glyph, .course-target-card__name):lang(zh) { font-family: "Noto Sans SC", "Noto Sans CJK SC", sans-serif; }

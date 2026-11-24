@@ -9,7 +9,7 @@
 
 /* Classic hero (Midnight Aurora and Ink & Paper), ported from the LandingScreen board. */
 html[data-theme-family="classic"] .landing-canvas {
-  --landing-body: color-mix(in srgb, var(--sf-text) 59%, var(--sf-text-muted));
+  --landing-body: var(--sf-text-body);
   --landing-warm: var(--sf-brand-text);
   --landing-btn-radius: 999px;
   --landing-card-radius: 20px;
@@ -18,13 +18,13 @@ html[data-theme-family="classic"] .landing-canvas {
   --landing-primary-shadow: 0 14px 28px -14px color-mix(in srgb, var(--sf-text) 90%, transparent);
   --landing-secondary-shadow: 0 1px 2px color-mix(in srgb, var(--sf-shadow) 27%, transparent);
   --landing-float-bg: color-mix(in srgb, var(--sf-surface) 92%, transparent);
-  --landing-float-shadow: 0 10px 24px -14px color-mix(in srgb, var(--sf-shadow) 100%, transparent);
+  --landing-float-shadow: 0 10px 24px -14px rgb(60 40 20 / .45);
   --landing-accent-soft: color-mix(in srgb, var(--sf-brand) 8%, transparent);
   --landing-accent-line: color-mix(in srgb, var(--sf-brand-text) 25%, transparent);
   --landing-warm-line: color-mix(in srgb, var(--sf-brand-text) 22%, transparent);
 }
 html[data-theme-family="classic"].dark .landing-canvas {
-  --landing-body: color-mix(in srgb, var(--sf-text) 37%, var(--sf-text-muted));
+  --landing-body: var(--sf-text-body);
   --landing-warm: var(--sf-reward);
   --landing-btn-radius: 16px;
   --landing-card-radius: 30px;
@@ -32,7 +32,7 @@ html[data-theme-family="classic"].dark .landing-canvas {
   --landing-primary-bg: var(--sf-brand);
   --landing-primary-shadow: 0 16px 40px -14px color-mix(in srgb, var(--sf-brand) 80%, transparent), inset 0 1px 0 rgb(255 255 255 / .5);
   --landing-secondary-shadow: none;
-  --landing-float-bg: color-mix(in srgb, var(--sf-surface) 70%, transparent);
+  --landing-float-bg: rgb(12 30 40 / .7);
   --landing-float-shadow: 0 16px 40px -16px rgb(0 0 0 / .8);
   --landing-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent);
   --landing-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
@@ -125,6 +125,27 @@ html.dark .landing-card-back { --back-text: var(--sf-text); --back-title: var(--
 .landing-classic-features li > span { display: flex; flex: none; width: 46px; height: 46px; align-items: center; justify-content: center; box-sizing: border-box; border: 1px solid var(--sf-border); border-radius: 14px; background: var(--sf-surface-raised); color: var(--sf-brand-text); font: italic 400 20px/1 var(--sf-font-display); }
 .landing-classic-features h3 { margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 22px; font-weight: var(--landing-display-weight); line-height: 1.25; }
 .landing-classic-features p { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 14.5px; line-height: 1.55; }
+
+/* LandingScreen values the hero rules above missed. Board boxes are content-box, so the 32px eyebrow, the 58px
+   secondary action and the 40px float chips each render 2px taller with their 1px line. Text with no line height on
+   the board keeps the normal one. Headline and card word are textStrong. The fine print is text3, which fails AA
+   on the page: dark takes the AA text3 token, light keeps text2 (the AA text3 measures 4.3:1 where it sits). The
+   light card face takes the board's cardShadow. The feature titles are textStrong at normal line height. */
+:where(html:not([data-theme-family=crystal])) .landing-classic-brand { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .landing-eyebrow { height: 34px; }
+:where(html:not([data-theme-family=crystal])) :is(.landing-classic-title, .landing-card-word, .landing-classic-features h3) { color: var(--sf-text-strong, var(--sf-text)); }
+:where(html:not([data-theme-family=crystal])) .landing-classic-features h3 { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .landing-secondary-action { height: 60px; }
+:where(html:not([data-theme-family=crystal])) .landing-fine-print { line-height: normal; }
+:where(html:not([data-theme-family=crystal])).dark .landing-fine-print { color: var(--sf-text-tertiary); }
+:where(html:not([data-theme-family=crystal])) .landing-float-chip { height: 42px; }
+:where(html:not([data-theme-family=crystal])) :is(.landing-card-kicker, .landing-card-prompt) { line-height: normal; }
+:where(html:not([data-theme-family=crystal])):not(.dark) .landing-card-face { box-shadow: var(--sf-card-shadow); }
+/* LandingScreen card back (its script's back colours): light ink #1c2a21 with the brand glow, text heroText, muted
+   #b7ad9b, highlight #f0b48f; dark title textStrong. The translation keeps the normal line height. */
+:where(html:not([data-theme-family=crystal])):not(.dark) .landing-card-back { --back-text: var(--sf-hero-text, #efe8da); --back-muted: #b7ad9b; --back-hl: #f0b48f; background: radial-gradient(ellipse 80% 50% at 50% 10%, color-mix(in srgb, var(--sf-brand) 22%, transparent), transparent 70%), #1c2a21; }
+:where(html:not([data-theme-family=crystal])).dark .landing-card-back.landing-card-back { --back-title: var(--sf-text-strong, var(--sf-text)); }
+:where(html:not([data-theme-family=crystal])) .landing-card-example-translation { line-height: normal; }
 
 @media (min-width: 1024px) { .landing-header { padding-inline: 16px; } html[data-theme-family="classic"] .landing-header { margin-top: -20px; } }
 @media (min-width: 1024px) and (max-width: 1379px) { html[data-theme-family="classic"] .landing-hero { grid-template-columns: minmax(0, 1fr) 470px; gap: 24px; padding-left: 16px; } .landing-classic-title { font-size: clamp(80px, 7.4vw, 104px); } .landing-classic-features { width: calc(100% - 32px); margin-left: 16px; } }
@@ -424,7 +445,36 @@ html[data-theme-family="classic"].dark .landing-methods-panel { background: var(
 html[data-theme-family="classic"] .landing-methods-quote { color: var(--sf-text-strong, var(--sf-text)); font-family: var(--sf-font-display); font-weight: var(--landing-display-weight); }
 html[data-theme-family="classic"] .landing-closing-start { border-radius: var(--landing-btn-radius); background: var(--landing-primary-bg); box-shadow: var(--landing-primary-shadow); color: var(--sf-on-brand); font-weight: 650; }
 html[data-theme-family="classic"] .landing-closing-start:hover { background: var(--landing-primary-bg); transform: translateY(-1px); }
-html[data-theme-family="classic"] .landing-footer { border-top-color: var(--sf-nav-line, var(--sf-border)); color: var(--sf-text-muted); }
-html[data-theme-family="classic"] .landing-footer-brand { color: var(--sf-text-strong, var(--sf-text)); font: 450 20px/1 var(--sf-font-display); letter-spacing: -.01em; }
+/* LandingSales footer: one 68px row under the navLine, 13px text2 items 28px apart, the 26px logo mark 9px before
+   the 18px display wordmark, and the copyright 12px at the row's end. The board's text3 copyright fails AA on the
+   light page, so light keeps text2; dark takes the AA text3 token. The links drop the underline as the board does
+   and show it on hover. The app's tagline and language links are app-only and take the row's text style. */
+html[data-theme-family="classic"] .landing-footer { border-top-color: var(--sf-nav-line, var(--sf-border)); color: var(--sf-text-muted); font-size: 13px; line-height: normal; }
+html[data-theme-family="classic"] .landing-footer :is(nav, p) { font-size: 13px; font-weight: 400; line-height: normal; }
+html[data-theme-family="classic"] .landing-footer-brand { color: var(--sf-text); font: 400 18px var(--sf-font-display); letter-spacing: normal; }
 html[data-theme-family="classic"] .landing-footer-brand em { color: var(--sf-brand); font-style: var(--sf-em-style, italic); }
-html[data-theme-family="classic"] .landing-footer a { border-radius: var(--landing-btn-radius); }
+html[data-theme-family="classic"] .landing-footer a { border-radius: var(--landing-btn-radius); text-decoration-line: none; }
+html[data-theme-family="classic"] .landing-footer a:hover { text-decoration-line: underline; }
+:where(html:not([data-theme-family=crystal])) .landing-footer-classic-mark { display: inline-flex; width: 26px; height: 26px; margin-right: 9px; flex: none; align-items: center; justify-content: center; vertical-align: middle; border-radius: 8px; background: var(--sf-logo-bg); box-shadow: var(--sf-logo-shadow); color: var(--sf-logo-text); font: italic 400 15px var(--sf-font-display); }
+:where(html:not([data-theme-family=crystal])).dark .landing-footer > div > p:last-child > span { color: var(--sf-text-tertiary); }
+:where(html:not([data-theme-family=crystal])) .landing-footer > div > p:last-child > span { font-size: 12px; }
+@media (min-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .landing-footer.landing-footer { padding-block: 0; }
+  :where(html:not([data-theme-family=crystal])) .landing-footer > div { min-height: 68px; flex-wrap: wrap; justify-content: flex-start; gap: 12px 28px; }
+  :where(html:not([data-theme-family=crystal])) .landing-footer > div > p:first-child { display: flex; flex-wrap: wrap; align-items: center; }
+  :where(html:not([data-theme-family=crystal])) .landing-footer-tagline { margin-left: .3em; }
+  :where(html:not([data-theme-family=crystal])) .landing-footer > div > p:last-child { display: contents; }
+  :where(html:not([data-theme-family=crystal])) .landing-footer > div > p:last-child > span { margin-left: auto; }
+}
+@media (min-width: 1024px) {
+  :where(html:not([data-theme-family=crystal])) .landing-footer.landing-footer { padding-inline: max(72px, calc((100% - 1296px) / 2)); }
+  :where(html:not([data-theme-family=crystal])) .landing-footer > div { max-width: none; }
+}
+/* LandingSales FAQ: the "Questions" title in the display face, and each item under a lineStrong rule with its
+   question 14.5px/650 textStrong and its answer 13px/1.55 text2. The items stay stacked in the pricing grid's
+   second column beside the Free vs Pro panel, which is not rebuilt. */
+html[data-theme-family="classic"] .landing-faq-title { margin: 0; color: var(--sf-text-strong, var(--sf-text)); font-family: var(--sf-font-display); font-size: 26px; font-weight: var(--landing-display-weight); line-height: 1.1; letter-spacing: normal; }
+html[data-theme-family="classic"] .landing-faq { padding-left: 0; border-left: 0; }
+html[data-theme-family="classic"] .landing-faq > div { padding-top: 4px; border-top: 1px solid var(--sf-panel-edge-2, var(--sf-border)); }
+html[data-theme-family="classic"] .landing-faq dt { margin-top: 10px; color: var(--sf-text-strong, var(--sf-text)); font-size: 14.5px; font-weight: 650; line-height: normal; }
+html[data-theme-family="classic"] .landing-faq dd { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 13px; line-height: 1.55; }
