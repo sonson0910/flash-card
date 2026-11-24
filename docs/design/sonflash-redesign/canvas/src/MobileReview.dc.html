@@ -2,7 +2,7 @@
 <div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
 <!--#AMBIENT-->
   <header style="position: relative; z-index: 3; height: 64px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; gap: 12px;">
-    <a href="#" aria-label="End session" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
+    <a href="#" aria-label="End session" class="{{t.fx.press}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
     </a>
     <div aria-hidden="true" style="flex-grow: 1; display: flex; gap: 3px;">
@@ -12,22 +12,22 @@
   </header>
 
   <div style="position: relative; z-index: 2; flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; padding-top: 6px;">
-    <div onClick="{{flip}}" style="position: relative; width: 350px; height: 560px; cursor: pointer;">
+    <div onClick="{{flip}}" class="{{t.fx.enter}}" style="position: relative; width: 350px; height: 560px; cursor: pointer;">
       <div style="position: absolute; inset: 0; perspective: 1400px;">
         <div style="position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateY({{ry}}deg); transition: transform 620ms cubic-bezier(.2,.8,.2,1);">
           <div style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-sizing: border-box; border-radius: {{t.mobileRadius}}px; overflow: hidden; display: flex; flex-direction: column; border: {{front.border}}; background: {{front.bg}}; box-shadow: {{front.shadow}};">
             <div style="position: relative; height: 230px; flex-shrink: 0; margin: {{t.imgMargin}}; border-radius: {{t.imgRadius}}; overflow: hidden;">
               <img src="../assets/blob/ed058680c239cce56bb63500ca7dd0e4.jpg" alt="Illustration for spelling" style="width: 100%; height: 100%; object-fit: cover; display: block; -webkit-mask-image: {{t.imgMask}}; mask-image: {{t.imgMask}};">
               <div style="position: absolute; top: 12px; right: 12px; display: flex; gap: 6px;">
-                <button onClick="{{stop}}" aria-label="Hide picture hint" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.iconLine}}; background: {{t.iconBg}}; color: {{t.iconText}}; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
-                <button onClick="{{stop}}" aria-label="Star this word" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.iconLine}}; background: {{t.iconBg}}; color: {{t.iconText}}; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></button>
+                <button onClick="{{stop}}" aria-label="Hide picture hint" class="{{t.fx.press}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.iconLine}}; background: {{t.iconBg}}; color: {{t.iconText}}; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                <button onClick="{{stop}}" aria-label="Star this word" class="{{t.fx.press}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.iconLine}}; background: {{t.iconBg}}; color: {{t.iconText}}; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></button>
               </div>
             </div>
             <div style="padding: 6px 24px 0; flex-grow: 1; display: flex; flex-direction: column;">
               <div style="font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text2}};">Noun · New</div>
               <div style="margin-top: 4px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};"><span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">Spel</span>ling</div>
               <div style="margin-top: 12px; display: flex; align-items: center; gap: 10px;">
-                <button onClick="{{stop}}" aria-label="Listen" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+                <button onClick="{{stop}}" aria-label="Listen" class="{{t.fx.press}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
                 <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; color: {{t.body}};">/ˈspelɪŋ/</span>
               </div>
               <p style="margin: 14px 0 0; font-size: 14.5px; line-height: 1.55; color: {{t.body}};">The process or ability of writing the letters of a word in the correct order.</p>
@@ -53,9 +53,9 @@
 
   <div style="position: relative; z-index: 3; flex-shrink: 0; height: 128px; padding: 0 16px 24px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;">
     <sc-if value="{{flipped}}" hint-placeholder-val="{{false}}">
-      <div role="group" aria-label="How well did you remember?" style="width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+      <div role="group" aria-label="How well did you remember?" class="{{t.fx.stagger}}" style="width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
         <sc-for list="{{grades}}" as="g" hint-placeholder-count="4">
-          <button onClick="{{g.pick}}" style="height: 64px; border-radius: 16px; border: 1px solid {{g.border}}; background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 14px; font-weight: 650;">
+          <button onClick="{{g.pick}}" class="{{t.fx.press}}" style="height: 64px; border-radius: 16px; border: 1px solid {{g.border}}; background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.shadow}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 14px; font-weight: 650;">
             <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{g.dot}};"></span>{{g.label}}</span>
             <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; opacity: 0.75;">{{g.next}}</span>
           </button>
@@ -63,7 +63,7 @@
       </div>
     </sc-if>
     <sc-if value="{{notFlipped}}" hint-placeholder-val="{{true}}">
-      <button onClick="{{flip}}" class="sf-press" style="width: 100%; height: 58px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 16px; font-weight: 650;">Reveal meaning</button>
+      <button onClick="{{flip}}" class="{{t.fx.press}} {{t.fx.enter2}}" style="width: 100%; height: 58px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 16px; font-weight: 650;">Reveal meaning</button>
     </sc-if>
   </div>
 </div>

@@ -2,8 +2,8 @@
 <div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
 <!--#AMBIENT-->
   <header style="position: relative; z-index: 3; height: 64px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; gap: 12px;">
-    <button aria-label="Close quiz" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
-    <div role="progressbar" aria-valuenow="4" aria-valuemin="0" aria-valuemax="10" style="flex-grow: 1; height: 6px; border-radius: 6px; background: {{t.track}}; overflow: hidden;"><div style="width: 40%; height: 100%; border-radius: 6px; background: {{bar}}; box-shadow: {{barGlow}};"></div></div>
+    <button aria-label="Close quiz" class="{{t.fx.press}}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    <div role="progressbar" aria-valuenow="4" aria-valuemin="0" aria-valuemax="10" style="flex-grow: 1; height: 6px; border-radius: 6px; background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 40%; height: 100%; border-radius: 6px; background: {{bar}}; box-shadow: {{barGlow}};"></div></div>
     <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; color: {{t.text2}};">4/10</span>
     <span style="height: 32px; padding: 0 10px; border-radius: 999px; border: 1px solid {{t.okLine}}; background: {{t.okBg}}; color: {{t.ok}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>3</span>
   </header>
@@ -13,7 +13,7 @@
       <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text2}};">Choose the meaning</div>
       <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
         <span style="font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 46px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">re<span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">sil</span>ient</span>
-        <button aria-label="Play pronunciation" style="margin-left: auto; width: 42px; height: 42px; border-radius: 50%; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
+        <button aria-label="Play pronunciation" class="{{t.fx.press}}" style="margin-left: auto; width: 42px; height: 42px; border-radius: 50%; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
       </div>
       <div style="margin-top: 8px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; color: {{t.text2}};">/rɪˈzɪliənt/ · adjective</div>
     </div>
@@ -30,13 +30,13 @@
     </div>
   </main>
 
-  <div role="status" class="sf-rise" style="position: relative; z-index: 3; flex-shrink: 0; margin: 0 12px 16px; padding: 16px 16px 14px; border-radius: 24px; border: 1px solid {{t.dangerLine}}; background: {{sheetBg}}; box-shadow: {{sheetShadow}};">
+  <div role="status" class="sf-sheet-b" style="position: relative; z-index: 3; flex-shrink: 0; margin: 0 12px 16px; padding: 16px 16px 14px; border-radius: 24px; border: 1px solid {{t.dangerLine}}; background: {{sheetBg}}; box-shadow: {{sheetShadow}};">
     <div style="display: flex; align-items: center; gap: 10px;">
       <span style="width: 30px; height: 30px; border-radius: 50%; background: {{t.dangerBg}}; color: {{t.danger}}; display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></span>
       <span style="font-family: Fraunces, Georgia, serif; font-size: 20px; color: {{t.textStrong}};">Not quite.</span>
     </div>
     <p style="margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; color: {{t.body}};"><span style="font-style: italic;">resilient</span> = <span style="color: {{t.ok}}; font-weight: 600;">kiên cường, mau phục hồi</span>. It comes back after this round.</p>
-    <button class="sf-press" style="margin-top: 12px; width: 100%; height: 52px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15.5px; font-weight: 650;">Continue</button>
+    <button class="{{t.fx.press}}" style="margin-top: 12px; width: 100%; height: 52px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 15.5px; font-weight: 650;">Continue</button>
   </div>
 </div>
 </x-dc>
@@ -47,7 +47,7 @@ class Component extends DCLogic {
     const dark = (this.props.theme ?? 'dark') === 'dark';
     const t = { ...sfTokens(dark), miniR: dark ? 22 : 16 };
     const opt = (key, text, kind) => {
-      const base = { key, text, checked: kind === 'wrong' ? 'true' : 'false', right: kind === 'right', wrong: kind === 'wrong', cls: kind === 'wrong' ? 'sf-shake' : '' };
+      const base = { key, text, checked: kind === 'wrong' ? 'true' : 'false', right: kind === 'right', wrong: kind === 'wrong', cls: kind === 'wrong' ? 'sf-shake sf-ease' : kind === 'right' ? t.fx.correct + ' sf-ease' : 'sf-ease' };
       if (kind === 'right') return { ...base, line: t.okLine, bg: t.okBg, fg: t.ok, shadow: dark ? '0 0 24px -10px rgb(117 208 121 / 0.6)' : 'none', keyBg: t.good, keyFg: dark ? '#06161f' : '#fffcf5' };
       if (kind === 'wrong') return { ...base, line: t.dangerLine, bg: t.dangerBg, fg: t.danger, shadow: 'none', keyBg: t.dangerSolid, keyFg: t.dangerSolidText };
       return { ...base, line: t.line, bg: t.secondaryBg, fg: t.text2, shadow: t.secondaryShadow, keyBg: t.chipBg, keyFg: t.text3 };

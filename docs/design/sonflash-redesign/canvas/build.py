@@ -167,6 +167,16 @@ SHARED_CSS = review_css + '''
 .au-press-danger{transition:transform 180ms cubic-bezier(.16,1,.3,1), filter 180ms ease}
 .au-press-danger:hover{transform:translateY(-2px);filter:drop-shadow(0 8px 16px rgb(255 138 134 / .3))}
 .au-press-danger:active{transform:translateY(0) scale(.97)}
+/* The ink wipe ends outside the text box and does not hold its end state, so descenders and italic overhang of a
+   settled headline are never clipped. */
+@keyframes ip-ink{from{clip-path:inset(-.3em calc(100% + .1em) -.35em -.1em)}to{clip-path:inset(-.3em -.1em -.35em -.1em)}}
+.ip-ink{animation:ip-ink 700ms cubic-bezier(.65,0,.35,1) 260ms backwards}
+.au-correct.sf-late,.ip-correct.sf-late{animation-delay:560ms}
+.sf-focus:focus-visible{outline:2px solid var(--sf-focus,currentColor);outline-offset:2px}
+/* A ring or line that draws up to the value it already shows: set stroke-dasharray:1 and the resting
+   stroke-dashoffset inline, with pathLength="1" on the shape. */
+@keyframes sf-draw-to-k{from{stroke-dashoffset:1}}
+.sf-draw-to{animation:sf-draw-to-k 1.2s cubic-bezier(.65,0,.35,1) 300ms backwards}
 @keyframes sf-drain-k{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 .sf-drain{transform-origin:left;animation:sf-drain-k 6s linear both}
 .ip-press{transition:transform 160ms cubic-bezier(.16,1,.3,1), filter 160ms ease}
@@ -195,7 +205,7 @@ SHARED_CSS = review_css + '''
 @keyframes sf-cells-k{from{opacity:0;scale:.6}to{opacity:1;scale:1}}
 .sf-cells>*{animation:sf-cells-k 360ms cubic-bezier(.16,1,.3,1) both}
 .sf-cells>:nth-child(7n+2){animation-delay:30ms}.sf-cells>:nth-child(7n+3){animation-delay:60ms}.sf-cells>:nth-child(7n+4){animation-delay:90ms}.sf-cells>:nth-child(7n+5){animation-delay:120ms}.sf-cells>:nth-child(7n+6){animation-delay:150ms}.sf-cells>:nth-child(7n){animation-delay:180ms}
-@media (prefers-reduced-motion: reduce){.sf-drain,.au-in,.au-in-2,.au-in-3,.au-in-4,.ip-in,.ip-in-2,.ip-in-3,.ip-in-4,.au-stagger>*,.ip-stagger>*,.au-dialog,.ip-dialog,.sf-scrim,.sf-sheet-r,.sf-sheet-b,.sf-toast,.au-glint::after,.au-correct,.ip-correct,.au-pop,.ip-stamp,.sf-tick,.sf-bars>*,.sf-draw,.sf-cells>*{animation:none}.au-lift,.ip-lift,.au-press,.ip-press,.sf-ease{transition:none}}
+@media (prefers-reduced-motion: reduce){.sf-drain,.sf-draw-to,.au-in,.au-in-2,.au-in-3,.au-in-4,.ip-in,.ip-in-2,.ip-in-3,.ip-in-4,.au-stagger>*,.ip-stagger>*,.au-dialog,.ip-dialog,.sf-scrim,.sf-sheet-r,.sf-sheet-b,.sf-toast,.au-glint::after,.au-correct,.ip-correct,.au-pop,.ip-stamp,.sf-tick,.sf-bars>*,.sf-draw,.sf-cells>*{animation:none}.au-lift,.ip-lift,.au-press,.ip-press,.sf-ease{transition:none}}
 '''
 COMPONENTS = sorted(f.name[:-len('.dc.html')] for f in SRC.glob('*.dc.html'))
 for name in COMPONENTS:
@@ -213,6 +223,11 @@ for name in COMPONENTS:
     assert '<!--#' not in s and '//#' not in s, name
     assert s.count('<sc-if') == s.count('</sc-if>') and s.count('<sc-for') == s.count('</sc-for>'), name
     (OUT / f'{name}.dc.html').write_text(s)
+# The two seed boards without a stylesheet of their own get the shared motion vocabulary, as the src boards do.
+for seed_name in ('TodayScreen', 'LibraryScreen'):
+    seed_out = OUT / f'{seed_name}.dc.html'
+    seed_out.write_text(seed_out.read_text().replace('<style>body{margin:0}</style>', '<style>body{margin:0}\n' + SHARED_CSS + '</style>'))
+
 if CHECK:
     print('compiled', len(COMPONENTS), 'components')
     sys.exit(0)

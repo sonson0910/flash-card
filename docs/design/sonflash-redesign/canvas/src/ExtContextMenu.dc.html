@@ -20,13 +20,13 @@
     <div role="menuitem" aria-disabled="true" style="{{item}}; color: #9a9a9a;">Kiểm tra</div>
   </div>
 
-  <div role="status" class="sf-pop" style="position: absolute; left: 16px; right: 16px; bottom: 18px; box-sizing: border-box; padding: 12px 12px 12px 14px; border-radius: 16px; border: {{toast.border}}; background: {{toast.bg}}; box-shadow: {{toast.shadow}}; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; display: flex; align-items: center; gap: 12px;">
-    <span style="width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; background: {{t.okBg}}; color: {{t.ok}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+  <div role="status" class="sf-toast" style="position: absolute; left: 16px; right: 16px; bottom: 18px; box-sizing: border-box; padding: 12px 12px 12px 14px; border-radius: 16px; border: {{toast.border}}; background: {{toast.bg}}; box-shadow: {{toast.shadow}}; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; display: flex; align-items: center; gap: 12px;">
+    <span class="{{t.fx.correct}}" style="width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; background: {{t.okBg}}; color: {{t.ok}}; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
     <div style="min-width: 0;">
       <div style="font-size: 13.5px; font-weight: 650; color: {{t.textStrong}};">Đã lưu vào IELTS</div>
       <div style="margin-top: 1px; font-size: 12px; color: {{t.text2}};"><span style="font-family: Fraunces, Georgia, serif; font-style: {{t.emStyle}}; color: {{t.emColor}};">resilient</span> · kiên cường · ôn ngày mai</div>
     </div>
-    <a href="#" style="margin-left: auto; font-size: 12.5px; font-weight: 650; color: {{t.accentText}}; text-decoration: none; flex-shrink: 0;">Mở thẻ</a>
+    <a href="#" class="{{t.fx.press}}" style="margin-left: auto; font-size: 12.5px; font-weight: 650; color: {{t.accentText}}; text-decoration: none; flex-shrink: 0;">Mở thẻ</a>
   </div>
 </div>
 </x-dc>
