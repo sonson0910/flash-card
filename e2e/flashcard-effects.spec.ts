@@ -79,7 +79,8 @@ test('card effects retain their observable desktop states', async ({ page, signI
   await expect.poll(() => shell.evaluate(element => [...element.querySelectorAll('div')]
     .find(node => node.style.getPropertyValue('--spotlight-x'))?.style.getPropertyValue('--spotlight-x') ?? ''))
     .not.toBe('');
-  await expect(aura).toHaveCSS('opacity', '0.35');
+  // The paper card's hover aura sits at 0.55 on the board.
+  await expect(aura).toHaveCSS('opacity', '0.55');
 
   await shell.getByRole('button', { name: 'Star this word' }).click();
   await expect(shell.locator('.flashcard-star-selected')).toBeVisible();

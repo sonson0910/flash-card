@@ -87,9 +87,22 @@ for (const theme of themes) {
       const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
       expect.soft(blocking, `${board}: ${JSON.stringify(blocking.map(violation => [violation.id, violation.nodes.map(node => node.target)]))}`).toEqual([]);
       const small = await page.locator('.sf-files button:visible, .sf-files select:visible').evaluateAll(elements => elements
-        .map(element => ({ label: element.getAttribute('aria-label') || element.textContent?.trim(), box: element.getBoundingClientRect() }))
-        .filter(({ box }) => box.width < 44 || box.height < 44)
-        .map(({ label, box }) => `${label} ${Math.round(box.width)}x${Math.round(box.height)}`));
+        .map(element => {
+          // A control the board draws under 44 px keeps its size and carries an invisible ::after layer that
+          // extends where it can be pressed; that layer is positioned against the control's padding box.
+          const layer = getComputedStyle(element, '::after');
+          const reach = (side: string) => layer.content !== 'none' && layer.position === 'absolute'
+            ? Math.max(0, -Number.parseFloat(layer.getPropertyValue(side)) || 0)
+            : 0;
+          const box = element.getBoundingClientRect();
+          return {
+            label: element.getAttribute('aria-label') || element.textContent?.trim(),
+            width: Math.max(box.width, element.clientWidth + reach('left') + reach('right')),
+            height: Math.max(box.height, element.clientHeight + reach('top') + reach('bottom')),
+          };
+        })
+        .filter(({ width, height }) => width < 44 || height < 44)
+        .map(({ label, width, height }) => `${label} ${Math.round(width)}x${Math.round(height)}`));
       expect.soft(small, `${board} has controls under 44 px`).toEqual([]);
     }
   });

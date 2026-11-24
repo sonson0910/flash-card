@@ -104,7 +104,9 @@ test('dialog overlay and content use coordinated entrance animations', async ({ 
   await expect(dialog).toHaveAttribute('data-gsap-entrance', 'result');
 });
 
-test('utility hover physics stay restrained while reward remains expressive', async ({ page, signIn }) => {
+// The boards grow the dark card's round icon buttons to 1.06 on hover and keep the light card's still.
+for (const { theme, grows } of [{ theme: 'dark', grows: true }, { theme: 'light', grows: false }] as const) test(`${theme} card icon buttons ${grows ? 'grow a little' : 'stay still'} on hover`, async ({ page, signIn }) => {
+  await page.addInitScript(value => { localStorage.setItem('lingoflash_theme', value); }, theme);
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page, '/?view=library');
   await page.evaluate(() => document.fonts.ready);
@@ -129,6 +131,12 @@ test('utility hover physics stay restrained while reward remains expressive', as
       return Math.hypot(matrix.a, matrix.b);
     });
   };
+  if (!grows) {
+    await star.hover({ force: true });
+    await page.waitForTimeout(400);
+    expect(await hoveredScale()).toBe(1);
+    return;
+  }
   await expect.poll(hoveredScale, { timeout: 3_000 }).toBeGreaterThan(1.02);
 
   expect(await hoveredScale()).toBeLessThanOrEqual(1.07);

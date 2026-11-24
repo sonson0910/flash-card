@@ -301,7 +301,11 @@ for (const theme of themes) {
       await expect(page.locator('.claude-topbar')).toBeHidden();
       await expect(page.locator('.claude-mobile-nav')).toBeHidden();
       await expect(page.getByRole('list', { name: 'Session progress' })).toBeVisible();
-      await expect(page.locator('.session-bridge-card')).toHaveCSS('transform', 'none');
+      // The Classic board rests the preview card at -2 degrees in every motion setting; Crystal's stands upright.
+      await expect(page.locator('.session-bridge-card')).toHaveCSS(
+        'transform',
+        theme.family === 'classic' ? 'matrix(0.999391, -0.0348995, 0.0348995, 0.999391, 0, 0)' : 'none',
+      );
       const bridgeEdges = await page.locator('[data-session-shell="bridge"]').evaluate(element => {
         const bounds = element.getBoundingClientRect();
         return { left: bounds.left, right: bounds.right, viewport: window.innerWidth };

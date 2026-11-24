@@ -290,8 +290,12 @@ for (const state of canvasCardStates) {
           await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.2);
           await expect(shell).toHaveAttribute('data-card-hovered', 'true');
           await expect(shell.locator('[data-card-effect="hover-wings"]')).toHaveAttribute('data-card-effect-tier', 'mastered');
-          await expect(shell.locator('[data-card-effect="holo"]')).toHaveCSS('opacity', theme.family === 'crystal' ? '0.55' : '0.35');
-          await expect(shell.locator('[data-card-effect="specular"]')).toHaveCSS('opacity', theme.family === 'crystal' ? '1' : '0.92');
+          // Board values: the dark card's holo foil rises to 0.5 under the pointer and the paper card has no foil;
+          // the specular layer is fully opaque on a hovered card in every look.
+          const holo = shell.locator('[data-card-effect="holo"]');
+          if (theme.family === 'classic' && theme.mode === 'light') await expect(holo).toBeHidden();
+          else await expect(holo).toHaveCSS('opacity', theme.family === 'crystal' ? '0.55' : '0.5');
+          await expect(shell.locator('[data-card-effect="specular"]')).toHaveCSS('opacity', '1');
         } else {
           const star = shell.locator('[data-card-effect="star-pop"]');
           await expect(shell).toHaveAttribute('data-card-tier', 'new');
