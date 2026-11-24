@@ -132,7 +132,8 @@ test('a prepared shell recovers the cached learner workspace during an app-serve
     await expect(page.getByRole('button', { name: 'Available offline', exact: true })).toBeDisabled();
     await expect(page.getByText('Available offline.', { exact: true })).toBeVisible();
 
-    await page.reload();
+    // Back to the library on a fresh navigation, which the prepared service worker now controls.
+    await page.goto(`${fixture.origin}/?view=library&locale=en`);
     await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
     await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
     await expect(page.getByText('resilient', { exact: true }).first()).toBeVisible();
@@ -224,7 +225,8 @@ test('protected and mutable paths stay outside the shell online and offline', as
     await page.goto(`${fixture.origin}/?view=files&locale=en`);
     await page.getByRole('button', { name: 'Prepare offline', exact: true }).click();
     await expect(page.getByText('Available offline.', { exact: true })).toBeVisible();
-    await page.reload();
+    // Back to the library on a fresh navigation, which the prepared service worker now controls.
+    await page.goto(`${fixture.origin}/?view=library&locale=en`);
     await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
     await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
 
@@ -278,7 +280,8 @@ test('a persistent Chromium profile reopens the cached workspace after all clien
     await first.goto(`${fixture.origin}/?view=files&locale=en`);
     await first.getByRole('button', { name: 'Prepare offline', exact: true }).click();
     await expect(first.getByText('Available offline.', { exact: true })).toBeVisible();
-    await first.reload();
+    // Back to the library on a fresh navigation, which the prepared service worker now controls.
+    await first.goto(`${fixture.origin}/?view=library&locale=en`);
     await expect.poll(() => first.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
     await expect.poll(() => first.evaluate(() => (
       globalThis as typeof globalThis & { __SONFLASH_RELEASE_MARKER__?: string }
