@@ -39,6 +39,34 @@ docker run --rm --init --ipc=host --user "$(id -u):$(id -g)" -e HOME=/tmp \
   bash -c 'export PATH=/opt/node22/bin:$PATH; node docs/design/sonflash-redesign/canvas/render-reference.mjs --force'
 ```
 
+## Classic motion system
+
+Midnight Aurora (dark) and Ink & Paper (light) share one markup, so a Classic board never names a look-specific motion class. It asks for a role through `t.fx.*` in `src/tokens.js`, and each look answers with its own signature: Aurora resolves out of blur and glows on touch, Ink & Paper lays ink and presses like a stamp. The classes themselves live in the `SHARED_CSS` string of `build.py`, which writes `shared.css`.
+
+| Role | Midnight Aurora | Ink & Paper | Use |
+| --- | --- | --- | --- |
+| `fx.enter`, `enter2`, `enter3`, `enter4` | `au-in` … `au-in-4` | `ip-in` … `ip-in-4` | Blocks arriving in reading order |
+| `fx.title` | `au-in` | `ip-ink` | The one headline of a screen |
+| `fx.stagger` | `au-stagger` | `ip-stagger` | A list or grid whose children arrive one after another |
+| `fx.dialog` | `au-dialog` | `ip-dialog` | A dialog panel; `DLGOPEN` applies it with `sf-scrim` |
+| `fx.lift` | `au-lift` | `ip-lift` | A card that can be opened |
+| `fx.press` | `au-press` | `ip-press` | Any button or link |
+| `fx.pressDanger` | `au-press-danger` | `ip-press` | A destructive button, so it does not glow in the accent |
+| `fx.glint` | `au-glint` | none | The one hero progress bar of a screen |
+| `fx.correct` | `au-correct` | `ip-correct` | A right answer; add `sf-late` to play it after the answer settles |
+| `fx.reward` | `au-pop` | `ip-stamp` | XP, combo and badge moments |
+
+Look-neutral classes are written directly: `sf-scrim`, `sf-sheet-r`, `sf-sheet-b` and `sf-toast` for overlays; `sf-ease` for state changes; `sf-tick` for a number that changed; `sf-bars`, `sf-cells`, `sf-grow`, `sf-draw` and `sf-draw-to` for data (`sf-draw` and `sf-draw-to` need `pathLength="1"` on the shape, and `sf-draw-to` needs the resting `stroke-dashoffset` inline); `sf-drain` for an undo countdown; `sf-shake` for a wrong answer; `sf-focus` for a keyboard focus ring.
+
+Rules that keep the boards calm and the stills stable:
+
+- Entrances use the individual `translate` property and fill backwards, so they pin nothing and the same element can still lift or press. The older `sf-rise`, `sf-deal-*`, `sf-pop`, `au-reveal*` and `nk-*` entrances end on `transform:none` and hold it: never put one on an element that has its own `transform` or a hover transform; wrap it instead.
+- `fx.stagger` sets `animation` on every child, so it overrides `sf-shake` or `fx.correct` on that child. Lists whose items give answer feedback do not stagger.
+- One loop per screen at most, and only for something live (a recording dot, a timer, a sound wave). A call to action does not pulse.
+- Nothing moves inside a card while the learner is reading it.
+- `fx.glint` sets `position:relative` and `overflow:hidden`; use it on a bar fill, not on an element whose shadow must show.
+- One reduced-motion rule switches all of these off. References are rendered with reduced motion, so a motion-only change leaves every still identical.
+
 ## Crystal Star shared tokens and partials
 
 Every Crystal Star board inlines `src/anime-tokens.js` and the partials in `src/partials.html`, so a change there changes all of them: re-render every reference with `--force` afterwards. The rules below keep both themes readable.

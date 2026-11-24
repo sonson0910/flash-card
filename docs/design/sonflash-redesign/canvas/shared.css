@@ -110,9 +110,11 @@ button{font-family:inherit}
 .nk-shine{animation:nk-shine-k 2.8s ease-in-out infinite}
 @keyframes nk-marquee-k{to{transform:translateX(-50%)}}
 .nk-marquee{animation:nk-marquee-k 24s linear infinite}
-.nk-press{transition:transform 160ms cubic-bezier(.34,1.56,.64,1), box-shadow 160ms ease}
-.nk-press:hover{transform:translate(-2px,-2px)}
-.nk-press:active{transform:translate(3px,3px);box-shadow:0 0 0 transparent !important}
+/* Press and lift move through the individual translate and scale properties, so they also work on the many
+   Crystal buttons that carry an inline skew and on elements whose entrance animation holds transform. */
+.nk-press{transition:translate 160ms cubic-bezier(.34,1.56,.64,1), box-shadow 160ms ease}
+.nk-press:hover{translate:-2px -2px}
+.nk-press:active{translate:3px 3px;box-shadow:0 0 0 transparent !important}
 @keyframes nk-meteor-k{0%{opacity:0;transform:translate3d(0,0,0) rotate(-35deg)}8%{opacity:1}30%,100%{opacity:0;transform:translate3d(-420px,300px,0) rotate(-35deg)}}
 .nk-meteor{transform:rotate(-35deg);animation:nk-meteor-k 6s ease-in infinite}
 @keyframes nk-twinkle-k{0%,100%{opacity:.25;transform:scale(.6) rotate(0)}50%{opacity:1;transform:scale(1) rotate(20deg)}}
@@ -124,9 +126,9 @@ button{font-family:inherit}
 .nk-rise{animation:nk-rise-k 700ms cubic-bezier(.16,1,.3,1) both}
 .nk-rise-2{animation:nk-rise-k 700ms cubic-bezier(.16,1,.3,1) 120ms both}
 .nk-rise-3{animation:nk-rise-k 700ms cubic-bezier(.16,1,.3,1) 240ms both}
-.nk-lift{transition:transform 220ms cubic-bezier(.34,1.56,.64,1), box-shadow 220ms ease, filter 220ms ease}
-.nk-lift:hover{transform:translateY(-3px);filter:brightness(1.06)}
-.nk-lift:active{transform:translateY(0) scale(.97)}
+.nk-lift{transition:translate 220ms cubic-bezier(.34,1.56,.64,1), scale 220ms cubic-bezier(.34,1.56,.64,1), box-shadow 220ms ease, filter 220ms ease}
+.nk-lift:hover{translate:0 -3px;filter:brightness(1.06)}
+.nk-lift:active{translate:0 0;scale:.97}
 @keyframes nk-flare-k{0%,100%{opacity:.55;transform:scale(.8) rotate(0)}50%{opacity:1;transform:scale(1.1) rotate(8deg)}}
 .nk-flare{animation:nk-flare-k 3.4s ease-in-out infinite}
 @keyframes nk-beam-k{0%,100%{opacity:.5;translate:0 0}50%{opacity:1;translate:40px 0}}
@@ -140,7 +142,7 @@ button{font-family:inherit}
 @keyframes nk-banner-k{0%{opacity:0;transform:translateX(-80px) skewX(-16deg)}60%{opacity:1;transform:translateX(6px) skewX(-16deg)}100%{opacity:1;transform:skewX(-16deg)}}
 .nk-banner{animation:nk-banner-k 520ms cubic-bezier(.2,1.4,.4,1) both}
 @media (prefers-reduced-motion: reduce){.nk-flare,.nk-beam,.nk-starfield,.nk-unfold,.nk-pillar,.nk-banner{animation:none}}
-@media (prefers-reduced-motion: reduce){.nk-meteor{animation:none;opacity:0}.nk-twinkle,.nk-drift,.nk-drift-b,.nk-rise,.nk-rise-2,.nk-rise-3{animation:none}.nk-lift{transition:none}}
+@media (prefers-reduced-motion: reduce){.nk-meteor{animation:none;opacity:0}.nk-twinkle,.nk-drift,.nk-drift-b,.nk-rise,.nk-rise-2,.nk-rise-3{animation:none}.nk-lift,.nk-press{transition:none}}
 @media (prefers-reduced-motion: reduce){.nk-pop,.nk-pop-2,.nk-pop-3,.nk-stamp,.nk-spark,.nk-speed,.nk-rim-spin,.nk-float,.nk-slide,.nk-slide-2,.nk-slide-3,.nk-slide-4,.nk-flash,.nk-bar,.nk-shine,.nk-marquee{animation:none}.nk-press{transition:none}}
 @media (prefers-reduced-motion: reduce){.sf-fall,.sf-rise,.sf-rise-2,.sf-rise-3,.sf-deal-1,.sf-deal-2,.sf-deal-3,.sf-sheen,.sf-grow,.sf-bob-a,.sf-bob-b,.sf-pop,.sf-pulse,.sf-wave,.sf-shimmer,.sf-spin,.sf-shake{animation:none}.sf-fall{display:none}.sf-press,.sf-lift{transition:none}}
 /* Classic motion system. A board picks the class through t.fx.* so each look keeps its own signature:

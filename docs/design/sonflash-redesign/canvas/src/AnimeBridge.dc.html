@@ -9,7 +9,7 @@
       <sc-for list="{{rail}}" as="r" hint-placeholder-count="4">
         <li aria-current="{{r.current}}" style="width: 196px; display: flex; flex-direction: column; gap: 7px;">
           <div style="height: 12px; transform: skewX(-30deg); background: {{t.track}}; overflow: hidden; box-shadow: {{r.edge}};"><div style="width: {{r.fill}}%; height: 100%; background: {{r.bar}}; box-shadow: {{r.glow}};"></div></div>
-          <div style="display: flex; align-items: baseline; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic;"><span style="font-weight: 900; font-size: 15px; letter-spacing: 0.06em; color: {{r.fg}};">{{r.n}} {{r.name}}</span><span style="margin-left: auto; font-weight: 700; font-size: 13px; color: {{t.text3}};">{{r.meta}}</span></div>
+          <div style="display: flex; align-items: baseline; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; text-shadow: {{t.onArtHalo}};"><span style="font-weight: 900; font-size: 15px; letter-spacing: 0.06em; color: {{r.fg}};">{{r.n}} {{r.name}}</span><span style="margin-left: auto; font-weight: 700; font-size: 13px; color: {{t.text3}};">{{r.meta}}</span></div>
         </li>
       </sc-for>
     </ol>
@@ -26,7 +26,7 @@
 
   <main style="position: relative; z-index: 3; flex-grow: 1; min-height: 0; display: grid; grid-template-columns: 380px 1fr 400px; gap: 20px; padding: 0 56px 30px 64px; align-items: center;">
     <section style="position: relative; display: flex; flex-direction: column; height: 100%;">
-      <div class="nk-rise" style="margin-top: 40px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.16em; color: {{t.holoText}};">STEP 1 DONE <span style="color: {{t.text3}};">//</span> {{reviewCount}} OF {{reviewCount}}</div>
+      <div class="nk-rise" style="margin-top: 40px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.16em; color: {{t.holoText}}; text-shadow: {{t.onArtHalo}};">STEP 1 DONE <span style="color: {{t.text3}};">//</span> {{reviewCount}} OF {{reviewCount}}</div>
       <div style="position: relative; margin-top: 10px; height: 170px;">
         <div class="nk-banner" style="position: absolute; left: -10px; right: -44px; top: 26px; height: 110px; transform: skewX(-16deg); background: linear-gradient(90deg, rgb(179 15 51 / 0.95), rgb(255 42 77 / 0.9) 60%, rgb(255 42 77 / 0.88) 88%, rgb(255 42 77 / 0)); box-shadow: 0 0 40px -6px rgb(255 42 77 / 0.7);"></div>
         <div style="position: absolute; left: -16px; top: 0; width: 76px; height: 76px; filter: drop-shadow(0 0 12px rgb(255 42 77 / 0.9));">
@@ -36,7 +36,7 @@
         <div style="position: absolute; left: 196px; top: 50px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 34px; letter-spacing: 0.04em; color: #ffffff; text-shadow: 0 3px 0 #7a0820;">DREAMY+</div>
         <div style="position: absolute; left: 200px; top: 92px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 13px; letter-spacing: 0.14em; color: #ffe3ea;">CORRECT IN A ROW</div>
       </div>
-      <div style="margin-top: 6px; display: flex; gap: 6px;">
+      <div class="nk-rise-2" style="margin-top: 6px; display: flex; gap: 6px;">
         <sc-for list="{{ticks}}" as="k" hint-placeholder-count="8"><span style="width: 32px; height: 12px; transform: skewX(-30deg); background: {{k.bg}}; box-shadow: {{k.glow}};"></span></sc-for>
       </div>
       <div class="nk-pop-2" style="margin-top: 14px; align-self: flex-start; height: 34px; padding: 0 16px; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #fff0b8, #ffd166); color: #4a2a00; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; letter-spacing: 0.04em; display: flex; align-items: center;">+36 XP · COMBO BONUS ×1.5</div>
@@ -110,15 +110,15 @@
     </section>
 
     <section class="nk-rise-2" style="position: relative; display: flex; flex-direction: column; justify-content: center;">
-      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}};">STEP 2 OF 4</div>
+      <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}}; text-shadow: {{t.onArtHalo}};">STEP 2 OF 4</div>
       <h1 style="margin: 8px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 108px; line-height: 0.9;">
         <span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.85));">NEW</span><br>
         <span style="background: {{t.titleMetal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: {{t.titleShadow}};">WORDS</span>
       </h1>
-      <p style="margin: 16px 0 0; font-size: 18px; line-height: 1.5; color: {{t.body}};">{{newCount}} new words<br><b style="color: {{t.textStrong}};">you met on the web</b></p>
+      <p style="margin: 16px 0 0; font-size: 18px; line-height: 1.5; color: {{t.body}}; text-shadow: {{t.onArtHalo}};">{{newCount}} new words<br><b style="color: {{t.textStrong}};">you met on the web</b></p>
       <div style="margin-top: 26px; width: 300px;">
-        <div style="height: 8px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: 64%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff2a4d); box-shadow: 0 0 10px rgb(255 42 77 / 0.6);"></div></div>
-        <div style="margin-top: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; letter-spacing: 0.06em; color: {{t.text3}};">CONTINUES IN 2 S · <span style="color: {{t.text2}};">SPACE TO SKIP</span></div>
+        <div style="height: 8px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: 64%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff2a4d); box-shadow: 0 0 10px rgb(255 42 77 / 0.6);"></div></div>
+        <div style="margin-top: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; letter-spacing: 0.06em; color: {{t.text3}}; text-shadow: {{t.onArtHalo}};">CONTINUES IN 2 S · <span style="color: {{t.text2}};">SPACE TO SKIP</span></div>
       </div>
     </section>
   </main>

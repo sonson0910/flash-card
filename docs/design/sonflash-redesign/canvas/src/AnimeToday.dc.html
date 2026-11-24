@@ -5,16 +5,18 @@
 
   <main style="position: relative; z-index: 3; flex-grow: 1; display: grid; grid-template-columns: 600px 1fr; gap: 40px; padding: 18px 48px 36px;">
     <section style="position: relative; display: flex; flex-direction: column;">
-      <div class="nk-rise" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}};">TUESDAY <span style="color: {{t.text3}};">//</span> WEEK 38 · STARLIGHT</div>
+      <div class="nk-rise" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 0.16em; color: {{t.crimsonText}}; text-shadow: {{t.onArtHalo}};">TUESDAY <span style="color: {{t.text3}};">//</span> WEEK 38 · STARLIGHT</div>
       <h1 class="nk-rise" style="margin: 6px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 128px; line-height: 0.92; letter-spacing: -0.01em;">
         <span style="background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 #7a0820) drop-shadow(0 0 22px rgb(255 42 77 / 0.7));">DAY</span>
         <span style="background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 26px rgb(255 42 77 / 0.9));">13</span>
       </h1>
-      <p class="nk-rise-2" style="margin: 14px 0 0; max-width: 470px; font-size: 16px; line-height: 1.55; color: {{t.body}};">{{dueTotal}} cards are waiting for you. One cosy lesson covers them all: review, new words, a quick word match, then your recap.</p>
+      <p class="nk-rise-2" style="margin: 14px 0 0; max-width: 470px; font-size: 16px; line-height: 1.55; color: {{t.body}}; text-shadow: {{t.onArtHalo}};">{{dueTotal}} cards are waiting for you. One cosy lesson covers them all: review, new words, a quick word match, then your recap.</p>
 
       <div class="nk-rise-2" style="position: relative; margin-top: 110px; width: 600px; height: 96px;">
-        <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -128px; top: -132px; width: 360px; height: 240px; opacity: 0.85; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.7));">
+        <div aria-hidden="true" class="nk-unfold" style="position: absolute; left: -128px; top: -132px; width: 360px; height: 240px;">
+          <div style="height: 100%; opacity: 0.85; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.7));">
 <!--#WINGS-->
+          </div>
         </div>
         <button class="nk-lift" style="position: absolute; left: 80px; top: 6px; width: 520px; height: 84px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 16px; padding: 0 24px 0 26px; filter: drop-shadow(0 0 22px rgb(255 42 77 / 0.7));">
           <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 70px; background: rgb(255 255 255 / 0.4);"></span>
@@ -46,7 +48,7 @@
         <div style="position: relative; margin-top: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
           <div aria-hidden="true" style="position: absolute; left: 60px; right: 60px; top: 44px; height: 3px; background: linear-gradient(90deg, #ff2a4d, #ff8fb6 40%, {{t.track}} 60%); box-shadow: 0 0 12px rgb(255 42 77 / 0.6);"></div>
           <sc-for list="{{stages}}" as="st" hint-placeholder-count="4">
-            <div style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 9px; text-align: center;">
+            <div class="{{st.cls}}" style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 9px; text-align: center;">
               <div style="position: relative; width: 90px; height: 90px; filter: {{st.glow}};">
                 <div style="position: absolute; inset: 0; clip-path: {{t.chamferSm}}; background: {{st.rim}};"></div>
                 <div style="position: absolute; inset: 3px; clip-path: {{t.chamferSm}}; background: {{st.fill}}; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 32px; color: {{st.numColor}};">{{st.n}}</div>
@@ -69,7 +71,7 @@
               <div style="display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center;">
                 <div style="font-weight: 900; font-size: 15.5px; color: {{t.textStrong}};">{{q.title}}</div>
                 <span style="height: 26px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{q.xpBg}}; color: {{q.xpColor}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; display: flex; align-items: center;">+{{q.xp}} XP</span>
-                <div style="height: 9px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: {{q.pct}}%; height: 100%; background: {{q.bar}}; box-shadow: 0 0 10px rgb(255 42 77 / 0.5);"></div></div>
+                <div style="height: 9px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div class="sf-grow" style="width: {{q.pct}}%; height: 100%; background: {{q.bar}}; box-shadow: 0 0 10px rgb(255 42 77 / 0.5);"></div></div>
                 <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 13px; color: {{t.text2}}; text-align: right;">{{q.progress}}</div>
               </div>
             </sc-for>
@@ -107,6 +109,8 @@ class Component extends DCLogic {
       const done = state === 'done';
       return {
         n, label, sub, current,
+        // The path stations enter in reading order, one slide step each.
+        cls: ['nk-slide', 'nk-slide-2', 'nk-slide-3', 'nk-slide-4'][Number(n) - 1],
         rim: current ? 'linear-gradient(150deg, #ffe3ea, #ff2a4d 45%, #7a0820)' : done ? t.tier.learning.rim : 'linear-gradient(150deg, ' + t.lineStrong + ', ' + t.line + ')',
         fill: current ? t.primaryBg : done ? t.panelSolid : t.panelSolid,
         numColor: current ? '#ffffff' : done ? t.violetText : t.text3,
@@ -120,7 +124,7 @@ class Component extends DCLogic {
     return {
       t, toggleTheme: this.props.onToggleTheme ?? (() => {}),
       nav: nkNav(t, 0), streak: 12,
-      bg: { wings: true },
+      bg: { wings: false },
       dueTotal: dueCount + newCount, newCount, leagueSize: 20,
       stages: [
         node('01', 'REVIEW', dueCount + ' due cards', 'current'),
