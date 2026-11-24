@@ -25,7 +25,11 @@ async function prepareTheme(page: Page, theme: (typeof themes)[number], viewport
   }, theme);
 }
 
-async function expectScreen(page: Page, testInfo: TestInfo, name: string, mask: Locator[] = []) {
+/**
+ * `hidden` lists selectors of text that changes from day to day. Such text is left unpainted rather than
+ * masked, because a mask covers the element's box and the box is as wide as that day's text.
+ */
+async function expectScreen(page: Page, testInfo: TestInfo, name: string, mask: Locator[] = [], hidden: string[] = []) {
   await expect(page.locator('html')).toHaveAttribute('data-theme-family', /classic|crystal/);
   // WebKit antialiases an outline differently while one of its transitions runs and until the frame after it ends,
   // so the capture waits for running transitions to end and then for two frames.
@@ -40,7 +44,8 @@ async function expectScreen(page: Page, testInfo: TestInfo, name: string, mask: 
   if (await mascot.isVisible()) await mascot.evaluate(image => (image as HTMLImageElement).decode());
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `${name} has horizontal overflow`).toBe(true);
   const screenshot = testInfo.outputPath(`${name}.png`);
-  const image = await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide', mask });
+  const style = hidden.length ? `${hidden.join(', ')} { visibility: hidden !important; }` : undefined;
+  const image = await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled', caret: 'hide', mask, style });
   await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
   return { image, name };
 }
@@ -146,7 +151,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(onboarding.getByRole('button', { name: 'Continue' })).toBeInViewport();
     // The date field and the footer summary show a day 86 days from today, so they change every day; the
     // countdown beside them does not.
-    const examScreenshot = await expectScreen(page, testInfo, `course-onboarding-exam-${theme.family}-${theme.mode}-${viewport.name}`, [onboarding.getByLabel('Exam date (optional)'), onboarding.locator('.onb-footer-note')]);
+    const examScreenshot = await expectScreen(page, testInfo, `course-onboarding-exam-${theme.family}-${theme.mode}-${viewport.name}`, [onboarding.getByLabel('Exam date (optional)')], ['.onb-footer-note']);
 
     await seedCourses(db, testUser.uid);
     await page.reload();
@@ -349,7 +354,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await expect(preview).toContainText('5 cards are ready for review.');
     await expect(preview.locator('.onb-phone-countdown')).toHaveCount(0);
     // The lock-screen preview prints today's date.
-    const reminderScreenshot = await expectScreen(page, testInfo, `course-onboarding-reminder-${theme.family}-${theme.mode}-${viewport.name}`, [preview.locator('.onb-phone-date')]);
+    const reminderScreenshot = await expectScreen(page, testInfo, `course-onboarding-reminder-${theme.family}-${theme.mode}-${viewport.name}`, [], ['.onb-phone-date']);
 
     for (const screen of [levelScreenshot, primerScreenshot, paceScreenshot, trialScreenshot, trialDoneScreenshot, reminderScreenshot]) {
       expect(screen.image).toMatchSnapshot(`${screen.name}.png`);

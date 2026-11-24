@@ -462,7 +462,9 @@ test('switching courses on another device cancels an in-flight weekly recap down
     await peerPage.getByRole('dialog', { name: 'Courses' })
       .getByRole('button', { name: /Korean.*Vietnamese/ }).click();
     await expect(peerPage.locator('.claude-course-switcher-trigger')).toHaveText(/Korean/);
-    await expect(dialog).toBeHidden();
+    // The switch reaches this page through its own listener on the course profile, which can lag
+    // well behind the peer's local update on a loaded runner.
+    await expect(dialog).toBeHidden({ timeout: 20_000 });
 
     const exportResponse = page.waitForResponse(response => exportChunk.test(response.url()));
     releaseExport();
