@@ -1,7 +1,7 @@
 <!--#AHEAD Crystal Star multilingual card-->
 <div style="width: 720px; height: 780px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column; align-items: center;">
 <!--#ABG-->
-  <div style="position: relative; z-index: 4; margin-top: 24px; height: 42px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 16px 0 6px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
+  <div class="nk-rise" style="position: relative; z-index: 4; margin-top: 24px; height: 42px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 16px 0 6px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
     <span style="height: 30px; min-width: 38px; padding: 0 9px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; display: flex; align-items: center; justify-content: center;">{{L.target.code}}</span>
     <span lang="{{langTag}}" style="font-family: {{v.sansFont}}; font-weight: 900; font-size: 15px; color: {{t.textStrong}};">{{L.target.name}}</span>
     <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.08em; color: {{t.crimsonText}};">//</span>
@@ -20,7 +20,7 @@
     </div>
   </div>
 
-  <div style="position: relative; z-index: 2; margin-top: 20px;">
+  <div class="nk-rise-2" style="position: relative; z-index: 2; margin-top: 20px;">
     <div class="{{dealCls}}" style="position: relative; width: 440px; height: 628px; flex-shrink: 0;">
       <div onMouseEnter="{{enter}}" onMouseMove="{{move}}" onMouseLeave="{{leave}}" style="position: absolute; inset: 0;">
         <div aria-hidden="true" style="position: absolute; left: -128px; top: 70px; width: 300px; height: 206px; pointer-events: none; transform-origin: 90% 75%; transform: scale({{wingScale}}) rotate({{wingRot}}deg); opacity: {{wingOpacity}}; transition: transform 460ms {{t.snap}}, opacity 300ms ease; filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.7));">
@@ -70,12 +70,12 @@
                   </sc-if>
                   <sc-if value="{{v.isJa}}" hint-placeholder-val="{{false}}">
                     <h2 lang="ja" style="margin: 4px 0 0; font-family: {{v.sansFont}}; font-weight: 900; font-size: {{v.headSize}}px; line-height: 1.25; letter-spacing: 0.04em; color: {{t.textStrong}};">
-                      <sc-for list="{{L.chars}}" as="ch" hint-placeholder-count="2"><ruby>{{ch.b}}<rt style="font-family: {{v.sansFont}}; font-size: 19px; font-weight: 700; letter-spacing: 0.06em; color: {{t.holoText}}; filter: {{v.aidFilter}}; transition: filter 300ms ease;">{{ch.rt}}</rt></ruby></sc-for>
+                      <sc-for list="{{L.chars}}" as="ch" hint-placeholder-count="2"><ruby>{{ch.b}}<rt class="sf-ease-filter" style="font-family: {{v.sansFont}}; font-size: 19px; font-weight: 700; letter-spacing: 0.06em; color: {{t.holoText}}; filter: {{v.aidFilter}};">{{ch.rt}}</rt></ruby></sc-for>
                     </h2>
                   </sc-if>
                   <sc-if value="{{v.isZh}}" hint-placeholder-val="{{false}}">
                     <h2 lang="zh-CN" style="margin: 4px 0 0; font-family: {{v.sansFont}}; font-weight: 900; font-size: {{v.headSize}}px; line-height: 1.25; letter-spacing: 0.06em; color: {{t.textStrong}};">
-                      <sc-for list="{{v.zchars}}" as="z" hint-placeholder-count="2"><ruby>{{z.b}}<rt style="font-family: {{t.fBody}}; font-size: 20px; font-weight: 900; color: {{z.color}}; filter: {{v.aidFilter}}; transition: filter 300ms ease;">{{z.rt}}</rt></ruby></sc-for>
+                      <sc-for list="{{v.zchars}}" as="z" hint-placeholder-count="2"><ruby>{{z.b}}<rt class="sf-ease-filter" style="font-family: {{t.fBody}}; font-size: 20px; font-weight: 900; color: {{z.color}}; filter: {{v.aidFilter}};">{{z.rt}}</rt></ruby></sc-for>
                     </h2>
                   </sc-if>
 
@@ -93,10 +93,10 @@
                     </button>
 
                     <sc-if value="{{v.isLatin}}" hint-placeholder-val="{{true}}">
-                      <div style="display: flex; flex-direction: column; gap: 5px; filter: {{v.aidFilter}}; transition: filter 300ms ease;">
+                      <div class="sf-ease-filter" style="display: flex; flex-direction: column; gap: 5px; filter: {{v.aidFilter}};">
                         <div style="display: flex; align-items: center; gap: 6px;">
                           <sc-for list="{{ipas}}" as="p" hint-placeholder-count="2">
-                            <button onClick="{{p.pick}}" aria-pressed="{{p.on}}" style="height: 24px; padding: 0 9px; border: 0; clip-path: {{t.chamferSm}}; background: {{p.bg}}; color: {{p.color}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 12px; font-weight: 800; cursor: pointer;">{{p.tag}}</button>
+                            <button onClick="{{p.pick}}" aria-pressed="{{p.on}}" class="sf-ease" style="height: 24px; padding: 0 9px; border: 0; clip-path: {{t.chamferSm}}; background: {{p.bg}}; color: {{p.color}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 12px; font-weight: 800; cursor: pointer;">{{p.tag}}</button>
                           </sc-for>
                           <span style="font-family: {{t.fMono}}; font-size: 15px; color: {{t.body}};">{{ipa}}</span>
                         </div>
@@ -104,7 +104,7 @@
                       </div>
                     </sc-if>
                     <sc-if value="{{v.isKo}}" hint-placeholder-val="{{false}}">
-                      <div style="display: flex; gap: 6px; filter: {{v.aidFilter}}; transition: filter 300ms ease;">
+                      <div class="sf-ease-filter" style="display: flex; gap: 6px; filter: {{v.aidFilter}};">
                         <sc-for list="{{L.blocks}}" as="bk" hint-placeholder-count="4">
                           <span style="min-width: 50px; height: 52px; padding: 0 6px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;">
                             <span lang="ko" style="font-family: {{v.sansFont}}; font-size: 19px; font-weight: 900; color: {{t.textStrong}};">{{bk.h}}</span>
@@ -114,7 +114,7 @@
                       </div>
                     </sc-if>
                     <sc-if value="{{v.isJa}}" hint-placeholder-val="{{false}}">
-                      <div style="display: flex; flex-direction: column; gap: 4px; filter: {{v.aidFilter}}; transition: filter 300ms ease;">
+                      <div class="sf-ease-filter" style="display: flex; flex-direction: column; gap: 4px; filter: {{v.aidFilter}};">
                         <div role="img" aria-label="Pitch accent: heiban" style="display: flex;">
                           <sc-for list="{{v.morae}}" as="m" hint-placeholder-count="4">
                             <span lang="ja" style="padding: 3px 7px; border-top: 3px solid {{m.top}}; border-bottom: 3px solid {{m.bottom}}; border-left: 3px solid {{m.left}}; font-family: {{v.sansFont}}; font-size: 17px; font-weight: 800; color: {{t.textStrong}};">{{m.k}}</span>
@@ -124,7 +124,7 @@
                       </div>
                     </sc-if>
                     <sc-if value="{{v.isZh}}" hint-placeholder-val="{{false}}">
-                      <div style="display: flex; gap: 8px; filter: {{v.aidFilter}}; transition: filter 300ms ease;">
+                      <div class="sf-ease-filter" style="display: flex; gap: 8px; filter: {{v.aidFilter}};">
                         <sc-for list="{{v.zchars}}" as="z" hint-placeholder-count="2">
                           <span style="height: 46px; padding: 0 12px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: center; gap: 8px;">
                             <svg width="24" height="16" viewBox="0 0 24 16" aria-hidden="true"><path d="{{z.path}}" fill="none" stroke="{{z.color}}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -161,7 +161,7 @@
                       <p lang="{{langTag}}" style="margin: 2px 0 0; font-family: {{exFont}}; font-weight: 800; font-size: 16px; line-height: 1.5; color: {{t.textStrong}};"><sc-for list="{{v.exFront}}" as="s" hint-placeholder-count="3"><span style="color: {{s.color}}; font-weight: {{s.weight}}; background: {{s.bg}};">{{s.t}}</span></sc-for></p>
                     </sc-if>
                     <sc-if value="{{v.hasExReading}}" hint-placeholder-val="{{false}}">
-                      <p style="margin: 2px 0 0; font-size: 12.5px; font-weight: 700; line-height: 1.45; color: {{t.text2}}; filter: {{v.aidFilter}}; transition: filter 300ms ease;">{{L.exReading}}</p>
+                      <p class="sf-ease-filter" style="margin: 2px 0 0; font-size: 12.5px; font-weight: 700; line-height: 1.45; color: {{t.text2}}; filter: {{v.aidFilter}};">{{L.exReading}}</p>
                     </sc-if>
                   </figure>
 
@@ -212,7 +212,7 @@
                 <div class="{{rimCls}}" style="position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: {{rim}};"></div>
               </div>
               <div style="position: absolute; inset: 3px; box-sizing: border-box; clip-path: {{t.chamfer}}; overflow: hidden; background: {{t.cardBack}}; display: flex; flex-direction: column;">
-                <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 20%; top: -30%; width: 110px; height: 160%; transform: rotate(22deg); background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.3), transparent); filter: blur(3px);"></div>
+                <div aria-hidden="true" style="position: absolute; left: 20%; top: -30%; width: 110px; height: 160%; transform: rotate(22deg); background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.3), transparent); filter: blur(3px);"></div>
                 <div style="position: relative; display: flex; align-items: center; gap: 10px; padding: 18px 18px 0 0;">
                   <span style="height: 32px; padding: 0 22px 0 24px; clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); background: {{t.primaryBg}}; display: flex; align-items: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: #ffffff; text-transform: uppercase;">{{nativeLang.name}}</span>
                   <span style="height: 26px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #fff0b8, #ffd166); color: #4a2a00; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; display: flex; align-items: center; text-transform: uppercase;">{{S.due}}</span>
@@ -220,21 +220,21 @@
                 </div>
 
                 <div style="position: relative; flex-grow: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 26px 0; text-align: center;">
-                  <div class="{{revealCls}}" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 48px; line-height: 1.1; color: {{t.textStrong}}; text-shadow: 0 0 24px {{tierSoft}}; text-wrap: balance;">{{L.meaning}}</div>
-                  <div class="{{revealCls2}}" style="margin-top: 6px; display: flex; align-items: center; gap: 10px; font-size: 14px; color: {{t.text2}};">
+                  <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 48px; line-height: 1.1; color: {{t.textStrong}}; text-shadow: 0 0 24px {{tierSoft}}; text-wrap: balance;">{{L.meaning}}</div>
+                  <div style="margin-top: 6px; display: flex; align-items: center; gap: 10px; font-size: 14px; color: {{t.text2}};">
                     <span lang="{{langTag}}" style="font-family: {{v.sansFont}}; font-weight: 900; font-size: 18px; color: {{t.textStrong}};">{{L.word}}</span>
                     <span style="font-family: {{t.fBody}}; font-size: 13px;">{{L.reading}}</span>
                     <button class="nk-lift" onClick="{{listen}}" aria-label="Listen · {{L.speech}}" style="width: 32px; height: 32px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
                   </div>
                   <sc-if value="{{v.hasHanviet}}" hint-placeholder-val="{{false}}">
-                    <div class="{{revealCls2}}" style="margin-top: 10px; height: 32px; padding: 0 16px; clip-path: {{t.chamferSm}}; background: linear-gradient(90deg, rgb(255 209 102 / 0.28), rgb(255 209 102 / 0.08)); box-shadow: inset 2px 0 0 #ffd166; display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{t.body}};">
+                    <div style="margin-top: 10px; height: 32px; padding: 0 16px; clip-path: {{t.chamferSm}}; background: linear-gradient(90deg, rgb(255 209 102 / 0.28), rgb(255 209 102 / 0.08)); box-shadow: inset 2px 0 0 #ffd166; display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{t.body}};">
                       <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.goldText}};">{{S.hanviet}}</span>
                       <span style="font-family: 'Noto Sans SC', sans-serif; font-weight: 900; font-size: 16px; color: {{t.textStrong}};">{{hanviet.src}}</span>
                       <span aria-hidden="true">→</span>
                       <span style="font-weight: 900; color: {{t.crimsonText}};">{{hanviet.reading}}</span>
                     </div>
                   </sc-if>
-                  <figure class="{{revealCls3}}" style="position: relative; margin: 14px 0 0; width: 100%; box-sizing: border-box; padding: 12px 16px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; text-align: left;">
+                  <figure style="position: relative; margin: 14px 0 0; width: 100%; box-sizing: border-box; padding: 12px 16px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; text-align: left;">
                     <sc-if value="{{v.isJa}}" hint-placeholder-val="{{false}}">
                       <blockquote lang="ja" style="margin: 0; font-family: {{v.sansFont}}; font-weight: 800; font-size: 17px; line-height: 1.9; color: {{t.textStrong}};"><sc-for list="{{v.exBack}}" as="s" hint-placeholder-count="6"><ruby style="color: {{s.color}}; font-weight: {{s.weight}}; background: {{s.bg}};">{{s.t}}<rt style="font-size: 9.5px; color: {{t.text2}};">{{s.rt}}</rt></ruby></sc-for></blockquote>
                     </sc-if>
@@ -246,15 +246,15 @@
                     </sc-if>
                     <figcaption style="margin-top: 5px; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">{{L.exTr}}</figcaption>
                   </figure>
-                  <p class="{{revealCls3}}" style="margin: 10px 2px 0; font-size: 13.5px; line-height: 1.55; color: {{t.body}}; text-align: left; align-self: stretch;"><span style="font-weight: 900; color: {{t.textStrong}};">{{S.note}} · </span>{{L.note}}</p>
-                  <div class="{{revealCls3}}" style="margin-top: 10px; align-self: stretch; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+                  <p style="margin: 10px 2px 0; font-size: 13.5px; line-height: 1.55; color: {{t.body}}; text-align: left; align-self: stretch;"><span style="font-weight: 900; color: {{t.textStrong}};">{{S.note}} · </span>{{L.note}}</p>
+                  <div style="margin-top: 10px; align-self: stretch; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
                     <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.text3}}; margin-right: 2px;">{{S.related}}</span>
                     <sc-for list="{{L.related}}" as="rw" hint-placeholder-count="3">
                       <span style="height: 28px; padding: 0 11px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; font-weight: 800; font-size: 12.5px; color: {{t.textStrong}}; display: flex; align-items: center; gap: 5px;"><span lang="{{langTag}}" style="font-family: {{v.sansFont}};">{{rw.w}}</span><span style="color: {{t.text3}}; font-weight: 600; font-size: 11.5px;">{{rw.p}}</span></span>
                     </sc-for>
                   </div>
                   <sc-if value="{{hasForms}}" hint-placeholder-val="{{false}}">
-                    <div class="{{revealCls3}}" style="margin-top: 12px; align-self: stretch; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                    <div style="margin-top: 12px; align-self: stretch; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
                       <sc-for list="{{L.forms}}" as="fm" hint-placeholder-count="3">
                         <div style="padding: 8px 10px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; text-align: left;"><div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">{{fm.k}}</div><div lang="{{langTag}}" style="margin-top: 2px; font-size: 14px; font-weight: 800; color: {{t.textStrong}};">{{fm.v}}</div></div>
                       </sc-for>
@@ -265,7 +265,7 @@
                     <button class="nk-lift" style="height: 42px; border: 0; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #7ff6ff, #1aa7c9); color: #031820; font-size: 13.5px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.8 9.2L24 12l-9.2 2.8L12 24l-2.8-9.2L0 12l9.2-2.8z"></path></svg>{{S.tutor}}</button>
                   </div>
                 </div>
-                <button onClick="{{flip}}" style="position: relative; height: 46px; flex-shrink: 0; border: 0; border-top: 1px solid {{t.lineStrong}}; background: transparent; color: {{t.text2}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>{{S.backTo}}</button>
+                <button onClick="{{flip}}" class="nk-press" style="position: relative; height: 46px; flex-shrink: 0; border: 0; border-top: 1px solid {{t.lineStrong}}; background: transparent; color: {{t.text2}}; font-family: {{t.fDisplay}}; font-style: italic; font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>{{S.backTo}}</button>
               </div>
             </div>
 
@@ -284,7 +284,7 @@
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { flipped: false, flipping: false, dealing: false, revealed: false, hover: false, rx: 0, ryTilt: 0, mx: 50, my: 50, starred: false, starPulse: false, blind: false, playing: false, variant: 0, romaji: true };
+    this.state = { flipped: false, flipping: false, dealing: false, hover: false, rx: 0, ryTilt: 0, mx: 50, my: 50, starred: false, starPulse: false, blind: false, playing: false, variant: 0, romaji: true };
   }
   renderVals() {
 //#ATOKENS
@@ -418,7 +418,7 @@ class Component extends DCLogic {
       fHl: '#ff6b85', fHlBg: 'linear-gradient(transparent 60%, rgb(255 42 77 / 0.24) 60%)', bHl: '#ff6b85', bHlBg: 'linear-gradient(transparent 60%, rgb(255 42 77 / 0.24) 60%)',
     } : {
       gender: { m: '#0a7d99', f: '#c40f35', n: '#8a5a00' }, genderSoft: { m: 'rgb(10 125 153 / 0.1)', f: 'rgb(196 15 53 / 0.1)', n: 'rgb(138 90 0 / 0.1)' },
-      tone: { 1: '#0a7d99', 2: '#1f7a3a', 3: '#8a5a00', 4: '#c40f35' }, pitch: '#c40f35',
+      tone: { 1: '#086a82', 2: '#19672f', 3: '#8a5a00', 4: '#c40f35' }, pitch: '#c40f35',
       fHl: '#c40f35', fHlBg: 'linear-gradient(transparent 60%, rgb(255 42 77 / 0.16) 60%)', bHl: '#c40f35', bHlBg: 'linear-gradient(transparent 60%, rgb(255 42 77 / 0.16) 60%)',
     };
     const v = langView(code, col, s.blind, s.romaji);
@@ -429,8 +429,8 @@ class Component extends DCLogic {
     const flip = () => {
       if (s.flipping) return;
       const next = !s.flipped;
-      this.setState({ flipped: next, flipping: true, revealed: false });
-      later(640, () => this.setState({ flipping: false, revealed: next }));
+      this.setState({ flipped: next, flipping: true });
+      later(640, () => this.setState({ flipping: false }));
     };
     const ipaList = L.ipas;
     const variant = Math.min(s.variant, Math.max(ipaList.length - 1, 0));
@@ -456,11 +456,10 @@ class Component extends DCLogic {
         bg: i === variant ? t.primaryBg : t.chip, color: i === variant ? '#ffffff' : t.text2 })),
       romaji: s.romaji ? 'true' : 'false', romajiText: s.romaji ? L.romaji : '', romajiColor: s.romaji ? t.holoText : 'transparent',
       romajiLabel: romajiLabels[L.kind] || '',
-      romajiBg: s.romaji ? (dark ? 'linear-gradient(180deg, #7ff6ff, #1aa7c9)' : 'linear-gradient(180deg, #2bc4e0, #0a8fb0)') : t.chip,
-      romajiBtnColor: s.romaji ? (dark ? '#031820' : '#ffffff') : t.text2, romajiTrack: s.romaji ? (dark ? '#031820' : '#ffffff') : t.text3,
+      romajiBg: s.romaji ? (dark ? 'linear-gradient(180deg, #7ff6ff, #1aa7c9)' : 'linear-gradient(180deg, #7ff6ff, #2bc4e0)') : t.chip,
+      romajiBtnColor: s.romaji ? '#031820' : t.text2, romajiTrack: s.romaji ? '#031820' : t.text3,
       toggleRomaji: () => this.setState({ romaji: !s.romaji }),
       dealCls: s.dealing ? 'nk-unfold' : '',
-      revealCls: s.revealed ? 'nk-pop' : '', revealCls2: s.revealed ? 'nk-pop-2' : '', revealCls3: s.revealed ? 'nk-rise-3' : '',
       mx: s.mx, my: s.my,
       band1: s.mx - 26, band2: s.mx - 14, band3: s.mx - 6, band4: s.mx + 2,
       rx: s.rx, ry: (s.flipped ? 180 : 0) + s.ryTilt,

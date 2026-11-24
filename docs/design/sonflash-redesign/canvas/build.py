@@ -54,6 +54,9 @@ SHARED_CSS = review_css + '''
 .sf-pulse{animation:sf-pulse-k 1.6s ease-out infinite}
 @keyframes sf-wave-k{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
 .sf-wave{transform-origin:center;animation:sf-wave-k 900ms ease-in-out infinite}
+/* A pulse for chamfered boxes: a drop shadow follows the clip path, where the ring of sf-pulse would be cut. */
+@keyframes nk-pulse-k{0%,100%{filter:drop-shadow(0 0 0 var(--sf-pulse, rgb(40 211 244 / 0.55)))}50%{filter:drop-shadow(0 0 9px var(--sf-pulse, rgb(40 211 244 / 0.55)))}}
+.nk-pulse{animation:nk-pulse-k 1.6s ease-in-out infinite}
 @keyframes sf-shimmer-k{from{background-position:200% 0}to{background-position:-200% 0}}
 /* The sheen is an image over the block's own background-color, and exists only while motion is allowed, so a
    reduced-motion skeleton stays flat. Give shimmer blocks background-color, not the background shorthand. */
@@ -127,7 +130,7 @@ SHARED_CSS = review_css + '''
 .nk-banner{animation:nk-banner-k 520ms cubic-bezier(.2,1.4,.4,1) both}
 @media (prefers-reduced-motion: reduce){.nk-flare,.nk-beam,.nk-starfield,.nk-unfold,.nk-pillar,.nk-banner{animation:none}}
 @media (prefers-reduced-motion: reduce){.nk-meteor{animation:none;opacity:0}.nk-twinkle,.nk-drift,.nk-drift-b,.nk-rise,.nk-rise-2,.nk-rise-3{animation:none}.nk-lift,.nk-press{transition:none}}
-@media (prefers-reduced-motion: reduce){.nk-pop,.nk-pop-2,.nk-pop-3,.nk-stamp,.nk-spark,.nk-speed,.nk-rim-spin,.nk-float,.nk-slide,.nk-slide-2,.nk-slide-3,.nk-slide-4,.nk-slide-5,.nk-flash,.nk-bar,.nk-shine,.nk-marquee{animation:none}.nk-press{transition:none}}
+@media (prefers-reduced-motion: reduce){.nk-pop,.nk-pop-2,.nk-pop-3,.nk-stamp,.nk-spark,.nk-speed,.nk-rim-spin,.nk-float,.nk-slide,.nk-slide-2,.nk-slide-3,.nk-slide-4,.nk-slide-5,.nk-flash,.nk-bar,.nk-shine,.nk-marquee,.nk-pulse{animation:none}.nk-shine{opacity:0}.nk-press{transition:none}}
 @media (prefers-reduced-motion: reduce){.sf-fall,.sf-rise,.sf-rise-2,.sf-rise-3,.sf-deal-1,.sf-deal-2,.sf-deal-3,.sf-sheen,.sf-grow,.sf-bob-a,.sf-bob-b,.sf-pop,.sf-pulse,.sf-wave,.sf-shimmer,.sf-spin,.sf-shake{animation:none}.sf-fall,.sf-fall-once{display:none}.sf-press,.sf-lift{transition:none}}
 /* Classic motion system. A board picks the class through t.fx.* so each look keeps its own signature:
    Midnight Aurora resolves light out of blur and glows on touch, Ink & Paper lays ink and presses like a stamp. */

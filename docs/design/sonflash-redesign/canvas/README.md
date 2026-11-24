@@ -73,6 +73,8 @@ Rules that keep the boards calm and the stills stable:
 - A skeleton block takes `sf-shimmer` with `background-color`, not the `background` shorthand: the moving sheen is a background image that exists only while motion is allowed, so the reduced-motion still stays flat.
 - `sf-ease-filter` is the transition for reading aids that fade through `filter`.
 - The board runtime reads an attribute that starts and ends with a token as one expression, so `class="{{a}} {{b}}"` would render no class. `build.py` prefixes such a class with the literal `sf-cls`; in a seed board, join the classes in the script instead.
+- A waiting box with cut corners pulses with `nk-pulse` on an unclipped wrapper: its glow is a drop shadow, so it follows the cut shape where the ring of `sf-pulse` would show as a rectangle.
+- A stopped `nk-shine` band is hidden when motion is reduced, so stills carry no frozen streak.
 - One reduced-motion rule switches all of these off. References are rendered with reduced motion, so a motion-only change leaves every still identical.
 
 ## Crystal Star shared tokens and partials

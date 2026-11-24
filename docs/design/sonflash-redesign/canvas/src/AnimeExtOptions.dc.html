@@ -1,6 +1,14 @@
 <!--#AHEAD Crystal Star extension options-->
 <div style="width: 960px; height: 900px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column;">
-<!--#ABG-->
+  <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; overflow: hidden;">
+    <div style="position: absolute; inset: 0; background: {{shipBg}};"></div>
+    <div style="position: absolute; left: -150px; bottom: -120px; width: 640px; height: 430px; opacity: {{t.wingOpacity}}; transform: rotate(-12deg); filter: drop-shadow(0 0 30px rgb(255 42 77 / 0.55));">
+<!--#WINGS-->
+    </div>
+    <div style="position: absolute; right: -150px; top: -60px; width: 640px; height: 430px; opacity: {{t.wingOpacity}}; transform: scaleX(-1) rotate(-18deg); filter: drop-shadow(0 0 30px rgb(255 42 77 / 0.55));">
+<!--#WINGS-->
+    </div>
+  </div>
 
   <header style="position: relative; z-index: 3; height: 70px; flex-shrink: 0; padding: 0 36px; display: flex; align-items: center; gap: 10px; box-shadow: inset 0 -1px 0 {{t.panelEdge}};">
     <span style="width: 30px; height: 30px; filter: drop-shadow(0 0 9px rgb(255 42 77 / 0.7));">
@@ -22,7 +30,7 @@
         <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
         <div style="margin-top: 2px; font-size: 13px; line-height: 1.4; font-weight: 700; color: {{t.textStrong}};">Trang nào được cấp quyền, mình sẽ đứng chờ ở đó.</div>
       </div>
-      <div class="nk-float" style="width: 118px; height: 118px;">
+      <div style="width: 118px; height: 118px;">
 <!--#MASCOT hint-->
       </div>
     </div>
@@ -30,33 +38,33 @@
 
   <div style="position: relative; z-index: 3; flex-grow: 1; padding: 16px 36px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-content: stretch;">
     <div style="display: flex; flex-direction: column; gap: 18px;">
-      <section class="nk-rise" style="{{card}}">
+      <section class="nk-rise-2" style="{{card}}">
         <h2 style="{{h2}}"><span style="{{h2dot}}"></span>HIỂN THỊ &amp; ÂM THANH</h2>
         <div style="{{row}}">
           <div><div style="{{rowTitle}}">Tự đọc phát âm</div><div style="{{rowHint}}">Phát âm ngay khi bong bóng hiện ra</div></div>
-          <span role="switch" aria-checked="true" style="{{swOn}}"><span style="{{knobOn}}"></span></span>
+          <span role="switch" aria-checked="true" class="sf-ease" style="{{swOn}}"><span style="{{knobOn}}"></span></span>
         </div>
         <div style="{{rowLast}}">
           <div><div style="{{rowTitle}}">Thời gian hiện bong bóng</div><div style="{{rowHint}}">0 = chỉ đóng thủ công</div></div>
-          <span style="height: 36px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: center; gap: 6px;"><span style="font-family: {{t.fMono}}; font-size: 14px; color: {{t.textStrong}};">8000</span><span style="font-size: 12px; color: {{t.text3}};">ms</span></span>
+          <span class="sf-ease" style="height: 36px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: center; gap: 6px;"><span style="font-family: {{t.fMono}}; font-size: 14px; color: {{t.textStrong}};">8000</span><span style="font-size: 12px; color: {{t.text3}};">ms</span></span>
         </div>
       </section>
 
-      <section class="nk-rise-2" style="{{card}}">
+      <section class="nk-rise-3" style="{{card}}">
         <h2 style="{{h2}}"><span style="{{h2dot}}"></span>BIỂU TƯỢNG NỔI</h2>
         <p style="margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: {{t.text2}};">Hiện nút <span style="display: inline-block; width: 18px; height: 18px; vertical-align: -4px; filter: drop-shadow(0 0 4px rgb(255 42 77 / 0.6));">
 <!--#STAR5-->
           </span> cạnh chữ bạn bôi đen, chỉ trên các trang đã cấp quyền.</p>
         <div style="margin-top: 12px; display: flex; gap: 8px;">
           <span style="flex-grow: 1; height: 40px; box-sizing: border-box; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1.5px {{t.panelEdge2}}; display: flex; align-items: center; font-family: {{t.fMono}}; font-size: 12.5px; color: {{t.textStrong}}; overflow: hidden; white-space: nowrap;">https://www.theguardian.com</span>
-          <button class="nk-press" style="height: 40px; padding: 0 16px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13.5px; letter-spacing: 0.04em;"><span style="display: inline-block; transform: skewX(12deg);">CẤP QUYỀN</span></button>
+          <span class="nk-press" style="display: flex; flex-shrink: 0;"><button style="height: 40px; padding: 0 16px; border: 0; transform: skewX(-12deg); background: {{t.primaryBg}}; box-shadow: {{t.primaryGlow}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13.5px; letter-spacing: 0.04em;"><span style="display: inline-block; transform: skewX(12deg);">CẤP QUYỀN</span></button></span>
         </div>
         <div style="margin-top: 10px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 6px;">
           <sc-for list="{{sites}}" as="s" hint-placeholder-count="3">
             <div style="height: 40px; padding: 0 6px 0 8px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.line}}; display: flex; align-items: center; gap: 10px;">
               <span style="width: 24px; height: 24px; background: {{s.color}}; color: #ffffff; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center;">{{s.letter}}</span>
               <span style="flex-grow: 1; font-family: {{t.fMono}}; font-size: 12.5px; color: {{t.textStrong}};">{{s.host}}</span>
-              <button aria-label="Gỡ quyền" style="height: 28px; padding: 0 12px; border: 0; transform: skewX(-12deg); background: transparent; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; color: {{t.crimsonText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px;"><span style="display: inline-block; transform: skewX(12deg);">GỠ</span></button>
+              <span class="nk-press" style="display: flex; flex-shrink: 0;"><button aria-label="Gỡ quyền" style="height: 28px; padding: 0 12px; border: 0; transform: skewX(-12deg); background: transparent; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; color: {{t.crimsonText}}; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px;"><span style="display: inline-block; transform: skewX(12deg);">GỠ</span></button></span>
             </div>
           </sc-for>
         </div>
@@ -64,17 +72,17 @@
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 18px;">
-      <section class="nk-rise" style="{{card}}">
+      <section class="nk-rise-2" style="{{card}}">
         <h2 style="{{h2}}"><span style="{{h2dot}}"></span>LỊCH SỬ &amp; DỊCH</h2>
         <div style="{{row}}">
           <div><div style="{{rowTitle}}">Lưu tra cứu gần đây</div><div style="{{rowHint}}">Tối đa 20 từ, chỉ trên máy này</div></div>
-          <span role="switch" aria-checked="true" style="{{swOn}}"><span style="{{knobOn}}"></span></span>
+          <span role="switch" aria-checked="true" class="sf-ease" style="{{swOn}}"><span style="{{knobOn}}"></span></span>
         </div>
         <div style="{{row}}">
           <div><div style="{{rowTitle}}">Ngôn ngữ nguồn</div><div style="{{rowHint}}">Tự nhận diện hoặc cố định tiếng Anh</div></div>
           <div role="radiogroup" style="display: flex; gap: 4px;">
-            <span role="radio" aria-checked="true" style="height: 32px; padding: 0 14px; transform: skewX(-14deg); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px;">Tự động</span></span>
-            <span role="radio" aria-checked="false" style="height: 32px; padding: 0 14px; transform: skewX(-14deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px;">English</span></span>
+            <span role="radio" aria-checked="true" class="sf-ease" style="height: 32px; padding: 0 14px; transform: skewX(-14deg); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px;">Tự động</span></span>
+            <span role="radio" aria-checked="false" class="sf-ease" style="height: 32px; padding: 0 14px; transform: skewX(-14deg); background: {{t.chip}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; color: {{t.text2}}; display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px;">English</span></span>
           </div>
         </div>
         <div style="{{rowLast}}">
@@ -83,7 +91,7 @@
         </div>
       </section>
 
-      <section class="nk-rise-2" style="{{card}}">
+      <section class="nk-rise-3" style="{{card}}">
         <h2 style="{{h2}}"><span style="{{h2dot}}"></span>TÀI KHOẢN</h2>
         <div style="margin-top: 12px; flex-grow: 1; display: flex; align-items: center; gap: 12px;">
           <span style="width: 44px; height: 44px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, #ff5470, #7a0820); color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center;">KB</span>
@@ -91,7 +99,7 @@
             <div style="font-weight: 900; font-size: 14.5px; color: {{t.textStrong}};">Đã đăng nhập</div>
             <div style="font-family: {{t.fMono}}; font-size: 12px; color: {{t.text3}};">kb…@gmail.com</div>
           </div>
-          <a href="#" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.crimsonText}}; text-decoration: none;">Đăng xuất</a>
+          <a href="#" class="nk-press" style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.crimsonText}}; text-decoration: none;">Đăng xuất</a>
         </div>
         <div style="margin-top: 12px; height: 40px; padding: 0 12px; clip-path: {{t.chamferSm}}; background: {{t.chip}}; box-shadow: inset 3px 0 0 {{t.holo}}; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: {{t.text2}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff;"></span>Đã đồng bộ 5 deck · 1 phút trước<a href="#" style="margin-left: auto; color: {{t.holoText}}; font-weight: 800; text-decoration: none;">Đồng bộ lại</a></div>
         <div style="margin-top: 10px; font-size: 13px; color: {{t.text2}};">Deck mặc định: <span style="display: inline-flex; height: 26px; padding: 0 10px; transform: skewX(-12deg); background: {{learn.rim}}; align-items: center; vertical-align: middle;"><span style="transform: skewX(12deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 13px; color: #1a0610;">IELTS</span></span></div>
@@ -100,11 +108,10 @@
   </div>
 
   <footer style="position: relative; z-index: 3; height: 76px; flex-shrink: 0; padding: 0 36px; display: flex; align-items: center; gap: 16px; background: {{footBg}}; box-shadow: inset 0 1px 0 {{t.panelEdge}};">
-    <span role="status" style="height: 30px; padding: 0 12px; transform: skewX(-12deg); background: {{okBg}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: center;"><span style="transform: skewX(12deg); display: flex; align-items: center; gap: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.holoText}};"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>ĐÃ LƯU</span></span>
+    <span class="nk-pop-3" style="display: flex;"><span role="status" style="height: 30px; padding: 0 12px; transform: skewX(-12deg); background: {{okBg}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; align-items: center;"><span style="transform: skewX(12deg); display: flex; align-items: center; gap: 6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; color: {{t.holoText}};"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>ĐÃ LƯU</span></span></span>
     <span style="font-size: 13px; color: {{t.text2}};">Áp dụng cho mọi tab đang mở</span>
-    <a href="#" style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; color: {{t.holoText}}; text-decoration: none;">Phím tắt Chrome</a>
+    <a href="#" class="nk-press" style="margin-left: auto; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 14px; color: {{t.holoText}}; text-decoration: none;">Phím tắt Chrome</a>
     <button class="nk-lift" style="position: relative; height: 48px; padding: 0 30px; overflow: hidden; border: 0; clip-path: {{t.chamfer}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; letter-spacing: 0.06em;">
-      <span aria-hidden="true" class="nk-shine" style="position: absolute; top: 0; bottom: 0; left: 0; width: 40px; background: rgb(255 255 255 / 0.4);"></span>
       <span style="position: relative;">LƯU CÀI ĐẶT</span>
     </button>
   </footer>
@@ -116,8 +123,13 @@ class Component extends DCLogic {
 //#ATOKENS
     const dark = (this.props.theme ?? 'dark') === 'dark';
     const t = nkTokens(dark);
+    // The extension still ships the static star field over the old glow (extensions/lingoflash/options.css, Crystal body
+    // background, body::before and body::after for the wings), not the painted nebula of the signed-in app; values copied from there.
+    const shipBg = dark
+      ? 'radial-gradient(1.5px 1.5px at 6% 12%, #cfe0ff, transparent), radial-gradient(1px 1px at 18% 38%, #fff, transparent), radial-gradient(2px 2px at 31% 8%, #9fd0ff, transparent), radial-gradient(1px 1px at 44% 28%, #fff, transparent), radial-gradient(1.5px 1.5px at 57% 62%, #cfe0ff, transparent), radial-gradient(1px 1px at 69% 18%, #fff, transparent), radial-gradient(2px 2px at 81% 44%, #9fd0ff, transparent), radial-gradient(1px 1px at 93% 9%, #fff, transparent), radial-gradient(1.5px 1.5px at 12% 78%, #fff, transparent), radial-gradient(1px 1px at 38% 88%, #9fd0ff, transparent), radial-gradient(1.5px 1.5px at 74% 84%, #fff, transparent), radial-gradient(1px 1px at 88% 94%, #cfe0ff, transparent), radial-gradient(ellipse 55% 45% at 18% 18%, rgb(16 42 92 / .55), transparent 70%), radial-gradient(ellipse 50% 45% at 85% 72%, rgb(10 50 110 / .5), transparent 70%), radial-gradient(ellipse 45% 35% at 62% 8%, rgb(179 15 51 / .3), transparent 70%), radial-gradient(ellipse 40% 30% at 30% 95%, rgb(122 8 32 / .35), transparent 70%), #04060c'
+      : 'radial-gradient(2px 2px at 8% 14%, #fff, transparent), radial-gradient(1.5px 1.5px at 22% 36%, #fff, transparent), radial-gradient(2.5px 2.5px at 36% 10%, #fff, transparent), radial-gradient(1.5px 1.5px at 52% 30%, #fff, transparent), radial-gradient(2px 2px at 66% 16%, #fff, transparent), radial-gradient(1.5px 1.5px at 80% 40%, #fff, transparent), radial-gradient(2.5px 2.5px at 92% 12%, #fff, transparent), radial-gradient(2px 2px at 14% 70%, #fff, transparent), radial-gradient(1.5px 1.5px at 72% 78%, #fff, transparent), radial-gradient(ellipse 50% 40% at 70% 20%, rgb(255 190 215 / .55), transparent 70%), radial-gradient(ellipse 45% 40% at 20% 80%, rgb(255 84 112 / .18), transparent 70%), linear-gradient(115deg, #a9dcff 0%, #c7ebff 24%, #b5e6ff 46%, #c9f6f4 66%, #9fd6ff 88%, #b8e4ff 100%)';
     return {
-      t, bg: { wings: true }, learn: t.tier.learning,
+      t, shipBg, learn: t.tier.learning,
       titleGrad: dark ? t.metal : 'linear-gradient(180deg, #0d1a33 0%, #0d1a33 45%, #b30f33 62%, #ff2a4d 100%)',
       titleShadow: dark ? '#7a0820' : 'rgb(255 255 255 / 0.8)',
       footBg: dark ? 'linear-gradient(180deg, rgb(10 13 24 / 0.9), rgb(4 6 12 / 0.96))' : 'linear-gradient(180deg, rgb(236 248 255 / 0.92), rgb(214 237 255 / 0.96))',
