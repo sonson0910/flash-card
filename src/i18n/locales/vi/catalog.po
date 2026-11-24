@@ -13,122 +13,122 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:549
+#: src/features/catalogWorkspace/CatalogScreen.tsx:551
 msgctxt "catalog.empty.title"
 msgid "No vocabulary found"
 msgstr "Không tìm thấy từ vựng"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:219
-#: src/features/catalogWorkspace/CatalogScreen.tsx:503
+#: src/features/catalogWorkspace/CatalogScreen.tsx:221
+#: src/features/catalogWorkspace/CatalogScreen.tsx:505
 msgctxt "paths.shelf.title"
 msgid "Your shelf"
 msgstr "Kệ lộ trình của bạn"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:134
+#: src/features/catalogWorkspace/CatalogScreen.tsx:135
 msgctxt "catalog.status.check-reviewed"
 msgid "Check for reviewed catalog"
 msgstr "Kiểm tra danh mục đã duyệt"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:514
+#: src/features/catalogWorkspace/CatalogScreen.tsx:516
 msgctxt "paths.roadmap.title"
 msgid "Your learning level"
 msgstr "Cấp độ học của bạn"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:554
+#: src/features/catalogWorkspace/CatalogScreen.tsx:556
 msgctxt "catalog.action.load-more"
 msgid "Load more words"
 msgstr "Tải thêm từ"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:514
+#: src/features/catalogWorkspace/CatalogScreen.tsx:516
 msgctxt "paths.roadmap.kicker"
 msgid "Your roadmap"
 msgstr "Lộ trình của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:399
+#: src/features/catalogWorkspace/CatalogScreen.tsx:401
 msgid "catalog.card.add-action"
 msgstr "{action} {lemma}"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:377
+#: src/features/catalogWorkspace/CatalogScreen.tsx:379
 msgid "catalog.card.add-to-library"
 msgstr "Thêm vào thư viện"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:372
+#: src/features/catalogWorkspace/CatalogScreen.tsx:374
 msgid "catalog.card.adding"
 msgstr "Đang thêm…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:391
-#: src/features/catalogWorkspace/CatalogScreen.tsx:391
+#: src/features/catalogWorkspace/CatalogScreen.tsx:393
+#: src/features/catalogWorkspace/CatalogScreen.tsx:393
 msgid "catalog.card.collocations"
 msgstr "Cụm từ đi kèm"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:390
-#: src/features/catalogWorkspace/CatalogScreen.tsx:390
+#: src/features/catalogWorkspace/CatalogScreen.tsx:392
+#: src/features/catalogWorkspace/CatalogScreen.tsx:392
 msgid "catalog.card.example"
 msgstr "Ví dụ"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:370
+#: src/features/catalogWorkspace/CatalogScreen.tsx:372
 msgid "catalog.card.in-library"
 msgstr "Trong thư viện của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:395
+#: src/features/catalogWorkspace/CatalogScreen.tsx:397
 msgid "catalog.card.license-missing"
 msgstr "Chưa cung cấp giấy phép"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:389
-#: src/features/catalogWorkspace/CatalogScreen.tsx:389
+#: src/features/catalogWorkspace/CatalogScreen.tsx:391
+#: src/features/catalogWorkspace/CatalogScreen.tsx:391
 msgid "catalog.card.meaning"
 msgstr "Nghĩa"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:374
+#: src/features/catalogWorkspace/CatalogScreen.tsx:376
 msgid "catalog.card.other-language"
 msgstr "Không thuộc ngôn ngữ khóa học của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:396
+#: src/features/catalogWorkspace/CatalogScreen.tsx:398
 msgid "catalog.card.review-missing"
 msgstr "Chưa ghi nhận đánh giá của người duyệt"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:394
+#: src/features/catalogWorkspace/CatalogScreen.tsx:396
 msgid "catalog.card.source-missing"
 msgstr "Chưa cung cấp nguồn"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:376
+#: src/features/catalogWorkspace/CatalogScreen.tsx:378
 msgid "catalog.card.try-adding-again"
 msgstr "Thử thêm lại"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:531
+#: src/features/catalogWorkspace/CatalogScreen.tsx:533
 msgid "catalog.filters.cefr"
 msgstr "Trình độ CEFR"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:533
+#: src/features/catalogWorkspace/CatalogScreen.tsx:535
 msgid "catalog.filters.part-of-speech"
 msgstr "Từ loại"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:530
+#: src/features/catalogWorkspace/CatalogScreen.tsx:532
 msgid "catalog.filters.search-placeholder"
 msgstr "vd. analysis…"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:534
+#: src/features/catalogWorkspace/CatalogScreen.tsx:536
 msgid "catalog.filters.skill"
 msgstr "Kỹ năng"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:532
+#: src/features/catalogWorkspace/CatalogScreen.tsx:534
 msgid "catalog.filters.topic"
 msgstr "Chủ đề"
 
@@ -138,37 +138,37 @@ msgid "catalog.language.coming-soon"
 msgstr "{names} — sắp ra mắt"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:186
+#: src/features/catalogWorkspace/CatalogScreen.tsx:188
 msgid "catalog.personal.keep-learning"
 msgstr "Tiếp tục học"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:186
+#: src/features/catalogWorkspace/CatalogScreen.tsx:188
 msgid "catalog.personal.keep-learning-description"
 msgstr "Các thẻ vẫn đang tiến tới mức thành thạo."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:187
+#: src/features/catalogWorkspace/CatalogScreen.tsx:189
 msgid "catalog.personal.mastered"
 msgstr "Đã thành thạo"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:187
+#: src/features/catalogWorkspace/CatalogScreen.tsx:189
 msgid "catalog.personal.mastered-description"
 msgstr "Các thẻ bạn đã nhớ chắc chắn."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:223
+#: src/features/catalogWorkspace/CatalogScreen.tsx:225
 msgid "catalog.personal.path-label"
 msgstr "Lộ trình học cá nhân: Đến hạn ôn → Tiếp tục học → Đã thành thạo"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:185
+#: src/features/catalogWorkspace/CatalogScreen.tsx:187
 msgid "catalog.personal.review-due"
 msgstr "Đến hạn ôn"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:185
+#: src/features/catalogWorkspace/CatalogScreen.tsx:187
 msgid "catalog.personal.review-due-description"
 msgstr "Các thẻ đến hạn ôn ngay bây giờ."
 
@@ -283,136 +283,136 @@ msgstr "Lỗi danh mục không xác định."
 msgid "catalog.workspace.updating"
 msgstr "Đang cập nhật từ vựng…"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:343
+#: src/features/catalogWorkspace/CatalogScreen.tsx:345
 msgctxt "paths.unit.continuing"
 msgid "Starting unit…"
 msgstr "Đang bắt đầu bài học…"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:554
+#: src/features/catalogWorkspace/CatalogScreen.tsx:556
 msgctxt "catalog.loading.next-page"
 msgid "Loading the next vocabulary page."
 msgstr "Đang tải trang từ vựng tiếp theo."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:469
+#: src/features/catalogWorkspace/CatalogScreen.tsx:471
 msgctxt "paths.current.kicker"
 msgid "Your current path"
 msgstr "Lộ trình hiện tại của bạn"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:262
-#: src/features/catalogWorkspace/CatalogScreen.tsx:320
+#: src/features/catalogWorkspace/CatalogScreen.tsx:264
+#: src/features/catalogWorkspace/CatalogScreen.tsx:322
 msgctxt "paths.unit.count"
 msgid "{count} words"
 msgstr "{count} từ"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:210
+#: src/features/catalogWorkspace/CatalogScreen.tsx:212
 msgctxt "catalog.action.continue-review"
 msgid "Continue review"
 msgstr "Tiếp tục ôn tập"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:151
+#: src/features/catalogWorkspace/CatalogScreen.tsx:153
 msgctxt "catalog.status.technical-detail"
 msgid "Technical detail"
 msgstr "Chi tiết kỹ thuật"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:131
+#: src/features/catalogWorkspace/CatalogScreen.tsx:132
 msgctxt "catalog.status.unavailable-title"
 msgid "Catalog unavailable"
 msgstr "Danh mục không khả dụng"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:276
+#: src/features/catalogWorkspace/CatalogScreen.tsx:278
 msgctxt "paths.selected"
 msgid "Selected"
 msgstr "Đã chọn"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:336
+#: src/features/catalogWorkspace/CatalogScreen.tsx:338
 msgctxt "paths.unit.complete-message"
 msgid "This unit is complete."
 msgstr "Bài này đã hoàn thành."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:530
+#: src/features/catalogWorkspace/CatalogScreen.tsx:532
 msgctxt "catalog.filters.search"
 msgid "Search vocabulary"
 msgstr "Tìm từ vựng"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:523
+#: src/features/catalogWorkspace/CatalogScreen.tsx:525
 msgctxt "catalog.filters.title"
 msgid "Filters"
 msgstr "Bộ lọc"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:386
+#: src/features/catalogWorkspace/CatalogScreen.tsx:388
 msgctxt "catalog.card.cefr"
 msgid "CEFR {level}"
 msgstr "CEFR {level}"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:343
+#: src/features/catalogWorkspace/CatalogScreen.tsx:345
 msgctxt "paths.unit.study"
 msgid "Study this unit"
 msgstr "Học bài này"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:546
+#: src/features/catalogWorkspace/CatalogScreen.tsx:548
 msgctxt "catalog.loading.matches"
 msgid "Loading matching vocabulary…"
 msgstr "Đang tải từ vựng phù hợp…"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:441
+#: src/features/catalogWorkspace/CatalogScreen.tsx:443
 msgctxt "paths.title"
 msgid "Paths"
 msgstr "Lộ trình"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:159
+#: src/features/catalogWorkspace/CatalogScreen.tsx:161
 msgctxt "catalog.action.retry"
 msgid "Try again"
 msgstr "Thử lại"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:313
+#: src/features/catalogWorkspace/CatalogScreen.tsx:315
 msgctxt "paths.units.title"
 msgid "Choose a unit"
 msgstr "Chọn bài học"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:447
+#: src/features/catalogWorkspace/CatalogScreen.tsx:449
 msgctxt "paths.source.personal"
 msgid "My vocabulary"
 msgstr "Từ vựng của tôi"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:343
+#: src/features/catalogWorkspace/CatalogScreen.tsx:345
 msgctxt "paths.unit.prepare-continue"
 msgid "Continue with this unit"
 msgstr "Học tiếp bài này"
 
 #: src/features/catalogWorkspace/CatalogScreen.tsx:111
-#: src/features/catalogWorkspace/CatalogScreen.tsx:211
+#: src/features/catalogWorkspace/CatalogScreen.tsx:213
 msgctxt "catalog.action.open-vocabulary"
 msgid "Open vocabulary"
 msgstr "Mở từ vựng"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:138
+#: src/features/catalogWorkspace/CatalogScreen.tsx:139
 msgctxt "catalog.status.release-pending"
 msgid "A download will appear after a reviewed release is published."
 msgstr "Bản tải xuống sẽ xuất hiện sau khi bản phát hành đã duyệt được công bố."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:338
-#: src/features/catalogWorkspace/CatalogScreen.tsx:491
+#: src/features/catalogWorkspace/CatalogScreen.tsx:340
+#: src/features/catalogWorkspace/CatalogScreen.tsx:493
 msgctxt "paths.unit.all-complete"
 msgid "All units in this path are complete."
 msgstr "Bạn đã hoàn thành mọi bài trong lộ trình này."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:397
+#: src/features/catalogWorkspace/CatalogScreen.tsx:399
 msgctxt "catalog.card.learning-context"
 msgid "Learning context:"
 msgstr "Ngữ cảnh học:"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:328
+#: src/features/catalogWorkspace/CatalogScreen.tsx:330
 msgctxt "paths.unit.progress"
 msgid "{introduced} introduced · {mastered} mastered"
 msgstr "Đã bắt đầu {introduced} · Đã thành thạo {mastered}"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:536
-#: src/features/catalogWorkspace/CatalogScreen.tsx:549
+#: src/features/catalogWorkspace/CatalogScreen.tsx:538
+#: src/features/catalogWorkspace/CatalogScreen.tsx:551
 msgctxt "catalog.filters.clear"
 msgid "Clear all filters"
 msgstr "Xóa mọi bộ lọc"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:319
+#: src/features/catalogWorkspace/CatalogScreen.tsx:321
 msgctxt "paths.unit.ordinal"
 msgid "Unit {ordinal}"
 msgstr "Bài {ordinal}"
@@ -429,118 +429,118 @@ msgid "paths.book.kind.exam"
 msgstr "Luyện thi"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:261
+#: src/features/catalogWorkspace/CatalogScreen.tsx:263
 msgid "paths.book.progress"
 msgstr "Đã thuộc {mastered}/{total} từ · {started} từ đã bắt đầu"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:439
+#: src/features/catalogWorkspace/CatalogScreen.tsx:441
 msgid "paths.crystal.kicker"
 msgstr "Hành trình <0>//</0> Tuần {week}"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:480
+#: src/features/catalogWorkspace/CatalogScreen.tsx:482
 msgid "paths.current.roadmap-label"
 msgstr "Lộ trình hiện tại"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:493
+#: src/features/catalogWorkspace/CatalogScreen.tsx:495
 msgid "paths.hero.continue-unit"
 msgstr "Học tiếp bài {ordinal}"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:486
+#: src/features/catalogWorkspace/CatalogScreen.tsx:488
 msgid "paths.hero.eta"
 msgstr "Còn khoảng {days, plural, one {# ngày} other {# ngày}} theo nhịp học của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:468
+#: src/features/catalogWorkspace/CatalogScreen.tsx:470
 msgid "paths.hero.kicker-unit"
 msgstr "Học tiếp · Bài {current}/{total}"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:479
+#: src/features/catalogWorkspace/CatalogScreen.tsx:481
 msgid "paths.hero.route"
 msgstr "Lộ trình bài học"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:479
+#: src/features/catalogWorkspace/CatalogScreen.tsx:481
 msgid "paths.hero.route-steps"
 msgstr "// {count} bước"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:495
+#: src/features/catalogWorkspace/CatalogScreen.tsx:497
 msgid "paths.hero.see-all-units"
 msgstr "Xem tất cả bài"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:487
+#: src/features/catalogWorkspace/CatalogScreen.tsx:489
 msgid "paths.hero.started"
 msgstr "{started} từ đã bắt đầu"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:471
+#: src/features/catalogWorkspace/CatalogScreen.tsx:473
 msgid "paths.hero.this-unit"
 msgstr "Bài này: <0>{title}</0>."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:485
+#: src/features/catalogWorkspace/CatalogScreen.tsx:487
 msgid "paths.hero.words-mastered"
 msgstr "Đã thuộc <0>{mastered}</0>/{total} từ"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:167
+#: src/features/catalogWorkspace/CatalogScreen.tsx:169
 msgid "paths.lumi.link"
 msgstr "Lumi · Link"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:191
+#: src/features/catalogWorkspace/CatalogScreen.tsx:193
 msgid "paths.lumi.review-due"
 msgstr "{count, plural, one {# thẻ} other {# thẻ}} đang chờ ôn tập."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:431
+#: src/features/catalogWorkspace/CatalogScreen.tsx:433
 msgid "paths.lumi.unit-remaining"
 msgstr "Còn {count, plural, one {# từ} other {# từ}} nữa là xong bài {ordinal}!"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:207
+#: src/features/catalogWorkspace/CatalogScreen.tsx:209
 msgid "paths.personal.due-count"
 msgstr "{count} thẻ cần ôn hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:206
+#: src/features/catalogWorkspace/CatalogScreen.tsx:208
 msgid "paths.personal.mastered-count"
 msgstr "Đã thuộc <0>{mastered}</0>/{total} thẻ"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:230
+#: src/features/catalogWorkspace/CatalogScreen.tsx:232
 msgid "paths.personal.step"
 msgstr "Bước {step}"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:221
-#: src/features/catalogWorkspace/CatalogScreen.tsx:505
+#: src/features/catalogWorkspace/CatalogScreen.tsx:223
+#: src/features/catalogWorkspace/CatalogScreen.tsx:507
 msgid "paths.shelf.browse"
 msgstr "Xem danh mục →"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:504
+#: src/features/catalogWorkspace/CatalogScreen.tsx:506
 msgid "paths.shelf.journeys"
 msgstr "// {count, plural, one {# hành trình} other {# hành trình}}"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:220
+#: src/features/catalogWorkspace/CatalogScreen.tsx:222
 msgid "paths.shelf.steps"
 msgstr "// {count} bước"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:446
+#: src/features/catalogWorkspace/CatalogScreen.tsx:448
 msgid "paths.source.label"
 msgstr "Nguồn lộ trình"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:442
+#: src/features/catalogWorkspace/CatalogScreen.tsx:444
 msgid "paths.subtitle"
 msgstr "Các bộ từ có hướng dẫn, sắp xếp để mỗi từ dựa trên từ trước đó."
 
@@ -645,54 +645,54 @@ msgid "paths.unit.continue-scope-unavailable"
 msgstr "Bài này hiện không khả dụng. Mở lại Lộ trình rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:307
+#: src/features/catalogWorkspace/CatalogScreen.tsx:309
 msgid "paths.unit.status.active"
 msgstr "Đang học"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:305
+#: src/features/catalogWorkspace/CatalogScreen.tsx:307
 msgid "paths.unit.status.complete"
 msgstr "Hoàn thành"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:310
+#: src/features/catalogWorkspace/CatalogScreen.tsx:312
 msgid "paths.unit.status.not-started"
 msgstr "Chưa bắt đầu"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:262
-#: src/features/catalogWorkspace/CatalogScreen.tsx:275
-#: src/features/catalogWorkspace/CatalogScreen.tsx:309
-#: src/features/catalogWorkspace/CatalogScreen.tsx:488
+#: src/features/catalogWorkspace/CatalogScreen.tsx:264
+#: src/features/catalogWorkspace/CatalogScreen.tsx:277
+#: src/features/catalogWorkspace/CatalogScreen.tsx:311
+#: src/features/catalogWorkspace/CatalogScreen.tsx:490
 msgid "paths.unit.status.unavailable"
 msgstr "Chưa thể xem tiến độ"
 
 #. js-lingui-explicit-id
-#: src/features/catalogWorkspace/CatalogScreen.tsx:314
+#: src/features/catalogWorkspace/CatalogScreen.tsx:316
 msgid "paths.units.list-label"
 msgstr "Danh sách bài học"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:340
+#: src/features/catalogWorkspace/CatalogScreen.tsx:342
 msgctxt "paths.unit.confirm-disclosure"
 msgid "Any missing unit words will be added to your Library before study."
 msgstr "Nếu còn từ chưa có, chúng sẽ được thêm vào Thư viện trước khi học."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:131
+#: src/features/catalogWorkspace/CatalogScreen.tsx:132
 msgctxt "catalog.status.no-drafts"
 msgid "Draft vocabulary is never shown here."
 msgstr "Từ vựng nháp không bao giờ hiển thị ở đây."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:343
+#: src/features/catalogWorkspace/CatalogScreen.tsx:345
 msgctxt "paths.unit.add-and-study"
 msgid "Add missing words and study"
 msgstr "Thêm từ còn thiếu và học"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:334
+#: src/features/catalogWorkspace/CatalogScreen.tsx:336
 msgctxt "paths.unit.continue-unavailable"
 msgid "Continue is unavailable until progress can be verified."
 msgstr "Chưa thể học tiếp cho đến khi xác minh được tiến độ."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:199
+#: src/features/catalogWorkspace/CatalogScreen.tsx:201
 msgctxt "catalog.personal.title"
 msgid "Your personal paths"
 msgstr "Lộ trình cá nhân của bạn"
@@ -702,107 +702,107 @@ msgctxt "catalog.personal.status-title"
 msgid "Personal learning mode"
 msgstr "Chế độ học cá nhân"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:278
+#: src/features/catalogWorkspace/CatalogScreen.tsx:280
 msgctxt "paths.tier.progress"
 msgid "{mastered} of {total} mastered · {started} started"
 msgstr "Đã thành thạo {mastered}/{total} · Đã bắt đầu {started}"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:398
+#: src/features/catalogWorkspace/CatalogScreen.tsx:400
 msgctxt "catalog.card.add-failed"
 msgid "Could not add “{lemma}” to your library. Check your connection or sign in, then try again."
 msgstr "Không thể thêm “{lemma}” vào thư viện. Kiểm tra kết nối hoặc đăng nhập rồi thử lại."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:520
+#: src/features/catalogWorkspace/CatalogScreen.tsx:522
 msgctxt "catalog.explorer.title"
 msgid "Vocabulary explorer"
 msgstr "Khám phá từ vựng"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:494
+#: src/features/catalogWorkspace/CatalogScreen.tsx:496
 msgctxt "paths.action.continue"
 msgid "Continue"
 msgstr "Học tiếp"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:358
+#: src/features/catalogWorkspace/CatalogScreen.tsx:360
 msgctxt "catalog.filter.all"
 msgid "All"
 msgstr "Tất cả"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:200
+#: src/features/catalogWorkspace/CatalogScreen.tsx:202
 msgctxt "catalog.personal.description"
 msgid "Use your {count} saved cards now. No draft catalog vocabulary is mixed into these paths."
 msgstr "Dùng {count} thẻ đã lưu của bạn ngay bây giờ. Từ vựng danh mục nháp không được trộn vào các lộ trình này."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:549
+#: src/features/catalogWorkspace/CatalogScreen.tsx:551
 msgctxt "catalog.empty.path"
 msgid "This reviewed catalog does not contain words for the selected path yet."
 msgstr "Danh mục đã duyệt này chưa có từ cho lộ trình đã chọn."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:136
+#: src/features/catalogWorkspace/CatalogScreen.tsx:137
 msgctxt "catalog.status.connect-first-download"
 msgid "Connect to the internet for the first verified download."
 msgstr "Kết nối Internet để tải bản đã xác thực lần đầu."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:146
+#: src/features/catalogWorkspace/CatalogScreen.tsx:148
 msgctxt "catalog.status.error-title"
 msgid "Catalog needs attention"
 msgstr "Danh mục cần được chú ý"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:313
+#: src/features/catalogWorkspace/CatalogScreen.tsx:315
 msgctxt "paths.units.kicker"
 msgid "Catalog units"
 msgstr "Các bài học trong danh mục"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:450
+#: src/features/catalogWorkspace/CatalogScreen.tsx:452
 msgctxt "paths.language.label"
 msgid "Language"
 msgstr "Ngôn ngữ"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:332
+#: src/features/catalogWorkspace/CatalogScreen.tsx:334
 msgctxt "paths.unit.eta"
 msgid "Estimated {days, plural, one {# day} other {# days}} left at your pace."
 msgstr "Ước tính còn {days, plural, one {# ngày} other {# ngày}} theo nhịp học của bạn."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:198
+#: src/features/catalogWorkspace/CatalogScreen.tsx:200
 msgctxt "catalog.personal.kicker"
 msgid "Built from your library"
 msgstr "Tạo từ thư viện của bạn"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:448
+#: src/features/catalogWorkspace/CatalogScreen.tsx:450
 msgctxt "paths.source.reviewed"
 msgid "Reviewed catalog"
 msgstr "Danh mục đã duyệt"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:554
+#: src/features/catalogWorkspace/CatalogScreen.tsx:556
 msgctxt "catalog.loading.more"
 msgid "Loading more words…"
 msgstr "Đang tải thêm từ…"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:396
+#: src/features/catalogWorkspace/CatalogScreen.tsx:398
 msgctxt "catalog.card.review"
 msgid "Review:"
 msgstr "Đánh giá:"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:395
+#: src/features/catalogWorkspace/CatalogScreen.tsx:397
 msgctxt "catalog.card.license"
 msgid "License:"
 msgstr "Giấy phép:"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:327
+#: src/features/catalogWorkspace/CatalogScreen.tsx:329
 msgctxt "paths.unit.progress-unavailable"
 msgid "Progress is unavailable until your library can be verified."
 msgstr "Chưa thể xem tiến độ cho đến khi xác minh thư viện của bạn."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:394
+#: src/features/catalogWorkspace/CatalogScreen.tsx:396
 msgctxt "catalog.card.source"
 msgid "Source:"
 msgstr "Nguồn:"
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:549
+#: src/features/catalogWorkspace/CatalogScreen.tsx:551
 msgctxt "catalog.empty.filtered"
 msgid "Try fewer filters or clear them to see this path again."
 msgstr "Thử dùng ít bộ lọc hơn hoặc xóa chúng để xem lại lộ trình này."
 
-#: src/features/catalogWorkspace/CatalogScreen.tsx:325
+#: src/features/catalogWorkspace/CatalogScreen.tsx:327
 msgctxt "paths.unit.preview"
 msgid "Preview: {title}"
 msgstr "Xem trước: {title}"

@@ -13,12 +13,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/onboarding/OnboardingJourney.tsx:154
+#: src/features/onboarding/OnboardingJourney.tsx:198
 msgctxt "onboarding.countdown.label"
 msgid "Countdown"
 msgstr "Đếm ngược"
 
-#: src/components/shell/LanguageMenu.tsx:29
+#: src/components/shell/LanguageMenu.tsx:30
 msgctxt "shell.language.settings"
 msgid "Language & course settings"
 msgstr "Cài đặt ngôn ngữ và khóa học"
@@ -28,7 +28,7 @@ msgctxt "onboarding.phone.label"
 msgid "Reminder preview"
 msgstr "Xem trước lời nhắc"
 
-#: src/components/shell/LibraryManagementMenu.tsx:315
+#: src/components/shell/LibraryManagementMenu.tsx:347
 msgctxt "shell.menu.card-style-standard"
 msgid "Card style: Standard"
 msgstr "Kiểu thẻ: Tiêu chuẩn"
@@ -43,7 +43,7 @@ msgctxt "course.manage.kicker"
 msgid "My languages · {count} active · meanings in {language}"
 msgstr "Ngôn ngữ của tôi · {count} đang học · nghĩa bằng {language}"
 
-#: src/features/onboarding/OnboardingJourney.tsx:133
+#: src/features/onboarding/OnboardingJourney.tsx:174
 msgctxt "onboarding.lumi.script.title"
 msgid "A new alphabet!"
 msgstr "Một bảng chữ cái mới!"
@@ -53,12 +53,12 @@ msgctxt "onboarding.primer.heading"
 msgid "Read <0>Hangul</0> before your first words"
 msgstr "Đọc <0>Hangul</0> trước những từ đầu tiên"
 
-#: src/features/onboarding/OnboardingJourney.tsx:157
+#: src/features/onboarding/OnboardingJourney.tsx:201
 msgctxt "onboarding.countdown.past"
 msgid "This date has already passed. Pick a date ahead."
 msgstr "Ngày này đã qua. Hãy chọn một ngày phía trước."
 
-#: src/components/shell/DesktopNavigation.tsx:94
+#: src/components/shell/DesktopNavigation.tsx:95
 #: src/features/profileCompletion/ProfileCompletionGate.tsx:81
 msgctxt "shell.brand.mark"
 msgid "S"
@@ -69,7 +69,7 @@ msgctxt "onboarding.phone.countdown"
 msgid "{goal} in {days, plural, one {# day} other {# days}}"
 msgstr "{goal} sau {days, plural, other {# ngày}}"
 
-#: src/features/onboarding/OnboardingJourney.tsx:132
+#: src/features/onboarding/OnboardingJourney.tsx:173
 msgctxt "onboarding.lumi.level.title"
 msgid "Where do we start?"
 msgstr "Mình bắt đầu từ đâu nhé?"
@@ -79,12 +79,12 @@ msgctxt "onboarding.primer.block.meaning"
 msgid "Korea"
 msgstr "Hàn Quốc"
 
-#: src/features/onboarding/OnboardingJourney.tsx:601
+#: src/features/onboarding/OnboardingJourney.tsx:647
 msgctxt "onboarding.pace.try"
 msgid "Try {count} cards"
 msgstr "Thử {count} thẻ"
 
-#: src/components/shell/LibraryManagementMenu.tsx:231
+#: src/components/shell/LibraryManagementMenu.tsx:262
 msgctxt "rewards.title.word-collector"
 msgid "Word Collector"
 msgstr "Người sưu tầm từ vựng"
@@ -94,33 +94,33 @@ msgctxt "shell.practice-menu.title"
 msgid "Choose a practice mode"
 msgstr "Chọn chế độ luyện tập"
 
-#: src/features/onboarding/OnboardingJourney.tsx:474
+#: src/features/onboarding/OnboardingJourney.tsx:518
 msgctxt "onboarding.goal.subtitle"
 msgid "Pick one. You can change it any time from the course switcher."
 msgstr "Chọn một mục tiêu. Bạn có thể đổi bất cứ lúc nào từ trình chuyển khóa học."
 
-#: src/features/onboarding/OnboardingJourney.tsx:399
+#: src/features/onboarding/OnboardingJourney.tsx:443
 msgctxt "onboarding.eyebrow.reminder"
 msgid "Reminders"
 msgstr "Nhắc nhở"
 
-#: src/features/onboarding/OnboardingJourney.tsx:549
+#: src/features/onboarding/OnboardingJourney.tsx:595
 msgctxt "onboarding.level.heading"
 msgid "Where are you <0>starting from?</0>"
 msgstr "Bạn đang <0>bắt đầu từ đâu?</0>"
 
-#: src/components/shell/ThemeMenu.tsx:32
+#: src/components/shell/ThemeMenu.tsx:33
 msgctxt "shell.theme.appearance-settings"
 msgid "More appearance options"
 msgstr "Tùy chọn giao diện khác"
 
-#: src/components/AppOverlays.tsx:663
+#: src/components/AppOverlays.tsx:665
 msgctxt "shell.share.fact-revoke"
 msgid "You can revoke this link at any time."
 msgstr "Bạn có thể thu hồi liên kết này bất cứ lúc nào."
 
 #: src/features/courses/AddCourseDialog.tsx:110
-#: src/features/onboarding/OnboardingJourney.tsx:386
+#: src/features/onboarding/OnboardingJourney.tsx:430
 msgctxt "onboarding.goal.none"
 msgid "No specific goal yet"
 msgstr "Chưa có mục tiêu cụ thể"
@@ -135,17 +135,17 @@ msgctxt "course.manage.close"
 msgid "Close courses"
 msgstr "Đóng danh sách khóa học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:156
+#: src/features/onboarding/OnboardingJourney.tsx:200
 msgctxt "onboarding.countdown.empty"
 msgid "Pick a date to start your countdown."
 msgstr "Chọn một ngày để bắt đầu đếm ngược."
 
-#: src/features/onboarding/OnboardingJourney.tsx:551
+#: src/features/onboarding/OnboardingJourney.tsx:597
 msgctxt "onboarding.level.label"
 msgid "Starting level"
 msgstr "Trình độ bắt đầu"
 
-#: src/features/onboarding/OnboardingJourney.tsx:473
+#: src/features/onboarding/OnboardingJourney.tsx:517
 msgctxt "onboarding.goal.heading"
 msgid "What are you <0>learning for?</0>"
 msgstr "Bạn học <0>để làm gì?</0>"
@@ -160,18 +160,18 @@ msgctxt "shell.loading.today"
 msgid "Preparing today’s learning plan…"
 msgstr "Đang chuẩn bị kế hoạch học hôm nay…"
 
-#: src/components/shell/LibraryManagementMenu.tsx:303
+#: src/components/shell/LibraryManagementMenu.tsx:335
 msgctxt "shell.menu.extension-privacy"
 msgid "Extension privacy"
 msgstr "Quyền riêng tư của tiện ích"
 
-#: src/features/onboarding/OnboardingJourney.tsx:635
+#: src/features/onboarding/OnboardingJourney.tsx:681
 msgctxt "onboarding.reminder.title"
 msgid "When should we <0>nudge you?</0>"
 msgstr "Khi nào mình nên <0>nhắc bạn?</0>"
 
-#: src/components/AppOverlays.tsx:515
-#: src/components/AppOverlays.tsx:631
+#: src/components/AppOverlays.tsx:517
+#: src/components/AppOverlays.tsx:633
 msgctxt "shell.share.cards-count"
 msgid "{count, plural, one {# card} other {# cards}}"
 msgstr "{count, plural, other {# thẻ}}"
@@ -186,13 +186,13 @@ msgctxt "shell.share.revoking"
 msgid "Revoking…"
 msgstr "Đang thu hồi…"
 
-#: src/components/AppOverlays.tsx:820
+#: src/components/AppOverlays.tsx:822
 msgctxt "shell.practice-menu.preparing"
 msgid "Preparing…"
 msgstr "Đang chuẩn bị…"
 
 #: src/components/shell/CourseSwitcherControl.tsx:76
-#: src/features/courses/CoursesSurface.tsx:248
+#: src/features/courses/CoursesSurface.tsx:249
 #: src/features/courses/CourseVisuals.tsx:56
 msgctxt "course.due-count"
 msgid "{count} due"
@@ -203,7 +203,7 @@ msgctxt "onboarding.primer.reader.description"
 msgid "Save Hangul alone as my reading aid."
 msgstr "Lưu chỉ dùng Hangul làm gợi ý cách đọc của tôi."
 
-#: src/components/AppOverlays.tsx:542
+#: src/components/AppOverlays.tsx:544
 msgctxt "shell.share.incoming-safeguard"
 msgid "Cards go into a new deck with the same name. Your existing cards and progress stay untouched."
 msgstr "Thẻ sẽ được thêm vào bộ thẻ mới cùng tên. Các thẻ và tiến độ hiện có của bạn vẫn nguyên vẹn."
@@ -213,7 +213,7 @@ msgctxt "onboarding.level.core"
 msgid "Core"
 msgstr "Cốt lõi"
 
-#: src/features/courses/CoursesSurface.tsx:247
+#: src/features/courses/CoursesSurface.tsx:248
 msgctxt "course.manage.study"
 msgid "Start {language} lesson"
 msgstr "Bắt đầu bài {language}"
@@ -235,12 +235,12 @@ msgstr "Ưu tiên phiên âm Latin"
 
 #: src/features/courses/CourseGoalsPanel.tsx:56
 #: src/features/courses/CourseGoalsPanel.tsx:104
-#: src/features/onboarding/OnboardingJourney.tsx:526
+#: src/features/onboarding/OnboardingJourney.tsx:572
 msgctxt "course.goal.add.level-label"
 msgid "Level or target (optional)"
 msgstr "Trình độ hoặc mức mục tiêu (không bắt buộc)"
 
-#: src/features/onboarding/OnboardingJourney.tsx:131
+#: src/features/onboarding/OnboardingJourney.tsx:172
 msgctxt "onboarding.lumi.exam.title"
 msgid "When is the big day?"
 msgstr "Khi nào là ngày quan trọng?"
@@ -255,17 +255,17 @@ msgctxt "onboarding.primer.consonants"
 msgid "Basic consonants"
 msgstr "Phụ âm cơ bản"
 
-#: src/components/shell/LibraryManagementMenu.tsx:361
+#: src/components/shell/LibraryManagementMenu.tsx:393
 msgctxt "shell.menu.clear-library"
 msgid "Clear the entire library"
 msgstr "Xóa toàn bộ thư viện"
 
-#: src/components/AppOverlays.tsx:641
+#: src/components/AppOverlays.tsx:643
 msgctxt "shell.share.link-label"
 msgid "Share link"
 msgstr "Liên kết chia sẻ"
 
-#: src/components/AppOverlays.tsx:537
+#: src/components/AppOverlays.tsx:539
 msgctxt "shell.share.no-sample-preview"
 msgid "A card preview is not available for this shared deck."
 msgstr "Không có bản xem trước thẻ cho bộ thẻ được chia sẻ này."
@@ -275,7 +275,7 @@ msgctxt "course.goal.paused"
 msgid "(paused)"
 msgstr "(đang tạm dừng)"
 
-#: src/components/shell/LibraryManagementMenu.tsx:302
+#: src/components/shell/LibraryManagementMenu.tsx:334
 msgctxt "shell.menu.terms"
 msgid "Terms"
 msgstr "Điều khoản"
@@ -285,17 +285,17 @@ msgctxt "onboarding.primer.block.parts"
 msgid "first consonant + vowel + final consonant"
 msgstr "phụ âm đầu + nguyên âm + phụ âm cuối"
 
-#: src/features/onboarding/OnboardingJourney.tsx:531
+#: src/features/onboarding/OnboardingJourney.tsx:577
 msgctxt "onboarding.exam.date-label"
 msgid "Exam date (optional)"
 msgstr "Ngày thi (không bắt buộc)"
 
-#: src/features/onboarding/OnboardingJourney.tsx:168
+#: src/features/onboarding/OnboardingJourney.tsx:212
 msgctxt "onboarding.countdown.weeks.exam"
 msgid "{weeks, plural, one {# week} other {# weeks}} until exam day."
 msgstr "Còn {weeks, plural, other {# tuần}} đến ngày thi."
 
-#: src/features/onboarding/OnboardingJourney.tsx:128
+#: src/features/onboarding/OnboardingJourney.tsx:169
 msgctxt "onboarding.lumi.language.title"
 msgid "Hi, I’m Lumi!"
 msgstr "Chào bạn, mình là Lumi!"
@@ -310,7 +310,7 @@ msgctxt "shell.practice-menu.kicker-count"
 msgid "Practice · {count, plural, one {# card} other {# cards}}"
 msgstr "Luyện tập · {count, plural, other {# thẻ}}"
 
-#: src/features/onboarding/OnboardingJourney.tsx:430
+#: src/features/onboarding/OnboardingJourney.tsx:474
 msgctxt "onboarding.language.switch-note"
 msgid "The app switches to {language} right away."
 msgstr "Ứng dụng chuyển sang {language} ngay lập tức."
@@ -320,12 +320,12 @@ msgctxt "onboarding.pace.tag.serious"
 msgid "Serious"
 msgstr "Nghiêm túc"
 
-#: src/components/AppOverlays.tsx:586
+#: src/components/AppOverlays.tsx:588
 msgctxt "shell.share.language-pair"
 msgid "{target} → {native}"
 msgstr "{target} → {native}"
 
-#: src/features/onboarding/OnboardingJourney.tsx:510
+#: src/features/onboarding/OnboardingJourney.tsx:556
 msgctxt "onboarding.exam.level-heading"
 msgid "What level, and <0>by when?</0>"
 msgstr "Trình độ nào, và <0>đến khi nào?</0>"
@@ -335,22 +335,22 @@ msgctxt "course.manage.switched"
 msgid "Switched to {language}"
 msgstr "Đã chuyển sang {language}"
 
-#: src/features/onboarding/OnboardingJourney.tsx:517
+#: src/features/onboarding/OnboardingJourney.tsx:563
 msgctxt "onboarding.exam.choice-label"
 msgid "Exam"
 msgstr "Kỳ thi"
 
-#: src/features/onboarding/OnboardingJourney.tsx:119
+#: src/features/onboarding/OnboardingJourney.tsx:160
 msgctxt "onboarding.eyebrow.step"
 msgid "Step {step} of {total}"
 msgstr "Bước {step}/{total}"
 
-#: src/components/AppOverlays.tsx:661
+#: src/components/AppOverlays.tsx:663
 msgctxt "shell.share.fact-private"
 msgid "Recipients get their own copy; your progress and review history stay private."
 msgstr "Người nhận có bản sao riêng; tiến độ và lịch sử ôn tập của bạn vẫn riêng tư."
 
-#: src/features/onboarding/OnboardingJourney.tsx:128
+#: src/features/onboarding/OnboardingJourney.tsx:169
 msgctxt "onboarding.lumi.language.body"
 msgid "Pick the language you read best. Every meaning and explanation will be written in it."
 msgstr "Chọn ngôn ngữ bạn đọc tốt nhất. Mọi nghĩa và giải thích sẽ được viết bằng ngôn ngữ đó."
@@ -391,7 +391,7 @@ msgctxt "shell.footer.library"
 msgid "LIBRARY:"
 msgstr "THƯ VIỆN:"
 
-#: src/components/AppOverlays.tsx:662
+#: src/components/AppOverlays.tsx:664
 msgctxt "shell.share.fact-edits"
 msgid "Edits you make later are not pushed to copies already taken."
 msgstr "Các lần chỉnh sửa sau này sẽ không cập nhật vào những bản sao đã nhận."
@@ -411,32 +411,32 @@ msgctxt "onboarding.pace.tag.recommended"
 msgid "Recommended"
 msgstr "Khuyên dùng"
 
-#: src/features/onboarding/OnboardingJourney.tsx:581
+#: src/features/onboarding/OnboardingJourney.tsx:627
 msgctxt "onboarding.pace.unit"
 msgid "cards / day"
 msgstr "thẻ / ngày"
 
-#: src/features/onboarding/OnboardingJourney.tsx:131
+#: src/features/onboarding/OnboardingJourney.tsx:172
 msgctxt "onboarding.lumi.exam.body"
 msgid "Set a date and I’ll count the days down with you."
 msgstr "Chọn một ngày và mình sẽ cùng bạn đếm ngược."
 
-#: src/components/AppOverlays.tsx:568
+#: src/components/AppOverlays.tsx:570
 msgctxt "shell.share.adding"
 msgid "Adding…"
 msgstr "Đang thêm…"
 
-#: src/features/onboarding/OnboardingJourney.tsx:619
+#: src/features/onboarding/OnboardingJourney.tsx:665
 msgctxt "onboarding.aha.already-added"
 msgid "Starter cards were already requested earlier in this setup, so no more were added. You can add cards from the library any time."
 msgstr "Thẻ khởi đầu đã được yêu cầu trước đó trong lần thiết lập này nên không thêm thẻ nữa. Bạn có thể thêm thẻ từ thư viện bất cứ lúc nào."
 
-#: src/components/shell/LibraryManagementMenu.tsx:297
+#: src/components/shell/LibraryManagementMenu.tsx:329
 msgctxt "shell.account.sign-out"
 msgid "Sign out of cloud sync"
 msgstr "Đăng xuất khỏi đồng bộ đám mây"
 
-#: src/features/onboarding/OnboardingJourney.tsx:394
+#: src/features/onboarding/OnboardingJourney.tsx:438
 msgctxt "onboarding.eyebrow.level"
 msgid "Your target"
 msgstr "Mục tiêu của bạn"
@@ -451,7 +451,7 @@ msgctxt "shell.footer.status"
 msgid "STATUS:"
 msgstr "TRẠNG THÁI:"
 
-#: src/features/onboarding/OnboardingJourney.tsx:664
+#: src/features/onboarding/OnboardingJourney.tsx:718
 msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr "Để sau"
@@ -471,12 +471,12 @@ msgctxt "course.add.languages-label"
 msgid "I want to learn"
 msgstr "Tôi muốn học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:644
+#: src/features/onboarding/OnboardingJourney.tsx:690
 msgctxt "onboarding.finish"
 msgid "Start learning"
 msgstr "Bắt đầu học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:615
+#: src/features/onboarding/OnboardingJourney.tsx:661
 msgctxt "onboarding.aha.subtitle"
 msgid "Five common words to get you started."
 msgstr "Năm từ thông dụng để bạn bắt đầu."
@@ -667,7 +667,7 @@ msgctxt "course.switcher.add"
 msgid "Add a language"
 msgstr "Thêm ngôn ngữ"
 
-#: src/features/onboarding/OnboardingJourney.tsx:135
+#: src/features/onboarding/OnboardingJourney.tsx:176
 msgctxt "onboarding.lumi.trial.title"
 msgid "Flip your first cards!"
 msgstr "Lật những thẻ đầu tiên nào!"
@@ -677,24 +677,24 @@ msgctxt "shell.share.outgoing-title"
 msgid "Share “{title}”"
 msgstr "Chia sẻ “{title}”"
 
-#: src/features/onboarding/OnboardingJourney.tsx:397
+#: src/features/onboarding/OnboardingJourney.tsx:441
 msgctxt "onboarding.eyebrow.pace"
 msgid "Daily pace"
 msgstr "Nhịp học mỗi ngày"
 
-#: src/features/onboarding/OnboardingJourney.tsx:389
+#: src/features/onboarding/OnboardingJourney.tsx:433
 msgctxt "onboarding.eyebrow.language"
 msgid "Your language"
 msgstr "Ngôn ngữ của bạn"
 
-#: src/features/onboarding/OnboardingJourney.tsx:155
+#: src/features/onboarding/OnboardingJourney.tsx:199
 msgctxt "onboarding.countdown.kicker"
 msgid "Countdown"
 msgstr "Đếm ngược"
 
-#: src/components/AppOverlays.tsx:545
-#: src/components/AppOverlays.tsx:666
-#: src/components/AppOverlays.tsx:698
+#: src/components/AppOverlays.tsx:547
+#: src/components/AppOverlays.tsx:668
+#: src/components/AppOverlays.tsx:700
 msgctxt "shell.share.expires-on"
 msgid "Link expires on {date}"
 msgstr "Liên kết hết hạn vào {date}"
@@ -704,12 +704,12 @@ msgctxt "shell.practice-menu.scope"
 msgid "Course language:"
 msgstr "Ngôn ngữ khóa học:"
 
-#: src/components/AppOverlays.tsx:507
+#: src/components/AppOverlays.tsx:509
 msgctxt "shell.share.cards"
 msgid "Cards"
 msgstr "Thẻ"
 
-#: src/features/onboarding/OnboardingJourney.tsx:593
+#: src/features/onboarding/OnboardingJourney.tsx:639
 msgctxt "onboarding.pace.estimate"
 msgid "About {minutes} min a day at this pace."
 msgstr "Khoảng {minutes} phút mỗi ngày với nhịp này."
@@ -729,7 +729,7 @@ msgctxt "shell.practice-menu.description"
 msgid "Choose a different way to practice with words from your library."
 msgstr "Chọn một cách khác để luyện tập với các từ trong thư viện của bạn."
 
-#: src/features/onboarding/OnboardingJourney.tsx:620
+#: src/features/onboarding/OnboardingJourney.tsx:666
 msgctxt "onboarding.aha.error"
 msgid "Something went wrong adding cards. You can add them later from the library."
 msgstr "Đã có lỗi khi thêm thẻ. Bạn có thể thêm sau trong thư viện."
@@ -739,7 +739,7 @@ msgctxt "course.switcher.switched"
 msgid "Switched to {language}"
 msgstr "Đã chuyển sang {language}"
 
-#: src/components/AppOverlays.tsx:626
+#: src/components/AppOverlays.tsx:628
 msgctxt "shell.share.updating"
 msgid "Updating this share link…"
 msgstr "Đang cập nhật liên kết chia sẻ…"
@@ -754,7 +754,7 @@ msgctxt "onboarding.level.advanced.description"
 msgid "You are at ease with most topics and want precise words."
 msgstr "Bạn tự tin với hầu hết chủ đề và muốn dùng từ chính xác hơn."
 
-#: src/features/onboarding/OnboardingJourney.tsx:616
+#: src/features/onboarding/OnboardingJourney.tsx:662
 msgctxt "onboarding.aha.create"
 msgid "Add 5 starter cards"
 msgstr "Thêm 5 thẻ khởi đầu"
@@ -764,7 +764,7 @@ msgctxt "course.switcher.switched-extension"
 msgid "the extension now saves new words here"
 msgstr "tiện ích giờ lưu từ mới vào đây"
 
-#: src/components/shell/DesktopNavigation.tsx:77
+#: src/components/shell/DesktopNavigation.tsx:78
 #: src/components/shell/FloatingMobileNav.tsx:45
 msgctxt "shell.nav.collection"
 msgid "Collection"
@@ -775,12 +775,12 @@ msgctxt "course.native-line"
 msgid "from {language}"
 msgstr "từ {language}"
 
-#: src/features/onboarding/OnboardingJourney.tsx:135
+#: src/features/onboarding/OnboardingJourney.tsx:176
 msgctxt "onboarding.lumi.trial.body"
 msgid "Turn a card to see its meaning, then tell me if you knew it."
 msgstr "Lật thẻ để xem nghĩa, rồi cho mình biết bạn có nhớ không nhé."
 
-#: src/features/onboarding/OnboardingJourney.tsx:134
+#: src/features/onboarding/OnboardingJourney.tsx:175
 msgctxt "onboarding.lumi.pace.body"
 msgid "Start small. You can change this later."
 msgstr "Bắt đầu nhẹ nhàng thôi. Bạn có thể đổi lại sau."
@@ -790,7 +790,7 @@ msgstr "Bắt đầu nhẹ nhàng thôi. Bạn có thể đổi lại sau."
 msgid "exam-band-picker.legend"
 msgstr "Band mục tiêu"
 
-#: src/features/courses/CoursesSurface.tsx:252
+#: src/features/courses/CoursesSurface.tsx:253
 msgctxt "course.manage.reading-aid"
 msgid "Reading aid"
 msgstr "Hỗ trợ đọc"
@@ -805,17 +805,17 @@ msgctxt "shell.undo.action"
 msgid "Undo"
 msgstr "Hoàn tác"
 
-#: src/features/onboarding/OnboardingJourney.tsx:136
+#: src/features/onboarding/OnboardingJourney.tsx:177
 msgctxt "onboarding.lumi.reminder.title"
 msgid "Want a nudge?"
 msgstr "Cần mình nhắc không?"
 
-#: src/features/onboarding/OnboardingJourney.tsx:439
+#: src/features/onboarding/OnboardingJourney.tsx:483
 msgctxt "onboarding.target.subtitle"
 msgid "Each language is its own course, with its own cards and goals. You can add another later."
 msgstr "Mỗi ngôn ngữ là một khóa học riêng, với thẻ và mục tiêu riêng. Bạn có thể thêm ngôn ngữ khác sau."
 
-#: src/components/shell/LibraryManagementMenu.tsx:315
+#: src/components/shell/LibraryManagementMenu.tsx:347
 msgctxt "shell.menu.card-style-zen"
 msgid "Card style: Zen Glass"
 msgstr "Kiểu thẻ: Kính Zen"
@@ -825,7 +825,7 @@ msgctxt "onboarding.trial.result-body"
 msgid "All {total} cards are already in your library, ready for your first review."
 msgstr "Cả {total} thẻ đã có trong thư viện của bạn, sẵn sàng cho lượt ôn đầu tiên."
 
-#: src/components/AppOverlays.tsx:672
+#: src/components/AppOverlays.tsx:674
 msgctxt "shell.share.copy-private"
 msgid "This link opens a preview. The recipient decides whether to add a separate copy."
 msgstr "Liên kết này mở bản xem trước. Người nhận sẽ tự chọn có thêm bản sao riêng hay không."
@@ -835,7 +835,7 @@ msgctxt "course.manage.kicker.no-active"
 msgid "My languages · {count} active"
 msgstr "Ngôn ngữ của tôi · {count} đang học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:550
+#: src/features/onboarding/OnboardingJourney.tsx:596
 msgctxt "onboarding.level.subtitle"
 msgid "Pick the level that sounds most like your {language}. It is your own answer, not a test, and it is optional."
 msgstr "Chọn mức giống với trình độ {language} của bạn nhất. Đây là câu trả lời của bạn, không phải bài kiểm tra, và bạn có thể bỏ qua."
@@ -850,19 +850,19 @@ msgctxt "shell.loading.web-words"
 msgid "Preparing your web words…"
 msgstr "Đang chuẩn bị các từ trên web của bạn…"
 
-#: src/features/onboarding/OnboardingJourney.tsx:621
+#: src/features/onboarding/OnboardingJourney.tsx:667
 msgctxt "onboarding.aha.none-added"
 msgid "No cards were added."
 msgstr "Chưa thêm thẻ nào."
 
-#: src/components/AppOverlays.tsx:527
-#: src/components/AppOverlays.tsx:544
-#: src/components/AppOverlays.tsx:671
+#: src/components/AppOverlays.tsx:529
+#: src/components/AppOverlays.tsx:546
+#: src/components/AppOverlays.tsx:673
 msgctxt "flashcard.ai-disclosure"
 msgid "AI-generated content may be incorrect. Please check the meaning."
 msgstr "Nội dung do AI tạo, có thể sai. Hãy kiểm tra nghĩa."
 
-#: src/components/shell/LibraryManagementMenu.tsx:275
+#: src/components/shell/LibraryManagementMenu.tsx:306
 msgctxt "shell.sync.now"
 msgid "Sync now"
 msgstr "Đồng bộ ngay"
@@ -877,7 +877,7 @@ msgctxt "onboarding.phone.now"
 msgid "now"
 msgstr "bây giờ"
 
-#: src/components/AppOverlays.tsx:537
+#: src/components/AppOverlays.tsx:539
 msgctxt "shell.share.no-cards"
 msgid "This shared deck has no cards to add."
 msgstr "Bộ thẻ được chia sẻ này không có thẻ nào để thêm."
@@ -902,17 +902,17 @@ msgctxt "shell.practice-menu.kicker"
 msgid "Practice"
 msgstr "Luyện tập"
 
-#: src/features/onboarding/OnboardingJourney.tsx:169
+#: src/features/onboarding/OnboardingJourney.tsx:213
 msgctxt "onboarding.countdown.weeks.goal"
 msgid "{weeks, plural, one {# week} other {# weeks}} until your target date."
 msgstr "Còn {weeks, plural, other {# tuần}} đến ngày mục tiêu."
 
-#: src/features/onboarding/OnboardingJourney.tsx:618
+#: src/features/onboarding/OnboardingJourney.tsx:664
 msgctxt "onboarding.aha.pending"
 msgid "Adding your cards…"
 msgstr "Đang thêm thẻ của bạn…"
 
-#: src/components/AppOverlays.tsx:646
+#: src/components/AppOverlays.tsx:648
 msgctxt "shell.share.copy-short"
 msgid "Copy"
 msgstr "Sao chép"
@@ -938,12 +938,12 @@ msgctxt "course.goal.add.submit"
 msgid "Add goal"
 msgstr "Thêm mục tiêu"
 
-#: src/features/onboarding/OnboardingJourney.tsx:438
+#: src/features/onboarding/OnboardingJourney.tsx:482
 msgctxt "onboarding.target.heading"
 msgid "What are you <0>learning?</0>"
 msgstr "Bạn đang <0>học gì?</0>"
 
-#: src/features/onboarding/OnboardingJourney.tsx:576
+#: src/features/onboarding/OnboardingJourney.tsx:622
 msgctxt "onboarding.pace.heading"
 msgid "How many cards <0>each day?</0>"
 msgstr "Mỗi ngày học <0>bao nhiêu thẻ?</0>"
@@ -963,7 +963,7 @@ msgctxt "onboarding.primer.vowels"
 msgid "Basic vowels"
 msgstr "Nguyên âm cơ bản"
 
-#: src/features/onboarding/OnboardingJourney.tsx:134
+#: src/features/onboarding/OnboardingJourney.tsx:175
 msgctxt "onboarding.lumi.pace.title"
 msgid "How fast shall we go?"
 msgstr "Mình học nhanh cỡ nào nhé?"
@@ -973,7 +973,7 @@ msgctxt "onboarding.trial.known"
 msgid "Got it"
 msgstr "Đã nhớ"
 
-#: src/components/shell/LibraryManagementMenu.tsx:342
+#: src/components/shell/LibraryManagementMenu.tsx:374
 msgctxt "shell.menu.exporting"
 msgid "Exporting library…"
 msgstr "Đang xuất thư viện…"
@@ -983,7 +983,7 @@ msgctxt "course.add.submit"
 msgid "Add {language}"
 msgstr "Thêm {language}"
 
-#: src/components/AppOverlays.tsx:511
+#: src/components/AppOverlays.tsx:513
 msgctxt "shell.share.copy"
 msgid "Your copy"
 msgstr "Bản sao của bạn"
@@ -1070,17 +1070,17 @@ msgstr "Đang lưu…"
 msgid "latest-score-editor.unreadable"
 msgstr "Chưa tải được điểm đã lưu. Lưu điểm mới sẽ thay thế điểm cũ."
 
-#: src/features/onboarding/OnboardingJourney.tsx:132
+#: src/features/onboarding/OnboardingJourney.tsx:173
 msgctxt "onboarding.lumi.level.body"
 msgid "Pick what sounds like you. A guess is fine."
 msgstr "Chọn mức giống bạn nhất. Đoán cũng được."
 
-#: src/features/onboarding/OnboardingJourney.tsx:566
+#: src/features/onboarding/OnboardingJourney.tsx:612
 msgctxt "onboarding.primer.footer"
 msgid "Romanization stays as you choose it here until you change it in Settings."
 msgstr "Phiên âm Latin giữ như bạn chọn ở đây cho đến khi bạn đổi trong Cài đặt."
 
-#: src/features/onboarding/OnboardingJourney.tsx:456
+#: src/features/onboarding/OnboardingJourney.tsx:501
 msgctxt "settings.course.script"
 msgid "Chinese script"
 msgstr "Chữ Hán"
@@ -1090,47 +1090,47 @@ msgctxt "onboarding.goal.description.business"
 msgid "Speak up in meetings with confident, precise words."
 msgstr "Tự tin phát biểu trong cuộc họp với vốn từ chính xác."
 
-#: src/features/onboarding/OnboardingJourney.tsx:130
+#: src/features/onboarding/OnboardingJourney.tsx:171
 msgctxt "onboarding.lumi.goal.title"
 msgid "Got a goal in mind?"
 msgstr "Bạn có mục tiêu chưa?"
 
-#: src/components/shell/LibraryManagementMenu.tsx:301
+#: src/components/shell/LibraryManagementMenu.tsx:333
 msgctxt "shell.menu.privacy"
 msgid "Privacy"
 msgstr "Quyền riêng tư"
 
-#: src/components/shell/LibraryManagementMenu.tsx:305
+#: src/components/shell/LibraryManagementMenu.tsx:337
 msgctxt "shell.menu.account-data"
 msgid "Account data"
 msgstr "Dữ liệu tài khoản"
 
-#: src/components/shell/LibraryManagementMenu.tsx:330
+#: src/components/shell/LibraryManagementMenu.tsx:362
 msgctxt "shell.menu.insights"
 msgid "Learning insights"
 msgstr "Thống kê học tập"
 
-#: src/features/onboarding/OnboardingJourney.tsx:398
+#: src/features/onboarding/OnboardingJourney.tsx:442
 msgctxt "onboarding.eyebrow.aha"
 msgid "First cards"
 msgstr "Những thẻ đầu tiên"
 
-#: src/components/AppOverlays.tsx:637
+#: src/components/AppOverlays.tsx:639
 msgctxt "shell.share.truncation"
 msgid "This link includes {shared} of {total} cards. Create smaller decks to share the rest."
 msgstr "Liên kết này gồm {shared} trong tổng số {total} thẻ. Hãy tạo các bộ thẻ nhỏ hơn để chia sẻ phần còn lại."
 
-#: src/features/onboarding/OnboardingJourney.tsx:495
+#: src/features/onboarding/OnboardingJourney.tsx:540
 msgctxt "onboarding.goal.curious.description"
 msgid "No exam or deadline. Grow a vocabulary that feels like yours."
 msgstr "Không thi cử hay hạn chót. Xây vốn từ theo cách của riêng bạn."
 
-#: src/features/onboarding/OnboardingJourney.tsx:141
+#: src/features/onboarding/OnboardingJourney.tsx:182
 msgctxt "onboarding.lumi.kicker"
 msgid "Lumi · online"
 msgstr "Lumi · trực tuyến"
 
-#: src/features/onboarding/OnboardingJourney.tsx:391
+#: src/features/onboarding/OnboardingJourney.tsx:435
 msgctxt "onboarding.eyebrow.goal"
 msgid "Your goal"
 msgstr "Mục tiêu của bạn"
@@ -1140,12 +1140,12 @@ msgctxt "onboarding.level.foundation"
 msgid "Foundation"
 msgstr "Nền tảng"
 
-#: src/components/AppOverlays.tsx:526
+#: src/components/AppOverlays.tsx:528
 msgctxt "shell.share.no-translation"
 msgid "Translation not available"
 msgstr "Chưa có bản dịch"
 
-#: src/features/onboarding/OnboardingJourney.tsx:396
+#: src/features/onboarding/OnboardingJourney.tsx:440
 msgctxt "onboarding.eyebrow.script"
 msgid "Alphabet"
 msgstr "Bảng chữ cái"
@@ -1175,7 +1175,7 @@ msgctxt "course.goals.empty"
 msgid "No goals yet. Studying without one is fine too."
 msgstr "Chưa có mục tiêu nào. Học không cần mục tiêu cũng được."
 
-#: src/features/onboarding/OnboardingJourney.tsx:390
+#: src/features/onboarding/OnboardingJourney.tsx:434
 msgctxt "onboarding.eyebrow.target"
 msgid "What to learn"
 msgstr "Học gì"
@@ -1190,17 +1190,17 @@ msgctxt "onboarding.primer.learning"
 msgid "I’m still learning to read"
 msgstr "Tôi vẫn đang học đọc"
 
-#: src/features/onboarding/OnboardingJourney.tsx:459
+#: src/features/onboarding/OnboardingJourney.tsx:504
 msgctxt "settings.course.script.traditional"
 msgid "Traditional"
 msgstr "Phồn thể"
 
-#: src/features/onboarding/OnboardingJourney.tsx:636
+#: src/features/onboarding/OnboardingJourney.tsx:682
 msgctxt "onboarding.reminder.description"
 msgid "Choose when SonFlash can remind you to review."
 msgstr "Chọn thời điểm SonFlash có thể nhắc bạn ôn tập."
 
-#: src/features/onboarding/OnboardingJourney.tsx:582
+#: src/features/onboarding/OnboardingJourney.tsx:628
 msgctxt "onboarding.pace.minutes"
 msgid "≈ {minutes} min a day"
 msgstr "≈ {minutes} phút mỗi ngày"
@@ -1210,7 +1210,7 @@ msgctxt "onboarding.trial.grade-label"
 msgid "Did you know this word?"
 msgstr "Bạn có nhớ từ này không?"
 
-#: src/components/AppOverlays.tsx:510
+#: src/components/AppOverlays.tsx:512
 msgctxt "shell.share.languages"
 msgid "Languages"
 msgstr "Ngôn ngữ"
@@ -1226,21 +1226,21 @@ msgid "Add a vocabulary card with a word and meaning first."
 msgstr "Hãy thêm một thẻ từ vựng có từ và nghĩa trước."
 
 #. js-lingui-explicit-id
-#: src/features/onboarding/OnboardingJourney.tsx:653
+#: src/features/onboarding/OnboardingJourney.tsx:707
 msgid "onboarding.title"
 msgstr "Thiết lập khóa học"
 
-#: src/components/AppOverlays.tsx:508
+#: src/components/AppOverlays.tsx:510
 msgctxt "shell.share.category"
 msgid "Category"
 msgstr "Chủ đề"
 
-#: src/components/AppOverlays.tsx:514
+#: src/components/AppOverlays.tsx:516
 msgctxt "shell.share.words-inside"
 msgid "A few words inside"
 msgstr "Một vài từ bên trong"
 
-#: src/features/onboarding/OnboardingJourney.tsx:381
+#: src/features/onboarding/OnboardingJourney.tsx:425
 msgctxt "onboarding.back"
 msgid "Back"
 msgstr "Quay lại"
@@ -1265,17 +1265,17 @@ msgctxt "shell.practice-menu.cancel"
 msgid "Cancel"
 msgstr "Hủy"
 
-#: src/components/AppOverlays.tsx:689
+#: src/components/AppOverlays.tsx:691
 msgctxt "shell.share.earlier-heading"
 msgid "Earlier links you can still revoke"
 msgstr "Các liên kết trước đó bạn vẫn có thể thu hồi"
 
-#: src/features/onboarding/OnboardingJourney.tsx:130
+#: src/features/onboarding/OnboardingJourney.tsx:171
 msgctxt "onboarding.lumi.goal.body"
 msgid "Choose a path and your cards will follow it."
 msgstr "Chọn một hướng đi và thẻ của bạn sẽ bám theo nó."
 
-#: src/features/onboarding/OnboardingJourney.tsx:479
+#: src/features/onboarding/OnboardingJourney.tsx:523
 msgctxt "onboarding.goal.exam"
 msgid "Pass {exams}"
 msgstr "Thi đậu {exams}"
@@ -1558,7 +1558,7 @@ msgid "Build one syllable block"
 msgstr "Ghép một khối âm tiết"
 
 #: src/components/shell/CourseSwitcherControl.tsx:198
-#: src/features/courses/CoursesSurface.tsx:253
+#: src/features/courses/CoursesSurface.tsx:254
 msgctxt "course.manage.meanings-in"
 msgid "Meanings in"
 msgstr "Nghĩa bằng"
@@ -1568,17 +1568,17 @@ msgctxt "onboarding.goal.description.study-abroad"
 msgid "Words for lectures, campus life and daily errands."
 msgstr "Từ vựng cho giờ giảng, đời sống ký túc xá và việc vặt hằng ngày."
 
-#: src/features/onboarding/OnboardingJourney.tsx:591
+#: src/features/onboarding/OnboardingJourney.tsx:637
 msgctxt "onboarding.pace.plan.dated"
 msgid "cards to study by {date}: {pace} a day for {days, plural, one {# day} other {# days}}."
 msgstr "thẻ cần học đến {date}: {pace} thẻ mỗi ngày trong {days, plural, other {# ngày}}."
 
-#: src/features/onboarding/OnboardingJourney.tsx:395
+#: src/features/onboarding/OnboardingJourney.tsx:439
 msgctxt "onboarding.eyebrow.level-start"
 msgid "Your level"
 msgstr "Trình độ của bạn"
 
-#: src/features/onboarding/OnboardingJourney.tsx:129
+#: src/features/onboarding/OnboardingJourney.tsx:170
 msgctxt "onboarding.lumi.target.title"
 msgid "What shall we learn?"
 msgstr "Mình học gì đây?"
@@ -1606,7 +1606,7 @@ msgstr "Danh hiệu Word Collector"
 #. js-lingui-explicit-id
 #: src/app/app-runtime-shared.ts:58
 msgid "rewards.reveal.streak.badge"
-msgstr "Huy hiệu Web Wanderer"
+msgstr "Web Wanderer"
 
 #: src/features/courses/AddCourseDialog.tsx:122
 msgctxt "course.create.submit"
@@ -1629,17 +1629,17 @@ msgctxt "course.add.language-selected"
 msgid "Selected"
 msgstr "Đã chọn"
 
-#: src/features/onboarding/OnboardingJourney.tsx:514
+#: src/features/onboarding/OnboardingJourney.tsx:560
 msgctxt "onboarding.exam.subtitle"
 msgid "Your target and test date. Both are optional and you can change them later."
 msgstr "Mục tiêu và ngày thi của bạn. Cả hai đều không bắt buộc và có thể đổi sau."
 
-#: src/features/onboarding/OnboardingJourney.tsx:509
+#: src/features/onboarding/OnboardingJourney.tsx:555
 msgctxt "onboarding.exam.heading"
 msgid "Which test, and <0>what score?</0>"
 msgstr "Thi gì, và <0>đạt bao nhiêu?</0>"
 
-#: src/features/courses/CoursesSurface.tsx:251
+#: src/features/courses/CoursesSurface.tsx:252
 msgctxt "course.manage.extension-saves-to"
 msgid "Extension saves to"
 msgstr "Tiện ích lưu vào"
@@ -1664,7 +1664,7 @@ msgctxt "onboarding.trial.position"
 msgid "Card {position} of {total}"
 msgstr "Thẻ {position}/{total}"
 
-#: src/components/AppOverlays.tsx:568
+#: src/components/AppOverlays.tsx:570
 msgctxt "shell.share.add-count"
 msgid "Add {count} cards"
 msgstr "Thêm {count} thẻ"
@@ -1724,16 +1724,16 @@ msgstr "Đã xảy ra lỗi."
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:169
-#: src/components/shell/LibraryManagementMenu.tsx:173
+#: src/components/shell/LibraryManagementMenu.tsx:204
 msgid "shell.feedback.account"
 msgstr "Tài khoản"
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:161
 #: src/components/shell/AppFeedback.tsx:176
-#: src/components/shell/DesktopNavigation.tsx:71
-#: src/components/shell/LibraryManagementMenu.tsx:174
-#: src/components/shell/LibraryManagementMenu.tsx:189
+#: src/components/shell/DesktopNavigation.tsx:72
+#: src/components/shell/LibraryManagementMenu.tsx:205
+#: src/components/shell/LibraryManagementMenu.tsx:220
 msgid "shell.feedback.connecting"
 msgstr "Đang kết nối…"
 
@@ -1784,21 +1784,21 @@ msgstr "Thử đồng bộ lại thư viện"
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:156
-#: src/components/shell/DesktopNavigation.tsx:66
-#: src/components/shell/LibraryManagementMenu.tsx:184
+#: src/components/shell/DesktopNavigation.tsx:67
+#: src/components/shell/LibraryManagementMenu.tsx:215
 msgid "shell.feedback.session-ended"
 msgstr "Phiên đã kết thúc"
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:157
-#: src/components/shell/LibraryManagementMenu.tsx:193
+#: src/components/shell/LibraryManagementMenu.tsx:224
 msgid "shell.feedback.session-ended-detail"
 msgstr "Đăng nhập lại để khôi phục đồng bộ đám mây."
 
 #. js-lingui-explicit-id
 #: src/components/shell/AppFeedback.tsx:160
 #: src/components/shell/AppFeedback.tsx:162
-#: src/components/shell/LibraryManagementMenu.tsx:290
+#: src/components/shell/LibraryManagementMenu.tsx:321
 msgid "shell.feedback.sign-in-again"
 msgstr "Đăng nhập lại"
 
@@ -1904,18 +1904,18 @@ msgid "shell.learning-workspace"
 msgstr "Không gian học tập"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:102
+#: src/components/shell/DesktopNavigation.tsx:103
 msgid "shell.level"
 msgstr "Cấp {level}, {xp} XP"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:105
+#: src/components/shell/DesktopNavigation.tsx:106
 msgid "shell.level.chip"
 msgstr "<0>Lv</0> {level}"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:102
 #: src/components/shell/DesktopNavigation.tsx:103
+#: src/components/shell/DesktopNavigation.tsx:104
 msgid "shell.level.short"
 msgstr "Lv {level}"
 
@@ -1935,23 +1935,23 @@ msgid "shell.library-count.cloud-paused"
 msgstr "Đồng bộ đám mây đã tạm dừng"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:262
+#: src/components/shell/LibraryManagementMenu.tsx:293
 msgid "shell.library-menu.label"
 msgstr "Quản lý thư viện"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:254
+#: src/components/shell/LibraryManagementMenu.tsx:285
 msgid "shell.library-menu.preferences"
 msgstr "Giao diện và ngôn ngữ"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:209
-#: src/components/shell/LibraryManagementMenu.tsx:213
+#: src/components/shell/LibraryManagementMenu.tsx:240
+#: src/components/shell/LibraryManagementMenu.tsx:244
 msgid "shell.library-menu.trigger"
 msgstr "Quản lý thư viện"
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:312
+#: src/components/shell/LibraryManagementMenu.tsx:344
 msgid "shell.library-menu.zen-toggle-description"
 msgstr "Chuyển giữa chế độ Học tiêu chuẩn và chế độ Kính Zen tối giản"
 
@@ -1966,28 +1966,28 @@ msgid "shell.listen-practice.sign-in"
 msgstr "Đăng nhập để luyện cụm từ này."
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:76
-#: src/components/shell/DesktopNavigation.tsx:76
+#: src/components/shell/DesktopNavigation.tsx:77
+#: src/components/shell/DesktopNavigation.tsx:77
 #: src/components/shell/FloatingMobileNav.tsx:42
 msgid "shell.nav.paths"
 msgstr "Lộ trình"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:78
-#: src/components/shell/DesktopNavigation.tsx:78
+#: src/components/shell/DesktopNavigation.tsx:79
+#: src/components/shell/DesktopNavigation.tsx:79
 #: src/components/shell/FloatingMobileNav.tsx:47
 msgid "shell.nav.progress"
 msgstr "Tiến độ"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:75
-#: src/components/shell/DesktopNavigation.tsx:75
+#: src/components/shell/DesktopNavigation.tsx:76
+#: src/components/shell/DesktopNavigation.tsx:76
 #: src/components/shell/FloatingMobileNav.tsx:41
 msgid "shell.nav.today"
 msgstr "Hôm nay"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:77
+#: src/components/shell/DesktopNavigation.tsx:78
 #: src/components/shell/FloatingMobileNav.tsx:46
 msgid "shell.nav.vocabulary"
 msgstr "Từ vựng"
@@ -1998,72 +1998,72 @@ msgid "shell.navigation.mobile"
 msgstr "Điều hướng trên di động"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:91
+#: src/components/shell/DesktopNavigation.tsx:92
 msgid "shell.navigation.primary"
 msgstr "Điều hướng chính"
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:314
+#: src/features/offlineApp/OfflineReadiness.tsx:317
 msgid "shell.offline.action.prepare"
 msgstr "Chuẩn bị offline"
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:309
+#: src/features/offlineApp/OfflineReadiness.tsx:312
 msgid "shell.offline.action.preparing"
 msgstr "Đang chuẩn bị offline…"
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:311
+#: src/features/offlineApp/OfflineReadiness.tsx:314
 msgid "shell.offline.action.ready"
 msgstr "Đã dùng được offline"
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:313
+#: src/features/offlineApp/OfflineReadiness.tsx:316
 msgid "shell.offline.action.update"
 msgstr "Có bản cập nhật"
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:334
+#: src/features/offlineApp/OfflineReadiness.tsx:339
 msgid "shell.offline.heading"
 msgstr "Truy cập offline"
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:321
+#: src/features/offlineApp/OfflineReadiness.tsx:324
 msgid "shell.offline.needs-connection"
 msgstr "Bạn đang offline. Hãy kết nối lại để chuẩn bị tệp ứng dụng."
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:336
+#: src/features/offlineApp/OfflineReadiness.tsx:341
 msgid "shell.offline.size"
 msgstr "tệp ứng dụng, tối đa 6 MiB"
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:25
+#: src/features/offlineApp/OfflineReadiness.tsx:27
 msgid "shell.offline.status.error"
 msgstr "Chuẩn bị offline thất bại. Hãy kiểm tra kết nối hoặc dung lượng lưu trữ rồi thử lại."
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:27
+#: src/features/offlineApp/OfflineReadiness.tsx:29
 msgid "shell.offline.status.idle"
 msgstr "Hãy chuẩn bị tệp ứng dụng để dùng offline khi bạn đang có kết nối."
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:22
+#: src/features/offlineApp/OfflineReadiness.tsx:24
 msgid "shell.offline.status.preparing"
 msgstr "Đang chuẩn bị tệp ứng dụng để dùng offline…"
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:23
+#: src/features/offlineApp/OfflineReadiness.tsx:25
 msgid "shell.offline.status.ready"
 msgstr "Đã dùng được offline."
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:26
+#: src/features/offlineApp/OfflineReadiness.tsx:28
 msgid "shell.offline.status.unsupported"
 msgstr "Chuẩn bị offline chỉ dùng được ở bản production trên trình duyệt được hỗ trợ."
 
 #. js-lingui-explicit-id
-#: src/features/offlineApp/OfflineReadiness.tsx:24
+#: src/features/offlineApp/OfflineReadiness.tsx:26
 msgid "shell.offline.status.update"
 msgstr "Có bản cập nhật. Hãy mở lại SonFlash sau buổi học."
 
@@ -2086,14 +2086,14 @@ msgstr "Thử tải lại không gian học tập"
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:313
 #: src/components/AppOverlays.tsx:316
-#: src/components/AppOverlays.tsx:508
-#: src/components/AppOverlays.tsx:621
-#: src/components/AppOverlays.tsx:686
+#: src/components/AppOverlays.tsx:510
+#: src/components/AppOverlays.tsx:623
+#: src/components/AppOverlays.tsx:688
 msgid "shell.share.all-library"
 msgstr "Tất cả thẻ trong thư viện"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:659
+#: src/components/AppOverlays.tsx:661
 msgid "shell.share.behavior"
 msgstr "Cách chia sẻ"
 
@@ -2103,23 +2103,23 @@ msgid "shell.share.close"
 msgstr "Đóng hộp thoại chia sẻ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:652
+#: src/components/AppOverlays.tsx:654
 msgid "shell.share.copy-failed"
 msgstr "Không thể sao chép liên kết. Hãy tự sao chép hoặc thử lại nút sao chép."
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:645
+#: src/components/AppOverlays.tsx:647
 msgid "shell.share.copy-link"
 msgstr "Sao chép liên kết chia sẻ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:653
+#: src/components/AppOverlays.tsx:655
 msgid "shell.share.dismiss-copy-error"
 msgstr "Đóng lỗi sao chép"
 
 #. js-lingui-explicit-id
 #: src/components/AppOverlays.tsx:334
-#: src/components/AppOverlays.tsx:505
+#: src/components/AppOverlays.tsx:507
 msgid "shell.share.dismiss-error"
 msgstr "Đóng thông báo lỗi chia sẻ"
 
@@ -2131,27 +2131,27 @@ msgid "shell.share.kicker"
 msgstr "Chia sẻ bộ thẻ"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:644
+#: src/components/AppOverlays.tsx:646
 msgid "shell.share.link-input"
 msgstr "Liên kết chia sẻ bộ thẻ từ vựng"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:518
+#: src/components/AppOverlays.tsx:520
 msgid "shell.share.sample-vocabulary"
 msgstr "Từ vựng mẫu"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:588
+#: src/components/AppOverlays.tsx:590
 msgid "shell.share.target-unspecified"
 msgstr "Chưa xác định ngôn ngữ cần học"
 
 #. js-lingui-explicit-id
-#: src/components/AppOverlays.tsx:589
+#: src/components/AppOverlays.tsx:591
 msgid "shell.share.translation-unspecified"
 msgstr "Chưa xác định ngôn ngữ dịch"
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:101
+#: src/components/shell/DesktopNavigation.tsx:102
 msgid "shell.streak"
 msgstr "Chuỗi {count} ngày"
 
@@ -2172,8 +2172,8 @@ msgid "shell.sync.awaiting-cloud-detail"
 msgstr "Đang hiển thị bản lưu trên thiết bị này cho đến khi đám mây xác nhận."
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:68
-#: src/components/shell/LibraryManagementMenu.tsx:186
+#: src/components/shell/DesktopNavigation.tsx:69
+#: src/components/shell/LibraryManagementMenu.tsx:217
 #: src/components/shell/localized-sync-status.ts:20
 #: src/components/shell/localized-sync-status.ts:21
 msgid "shell.sync.checking"
@@ -2185,8 +2185,8 @@ msgid "shell.sync.checking-detail"
 msgstr "Đang xác minh phiên đám mây của bạn."
 
 #. js-lingui-explicit-id
-#: src/components/shell/DesktopNavigation.tsx:72
-#: src/components/shell/LibraryManagementMenu.tsx:190
+#: src/components/shell/DesktopNavigation.tsx:73
+#: src/components/shell/LibraryManagementMenu.tsx:221
 msgid "shell.sync.device"
 msgstr "Trên thiết bị này"
 
@@ -2234,7 +2234,7 @@ msgid "shell.sync.saved-detail"
 msgstr "Mọi thay đổi đã được lưu."
 
 #. js-lingui-explicit-id
-#: src/components/shell/LibraryManagementMenu.tsx:291
+#: src/components/shell/LibraryManagementMenu.tsx:322
 msgid "shell.sync.sign-in"
 msgstr "Đăng nhập & đồng bộ"
 
@@ -2275,12 +2275,12 @@ msgstr "Đóng thông báo"
 msgid "shell.undo.restore-failed"
 msgstr "Không thể khôi phục thẻ này. Hãy kiểm tra thư viện rồi thử lại."
 
-#: src/features/onboarding/OnboardingJourney.tsx:625
+#: src/features/onboarding/OnboardingJourney.tsx:671
 msgctxt "onboarding.aha.quota-note"
 msgid "Your monthly Free card allowance is almost used up, so {count} card(s) were not added."
 msgstr "Hạn mức thẻ miễn phí tháng này của bạn sắp hết, nên {count} thẻ chưa được thêm."
 
-#: src/components/AppOverlays.tsx:515
+#: src/components/AppOverlays.tsx:517
 msgctxt "shell.share.more-cards"
 msgid "+{count} more"
 msgstr "+{count} thẻ nữa"
@@ -2295,7 +2295,7 @@ msgctxt "course.switcher.heading"
 msgid "Your <0>courses</0>"
 msgstr "<0>Khóa học</0> của bạn"
 
-#: src/features/onboarding/OnboardingJourney.tsx:411
+#: src/features/onboarding/OnboardingJourney.tsx:455
 msgctxt "onboarding.language.subtitle"
 msgid "This sets the app's interface and the language your explanations will be written in."
 msgstr "Lựa chọn này đặt ngôn ngữ giao diện và ngôn ngữ dùng để giải nghĩa cho bạn."
@@ -2306,12 +2306,12 @@ msgid "App language"
 msgstr "Ngôn ngữ ứng dụng"
 
 #: src/features/courses/CoursesSurface.tsx:236
-#: src/features/onboarding/OnboardingJourney.tsx:139
+#: src/features/onboarding/OnboardingJourney.tsx:180
 msgctxt "onboarding.lumi.label"
 msgid "Lumi"
 msgstr "Lumi"
 
-#: src/features/onboarding/OnboardingJourney.tsx:136
+#: src/features/onboarding/OnboardingJourney.tsx:177
 msgctxt "onboarding.lumi.reminder.body"
 msgid "Pick a time and SonFlash will remind you to review."
 msgstr "Chọn một giờ và SonFlash sẽ nhắc bạn ôn tập."
@@ -2327,12 +2327,12 @@ msgctxt "shell.loading.practice"
 msgid "Loading practice"
 msgstr "Đang tải bài luyện tập"
 
-#: src/features/onboarding/OnboardingJourney.tsx:410
+#: src/features/onboarding/OnboardingJourney.tsx:454
 msgctxt "onboarding.language.heading"
 msgid "Choose your <0>language</0>"
 msgstr "Chọn <0>ngôn ngữ</0> của bạn"
 
-#: src/features/onboarding/OnboardingJourney.tsx:613
+#: src/features/onboarding/OnboardingJourney.tsx:659
 msgctxt "onboarding.aha.heading"
 msgid "Let's add your <0>first cards</0>"
 msgstr "Thêm <0>những thẻ đầu tiên</0> nhé"
@@ -2357,7 +2357,7 @@ msgctxt "shell.loading.workspace"
 msgid "Loading workspace…"
 msgstr "Đang tải không gian học tập…"
 
-#: src/components/AppOverlays.tsx:706
+#: src/components/AppOverlays.tsx:708
 msgctxt "shell.share.earlier-revoke"
 msgid "Revoke"
 msgstr "Thu hồi"
@@ -2367,7 +2367,7 @@ msgctxt "app-overlays.text-practice-mission"
 msgid "Text practice mission"
 msgstr "Nhiệm vụ luyện hội thoại"
 
-#: src/features/onboarding/OnboardingJourney.tsx:387
+#: src/features/onboarding/OnboardingJourney.tsx:431
 msgctxt "onboarding.goal.selected"
 msgid "Selected: <0>{goal}</0>"
 msgstr "Đã chọn: <0>{goal}</0>"
@@ -2377,7 +2377,7 @@ msgctxt "course.switcher.no-active"
 msgid "Choose a course"
 msgstr "Chọn khóa học"
 
-#: src/features/onboarding/OnboardingJourney.tsx:458
+#: src/features/onboarding/OnboardingJourney.tsx:503
 msgctxt "settings.course.script.simplified"
 msgid "Simplified"
 msgstr "Giản thể"
@@ -2387,7 +2387,7 @@ msgctxt "onboarding.level.advanced"
 msgid "Advanced"
 msgstr "Nâng cao"
 
-#: src/features/onboarding/OnboardingJourney.tsx:161
+#: src/features/onboarding/OnboardingJourney.tsx:205
 msgctxt "onboarding.countdown.days"
 msgid "{days, plural, one {day to {goal}} other {days to {goal}}}"
 msgstr "{days, plural, other {ngày đến {goal}}}"
@@ -2397,22 +2397,22 @@ msgctxt "shell.share.empty-description"
 msgid "Close this dialog and try opening the share link again."
 msgstr "Đóng hộp thoại này rồi thử mở lại liên kết chia sẻ."
 
-#: src/components/AppOverlays.tsx:568
+#: src/components/AppOverlays.tsx:570
 msgctxt "shell.share.add-none"
 msgid "No cards to add"
 msgstr "Không có thẻ để thêm"
 
-#: src/features/onboarding/OnboardingJourney.tsx:659
+#: src/features/onboarding/OnboardingJourney.tsx:713
 msgctxt "onboarding.header.tag"
 msgid "Hello · let’s begin"
 msgstr "Xin chào · bắt đầu thôi"
 
-#: src/features/onboarding/OnboardingJourney.tsx:480
+#: src/features/onboarding/OnboardingJourney.tsx:524
 msgctxt "onboarding.goal.exam.description"
 msgid "Set a target score and count down to your test date."
 msgstr "Đặt điểm mục tiêu và đếm ngược đến ngày thi."
 
-#: src/components/shell/LibraryManagementMenu.tsx:342
+#: src/components/shell/LibraryManagementMenu.tsx:374
 msgctxt "shell.menu.export"
 msgid "Export library to Excel"
 msgstr "Xuất thư viện sang Excel"
@@ -2442,17 +2442,17 @@ msgctxt "course.manage.stat.due"
 msgid "Due"
 msgstr "Đến hạn"
 
-#: src/features/onboarding/OnboardingJourney.tsx:495
+#: src/features/onboarding/OnboardingJourney.tsx:540
 msgctxt "onboarding.goal.curious"
 msgid "Just curious"
 msgstr "Chỉ tò mò thôi"
 
-#: src/components/AppOverlays.tsx:646
+#: src/components/AppOverlays.tsx:648
 msgctxt "shell.share.copied"
 msgid "Copied"
 msgstr "Đã sao chép"
 
-#: src/components/AppOverlays.tsx:669
+#: src/components/AppOverlays.tsx:671
 msgctxt "shell.share.privacy-warning"
 msgid "Shared cards may include memory hooks and personal notes. Review them for private information before sharing."
 msgstr "Thẻ chia sẻ có thể chứa mẹo ghi nhớ và ghi chú cá nhân. Hãy kiểm tra thông tin riêng tư trước khi chia sẻ."
@@ -2467,7 +2467,7 @@ msgctxt "shell.loading.progress"
 msgid "Preparing learning progress…"
 msgstr "Đang chuẩn bị tiến độ học…"
 
-#: src/components/AppOverlays.tsx:511
+#: src/components/AppOverlays.tsx:513
 msgctxt "shell.share.copy-detail"
 msgid "New library deck"
 msgstr "Bộ thẻ thư viện mới"
@@ -2482,7 +2482,7 @@ msgctxt "shell.practice-menu.keys-unlock"
 msgid "<0>Press</0> <1/> to pick · add cards to unlock more"
 msgstr "<0>Nhấn</0> <1/> để chọn · thêm thẻ để mở khóa thêm chế độ"
 
-#: src/features/onboarding/OnboardingJourney.tsx:515
+#: src/features/onboarding/OnboardingJourney.tsx:561
 msgctxt "onboarding.exam.level-subtitle"
 msgid "Both are optional and you can change them later."
 msgstr "Cả hai đều không bắt buộc và có thể đổi sau."
@@ -2503,7 +2503,7 @@ msgctxt "course.goal.add.date-label"
 msgid "Exam or target date (optional)"
 msgstr "Ngày thi hoặc ngày mục tiêu (không bắt buộc)"
 
-#: src/features/onboarding/OnboardingJourney.tsx:129
+#: src/features/onboarding/OnboardingJourney.tsx:170
 msgctxt "onboarding.lumi.target.body"
 msgid "Pick one language for now. You can add more from the course switcher."
 msgstr "Chọn một ngôn ngữ trước đã. Bạn có thể thêm ngôn ngữ khác trong trình chuyển khóa học."
@@ -2524,12 +2524,12 @@ msgctxt "onboarding.primer.subtitle"
 msgid "Hangul has 14 basic consonants and 10 basic vowels. They stack into one block per syllable, so once you know the letters you can sound out any word."
 msgstr "Hangul có 14 phụ âm cơ bản và 10 nguyên âm cơ bản. Chúng ghép thành một khối cho mỗi âm tiết, nên khi đã biết các chữ cái, bạn có thể đánh vần bất kỳ từ nào."
 
-#: src/features/onboarding/OnboardingJourney.tsx:592
+#: src/features/onboarding/OnboardingJourney.tsx:638
 msgctxt "onboarding.pace.plan.weekly"
 msgid "cards a week at {pace} a day."
 msgstr "thẻ mỗi tuần, với {pace} thẻ mỗi ngày."
 
-#: src/features/onboarding/OnboardingJourney.tsx:393
+#: src/features/onboarding/OnboardingJourney.tsx:437
 msgctxt "onboarding.eyebrow.exam"
 msgid "Your exam"
 msgstr "Kỳ thi của bạn"
@@ -2539,22 +2539,22 @@ msgctxt "course.add.native-label"
 msgid "Explain meanings in"
 msgstr "Giải nghĩa bằng"
 
-#: src/components/AppOverlays.tsx:565
+#: src/components/AppOverlays.tsx:567
 msgctxt "shell.share.cancel"
 msgid "Cancel"
 msgstr "Hủy"
 
-#: src/features/onboarding/OnboardingJourney.tsx:532
+#: src/features/onboarding/OnboardingJourney.tsx:578
 msgctxt "onboarding.exam.target-date-label"
 msgid "Target date (optional)"
 msgstr "Ngày mục tiêu (không bắt buộc)"
 
-#: src/features/onboarding/OnboardingJourney.tsx:660
+#: src/features/onboarding/OnboardingJourney.tsx:714
 msgctxt "onboarding.progress.label"
 msgid "Setup progress"
 msgstr "Tiến độ thiết lập"
 
-#: src/components/AppOverlays.tsx:704
+#: src/components/AppOverlays.tsx:706
 msgctxt "shell.share.earlier-revoke-label"
 msgid "Revoke the link for {title}"
 msgstr "Thu hồi liên kết của {title}"
@@ -2584,7 +2584,7 @@ msgctxt "shell.undo.window"
 msgid "Undo is available for {seconds} seconds."
 msgstr "Có thể hoàn tác trong {seconds} giây."
 
-#: src/features/onboarding/OnboardingJourney.tsx:133
+#: src/features/onboarding/OnboardingJourney.tsx:174
 msgctxt "onboarding.lumi.script.body"
 msgid "Each block is one syllable. You’ll read it in no time."
 msgstr "Mỗi khối là một âm tiết. Bạn sẽ đọc được ngay thôi."
@@ -2599,7 +2599,7 @@ msgctxt "course.manage.title"
 msgid "Your <0>languages</0>"
 msgstr "<0>Ngôn ngữ</0> của bạn"
 
-#: src/components/AppOverlays.tsx:657
+#: src/components/AppOverlays.tsx:659
 msgctxt "shell.share.link-copied"
 msgid "Link copied"
 msgstr "Đã sao chép liên kết"
@@ -2614,12 +2614,12 @@ msgctxt "course.manage.reading-aid.traditional"
 msgid "Traditional characters"
 msgstr "Chữ phồn thể"
 
-#: src/features/onboarding/OnboardingJourney.tsx:626
+#: src/features/onboarding/OnboardingJourney.tsx:672
 msgctxt "onboarding.aha.next"
 msgid "Set my reminder"
 msgstr "Đặt lời nhắc"
 
-#: src/components/AppOverlays.tsx:732
+#: src/components/AppOverlays.tsx:734
 msgctxt "shell.share.manage"
 msgid "Manage shared link"
 msgstr "Quản lý liên kết chia sẻ"
@@ -2653,13 +2653,13 @@ msgstr "Crystal Star: Ban ngày"
 #: src/components/shell/CourseSwitcherControl.tsx:181
 #: src/features/courses/AddCourseDialog.tsx:117
 #: src/features/courses/CoursesSurface.tsx:225
-#: src/features/onboarding/OnboardingJourney.tsx:369
+#: src/features/onboarding/OnboardingJourney.tsx:413
 msgctxt "course.error.generic"
 msgid "That course action did not go through. Please try again."
 msgstr "Thao tác với khóa học chưa thành công. Vui lòng thử lại."
 
-#: src/features/onboarding/OnboardingJourney.tsx:382
-#: src/features/onboarding/OnboardingJourney.tsx:602
+#: src/features/onboarding/OnboardingJourney.tsx:426
+#: src/features/onboarding/OnboardingJourney.tsx:648
 msgctxt "onboarding.continue"
 msgid "Continue"
 msgstr "Tiếp tục"
@@ -2669,17 +2669,17 @@ msgctxt "shell.theme.crystal-dark"
 msgid "Crystal Star: Night"
 msgstr "Crystal Star: Ban đêm"
 
-#: src/components/AppOverlays.tsx:504
+#: src/components/AppOverlays.tsx:506
 msgctxt "shell.share.importing"
 msgid "Adding {count} cards to your new deck…"
 msgstr "Đang thêm {count} thẻ vào bộ thẻ mới…"
 
-#: src/features/onboarding/OnboardingJourney.tsx:577
+#: src/features/onboarding/OnboardingJourney.tsx:623
 msgctxt "onboarding.pace.subtitle"
 msgid "Your daily study goal, new words and reviews together. Today adds up to {limit} new words a day. You can change this any time in Settings."
 msgstr "Mục tiêu học mỗi ngày, gồm cả từ mới và thẻ ôn tập. Hôm nay thêm tối đa {limit} từ mới mỗi ngày. Bạn có thể đổi bất cứ lúc nào trong Cài đặt."
 
-#: src/components/shell/LibraryManagementMenu.tsx:306
+#: src/components/shell/LibraryManagementMenu.tsx:338
 msgctxt "shell.menu.appearance-settings"
 msgid "Appearance settings"
 msgstr "Cài đặt giao diện"

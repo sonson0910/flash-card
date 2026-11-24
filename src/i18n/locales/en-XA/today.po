@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:121
+#: src/features/dailyLearning/ProgressWorkspace.tsx:126
 msgctxt "progress.weeklyRecap.open"
 msgid "View weekly recap"
 msgstr ""
@@ -33,32 +33,32 @@ msgctxt "today.match.session-expired"
 msgid "This round was open for too long, so its result could not be saved."
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:37
+#: src/features/dailyLearning/ProgressScreen.tsx:38
 msgctxt "progress.lumi.link"
 msgid "Lumi · Link"
 msgstr ""
 
-#: src/features/dailyLearning/SessionBridge.tsx:233
+#: src/features/dailyLearning/SessionBridge.tsx:279
 msgctxt "session.bridge.skip"
 msgid "Skip"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:113
+#: src/features/dailyLearning/ProgressWorkspace.tsx:118
 msgctxt "progress.mastered.empty"
 msgid "No cards have reached mastery yet."
 msgstr "[No cards have reached mastery yet.]"
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:94
+#: src/features/dailyLearning/ProgressWorkspace.tsx:99
 msgctxt "progress.forecast.title"
 msgid "Coming up"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:50
+#: src/features/dailyLearning/ProgressWorkspace.tsx:55
 msgctxt "progress.charts.loading"
 msgid "Loading progress charts…"
 msgstr ""
 
-#: src/features/dailyLearning/TodayScreen.tsx:83
+#: src/features/dailyLearning/TodayScreen.tsx:84
 msgctxt "today-screen.start-recommended-lesson"
 msgid "Start recommended lesson"
 msgstr ""
@@ -68,7 +68,7 @@ msgctxt "webWords.filter.site.label"
 msgid "Site"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:47
+#: src/features/dailyLearning/ProgressScreen.tsx:68
 msgctxt "progress.metric.mastered"
 msgid "Mastered"
 msgstr ""
@@ -78,7 +78,7 @@ msgctxt "webWords.status.empty-batch"
 msgid "No web words for this course are in this batch. Load more to keep looking."
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:78
+#: src/features/dailyLearning/ProgressScreen.tsx:104
 msgctxt "progress.offline.reconnect"
 msgid "You’re offline. Reconnect to review and save your progress."
 msgstr ""
@@ -93,7 +93,8 @@ msgctxt "webWords.feedback.not-added"
 msgid "These cards were not added to today's new-word stage. You can study them elsewhere or try again later."
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:42
+#: src/features/dailyLearning/ProgressScreen.tsx:54
+#: src/features/dailyLearning/ProgressScreen.tsx:63
 msgctxt "progress.empty.title"
 msgid "Your learning story starts here"
 msgstr ""
@@ -104,7 +105,7 @@ msgctxt "webWords.chip.learning"
 msgid "Learning"
 msgstr ""
 
-#: src/features/dailyLearning/TodayScreen.tsx:290
+#: src/features/dailyLearning/TodayScreen.tsx:291
 msgctxt "today-screen.immerse"
 msgid "Immerse"
 msgstr ""
@@ -119,43 +120,43 @@ msgctxt "today.match.retry-verification"
 msgid "Retry verification"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:31
+#: src/features/dailyLearning/ProgressScreen.tsx:32
 msgctxt "progress.lumi.due"
 msgid "{count, plural, one {# word is} other {# words are}} due today. Let’s keep them blooming!"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:31
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:39
 msgid "daily-goals.goal.keep-streak"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:32
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:40
 msgid "daily-goals.goal.start-streak"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:27
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:35
 msgid "daily-goals.goal.study-cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:29
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:37
 msgid "daily-goals.goal.win-match"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:98
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:108
 msgid "daily-goals.heading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:61
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:69
 msgid "daily-goals.not-counted"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:49
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:57
 msgid "daily-goals.progress-value"
 msgstr ""
 
@@ -165,7 +166,7 @@ msgid "daily-goals.resets-in"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyGoals/DailyGoalsPanel.tsx:39
+#: src/features/dailyGoals/DailyGoalsPanel.tsx:47
 msgid "daily-goals.xp"
 msgstr ""
 
@@ -176,29 +177,29 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1201
-#: src/features/dailyLearning/LessonScreen.tsx:270
+#: src/features/dailyLearning/LessonScreen.tsx:283
 msgid "daily.lesson.back-to-today"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/LessonScreen.tsx:112
-#: src/features/dailyLearning/LessonScreen.tsx:276
+#: src/features/dailyLearning/LessonScreen.tsx:289
 msgid "daily.lesson.build-sentence"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:278
+#: src/features/dailyLearning/LessonScreen.tsx:291
 msgid "daily.lesson.check"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/LessonScreen.tsx:94
-#: src/features/dailyLearning/LessonScreen.tsx:276
+#: src/features/dailyLearning/LessonScreen.tsx:289
 msgid "daily.lesson.choose-answer"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:268
+#: src/features/dailyLearning/LessonScreen.tsx:281
 msgid "daily.lesson.complete"
 msgstr ""
 
@@ -208,7 +209,7 @@ msgid "daily.lesson.correct-answer"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:278
+#: src/features/dailyLearning/LessonScreen.tsx:291
 msgid "daily.lesson.enter-key"
 msgstr ""
 
@@ -218,64 +219,64 @@ msgid "daily.lesson.exit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:199
+#: src/features/dailyLearning/LessonScreen.tsx:206
 msgid "daily.lesson.guidance.0"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:200
+#: src/features/dailyLearning/LessonScreen.tsx:207
 msgid "daily.lesson.guidance.1"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:202
-#: src/features/dailyLearning/LessonScreen.tsx:225
+#: src/features/dailyLearning/LessonScreen.tsx:209
+#: src/features/dailyLearning/LessonScreen.tsx:236
 msgid "daily.lesson.guidance.3"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:204
+#: src/features/dailyLearning/LessonScreen.tsx:211
 msgid "daily.lesson.guidance.4"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:206
+#: src/features/dailyLearning/LessonScreen.tsx:213
 msgid "daily.lesson.guidance.5"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:207
+#: src/features/dailyLearning/LessonScreen.tsx:214
 msgid "daily.lesson.guidance.6"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:222
+#: src/features/dailyLearning/LessonScreen.tsx:233
 msgid "daily.lesson.guidance.7"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:223
+#: src/features/dailyLearning/LessonScreen.tsx:234
 msgid "daily.lesson.guidance.8"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:227
+#: src/features/dailyLearning/LessonScreen.tsx:238
 msgid "daily.lesson.guidance.9"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:316
+#: src/features/dailyLearning/LessonScreen.tsx:331
 msgid "daily.lesson.learn-first"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:173
+#: src/features/dailyLearning/LessonScreen.tsx:178
 msgid "daily.lesson.lumi-copy"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:175
-#: src/features/dailyLearning/LessonScreen.tsx:177
+#: src/features/dailyLearning/LessonScreen.tsx:180
+#: src/features/dailyLearning/LessonScreen.tsx:182
 msgid "daily.lesson.lumi-label"
 msgstr ""
 
@@ -285,8 +286,8 @@ msgid "daily.lesson.no-words"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:315
-#: src/features/dailyLearning/PlacementScreen.tsx:128
+#: src/features/dailyLearning/LessonScreen.tsx:330
+#: src/features/dailyLearning/PlacementScreen.tsx:130
 msgid "daily.lesson.play-audio"
 msgstr ""
 
@@ -297,7 +298,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/LessonScreen.tsx:54
-#: src/features/dailyLearning/LessonScreen.tsx:323
+#: src/features/dailyLearning/LessonScreen.tsx:339
 msgid "daily.lesson.question-progress"
 msgstr ""
 
@@ -367,7 +368,7 @@ msgid "daily.lesson.sentence-help"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:267
+#: src/features/dailyLearning/LessonScreen.tsx:280
 msgid "daily.lesson.session-complete-kicker"
 msgstr ""
 
@@ -407,7 +408,7 @@ msgid "daily.lesson.stages-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/LessonScreen.tsx:186
+#: src/features/dailyLearning/LessonScreen.tsx:191
 msgid "daily.lesson.title"
 msgstr ""
 
@@ -417,12 +418,12 @@ msgid "daily.lesson.your-sentence"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:157
+#: src/features/dailyLearning/PlacementScreen.tsx:167
 msgid "daily.placement.back-to-today"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:131
+#: src/features/dailyLearning/PlacementScreen.tsx:142
 msgid "daily.placement.choose-answer"
 msgstr ""
 
@@ -442,22 +443,22 @@ msgid "daily.placement.confidence.medium"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:203
+#: src/features/dailyLearning/PlacementScreen.tsx:212
 msgid "daily.placement.correct-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:162
+#: src/features/dailyLearning/PlacementScreen.tsx:172
 msgid "daily.placement.diagnostic"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:165
+#: src/features/dailyLearning/PlacementScreen.tsx:175
 msgid "daily.placement.eligible-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:191
+#: src/features/dailyLearning/PlacementScreen.tsx:200
 msgid "daily.placement.error-title"
 msgstr ""
 
@@ -467,32 +468,32 @@ msgid "daily.placement.exit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:111
+#: src/features/dailyLearning/PlacementScreen.tsx:117
 msgid "daily.placement.headline.accent"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:111
+#: src/features/dailyLearning/PlacementScreen.tsx:117
 msgid "daily.placement.headline.lead"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:180
+#: src/features/dailyLearning/PlacementScreen.tsx:189
 msgid "daily.placement.insufficient-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:181
+#: src/features/dailyLearning/PlacementScreen.tsx:190
 msgid "daily.placement.insufficient-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:178
+#: src/features/dailyLearning/PlacementScreen.tsx:187
 msgid "daily.placement.insufficient-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:165
+#: src/features/dailyLearning/PlacementScreen.tsx:175
 msgid "daily.placement.intro-note"
 msgstr ""
 
@@ -537,8 +538,8 @@ msgid "daily.placement.ladder.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:117
-#: src/features/dailyLearning/PlacementScreen.tsx:170
+#: src/features/dailyLearning/PlacementScreen.tsx:123
+#: src/features/dailyLearning/PlacementScreen.tsx:178
 msgid "daily.placement.lumi-copy"
 msgstr ""
 
@@ -554,13 +555,13 @@ msgid "daily.placement.meaning-question"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:140
+#: src/features/dailyLearning/PlacementScreen.tsx:151
 msgid "daily.placement.next-question"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:183
-#: src/features/dailyLearning/PlacementScreen.tsx:206
+#: src/features/dailyLearning/PlacementScreen.tsx:192
+#: src/features/dailyLearning/PlacementScreen.tsx:215
 msgid "daily.placement.open-paths"
 msgstr ""
 
@@ -570,29 +571,29 @@ msgid "daily.placement.progress-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:123
+#: src/features/dailyLearning/PlacementScreen.tsx:137
 msgid "daily.placement.question-note"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/PlacementScreen.tsx:95
-#: src/features/dailyLearning/PlacementScreen.tsx:121
+#: src/features/dailyLearning/PlacementScreen.tsx:135
 msgid "daily.placement.question-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:201
+#: src/features/dailyLearning/PlacementScreen.tsx:210
 msgid "daily.placement.result-kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:205
+#: src/features/dailyLearning/PlacementScreen.tsx:214
 msgid "daily.placement.result-note"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1200
-#: src/features/dailyLearning/PlacementScreen.tsx:193
+#: src/features/dailyLearning/PlacementScreen.tsx:202
 msgid "daily.placement.retry"
 msgstr ""
 
@@ -602,7 +603,7 @@ msgid "daily.placement.skip"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:166
+#: src/features/dailyLearning/PlacementScreen.tsx:176
 msgid "daily.placement.start"
 msgstr ""
 
@@ -632,7 +633,7 @@ msgid "daily.placement.title-kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/PlacementScreen.tsx:141
+#: src/features/dailyLearning/PlacementScreen.tsx:152
 msgid "daily.placement.unsure"
 msgstr ""
 
@@ -641,12 +642,12 @@ msgctxt "webWords.status.loading"
 msgid "Loading your web words…"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:80
+#: src/features/dailyLearning/ProgressScreen.tsx:106
 msgctxt "progress.error.kicker"
 msgid "Progress unavailable"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:99
+#: src/features/dailyLearning/ProgressWorkspace.tsx:104
 msgctxt "progress.forecast.unavailable"
 msgid "Forecast is unavailable while saved progress is loading."
 msgstr "[Forecast is unavailable while saved progress is loading.]"
@@ -795,7 +796,7 @@ msgstr ""
 msgid "flashcard.tier.new"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:80
+#: src/features/dailyLearning/ProgressScreen.tsx:106
 msgctxt "progress.error.title"
 msgid "Progress needs attention"
 msgstr ""
@@ -805,57 +806,57 @@ msgctxt "webWords.filter.status.label"
 msgid "Status"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:42
+#: src/features/dailyLearning/ProgressScreen.tsx:63
 msgctxt "progress.clear.title"
 msgid "Your scheduled review is clear"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:22
+#: src/features/dailyLearning/ProgressScreen.tsx:23
 msgctxt "progress.title"
 msgid "Progress"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:94
+#: src/features/dailyLearning/ProgressWorkspace.tsx:99
 msgctxt "progress.forecast.note"
 msgid "Cards due, next 14 days"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:47
+#: src/features/dailyLearning/ProgressScreen.tsx:68
 msgctxt "progress.metric.reviewed"
 msgid "Reviewed"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:34
+#: src/features/dailyLearning/ProgressScreen.tsx:35
 msgctxt "progress.lumi.start"
 msgid "Every review helps your words bloom."
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:72
+#: src/features/dailyLearning/ProgressScreen.tsx:98
 msgctxt "progress.kicker"
 msgid "Study diary"
 msgstr ""
 
-#: src/features/dailyLearning/TodayScreen.tsx:264
+#: src/features/dailyLearning/TodayScreen.tsx:265
 msgctxt "today-screen.start-with-memory-meet-the-words-in-sound-then-use-them-in-a-real"
 msgid "Start with memory, meet the words in sound, then use them in a real context."
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:46
+#: src/features/dailyLearning/ProgressScreen.tsx:43
 msgctxt "progress.add-vocabulary"
 msgid "Add vocabulary"
 msgstr ""
 
-#: src/features/dailyLearning/TodayScreen.tsx:262
+#: src/features/dailyLearning/TodayScreen.tsx:263
 msgctxt "today-screen.one-learning-loop"
 msgid "One learning loop"
 msgstr ""
 
-#: src/features/dailyLearning/TodayScreen.tsx:272
+#: src/features/dailyLearning/TodayScreen.tsx:273
 msgctxt "today-screen.build-recall-with-the-next-scheduled-words"
 msgid "Build recall with the next scheduled words."
 msgstr ""
 
-#: src/features/dailyLearning/TodayScreen.tsx:271
+#: src/features/dailyLearning/TodayScreen.tsx:272
 msgctxt "today-screen.learn"
 msgid "Learn"
 msgstr ""
@@ -866,7 +867,7 @@ msgctxt "today.activity.preparing"
 msgid "Preparing activity…"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:56
+#: src/features/dailyLearning/ProgressScreen.tsx:77
 msgctxt "progress.subtitle.mastered"
 msgid "<0>{count}</0> mastered"
 msgstr ""
@@ -877,7 +878,7 @@ msgid "Add to today’s session"
 msgstr ""
 
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1188
-#: src/features/dailyLearning/SessionBridge.tsx:229
+#: src/features/dailyLearning/SessionBridge.tsx:275
 msgctxt "session.bridge.continue"
 msgid "Continue"
 msgstr ""
@@ -897,7 +898,7 @@ msgctxt "today.match.abandon"
 msgid "Abandon round and start over"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:117
+#: src/features/dailyLearning/ProgressWorkspace.tsx:122
 msgctxt "progress.achievements.open"
 msgid "View achievements"
 msgstr ""
@@ -943,12 +944,12 @@ msgctxt "webWords.page.description"
 msgid "Saved with the SonFlash extension — each one keeps the sentence you found it in."
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:42
+#: src/features/dailyLearning/ProgressScreen.tsx:63
 msgctxt "progress.due.title"
 msgid "Keep today’s memory work moving"
 msgstr ""
 
-#: src/features/dailyLearning/TodayScreen.tsx:306
+#: src/features/dailyLearning/TodayScreen.tsx:307
 msgctxt "today-screen.communicate"
 msgid "Communicate"
 msgstr ""
@@ -958,7 +959,7 @@ msgctxt "webWords.back.today"
 msgid "Today"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:42
+#: src/features/dailyLearning/ProgressScreen.tsx:63
 msgctxt "progress.loading.title"
 msgid "Your saved progress"
 msgstr ""
@@ -969,82 +970,83 @@ msgid "Open {title} in a new tab"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:92
+#: src/features/dailyLearning/ProgressWorkspace.tsx:97
 msgid "progress.evidence.forecast-and-mastery"
 msgstr "[Forecast and recently mastered cards]"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressScreen.tsx:68
+#: src/features/dailyLearning/ProgressScreen.tsx:94
 msgid "progress.insights.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:106
+#: src/features/dailyLearning/ProgressWorkspace.tsx:111
 msgid "progress.mastered.all-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:87
+#: src/features/dailyLearning/ProgressWorkspace.tsx:92
 msgid "progress.message.error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:87
+#: src/features/dailyLearning/ProgressWorkspace.tsx:92
 msgid "progress.message.loading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/ProgressWorkspace.tsx:87
+#: src/features/dailyLearning/ProgressWorkspace.tsx:92
 msgid "progress.message.ready"
 msgstr ""
 
-#: src/features/dailyLearning/SessionBridge.tsx:176
+#: src/features/dailyLearning/SessionBridge.tsx:218
 msgctxt "session.bridge.combo"
 msgid "correct answers in a row"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:104
+#: src/features/dailyLearning/ProgressWorkspace.tsx:109
 msgctxt "progress.mastered.crystal-title"
 msgid "New stars"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:44
+#: src/features/dailyLearning/ProgressScreen.tsx:55
+#: src/features/dailyLearning/ProgressScreen.tsx:65
 msgctxt "progress.empty.description"
 msgid "Complete a review to begin your progress history."
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:33
+#: src/features/dailyLearning/ProgressScreen.tsx:34
 msgctxt "progress.lumi.clear"
 msgid "Nothing due right now. Your words are blooming!"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:55
+#: src/features/dailyLearning/ProgressScreen.tsx:76
 msgctxt "progress.subtitle.reviewed"
 msgid "{count, plural, one {<0>#</0> card reviewed} other {<0>#</0> cards reviewed}}"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:189
+#: src/features/dailyLearning/SessionBridge.tsx:231
 msgid "session.bridge.answer.correct"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:189
+#: src/features/dailyLearning/SessionBridge.tsx:231
 msgid "session.bridge.answer.missed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:95
+#: src/features/dailyLearning/SessionBridge.tsx:111
 msgid "session.bridge.card.flip"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:98
+#: src/features/dailyLearning/SessionBridge.tsx:115
 msgid "session.bridge.card.meaning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:88
+#: src/features/dailyLearning/SessionBridge.tsx:104
 msgid "session.bridge.card.source"
 msgstr ""
 
@@ -1114,27 +1116,27 @@ msgid "session.bridge.completed-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:138
+#: src/features/dailyLearning/SessionBridge.tsx:180
 msgid "session.bridge.exit"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:120
+#: src/features/dailyLearning/SessionBridge.tsx:162
 msgid "session.bridge.feedback.both"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:121
+#: src/features/dailyLearning/SessionBridge.tsx:163
 msgid "session.bridge.feedback.haptics"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:121
+#: src/features/dailyLearning/SessionBridge.tsx:163
 msgid "session.bridge.feedback.none"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:120
+#: src/features/dailyLearning/SessionBridge.tsx:162
 msgid "session.bridge.feedback.sound"
 msgstr ""
 
@@ -1149,32 +1151,32 @@ msgid "session.bridge.live-recap"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:201
+#: src/features/dailyLearning/SessionBridge.tsx:243
 msgid "session.bridge.lumi.body"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:199
+#: src/features/dailyLearning/SessionBridge.tsx:241
 msgid "session.bridge.lumi.name"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:200
+#: src/features/dailyLearning/SessionBridge.tsx:242
 msgid "session.bridge.lumi.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:207
+#: src/features/dailyLearning/SessionBridge.tsx:249
 msgid "session.bridge.preview"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:141
+#: src/features/dailyLearning/SessionBridge.tsx:183
 msgid "session.bridge.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:186
+#: src/features/dailyLearning/SessionBridge.tsx:228
 msgid "session.bridge.recent-answers"
 msgstr ""
 
@@ -1204,7 +1206,7 @@ msgid "session.bridge.summary.new-web"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:194
+#: src/features/dailyLearning/SessionBridge.tsx:236
 msgid "session.bridge.xp"
 msgstr ""
 
@@ -1254,13 +1256,23 @@ msgid "session.stage.review.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/SessionBridge.tsx:158
+#: src/features/dailyLearning/SessionBridge.tsx:200
 msgid "shell.theme.quick-toggle"
 msgstr ""
 
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1212
 msgctxt "daily-learning-workspace.immerse-listen"
 msgid "Immerse · Listen"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressScreen.tsx:50
+msgid "stats.activity-note-26-weeks"
+msgstr ""
+
+#. js-lingui-explicit-id
+#: src/features/dailyLearning/ProgressScreen.tsx:50
+msgid "stats.activity-title"
 msgstr ""
 
 #: src/features/webWords/WebWordsPage.tsx:233
@@ -1273,23 +1285,23 @@ msgctxt "webWords.status.empty.title"
 msgid "No web words yet"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:109
+#: src/features/dailyLearning/ProgressWorkspace.tsx:114
 msgctxt "progress.mastered.chip"
 msgid "Star"
 msgstr ""
 
-#: src/features/dailyLearning/SessionBridge.tsx:175
+#: src/features/dailyLearning/SessionBridge.tsx:217
 msgctxt "session.bridge.combo-crystal"
 msgid "correct in a row"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:268
+#: src/features/dailyLearning/TodayScreen.tsx:269
 msgid "today-screen.learning-journey"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:356
+#: src/features/dailyLearning/TodayScreen.tsx:357
 msgid "today.adult-statement"
 msgstr ""
 
@@ -1304,282 +1316,282 @@ msgid "today.answer.incorrect"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:161
+#: src/features/dailyLearning/TodayScreen.tsx:162
 msgid "today.caught-up.browse-paths"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:140
+#: src/features/dailyLearning/TodayScreen.tsx:141
 msgid "today.caught-up.next-review"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:144
+#: src/features/dailyLearning/TodayScreen.tsx:145
 msgid "today.caught-up.no-new-cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:132
+#: src/features/dailyLearning/TodayScreen.tsx:133
 msgid "today.caught-up.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:134
+#: src/features/dailyLearning/TodayScreen.tsx:135
 msgid "today.caught-up.title-emphasis"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:200
-#: src/features/dailyLearning/TodayScreen.tsx:375
+#: src/features/dailyLearning/TodayReadyHero.tsx:207
+#: src/features/dailyLearning/TodayScreen.tsx:376
 msgid "today.course.fallback"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:531
+#: src/features/dailyLearning/TodayReadyHero.tsx:571
 msgid "today.crystal.day-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:527
+#: src/features/dailyLearning/TodayReadyHero.tsx:566
 msgid "today.crystal.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:534
+#: src/features/dailyLearning/TodayReadyHero.tsx:578
 msgid "today.crystal.lede"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:578
+#: src/features/dailyLearning/TodayReadyHero.tsx:625
 msgid "today.crystal.level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:584
+#: src/features/dailyLearning/TodayReadyHero.tsx:633
 msgid "today.crystal.level-next"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:579
+#: src/features/dailyLearning/TodayReadyHero.tsx:628
 msgid "today.crystal.level-value"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:555
+#: src/features/dailyLearning/TodayReadyHero.tsx:600
 msgid "today.crystal.lumi-hi"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:554
+#: src/features/dailyLearning/TodayReadyHero.tsx:599
 msgid "today.crystal.lumi-hi.named"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:551
+#: src/features/dailyLearning/TodayReadyHero.tsx:596
 msgid "today.crystal.lumi-link"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:560
+#: src/features/dailyLearning/TodayReadyHero.tsx:605
 msgid "today.crystal.lumi-streak.extend"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:514
+#: src/features/dailyLearning/TodayReadyHero.tsx:553
 msgid "today.crystal.lumi-streak.milestone"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:516
-#: src/features/dailyLearning/TodayReadyHero.tsx:561
+#: src/features/dailyLearning/TodayReadyHero.tsx:555
+#: src/features/dailyLearning/TodayReadyHero.tsx:606
 msgid "today.crystal.lumi-streak.start"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:558
+#: src/features/dailyLearning/TodayReadyHero.tsx:603
 msgid "today.crystal.lumi-streak.today"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:569
+#: src/features/dailyLearning/TodayReadyHero.tsx:614
 msgid "today.crystal.path"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:570
+#: src/features/dailyLearning/TodayReadyHero.tsx:615
 msgid "today.crystal.path-minutes"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:569
+#: src/features/dailyLearning/TodayReadyHero.tsx:614
 msgid "today.crystal.path-steps"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:542
+#: src/features/dailyLearning/TodayReadyHero.tsx:587
 msgid "today.crystal.start"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:543
+#: src/features/dailyLearning/TodayReadyHero.tsx:588
 msgid "today.crystal.start-meta"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:599
+#: src/features/dailyLearning/TodayReadyHero.tsx:651
 msgid "today.crystal.words.session"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:602
+#: src/features/dailyLearning/TodayReadyHero.tsx:654
 msgid "today.crystal.words.session-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:599
+#: src/features/dailyLearning/TodayReadyHero.tsx:651
 msgid "today.crystal.words.web"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:601
+#: src/features/dailyLearning/TodayReadyHero.tsx:653
 msgid "today.crystal.words.web-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:154
-#: src/features/dailyLearning/TodayScreen.tsx:358
+#: src/features/dailyLearning/TodayScreen.tsx:155
+#: src/features/dailyLearning/TodayScreen.tsx:359
 msgid "today.empty.add-vocabulary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:349
+#: src/features/dailyLearning/TodayScreen.tsx:350
 msgid "today.empty.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:354
+#: src/features/dailyLearning/TodayScreen.tsx:355
 msgid "today.empty.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:359
+#: src/features/dailyLearning/TodayScreen.tsx:360
 msgid "today.empty.open-paths"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:355
+#: src/features/dailyLearning/TodayScreen.tsx:356
 msgid "today.empty.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:392
+#: src/features/dailyLearning/TodayScreen.tsx:393
 msgid "today.error.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:395
+#: src/features/dailyLearning/TodayScreen.tsx:396
 #: src/features/webWords/WebWordsPage.tsx:283
 msgid "today.error.retry"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:393
+#: src/features/dailyLearning/TodayScreen.tsx:394
 msgid "today.error.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:204
+#: src/features/dailyLearning/TodayReadyHero.tsx:211
 msgid "today.hero.goal.days"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:202
+#: src/features/dailyLearning/TodayReadyHero.tsx:209
 msgid "today.hero.goal.days-level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:206
+#: src/features/dailyLearning/TodayReadyHero.tsx:213
 msgid "today.hero.goal.level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:383
+#: src/features/dailyLearning/TodayReadyHero.tsx:390
 msgid "today.hero.greeting"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:382
+#: src/features/dailyLearning/TodayReadyHero.tsx:389
 msgid "today.hero.greeting.named"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:246
+#: src/features/dailyLearning/TodayReadyHero.tsx:253
 msgid "today.hero.level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:247
+#: src/features/dailyLearning/TodayReadyHero.tsx:254
+#: src/features/dailyLearning/TodayReadyHero.tsx:635
 msgid "today.hero.level-eta"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:249
-#: src/features/dailyLearning/TodayReadyHero.tsx:582
+#: src/features/dailyLearning/TodayReadyHero.tsx:256
 msgid "today.hero.level-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:396
+#: src/features/dailyLearning/TodayReadyHero.tsx:403
 msgid "today.hero.minutes"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:455
+#: src/features/dailyLearning/TodayReadyHero.tsx:462
 msgid "today.hero.ready-words"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:256
+#: src/features/dailyLearning/TodayReadyHero.tsx:263
 msgid "today.hero.review-only"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:402
+#: src/features/dailyLearning/TodayReadyHero.tsx:409
 msgid "today.hero.session"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningScreens.test.tsx:820
-#: src/features/dailyLearning/TodayReadyHero.tsx:403
+#: src/features/dailyLearning/TodayReadyHero.tsx:410
 msgid "today.hero.session-size"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:413
-#: src/features/dailyLearning/TodayReadyHero.tsx:479
+#: src/features/dailyLearning/TodayReadyHero.tsx:420
+#: src/features/dailyLearning/TodayReadyHero.tsx:486
 msgid "today.hero.start"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:183
 #: src/features/dailyLearning/TodayReadyHero.tsx:190
+#: src/features/dailyLearning/TodayReadyHero.tsx:197
 msgid "today.hero.streak.extend"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:182
-#: src/features/dailyLearning/TodayReadyHero.tsx:187
+#: src/features/dailyLearning/TodayReadyHero.tsx:189
+#: src/features/dailyLearning/TodayReadyHero.tsx:194
 msgid "today.hero.streak.keep"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:184
-#: src/features/dailyLearning/TodayReadyHero.tsx:192
+#: src/features/dailyLearning/TodayReadyHero.tsx:191
+#: src/features/dailyLearning/TodayReadyHero.tsx:199
 msgid "today.hero.streak.start"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:416
+#: src/features/dailyLearning/TodayReadyHero.tsx:423
 msgid "today.hero.xp"
 msgstr ""
 
@@ -1614,100 +1626,100 @@ msgid "today.instruction.spelling"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:291
+#: src/features/dailyLearning/TodayScreen.tsx:292
 msgid "today.journey.a-listening-lesson-is-not-available-yet"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:255
+#: src/features/dailyLearning/TodayScreen.tsx:256
 msgid "today.journey.add-vocabulary"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:256
+#: src/features/dailyLearning/TodayScreen.tsx:257
 msgid "today.journey.available-after-your-first-plan"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:291
+#: src/features/dailyLearning/TodayScreen.tsx:292
 msgid "today.journey.build-a-plan-to-unlock-listening-practice"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:307
+#: src/features/dailyLearning/TodayScreen.tsx:308
 msgid "today.journey.build-a-plan-to-unlock-story-shadowing-and-ai-dialogue"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:321
+#: src/features/dailyLearning/TodayScreen.tsx:322
 msgid "today.journey.communicate-go-to-vocabulary-tools-for-ai-dialogue"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:311
+#: src/features/dailyLearning/TodayScreen.tsx:312
 msgid "today.journey.communicate-open-text-story-or-shadowing-practice"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:311
-#: src/features/dailyLearning/TodayScreen.tsx:321
+#: src/features/dailyLearning/TodayScreen.tsx:312
+#: src/features/dailyLearning/TodayScreen.tsx:322
 msgid "today.journey.communicate.aria"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:326
+#: src/features/dailyLearning/TodayScreen.tsx:327
 msgid "today.journey.go-to-vocabulary-tools-for-ai-dialogue"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:295
+#: src/features/dailyLearning/TodayScreen.tsx:296
 msgid "today.journey.immerse-start-listening-practice"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:295
+#: src/features/dailyLearning/TodayScreen.tsx:296
 msgid "today.journey.immerse.aria"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:276
+#: src/features/dailyLearning/TodayScreen.tsx:277
 msgid "today.journey.learn.aria"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:316
+#: src/features/dailyLearning/TodayScreen.tsx:317
 msgid "today.journey.open-communication-practice"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:255
+#: src/features/dailyLearning/TodayScreen.tsx:256
 msgid "today.journey.review-due-words"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:300
+#: src/features/dailyLearning/TodayScreen.tsx:301
 msgid "today.journey.start-listening-practice"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:255
+#: src/features/dailyLearning/TodayScreen.tsx:256
 msgid "today.journey.start-recognition-lesson"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:291
+#: src/features/dailyLearning/TodayScreen.tsx:292
 msgid "today.journey.train-your-ear-with-a-focused-listening-lesson"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:307
+#: src/features/dailyLearning/TodayScreen.tsx:308
 msgid "today.journey.use-a-bounded-text-mission-story-or-shadowing-practice-with-your-"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:339
-#: src/features/dailyLearning/TodayScreen.tsx:346
-#: src/features/dailyLearning/TodayScreen.tsx:372
+#: src/features/dailyLearning/TodayScreen.tsx:340
+#: src/features/dailyLearning/TodayScreen.tsx:347
+#: src/features/dailyLearning/TodayScreen.tsx:373
 msgid "today.kicker"
 msgstr ""
 
@@ -1722,17 +1734,17 @@ msgid "today.mode.active-recall"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:40
+#: src/features/dailyLearning/TodayScreen.tsx:41
 msgid "today.mode.active-recall.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:40
+#: src/features/dailyLearning/TodayScreen.tsx:41
 msgid "today.mode.active-recall.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:40
+#: src/features/dailyLearning/TodayScreen.tsx:41
 msgid "today.mode.active-recall.tag"
 msgstr ""
 
@@ -1742,12 +1754,12 @@ msgid "today.mode.cloze"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:45
+#: src/features/dailyLearning/TodayScreen.tsx:46
 msgid "today.mode.cloze.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:45
+#: src/features/dailyLearning/TodayScreen.tsx:46
 msgid "today.mode.cloze.label"
 msgstr ""
 
@@ -1757,17 +1769,17 @@ msgid "today.mode.listening"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:41
+#: src/features/dailyLearning/TodayScreen.tsx:42
 msgid "today.mode.listening.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:41
+#: src/features/dailyLearning/TodayScreen.tsx:42
 msgid "today.mode.listening.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:41
+#: src/features/dailyLearning/TodayScreen.tsx:42
 msgid "today.mode.listening.tag"
 msgstr ""
 
@@ -1777,17 +1789,17 @@ msgid "today.mode.recognition"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:39
+#: src/features/dailyLearning/TodayScreen.tsx:40
 msgid "today.mode.recognition.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:39
+#: src/features/dailyLearning/TodayScreen.tsx:40
 msgid "today.mode.recognition.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:39
+#: src/features/dailyLearning/TodayScreen.tsx:40
 msgid "today.mode.recognition.tag"
 msgstr ""
 
@@ -1797,12 +1809,12 @@ msgid "today.mode.sentence-building"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:46
+#: src/features/dailyLearning/TodayScreen.tsx:47
 msgid "today.mode.sentence-building.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:46
+#: src/features/dailyLearning/TodayScreen.tsx:47
 msgid "today.mode.sentence-building.label"
 msgstr ""
 
@@ -1812,25 +1824,25 @@ msgid "today.mode.spelling"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:44
+#: src/features/dailyLearning/TodayScreen.tsx:45
 msgid "today.mode.spelling.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:44
+#: src/features/dailyLearning/TodayScreen.tsx:45
 msgid "today.mode.spelling.label"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1194
-#: src/features/dailyLearning/TodayScreen.tsx:348
-#: src/features/dailyLearning/TodayScreen.tsx:379
-#: src/features/dailyLearning/TodayScreen.tsx:403
+#: src/features/dailyLearning/TodayScreen.tsx:349
+#: src/features/dailyLearning/TodayScreen.tsx:380
+#: src/features/dailyLearning/TodayScreen.tsx:404
 msgid "today.offline"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:423
+#: src/features/dailyLearning/TodayScreen.tsx:425
 msgid "today.placement.action"
 msgstr ""
 
@@ -1847,7 +1859,7 @@ msgid "today.placement.core"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:422
+#: src/features/dailyLearning/TodayScreen.tsx:424
 msgid "today.placement.description"
 msgstr ""
 
@@ -1868,7 +1880,7 @@ msgid "today.placement.intro"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:420
+#: src/features/dailyLearning/TodayScreen.tsx:422
 msgid "today.placement.kicker"
 msgstr ""
 
@@ -1879,12 +1891,12 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:1250
-#: src/features/dailyLearning/PlacementScreen.tsx:210
+#: src/features/dailyLearning/PlacementScreen.tsx:217
 msgid "today.placement.result"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:421
+#: src/features/dailyLearning/TodayScreen.tsx:423
 msgid "today.placement.title"
 msgstr ""
 
@@ -1899,7 +1911,7 @@ msgid "today.plan.empty"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:187
+#: src/features/dailyLearning/TodayScreen.tsx:188
 msgid "today.plan.length"
 msgstr ""
 
@@ -1924,12 +1936,12 @@ msgid "today.plan.short"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:420
+#: src/features/dailyLearning/TodayReadyHero.tsx:427
 msgid "today.plan.short-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:189
+#: src/features/dailyLearning/TodayScreen.tsx:190
 msgid "today.plan.sized-start"
 msgstr ""
 
@@ -1939,32 +1951,32 @@ msgid "today.pool.error"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:181
+#: src/features/dailyLearning/TodayScreen.tsx:182
 msgid "today.practice.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:178
+#: src/features/dailyLearning/TodayScreen.tsx:179
 msgid "today.practice.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:183
+#: src/features/dailyLearning/TodayScreen.tsx:184
 msgid "today.practice.more"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:219
+#: src/features/dailyLearning/TodayScreen.tsx:220
 msgid "today.practice.more-modes"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:180
+#: src/features/dailyLearning/TodayScreen.tsx:181
 msgid "today.practice.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:356
+#: src/features/dailyLearning/TodayScreen.tsx:357
 msgid "today.privacy"
 msgstr ""
 
@@ -2004,7 +2016,7 @@ msgid "today.question.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:80
+#: src/features/dailyLearning/TodayScreen.tsx:81
 msgid "today.recommended.aria"
 msgstr ""
 
@@ -2034,12 +2046,12 @@ msgid "today.recommended.reason.weak"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:466
+#: src/features/dailyLearning/TodayReadyHero.tsx:473
 msgid "today.stack.due"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:466
+#: src/features/dailyLearning/TodayReadyHero.tsx:473
 msgid "today.stack.new"
 msgstr ""
 
@@ -2064,7 +2076,7 @@ msgid "today.stage.match.pairs"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:170
+#: src/features/dailyLearning/TodayReadyHero.tsx:177
 msgid "today.stage.minutes"
 msgstr ""
 
@@ -2084,383 +2096,383 @@ msgid "today.stage.weak.count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:210
+#: src/features/dailyLearning/StreakDialog.tsx:211
 msgid "today.streak.chip"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:207
+#: src/features/dailyLearning/StreakDialog.tsx:208
 msgid "today.streak.chip.ended"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:209
+#: src/features/dailyLearning/StreakDialog.tsx:210
 msgid "today.streak.chip.freezes"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:205
+#: src/features/dailyLearning/StreakDialog.tsx:206
 msgid "today.streak.chip.repair"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:293
+#: src/features/dailyLearning/StreakDialog.tsx:304
 msgid "today.streak.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:276
+#: src/features/dailyLearning/StreakDialog.tsx:277
 msgid "today.streak.continue"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:76
+#: src/features/dailyLearning/StreakDialog.tsx:77
 msgid "today.streak.day.done"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:77
+#: src/features/dailyLearning/StreakDialog.tsx:78
 msgid "today.streak.day.frozen"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:81
+#: src/features/dailyLearning/StreakDialog.tsx:82
 msgid "today.streak.day.future"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:79
+#: src/features/dailyLearning/StreakDialog.tsx:80
 msgid "today.streak.day.missed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:78
+#: src/features/dailyLearning/StreakDialog.tsx:79
 msgid "today.streak.day.repaired"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:80
+#: src/features/dailyLearning/StreakDialog.tsx:81
 msgid "today.streak.day.today"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:231
+#: src/features/dailyLearning/StreakDialog.tsx:232
 msgid "today.streak.ended-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:213
+#: src/features/dailyLearning/StreakDialog.tsx:214
 msgid "today.streak.ended-eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:221
+#: src/features/dailyLearning/StreakDialog.tsx:222
 msgid "today.streak.ended-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:218
+#: src/features/dailyLearning/StreakDialog.tsx:219
 msgid "today.streak.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:106
+#: src/features/dailyLearning/StreakDialog.tsx:107
 msgid "today.streak.freezes.earn"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:105
+#: src/features/dailyLearning/StreakDialog.tsx:106
 msgid "today.streak.freezes.earn.crystal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:103
+#: src/features/dailyLearning/StreakDialog.tsx:104
 msgid "today.streak.freezes.full"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:102
+#: src/features/dailyLearning/StreakDialog.tsx:103
 msgid "today.streak.freezes.full.crystal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:118
+#: src/features/dailyLearning/StreakDialog.tsx:119
 msgid "today.streak.freezes.left"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:119
+#: src/features/dailyLearning/StreakDialog.tsx:120
 msgid "today.streak.freezes.none"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:253
+#: src/features/dailyLearning/StreakDialog.tsx:254
 msgid "today.streak.freezes.note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:239
+#: src/features/dailyLearning/StreakDialog.tsx:240
 msgid "today.streak.frozen-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:238
+#: src/features/dailyLearning/StreakDialog.tsx:239
 msgid "today.streak.frozen-description.crystal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:277
+#: src/features/dailyLearning/StreakDialog.tsx:278
 msgid "today.streak.keep-going"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:216
+#: src/features/dailyLearning/StreakDialog.tsx:217
 msgid "today.streak.milestone.badge-eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:243
+#: src/features/dailyLearning/StreakDialog.tsx:244
 msgid "today.streak.milestone.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:217
+#: src/features/dailyLearning/StreakDialog.tsx:218
 msgid "today.streak.milestone.eyebrow"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:242
+#: src/features/dailyLearning/StreakDialog.tsx:243
 msgid "today.streak.milestone.month"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:225
+#: src/features/dailyLearning/StreakDialog.tsx:226
 msgid "today.streak.milestone.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:224
+#: src/features/dailyLearning/StreakDialog.tsx:225
 msgid "today.streak.milestone.title.crystal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:251
+#: src/features/dailyLearning/StreakDialog.tsx:252
 msgid "today.streak.milestone.xp"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:254
+#: src/features/dailyLearning/StreakDialog.tsx:255
 msgid "today.streak.note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:246
+#: src/features/dailyLearning/StreakDialog.tsx:247
 msgid "today.streak.open-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:228
+#: src/features/dailyLearning/StreakDialog.tsx:229
 msgid "today.streak.open-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:235
+#: src/features/dailyLearning/StreakDialog.tsx:236
 msgid "today.streak.repair-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:234
+#: src/features/dailyLearning/StreakDialog.tsx:235
 msgid "today.streak.repair-description.crystal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:271
+#: src/features/dailyLearning/StreakDialog.tsx:272
 msgid "today.streak.repair.continue"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:133
+#: src/features/dailyLearning/StreakDialog.tsx:134
 msgid "today.streak.repair.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:249
+#: src/features/dailyLearning/StreakDialog.tsx:250
 msgid "today.streak.repair.note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:145
+#: src/features/dailyLearning/StreakDialog.tsx:146
 msgid "today.streak.repair.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:138
+#: src/features/dailyLearning/StreakDialog.tsx:139
 msgid "today.streak.repair.progress-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:158
+#: src/features/dailyLearning/StreakDialog.tsx:159
 msgid "today.streak.repair.safe"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:272
-#: src/features/dailyLearning/StreakDialog.tsx:274
+#: src/features/dailyLearning/StreakDialog.tsx:273
+#: src/features/dailyLearning/StreakDialog.tsx:275
 msgid "today.streak.repair.start"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:345
+#: src/features/dailyLearning/StreakDialog.tsx:356
 msgid "today.streak.repair.start-fresh"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:134
+#: src/features/dailyLearning/StreakDialog.tsx:135
 msgid "today.streak.repair.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:156
+#: src/features/dailyLearning/StreakDialog.tsx:157
 msgid "today.streak.repair.window"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:245
+#: src/features/dailyLearning/StreakDialog.tsx:246
 msgid "today.streak.safe-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:227
+#: src/features/dailyLearning/StreakDialog.tsx:228
 msgid "today.streak.safe-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:266
+#: src/features/dailyLearning/StreakDialog.tsx:267
 msgid "today.streak.stat.best"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:266
+#: src/features/dailyLearning/StreakDialog.tsx:267
 msgid "today.streak.stat.best-value"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:264
+#: src/features/dailyLearning/StreakDialog.tsx:265
 msgid "today.streak.stat.days"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:259
+#: src/features/dailyLearning/StreakDialog.tsx:260
 msgid "today.streak.stat.new-words"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:260
+#: src/features/dailyLearning/StreakDialog.tsx:261
 msgid "today.streak.stat.recall"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:258
+#: src/features/dailyLearning/StreakDialog.tsx:259
 msgid "today.streak.stat.reviews"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:261
+#: src/features/dailyLearning/StreakDialog.tsx:262
 msgid "today.streak.stat.run-xp"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:265
+#: src/features/dailyLearning/StreakDialog.tsx:266
 msgid "today.streak.stat.xp"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/StreakDialog.tsx:84
+#: src/features/dailyLearning/StreakDialog.tsx:85
 msgid "today.streak.week"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:356
+#: src/features/dailyLearning/TodayScreen.tsx:357
 msgid "today.terms"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:489
+#: src/features/dailyLearning/TodayReadyHero.tsx:496
 msgid "today.tile.level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:495
+#: src/features/dailyLearning/TodayReadyHero.tsx:502
 msgid "today.tile.new"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:483
+#: src/features/dailyLearning/TodayReadyHero.tsx:490
 msgid "today.tile.review"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayScreen.tsx:59
+#: src/features/dailyLearning/TodayScreen.tsx:60
 msgid "today.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:291
+#: src/features/dailyLearning/TodayReadyHero.tsx:298
 msgid "today.words.reason.due"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:288
+#: src/features/dailyLearning/TodayReadyHero.tsx:295
 msgid "today.words.reason.new"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:290
+#: src/features/dailyLearning/TodayReadyHero.tsx:297
 msgid "today.words.reason.weak"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:338
+#: src/features/dailyLearning/TodayReadyHero.tsx:345
 msgid "today.words.session.match-only"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:334
+#: src/features/dailyLearning/TodayReadyHero.tsx:341
 msgid "today.words.session.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:333
+#: src/features/dailyLearning/TodayReadyHero.tsx:340
 msgid "today.words.session.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:332
+#: src/features/dailyLearning/TodayReadyHero.tsx:339
 msgid "today.words.session.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:353
-#: src/features/dailyLearning/TodayReadyHero.tsx:610
+#: src/features/dailyLearning/TodayReadyHero.tsx:360
+#: src/features/dailyLearning/TodayReadyHero.tsx:662
 msgid "today.words.web.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:352
+#: src/features/dailyLearning/TodayReadyHero.tsx:359
 msgid "today.words.web.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:351
+#: src/features/dailyLearning/TodayReadyHero.tsx:358
 msgid "today.words.web.subtitle-cap"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:349
+#: src/features/dailyLearning/TodayReadyHero.tsx:356
 msgid "today.words.web.title"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:106
+#: src/features/dailyLearning/ProgressWorkspace.tsx:111
 msgctxt "progress.mastered.all"
 msgid "All {count}"
 msgstr ""
@@ -2475,7 +2487,7 @@ msgctxt "today.match.start-failed"
 msgid "Word Match could not start. Your completed reviews are saved."
 msgstr ""
 
-#: src/features/dailyLearning/TodayScreen.tsx:263
+#: src/features/dailyLearning/TodayScreen.tsx:264
 msgctxt "today-screen.learn-immerse-communicate"
 msgid "Learn → Immerse → Communicate"
 msgstr ""
@@ -2520,7 +2532,7 @@ msgctxt "webWords.back.paths"
 msgid "Paths"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:96
+#: src/features/dailyLearning/ProgressWorkspace.tsx:101
 msgctxt "progress.forecast.today"
 msgid "Today"
 msgstr ""
@@ -2530,27 +2542,27 @@ msgctxt "webWords.back.settings"
 msgid "Settings"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:47
+#: src/features/dailyLearning/ProgressScreen.tsx:68
 msgctxt "progress.evidence"
 msgid "Supporting evidence"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:47
+#: src/features/dailyLearning/ProgressScreen.tsx:68
 msgctxt "progress.metric.due"
 msgid "Due today"
 msgstr ""
 
-#: src/features/dailyLearning/TodayScreen.tsx:74
+#: src/features/dailyLearning/TodayScreen.tsx:75
 msgctxt "today-screen.recommended-next"
 msgid "Recommended next"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:45
+#: src/features/dailyLearning/ProgressScreen.tsx:66
 msgctxt "progress.review-due"
 msgid "Review {count, plural, one {# due word} other {# due words}}"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressScreen.tsx:46
+#: src/features/dailyLearning/ProgressScreen.tsx:43
 msgctxt "progress.start-review"
 msgid "Start your first review"
 msgstr ""
@@ -2560,7 +2572,7 @@ msgctxt "webWords.back.progress"
 msgid "Progress"
 msgstr ""
 
-#: src/features/dailyLearning/ProgressWorkspace.tsx:105
+#: src/features/dailyLearning/ProgressWorkspace.tsx:110
 msgctxt "progress.mastered.title"
 msgid "Recently <0>mastered</0>"
 msgstr ""
