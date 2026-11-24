@@ -159,13 +159,36 @@ async function clickAfterRewards(page: Page, action: Locator) {
   }
 }
 
+/**
+ * The reward for a rating opens over the lesson whenever its lazily loaded screen is ready, which can be
+ * while the next question is already being answered. A reward that opens between a click's press and its
+ * release swallows that click, so the answer step is repeated until its feedback shows.
+ */
+async function answerAndCheck(page: Page) {
+  const choice = page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first();
+  const check = page.getByRole('button', { name: 'Check', exact: true });
+  const feedback = page.locator('[data-lesson-feedback]');
+  await expect(async () => {
+    await dismissRewards(page);
+    if (!await feedback.isVisible()) {
+      if (await check.isDisabled({ timeout: 2_500 })) await choice.click({ timeout: 2_500 });
+      await check.click({ timeout: 2_500 });
+    }
+    await expect(feedback).toBeVisible({ timeout: 2_500 });
+  }).toPass({ timeout: 30_000 });
+}
+
 async function waitForNextQuestionOrCompletion(page: Page, complete: Locator) {
   const submitButton = page.getByRole('button', { name: 'Check', exact: true });
   const reward = page.locator('.anime-reveal');
+  const good = page.getByRole('button', { name: 'Good' });
   for (let index = 0; index < 5; index += 1) {
     await expect(submitButton.or(complete).or(reward)).toBeVisible({ timeout: 15_000 });
     await dismissRewards(page);
     if (await submitButton.or(complete).isVisible()) return;
+    // A rating still offered and not being saved means the reward swallowed the rating click. The
+    // question may advance before the repeated click lands, which the next pass then sees.
+    if (await good.isVisible() && await good.isEnabled()) await good.click({ timeout: 2_500 }).catch(() => undefined);
   }
   await expect(submitButton.or(complete)).toBeVisible();
 }
@@ -179,10 +202,7 @@ async function waitForNextQuestionOrCompletion(page: Page, complete: Locator) {
  * rest of this suite already uses for that round-trip.
  */
 async function rateCurrentQuestion(page: Page, complete: Locator): Promise<void> {
-  await dismissRewards(page);
-  await clickAfterRewards(page, page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first());
-  await clickAfterRewards(page, page.getByRole('button', { name: 'Check', exact: true }));
-  await expect(page.locator('[data-lesson-feedback]')).toBeVisible();
+  await answerAndCheck(page);
   await clickAfterRewards(page, page.getByRole('button', { name: 'Good' }));
   // `AnswerControl`'s <fieldset> is the same DOM node across questions (only
   // its `disabled` attribute and options change), so waiting for its "group"
@@ -212,9 +232,7 @@ async function runLessonStage(
   await onFront();
 
   const complete = page.getByRole('heading', { level: 1, name: 'Lesson complete' });
-  await page.getByRole('group', { name: 'Choose one answer' }).getByRole('button').first().click();
-  await page.getByRole('button', { name: 'Check', exact: true }).click();
-  await expect(page.locator('[data-lesson-feedback]')).toBeVisible();
+  await answerAndCheck(page);
   if (onBack) await onBack();
   await clickAfterRewards(page, page.getByRole('button', { name: 'Good' }));
   await waitForNextQuestionOrCompletion(page, complete);

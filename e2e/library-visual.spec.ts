@@ -392,6 +392,10 @@ test('Library edit image removal makes the unsaved draft state explicit', async 
   await expect(page.locator('[data-edit-preview] img')).toHaveCount(0);
   await expect(page.locator('[data-edit-dirty]')).toHaveText('Unsaved');
   await expect(page.getByRole('button', { name: 'Discard' })).toBeVisible();
+  // Where the form rests after the photo is removed can differ by a pixel from run to run, so the capture
+  // first scrolls the settled form to a fixed place, with the pointer off the form.
+  await page.locator('[data-edit-image-find]').evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await page.mouse.move(0, 0);
   const screenshot = testInfo.outputPath('library-edit-image-removed-classic-light-mobile.png');
   const image = await page.locator('[role="dialog"]').last().screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
   await testInfo.attach('library-edit-image-removed-classic-light-mobile', { path: screenshot, contentType: 'image/png' });
