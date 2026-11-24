@@ -29,7 +29,7 @@
   </header>
 
   <aside style="position: absolute; z-index: 4; left: 64px; top: 220px; width: 290px;">
-    <div class="nk-rise" style="position: relative; box-sizing: border-box; padding: 16px 20px 18px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
+    <div class="nk-rise" style="position: relative; box-sizing: border-box; padding: 16px 20px 18px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
       <span aria-hidden="true" style="position: absolute; left: 0; top: 18px; bottom: 18px; width: 3px; background: linear-gradient(180deg, #ff2a4d, #5ef2ff);"></span>
       <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.1em; color: {{t.holoText}};">LUMI · LINK</div>
       <div style="margin-top: 4px; font-weight: 900; font-size: 18px; line-height: 1.3; color: {{t.textStrong}};">{{voltLine}}</div>
@@ -52,7 +52,7 @@
         <div class="nk-pop" style="position: absolute; right: 8px; top: 118px; height: 30px; padding: 0 14px; clip-path: {{t.chamferSm}}; background: linear-gradient(180deg, #fff0b8, #ffd166); color: #4a2a00; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 15px; display: flex; align-items: center;">+{{xpGain}} XP</div>
       </sc-if>
     </div>
-    <div style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 16px 20px 18px;">
+    <div style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 16px 20px 18px;">
       <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.holoText}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff;"></span>DAILY GOAL</div>
       <div style="margin-top: 6px; font-weight: 900; font-size: 17px; color: {{t.textStrong}};">Review 12 cards</div>
       <div style="margin-top: 10px; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: {{questPct}}%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.7); transition: width 600ms {{t.snap}};"></div></div>
@@ -178,7 +178,7 @@
                     <span style="font-family: {{t.fMono}}; font-size: 13px;">{{back.ipa}}</span>
                     <button class="nk-lift" onClick="{{listen}}" aria-label="Listen to pronunciation" style="width: 32px; height: 32px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
                   </div>
-                  <figure class="{{revealCls3}}" style="position: relative; margin: 18px 0 0; width: 100%; box-sizing: border-box; padding: 14px 18px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; text-align: left;">
+                  <figure class="{{revealCls3}}" style="position: relative; margin: 18px 0 0; width: 100%; box-sizing: border-box; padding: 14px 18px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; text-align: left;">
                     <blockquote style="margin: 0; font-weight: 800; font-size: 17px; line-height: 1.45; color: {{t.textStrong}};">“{{back.examplePre}}<span style="font-weight: 900; color: {{t.crimsonText}};">{{back.exampleWord}}</span>{{back.examplePost}}”</blockquote>
                     <figcaption style="margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: {{t.text2}};">{{back.exampleVi}}</figcaption>
                   </figure>

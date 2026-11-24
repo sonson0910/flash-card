@@ -29,7 +29,7 @@
 
     <div style="margin-top: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; width: 100%;">
       <sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
-        <div class="{{s.cls}}" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{s.edge}}; padding: 14px 20px 16px;">
+        <div class="{{s.cls}}" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{s.edge}}; padding: 14px 20px 16px;">
           <span aria-hidden="true" style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: {{s.bar}};"></span>
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.text2}};">{{s.label}}</div>
           <div style="margin-top: 2px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 44px; line-height: 1.05; white-space: nowrap; color: {{s.color}};">{{s.value}}</div>
@@ -39,7 +39,7 @@
     </div>
 
     <div style="margin-top: 16px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; width: 100%;">
-      <div class="nk-rise-2" style="clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 16px 22px 18px; display: flex; flex-direction: column;">
+      <div class="nk-rise-2" style="clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 16px 22px 18px; display: flex; flex-direction: column;">
         <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.crimsonText}};">CARDS GLOWED UP <span style="color: {{t.text3}};">// 3</span></div>
         <div style="margin-top: 12px; flex-grow: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
           <sc-for list="{{ups}}" as="u" hint-placeholder-count="3">
@@ -54,7 +54,7 @@
           </sc-for>
         </div>
       </div>
-      <div class="nk-rise-3" style="clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 16px 22px 18px;">
+      <div class="nk-rise-3" style="clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 16px 22px 18px;">
         <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.holoText}};">IELTS BAND GOAL</div>
         <div style="margin-top: 8px; display: flex; align-items: baseline; gap: 12px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 40px; color: {{t.text3}};">{{ielts.latest}}</span><span style="margin-left: -6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; color: {{t.text3}};">LATEST</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{t.holoText}}" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 48px; color: {{t.textStrong}}; filter: drop-shadow(0 0 14px rgb(94 242 255 / 0.6));">{{ielts.target}}</span><span style="margin-left: -6px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; color: {{t.holoText}};">TARGET</span></div>
         <div style="position: relative; margin-top: 8px; height: 12px; transform: skewX(-24deg); background: {{t.track}};">

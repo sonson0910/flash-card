@@ -15,7 +15,7 @@
       <h1 id="rem-title" style="margin: 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 44px; line-height: 1; color: {{t.textStrong}};">A NUDGE, <span style="background: {{t.metal}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820) drop-shadow(0 0 14px rgb(255 42 77 / 0.5));">NOT A NAG.</span></h1>
       <p style="margin: 8px 0 0; font-size: 14.5px; color: {{t.text2}};">We remind you once a day, only when cards are waiting.</p>
 
-      <div style="margin-top: 16px; padding: 18px 22px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
+      <div style="margin-top: 16px; padding: 18px 22px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
         <div style="display: flex; align-items: center; gap: 18px;">
           <div>
             <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.14em; color: {{t.text2}};">DAILY REMINDER</div>
@@ -44,7 +44,7 @@
       <h2 style="margin: 16px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; letter-spacing: 0.1em; color: {{t.textStrong}};">CHANNELS</h2>
       <div style="margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
         <sc-for list="{{channels}}" as="c" hint-placeholder-count="3">
-          <div style="padding: 14px 16px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+          <div style="padding: 14px 16px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <span style="width: 34px; height: 38px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.tier.new.rim}}; color: #031820; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{c.icon}}"></path></svg></span>
               <span role="switch" aria-checked="{{c.on}}" aria-label="{{c.label}}" style="width: 48px; height: 24px; padding: 3px; box-sizing: border-box; transform: skewX(-14deg); background: {{c.track}}; display: flex; justify-content: {{c.align}};"><span style="width: 18px; height: 18px; background: {{c.knob}};"></span></span>
@@ -58,7 +58,7 @@
       <h2 style="margin: 16px 0 0; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 17px; letter-spacing: 0.1em; color: {{t.textStrong}};">SOUNDS &amp; HAPTICS</h2>
       <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <sc-for list="{{sounds}}" as="s" hint-placeholder-count="4">
-          <div style="height: 50px; padding: 0 14px 0 8px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; gap: 12px;">
+          <div style="height: 50px; padding: 0 14px 0 8px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; display: flex; align-items: center; gap: 12px;">
             <button aria-label="Play {{s.label}}" class="nk-lift" style="width: 34px; height: 36px; border: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></button>
             <span style="flex-grow: 1; font-weight: 800; font-size: 14.5px; color: {{t.textStrong}};">{{s.label}}</span>
             <span role="switch" aria-checked="{{s.on}}" aria-label="{{s.label}}" style="width: 48px; height: 24px; padding: 3px; box-sizing: border-box; transform: skewX(-14deg); background: {{s.track}}; display: flex; justify-content: {{s.align}};"><span style="width: 18px; height: 18px; background: {{s.knob}};"></span></span>
@@ -105,7 +105,7 @@
         <div class="nk-float" style="width: 116px; height: 116px; flex-shrink: 0;">
 <!--#MASCOT hint-->
         </div>
-        <div style="margin-bottom: 14px; flex-grow: 1; padding: 10px 14px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+        <div style="margin-bottom: 14px; flex-grow: 1; padding: 10px 14px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
           <div style="margin-top: 2px; font-weight: 800; font-size: 13.5px; line-height: 1.4; color: {{t.textStrong}};">Mình chỉ gọi bạn một lần mỗi ngày, khi có thẻ đến hạn.</div>
         </div>

@@ -19,7 +19,7 @@
 
   <main style="position: relative; z-index: 3; flex-grow: 1; display: grid; grid-template-columns: 250px 410px 1fr; gap: 40px; padding: 10px 56px 70px 48px; align-items: center;">
     <aside style="display: flex; flex-direction: column; padding-top: 60px;">
-      <div class="nk-rise" style="position: relative; box-sizing: border-box; padding: 14px 18px 16px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+      <div class="nk-rise" style="position: relative; box-sizing: border-box; padding: 14px 18px 16px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
         <span aria-hidden="true" style="position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; background: linear-gradient(180deg, #ff2a4d, #5ef2ff);"></span>
         <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
         <div style="margin-top: 4px; font-weight: 900; font-size: 17px; line-height: 1.3; color: {{t.textStrong}};">{{lumiLine}}</div>
@@ -76,7 +76,7 @@
         </div>
       </sc-for>
       <sc-if value="{{answered}}" hint-placeholder-val="{{true}}">
-        <div class="nk-rise-2" style="position: relative; margin-top: 8px; padding: 14px 18px 14px 22px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; gap: 14px; align-items: flex-start;">
+        <div class="nk-rise-2" style="position: relative; margin-top: 8px; padding: 14px 18px 14px 22px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; display: flex; gap: 14px; align-items: flex-start;">
           <span aria-hidden="true" style="position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
           <span style="width: 30px; height: 30px; flex-shrink: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(180deg, #7ff6ff, #1aa7c9); color: #031820; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 16px; display: flex; align-items: center; justify-content: center;">i</span>
           <p style="margin: 0; font-size: 14px; line-height: 1.55; color: {{t.body}};"><b style="color: {{t.textStrong}}; font-weight: 900;">am·bi·tion</b> <span style="font-family: {{t.fMono}}; color: {{t.text2}};">/æmˈbɪʃ.ən/</span> is the goal itself. <b style="color: {{t.textStrong}}; font-weight: 900;">Ambitious</b> is the adjective — it describes a person, so it cannot fill a noun slot.</p>

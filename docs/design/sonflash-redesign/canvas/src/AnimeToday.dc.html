@@ -31,7 +31,7 @@
         <div class="nk-float" style="width: 238px; height: 254px; flex-shrink: 0;">
 <!--#MASCOT idle-->
         </div>
-        <div class="nk-rise-3" style="position: relative; margin-bottom: 52px; width: 346px; box-sizing: border-box; padding: 16px 20px 18px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+        <div class="nk-rise-3" style="position: relative; margin-bottom: 52px; width: 346px; box-sizing: border-box; padding: 16px 20px 18px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
           <span aria-hidden="true" style="position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
           <div style="margin-top: 4px; font-weight: 900; font-size: 18px; color: {{t.textStrong}};">Hi Khánh! {{dueTotal}} cards are waiting.</div>
@@ -41,7 +41,7 @@
     </section>
 
     <section style="display: flex; flex-direction: column; gap: 22px; min-width: 0;">
-      <div class="nk-rise" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 22px 26px 26px;">
+      <div class="nk-rise" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 22px 26px 26px;">
         <div style="display: flex; align-items: center; gap: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.14em; color: {{t.crimsonText}};">TODAY'S PATH <span style="color: {{t.text3}};">// 4 STEPS</span><span style="margin-left: auto; font-size: 13px; color: {{t.text2}}; letter-spacing: 0.08em;">~12 MIN</span></div>
         <div style="position: relative; margin-top: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
           <div aria-hidden="true" style="position: absolute; left: 60px; right: 60px; top: 44px; height: 3px; background: linear-gradient(90deg, #ff2a4d, #ff8fb6 40%, {{t.track}} 60%); box-shadow: 0 0 12px rgb(255 42 77 / 0.6);"></div>
@@ -62,7 +62,7 @@
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 250px; gap: 22px; min-height: 0;">
-        <div class="nk-rise-2" style="clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 22px 24px 24px;">
+        <div class="nk-rise-2" style="clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 22px 24px 24px;">
           <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 0.14em; color: {{t.holoText}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff;"></span>DAILY GOALS<span style="margin-left: auto; font-size: 12.5px; color: {{t.text3}}; letter-spacing: 0.08em;">RESET 14:22</span></div>
           <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 20px;">
             <sc-for list="{{quests}}" as="q" hint-placeholder-count="3">
@@ -76,7 +76,7 @@
           </div>
         </div>
 
-        <div class="nk-rise-3" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 22px 22px 24px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="nk-rise-3" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 22px 22px 24px; display: flex; flex-direction: column; justify-content: space-between;">
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.crimsonText}};">FRIENDS LEAGUE</div>
           <div style="display: flex; align-items: center; gap: 12px;"><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 76px; line-height: 0.9; padding-right: 4px; background: {{t.metalGold}}; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 #7a0820);">{{leagueSize}}</span><span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; line-height: 1.25; letter-spacing: 0.1em; color: {{t.text2}};">LEARNING<br>THIS WEEK</span></div>
           <span style="align-self: flex-start; height: 28px; padding: 0 12px; transform: skewX(-14deg); background: linear-gradient(90deg, #5ef2ff, #1aa7c9); display: flex; align-items: center;"><span style="transform: skewX(14deg); font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.08em; color: #031820;">WEEK ENDS IN 2D 6H</span></span>
@@ -84,7 +84,7 @@
         </div>
       </div>
 
-      <div class="nk-rise-3" style="clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; padding: 18px 24px 20px;">
+      <div class="nk-rise-3" style="clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.lineStrong}}; padding: 18px 24px 20px;">
         <div style="display: flex; align-items: center; gap: 10px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; color: {{t.violetText}};">WORDS FROM THE WEB <span style="color: {{t.text3}};">// {{newCount}} NEW · ADDED TO STEP 2</span></div>
         <div style="margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px;">
           <sc-for list="{{webWords}}" as="w" hint-placeholder-count="5">

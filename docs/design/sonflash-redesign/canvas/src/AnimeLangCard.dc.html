@@ -1,7 +1,7 @@
 <!--#AHEAD Crystal Star multilingual card-->
 <div style="width: 720px; height: 780px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: {{t.fBody}}; background: {{t.pageBg}}; display: flex; flex-direction: column; align-items: center;">
 <!--#ABG-->
-  <div style="position: relative; z-index: 4; margin-top: 24px; height: 42px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 16px 0 6px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
+  <div style="position: relative; z-index: 4; margin-top: 24px; height: 42px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 16px 0 6px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}};">
     <span style="height: 30px; min-width: 38px; padding: 0 9px; box-sizing: border-box; clip-path: {{t.chamferSm}}; background: {{t.primaryBg}}; color: #ffffff; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 15px; display: flex; align-items: center; justify-content: center;">{{L.target.code}}</span>
     <span lang="{{langTag}}" style="font-family: {{v.sansFont}}; font-weight: 900; font-size: 15px; color: {{t.textStrong}};">{{L.target.name}}</span>
     <span style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.08em; color: {{t.crimsonText}};">//</span>
@@ -11,7 +11,7 @@
   </div>
 
   <div style="position: absolute; z-index: 3; left: 4px; bottom: 6px; width: 132px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;">
-    <div class="nk-rise" style="position: relative; box-sizing: border-box; width: 128px; padding: 8px 10px 9px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+    <div class="nk-rise" style="position: relative; box-sizing: border-box; width: 128px; padding: 8px 10px 9px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
       <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 10.5px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
       <div style="margin-top: 2px; font-size: 12px; font-weight: 800; line-height: 1.35; color: {{t.textStrong}};">{{lumiLine}}</div>
     </div>
@@ -152,7 +152,7 @@
                     </div>
                   </sc-if>
 
-                  <figure style="position: relative; margin: 14px 0 0; padding: 10px 14px 11px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+                  <figure style="position: relative; margin: 14px 0 0; padding: 10px 14px 11px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
                     <figcaption style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: {{t.holoText}};">{{S.example}}</figcaption>
                     <sc-if value="{{v.isJa}}" hint-placeholder-val="{{false}}">
                       <p lang="ja" style="margin: 2px 0 0; font-family: {{v.sansFont}}; font-weight: 700; font-size: 17px; line-height: 1.9; color: {{t.textStrong}};"><sc-for list="{{v.exFront}}" as="s" hint-placeholder-count="6"><ruby style="color: {{s.color}}; font-weight: {{s.weight}}; background: {{s.bg}};">{{s.t}}<rt style="font-size: 9.5px; color: {{t.text2}}; filter: {{v.aidFilter}};">{{s.rt}}</rt></ruby></sc-for></p>
@@ -234,7 +234,7 @@
                       <span style="font-weight: 900; color: {{t.crimsonText}};">{{hanviet.reading}}</span>
                     </div>
                   </sc-if>
-                  <figure class="{{revealCls3}}" style="position: relative; margin: 14px 0 0; width: 100%; box-sizing: border-box; padding: 12px 16px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; text-align: left;">
+                  <figure class="{{revealCls3}}" style="position: relative; margin: 14px 0 0; width: 100%; box-sizing: border-box; padding: 12px 16px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; text-align: left;">
                     <sc-if value="{{v.isJa}}" hint-placeholder-val="{{false}}">
                       <blockquote lang="ja" style="margin: 0; font-family: {{v.sansFont}}; font-weight: 800; font-size: 17px; line-height: 1.9; color: {{t.textStrong}};"><sc-for list="{{v.exBack}}" as="s" hint-placeholder-count="6"><ruby style="color: {{s.color}}; font-weight: {{s.weight}}; background: {{s.bg}};">{{s.t}}<rt style="font-size: 9.5px; color: {{t.text2}};">{{s.rt}}</rt></ruby></sc-for></blockquote>
                     </sc-if>

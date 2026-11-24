@@ -83,7 +83,7 @@
         <div class="nk-float" style="width: 124px; height: 124px; flex-shrink: 0;">
 <!--#MASCOT $-->
         </div>
-        <div style="position: relative; flex-grow: 1; padding: 12px 14px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+        <div style="position: relative; flex-grow: 1; padding: 12px 14px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
           <div style="margin-top: 2px; font-weight: 900; font-size: 15.5px; line-height: 1.3; color: {{t.textStrong}};">Hi Khánh! 18 cards are waiting for you.</div>
         </div>
@@ -106,7 +106,7 @@
         </sc-for>
       </div>
 
-      <div class="nk-rise-3" style="margin-top: 16px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 14px 16px 12px;">
+      <div class="nk-rise-3" style="margin-top: 16px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 14px 16px 12px;">
         <div style="display: flex; align-items: center; gap: 8px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.holoText}};"><span style="width: 8px; height: 8px; transform: rotate(45deg); background: #5ef2ff; box-shadow: 0 0 8px #5ef2ff;"></span>DAILY GOALS<span style="margin-left: auto; font-family: {{t.fBody}}; font-style: normal; font-weight: 700; font-size: 11.5px; letter-spacing: 0; color: {{t.text3}};">Reset 23:59</span></div>
         <sc-for list="{{quests}}" as="q" hint-placeholder-count="3">
           <div style="margin-top: 11px;">
@@ -135,7 +135,7 @@
 
       <div style="margin-top: 16px; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
-          <div class="{{s.cls}}" style="padding: 12px 14px; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{s.edge}}; text-align: left;">
+          <div class="{{s.cls}}" style="padding: 12px 14px; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{s.edge}}; text-align: left;">
             <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 700; font-size: 11px; letter-spacing: 0.12em; color: {{t.text3}};">{{s.label}}</div>
             <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1.1; color: {{s.fg}};">{{s.value}}</div>
           </div>

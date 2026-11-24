@@ -5,7 +5,7 @@
 
   <main style="position: relative; z-index: 3; flex-grow: 1; padding: 14px 44px 36px; display: grid; grid-template-columns: 360px 1fr; gap: 32px;">
     <aside class="nk-rise" style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 16px; min-height: 0;">
-      <div style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 22px 24px 22px;">
+      <div style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 22px 24px 22px;">
         <div aria-hidden="true" class="nk-beam" style="position: absolute; left: 50%; top: -40%; width: 90px; height: 180%; transform: rotate(24deg); background: linear-gradient(90deg, transparent, {{t.beam}}, transparent);"></div>
         <div style="position: relative; display: flex; align-items: center; gap: 16px;">
           <div style="position: relative; width: 88px; height: 96px; flex-shrink: 0; filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.6));">
@@ -21,7 +21,7 @@
         <div style="position: relative; margin-top: 16px; height: 10px; transform: skewX(-24deg); background: {{t.track}}; overflow: hidden;"><div style="width: 65%; height: 100%; background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); box-shadow: 0 0 12px rgb(255 42 77 / 0.7);"></div></div>
       </div>
 
-      <div style="clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 18px 22px;">
+      <div style="clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 18px 22px;">
         <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: 0.12em; color: {{t.holoText}};">CARDS BY BLOOM</div>
         <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 14px;">
           <sc-for list="{{grades}}" as="g" hint-placeholder-count="3">
@@ -36,7 +36,7 @@
         </div>
       </div>
 
-      <div style="position: relative; flex-grow: 1; min-height: 0; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 20px 24px 0; display: flex; flex-direction: column;">
+      <div style="position: relative; flex-grow: 1; min-height: 0; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge}}; padding: 20px 24px 0; display: flex; flex-direction: column;">
         <div aria-hidden="true" style="position: absolute; left: 50%; bottom: -60px; width: 300px; height: 300px; margin-left: -150px; border-radius: 50%; background: radial-gradient(circle, rgb(94 242 255 / 0.22), transparent 65%);"></div>
         <div style="position: relative; padding-left: 14px; box-shadow: inset 3px 0 0 #5ef2ff;">
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>

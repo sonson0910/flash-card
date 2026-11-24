@@ -54,7 +54,7 @@
         </sc-for>
         <button style="position: relative; height: 450px; border: 0; padding: 0; background: transparent; cursor: pointer; font-family: inherit; text-align: left;">
           <span aria-hidden="true" style="position: absolute; inset: 0; clip-path: {{t.chamfer}}; background: repeating-linear-gradient(135deg, {{t.lineStrong}} 0 2px, transparent 2px 12px);"></span>
-          <span style="position: absolute; inset: 2px; clip-path: {{t.chamfer}}; background: {{t.panel}}; padding: 20px 18px; box-sizing: border-box; display: flex; flex-direction: column;">
+          <span style="position: absolute; inset: 2px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; padding: 20px 18px; box-sizing: border-box; display: flex; flex-direction: column;">
             <span style="width: 56px; height: 56px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.primaryBg}}; color: #ffffff; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
             <span style="margin-top: 16px; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 24px; line-height: 1.05; color: {{t.textStrong}};">NEW<br>LANGUAGE</span>
             <span style="margin-top: 6px; font-size: 13px; line-height: 1.4; color: {{t.text2}};">Pro: unlimited · Free: 2</span>
@@ -76,7 +76,7 @@
           </span>
           <span style="position: relative; margin-left: 10px; height: 26px; padding: 0 9px; background: rgb(0 0 0 / 0.22); font-family: {{t.fMono}}; font-size: 11px; display: flex; align-items: center;">Enter</span>
         </button>
-        <div style="flex-grow: 1; clip-path: {{t.chamferSm}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 12px 18px; display: flex; gap: 22px;">
+        <div style="flex-grow: 1; clip-path: {{t.chamferSm}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}}; padding: 12px 18px; display: flex; gap: 22px;">
           <sc-for list="{{loadout}}" as="o" hint-placeholder-count="3">
             <div style="min-width: 0;">
               <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.14em; color: {{t.holoText}};">{{o.l}}</div>
@@ -94,7 +94,7 @@
           <span lang="ja" style="transform: skewX(16deg); font-family: 'Noto Sans JP', sans-serif; font-weight: 900; font-size: 20px; color: #ffffff;">日本語</span>
         </div>
       </sc-if>
-      <div class="nk-rise-2" style="position: relative; box-sizing: border-box; padding: 14px 16px 16px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+      <div class="nk-rise-2" style="position: relative; box-sizing: border-box; padding: 14px 16px 16px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
         <span aria-hidden="true" style="position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
         <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
         <div style="margin-top: 3px; font-weight: 900; font-size: 17px; line-height: 1.3; color: {{t.textStrong}};">{{lumiLine}}</div>

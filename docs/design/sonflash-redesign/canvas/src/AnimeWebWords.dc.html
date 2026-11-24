@@ -14,7 +14,7 @@
         <div class="nk-float" style="width: 92px; height: 92px; flex-shrink: 0;">
 <!--#MASCOT hint-->
         </div>
-        <div style="position: relative; margin-bottom: 10px; width: 232px; box-sizing: border-box; padding: 8px 14px 9px; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
+        <div style="position: relative; margin-bottom: 10px; width: 232px; box-sizing: border-box; padding: 8px 14px 9px; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{t.panelEdge2}};">
           <span aria-hidden="true" style="position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: linear-gradient(180deg, #5ef2ff, #ff2a4d);"></span>
           <div style="font-family: {{t.fDisplay}}; font-style: italic; font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: {{t.holoText}};">LUMI · LINK</div>
           <div style="margin-top: 2px; font-weight: 800; font-size: 13px; line-height: 1.35; color: {{t.textStrong}};">I keep the whole sentence so you remember the context.</div>
@@ -33,7 +33,7 @@
 
     <div style="margin-top: 16px; flex-grow: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 22px;">
       <sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
-        <section class="{{g.rise}}" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panel}}; box-shadow: inset 0 0 0 1px {{g.edge}}; display: flex; flex-direction: column; min-height: 0;">
+        <section class="{{g.rise}}" style="position: relative; clip-path: {{t.chamfer}}; background: {{t.panelWork}}; box-shadow: inset 0 0 0 1px {{g.edge}}; display: flex; flex-direction: column; min-height: 0;">
           <header style="display: flex; align-items: center; gap: 14px; padding: 16px 20px 14px; border-bottom: 1px solid {{t.line}};">
             <span style="width: 42px; height: 42px; flex-shrink: 0; clip-path: {{t.chamferSm}}; background: {{g.fav}}; color: #ffffff; display: flex; align-items: center; justify-content: center; font-family: {{t.fDisplay}}; font-style: italic; font-weight: 900; font-size: 20px;">{{g.site0}}</span>
             <div style="min-width: 0; flex-grow: 1;">
