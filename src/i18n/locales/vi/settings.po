@@ -28,7 +28,7 @@ msgctxt "settings.reminders.badge.read-only"
 msgid "Read only"
 msgstr "Chỉ xem"
 
-#: src/features/settings/CourseSettingsSection.tsx:180
+#: src/features/settings/CourseSettingsSection.tsx:189
 msgctxt "settings.voice"
 msgid "Voice"
 msgstr "Giọng nói"
@@ -58,7 +58,7 @@ msgctxt "settings.reminders.skip"
 msgid "Skip for now"
 msgstr "Bỏ qua lúc này"
 
-#: src/features/settings/CourseSettingsSection.tsx:247
+#: src/features/settings/CourseSettingsSection.tsx:256
 msgctxt "settings.course.meaning-language.scope"
 msgid "Applies to new cards. Existing card meanings do not change."
 msgstr "Chỉ áp dụng cho thẻ mới. Nghĩa của thẻ hiện có không thay đổi."
@@ -88,17 +88,17 @@ msgctxt "settings.reminders.smart"
 msgid "Smart reminder"
 msgstr "Nhắc thông minh"
 
-#: src/features/settings/CourseSettingsSection.tsx:264
+#: src/features/settings/CourseSettingsSection.tsx:273
 msgctxt "settings.course.note.body"
 msgid "Meanings stay in the language they were written in."
 msgstr "Nghĩa vẫn giữ ở ngôn ngữ đã được viết."
 
-#: src/features/settings/CourseSettingsSection.tsx:163
+#: src/features/settings/CourseSettingsSection.tsx:172
 msgctxt "settings.course.add"
 msgid "Add a language"
 msgstr "Thêm ngôn ngữ"
 
-#: src/features/settings/CourseSettingsSection.tsx:87
+#: src/features/settings/CourseSettingsSection.tsx:96
 msgctxt "settings.course.ui-language"
 msgid "App language"
 msgstr "Ngôn ngữ ứng dụng"
@@ -153,12 +153,12 @@ msgctxt "settings.sound.label"
 msgid "Study sounds"
 msgstr "Âm thanh học tập"
 
-#: src/features/settings/CourseSettingsSection.tsx:222
+#: src/features/settings/CourseSettingsSection.tsx:231
 msgctxt "settings.course.archived"
 msgid "Archived courses"
 msgstr "Khóa học đã lưu trữ"
 
-#: src/features/settings/CourseSettingsSection.tsx:188
+#: src/features/settings/CourseSettingsSection.tsx:197
 msgctxt "settings.voice.automatic"
 msgid "Automatic"
 msgstr "Tự động"
@@ -168,7 +168,7 @@ msgctxt "settings.follow-system.label"
 msgid "Follow system"
 msgstr "Theo hệ thống"
 
-#: src/features/settings/CourseSettingsSection.tsx:88
+#: src/features/settings/CourseSettingsSection.tsx:97
 msgctxt "settings.course.ui-language.scope"
 msgid "Menus, buttons, emails and notifications"
 msgstr "Menu, nút bấm, email và thông báo"
@@ -188,7 +188,7 @@ msgctxt "settings.theme.paper"
 msgid "Ink & Paper"
 msgstr "Ink & Paper"
 
-#: src/features/settings/CourseSettingsSection.tsx:194
+#: src/features/settings/CourseSettingsSection.tsx:203
 msgctxt "settings.course.keyboard.ko-help"
 msgid "Korean 2-set (두벌식): add Korean in your device keyboard settings, or use the on-screen keys in Korean practice."
 msgstr "Bàn phím tiếng Hàn 2-set (두벌식): hãy thêm tiếng Hàn trong cài đặt bàn phím của thiết bị, hoặc dùng các phím trên màn hình khi luyện tiếng Hàn."
@@ -203,7 +203,7 @@ msgctxt "settings.reminders.preview.mail-subject"
 msgid "Your SonFlash weekly recap"
 msgstr "Tổng kết tuần học SonFlash"
 
-#: src/features/settings/CourseSettingsSection.tsx:204
+#: src/features/settings/CourseSettingsSection.tsx:213
 msgctxt "settings.course.pace.description"
 msgid "Cards you aim to study each day"
 msgstr "Số thẻ bạn đặt mục tiêu học mỗi ngày"
@@ -233,7 +233,7 @@ msgctxt "settings.reminders.timezone"
 msgid "Time zone"
 msgstr "Múi giờ"
 
-#: src/features/settings/CourseSettingsSection.tsx:194
+#: src/features/settings/CourseSettingsSection.tsx:203
 msgctxt "settings.course.keyboard"
 msgid "Keyboard"
 msgstr "Bàn phím"
@@ -248,7 +248,7 @@ msgctxt "settings.reminders.timezone.use-device"
 msgid "Use this device’s time zone"
 msgstr "Dùng múi giờ của thiết bị này"
 
-#: src/features/settings/CourseSettingsSection.tsx:189
+#: src/features/settings/CourseSettingsSection.tsx:198
 msgctxt "settings.voice.unavailable"
 msgid "Saved voice unavailable · Automatic"
 msgstr "Giọng đã lưu không khả dụng · Tự động"
@@ -323,17 +323,17 @@ msgctxt "settings.crystal-mode.day"
 msgid "Prism Day"
 msgstr "Prism Day"
 
-#: src/features/settings/CourseSettingsSection.tsx:176
+#: src/features/settings/CourseSettingsSection.tsx:185
 msgctxt "settings.course.romanization"
 msgid "Show romanization"
 msgstr "Hiện phiên âm Latin"
 
-#: src/features/settings/CourseSettingsSection.tsx:176
+#: src/features/settings/CourseSettingsSection.tsx:185
 msgctxt "settings.course.romanization.description"
 msgid "Your saved choice for this course. Each card has its own reading switch."
 msgstr "Lựa chọn đã lưu cho khóa học này. Mỗi thẻ có công tắc cách đọc riêng."
 
-#: src/features/settings/CourseSettingsSection.tsx:268
+#: src/features/settings/CourseSettingsSection.tsx:277
 msgctxt "settings.course.pace.error"
 msgid "Daily pace could not be saved. Please try again."
 msgstr "Không thể lưu nhịp học hằng ngày. Hãy thử lại."
@@ -373,7 +373,7 @@ msgctxt "settings.reminders.preview.mail-day"
 msgid "Sun"
 msgstr "CN"
 
-#: src/features/settings/CourseSettingsSection.tsx:197
+#: src/features/settings/CourseSettingsSection.tsx:206
 msgctxt "settings.course.script"
 msgid "Chinese script"
 msgstr "Chữ Hán"
@@ -418,7 +418,7 @@ msgctxt "settings.crystal-mode.night"
 msgid "Starry Night"
 msgstr "Starry Night"
 
-#: src/features/settings/CourseSettingsSection.tsx:200
+#: src/features/settings/CourseSettingsSection.tsx:209
 msgctxt "settings.course.script.traditional"
 msgid "Traditional"
 msgstr "Phồn thể"
@@ -443,7 +443,7 @@ msgctxt "settings.menu.sounds"
 msgid "Sounds & haptics"
 msgstr "Âm thanh & rung"
 
-#: src/features/settings/CourseSettingsSection.tsx:170
+#: src/features/settings/CourseSettingsSection.tsx:179
 msgctxt "settings.course.active-badge"
 msgid "Active"
 msgstr "Đang học"
@@ -468,7 +468,7 @@ msgctxt "settings.reminders.preview.mail-link"
 msgid "Continue on SonFlash →"
 msgstr "Tiếp tục trên SonFlash →"
 
-#: src/features/settings/CourseSettingsSection.tsx:232
+#: src/features/settings/CourseSettingsSection.tsx:241
 msgctxt "settings.course.add.title"
 msgid "Start another language"
 msgstr "Học thêm ngôn ngữ khác"
@@ -478,7 +478,7 @@ msgctxt "settings.reminders.quiet"
 msgid "Quiet hours"
 msgstr "Giờ yên lặng"
 
-#: src/features/settings/CourseSettingsSection.tsx:204
+#: src/features/settings/CourseSettingsSection.tsx:213
 msgctxt "settings.course.pace"
 msgid "Daily pace"
 msgstr "Nhịp học mỗi ngày"
@@ -494,33 +494,33 @@ msgid "Reminders follow this clock."
 msgstr "Lời nhắc chạy theo giờ này."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:160
+#: src/features/settings/CourseSettingsSection.tsx:169
 msgid "settings.course.list.label"
 msgstr "Khóa học của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:205
+#: src/features/settings/CourseSettingsSection.tsx:214
 msgid "settings.course.pace.label"
 msgstr "Nhịp học mỗi ngày"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:206
+#: src/features/settings/CourseSettingsSection.tsx:215
 msgid "settings.course.pace.option"
 msgstr "{count} thẻ / ngày"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:102
-#: src/features/settings/CourseSettingsSection.tsx:158
+#: src/features/settings/CourseSettingsSection.tsx:111
+#: src/features/settings/CourseSettingsSection.tsx:167
 msgid "settings.course.region"
 msgstr "Ngôn ngữ & khóa học"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:198
+#: src/features/settings/CourseSettingsSection.tsx:207
 msgid "settings.course.script.label"
 msgstr "Chữ Hán"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:84
+#: src/features/settings/CourseSettingsSection.tsx:93
 msgid "settings.course.ui-language.label"
 msgstr "Ngôn ngữ ứng dụng"
 
@@ -570,22 +570,22 @@ msgid "settings.sound.preview"
 msgstr "Phát thử âm thanh học tập"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:128
+#: src/features/settings/CourseSettingsSection.tsx:137
 msgid "settings.voice.empty"
 msgstr "Không có giọng {language} nào được cài đặt. Có thể chọn tự động."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:122
+#: src/features/settings/CourseSettingsSection.tsx:131
 msgid "settings.voice.label"
 msgstr "Giọng nói"
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:126
+#: src/features/settings/CourseSettingsSection.tsx:135
 msgid "settings.voice.missing"
 msgstr "Giọng đã lưu không khả dụng. Đang dùng lựa chọn tự động."
 
 #. js-lingui-explicit-id
-#: src/features/settings/CourseSettingsSection.tsx:124
+#: src/features/settings/CourseSettingsSection.tsx:133
 msgid "settings.voice.unsupported"
 msgstr "Giọng nói trên thiết bị không khả dụng."
 
@@ -599,12 +599,12 @@ msgctxt "settings.sounds.description"
 msgid "Feedback while you study, on this device."
 msgstr "Phản hồi khi học, trên thiết bị này."
 
-#: src/features/settings/CourseSettingsSection.tsx:211
+#: src/features/settings/CourseSettingsSection.tsx:220
 msgctxt "settings.course.archive"
 msgid "Archive course"
 msgstr "Lưu trữ khóa học"
 
-#: src/features/settings/CourseSettingsSection.tsx:180
+#: src/features/settings/CourseSettingsSection.tsx:189
 msgctxt "settings.voice.description"
 msgid "Read words aloud with a voice on this device"
 msgstr "Đọc to từ bằng giọng có trên thiết bị này"
@@ -614,17 +614,17 @@ msgctxt "settings.description"
 msgid "Choose a look and tune the details that help you focus."
 msgstr "Chọn phong cách và điều chỉnh chi tiết giúp bạn tập trung."
 
-#: src/features/settings/CourseSettingsSection.tsx:199
+#: src/features/settings/CourseSettingsSection.tsx:208
 msgctxt "settings.course.script.simplified"
 msgid "Simplified"
 msgstr "Giản thể"
 
-#: src/features/settings/CourseSettingsSection.tsx:260
+#: src/features/settings/CourseSettingsSection.tsx:269
 msgctxt "settings.course.meaning-language.preview"
 msgid "preview on a card"
 msgstr "xem trước trên thẻ"
 
-#: src/features/settings/CourseSettingsSection.tsx:162
+#: src/features/settings/CourseSettingsSection.tsx:171
 msgctxt "settings.course.list.title"
 msgid "Your courses · {count}"
 msgstr "Khóa học của bạn · {count}"
@@ -634,7 +634,7 @@ msgctxt "settings.reminders.push-denied"
 msgid "Browser notifications are blocked. Allow them in your browser settings to turn on push."
 msgstr "Thông báo trình duyệt đang bị chặn. Hãy cho phép trong cài đặt trình duyệt để bật thông báo đẩy."
 
-#: src/features/settings/CourseSettingsSection.tsx:246
+#: src/features/settings/CourseSettingsSection.tsx:255
 msgctxt "settings.course.meaning-language.title"
 msgid "Meanings and explanations in"
 msgstr "Nghĩa và giải thích bằng"
@@ -644,7 +644,7 @@ msgctxt "settings.follow-system.description"
 msgid "Match your device’s light or dark setting."
 msgstr "Theo chế độ sáng hoặc tối của thiết bị."
 
-#: src/features/settings/CourseSettingsSection.tsx:176
+#: src/features/settings/CourseSettingsSection.tsx:185
 msgctxt "settings.course.romanization.description-en"
 msgid "Your saved choice for this course."
 msgstr "Lựa chọn đã lưu cho khóa học này."
@@ -676,17 +676,17 @@ msgctxt "settings.sounds.eyebrow"
 msgid "Sounds & haptics"
 msgstr "Âm thanh & rung"
 
-#: src/features/settings/CourseSettingsSection.tsx:226
+#: src/features/settings/CourseSettingsSection.tsx:235
 msgctxt "settings.course.reopen"
 msgid "Reopen"
 msgstr "Mở lại"
 
-#: src/features/settings/CourseSettingsSection.tsx:264
+#: src/features/settings/CourseSettingsSection.tsx:273
 msgctxt "settings.course.note.title"
 msgid "Switching the app language never changes your cards."
 msgstr "Đổi ngôn ngữ ứng dụng không bao giờ thay đổi thẻ của bạn."
 
-#: src/features/settings/CourseSettingsSection.tsx:267
+#: src/features/settings/CourseSettingsSection.tsx:276
 msgctxt "course.error.generic"
 msgid "That course action did not go through. Please try again."
 msgstr "Thao tác với khóa học không thành công. Hãy thử lại."

@@ -18,7 +18,7 @@ msgctxt "progress.studied-since"
 msgid "<0>{duration}</0> studied since {date}"
 msgstr "<0>{duration}</0> studied since {date}"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:202
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:203
 msgctxt "weeklyRecap.action.share"
 msgid "Share"
 msgstr "Share"
@@ -263,7 +263,7 @@ msgstr "Titles"
 msgid "achievements.unlocked-count"
 msgstr "{earned} / {total} unlocked"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:246
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:247
 msgctxt "weeklyRecap.export-error"
 msgid "Could not create the image. Please try again."
 msgstr "Could not create the image. Please try again."
@@ -283,7 +283,7 @@ msgctxt "progress.studied"
 msgid "<0>{duration}</0> studied"
 msgstr "<0>{duration}</0> studied"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:237
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:238
 msgctxt "weeklyRecap.caption.label"
 msgid "Caption"
 msgstr "Caption"
@@ -293,7 +293,7 @@ msgctxt "weeklyRecap.saved-warning"
 msgid "Showing saved recap. Recent reviews may not be included."
 msgstr "Showing saved recap. Recent reviews may not be included."
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:226
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:227
 msgctxt "weeklyRecap.selection.legend"
 msgid "Show on the card"
 msgstr "Show on the card"
@@ -923,32 +923,32 @@ msgid "weeklyRecap.chip.under-minute"
 msgstr "< 1 min"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:218
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:219
 msgid "weeklyRecap.controls.ahead"
 msgstr "<0>+{words, plural, one {# word} other {# words}}</0> compared with last week."
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:165
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:166
 msgid "weeklyRecap.controls.best-week"
 msgstr "Your best week <0>so far.</0>"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:166
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:167
 msgid "weeklyRecap.controls.best-week-since"
 msgstr "Your best week <0>since {date}.</0>"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:215
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:216
 msgid "weeklyRecap.controls.kicker"
 msgstr "Weekly recap <0/> Ready to share"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:164
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:165
 msgid "weeklyRecap.controls.title"
 msgstr "Your week <0>so far.</0>"
 
 #. js-lingui-explicit-id
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:222
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:223
 msgid "weeklyRecap.counted-since"
 msgstr "Weekly word counts started on {date}."
 
@@ -1098,7 +1098,7 @@ msgstr "Reviewed {reviews, plural, one {# time} other {# times}} this week"
 msgid "weeklyRecap.word-of-week.label"
 msgstr "Word of the week"
 
-#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:203
+#: src/features/weeklyRecap/WeeklyRecapScreen.tsx:204
 msgctxt "weeklyRecap.action.download"
 msgid "Download PNG"
 msgstr "Download PNG"

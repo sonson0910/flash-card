@@ -1347,113 +1347,113 @@ msgid "today.course.fallback"
 msgstr "Khóa học hiện tại của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:571
+#: src/features/dailyLearning/TodayReadyHero.tsx:580
 msgid "today.crystal.day-title"
 msgstr "Ngày <0>{day}</0>"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:566
+#: src/features/dailyLearning/TodayReadyHero.tsx:575
 msgid "today.crystal.kicker"
 msgstr "{weekday} // Tuần {week}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:578
+#: src/features/dailyLearning/TodayReadyHero.tsx:587
 msgid "today.crystal.lede"
 msgstr "{count, plural, other {# thẻ đang chờ bạn.}} Một bài học gồm {steps, plural, one {# bước} other {cả # bước}}."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:625
+#: src/features/dailyLearning/TodayReadyHero.tsx:634
 msgid "today.crystal.level"
 msgstr "Cấp độ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:633
+#: src/features/dailyLearning/TodayReadyHero.tsx:642
 msgid "today.crystal.level-next"
 msgstr "+{xp} XP để lên Lv {level}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:628
+#: src/features/dailyLearning/TodayReadyHero.tsx:637
 msgid "today.crystal.level-value"
 msgstr "Lv {level}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:600
+#: src/features/dailyLearning/TodayReadyHero.tsx:609
 msgid "today.crystal.lumi-hi"
 msgstr "{count, plural, other {Chào bạn! # thẻ đang chờ.}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:599
+#: src/features/dailyLearning/TodayReadyHero.tsx:608
 msgid "today.crystal.lumi-hi.named"
 msgstr "{count, plural, other {Chào {name}! # thẻ đang chờ.}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:596
+#: src/features/dailyLearning/TodayReadyHero.tsx:605
 msgid "today.crystal.lumi-link"
 msgstr "Lumi · Link"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:605
+#: src/features/dailyLearning/TodayReadyHero.tsx:614
 msgid "today.crystal.lumi-streak.extend"
 msgstr "Học xong hôm nay để có {count} ngày liên tiếp."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:553
+#: src/features/dailyLearning/TodayReadyHero.tsx:562
 msgid "today.crystal.lumi-streak.milestone"
 msgstr "{count, plural, other {Streak # ngày.}} {left, plural, other {Còn # ngày nữa là tới mốc {milestone} ngày.}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:555
-#: src/features/dailyLearning/TodayReadyHero.tsx:606
+#: src/features/dailyLearning/TodayReadyHero.tsx:564
+#: src/features/dailyLearning/TodayReadyHero.tsx:615
 msgid "today.crystal.lumi-streak.start"
 msgstr "Học xong hôm nay để bắt đầu streak mới."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:603
+#: src/features/dailyLearning/TodayReadyHero.tsx:612
 msgid "today.crystal.lumi-streak.today"
 msgstr "{count, plural, other {Streak # ngày. Hôm nay bạn làm tốt lắm.}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:614
+#: src/features/dailyLearning/TodayReadyHero.tsx:623
 msgid "today.crystal.path"
 msgstr "Lộ trình hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:615
+#: src/features/dailyLearning/TodayReadyHero.tsx:624
 msgid "today.crystal.path-minutes"
 msgstr "~{minutes} phút"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:614
+#: src/features/dailyLearning/TodayReadyHero.tsx:623
 msgid "today.crystal.path-steps"
 msgstr "{steps, plural, other {# bước}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:587
+#: src/features/dailyLearning/TodayReadyHero.tsx:596
 msgid "today.crystal.start"
 msgstr "Bắt đầu bài học hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:588
+#: src/features/dailyLearning/TodayReadyHero.tsx:597
 msgid "today.crystal.start-meta"
 msgstr "{minutes} phút · {steps, plural, other {# bước}} · tối đa +{xp} XP"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:651
+#: src/features/dailyLearning/TodayReadyHero.tsx:660
 msgid "today.crystal.words.session"
 msgstr "Trong bài học hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:654
+#: src/features/dailyLearning/TodayReadyHero.tsx:663
 msgid "today.crystal.words.session-count"
 msgstr "{count, plural, other {# từ}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:651
+#: src/features/dailyLearning/TodayReadyHero.tsx:660
 msgid "today.crystal.words.web"
 msgstr "Từ gặp trên web"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:653
+#: src/features/dailyLearning/TodayReadyHero.tsx:662
 msgid "today.crystal.words.web-count"
 msgstr "Đã lưu {count} · {inSession} trong bài này"
 
@@ -1515,60 +1515,60 @@ msgid "today.hero.goal.level"
 msgstr "{goal} · mục tiêu {level}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:390
+#: src/features/dailyLearning/TodayReadyHero.tsx:395
 msgid "today.hero.greeting"
 msgstr "{period, select, morning {Chào buổi sáng.} afternoon {Chào buổi chiều.} other {Chào buổi tối.}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:389
+#: src/features/dailyLearning/TodayReadyHero.tsx:394
 msgid "today.hero.greeting.named"
 msgstr "{period, select, morning {Chào buổi sáng, {name}.} afternoon {Chào buổi chiều, {name}.} other {Chào buổi tối, {name}.}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:253
+#: src/features/dailyLearning/TodayReadyHero.tsx:258
 msgid "today.hero.level"
 msgstr "Cấp {level} · <0>{xp}</0> / {next} XP"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:254
-#: src/features/dailyLearning/TodayReadyHero.tsx:635
+#: src/features/dailyLearning/TodayReadyHero.tsx:259
+#: src/features/dailyLearning/TodayReadyHero.tsx:644
 msgid "today.hero.level-eta"
 msgstr "Lên cấp {level} sau ≈ {sessions, plural, other {# buổi}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:256
+#: src/features/dailyLearning/TodayReadyHero.tsx:261
 msgid "today.hero.level-progress"
 msgstr "Tiến độ cấp độ"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:403
+#: src/features/dailyLearning/TodayReadyHero.tsx:408
 msgid "today.hero.minutes"
 msgstr "Hôm nay <0>{minutes, plural, other {# phút}}</0>."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:462
+#: src/features/dailyLearning/TodayReadyHero.tsx:468
 msgid "today.hero.ready-words"
 msgstr "{count, plural, other {# từ đang chờ bạn <0>ghi nhớ.</0>}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:263
+#: src/features/dailyLearning/TodayReadyHero.tsx:268
 msgid "today.hero.review-only"
 msgstr "Chỉ ôn tập thôi"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:409
+#: src/features/dailyLearning/TodayReadyHero.tsx:414
 msgid "today.hero.session"
 msgstr "Buổi học hôm nay"
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningScreens.test.tsx:820
-#: src/features/dailyLearning/TodayReadyHero.tsx:410
+#: src/features/dailyLearning/TodayReadyHero.tsx:415
 msgid "today.hero.session-size"
 msgstr "Đã xếp {count, plural, other {# thẻ}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:420
-#: src/features/dailyLearning/TodayReadyHero.tsx:486
+#: src/features/dailyLearning/TodayReadyHero.tsx:425
+#: src/features/dailyLearning/TodayReadyHero.tsx:459
 msgid "today.hero.start"
 msgstr "Bắt đầu buổi học hôm nay · {minutes} phút"
 
@@ -1591,7 +1591,7 @@ msgid "today.hero.streak.start"
 msgstr "bắt đầu streak học của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:423
+#: src/features/dailyLearning/TodayReadyHero.tsx:428
 msgid "today.hero.xp"
 msgstr "Nhận tối đa +{xp} XP khi hoàn thành"
 
@@ -1936,7 +1936,7 @@ msgid "today.plan.short"
 msgstr "Kế hoạch ngắn hơn đã sẵn sàng."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:427
+#: src/features/dailyLearning/TodayReadyHero.tsx:432
 msgid "today.plan.short-description"
 msgstr "Hôm nay có ít hơn 10 thẻ đủ điều kiện. Bạn vẫn có thể hoàn thành kế hoạch ngắn hơn này."
 
@@ -2046,12 +2046,12 @@ msgid "today.recommended.reason.weak"
 msgstr "Củng cố một từ còn yếu"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:473
+#: src/features/dailyLearning/TodayReadyHero.tsx:479
 msgid "today.stack.due"
 msgstr "Đến hạn ôn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:473
+#: src/features/dailyLearning/TodayReadyHero.tsx:479
 msgid "today.stack.new"
 msgstr "Từ mới"
 
@@ -2397,17 +2397,17 @@ msgid "today.terms"
 msgstr "Điều khoản"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:496
+#: src/features/dailyLearning/TodayReadyHero.tsx:505
 msgid "today.tile.level"
 msgstr "Cấp {level}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:502
+#: src/features/dailyLearning/TodayReadyHero.tsx:511
 msgid "today.tile.new"
 msgstr "Từ mới"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:490
+#: src/features/dailyLearning/TodayReadyHero.tsx:499
 msgid "today.tile.review"
 msgstr "Cần ôn"
 
@@ -2417,58 +2417,58 @@ msgid "today.title"
 msgstr "Hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:298
+#: src/features/dailyLearning/TodayReadyHero.tsx:303
 msgid "today.words.reason.due"
 msgstr "Đến hạn ôn"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:295
+#: src/features/dailyLearning/TodayReadyHero.tsx:300
 msgid "today.words.reason.new"
 msgstr "Từ mới"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:297
+#: src/features/dailyLearning/TodayReadyHero.tsx:302
 msgid "today.words.reason.weak"
 msgstr "Cần ôn thêm"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:345
+#: src/features/dailyLearning/TodayReadyHero.tsx:350
 msgid "today.words.session.match-only"
 msgstr "Hôm nay là một vòng Word Match với các từ bạn đã biết."
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:341
+#: src/features/dailyLearning/TodayReadyHero.tsx:346
 msgid "today.words.session.open"
 msgstr "Mở kho từ vựng"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:340
+#: src/features/dailyLearning/TodayReadyHero.tsx:345
 msgid "today.words.session.subtitle"
 msgstr "{shown} trong {total, plural, other {# từ đã xếp}}"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:339
+#: src/features/dailyLearning/TodayReadyHero.tsx:344
 msgid "today.words.session.title"
 msgstr "Trong buổi học hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:360
-#: src/features/dailyLearning/TodayReadyHero.tsx:662
+#: src/features/dailyLearning/TodayReadyHero.tsx:365
+#: src/features/dailyLearning/TodayReadyHero.tsx:671
 msgid "today.words.web.open"
 msgstr "Xem tất cả kèm câu gốc"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:359
+#: src/features/dailyLearning/TodayReadyHero.tsx:364
 msgid "today.words.web.subtitle"
 msgstr "{count, plural, other {# từ đã lưu}} · {inSession} trong buổi học hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:358
+#: src/features/dailyLearning/TodayReadyHero.tsx:363
 msgid "today.words.web.subtitle-cap"
 msgstr "{count} từ lưu gần nhất · {inSession} trong buổi học hôm nay"
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:356
+#: src/features/dailyLearning/TodayReadyHero.tsx:361
 msgid "today.words.web.title"
 msgstr "Từ bạn gặp trên web"
 

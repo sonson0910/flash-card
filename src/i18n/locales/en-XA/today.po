@@ -1347,113 +1347,113 @@ msgid "today.course.fallback"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:571
+#: src/features/dailyLearning/TodayReadyHero.tsx:580
 msgid "today.crystal.day-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:566
+#: src/features/dailyLearning/TodayReadyHero.tsx:575
 msgid "today.crystal.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:578
+#: src/features/dailyLearning/TodayReadyHero.tsx:587
 msgid "today.crystal.lede"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:625
+#: src/features/dailyLearning/TodayReadyHero.tsx:634
 msgid "today.crystal.level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:633
+#: src/features/dailyLearning/TodayReadyHero.tsx:642
 msgid "today.crystal.level-next"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:628
+#: src/features/dailyLearning/TodayReadyHero.tsx:637
 msgid "today.crystal.level-value"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:600
+#: src/features/dailyLearning/TodayReadyHero.tsx:609
 msgid "today.crystal.lumi-hi"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:599
+#: src/features/dailyLearning/TodayReadyHero.tsx:608
 msgid "today.crystal.lumi-hi.named"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:596
+#: src/features/dailyLearning/TodayReadyHero.tsx:605
 msgid "today.crystal.lumi-link"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:605
+#: src/features/dailyLearning/TodayReadyHero.tsx:614
 msgid "today.crystal.lumi-streak.extend"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:553
+#: src/features/dailyLearning/TodayReadyHero.tsx:562
 msgid "today.crystal.lumi-streak.milestone"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:555
-#: src/features/dailyLearning/TodayReadyHero.tsx:606
+#: src/features/dailyLearning/TodayReadyHero.tsx:564
+#: src/features/dailyLearning/TodayReadyHero.tsx:615
 msgid "today.crystal.lumi-streak.start"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:603
+#: src/features/dailyLearning/TodayReadyHero.tsx:612
 msgid "today.crystal.lumi-streak.today"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:614
+#: src/features/dailyLearning/TodayReadyHero.tsx:623
 msgid "today.crystal.path"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:615
+#: src/features/dailyLearning/TodayReadyHero.tsx:624
 msgid "today.crystal.path-minutes"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:614
+#: src/features/dailyLearning/TodayReadyHero.tsx:623
 msgid "today.crystal.path-steps"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:587
+#: src/features/dailyLearning/TodayReadyHero.tsx:596
 msgid "today.crystal.start"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:588
+#: src/features/dailyLearning/TodayReadyHero.tsx:597
 msgid "today.crystal.start-meta"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:651
+#: src/features/dailyLearning/TodayReadyHero.tsx:660
 msgid "today.crystal.words.session"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:654
+#: src/features/dailyLearning/TodayReadyHero.tsx:663
 msgid "today.crystal.words.session-count"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:651
+#: src/features/dailyLearning/TodayReadyHero.tsx:660
 msgid "today.crystal.words.web"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:653
+#: src/features/dailyLearning/TodayReadyHero.tsx:662
 msgid "today.crystal.words.web-count"
 msgstr ""
 
@@ -1515,60 +1515,60 @@ msgid "today.hero.goal.level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:390
+#: src/features/dailyLearning/TodayReadyHero.tsx:395
 msgid "today.hero.greeting"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:389
+#: src/features/dailyLearning/TodayReadyHero.tsx:394
 msgid "today.hero.greeting.named"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:253
+#: src/features/dailyLearning/TodayReadyHero.tsx:258
 msgid "today.hero.level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:254
-#: src/features/dailyLearning/TodayReadyHero.tsx:635
+#: src/features/dailyLearning/TodayReadyHero.tsx:259
+#: src/features/dailyLearning/TodayReadyHero.tsx:644
 msgid "today.hero.level-eta"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:256
+#: src/features/dailyLearning/TodayReadyHero.tsx:261
 msgid "today.hero.level-progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:403
+#: src/features/dailyLearning/TodayReadyHero.tsx:408
 msgid "today.hero.minutes"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:462
+#: src/features/dailyLearning/TodayReadyHero.tsx:468
 msgid "today.hero.ready-words"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:263
+#: src/features/dailyLearning/TodayReadyHero.tsx:268
 msgid "today.hero.review-only"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:409
+#: src/features/dailyLearning/TodayReadyHero.tsx:414
 msgid "today.hero.session"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/DailyLearningScreens.test.tsx:820
-#: src/features/dailyLearning/TodayReadyHero.tsx:410
+#: src/features/dailyLearning/TodayReadyHero.tsx:415
 msgid "today.hero.session-size"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:420
-#: src/features/dailyLearning/TodayReadyHero.tsx:486
+#: src/features/dailyLearning/TodayReadyHero.tsx:425
+#: src/features/dailyLearning/TodayReadyHero.tsx:459
 msgid "today.hero.start"
 msgstr ""
 
@@ -1591,7 +1591,7 @@ msgid "today.hero.streak.start"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:423
+#: src/features/dailyLearning/TodayReadyHero.tsx:428
 msgid "today.hero.xp"
 msgstr ""
 
@@ -1936,7 +1936,7 @@ msgid "today.plan.short"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:427
+#: src/features/dailyLearning/TodayReadyHero.tsx:432
 msgid "today.plan.short-description"
 msgstr ""
 
@@ -2046,12 +2046,12 @@ msgid "today.recommended.reason.weak"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:473
+#: src/features/dailyLearning/TodayReadyHero.tsx:479
 msgid "today.stack.due"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:473
+#: src/features/dailyLearning/TodayReadyHero.tsx:479
 msgid "today.stack.new"
 msgstr ""
 
@@ -2397,17 +2397,17 @@ msgid "today.terms"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:496
+#: src/features/dailyLearning/TodayReadyHero.tsx:505
 msgid "today.tile.level"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:502
+#: src/features/dailyLearning/TodayReadyHero.tsx:511
 msgid "today.tile.new"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:490
+#: src/features/dailyLearning/TodayReadyHero.tsx:499
 msgid "today.tile.review"
 msgstr ""
 
@@ -2417,58 +2417,58 @@ msgid "today.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:298
+#: src/features/dailyLearning/TodayReadyHero.tsx:303
 msgid "today.words.reason.due"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:295
+#: src/features/dailyLearning/TodayReadyHero.tsx:300
 msgid "today.words.reason.new"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:297
+#: src/features/dailyLearning/TodayReadyHero.tsx:302
 msgid "today.words.reason.weak"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:345
+#: src/features/dailyLearning/TodayReadyHero.tsx:350
 msgid "today.words.session.match-only"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:341
+#: src/features/dailyLearning/TodayReadyHero.tsx:346
 msgid "today.words.session.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:340
+#: src/features/dailyLearning/TodayReadyHero.tsx:345
 msgid "today.words.session.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:339
+#: src/features/dailyLearning/TodayReadyHero.tsx:344
 msgid "today.words.session.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:360
-#: src/features/dailyLearning/TodayReadyHero.tsx:662
+#: src/features/dailyLearning/TodayReadyHero.tsx:365
+#: src/features/dailyLearning/TodayReadyHero.tsx:671
 msgid "today.words.web.open"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:359
+#: src/features/dailyLearning/TodayReadyHero.tsx:364
 msgid "today.words.web.subtitle"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:358
+#: src/features/dailyLearning/TodayReadyHero.tsx:363
 msgid "today.words.web.subtitle-cap"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/TodayReadyHero.tsx:356
+#: src/features/dailyLearning/TodayReadyHero.tsx:361
 msgid "today.words.web.title"
 msgstr ""
 

@@ -39,7 +39,7 @@ msgctxt "landing.demo.meaning.spelling"
 msgid "spelling"
 msgstr "chính tả"
 
-#: src/features/landing/LandingPage.tsx:1205
+#: src/features/landing/LandingPage.tsx:1206
 msgctxt "landing.footer.privacy"
 msgid "Privacy Policy"
 msgstr "Chính sách quyền riêng tư"
@@ -367,17 +367,13 @@ msgctxt "landing.ribbon.spaced-review"
 msgid "Spaced review"
 msgstr "Ôn cách quãng"
 
-#: src/features/landing/LandingPage.tsx:1194
-msgctxt "landing.brand.plain"
-msgid "SonFlash"
-msgstr "SonFlash"
-
 #: src/features/landing/LandingPage.tsx:1031
 msgctxt "landing.methods.context.title"
 msgid "See the meaning in context"
 msgstr "Hiểu nghĩa trong ngữ cảnh"
 
 #: src/features/landing/LandingPage.tsx:646
+#: src/features/landing/LandingPage.tsx:1191
 msgctxt "landing.brand.mark"
 msgid "S"
 msgstr "S"
@@ -449,7 +445,7 @@ msgctxt "landing.nav.vocabulary"
 msgid "Vocabulary"
 msgstr "Từ vựng"
 
-#: src/features/landing/LandingPage.tsx:1215
+#: src/features/landing/LandingPage.tsx:1216
 msgctxt "landing.footer.copyright"
 msgid "© {year} SonFlash"
 msgstr "© {year} SonFlash"
@@ -465,7 +461,7 @@ msgid "Questions"
 msgstr "Câu hỏi thường gặp"
 
 #: src/features/landing/LandingPage.tsx:649
-#: src/features/landing/LandingPage.tsx:1193
+#: src/features/landing/LandingPage.tsx:1194
 msgctxt "landing.brand.crystal-wordmark"
 msgid "SON<0>FLASH</0>"
 msgstr "SON<0>FLASH</0>"
@@ -502,6 +498,7 @@ msgid "English, Korean, Japanese and Chinese."
 msgstr "Tiếng Anh, Hàn, Nhật và Trung."
 
 #: src/features/landing/LandingPage.tsx:648
+#: src/features/landing/LandingPage.tsx:1195
 msgctxt "landing.brand.classic-wordmark"
 msgid "Son<0>Flash</0>"
 msgstr "Son<0>Flash</0>"
@@ -568,7 +565,7 @@ msgctxt "landing.ribbon.chrome-extension"
 msgid "Chrome extension"
 msgstr "Tiện ích Chrome"
 
-#: src/features/landing/LandingPage.tsx:1211
+#: src/features/landing/LandingPage.tsx:1212
 msgctxt "landing.footer.extension"
 msgid "Extension"
 msgstr "Tiện ích mở rộng"
@@ -639,7 +636,7 @@ msgctxt "landing.extension.feature.popup.title"
 msgid "Check in from the toolbar"
 msgstr "Xem nhanh từ thanh công cụ"
 
-#: src/features/landing/LandingPage.tsx:1208
+#: src/features/landing/LandingPage.tsx:1209
 msgctxt "landing.footer.terms"
 msgid "Terms"
 msgstr "Điều khoản"
@@ -655,7 +652,7 @@ msgctxt "landing.features.title"
 msgid "Keep the words you meet."
 msgstr "Giữ lại những từ bạn gặp."
 
-#: src/features/landing/LandingPage.tsx:1198
+#: src/features/landing/LandingPage.tsx:1199
 msgctxt "landing.footer.description"
 msgid "for intentional vocabulary learning."
 msgstr "dành cho việc học từ vựng có chủ đích."
