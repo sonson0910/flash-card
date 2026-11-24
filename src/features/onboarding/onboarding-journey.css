@@ -834,12 +834,15 @@ html:not([data-theme-family='crystal']) input[type='date'].onb-field { border-co
    action presses; the level list and the chips stay still, as drawn. */
 :where(html:not([data-theme-family=crystal])) .onb-content { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) backwards; }
 :where(html:not([data-theme-family=crystal])) :is(.onboarding-journey__goal-card, .onb-option:not(.onb-level-option)) { transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease; }
-:where(html:not([data-theme-family=crystal])) .onb-primary { transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
+:where(html:not([data-theme-family=crystal])) .onb-primary { position: relative; transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
 :where(html:not([data-theme-family=crystal])) .onb-primary:active:not(:disabled) { transform: translateY(0) scale(.97); }
 
 @media (hover: hover) and (pointer: fine) {
   :where(html:not([data-theme-family=crystal])) :is(.onboarding-journey__goal-card, .onb-option:not(.onb-level-option)):hover { transform: translateY(-6px) rotate(-.6deg); }
   :where(html:not([data-theme-family=crystal])) .onb-primary:hover:not(:disabled):not(:active) { transform: translateY(-2px); filter: brightness(1.06); }
+  /* The lifted button still covers where it rested. Without this a pointer on its bottom edge loses the button
+     as it rises, the button drops back under the pointer and rises again, without end. */
+  :where(html:not([data-theme-family=crystal])) .onb-primary:hover:not(:disabled):not(:active)::after { position: absolute; inset: 0 0 -2px; content: ''; }
 }
 
 @media (prefers-reduced-motion: reduce) {

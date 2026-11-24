@@ -1656,7 +1656,11 @@
 }
 
 /* Lines 10-13: two blurred blobs inside the dark card, clipped to its rounded face. The layer reaches 160px
-   past the face so each blob is blurred whole, as the board's blob elements are, before the clip. */
+   past the face so each blob is blurred whole, as the board's blob elements are, before the clip. The card
+   clips its overflow as the board's does (line 9), so that reach never widens the dialog's scroll area. */
+:root.dark:not([data-theme-family='crystal']) .weekly-recap-card {
+  overflow: clip;
+}
 :root.dark:not([data-theme-family='crystal']) .weekly-recap-card::before {
   position: absolute;
   inset: -160px;
