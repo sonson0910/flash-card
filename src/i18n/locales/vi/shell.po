@@ -48,7 +48,7 @@ msgctxt "onboarding.lumi.script.title"
 msgid "A new alphabet!"
 msgstr "Một bảng chữ cái mới!"
 
-#: src/features/onboarding/HangulPrimer.tsx:49
+#: src/features/onboarding/HangulPrimer.tsx:50
 msgctxt "onboarding.primer.heading"
 msgid "Read <0>Hangul</0> before your first words"
 msgstr "Đọc <0>Hangul</0> trước những từ đầu tiên"
@@ -74,7 +74,7 @@ msgctxt "onboarding.lumi.level.title"
 msgid "Where do we start?"
 msgstr "Mình bắt đầu từ đâu nhé?"
 
-#: src/features/onboarding/HangulPrimer.tsx:76
+#: src/features/onboarding/HangulPrimer.tsx:77
 msgctxt "onboarding.primer.block.meaning"
 msgid "Korea"
 msgstr "Hàn Quốc"
@@ -198,7 +198,7 @@ msgctxt "course.due-count"
 msgid "{count} due"
 msgstr "{count} đến hạn"
 
-#: src/features/onboarding/HangulPrimer.tsx:58
+#: src/features/onboarding/HangulPrimer.tsx:59
 msgctxt "onboarding.primer.reader.description"
 msgid "Save Hangul alone as my reading aid."
 msgstr "Lưu chỉ dùng Hangul làm gợi ý cách đọc của tôi."
@@ -250,7 +250,7 @@ msgctxt "onboarding.trial.heading"
 msgid "Flip each card, then <0>grade yourself.</0>"
 msgstr "Lật từng thẻ, rồi <0>tự chấm mình.</0>"
 
-#: src/features/onboarding/HangulPrimer.tsx:80
+#: src/features/onboarding/HangulPrimer.tsx:81
 msgctxt "onboarding.primer.consonants"
 msgid "Basic consonants"
 msgstr "Phụ âm cơ bản"
@@ -280,7 +280,7 @@ msgctxt "shell.menu.terms"
 msgid "Terms"
 msgstr "Điều khoản"
 
-#: src/features/onboarding/HangulPrimer.tsx:65
+#: src/features/onboarding/HangulPrimer.tsx:66
 msgctxt "onboarding.primer.block.parts"
 msgid "first consonant + vowel + final consonant"
 msgstr "phụ âm đầu + nguyên âm + phụ âm cuối"
@@ -456,7 +456,7 @@ msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr "Để sau"
 
-#: src/features/onboarding/HangulPrimer.tsx:65
+#: src/features/onboarding/HangulPrimer.tsx:66
 msgctxt "onboarding.primer.block.title"
 msgid "Build one syllable block"
 msgstr "Ghép một khối âm tiết"
@@ -867,7 +867,7 @@ msgctxt "shell.sync.now"
 msgid "Sync now"
 msgstr "Đồng bộ ngay"
 
-#: src/features/onboarding/HangulPrimer.tsx:57
+#: src/features/onboarding/HangulPrimer.tsx:58
 msgctxt "onboarding.primer.reader"
 msgid "I can already read Hangul"
 msgstr "Tôi đã đọc được Hangul"
@@ -958,7 +958,7 @@ msgctxt "course.create.no-target-left"
 msgid "All supported languages already have a course. Archive one to add another."
 msgstr "Mọi ngôn ngữ được hỗ trợ đều đã có khóa học. Hãy lưu trữ một khóa để thêm khóa khác."
 
-#: src/features/onboarding/HangulPrimer.tsx:81
+#: src/features/onboarding/HangulPrimer.tsx:82
 msgctxt "onboarding.primer.vowels"
 msgid "Basic vowels"
 msgstr "Nguyên âm cơ bản"
@@ -1185,7 +1185,7 @@ msgctxt "onboarding.level.core.description"
 msgid "You handle everyday topics and want a wider range."
 msgstr "Bạn xoay xở được các chủ đề hằng ngày và muốn mở rộng vốn từ."
 
-#: src/features/onboarding/HangulPrimer.tsx:53
+#: src/features/onboarding/HangulPrimer.tsx:54
 msgctxt "onboarding.primer.learning"
 msgid "I’m still learning to read"
 msgstr "Tôi vẫn đang học đọc"
@@ -1547,12 +1547,12 @@ msgctxt "course.add.native-hint"
 msgid "your native language"
 msgstr "tiếng mẹ đẻ của bạn"
 
-#: src/features/onboarding/HangulPrimer.tsx:51
+#: src/features/onboarding/HangulPrimer.tsx:52
 msgctxt "onboarding.primer.choice-label"
 msgid "Reading aid"
 msgstr "Hỗ trợ đọc"
 
-#: src/features/onboarding/HangulPrimer.tsx:64
+#: src/features/onboarding/HangulPrimer.tsx:65
 msgctxt "onboarding.primer.block.label"
 msgid "Build one syllable block"
 msgstr "Ghép một khối âm tiết"
@@ -2285,7 +2285,7 @@ msgctxt "shell.share.more-cards"
 msgid "+{count} more"
 msgstr "+{count} thẻ nữa"
 
-#: src/features/onboarding/HangulPrimer.tsx:54
+#: src/features/onboarding/HangulPrimer.tsx:55
 msgctxt "onboarding.primer.learning.description"
 msgid "Save romanization as my reading aid for this course."
 msgstr "Lưu phiên âm Latin làm gợi ý cách đọc của tôi cho khóa học này."
@@ -2342,7 +2342,7 @@ msgctxt "onboarding.level.foundation.description"
 msgid "New to the language, or you know a few words."
 msgstr "Mới bắt đầu với ngôn ngữ này, hoặc mới biết vài từ."
 
-#: src/features/onboarding/HangulPrimer.tsx:61
+#: src/features/onboarding/HangulPrimer.tsx:62
 msgctxt "onboarding.primer.note"
 msgid "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
 msgstr "Mỗi thẻ tiếng Hàn có công tắc phiên âm Latin riêng. Bạn có thể đổi lựa chọn này bất cứ lúc nào trong Cài đặt."
@@ -2519,7 +2519,7 @@ msgctxt "course.create.cancel"
 msgid "Cancel"
 msgstr "Hủy"
 
-#: src/features/onboarding/HangulPrimer.tsx:50
+#: src/features/onboarding/HangulPrimer.tsx:51
 msgctxt "onboarding.primer.subtitle"
 msgid "Hangul has 14 basic consonants and 10 basic vowels. They stack into one block per syllable, so once you know the letters you can sound out any word."
 msgstr "Hangul có 14 phụ âm cơ bản và 10 nguyên âm cơ bản. Chúng ghép thành một khối cho mỗi âm tiết, nên khi đã biết các chữ cái, bạn có thể đánh vần bất kỳ từ nào."

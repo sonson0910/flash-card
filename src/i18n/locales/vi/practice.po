@@ -53,7 +53,7 @@ msgctxt "practice.shadowing.you-said"
 msgid "You said:"
 msgstr "Bạn đã nói:"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:192
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:191
 msgctxt "languagePractice.ko.title"
 msgid "Build the syllable blocks"
 msgstr "Ghép các khối âm tiết"
@@ -78,7 +78,7 @@ msgctxt "practice.shadowing.close"
 msgid "Close shadowing practice"
 msgstr "Đóng phần luyện bắt chước phát âm"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:322
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:321
 msgctxt "languagePractice.feedback.incorrect"
 msgid "Try this card again in the next round."
 msgstr "Hãy thử lại thẻ này ở lượt sau."
@@ -128,12 +128,12 @@ msgctxt "recap.tier.new"
 msgid "New"
 msgstr "Mới"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:267
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:266
 msgctxt "languagePractice.zh.tones"
 msgid "Pinyin tones"
 msgstr "Thanh điệu pinyin"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:228
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:227
 msgctxt "languagePractice.ko.instruction"
 msgid "Build the Hangul word from its meaning."
 msgstr "Ghép từ Hangul theo nghĩa cho sẵn."
@@ -214,7 +214,7 @@ msgctxt "recap.tomorrow-estimate"
 msgid "{count, plural, one {# card} other {# cards}} · about {minutes} min"
 msgstr "{count, plural, other {# thẻ}} · khoảng {minutes} phút"
 
-#: src/features/practice/SpellingView.tsx:318
+#: src/features/practice/SpellingView.tsx:325
 msgctxt "practice.spelling.meaning-hint"
 msgid "Meaning:"
 msgstr "Nghĩa:"
@@ -244,12 +244,12 @@ msgctxt "practice.shadowing.model-voice"
 msgid "Spoken by your browser voice. Tap play to hear it."
 msgstr "Giọng đọc của trình duyệt. Chạm nút phát để nghe."
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:297
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:296
 msgctxt "languagePractice.ko.block-formula"
 msgid "Each block = 초성 initial + 중성 vowel + 종성 final"
 msgstr "Mỗi khối = 초성 phụ âm đầu + 중성 nguyên âm + 종성 phụ âm cuối"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:233
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:232
 msgctxt "languagePractice.en.instruction"
 msgid "Type the vocabulary word for this meaning."
 msgstr "Nhập từ vựng ứng với nghĩa này."
@@ -280,12 +280,12 @@ msgctxt "study.recall-mode.adaptive"
 msgid "Adaptive difficulty"
 msgstr "Độ khó thích ứng"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:190
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:189
 msgctxt "languagePractice.en.pack"
 msgid "English pack"
 msgstr "Gói tiếng Anh"
 
-#: src/features/practice/SpellingView.tsx:481
+#: src/features/practice/SpellingView.tsx:488
 msgctxt "practice.spelling.words-right"
 msgid "{score} of {answered} words right"
 msgstr "Đúng {score}/{answered} từ"
@@ -315,7 +315,7 @@ msgctxt "practice.match.retry-new-round"
 msgid "Retry new round"
 msgstr "Thử lại vòng mới"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:350
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:349
 msgctxt "languagePractice.results.score"
 msgid "{correct} of {total} correct"
 msgstr "Đúng {correct}/{total} câu"
@@ -336,7 +336,7 @@ msgctxt "practice.match.time-up"
 msgid "Time is up"
 msgstr "Hết giờ"
 
-#: src/features/practice/SpellingView.tsx:485
+#: src/features/practice/SpellingView.tsx:492
 msgctxt "practice.spelling.letter-key"
 msgid "Letter key"
 msgstr "Phím chữ"
@@ -351,7 +351,7 @@ msgctxt "practice.quiz.results-subtitle"
 msgid "Your vocabulary review results"
 msgstr "Kết quả ôn từ vựng của bạn"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:230
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:229
 msgctxt "languagePractice.ja.instruction"
 msgid "Read the word, then type it in Japanese."
 msgstr "Đọc từ, rồi nhập đáp án bằng tiếng Nhật."
@@ -371,14 +371,14 @@ msgctxt "practice.match.matched"
 msgid "Matched"
 msgstr "Đã ghép"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:193
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:192
 msgctxt "languagePractice.ja.title"
 msgid "Type the reading"
 msgstr "Gõ cách đọc"
 
 #: src/features/practice/QuizView.tsx:251
 #: src/features/practice/SpellingView.tsx:201
-#: src/features/practice/SpellingView.tsx:477
+#: src/features/practice/SpellingView.tsx:484
 msgctxt "practice.results.accuracy"
 msgid "Accuracy"
 msgstr "Độ chính xác"
@@ -409,7 +409,7 @@ msgctxt "practice.score"
 msgid "Score: {score} / {total}"
 msgstr "Điểm: {score} / {total}"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:326
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:325
 msgctxt "languagePractice.action.next"
 msgid "Next"
 msgstr "Tiếp"
@@ -467,7 +467,7 @@ msgid "daily-goals.xp"
 msgstr "+{xp} XP"
 
 #: src/features/practice/QuizView.tsx:416
-#: src/features/practice/SpellingView.tsx:352
+#: src/features/practice/SpellingView.tsx:359
 msgctxt "practice.feedback.incorrect-prefix"
 msgid "Incorrect. The correct answer is"
 msgstr "Chưa đúng. Đáp án đúng là"
@@ -483,7 +483,7 @@ msgctxt "recap.weekly-detail-week"
 msgid "Your week so far"
 msgstr "Tuần của bạn đến lúc này"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:232
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:231
 msgctxt "languagePractice.zh.instruction"
 msgid "Choose the tone for every pinyin syllable."
 msgstr "Chọn thanh điệu cho từng âm tiết pinyin."
@@ -493,12 +493,12 @@ msgctxt "recap.word-match-chip-detail"
 msgid "{seconds} s · {count, plural, one {# word} other {# words}}"
 msgstr "{seconds} giây · {count, plural, other {# từ}}"
 
-#: src/features/practice/SpellingView.tsx:307
+#: src/features/practice/SpellingView.tsx:314
 msgctxt "practice.spelling.speed-normal"
 msgid "1× normal"
 msgstr "1× bình thường"
 
-#: src/features/practice/SpellingView.tsx:444
+#: src/features/practice/SpellingView.tsx:451
 msgctxt "practice.actions.next"
 msgid "Next"
 msgstr "Tiếp"
@@ -528,7 +528,7 @@ msgctxt "recap.grade.new"
 msgid "Bud"
 msgstr "Chồi"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:309
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:308
 msgctxt "languagePractice.ko.physicalKeyboard"
 msgid "Physical keyboard: type the 2-set keys shown on each button."
 msgstr "Bàn phím vật lý: gõ các phím 2-set ghi trên từng nút."
@@ -538,7 +538,7 @@ msgctxt "practice.story.mode-detail"
 msgid "written from your words"
 msgstr "viết từ chính các từ của bạn"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:265
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:264
 msgctxt "languagePractice.zh.missingTones"
 msgid "This card needs verified pinyin tone data before it can be practised."
 msgstr "Thẻ này cần dữ liệu thanh điệu pinyin đã được xác minh trước khi luyện."
@@ -548,7 +548,7 @@ msgctxt "recap.review-misses"
 msgid "Review misses"
 msgstr "Ôn thẻ quên"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:352
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:351
 msgctxt "languagePractice.results.try-again"
 msgid "Try again"
 msgstr "Thử lại"
@@ -558,7 +558,7 @@ msgctxt "practice.shadowing.next-short"
 msgid "Next"
 msgstr "Tiếp"
 
-#: src/features/practice/SpellingView.tsx:456
+#: src/features/practice/SpellingView.tsx:463
 msgctxt "practice.spelling.reveal"
 msgid "Reveal"
 msgstr "Hiện đáp án"
@@ -583,7 +583,7 @@ msgctxt "practice.spelling.results-subtitle"
 msgid "Your spelling practice results"
 msgstr "Kết quả luyện chính tả của bạn"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:188
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:187
 msgctxt "languagePractice.ja.pack"
 msgid "Japanese pack · 日本語"
 msgstr "Gói tiếng Nhật · 日本語"
@@ -603,7 +603,7 @@ msgctxt "practice.story.lumi.tap"
 msgid "Tap a highlighted word to see what it means."
 msgstr "Chạm vào một từ được tô sáng để xem nghĩa."
 
-#: src/features/practice/SpellingView.tsx:334
+#: src/features/practice/SpellingView.tsx:341
 msgctxt "practice.spelling.character-count"
 msgid "{count, plural, one {# character} other {# characters}}"
 msgstr "{count, plural, other {# ký tự}}"
@@ -623,7 +623,7 @@ msgctxt "practice.loading.study"
 msgid "Loading study session"
 msgstr "Đang tải phiên học"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:326
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:325
 msgctxt "languagePractice.action.check"
 msgid "Check"
 msgstr "Kiểm tra"
@@ -669,12 +669,12 @@ msgctxt "practice.match.complete-copy"
 msgid "You matched all {pairCount} pairs in {seconds} seconds."
 msgstr "Bạn đã ghép đủ {pairCount} cặp trong {seconds} giây."
 
-#: src/features/practice/SpellingView.tsx:415
+#: src/features/practice/SpellingView.tsx:422
 msgctxt "practice.spelling.correct"
 msgid "Correct"
 msgstr "Đúng"
 
-#: src/features/practice/SpellingView.tsx:451
+#: src/features/practice/SpellingView.tsx:458
 msgctxt "practice.spelling.check"
 msgid "Check"
 msgstr "Kiểm tra"
@@ -694,7 +694,7 @@ msgctxt "study-view.summary"
 msgid "Summary"
 msgstr "Tổng kết"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:195
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:194
 msgctxt "languagePractice.en.title"
 msgid "Spell the word"
 msgstr "Viết từ vựng"
@@ -726,7 +726,7 @@ msgctxt "practice.match.complete-title"
 msgid "Pairs complete"
 msgstr "Hoàn thành các cặp"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:265
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:264
 msgctxt "languagePractice.loadError"
 msgid "This language exercise could not load. Please try again."
 msgstr "Không thể tải bài luyện ngôn ngữ này. Hãy thử lại."
@@ -795,7 +795,7 @@ msgctxt "recap.share-week"
 msgid "Share your week"
 msgstr "Chia sẻ tuần của bạn"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:322
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:321
 msgctxt "languagePractice.feedback.correct"
 msgid "Correct."
 msgstr "Chính xác."
@@ -810,7 +810,7 @@ msgctxt "practice.spelling.mode"
 msgid "Spelling"
 msgstr "Chính tả"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:324
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:323
 msgctxt "languagePractice.footer.progress"
 msgid "Word {current} of {total}"
 msgstr "Từ {current}/{total}"
@@ -845,13 +845,13 @@ msgctxt "practice.match.selected"
 msgid "Selected"
 msgstr "Đã chọn"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:251
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:250
 msgctxt "languagePractice.progress"
 msgid "Item {current} of {total}"
 msgstr "Câu {current} trên {total}"
 
 #: src/features/practice/QuizView.tsx:468
-#: src/features/practice/SpellingView.tsx:470
+#: src/features/practice/SpellingView.tsx:477
 #: src/features/practice/StudyView.tsx:448
 msgctxt "practice.learn-first"
 msgid "I don't know this — learn first"
@@ -873,57 +873,57 @@ msgid "Target phrases"
 msgstr "Cụm từ cần luyện"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:255
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:254
 msgid "languagePractice.action.listen"
 msgstr "Phát âm"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:265
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:264
 msgid "languagePractice.action.retry"
 msgstr "Thử lại"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:257
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:256
 msgid "languagePractice.action.slow"
 msgstr "Bật hoặc tắt phát âm chậm"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:242
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:241
 msgid "languagePractice.en.placeholder"
 msgstr "Từ vựng"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:237
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:236
 msgid "languagePractice.ja.placeholder"
 msgstr "Đáp án kana"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:317
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:316
 msgid "languagePractice.ja.sentence.choices"
 msgstr "Các lựa chọn điền vào câu"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:235
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:234
 msgid "languagePractice.ja.sentence.placeholder"
 msgstr "Nhập từ còn thiếu"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:284
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:283
 msgid "languagePractice.ko.emptyBlocks"
 msgstr "Các ô Hangul trống"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:239
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:238
 msgid "languagePractice.ko.placeholder"
 msgstr "Đáp án Hangul"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:306
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:305
 msgid "languagePractice.ko.space"
 msgstr "Dấu cách"
 
 #. js-lingui-explicit-id
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:241
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:240
 msgid "languagePractice.zh.placeholder"
 msgstr "Đáp án Hán tự"
 
@@ -937,7 +937,7 @@ msgctxt "recap.card-move"
 msgid "Moved from {from} to {to}"
 msgstr "Chuyển từ {from} lên {to}"
 
-#: src/features/practice/SpellingView.tsx:419
+#: src/features/practice/SpellingView.tsx:426
 msgctxt "practice.spelling.answer-is"
 msgid "The answer is"
 msgstr "Đáp án là"
@@ -967,12 +967,12 @@ msgctxt "shadowing-view.practice-clip-sentence"
 msgid "Practice clip sentence"
 msgstr "Luyện câu trong đoạn nghe"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:299
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:298
 msgctxt "languagePractice.ko.final-correction"
 msgid "Final consonant: {typed} makes a different word. Delete it and choose {expected}."
 msgstr "Phụ âm cuối {typed} tạo thành từ khác. Hãy xóa và chọn {expected}."
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:326
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:325
 msgctxt "languagePractice.key.enter"
 msgid "Enter"
 msgstr "Enter"
@@ -1012,7 +1012,7 @@ msgctxt "study.combo"
 msgid "Combo ×{count}"
 msgstr "Chuỗi ×{count}"
 
-#: src/features/practice/SpellingView.tsx:332
+#: src/features/practice/SpellingView.tsx:339
 msgctxt "practice.spelling.letter-count"
 msgid "{count, plural, one {# letter} other {# letters}}"
 msgstr "{count, plural, other {# chữ cái}}"
@@ -1048,7 +1048,7 @@ msgctxt "study.recall-mode.image-to-word"
 msgid "Image → Word"
 msgstr "Hình ảnh → Từ"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:307
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:306
 msgctxt "languagePractice.ko.backspace"
 msgid "Delete"
 msgstr "Xóa"
@@ -1078,12 +1078,12 @@ msgctxt "study.recall-mode.native-to-target"
 msgid "{nativeLanguage} → {targetLanguage}"
 msgstr "{nativeLanguage} → {targetLanguage}"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:187
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:186
 msgctxt "languagePractice.ko.pack"
 msgid "Korean pack · 한국어"
 msgstr "Gói tiếng Hàn · 한국어"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:353
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:352
 msgctxt "languagePractice.results.close"
 msgid "Back to library"
 msgstr "Về thư viện"
@@ -1216,7 +1216,7 @@ msgstr "Chuẩn bị hoạt động này mất quá lâu. Kiểm tra kết nối
 
 #. js-lingui-explicit-id
 #: src/features/practice/QuizView.tsx:411
-#: src/features/practice/SpellingView.tsx:347
+#: src/features/practice/SpellingView.tsx:354
 msgid "practice.feedback.correct"
 msgstr "Đúng rồi."
 
@@ -1487,12 +1487,12 @@ msgid "practice.shadowing.waves"
 msgstr "Mẫu và lượt đọc của bạn"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:402
+#: src/features/practice/SpellingView.tsx:409
 msgid "practice.spelling.answer-label"
 msgstr "Gõ từ {targetLanguage}"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:395
+#: src/features/practice/SpellingView.tsx:402
 msgid "practice.spelling.answer-placeholder"
 msgstr "Gõ từ {targetLanguage}…"
 
@@ -1507,7 +1507,7 @@ msgid "practice.spelling.progress"
 msgstr "Tiến độ luyện chính tả"
 
 #. js-lingui-explicit-id
-#: src/features/practice/SpellingView.tsx:304
+#: src/features/practice/SpellingView.tsx:311
 msgid "practice.spelling.speed"
 msgstr "Tốc độ phát"
 
@@ -1596,7 +1596,7 @@ msgctxt "recap.summary-title"
 msgid "Session summary"
 msgstr "Tổng kết phiên học"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:265
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:264
 msgctxt "languagePractice.loading"
 msgid "Loading this language exercise…"
 msgstr "Đang tải bài luyện ngôn ngữ…"
@@ -1652,7 +1652,7 @@ msgctxt "practice.results.correct-answers"
 msgid "Correct answers"
 msgstr "Câu trả lời đúng"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:226
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:225
 msgctxt "languagePractice.ja.sentence.instruction"
 msgid "Choose the missing word."
 msgstr "Chọn từ còn thiếu."
@@ -1682,7 +1682,7 @@ msgctxt "recap.remind-at"
 msgid "Remind me at <0>{time}</0>"
 msgstr "Nhắc mình lúc <0>{time}</0>"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:349
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:348
 msgctxt "languagePractice.results.title"
 msgid "Drill complete"
 msgstr "Hoàn thành bài luyện"
@@ -1806,12 +1806,12 @@ msgctxt "recap.best-run"
 msgid "Best combo"
 msgstr "Chuỗi đúng dài nhất"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:189
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:188
 msgctxt "languagePractice.zh.pack"
 msgid "Chinese pack · 中文"
 msgstr "Gói tiếng Trung · 中文"
 
-#: src/features/practice/SpellingView.tsx:461
+#: src/features/practice/SpellingView.tsx:468
 msgctxt "practice.spelling.skip"
 msgid "Skip"
 msgstr "Bỏ qua"
@@ -1831,7 +1831,7 @@ msgctxt "study.combo-name.lovely"
 msgid "Lovely"
 msgstr "Đáng yêu"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:194
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:193
 msgctxt "languagePractice.zh.title"
 msgid "Hear the tones"
 msgstr "Nghe thanh điệu"
@@ -1857,12 +1857,12 @@ msgctxt "rich-story-view.read-aloud"
 msgid "Read aloud"
 msgstr "Đọc thành tiếng"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:191
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:190
 msgctxt "languagePractice.ja.sentence.title"
 msgid "Complete the sentence"
 msgstr "Hoàn thành câu"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:313
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:312
 msgctxt "languagePractice.answer.label"
 msgid "Your answer"
 msgstr "Câu trả lời của bạn"
@@ -1903,7 +1903,7 @@ msgctxt "practice.shadowing.focus-word"
 msgid "Focus word"
 msgstr "Từ trọng tâm"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:283
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:282
 msgctxt "languagePractice.ko.keyboard"
 msgid "Hangul block keyboard"
 msgstr "Bàn phím ghép âm Hangul"
@@ -1924,7 +1924,7 @@ msgid "Tap the microphone and read the sentence."
 msgstr "Chạm vào micrô và đọc câu."
 
 #: src/features/practice/QuizView.tsx:510
-#: src/features/practice/SpellingView.tsx:438
+#: src/features/practice/SpellingView.tsx:445
 msgctxt "practice.actions.saving-result"
 msgid "Saving result…"
 msgstr "Đang lưu kết quả…"
@@ -1976,18 +1976,18 @@ msgctxt "practice.feedback.correct-short"
 msgid "Correct"
 msgstr "Đúng"
 
-#: src/features/practice/SpellingView.tsx:313
+#: src/features/practice/SpellingView.tsx:320
 msgctxt "practice.spelling.speed-slow"
 msgid "0.6× slow"
 msgstr "0.6× chậm"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:248
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:247
 msgctxt "languagePractice.action.exit"
 msgid "Exit"
 msgstr "Thoát"
 
 #: src/features/practice/QuizView.tsx:513
-#: src/features/practice/SpellingView.tsx:441
+#: src/features/practice/SpellingView.tsx:448
 msgctxt "practice.actions.view-results"
 msgid "View results"
 msgstr "Xem kết quả"
@@ -2007,7 +2007,7 @@ msgctxt "practice.story.listen"
 msgid "Listen"
 msgstr "Nghe"
 
-#: src/features/languagePacks/LanguagePracticeDrill.tsx:325
+#: src/features/languagePacks/LanguagePracticeDrill.tsx:324
 msgctxt "languagePractice.action.hint"
 msgid "Hint"
 msgstr "Gợi ý"

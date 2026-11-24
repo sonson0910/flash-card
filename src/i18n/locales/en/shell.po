@@ -48,7 +48,7 @@ msgctxt "onboarding.lumi.script.title"
 msgid "A new alphabet!"
 msgstr "A new alphabet!"
 
-#: src/features/onboarding/HangulPrimer.tsx:49
+#: src/features/onboarding/HangulPrimer.tsx:50
 msgctxt "onboarding.primer.heading"
 msgid "Read <0>Hangul</0> before your first words"
 msgstr "Read <0>Hangul</0> before your first words"
@@ -74,7 +74,7 @@ msgctxt "onboarding.lumi.level.title"
 msgid "Where do we start?"
 msgstr "Where do we start?"
 
-#: src/features/onboarding/HangulPrimer.tsx:76
+#: src/features/onboarding/HangulPrimer.tsx:77
 msgctxt "onboarding.primer.block.meaning"
 msgid "Korea"
 msgstr "Korea"
@@ -198,7 +198,7 @@ msgctxt "course.due-count"
 msgid "{count} due"
 msgstr "{count} due"
 
-#: src/features/onboarding/HangulPrimer.tsx:58
+#: src/features/onboarding/HangulPrimer.tsx:59
 msgctxt "onboarding.primer.reader.description"
 msgid "Save Hangul alone as my reading aid."
 msgstr "Save Hangul alone as my reading aid."
@@ -250,7 +250,7 @@ msgctxt "onboarding.trial.heading"
 msgid "Flip each card, then <0>grade yourself.</0>"
 msgstr "Flip each card, then <0>grade yourself.</0>"
 
-#: src/features/onboarding/HangulPrimer.tsx:80
+#: src/features/onboarding/HangulPrimer.tsx:81
 msgctxt "onboarding.primer.consonants"
 msgid "Basic consonants"
 msgstr "Basic consonants"
@@ -280,7 +280,7 @@ msgctxt "shell.menu.terms"
 msgid "Terms"
 msgstr "Terms"
 
-#: src/features/onboarding/HangulPrimer.tsx:65
+#: src/features/onboarding/HangulPrimer.tsx:66
 msgctxt "onboarding.primer.block.parts"
 msgid "first consonant + vowel + final consonant"
 msgstr "first consonant + vowel + final consonant"
@@ -456,7 +456,7 @@ msgctxt "onboarding.aha.skip"
 msgid "Skip for now"
 msgstr "Skip for now"
 
-#: src/features/onboarding/HangulPrimer.tsx:65
+#: src/features/onboarding/HangulPrimer.tsx:66
 msgctxt "onboarding.primer.block.title"
 msgid "Build one syllable block"
 msgstr "Build one syllable block"
@@ -867,7 +867,7 @@ msgctxt "shell.sync.now"
 msgid "Sync now"
 msgstr "Sync now"
 
-#: src/features/onboarding/HangulPrimer.tsx:57
+#: src/features/onboarding/HangulPrimer.tsx:58
 msgctxt "onboarding.primer.reader"
 msgid "I can already read Hangul"
 msgstr "I can already read Hangul"
@@ -958,7 +958,7 @@ msgctxt "course.create.no-target-left"
 msgid "All supported languages already have a course. Archive one to add another."
 msgstr "All supported languages already have a course. Archive one to add another."
 
-#: src/features/onboarding/HangulPrimer.tsx:81
+#: src/features/onboarding/HangulPrimer.tsx:82
 msgctxt "onboarding.primer.vowels"
 msgid "Basic vowels"
 msgstr "Basic vowels"
@@ -1185,7 +1185,7 @@ msgctxt "onboarding.level.core.description"
 msgid "You handle everyday topics and want a wider range."
 msgstr "You handle everyday topics and want a wider range."
 
-#: src/features/onboarding/HangulPrimer.tsx:53
+#: src/features/onboarding/HangulPrimer.tsx:54
 msgctxt "onboarding.primer.learning"
 msgid "I’m still learning to read"
 msgstr "I’m still learning to read"
@@ -1547,12 +1547,12 @@ msgctxt "course.add.native-hint"
 msgid "your native language"
 msgstr "your native language"
 
-#: src/features/onboarding/HangulPrimer.tsx:51
+#: src/features/onboarding/HangulPrimer.tsx:52
 msgctxt "onboarding.primer.choice-label"
 msgid "Reading aid"
 msgstr "Reading aid"
 
-#: src/features/onboarding/HangulPrimer.tsx:64
+#: src/features/onboarding/HangulPrimer.tsx:65
 msgctxt "onboarding.primer.block.label"
 msgid "Build one syllable block"
 msgstr "Build one syllable block"
@@ -2285,7 +2285,7 @@ msgctxt "shell.share.more-cards"
 msgid "+{count} more"
 msgstr "+{count} more"
 
-#: src/features/onboarding/HangulPrimer.tsx:54
+#: src/features/onboarding/HangulPrimer.tsx:55
 msgctxt "onboarding.primer.learning.description"
 msgid "Save romanization as my reading aid for this course."
 msgstr "Save romanization as my reading aid for this course."
@@ -2342,7 +2342,7 @@ msgctxt "onboarding.level.foundation.description"
 msgid "New to the language, or you know a few words."
 msgstr "New to the language, or you know a few words."
 
-#: src/features/onboarding/HangulPrimer.tsx:61
+#: src/features/onboarding/HangulPrimer.tsx:62
 msgctxt "onboarding.primer.note"
 msgid "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
 msgstr "Every Korean card has its own Romanization switch. You can change this choice any time in Settings."
@@ -2519,7 +2519,7 @@ msgctxt "course.create.cancel"
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/features/onboarding/HangulPrimer.tsx:50
+#: src/features/onboarding/HangulPrimer.tsx:51
 msgctxt "onboarding.primer.subtitle"
 msgid "Hangul has 14 basic consonants and 10 basic vowels. They stack into one block per syllable, so once you know the letters you can sound out any word."
 msgstr "Hangul has 14 basic consonants and 10 basic vowels. They stack into one block per syllable, so once you know the letters you can sound out any word."

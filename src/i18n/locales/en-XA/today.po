@@ -18,12 +18,12 @@ msgctxt "progress.weeklyRecap.open"
 msgid "View weekly recap"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:207
+#: src/features/webWords/WebWordsPage.tsx:213
 msgctxt "webWords.lumi.tag"
 msgid "Lumi · Link"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:263
+#: src/features/webWords/WebWordsPage.tsx:269
 msgctxt "webWords.feedback.queued"
 msgid "These words are queued and get priority in your next new-word session."
 msgstr ""
@@ -63,7 +63,7 @@ msgctxt "today-screen.start-recommended-lesson"
 msgid "Start recommended lesson"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:226
+#: src/features/webWords/WebWordsPage.tsx:232
 msgctxt "webWords.filter.site.label"
 msgid "Site"
 msgstr ""
@@ -73,7 +73,7 @@ msgctxt "progress.metric.mastered"
 msgid "Mastered"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:297
+#: src/features/webWords/WebWordsPage.tsx:303
 msgctxt "webWords.status.empty-batch"
 msgid "No web words for this course are in this batch. Load more to keep looking."
 msgstr ""
@@ -83,12 +83,12 @@ msgctxt "progress.offline.reconnect"
 msgid "You’re offline. Reconnect to review and save your progress."
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:208
+#: src/features/webWords/WebWordsPage.tsx:214
 msgctxt "webWords.lumi.text"
 msgid "I keep the whole sentence, so you remember the context."
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:264
+#: src/features/webWords/WebWordsPage.tsx:270
 msgctxt "webWords.feedback.not-added"
 msgid "These cards were not added to today's new-word stage. You can study them elsewhere or try again later."
 msgstr ""
@@ -99,8 +99,8 @@ msgctxt "progress.empty.title"
 msgid "Your learning story starts here"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:90
-#: src/features/webWords/WebWordsPage.tsx:181
+#: src/features/webWords/WebWordsPage.tsx:91
+#: src/features/webWords/WebWordsPage.tsx:187
 msgctxt "webWords.chip.learning"
 msgid "Learning"
 msgstr ""
@@ -110,12 +110,12 @@ msgctxt "today-screen.immerse"
 msgid "Immerse"
 msgstr ""
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1196
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1198
 msgctxt "today.match.verification-failed"
 msgid "We could not verify your result. Your completed pairs are still here."
 msgstr ""
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1199
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1202
 msgctxt "today.match.retry-verification"
 msgid "Retry verification"
 msgstr ""
@@ -176,7 +176,7 @@ msgid "daily.lesson.answer-feedback"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1201
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1204
 #: src/features/dailyLearning/LessonScreen.tsx:283
 msgid "daily.lesson.back-to-today"
 msgstr ""
@@ -550,7 +550,7 @@ msgid "daily.placement.lumi-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1269
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1273
 msgid "daily.placement.meaning-question"
 msgstr ""
 
@@ -592,7 +592,7 @@ msgid "daily.placement.result-note"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1200
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1203
 #: src/features/dailyLearning/PlacementScreen.tsx:202
 msgid "daily.placement.retry"
 msgstr ""
@@ -637,7 +637,7 @@ msgstr ""
 msgid "daily.placement.unsure"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:273
+#: src/features/webWords/WebWordsPage.tsx:279
 msgctxt "webWords.status.loading"
 msgid "Loading your web words…"
 msgstr ""
@@ -652,17 +652,17 @@ msgctxt "progress.forecast.unavailable"
 msgid "Forecast is unavailable while saved progress is loading."
 msgstr "[Forecast is unavailable while saved progress is loading.]"
 
-#: src/features/webWords/WebWordsPage.tsx:309
+#: src/features/webWords/WebWordsPage.tsx:315
 msgctxt "webWords.actions.load-more"
 msgid "Load more"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:278
+#: src/features/webWords/WebWordsPage.tsx:284
 msgctxt "webWords.status.signed-out"
 msgid "Sign in to see words you saved from the web."
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:179
+#: src/features/webWords/WebWordsPage.tsx:185
 msgctxt "webWords.tab.all"
 msgid "All {count}"
 msgstr ""
@@ -776,23 +776,23 @@ msgstr ""
 msgid "exam-progress.set-target"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:266
+#: src/features/webWords/WebWordsPage.tsx:272
 msgctxt "webWords.feedback.some-scheduled-normal-review"
 msgid "Other selected cards follow their normal review schedule."
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:82
+#: src/features/webWords/WebWordsPage.tsx:83
 msgid "flashcard.tier.learning"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:83
+#: src/features/webWords/WebWordsPage.tsx:84
 msgid "flashcard.tier.mastered"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:81
+#: src/features/webWords/WebWordsPage.tsx:82
 msgid "flashcard.tier.new"
 msgstr ""
 
@@ -801,7 +801,7 @@ msgctxt "progress.error.title"
 msgid "Progress needs attention"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:214
+#: src/features/webWords/WebWordsPage.tsx:220
 msgctxt "webWords.filter.status.label"
 msgid "Status"
 msgstr ""
@@ -862,7 +862,7 @@ msgid "Learn"
 msgstr ""
 
 #: src/features/dailyLearning/DailyLearningWorkspace.tsx:106
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1203
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1207
 msgctxt "today.activity.preparing"
 msgid "Preparing activity…"
 msgstr ""
@@ -872,28 +872,28 @@ msgctxt "progress.subtitle.mastered"
 msgid "<0>{count}</0> mastered"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:249
+#: src/features/webWords/WebWordsPage.tsx:255
 msgctxt "webWords.actions.add-selected-to-session"
 msgid "Add to today’s session"
 msgstr ""
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1188
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1189
 #: src/features/dailyLearning/SessionBridge.tsx:275
 msgctxt "session.bridge.continue"
 msgid "Continue"
 msgstr ""
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1213
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1217
 msgctxt "daily-learning-workspace.back-to-today"
 msgid "Back to Today"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:243
+#: src/features/webWords/WebWordsPage.tsx:249
 msgctxt "webWords.selection.count"
 msgid "{count, plural, one {# word selected} other {# words selected}}"
 msgstr ""
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1202
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1205
 msgctxt "today.match.abandon"
 msgid "Abandon round and start over"
 msgstr ""
@@ -903,43 +903,43 @@ msgctxt "progress.achievements.open"
 msgid "View achievements"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:282
+#: src/features/webWords/WebWordsPage.tsx:288
 msgctxt "webWords.status.error"
 msgid "Web words could not load. Try again."
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:250
+#: src/features/webWords/WebWordsPage.tsx:256
 msgctxt "webWords.actions.add-all-to-session"
 msgid "Add all {count} to today’s session"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:289
+#: src/features/webWords/WebWordsPage.tsx:295
 msgctxt "webWords.status.empty.description"
 msgid "Save a word while reading on the web, and it will show up here."
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:172
+#: src/features/webWords/WebWordsPage.tsx:178
 msgctxt "webWords.back.library"
 msgid "Vocabulary"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:262
+#: src/features/webWords/WebWordsPage.tsx:268
 msgctxt "webWords.feedback.added-partial"
 msgid "Added the words that fit today; the rest are queued for a later session."
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:91
-#: src/features/webWords/WebWordsPage.tsx:182
+#: src/features/webWords/WebWordsPage.tsx:92
+#: src/features/webWords/WebWordsPage.tsx:188
 msgctxt "webWords.chip.known"
 msgid "Known"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:261
+#: src/features/webWords/WebWordsPage.tsx:267
 msgctxt "webWords.feedback.added"
 msgid "Added to today's new words."
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:202
+#: src/features/webWords/WebWordsPage.tsx:208
 msgctxt "webWords.page.description"
 msgid "Saved with the SonFlash extension — each one keeps the sentence you found it in."
 msgstr ""
@@ -954,7 +954,7 @@ msgctxt "today-screen.communicate"
 msgid "Communicate"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:173
+#: src/features/webWords/WebWordsPage.tsx:179
 msgctxt "webWords.back.today"
 msgid "Today"
 msgstr ""
@@ -964,7 +964,7 @@ msgctxt "progress.loading.title"
 msgid "Your saved progress"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:126
+#: src/features/webWords/WebWordsPage.tsx:129
 msgctxt "webWords.group.open"
 msgid "Open {title} in a new tab"
 msgstr ""
@@ -1260,7 +1260,7 @@ msgstr ""
 msgid "shell.theme.quick-toggle"
 msgstr ""
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1212
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1216
 msgctxt "daily-learning-workspace.immerse-listen"
 msgid "Immerse · Listen"
 msgstr ""
@@ -1275,12 +1275,12 @@ msgstr ""
 msgid "stats.activity-title"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:233
+#: src/features/webWords/WebWordsPage.tsx:239
 msgctxt "webWords.filter.day.label"
 msgid "Day"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:288
+#: src/features/webWords/WebWordsPage.tsx:294
 msgctxt "webWords.status.empty.title"
 msgid "No web words yet"
 msgstr ""
@@ -1306,12 +1306,12 @@ msgid "today.adult-statement"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1365
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1369
 msgid "today.answer.correct"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1365
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1369
 msgid "today.answer.incorrect"
 msgstr ""
 
@@ -1490,7 +1490,7 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/dailyLearning/TodayScreen.tsx:396
-#: src/features/webWords/WebWordsPage.tsx:283
+#: src/features/webWords/WebWordsPage.tsx:289
 msgid "today.error.retry"
 msgstr ""
 
@@ -1724,7 +1724,7 @@ msgid "today.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1369
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1373
 msgid "today.lesson.fallback"
 msgstr ""
 
@@ -1834,7 +1834,7 @@ msgid "today.mode.spelling.label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1194
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1196
 #: src/features/dailyLearning/TodayScreen.tsx:349
 #: src/features/dailyLearning/TodayScreen.tsx:380
 #: src/features/dailyLearning/TodayScreen.tsx:404
@@ -1847,13 +1847,13 @@ msgid "today.placement.action"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1254
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1258
 #: src/features/dailyLearning/PlacementScreen.tsx:32
 msgid "today.placement.advanced"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1253
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1257
 #: src/features/dailyLearning/PlacementScreen.tsx:33
 msgid "today.placement.core"
 msgstr ""
@@ -1864,18 +1864,18 @@ msgid "today.placement.description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1252
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1256
 #: src/features/dailyLearning/PlacementScreen.tsx:34
 msgid "today.placement.foundation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1246
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1250
 msgid "today.placement.insufficient"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1259
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1263
 msgid "today.placement.intro"
 msgstr ""
 
@@ -1885,12 +1885,12 @@ msgid "today.placement.kicker"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1243
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1247
 msgid "today.placement.preparing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1250
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1254
 #: src/features/dailyLearning/PlacementScreen.tsx:217
 msgid "today.placement.result"
 msgstr ""
@@ -1901,12 +1901,12 @@ msgid "today.placement.title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1469
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1473
 msgid "today.plan.caught-up"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1470
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1474
 msgid "today.plan.empty"
 msgstr ""
 
@@ -1921,17 +1921,17 @@ msgid "today.plan.order"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1467
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1471
 msgid "today.plan.preparing"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1471
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1475
 msgid "today.plan.ready"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1471
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1475
 msgid "today.plan.short"
 msgstr ""
 
@@ -2011,7 +2011,7 @@ msgid "today.prompt.spell-context"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1267
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1271
 msgid "today.question.progress"
 msgstr ""
 
@@ -2477,12 +2477,12 @@ msgctxt "progress.mastered.all"
 msgid "All {count}"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:122
+#: src/features/webWords/WebWordsPage.tsx:125
 msgctxt "webWords.group.word-count"
 msgid "{count, plural, one {# word} other {# words}}"
 msgstr ""
 
-#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1197
+#: src/features/dailyLearning/DailyLearningWorkspace.tsx:1199
 msgctxt "today.match.start-failed"
 msgid "Word Match could not start. Your completed reviews are saved."
 msgstr ""
@@ -2492,42 +2492,42 @@ msgctxt "today-screen.learn-immerse-communicate"
 msgid "Learn → Immerse → Communicate"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:201
+#: src/features/webWords/WebWordsPage.tsx:207
 msgctxt "webWords.page.heading"
 msgid "<0>Words you met</0> <1>on the web</1>"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:149
+#: src/features/webWords/WebWordsPage.tsx:155
 msgid "webWords.card.select-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:235
+#: src/features/webWords/WebWordsPage.tsx:241
 msgid "webWords.filter.day.all"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:228
+#: src/features/webWords/WebWordsPage.tsx:234
 msgid "webWords.filter.site.all"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:109
+#: src/features/webWords/WebWordsPage.tsx:112
 msgid "webWords.group.untitled"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:199
+#: src/features/webWords/WebWordsPage.tsx:205
 msgid "webWords.page.close-label"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/webWords/WebWordsPage.tsx:190
+#: src/features/webWords/WebWordsPage.tsx:196
 msgid "webWords.page.title"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:176
+#: src/features/webWords/WebWordsPage.tsx:182
 msgctxt "webWords.back.paths"
 msgid "Paths"
 msgstr ""
@@ -2537,7 +2537,7 @@ msgctxt "progress.forecast.today"
 msgid "Today"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:175
+#: src/features/webWords/WebWordsPage.tsx:181
 msgctxt "webWords.back.settings"
 msgid "Settings"
 msgstr ""
@@ -2567,7 +2567,7 @@ msgctxt "progress.start-review"
 msgid "Start your first review"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:174
+#: src/features/webWords/WebWordsPage.tsx:180
 msgctxt "webWords.back.progress"
 msgid "Progress"
 msgstr ""
@@ -2577,13 +2577,13 @@ msgctxt "progress.mastered.title"
 msgid "Recently <0>mastered</0>"
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:265
+#: src/features/webWords/WebWordsPage.tsx:271
 msgctxt "webWords.feedback.scheduled-normal-review"
 msgid "These cards already follow their normal review schedule."
 msgstr ""
 
-#: src/features/webWords/WebWordsPage.tsx:89
-#: src/features/webWords/WebWordsPage.tsx:180
+#: src/features/webWords/WebWordsPage.tsx:90
+#: src/features/webWords/WebWordsPage.tsx:186
 msgctxt "webWords.chip.new"
 msgid "New"
 msgstr ""
