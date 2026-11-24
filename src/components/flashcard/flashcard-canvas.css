@@ -1,41 +1,8 @@
 /* Card-only finish for the Aurora/Atelier and Crystal Star references. */
 
+/* Hover wings exist only in Crystal Star (the port block at the end of this file places them). */
 .flashcard-hover-wings {
-  --flashcard-wing-opacity: 0;
-  opacity: var(--flashcard-wing-opacity);
-  transform: translateZ(0);
-  transition:
-    opacity 320ms var(--ease-out-expo),
-    transform 420ms var(--ease-out-expo);
-}
-
-.flashcard-wing {
-  position: absolute;
-  top: 5%;
-  bottom: 5%;
-  width: 58%;
-  border: 1px solid color-mix(in srgb, var(--flashcard-wing-color, var(--sf-second)) 70%, transparent);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--flashcard-wing-color, var(--sf-second)) 50%, transparent), transparent 58%);
-  box-shadow: 0 0 34px -12px var(--flashcard-wing-color, var(--sf-second));
-  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--flashcard-wing-color, var(--sf-second)) 45%, transparent));
-  opacity: 0.9;
-  transition:
-    opacity 320ms var(--ease-out-expo),
-    transform 420ms var(--ease-out-expo);
-}
-
-.flashcard-wing-left {
-  left: -17%;
-  transform: rotate(-16deg) scale(0.56);
-  transform-origin: right center;
-  clip-path: polygon(100% 0, 38% 8%, 0 50%, 38% 92%, 100% 100%);
-}
-
-.flashcard-wing-right {
-  right: -17%;
-  transform: rotate(16deg) scale(0.56);
-  transform-origin: left center;
-  clip-path: polygon(0 0, 62% 8%, 100% 50%, 62% 92%, 0 100%);
+  display: none;
 }
 
 .flashcard-shell[data-card-tier="new"] {
@@ -50,42 +17,9 @@
   --flashcard-wing-color: var(--sf-reward);
 }
 
-/* Crystal Star uses the two crystal wings shown by AnimeReview/AnimeReveal. */
-:root[data-theme-family="crystal"] .flashcard-hover-wings {
-  --flashcard-wing-opacity: 0;
-}
-
-:root[data-theme-family="crystal"] .flashcard-shell:hover .flashcard-hover-wings,
-:root[data-theme-family="crystal"] .flashcard-shell:focus-within .flashcard-hover-wings,
-:root[data-theme-family="crystal"] .flashcard-shell[data-card-hovered="true"] .flashcard-hover-wings {
-  --flashcard-wing-opacity: var(--nk-wing-opacity, 0.5);
-  transform: scale(1.04);
-}
-
-:root[data-theme-family="crystal"] .flashcard-shell:hover .flashcard-wing-left,
-:root[data-theme-family="crystal"] .flashcard-shell:focus-within .flashcard-wing-left,
-:root[data-theme-family="crystal"] .flashcard-shell[data-card-hovered="true"] .flashcard-wing-left {
-  transform: rotate(0deg) scale(1);
-}
-
-:root[data-theme-family="crystal"] .flashcard-shell:hover .flashcard-wing-right,
-:root[data-theme-family="crystal"] .flashcard-shell:focus-within .flashcard-wing-right,
-:root[data-theme-family="crystal"] .flashcard-shell[data-card-hovered="true"] .flashcard-wing-right {
-  transform: rotate(0deg) scale(1);
-}
-
-:root[data-theme-family="crystal"] .flashcard-wing {
-  background: linear-gradient(145deg, color-mix(in srgb, var(--flashcard-wing-color) 58%, transparent), color-mix(in srgb, var(--sf-second) 18%, transparent) 48%, transparent 78%);
-}
-
-:root[data-theme-family="crystal"].dark .flashcard-wing {
-  border-color: color-mix(in srgb, var(--flashcard-wing-color) 78%, white 12%);
-  filter: drop-shadow(0 0 20px color-mix(in srgb, var(--flashcard-wing-color) 62%, transparent));
-}
-
-:root[data-theme-family="crystal"]:not(.dark) .flashcard-wing {
-  border-color: color-mix(in srgb, var(--flashcard-wing-color) 58%, #0d1a33 18%);
-  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--flashcard-wing-color) 34%, transparent));
+/* A category aura colour arrives from the component as a custom property. */
+.flashcard-canvas-aura {
+  background: var(--flashcard-aura);
 }
 
 /* The Zen slab is still a tiered card even though its surface is glass. */
@@ -1966,6 +1900,888 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
     height: 40%;
   }
 }
+
+/* ------------------------------------------------------------------------
+   Crystal Star study card, ported value by value from the AnimeReview board
+   (docs/design/sonflash-redesign/canvas/src/AnimeReview.dc.html) and its
+   motion board. Board values that come from the board's token table use the
+   matching --sf-* token; values the theme has no token for are written out.
+   Front content rules skip the language-pack face, which follows its own
+   boards; the frame, the back and the motion apply to every Crystal card.
+   ------------------------------------------------------------------------ */
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] {
+  --flashcard-text-faint: #7a8397;
+  /* The pastel film covers the padding box only, so it never tints the rim. */
+  --flashcard-back-surface: linear-gradient(115deg, rgb(255 214 236 / 0.22), rgb(207 238 255 / 0.18) 50%, rgb(255 227 241 / 0.22)) padding-box, linear-gradient(180deg, #141a2a, #090c16);
+}
+
+/* One step darker than the board's #627392, which stays under 4.5:1 for small text on the light front. */
+:root:not(.dark) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] {
+  --flashcard-text-faint: #5b6c8b;
+  --flashcard-back-surface: var(--sf-card-bg);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-tier="new"] {
+  --flashcard-tier-soft: rgb(94 242 255 / 0.5);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-tier="learning"] {
+  --flashcard-tier-soft: rgb(255 143 182 / 0.55);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-tier="mastered"] {
+  --flashcard-tier-soft: rgb(255 42 77 / 0.6);
+}
+
+:root .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) {
+  --flashcard-surface: var(--sf-card-front);
+}
+
+:root .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] {
+  --flashcard-surface: var(--flashcard-back-surface);
+}
+
+/* Frame. The board's rim is a 200% layer behind a 3px-inset face, so only the
+   middle half of each rim gradient shows and both chamfered corners keep a rim
+   as wide as the straight edges. The face background draws the straight edges;
+   ::after adds the two corner triangles inside the padding box. Shadows and the
+   tier glow sit on the stage, outside the chamfer clip that would cut them. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-panel:is(.flashcard-face, .flashcard-back)[data-card-look="crystal"] {
+  border-color: transparent;
+  box-shadow: none;
+  filter: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-tier-rim {
+  display: none;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"]::before {
+  content: none;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] [data-flashcard-stage] {
+  filter: drop-shadow(0 30px 40px rgb(0 0 0 / 0.45)) drop-shadow(0 0 22px var(--flashcard-tier-soft));
+}
+
+@media not (forced-colors: active) {
+  .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-tier] .flashcard-panel:is(.flashcard-face, .flashcard-back)[data-card-look="crystal"] {
+    background: var(--flashcard-surface) padding-box, var(--flashcard-tier-rim) center / 200% 200% border-box;
+  }
+
+  .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-panel:is(.flashcard-face, .flashcard-back)[data-card-look="crystal"]::after {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    border-radius: 0;
+    pointer-events: none;
+    background: var(--flashcard-tier-rim) center / calc(200% + 12px) calc(200% + 12px);
+    clip-path: polygon(0 0, 18px 0, 0 18px, 0 0, 100% 100%, 100% calc(100% - 18px), calc(100% - 18px) 100%, 100% 100%);
+    opacity: 1;
+    content: "";
+  }
+
+  /* Mastered: the gold rim turns once every 6s, as the board's spinning rim layer does. */
+  @media (prefers-reduced-motion: no-preference) {
+    html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-tier="mastered"] .flashcard-panel:is(.flashcard-face, .flashcard-back)[data-card-look="crystal"] {
+      background: var(--flashcard-surface) padding-box, conic-gradient(from calc(200deg + var(--nk-a, 0deg)), #fff3c4, #ffd166, #ff2a4d, #7a0820, #ff5470, #ffffff, #ffd166, #fff3c4) center / 200% 200% border-box;
+      animation: nk-sweep-k 6s linear infinite;
+    }
+
+    html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-tier="mastered"] .flashcard-panel:is(.flashcard-face, .flashcard-back)[data-card-look="crystal"]::after {
+      background: conic-gradient(from calc(200deg + var(--nk-a, 0deg)), #fff3c4, #ffd166, #ff2a4d, #7a0820, #ff5470, #ffffff, #ffd166, #fff3c4) center / calc(200% + 12px) calc(200% + 12px);
+      animation: nk-sweep-k 6s linear infinite;
+    }
+  }
+}
+
+/* Aura behind the card: brighter while the pointer is on it. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] > [data-card-effect="aura"] {
+  inset: -40px;
+  z-index: 1;
+  border-radius: 0;
+  background: radial-gradient(ellipse at 50% 45%, var(--flashcard-tier-soft), transparent 70%);
+  filter: blur(40px);
+  opacity: 0.4;
+  transition: opacity 320ms ease-out;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-hovered="true"] > [data-card-effect="aura"] {
+  opacity: 0.95;
+}
+
+/* On a phone the aura box stays inside the card's width so it never widens the page; the blur still spreads past it. */
+@media (max-width: 599px) {
+  .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] > [data-card-effect="aura"] {
+    inset: -40px 0;
+  }
+}
+
+/* Crystal wings unfold beside the card on hover; a mastered card keeps them faint at rest.
+   They need a fine pointer and room on both sides of the card, and stay off under reduced motion. */
+@media (hover: hover) and (pointer: fine) and (min-width: 1280px) and (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] > .flashcard-hover-wings {
+    display: block;
+    inset: 0;
+    z-index: 0;
+  }
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-wing {
+  position: absolute;
+  top: 40px;
+  width: 520px;
+  height: 350px;
+  opacity: 0;
+  filter: drop-shadow(0 0 24px rgb(255 42 77 / 0.7));
+  transition: transform 460ms cubic-bezier(0.2, 1.4, 0.4, 1), opacity 300ms ease;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-wing-left {
+  left: -360px;
+  transform-origin: 90% 75%;
+  transform: scale(0.55) rotate(-16deg);
+}
+
+/* The board writes the right wing as right: -360px with its origin at 10%, but the flip then turns the box
+   inward over the card, where the card face hides it. The right wing is placed as the exact mirror of the
+   left one instead: its pivot sits 108px inside the right edge (the left pivot's mirror) with the same 90%
+   origin, so the flip opens it outward. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-wing-right {
+  right: 56px;
+  transform-origin: 90% 75%;
+  transform: scaleX(-1) scale(0.55) rotate(-16deg);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-tier="mastered"] .flashcard-wing {
+  opacity: 0.35;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-hovered="true"] .flashcard-wing {
+  opacity: 1;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-hovered="true"] .flashcard-wing-left {
+  transform: scale(1.15) rotate(0deg);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-hovered="true"] .flashcard-wing-right {
+  transform: scaleX(-1) scale(1.15) rotate(0deg);
+}
+
+/* The library card dialog follows AnimeLangCard: smaller wings (300 x 206 from 70px down, pivot 142px in from
+   each side), full size and 0.9 opacity on hover, 0.3 at rest for a mastered card. */
+.library-card-detail-dialog .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-wing {
+  top: 70px;
+  width: 300px;
+  height: 206px;
+}
+
+.library-card-detail-dialog .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-wing-left {
+  left: -128px;
+}
+
+.library-card-detail-dialog .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-wing-right {
+  right: 112px;
+}
+
+.library-card-detail-dialog .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-tier="mastered"] .flashcard-wing {
+  opacity: 0.3;
+}
+
+.library-card-detail-dialog .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-hovered="true"] .flashcard-wing {
+  opacity: 0.9;
+}
+
+.library-card-detail-dialog .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-hovered="true"] .flashcard-wing-left {
+  transform: scale(1) rotate(0deg);
+}
+
+.library-card-detail-dialog .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-hovered="true"] .flashcard-wing-right {
+  transform: scaleX(-1) scale(1) rotate(0deg);
+}
+
+/* Light pillar flashed across the card while it turns to the back (mounted only for that turn). */
+.flashcard-flip-pillar {
+  position: absolute;
+  top: -84px;
+  bottom: -196px;
+  left: 50%;
+  z-index: 40;
+  width: 520px;
+  margin-left: -260px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.85) 30%, #ffffff 50%, rgb(255 255 255 / 0.85) 70%, transparent);
+  mix-blend-mode: screen;
+  animation: flashcard-pillar-k 800ms ease-out both;
+}
+
+/* On a phone the pillar starts inside the card, so its widest frame (1.4x) still fits the card's width. */
+@media (max-width: 599px) {
+  .flashcard-flip-pillar {
+    right: 14%;
+    left: 14%;
+    width: auto;
+    margin-left: 0;
+  }
+
+}
+
+@keyframes flashcard-pillar-k {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.1);
+  }
+
+  30% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scaleX(1.4);
+  }
+}
+
+/* Same entrance as the board's rise, in 2D so no 3D transform is left on settled text. */
+@keyframes flashcard-rise-k {
+  from {
+    opacity: 0;
+    transform: translate(0, 18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Corner controls: the board's row sits 16px inside the 3px rim. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] [data-card-top-controls] {
+  top: 19px;
+  right: 19px;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-chrome-button {
+  border: 0;
+  background: rgb(7 6 15 / 0.55);
+  color: #fff;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-side="back"] .flashcard-chrome-button {
+  background: var(--sf-surface-control);
+  color: var(--sf-text);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-chrome-button[data-selected="true"] {
+  background: linear-gradient(180deg, #7ff6ff, #1aa7c9);
+  color: #fff;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-chrome-button.flashcard-reward-button[data-selected="true"] {
+  background: linear-gradient(180deg, #ff5470, #b30f33);
+  color: #fff;
+  box-shadow: none;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-reward-button[data-selected="true"] svg {
+  fill: #ffd166;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-chrome-button[data-card-danger]:hover {
+  background: var(--sf-danger);
+  color: var(--sf-on-brand);
+}
+
+/* A starred word keeps a cross flare centred on the star button. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-star-flare {
+  position: absolute;
+  top: -26px;
+  right: -26px;
+  width: 96px;
+  height: 96px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, #fff, transparent) center / 100% 2px no-repeat,
+    linear-gradient(180deg, transparent, #fff, transparent) center / 2px 100% no-repeat;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-star-selected {
+  animation: none;
+}
+
+/* nk-lift: every Crystal card control rises 3px and brightens on hover and presses in on click. */
+@media (hover: hover) {
+  .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] :is(.flashcard-chrome-button, .flashcard-play-button, .flashcard-reveal, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor):hover:not(:disabled) {
+    transform: translateY(-3px);
+    filter: brightness(1.06);
+  }
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] :is(.flashcard-chrome-button, .flashcard-play-button, .flashcard-reveal, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor):active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Front */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-art {
+  height: min(282px, 46%);
+}
+
+/* MobileReview card face: a 160px picture band and a 42px headword, so the answer box keeps its room above the reveal. */
+@media (max-width: 599px) {
+  .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-art {
+    height: 160px;
+  }
+
+  .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-headword {
+    --headword-max: 42px;
+  }
+}
+
+@media (max-width: 379px) {
+  .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-art {
+    height: 40%;
+  }
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-art-shade {
+  background: linear-gradient(180deg, rgb(7 6 15 / 0.35), transparent 35%, transparent 60%, rgb(179 15 51 / 0.35));
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-image-tint {
+  display: none;
+}
+
+/* The photo sits zoomed to 1.06 and drifts up to 6px against the pointer; the hint switch blurs it in place. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) [data-card-effect="blind-image"] {
+  scale: none;
+  filter: none;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-art img {
+  scale: none;
+  transform: scale(1.06) translate(var(--card-art-shift-x, 0px), var(--card-art-shift-y, 0px));
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-blind="true"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-art img {
+  filter: blur(20px) saturate(0.5);
+  transform: scale(1.14) translate(var(--card-art-shift-x, 0px), var(--card-art-shift-y, 0px));
+}
+
+:root .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-tier-ribbon [data-card-tier-label] {
+  text-shadow: 0 2px 0 #7a0820, 0 0 10px rgb(0 0 0 / 0.4);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-tier-name {
+  color: #1a0610;
+}
+
+/* A mastered card's chip takes only the gold stops of its rim: the rim's crimson stops sit under the dark tier
+   name at under 2:1, the gold ones keep it above 4.5:1. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-tier="mastered"] .flashcard-tier-ribbon {
+  background: linear-gradient(150deg, #fff3c4, #ffd166 55%, #fff3c4);
+}
+
+/* The board keeps the body under its hover light layers (sheen, spotlight, holo). */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) :is(.flashcard-body, .flashcard-reveal) {
+  z-index: 2;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-meta-category {
+  color: var(--flashcard-text-faint);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-headword .flashcard-headword-word.flashcard-word-gradient {
+  color: var(--sf-text-strong);
+  line-height: 1.02;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-headword-stress {
+  background: linear-gradient(180deg, #ff8fa3, #ff2a4d 55%, #b30f33);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 16px rgb(255 42 77 / 0.6));
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-pronunciation {
+  margin-top: 10px;
+  column-gap: 12px;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-play-button {
+  background: var(--sf-primary-bg);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-ipa {
+  color: var(--sf-text-body);
+  font-size: 15px;  line-height: normal;
+}
+
+/* The headword's crimson part already marks the stress, so the syllable line stays one quiet colour. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-syllables :is(button, [aria-hidden="true"]) {
+  color: var(--flashcard-text-faint);
+  font-weight: 400;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-definition {
+  margin-top: 12px;
+  color: var(--sf-text-body);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+:root .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-reveal {
+  background: var(--sf-primary-bg);
+}
+
+/* Hover light on the front, in the board's order: sheen band, tier spotlight with its sparkle, then the
+   holographic film, which only a mastered card carries (faint at rest, stronger under the pointer). */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-canvas-specular {
+  z-index: 20;
+  border-radius: 0;
+  background: linear-gradient(115deg, transparent calc(var(--spotlight-x, 50%) - 26%), rgb(255 255 255 / 0.18) calc(var(--spotlight-x, 50%) - 14%), rgb(255 255 255 / 0.04) calc(var(--spotlight-x, 50%) - 6%), transparent calc(var(--spotlight-x, 50%) + 2%));
+  mix-blend-mode: normal;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-hovered="true"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-canvas-specular {
+  opacity: 1;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) [data-card-effect="spotlight"] {
+  z-index: 21;
+  mix-blend-mode: screen;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) [data-card-effect="spotlight"]::before {
+  position: absolute;
+  top: calc(var(--spotlight-y, 50%) - 50px);
+  left: calc(var(--spotlight-x, 50%) - 50px);
+  width: 100px;
+  height: 100px;
+  background:
+    linear-gradient(90deg, transparent, #fff, transparent) center / 100% 2px no-repeat,
+    linear-gradient(180deg, transparent, #fff, transparent) center / 2px 80px no-repeat;
+  content: "";
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) [data-card-effect="spotlight"]::after {
+  position: absolute;
+  top: calc(var(--spotlight-y, 50%) - 4px);
+  left: calc(var(--spotlight-x, 50%) - 4px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 14px 5px var(--flashcard-tier-soft);
+  content: "";
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-holo {
+  display: none;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-tier="mastered"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-holo {
+  position: absolute;
+  inset: 0;
+  z-index: 23;
+  display: block;
+  pointer-events: none;
+  background: repeating-linear-gradient(115deg, rgb(255 143 182 / 0.5) 0%, rgb(255 209 102 / 0.5) 6%, rgb(94 242 255 / 0.5) 12%, rgb(155 107 255 / 0.5) 18%, rgb(255 84 112 / 0.5) 24%, rgb(255 143 182 / 0.5) 30%);
+  background-position: var(--spotlight-x, 50%) var(--spotlight-y, 50%);
+  background-size: 300% 300%;
+  mix-blend-mode: color-dodge;
+  opacity: 0.22;
+  transition: opacity 300ms ease;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-tier="mastered"][data-card-hovered="true"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-holo {
+  opacity: 0.55;
+}
+
+/* Back */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] :is([data-card-effect="spotlight"], .flashcard-holo, .flashcard-canvas-specular) {
+  display: none;
+}
+
+/* A slow light beam and a faint star mark behind the back's content. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back-beam {
+  position: absolute;
+  top: -30%;
+  left: 20%;
+  z-index: 0;
+  width: 110px;
+  height: 160%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  filter: blur(3px);
+  transform: rotate(22deg);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back-star {
+  position: absolute;
+  right: -40px;
+  bottom: 60px;
+  z-index: 0;
+  width: 180px;
+  height: 180px;
+  opacity: 0.18;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-header {
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-language {
+  background: var(--sf-primary-bg);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-due {
+  padding: 0 12px;
+  background: linear-gradient(180deg, #fff0b8, #ffd166);
+  color: #4a2a00;
+  font-size: 12px;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-scroll {
+  align-items: center;
+  padding: 14px 28px 0;
+  text-align: center;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-meaning {
+  flex: none;
+  justify-content: flex-start;
+  gap: 0;
+  min-height: 0;
+  padding: 0;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-translation {
+  color: var(--sf-text-strong);
+  /* 50px on the board's 460px card, whose content box is 398px wide; smaller cards scale it down. */
+  font-size: clamp(32px, 12.6cqi, 50px);
+  text-shadow: 0 0 24px var(--flashcard-tier-soft);
+  animation: none;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-source {
+  margin-top: 6px;
+  gap: 10px;
+  color: var(--sf-text-muted);
+  font-size: 14px;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-word {
+  color: var(--sf-text-strong);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-ipa {
+  font-size: 13px;
+}
+
+/* The part of speech already heads the front, so the back's source line keeps the word, its IPA and the listen button. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-pos {
+  display: none;
+}
+
+/* The board's 32px listen hexagon, drawn inside a 44px touch target that takes only 32px of the row. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-play {
+  position: relative;
+  isolation: isolate;
+  margin-block: -6px;
+  border: 0;
+  clip-path: none;
+  background: none;
+  color: #fff;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-play::before {
+  position: absolute;
+  inset: 6px;
+  z-index: -1;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: var(--sf-primary-bg);
+  content: "";
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-example {
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px 18px;
+  background: var(--sf-surface-glass);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-example-text {
+  color: var(--sf-text-strong);
+  line-height: 1.45;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-example-translation {
+  margin-top: 6px;
+  color: var(--sf-text-muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-explanation {
+  align-self: stretch;
+  width: auto;
+  margin: 12px 2px 0;
+  padding: 0;
+  color: var(--sf-text-body);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-tools {
+  align-self: stretch;
+  gap: 10px;
+  margin-top: auto;
+  padding-bottom: 14px;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] :is(.flashcard-hook-button, .flashcard-back-tutor) {
+  gap: 7px;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-hook-button {
+  background: linear-gradient(180deg, #fff0b8, #ffd166);
+  color: #4a2a00;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-tutor {
+  background: linear-gradient(180deg, #7ff6ff, #1aa7c9);
+  color: #031820;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-more {
+  align-self: stretch;
+  margin-top: 0;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-look="crystal"] .flashcard-back-return {
+  border-top-color: var(--sf-edge-highlight);
+}
+
+/* Motion, only when the visitor allows it (OS setting and the app's own switch). */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-wing {
+    will-change: transform, opacity;
+  }
+
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] :is(.flashcard-chrome-button, .flashcard-play-button, .flashcard-reveal, .flashcard-back-play, .flashcard-hook-button, .flashcard-back-tutor) {
+    transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 220ms ease, filter 220ms ease;
+  }
+
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-star-flare {
+    animation: nk-flare-k 3.4s ease-in-out infinite;
+  }
+
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-star-selected {
+    animation: nk-pop-k 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-reveal-shine {
+    transition: none;
+    animation: nk-shine-k 2.8s ease-in-out infinite;
+  }
+
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-face[data-card-look="crystal"]:not([data-card-kind="language"]) .flashcard-art img {
+    transition: opacity 500ms ease, filter 500ms ease, transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back-beam {
+    animation: nk-beam-k 9s ease-in-out infinite;
+  }
+
+  /* The back shows its content while it turns in, as the board's back face does; once the turn has ended the
+     meaning pops in again, the source row 140ms later, then the example and the explanation rise. */
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back[data-card-look="crystal"] .flashcard-back-translation {
+    animation: nk-pop-k 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back[data-card-look="crystal"] .flashcard-back-source {
+    animation: nk-pop-k 520ms cubic-bezier(0.34, 1.56, 0.64, 1) 140ms both;
+  }
+
+  html:not([data-motion="reduced"]) .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"][data-card-flipping="false"] .flashcard-back[data-card-look="crystal"] :is(.flashcard-back-example, .flashcard-back-explanation) {
+    animation: flashcard-rise-k 700ms cubic-bezier(0.16, 1, 0.3, 1) 240ms both;
+  }
+}
+
+/* The board's blind band: a dark veil over the picture area, the cyan crack and the crimson plate. It sits over the
+   picture and its shade and under the tier chip. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-blind-band {
+  z-index: 10;
+  background: rgb(10 6 24 / 0.72);
+}
+
+/* With no picture under it (the prompt hides it, or the card has none) the band still reads as the board's
+   darkened, blurred picture in both modes: the same veil over a dark base instead of over the light face. */
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-art:not(:has(img)) .flashcard-blind-band {
+  background: linear-gradient(rgb(10 6 24 / 0.72), rgb(10 6 24 / 0.72)), linear-gradient(180deg, #221c38, #0c0a18);
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-blind-plate {
+  padding: 10px 22px;
+  clip-path: var(--nk-chamfer-sm);
+  background: linear-gradient(180deg, #ff5470, #b30f33);
+  color: #fff;
+  text-align: center;
+}
+
+.flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-blind-title {
+  font-family: var(--sf-font-display);
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The study prompt in the card face: a sentence prompt is set smaller than a word, the answer box takes the
+   definition's place and wears the board's field (chamfered chip with an inset edge), and the check button the
+   board's primary chip. */
+.flashcard-recall-card[data-card-look="crystal"] [data-recall-prompt="sentence"] .flashcard-headword-word.flashcard-word-gradient {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.flashcard-recall-card[data-card-look="crystal"] .flashcard-recall-slot {
+  display: block;
+}
+
+.flashcard-recall-card[data-card-look="crystal"] .flashcard-recall-instruction {
+  margin: 0 0 10px;
+  color: var(--sf-text-body);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.6;
+  text-align: left;
+  text-transform: none;
+}
+
+.flashcard-recall-card[data-card-look="crystal"] .flashcard-recall-input {
+  height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge);
+  color: var(--sf-text-strong);
+  font-family: var(--sf-font-display);
+  font-size: 18px;
+  font-style: italic;
+  font-weight: 800;
+  outline-offset: -4px;
+}
+
+.flashcard-recall-card[data-card-look="crystal"] .flashcard-recall-input::placeholder {
+  color: var(--sf-text-muted);
+  font-weight: 700;
+}
+
+.flashcard-recall-card[data-card-look="crystal"] .flashcard-recall-check {
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm);
+  background: var(--sf-primary-bg);
+  color: #fff;
+  font-family: var(--sf-font-display);
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  outline-offset: -4px;
+}
+
+.flashcard-recall-card[data-card-look="crystal"] .flashcard-recall-result {
+  min-height: 20px;
+  margin: 6px 0 0;
+  color: var(--sf-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.flashcard-recall-card[data-card-look="crystal"] .flashcard-recall-result[data-recall-result="correct"] {
+  color: var(--sf-success);
+}
+
+.flashcard-recall-card[data-card-look="crystal"] .flashcard-recall-result[data-recall-result="incorrect"] {
+  color: var(--sf-danger);
+}
+
+/* The study screen's recall card stands where the board's card front stands, so it wears the same
+   frame: the tier rim (a 200% layer seen through a 3px border, with both chamfered corners filled),
+   the card-front surface, and the stage shadows on its wrapper, outside the chamfer clip. */
+.flashcard-recall[data-card-look="crystal"][data-card-tier="new"] {
+  --flashcard-tier-rim: var(--sf-rim-new);
+}
+
+.flashcard-recall[data-card-look="crystal"][data-card-tier="learning"] {
+  --flashcard-tier-rim: var(--sf-rim-learning);
+}
+
+.flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"] {
+  --flashcard-tier-rim: var(--sf-gold-rim);
+}
+
+.flashcard-recall[data-card-look="crystal"][data-card-tier] {
+  position: relative;
+  border: 3px solid transparent;
+  box-shadow: none;
+}
+
+@media not (forced-colors: active) {
+  .flashcard-recall[data-card-look="crystal"][data-card-tier] {
+    background: var(--sf-card-front) padding-box, var(--flashcard-tier-rim) center / 200% 200% border-box;
+  }
+
+  .flashcard-recall[data-card-look="crystal"][data-card-tier]::after {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    background: var(--flashcard-tier-rim) center / calc(200% + 12px) calc(200% + 12px);
+    clip-path: polygon(0 0, 18px 0, 0 18px, 0 0, 100% 100%, 100% calc(100% - 18px), calc(100% - 18px) 100%, 100% 100%);
+    content: "";
+  }
+}
+
+div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="new"]) {
+  filter: drop-shadow(0 30px 40px rgb(0 0 0 / 0.45)) drop-shadow(0 0 22px rgb(94 242 255 / 0.5));
+}
+
+div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="learning"]) {
+  filter: drop-shadow(0 30px 40px rgb(0 0 0 / 0.45)) drop-shadow(0 0 22px rgb(255 143 182 / 0.55));
+}
+
+div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]) {
+  filter: drop-shadow(0 30px 40px rgb(0 0 0 / 0.45)) drop-shadow(0 0 22px rgb(255 42 77 / 0.6));
+}
+
 
 /* ------------------------------------------------------------------------
    Language-pack card (Korean, Japanese, Chinese): the front teaches through

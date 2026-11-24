@@ -281,7 +281,7 @@ for (const state of canvasCardStates) {
           await expect(shell).toHaveAttribute('data-card-hovered', 'true');
           await expect(shell.locator('[data-card-effect="hover-wings"]')).toHaveAttribute('data-card-effect-tier', 'mastered');
           await expect(shell.locator('[data-card-effect="holo"]')).toHaveCSS('opacity', theme.family === 'crystal' ? '0.55' : '0.35');
-          await expect(shell.locator('[data-card-effect="specular"]')).toHaveCSS('opacity', '0.92');
+          await expect(shell.locator('[data-card-effect="specular"]')).toHaveCSS('opacity', theme.family === 'crystal' ? '1' : '0.92');
         } else {
           const star = shell.locator('[data-card-effect="star-pop"]');
           await expect(shell).toHaveAttribute('data-card-tier', 'new');

@@ -147,7 +147,8 @@ export function CardFront({
           {supportedImageUrl && <CardImage src={supportedImageUrl} alt={i18n._(msg({ id: 'flashcard.image.illustration', message: 'Illustration for {word}' }).id, { word: data.word })} priority={imagePriority} />}
         </div>
         {supportedImageUrl && <div className="flashcard-art-shade pointer-events-none absolute inset-0" aria-hidden="true" />}
-        {isBlindMode && supportedImageUrl && (
+        {isBlindMode && look === 'crystal' && !isPackCard && <CrystalBlindBand />}
+        {isBlindMode && supportedImageUrl && !(look === 'crystal' && !isPackCard) && (
           <div className="absolute inset-0 z-20 flex items-center justify-center px-6 text-center">
             <span className="inline-flex items-center gap-2 rounded-full bg-[var(--sf-surface)] px-3.5 py-2 text-sm font-semibold text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)]">
               <EyeOff size={16} aria-hidden="true" />
@@ -457,6 +458,27 @@ function ZenCardFront({
                 </button>
               </div>
             </div>
+  );
+}
+
+const BLIND_ZIGZAG = '0,150 70,128 110,160 170,118 205,150 250,96 300,140 340,110 390,146 460,120';
+
+/**
+ * The board's blind band over the picture area: a dark veil, a cyan zigzag crack and the crimson plate that says the
+ * visual hint is hidden. Crystal only.
+ */
+export function CrystalBlindBand() {
+  return (
+    <div data-card-effect="blind-band" className="flashcard-blind-band absolute inset-0 flex items-center justify-center">
+      <svg className="flashcard-blind-crack absolute inset-0 h-full w-full" viewBox="0 0 460 282" preserveAspectRatio="none" aria-hidden="true">
+        <polyline points={BLIND_ZIGZAG} fill="none" stroke="#5ef2ff" strokeWidth="3" style={{ filter: 'drop-shadow(0 0 8px #5ef2ff)' }} />
+        <polyline points={BLIND_ZIGZAG} fill="none" stroke="#ffffff" strokeWidth="1" />
+        <polyline points="170,118 180,70 214,40" fill="none" stroke="#ff5470" strokeWidth="1.6" />
+      </svg>
+      <div className="flashcard-blind-plate relative">
+        <div className="flashcard-blind-title"><Trans {...msg({ context: 'flashcard.visual-hint.hidden', message: 'Visual hint hidden' })} /></div>
+      </div>
+    </div>
   );
 }
 

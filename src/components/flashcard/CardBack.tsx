@@ -92,6 +92,13 @@ export function CardBack({
       className="flashcard-panel flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[var(--flashcard-radius,32px)]"
     >
       <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo tier={tier} />
+      {/* The Crystal board's back carries a slow light beam and a faint star mark behind the content. */}
+      {look === 'crystal' && (
+        <>
+          <span className="flashcard-back-beam" aria-hidden="true" />
+          <span className="flashcard-back-star crystal-star-art" aria-hidden="true" />
+        </>
+      )}
       <div className="flashcard-back-header relative z-20 flex shrink-0 flex-wrap items-center">
         <span className="flashcard-back-language">
           {look === 'aurora' && <span className="flashcard-back-language-dot" aria-hidden="true" />}

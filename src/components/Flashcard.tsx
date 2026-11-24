@@ -23,7 +23,8 @@ import { CardBack } from './flashcard/CardBack';
 import { CardEffectsLayer, useCardEffects } from './flashcard/CardEffectsLayer';
 import { CardFront } from './flashcard/CardFront';
 import { cardSideAnnouncement, cardSideStatus, isLanguagePackCard } from './flashcard/cardLanguage';
-import { useCardLook } from './flashcard/cardLook';
+import { cardTierOf, useCardLook } from './flashcard/cardLook';
+import { crystalFlipMotion, crystalTiltMotion } from './flashcard/crystalCardMotion';
 import { useFlashcardAudio } from './flashcard/useFlashcardAudio';
 import { useFlashcardSpeechMatch } from './flashcard/useFlashcardSpeechMatch';
 import { useZenGlassMode } from '../lib/useZenGlassMode';
@@ -65,6 +66,8 @@ export interface FlashcardProps {
   onEditOpenChange?: (open: boolean) => void;
   editorContext?: EditCardDialogContext;
   initialSide?: 'front' | 'back';
+  /** Starts with the picture and definition hidden, as the study prompt that turns into this card hid them. */
+  initialBlind?: boolean;
   imagePriority?: boolean;
 }
 
@@ -80,7 +83,7 @@ const startsOnCardControl = (target: EventTarget, card: Element): boolean => {
   return dialog !== null && !dialog.contains(card);
 };
 
-export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, onEditOpenChange, editorContext, initialSide = 'front', imagePriority = false }: FlashcardProps) {
+export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditDelete, onToggleBookmark, customDecks = [], onAssignDeck, onUpdateCard, onEditOpenChange, editorContext, initialSide = 'front', initialBlind = false, imagePriority = false }: FlashcardProps) {
   const { _, i18n } = useLingui();
   const { model: courseModel } = useCourseSession();
   const translationFailureMessage = _(msg({ id: 'flashcard.translation.failed', message: 'The explanation could not be translated. Check your connection and try again.' }));
@@ -90,6 +93,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
   const [isFlipped, setIsFlipped] = useState(initialSide === 'back');
   const [flipDirection, setFlipDirection] = useState<1 | -1>(initialSide === 'back' ? 1 : -1);
   const [isFlipAnimating, setIsFlipAnimating] = useState(false);
+  // The side the running turn ends on: the Crystal light pillar and the meaning's entrance belong only to the turn toward the back.
+  const [flipTarget, setFlipTarget] = useState<'front' | 'back'>('back');
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const frontFlipRef = useRef<HTMLButtonElement | null>(null);
   const backFlipRef = useRef<HTMLButtonElement | null>(null);
@@ -120,7 +125,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
   const editDialogOpenRef = useRef(false);
   const latestEditOpenChangeRef = useRef(onEditOpenChange);
   latestEditOpenChangeRef.current = onEditOpenChange;
-  const [isBlindMode, setIsBlindMode] = useState(false);
+  const [isBlindMode, setIsBlindMode] = useState(initialBlind);
   const [showReading, setShowReading] = useState(true);
   const isPackCard = isLanguagePackCard(data);
   const [showQuickQuiz, setShowQuickQuiz] = useState(false);
@@ -179,6 +184,9 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
     latestEditOpenChangeRef.current?.(false);
   }, []);
 
+  const cardLook = useCardLook();
+  const isCrystalCard = cardLook === 'crystal' && !isZenMode;
+
   const showCardSide = (side: 'front' | 'back') => {
     const nextFlipped = side === 'back';
     if (nextFlipped === isFlipped || isFlipAnimating) return;
@@ -204,21 +212,32 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       return;
     }
 
+    setFlipTarget(nextFlipped ? 'back' : 'front');
     setIsFlipAnimating(true);
     flipOutTweenRef.current?.kill();
-    flipOutTweenRef.current = gsap.to(faceRef.current, {
-      autoAlpha: 0.62,
-      rotationY: direction * -92,
-      scale: 0.985,
-      duration: 0.16,
-      ease: 'power2.in',
-      force3D: true,
-      transformOrigin: 'center center',
-      onComplete: commitSideChange,
-    });
+    flipOutTweenRef.current = isCrystalCard
+      // The leaving face runs the first half of the board's single 180deg turn: no fade, no shrink.
+      ? gsap.to(faceRef.current, {
+        rotationY: direction * 90,
+        duration: crystalFlipMotion.out.durationSeconds,
+        ease: crystalFlipMotion.out.ease,
+        force3D: true,
+        transformOrigin: 'center center',
+        onComplete: commitSideChange,
+      })
+      : gsap.to(faceRef.current, {
+        autoAlpha: 0.62,
+        rotationY: direction * -92,
+        scale: 0.985,
+        duration: 0.16,
+        ease: 'power2.in',
+        force3D: true,
+        transformOrigin: 'center center',
+        onComplete: commitSideChange,
+      });
     // GSAP relies on requestAnimationFrame, which browsers may suspend in a
     // throttled/background tab. Never let that leave the card interaction locked.
-    flipCommitTimerRef.current = window.setTimeout(commitSideChange, 320);
+    flipCommitTimerRef.current = window.setTimeout(commitSideChange, isCrystalCard ? Math.round(crystalFlipMotion.out.durationSeconds * 1000) + 160 : 320);
   };
 
   const handleCardPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -278,7 +297,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       completeFaceTransition(side);
       return;
     }
-    const animation = getFlashcardFlipMotion(flipDirection, reduceMotion);
+    const animation = isCrystalCard
+      // The arriving face runs the rest of the same curve from the far edge to flat.
+      ? {
+        from: { rotationY: flipDirection * -90 },
+        to: { rotationY: 0, duration: crystalFlipMotion.in.durationSeconds, ease: crystalFlipMotion.in.ease },
+      }
+      : getFlashcardFlipMotion(flipDirection, reduceMotion);
+    const fallbackMs = isCrystalCard ? Math.round(crystalFlipMotion.in.durationSeconds * 1000) + 260 : 500;
         let transitionFinished = false;
         const finishTransition = () => {
           if (transitionFinished) return;
@@ -287,7 +313,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
           gsap.set(face, { clearProps: 'transform,opacity,visibility' });
           completeFaceTransition(side);
         };
-        const completionFallback = window.setTimeout(finishTransition, 500);
+        const completionFallback = window.setTimeout(finishTransition, fallbackMs);
         gsap.fromTo(face, animation.from, {
           ...animation.to,
           transformOrigin: 'center center',
@@ -298,7 +324,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
           },
         });
         return () => window.clearTimeout(completionFallback);
-  }, { scope: shellRef, dependencies: [isFlipped, flipDirection, reduceMotion], revertOnUpdate: true });
+  }, { scope: shellRef, dependencies: [isFlipped, flipDirection, reduceMotion, isCrystalCard], revertOnUpdate: true });
 
   useEffect(() => () => {
     flipOutTweenRef.current?.kill();
@@ -335,7 +361,10 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
     }
   };
 
-  const spotlightBackground = 'radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgba(2, 132, 199, 0.11) 0%, rgba(6, 182, 212, 0.025) 40%, transparent 70%)';
+  // Crystal Star follows the board: a tier-tinted light under the pointer, screen-blended in CSS.
+  const spotlightBackground = isCrystalCard
+    ? 'radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), var(--flashcard-tier-soft) 0%, transparent 40%)'
+    : 'radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgba(2, 132, 199, 0.11) 0%, rgba(6, 182, 212, 0.025) 40%, transparent 70%)';
   const { aura, isHovered, handleMouseEnter, handleMouseMove, handleMouseLeave } = useCardEffects({
     category: data.category,
     faceRef,
@@ -343,12 +372,10 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
     reduceMotion,
     isFlipAnimating,
     spotlightBackground,
+    tilt: isCrystalCard ? crystalTiltMotion : undefined,
   });
-  const cardTier = data.difficulty === 'easy' ? 'mastered'
-    : (data.nextReviewDate || (data.reviews ?? 0) > 0 || (data.difficulty && data.difficulty !== 'unrated'))
-      ? 'learning' : 'new';
+  const cardTier = cardTierOf(data);
   const hasHangulReviewPanel = editorContext?.kind === 'review' && /^ko(?:-|$)/i.test(data.language ?? '');
-  const cardLook = useCardLook();
 
   return (
     <div className="relative mx-auto w-full max-w-[960px]">
@@ -364,6 +391,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       aria-label={_({ ...cardStatusMessage, values: { word: data.word, side: cardSideStatus(i18n, data, isFlipped ? 'back' : 'front') } })}
       data-card-side={isFlipped ? 'back' : 'front'}
       data-card-tier={cardTier}
+      data-card-flipping={isFlipAnimating ? `to-${flipTarget}` : 'false'}
       data-flip-animation={reduceMotion ? 'reduced' : 'spatial'}
       data-card-mode={isZenMode ? 'zen' : 'standard'}
       data-card-look={cardLook}
@@ -373,6 +401,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       data-card-effects="tilt spotlight aura flip star blind audio tier-rim hover-wings"
     >
       <CardEffectsLayer aura={aura} wings tier={cardTier} isHovered={isHovered} />
+      {/* The board flashes a light pillar across the card while it turns to the back; reduced motion skips it. */}
+      {isCrystalCard && isFlipAnimating && flipTarget === 'back' && !reduceMotion && <span data-card-effect="flip-pillar" className="flashcard-flip-pillar" aria-hidden="true" />}
       <span className="sr-only" aria-live="polite">{cardSideAnnouncement(i18n, data, isFlipped ? 'back' : 'front')}</span>
       <AlertDialog.Root
         open={showConfirmDelete}
@@ -630,10 +660,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
               data-color-role="reward"
               data-card-effect="star-pop"
               onMouseEnter={event => {
-                if (reduceMotion) return;
+                // The Crystal star lifts like every other Crystal control (CSS), without the tilt.
+                if (reduceMotion || isCrystalCard) return;
                 gsap.to(event.currentTarget, { scale: 1.05, rotation: 6, duration: 0.18, ease: 'power3.out', overwrite: 'auto' });
               }}
               onMouseLeave={event => {
+                if (isCrystalCard) return;
                 gsap.to(event.currentTarget, { scale: 1, rotation: 0, duration: reduceMotion ? 0 : 0.22, ease: 'power3.out', overwrite: 'auto' });
               }}
               onClick={(event) => {
@@ -657,6 +689,8 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
               </span>
             </button>
           )}
+          {/* A starred Crystal card keeps a slow cross flare centred on the star; it sits outside the chamfered button so the clip does not cut it. */}
+          {onToggleBookmark && isCrystalCard && data.bookmarked && <span data-card-effect="star-flare" className="flashcard-star-flare" aria-hidden="true" />}
 
           {!isFlipped && (
             <button

@@ -119,9 +119,8 @@ test('study reveal keeps progress visible and scrolls rating controls into view'
     const box = await rating.boundingBox();
     return Boolean(box && box.y >= 0 && box.y + box.height <= 844);
   }).toBe(true);
-  const prepareOffline = page.getByRole('region', { name: 'Offline access' }).getByRole('button', { name: 'Prepare offline' });
-  await prepareOffline.scrollIntoViewIfNeeded();
-  await expect(prepareOffline).toBeInViewport();
+  // Preparing offline lives in My Files, so the study session carries no offline card under it.
+  await expect(page.getByRole('region', { name: 'Offline access' })).toHaveCount(0);
 });
 
 test('study timer pauses for the card editor and resumes from the elapsed time', async ({ page, signIn }) => {
