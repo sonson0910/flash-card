@@ -90,7 +90,7 @@ describe('WeeklyRecapScreen', () => {
     }
     const classic = render(<WeeklyRecapScreen {...props()} />);
     expect(classic).not.toContain('weekly-recap-stage');
-    expect(classic).toMatch(/^<div class="weekly-recap-screen" data-family="classic"><section class="weekly-recap-card"/);
+    expect(classic).toMatch(/^<div class="weekly-recap-screen" data-family="classic"><div class="weekly-recap-card-deck"><section class="weekly-recap-card sf-deal-1"/);
   });
 
   it('shows an honest empty state instead of zero metrics', () => {

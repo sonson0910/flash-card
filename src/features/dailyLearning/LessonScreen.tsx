@@ -287,7 +287,7 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
   const instruction = model.answer.kind === 'text'
     ? <label htmlFor="daily-lesson-answer" className="lesson-instruction">{model.answer.label}</label>
     : <span className="lesson-instruction" aria-hidden="true">{model.answer.kind === 'choice' ? _(msg({ id: 'daily.lesson.choose-answer', message: 'Choose one answer' })) : _(msg({ id: 'daily.lesson.build-sentence', message: 'Build the sentence' }))}</span>;
-  const submitButton = answering && <button type="submit" onPointerDown={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }} disabled={!model.canSubmit} className="lesson-primary lesson-submit">
+  const submitButton = answering && <button type="submit" onPointerDown={() => { pointerSubmit.current = true; setTimeout(() => { pointerSubmit.current = false; }, 0); }} disabled={!model.canSubmit} className="lesson-primary lesson-submit sf-press">
     {_(msg({ id: 'daily.lesson.check', message: 'Check' }))}<kbd className="lesson-kbd font-mono" aria-hidden="true">{_(msg({ id: 'daily.lesson.enter-key', message: 'Enter' }))}</kbd>
   </button>;
   const canAskForGuidance = Boolean(model.card && actions.requestGuidance && (model.status === 'answering' || model.status === 'feedback'));
@@ -327,7 +327,7 @@ export function LessonScreen({ model, actions }: LessonScreenProps) {
             <SentenceAnswer model={model} actions={actions} />
             {(model.answer.kind !== 'text' && submitButton) || showAudio || canAskForGuidance ? <div className="lesson-aux-row">
               {model.answer.kind !== 'text' && submitButton}
-              {showAudio && <button type="button" onClick={actions.playAudio} className="lesson-pill lesson-audio"><Play size={11} fill="currentColor" aria-hidden="true" />{_(msg({ id: 'daily.lesson.play-audio', message: 'Play audio' }))}</button>}
+              {showAudio && <button type="button" onClick={actions.playAudio} className="lesson-pill lesson-audio sf-press"><Play size={11} fill="currentColor" aria-hidden="true" />{_(msg({ id: 'daily.lesson.play-audio', message: 'Play audio' }))}</button>}
               {canAskForGuidance && <button type="button" onClick={actions.requestGuidance} className="lesson-link">{_(msg({ id: 'daily.lesson.learn-first', message: "I don't know this — learn first" }))}</button>}
             </div> : null}
           </form>

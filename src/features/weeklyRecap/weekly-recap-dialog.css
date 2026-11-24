@@ -140,7 +140,7 @@
   --weekly-recap-card-line: rgb(251 246 236 / .14);
   --weekly-recap-card-chip: rgb(251 246 236 / .06);
   --weekly-recap-card-accent: #e8a075;
-  /* The light page shares a dark ink card, so its heat steps are the card's own; every other theme uses the page heat scale. */
+  /* Each Classic card keeps its own heat steps (WeeklyRecap board line 91); the dark ones are set below. */
   --weekly-recap-heat-0: rgb(251 246 236 / .08);
   --weekly-recap-heat-1: rgb(232 160 117 / .3);
   --weekly-recap-heat-2: rgb(232 160 117 / .55);
@@ -153,22 +153,11 @@
   flex-direction: column;
   border: 0;
   border-radius: 26px;
-  background: linear-gradient(170deg, var(--weekly-recap-card-bg), var(--weekly-recap-card-bg-end));
+  background: var(--weekly-recap-card-bg);
   padding: clamp(1.4rem, 3vw, 1.875rem) clamp(1.4rem, 3vw, 1.875rem) clamp(1.25rem, 2.5vw, 1.5rem);
-  color: var(--weekly-recap-card-text);
+  color: #e9e2d2;
+  line-height: normal;
   box-shadow: 0 50px 80px -40px rgb(60 40 20 / .7), 0 2px 6px rgb(60 40 20 / .12);
-}
-
-/* The second card peeking out behind, as on the board. */
-:where(html:not([data-theme-family=crystal])) .weekly-recap-card::after {
-  position: absolute;
-  z-index: -1;
-  inset: 30px -24px -24px 30px;
-  border-radius: inherit;
-  pointer-events: none;
-  content: '';
-  background: rgb(29 26 22 / .06);
-  transform: rotate(4deg);
 }
 
 .weekly-recap-card > * {
@@ -200,9 +189,9 @@
   flex: none;
   place-items: center;
   border-radius: 7px;
-  background: var(--weekly-recap-card-text);
-  color: var(--weekly-recap-card-bg);
-  font: italic 600 13px/1 var(--sf-font-display);
+  background: var(--sf-logo-bg);
+  color: var(--sf-logo-text);
+  font: italic 600 13px/normal var(--sf-font-display);
 }
 
 .weekly-recap-card__brand-star {
@@ -227,7 +216,7 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: .08em;
-  line-height: 1.3;
+  line-height: normal;
   text-transform: uppercase;
 }
 
@@ -285,7 +274,6 @@
   font-family: var(--sf-font-display);
   font-size: clamp(1.45rem, 3vw, 1.75rem);
   font-weight: 400;
-  letter-spacing: -.01em;
   line-height: 1.05;
 }
 
@@ -318,7 +306,7 @@
   min-width: 0;
   flex-direction: column-reverse;
   justify-content: flex-end;
-  gap: .3rem;
+  gap: 4px;
   border: 1px solid var(--weekly-recap-card-line);
   border-radius: 12px;
   background: var(--weekly-recap-card-chip);
@@ -383,7 +371,7 @@
 :where(html:not([data-theme-family=crystal])) .weekly-recap-card__heatmap-day small {
   color: var(--weekly-recap-card-muted);
   font-size: 10.5px;
-  font-weight: 600;
+  font-weight: 400;
   text-transform: uppercase;
 }
 
@@ -418,7 +406,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: .15rem 1rem;
+  gap: .15rem 10px;
   margin-top: 1rem;
   border: 1px solid var(--weekly-recap-card-line);
   border-radius: 14px;
@@ -492,10 +480,6 @@
   box-shadow: 0 50px 90px -40px rgb(0 0 0 / .95), 0 0 80px -30px rgb(40 211 244 / .6);
 }
 
-:root[data-theme-family="classic"].dark .weekly-recap-card::after {
-  background: rgb(255 255 255 / .04);
-}
-
 :root[data-theme-family="classic"].dark .weekly-recap-card__brand-mark {
   background: var(--sf-logo-bg);
   color: var(--sf-logo-text);
@@ -535,8 +519,7 @@
   line-height: 1.02;
 }
 :where(html:not([data-theme-family=crystal])) .weekly-recap-controls__intro h1 {
-  max-width: 16ch;
-  margin: .55rem 0 0;
+  margin: 10px 0 0;
   color: var(--sf-text-strong);
   font-family: var(--sf-font-display);
   font-optical-sizing: auto;
@@ -676,15 +659,16 @@
   box-sizing: border-box;
   display: block;
   width: 100%;
-  min-height: 6rem;
+  min-height: 0;
   border: 1px solid var(--sf-border);
   border-radius: 14px;
   background: var(--sf-surface-control);
-  padding: .85rem 1rem 2rem;
+  /* The bottom padding holds the board's hint row (line 71: 6px gap, one 12px line at 1.5). */
+  padding: 12px 14px 36px;
   color: var(--sf-text);
   font: inherit;
-  font-size: .95rem;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 400;
   line-height: 1.5;
   resize: vertical;
 }
@@ -754,10 +738,10 @@
   border-radius: var(--sf-button-radius, 999px);
   background: var(--sf-surface-control);
   box-shadow: var(--sf-secondary-shadow, none);
-  padding: .6rem 1.4rem;
+  padding: 0 20px;
   color: var(--sf-text);
   cursor: pointer;
-  font-size: .92rem;
+  font-size: 14.5px;
   font-weight: 600;
   transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
@@ -783,6 +767,8 @@
   background: var(--sf-primary-bg);
   color: var(--sf-on-primary);
   box-shadow: var(--sf-primary-shadow);
+  padding: 0 22px;
+  font-size: 15px;
   font-weight: 650;
 }
 
@@ -1638,6 +1624,178 @@
   font-weight: 900;
 }
 
+/* ----- Classic: WeeklyRecap board values (WeeklyRecap.dc.html) not set by the rules above ----- */
+
+/* Lines 7-8: the card sits in a relative box whose first child is the stacked card behind it. */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card-deck {
+  position: relative;
+  min-width: 0;
+}
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card-deck::before {
+  position: absolute;
+  inset: 30px -24px -24px 30px;
+  border-radius: 26px;
+  pointer-events: none;
+  content: '';
+  background: rgb(29 26 22 / .06);
+  transform: rotate(4deg);
+}
+:root.dark:not([data-theme-family='crystal']) .weekly-recap-card-deck::before {
+  background: rgb(255 255 255 / .04);
+}
+
+/* Lines 89 and 91: the dark card's own text colour, flat face over the learning rim, and its own heat steps. */
+:root.dark:not([data-theme-family='crystal']) .weekly-recap-card {
+  --weekly-recap-heat-0: rgb(255 255 255 / .06);
+  --weekly-recap-heat-1: rgb(40 211 244 / .3);
+  --weekly-recap-heat-2: rgb(40 211 244 / .55);
+  --weekly-recap-heat-3: #28d3f4;
+  --weekly-recap-heat-4: #7ee6fa;
+  color: var(--sf-text);
+  background: linear-gradient(170deg, var(--weekly-recap-card-bg), var(--weekly-recap-card-bg-end) 70%) padding-box, var(--sf-rim-learning) border-box;
+}
+
+/* Lines 10-13: two blurred blobs inside the dark card, clipped to its rounded face. The layer reaches 160px
+   past the face so each blob is blurred whole, as the board's blob elements are, before the clip. */
+:root.dark:not([data-theme-family='crystal']) .weekly-recap-card::before {
+  position: absolute;
+  inset: -160px;
+  pointer-events: none;
+  content: '';
+  background:
+    radial-gradient(circle 190px at 230px 210px, rgb(150 108 215 / .55) 190px, transparent 190px),
+    radial-gradient(circle 170px at calc(100% - 190px) calc(100% - 390px), rgb(40 211 244 / .4) 170px, transparent 170px);
+  filter: blur(80px);
+  clip-path: inset(160px round 24.5px);
+}
+
+/* Line 14. */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card__header {
+  gap: 8px;
+}
+
+/* Line 18. */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card__hero-metric {
+  margin-top: 26px;
+}
+
+/* Lines 21-25. */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card__metrics {
+  gap: 8px;
+  margin: 22px 0 0;
+}
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card__metrics dt {
+  font-size: 11px;
+  font-weight: 400;
+  line-height: normal;
+}
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card__metrics dd {
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* Lines 31-32. */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card__word-label {
+  font-size: 11px;
+}
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card__word-value {
+  line-height: normal;
+}
+
+/* Lines 35-37. */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card__heatmap {
+  margin: 16px 0 0;
+}
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card__heatmap-grid {
+  gap: 6px;
+}
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card__heatmap-day {
+  gap: 5px;
+}
+
+/* Line 41: the caption takes the board's footer slot (the referral line there is never built). */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-card__caption {
+  margin: auto 0 0;
+  border-top: 1px solid var(--weekly-recap-card-line);
+  padding-top: 14px;
+  color: var(--weekly-recap-card-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+/* Lines 6, 9 and 48: a 432px card and a 520px share column, 72px apart. */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-screen {
+  grid-template-columns: minmax(19rem, 432px) minmax(24rem, 520px);
+  column-gap: 72px;
+}
+
+/* Lines 49-77: the share column spaces its blocks with margins, not one gap. */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-controls {
+  gap: 0;
+  line-height: normal;
+}
+:where(html:not([data-theme-family=crystal])) .weekly-recap-controls__kicker {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .1em;
+}
+:where(html:not([data-theme-family=crystal])) .weekly-recap-controls__lead {
+  font-size: 14.5px;
+}
+:where(html:not([data-theme-family=crystal])) .weekly-recap-controls__unavailable {
+  margin-top: 12px;
+}
+:where(html:not([data-theme-family=crystal])) :is(.weekly-recap-controls__selection, .weekly-recap-controls__caption) {
+  margin-top: 22px;
+}
+:where(html:not([data-theme-family=crystal])) :is(.weekly-recap-controls__selection legend, .weekly-recap-controls__caption > label) {
+  margin-bottom: 8px;
+  color: var(--sf-text-tertiary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  line-height: normal;
+}
+:where(html:not([data-theme-family=crystal])) .weekly-recap-controls__selection > div {
+  gap: 6px;
+}
+:where(html:not([data-theme-family=crystal])) .weekly-recap-controls__selection label {
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: normal;
+}
+/* Line 64: 34px toggles where a fine pointer aims; touch keeps the 44px target. */
+@media (pointer: fine) {
+  :where(html:not([data-theme-family=crystal])) .weekly-recap-controls__selection label {
+    min-height: 34px;
+  }
+}
+/* Line 71: the count sits in the hint row inside the box. */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-controls__caption-box > span {
+  right: 15px;
+  bottom: 13px;
+  color: var(--sf-text-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+/* The privacy note is the board's hint row under the box (line 71); status lines follow it. */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-controls__privacy {
+  margin: 6px 0 0;
+  color: var(--sf-text-tertiary);
+  font-size: 12px;
+}
+:where(html:not([data-theme-family=crystal])) :is(.weekly-recap-controls__outcome, .weekly-recap-controls__error) {
+  margin-top: 12px;
+}
+/* Line 74. */
+:where(html:not([data-theme-family=crystal])) .weekly-recap-controls__actions {
+  margin-top: 20px;
+  gap: 10px;
+}
+
 /* Below the two-column width the stage and the share column stack, centred. */
 @media (max-width: 1199px) {
   :root[data-theme-family="crystal"] .weekly-recap-dialog .weekly-recap-screen[data-family="crystal"],
@@ -1789,5 +1947,12 @@
 
   .weekly-recap-card__metrics > div {
     padding: .55rem .5rem;
+  }
+}
+
+/* The phone card fills the width, so the stacked card behind it would push the dialog sideways. */
+@media (max-width: 760px) {
+  :where(html:not([data-theme-family=crystal])) .weekly-recap-card-deck::before {
+    display: none;
   }
 }

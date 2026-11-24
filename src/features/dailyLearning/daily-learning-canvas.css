@@ -70,6 +70,8 @@
 .daily-facet-action { min-height: 3.75rem; }
 .daily-ghost-action { background: transparent; }
 .progress-canvas, [aria-labelledby="daily-progress-heading"] { max-width: 84rem !important; gap: 1.25rem !important; }
+/* ProgressScreen board: the content column is 1328 px wide at the board's 1440 px width. */
+:where(html:not([data-theme-family=crystal])) [aria-labelledby="daily-progress-heading"] { max-width: 83rem !important; }
 .progress-canvas > header, [aria-labelledby="daily-progress-heading"] > header { display: flex; flex-wrap: wrap; align-items: end; gap: .25rem 1.25rem; }
 .progress-canvas > header h1, [aria-labelledby="daily-progress-heading"] > header h1 { font-size: clamp(2.8rem, 6vw, 4rem) !important; letter-spacing: -.045em !important; line-height: .96 !important; }
 .progress-canvas > header > :last-child, [aria-labelledby="daily-progress-heading"] > header > :last-child { width: 100%; }

@@ -42,6 +42,14 @@
 }
 :root:not([data-theme-family='crystal']) .progress-board.progress-board > header.progress-board-header:has(> .progress-board-range) > * { grid-column: 1; }
 :root:not([data-theme-family='crystal']) .progress-board.progress-board > header.progress-board-header > .progress-board-range { grid-column: 2; grid-row: 1 / span 2; margin-left: 0; }
+/* ProgressScreen board: the page root sets no line-height, so its text takes the font's normal height (the app
+   root inherits 1.5); the header row has a 20px gap and the panel grid starts 26px below it; the subtitle figures
+   are plain weight; panel heads align title and note on their baseline. */
+:where(html:not([data-theme-family=crystal])) .progress-board,
+:where(html:not([data-theme-family=crystal])) .progress-board :is(.progress-board-subtitle, .stats-panel-title, .stats-panel-note) { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .progress-board.progress-board > header.progress-board-header { column-gap: 20px; margin-block-end: 26px; }
+:where(html:not([data-theme-family=crystal])) .progress-board-stat strong { font-weight: inherit; }
+:where(html:not([data-theme-family=crystal])) .progress-board .stats-panel-head { align-items: baseline; }
 
 /* Insights grid: activity and mastery, then forecast and recently mastered, with the board's 400px side column. */
 .progress-board-insights > div > :not(:last-child) { margin-block-end: 20px; }
@@ -96,6 +104,13 @@
 :root:not([data-theme-family='crystal']) .progress-forecast-days > li[data-forecast-day='today'] .progress-forecast-count { font-weight: 400; }
 .progress-forecast-days > li[data-forecast-day='today'] time { font-weight: 650; color: var(--st-title); }
 :root:not([data-theme-family='crystal']) .progress-forecast-days > li[data-forecast-day='today'] time { color: var(--sf-text); }
+/* ProgressScreen board forecast: a 170px row 16px under the head; each day stacks count, bar and label 6px apart from
+   the bottom, and the bar is its share of the busiest day times 120px. The bar box carries that height, so its fill
+   covers the box instead of the inline percentage the Crystal board's fixed box uses. */
+:where(html:not([data-theme-family=crystal])) .progress-forecast-days { margin-top: 16px; }
+:where(html:not([data-theme-family=crystal])) .progress-forecast-days > li { height: 170px; justify-content: flex-start; }
+:where(html:not([data-theme-family=crystal])) .progress-forecast-bar { height: calc(120px * var(--forecast-ratio, 0)); }
+:where(html:not([data-theme-family=crystal])) .progress-forecast-bar > span { height: 100% !important; }
 
 .progress-mastered-all {
   min-height: 44px;
@@ -143,6 +158,19 @@
 }
 .progress-mastered-meaning { margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--st-text2); }
 .progress-mastered-date { margin-top: 6px; font-family: var(--st-mono); font-size: 11px; color: var(--st-text3); }
+/* ProgressScreen board shelf card: 76px tall, the word (line-height 1) at the top and the meaning at the bottom. The
+   app's mastered date, which the board does not draw, shares the bottom line at the right so the card keeps the
+   board's height. */
+:where(html:not([data-theme-family=crystal])) .progress-mastered-cards > li {
+  height: 76px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: last baseline;
+  column-gap: 8px;
+}
+:where(html:not([data-theme-family=crystal])) .progress-mastered-word { grid-column: 1 / -1; align-self: start; line-height: 1; }
+:where(html:not([data-theme-family=crystal])) :is(.progress-mastered-meaning, .progress-mastered-date) { margin-top: 0; }
 
 /* Summary: the next review action and supporting evidence. */
 .progress-summary-copy { font-size: 14px; line-height: 1.55; color: var(--st-text2); }

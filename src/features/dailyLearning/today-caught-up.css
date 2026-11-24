@@ -1,6 +1,6 @@
 /* The caught-up panel follows the source Canvas dimensions and motif without affecting other Today states. */
 .today-caught-up-panel { box-sizing: border-box; width: min(100%, 26.5rem); max-width: 26.5rem; min-height: 19.625rem; overflow: hidden; border: 1px solid var(--sf-border); border-radius: var(--sf-card-radius, 20px); background: var(--sf-surface); box-shadow: var(--sf-panel-shadow); color: var(--sf-text); }
-:root:not([data-theme-family="crystal"]) .today-caught-up-panel { border-radius: var(--sf-panel-radius, 18px); background: var(--sf-surface-glass); -webkit-backdrop-filter: var(--sf-panel-blur, none); backdrop-filter: var(--sf-panel-blur, none); }
+:root:not([data-theme-family="crystal"]) .today-caught-up-panel { line-height: normal; border-radius: var(--sf-panel-radius, 18px); background: var(--sf-surface-glass); -webkit-backdrop-filter: var(--sf-panel-blur, none); backdrop-filter: var(--sf-panel-blur, none); }
 .today-caught-up-panel-inner { box-sizing: border-box; display: flex; min-height: inherit; flex-direction: column; padding: 1.5rem; text-align: center; }
 .today-caught-up-seal { display: flex; width: 70px; height: 70px; flex-shrink: 0; align-items: center; justify-content: center; margin: 0 auto; border: 2px solid #337344; border-radius: 50%; background-color: #fbf8f2; box-shadow: 0 0 0 5px #f2ecdf, 0 0 0 6px rgb(51 115 68 / 0.3); color: #337344; }
 :root.dark:not([data-theme-family="crystal"]) .today-caught-up-seal { border-color: transparent; background: radial-gradient(circle, #0f2430 60%, transparent 62%) padding-box, linear-gradient(155deg, #7ee6fa, rgb(40 211 244 / 0.2) 40%, rgb(150 108 215 / 0.35) 75%, #b395ea) border-box; box-shadow: 0 0 36px -8px rgb(40 211 244 / 0.6); color: #7ee6fa; }
@@ -13,12 +13,20 @@
 .today-caught-up-light-accent { color: var(--sf-success); }
 .today-caught-up-status { margin-top: .5rem; color: var(--sf-text-muted); font-size: 13.5px; line-height: 1.5; }
 :root:not([data-theme-family="crystal"]) .today-caught-up-status { color: var(--sf-text-body); }
-:root:not([data-theme-family="crystal"]) .today-caught-up-button { border-radius: var(--sf-button-radius, 999px); }
+:root:not([data-theme-family="crystal"]) .today-caught-up-button { box-sizing: border-box; height: 42px; min-height: 0; padding: 0 18px; border-radius: var(--sf-button-radius, 999px); font-size: 14px; line-height: normal; }
 :root:not([data-theme-family="crystal"]) .today-caught-up-primary { border: 0; background: var(--sf-primary-bg); box-shadow: var(--sf-primary-shadow); color: var(--sf-on-primary); font-weight: 650; }
-:root:not([data-theme-family="crystal"]) .today-caught-up-secondary { border: 1px solid var(--sf-border); background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow, none); color: var(--sf-text); font-weight: 600; }
+:root:not([data-theme-family="crystal"]) .today-caught-up-secondary { border: 1px solid var(--sf-border); background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow, none); color: var(--sf-text); font-weight: 650; }
 .today-caught-up-status p { margin: 0; }
 .today-caught-up-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin-top: auto; padding-top: 1rem; }
 .today-caught-up-button { cursor: pointer; }
+/* SystemStates "all caught up": the seal, title, line and buttons sit together in the middle of the 314 px tile
+   (312 inside its 1 px edges), with the buttons 18 px under the line. The board's light seal declares a face of
+   `#fbf8f2 padding-box, linear-gradient(...) border-box`; a colour is only valid in the last background layer, so
+   the browser drops it and the board renders the light seal as its two shadow rings over the tile, with no face
+   and a transparent 2 px edge. */
+:where(html:not([data-theme-family=crystal])) .today-caught-up-panel-inner { min-height: 312px; align-items: center; justify-content: center; }
+:where(html:not([data-theme-family=crystal])) .today-caught-up-actions { margin-top: 18px; padding-top: 0; }
+:where(html:not([data-theme-family=crystal]):not(.dark)) .today-caught-up-seal { border-color: transparent; background: none; }
 
 :root[data-theme-family="crystal"] .today-caught-up-panel { height: 300px; min-height: 300px; padding: 1.5px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer); background: conic-gradient(from 200deg, #fff3c4, #ffd166, #ff2a4d, #ffd166, #fff3c4); filter: drop-shadow(0 0 24px rgb(255 209 102 / .2)); }
 :root[data-theme-family="crystal"] .today-caught-up-panel-inner { height: 100%; min-height: 0; overflow: hidden; padding: 18px 22px 20px; clip-path: var(--nk-chamfer); background: linear-gradient(170deg, #f7fcff, #dcefff); text-align: left; }

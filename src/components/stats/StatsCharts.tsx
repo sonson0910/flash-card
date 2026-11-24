@@ -70,8 +70,8 @@ const memoryColors: Record<string, string> = {
 const memoryKinds: Record<string, 'mastered' | 'learning' | 'new'> = { Mastered: 'mastered', Learning: 'learning', 'Not reviewed': 'new' };
 const memoryOrder = ['Mastered', 'Learning', 'Not reviewed'] as const;
 
-/** The Crystal board always lists the three tiers in rank order; a tier the library has no card in counts 0. */
-const crystalMemoryRows = (rows: Array<{ name: string; value: number }>) => memoryOrder.map(name => rows.find(row => row.name === name) ?? { name, value: 0 });
+/** Both boards always list the three tiers in rank order; a tier the library has no card in counts 0. */
+const boardMemoryRows = (rows: Array<{ name: string; value: number }>) => memoryOrder.map(name => rows.find(row => row.name === name) ?? { name, value: 0 });
 
 function XpChart({ entries, locale, noHistory }: { entries: Array<{ date: string; XP: number }>; locale: string; noHistory: string }) {
   if (entries.length === 0) return <div className={emptyChartClass}>{noHistory}</div>;
@@ -155,7 +155,7 @@ export default function StatsCharts({ data, section = 'all', reviewRangeDays: pa
   const noHistory = _(text.noHistory); const noData = _(text.noData);
   const memoryLabels: Record<string, string> = { Mastered: _(text.mastered), Learning: _(text.learning), 'Not reviewed': _(text.notReviewed) };
   const memoryGrades: Record<string, string> = { Mastered: _(text.gradeMastered), Learning: _(text.gradeLearning), 'Not reviewed': _(text.gradeNew) };
-  const memoryEntries = (isCrystal ? crystalMemoryRows(data.difficultyChart) : data.difficultyChart).map(entry => ({ ...entry, name: memoryLabels[entry.name] ?? entry.name, color: memoryColors[entry.name] ?? 'var(--st-new)', kind: memoryKinds[entry.name], grade: memoryGrades[entry.name] }));
+  const memoryEntries = boardMemoryRows(data.difficultyChart).map(entry => ({ ...entry, name: memoryLabels[entry.name] ?? entry.name, color: memoryColors[entry.name] ?? 'var(--st-new)', kind: memoryKinds[entry.name], grade: memoryGrades[entry.name] }));
   const rangeStart = todayKey ? new Date(`${todayKey}T12:00:00`) : new Date();
   rangeStart.setHours(0, 0, 0, 0);
   rangeStart.setDate(rangeStart.getDate() - (reviewRangeDays === 'all' ? 0 : reviewRangeDays) + 1);

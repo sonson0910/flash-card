@@ -34,7 +34,7 @@
 }
 :where(html:not([data-theme-family=crystal])) .streak-dialog {
   --sd-ice-flame: var(--sd-ice);
-  --sd-ice-chip: color-mix(in srgb, var(--sd-ice) 11%, var(--sf-surface));
+  --sd-ice-chip: #e7f1f4;
   --sd-ice-ring: color-mix(in srgb, var(--sd-ice) 45%, transparent);
   --sd-ice-soft: color-mix(in srgb, var(--sd-ice) 6%, transparent);
   --sd-ice-line: color-mix(in srgb, var(--sd-ice) 22%, transparent);
@@ -43,19 +43,20 @@
   --sd-accent-soft: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 8%, transparent));
   --sd-radius: var(--sf-dialog-radius, 18px); --sd-btn-radius: var(--sf-button-radius, 999px); --sd-display-weight: var(--sf-display-weight, 380); --sd-em-style: var(--sf-em-style, italic);
   --sd-hero-border: 1px solid color-mix(in srgb, var(--sd-ice) 25%, transparent);
-  --sd-hero-bg: radial-gradient(circle, color-mix(in srgb, var(--sd-ice) 5%, var(--sf-surface)) 58%, color-mix(in srgb, var(--sd-ice) 13%, var(--sf-surface)) 100%);
-  --sd-hero-shadow: inset 0 0 0 6px var(--sf-surface), 0 14px 26px -16px color-mix(in srgb, var(--sd-ice) 60%, transparent);
+  --sd-hero-bg: radial-gradient(circle, #f3f8f9 58%, #e1edf1 100%);
+  --sd-hero-shadow: inset 0 0 0 6px var(--sf-surface), 0 14px 26px -16px rgb(40 70 90 / .5);
   --sd-hero-fg: var(--sd-ice); --sd-hero-glow: none;
   --sd-eyebrow: var(--sd-ice); --sd-em: var(--sd-ice-flame); --sd-em-glow: none;
   position: fixed; left: 50%; top: 50%; z-index: 51; transform: translate(-50%, -50%);
   display: flex; flex-direction: column; box-sizing: border-box;
   width: min(560px, calc(100% - 32px)); max-height: min(740px, calc(100dvh - 32px)); overflow: auto;
   border: var(--sf-dialog-border, 1px solid var(--sf-border)); border-radius: var(--sd-radius); background: var(--sf-dialog-bg); box-shadow: var(--sf-dialog-shadow);
-  color: var(--sf-text);
+  color: var(--sf-text); line-height: normal;
 }
 :root.dark:not([data-theme-family="crystal"]) .streak-dialog {
-  --sd-ice-flame: color-mix(in srgb, var(--sf-holo-text) 80%, var(--sf-text-strong));
-  --sd-ice-chip: linear-gradient(160deg, color-mix(in srgb, var(--sf-holo-text) 25%, var(--sf-surface)), color-mix(in srgb, var(--sf-holo-text) 8%, var(--sf-surface)));
+  --sd-ice: #bff1ff;
+  --sd-ice-flame: #9fe8ff;
+  --sd-ice-chip: linear-gradient(160deg, #1b4a5c, #0f2a36);
   --sd-ice-ring: color-mix(in srgb, var(--sd-ice-flame) 55%, transparent);
   --sd-ice-soft: color-mix(in srgb, var(--sd-ice-flame) 7%, transparent);
   --sd-ice-line: color-mix(in srgb, var(--sd-ice-flame) 25%, transparent);
@@ -66,7 +67,7 @@
   --sd-accent-soft: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 12%, transparent));
   --sd-radius: var(--sf-dialog-radius, 26px); --sd-btn-radius: var(--sf-button-radius, 16px); --sd-display-weight: var(--sf-display-weight, 440); --sd-em-style: var(--sf-em-style, normal);
   --sd-hero-border: 1.5px solid color-mix(in srgb, var(--sd-ice-flame) 40%, transparent);
-  --sd-hero-bg: radial-gradient(circle at 40% 30%, color-mix(in srgb, var(--sf-holo-text) 22%, var(--sf-surface)), var(--sf-surface) 70%);
+  --sd-hero-bg: radial-gradient(circle at 40% 30%, #1d4556, #0b1f29 70%);
   --sd-hero-shadow: 0 0 60px -12px color-mix(in srgb, var(--sd-ice-flame) 55%, transparent);
   --sd-hero-glow: var(--sd-ice-glow);
   --sd-em-glow: 0 0 30px color-mix(in srgb, var(--sd-ice-flame) 50%, transparent);
@@ -85,10 +86,24 @@
 }
 :root.dark:not([data-theme-family="crystal"]) .streak-dialog[data-streak-state="milestone"] {
   --sd-hero-border: 2.5px solid transparent;
-  --sd-hero-bg: radial-gradient(circle at 40% 30%, color-mix(in srgb, var(--sf-reward) 24%, black), color-mix(in srgb, var(--sf-reward) 10%, black) 70%) padding-box, var(--sf-gold-rim) border-box;
+  --sd-hero-bg: radial-gradient(circle at 40% 30%, #3a2a10, #1a1206 70%) padding-box, var(--sf-gold-rim) border-box;
   --sd-hero-shadow: 0 0 80px -10px color-mix(in srgb, var(--sf-reward) 70%, transparent);
   --sd-hero-glow: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-reward) 80%, transparent));
   --sd-em-glow: 0 0 36px color-mix(in srgb, var(--sf-reward) 55%, transparent);
+}
+/* Classic states the shared state rules above do not reach. The dark base sets the hero and glow variables at a
+   higher specificity than the repair rule, so the ended streak restates the board's dashed empty emblem per mode;
+   the light milestone takes the board's literal gold face, drop shadow and emblem tone. */
+:root:not(.dark):not([data-theme-family="crystal"]) .streak-dialog:is([data-streak-state="repair"], [data-streak-state="ended"]) { --sd-hero-border: 1.5px dashed rgb(29 26 22 / .2); }
+:root.dark:not([data-theme-family="crystal"]) .streak-dialog:is([data-streak-state="repair"], [data-streak-state="ended"]) {
+  --sd-hero-border: 1.5px dashed rgb(255 255 255 / .18); --sd-hero-bg: rgb(255 255 255 / .03); --sd-hero-shadow: none;
+  --sd-hero-fg: var(--sf-text-tertiary); --sd-hero-glow: none;
+  --sd-eyebrow: var(--sf-danger); --sd-em: var(--sf-danger); --sd-em-glow: none;
+}
+:root:not(.dark):not([data-theme-family="crystal"]) .streak-dialog[data-streak-state="milestone"] {
+  --sd-hero-bg: radial-gradient(circle, #fbf3df 56%, #f1dfae 60%, #fbf3df 64%) padding-box, var(--sf-gold-rim) border-box;
+  --sd-hero-shadow: 0 0 0 5px var(--sf-surface), 0 0 0 6px rgb(184 134 43 / .4), 0 16px 26px -14px rgb(120 80 10 / .6);
+  --sd-hero-fg: #a8781f;
 }
 .streak-dialog:focus { outline: none; }
 .streak-dialog:focus-visible { outline: 2px solid var(--sf-brand-text); outline-offset: 3px; }
@@ -123,7 +138,7 @@
   color: color-mix(in srgb, var(--sf-reward) 45%, var(--sf-surface)); font-family: var(--sf-font-mono); font-size: 13px; font-weight: 600;
 }
 :root.dark:not([data-theme-family="crystal"]) .streak-dialog-gold-chip {
-  background: var(--sf-gold-rim); box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--sf-reward) 80%, transparent); color: color-mix(in srgb, var(--sf-reward) 15%, black);
+  background: var(--sf-gold-rim); box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--sf-reward) 80%, transparent); color: #2a1a02;
 }
 .streak-dialog-eyebrow { margin: 22px 0 0; color: var(--sd-eyebrow); font-size: 11.5px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; }
 .streak-dialog-title {
@@ -192,6 +207,30 @@
 :where(html:not([data-theme-family=crystal])) .streak-dialog-secondary { padding: 0 18px; border: 1px solid var(--sf-border); background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow, none); color: var(--sf-text); font-weight: 600; }
 .streak-dialog-primary:hover, .streak-dialog-secondary:hover { filter: brightness(1.05); }
 .streak-dialog-primary:active, .streak-dialog-secondary:active { transform: scale(.98); }
+
+/* DlgStreak values the shared rules above do not carry. The board's badge, empty freeze slot and gold chip are
+   content-box, so their edges add to the stated size; its light gold chip text is the board's #f3d58a, the repair
+   tile's edge is accentLine and the freeze note sits 2 px under its title. */
+:where(html:not([data-theme-family=crystal])) .streak-dialog-badge { box-sizing: content-box; }
+:where(html:not([data-theme-family=crystal])) .streak-dialog-freeze-slot:not([data-held]) { box-sizing: content-box; }
+:where(html:not([data-theme-family=crystal])) .streak-dialog-freeze-copy { gap: 0; }
+:where(html:not([data-theme-family=crystal])) .streak-dialog-freeze-copy span { margin-top: 2px; }
+:where(html:not([data-theme-family=crystal])) .streak-dialog-gold-chip { color: #f3d58a; }
+:root.dark:not([data-theme-family="crystal"]) .streak-dialog-gold-chip { color: #2a1a02; }
+:where(html:not([data-theme-family=crystal])) .streak-dialog-repair { border-color: var(--sf-accent-line, color-mix(in srgb, var(--sf-brand) 35%, transparent)); }
+/* The dialog pops in as the board's .sf-pop does (from 6 px higher at 96% around a point 120 px from its left
+   edge, over 380 ms). The centring transform stays put, so the pop uses the separate translate and scale. */
+:where(html:not([data-theme-family=crystal])) .streak-dialog {
+  transform-origin: 120px 0;
+  transition: opacity 380ms cubic-bezier(.16, 1, .3, 1), translate 380ms cubic-bezier(.16, 1, .3, 1), scale 380ms cubic-bezier(.16, 1, .3, 1);
+}
+@starting-style {
+  :where(html:not([data-theme-family=crystal])) .streak-dialog { opacity: 0; translate: 0 -6px; scale: .96; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(html:not([data-theme-family=crystal])) .streak-dialog { transition: none; }
+}
+:where(html[data-motion=reduced]:not([data-theme-family=crystal])) .streak-dialog { transition: none; }
 
 /* Crystal Star (AnimeStreak). The board's values per mode: the ice set for an active or frozen streak, then
    the state rules pick from it. Small text the board sets in a tone under AA on the light card (text3, holoText)

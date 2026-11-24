@@ -357,9 +357,9 @@ export function StreakChip({ view, runStats, now, streak, run, week, className, 
               </Dialog.Close>
             )}
             {startsSession ? (
-              <Dialog.Close className="streak-dialog-primary" onClick={onStartSession}><span>{primaryLabel}</span></Dialog.Close>
+              <Dialog.Close className="streak-dialog-primary sf-press" onClick={onStartSession}><span>{primaryLabel}</span></Dialog.Close>
             ) : state !== 'repair' ? (
-              <Dialog.Close className="streak-dialog-primary"><span>{primaryLabel}</span></Dialog.Close>
+              <Dialog.Close className="streak-dialog-primary sf-press"><span>{primaryLabel}</span></Dialog.Close>
             ) : null}
           </footer>
         </Dialog.Content>

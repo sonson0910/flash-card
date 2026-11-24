@@ -33,10 +33,11 @@
   --td-blur: var(--sf-panel-blur, none); --td-radius: var(--sf-panel-radius, 18px); --td-track: var(--sf-track, color-mix(in srgb, var(--sf-text-strong) 8%, transparent)); --td-bar: var(--sf-brand); --td-bar-glow: none;
   --td-link: repeating-linear-gradient(90deg, color-mix(in srgb, var(--sf-text-strong) 30%, transparent) 0 5px, transparent 5px 10px); --td-dot-glow: none;
   --td-logo-bg: var(--sf-logo-bg); --td-logo-text: var(--sf-logo-text); --td-logo-shadow: var(--sf-logo-shadow);
-  --td-ghost: color-mix(in srgb, var(--sf-text-strong) 4%, var(--sf-surface)); --td-mini-radius: 16px; --td-image-margin: 9px 9px 0; --td-image-radius: var(--sf-img-radius, 10px); --td-image-mask: var(--sf-img-mask, none);
+  --td-ghost: #f7f2e7; --td-mini-radius: 16px; --td-image-margin: 9px 9px 0; --td-image-radius: var(--sf-img-radius, 10px); --td-image-mask: var(--sf-img-mask, none);
   --td-front-border: 0; --td-front-bg: var(--sf-card-front); --td-front-shadow: var(--td-card-shadow);
   --td-mono: var(--sf-font-mono); --td-serif: var(--sf-font-display);
-  display: grid; gap: 1.5rem; width: 100%; max-width: 82rem; margin-inline: auto; color: var(--sf-text);
+  /* TodaySession line 6: the 876px column, 32px gap and 420px aside fill the board's 1328px (1440 less 2 x 56). */
+  display: grid; gap: 1.5rem; width: 100%; max-width: 83rem; margin-inline: auto; color: var(--sf-text);
 }
 :root.dark:not([data-theme-family="crystal"]) .today-ready-page {
   --td-accent-line: var(--sf-accent-line, color-mix(in srgb, var(--sf-brand) 35%, transparent)); --td-accent-soft: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 12%, transparent));
@@ -48,7 +49,7 @@
   --td-blur: var(--sf-panel-blur, blur(18px)); --td-radius: var(--sf-panel-radius, 22px);
   --td-bar: linear-gradient(90deg, var(--sf-brand), var(--sf-second)); --td-bar-glow: 0 0 14px color-mix(in srgb, var(--sf-brand) 60%, transparent);
   --td-link: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) 40%, transparent), var(--sf-border)); --td-dot-glow: 0 0 20px color-mix(in srgb, var(--sf-brand) 60%, transparent);
-  --td-ghost: color-mix(in srgb, var(--sf-surface) 90%, black); --td-mini-radius: 22px; --td-image-margin: 0; --td-image-radius: var(--sf-img-radius, 0);
+  --td-ghost: #0c1f28; --td-mini-radius: 22px; --td-image-margin: 0; --td-image-radius: var(--sf-img-radius, 0);
   --td-front-border: 1.5px solid transparent;
   --td-front-bg: var(--sf-solid-card-front, var(--sf-card-front)) padding-box, var(--sf-rim-learning) border-box;
   --td-front-shadow: 0 30px 60px -24px color-mix(in srgb, black 90%, transparent), 0 0 40px -12px color-mix(in srgb, var(--sf-brand) 50%, transparent);
@@ -162,6 +163,26 @@
 .today-tile span { display: block; color: var(--td-text2); font-size: 12px; }
 .today-tile strong { display: block; margin-top: 2px; color: var(--td-text-strong); font-family: var(--td-serif); font-weight: var(--td-display-weight); font-size: 28px; }
 .today-tile small { color: var(--td-text2); font-size: 15px; }
+
+/* Classic values from TodaySession and MobileToday that the shared rules above do not carry. The boards set
+   text at the font's normal line height, and their fixed-height chips, rings and links are content-box, so a
+   bordered piece measures its height plus the border. */
+:where(html:not([data-theme-family=crystal])) .today-hero { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .today-hero--compact { align-items: stretch; }
+:where(html:not([data-theme-family=crystal])) .today-chip { box-sizing: content-box; }
+:where(html:not([data-theme-family=crystal])) .today-stage-rail--classic .today-stage-icon { box-sizing: content-box; }
+:where(html:not([data-theme-family=crystal])) .today-stage-rail--classic .today-stage--current .today-stage-icon { border: 0; }
+:where(html:not([data-theme-family=crystal])) .today-stage-rail--classic .today-stage-sub { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .today-primary kbd { font-weight: inherit; }
+:where(html:not([data-theme-family=crystal])) .today-primary.sf-pulse { --sf-pulse: color-mix(in srgb, var(--sf-text-strong) 20%, transparent); }
+:root.dark:not([data-theme-family="crystal"]) .today-primary.sf-pulse { --sf-pulse: color-mix(in srgb, var(--sf-brand) 40%, transparent); }
+:where(html:not([data-theme-family=crystal])) .today-primary.sf-pulse:disabled { animation: none; }
+:where(html:not([data-theme-family=crystal])) .today-words-head h2 { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .today-words-foot { display: flex; flex-direction: column; }
+:where(html:not([data-theme-family=crystal])) .today-words-link { box-sizing: content-box; width: auto; }
+@media (min-width: 1024px) {
+  :where(html:not([data-theme-family=crystal])) .today-words { height: 700px; }
+}
 
 /* Crystal Star (AnimeToday; AnimeMobile "today" below 640 px). Literal colours are the board's own values
    that have no app token; they are the same in both modes unless a mode rule overrides them. */

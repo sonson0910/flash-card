@@ -148,7 +148,8 @@ function CrystalWeeklyRecapCard({ content, dateRangeLabel, caption }: { readonly
 
 function WeeklyRecapCard({ content, dateRangeLabel, caption }: { readonly content: WeeklyRecapCardContent; readonly dateRangeLabel: string; readonly caption: string }) {
   const { _ } = useLingui();
-  return <section className="weekly-recap-card" aria-label={_(weeklyRecapCopy.title)}>
+  // WeeklyRecap board: the card deals in over the stacked card behind it, which the deck draws and keeps still.
+  return <div className="weekly-recap-card-deck"><section className="weekly-recap-card sf-deal-1" aria-label={_(weeklyRecapCopy.title)}>
     <header className="weekly-recap-card__header">
       <span className="weekly-recap-card__brand-mark" aria-hidden="true">S</span>
       <p className="weekly-recap-card__kicker">{content.kicker}</p>
@@ -157,7 +158,7 @@ function WeeklyRecapCard({ content, dateRangeLabel, caption }: { readonly conten
 
     {content.empty !== null ? <div className="weekly-recap-card__empty">{content.empty}</div> : <WeeklyRecapCardBody content={content} />}
     {caption && <p className="weekly-recap-card__range weekly-recap-card__caption">{caption}</p>}
-  </section>;
+  </section></div>;
 }
 
 const headlineCopy = {
@@ -229,14 +230,14 @@ export function WeeklyRecapScreen({
           {isCrystal
             // The board skews the toggle and turns its label back upright.
             ? <span className="weekly-recap-controls__toggle-label">{selection[key] && <BoardCheck />}{_(key === 'words' && heroIsXp ? xpToggle : selectionCopy[key])}</span>
-            : <>{selection[key] && <Check size={13} strokeWidth={2.6} aria-hidden="true" />}{_(key === 'words' && heroIsXp ? xpToggle : selectionCopy[key])}</>}
+            : <>{selection[key] && <Check size={12} strokeWidth={3} aria-hidden="true" />}{_(key === 'words' && heroIsXp ? xpToggle : selectionCopy[key])}</>}
         </label>)}</div>
       </fieldset>}
 
       <div className="weekly-recap-controls__caption">
         <label htmlFor="weekly-recap-caption"><Trans {...msg({ context: 'weeklyRecap.caption.label', message: 'Caption' })} /></label>
         <div className="weekly-recap-controls__caption-box">
-          <textarea id="weekly-recap-caption" value={caption} maxLength={WEEKLY_RECAP_CAPTION_MAX_LENGTH} onChange={event => actions.setCaption(event.target.value)} rows={3} />
+          <textarea id="weekly-recap-caption" value={caption} maxLength={WEEKLY_RECAP_CAPTION_MAX_LENGTH} onChange={event => actions.setCaption(event.target.value)} rows={isCrystal ? 3 : 2} />
           <span>{caption.length} / {WEEKLY_RECAP_CAPTION_MAX_LENGTH}</span>
         </div>
       </div>
@@ -254,7 +255,7 @@ export function WeeklyRecapScreen({
           </>
           : <>
             <button type="button" onClick={actions.share} disabled={isBusy} className="brand-action sf-press"><Share2 size={16} aria-hidden="true" />{shareLabel}</button>
-            <button type="button" onClick={actions.download} disabled={isBusy}><Download size={16} aria-hidden="true" />{downloadLabel}</button>
+            <button type="button" onClick={actions.download} disabled={isBusy}><Download size={15} aria-hidden="true" />{downloadLabel}</button>
           </>}
       </div>
     </section>

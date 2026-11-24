@@ -232,6 +232,16 @@ button.paths-book { cursor: pointer; }
 .paths-book-count { flex: none; font-size: 11.5px; }
 :root.dark:not([data-theme-family='crystal']) .paths-book { background: radial-gradient(ellipse 90% 70% at 100% 0%, var(--pa-cloth), transparent 70%), var(--sf-book-face); }
 :root.dark:not([data-theme-family='crystal']) .paths-book-spine { background: var(--pa-cloth); }
+/* PathsScreen board: the page root sets no line-height, so the board's pieces take the font's normal height
+   (the app root inherits 1.5). App-only notices and lists keep the app's 1.5. */
+:where(html:not([data-theme-family=crystal])) .catalog-canvas :is(.paths-subtitle, .paths-hero, .paths-shelf) { line-height: normal; }
+/* Shelf head h2 (line 38) sets no line-height. */
+:where(html:not([data-theme-family=crystal])) .paths-shelf-title { line-height: normal; }
+/* Book foot (line 47): margin-top auto only; the 272px book leaves the room. */
+:where(html:not([data-theme-family=crystal])) .paths-book-foot { padding-top: 0; }
+/* Board books are links with sf-lift; the catalog books are buttons and carry sf-lift (CatalogScreen.tsx). The personal step
+   books are plain list items, so they do not lift on hover. */
+:where(html:not([data-theme-family=crystal])) li.paths-book:hover { transform: none; }
 
 /* Unit picker, roadmap and explorer */
 .paths-section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 16px; }

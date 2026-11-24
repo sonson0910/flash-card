@@ -50,6 +50,9 @@
   --ach-sheen-blend: screen;
 }
 
+/* AchievementsScreen board: the page root sets no line-height, so text takes the font's normal height (the app root inherits 1.5). */
+:where(html:not([data-theme-family=crystal])) .achievements-board--classic { line-height: normal; }
+
 /* Back to Progress */
 .ach-back {
   padding: 0 2px;
@@ -144,6 +147,9 @@
   text-align: center;
 }
 .achievements-board--classic .ach-badge[data-badge-state='locked'] { background: color-mix(in srgb, var(--sf-surface-glass) 55%, transparent); box-shadow: none; }
+/* AchievementsScreen board: a locked card is drawn at opacity .6; its surface and line take that share here, while its text
+   keeps full-strength colours for contrast. */
+:where(html:not([data-theme-family=crystal])) .achievements-board--classic .ach-badge[data-badge-state='locked'] { border-color: color-mix(in srgb, var(--st-line) 60%, transparent); background: color-mix(in srgb, var(--sf-surface-glass) 60%, transparent); }
 .achievements-board--classic .ach-badge-head { display: flex; flex-direction: column; align-items: center; width: 100%; }
 .achievements-board--classic .ach-medal {
   position: relative;
@@ -192,6 +198,12 @@
 .achievements-board--classic .ach-badge-tier { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .achievements-board--classic .ach-badge-desc { margin: 4px 0 0; font-size: 12px; line-height: 1.4; color: var(--st-text2); }
 .achievements-board--classic .ach-badge-foot { margin-top: auto; width: 100%; padding-top: 10px; }
+/* AchievementsScreen board: a locked card keeps the card shadow (t.surfaceShadow = --sf-panel-shadow), drawn at the card's
+   .6 opacity. A shadow list cannot take a share of the panel token, so its layers are rebuilt from the shadow tokens at .6. */
+:where(html:not([data-theme-family=crystal]):not(.dark)) .achievements-board--classic .ach-badge[data-badge-state='locked'] { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sf-flare) 60%, transparent), 0 1px 2px color-mix(in srgb, var(--sf-shadow-tint) 3.6%, transparent), 0 14px 28px -18px color-mix(in srgb, var(--sf-shadow) 60%, transparent); }
+:where(html.dark:not([data-theme-family=crystal])) .achievements-board--classic .ach-badge[data-badge-state='locked'] { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sf-shadow) 60%, transparent); }
+/* AchievementsScreen board: the foot only takes margin-top auto; the fixed 222px card leaves the room. */
+:where(html:not([data-theme-family=crystal])) .achievements-board--classic .ach-badge-foot { padding-top: 0; }
 .ach-badge-earned { margin: 0; display: flex; align-items: center; justify-content: center; gap: 4px; font-family: var(--sf-font-mono); font-size: 11px; color: var(--ach-earned-text); }
 [data-badge-tier='star'] .ach-badge-earned { color: var(--ach-star-text); }
 .ach-badge-count { display: flex; justify-content: space-between; gap: 6px; font-family: var(--sf-font-mono); font-size: 11px; color: var(--st-text2); }

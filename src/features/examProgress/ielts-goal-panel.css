@@ -59,6 +59,8 @@
 :root:not([data-theme-family="crystal"]) .ielts-goal-ring__percent { color: var(--sf-text-strong); }
 :root:not([data-theme-family="crystal"]) :is(.ielts-goal-panel__summary, .ielts-goal-panel__prompt p) { color: var(--sf-text-body); }
 :root:not([data-theme-family="crystal"]) :is(.ielts-goal-band__latest, .ielts-goal-band__arrow, .ielts-goal-band__date, .ielts-goal-panel__footnote) { color: var(--sf-text-subtle); }
+/* RecapNext.dc.html goal card: the heading, ring percent and band figures sit on normal line boxes. */
+:root:not([data-theme-family="crystal"]) :is(.ielts-goal-panel__heading, .ielts-goal-ring__percent, .ielts-goal-band__latest, .ielts-goal-band__target, .ielts-goal-band__date) { line-height: normal; }
 :root:not([data-theme-family="crystal"]) .ielts-goal-panel__button {
   background: var(--sf-primary-bg);
   box-shadow: var(--sf-primary-shadow);

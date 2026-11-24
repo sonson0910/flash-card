@@ -34,7 +34,7 @@
   --sb-ambient: radial-gradient(rgb(29 26 22 / .08) 1px, transparent 1.2px) 0 0 / 28px 28px;
   --sb-serif: var(--sf-font-display); --sb-mono: 'Geist Mono', ui-monospace, monospace;
   position: relative; isolation: isolate; display: flex; width: 100%; min-height: 100dvh; flex-direction: column; overflow: hidden;
-  background: var(--sf-canvas); color: var(--sf-text);
+  background: var(--sf-canvas); color: var(--sf-text); line-height: normal;
 }
 :root.dark:not([data-theme-family="crystal"]) .session-bridge {
   --sb-text-strong: #f1f6f9; --sb-text2: #99a7b0; --sb-text3: var(--sf-text-subtle); --sb-body: #b5c2ca;
@@ -142,6 +142,19 @@
 :where(html[data-theme-family=crystal]) .session-bridge-secondary { border: 1px solid var(--sb-line); background: var(--sb-secondary-bg); color: var(--sf-text); }
 :where(html:not([data-theme-family=crystal])) .session-bridge-secondary { border: 1px solid var(--sb-line); background: var(--sb-secondary-bg); box-shadow: var(--sf-secondary-shadow, none); color: var(--sf-text); }
 .session-bridge :is(button, a):focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 3px; }
+
+/* SessionBridge values the shared rules above do not carry. The board's spans and divs are content-box, so the
+   sound chip, the XP chip, the card's source chip and the ghost cards add their 1 px edges to the stated size;
+   its exit is a 40 px button at desktop width, where the app's 44 px touch target is not needed. */
+:where(html:not([data-theme-family=crystal])) .session-bridge-feedback { box-sizing: content-box; font-size: 12px; }
+:where(html:not([data-theme-family=crystal])) .session-bridge-xp { box-sizing: content-box; gap: 6px; }
+:where(html:not([data-theme-family=crystal])) .session-bridge-card-category { box-sizing: content-box; }
+@media (min-width: 761px) {
+  :where(html:not([data-theme-family=crystal])) .session-bridge-ghosts > span { box-sizing: content-box; margin: -226px 0 0 -171px; }
+}
+@media (min-width: 1024px) {
+  :where(html:not([data-theme-family=crystal])) .session-bridge-exit { width: 40px; height: 40px; }
+}
 
 /* Crystal Star: AnimeBridge. */
 .session-bridge[data-family="crystal"] {
@@ -384,3 +397,8 @@ html[data-motion="reduced"] .session-bridge-card-rotor, html[data-motion="reduce
 html[data-motion="reduced"] [data-family="crystal"] .session-bridge-card-rotor { transform: none; }
 html[data-motion="reduced"] [data-family="crystal"] .session-bridge-card-rotor[data-flipped] { transform: rotateY(180deg); }
 html[data-motion="reduced"] .session-bridge-wave > span { animation: none; }
+/* The board's card rests at -2 degrees in every motion setting; reduced motion only stops the deal-in. */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-theme-family="crystal"]) .session-bridge-card { transform: rotate(-2deg); }
+}
+:root[data-motion="reduced"]:not([data-theme-family="crystal"]) .session-bridge-card { transform: rotate(-2deg); }

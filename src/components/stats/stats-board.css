@@ -192,6 +192,30 @@
 @media (hover: hover) and (pointer: fine) {
   .stats-range-button:not([aria-pressed='true']):hover { color: var(--st-title); }
 }
+/* ProgressScreen board range: the buttons sit edge to edge in the 4px-padded group and are 36px tall. With a mouse
+   the 36px plate is drawn inside a button that keeps the 44px target and gives the extra 8px back to the group;
+   touch screens show the 44px button. */
+:where(html:not([data-theme-family=crystal])) .stats-range { gap: 0; }
+@media (pointer: fine) {
+  :where(html:not([data-theme-family=crystal])) .stats-range-button { position: relative; z-index: 0; margin-block: -4px; }
+  :where(html:not([data-theme-family=crystal])) .stats-range-button::before {
+    content: '';
+    position: absolute;
+    inset: 4px 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: transparent;
+    transition: background-color .16s ease;
+  }
+  :where(html:not([data-theme-family=crystal])) .stats-range-button[aria-pressed='true'] { background: transparent; }
+  :where(html:not([data-theme-family=crystal])) .stats-range-button[aria-pressed='true']::before { background: var(--st-nav-active-bg); }
+  /* The focus ring follows the 36px plate, inside the group's frame, in the ring colour the button resolves. */
+  :where(html:not([data-theme-family=crystal])) .stats-range-button.stats-range-button:focus-visible { outline-style: none; }
+  :where(html:not([data-theme-family=crystal])) .stats-range-button:focus-visible::before { outline: 2px solid; outline-color: inherit; outline-offset: 2px; }
+}
+@media (pointer: fine) and (prefers-reduced-motion: reduce) {
+  :where(html:not([data-theme-family=crystal])) .stats-range-button::before { transition: none; }
+}
 
 /* Heatmap */
 .stats-heatmap { --heat-row: 22px; --heat-gap: 5px; margin-top: 18px; }
@@ -208,6 +232,9 @@
 .stats-heat-button[aria-pressed='true'] .stats-heat-cell { outline: 2px solid var(--st-title); outline-offset: 1px; }
 .stats-heat-months { display: flex; gap: var(--heat-gap); margin-top: 6px; font-size: 11px; color: var(--sf-text-tertiary); }
 .stats-heat-month { width: var(--heat-row); flex-shrink: 0; overflow: visible; white-space: nowrap; }
+/* ProgressScreen board: the month row starts 10px under the last row of cells; a day button reaches 1px below its cell. */
+:where(html:not([data-theme-family=crystal])) .stats-heat-months { margin-top: 10px; }
+:where(html:not([data-theme-family=crystal])) .stats-heatmap[data-interactive] .stats-heat-months { margin-top: 9px; }
 .stats-heat-foot { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; font-size: 12px; color: var(--sf-text-muted); }
 .stats-heat-summary { display: flex; gap: 16px; }
 :where(html[data-theme-family=crystal]) .stats-heat-legend { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--sf-text-muted); }

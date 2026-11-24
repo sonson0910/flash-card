@@ -178,7 +178,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
       </>}
       <header className="session-bridge-header">
         <button type="button" onClick={actions.exit} className="session-bridge-exit" aria-label={_(msg({ id: 'session.bridge.exit', message: 'Exit session' }))}>
-          <X size={16} aria-hidden="true" />
+          <X size={crystal ? 16 : 15} aria-hidden="true" />
         </button>
         <ol className="session-bridge-rail" aria-label={_(msg({ id: 'session.bridge.progress', message: 'Session progress' }))}>
           {model.stages.map((stage, index) => (
@@ -252,7 +252,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
             <>
               <span className="session-bridge-ghosts" aria-hidden="true"><span /><span /><span /></span>
               <span className="session-bridge-trails" aria-hidden="true"><span /><span /></span>
-              <button type="button" className="session-bridge-card" data-tier={crystal ? card.tier : undefined} aria-pressed={flipped} onClick={flip} onPointerMove={tilt} onPointerLeave={untilt}>
+              <button type="button" className="session-bridge-card sf-deal-2" data-tier={crystal ? card.tier : undefined} aria-pressed={flipped} onClick={flip} onPointerMove={tilt} onPointerLeave={untilt}>
                 {crystal && <>
                   <span className="session-bridge-card-wing session-bridge-card-wing--start crystal-wing-art" aria-hidden="true" />
                   <span className="session-bridge-card-wing session-bridge-card-wing--end crystal-wing-art" aria-hidden="true" />

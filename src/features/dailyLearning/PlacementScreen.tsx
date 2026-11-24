@@ -143,12 +143,12 @@ function Question({ model, actions, showLumi, crystal }: { readonly model: Extra
           <div className="placement-choice-grid">
             {model.options.map((option, index) => {
               const selected = model.selectedId === option.id;
-              return <button key={option.id} type="button" lang={option.language} aria-pressed={selected} onClick={() => actions.chooseAnswer(option.id)} className="placement-choice lesson-choice" data-selected={selected ? 'true' : 'false'}><span className="lesson-choice-index font-mono" aria-hidden="true">{index + 1}</span><span className="min-w-0">{option.label}</span></button>;
+              return <button key={option.id} type="button" lang={option.language} aria-pressed={selected} onClick={() => actions.chooseAnswer(option.id)} className="placement-choice lesson-choice sf-press" data-selected={selected ? 'true' : 'false'}><span className="lesson-choice-index font-mono" aria-hidden="true">{index + 1}</span><span className="min-w-0">{option.label}</span></button>;
             })}
           </div>
         </fieldset>
         <div className="placement-action-row">
-          <button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className="lesson-primary placement-submit">{crystal && <span className="placement-submit-shine crystal-shine" aria-hidden="true" />}{_(msg({ id: 'daily.placement.next-question', message: 'Next question' }))}</button>
+          <button type="button" disabled={!model.selectedId} onClick={actions.submitAnswer} className="lesson-primary placement-submit sf-press">{crystal && <span className="placement-submit-shine crystal-shine" aria-hidden="true" />}{_(msg({ id: 'daily.placement.next-question', message: 'Next question' }))}</button>
           {actions.markUnsure && <button type="button" onClick={actions.markUnsure} className="lesson-link">{_(msg({ id: 'daily.placement.unsure', message: 'I’m not sure' }))}</button>}
         </div>
         {!showLumi && <p className="placement-guidance-copy">{lumiCopy}</p>}

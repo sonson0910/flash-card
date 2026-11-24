@@ -1,7 +1,7 @@
 import { Children, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { ArrowRight, CalendarDays, Globe2, Play, Plus, RefreshCw, Sparkles, Star, Zap } from 'lucide-react';
+import { ArrowRight, CalendarDays, Globe, Plus, RefreshCw, Sparkles, Star, Zap } from 'lucide-react';
 import type { CardData } from '../../types/card';
 import { Lumi } from '../../components/lumi/Lumi';
 import { DailyGoalsPanel } from '../dailyGoals/DailyGoalsPanel';
@@ -215,6 +215,11 @@ function GoalChip({ model }: { readonly model: TodayScreenModel }) {
   return <p className="today-chip today-chip--accent"><CalendarDays size={13} aria-hidden="true" />{text}</p>;
 }
 
+/** The board's filled play triangle: a 15 px glyph with no stroke, so it reads lighter than an outlined icon. */
+function PlayGlyph() {
+  return <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>;
+}
+
 function PrimaryAction({ model, actions, facts, label, shortcut, className, children }: {
   readonly model: TodayScreenModel;
   readonly actions: TodayScreenActions;
@@ -234,7 +239,7 @@ function PrimaryAction({ model, actions, facts, label, shortcut, className, chil
       className={className}
       data-session-minutes={facts.minutes}
     >
-      {children ?? <><Play size={14} fill="currentColor" aria-hidden="true" /><span>{label}</span></>}
+      {children ?? <><PlayGlyph /><span>{label}</span></>}
       {shortcut && <kbd aria-hidden="true">{shortcut}</kbd>}
     </button>
   );
@@ -318,7 +323,7 @@ function WordsPanelFrame({ title, subtitle, children, footer }: { readonly title
   return (
     <>
       <div className="today-words-head">
-        <span className="today-words-logo" aria-hidden="true"><Globe2 size={17} /></span>
+        <span className="today-words-logo" aria-hidden="true"><Globe size={16} strokeWidth={2} /></span>
         <div>
           <h2 id="today-words-heading">{title}</h2>
           <p>{subtitle}</p>
@@ -416,7 +421,7 @@ function ClassicDesktopHero({ model, actions, ownerId, targetLanguage, translati
               actions={actions}
               facts={facts}
               shortcut="Space"
-              className="today-primary sf-press"
+              className="today-primary sf-press sf-pulse"
               label={_({ ...msg({ id: 'today.hero.start', message: "Start today's session · {minutes} min" }), values: { minutes: facts.minutes } })}
             />
             <p className="today-session-reward">
@@ -451,6 +456,7 @@ function ClassicCompactHero({ model, actions, streakChip }: TodayReadyHeroProps)
   const card = model.previewCard;
   const firstReason = model.sessionWords?.[0]?.reason;
   const number = new Intl.NumberFormat(i18n.locale);
+  const startLabel = _({ ...msg({ id: 'today.hero.start', message: "Start today's session · {minutes} min" }), values: { minutes: facts.minutes } });
 
   return (
     <section aria-labelledby="daily-today-heading" className="today-hero today-hero--compact" data-today-ready="true">
@@ -483,8 +489,11 @@ function ClassicCompactHero({ model, actions, streakChip }: TodayReadyHeroProps)
         facts={facts}
         shortcut={null}
         className="today-primary today-primary--wide sf-press"
-        label={_({ ...msg({ id: 'today.hero.start', message: "Start today's session · {minutes} min" }), values: { minutes: facts.minutes } })}
-      />
+        label={startLabel}
+      >
+        {/* The phone board's start button carries no play glyph. */}
+        <span>{startLabel}</span>
+      </PrimaryAction>
       <div className="today-tiles">
         <div className="today-tile">
           <span>{_(msg({ id: 'today.tile.review', message: 'To review' }))}</span>
