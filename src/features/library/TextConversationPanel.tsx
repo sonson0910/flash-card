@@ -234,16 +234,16 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
   if (!activeMission || !session) {
     return (
       <section
-        className="max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-xl outline-none sm:p-6"
+        className="text-conversation-panel max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-xl outline-none sm:p-6"
         aria-labelledby="text-conversation-heading"
       >
         <div className="flex items-start justify-between gap-3">
-          <h2 id="text-conversation-heading" className="text-lg font-black sm:text-xl">Text practice mission</h2>
+          <h2 id="text-conversation-heading" className="text-conversation-title text-lg font-black sm:text-xl">Text practice mission</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close text practice"
-            className="flex size-10 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)]"
+            className="text-conversation-close flex size-10 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)]"
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -255,26 +255,26 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
 
   return (
     <section
-      className="max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-xl outline-none sm:p-6"
+      className="text-conversation-panel max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-xl outline-none sm:p-6"
       aria-labelledby="text-conversation-heading"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)]">
+          <div className="text-conversation-icon flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)]">
             <MessageCircle size={20} aria-hidden="true" />
           </div>
           <div>
-            <h2 id="text-conversation-heading" className="text-lg font-black sm:text-xl">
+            <h2 id="text-conversation-heading" className="text-conversation-title text-lg font-black sm:text-xl">
               Text practice mission
             </h2>
-            <p className="mt-1 text-xs text-[var(--sf-text-muted)]">{activeMission.goal}</p>
+            <p className="text-conversation-goal mt-1 text-xs text-[var(--sf-text-muted)]">{activeMission.goal}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onBack}
-            className="flex min-h-10 items-center gap-1.5 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] hover:border-[var(--sf-brand)]"
+            className="text-conversation-back flex min-h-10 items-center gap-1.5 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] hover:border-[var(--sf-brand)]"
           >
             <ArrowLeft size={14} aria-hidden="true" />
             Back
@@ -283,7 +283,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
             type="button"
             onClick={onClose}
             aria-label="Close text practice"
-            className="flex size-10 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] hover:border-[var(--sf-brand)]"
+            className="text-conversation-close flex size-10 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] hover:border-[var(--sf-brand)]"
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -292,14 +292,14 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
 
       <div className="mt-4 flex flex-wrap gap-1.5" aria-label="Mission vocabulary">
         {activeMission.cards.map(card => (
-          <span key={card.id} className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 py-1 text-[11px] font-bold">
+          <span key={card.id} className="text-conversation-chip rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 py-1 text-[11px] font-bold">
             {card.word}
           </span>
         ))}
       </div>
 
       <div
-        className="mt-4 max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3"
+        className="text-conversation-log mt-4 max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3"
         role="log"
         aria-label="Text conversation"
         aria-live="polite"
@@ -311,7 +311,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
         )}
         {session.messages.map((message, index) => (
           <div key={`${message.role}-${index}`} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm ${message.role === 'user' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'border border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
+            <div className={`text-conversation-bubble text-conversation-bubble--${message.role} max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm ${message.role === 'user' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'border border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
               <p className="font-medium">{message.text}</p>
               {message.translation && (
                 <p className="mt-1 text-xs opacity-75">{message.translation}</p>
@@ -378,7 +378,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
               maxLength={500}
               rows={2}
               disabled={isLoading || session.status !== 'active'}
-              className="min-h-12 w-full resize-none rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2.5 text-sm outline-none focus:border-[var(--sf-brand)] disabled:opacity-60"
+              className="text-conversation-input min-h-12 w-full resize-none rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2.5 text-sm outline-none focus:border-[var(--sf-brand)] disabled:opacity-60"
             />
             {voiceAdapter && (
               <div className="space-y-1">
@@ -409,7 +409,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
             type="submit"
             disabled={isLoading || session.status !== 'active' || !draft.trim()}
             aria-label="Send message"
-            className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="text-conversation-send flex size-12 shrink-0 items-center justify-center rounded-xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <Send size={18} aria-hidden="true" />}
           </button>

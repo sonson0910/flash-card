@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { createServer, type Plugin, type ViteDevServer } from 'vite';
 
 // Base port for this spec's own Vite fixture server, offset per-worker below.
@@ -66,6 +66,20 @@ async function expectAccessibleAndContained(page: Page, label: string) {
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
   const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
   expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
+}
+
+/**
+ * Crystal paints a library dialog's fill on the frame's chamfered ::after layer, so the frame's drop-shadow glow is
+ * not clipped. The fill must still end in an opaque gradient so nothing behind the dialog shows through.
+ */
+async function expectOpaqueCrystalFill(dialog: Locator, stops: readonly [string, string]) {
+  const fill = await dialog.evaluate(element => {
+    const style = getComputedStyle(element, '::after');
+    return { content: style.content, position: style.position, image: style.backgroundImage };
+  });
+  expect(fill.content).not.toBe('none');
+  expect(fill.position).toBe('absolute');
+  expect(fill.image.endsWith(`linear-gradient(170deg, ${stops[0]} 0%, ${stops[1]} 100%)`)).toBe(true);
 }
 
 async function expectReducedMotion(page: Page, label: string) {
@@ -136,8 +150,7 @@ for (const mode of ['light', 'dark'] as const) {
     await gotoFixture(page, 'locale=en&dialog=clear');
     await page.addStyleTag({ content: '.library-dialog-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }' });
     const dialog = page.getByRole('alertdialog');
-    await expect(dialog).toHaveCSS('background-color', mode === 'light' ? 'rgb(230, 245, 255)' : 'rgb(14, 17, 28)');
-    await expect(dialog).toHaveCSS('background-image', /linear-gradient/);
+    await expectOpaqueCrystalFill(dialog, mode === 'light' ? ['rgb(255, 245, 248)', 'rgb(227, 239, 255)'] : ['rgb(26, 16, 32)', 'rgb(11, 10, 20)']);
     await expect(dialog.getByRole('button', { name: 'Keep library' })).toBeInViewport({ ratio: 1 });
     await expect(dialog.getByRole('button', { name: 'Delete everything' })).toBeDisabled();
     await expectAccessibleAndContained(page, `Crystal ${mode} clear dialog without backdrop blur`);
@@ -145,8 +158,7 @@ for (const mode of ['light', 'dark'] as const) {
     await gotoFixture(page, 'locale=en&dialog=import-error');
     await page.addStyleTag({ content: '.library-dialog-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }' });
     const importDialog = page.getByRole('dialog');
-    await expect(importDialog).toHaveCSS('background-color', mode === 'light' ? 'rgb(230, 245, 255)' : 'rgb(14, 17, 28)');
-    await expect(importDialog).toHaveCSS('background-image', /linear-gradient/);
+    await expectOpaqueCrystalFill(importDialog, mode === 'light' ? ['rgb(245, 251, 255)', 'rgb(219, 238, 255)'] : ['rgb(20, 26, 43)', 'rgb(10, 13, 23)']);
     await expect(importDialog.getByRole('alert')).toBeVisible();
     await expectAccessibleAndContained(page, `Crystal ${mode} import dialog without backdrop blur`);
     await testInfo.attach(`crystal-${mode}-import-without-blur`, { body: await page.screenshot(), contentType: 'image/png' });
@@ -201,6 +213,53 @@ for (const theme of themes) for (const viewport of viewports) {
     await expectReducedMotion(page, `${name}-extractor`);
     await expectDialogInViewport(page, testInfo, `${name}-extractor`);
     await expectScreen(page, testInfo, `${name}-extractor`);
+  });
+}
+
+for (const mode of ['light', 'dark'] as const) for (const viewport of viewports) {
+  test(`crystal ${mode} Library list view keeps every row inside its rim at ${viewport.name}`, async ({ page }, testInfo) => {
+    page.on('pageerror', error => { throw error; });
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: mode, reducedMotion: 'reduce' });
+    await page.route(new RegExp(`^https?://(?!127\\.0\\.0\\.1:${fixturePort})`), route => route.abort());
+    await page.addInitScript(mode => {
+      localStorage.setItem('sonflash_theme_family', 'crystal');
+      localStorage.setItem('lingoflash_theme', mode);
+      localStorage.setItem('sonflash_theme_follow_system', 'false');
+      localStorage.setItem('sonflash_reduced_motion', 'true');
+    }, mode);
+    const name = `library-crystal-${mode}-${viewport.name}-list`;
+    await gotoFixture(page);
+    const listView = page.getByRole('button', { name: 'List view' });
+    await listView.click();
+    await expect(listView).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-library-view="list"]')).toBeVisible();
+    await expect(page.getByText('/əˈdæpt/')).toBeVisible();
+    await expect(page.getByText('in 2d')).toBeVisible();
+    // Each row grows with its content, so no part of it may reach past the row's box: a part that did would
+    // cover the rim's chamfered corner or spill into the next row.
+    const spills = await page.locator('.library-word-card').evaluateAll(cards => cards.flatMap((card, index) => {
+      const row = card.getBoundingClientRect();
+      return [...card.children].flatMap(part => {
+        const box = part.getBoundingClientRect();
+        const outside = box.width > 0 && box.height > 0
+          && (box.top < row.top - 0.5 || box.left < row.left - 0.5 || box.bottom > row.bottom + 0.5 || box.right > row.right + 0.5);
+        return outside ? [`row ${index + 1}: ${part.className}`] : [];
+      });
+    }));
+    expect(spills, `${name} has parts outside their row`).toEqual([]);
+    if (viewport.name === '390px') {
+      // On a phone the row actions stay visible and keep a 44 px touch target.
+      const targets = await page.locator('.library-word-card :is(.library-word-controls button, .library-word-select)').evaluateAll(elements => elements
+        .map(element => element.getBoundingClientRect())
+        .filter(box => box.width > 0 && box.height > 0)
+        .map(box => Math.min(box.width, box.height)));
+      expect(targets.length).toBeGreaterThan(0);
+      expect(Math.min(...targets), `${name} has a row action under 44 px`).toBeGreaterThanOrEqual(44);
+    }
+    await expectAccessibleAndContained(page, name);
+    await expectReducedMotion(page, name);
+    await expectScreen(page, testInfo, name);
   });
 }
 

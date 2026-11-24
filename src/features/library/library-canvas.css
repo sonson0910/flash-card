@@ -148,6 +148,18 @@
   filter: brightness(1.06);
 }
 
+/* The label wrapper lets the Crystal button skew while its text stays upright. */
+.library-canvas-create-label {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+/* The light band inside the Crystal button; other themes have no band. */
+.library-canvas-create-shine {
+  display: none;
+}
+
 .library-lumi-hint {
   display: none;
 }
@@ -681,6 +693,17 @@
   white-space: nowrap;
 }
 
+/* The category label lives on the cover; only the Crystal list row, whose thumbnail is too small for
+   it, shows it in the meta line instead. */
+.library-word-meta-category {
+  display: none;
+}
+
+/* The part-of-speech wrapper only carries the Crystal grey; its pieces stay items of the meta line. */
+.library-word-meta-pos {
+  display: contents;
+}
+
 .library-word-meta i {
   display: inline-block;
   width: 7px;
@@ -1037,6 +1060,46 @@
   font-size: 1.3rem;
 }
 
+/* Crystal's close takes the board dialogs' 38px chamfered chip instead of the round Classic button. */
+:root[data-theme-family="crystal"] .library-card-detail-close {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  clip-path: var(--nk-chamfer-sm);
+  color: var(--sf-text-muted);
+}
+
+:root[data-theme-family="crystal"] .library-card-detail-close:hover {
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
+  color: var(--sf-text-strong);
+}
+
+:root[data-theme-family="crystal"] .library-card-detail-close:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px var(--sf-brand);
+}
+
+/* Crystal stages the card as the study page does: an aura and a drop shadow below it, wings beside it on
+   wide screens and a light pillar while it turns. Inside the scroll box the bottom padding keeps the aura
+   and shadow from being cut off. */
+:root[data-theme-family="crystal"] .library-card-detail-dialog {
+  padding-bottom: 5rem;
+}
+
+/* Where the wings unfold (1280px and wider) the box stops clipping, so the wings, aura and pillar spread
+   past it. Without the scroll box nothing may overflow the viewport: the tallest card shell (620px) plus
+   the close button's 3.25rem fits inside the max-height from a 720px-tall viewport upward, with the
+   bottom padding dropped because nothing below the card needs room inside the box any more. */
+@media (min-width: 1280px) and (min-height: 720px) {
+  :root[data-theme-family="crystal"] .library-card-detail-dialog {
+    overflow: visible;
+    padding-bottom: 0;
+  }
+}
+
 .library-delete-dialog {
   position: fixed;
   z-index: 101;
@@ -1049,6 +1112,12 @@
   box-shadow: 0 24px 64px -22px var(--sf-shadow);
   padding: 1.4rem;
   color: var(--sf-text);
+}
+
+/* Crystal adds a hex icon and a kicker; Classic keeps its plain alert. */
+.library-delete-icon,
+.library-delete-kicker {
+  display: none;
 }
 
 .library-delete-dialog h2 {
@@ -1087,13 +1156,17 @@
 /* Crystal Star keeps the Canvas shell and face as separate layers. */
 :root[data-theme-family="crystal"] .library-canvas-kicker {
   font-family: var(--sf-font-display, Kanit, Nunito, system-ui, sans-serif);
+  font-size: 13px;
   font-style: italic;
+  font-weight: 800;
   letter-spacing: .16em;
 }
 
+/* The deck count keeps the kicker's crimson, as on the board. The board greys only the "//", which here is
+   part of the translated message and cannot take its own colour. */
 :root[data-theme-family="crystal"] .library-canvas-kicker-decks {
   display: inline;
-  color: var(--sf-text-muted);
+  color: inherit;
 }
 
 :root[data-theme-family="crystal"] .library-canvas-title h2 {
@@ -1105,7 +1178,25 @@
   font-style: italic;
   font-weight: 900;
   letter-spacing: .01em;
+  line-height: 1;
+  margin-top: 4px;
   text-transform: uppercase;
+}
+
+/* The board's summary line: muted copy, the word count in mono, the due count in heavy crimson. */
+:root[data-theme-family="crystal"] .library-canvas-summary {
+  margin-top: 8px;
+  color: var(--sf-text-muted);
+  font-size: 14px;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-summary > span:first-child {
+  color: var(--sf-text-strong);
+  font-weight: 600;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-summary strong {
+  font-weight: 900;
 }
 
 :root[data-theme-family="crystal"].dark .library-canvas-title h2 {
@@ -1215,58 +1306,369 @@
   gap: 7px;
 }
 
-:root[data-theme-family="crystal"] .library-canvas-search,
-:root[data-theme-family="crystal"] .library-canvas-create,
-:root[data-theme-family="crystal"] .library-canvas-rail button,
-:root[data-theme-family="crystal"] .library-canvas-view-toggle button {
+/* Header and rail, ported from the Vocabulary board. Hairlines are drawn as inset rings: a border would
+   be cut away at the chamfered corners. The board's strong hairline has no theme token, so it is set here
+   per mode. */
+:root[data-theme-family="crystal"] .library-canvas {
+  --library-line-strong: rgb(255 255 255 / .22);
+  --library-primary-glow: 0 0 30px -4px rgb(255 42 77 / .85);
+}
+
+:root[data-theme-family="crystal"]:not(.dark) .library-canvas {
+  --library-line-strong: rgb(13 40 80 / .24);
+  --library-primary-glow: 0 12px 28px -8px rgb(224 23 63 / .6);
+}
+
+:root[data-theme-family="crystal"] .library-canvas-search {
+  gap: 10px;
+  border: 0;
   border-radius: 0;
+  padding: 0 12px 0 16px;
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  box-shadow: inset 0 0 0 1px var(--library-line-strong);
+  color: var(--sf-text-muted);
 }
 
-:root[data-theme-family="crystal"] .library-canvas-create,
-:root[data-theme-family="crystal"] .library-canvas-study {
-  background: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%);
-  color: #fff;
-  filter: drop-shadow(0 0 14px rgb(255 42 77 / .55));
-  font-family: var(--sf-font-display, Kanit, Nunito, system-ui, sans-serif);
-  font-style: italic;
-  letter-spacing: .05em;
+:root[data-theme-family="crystal"] .library-canvas-search input {
+  font-size: 14px;
+  font-weight: 600;
 }
 
-:root[data-theme-family="crystal"] .library-canvas-decks button {
+:root[data-theme-family="crystal"] .library-canvas-search kbd {
+  height: 24px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 8px;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+  font-size: 11px;
+}
+
+/* The page's one primary action: a skewed crimson slab with the board's crimson glow; the label is
+   skewed back so it reads upright. */
+:root[data-theme-family="crystal"] .library-canvas-create {
+  height: 48px;
+  border-radius: 0;
+  padding: 0 26px;
   transform: skewX(-14deg);
+  background: var(--sf-primary-bg);
+  box-shadow: none;
+  color: #fff;
+  filter: drop-shadow(0 0 14px rgb(255 42 77 / .6));
+  font-family: var(--sf-font-display, Kanit, Nunito, system-ui, sans-serif);
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
 }
 
-:root[data-theme-family="crystal"] .library-canvas-decks button > * {
+/* The board's light band rests against the button's left edge; the motion layer sweeps this element
+   across, and the label sits above it. */
+:root[data-theme-family="crystal"] .library-canvas-create-shine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+  width: 40px;
+  background: rgb(255 255 255 / .35);
+  pointer-events: none;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-create-label {
+  position: relative;
+  gap: 8px;
   transform: skewX(14deg);
 }
 
-:root[data-theme-family="crystal"] .library-canvas-rail button.is-active,
-:root[data-theme-family="crystal"] .library-canvas-view-toggle button.is-active {
-  background: linear-gradient(180deg, #ff5470 0%, #e0173f 50%, #a30c2d 100%);
+:root[data-theme-family="crystal"] .library-canvas-create-label > svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.6;
+}
+
+/* Deck tabs: skewed slabs; the selected deck is crimson with the board's glow. */
+:root[data-theme-family="crystal"] .library-canvas-decks {
+  gap: 6px;
+  /* Room for the skewed ends and the selected tab's glow, which the scroll box would otherwise clip. */
+  margin: -14px -10px;
+  padding: 14px 10px;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-decks button {
+  height: 36px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 16px;
+  transform: skewX(-16deg);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--library-line-strong);
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-display, Kanit, Nunito, system-ui, sans-serif);
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-decks button > * {
+  transform: skewX(16deg);
+}
+
+:root[data-theme-family="crystal"] .library-canvas-decks button.is-active {
+  background: var(--sf-primary-bg);
+  box-shadow: var(--library-primary-glow);
   color: #fff;
 }
 
-:root[data-theme-family="crystal"] .library-canvas-rail button:not(.is-active),
-:root[data-theme-family="crystal"] .library-canvas-view-toggle button:not(.is-active) {
-  background: var(--sf-surface-control);
+:root[data-theme-family="crystal"] .library-canvas-decks small {
+  font-family: var(--sf-font-mono, 'Geist Mono', ui-monospace, monospace);
+  font-size: 11.5px;
+  font-style: normal;
+  font-weight: 500;
+  opacity: .75;
+}
+
+/* Status filters: quiet chamfered chips; the selected one is a light glass chip with the crimson edge. */
+:root[data-theme-family="crystal"] .library-canvas-filters {
+  gap: 6px;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-filters button[data-library-filter] {
+  height: 32px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 12px;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-body, Nunito, system-ui, sans-serif);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-filters button[data-library-filter].is-active {
+  background: rgb(255 255 255 / .14);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge);
+  color: var(--sf-text-strong);
+}
+
+:root[data-theme-family="crystal"]:not(.dark) .library-canvas-filters button[data-library-filter].is-active {
+  background: #fff;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-rail-divider {
+  height: 22px;
+  margin: 0 6px;
 }
 
 :root[data-theme-family="crystal"] .library-canvas-view-toggle {
-  gap: .2rem;
+  gap: 3px;
   border: 0;
+  border-radius: 0;
   padding: 0;
   background: transparent;
 }
 
+:root[data-theme-family="crystal"] .library-canvas-view-toggle button {
+  width: 38px;
+  height: 32px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 0;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-border);
+  color: var(--sf-text-muted);
+}
+
+:root[data-theme-family="crystal"] .library-canvas-view-toggle button.is-active {
+  background: var(--sf-primary-bg);
+  box-shadow: none;
+  color: #fff;
+}
+
+/* clip-path cuts an outline away, so keyboard focus on the chamfered and skewed chips is an inset ring. */
+:root[data-theme-family="crystal"] :is(.library-canvas-decks button, .library-canvas-filters button, .library-canvas-view-toggle button, .library-canvas-actions > button, .library-canvas-create):focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px var(--sf-brand-text);
+}
+
+/* Board spacing: the rail sits 18 px under the heading and the card grid follows the rail closely. */
+:root[data-theme-family="crystal"] .library-canvas-heading {
+  margin-bottom: 18px;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-rail {
+  gap: 18px;
+  margin: 0;
+  padding-bottom: 14px;
+}
+
+/* The board has no line under the rail; the heading's summary already says what the page holds. The
+   heading for assistive tech stays. */
+:root[data-theme-family="crystal"] .library-canvas-collection-caption {
+  display: none;
+}
+
+/* App-only collection tools (sort, select page, share, study) share one quiet row of board-style chips
+   between the rail and the grid; the board's primary action stays Create card. */
+:root[data-theme-family="crystal"] .library-canvas-actions {
+  gap: 6px;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-actions > button {
+  gap: 7px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 14px;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--library-line-strong);
+  color: var(--sf-text-strong);
+  font-family: var(--sf-font-body, Nunito, system-ui, sans-serif);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-actions .library-canvas-study {
+  background: var(--sf-primary-bg);
+  box-shadow: none;
+  color: #fff;
+  filter: none;
+  font-family: var(--sf-font-display, Kanit, Nunito, system-ui, sans-serif);
+  font-size: 14px;
+  font-style: italic;
+  letter-spacing: .04em;
+}
+
+:root[data-theme-family="crystal"] :is(.library-canvas-sort, .library-canvas-select-page) {
+  color: var(--sf-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-shadow: var(--sf-on-art-halo);
+}
+
+:root[data-theme-family="crystal"] .library-canvas-sort select {
+  height: 32px;
+  border: 0;
+  border-radius: 0;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--library-line-strong);
+  color: var(--sf-text-strong);
+  font-size: 13px;
+  font-weight: 800;
+  text-shadow: none;
+}
+
+:root.dark[data-theme-family="crystal"] .library-canvas-sort select {
+  background: var(--sf-glass-surface, var(--sf-surface-control));
+}
+
+/* On wider screens the tools row is one line: sort and select-page on the left, share and study on the
+   right, 32 px chips like the rail's. The heading wrapper spans the row above and has no height. */
+@media (min-width: 721px) {
+  :root[data-theme-family="crystal"] .library-canvas-collection {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-auto-flow: row dense;
+    align-items: center;
+    column-gap: 18px;
+    margin-top: 12px;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection > * {
+    grid-column: 1 / -1;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection-head {
+    display: contents;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection-head > div:first-child {
+    grid-column: 1 / -1;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-actions {
+    grid-column: 2;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection > .library-canvas-collection-tools {
+    grid-column: 1;
+    justify-content: flex-start;
+    margin-top: 0;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-actions > button {
+    height: 32px;
+    min-height: 32px;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-card-grid {
+    margin-top: 18px;
+  }
+}
+
+/* On a phone the tools stack: share and study, then sort and select-page, then the cards. The heading
+   wrapper above them has no visible height in Crystal, so it adds no gap of its own. */
+@media (max-width: 720px) {
+  :root[data-theme-family="crystal"] .library-canvas-collection {
+    margin-top: 12px;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection-head {
+    gap: 0;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-card-grid {
+    margin-top: 16px;
+  }
+}
+
+/* A full-width skewed button would push its slanted ends past the page edge on a phone, so the narrow
+   layout uses the chamfered slab instead. */
+@media (max-width: 460px) {
+  :root[data-theme-family="crystal"] .library-canvas-create {
+    transform: none;
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-create-label {
+    transform: none;
+  }
+}
+
+/* Crystal card, ported from the Vocabulary board: a tier rim clipped to the chamfer, an opaque card face
+   2 px inside it with the same 18 px cut, a 116 px art area on top and the word block below. The board
+   puts no shadow under the card; only a Star card keeps a faint crimson glow at rest, and hover lifts the
+   card 6 px with a glow in its tier colour. */
 :root[data-theme-family="crystal"] .library-word-card {
-  --library-card-rotation: 0deg;
+  --library-card-glow: rgb(94 242 255 / .55);
+  --library-card-text-3: #7a8397;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
   isolation: isolate;
   overflow: visible;
+  filter: none;
+  transition: transform 180ms ease-out, filter 220ms ease;
+}
+
+/* The board's text3 grey falls under 4.5:1 on the pale card face, so Prism Day uses the theme's AA grey. */
+:root[data-theme-family="crystal"]:not(.dark) .library-word-card {
+  --library-card-text-3: var(--sf-text-tertiary);
+}
+
+:root[data-theme-family="crystal"] .library-canvas-card-grid {
+  gap: 18px 20px;
 }
 
 :root[data-theme-family="crystal"] .library-word-card::before,
@@ -1277,17 +1679,18 @@
   clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
 }
 
+/* The board paints the rim on a box twice the card's size, centred on it, so only the middle of the
+   gradient shows; a 200% background centred on the card draws the same band. */
 :root[data-theme-family="crystal"] .library-word-card::before {
   z-index: -2;
   inset: 0;
-  background: var(--library-rim);
-  filter: drop-shadow(0 18px 24px color-mix(in srgb, var(--sf-shadow) 70%, transparent));
+  background: var(--library-rim) 50% 50% / 200% 200% no-repeat;
 }
 
 :root[data-theme-family="crystal"] .library-word-card::after {
   z-index: -1;
   inset: 2px;
-  background: var(--sf-card-bg, var(--sf-surface));
+  background: var(--sf-solid-card-front, var(--sf-card-front, var(--sf-surface)));
 }
 
 :root[data-theme-family="crystal"] .library-word-card--new {
@@ -1296,41 +1699,46 @@
 
 :root[data-theme-family="crystal"] .library-word-card--learning {
   --library-rim: linear-gradient(150deg, #ffe3f1, #ff8fb6 35%, #ff5470 65%, #5ef2ff);
+  --library-card-glow: rgb(255 143 182 / .6);
 }
 
 :root[data-theme-family="crystal"] .library-word-card--mastered {
   --library-rim: conic-gradient(from 200deg, #fff3c4, #ffd166, #ff2a4d, #7a0820, #ff5470, #fff, #ffd166, #fff3c4);
+  --library-card-glow: rgb(255 42 77 / .7);
+  filter: drop-shadow(0 0 12px rgb(255 42 77 / .35));
 }
-
-:root[data-theme-family="crystal"] .library-word-card:nth-child(5n + 1) { --library-card-rotation: -.8deg; }
-:root[data-theme-family="crystal"] .library-word-card:nth-child(5n + 2) { --library-card-rotation: .65deg; }
-:root[data-theme-family="crystal"] .library-word-card:nth-child(5n + 3) { --library-card-rotation: -.35deg; }
-:root[data-theme-family="crystal"] .library-word-card:nth-child(5n + 4) { --library-card-rotation: .6deg; }
-:root[data-theme-family="crystal"] .library-word-card:nth-child(5n) { --library-card-rotation: -.55deg; }
 
 :root[data-theme-family="crystal"] .library-word-card:hover,
 :root[data-theme-family="crystal"] .library-word-card:focus-visible {
-  transform: translateY(-5px) rotate(var(--library-card-rotation));
-  filter: drop-shadow(0 0 24px color-mix(in srgb, var(--sf-brand) 45%, transparent));
+  transform: translateY(-6px);
+  filter: drop-shadow(0 0 26px var(--library-card-glow));
   box-shadow: none;
 }
 
+/* The art area fills the face's top-left corner, so it takes the face's cut: a square photo or tone panel
+   would otherwise cover the chamfer and poke out past the rim. */
 :root[data-theme-family="crystal"] .library-word-cover {
-  height: 7.25rem;
+  height: 116px;
   margin: 2px 2px 0;
   border-radius: 0;
-  background: var(--sf-surface-raised);
+  clip-path: polygon(18px 0, 100% 0, 100% 100%, 0 100%, 0 18px);
 }
 
 :root[data-theme-family="crystal"] .library-word-cover img {
   -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
   mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+  transition: transform 300ms ease;
 }
 
+:root[data-theme-family="crystal"] .library-word-card:hover .library-word-cover img {
+  transform: scale(1.08);
+}
+
+/* The word block sits on the card face and paints nothing of its own. */
 :root[data-theme-family="crystal"] .library-word-body {
-  min-height: 9.75rem;
+  min-height: 0;
   margin: 0 2px 2px;
-  background: var(--sf-card-bg, var(--sf-surface));
+  background: transparent;
 }
 
 :root[data-theme-family="crystal"] .library-word-body h3,
@@ -1341,7 +1749,12 @@
 }
 
 :root[data-theme-family="crystal"] .library-word-body h3 {
+  margin-top: 6px;
+  color: var(--sf-text-strong);
+  font-size: 27px;
   font-weight: 900;
+  letter-spacing: normal;
+  line-height: 1.02;
 }
 
 :root[data-theme-family="crystal"] .library-word-cover b {
@@ -1403,56 +1816,110 @@
   backdrop-filter: none;
 }
 
+/* The board's star: a gold star with a thin blood-red outline and a soft gold glow, 26 px, 8 px from the top. */
 :root[data-theme-family="crystal"] .library-word-star {
+  top: 8px;
+  padding: 0;
+  border-radius: 0;
   background: transparent !important;
+  box-shadow: none;
   color: #ffd166;
+  stroke: #7a0820;
+  stroke-width: .8px;
   filter: drop-shadow(0 0 8px rgb(255 209 102 / .8));
 }
 
 :root[data-theme-family="crystal"] .library-word-body {
-  padding: 12px 16px 16px;
+  padding: 6px 16px 14px;
 }
 
+/* Art area tones per category (cyan, rose, gold), as on the board; a photo sits on the solid panel colour. */
 :root[data-theme-family="crystal"] .library-word-cover {
-  --library-cover-tone: var(--sf-second);
-  --library-cover-accent: var(--sf-second);
-  background:
-    radial-gradient(120% 95% at 22% 0%, color-mix(in srgb, var(--library-cover-tone) 30%, transparent), transparent 72%),
-    color-mix(in srgb, var(--library-cover-tone) 10%, var(--sf-surface-raised));
+  --library-cover-glow: rgb(94 242 255 / .32);
+  --library-cover-base: #0c1a2a;
+  --library-cover-glyph: rgb(94 242 255 / .2);
+  --library-cover-label: #5ef2ff;
+  background: radial-gradient(circle at 20% 0%, var(--library-cover-glow), transparent 60%), var(--library-cover-base);
 }
 
 :root[data-theme-family="crystal"] .library-word-cover--violet {
-  --library-cover-tone: var(--sf-brand);
-  --library-cover-accent: var(--sf-brand-text);
+  --library-cover-glow: rgb(255 84 112 / .38);
+  --library-cover-base: #1c0e18;
+  --library-cover-glyph: rgb(255 143 182 / .2);
+  --library-cover-label: #ff9ec0;
 }
 
 :root[data-theme-family="crystal"] .library-word-cover--amber {
-  --library-cover-tone: var(--sf-reward);
-  --library-cover-accent: var(--sf-reward);
+  --library-cover-glow: rgb(255 209 102 / .32);
+  --library-cover-base: #1c1610;
+  --library-cover-glyph: rgb(255 209 102 / .2);
+  --library-cover-label: #ffd166;
+}
+
+:root[data-theme-family="crystal"]:not(.dark) .library-word-cover {
+  --library-cover-glow: rgb(255 255 255 / .7);
+  --library-cover-base: #bfe7ff;
+  --library-cover-glyph: rgb(10 125 153 / .2);
+  --library-cover-label: #0a7d99;
+}
+
+:root[data-theme-family="crystal"]:not(.dark) .library-word-cover--violet {
+  --library-cover-base: #ffd6e6;
+  --library-cover-glyph: rgb(196 15 53 / .16);
+  --library-cover-label: #b3265a;
+}
+
+:root[data-theme-family="crystal"]:not(.dark) .library-word-cover--amber {
+  --library-cover-base: #fff0c9;
+  --library-cover-glyph: rgb(138 90 0 / .18);
+  --library-cover-label: #8a5a00;
+}
+
+:root[data-theme-family="crystal"] .library-word-cover:has(> img) {
+  background: #0e111c;
+}
+
+:root[data-theme-family="crystal"]:not(.dark) .library-word-cover:has(> img) {
+  background: #e6f5ff;
 }
 
 :root[data-theme-family="crystal"] .library-word-cover > span:not(.library-filter-mark) {
-  bottom: -1.75rem;
-  color: color-mix(in srgb, var(--library-cover-tone) 32%, transparent);
-  font-size: 8.5rem;
+  right: 8px;
+  bottom: -30px;
+  color: var(--library-cover-glyph);
+  font-size: 140px;
   font-weight: 900;
+  line-height: 1;
 }
 
 :root[data-theme-family="crystal"] .library-word-cover small {
+  color: var(--library-cover-label);
   font-family: var(--sf-font-display);
+  font-size: 11.5px;
   font-style: italic;
   font-weight: 800;
   letter-spacing: .12em;
 }
 
+/* Kicker: the tier name in its tier colour, then "// part of speech" in the quiet grey, on one line. */
 :root[data-theme-family="crystal"] .library-word-meta {
-  color: var(--sf-success);
+  display: block;
+  color: var(--sf-holo-text);
+  font-size: 11px;
   font-weight: 800;
+  letter-spacing: .1em;
 }
 
-:root[data-theme-family="crystal"] .library-word-card--learning .library-word-meta,
+:root[data-theme-family="crystal"] .library-word-card--learning .library-word-meta {
+  color: var(--sf-pink-text);
+}
+
 :root[data-theme-family="crystal"] .library-word-card--mastered .library-word-meta {
   color: var(--sf-brand-text);
+}
+
+:root[data-theme-family="crystal"] .library-word-meta-pos {
+  color: var(--library-card-text-3);
 }
 
 :root[data-theme-family="crystal"] .library-word-meta i {
@@ -1464,18 +1931,72 @@
 }
 
 :root[data-theme-family="crystal"] .library-word-meta span[aria-hidden]::before {
-  color: var(--sf-text-muted);
-  font-size: .6875rem;
+  font-size: 11px;
   content: '//';
 }
 
+/* The stressed syllable is crimson in every tier, as on the board. */
 :root[data-theme-family="crystal"] .library-word-card .library-word-stress {
-  color: var(--sf-brand);
+  color: var(--sf-brand-text);
   font-style: inherit;
+}
+
+:root[data-theme-family="crystal"] .library-word-body code {
+  margin-top: 4px;
+  color: var(--library-card-text-3);
+  font-size: 12px;
+  line-height: normal;
+}
+
+:root[data-theme-family="crystal"] .library-word-translation-row {
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+:root[data-theme-family="crystal"] .library-word-translation {
+  color: var(--sf-text-body);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+:root[data-theme-family="crystal"] .library-word-translation-row > span {
+  color: var(--library-card-text-3);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+:root[data-theme-family="crystal"] .library-word-translation-row > span.is-due {
+  color: var(--sf-brand-text);
 }
 
 :root[data-theme-family="crystal"] .library-word-due > span[aria-hidden] {
   display: none;
+}
+
+/* Card actions are small chamfered glass tiles, like the header's icon buttons. clip-path would cut
+   away an outline, so focus is drawn as an inset ring instead. */
+:root[data-theme-family="crystal"] :is(.library-word-controls button, .library-word-select) {
+  border: 0;
+  border-radius: 0;
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  background: var(--sf-glass-surface, var(--sf-surface));
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2, var(--sf-border));
+  color: var(--sf-text);
+  transition: color .15s ease, box-shadow .15s ease;
+}
+
+:root[data-theme-family="crystal"] .library-word-controls button:hover,
+:root[data-theme-family="crystal"] .library-word-select:hover {
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge, var(--sf-brand));
+  color: var(--sf-brand-text);
+}
+
+:root[data-theme-family="crystal"] .library-word-controls button:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px var(--sf-brand-text);
 }
 
 :root[data-theme-family="crystal"] .library-canvas-empty {
@@ -1528,6 +2049,9 @@
   .library-word-body { min-height: 7.7rem; padding: .7rem; }
   :root.dark .library-word-body { padding: .35rem .75rem .75rem; }
   .library-word-body h3 { font-size: 1.5rem; }
+  /* Two-up narrow cards keep the smaller headword; the board's 27 px is sized for its 254 px desktop card. */
+  :root[data-theme-family="crystal"] .library-word-body h3 { font-size: 1.5rem; }
+  :root[data-theme-family="crystal"] .library-canvas-card-grid { gap: .75rem; }
   .library-word-cover { height: 6rem; margin: 6px 6px 0; }
   .library-word-cover > span:not(.library-filter-mark) { font-size: 7rem; bottom: -1.5rem; }
   /* Narrow cards keep the corner free for the 44 px actions, so the marks stack. */
@@ -1551,6 +2075,10 @@
   .library-canvas-create { width: 100%; justify-content: center; }
   .library-canvas-card-grid { gap: .65rem; }
   .library-word-body h3 { font-size: 1.2rem; }
+  :root[data-theme-family="crystal"] .library-word-body h3 { font-size: 1.2rem; }
+  :root[data-theme-family="crystal"] .library-canvas-card-grid { gap: .65rem; }
+  :root[data-theme-family="crystal"] .library-word-meta { font-size: .58rem; }
+  :root[data-theme-family="crystal"] .library-word-translation-row { align-items: flex-start; }
   .library-word-meta { font-size: .58rem; }
   .library-word-translation-row { align-items: flex-start; flex-direction: column; gap: .2rem; }
 }
@@ -1599,13 +2127,171 @@
   opacity: 1;
 }
 
+/* Crystal list view. The board has no list layout, so each row is the board's card laid on its side: the
+   same rim, face, cut, art tones, kicker, headword, IPA, meaning and status values, with the art area as a
+   thumbnail that takes the row's top-left cut. The word block, the meaning and the review status sit in
+   fixed-width columns so they line up from row to row, with the actions always visible at the end. The row
+   grows with its content instead of holding a fixed height, so nothing can spill past the rim. */
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-canvas-card-grid {
+  gap: .75rem;
+  perspective: none;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-card {
+  height: auto;
+  min-height: 5.75rem;
+  grid-template-columns: 8.5rem minmax(0, 1fr) auto;
+  align-items: stretch;
+}
+
 :root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-cover {
-  height: calc(100% - 4px);
+  height: auto;
   margin: 2px 0 2px 2px;
 }
 
+/* The photo is laid over the thumbnail so its own aspect ratio never sets the row height, and it
+   fades into the row on its right edge rather than into a body below it. */
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-cover img {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(90deg, #000 62%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 62%, transparent 100%);
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-cover > span:not(.library-filter-mark) {
+  right: 8px;
+  bottom: -1.15rem;
+  font-size: 5.5rem;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-cover small {
+  display: none;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-meta-category {
+  display: contents;
+  color: var(--sf-text-muted);
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-marks {
+  top: 8px;
+  left: 10px;
+}
+
 :root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-body {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) 7rem;
+  grid-template-areas:
+    "meta meaning next"
+    "word meaning next"
+    "phonetic meaning next";
+  align-content: center;
+  column-gap: 1.5rem;
   margin: 2px 0;
+  padding: .7rem 1.25rem;
+  clip-path: none;
+  background: transparent;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-meta {
+  grid-area: meta;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-body h3 {
+  grid-area: word;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-body code {
+  grid-area: phonetic;
+  margin-top: 2px;
+}
+
+/* The meaning and the status leave their shared bottom line and take their own columns. */
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-translation-row {
+  display: contents;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-translation {
+  grid-area: meaning;
+  align-self: center;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-translation-row > span {
+  grid-area: next;
+  align-self: center;
+  justify-self: end;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-controls {
+  gap: .35rem;
+  margin: 0 1.1rem 0 0;
+}
+
+:root[data-theme-family="crystal"] .library-canvas-collection--list :is(.library-word-controls button, .library-word-select) {
+  width: 2.125rem;
+  height: 2.125rem;
+}
+
+/* Narrow Crystal rows stack in two tiers beside a full-height thumbnail: the word, meaning and status
+   on top, and one line of 44 px actions below, kept clear of the bottom-right cut. */
+@media (max-width: 720px) {
+  :root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-card {
+    min-height: 0;
+    grid-template-columns: 5.75rem minmax(0, 1fr);
+    grid-template-areas: "cover body" "cover controls";
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-cover {
+    grid-area: cover;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-cover > span:not(.library-filter-mark) {
+    bottom: -1rem;
+    font-size: 5rem;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-body {
+    grid-area: body;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "meta meta"
+      "word word"
+      "phonetic phonetic"
+      "meaning next";
+    align-content: start;
+    column-gap: .75rem;
+    margin: 2px 0 0;
+    padding: .75rem .9rem .35rem;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-body h3 {
+    font-size: 1.35rem;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-translation {
+    margin-top: 4px;
+    align-self: baseline;
+    font-size: .875rem;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-translation-row > span {
+    align-self: baseline;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection--list .library-word-controls {
+    grid-area: controls;
+    display: flex;
+    justify-self: end;
+    align-self: end;
+    gap: 4px;
+    margin: 0 10px 10px 0;
+  }
+
+  :root[data-theme-family="crystal"] .library-canvas-collection--list :is(.library-word-controls button, .library-word-select) {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
 }
 
 @media (max-width: 560px) {
@@ -1623,6 +2309,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .library-word-card { transition: none; }
+  :root[data-theme-family="crystal"] .library-word-card,
+  :root[data-theme-family="crystal"] .library-word-cover img { transition: none; }
+  :root[data-theme-family="crystal"] .library-word-card:hover .library-word-cover img { transform: none; }
 }
 
 /* Crystal desktop heading: Lumi stands beside a column that holds her one-line

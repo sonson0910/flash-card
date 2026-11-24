@@ -3,7 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { AlertTriangle, Check, Download, Loader2, Plus, RotateCcw, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { GsapEntrance } from '../../components/motion/GsapEntrance';
 import { formatNumber } from '../../lib/format';
 import { useTheme } from '../theme/ThemeProvider';
@@ -33,6 +33,17 @@ const classicLightCoverLabels = {
   slate: msg({ id: 'library.deck.cover.classic-light.slate', message: 'Ink' }),
   moss: msg({ id: 'library.deck.cover.classic-light.moss', message: 'Linen' }),
 } satisfies Record<CoverPreset, ReturnType<typeof msg>>;
+
+const INSIGHTS_RING_RADIUS = 42;
+const INSIGHTS_RING_CIRCUMFERENCE = 2 * Math.PI * INSIGHTS_RING_RADIUS;
+
+/** XP points on a 560x90 canvas: the line runs edge to edge, the peak sits 6 units below the top. */
+function insightsSparkline(values: readonly number[], max: number) {
+  const series = values.length === 1 ? [values[0], values[0]] : values;
+  const points = series.map((value, index) => [(index * 560) / (series.length - 1), 84 - (Math.max(0, value) / max) * 76] as const);
+  const line = points.map(([x, y], index) => `${index === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+  return { line, area: `${line} L560 90 L0 90 Z`, end: points[points.length - 1] };
+}
 
 export function restoreLibraryDialogFocus(
   event: { preventDefault: () => void },
@@ -160,7 +171,7 @@ export function DeckCreationDialog({
                   disabled={isWorking || isSuccess}
                   className="library-dialog-chip"
                 >
-                  {i18n._(suggestion)}
+                  <span>{i18n._(suggestion)}</span>
                 </button>
               ))}
             </div>
@@ -448,6 +459,14 @@ export function LibraryInsightsDialog({
     return `var(--library-difficulty-${index % 3}) ${start.toFixed(2)}% ${difficultyCursor.toFixed(2)}%`;
   }).join(', ');
   const maxXp = hasStats ? Math.max(1, ...stats.xpChartData.map(item => item.XP)) : 1;
+  // Crystal draws the same shares as stroked arcs on a 110-unit ring, each arc 2 units short so the segments part.
+  let ringCursor = 0;
+  const difficultyArcs = difficultyShares.map((share, index) => {
+    const arc = { index: index % 3, length: INSIGHTS_RING_CIRCUMFERENCE * share - 2, offset: -INSIGHTS_RING_CIRCUMFERENCE * ringCursor };
+    ringCursor += share;
+    return arc;
+  }).filter(arc => arc.length > 0);
+  const xpSpark = hasStats && stats.xpChartData.length > 0 ? insightsSparkline(stats.xpChartData.map(point => point.XP), maxXp) : null;
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -504,7 +523,12 @@ export function LibraryInsightsDialog({
                     <h3 id="library-insights-difficulty-title"><Trans {...msg({ context: 'library.insights.difficulty', message: 'Difficulty' })} /></h3>
                     {stats.difficultyChart.length === 0 ? <p className="library-dialog-muted"><Trans {...msg({ context: 'library.insights.no-difficulty', message: 'No review ratings yet.' })} /></p> : (
                       <div className="library-insights-difficulty">
-                        <span className="library-insights-donut" aria-hidden="true" style={{ background: difficultyTotal > 0 ? `conic-gradient(${difficultyRing})` : undefined }} />
+                        <span className="library-insights-donut" aria-hidden="true" style={difficultyTotal > 0 ? { '--library-difficulty-ring': `conic-gradient(${difficultyRing})` } as CSSProperties : undefined}>
+                          <svg className="library-insights-ring" viewBox="0 0 110 110">
+                            <circle cx="55" cy="55" r={INSIGHTS_RING_RADIUS} />
+                            {difficultyArcs.map(arc => <circle key={arc.index} data-difficulty-index={arc.index} cx="55" cy="55" r={INSIGHTS_RING_RADIUS} strokeDasharray={`${arc.length.toFixed(2)} ${INSIGHTS_RING_CIRCUMFERENCE.toFixed(2)}`} strokeDashoffset={arc.offset.toFixed(2)} />)}
+                          </svg>
+                        </span>
                         <ul className="library-insights-legend">
                           {stats.difficultyChart.map((item, index) => <li key={item.name} data-difficulty-index={index % 3}><span>{difficultyLabels[item.name] ?? item.name}</span><strong>{formatNumber(item.value)}</strong><small>{Math.round((difficultyShares[index] ?? 0) * 100)}%</small></li>)}
                         </ul>
@@ -518,6 +542,16 @@ export function LibraryInsightsDialog({
                   {stats.xpChartData.length === 0 ? <p className="library-dialog-muted"><Trans {...msg({ context: 'library.insights.no-xp', message: 'Complete a review to start your activity chart.' })} /></p> : (
                     <div className="library-insights-xp" role="img" aria-label={i18n._(msg({ id: 'library.insights.xp-chart', message: 'Recent XP activity' }))}>
                       {stats.xpChartData.map(point => <span key={point.date} title={i18n._(msg({ id: 'library.insights.xp-point', message: '{date}: {xp, number} XP' }).id, { date: point.date, xp: point.XP })} style={{ height: `${Math.max(8, Math.round((point.XP / maxXp) * 100))}%` }} />)}
+                      {xpSpark ? (
+                        <>
+                          <svg className="library-insights-spark" viewBox="0 0 560 90" preserveAspectRatio="none">
+                            <path className="library-insights-spark-area" d={xpSpark.area} />
+                            <path className="library-insights-spark-line" d={xpSpark.line} />
+                            <circle className="library-insights-spark-end" cx={xpSpark.end[0]} cy={xpSpark.end[1]} r="5" />
+                          </svg>
+                          <div className="library-insights-spark-dates"><span>{stats.xpChartData[0].date}</span><span>{stats.xpChartData[stats.xpChartData.length - 1].date}</span></div>
+                        </>
+                      ) : null}
                     </div>
                   )}
                 </section>

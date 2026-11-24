@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { useEffect, useRef, useState } from 'react';
 import '../../src/index.css';
+import '../../src/styles/themes/crystal-motion.css';
 import '../../src/styles/app-bootstrap.css';
 import { ThemeProvider } from '../../src/features/theme/ThemeProvider';
 import { AppOverlays } from '../../src/components/AppOverlays';
@@ -73,6 +74,8 @@ function LibraryFixture() {
   const [editOpen, setEditOpen] = useState(true);
   const [importedFile, setImportedFile] = useState('');
   const dialog = new URLSearchParams(location.search).get('dialog');
+  // A signed-in capture passes its emulator uid so owner-scoped tools (the word extractor's AI call) can run.
+  const ownerId = new URLSearchParams(location.search).get('owner');
   const libraryCards = dialog === 'extract' ? [...cards, ...extractorOwnedCards] : cards;
 
   useEffect(() => { void Promise.all([loadCatalog(locale, 'library'), loadCatalog(locale, 'shell'), loadCatalog(locale, 'progress')]).then(() => setReady(true)); }, [locale]);
@@ -84,6 +87,7 @@ function LibraryFixture() {
   );
   const model: LibraryScreenModel = {
     isAuthenticated: false,
+    ownerId,
     overview: { total: cards.length, due: 2, mastered: 1, streak: 4, level: 3, xp: 480, canStudy: true },
     grid: {
       searchQuery: search, legacyCardsPending: 0, legacyIssue: null, isMigratingLegacy: false, activeCategory: category, activeCustomDeck: { kind: 'all' },

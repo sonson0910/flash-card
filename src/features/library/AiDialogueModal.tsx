@@ -10,6 +10,7 @@ import { getProtectedFunctionUserMessage, ProtectedFunctionError } from '../../l
 import type { CardData } from '../../types/card';
 import type { DialogueResult } from '../../lib/aiFeatureInfo';
 import { TextConversationPanel } from './TextConversationPanel';
+import './library-dialog-overlays.css';
 
 interface AiDialogueModalProps {
   cards: CardData[];
@@ -134,25 +135,25 @@ export function AiDialogueContent({
 
   return (
     <div
-      className="library-dialog-canvas max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none"
+      className="ai-dialogue-panel library-dialog-canvas max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none"
     >
-      <header className="flex items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
+      <header className="ai-dialogue-header flex items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
         <div className="min-w-0">
-          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--sf-brand-text)]">
+          <p className="ai-dialogue-kicker flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--sf-brand-text)]">
             <Sparkles size={13} aria-hidden="true" />
             {translate(msg({ id: 'library.dialogue.eyebrow', message: 'AI dialogue' }))}
           </p>
-          <Dialog.Title className="mt-1 font-display text-3xl font-semibold tracking-tight text-[var(--sf-text)]">
+          <Dialog.Title className="ai-dialogue-title mt-1 font-display text-3xl font-semibold tracking-tight text-[var(--sf-text)]">
             {translate(msg({ id: 'library.dialogue.title', message: 'Practice in context' }))}
           </Dialog.Title>
-          <Dialog.Description className="mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">
+          <Dialog.Description className="ai-dialogue-description mt-1 text-sm leading-6 text-[var(--sf-text-muted)]">
             {translate(msg({ id: 'library.dialogue.description', message: 'Build a short conversation with words from your library.' }))}
           </Dialog.Description>
         </div>
         <button
           type="button"
           onClick={close}
-          className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+          className="ai-dialogue-close flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-brand)] hover:text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
           aria-label={translate(msg({ id: 'library.close', message: 'Close' }))}
         >
           <X size={16} />
@@ -160,21 +161,21 @@ export function AiDialogueContent({
       </header>
 
       {!dialogue && (
-        <div className="space-y-4 px-5 py-5 sm:px-7">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-[var(--sf-text)]">
+        <div className="ai-dialogue-body space-y-4 px-5 py-5 sm:px-7">
+          <div className="ai-dialogue-pick-head flex items-center justify-between">
+            <p className="ai-dialogue-count text-sm font-semibold text-[var(--sf-text)]">
               {translate(msg({ id: 'library.dialogue.select-words', message: 'Choose up to 5 words ({selected, number}/5)' }), { selected: selectedWordIds.size })}
             </p>
             <button
               type="button"
               onClick={selectRandomWords}
-              className="text-xs font-semibold text-[var(--sf-brand-text)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+              className="ai-dialogue-random text-xs font-semibold text-[var(--sf-brand-text)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
             >
               {translate(msg({ id: 'library.dialogue.random', message: 'Choose for me' }))}
             </button>
           </div>
 
-          <div className="flex max-h-44 flex-wrap gap-2 overflow-y-auto pr-1">
+          <div className="ai-dialogue-words flex max-h-44 flex-wrap gap-2 overflow-y-auto pr-1">
             {availableCards.map(c => {
               const isSelected = selectedWordIds.has(c.id);
               return (
@@ -183,7 +184,7 @@ export function AiDialogueContent({
                   type="button"
                   onClick={() => toggleWordSelection(c.id)}
                     aria-pressed={isSelected}
-                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] ${
+                    className={`ai-dialogue-word flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] ${
                       isSelected
                       ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] text-[var(--sf-brand-text)]'
                       : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] hover:border-[var(--sf-brand)]'
@@ -197,7 +198,7 @@ export function AiDialogueContent({
           </div>
 
           {error !== null && (
-            <p role="alert" className="rounded-[14px] border border-rose-400/30 bg-rose-500/10 p-3 text-sm font-medium text-rose-700 dark:text-rose-200">
+            <p role="alert" className="ai-dialogue-error rounded-[14px] border border-rose-400/30 bg-rose-500/10 p-3 text-sm font-medium text-rose-700 dark:text-rose-200">
               {dialogueFailureMessage(error)}
             </p>
           )}
@@ -206,7 +207,7 @@ export function AiDialogueContent({
             type="button"
             onClick={handleGenerate}
             disabled={isLoading || availableCards.length === 0}
-            className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-5 text-sm font-semibold text-[var(--sf-on-brand)] shadow-[var(--sf-shadow)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50"
+            className="ai-dialogue-primary mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-5 text-sm font-semibold text-[var(--sf-on-brand)] shadow-[var(--sf-shadow)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50"
           >
             {isLoading ? (
               <>
@@ -224,7 +225,7 @@ export function AiDialogueContent({
             type="button"
             onClick={() => setShowTextPractice(true)}
             disabled={isLoading || availableCards.length === 0}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="ai-dialogue-secondary flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <MessageSquare size={16} aria-hidden="true" />
             <span><Trans {...msg({ context: 'ai-dialogue-modal.practice-this-mission-by-text', message: 'Practice this mission by text' })} /></span>
@@ -233,39 +234,39 @@ export function AiDialogueContent({
       )}
 
       {dialogue && (
-        <div className="space-y-4 px-5 py-5 sm:px-7">
-          <div className="rounded-[14px] border border-[var(--sf-border)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface))] p-4">
-            <h3 lang="en" className="font-display text-xl font-semibold text-[var(--sf-text)]">
+        <div className="ai-dialogue-body space-y-4 px-5 py-5 sm:px-7">
+          <div className="ai-dialogue-scene rounded-[14px] border border-[var(--sf-border)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface))] p-4">
+            <h3 lang="en" className="ai-dialogue-scene-title font-display text-xl font-semibold text-[var(--sf-text)]">
               {dialogue.title}
             </h3>
-            <p lang="en" className="mt-1 text-xs text-[var(--sf-text-muted)]">
+            <p lang="en" className="ai-dialogue-scene-context mt-1 text-xs text-[var(--sf-text-muted)]">
               {dialogue.context}
             </p>
           </div>
 
-          <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
+          <div className="ai-dialogue-turns max-h-72 space-y-3 overflow-y-auto pr-1">
             {dialogue.turns.map((turn, i) => (
               <div
                 key={i}
-                className="flex flex-col gap-1 rounded-[14px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4"
+                className="ai-dialogue-turn flex flex-col gap-1 rounded-[14px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-[var(--sf-brand-text)]">
+                  <span className="ai-dialogue-speaker text-[11px] font-black uppercase tracking-wider text-[var(--sf-brand-text)]">
                     {turn.speaker}
                   </span>
                   <button
                     type="button"
                     onClick={() => playLine(turn.en)}
-                    className="flex size-8 items-center justify-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+                    className="ai-dialogue-listen flex size-8 items-center justify-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
                     aria-label={translate(msg({ id: 'library.dialogue.listen', message: 'Listen to {speaker}’s line' }), { speaker: turn.speaker })}
                   >
                     <Volume2 size={13} />
                   </button>
                 </div>
-                <p lang="en" className="text-sm font-semibold text-[var(--sf-text)]">
+                <p lang="en" className="ai-dialogue-line text-sm font-semibold text-[var(--sf-text)]">
                   {turn.en}
                 </p>
-                <p lang="vi" className="text-xs text-[var(--sf-text-muted)]">
+                <p lang="vi" className="ai-dialogue-translation text-xs text-[var(--sf-text-muted)]">
                   {turn.vi}
                 </p>
               </div>
@@ -275,7 +276,7 @@ export function AiDialogueContent({
           <button
             type="button"
             onClick={() => setDialogue(null)}
-            className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-sm font-semibold text-[var(--sf-text)] hover:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+            className="ai-dialogue-secondary mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-sm font-semibold text-[var(--sf-text)] hover:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
           >
             <span>{translate(msg({ id: 'library.dialogue.reset', message: 'Create another dialogue' }))}</span>
           </button>
@@ -292,12 +293,14 @@ export function AiDialogueModal({ cards, open, onOpenChange, ownerId }: AiDialog
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 dialog-veil backdrop-blur-sm" />
-        <Dialog.Content className="fixed inset-x-4 top-1/2 z-50 mx-auto w-auto max-w-2xl -translate-y-1/2 focus:outline-none sm:inset-x-6">
+        <Dialog.Content className="ai-dialogue-content fixed inset-x-4 top-1/2 z-50 mx-auto w-auto max-w-2xl -translate-y-1/2 focus:outline-none sm:inset-x-6">
           <AiDialogueContent
             cards={cards}
             ownerId={ownerId}
             onClose={() => onOpenChange(false)}
           />
+          <span aria-hidden="true" className="ai-dialogue-ribbon" />
+          <span aria-hidden="true" className="ai-dialogue-tail" />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

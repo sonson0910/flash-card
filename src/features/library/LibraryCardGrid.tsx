@@ -25,6 +25,7 @@ import { formatNumber, formatRelativeTime } from '../../lib/format';
 import { getLibraryCardTier, isLibraryCardDue, sortLibraryCards, type LibrarySortOrder } from './libraryViewModel';
 import { getLibraryGridLoadingLabel } from './libraryLoading';
 import { getLibraryCoverTone, splitStressedWord } from './libraryCardFace';
+import './library-dialog-overlays.css';
 import { getRelativeReviewDays } from './libraryPresentation';
 import { ALL_PRACTICE_DECK_SCOPE, libraryDeckForPracticeScope, type PracticeDeckScope } from '../../lib/practiceScope';
 
@@ -422,7 +423,7 @@ export function LibraryCardGrid({
               )}
             </div>
             <div className="library-word-body">
-              <p className="library-word-meta"><i aria-hidden="true"/> {tierLabel(cardTier)} <span aria-hidden="true">·</span> {card.partOfSpeech ?? <Trans {...msg({ context: 'library.card.word', message: 'word' })} />}</p>
+              <p className="library-word-meta"><i aria-hidden="true"/> {tierLabel(cardTier)} <span className="library-word-meta-pos"><span aria-hidden="true">·</span> {card.partOfSpeech?.trim() || <Trans {...msg({ context: 'library.card.word', message: 'word' })} />}</span>{card.category && <span className="library-word-meta-category"> <span aria-hidden="true">·</span> {card.category}</span>}</p>
               <h3 lang={card.language}>{stress ? <>{stress.before}<span className="library-word-stress">{stress.stressed}</span>{stress.after}</> : card.word}</h3>
               {card.phonetic && <code>{card.phonetic}</code>}
               <div className="library-word-translation-row"><p className="library-word-translation">{card.translation}</p><span className={due ? 'is-due' : undefined}>{nextLabel(card)}</span></div>
@@ -458,7 +459,7 @@ export function LibraryCardGrid({
         // heading) win instead, matching Flashcard.tsx's equivalent dialog.
         if (!deleteConfirmedRef.current) globalThis.requestAnimationFrame?.(() => deleteTriggerRef.current?.focus());
         deleteConfirmedRef.current = false;
-      }}><AlertDialog.Portal><AlertDialog.Overlay className="library-delete-overlay"/><AlertDialog.Content className="library-delete-dialog"><AlertDialog.Title><Trans {...msg({ context: 'library.delete.title', message: 'Delete card?' })} /></AlertDialog.Title><AlertDialog.Description><Trans {...msg({ context: 'library.delete.description', message: 'This will permanently remove {word} from your library.' })} values={{ word: activeDeletingCard?.word ?? '' }} /></AlertDialog.Description><div><AlertDialog.Cancel><Trans {...msg({ context: 'common.cancel', message: 'Cancel' })} /></AlertDialog.Cancel><AlertDialog.Action onClick={() => { if (!activeDeletingCard) return; deleteConfirmedRef.current = true; void afterDelete(activeDeletingCard.id); setDeletingCard(null); }}><Trans {...msg({ context: 'library.delete.confirm', message: 'Delete card' })} /></AlertDialog.Action></div></AlertDialog.Content></AlertDialog.Portal></AlertDialog.Root>
+      }}><AlertDialog.Portal><AlertDialog.Overlay className="library-delete-overlay"/><AlertDialog.Content className="library-delete-dialog"><span className="library-delete-icon" aria-hidden="true"><Trash2 size={20} /></span><p className="library-delete-kicker" aria-hidden="true"><Trans {...msg({ context: 'library.delete.confirm', message: 'Delete card' })} /></p><AlertDialog.Title><Trans {...msg({ context: 'library.delete.title', message: 'Delete card?' })} /></AlertDialog.Title><AlertDialog.Description><Trans {...msg({ context: 'library.delete.description', message: 'This will permanently remove {word} from your library.' })} values={{ word: activeDeletingCard?.word ?? '' }} /></AlertDialog.Description><div><AlertDialog.Cancel><Trans {...msg({ context: 'common.cancel', message: 'Cancel' })} /></AlertDialog.Cancel><AlertDialog.Action onClick={() => { if (!activeDeletingCard) return; deleteConfirmedRef.current = true; void afterDelete(activeDeletingCard.id); setDeletingCard(null); }}><Trans {...msg({ context: 'library.delete.confirm', message: 'Delete card' })} /></AlertDialog.Action></div></AlertDialog.Content></AlertDialog.Portal></AlertDialog.Root>
     </section>
   );
 }
