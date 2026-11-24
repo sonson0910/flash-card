@@ -201,9 +201,14 @@ for (const theme of [
       await expect(session.locator('[data-study-recall-mode] select')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Reveal answer' })).toBeVisible();
       await expect(rating.locator('[data-review-state]')).toHaveAttribute('data-review-state', 'locked');
-      await expect(rating).toContainText('Reveal the answer before rating');
-      await expect(ratingButtons).toHaveCount(4);
-      for (const index of [0, 1, 2, 3]) await expect(ratingButtons.nth(index)).toBeDisabled();
+      if (theme.family === 'crystal') {
+        // The Crystal board shows the card and its hint only; the rating row appears once the answer is revealed.
+        await expect(rating).toBeHidden();
+      } else {
+        await expect(rating).toContainText('Reveal the answer before rating');
+        await expect(ratingButtons).toHaveCount(4);
+        for (const index of [0, 1, 2, 3]) await expect(ratingButtons.nth(index)).toBeDisabled();
+      }
       await captureStudyState(testInfo, page, `study-review-${theme.name}-${viewport.name}-prompt`);
 
       await page.getByRole('button', { name: 'Reveal answer' }).click();

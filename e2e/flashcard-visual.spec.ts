@@ -179,6 +179,8 @@ for (const theme of themes) {
       await expect(shell.locator('.flashcard-face')).toBeVisible();
       await expectPaintedSurface(shell.locator('.flashcard-face'));
       await expectCardPhotoReady(shell);
+      // The Crystal card names the part of speech on its front; the back's source line then leaves it out.
+      if (theme.family === 'crystal') await expect(shell.locator('.flashcard-face [data-card-metadata]').getByText('adjective', { exact: true })).toBeVisible();
       await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-front.png`);
       await expectNoBlockingViolations(page);
 
@@ -191,7 +193,8 @@ for (const theme of themes) {
       await shell.getByRole('button', { name: /Reveal the Vietnamese meaning of luminous/ }).click();
       await expectCardBackSettled(shell);
       await expectPaintedSurface(shell.locator('.flashcard-back'));
-      await expect(shell.getByText('adjective', { exact: true })).toBeVisible();
+      if (theme.family === 'crystal') await expect(shell.locator('.flashcard-back-pos')).toBeHidden();
+      else await expect(shell.getByText('adjective', { exact: true })).toBeVisible();
       await expect(shell.getByText('/ˈluːmɪnəs/', { exact: true })).toBeVisible();
       await expect(shell.getByText('The luminous dial remained visible at night.', { exact: true })).toBeVisible();
       await expect(shell.getByText('Mặt số phát sáng vẫn nhìn thấy được vào ban đêm.', { exact: true })).toBeVisible();
