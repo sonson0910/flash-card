@@ -77,6 +77,9 @@ export function useCardEffects({ category, faceRef, spotlightRef, reduceMotion, 
       // The front art drifts against the pointer, up to 6px each way (the board's (50 - pointer%) * 0.12).
       faceRef.current?.style.setProperty('--card-art-shift-x', `${((50 - position.x) * 0.12).toFixed(2)}px`);
       faceRef.current?.style.setProperty('--card-art-shift-y', `${((50 - position.y) * 0.12).toFixed(2)}px`);
+      // Unitless pointer position for the Classic light-angle formulas (the board's 150deg + (x - 50) * 0.8deg).
+      faceRef.current?.style.setProperty('--card-pointer-x', position.x.toFixed(2));
+      faceRef.current?.style.setProperty('--card-pointer-y', position.y.toFixed(2));
       if (faceRef.current) {
         const px = ((clientX - bounds.left) / bounds.width - 0.5) * 2;
         const py = ((clientY - bounds.top) / bounds.height - 0.5) * 2;
@@ -100,6 +103,8 @@ export function useCardEffects({ category, faceRef, spotlightRef, reduceMotion, 
     }
     faceRef.current?.style.setProperty('--card-art-shift-x', '0px');
     faceRef.current?.style.setProperty('--card-art-shift-y', '0px');
+    faceRef.current?.style.setProperty('--card-pointer-x', '50');
+    faceRef.current?.style.setProperty('--card-pointer-y', '50');
     if (!isFlipAnimatingRef.current && faceRef.current) gsap.to(faceRef.current, { rotationX: 0, rotationY: 0, duration: tilt ? tiltDuration : 0.35, ease: tiltEase, overwrite: 'auto' });
   };
 

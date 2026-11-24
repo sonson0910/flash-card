@@ -334,7 +334,7 @@ export function QuizView({
               </LumiCoach>
             )}
             <span className="practice-quiz__wing crystal-wing-art" aria-hidden="true" />
-            <section data-quiz-question-panel data-tier={cardTier} className="practice-prompt" aria-label={_(msg({ id: "practice.quiz.prompt-card", message: "Prompt card" }))}>
+            <section data-quiz-question-panel data-tier={cardTier} className="practice-prompt sf-rise" aria-label={_(msg({ id: "practice.quiz.prompt-card", message: "Prompt card" }))}>
               <div className="practice-prompt__top">
                 <span className="practice-prompt__tier" aria-hidden="true">
                   <span className="practice-prompt__tier-grade"><CardTierName tier={cardTier} /></span>
@@ -440,7 +440,7 @@ export function QuizView({
                       disabled={answered}
                       aria-pressed={selected}
                       data-state={state}
-                      className="practice-option min-w-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                      className={`practice-option${state === "wrong" ? " sf-shake" : state === "idle" ? " sf-press" : ""} min-w-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none`}
                     >
                       <span aria-hidden="true" className="practice-option__key">
                         {optionIndex + 1}
@@ -469,7 +469,7 @@ export function QuizView({
                 </button>
               )}
               {answered && hasExplanation && (
-                <div className="practice-explain crystal-chamfer">
+                <div className="practice-explain sf-rise-2 crystal-chamfer">
                   <span className="practice-explain__icon" aria-hidden="true" />
                   <p>
                     <b lang={targetLanguage}>{explanationWord}</b>
@@ -504,7 +504,7 @@ export function QuizView({
                     onClick={onNext}
                     disabled={savingResult}
                     aria-busy={savingResult}
-                    className="practice-primary crystal-chamfer min-h-14 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                    className="practice-primary sf-press crystal-chamfer min-h-14 max-[641px]:[html:not([data-theme-family=crystal])_&]:min-h-13 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                   >
                     {savingResult ? (
                       <Trans {...msg({ context: 'practice.actions.saving-result', message: 'Saving result…' })} />

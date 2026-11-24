@@ -59,10 +59,6 @@
   opacity: 0.82;
 }
 
-:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"] .flashcard-canvas-specular {
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14);
-}
-
 .flashcard-shell:hover .flashcard-canvas-specular,
 .flashcard-shell[data-card-hovered="true"] .flashcard-canvas-specular {
   opacity: 0.92;
@@ -146,24 +142,24 @@ html[data-motion="reduced"] .flashcard-hover-wings {
     background: var(--flashcard-surface) padding-box, var(--flashcard-tier-rim) border-box;
   }
 
-  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier] .flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
-    --flashcard-back-glow: rgb(40 211 244 / 0.14);
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier] .flashcard-panel.flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
+    --flashcard-back-glow: rgb(40 211 244 / 0.16);
     background:
-      radial-gradient(ellipse 75% 45% at 50% 0%, var(--flashcard-back-glow), transparent 70%) padding-box,
-      radial-gradient(circle at 86% 10%, rgb(168 132 230 / 0.14), transparent 48%) padding-box,
+      radial-gradient(ellipse 90% 55% at 50% 18%, var(--flashcard-back-glow) 0%, transparent 70%) padding-box,
+      radial-gradient(circle at 100% 0%, rgb(150 108 215 / 0.18), transparent 45%) padding-box,
       var(--flashcard-surface) padding-box,
       var(--flashcard-tier-rim) border-box;
   }
 
-  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier="learning"] .flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
-    --flashcard-back-glow: rgb(40 211 244 / 0.24);
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier="learning"] .flashcard-panel.flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
+    --flashcard-back-glow: rgb(150 108 215 / 0.2);
   }
 
-  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier="mastered"] .flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
-    --flashcard-back-glow: rgb(245 174 57 / 0.26);
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier="mastered"] .flashcard-panel.flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
+    --flashcard-back-glow: rgb(245 174 57 / 0.16);
   }
 
-  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier] .flashcard-back[data-card-look="paper"]:not(.zen-glass-slab) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier] .flashcard-panel.flashcard-back[data-card-look="paper"]:not(.zen-glass-slab) {
     background:
       radial-gradient(ellipse 80% 50% at 50% 12%, var(--flashcard-ink-glow), transparent 70%) padding-box,
       linear-gradient(var(--flashcard-ink), var(--flashcard-ink)) padding-box;
@@ -215,9 +211,10 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   backdrop-filter: none;
 }
 :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"] .flashcard-chrome-button {
-  border-color: color-mix(in srgb, var(--sf-text) 14%, transparent);
-  background: var(--sf-surface-raised, var(--sf-surface));
-  box-shadow: 0 1px 2px rgb(60 40 20 / 0.08), 0 6px 14px -6px rgb(60 40 20 / 0.2);
+  border-color: rgb(29 26 22 / 0.1);
+  background: rgb(255 252 245 / 0.92);
+  color: #1d1a16;
+  box-shadow: 0 2px 6px rgb(60 40 20 / 0.2);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
@@ -255,8 +252,8 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   mask-image: linear-gradient(to bottom, #000 0%, #000 42%, rgb(0 0 0 / 0.35) 72%, transparent 100%);
 }
 :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-look="aurora"] .flashcard-art-image {
-  -webkit-mask-image: var(--sf-img-mask, linear-gradient(to bottom, #000 0%, #000 42%, rgb(0 0 0 / 0.35) 72%, transparent 100%));
-  mask-image: var(--sf-img-mask, linear-gradient(to bottom, #000 0%, #000 42%, rgb(0 0 0 / 0.35) 72%, transparent 100%));
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 42%, rgb(0 0 0 / 0.35) 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 42%, rgb(0 0 0 / 0.35) 72%, transparent 100%);
 }
 
 .flashcard-face[data-card-look="aurora"] .flashcard-art-shade {
@@ -269,9 +266,10 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   border-radius: 12px;
 }
 :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-look="paper"] .flashcard-art {
-  height: 38%;
-  margin: var(--sf-img-margin, 16px 16px 0);
-  border-radius: var(--sf-img-radius, 12px);
+  height: calc(236 / 620 * 100%);
+  margin: 16px 16px 0;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgb(29 26 22 / 0.1);
 }
 
 .flashcard-face[data-card-look="paper"] .flashcard-art-shade {
@@ -282,22 +280,32 @@ html[data-motion="reduced"] .flashcard-hover-wings {
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-look="aurora"] .flashcard-blind-pill {
-  border: 1px solid rgb(255 255 255 / 0.14);
-  background: rgb(6 22 31 / 0.72);
-  color: #e5ecf1;
-  box-shadow: 0 8px 20px -6px rgb(0 0 0 / 0.6);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-look="paper"] .flashcard-blind-pill {
-  border: 1px solid rgb(29 26 22 / 0.14);
-  background: rgb(251 246 236 / 0.88);
-  color: #1d1a16;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fffcf5;
   font-family: var(--sf-font-display);
+  font-size: 16px;
   font-style: italic;
-  font-weight: 450;
-  box-shadow: 0 4px 12px -4px rgb(60 40 20 / 0.25);
+  font-weight: 400;
+  box-shadow: none;
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-art {
@@ -980,12 +988,16 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   --flashcard-ink-body: #efe8da;
   --flashcard-ink-muted: #b7ad9b;
   --flashcard-ink-accent: #e8a075;
-  --flashcard-ink-glow: rgb(180 70 26 / 0.24);
+  --flashcard-ink-glow: rgb(180 70 26 / 0.22);
+  /* The language-pack ink back's due, warm and second inks (LangCard.dc.html 448-454). */
+  --flashcard-ink-due: #f0b48a;
+  --flashcard-ink-warm: #f0c872;
+  --flashcard-ink-second: #a9d3b2;
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier] .flashcard-back[data-card-look="paper"] {
   --flashcard-surface: linear-gradient(var(--flashcard-ink), var(--flashcard-ink));
-  --sf-text: var(--flashcard-ink-text);
+  --sf-text: var(--flashcard-ink-body);
   --sf-text-muted: var(--flashcard-ink-muted);
   --sf-brand-text: var(--flashcard-ink-accent);
   --sf-border: color-mix(in srgb, var(--flashcard-ink-text) 14%, transparent);
@@ -1066,9 +1078,9 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 }
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-due {
   height: 24px;
-  border: 1px solid rgb(232 160 117 / 0.45);
+  border: 1px solid rgb(232 160 117 / 0.4);
   background: transparent;
-  color: #f0b48f;
+  color: #e8a075;
   font-size: 11.5px;
 }
 
@@ -1179,15 +1191,19 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   position: absolute;
   inset: 6px;
   z-index: -1;
-  border: 1px solid var(--sf-border);
+  border: 1px solid rgb(40 211 244 / 0.35);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--sf-text) 5%, transparent);
+  background: rgb(40 211 244 / 0.08);
   content: "";
   transition: background-color 200ms ease, border-color 200ms ease;
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-back:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-play:is(:hover, [data-playing="true"])::before {
-  background: color-mix(in srgb, var(--sf-brand) 14%, transparent);
+  background: rgb(40 211 244 / 0.2);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-back-play {
+  color: #28d3f4;
 }
 
 .flashcard-back-note {
@@ -1270,7 +1286,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   cursor: pointer;
 }
 :where(html:not([data-theme-family=crystal])) .flashcard-back-tool {
-  height: 48px;
+  height: 44px;
   padding: 0 14px;
   border: 1px solid var(--sf-border);
   border-radius: 14px;
@@ -1290,13 +1306,13 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-back-tutor {
-  border-color: rgb(143 107 212 / 0.4);
-  background: rgb(143 107 212 / 0.14);
+  border-color: rgb(150 108 215 / 0.35);
+  background: rgb(150 108 215 / 0.1);
   color: #c9b3f0;
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-back-tutor:hover {
-  background: rgb(143 107 212 / 0.22);
+  background: rgb(150 108 215 / 0.18);
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-back-tutor .flashcard-back-tutor-icon {
@@ -1314,13 +1330,13 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-hook-button {
-  border-color: rgb(245 174 57 / 0.35);
-  background: rgb(245 174 57 / 0.1);
-  color: #f6cb75;
+  border-color: rgb(245 174 57 / 0.28);
+  background: rgb(245 174 57 / 0.07);
+  color: #f5ae39;
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-hook-button:hover {
-  background: rgb(245 174 57 / 0.18);
+  background: rgb(245 174 57 / 0.14);
 }
 
 .flashcard-hook-icon {
@@ -1440,6 +1456,11 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   background: var(--sf-brand-text);
 }
 
+/* The Aurora back draws its rule only on phones (MobileReview.dc.html 40). */
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-back-ink-rule {
+  display: none;
+}
+
 .flashcard-back[data-card-look="paper"] .flashcard-back-source {
   justify-content: flex-start;
   margin-top: 6px;
@@ -1461,16 +1482,16 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 }
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-play {
   background: none;
-  color: var(--sf-text);
+  color: #efe8da;
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-play::before {
-  border-color: rgb(239 232 218 / 0.2);
-  background: rgb(239 232 218 / 0.06);
+  border-color: rgb(239 232 218 / 0.25);
+  background: transparent;
 }
 
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-play:is(:hover, [data-playing="true"])::before {
-  background: rgb(239 232 218 / 0.14);
+  background: rgb(239 232 218 / 0.08);
 }
 
 .flashcard-back[data-card-look="paper"] .flashcard-back-note {
@@ -1524,7 +1545,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   height: 44px;
   border-color: rgb(239 232 218 / 0.16);
   border-radius: 12px;
-  background: rgb(239 232 218 / 0.06);
+  background: rgb(239 232 218 / 0.05);
   color: var(--flashcard-ink-body);
 }
 
@@ -1538,7 +1559,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-hook-button {
   border-color: rgb(239 232 218 / 0.16);
-  background: rgb(239 232 218 / 0.06);
+  background: rgb(239 232 218 / 0.05);
   color: var(--flashcard-ink-body);
 }
 
@@ -1564,7 +1585,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-return {
   gap: 8px;
   min-height: 54px;
-  border-top: 1px dashed rgb(239 232 218 / 0.14);
+  border-top: 1px dashed rgb(239 232 218 / 0.16);
   color: var(--flashcard-ink-muted);
   font-family: var(--sf-font-display);
   font-size: 16px;
@@ -1740,7 +1761,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 }
 :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade {
   min-height: 68px;
-  transition: transform 180ms var(--ease-out-expo), border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease;
 }
 
 .review-grades[data-card-look="aurora"] .review-grade[data-rating="again"] {
@@ -1779,7 +1800,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   border-radius: 16px;
   background: var(--sf-surface);
   box-shadow: 0 1px 2px rgb(60 40 20 / 0.08);
-  transition: transform 180ms var(--ease-out-expo), border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms ease;
 }
 
 :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade-label {
@@ -1797,14 +1818,6 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 @media (hover: hover) and (pointer: fine) {
   :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
     transform: translateY(-3px);
-  }
-
-  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade:not(:disabled):hover {
-    box-shadow: 0 10px 20px -12px rgb(60 40 20 / 0.45);
-  }
-
-  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating="good"]:not(:disabled):hover {
-    box-shadow: 0 14px 28px -12px rgb(29 26 22 / 0.85);
   }
 }
 
@@ -1864,6 +1877,141 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   font-size: 15px;
   font-style: italic;
 }
+
+/* Classic grade tray from the seed boards: Aurora.dc.html 232-237 and 299-304 (dark), Atelier.dc.html 212-216
+   and 273-278 (light), motion from canvas/shared.css 25-27 and 46-48. A board button's inline box-shadow wins
+   over its hover class, so only the lift changes on hover. */
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grades-row {
+  max-width: 576px;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 24px;
+  background: rgb(12 30 40 / 0.6);
+  box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grades-row {
+  max-width: 558px;
+  gap: 10px;
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade[data-rating] {
+  --grade-dot: #f59145;
+  border-color: rgb(255 255 255 / 0.08);
+  background: rgb(255 255 255 / 0.03);
+  color: #e5ecf1;
+  box-shadow: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade[data-rating="again"] {
+  --grade-dot: #ed5350;
+  border-color: rgb(237 83 80 / 0.3);
+  background: rgb(237 83 80 / 0.08);
+  color: #f3b3b2;
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade[data-rating="good"] {
+  --grade-dot: #06161f;
+  border-color: #7ee6fa;
+  background: #28d3f4;
+  color: #04141c;
+  box-shadow: 0 12px 30px -10px rgb(40 211 244 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.5);
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade[data-rating="easy"] {
+  --grade-dot: #75d079;
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating] {
+  --grade-dot: #d3721e;
+  border-color: rgb(29 26 22 / 0.12);
+  background: #fffcf5;
+  color: #1d1a16;
+  box-shadow: 0 1px 2px rgb(60 40 20 / 0.08);
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating="again"] {
+  --grade-dot: #c53637;
+  border-color: rgb(197 54 55 / 0.3);
+  background: #fbf1ec;
+  color: #8f2324;
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating="good"] {
+  --grade-dot: #e8a075;
+  border-color: #1d1a16;
+  background: #1d1a16;
+  color: #fbf6ec;
+  box-shadow: 0 12px 24px -12px rgb(29 26 22 / 0.8);
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating="easy"] {
+  --grade-dot: #337344;
+}
+
+/* The grade the card last got is an app state; it rings in the grade's own dot colour. */
+:where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade[data-rating][aria-pressed="true"] {
+  border-color: var(--grade-dot);
+  box-shadow: 0 0 0 1px var(--grade-dot);
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade[data-rating] .review-grade-dot {
+  background: var(--grade-dot);
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade[data-rating] .review-grade-dot {
+  box-shadow: 0 0 10px var(--grade-dot);
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade-label {
+  gap: 8px;
+}
+
+/* The boards set the label and key on the default line height (normal), not the app's 1.5. */
+:where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) :is(.review-grade-label, .review-grade-key) {
+  line-height: normal;
+}
+
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade-key {
+  opacity: 0.7;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):active {
+    transform: translateY(0);
+  }
+}
+
+/* Phones follow the Mobile review board (MobileReview.dc.html 54-61 and 89-98): four keys in one row, no tray. */
+@media (max-width: 640px) {
+
+  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade[data-rating]:not([data-rating="again"], [data-rating="good"]) {
+    background: rgb(255 255 255 / 0.04);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade[data-rating="good"] {
+    --grade-dot: #04141c;
+    box-shadow: 0 10px 24px -10px rgb(40 211 244 / 0.7);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating]:not([data-rating="good"]) {
+    box-shadow: none;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating="good"] {
+    box-shadow: 0 10px 20px -10px rgb(29 26 22 / 0.8);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade-face {
+    gap: 3px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade[data-rating] .review-grade-dot {
+    box-shadow: none;
+  }
+}
+
 
 .review-grades[data-card-look="crystal"] .review-grades-row {
   gap: 12px;
@@ -2133,6 +2281,1508 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   background: rgb(0 0 0 / 0.4);
 }
 
+/* ------------------------------------------------------------------------
+   Classic standard card from the seed boards: Midnight Aurora
+   (canvas/seed/Aurora.dc.html, dark) and Ink & Paper (canvas/seed/Atelier.dc.html,
+   light). Surfaces, light layers, corner controls, front and back bodies and the
+   board motion. Language-pack cards and Zen keep their own rules.
+   ------------------------------------------------------------------------ */
+
+/* Tier rims, accents, back tints and auras (Aurora.dc.html 265-289, 314-316; Atelier.dc.html 243-255).
+   The dark language card uses the same tiers (LangCard.dc.html 400-403). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="new"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"][data-card-kind="language"][data-card-tier="new"] {
+  --flashcard-tier-rim: linear-gradient(160deg, rgb(255 255 255 / 0.4), rgb(255 255 255 / 0.06) 38%, rgb(255 255 255 / 0.05) 70%, rgb(255 255 255 / 0.22));
+  --flashcard-tier-color: #c3ced5;
+  --flashcard-accent: #28d3f4;
+  --flashcard-accent-dot: #28d3f4;
+  --flashcard-accent-glow: rgb(40 211 244 / 0.55);
+  --flashcard-back-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.9);
+  --flashcard-aura-fill: radial-gradient(ellipse at 50% 40%, rgba(40, 211, 244, 0.75) 0%, rgba(14, 165, 233, 0.45) 45%, rgba(150, 108, 215, 0.25) 70%, transparent 86%);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="learning"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"][data-card-kind="language"][data-card-tier="learning"] {
+  --flashcard-tier-rim: linear-gradient(155deg, #7ee6fa, rgb(40 211 244 / 0.2) 40%, rgb(150 108 215 / 0.35) 75%, #b395ea);
+  --flashcard-tier-color: #28d3f4;
+  --flashcard-accent: #7ee6fa;
+  --flashcard-accent-dot: #28d3f4;
+  --flashcard-accent-glow: rgb(40 211 244 / 0.55);
+  --flashcard-back-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.9), 0 0 50px -14px rgb(40 211 244 / 0.5);
+  --flashcard-aura-fill: radial-gradient(ellipse at 50% 40%, rgba(150, 108, 215, 0.75) 0%, rgba(40, 211, 244, 0.45) 45%, rgba(99, 102, 241, 0.2) 70%, transparent 86%);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="mastered"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"][data-card-kind="language"][data-card-tier="mastered"] {
+  --flashcard-tier-rim: conic-gradient(from 200deg, #ffe6a8, #f5ae39, #fff6dc, #7ee6fa, #c9a3ff, #f5ae39, #ffe6a8);
+  --flashcard-tier-color: #f5ae39;
+  --flashcard-accent: #f5ae39;
+  --flashcard-accent-dot: #f5ae39;
+  --flashcard-accent-glow: rgb(245 174 57 / 0.55);
+  --flashcard-back-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.9), 0 0 56px -12px rgb(245 174 57 / 0.55);
+  --flashcard-aura-fill: radial-gradient(ellipse at 50% 40%, rgba(245, 174, 57, 0.7) 0%, rgba(237, 83, 80, 0.35) 45%, rgba(40, 211, 244, 0.2) 70%, transparent 86%);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="new"] {
+  --flashcard-aura-fill: radial-gradient(ellipse at 50% 55%, rgba(180, 70, 26, 0.35) 0%, rgba(214, 150, 90, 0.25) 50%, transparent 80%);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="learning"] {
+  --flashcard-aura-fill: radial-gradient(ellipse at 50% 55%, rgba(51, 115, 68, 0.35) 0%, rgba(120, 160, 110, 0.22) 50%, transparent 80%);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="mastered"] {
+  --flashcard-aura-fill: radial-gradient(ellipse at 50% 55%, rgba(214, 160, 60, 0.45) 0%, rgba(230, 190, 110, 0.3) 50%, transparent 80%);
+}
+
+/* Surfaces: the board cards have no glass blur, no panel noise, no hover halo and no hover brightness. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-panel:is(.flashcard-face, .flashcard-back),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-panel:is(.flashcard-face, .flashcard-back) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])::before,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])::before {
+  content: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-panel::after {
+  content: none;
+}
+
+@media not (forced-colors: active) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-panel.flashcard-face {
+    background: #fffcf5;
+  }
+}
+
+/* The Aurora back drops the 1px ring the front carries (Aurora.dc.html 170). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-panel.flashcard-back {
+  box-shadow: var(--flashcard-back-shadow);
+}
+
+/* Paper grain under the content: multiply on the front, overlay on the ink back (Atelier.dc.html 75, 154). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-panel:is(.flashcard-face, .flashcard-back)::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  content: "";
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.28 0 0 0 0 0.2 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.12;
+  mix-blend-mode: multiply;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-panel.flashcard-back::before {
+  opacity: 0.25;
+  mix-blend-mode: overlay;
+}
+
+/* Light layers (Aurora.dc.html 156-163, 219-220; Atelier.dc.html 146-147, 199). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back :is(.flashcard-canvas-specular, .flashcard-holo),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back :is(.flashcard-canvas-specular, .flashcard-holo),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-holo {
+  display: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-canvas-specular {
+  z-index: 20;
+  background: linear-gradient(calc(150deg + (var(--card-pointer-x, 50) - 50) * 0.8deg), rgb(255 255 255 / 0.1) 0%, transparent 28%);
+  opacity: 0.6;
+  box-shadow: none;
+  mix-blend-mode: normal;
+  transition: opacity 300ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-hovered="true"] .flashcard-face .flashcard-canvas-specular {
+  opacity: 1;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-canvas-specular,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-hovered="true"] .flashcard-face .flashcard-canvas-specular {
+  z-index: 20;
+  background: linear-gradient(calc(160deg + (var(--card-pointer-x, 50) - 50) * 0.6deg), transparent 40%, rgb(60 40 20 / 0.06) 100%);
+  opacity: 1;
+  box-shadow: none;
+  mix-blend-mode: normal;
+  transition: none;
+}
+
+/* The Aurora top hairline, front and back. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-tier-rim {
+  position: absolute;
+  top: 0;
+  right: 12%;
+  left: 12%;
+  z-index: 21;
+  display: block;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.5), transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face [data-card-effect="spotlight"] {
+  --flashcard-spotlight: radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgb(40 211 244 / 0.14) 0%, transparent 55%);
+  z-index: 22;
+  transition: opacity 200ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back [data-card-effect="spotlight"] {
+  --flashcard-spotlight: radial-gradient(circle at calc(100% - var(--spotlight-x, 50%)) var(--spotlight-y, 50%), rgb(40 211 244 / 0.1) 0%, transparent 55%);
+  z-index: 22;
+  transition: opacity 200ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face [data-card-effect="spotlight"] {
+  --flashcard-spotlight: radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgb(255 255 255 / 0.9) 0%, transparent 50%);
+  z-index: 20;
+  mix-blend-mode: soft-light;
+  transition: opacity 220ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back [data-card-effect="spotlight"] {
+  --flashcard-spotlight: radial-gradient(circle at calc(100% - var(--spotlight-x, 50%)) var(--spotlight-y, 50%), rgb(232 160 117 / 0.12) 0%, transparent 50%);
+  z-index: 20;
+  transition: opacity 220ms ease;
+}
+
+/* The mastered holo foil (Aurora.dc.html 161, LangCard.dc.html 179) is one fixed rainbow in both modes; the standard
+   Aurora front and the language-pack card share it. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-mode="standard"] {
+  --flashcard-holo-foil: repeating-linear-gradient(115deg, rgb(255 120 120 / 0.5) 0%, rgb(255 220 120 / 0.5) 6%, rgb(140 255 170 / 0.5) 12%, rgb(120 220 255 / 0.5) 18%, rgb(190 150 255 / 0.5) 24%, rgb(255 120 120 / 0.5) 30%);
+}
+
+/* Mastered Aurora front only: holo foil, grain and a white spot under the pointer. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-holo {
+  opacity: 0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="mastered"] .flashcard-face .flashcard-holo {
+  position: absolute;
+  inset: 0;
+  z-index: 23;
+  pointer-events: none;
+  background: var(--flashcard-holo-foil);
+  background-position: var(--spotlight-x, 50%) var(--spotlight-y, 50%);
+  background-size: 300% 300%;
+  mix-blend-mode: color-dodge;
+  opacity: 0.22;
+  transition: opacity 300ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="mastered"][data-card-hovered="true"] .flashcard-face .flashcard-holo {
+  opacity: 0.5;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="mastered"] .flashcard-panel.flashcard-face::after {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  border-radius: inherit;
+  pointer-events: none;
+  content: "";
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  opacity: 0.2;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="mastered"][data-card-hovered="true"] .flashcard-panel.flashcard-face::after {
+  opacity: 0.35;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="mastered"] .flashcard-panel.flashcard-face::before {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  border-radius: inherit;
+  pointer-events: none;
+  content: "";
+  background: radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgb(255 255 255 / 0.55) 0%, transparent 45%);
+  mix-blend-mode: overlay;
+  opacity: 0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="mastered"][data-card-hovered="true"] .flashcard-panel.flashcard-face::before {
+  opacity: 1;
+}
+
+/* Hover aura behind the card (Aurora.dc.html 81; Atelier.dc.html 66). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-canvas-aura,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-canvas-aura {
+  inset: -26px;
+  border-radius: 56px;
+  background: var(--flashcard-aura-fill);
+  filter: blur(30px);
+  opacity: 0;
+  transition: opacity 320ms ease-out;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-hovered="true"] .flashcard-canvas-aura {
+  opacity: 0.42;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-canvas-aura {
+  inset: -30px;
+  border-radius: 60px;
+  filter: blur(34px);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-hovered="true"] .flashcard-canvas-aura {
+  opacity: 0.55;
+}
+
+/* Phones keep the aura inside the viewport width. */
+@media (max-width: 599px) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-canvas-aura,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-canvas-aura {
+    inset: -26px 0;
+  }
+}
+
+/* Corner controls (Aurora.dc.html 98-106, 174-176, 332-336; Atelier.dc.html 84-89, 157-159, 300-304). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="front"] [data-card-top-controls] {
+  top: 19.5px;
+  right: 19.5px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] [data-card-top-controls] {
+  top: 23.5px;
+  right: 23.5px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] [data-card-top-controls] {
+  top: 22px;
+  right: 22px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]):hover {
+  border: 1px solid rgb(255 255 255 / 0.2);
+  background: rgb(6 22 31 / 0.5);
+  color: #fff;
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] .flashcard-chrome-button,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] .flashcard-chrome-button:not([data-card-danger]):hover {
+  background: rgb(255 255 255 / 0.04);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button[data-selected="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button[data-selected="true"]:hover {
+  border-color: #7ee6fa;
+  background: #28d3f4;
+  color: #04141c;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button.flashcard-reward-button[data-selected="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button.flashcard-reward-button[data-selected="true"]:hover {
+  border-color: #ffd88a;
+  background: #f5ae39;
+  color: #1f1403;
+  box-shadow: 0 0 22px -2px rgb(245 174 57 / 0.7);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]):hover {
+  border: 1px solid rgb(29 26 22 / 0.1);
+  background: rgb(255 252 245 / 0.92);
+  color: #1d1a16;
+  box-shadow: 0 2px 6px rgb(60 40 20 / 0.2);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button[data-selected="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button[data-selected="true"]:hover {
+  border-color: #1d1a16;
+  background: #1d1a16;
+  color: #fbf8f2;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button.flashcard-reward-button[data-selected="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button.flashcard-reward-button[data-selected="true"]:hover {
+  border-color: #b4461a;
+  background: #b4461a;
+  color: #fffcf5;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] .flashcard-chrome-button,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] .flashcard-chrome-button:not([data-card-danger]):hover {
+  border-color: rgb(239 232 218 / 0.22);
+  background: transparent;
+  color: #efe8da;
+  box-shadow: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] .flashcard-chrome-button.flashcard-reward-button[data-selected="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] .flashcard-chrome-button.flashcard-reward-button[data-selected="true"]:hover {
+  border-color: #e8a075;
+  background: #e8a075;
+  color: #1c2a21;
+}
+
+/* Delete is an app-only control: it keeps its danger fill on hover. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button[data-card-danger]:hover,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button[data-card-danger]:hover {
+  border-color: var(--sf-danger);
+  background: var(--sf-danger);
+  color: var(--sf-on-brand);
+}
+
+/* Aurora icon buttons (blind, star, listen) grow on hover; paper buttons stay still. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button {
+  transform: none;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button.flashcard-reward-button:hover {
+  transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-chrome-button:not([data-card-danger]):hover,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button:hover {
+    transform: scale(1.06);
+  }
+}
+
+/* Star pop when a word is starred. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-star-selected,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-star-selected {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-star-selected {
+    animation: au-star 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-star-selected {
+    animation: ip-star 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/* Front art (Aurora.dc.html 88-97, 320-332; Atelier.dc.html 76-83, 297-300). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-art {
+  height: calc(300 / 617 * 100%);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-image-tint,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-image-tint {
+  display: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face [data-card-effect="blind-image"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face [data-card-effect="blind-image"] {
+  scale: none;
+  filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-art img {
+  scale: none;
+  transform: scale(1.06) translate(var(--card-art-shift-x, 0px), var(--card-art-shift-y, 0px));
+  transition: filter 500ms ease, transform 400ms cubic-bezier(0.22, 1, 0.36, 1), opacity 500ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-blind="true"] .flashcard-face .flashcard-art img {
+  filter: blur(24px) saturate(0.5);
+  transform: scale(1.14) translate(var(--card-art-shift-x, 0px), var(--card-art-shift-y, 0px));
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-art-shade {
+  background: linear-gradient(to bottom, rgb(6 22 31 / 0.35) 0%, transparent 30%);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-art img {
+  scale: none;
+  transform: none;
+  filter: saturate(0.92);
+  transition: filter 500ms ease, transform 500ms ease, opacity 500ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-blind="true"] .flashcard-face .flashcard-art img {
+  filter: blur(22px) saturate(0.4) sepia(0.3);
+  transform: scale(1.14);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-art-shade {
+  border-radius: 0;
+  background: linear-gradient(180deg, rgb(255 248 235 / 0.1), rgb(60 40 20 / 0.12));
+  box-shadow: none;
+  mix-blend-mode: multiply;
+}
+
+/* Hidden-picture label: plain text over the blurred photo, no pill. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-art > div:has(> .flashcard-blind-pill) {
+  bottom: 90px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-blind-pill svg {
+  width: 24px;
+  height: 24px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-blind-pill svg {
+  width: 22px;
+  height: 22px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-category-chip {
+  /* The board's 30px chip is content-box, so it draws 32px tall, centred on the 44px corner buttons. */
+  top: 24px;
+  min-height: 32px;
+  padding-block: 7px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 999px;
+  background: rgb(6 22 31 / 0.5);
+  color: #fff;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-category-chip > span[aria-hidden="true"] {
+  background: var(--flashcard-accent-dot);
+}
+
+/* Front body (Aurora.dc.html 108-149; Atelier.dc.html 100-137). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-body,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-body {
+  z-index: 2;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-meta {
+  gap: 10px;
+  color: #99a7b0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-meta-dot {
+  background: #5d6d76;
+  opacity: 1;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-headword-word {
+  margin-top: 6px;
+  color: #f1f6f9;
+  line-height: 1;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-headword-stress {
+  color: var(--flashcard-accent);
+  text-shadow: 0 0 28px var(--flashcard-accent-glow);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-headword-word {
+  margin-top: 0;
+  color: #1d1a16;
+  line-height: 1;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-headword-stress {
+  color: #b4461a;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-pronunciation {
+  min-height: 40px;
+  margin-top: 14px;
+  column-gap: 12px;
+}
+
+/* 40px listen circle inside the 44px touch target. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button:is(:hover, [data-playing="true"]) {
+  position: relative;
+  isolation: isolate;
+  margin: -2px;
+  border: 0;
+  background: none;
+  color: #28d3f4;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button::before {
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  border: 1px solid rgb(40 211 244 / 0.35);
+  border-radius: 50%;
+  background: rgb(40 211 244 / 0.08);
+  content: "";
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button[data-playing="true"]::before {
+  background: rgb(40 211 244 / 0.2);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-ipa {
+  color: #c3ced5;
+  font-size: 15px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-syllables {
+  color: #99a7b0;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-syllables button {
+  margin-block: -2px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-syllables :is(button:not([data-syllable-stressed]), span[aria-hidden="true"]) {
+  color: #99a7b0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-pronunciation {
+  min-height: 0;
+  margin-top: 14px;
+  align-items: baseline;
+  column-gap: 12px;
+  color: #6b6255;
+  font-size: 14px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-pos {
+  color: #1d1a16;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-ipa {
+  font-size: 14px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-syllables {
+  letter-spacing: 0.04em;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-syllables button {
+  margin-block: -12px;
+  font-size: 14px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-syllables :is(button:not([data-syllable-stressed]), span[aria-hidden="true"]) {
+  color: #6b6255;
+  font-size: 14px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-rule {
+  margin-top: 14px;
+  background: linear-gradient(90deg, rgb(29 26 22 / 0.2), rgb(29 26 22 / 0.04));
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-definition {
+  margin-top: 18px;
+  color: #b5c2ca;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-definition {
+  margin-top: 14px;
+  color: #3d372f;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-definition-number {
+  color: #b4461a;
+}
+
+/* Action row: 40px pills drawn inside the 44px touch targets. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions {
+  gap: 8px;
+  padding: 0 0 20px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions {
+  gap: 6px;
+  padding: 0 0 18px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action:is(:hover, [aria-pressed="true"], [data-recording="true"]),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action:is(:hover, [aria-pressed="true"], [data-recording="true"]) {
+  position: relative;
+  isolation: isolate;
+  margin-block: -2px;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 600;
+  transition: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action::before,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action::before {
+  position: absolute;
+  inset: 1px -1px;
+  z-index: -1;
+  border: 1px solid transparent;
+  border-radius: inherit;
+  content: "";
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action {
+  padding: 0 14px;
+  color: #e5ecf1;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action::before {
+  border-color: rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.04);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-action-quiz-icon {
+  color: #966cd7;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action.flashcard-action-speed {
+  padding: 0 12px;
+  color: #c3ced5;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action.flashcard-action-more {
+  padding: 0;
+  color: #99a7b0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action.flashcard-action-more::before {
+  inset: 1px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action {
+  padding: 0 12px;
+  color: #1d1a16;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action::before {
+  border-color: rgb(29 26 22 / 0.14);
+  background: transparent;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action.flashcard-action-listen,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action.flashcard-action-listen:hover {
+  gap: 8px;
+  padding: 0 16px 0 12px;
+  border: 0;
+  background: none;
+  color: #fbf8f2;
+  box-shadow: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action.flashcard-action-listen::before {
+  inset: 2px 0;
+  border: 0;
+  background: #1d1a16;
+  box-shadow: 0 6px 14px -8px rgb(29 26 22 / 0.8);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action:is(.flashcard-action-speed, .flashcard-action-more),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action:is(.flashcard-action-speed, .flashcard-action-more):hover {
+  border: 0;
+  color: #6b6255;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action.flashcard-action-speed {
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action.flashcard-action-more {
+  padding: 0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action:is(.flashcard-action-speed, .flashcard-action-more)::before {
+  inset: 2px 0;
+  border: 0;
+}
+
+/* App-only action states keep their meaning in the board's colours. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action[aria-pressed="true"]::before {
+  border-color: rgb(40 211 244 / 0.35);
+  background: rgb(40 211 244 / 0.08);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action[aria-pressed="true"]::before {
+  border: 1px solid rgb(29 26 22 / 0.14);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action[data-recording="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action[data-recording="true"] {
+  color: var(--sf-on-brand);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action[data-recording="true"]::before,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-actions .flashcard-action[data-recording="true"]::before {
+  border-color: var(--sf-danger);
+  background: var(--sf-danger);
+}
+
+/* Reveal footer (Aurora.dc.html 151-155; Atelier.dc.html 139-143). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal:hover {
+  z-index: 3;
+  gap: 10px;
+  min-height: 60px;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  background: rgb(255 255 255 / 0.02);
+  color: #e5ecf1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal-laser,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal:hover .flashcard-reveal-laser {
+  right: 26%;
+  left: 26%;
+  background: linear-gradient(90deg, transparent, #28d3f4 20%, #966cd7 80%, transparent);
+  box-shadow: 0 0 14px rgb(40 211 244 / 0.8);
+  transition: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-kbd {
+  /* The board's 22px key is content-box: 24px with its border. */
+  height: 24px;
+  padding: 0 7px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 6px;
+  color: #99a7b0;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal:hover {
+  z-index: 3;
+  gap: 12px;
+  min-height: 58px;
+  border-top: 1px dashed rgb(29 26 22 / 0.18);
+  background: transparent;
+  color: #1d1a16;
+  font-family: var(--sf-font-display);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 400;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal-rule,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal:hover .flashcard-reveal-rule {
+  width: 34px;
+  height: 2px;
+  background: #b4461a;
+  transform-origin: center;
+  transition: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-kbd {
+  /* The board's 22px key is content-box: 24px with its border. */
+  height: 24px;
+  padding: 0 7px;
+  border: 1px solid rgb(29 26 22 / 0.18);
+  border-radius: 5px;
+  color: #6b6255;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal-laser {
+    animation: au-laser 2.4s ease-in-out infinite;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal-rule {
+    animation: ip-rule 2.6s ease-in-out infinite;
+  }
+}
+
+/* Back header (Aurora.dc.html 171-176; Atelier.dc.html 155-160). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-header,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-header {
+  min-height: 66px;
+  gap: 10px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-header {
+  padding: 22px 128px 0 28px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-language {
+  gap: 8px;
+  color: #99a7b0;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-language-dot {
+  background: #28d3f4;
+  box-shadow: 0 0 10px #28d3f4;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-due {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid rgb(245 174 57 / 0.3);
+  background: rgb(245 174 57 / 0.12);
+  color: #f5ae39;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+/* Back body (Aurora.dc.html 179-214; Atelier.dc.html 162-195). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-scroll {
+  padding: 18px 34px 20px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-scroll {
+  padding: 22px 34px 18px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-meaning,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-meaning {
+  flex: 0 0 auto;
+  gap: 0;
+  min-height: 0;
+  padding: 0;
+  justify-content: flex-start;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-translation {
+  background: none;
+  color: #f1f6f9;
+  font-size: clamp(34px, calc(54 / 389 * 100cqi), 54px);
+  font-weight: 420;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-translation {
+  color: #fbf6ec;
+  font-size: clamp(36px, calc(58 / 392 * 100cqi), 58px);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-source,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-source {
+  gap: 4px 10px;
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-source {
+  color: #99a7b0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-word {
+  color: #c3ced5;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-ipa,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-ipa {
+  font-size: 13px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example {
+  margin: 26px 0 0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example {
+  width: 100%;
+  padding: 18px 20px;
+  border: 1px solid rgb(255 255 255 / 0.07);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 0.035);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-text {
+  color: #e5ecf1;
+  font-size: 19px;
+  font-weight: 380;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-word {
+  background: linear-gradient(transparent 62%, rgb(40 211 244 / 0.18) 62%);
+  color: #28d3f4;
+  font-weight: 520;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-word {
+  color: #f0b48f;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-translation,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-translation {
+  margin-top: 8px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-translation {
+  color: #99a7b0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation {
+  align-self: stretch;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation {
+  margin-top: 16px;
+  color: #b5c2ca;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation {
+  margin-top: 18px;
+  color: #cfc6b5;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation :is(p:not(.sr-only), li),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation :is(p:not(.sr-only), li) {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation :is(p:not(.sr-only), li) {
+  line-height: 1.6;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation :is(p:not(.sr-only), li) {
+  line-height: 1.62;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-tools,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-tools {
+  align-self: stretch;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-return,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-return:hover {
+  gap: 8px;
+  min-height: 56px;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  background: rgb(255 255 255 / 0.02);
+  color: #99a7b0;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+/* The board's return button has no laser; the markup keeps the span for the shared screenshot hook. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-reveal-laser {
+  display: none;
+}
+
+/* Back content reveals after the turn lands (Aurora.dc.html 26-28; Atelier.dc.html 27-29). */
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back .flashcard-back-translation {
+    animation: au-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back .flashcard-back-source {
+    animation: au-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back :is(.flashcard-back-example, .flashcard-back-explanation) {
+    animation: au-reveal 420ms cubic-bezier(0.16, 1, 0.3, 1) 280ms both;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back :is(.flashcard-back-translation, .flashcard-back-source) {
+    animation: ip-reveal 480ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back .flashcard-back-ink-rule {
+    animation: ip-ink 700ms cubic-bezier(0.65, 0, 0.35, 1) 260ms both;
+  }
+
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-flipping="false"] .flashcard-back :is(.flashcard-back-example, .flashcard-back-explanation) {
+    animation: ip-reveal 480ms cubic-bezier(0.16, 1, 0.3, 1) 340ms both;
+  }
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-translation,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-translation {
+  animation: none;
+}
+
+/* The study deck: two cards wait under the one in play and deal in with it (Aurora.dc.html 77-78,
+   Atelier.dc.html 64-65). Phones follow MobileReview, which draws no deck. */
+@media (min-width: 641px) {
+  :where(html:not([data-theme-family=crystal])) [data-study-card] .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])::before,
+  :where(html:not([data-theme-family=crystal])) [data-study-card] .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])::after,
+  :where(html:not([data-theme-family=crystal])) [data-study-card] .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])::before,
+  :where(html:not([data-theme-family=crystal])) [data-study-card] .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    border-radius: var(--flashcard-radius);
+    pointer-events: none;
+  }
+
+  :where(html:not([data-theme-family=crystal])) [data-study-card] .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])::before {
+    border: 1px solid rgb(255 255 255 / 0.06);
+    background: #0b1d26;
+    opacity: 0.5;
+    transform: translate3d(0, 55px, 0) scale(0.9);
+  }
+
+  :where(html:not([data-theme-family=crystal])) [data-study-card] .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])::after {
+    border: 1px solid rgb(255 255 255 / 0.07);
+    background: #0d212b;
+    opacity: 0.8;
+    transform: translate3d(0, 28px, 0) scale(0.95);
+  }
+
+  :where(html:not([data-theme-family=crystal])) [data-study-card] .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])::before {
+    background: #f4efe4;
+    box-shadow: 0 2px 6px rgb(60 40 20 / 0.12);
+    transform: rotate(-4.5deg) translate3d(-10px, 8px, 0);
+  }
+
+  :where(html:not([data-theme-family=crystal])) [data-study-card] .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])::after {
+    background: #f8f4ea;
+    box-shadow: 0 2px 6px rgb(60 40 20 / 0.1);
+    transform: rotate(2.5deg) translate3d(8px, 4px, 0);
+  }
+
+  /* The board draws the hover aura above the deck and below the card. */
+  :where(html:not([data-theme-family=crystal])) [data-study-card] .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-canvas-aura,
+  :where(html:not([data-theme-family=crystal])) [data-study-card] .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-canvas-aura {
+    z-index: 1;
+  }
+}
+
+/* Paper tier seal (Atelier.dc.html 101-102, 259-264): the gold foil turns with the pointer. */
+/* The board's seal is 66px content-box, so its rim draws outside that size (Atelier.dc.html 101). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-seal {
+  box-sizing: content-box;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="new"] .flashcard-face .flashcard-seal {
+  border: 1.5px dashed rgb(29 26 22 / 0.3);
+  background: transparent;
+  color: #6b6255;
+  box-shadow: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="learning"] .flashcard-face .flashcard-seal {
+  border: 1.5px solid #337344;
+  background: rgb(51 115 68 / 0.08);
+  color: #2c6a3d;
+  box-shadow: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="mastered"] .flashcard-face .flashcard-seal {
+  border: 1px solid #a8781f;
+  background: conic-gradient(from calc(200deg + (var(--card-pointer-x, 50) - 50) * 2deg), #f3d58a, #b8862b, #fff1c9, #c99a3c, #f7e2a6, #a8781f, #f3d58a);
+  color: #4a3208;
+  box-shadow: 0 2px 6px rgb(120 80 20 / 0.35), inset 0 1px 1px rgb(255 255 255 / 0.7);
+}
+
+/* The language card rims a mastered paper front in gold foil (LangCard.dc.html 423-424); Atelier's own
+   card marks the tier with its seal only. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-kind="language"][data-card-tier="mastered"] .flashcard-face:not(.zen-glass-slab) {
+  border: 2px solid transparent;
+}
+
+/* Atelier sets its example without quote marks (Atelier.dc.html 177). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-text > span[aria-hidden="true"] {
+  display: none;
+}
+
+/* Phones follow the Mobile review board (canvas/src/MobileReview.dc.html, 390 wide): a shorter image,
+   tighter body, a plain footer and a smaller back. Rules the board does not draw keep the seed values. */
+@media (max-width: 640px) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="new"] {
+    --flashcard-tier-rim: var(--sf-rim-new);
+    --flashcard-tier-shadow: 0 40px 80px -30px rgb(0 0 0 / 0.9);
+    --flashcard-back-shadow: 0 40px 80px -30px rgb(0 0 0 / 0.9);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="learning"] {
+    --flashcard-tier-shadow: 0 40px 80px -30px rgb(0 0 0 / 0.9), 0 0 50px -14px rgb(40 211 244 / 0.5);
+    --flashcard-back-shadow: 0 40px 80px -30px rgb(0 0 0 / 0.9), 0 0 50px -14px rgb(40 211 244 / 0.5);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="mastered"] {
+    --flashcard-tier-shadow: 0 40px 80px -30px rgb(0 0 0 / 0.9), 0 0 56px -12px rgb(245 174 57 / 0.55);
+    --flashcard-back-shadow: 0 40px 80px -30px rgb(0 0 0 / 0.9), 0 0 56px -12px rgb(245 174 57 / 0.55);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-tier="new"] .flashcard-panel.flashcard-back {
+    --flashcard-back-glow: rgb(40 211 244 / 0.2);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-panel.flashcard-face {
+    box-shadow: inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.06), 0 10px 20px -10px rgb(60 40 20 / 0.18), 0 50px 70px -40px rgb(60 40 20 / 0.45);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-panel.flashcard-back {
+    box-shadow: inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.06), 0 10px 20px -10px rgb(60 40 20 / 0.18), 0 50px 70px -40px rgb(60 40 20 / 0.45);
+  }
+
+  @media not (forced-colors: active) {
+    :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-panel.flashcard-back {
+      background:
+        radial-gradient(ellipse 90% 55% at 50% 8%, var(--flashcard-back-glow) 0%, transparent 70%) padding-box,
+        var(--flashcard-surface) padding-box,
+        var(--flashcard-tier-rim) border-box;
+    }
+
+    :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-panel.flashcard-back {
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 8%, rgb(180 70 26 / 0.22), transparent 70%) padding-box,
+        linear-gradient(var(--flashcard-ink), var(--flashcard-ink)) padding-box;
+    }
+  }
+
+  /* Front: image, corner buttons, body (MobileReview.dc.html 19-34). */
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-art {
+    height: calc(230 / 557 * 100%);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-art-image {
+    -webkit-mask-image: linear-gradient(to bottom, #000 42%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 42%, transparent 100%);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-art {
+    height: calc(230 / 560 * 100%);
+    margin: 12px 12px 0;
+    border-radius: 10px;
+    box-shadow: none;
+  }
+
+  /* The phone board shows the photo as it is, without the desktop card's inset ring and desaturation. */
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-art img {
+    filter: none;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="front"] [data-card-top-controls],
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] [data-card-top-controls] {
+    top: 12px;
+    right: 12px;
+    gap: 6px;
+  }
+
+  /* The board sets the front buttons 12px inside the image, which starts inside the card's 1px border. */
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="front"] [data-card-top-controls] {
+    top: 13px;
+    right: 13px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="front"] [data-card-top-controls] {
+    top: 24px;
+    right: 24px;
+    gap: 6px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="back"] [data-card-top-controls] {
+    top: 12px;
+    right: 12px;
+    gap: 6px;
+  }
+
+  /* MobileReview draws no chip; the app's keeps centring on the 44px corner buttons. */
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-category-chip {
+    top: 18px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="front"] .flashcard-chrome-button,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="front"] .flashcard-chrome-button:not([data-card-danger]):hover,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="front"] .flashcard-chrome-button,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="front"] .flashcard-chrome-button:not([data-card-danger]):hover {
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="front"] .flashcard-chrome-button,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"])[data-card-side="front"] .flashcard-chrome-button:not([data-card-danger]):hover {
+    box-shadow: none;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-body {
+    margin-top: 0;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-body-scroll,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-body-scroll {
+    padding: 6px 24px 0;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-meta {
+    font-size: 11px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-headword-word,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-headword-word {
+    margin-top: 4px;
+    font-size: 52px;
+    letter-spacing: -0.03em;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-pronunciation,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-pronunciation {
+    margin-top: 12px;
+    column-gap: 10px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-ipa {
+    color: #b5c2ca;
+    font-size: 14px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-ipa {
+    color: #3d372f;
+  }
+
+  /* The board's meta line is plain "Noun · New" in the secondary text colour, and the paper card plays the
+     word from the same ringed button as the dark one, in the light accent (MobileReview.dc.html 27-31). */
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-meta-tier,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-meta-tier {
+    color: inherit;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-meta-tier-dot,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-meta-tier-dot {
+    display: none;
+  }
+
+  /* No seal on the phone card, so the headword takes the full line. */
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-headword {
+    --headword-room: 0px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-meta {
+    margin-bottom: 0;
+    padding-right: 0;
+    color: #6b6255;
+    font-size: 11px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-ipa {
+    font-size: 14px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button:is(:hover, [data-playing="true"]) {
+    position: relative;
+    isolation: isolate;
+    margin: -2px;
+    border: 0;
+    background: none;
+    color: #97400d;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button::before {
+    position: absolute;
+    inset: 2px;
+    z-index: -1;
+    border: 1px solid rgb(151 64 13 / 0.25);
+    border-radius: 50%;
+    background: rgb(180 70 26 / 0.08);
+    content: "";
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button:is(:hover, [data-playing="true"]) {
+    color: #7ee6fa;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-play-button::before {
+    background: rgb(40 211 244 / 0.12);
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-definition,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-definition {
+    margin-top: 14px;
+    font-size: 14.5px;
+    line-height: 1.55;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-definition {
+    color: #b5c2ca;
+  }
+
+  /* The board's footer sits inside the body's 24px padding, so its rule stops short of the card edges;
+     its 56px height is content-box, 57px with the rule (MobileReview.dc.html 26 and 33). */
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal:hover,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal:hover {
+    gap: 10px;
+    width: calc(100% - 48px);
+    min-height: 57px;
+    margin-inline: 24px;
+    padding-inline: 0;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal:hover {
+    border-top: 1px solid rgb(255 255 255 / 0.08);
+    color: #e5ecf1;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face .flashcard-reveal:hover {
+    border-top: 1px solid rgb(29 26 22 / 0.1);
+    color: #1d1a16;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face :is(.flashcard-reveal-laser, .flashcard-reveal-rule, .flashcard-kbd),
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-face :is(.flashcard-reveal-laser, .flashcard-reveal-rule, .flashcard-kbd) {
+    display: none;
+  }
+
+  /* Back (MobileReview.dc.html 37-43). */
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-header,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-header {
+    min-height: 0;
+    padding: 36px 116px 0 26px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-language,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-language {
+    color: #99a7b0;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-language {
+    color: #b7ad9b;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-scroll,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-scroll {
+    padding: 12px 26px 22px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-translation,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-translation {
+    font-size: 46px;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-ink-rule,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-ink-rule {
+    display: block;
+    width: 90px;
+    height: 3px;
+    margin-top: 14px;
+    border-radius: 2px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-ink-rule {
+    background: #28d3f4;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example {
+    margin: 24px 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-text {
+    color: #e5ecf1;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-text,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-text {
+    font-size: 19px;
+    line-height: 1.45;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-text > span[aria-hidden="true"] {
+    display: none;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-word,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-word {
+    background: none;
+    font-weight: 400;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-word {
+    color: #7ee6fa;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-translation,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-translation {
+    margin-top: 6px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation {
+    margin-top: 18px;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation :is(p:not(.sr-only), li),
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation :is(p:not(.sr-only), li) {
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+
+  /* The phone back is set flush left at the display weight, the label on its default line height, the
+     example in regular italic and the explanation on the body edge (MobileReview.dc.html 38-43). */
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-meaning {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-source {
+    justify-content: flex-start;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-translation {
+    font-weight: 440;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-translation {
+    font-weight: 380;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-language,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-language {
+    line-height: normal;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-text,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-example-text {
+    font-weight: 400;
+  }
+
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"][data-card-mode="standard"]:not([data-card-kind="language"]) .flashcard-back .flashcard-back-explanation {
+    padding-inline: 0;
+  }
+}
+
 /* Phone layout and grade row: tighter radii/padding and four equal buttons without the glass tray. */
 @media (max-width: 560px) {
 :where(html[data-theme-family=crystal]) .review-grades {
@@ -2218,9 +3868,11 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
   }
 
   :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look] .review-grades-row {
-    gap: 8px;
+    max-width: none;
+    gap: 6px;
     padding: 0;
     border: 0;
+    border-radius: 0;
     background: none;
     box-shadow: none;
     -webkit-backdrop-filter: none;
@@ -2231,10 +3883,6 @@ html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-gra
     min-height: 64px;
     padding-inline: 4px;
     border-radius: 16px;
-  }
-
-  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="crystal"] .review-grade {
-    border-radius: 0;
   }
 
   :where(html:not([data-theme-family=crystal])) .review-grade-label,
@@ -3401,10 +5049,6 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   text-shadow: 0 0 28px color-mix(in srgb, var(--flashcard-accent) 55%, transparent);
 }
 
-:where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"][data-card-look="paper"] .flashcard-lang-word {
-  font-weight: 500;
-}
-
 .flashcard-face[data-card-look="paper"] .flashcard-lang-accent {
   color: var(--sf-brand);
   text-shadow: none;
@@ -3951,4 +5595,833 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 
 html[data-motion="reduced"] :is([data-reading-aid], .flashcard-lang-switch-knob) {
   transition: none;
+}
+
+/* ------------------------------------------------------------------------
+   Classic language-pack card from canvas/src/LangCard.dc.html: Midnight Aurora
+   in dark, Ink & Paper in light. The dark tiers share the Aurora tier blocks;
+   Crystal keeps the language rules above.
+   ------------------------------------------------------------------------ */
+
+/* The board card is 440 x 628 (LangCard.dc.html 12, 23); short windows keep the shared fit. */
+@media (min-height: 501px) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"],
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] {
+    max-width: 440px;
+    height: clamp(560px, 72dvh, 628px);
+  }
+}
+
+/* Paper tiers (LangCard.dc.html 406-409). Tier labels are text: the new label takes the subtle ink
+   and the mastered label the AA gold of --sf-tone-3, while the dots keep the board colours. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-tier="new"] {
+  --flashcard-tier-color: var(--sf-text-subtle);
+  --flashcard-tier-dot: var(--sf-text-mark);
+  --flashcard-aura-fill: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--sf-brand) 35%, transparent) 0%, color-mix(in srgb, var(--sf-reward) 20%, transparent) 45%, color-mix(in srgb, var(--sf-text-strong) 8%, transparent) 70%, transparent 86%);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-tier="learning"] {
+  --flashcard-tier-color: var(--sf-brand);
+  --flashcard-tier-dot: var(--sf-brand);
+  --flashcard-aura-fill: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--sf-brand) 40%, transparent) 0%, color-mix(in srgb, var(--sf-reward) 22%, transparent) 45%, color-mix(in srgb, var(--sf-text-strong) 8%, transparent) 70%, transparent 86%);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-tier="mastered"] {
+  --flashcard-tier-color: var(--sf-warn);
+  --flashcard-tier-dot: color-mix(in srgb, var(--sf-reward) 65%, var(--sf-warn));
+  --flashcard-aura-fill: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--sf-reward) 55%, transparent) 0%, color-mix(in srgb, var(--sf-brand) 25%, transparent) 45%, color-mix(in srgb, var(--sf-text-strong) 8%, transparent) 70%, transparent 86%);
+}
+
+/* Two deck cards behind the card instead of the hover halo (LangCard.dc.html 13-14, 420, 429). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"]::before,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"]::after,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"]::before,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"]::after {
+  position: absolute;
+  inset: 0;
+  z-index: auto;
+  border-radius: var(--flashcard-radius);
+  pointer-events: none;
+  content: "";
+  transition: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"]::before,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"]::before {
+  transform: translate3d(0, 44px, 0) scale(0.9);
+  opacity: 0.5;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"]::after,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"]::after {
+  z-index: 0;
+  transform: translate3d(0, 22px, 0) scale(0.95);
+  opacity: 0.8;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"]::before {
+  background: color-mix(in srgb, var(--sf-surface) 88%, var(--sf-umbra));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-flare) 6%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"]::after {
+  background: var(--sf-surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-flare) 6%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"]::before {
+  background: color-mix(in srgb, var(--sf-avatar-bg) 86%, var(--sf-gold-paper));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-text-strong) 6%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"]::after {
+  background: color-mix(in srgb, var(--sf-hero-text) 63%, var(--sf-on-brand));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-text-strong) 6%, transparent);
+}
+
+/* Hover aura over the deck (LangCard.dc.html 17, 495). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-canvas-aura,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-canvas-aura {
+  z-index: 1;
+  inset: -26px;
+  border-radius: 56px;
+  background: var(--flashcard-aura-fill);
+  filter: blur(30px);
+  opacity: 0;
+  transition: opacity 320ms ease-out;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"][data-card-hovered="true"] .flashcard-canvas-aura {
+  opacity: 0.42;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-hovered="true"] .flashcard-canvas-aura {
+  opacity: 0.3;
+}
+
+@media (max-width: 599px) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-canvas-aura,
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-canvas-aura {
+    inset: -26px 0;
+  }
+}
+
+/* Surfaces: no glass, no panel noise; paper lies flat under the board shadow (LangCard.dc.html 416-428). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-panel:is(.flashcard-face, .flashcard-back),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-panel:is(.flashcard-face, .flashcard-back) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-panel::after {
+  content: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-panel.flashcard-face {
+  box-shadow: inset 0 1px 0 var(--sf-flare), inset 0 0 0 1px color-mix(in srgb, var(--sf-text-strong) 6%, transparent), 0 10px 20px -10px color-mix(in srgb, var(--sf-shadow-tint) 18%, transparent), 0 50px 70px -40px color-mix(in srgb, var(--sf-shadow-tint) 45%, transparent);
+}
+
+/* The board front sets its own lines at the font's normal height. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-panel.flashcard-face,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-panel.flashcard-face {
+  line-height: normal;
+}
+
+/* Light layers on the front (LangCard.dc.html 174-178, 496-497). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-canvas-specular,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-canvas-specular {
+  z-index: 20;
+  background: linear-gradient(calc(150deg + (var(--card-pointer-x, 50) - 50) * 0.8deg), color-mix(in srgb, var(--sf-flare) 10%, transparent) 0%, transparent 28%);
+  opacity: 0.6;
+  box-shadow: none;
+  mix-blend-mode: normal;
+  transition: opacity 300ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-canvas-specular {
+  background: linear-gradient(calc(150deg + (var(--card-pointer-x, 50) - 50) * 0.8deg), color-mix(in srgb, var(--sf-flare) 55%, transparent) 0%, transparent 28%);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"][data-card-hovered="true"] .flashcard-face .flashcard-canvas-specular,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-hovered="true"] .flashcard-face .flashcard-canvas-specular {
+  opacity: 1;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face [data-card-effect="spotlight"] {
+  --flashcard-spotlight: radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), color-mix(in srgb, var(--sf-brand) 14%, transparent) 0%, transparent 55%);
+  z-index: 22;
+  mix-blend-mode: normal;
+  transition: opacity 200ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face [data-card-effect="spotlight"] {
+  --flashcard-spotlight: radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), color-mix(in srgb, var(--sf-brand) 7%, transparent) 0%, transparent 55%);
+  z-index: 22;
+  mix-blend-mode: normal;
+  transition: opacity 200ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-holo,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-holo {
+  opacity: 0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"][data-card-tier="mastered"] .flashcard-face .flashcard-holo,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-tier="mastered"] .flashcard-face .flashcard-holo {
+  position: absolute;
+  inset: 0;
+  z-index: 23;
+  display: block;
+  pointer-events: none;
+  background: var(--flashcard-holo-foil);
+  background-position: var(--spotlight-x, 50%) var(--spotlight-y, 50%);
+  background-size: 300% 300%;
+  mix-blend-mode: color-dodge;
+  opacity: 0.22;
+  transition: opacity 300ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-tier="mastered"] .flashcard-face .flashcard-holo {
+  mix-blend-mode: soft-light;
+  opacity: 0.14;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"][data-card-tier="mastered"][data-card-hovered="true"] .flashcard-face .flashcard-holo {
+  opacity: 0.5;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-tier="mastered"][data-card-hovered="true"] .flashcard-face .flashcard-holo {
+  opacity: 0.35;
+}
+
+/* Watermark ink (LangCard.dc.html 24, 435, 439). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-art-glyph {
+  color: color-mix(in srgb, var(--sf-flare) 3.5%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-art-glyph {
+  color: color-mix(in srgb, var(--sf-text-strong) 4.5%, transparent);
+}
+
+/* Top row: the level chip, then blind and star 20px in from the edge (LangCard.dc.html 26-34). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-art[data-card-art-kind="glyph"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-art[data-card-art-kind="glyph"] {
+  height: 64px;
+  min-height: 0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-art[data-card-art-kind="glyph"] .flashcard-category-chip,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-art[data-card-art-kind="glyph"] .flashcard-category-chip {
+  position: relative;
+  top: auto;
+  left: auto;
+  gap: 7px;
+  height: 30px;
+  min-height: 0;
+  margin: 27px 0 0 26px;
+  padding: 0 11px;
+  border: 1px solid color-mix(in srgb, var(--sf-flare) 10%, transparent);
+  background: color-mix(in srgb, var(--sf-flare) 4%, transparent);
+  color: var(--sf-text-strong);
+  font-size: 12px;
+  font-weight: 650;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-art[data-card-art-kind="glyph"] .flashcard-category-chip {
+  border-color: color-mix(in srgb, var(--sf-text-strong) 12%, transparent);
+  background: color-mix(in srgb, var(--sf-hero-text) 34%, var(--sf-on-brand));
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-category-chip > span[aria-hidden="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-category-chip > span[aria-hidden="true"] {
+  background: var(--flashcard-tier-dot, var(--flashcard-tier-color));
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-category-chip > span[aria-hidden="true"] {
+  box-shadow: 0 0 10px var(--flashcard-tier-dot, var(--flashcard-tier-color));
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] [data-card-top-controls] {
+  top: 21.5px;
+  right: 21.5px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] [data-card-top-controls] {
+  top: 20px;
+  right: 20px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"][data-card-side="front"] .flashcard-chrome-button,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"][data-card-side="front"] .flashcard-chrome-button:not([data-card-danger]):hover {
+  border: 1px solid color-mix(in srgb, var(--sf-flare) 10%, transparent);
+  background: color-mix(in srgb, var(--sf-flare) 4%, transparent);
+  color: var(--sf-text-strong);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"][data-card-side="back"] .flashcard-chrome-button,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"][data-card-side="back"] .flashcard-chrome-button:not([data-card-danger]):hover {
+  border: 1px solid color-mix(in srgb, var(--sf-flare) 9%, transparent);
+  background: color-mix(in srgb, var(--sf-flare) 4%, transparent);
+  color: var(--sf-text-strong);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-side="front"] .flashcard-chrome-button,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-side="front"] .flashcard-chrome-button:not([data-card-danger]):hover {
+  border: 1px solid color-mix(in srgb, var(--sf-text-strong) 12%, transparent);
+  background: color-mix(in srgb, var(--sf-hero-text) 34%, var(--sf-on-brand));
+  color: var(--sf-text-strong);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-side="back"] .flashcard-chrome-button,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-side="back"] .flashcard-chrome-button:not([data-card-danger]):hover {
+  border: 1px solid color-mix(in srgb, var(--flashcard-ink-body) 14%, transparent);
+  background: color-mix(in srgb, var(--flashcard-ink-body) 6%, transparent);
+  color: var(--flashcard-ink-text);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-chrome-button[data-selected="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-chrome-button[data-selected="true"]:hover {
+  border-color: var(--sf-brand);
+  background: var(--sf-brand);
+  color: var(--sf-on-brand);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-chrome-button[data-selected="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-chrome-button[data-selected="true"]:hover {
+  border-color: var(--sf-brand);
+  background: var(--sf-brand);
+  color: var(--sf-surface);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-chrome-button.flashcard-reward-button[data-selected="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-chrome-button.flashcard-reward-button[data-selected="true"]:hover {
+  border-color: color-mix(in oklab, var(--sf-reward) 29%, var(--sf-gold-ink));
+  background: var(--sf-reward);
+  color: color-mix(in oklab, var(--sf-reward) 25%, var(--sf-umbra));
+  box-shadow: 0 0 22px -2px color-mix(in srgb, var(--sf-reward) 70%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-side="front"] .flashcard-chrome-button.flashcard-reward-button[data-selected="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-side="front"] .flashcard-chrome-button.flashcard-reward-button[data-selected="true"]:hover {
+  border-color: var(--sf-text-strong);
+  background: var(--sf-text-strong);
+  color: color-mix(in srgb, var(--sf-surface) 20%, var(--flashcard-ink-warm));
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-side="back"] .flashcard-chrome-button.flashcard-reward-button[data-selected="true"],
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"][data-card-side="back"] .flashcard-chrome-button.flashcard-reward-button[data-selected="true"]:hover {
+  border-color: var(--flashcard-ink-warm);
+  background: var(--flashcard-ink-warm);
+  color: color-mix(in srgb, var(--sf-warn) 22%, var(--sf-umbra));
+}
+
+/* Delete and edit are app-only controls; delete keeps its danger fill on hover. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-chrome-button[data-card-danger]:hover,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-chrome-button[data-card-danger]:hover {
+  border-color: var(--sf-danger);
+  background: var(--sf-danger);
+  color: var(--sf-on-brand);
+}
+
+/* The board's icon buttons (blind, star, listen) grow on hover in both looks (canvas/shared.css 28-29). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-chrome-button:not([data-card-danger]),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-chrome-button:not([data-card-danger]),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-headword .flashcard-play-button,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-headword .flashcard-play-button {
+  transform: none;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-chrome-button:not([data-card-danger]):hover,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-chrome-button:not([data-card-danger]):hover,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-headword .flashcard-play-button:hover,
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-headword .flashcard-play-button:hover {
+    transform: scale(1.06);
+  }
+}
+
+/* Meta row: part of speech, a text3 dot, the tier in its colour (LangCard.dc.html 37-41). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-meta,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-meta {
+  gap: 10px;
+  margin-top: 18px;
+  margin-bottom: 0;
+  font-weight: 550;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-meta-dot {
+  background: var(--sf-text-mark);
+  opacity: 1;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-meta-dot {
+  background: var(--sf-text-mark);
+  opacity: 1;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-meta-tier-dot,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-meta-tier-dot {
+  display: none;
+}
+
+/* Board ink: the front's words and controls are set in the head colour (LangCard.dc.html 433). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face :is(.flashcard-lang-word, .flashcard-lang-mora, .flashcard-lang-block-text, .flashcard-lang-example-text, .flashcard-lang-phrase, .flashcard-reveal) {
+  color: var(--sf-text-strong);
+}
+
+/* Reading row: listen in the accent, morae at the font's normal height (LangCard.dc.html 61, 96). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-headword .flashcard-play-button {
+  border-color: color-mix(in srgb, var(--sf-brand) 35%, transparent);
+  background: color-mix(in srgb, var(--sf-brand) 8%, transparent);
+  color: var(--sf-brand);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-headword .flashcard-play-button {
+  border-color: color-mix(in srgb, var(--sf-brand-hover) 30%, transparent);
+  background: transparent;
+  color: var(--sf-brand);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face :is(.flashcard-lang-romaji, .flashcard-lang-block-roman) {
+  color: var(--sf-brand);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-mora,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-mora {
+  line-height: normal;
+}
+
+/* The reading row is as tall as its tallest item; Hangul blocks and tone keys are the card's chips (LangCard.dc.html 84-112). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-reading,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-reading {
+  min-height: 0;
+}
+
+/* The board shows "due" only on the back; the app's front status chips keep their 24px pill but take no more
+   height than the 16px meta line, so a due card's headword stays where the board puts it. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-meta .flashcard-status-chip,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-meta .flashcard-status-chip {
+  margin-block: -4px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face :is(.flashcard-lang-block, .flashcard-lang-tone) {
+  border-color: color-mix(in srgb, var(--sf-flare) 10%, transparent);
+  background: color-mix(in srgb, var(--sf-flare) 4%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face :is(.flashcard-lang-block, .flashcard-lang-tone) {
+  background: color-mix(in srgb, var(--sf-hero-text) 34%, var(--sf-on-brand));
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face :is(.flashcard-lang-block-text, .flashcard-lang-block-roman),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face :is(.flashcard-lang-block-text, .flashcard-lang-block-roman) {
+  line-height: normal;
+}
+
+/* Example and phrases (LangCard.dc.html 127-152, 435, 439). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-example {
+  border-color: color-mix(in srgb, var(--sf-flare) 7%, transparent);
+  background: color-mix(in srgb, var(--sf-flare) 3%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-example {
+  border-color: color-mix(in srgb, var(--sf-text-strong) 8%, transparent);
+  background: color-mix(in srgb, var(--sf-text-strong) 3%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-example-rt,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-example-rt {
+  font-weight: inherit;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-phrase,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-phrase {
+  /* The board's 30px chip is content-box: 32px with its dashed border. */
+  min-height: 32px;
+}
+
+/* Bottom row sits on the card's foot (LangCard.dc.html 155-167). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-actions,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-actions {
+  margin-top: auto;
+  padding: 0 0 16px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-actions .flashcard-action:not([aria-pressed="true"]) {
+  border-color: color-mix(in srgb, var(--sf-flare) 10%, transparent);
+  background: color-mix(in srgb, var(--sf-flare) 4%, transparent);
+  color: var(--sf-text-strong);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-actions .flashcard-action:not([aria-pressed="true"]) {
+  border-color: color-mix(in srgb, var(--sf-text-strong) 12%, transparent);
+  background: color-mix(in srgb, var(--sf-hero-text) 34%, var(--sf-on-brand));
+  color: var(--sf-text-strong);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-actions .flashcard-lang-switch:not([aria-pressed="true"]),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-actions .flashcard-lang-switch:not([aria-pressed="true"]) {
+  color: var(--sf-text-muted);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-actions .flashcard-lang-switch[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--sf-brand-hover) 30%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-lang-speech-locale,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-lang-speech-locale {
+  font-weight: 600;
+}
+
+/* The board's text3 labels miss AA on the card; they take the nearest passing ink. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face :is(.flashcard-lang-label, .flashcard-lang-speech-locale),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face :is(.flashcard-lang-label, .flashcard-lang-speech-locale) {
+  color: var(--sf-text-subtle);
+}
+
+/* Reveal footer (LangCard.dc.html 170-174, 423, 429). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-reveal,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-reveal:hover {
+  z-index: 3;
+  gap: 10px;
+  min-height: 58px;
+  border-top: 1px solid color-mix(in srgb, var(--sf-flare) 7%, transparent);
+  background: color-mix(in srgb, var(--sf-flare) 2%, transparent);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-reveal,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-reveal:hover {
+  z-index: 3;
+  gap: 10px;
+  min-height: 58px;
+  border-top: 1px dashed color-mix(in srgb, var(--sf-text-strong) 18%, transparent);
+  background: transparent;
+  color: var(--sf-text-strong);
+  font-family: var(--sf-font-display);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 600;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-reveal-laser,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-reveal:hover .flashcard-reveal-laser {
+  right: 26%;
+  left: 26%;
+  background: linear-gradient(90deg, transparent, var(--sf-brand) 20%, var(--sf-second) 80%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--sf-brand) 80%, transparent);
+  transition: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-theme-family=crystal]):not([data-motion="reduced"])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-reveal-laser {
+    animation: au-laser 2.4s ease-in-out infinite;
+  }
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-face .flashcard-kbd,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-kbd {
+  /* The board's 22px key is content-box: 24px with its border. */
+  height: 24px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--sf-flare) 10%, transparent);
+  color: var(--sf-text-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-face .flashcard-kbd {
+  border-color: color-mix(in srgb, var(--sf-text-strong) 12%, transparent);
+}
+
+/* Back (LangCard.dc.html 186-255): a centred meaning over the source row, the example, the tools and a plain
+   turn-back bar; dark keeps the Aurora tier back, light is the ink back. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-panel.flashcard-back {
+  box-shadow: var(--flashcard-back-shadow);
+  color: var(--sf-text-body);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-panel.flashcard-back {
+  color: var(--flashcard-ink-body);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back :is(.flashcard-canvas-specular, .flashcard-holo, .flashcard-back-ink-rule),
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back :is(.flashcard-canvas-specular, .flashcard-holo, .flashcard-back-ink-rule) {
+  display: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back [data-card-effect="spotlight"] {
+  --flashcard-spotlight: radial-gradient(circle at calc(100% - var(--spotlight-x, 50%)) var(--spotlight-y, 50%), color-mix(in srgb, var(--sf-brand) 10%, transparent) 0%, transparent 55%);
+  z-index: 22;
+  mix-blend-mode: normal;
+  transition: opacity 200ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back [data-card-effect="spotlight"] {
+  --flashcard-spotlight: radial-gradient(circle at calc(100% - var(--spotlight-x, 50%)) var(--spotlight-y, 50%), color-mix(in srgb, var(--flashcard-ink-accent) 10%, transparent) 0%, transparent 55%);
+  z-index: 22;
+  mix-blend-mode: normal;
+  transition: opacity 200ms ease;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-header,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-header {
+  gap: 10px;
+  padding: 20px 128px 0 28px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-language,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-language {
+  gap: 8px;
+  color: var(--sf-text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 550;
+  letter-spacing: 0.08em;
+  line-height: normal;
+  text-transform: uppercase;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-language {
+  color: var(--flashcard-ink-muted);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-language-dot {
+  background: var(--sf-brand);
+  box-shadow: 0 0 10px var(--sf-brand);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-language-dot {
+  background: var(--flashcard-ink-accent);
+  box-shadow: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-due,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-due {
+  /* The board's 26px chip is content-box: 28px with its border. */
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--sf-reward) 30%, transparent);
+  background: color-mix(in srgb, var(--sf-reward) 12%, transparent);
+  color: var(--sf-reward);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-due {
+  border-color: color-mix(in srgb, var(--flashcard-ink-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--flashcard-ink-accent) 14%, transparent);
+  color: var(--flashcard-ink-due);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-scroll,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-scroll {
+  padding: 12px 30px 18px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-meaning,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-meaning {
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  min-height: 0;
+  padding: 0;
+  text-align: center;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-translation,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-translation {
+  background: none;
+  color: var(--sf-text-strong);
+  font-size: clamp(34px, calc(50 / 378 * 100cqi), 50px);
+  font-weight: 420;
+  letter-spacing: -0.02em;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-translation {
+  color: var(--flashcard-ink-text);
+  font-weight: 360;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-source,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-source {
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  color: var(--sf-text-muted);
+  font-size: 14px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-source {
+  color: var(--flashcard-ink-muted);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-word,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-word {
+  color: var(--sf-text-strong);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-word {
+  color: var(--flashcard-ink-text);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-reading,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-reading {
+  font-size: 13px;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-play::before {
+  border-color: color-mix(in srgb, var(--sf-brand) 35%, transparent);
+  background: color-mix(in srgb, var(--sf-flare) 4%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-play {
+  color: var(--flashcard-ink-accent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-play::before {
+  border-color: color-mix(in srgb, var(--flashcard-ink-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--flashcard-ink-body) 6%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-play:is(:hover, [data-playing="true"])::before {
+  background: color-mix(in srgb, var(--flashcard-ink-accent) 14%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-example,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-example {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--sf-flare) 7%, transparent);
+  background: color-mix(in srgb, var(--sf-flare) 3.5%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-example {
+  border-color: color-mix(in srgb, var(--flashcard-ink-body) 10%, transparent);
+  border-radius: var(--sf-panel-radius);
+  background: color-mix(in srgb, var(--flashcard-ink-body) 5%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-example-text,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-example-text {
+  color: var(--sf-text-strong);
+  font-size: 18px;
+  font-weight: 400;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-example-text {
+  color: var(--flashcard-ink-text);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-example-word {
+  color: var(--sf-brand);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-example-word {
+  background: linear-gradient(transparent 62%, color-mix(in srgb, var(--flashcard-ink-accent) 20%, transparent) 62%);
+  color: var(--flashcard-ink-due);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-lang-example-rt,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-lang-example-rt {
+  font-weight: inherit;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-example-translation,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-example-translation {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* The app's explanation takes the place and type of the board's note line. */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-explanation,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-explanation {
+  margin-top: 12px;
+  color: inherit;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+/* The tools sit on the foot of the body (LangCard.dc.html 236). */
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-tools,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-tools {
+  margin-top: auto;
+  padding-top: 0;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-hook-button {
+  border-color: color-mix(in srgb, var(--flashcard-ink-warm) 30%, transparent);
+  background: color-mix(in srgb, var(--flashcard-ink-warm) 8%, transparent);
+  color: var(--flashcard-ink-warm);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-hook-button:hover {
+  background: color-mix(in srgb, var(--flashcard-ink-warm) 14%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-tutor {
+  border-color: color-mix(in srgb, var(--flashcard-ink-second) 30%, transparent);
+  background: color-mix(in srgb, var(--flashcard-ink-second) 8%, transparent);
+  color: var(--flashcard-ink-second);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-tutor:hover {
+  background: color-mix(in srgb, var(--flashcard-ink-second) 14%, transparent);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-tutor .flashcard-back-tutor-icon {
+  color: var(--flashcard-ink-second);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-return,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-return:hover {
+  gap: 8px;
+  min-height: 54px;
+  border-top: 1px solid color-mix(in srgb, var(--sf-flare) 7%, transparent);
+  background: transparent;
+  color: var(--sf-text-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="aurora"][data-card-mode="standard"] .flashcard-back .flashcard-back-return .flashcard-reveal-laser {
+  display: none;
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-return,
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-kind="language"][data-card-look="paper"][data-card-mode="standard"] .flashcard-back .flashcard-back-return:hover {
+  gap: 8px;
+  min-height: 54px;
+  border-top: 1px dashed color-mix(in srgb, var(--flashcard-ink-body) 16%, transparent);
+  background: transparent;
+  color: var(--flashcard-ink-muted);
+  font-family: var(--sf-font-display);
+  font-size: 13.5px;
+  font-style: italic;
+  font-weight: 600;
 }

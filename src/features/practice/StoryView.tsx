@@ -278,7 +278,7 @@ export function StoryView({ story, loading, error = null, onGenerate, onClose, o
   };
 
   const popover = (card: CardData) => (
-    <span id={POPOVER_ID} role="dialog" aria-label={card.word} data-story-pop className="practice-story__pop crystal-chamfer">
+    <span id={POPOVER_ID} role="dialog" aria-label={card.word} data-story-pop className="practice-story__pop sf-pop crystal-chamfer">
       <span aria-hidden="true" className="practice-story__caret" />
       <StoryGloss
         card={card}
@@ -359,7 +359,7 @@ export function StoryView({ story, loading, error = null, onGenerate, onClose, o
               type="button"
               onClick={toggleStoryAudio}
               aria-pressed={playing === "story"}
-              className="practice-topbar__action crystal-chamfer-sm min-h-11 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              className="practice-topbar__action sf-press crystal-chamfer-sm min-h-11 min-[641px]:[html:not([data-theme-family=crystal])_&]:min-h-[42px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
               data-variant="accent"
             >
               {playing === "story" ? <Square size={12} fill="currentColor" aria-hidden="true" /> : <Play size={crystal ? 13 : 12} fill="currentColor" aria-hidden="true" />}
@@ -370,7 +370,7 @@ export function StoryView({ story, loading, error = null, onGenerate, onClose, o
             <button
               type="button"
               onClick={handleGenerate}
-              className="practice-topbar__action crystal-chamfer-sm min-h-11 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+              className="practice-topbar__action sf-press crystal-chamfer-sm min-h-11 min-[641px]:[html:not([data-theme-family=crystal])_&]:min-h-[42px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
             >
               <RefreshCw size={15} aria-hidden="true" />
               <span className="practice-topbar__action-label">
@@ -569,7 +569,7 @@ export function StoryView({ story, loading, error = null, onGenerate, onClose, o
                     type="button"
                     data-color-role="primary"
                     onClick={() => reviewCards([...cards])}
-                    className="practice-primary crystal-chamfer min-h-12 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+                    className="practice-primary sf-press crystal-chamfer min-h-12 [html:not([data-theme-family=crystal])_&]:min-h-[46px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
                   >
                     {crystal && (
                       <>

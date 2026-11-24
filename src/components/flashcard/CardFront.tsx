@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { CheckCircle2, EyeOff, FolderOpen, FolderX, Mic, Sparkles, Volume2, X } from 'lucide-react';
-import type { Dispatch, MouseEvent, PointerEvent, ReactNode, RefObject, SetStateAction } from 'react';
+import { useSyncExternalStore, type Dispatch, type MouseEvent, type PointerEvent, type ReactNode, type RefObject, type SetStateAction } from 'react';
 import { speechLocaleFor } from '../../lib/speechLocale';
 import { localizeSpeechMessage } from './localizeSpeechMessage';
 import { isCardDue } from '../../lib/srs';
@@ -17,6 +17,17 @@ import { useCardLook } from './cardLook';
 import { cardEndonym, LanguageCardExample, LanguageCardHeadword, LanguageCardPhrases, LanguageReadingSwitch, useLanguageCardReading } from './LanguageCardFace';
 
 export type CardTier = 'new' | 'learning' | 'mastered';
+
+/* Phones draw the paper card from the Mobile review board, which sets the same body as the dark card. */
+const PHONE_QUERY = '(max-width: 640px)';
+function subscribePhone(onChange: () => void) {
+  const query = globalThis.matchMedia?.(PHONE_QUERY);
+  query?.addEventListener('change', onChange);
+  return () => query?.removeEventListener('change', onChange);
+}
+function useIsPhone() {
+  return useSyncExternalStore(subscribePhone, () => Boolean(globalThis.matchMedia?.(PHONE_QUERY).matches), () => false);
+}
 
 interface CardFrontProps {
   isZenMode: boolean;
@@ -63,6 +74,9 @@ export function CardFront({
 }: CardFrontProps) {
   const { _, i18n } = useLingui();
   const look = useCardLook();
+  const isPhone = useIsPhone();
+  // The Atelier seal, figure caption, rule, numbered sense and Listen pill belong to the desktop paper card.
+  const paperDesk = look === 'paper' && !isPhone;
   const reading = useLanguageCardReading(data);
   if (isZenMode) return <ZenCardFront
     tier={tier}
@@ -178,7 +192,7 @@ export function CardFront({
           </div>
         )}
       </div>
-      {look === 'paper' && supportedImageUrl && data.category && (
+      {paperDesk && supportedImageUrl && data.category && (
         <div className="flashcard-fig-caption">
           <span aria-hidden="true">{`${_(msg({ id: 'flashcard.figure-caption', message: 'fig.' }))} — `}</span>
           <span lang={language} className="min-w-0 break-words [overflow-wrap:anywhere]">{data.category}</span>
@@ -187,13 +201,13 @@ export function CardFront({
 
       <div className="flashcard-body relative z-20 flex min-h-0 flex-1 flex-col">
         <div className="flashcard-body-scroll flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain scrollbar-thin">
-          {look === 'paper' && !isPackCard && (
+          {paperDesk && !isPackCard && (
             <div data-card-seal className="flashcard-seal">
               <span className="flashcard-seal-glyph" aria-hidden="true">{tier === 'new' ? '·' : tier === 'learning' ? '½' : '✦'}</span>
               <span data-card-tier-label><CardTierStatus tier={tier} /></span>
             </div>
           )}
-          {(look === 'aurora' || (look === 'paper' && isPackCard)) && (
+          {(look === 'aurora' || (look === 'paper' && (isPackCard || isPhone))) && (
             <div data-card-metadata className="flashcard-meta">
               {partOfSpeech && <><span lang={language}>{partOfSpeech}</span><span className="flashcard-meta-dot" aria-hidden="true" /></>}
               <span className="flashcard-meta-tier"><span className="flashcard-meta-tier-dot" aria-hidden="true" /><span data-card-tier-label><CardTierStatus tier={tier} /></span></span>
@@ -209,15 +223,15 @@ export function CardFront({
               {statusChips}
             </div>
           )}
-          {look === 'paper' && !isPackCard && (isDue || data.difficulty === 'hard') && <div data-card-metadata className="flashcard-meta">{statusChips}</div>}
+          {paperDesk && !isPackCard && (isDue || data.difficulty === 'hard') && <div data-card-metadata className="flashcard-meta">{statusChips}</div>}
 
           {isPackCard
             ? <LanguageCardHeadword card={data} reading={reading} showReading={showReading} isBlindMode={isBlindMode} onPlayAudio={playAudio} isPlayingAudio={isPlayingAudio} />
             : <CardHeadword
               card={data}
-              onPlayAudio={look === 'paper' ? undefined : playAudio}
+              onPlayAudio={paperDesk ? undefined : playAudio}
               isPlayingAudio={isPlayingAudio}
-              leading={look === 'paper' && partOfSpeech ? <span lang={language} className="flashcard-pos">{partOfSpeech}</span> : undefined}
+              leading={paperDesk && partOfSpeech ? <span lang={language} className="flashcard-pos">{partOfSpeech}</span> : undefined}
             />}
 
           {isRecording && <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[var(--sf-danger)]"><span className="size-2 rounded-full bg-[var(--sf-danger)] animate-pulse motion-reduce:animate-none" /><Trans {...msg({ context: 'flashcard.audio.listening', message: 'Listening' })} /></div>}
@@ -231,9 +245,9 @@ export function CardFront({
             </>
           ) : (
             <>
-              {look === 'paper' && <div className="flashcard-rule" aria-hidden="true" />}
+              {paperDesk && <div className="flashcard-rule" aria-hidden="true" />}
               <div className="flashcard-definition relative text-left">
-                {look === 'paper' && <span className="flashcard-definition-number" aria-hidden="true">1</span>}
+                {paperDesk && <span className="flashcard-definition-number" aria-hidden="true">1</span>}
                 <p lang={language} aria-hidden={isBlindMode} className={`min-w-0 break-words [overflow-wrap:anywhere] transition-[filter,opacity] ${isBlindMode ? 'select-none blur-md opacity-35' : ''}`}>{data.explanation}</p>
                 {isBlindMode && <div className="pointer-events-none absolute inset-0 flex items-center justify-start"><span className="text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'flashcard.definition.hidden', message: 'Definition hidden' })} /></span></div>}
               </div>
@@ -273,7 +287,7 @@ export function CardFront({
             </div>
           ) : (
           <div data-card-actions className="flashcard-actions mt-auto flex flex-wrap items-center gap-1.5">
-            {look === 'paper' && (
+            {paperDesk && (
               <button
                 type="button"
                 data-card-control
@@ -323,7 +337,10 @@ export function CardFront({
               className="flashcard-action touch-manipulation flex min-h-11 items-center gap-[7px]"
               title={_(msg({ id: 'flashcard.quiz.title', message: 'Quick self-test quiz before revealing definition' }))}
             >
-              <Sparkles size={15} className="flashcard-action-quiz-icon text-[var(--sf-second)]" aria-hidden="true" />
+              {look === 'crystal'
+                ? <Sparkles size={15} className="flashcard-action-quiz-icon text-[var(--sf-second)]" aria-hidden="true" />
+                // Aurora draws Quiz me with a stroked four-point star (Aurora.dc.html 141).
+                : <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" className="flashcard-action-quiz-icon text-[var(--sf-second)]" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /></svg>}
               <span className="flashcard-action-label"><Trans {...msg({ context: 'flashcard.quiz-me', message: 'Quiz me' })} /></span>
             </button>
             {toolsMenu('ml-auto', null)}

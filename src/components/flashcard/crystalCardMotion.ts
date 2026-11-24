@@ -55,29 +55,54 @@ function timeAtProgress(ease: EaseFunction, target: number) {
 }
 
 const flipEase = cubicBezier(0.2, 0.8, 0.2, 1);
-const flipDurationSeconds = 0.64;
 const halfTurnTime = timeAtProgress(flipEase, 0.5);
 
-export const crystalFlipMotion = {
-  /** Total duration of the board's rotor transition. */
-  durationSeconds: flipDurationSeconds,
-  /** The leaving face turns 0 → 90deg over the first part of the curve. */
-  out: {
-    durationSeconds: flipDurationSeconds * halfTurnTime,
-    ease: ((progress: number) => flipEase(progress * halfTurnTime) / 0.5) as EaseFunction,
-  },
-  /** The arriving face turns -90 → 0deg over the rest of the curve. */
-  in: {
-    durationSeconds: flipDurationSeconds * (1 - halfTurnTime),
-    ease: ((progress: number) => (flipEase(halfTurnTime + progress * (1 - halfTurnTime)) - 0.5) / 0.5) as EaseFunction,
-  },
-  /** Reduced motion replaces the turn with a short crossfade. */
-  reducedCrossfadeSeconds: 0.12,
-} as const;
+/**
+ * One board turn of the given length on cubic-bezier(.2, .8, .2, 1), split where it crosses 90deg.
+ * Every design board turns its card on this curve; only the duration differs.
+ */
+export function boardFlipMotion(durationSeconds: number) {
+  return {
+    /** Total duration of the board's rotor transition. */
+    durationSeconds,
+    /** The leaving face turns 0 → 90deg over the first part of the curve. */
+    out: {
+      durationSeconds: durationSeconds * halfTurnTime,
+      ease: ((progress: number) => flipEase(progress * halfTurnTime) / 0.5) as EaseFunction,
+    },
+    /** The arriving face turns -90 → 0deg over the rest of the curve. */
+    in: {
+      durationSeconds: durationSeconds * (1 - halfTurnTime),
+      ease: ((progress: number) => (flipEase(halfTurnTime + progress * (1 - halfTurnTime)) - 0.5) / 0.5) as EaseFunction,
+    },
+    /** Reduced motion replaces the turn with a short crossfade. */
+    reducedCrossfadeSeconds: 0.12,
+  } as const;
+}
+
+export type BoardFlipMotion = ReturnType<typeof boardFlipMotion>;
+
+export const crystalFlipMotion = boardFlipMotion(0.64);
 
 /** Hover tilt: rotateX/rotateY up to 5deg toward the pointer over 280 ms. */
 export const crystalTiltMotion = {
   maxDegrees: 5,
   durationSeconds: 0.28,
   ease: cubicBezier(0.22, 1, 0.36, 1),
+} as const;
+
+/**
+ * Classic card motion from the seed boards: Midnight Aurora turns in 640 ms and tilts up to 4deg,
+ * Ink & Paper turns in 660 ms and tilts up to 3.5deg; both settle the tilt over 280 ms on
+ * cubic-bezier(.22, 1, .36, 1).
+ */
+export const classicCardMotion = {
+  aurora: {
+    flip: boardFlipMotion(0.64),
+    tilt: { maxDegrees: 4, durationSeconds: 0.28, ease: cubicBezier(0.22, 1, 0.36, 1) },
+  },
+  paper: {
+    flip: boardFlipMotion(0.66),
+    tilt: { maxDegrees: 3.5, durationSeconds: 0.28, ease: cubicBezier(0.22, 1, 0.36, 1) },
+  },
 } as const;

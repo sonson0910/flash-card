@@ -1,7 +1,7 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
 import { Moon, Sun, X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Lumi, type LumiPose } from '../../components/lumi/Lumi';
 import { readLumiEnabled } from '../settings/lumi-preference';
 import { useTheme } from '../theme/ThemeProvider';
@@ -70,7 +70,7 @@ export function PracticeTopBar({
           onClick={onClose}
           disabled={closeDisabled}
           aria-label={closeAriaLabel}
-          className="practice-topbar__close crystal-chamfer-sm min-h-11 min-w-11 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
+          className="practice-topbar__close crystal-chamfer-sm min-h-11 min-w-11 max-[641px]:[html:not([data-theme-family=crystal])_&]:min-h-10 max-[641px]:[html:not([data-theme-family=crystal])_&]:min-w-10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none"
         >
           <X size={18} aria-hidden="true" />
           <span className="sr-only">{closeLabel}</span>
@@ -94,6 +94,7 @@ export function PracticeTopBar({
           aria-valuemin={0}
           aria-valuemax={segments.length}
           aria-valuenow={progressValue ?? 0}
+          style={{ '--pr-run': `${segments.length > 0 ? Math.min(100, ((progressValue ?? 0) / segments.length) * 100) : 0}%` } as CSSProperties}
         >
           {segments.map((state, index) => (
             <i key={index} data-state={state} data-complete={state === 'correct' || state === 'wrong' || state === 'done' ? 'true' : undefined} />

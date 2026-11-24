@@ -188,6 +188,50 @@
 .practice-recap-primary:hover, .practice-recap-secondary:hover { filter: brightness(1.05); }
 .practice-recap-primary:active, .practice-recap-secondary:active { transform: scale(.98); }
 
+/* RecapScreen.dc.html values the shared rules above do not carry. The board's root ink is t.text, its close link
+   and its pill and streak spans are content-box (border outside the 44/32/24px box), the card word sits on a 1.0
+   line box, the result values have no gap ("83%", "+120 XP" with a word space, the streak chip 10px off), the recall
+   bar shows the tile surface between its parts, and the labels use normal line boxes (lines 15, 23, 42-47, 53-66). */
+html:not([data-theme-family=crystal]) .practice-recap-board { color: var(--sf-text); }
+html:not([data-theme-family=crystal]) .practice-recap-card-word { line-height: 1; }
+html:not([data-theme-family=crystal]) :is(.practice-recap-pill, .practice-recap-chip-today, .practice-recap-card-meaning, .practice-recap-card-move, .practice-recap-card-level, .practice-recap-stat dt, .practice-recap-stat-sub) { line-height: normal; }
+html:not([data-theme-family=crystal]) .practice-recap-stat-value { gap: 0; }
+html:not([data-theme-family=crystal]) .practice-recap-unit { margin-left: 8px; }
+html:not([data-theme-family=crystal]) .practice-recap-chip-today { margin-left: 10px; }
+html:not([data-theme-family=crystal]) .practice-recap-bar { background: transparent; }
+html:not([data-theme-family=crystal]) .practice-recap-secondary { color: var(--sf-text); }
+@media (min-width: 761px) {
+  html:not([data-theme-family=crystal]) .practice-recap-close { width: 46px; height: 46px; }
+  html:not([data-theme-family=crystal]) .practice-recap-pill { height: 34px; }
+  html:not([data-theme-family=crystal]) .practice-recap-chip-today { height: 26px; }
+}
+
+/* RecapNext.dc.html lines 9-17: the next-steps recap opens with an uppercase session line, a 68px headline and a
+   row of bordered stat tiles, the XP tile warm. The tile radius is the board's 16px in both modes. */
+:where(html:not([data-theme-family=crystal])) .practice-recap-board { --rc-tile-radius: 16px; }
+html:not([data-theme-family=crystal]) .practice-recap-lead { min-width: 0; }
+html:not([data-theme-family=crystal]) .practice-recap-overline { margin: 0; color: var(--rc-text2); font-size: 12px; font-weight: 600; line-height: normal; letter-spacing: .12em; text-transform: uppercase; }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-headline { margin-top: 12px; line-height: .98; letter-spacing: -.04em; }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stats {
+  display: flex; width: auto; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 26px 0 0;
+  border: 0; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stats > .practice-recap-stat {
+  min-width: 128px; flex: none; box-sizing: border-box; padding: 14px 16px; border: 1px solid var(--rc-line); border-radius: var(--rc-tile-radius); background: var(--rc-surface);
+}
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stats > .practice-recap-stat[data-tone="warm"] { border-color: var(--rc-warm-line); background: var(--rc-warm-bg); }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stat dt { font-size: 12px; }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stat-value { margin-top: 2px; font-size: 32px; line-height: normal; }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stat[data-tone="warm"] .practice-recap-stat-value { color: var(--rc-warm); }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-pct { align-self: auto; margin: 0; font-size: inherit; }
+html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stat-sub { margin: 0; font-family: var(--sf-font-mono); font-size: 11px; }
+@media (min-width: 761px) {
+  html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-headline { font-size: 68px; }
+}
+@media (max-width: 760px) {
+  html:not([data-theme-family=crystal]) .practice-recap-main[data-recap-variant="next"] .practice-recap-stats > .practice-recap-stat { flex: 1 1 128px; }
+}
+
 /* Crystal Star (AnimeRecap). */
 .practice-recap-board[data-family="crystal"] {
   --rk-text: #f3f5fa; --rk-strong: #fff; --rk-text2: #aab3c5; --rk-text3: #7a8397; --rk-crimson: #ff6b85; --rk-holo: var(--sf-second); --rk-gold: var(--sf-reward); --rk-violet: #ff9ec0;

@@ -37,6 +37,22 @@ const PRESET_PROMPTS = [
   },
 ];
 
+
+/** The four-point star the DlgTutor board draws in its mark and answer headings (DlgTutor.dc.html 4 and 18). */
+function TutorStar({ className }: { className?: string }) {
+  return <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z" /></svg>;
+}
+
+/** Crystal keeps its sparkles; Classic shows the board's star. */
+function HeadingStar() {
+  return (
+    <>
+      <Sparkles aria-hidden="true" className="[html:not([data-theme-family=crystal])_&]:hidden" />
+      <TutorStar className="hidden [html:not([data-theme-family=crystal])_&]:block" />
+    </>
+  );
+}
+
 export function CardAiAssistantModal({
   card,
   open,
@@ -165,7 +181,7 @@ export function CardAiAssistantModal({
             <span aria-hidden="true" className="overlay-dialog-ornament overlay-dialog-ornament-top" />
             <span aria-hidden="true" className="overlay-dialog-ornament overlay-dialog-ornament-bottom" />
             <div className="overlay-dialog-header">
-              <span aria-hidden="true" className="card-tutor-mark"><Sparkles /></span>
+              <span aria-hidden="true" className="card-tutor-mark"><TutorStar /></span>
               <span aria-hidden="true" className="card-tutor-portrait"><Lumi pose="hint" size={74} /></span>
               <div className="min-w-0 flex-1">
                 <p className="overlay-dialog-kicker">
@@ -219,7 +235,7 @@ export function CardAiAssistantModal({
                   {turns.map((turn, index) => (
                     <div key={index} className="card-tutor-answer">
                       <p className="card-tutor-answer-heading">
-                        <Sparkles aria-hidden="true" />
+                        <HeadingStar />
                         <span className="sr-only"><Trans {...msg({ context: 'flashcard.ai.question', message: 'Q:' })} /> </span>
                         {turn.label || turn.question}
                       </p>
@@ -227,7 +243,7 @@ export function CardAiAssistantModal({
                     </div>
                   ))}
                   {(isLoading || error) && <div className="card-tutor-answer">
-                    <p className="card-tutor-answer-heading"><Sparkles aria-hidden="true" />{activeQuestion}</p>
+                    <p className="card-tutor-answer-heading"><HeadingStar />{activeQuestion}</p>
                     {isLoading ? (
                       <div role="status" className="card-tutor-loading">
                         <span aria-hidden="true" className="card-tutor-spinner" />

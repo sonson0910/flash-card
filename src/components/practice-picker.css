@@ -139,6 +139,12 @@ html[data-theme-family="classic"] .practice-picker-row-name { color: var(--sf-te
   font-size: inherit;
 }
 
+/* DlgPractice: the board's text keeps the default line height, the row type is 13.5px, and the key hint and
+   the lock badge are 26px inside their 1px border (28px drawn). */
+:where(html:not([data-theme-family=crystal])) .practice-picker :is(.overlay-dialog-kicker, .overlay-dialog-note, kbd, .practice-picker-row-name, .practice-picker-row-time, .practice-picker-row-status, .practice-picker-row-lock, .practice-picker-row-key) { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .practice-picker-row { font-size: 13.5px; }
+:where(html:not([data-theme-family=crystal])) :is(.practice-picker-row-key, .practice-picker-row-lock) { box-sizing: content-box; }
+
 /* Crystal rows: chamfered chips with a left strip, hexagon icons and skewed key badges. */
 html[data-theme-family="crystal"] .practice-picker-row {
   --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control));
@@ -341,6 +347,8 @@ html[data-theme-family="crystal"] .practice-picker .overlay-dialog-secondary { c
   .practice-picker-row[data-state="locked"] .practice-picker-row-chevron,
   .practice-picker-row:not([data-state="locked"]) .practice-picker-row-lock-icon,
   .practice-picker-row[data-state="loading"] .practice-picker-row-chevron { display: none; }
+  /* MobileSheet line 35: the lock on a locked row is drawn at 15px (the chevron stays 16px). */
+  :where(html:not([data-theme-family=crystal])) .practice-picker-row-lock-icon { width: 15px; height: 15px; }
   .practice-picker-row-status { font-size: 12px; }
 
   /* MobileSheet's per-mode icon tints. */
@@ -380,6 +388,13 @@ html[data-theme-family="crystal"] .practice-picker .overlay-dialog-secondary { c
   html[data-theme-family="classic"].dark .practice-picker-row[data-state="locked"][data-practice-choice] {
     --pp-icon-bg: color-mix(in srgb, var(--sf-flare) 5%, transparent);
   }
+
+  /* MobileSheet: the title row starts 16px under the handle (the close control sits in the handle row,
+     clear of the chip), its text keeps the default line height, and a locked row keeps the board's
+     per-mode icon tint. */
+  :where(html:not([data-theme-family=crystal])) .practice-picker .overlay-dialog-header { padding-top: 16px; }
+  :where(html:not([data-theme-family=crystal])) :is(.practice-picker-count, .practice-picker-scope, .practice-picker-row-desc-short) { line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .practice-picker-row[data-state="locked"][data-practice-choice] .practice-picker-row-icon { background: var(--pp-icon-bg); }
 
   html[data-theme-family="crystal"] .practice-picker-row { min-height: 70px; padding: 8px 14px 8px 12px; }
 }

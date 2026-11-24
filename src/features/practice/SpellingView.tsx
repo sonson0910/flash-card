@@ -154,7 +154,7 @@ export function SpellingView({
       <li data-state="missing"><Trans {...msg({ context: "practice.spelling.legend.missing", message: "Missing letter" })} /></li>
     </ul>
   );
-  const actionClass = "crystal-chamfer min-h-14 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none";
+  const actionClass = "sf-press crystal-chamfer min-h-14 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none";
   return (
     <div className="practice-board practice-board--spelling practice-stage" data-practice-mode="spelling">
       {showResults ? (
@@ -242,7 +242,7 @@ export function SpellingView({
             progressValue={answeredCount}
             actions={runningAccuracy !== null ? (
               <span className="practice-topbar__accuracy">
-                <Trans {...msg({ context: 'practice.spelling.accuracy-so-far', message: '{percent}% accuracy' })} values={{ percent: runningAccuracy }} />
+                <Trans {...msg({ context: 'practice.spelling.accuracy-so-far', message: '{percent}% accuracy' })} values={{ percent: <span className="practice-topbar__accuracy-value">{runningAccuracy}</span> }} />
               </span>
             ) : undefined}
             chip={!focusModeEnabled && answeredCount >= 2 ? (
@@ -369,7 +369,7 @@ export function SpellingView({
                   data-practice-tiles
                   style={{ "--tile-count": Math.max(tiles.length, 1) } as CSSProperties}
                 >
-                  <ol className="practice-tiles__row" aria-hidden="true" lang={targetLanguage}>
+                  <ol className={`practice-tiles__row${checked && !correct ? " sf-shake" : ""}`} aria-hidden="true" lang={targetLanguage}>
                     {tiles.map((tile, index) => (
                       <li
                         key={index}

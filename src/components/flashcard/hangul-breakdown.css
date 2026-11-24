@@ -6,10 +6,27 @@
 @media (min-width: 640px) and (max-width: 1319px) { .hangul-breakdown__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .hangul-breakdown__row { display: flex; min-width: 0; align-items: center; gap: .5rem; padding: .5rem .625rem; border-radius: .75rem; background: var(--sf-surface-muted); }
 .hangul-breakdown__block { display: flex; flex: 0 0 2.5rem; height: 2.5rem; align-items: center; justify-content: center; border: 1px solid var(--sf-border); border-radius: .5rem; color: var(--sf-brand-text); font-size: 1.125rem; font-weight: 700; }
-html:not([data-theme-family="crystal"]) .hangul-breakdown { border-radius: var(--sf-panel-radius, 18px); background: var(--sf-surface-glass, var(--sf-surface-raised)); box-shadow: var(--sf-panel-shadow, none); -webkit-backdrop-filter: var(--sf-panel-blur, none); backdrop-filter: var(--sf-panel-blur, none); }
-html:not([data-theme-family="crystal"]) .hangul-breakdown__row { border: 1px solid var(--sf-border-subtle, color-mix(in srgb, var(--sf-text) 8%, transparent)); border-radius: 12px; }
-html:not([data-theme-family="crystal"]) .hangul-breakdown__block { flex: 0 0 2.75rem; height: 2.75rem; border-color: var(--sf-accent-line, var(--sf-border)); border-radius: 12px; background: var(--sf-accent-soft, transparent); }
+/* Classic draws the LangReview board's Hangul panel (LangReview.dc.html 55-67). */
+html:not([data-theme-family="crystal"]) .hangul-breakdown { padding: 22px; border-radius: var(--sf-panel-radius, 18px); background: var(--sf-surface-glass, var(--sf-surface-raised)); box-shadow: var(--sf-panel-shadow, none); -webkit-backdrop-filter: var(--sf-panel-blur, none); backdrop-filter: var(--sf-panel-blur, none); }
+html:not([data-theme-family="crystal"]) .hangul-breakdown__row { gap: 10px; padding: 0; border-radius: 0; background: none; }
+html:not([data-theme-family="crystal"]) .hangul-breakdown__block { flex: 0 0 44px; height: 44px; border-color: var(--sf-accent-line, var(--sf-border)); border-radius: 12px; background: var(--sf-accent-soft, transparent); color: var(--sf-text-strong, var(--sf-text)); font-family: "Noto Sans KR", "Noto Sans CJK KR", sans-serif; font-size: 22px; }
 .hangul-breakdown__equals { color: var(--sf-text-muted); }
 .hangul-breakdown__parts { display: flex; min-width: 0; flex-wrap: wrap; column-gap: .5rem; row-gap: .25rem; }
 .hangul-breakdown__part { display: flex; min-width: 1.5rem; flex-direction: column; align-items: center; font-size: 1rem; font-weight: 600; }
 .hangul-breakdown__part span + span { color: var(--sf-brand-text); font-size: .625rem; font-weight: 700; }
+html:not([data-theme-family="crystal"]) .hangul-breakdown__title { color: var(--sf-text-tertiary, var(--sf-text-muted)); font-size: 11.5px; font-weight: 600; letter-spacing: .08em; }
+html:not([data-theme-family="crystal"]) .hangul-breakdown__grid { gap: 8px; margin-top: 12px; }
+html:not([data-theme-family="crystal"]) .hangul-breakdown__equals { color: var(--sf-text-tertiary, var(--sf-text-muted)); }
+html:not([data-theme-family="crystal"]) .hangul-breakdown__part { min-width: 30px; color: var(--sf-text); font-size: 18px; font-weight: 600; }
+html:not([data-theme-family="crystal"]) .hangul-breakdown__part > span[lang="ko"] { font-family: "Noto Sans KR", "Noto Sans CJK KR", sans-serif; }
+html:not([data-theme-family="crystal"]) .hangul-breakdown__part span + span { color: var(--sf-brand); font-size: 11px; font-weight: 600; }
+/* LangReview.dc.html 55-67 at 1440: the panel stands 62px below the card top with its left edge 348px right of
+   centre (right: 72px), rises with the board's sf-rise-2 beat, keeps the board's normal line height, and draws
+   44px blocks inside a 1px border (46px in all). */
+@media (min-width: 1320px) { html:not([data-theme-family="crystal"]) .hangul-breakdown-slot { left: calc(50% + 348px); top: 62px; } }
+html:not([data-theme-family="crystal"]) .hangul-breakdown-slot { animation: sf-rise-k 600ms cubic-bezier(.16, 1, .3, 1) 120ms backwards; }
+@media (prefers-reduced-motion: reduce) { html:not([data-theme-family="crystal"]) .hangul-breakdown-slot { animation: none; } }
+html[data-motion="reduced"]:not([data-theme-family="crystal"]) .hangul-breakdown-slot { animation: none; }
+html:not([data-theme-family="crystal"]) .hangul-breakdown { line-height: normal; }
+html:not([data-theme-family="crystal"]) .hangul-breakdown__block { flex-basis: 46px; height: 46px; }
+html:not([data-theme-family="crystal"]) .hangul-breakdown__parts { column-gap: 10px; }

@@ -24,7 +24,7 @@ import { CardEffectsLayer, useCardEffects } from './flashcard/CardEffectsLayer';
 import { CardFront } from './flashcard/CardFront';
 import { cardSideAnnouncement, cardSideStatus, isLanguagePackCard } from './flashcard/cardLanguage';
 import { cardTierOf, useCardLook } from './flashcard/cardLook';
-import { crystalFlipMotion, crystalTiltMotion } from './flashcard/crystalCardMotion';
+import { classicCardMotion, crystalFlipMotion, crystalTiltMotion } from './flashcard/crystalCardMotion';
 import { useFlashcardAudio } from './flashcard/useFlashcardAudio';
 import { useFlashcardSpeechMatch } from './flashcard/useFlashcardSpeechMatch';
 import { useZenGlassMode } from '../lib/useZenGlassMode';
@@ -186,6 +186,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
 
   const cardLook = useCardLook();
   const isCrystalCard = cardLook === 'crystal' && !isZenMode;
+  // Classic standard cards turn and tilt on their seed board's curves (Aurora dark, Atelier light);
+  // the language card turns in 640 ms and tilts 4deg in both looks (LangCard.dc.html 496, 515).
+  const classicMotion = !isZenMode && cardLook !== 'crystal'
+    ? (isPackCard ? classicCardMotion.aurora : classicCardMotion[cardLook])
+    : null;
+  const boardFlip = isCrystalCard ? crystalFlipMotion : classicMotion?.flip ?? null;
 
   const showCardSide = (side: 'front' | 'back') => {
     const nextFlipped = side === 'back';
@@ -215,12 +221,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
     setFlipTarget(nextFlipped ? 'back' : 'front');
     setIsFlipAnimating(true);
     flipOutTweenRef.current?.kill();
-    flipOutTweenRef.current = isCrystalCard
+    flipOutTweenRef.current = boardFlip
       // The leaving face runs the first half of the board's single 180deg turn: no fade, no shrink.
       ? gsap.to(faceRef.current, {
         rotationY: direction * 90,
-        duration: crystalFlipMotion.out.durationSeconds,
-        ease: crystalFlipMotion.out.ease,
+        duration: boardFlip.out.durationSeconds,
+        ease: boardFlip.out.ease,
         force3D: true,
         transformOrigin: 'center center',
         onComplete: commitSideChange,
@@ -237,7 +243,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       });
     // GSAP relies on requestAnimationFrame, which browsers may suspend in a
     // throttled/background tab. Never let that leave the card interaction locked.
-    flipCommitTimerRef.current = window.setTimeout(commitSideChange, isCrystalCard ? Math.round(crystalFlipMotion.out.durationSeconds * 1000) + 160 : 320);
+    flipCommitTimerRef.current = window.setTimeout(commitSideChange, boardFlip ? Math.round(boardFlip.out.durationSeconds * 1000) + 160 : 320);
   };
 
   const handleCardPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -297,14 +303,14 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       completeFaceTransition(side);
       return;
     }
-    const animation = isCrystalCard
+    const animation = boardFlip
       // The arriving face runs the rest of the same curve from the far edge to flat.
       ? {
         from: { rotationY: flipDirection * -90 },
-        to: { rotationY: 0, duration: crystalFlipMotion.in.durationSeconds, ease: crystalFlipMotion.in.ease },
+        to: { rotationY: 0, duration: boardFlip.in.durationSeconds, ease: boardFlip.in.ease },
       }
       : getFlashcardFlipMotion(flipDirection, reduceMotion);
-    const fallbackMs = isCrystalCard ? Math.round(crystalFlipMotion.in.durationSeconds * 1000) + 260 : 500;
+    const fallbackMs = boardFlip ? Math.round(boardFlip.in.durationSeconds * 1000) + 260 : 500;
         let transitionFinished = false;
         const finishTransition = () => {
           if (transitionFinished) return;
@@ -324,7 +330,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
           },
         });
         return () => window.clearTimeout(completionFallback);
-  }, { scope: shellRef, dependencies: [isFlipped, flipDirection, reduceMotion, isCrystalCard], revertOnUpdate: true });
+  }, { scope: shellRef, dependencies: [isFlipped, flipDirection, reduceMotion, boardFlip], revertOnUpdate: true });
 
   useEffect(() => () => {
     flipOutTweenRef.current?.kill();
@@ -362,9 +368,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
   };
 
   // Crystal Star follows the board: a tier-tinted light under the pointer, screen-blended in CSS.
+  // Classic standard cards take their board's light from the stylesheet (--flashcard-spotlight per look and side).
+  const fallbackSpotlight = 'radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgba(2, 132, 199, 0.11) 0%, rgba(6, 182, 212, 0.025) 40%, transparent 70%)';
   const spotlightBackground = isCrystalCard
     ? 'radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), var(--flashcard-tier-soft) 0%, transparent 40%)'
-    : 'radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgba(2, 132, 199, 0.11) 0%, rgba(6, 182, 212, 0.025) 40%, transparent 70%)';
+    : classicMotion ? `var(--flashcard-spotlight, ${fallbackSpotlight})` : fallbackSpotlight;
   const { aura, isHovered, handleMouseEnter, handleMouseMove, handleMouseLeave } = useCardEffects({
     category: data.category,
     faceRef,
@@ -372,7 +380,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
     reduceMotion,
     isFlipAnimating,
     spotlightBackground,
-    tilt: isCrystalCard ? crystalTiltMotion : undefined,
+    tilt: isCrystalCard ? crystalTiltMotion : classicMotion?.tilt,
   });
   const cardTier = cardTierOf(data);
   const hasHangulReviewPanel = editorContext?.kind === 'review' && /^ko(?:-|$)/i.test(data.language ?? '');
@@ -660,12 +668,12 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
               data-color-role="reward"
               data-card-effect="star-pop"
               onMouseEnter={event => {
-                // The Crystal star lifts like every other Crystal control (CSS), without the tilt.
-                if (reduceMotion || isCrystalCard) return;
+                // Crystal and the Classic standard card take the star's hover from CSS (their boards have no tilt).
+                if (reduceMotion || isCrystalCard || classicMotion) return;
                 gsap.to(event.currentTarget, { scale: 1.05, rotation: 6, duration: 0.18, ease: 'power3.out', overwrite: 'auto' });
               }}
               onMouseLeave={event => {
-                if (isCrystalCard) return;
+                if (isCrystalCard || classicMotion) return;
                 gsap.to(event.currentTarget, { scale: 1, rotation: 0, duration: reduceMotion ? 0 : 0.22, ease: 'power3.out', overwrite: 'auto' });
               }}
               onClick={(event) => {

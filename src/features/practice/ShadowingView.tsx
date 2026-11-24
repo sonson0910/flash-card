@@ -305,7 +305,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
                 className="practice-shadowing__play focus-visible:outline-2 focus-visible:outline-offset-2"
                 aria-label={t(msg({ id: 'practice.shadowing.play-pronunciation', message: 'Play pronunciation for {word}' }), { word: card.word })}
               >
-                <span><Play size={crystal ? 12 : 13} fill="currentColor" aria-hidden="true" /></span>
+                <span><Play size={crystal ? 12 : 11} fill="currentColor" aria-hidden="true" /></span>
               </button>
               <span className="practice-shadowing__track-label"><Trans {...msg({ context: 'practice.shadowing.model', message: 'Model' })} /></span>
               {model && <span className="practice-shadowing__clock">{formatTakeClock(model.duration)}</span>}
@@ -359,7 +359,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
                   aria-valuemax={100}
                   aria-valuenow={matchResult.score}
                 >
-                  <span style={{ width: `${Math.max(0, Math.min(100, matchResult.score))}%` }} />
+                  <span className="sf-grow" style={{ width: `${Math.max(0, Math.min(100, matchResult.score))}%` }} />
                 </div>
               </>
             ) : (
@@ -394,13 +394,13 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
               type="button"
               onClick={() => move(Math.max(0, currentIndex - 1))}
               disabled={currentIndex === 0}
-              className="practice-shadowing__prev practice-secondary crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="practice-shadowing__prev practice-secondary sf-press crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2"
               aria-label={_(msg({ id: 'practice.shadowing.previous', message: 'Previous word' }))}
             >
               <ChevronLeft size={20} aria-hidden="true" />
             </button>
             {(matchResult || transcript) && !isListening && (
-              <button type="button" onClick={startListening} className="practice-secondary crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2">
+              <button type="button" onClick={startListening} className="practice-secondary sf-press crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2">
                 <RotateCcw size={16} aria-hidden="true" />
                 <Trans {...msg({ context: 'practice.shadowing.try-again', message: 'Try again' })} />
               </button>
@@ -409,7 +409,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
               type="button"
               onClick={() => move(Math.min(cards.length - 1, currentIndex + 1))}
               disabled={isLast}
-              className="practice-primary crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="practice-primary sf-press crystal-chamfer focus-visible:outline-2 focus-visible:outline-offset-2"
               aria-label={_(msg({ id: 'practice.shadowing.next', message: 'Next word' }))}
             >
               {crystal && <span aria-hidden="true" className="practice-shadowing__shine crystal-shine" />}

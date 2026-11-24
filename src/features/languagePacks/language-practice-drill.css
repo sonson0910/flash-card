@@ -292,8 +292,6 @@
 :where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence .language-practice-drill__segments { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; margin-top: 1rem; }
 :where(html:not([data-theme-family=crystal])) .language-practice-drill__segments { display: flex; flex-wrap: wrap; gap: .375rem; margin-top: 1.2rem; }
 :where(html:not([data-theme-family=crystal])) .language-practice-drill__segments button { display: grid; min-height: 4.35rem; place-content: center; gap: .1rem; padding: .45rem .65rem; border: 1px solid var(--sf-border); border-radius: 12px; background: var(--sf-surface-raised); color: var(--sf-text); font: inherit; font-weight: 700; text-align: center; cursor: pointer; }
-:where(html:not([data-theme-family=crystal])) .language-practice-drill__segments button[aria-pressed='true'] { border-color: var(--sf-accent-line, var(--sf-brand)); background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 12%, transparent)); color: var(--sf-brand-text); }
-:where(html:not([data-theme-family=crystal])) .language-practice-drill__segments button small { color: var(--sf-text-muted); font-size: .72rem; font-weight: 500; }
 :where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence-explanation { margin-top: 1rem; padding: .875rem 1rem; border: 1px solid var(--sf-border); background: var(--sf-surface-raised); box-shadow: var(--sf-panel-shadow); }
 :where(html:not([data-theme-family=crystal])) .language-practice-drill__sentence-explanation p { margin: 0; color: var(--sf-text-muted); font-size: .875rem; line-height: 1.5; }
 :where(html:not([data-theme-family=crystal])) .language-practice-drill__results { text-align: center; }
@@ -310,13 +308,21 @@ html:not([data-theme-family='crystal']) .language-practice-drill {
   --lpd-tile-r: 18px;
   --lpd-field-r: 16px;
   --lpd-key-r: 10px;
+  --lpd-tag-r: 6px;
+  --lpd-chip-r: 12px;
+  --lpd-swatch-r: 3px;
+  --lpd-input-bg: rgb(255 255 255 / .04);
+  --lpd-key-bg: rgb(255 255 255 / .025);
   --lpd-font-jp: 'Noto Sans JP', sans-serif;
   --lpd-font-kr: 'Noto Sans KR', sans-serif;
   --lpd-font-sc: 'Noto Sans SC', sans-serif;
-  --lpd-tone-1: var(--sf-tone-4);
-  --lpd-tone-2: var(--sf-tone-3);
-  --lpd-tone-3: var(--sf-tone-2);
-  --lpd-tone-4: var(--sf-tone-1);
+  /* LangPractice.dc.html line 266: tones 1-4 are the board's danger, warn, good and accent-text inks, the neutral tone its
+     muted ink. In light, tone 3 is the ok text ink and tone 4 the shared blue tone token (#1f5fb8 against the board's
+     #1f5fa8); tone 2 keeps --sf-warn (#8a5a0c), the AA-safe form of the board's #a86a12. */
+  --lpd-tone-1: var(--sf-danger);
+  --lpd-tone-2: var(--sf-warn);
+  --lpd-tone-3: var(--sf-success);
+  --lpd-tone-4: var(--sf-brand-text);
   --lpd-tone-5: var(--sf-text-muted);
   --sf-pulse: rgb(40 211 244 / .45);
   width: 100%;
@@ -331,7 +337,10 @@ html:not(.dark):not([data-theme-family='crystal']) .language-practice-drill {
   --lpd-panel-r: 12px;
   --lpd-tile-r: 12px;
   --lpd-field-r: 999px;
-  --lpd-key-r: 8px;
+  --lpd-key-bg: var(--sf-surface-raised);
+  --lpd-input-bg: var(--sf-surface);
+  --lpd-tone-3: var(--sf-success-text);
+  --lpd-tone-4: var(--sf-tone-1);
   --lpd-font-jp: 'Noto Serif JP', 'Noto Sans JP', serif;
   --lpd-font-kr: 'Noto Serif KR', 'Noto Sans KR', serif;
   --lpd-font-sc: 'Noto Serif SC', 'Noto Sans SC', serif;
@@ -339,8 +348,8 @@ html:not(.dark):not([data-theme-family='crystal']) .language-practice-drill {
 }
 html:not([data-theme-family='crystal']) .language-practice-drill__toolbar {
   min-height: 76px;
-  padding: 0 26px;
-  gap: 12px;
+  padding: 0 28px;
+  gap: 14px;
   border-bottom: 1px solid var(--sf-nav-line);
 }
 html:not([data-theme-family='crystal']) .language-practice-drill__toolbar .language-practice-drill__exit {
@@ -357,8 +366,9 @@ html:not([data-theme-family='crystal']) .language-practice-drill__toolbar .langu
 }
 html:not([data-theme-family='crystal']) .language-practice-drill__toolbar .language-practice-drill__exit:hover { color: var(--sf-text-strong); }
 html:not([data-theme-family='crystal']) .language-practice-drill__identity { column-gap: 8px; color: var(--lpd-text3); font-size: 12px; font-weight: 600; letter-spacing: .08em; }
-html:not([data-theme-family='crystal']) .language-practice-drill__identity h2 { margin: 2px 0 0; color: var(--sf-text-strong); font-size: 22px; font-weight: var(--sf-display-weight); letter-spacing: -.02em; }
-html:not([data-theme-family='crystal']) .language-practice-drill__pack { padding: 3px 8px; font-size: 11px; letter-spacing: .06em; }
+html:not([data-theme-family='crystal']) .language-practice-drill__identity h2 { margin: 4px 0 0; color: var(--sf-text-strong); font-size: 23px; font-weight: var(--sf-display-weight); letter-spacing: -.015em; line-height: 1.1; }
+/* LangPractice.dc.html line 9: the code tag is a 20px content-box mono span (22px with its border). */
+html:not([data-theme-family='crystal']) .language-practice-drill__pack { display: inline-flex; align-items: center; height: 22px; box-sizing: border-box; padding: 0 7px; font-family: var(--sf-font-mono); font-size: 11.5px; font-weight: 600; letter-spacing: .04em; line-height: normal; border-radius: var(--lpd-tag-r); }
 html:not([data-theme-family='crystal']) .language-practice-drill__progress i { width: 16px; background: var(--lpd-track); }
 html.dark:not([data-theme-family='crystal']) .language-practice-drill__progress .language-practice-drill__progress-done { box-shadow: 0 0 8px rgb(40 211 244 / .55); }
 html:not([data-theme-family='crystal']) .language-practice-drill__progress b { padding: 3px 8px; background: var(--sf-surface-control); color: var(--sf-text-muted); font-family: var(--sf-font-mono); font-size: 12px; }
@@ -370,6 +380,9 @@ html:not([data-theme-family='crystal']) .language-practice-drill__listen-bars i:
 html:not([data-theme-family='crystal']) .language-practice-drill__listen-bars i:nth-child(4) { height: 18px; }
 html:not([data-theme-family='crystal']) .language-practice-drill__instruction { color: var(--lpd-text3); font-size: 11.5px; font-weight: 600; letter-spacing: .08em; }
 html:not([data-theme-family='crystal']) .language-practice-drill__prompt { margin-top: 3px; color: var(--sf-text-strong); font-size: 24px; font-weight: var(--sf-display-weight); line-height: 1.2; }
+/* LangPractice.dc.html lines 33, 77 and 118: beside a Korean, Japanese or Chinese word the meaning is plain 22px Fraunces at
+   the regular weight on a normal line box; the sentence stage keeps the 24px prompt above. */
+html:not([data-theme-family='crystal']) .language-practice-drill:is(.language-practice-drill--hangul-blocks, .language-practice-drill--kana-reading, .language-practice-drill--tone-melody):not(:has(.language-practice-drill__sentence)) .language-practice-drill__prompt { font-size: 22px; font-weight: 400; line-height: normal; }
 html:not([data-theme-family='crystal']) .language-practice-drill__speed {
   align-self: center;
   height: 32px;
@@ -396,37 +409,54 @@ html:not([data-theme-family='crystal']) .language-practice-drill__hangul-blocks 
   color: var(--lpd-text3);
   font-family: var(--lpd-font-kr);
   font-size: clamp(44px, 11vw, 66px);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1;
 }
-html:not([data-theme-family='crystal']) .language-practice-drill__hangul-blocks .language-practice-drill__hangul-filled { border-color: var(--sf-accent-line); color: var(--sf-text-strong); }
-html:not([data-theme-family='crystal']) .language-practice-drill__hangul-blocks span[data-hangul-mismatch] { border-color: var(--sf-rating-again); background: var(--sf-danger-soft); color: var(--sf-danger); }
+/* LangPractice.dc.html line 270: a filled block is the board's ok chip, a plain line border with strong text; a mismatched
+   block is the bad chip, which has no shadow. */
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-blocks .language-practice-drill__hangul-filled { color: var(--sf-text-strong); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-blocks span[data-hangul-mismatch] { border-color: var(--sf-rating-again); background: var(--sf-danger-soft); box-shadow: none; color: var(--sf-danger); }
 html:not([data-theme-family='crystal']) .language-practice-drill__hangul-parts b { border-radius: 8px; background: var(--sf-surface-control); color: var(--sf-text-strong); font-family: var(--lpd-font-kr); }
 html:not([data-theme-family='crystal']) .language-practice-drill__hangul-parts b[data-hangul-wrong] { border-color: var(--sf-danger-line); color: var(--sf-danger); }
 html:not([data-theme-family='crystal']) .language-practice-drill__hangul-fix { border-radius: 12px; color: var(--sf-text-strong); }
 html:not([data-theme-family='crystal']) .language-practice-drill__hangul-fix b { color: var(--sf-text-strong); font-family: var(--lpd-font-kr); }
+/* LangPractice.dc.html lines 58-65 and 268-272: 50x44 keys at 18px / 700 in rows 6px apart, keys 5px apart, the
+   second and third rows set in 28 / 84px; an idle key is a 1px line on a faint fill, the key to press is the board's
+   hint (green), the key typed by mistake its bad state (again red). The radius is the board's 10px in both modes.
+   The app's Shift and Delete keys (not on the board) sit on the third row's line, 5px outside its first and last key. */
 html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys { position: relative; flex-direction: column; flex-wrap: nowrap; align-items: center; gap: 6px; max-width: none; margin: 16px auto 0; }
-html:not([data-theme-family='crystal']) .language-practice-drill__hangul-row:nth-of-type(2) { padding-left: 26px; }
-html:not([data-theme-family='crystal']) .language-practice-drill__hangul-row:nth-of-type(3) { padding-left: 78px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-row { gap: 5px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-row:nth-of-type(2) { padding-left: 28px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-row:nth-of-type(3) { padding-left: 84px; }
 html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key {
-  width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
   min-width: 0;
-  height: 42px;
+  height: 44px;
   min-height: 0;
+  padding: 0;
+  border: 1px solid var(--sf-border);
   border-radius: var(--lpd-key-r);
-  background: var(--sf-surface-control);
-  box-shadow: var(--sf-secondary-shadow);
-  color: var(--sf-text-strong);
+  background: var(--lpd-key-bg);
+  box-shadow: none;
+  color: var(--sf-text);
   font-family: var(--lpd-font-kr);
-  font-size: 17px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: normal;
 }
-html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key[data-hangul-key='expected'],
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key small { right: 5px; bottom: 3px; color: var(--lpd-text3); font-family: var(--sf-font-mono); font-size: 9px; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key[data-hangul-key='expected'] { border: 1.5px solid var(--sf-success); background: var(--sf-success-soft); color: var(--sf-success-text); }
+html.dark:not([data-theme-family='crystal']) .language-practice-drill__hangul-key[data-hangul-key='expected'] { box-shadow: 0 0 18px -6px var(--sf-success); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key[data-hangul-key='typed'] { border: 1.5px solid var(--sf-rating-again); background: var(--sf-danger-soft); color: var(--sf-danger); }
 html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key[aria-pressed='true'] { border-color: var(--sf-accent-line); background: var(--sf-accent-soft); color: var(--sf-brand-text); }
-html:not([data-theme-family='crystal']) .language-practice-drill__hangul-key[data-hangul-key='typed'] { border-color: var(--sf-danger-line); background: var(--sf-danger-soft); color: var(--sf-danger); }
-html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > button:first-child { position: absolute; top: 96px; left: calc(50% - 198px); }
-html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > button:last-child { position: absolute; top: 96px; left: calc(50% + 228px); width: auto; padding: 0 12px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > button:first-child { position: absolute; top: 100px; left: calc(50% - 203px); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > button:last-child { position: absolute; top: 100px; left: calc(50% + 237px); width: auto; padding: 0 12px; }
 html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > div + button:not(:last-child) { width: 160px; }
+/* Space and Delete carry a word, not a jamo: they take the board's secondary-button type (the Hint button, 14px/600). */
+html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > button:not(:first-child) { font-family: var(--sf-font-body); font-size: 14px; font-weight: 600; }
 html:not([data-theme-family='crystal']) .language-practice-drill__answer {
   height: 58px;
   min-height: 0;
@@ -440,33 +470,65 @@ html:not([data-theme-family='crystal']) .language-practice-drill__answer {
 }
 html:not([data-theme-family='crystal']) .language-practice-drill[data-result='correct'] .language-practice-drill__answer { border-color: var(--sf-success-line); background: var(--sf-success-soft); }
 html:not([data-theme-family='crystal']) .language-practice-drill[data-result='incorrect'] .language-practice-drill__answer { border-color: var(--sf-danger-line); background: var(--sf-danger-soft); }
-html:not([data-theme-family='crystal']) .language-practice-drill__tone-card { padding: 18px 20px; }
+/* LangPractice.dc.html lines 121-133 and 323-333: two 270px syllable cards 26px apart, 20px/700 pinyin over a 76px/700
+   hanzi, and 44x52 tone keys 5px apart that take the board's chip states once checked. */
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 26px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-card { display: flex; width: 270px; box-sizing: border-box; flex-direction: column; align-items: center; padding: 14px 14px 16px; }
 html:not([data-theme-family='crystal']) .language-practice-drill__tone-card[data-tone-verdict='right'] { border-color: var(--sf-success-line); }
 html:not([data-theme-family='crystal']) .language-practice-drill__tone-card[data-tone-verdict='wrong'] { border-color: var(--sf-danger-line); }
-html:not([data-theme-family='crystal']) .language-practice-drill__syllable { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 20px; font-weight: 600; }
+html:not([data-theme-family='crystal']) .language-practice-drill__syllable { height: 24px; color: var(--sf-brand-text); font-family: var(--sf-font-body); font-size: 20px; font-weight: 700; line-height: normal; }
 html:not([data-theme-family='crystal']) .language-practice-drill__tone-card[data-tone-verdict='right'] .language-practice-drill__syllable { color: var(--lpd-tone, var(--sf-brand-text)); }
 html:not([data-theme-family='crystal']) .language-practice-drill__tone-card[data-tone-verdict='wrong'] .language-practice-drill__syllable { color: var(--sf-danger); }
-html:not([data-theme-family='crystal']) .language-practice-drill__hanzi { color: var(--sf-text-strong); font-family: var(--lpd-font-sc); font-size: 64px; font-weight: 600; line-height: 1.1; }
-html:not([data-theme-family='crystal']) .language-practice-drill__tone-option { background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow); color: var(--lpd-tone); }
-html:not([data-theme-family='crystal']) .language-practice-drill__tone-option[aria-pressed='true'],
-html:not([data-theme-family='crystal']) .language-practice-drill__tone-option[data-tone-verdict='answer'] { border-color: var(--sf-accent-line); background: var(--sf-accent-soft); box-shadow: none; color: var(--sf-brand-text); }
-html:not([data-theme-family='crystal']) .language-practice-drill__tone-option[data-tone-verdict='wrong'] { border-color: var(--sf-danger-line); background: var(--sf-danger-soft); box-shadow: none; color: var(--sf-danger); }
+html:not([data-theme-family='crystal']) .language-practice-drill__hanzi { margin: 0; color: var(--sf-text-strong); font-family: var(--lpd-font-sc); font-size: 76px; font-weight: 700; line-height: 1.1; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-options { display: flex; gap: 5px; margin-top: 12px; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-option { display: flex; width: 44px; height: 52px; min-height: 0; box-sizing: border-box; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; border: 1px solid var(--sf-border); border-radius: var(--lpd-key-r); background: var(--lpd-key-bg); box-shadow: none; color: var(--lpd-tone); font-size: 13.5px; font-weight: 400; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-option small { font-family: var(--sf-font-mono); font-size: 11px; font-weight: 500; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-option[aria-pressed='true'] { border-color: var(--sf-accent-line); background: var(--sf-accent-soft); color: var(--sf-brand-text); }
+/* After Check the right tone (picked or missed) is the board's ok-green hint chip and a wrong pick its again-red chip. */
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-option:is([data-tone-verdict='right'], [data-tone-verdict='answer']) { border: 1.5px solid var(--sf-success); background: var(--sf-success-soft); color: var(--sf-success-text); }
+html.dark:not([data-theme-family='crystal']) .language-practice-drill__tone-option:is([data-tone-verdict='right'], [data-tone-verdict='answer']) { box-shadow: 0 0 18px -6px var(--sf-success); }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-option[data-tone-verdict='wrong'] { border: 1.5px solid var(--sf-rating-again); background: var(--sf-danger-soft); color: var(--sf-danger); }
 html:not([data-theme-family='crystal']) .language-practice-drill :is(.language-practice-drill__tone-option--1, .language-practice-drill__tone-card[data-tone='1'], .language-practice-drill__tone-legend [data-tone='1']) { --lpd-tone: var(--lpd-tone-1); }
 html:not([data-theme-family='crystal']) .language-practice-drill :is(.language-practice-drill__tone-option--2, .language-practice-drill__tone-card[data-tone='2'], .language-practice-drill__tone-legend [data-tone='2']) { --lpd-tone: var(--lpd-tone-2); }
 html:not([data-theme-family='crystal']) .language-practice-drill :is(.language-practice-drill__tone-option--3, .language-practice-drill__tone-card[data-tone='3'], .language-practice-drill__tone-legend [data-tone='3']) { --lpd-tone: var(--lpd-tone-3); }
 html:not([data-theme-family='crystal']) .language-practice-drill :is(.language-practice-drill__tone-option--4, .language-practice-drill__tone-card[data-tone='4'], .language-practice-drill__tone-legend [data-tone='4']) { --lpd-tone: var(--lpd-tone-4); }
 html:not([data-theme-family='crystal']) .language-practice-drill :is(.language-practice-drill__tone-option--5, .language-practice-drill__tone-card[data-tone='5'], .language-practice-drill__tone-legend [data-tone='5']) { --lpd-tone: var(--lpd-tone-5); }
-html:not([data-theme-family='crystal']) .language-practice-drill__tone-legend { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 12px; color: var(--lpd-text3); font-size: 12px; font-weight: 600; }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-legend { display: flex; align-items: center; justify-content: flex-start; gap: 14px; margin-top: 12px; color: var(--sf-text-muted); font-size: 12px; font-weight: 400; line-height: normal; }
 html:not([data-theme-family='crystal']) .language-practice-drill__tone-legend span { display: flex; align-items: center; gap: 5px; }
-html:not([data-theme-family='crystal']) .language-practice-drill__tone-legend i { display: inline-block; width: 12px; height: 5px; border-radius: 3px; background: var(--lpd-tone); }
-html:not([data-theme-family='crystal']) .language-practice-drill__segments button { background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow); }
-html:not([data-theme-family='crystal']) .language-practice-drill__segments button[aria-pressed='true'] { border-color: var(--sf-accent-line); background: var(--sf-accent-soft); box-shadow: none; color: var(--sf-brand-text); }
-html:not([data-theme-family='crystal']) .language-practice-drill__actions { padding-top: 20px; border-top: 1px solid var(--sf-nav-line); }
+html:not([data-theme-family='crystal']) .language-practice-drill__tone-legend i { display: inline-block; font-style: normal; width: 10px; height: 10px; border-radius: var(--lpd-swatch-r); background: var(--lpd-tone); }
+/* LangPractice.dc.html lines 201-219 and 345-353: every chunk, punctuation included, is a 68px chip 6px apart in the
+   board's ok chip (border and fill; the board's chunks draw no shadow or glow in any state), the slot is 110px wide, accented until Check and then the board's hint
+   or bad chip; the four 70px choices show the word over one "reading · meaning" line and take the same chip states. */
+html:not([data-theme-family='crystal']) .language-practice-drill__sentence-tokens { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 16px; font-family: var(--lpd-font-jp); font-size: clamp(1.35rem, 5vw, 28px); font-weight: 700; line-height: normal; }
+html:not([data-theme-family='crystal']) :is(.language-practice-drill__sentence-token, .language-practice-drill__sentence-blank, :where(.language-practice-drill__sentence-tokens > span:not([class]))) { display: inline-flex; align-items: center; justify-content: center; height: 68px; min-width: 0; box-sizing: border-box; margin: 0; padding: 0 12px; border-radius: var(--lpd-chip-r); font-weight: 700; line-height: normal; }
+html:not([data-theme-family='crystal']) :is(.language-practice-drill__sentence-token, :where(.language-practice-drill__sentence-tokens > span:not([class]))) { border: 1px solid var(--sf-border); background: var(--sf-surface-glass); box-shadow: none; color: var(--sf-text-strong); }
+html:not([data-theme-family='crystal']) .language-practice-drill__sentence-blank { min-width: 110px; }
+html:not([data-theme-family='crystal']) .language-practice-drill[data-result='correct'] .language-practice-drill__sentence-blank { border: 1.5px solid var(--sf-success); background: var(--sf-success-soft); color: var(--sf-success-text); }
+html:not([data-theme-family='crystal']) .language-practice-drill[data-result='incorrect'] .language-practice-drill__sentence-blank { border: 1.5px solid var(--sf-rating-again); background: var(--sf-danger-soft); color: var(--sf-danger); }
+html:not([data-theme-family='crystal']) .language-practice-drill__segments button { display: flex; height: 70px; min-height: 0; box-sizing: border-box; flex-flow: row wrap; align-content: center; justify-content: center; gap: 2px 0; padding: 0 8px; border-radius: var(--lpd-chip-r); background: var(--lpd-key-bg); box-shadow: none; color: var(--sf-text-strong); font-size: 13.5px; font-weight: 400; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__segments button > span { flex-basis: 100%; font-family: var(--lpd-font-jp); font-size: 24px; font-weight: 700; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__segments button small { color: var(--sf-text-muted); font-size: 11.5px; font-weight: 400; line-height: normal; }
+html:not([data-theme-family='crystal']) .language-practice-drill__segments button small + small::before { content: '\00a0·\00a0'; }
+html:not([data-theme-family='crystal']) .language-practice-drill__segments button[aria-pressed='true'] { border-color: var(--sf-accent-line); background: var(--sf-accent-soft); color: var(--sf-brand-text); }
+html:not([data-theme-family='crystal']) .language-practice-drill[data-result='correct'] .language-practice-drill__segments button[aria-pressed='true'] { border: 1.5px solid var(--sf-success); background: var(--sf-success-soft); color: var(--sf-text-strong); }
+html.dark:not([data-theme-family='crystal']) .language-practice-drill[data-result='correct'] .language-practice-drill__segments button[aria-pressed='true'] { box-shadow: 0 0 18px -6px var(--sf-success); }
+html:not([data-theme-family='crystal']) .language-practice-drill[data-result='incorrect'] .language-practice-drill__segments button[aria-pressed='true'] { border: 1.5px solid var(--sf-rating-again); background: var(--sf-danger-soft); color: var(--sf-text-strong); }
+/* LangPractice.dc.html lines 72-85 and 309-315: the word is 84px/700 under a 20px/500 reading spaced .2em; the 64px field
+   has a 1.5px accent line on the input fill and 30px/700 kana. A right reading moves on to the sentence stage, which
+   keeps the plain answer field (the board's segment kind has none). */
+html:not([data-theme-family='crystal']) .language-practice-drill--kana-reading .language-practice-drill__ruby { color: var(--sf-text-strong); font-size: clamp(2.8rem, 12vw, 84px); font-weight: 700; line-height: 1; }
+html:not([data-theme-family='crystal']) .language-practice-drill--kana-reading .language-practice-drill__ruby rt { color: var(--sf-brand-text); font-size: 20px; font-weight: 500; letter-spacing: .2em; }
+html:not([data-theme-family='crystal']) .language-practice-drill--kana-reading:not(:has(.language-practice-drill__sentence)) .language-practice-drill__answer { height: 64px; padding: 0 16px 0 20px; border: 1.5px solid var(--sf-accent-line); background: var(--lpd-input-bg); font-size: 30px; font-weight: 700; letter-spacing: .06em; }
+html:not([data-theme-family='crystal']) .language-practice-drill--kana-reading[data-result='correct']:not(:has(.language-practice-drill__sentence)) .language-practice-drill__answer { border-color: var(--sf-success); background: var(--lpd-input-bg); }
+/* LangPractice.dc.html lines 238-241: the footer has no rule above it; Hint and Check are 46px at 14 / 14.5px. */
+html:not([data-theme-family='crystal']) .language-practice-drill__actions { gap: 10px; padding-top: 14px; border-top: 0; }
 html:not([data-theme-family='crystal']) .language-practice-drill__footnote { color: var(--lpd-text3); font-size: 12.5px; }
-html:not([data-theme-family='crystal']) .language-practice-drill__hint { min-height: 46px; padding: 0 18px; border-radius: var(--sf-button-radius, 999px); background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow); color: var(--sf-text-strong); font-weight: 600; }
+html:not([data-theme-family='crystal']) .language-practice-drill__hint { min-height: 46px; padding: 0 16px; font-size: 14px; border-radius: var(--sf-button-radius, 999px); background: var(--sf-surface-control); box-shadow: var(--sf-secondary-shadow); color: var(--sf-text-strong); font-weight: 600; }
 html:not([data-theme-family='crystal']) .language-practice-drill__primary-action {
-  min-height: 48px;
-  padding: 0 22px;
+  min-height: 46px;
+  gap: 10px;
+  padding: 0 20px;
+  font-size: 14.5px;
   border-radius: var(--sf-button-radius, 999px);
   background: var(--sf-primary-bg);
   box-shadow: var(--sf-primary-shadow);
@@ -474,6 +536,12 @@ html:not([data-theme-family='crystal']) .language-practice-drill__primary-action
   font-weight: 650;
 }
 html:not([data-theme-family='crystal']) .language-practice-drill__primary-action:hover:not(:disabled) { filter: brightness(1.06); }
+/* LangPractice.dc.html lines 5, 16, 68: the exit sits on the chip fill without a shadow, the dark play button is the
+   board's lit cyan sphere, and the physical-keyboard note is 12px text3 on a normal line box. */
+html:not([data-theme-family='crystal']) .language-practice-drill__toolbar .language-practice-drill__exit { box-shadow: none; }
+html:not(.dark):not([data-theme-family='crystal']) .language-practice-drill__toolbar .language-practice-drill__exit { background: var(--sf-surface-raised); }
+html.dark:not([data-theme-family='crystal']) .language-practice-drill__listen { background: radial-gradient(circle at 35% 30%, #9ef0ff, #28d3f4 55%, #1a9fbd); }
+html:not([data-theme-family='crystal']) .language-practice-drill__physical-help { color: var(--lpd-text3); font-size: 12px; line-height: normal; }
 html:not([data-theme-family='crystal']) .language-practice-drill__primary-action kbd { padding: 2px 6px; border: 0; background: var(--sf-primary-kbd-bg); font-family: var(--sf-font-mono); font-size: 11px; }
 html:not([data-theme-family='crystal']) .language-practice-drill__results .language-practice-drill__exit {
   width: auto;
@@ -503,8 +571,7 @@ html:not([data-theme-family='crystal']) .language-practice-drill__results .langu
   html:not([data-theme-family='crystal']) .language-practice-drill__hangul-keys > div + button:not(:last-child) { width: auto; padding: 0 12px; }
   html:not([data-theme-family='crystal']) .language-practice-drill__hangul-fix { flex-direction: column; align-items: flex-start; gap: .4rem; }
   html:not([data-theme-family='crystal']) .language-practice-drill__sentence .language-practice-drill__segments { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  html:not([data-theme-family='crystal']) .language-practice-drill__sentence-token,
-  html:not([data-theme-family='crystal']) .language-practice-drill__sentence-blank { min-width: 1.8rem; padding: .4rem .5rem; }
+  html:not([data-theme-family='crystal']) :is(.language-practice-drill__sentence-token, .language-practice-drill__sentence-blank, :where(.language-practice-drill__sentence-tokens > span:not([class]))) { height: 52px; min-width: 1.8rem; padding: .4rem .5rem; }
   html:not([data-theme-family='crystal']) .language-practice-drill__footnote { flex-basis: 100%; }
   html:not([data-theme-family='crystal']) .language-practice-drill__actions { flex-wrap: wrap; }
 }

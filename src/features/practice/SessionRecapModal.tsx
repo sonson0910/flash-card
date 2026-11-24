@@ -209,11 +209,11 @@ function TierLabel({ tier, crystal }: { tier: SessionRecapTier; crystal: boolean
   return <Trans {...msg({ context: 'recap.tier.mastered', message: 'Mastered' })} />;
 }
 
-function PromotedCard({ promotion, crystal }: { promotion: SessionRecapPromotion; crystal: boolean }) {
+function PromotedCard({ promotion, crystal, deal }: { promotion: SessionRecapPromotion; crystal: boolean; deal?: number }) {
   const { card, from, to } = promotion;
   const levels = Math.max(1, tierRank[to] - tierRank[from]);
   return (
-    <li className="practice-recap-card" data-tier={to}>
+    <li className={`practice-recap-card${deal ? ` sf-deal-${Math.min(deal, 3)}` : ''}`} data-tier={to}>
       <div className="practice-recap-card-face">
         {!crystal && (
           <span className="practice-recap-card-art" aria-hidden="true">
@@ -237,7 +237,8 @@ function PromotedCard({ promotion, crystal }: { promotion: SessionRecapPromotion
   );
 }
 
-function StatTile({ label, value, children, tone }: { label: ReactNode; value: ReactNode; children?: ReactNode; tone?: 'holo' | 'crimson' | 'gold' }) {
+// holo, crimson and gold are the Crystal tile bars; warm is the Classic RecapNext XP tile.
+function StatTile({ label, value, children, tone }: { label: ReactNode; value: ReactNode; children?: ReactNode; tone?: 'holo' | 'crimson' | 'gold' | 'warm' }) {
   return (
     <div className="practice-recap-stat" data-tone={tone}>
       <dt>{label}</dt>
@@ -359,6 +360,7 @@ export function SessionRecapModal({
     : duration.minutes > 0
       ? <Trans {...msg({ context: 'recap.title-duration', message: 'Session complete · {minutes} min {seconds} s' })} values={{ minutes: duration.minutes, seconds: duration.seconds }} />
       : <Trans {...msg({ context: 'recap.title-seconds', message: 'Session complete · {seconds} s' })} values={{ seconds: duration.seconds }} />;
+  const classicHeadline = <Trans {...msg({ context: 'recap.headline', message: '{count, plural, one {<0>#</0> word, <1>locked in.</1>} other {<0>#</0> words, <1>locked in.</1>}}' })} values={{ count: saved }} components={{ 0: <CountUp to={saved} />, 1: <em /> }} />;
   const closeLabel = returnsToToday
     ? <Trans {...msg({ context: 'recap.back-today', message: 'Back to Today' })} />
     : <Trans {...msg({ context: 'recap.continue', message: 'Continue learning' })} />;
@@ -550,21 +552,50 @@ export function SessionRecapModal({
               </div>
             </div>
           ) : (
-            <div className="practice-recap-main">
-              <Dialog.Title className="practice-recap-pill"><Check size={14} strokeWidth={2.4} aria-hidden="true" />{classicTitle}</Dialog.Title>
-              <p className="practice-recap-headline">
-                <Trans {...msg({ context: 'recap.headline', message: '{count, plural, one {<0>#</0> word, <1>locked in.</1>} other {<0>#</0> words, <1>locked in.</1>}}' })} values={{ count: saved }} components={{ 0: <CountUp to={saved} />, 1: <em /> }} />
-              </p>
-              <Dialog.Description id="session-recap-description" className="practice-recap-sub">{description}</Dialog.Description>
+            <div className="practice-recap-main" data-recap-variant={isNext ? 'next' : undefined}>
+              {isNext ? (
+                // RecapNext: one rising column of the session line, the headline and the stat tiles beside
+                // the goal card; the sentence summary stays the dialog's description for assistive tech,
+                // its figures are on the tiles and the promoted cards.
+                <div className="practice-recap-lead sf-rise">
+                  <Dialog.Title className="practice-recap-overline">{classicTitle}</Dialog.Title>
+                  <p className="practice-recap-headline">{classicHeadline}</p>
+                  <Dialog.Description id="session-recap-description" className="sr-only">{description}</Dialog.Description>
+                  <dl data-recap-stats className="practice-recap-stats">
+                    <StatTile tone="warm" label={<Trans {...msg({ context: 'recap.xp-earned', message: 'XP earned' })} />} value={<><span aria-hidden="true">+</span><CountUp to={xpEarned} /></>}>
+                      <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.xp-session', message: 'This session' })} /></p>
+                    </StatTile>
+                    <StatTile label={<Trans {...msg({ context: 'recap.accuracy', message: 'Accuracy' })} />} value={<><CountUp to={accuracy} suffix="%" /><span className="practice-recap-pct" aria-hidden="true">%</span></>}>
+                      <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.remembered-of', message: '{good} of {total} remembered' })} values={{ good: goodCount, total: saved }} /></p>
+                    </StatTile>
+                    {showBestRun && (
+                      <StatTile label={<Trans {...msg({ context: 'recap.best-run', message: 'Best combo' })} />} value={<>×{formatNumber(bestRun)}</>}>
+                        <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.best-run-detail', message: 'Remembered in a row' })} /></p>
+                      </StatTile>
+                    )}
+                    {showStreak && (
+                      <StatTile label={<Trans {...msg({ context: 'recap.streak', message: 'Streak' })} />} value={formatNumber(streakDays)}>
+                        <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.streak-detail', message: 'Days in a row' })} /></p>
+                      </StatTile>
+                    )}
+                  </dl>
+                </div>
+              ) : (
+                <>
+                  <Dialog.Title className="practice-recap-pill sf-rise"><Check size={14} strokeWidth={2.4} aria-hidden="true" />{classicTitle}</Dialog.Title>
+                  <p className="practice-recap-headline sf-rise-2">{classicHeadline}</p>
+                  <Dialog.Description id="session-recap-description" className="practice-recap-sub sf-rise-2">{description}</Dialog.Description>
+                </>
+              )}
               {goalPanel}
 
               {shownPromotions.length > 0 && (
                 <ul className="practice-recap-cards" aria-label={_(msg({ id: 'recap.cards-up-label', message: 'Words that moved up a level' }))}>
-                  {shownPromotions.map(promotion => <PromotedCard key={promotion.card.id} promotion={promotion} crystal={false} />)}
+                  {shownPromotions.map((promotion, index) => <PromotedCard key={promotion.card.id} promotion={promotion} crystal={false} deal={index + 1} />)}
                 </ul>
               )}
 
-              <dl data-recap-stats className="practice-recap-stats">
+              {!isNext && <dl data-recap-stats className="practice-recap-stats sf-rise-3">
                 <StatTile label={<Trans {...msg({ context: 'recap.recall', message: 'Recall' })} />} value={<><CountUp to={accuracy} suffix="%" /><span className="practice-recap-pct" aria-hidden="true">%</span></>}>
                   <span className="practice-recap-bar" role="img" aria-label={_({ ...msg({ id: 'recap.recall-split', message: '{good} remembered, {again} to revisit' }), values: { good: goodCount, again: againCount } })}>
                     {againCount > 0 && <span data-part="again" style={{ width: `${100 - goodShare}%` }} />}
@@ -579,19 +610,17 @@ export function SessionRecapModal({
                     <p className="practice-recap-stat-sub"><Trans {...msg({ context: 'recap.streak-note', message: 'A day counts after one review.' })} /></p>
                   </StatTile>
                 )}
-                {!isNext && (
-                  <StatTile label={<Trans {...msg({ context: 'recap.next-review', message: 'Next review' })} />} value={<Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} />}>
-                    <p className="practice-recap-stat-sub" aria-live="polite"><TomorrowDueText result={tomorrow} msPerReview={msPerReview} /></p>
-                  </StatTile>
-                )}
-              </dl>
+                <StatTile label={<Trans {...msg({ context: 'recap.next-review', message: 'Next review' })} />} value={<Trans {...msg({ context: 'recap.tomorrow', message: 'Tomorrow' })} />}>
+                  <p className="practice-recap-stat-sub" aria-live="polite"><TomorrowDueText result={tomorrow} msPerReview={msPerReview} /></p>
+                </StatTile>
+              </dl>}
               {progressLine}
               {whatNext}
 
-              <div className="practice-recap-actions">
+              <div className="practice-recap-actions sf-rise-3">
                 {/* The Word Match card leads the row when it is offered, so closing steps back to a secondary button. */}
-                <button type="button" className={offerWordMatch ? 'practice-recap-secondary' : 'practice-recap-primary'} onClick={onClose}>{closeLabel}</button>
-                {canRetry && <button type="button" className="practice-recap-secondary" onClick={onRetryWeak} disabled={retryDisabled}>{retryLabel}</button>}
+                <button type="button" className={`${offerWordMatch ? 'practice-recap-secondary' : 'practice-recap-primary'} sf-press`} onClick={onClose}>{closeLabel}</button>
+                {canRetry && <button type="button" className="practice-recap-secondary sf-press" onClick={onRetryWeak} disabled={retryDisabled}>{retryLabel}</button>}
                 {!isNext && onViewWeeklyRecap && <button type="button" className="practice-recap-link" onClick={onViewWeeklyRecap}><Trans {...msg({ context: 'recap.weekly', message: 'View weekly recap' })} /> <ArrowRight size={15} aria-hidden="true" /></button>}
               </div>
             </div>

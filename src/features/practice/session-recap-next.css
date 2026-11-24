@@ -51,6 +51,25 @@ button.practice-recap-next-card:active { transform: scale(.985); }
 .practice-recap-switch:disabled { cursor: not-allowed; }
 .practice-recap-switch[aria-busy="true"] { cursor: progress; }
 
+/* RecapNext.dc.html lines 53-69 (desktop board): the section sits 26px under the results, the heading and the card
+   lines use normal line boxes with 3px between title and detail, the cards pad 0 20px (Word Match 0 22px with a
+   16px gap and no border), the reminder time is in the body ink and the switch knob has no shadow. */
+@media (min-width: 761px) {
+  :where(html:not([data-theme-family=crystal])) .practice-recap-whatnext { margin-top: 26px; }
+  :where(html:not([data-theme-family=crystal])) .practice-recap-whatnext-heading { line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .practice-recap-next-card { padding: 0 20px; }
+  :where(html:not([data-theme-family=crystal])) .practice-recap-next-card[data-recap-next="match"] { gap: 16px; padding: 0 22px; border-width: 0; }
+  :where(html:not([data-theme-family=crystal])) .practice-recap-next-text { gap: 3px; }
+  :where(html:not([data-theme-family=crystal])) .practice-recap-next-text :is(strong, small) { line-height: normal; }
+}
+:where(html:not([data-theme-family=crystal])) .practice-recap-time { color: var(--sf-text); }
+/* The board cards carry the body ink with text-strong titles, sit on the surface without a blur, and the share
+   icon is a 46px content-box span with a 1px border (48px). */
+:where(html:not([data-theme-family=crystal])) .practice-recap-next-card { color: var(--sf-text); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:where(html:not([data-theme-family=crystal])) .practice-recap-next-card:not([data-recap-next="match"]) .practice-recap-next-text strong { color: var(--sf-text-strong); }
+:where(html:not([data-theme-family=crystal])) .practice-recap-next-card[data-recap-next="share"] .practice-recap-next-icon { width: 48px; height: 48px; }
+:where(html:not([data-theme-family=crystal])) .practice-recap-switch[aria-checked="true"] .practice-recap-switch-thumb { box-shadow: none; }
+
 /* With the exam goal beside the headline, the row runs full width under both columns. */
 @media (min-width: 1024px) {
   .practice-recap-board[data-family="classic"] .practice-recap-main:has(> .ielts-goal-panel) > .practice-recap-whatnext { grid-column: 1 / -1; order: 1; justify-self: stretch; width: 100%; }

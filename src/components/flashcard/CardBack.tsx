@@ -101,7 +101,8 @@ export function CardBack({
       )}
       <div className="flashcard-back-header relative z-20 flex shrink-0 flex-wrap items-center">
         <span className="flashcard-back-language">
-          {look === 'aurora' && <span className="flashcard-back-language-dot" aria-hidden="true" />}
+          {/* The language card's ink back keeps the dot too (LangCard.dc.html 188). */}
+          {(look === 'aurora' || (isPackCard && look === 'paper')) && <span className="flashcard-back-language-dot" aria-hidden="true" />}
           {isPackCard ? cardInMeaningLanguage(i18n, data) : cardMeaningLanguageName(i18n, data)}
         </span>
         {isDue && (
@@ -117,7 +118,7 @@ export function CardBack({
           <h2 data-translation-reveal lang={meaningLanguage} className="flashcard-back-translation flashcard-translation-reveal break-words text-balance first-letter:uppercase [overflow-wrap:anywhere]">
             {data.translation}
           </h2>
-          {look === 'paper' && <span className="flashcard-back-ink-rule" aria-hidden="true" />}
+          {(look === 'paper' || look === 'aurora') && <span className="flashcard-back-ink-rule" aria-hidden="true" />}
           <div className="flashcard-back-source flex flex-wrap items-center">
             <span lang={sourceLanguage} className="flashcard-back-word">{data.word}</span>
             {isPackCard
@@ -138,7 +139,10 @@ export function CardBack({
             >
               {isPlayingAudio
                 ? <span data-audio-waves="active" className="flex h-3 items-center gap-0.5" aria-hidden="true"><span className="wave-bar-1 w-0.5 rounded-full bg-current" /><span className="wave-bar-2 w-0.5 rounded-full bg-current" /><span className="wave-bar-3 w-0.5 rounded-full bg-current" /><span className="wave-bar-4 w-0.5 rounded-full bg-current" /></span>
-                : <Volume2 size={16} aria-hidden="true" />}
+                : look === 'crystal'
+                  ? <Volume2 size={16} aria-hidden="true" />
+                  // The Classic boards play the word from a filled triangle (Aurora 13px, Atelier 12px).
+                  : <svg width={look === 'paper' ? 12 : 13} height={look === 'paper' ? 12 : 13} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>}
             </button>
           </div>
           {data.origin === 'ai' && (

@@ -124,6 +124,17 @@ export function resolveStudyRecallMode(
 }
 
 /**
+ * Brings in the next card. Classic deals it the way its seed boards do (Aurora.dc.html and Atelier.dc.html,
+ * au-deal-a 560 ms and ip-deal-a 600 ms in study-shell.css); Crystal keeps its GSAP step.
+ */
+function StudyCardEntrance({ index, direction, children }: { index: number; direction: 1 | -1; children: ReactNode }) {
+  if (globalThis.document?.documentElement.dataset.themeFamily !== 'crystal') {
+    return <div key={index} data-study-deal className="study-shell-deal">{children}</div>;
+  }
+  return <GsapEntrance animationKey={index} direction={direction} variant="step">{children}</GsapEntrance>;
+}
+
+/**
  * True when revealing the answer turns the Crystal card over, as the AnimeReview board turns the revealed card
  * 180deg; the card's own flip then plays the flip sound. Classic, Zen glass and reduced motion show the answer side
  * at once.
@@ -523,7 +534,7 @@ export function StudyView({
         )}
 
         <CrystalFamilySlot crystal={false}>{learnFirst}</CrystalFamilySlot>
-        <GsapEntrance animationKey={index} direction={direction} variant="step">
+        <StudyCardEntrance index={index} direction={direction}>
           {needsIntroduction ? (
             <section data-study-introduction className="study-shell-intro mx-auto w-full max-w-2xl rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-card-radius,22px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 shadow-xl sm:p-5" aria-labelledby="study-introduction-heading">
               <div className="study-shell-intro__head mb-4 text-center">
@@ -572,7 +583,7 @@ export function StudyView({
               onToggleBookmark={onBookmark}
             />
           )}
-        </GsapEntrance>
+        </StudyCardEntrance>
         {lumiReaction && (
           <div className="study-shell-reaction pointer-events-none absolute -bottom-5 -right-1 z-20 hidden sm:block" aria-hidden="true">
             <Lumi pose={lumiReaction} size={72} className="crystal-ornament drop-shadow-[0_8px_16px_var(--sf-shadow)]" />

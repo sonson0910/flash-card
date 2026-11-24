@@ -143,6 +143,20 @@ html[data-motion="reduced"]:not([data-theme-family=crystal]) .study-shell :is(.s
 }
 html:not([data-theme-family=crystal]):not(.dark) :is(.study-shell-kbd, .study-shell-shortcuts__key) { border-radius: 5px; }
 html:not([data-theme-family=crystal]):not(.dark) .study-shell-hint { font: italic 400 17px/1.3 var(--sf-font-display); }
+/* The seed boards' grade tray is wider than the card: 576px in Aurora, 558px in Atelier (Aurora.dc.html 232-235, Atelier.dc.html 212-215). */
+html:not([data-theme-family=crystal]).dark .practice-board--study.study-shell [data-study-rating] { max-width: 576px; }
+html:not([data-theme-family=crystal]):not(.dark) .practice-board--study.study-shell [data-study-rating] { max-width: 558px; }
+/* Classic deals each card in from the seed boards' stack (canvas/shared.css 18 and 43; keyframes in index.css). */
+html:not([data-theme-family=crystal]).dark .study-shell-deal { animation: au-deal-a 560ms cubic-bezier(.16, 1, .3, 1) backwards; }
+html:not([data-theme-family=crystal]):not(.dark) .study-shell-deal { animation: ip-deal-a 600ms cubic-bezier(.16, 1, .3, 1) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-theme-family=crystal]).dark .study-shell-deal,
+  html:not([data-theme-family=crystal]):not(.dark) .study-shell-deal { animation: none; }
+}
+html[data-motion="reduced"]:not([data-theme-family=crystal]) .study-shell-deal { animation: none; }
+/* Aurora's hint and its Space key (Aurora.dc.html 241-244). */
+html:not([data-theme-family=crystal]).dark .study-shell-hint { font-size: 14px; font-weight: 400; }
+html:not([data-theme-family=crystal]).dark .study-shell-hint .study-shell-kbd { min-width: 0; height: 24px; padding: 0 8px; border-color: rgb(255 255 255 / 0.14); background: none; color: inherit; font: 400 11px/1 var(--sf-font-mono); }
 
 .practice-board--study.study-shell .study-shell-combo { max-width: 460px; }
 /* The right-column wrapper only takes a box in Crystal on wide screens. */
@@ -662,6 +676,8 @@ html[data-theme-family=crystal]:not(.dark) .practice-board.study-shell [data-stu
 
 /* Phones: the MobileReview header, a single row of close, progress and the session tools. */
 @media (max-width: 640px) {
+  /* MobileReview keeps the header and the grade tray 16px from the screen edges (MobileReview.dc.html 4 and 54). */
+  html:not([data-theme-family=crystal]) .practice-board--study.study-shell { padding-inline: 16px; }
   .claude-app-shell:has([data-study-session]) .claude-workspace-inner { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
   .practice-board--study.study-shell [data-study-header] { display: flex; min-height: 56px; gap: 8px; margin-bottom: 4px; }
   .study-shell-start { flex: none; }

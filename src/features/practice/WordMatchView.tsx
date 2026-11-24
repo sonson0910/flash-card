@@ -280,8 +280,10 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
         aria-pressed={isSelected}
         data-kind={tile.type}
         data-state={state}
-        className={`practice-match__tile transition-[border-color,background-color,box-shadow,transform] active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${
-          isMismatched ? 'motion-safe:animate-shake' : isSelected ? 'ring-2' : ''
+        className={`practice-match__tile transition-[border-color,background-color,box-shadow,transform] [html[data-theme-family=crystal]_&]:active:scale-[.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none ${
+          isMismatched
+            ? 'sf-shake [html[data-theme-family=crystal]_&]:motion-safe:animate-shake'
+            : isSelected ? '[html[data-theme-family=crystal]_&]:ring-2' : 'sf-press'
         }`}
       >
         <span className="practice-match__text">{tile.text}</span>
