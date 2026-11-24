@@ -57,8 +57,8 @@
 <!--@@DLGOPEN-->
 <div style="width: 720px; height: 780px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; align-items: center; justify-content: center;">
 <!--#AMBIENT-->
-  <div aria-hidden="true" style="position: absolute; inset: 0; background: {{t.scrim}};"></div>
-  <div role="dialog" aria-modal="true" aria-labelledby="dlg-title" class="sf-pop" style="position: relative; z-index: 2; width: {{dw}}px; max-height: 740px; box-sizing: border-box; overflow: hidden; border-radius: {{t.dlgRadius}}px; border: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}}; display: flex; flex-direction: column;">
+  <div aria-hidden="true" class="sf-scrim" style="position: absolute; inset: 0; background: {{t.scrim}};"></div>
+  <div role="dialog" aria-modal="true" aria-labelledby="dlg-title" class="{{t.fx.dialog}}" style="position: relative; z-index: 2; width: {{dw}}px; max-height: 740px; box-sizing: border-box; overflow: hidden; border-radius: {{t.dlgRadius}}px; border: {{t.dlgBorder}}; background: {{t.dlgBg}}; box-shadow: {{t.dlgShadow}}; display: flex; flex-direction: column;">
 <!--@@DLGCLOSE-->
   </div>
 </div>

@@ -119,6 +119,78 @@ SHARED_CSS = review_css + '''
 @media (prefers-reduced-motion: reduce){.nk-meteor{animation:none;opacity:0}.nk-twinkle,.nk-drift,.nk-drift-b,.nk-rise,.nk-rise-2,.nk-rise-3{animation:none}.nk-lift{transition:none}}
 @media (prefers-reduced-motion: reduce){.nk-pop,.nk-pop-2,.nk-pop-3,.nk-stamp,.nk-spark,.nk-speed,.nk-rim-spin,.nk-float,.nk-slide,.nk-slide-2,.nk-slide-3,.nk-slide-4,.nk-flash,.nk-bar,.nk-shine,.nk-marquee{animation:none}.nk-press{transition:none}}
 @media (prefers-reduced-motion: reduce){.sf-fall,.sf-rise,.sf-rise-2,.sf-rise-3,.sf-deal-1,.sf-deal-2,.sf-deal-3,.sf-sheen,.sf-grow,.sf-bob-a,.sf-bob-b,.sf-pop,.sf-pulse,.sf-wave,.sf-shimmer,.sf-spin,.sf-shake{animation:none}.sf-fall{display:none}.sf-press,.sf-lift{transition:none}}
+/* Classic motion system. A board picks the class through t.fx.* so each look keeps its own signature:
+   Midnight Aurora resolves light out of blur and glows on touch, Ink & Paper lays ink and presses like a stamp. */
+/* Entrances use the individual translate property and fill backwards, so nothing stays pinned afterwards and the
+   same element can still lift or press on hover. */
+@keyframes au-in-k{from{opacity:0;translate:0 10px;filter:blur(6px)}}
+@keyframes ip-in-k{from{opacity:0;translate:0 8px}}
+.au-in{animation:au-in-k 420ms cubic-bezier(.16,1,.3,1) 80ms backwards}
+.au-in-2{animation:au-in-k 420ms cubic-bezier(.16,1,.3,1) 180ms backwards}
+.au-in-3{animation:au-in-k 420ms cubic-bezier(.16,1,.3,1) 280ms backwards}
+.au-in-4{animation:au-in-k 420ms cubic-bezier(.16,1,.3,1) 380ms backwards}
+.ip-in{animation:ip-in-k 480ms cubic-bezier(.16,1,.3,1) 60ms backwards}
+.ip-in-2{animation:ip-in-k 480ms cubic-bezier(.16,1,.3,1) 200ms backwards}
+.ip-in-3{animation:ip-in-k 480ms cubic-bezier(.16,1,.3,1) 340ms backwards}
+.ip-in-4{animation:ip-in-k 480ms cubic-bezier(.16,1,.3,1) 480ms backwards}
+.au-stagger>*{animation:au-in-k 420ms cubic-bezier(.16,1,.3,1) backwards}
+.ip-stagger>*{animation:ip-in-k 480ms cubic-bezier(.16,1,.3,1) backwards}
+.au-stagger>:nth-child(1),.ip-stagger>:nth-child(1){animation-delay:120ms}
+.au-stagger>:nth-child(2),.ip-stagger>:nth-child(2){animation-delay:180ms}
+.au-stagger>:nth-child(3),.ip-stagger>:nth-child(3){animation-delay:240ms}
+.au-stagger>:nth-child(4),.ip-stagger>:nth-child(4){animation-delay:300ms}
+.au-stagger>:nth-child(5),.ip-stagger>:nth-child(5){animation-delay:360ms}
+.au-stagger>:nth-child(6),.ip-stagger>:nth-child(6){animation-delay:420ms}
+.au-stagger>:nth-child(7),.ip-stagger>:nth-child(7){animation-delay:480ms}
+.au-stagger>:nth-child(n+8),.ip-stagger>:nth-child(n+8){animation-delay:540ms}
+@keyframes au-dialog-k{from{opacity:0;transform:translate3d(0,14px,0) scale(.97);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+.au-dialog{animation:au-dialog-k 340ms cubic-bezier(.16,1,.3,1) both}
+@keyframes ip-dialog-k{from{opacity:0;transform:translate3d(0,22px,0) rotate(-.8deg)}to{opacity:1;transform:none}}
+.ip-dialog{animation:ip-dialog-k 380ms cubic-bezier(.16,1,.3,1) both}
+@keyframes sf-scrim-k{from{opacity:0}to{opacity:1}}
+.sf-scrim{animation:sf-scrim-k 240ms ease-out both}
+@keyframes sf-sheet-r-k{from{opacity:0;translate:48px 0}to{opacity:1;translate:0 0}}
+.sf-sheet-r{animation:sf-sheet-r-k 360ms cubic-bezier(.16,1,.3,1) both}
+@keyframes sf-sheet-b-k{from{opacity:0;translate:0 56px}to{opacity:1;translate:0 0}}
+.sf-sheet-b{animation:sf-sheet-b-k 380ms cubic-bezier(.16,1,.3,1) both}
+@keyframes sf-toast-k{from{opacity:0;translate:0 16px;scale:.96}to{opacity:1;translate:0 0;scale:1}}
+.sf-toast{animation:sf-toast-k 420ms cubic-bezier(.16,1,.3,1) both}
+.au-lift{transition:transform 240ms cubic-bezier(.16,1,.3,1), filter 240ms ease}
+.au-lift:hover{transform:translateY(-4px);filter:brightness(1.07) drop-shadow(0 16px 24px rgb(40 211 244 / .2))}
+.au-lift:active{transform:translateY(-1px) scale(.99)}
+.ip-lift{transition:transform 240ms cubic-bezier(.16,1,.3,1), filter 240ms ease}
+.ip-lift:hover{transform:translateY(-4px) rotate(-.5deg);filter:drop-shadow(0 14px 12px rgb(60 40 20 / .18))}
+.ip-lift:active{transform:translateY(-1px)}
+.au-press{transition:transform 180ms cubic-bezier(.16,1,.3,1), filter 180ms ease}
+.au-press:hover{transform:translateY(-2px);filter:brightness(1.08) drop-shadow(0 10px 18px rgb(40 211 244 / .35))}
+.au-press:active{transform:translateY(0) scale(.97);filter:brightness(.98)}
+.ip-press{transition:transform 160ms cubic-bezier(.16,1,.3,1), filter 160ms ease}
+.ip-press:hover{transform:translateY(-2px);filter:drop-shadow(0 8px 8px rgb(60 40 20 / .2))}
+.ip-press:active{transform:translateY(1px) scale(.98);filter:none}
+.sf-ease{transition:background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease, opacity 200ms ease, transform 200ms cubic-bezier(.16,1,.3,1)}
+.au-glint{position:relative;overflow:hidden}
+.au-glint::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(100deg,transparent 30%,rgb(255 255 255 / .55) 50%,transparent 70%);animation:au-glint-k 3.2s ease-in-out 1.4s infinite}
+@keyframes au-glint-k{0%{opacity:0;transform:translateX(-120%)}12%{opacity:1}55%,100%{opacity:0;transform:translateX(160%)}}
+@keyframes au-correct-k{0%{box-shadow:0 0 0 0 rgb(117 208 121 / .55)}100%{box-shadow:0 0 0 18px rgb(117 208 121 / 0)}}
+.au-correct{animation:au-correct-k 720ms ease-out 1}
+@keyframes ip-correct-k{0%{scale:1}35%{scale:.96}70%{scale:1.02}100%{scale:1}}
+.ip-correct{animation:ip-correct-k 420ms cubic-bezier(.16,1,.3,1) 1}
+@keyframes au-pop-k{0%{opacity:0;scale:.6;filter:blur(6px)}70%{opacity:1;scale:1.06;filter:none}100%{opacity:1;scale:1}}
+.au-pop{animation:au-pop-k 520ms cubic-bezier(.16,1,.3,1) 200ms both}
+@keyframes ip-stamp-k{0%{opacity:0;scale:1.9;rotate:-10deg}60%{opacity:1;scale:.94;rotate:1deg}100%{opacity:1;scale:1;rotate:0deg}}
+.ip-stamp{animation:ip-stamp-k 560ms cubic-bezier(.34,1.56,.64,1) 260ms both}
+@keyframes sf-tick-k{from{opacity:0;translate:0 .45em;filter:blur(4px)}to{opacity:1;translate:0 0;filter:none}}
+.sf-tick{animation:sf-tick-k 520ms cubic-bezier(.16,1,.3,1) 240ms both}
+@keyframes sf-bar-k{from{opacity:.35;scale:1 .12}to{opacity:1;scale:1 1}}
+.sf-bars>*{transform-origin:bottom;animation:sf-bar-k 700ms cubic-bezier(.16,1,.3,1) both}
+.sf-bars>:nth-child(2){animation-delay:40ms}.sf-bars>:nth-child(3){animation-delay:80ms}.sf-bars>:nth-child(4){animation-delay:120ms}.sf-bars>:nth-child(5){animation-delay:160ms}.sf-bars>:nth-child(6){animation-delay:200ms}.sf-bars>:nth-child(7){animation-delay:240ms}.sf-bars>:nth-child(n+8){animation-delay:280ms}
+/* Line draw for sparklines and rings: the path needs pathLength="1". */
+@keyframes sf-draw-k{from{stroke-dasharray:1;stroke-dashoffset:1}to{stroke-dasharray:1;stroke-dashoffset:0}}
+.sf-draw{animation:sf-draw-k 1.2s cubic-bezier(.65,0,.35,1) 300ms both}
+@keyframes sf-cells-k{from{opacity:0;scale:.6}to{opacity:1;scale:1}}
+.sf-cells>*{animation:sf-cells-k 360ms cubic-bezier(.16,1,.3,1) both}
+.sf-cells>:nth-child(7n+2){animation-delay:30ms}.sf-cells>:nth-child(7n+3){animation-delay:60ms}.sf-cells>:nth-child(7n+4){animation-delay:90ms}.sf-cells>:nth-child(7n+5){animation-delay:120ms}.sf-cells>:nth-child(7n+6){animation-delay:150ms}.sf-cells>:nth-child(7n){animation-delay:180ms}
+@media (prefers-reduced-motion: reduce){.au-in,.au-in-2,.au-in-3,.au-in-4,.ip-in,.ip-in-2,.ip-in-3,.ip-in-4,.au-stagger>*,.ip-stagger>*,.au-dialog,.ip-dialog,.sf-scrim,.sf-sheet-r,.sf-sheet-b,.sf-toast,.au-glint::after,.au-correct,.ip-correct,.au-pop,.ip-stamp,.sf-tick,.sf-bars>*,.sf-draw,.sf-cells>*{animation:none}.au-lift,.ip-lift,.au-press,.ip-press,.sf-ease{transition:none}}
 '''
 COMPONENTS = sorted(f.name[:-len('.dc.html')] for f in SRC.glob('*.dc.html'))
 for name in COMPONENTS:
