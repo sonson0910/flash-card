@@ -283,9 +283,10 @@ html[data-theme-family="crystal"] .create-card-dialog {
 }
 html[data-theme-family="crystal"] .create-card-dialog__form { background: var(--sf-dialog-bg); clip-path: var(--nk-chamfer); }
 html[data-theme-family="crystal"] .create-card-dialog__header { border-bottom: 0; background: var(--sf-dialog-bg); padding: 1.2rem 1.25rem .9rem 1.45rem; }
-html[data-theme-family="crystal"] .create-card-dialog__ornament { display: block; background: linear-gradient(90deg, color-mix(in srgb, var(--sf-brand) 78%, white), var(--sf-brand) 58%, var(--sf-second)); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 75%, transparent); }
-html[data-theme-family="crystal"] .create-card-dialog__ornament--top { top: 0; left: 1.6rem; width: 7.5rem; }
-html[data-theme-family="crystal"] .create-card-dialog__ornament--bottom { right: 1.6rem; bottom: 0; width: 4.5rem; background: var(--sf-second); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 80%, transparent); }
+html[data-theme-family="crystal"] .create-card-dialog__ornament { display: block; background: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%); box-shadow: 0 0 12px rgb(255 42 77 / .8); }
+/* The accent bars sit just inside the 2px rim, as on the board. */
+html[data-theme-family="crystal"] .create-card-dialog__ornament--top { top: 2px; left: 28px; width: 120px; }
+html[data-theme-family="crystal"] .create-card-dialog__ornament--bottom { right: 32px; bottom: 2px; width: 70px; background: var(--sf-second); box-shadow: 0 0 10px rgb(94 242 255 / .8); }
 html[data-theme-family="crystal"] .create-card-dialog__kicker,
 html[data-theme-family="crystal"] .create-card-dialog__title,
 html[data-theme-family="crystal"] .create-card-dialog__section-kicker { font-family: var(--sf-font-display); font-style: italic; }
@@ -293,7 +294,6 @@ html[data-theme-family="crystal"] .create-card-dialog__kicker { color: var(--sf-
 html[data-theme-family="crystal"] .create-card-dialog__kicker span { display: inline; color: var(--sf-brand-text); }
 html[data-theme-family="crystal"] .create-card-dialog__title { font-size: 2rem; font-weight: 900; letter-spacing: .01em; }
 html[data-theme-family="crystal"] .create-card-dialog__field,
-html[data-theme-family="crystal"] .create-card-dialog__pos > div,
 html[data-theme-family="crystal"] .create-card-dialog__preview,
 html[data-theme-family="crystal"] .create-card-dialog__manual,
 html[data-theme-family="crystal"] .create-card-dialog__empty-preview { border-radius: 0; clip-path: var(--nk-chamfer-sm); }
@@ -307,7 +307,14 @@ html[data-theme-family="crystal"] .create-card-dialog__secondary,
 html[data-theme-family="crystal"] .create-card-dialog__primary { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; letter-spacing: .04em; }
 html[data-theme-family="crystal"] .create-card-dialog__pos button { transform: skewX(-12deg); }
 html[data-theme-family="crystal"] .create-card-dialog__pos button > span { transform: skewX(12deg); }
-html[data-theme-family="crystal"] .create-card-dialog__preview { border: 0; box-shadow: inset 0 0 0 1px var(--sf-brand), 0 18px 36px -28px var(--sf-shadow); }
+/* The draft card is the board's new-tier card: the tier rim and the card face are two layers, each under the large
+   chamfer and the face 2px inside the rim, so the rim also runs along the cut corners. The card itself stays
+   unclipped so a glow on it is not cut off; its transparent 2px border keeps the box size. */
+html[data-theme-family="crystal"] .create-card-dialog__preview { --cc-preview-rim: var(--sf-rim-new); isolation: isolate; border: 2px solid transparent; background: none; box-shadow: none; clip-path: none; }
+html[data-theme-family="crystal"] .create-card-dialog__preview::before,
+html[data-theme-family="crystal"] .create-card-dialog__preview::after { position: absolute; z-index: -1; clip-path: var(--nk-chamfer); content: ""; pointer-events: none; }
+html[data-theme-family="crystal"] .create-card-dialog__preview::before { inset: -2px; background: var(--cc-preview-rim); }
+html[data-theme-family="crystal"] .create-card-dialog__preview::after { inset: 0; background: var(--sf-solid-card, var(--sf-card-bg)); }
 html[data-theme-family="crystal"] .create-card-dialog__preview-heading,
 html[data-theme-family="crystal"] .create-card-dialog__regeneration-heading { font-family: var(--sf-font-display); font-style: italic; }
 html[data-theme-family="crystal"] .create-card-dialog__ai-badge { text-transform: uppercase; letter-spacing: .12em; }
@@ -316,6 +323,72 @@ html[data-theme-family="crystal"] .create-card-dialog__close,
 html[data-theme-family="crystal"] .create-card-dialog__audio { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); }
 html[data-theme-family="crystal"] .create-card-dialog__primary { background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 78%, white), var(--sf-brand) 45%, color-mix(in srgb, var(--sf-brand) 62%, black)); color: white; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
 html[data-theme-family="crystal"] .create-card-dialog__footer { border-top-color: var(--sf-border); }
+/* The part-of-speech chips sit loose on the body with no track, as on the board; the body padding absorbs the 5px
+   a skewed outer chip leans past its box. */
+html[data-theme-family="crystal"] .create-card-dialog__pos > div { gap: 6px; padding: 0; border: 0; background: none; }
+html[data-theme-family="crystal"] .create-card-dialog__save-row select { border-radius: 0; clip-path: var(--nk-chamfer-sm); }
+/* Crystal: the AnimeDlgStudy "Add a word" dialog. The rim (::before) and the fill (::after, 2px inside it) carry the
+   chamfer, so the frame's glow is not cut by a clip on the frame itself; the form cuts its own bottom corner so the
+   footer band stays inside the fill. */
+html[data-theme-family="crystal"].dark .create-card-dialog { --cc-foot: rgb(0 0 0 / .25); --cc-body: #d6dbe6; --cc-chip-on: rgb(255 42 77 / .2); --cc-secondary-bg: rgb(255 255 255 / .06); --cc-frame: linear-gradient(155deg, #ff5470, rgb(255 42 77 / .25) 28%, rgb(94 242 255 / .2) 72%, #5ef2ff); --cc-fill: linear-gradient(170deg, #141a2b 0%, #0a0d17 100%); --cc-glow: drop-shadow(0 0 36px rgb(255 42 77 / .3)) drop-shadow(0 30px 40px rgb(0 0 0 / .7)); }
+html[data-theme-family="crystal"]:not(.dark) .create-card-dialog { --cc-foot: rgb(190 222 250 / .45); --cc-body: #243553; --cc-chip-on: #fff; --cc-secondary-bg: #e6f5ff; --cc-frame: linear-gradient(155deg, #ff5470, rgb(224 23 63 / .3) 28%, rgb(26 167 201 / .35) 72%, #1aa7c9); --cc-fill: linear-gradient(170deg, #f5fbff 0%, #dbeeff 100%); --cc-glow: drop-shadow(0 26px 40px rgb(20 70 130 / .35)); }
+/* Radius 0 also beats the dark rounded corner: the frame keeps overflow hidden, so any radius would round the two square corners of the rim. */
+html[data-theme-family="crystal"] .create-card-dialog.crystal-chamfer { isolation: isolate; border-radius: 0; background: none; box-shadow: none; clip-path: none; filter: var(--cc-glow); }
+html[data-theme-family="crystal"] .create-card-dialog.crystal-chamfer::before,
+html[data-theme-family="crystal"] .create-card-dialog.crystal-chamfer::after { position: absolute; z-index: -1; inset: 0; background: var(--cc-frame); clip-path: var(--nk-chamfer); content: ""; pointer-events: none; }
+html[data-theme-family="crystal"] .create-card-dialog.crystal-chamfer::after { inset: 2px; background: var(--cc-fill); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__header { gap: 14px; padding: 22px 24px 14px 26px; background: none; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__form { background: none; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%); }
+html[data-theme-family="crystal"] .create-card-dialog__kicker:not(.create-card-dialog__kicker--stream) { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+html[data-theme-family="crystal"] .create-card-dialog__kicker:not(.create-card-dialog__kicker--stream) > span[aria-hidden] { width: 7px; height: 7px; flex: none; overflow: hidden; background: currentColor; box-shadow: 0 0 8px currentColor; color: var(--sf-brand-text); font-size: 0; transform: rotate(45deg); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__title { margin-top: 6px; color: var(--sf-text-strong); font-size: 30px; font-weight: 900; line-height: 1.05; }
+html[data-theme-family="crystal"] .create-card-dialog__description { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 13.5px; line-height: 1.5; }
+/* The close keeps its 44px target; the board's 38px chip is drawn inside it. */
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__close { position: relative; isolation: isolate; margin: -3px -3px 0 0; background: none; clip-path: none; color: var(--sf-text-muted); }
+html[data-theme-family="crystal"] .create-card-dialog__close::before { position: absolute; z-index: -1; inset: 3px; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm); content: ""; }
+html[data-theme-family="crystal"] .create-card-dialog__close:hover:not(:disabled) { color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .create-card-dialog__close svg { width: 14px; height: 14px; stroke-width: 2.6; }
+html[data-theme-family="crystal"] .create-card-dialog:not(.create-card-dialog--stream) .create-card-dialog__body { padding: 4px 26px 18px; }
+@media (min-width: 621px) {
+  html[data-theme-family="crystal"] .create-card-dialog:not(.create-card-dialog--stream) { width: min(630px, calc(100vw - 2rem)); }
+  html[data-theme-family="crystal"] .create-card-dialog__input-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; }
+}
+html[data-theme-family="crystal"] .create-card-dialog__label { color: var(--sf-text-muted); font-family: var(--sf-font-display); font-size: 11.5px; font-style: italic; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+html[data-theme-family="crystal"] .create-card-dialog__label em { color: var(--sf-text-subtle); font-size: inherit; font-style: inherit; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__field { height: 42px; min-height: 0; box-sizing: border-box; padding: 0 14px; border: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-strong); font-size: 14px; font-weight: 700; }
+/* The board's active field ring is the focus ring; the dialog opens with focus in the word field, as the board shows. */
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__field:focus-within { box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__field:has(input[aria-invalid="true"]) { box-shadow: inset 0 0 0 1.5px var(--sf-brand); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__field--active input { color: var(--sf-text-strong); font-size: 18px; font-style: italic; font-weight: 800; }
+html[data-theme-family="crystal"] .create-card-dialog__field:not(.create-card-dialog__field--active) input { color: var(--cc-body); font-size: 13px; font-weight: 500; }
+html[data-theme-family="crystal"] .create-card-dialog__pos { margin-top: 14px; }
+/* The chips keep a 44px target; the board's 32px skewed chip is drawn inside it. */
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__pos button { position: relative; isolation: isolate; flex: 0 0 auto; padding: 0 14px; background: none; box-shadow: none; clip-path: none; color: var(--sf-text-muted); font-size: 13px; font-weight: 800; letter-spacing: normal; }
+html[data-theme-family="crystal"] .create-card-dialog__pos button::before { position: absolute; z-index: -1; inset: 6px 0; box-shadow: inset 0 0 0 1px var(--sf-border); content: ""; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__pos button.is-selected { background: none; color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .create-card-dialog__pos button.is-selected::before { background: var(--cc-chip-on); box-shadow: inset 0 0 0 1px var(--sf-panel-edge); }
+html[data-theme-family="crystal"] .create-card-dialog__pos button:hover:not(:disabled, .is-selected) { color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__footer { gap: 10px; padding: 14px 26px 18px; border-top: 0; background: var(--cc-foot); box-shadow: inset 0 1px 0 var(--sf-border); }
+html[data-theme-family="crystal"] .create-card-dialog__request-count { gap: 6px; color: var(--sf-text-subtle); font-size: 12px; }
+html[data-theme-family="crystal"] .create-card-dialog__request-count svg { box-sizing: content-box; width: 13px; height: 13px; padding: 2px 6px; box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-muted); }
+html[data-theme-family="crystal"] .create-card-dialog :is(.create-card-dialog__secondary, .create-card-dialog__primary, .create-card-dialog__manual-link) { height: 46px; min-height: 46px; gap: 7px; border: 0; border-radius: 0; font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .05em; text-decoration: none; white-space: nowrap; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__secondary { padding: 0 20px; background: var(--cc-secondary-bg); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm); color: var(--sf-text-strong); }
+/* Adding a card by hand is an app feature the board lacks; it takes the board's ghost button. */
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual-link { margin-left: auto; padding: 0 14px; background: transparent; box-shadow: inset 0 0 0 1px var(--sf-border); clip-path: var(--nk-chamfer-sm); color: var(--sf-text-muted); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual-link:hover { color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__footer:not(.create-card-dialog__footer--stream) .create-card-dialog__primary { padding: 0 26px; background: var(--sf-primary-bg); box-shadow: none; clip-path: var(--nk-chamfer); color: #fff; font-weight: 900; filter: drop-shadow(0 0 14px rgb(255 42 77 / .6)); }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__footer:not(.create-card-dialog__footer--stream) .create-card-dialog__primary:disabled { padding: 0 24px; background: var(--sf-border); color: var(--sf-text-subtle); filter: none; opacity: 1; }
+
+@media (max-width: 620px) {
+  /* Five part-of-speech tabs do not fit one phone row at a readable size; they wrap three to a row instead. */
+  html[data-theme-family="crystal"] .create-card-dialog__pos > div { flex-wrap: wrap; row-gap: .35rem; }
+  html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__pos button { flex: 1 1 calc(33.333% - .3rem); }
+  /* Phone gutters, matching the streaming layout's. */
+  html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__header { padding: 18px 16px 12px 18px; }
+  html[data-theme-family="crystal"] .create-card-dialog:not(.create-card-dialog--stream) .create-card-dialog__body { padding: 4px 16px 16px; }
+  html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__footer { padding: 12px 16px 16px; }
+  html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__footer:not(.create-card-dialog__footer--stream) :is(.create-card-dialog__primary, .create-card-dialog__primary:disabled) { padding: 0 16px; }
+}
 
 @media (max-width: 620px) {
   .create-card-dialog { width: calc(100vw - 1rem); max-height: calc(100dvh - 1rem); }
@@ -511,9 +584,10 @@ html[data-theme-family="crystal"] .create-card-dialog__preview--stream {
   box-sizing: border-box;
   gap: 12px;
   padding: 14px 16px;
+  --cc-preview-rim: var(--sf-rim-learning);
   border: 2px solid transparent;
-  clip-path: var(--nk-chamfer);
-  background: var(--sf-solid-card, var(--sf-card-bg)) padding-box, var(--sf-rim-learning) border-box;
+  clip-path: none;
+  background: none;
   box-shadow: none;
   filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 28%, transparent));
 }
@@ -576,3 +650,12 @@ html[data-theme-family="crystal"] .create-card-dialog__footer--stream .create-ca
 html[data-motion="reduced"] .create-card-dialog--stream :is(.create-card-dialog__step-icon, .create-card-dialog__kicker-spin, .create-card-dialog__skeleton, .create-card-dialog__stream-image-slot, .create-card-dialog__stream-status svg, .create-card-dialog__progress-fill),
 html[data-motion="reduced"] .create-card-dialog__preview--stream :is(.create-card-dialog__meta > label, .create-card-dialog__preview-meaning, .create-card-dialog__preview-explanation, .create-card-dialog__examples > label),
 html[data-motion="reduced"] .create-card-dialog__skeleton { animation: none; transition: none; }
+/* Crystal manual card: the details panel is an inner tile with the board's 1px line, and its inputs, like the deck
+   select, take the board's field recipe (42px, chamfered, strong 1px inset line) in place of rounded bordered boxes,
+   so no radius sits under a cut and the chamfer clips the line on the diagonal. */
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual { padding: 14px 16px; border: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-border); }
+html[data-theme-family="crystal"] .create-card-dialog :is(.create-card-dialog__manual-grid input, .create-card-dialog__manual-grid textarea, .create-card-dialog__save-row select) { border: 0; border-radius: 0; background-color: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm); color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .create-card-dialog :is(.create-card-dialog__manual-grid input, .create-card-dialog__save-row select) { height: 42px; min-height: 0; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual-grid input { padding: 0 14px; }
+html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual-grid textarea { padding: 9px 14px; line-height: 1.4; }
+html[data-theme-family="crystal"] .create-card-dialog :is(.create-card-dialog__manual-grid input, .create-card-dialog__manual-grid textarea, .create-card-dialog__save-row select):focus-visible { outline: 0; box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge); }

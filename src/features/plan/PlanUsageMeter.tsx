@@ -32,7 +32,7 @@ export function PlanUsageMeter({ source = 'quota', onOpenUpgrade }: {
       </p>}
       {usage.tier === 'free' && (exhausted || source === 'menu') && <button type="button"
         role={source === 'menu' ? 'menuitem' : undefined}
-        onClick={() => onOpenUpgrade ? onOpenUpgrade() : setUpgradeOpen(true)} className="mt-3 min-h-11 rounded-xl border border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface))] px-3 font-bold text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm [--sf-chamfer-edge:var(--sf-brand)]">
+        onClick={() => onOpenUpgrade ? onOpenUpgrade() : setUpgradeOpen(true)} className="mt-3 min-h-11 rounded-xl border border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface))] px-3 font-bold text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
         <Trans {...msg({ context: 'plan.usage.view-pro', message: 'See Pro plan' })} />
       </button>}
       {upgradeOpen && <Suspense fallback={null}><UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} trigger={source} /></Suspense>}

@@ -69,7 +69,6 @@ html:not([data-theme-family=crystal]) .claude-course-switcher-panel,
 html:not([data-theme-family=crystal]) .claude-topbar[data-mobile-course] .claude-course-switcher-panel { background-image: var(--sf-dialog-bg); }
 html[data-theme-family=crystal] .claude-course-switcher-panel {
   --sf-chamfer-fill: var(--sf-dialog-bg);
-  --sf-chamfer-edge: var(--sf-edge-highlight);
   border-color: var(--sf-edge-highlight);
   border-radius: 0;
 }
@@ -100,6 +99,12 @@ html[data-theme-family=crystal] .course-panel__handle { border-radius: 0; }
 html[data-theme-family=crystal] .course-panel__title { font-style: italic; font-weight: 900; letter-spacing: 0; text-transform: uppercase; }
 html[data-theme-family=crystal] .course-panel__title em { color: var(--sf-brand-text); }
 html[data-theme-family=crystal] .course-panel__close { border-radius: 0; }
+/* The note about shared progress goes under the title, so on a phone it is not squeezed beside the big title and on
+   desktop it does not crowd the close button; the close button keeps the right column on both rows. */
+html[data-theme-family=crystal] .course-panel__header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 10px; row-gap: 4px; }
+html[data-theme-family=crystal] .course-panel__title { grid-column: 1; grid-row: 1; }
+html[data-theme-family=crystal] .course-panel__subline { grid-column: 1; grid-row: 2; text-align: left; }
+html[data-theme-family=crystal] .course-panel__close { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
 html[data-theme-family=crystal] .course-panel__close:focus-visible { outline-offset: -4px; }
 
 /* Course rows */
@@ -132,9 +137,8 @@ html[data-theme-family=crystal] .course-panel__close:focus-visible { outline-off
 .course-row .course-due-pill { height: 28px; padding: 0 10px; font-size: 12.5px; }
 .course-row__check { display: none; width: 22px; flex: none; justify-content: center; color: var(--sf-brand-text); }
 
-html[data-theme-family=crystal] .course-row { --sf-chamfer-edge: transparent; border-radius: 0; }
+html[data-theme-family=crystal] .course-row { border-radius: 0; }
 html[data-theme-family=crystal] .course-row[aria-current='true'] {
-  --sf-chamfer-edge: var(--sf-brand);
   --sf-chamfer-fill: color-mix(in srgb, var(--sf-brand) 10%, transparent);
   border-color: color-mix(in srgb, var(--sf-brand) 60%, transparent);
   background-color: transparent;
@@ -165,7 +169,6 @@ html[data-theme-family=crystal] .course-row__meta { font-style: italic; }
 
 html[data-theme-family=crystal] :is(.course-panel__add, .course-panel__manage) { border-radius: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 html[data-theme-family=crystal] .course-panel__add {
-  --sf-chamfer-edge: var(--sf-edge-highlight);
   --sf-chamfer-fill: repeating-linear-gradient(135deg, transparent 0 10px, color-mix(in srgb, var(--sf-text) 5%, transparent) 10px 11px);
 }
 html[data-theme-family=crystal] :is(.course-panel__add, .course-panel__manage):focus-visible { outline-offset: -4px; }
@@ -209,6 +212,13 @@ html[data-theme-family=crystal] .course-panel__languages-label { font-style: ita
   }
   .dark .claude-course-switcher-panel { border-radius: 26px; }
   html[data-theme-family=crystal] .claude-course-switcher-panel { border-bottom-color: var(--sf-edge-highlight); border-radius: 0; }
+  /* The desktop popover is drawn like the board's menus (AnimeFeedback): a 1.5px gradient rim layer and the menu
+     fill 1.5px inside it, both under the large chamfer, so the rim also runs along the cut corners; the drop
+     shadow sits on the unclipped popover. */
+  html[data-theme-family=crystal] .claude-course-switcher-panel { isolation: isolate; padding: 9.5px; border: 0; background: none; box-shadow: none; clip-path: none; filter: drop-shadow(0 18px 28px var(--sf-menu-drop)); }
+  html[data-theme-family=crystal] .claude-course-switcher-panel::before,
+  html[data-theme-family=crystal] .claude-course-switcher-panel::after { position: absolute; z-index: -1; inset: 0; clip-path: var(--nk-chamfer); background: var(--sf-menu-frame); content: ''; pointer-events: none; }
+  html[data-theme-family=crystal] .claude-course-switcher-panel::after { inset: 1.5px; background: var(--sf-menu-fill); }
 
   .course-panel__handle { display: none; }
   .course-panel__header { align-items: baseline; padding: 8px 10px 10px; }
@@ -254,7 +264,7 @@ html[data-theme-family=crystal] .course-panel__languages-label { font-style: ita
 }
 html:not([data-theme-family=crystal]) .course-switched-toast { background-image: var(--sf-dialog-bg); }
 .dark .course-switched-toast { box-shadow: 0 30px 70px -30px rgb(0 0 0 / .9), 0 0 50px -30px color-mix(in srgb, var(--sf-brand) 50%, transparent); }
-html[data-theme-family=crystal] .course-switched-toast { --sf-chamfer-fill: var(--sf-dialog-bg); --sf-chamfer-edge: var(--sf-edge-highlight); border-radius: 0; }
+html[data-theme-family=crystal] .course-switched-toast { --sf-chamfer-fill: var(--sf-dialog-bg); border-radius: 0; }
 .course-switched-toast .course-tile { --course-tile-size: 34px; border-radius: 999px; font-size: 15px; }
 html[data-theme-family=crystal] .course-switched-toast .course-tile { border-radius: 0; }
 .course-switched-toast__from { opacity: .55; }

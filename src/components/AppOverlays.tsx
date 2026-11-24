@@ -440,7 +440,7 @@ export function AppOverlays({
         <Dialog.Portal>
           <Dialog.Overlay data-motion-overlay className={overlayClass} />
           <Dialog.Content asChild onCloseAutoFocus={event => restoreFocus(event, practiceOpenerRef)}>
-            <GsapEntrance animationKey={isTextPracticeOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'max-w-lg p-3 sm:p-4')}>
+            <GsapEntrance animationKey={isTextPracticeOpen} variant="result" data-motion-dialog="true" className={cn(modalClass, 'app-text-practice max-w-lg p-3 sm:p-4')}>
               <Dialog.Title className="sr-only"><Trans {...msg({ context: 'app-overlays.text-practice-mission', message: 'Text practice mission' })} /></Dialog.Title>
               <Dialog.Description className="sr-only"><Trans {...msg({ context: 'app-overlays.practise-your-vocabulary-in-a-bounded-text-conversation', message: 'Practise your vocabulary in a bounded text conversation.' })} /></Dialog.Description>
               <TextConversationPanel
@@ -457,6 +457,8 @@ export function AppOverlays({
                   if (activeListenPracticeHandoff) onDismissListenPractice();
                 }}
               />
+              <span aria-hidden="true" className="app-text-practice-ribbon" />
+              <span aria-hidden="true" className="app-text-practice-tail" />
             </GsapEntrance>
           </Dialog.Content>
         </Dialog.Portal>
@@ -638,7 +640,7 @@ export function OutgoingShareDetails({
         </div>
       ) : null}
       <label className="block text-left">
-        <span className="mb-1.5 block text-xs font-semibold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'shell.share.link-label', message: 'Share link' })} /></span>
+        <span className="share-dialog-link-label mb-1.5 block text-xs font-semibold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'shell.share.link-label', message: 'Share link' })} /></span>
         <span className="share-dialog-link-shell flex h-[50px] items-center gap-2 rounded-[var(--sf-card-radius,14px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] pl-3.5 pr-1.5 text-[var(--sf-text)]">
           <Link2 size={15} className="shrink-0 text-[var(--sf-text-muted)]" aria-hidden="true" />
           <input type="text" readOnly value={shareLink} aria-label={_(msg({ id: 'shell.share.link-input', message: 'Vocabulary deck share link' }))} className="share-dialog-link-input min-h-11 min-w-0 flex-1 bg-transparent font-mono text-[12px] text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--sf-brand)]" />

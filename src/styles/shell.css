@@ -67,39 +67,87 @@
 .claude-app-shell:has(:is([data-session-shell="bridge"], [aria-labelledby="daily-lesson-heading"], [data-session-shell="placement"], [data-active-daily-match])) :is(.claude-topbar, .claude-mobile-nav, [data-offline-readiness]) { display: none; }
 .claude-app-shell:has(:is([data-session-shell="bridge"], [aria-labelledby="daily-lesson-heading"], [data-session-shell="placement"], [data-active-daily-match])) .claude-workspace-inner { max-width: none; padding: 0; }
 
-html[data-theme-family=crystal] .claude-app-shell { font-family: var(--sf-font-body); background: var(--sf-space), var(--sf-canvas); }
+/* Signed-in screens follow the board: a dark (or pale) field behind the content, with the painted nebula and its
+   shards showing only toward the edges. The landing page uses --sf-space alone and keeps the full painting. */
+html[data-theme-family=crystal] .claude-app-shell { font-family: var(--sf-font-body); background: var(--sf-space-veil, none), var(--sf-space), var(--sf-canvas); }
 html[data-theme-family=crystal] .claude-app-shell::before { opacity: 1; background-image: var(--nk-stars); mix-blend-mode: normal; }
 /* Crystal panels in the workspace are glass over the painted backdrop. Dialogs, menus, faces that sit on a
    gradient border and the practice board keep the solid values, which are captured here before the workspace
    swaps them. The practice board also uses the surface colour as ink and inside colour mixes, so it must stay opaque. */
 html[data-theme-family=crystal] { --sf-solid-surface: var(--sf-surface); --sf-solid-card: var(--sf-card-bg); --sf-solid-card-front: var(--sf-card-front); }
+/* Panels read as solid, as on the board; the board's own panel token stays pinned, so the workspace raises it here. */
+html[data-theme-family=crystal].dark .claude-workspace-inner { --sf-surface-glass: linear-gradient(160deg, rgb(22 26 40 / 0.97), rgb(8 10 18 / 0.98)); }
+html[data-theme-family=crystal]:not(.dark) .claude-workspace-inner { --sf-surface-glass: linear-gradient(160deg, rgb(238 249 255 / 0.97), rgb(208 234 255 / 0.95)); }
 html[data-theme-family=crystal] .claude-workspace-inner { --sf-surface: var(--sf-glass-surface, var(--sf-solid-surface)); --sf-card-bg: var(--sf-glass-card, var(--sf-solid-card)); --sf-card-front: var(--sf-glass-card-front, var(--sf-solid-card-front)); }
 html[data-theme-family=crystal] .claude-workspace-inner :is([role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], dialog, .practice-board) { --sf-surface: var(--sf-solid-surface); --sf-card-bg: var(--sf-solid-card); --sf-card-front: var(--sf-solid-card-front); }
+/* Header menus are the AnimeFeedback menu: a shadowed wrapper, a 1.5px gradient rim layer under the chamfer and an
+   opaque chamfered fill 1.5px inside it, with 40px chamfered rows. The drop shadow sits on the unclipped wrapper
+   (a clip-path would cut it away), and the rim and fill are its pseudo-elements. */
+.claude-menu-divider { display: none; }
+html[data-theme-family=crystal].dark { --sf-menu-fill: linear-gradient(170deg, #161c2e, #0b0e19); --sf-menu-frame: linear-gradient(160deg, #ff5470, rgb(255 255 255 / 0.12) 40%, rgb(94 242 255 / 0.5)); --sf-menu-drop: rgb(0 0 0 / 0.55); --sf-menu-hover: rgb(255 255 255 / 0.07); }
+html[data-theme-family=crystal]:not(.dark) { --sf-menu-fill: linear-gradient(170deg, #f7fcff, #dff0ff); --sf-menu-frame: linear-gradient(160deg, #ff5470, rgb(13 40 80 / 0.12) 40%, #1aa7c9); --sf-menu-drop: rgb(20 70 130 / 0.22); --sf-menu-hover: rgb(255 255 255 / 0.9); }
+html[data-theme-family=crystal] :is(.claude-theme-menu-popover, .claude-language-menu-popover) { isolation: isolate; padding: 9.5px; border: 0; border-radius: 0; background: none; box-shadow: none; clip-path: none; filter: drop-shadow(0 18px 28px var(--sf-menu-drop)); }
+html[data-theme-family=crystal] :is(.claude-theme-menu-popover, .claude-language-menu-popover)::before,
+html[data-theme-family=crystal] :is(.claude-theme-menu-popover, .claude-language-menu-popover)::after { position: absolute; z-index: -1; inset: 0; clip-path: var(--nk-chamfer); background: var(--sf-menu-frame); content: ''; pointer-events: none; }
+html[data-theme-family=crystal] :is(.claude-theme-menu-popover, .claude-language-menu-popover)::after { inset: 1.5px; background: var(--sf-menu-fill); }
+html[data-theme-family=crystal] :is(.claude-theme-menu-popover, .claude-language-menu-popover) > :is([role=menuitemradio], [role=menuitem]) { min-height: 40px; height: 40px; margin: 0; padding: 0 10px; gap: 10px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); color: var(--sf-text); font: 700 14px/normal var(--sf-font-body); }
+html[data-theme-family=crystal] :is(.claude-theme-menu-popover, .claude-language-menu-popover) > :is([role=menuitemradio], [role=menuitem]):is(:hover, :focus-visible, [aria-checked=true]) { background: var(--sf-menu-hover); box-shadow: inset 3px 0 0 #ff2a4d; }
+html[data-theme-family=crystal] :is(.claude-theme-menu-popover, .claude-language-menu-popover) > :is([role=menuitemradio], [role=menuitem]) > svg { width: 16px; height: 16px; flex: none; stroke-width: 2; }
+html[data-theme-family=crystal] :is(.claude-theme-menu-popover, .claude-language-menu-popover) > [role=menuitem] { color: var(--sf-text-muted); }
+/* The language menu's settings row stays on one line inside the 40px row. */
+html[data-theme-family=crystal] .claude-language-menu-popover { width: 18rem; }
+html[data-theme-family=crystal] .claude-menu-divider { display: block; height: 1px; margin: 6px 4px; background: var(--sf-border); }
 html[data-theme-family=crystal] .claude-topbar { height: 78px; border: 0; }
 html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 44px; gap: 24px; }
 html[data-theme-family=crystal] .claude-brand-classic { display: none; }
+html[data-theme-family=crystal] .claude-brand { gap: 10px; }
 html[data-theme-family=crystal] .claude-brand-star { display: block; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--sf-brand) 70%, transparent)); }
 html[data-theme-family=crystal] .claude-brand-name { color: var(--sf-text-strong); font: italic 900 26px/1 var(--sf-font-display); letter-spacing: .01em; text-shadow: 0 0 18px color-mix(in srgb, var(--sf-brand) 45%, transparent); }
 html[data-theme-family=crystal] .claude-brand-name em { color: var(--sf-brand-text); font-style: inherit; }
+/* ANAV: 38px skewed tabs with a 20px inset, 16px after the brand. The top bar is capped at 1440px, so the
+   row never grows past the board's width; the course chip stays on one line (below) so the board's spacing fits. */
 html[data-theme-family=crystal] .claude-topbar .claude-nav-items { margin-left: 16px; }
-html[data-theme-family=crystal] .claude-nav-item { padding: 0 20px; border-radius: 0; transform: skewX(-16deg); font: italic 700 15px/1 var(--sf-font-display); letter-spacing: .06em; text-transform: uppercase; }
+/* The course chip is the app's addition to ANAV; it keeps to the board's one-line chip, so its native-language line
+   stays in the accessible name only and the course panel shows it. */
+html[data-theme-family=crystal] .claude-topbar .course-trigger__from { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* Block borders are whole pixels at 1x (3.5px paints 3px), so the 44px target with 3px borders paints the board's 38px tab. */
+html[data-theme-family=crystal] .claude-nav-item { min-height: 44px; border-block-width: 3px; padding: 0 20px; border-radius: 0; transform: skewX(-16deg); font: italic 700 15px/1 var(--sf-font-display); letter-spacing: .06em; text-transform: uppercase; }
 html[data-theme-family=crystal] .claude-nav-item > span { transform: skewX(16deg); }
 html[data-theme-family=crystal] .claude-nav-item:hover { color: var(--sf-text); background-color: color-mix(in srgb, var(--sf-text) 8%, transparent); }
-html[data-theme-family=crystal] .claude-nav-item[data-shell-active=true] { color: var(--sf-on-primary); background-image: var(--sf-primary-bg); box-shadow: 0 12px 28px -8px color-mix(in srgb, var(--sf-brand-hover) 60%, transparent); }
+/* The board's primaryGlow: an even crimson halo on Starry Night, a drop under the tab on Prism Day. */
+html[data-theme-family=crystal] .claude-nav-item[data-shell-active=true] { position: relative; color: var(--sf-on-primary); background-image: var(--sf-primary-bg); }
+/* The 45px target paints a 38px tab inside its transparent block borders; the glow follows the tab, not the target. */
+html[data-theme-family=crystal] .claude-nav-item[data-shell-active=true]::before { position: absolute; z-index: -1; inset: 0; box-shadow: var(--sf-primary-shadow); content: ''; pointer-events: none; }
 /* ANAV controls are 42px chamfered chips with an inset line, drawn inside the 45px hit box. */
 html[data-theme-family=crystal] .claude-theme-quick-toggle,html[data-theme-family=crystal] .claude-theme-picker,html[data-theme-family=crystal] .claude-language-menu > button { border: 0; border-radius: 0; clip-path: polygon(11.5px 1.5px, calc(100% - 1.5px) 1.5px, calc(100% - 1.5px) calc(100% - 11.5px), calc(100% - 11.5px) calc(100% - 1.5px), 1.5px calc(100% - 1.5px), 1.5px 11.5px); background: var(--sf-surface-control); box-shadow: inset 0 0 0 2.5px var(--sf-edge-highlight); color: var(--sf-text); }
 html[data-theme-family=crystal] .claude-theme-quick-toggle:hover,html[data-theme-family=crystal] .claude-theme-picker:hover,html[data-theme-family=crystal] .claude-language-menu > button:hover { background: var(--sf-surface-raised); }
+html[data-theme-family=crystal] :is(.claude-theme-quick-toggle,.claude-theme-picker,.claude-language-menu > button) > svg { width: 17px; height: 17px; }
+/* Open state of a chip trigger (AnimeFeedback "Library actions"): a 1.5px panelEdge2 ring inside the 1.5px clip inset. */
+html[data-theme-family=crystal] :is(.claude-theme-quick-toggle,.claude-theme-picker,.claude-language-menu > button)[aria-expanded=true] { color: var(--sf-text-strong); box-shadow: inset 0 0 0 3px var(--sf-panel-edge-2); }
 /* A clip-path also clips an outside focus outline, so clipped controls draw it inside their shape. */
 html[data-theme-family=crystal] :is(.claude-theme-quick-toggle,.claude-theme-picker,.claude-language-menu > button,.claude-account-trigger):focus-visible { outline-offset: -4px; }
 html[data-theme-family=crystal] .claude-account-trigger:focus-visible { outline-color: var(--sf-on-primary); }
 html[data-theme-family=crystal] .claude-streak { height: 42px; min-height: 42px; padding: 0 16px 0 12px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); color: var(--sf-on-primary); background: var(--sf-primary-bg); gap: 6px; font: italic 800 17px/1 var(--sf-font-display); }
-html[data-theme-family=crystal] .claude-streak svg { color: var(--sf-warm); }
+html[data-theme-family=crystal] .claude-streak svg { width: 16px; height: 16px; color: var(--sf-warm); }
 html[data-theme-family=crystal] .claude-level { height: 42px; min-height: 42px; gap: 9px; border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-holo-text); font: italic 800 15px/1 var(--sf-font-display); text-transform: uppercase; }
 html[data-theme-family=crystal] .claude-level-label { color: inherit; font: inherit; }
-html[data-theme-family=crystal] .claude-level-track { display: inline-block; transform: skewX(-20deg); }
-html[data-theme-family=crystal] .claude-level-track > span { background: linear-gradient(90deg, var(--sf-second), color-mix(in srgb, var(--sf-brand) 80%, white), var(--sf-brand)); }
-html[data-theme-family=crystal] .claude-account-trigger { border: 0; border-radius: 0; clip-path: polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%); color: var(--sf-avatar-text); background: var(--sf-avatar-bg); box-shadow: none; font: italic 800 14px/1 var(--sf-font-display); }
-html[data-theme-family=crystal] .claude-workspace-inner { padding-left: 44px; padding-right: 44px; }
+html[data-theme-family=crystal] .claude-level-track { display: inline-block; width: 76px; border-radius: 0; transform: skewX(-20deg); }
+html[data-theme-family=crystal] .claude-level-track > span { background: linear-gradient(90deg, #5ef2ff, #ff5470, #ff2a4d); }
+/* The ANAV avatar keeps the deep crimson end in both modes. */
+html[data-theme-family=crystal] .claude-account-trigger { border: 0; border-radius: 0; clip-path: polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%); color: #ffffff; background: linear-gradient(145deg, #ff5470, #7a0820); box-shadow: none; font: italic 800 14px/1 var(--sf-font-display); }
+/* Board page frame. Every board is a 1440px frame: ANAV, then a <main> whose side padding is the header's 44px rail
+   plus a per-screen inset (AnimeToday and AnimeLangCourses 48px, AnimeSettings 56px), with its own top and bottom.
+   The workspace is capped at 1440px like the top bar, so wider screens centre the same frame. Pages fill the
+   workspace's content box; they do not add their own side gutters or max widths. */
+html[data-theme-family=crystal] .claude-workspace-inner { --sf-shell-gutter: 44px; --sf-board-inset: 0px; padding-left: calc(var(--sf-shell-gutter) + var(--sf-board-inset)); padding-right: calc(var(--sf-shell-gutter) + var(--sf-board-inset)); }
+@media (min-width: 1024px) {
+  html[data-theme-family=crystal] .claude-workspace-inner { padding-top: var(--sf-board-top, 10px); padding-bottom: var(--sf-board-bottom, 28px); }
+  html[data-theme-family=crystal] .claude-app-shell[data-view=today] .claude-workspace-inner { --sf-board-top: 18px; --sf-board-inset: 4px; --sf-board-bottom: 36px; }
+  html[data-theme-family=crystal] .claude-app-shell[data-view=courses] .claude-workspace-inner { --sf-board-inset: 4px; --sf-board-bottom: 30px; }
+  html[data-theme-family=crystal] .claude-app-shell[data-view=catalog] .claude-workspace-inner { --sf-board-bottom: 30px; }
+  html[data-theme-family=crystal] .claude-app-shell:is([data-view=progress],[data-view=web-words]) .claude-workspace-inner { --sf-board-top: 6px; }
+  html[data-theme-family=crystal] .claude-app-shell[data-view=settings] .claude-workspace-inner { --sf-board-top: 14px; --sf-board-inset: 12px; --sf-board-bottom: 24px; }
+}
 
 /* AnimeMobile (Crystal) uses a full-width four-tab rail; classic floats it below (MobileToday). */
 .claude-mobile-nav { height: calc(78px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 8px 16px calc(20px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--sf-border); background: var(--sf-surface); box-shadow: inset 0 1px 0 var(--sf-edge-highlight); }
@@ -121,7 +169,7 @@ html[data-theme-family=crystal] .claude-workspace-inner { padding-left: 44px; pa
   :is(html[data-theme-family=classic], html:not([data-theme-family])) .claude-mobile-nav { background: var(--sf-surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 html[data-theme-family=crystal] .claude-mobile-nav { border-top: 0; background: var(--sf-tab-bg); box-shadow: var(--sf-tab-shadow); }
-html[data-theme-family=crystal] .claude-mobile-nav-item { border-radius: 0; transform: skewX(-14deg); font: italic 700 10.5px/1 var(--sf-font-display); letter-spacing: .06em; text-transform: uppercase; }
+html[data-theme-family=crystal] .claude-mobile-nav-item { border-radius: 0; transform: skewX(-14deg); font: italic 700 10.5px/normal var(--sf-font-display); letter-spacing: .06em; text-transform: uppercase; }
 html[data-theme-family=crystal] .claude-mobile-nav-item > :is(svg, span) { transform: skewX(14deg); }
 html[data-theme-family=crystal] .claude-mobile-nav-item:hover { background: color-mix(in srgb, var(--sf-text) 6%, transparent); }
 html[data-theme-family=crystal] .claude-mobile-nav-item[data-shell-active=true] { color: var(--sf-tab-active-text); background: var(--sf-tab-active); box-shadow: 0 0 18px -2px color-mix(in srgb, var(--sf-brand) 70%, transparent); }
@@ -131,12 +179,13 @@ html[data-theme-family=crystal] .claude-mobile-nav-item[data-shell-active=true] 
 @media (max-width: 1439px) {
   .claude-topbar .course-trigger__from { display: none; }
   html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 32px; gap: 18px; }
-  html[data-theme-family=crystal] .claude-nav-item { padding: 0 15px; }
+  html[data-theme-family=crystal] .claude-workspace-inner { --sf-shell-gutter: 32px; }
   html[data-theme-family=crystal] .claude-level-track { display: none; }
 }
 /* Below 1280px the theme picker and language menu move into the account menu. */
 @media (max-width: 1279px) {
   .claude-topbar-inner,html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 24px; gap: 16px; }
+  html[data-theme-family=crystal] .claude-workspace-inner { --sf-shell-gutter: 24px; }
   .claude-shell-actions > .claude-theme-menu > .claude-theme-picker,
   .claude-shell-actions > .claude-language-menu { display: none; }
   .claude-shell-actions > .claude-theme-menu { gap: 0; }
@@ -161,7 +210,8 @@ html[data-theme-family=crystal] .claude-mobile-nav-item[data-shell-active=true] 
   .claude-topbar .claude-course-switcher { min-width: 0; max-width: 100%; }
   .claude-topbar .claude-course-switcher-trigger { max-width: 100%; }
   .claude-topbar .claude-course-switcher-trigger > .truncate { max-width: 8rem; }
-  .claude-workspace-inner,html[data-theme-family=crystal] .claude-workspace-inner { padding-left: 20px; padding-right: 20px; }
+  .claude-workspace-inner { padding-left: 20px; padding-right: 20px; }
+  html[data-theme-family=crystal] .claude-workspace-inner { --sf-shell-gutter: 20px; }
 }
 /* MobileToday (classic) and AnimeMobile (Crystal): brand, streak chip and avatar. A signed-in
    learner's course chip takes the wordmark's place, as on LangMobile. */
@@ -190,7 +240,9 @@ html[data-theme-family=crystal] .claude-mobile-nav-item[data-shell-active=true] 
   .claude-app-shell .account-menu-trigger { font-size: 12px; }
   /* AnimeMobile's 36px hexagon, centred in the 44px target. */
   html[data-theme-family=crystal] .claude-app-shell .account-menu-trigger { clip-path: polygon(50% 4px, calc(100% - 4px) 13px, calc(100% - 4px) calc(100% - 13px), 50% calc(100% - 4px), 4px calc(100% - 13px), 4px 13px); font-size: 13px; font-weight: 800; }
-  .claude-workspace-inner,html[data-theme-family=crystal] .claude-workspace-inner { padding: 14px 16px calc(92px + env(safe-area-inset-bottom, 0px)); }
+  .claude-workspace-inner { padding: 14px 16px calc(92px + env(safe-area-inset-bottom, 0px)); }
+  /* AnimeMobile: screens sit on a 20px rail, 6px under the 54px header row. */
+  html[data-theme-family=crystal] .claude-workspace-inner { padding: 6px 20px calc(92px + env(safe-area-inset-bottom, 0px)); }
   /* MobileToday places the violet glow behind the header and the cyan one beside the session card. */
   :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell {
     --shell-aurora-violet-at: 100px 120px;

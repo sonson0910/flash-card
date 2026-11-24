@@ -890,10 +890,29 @@
   clip-path: var(--nk-chamfer);
 }
 
+/* The review sheet is the AnimeEditSheet aside: a near-opaque vertical fill, a long side shadow and a glowing
+   3px holo-crimson-gold strip on its left edge. */
 :root[data-theme-family="crystal"] .edit-sheet--review {
-  border-left: 3px solid transparent;
-  border-image: linear-gradient(180deg, var(--sf-second), var(--sf-brand) 55%, var(--sf-reward)) 1;
+  border: 0;
   clip-path: none;
+}
+:root[data-theme-family="crystal"].dark .edit-sheet--review {
+  background: linear-gradient(180deg, rgb(16 20 32 / .97), rgb(8 10 18 / .98));
+  box-shadow: -40px 0 90px -30px rgb(0 0 0 / .9);
+}
+:root[data-theme-family="crystal"]:not(.dark) .edit-sheet--review {
+  background: linear-gradient(180deg, rgb(240 250 255 / .97), rgb(214 237 255 / .97));
+  box-shadow: -30px 0 60px -30px rgb(20 70 130 / .45);
+}
+:root[data-theme-family="crystal"] .edit-sheet--review::before {
+  position: absolute;
+  z-index: 2;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, #5ef2ff, #ff2a4d 50%, #ffd166);
+  box-shadow: 0 0 16px rgb(255 42 77 / .7);
+  content: '';
+  pointer-events: none;
 }
 
 :root[data-theme-family="crystal"] :is(.edit-sheet-kicker, .edit-sheet-label, .edit-sheet-title, .edit-sheet-button, .edit-sheet-preview-kicker) {
@@ -971,6 +990,85 @@
 :root[data-theme-family="crystal"] .edit-sheet-stress {
   color: var(--sf-brand);
   font-style: inherit;
+}
+
+/* Review sheet header, close chip and footer at the board's sizes. The close button keeps a 44px target; its
+   ::before draws the board's 40px chamfered chip. */
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-header {
+  gap: 12px;
+  padding: 24px 30px 16px 34px;
+  border-bottom-color: var(--sf-edge-highlight);
+}
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-kicker { font-size: 13px; line-height: normal; }
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-title {
+  color: var(--sf-text-strong);
+  font-size: 38px;
+  line-height: 1;
+}
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-close {
+  margin: -2px -2px 0 0;
+  color: var(--sf-text);
+}
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-close::before {
+  inset: 2px;
+  border: 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+}
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-close svg { width: 16px; height: 16px; stroke-width: 2.4; }
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-footer {
+  gap: 12px;
+  padding: 16px 30px calc(22px + env(safe-area-inset-bottom, 0px)) 34px;
+  border-top-color: var(--sf-edge-highlight);
+  background: none;
+}
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-esc { font-size: 13px; color: var(--sf-text-subtle); }
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-esc kbd {
+  display: inline-flex;
+  height: 22px;
+  align-items: center;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  font-family: var(--sf-font-mono);
+  font-size: 11px;
+}
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-button {
+  min-height: 48px;
+  flex: 0 0 auto;
+  padding: 0 18px;
+  border: 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  color: var(--sf-text-strong);
+  font-size: 15px;
+  letter-spacing: .06em;
+}
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-button--primary {
+  gap: 10px;
+  padding: 0 20px;
+  background: var(--sf-primary-bg);
+  box-shadow: none;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+  filter: drop-shadow(0 0 14px rgb(255 42 77 / .6));
+}
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-button--primary kbd {
+  display: inline-flex;
+  height: 22px;
+  align-items: center;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 0;
+  background: rgb(0 0 0 / .22);
+  font-family: var(--sf-font-mono);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 :root[data-theme-family="crystal"] .edit-sheet-preview-word,
@@ -1528,4 +1626,127 @@
   .edit-sheet-segment {
     transition: none;
   }
+}
+
+/* Crystal library editing: the AnimeDlgStudy "Edit card" dialog. The rim (::before) and the fill (::after, 2px
+   inside it) carry the chamfer, so the frame's glow is not cut by a clip on the frame itself. */
+@media (min-width: 768px) {
+  :root[data-theme-family="crystal"].dark .edit-sheet--dialog { --esd-frame: linear-gradient(155deg, #ff5470, rgb(255 42 77 / .25) 28%, rgb(94 242 255 / .2) 72%, #5ef2ff); --esd-fill: linear-gradient(170deg, #141a2b 0%, #0a0d17 100%); --esd-glow: drop-shadow(0 0 36px rgb(255 42 77 / .3)) drop-shadow(0 30px 40px rgb(0 0 0 / .7)); --esd-foot: rgb(0 0 0 / .25); --esd-chip-on: rgb(255 42 77 / .2); --esd-secondary-bg: rgb(255 255 255 / .06); --esd-body: #d6dbe6; --esd-gold-bg: rgb(255 209 102 / .1); --esd-gold-line: rgb(255 209 102 / .45); --esd-good: #5ef2ff; --esd-easy: #ffd166; --esd-hard: #ff8a3d; }
+  :root[data-theme-family="crystal"]:not(.dark) .edit-sheet--dialog { --esd-frame: linear-gradient(155deg, #ff5470, rgb(224 23 63 / .3) 28%, rgb(26 167 201 / .35) 72%, #1aa7c9); --esd-fill: linear-gradient(170deg, #f5fbff 0%, #dbeeff 100%); --esd-glow: drop-shadow(0 26px 40px rgb(20 70 130 / .35)); --esd-foot: rgb(190 222 250 / .45); --esd-chip-on: #fff; --esd-secondary-bg: #e6f5ff; --esd-body: #243553; --esd-gold-bg: rgb(255 236 180 / .7); --esd-gold-line: rgb(180 120 0 / .4); --esd-good: #0a8fb0; --esd-easy: #f0a90f; --esd-hard: #c25a0a; }
+  :root[data-theme-family="crystal"] .edit-sheet.edit-sheet--dialog { isolation: isolate; width: min(calc(100vw - 2rem), 630px); padding: 2px; border: 0; background: none; box-shadow: none; clip-path: none; filter: var(--esd-glow); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog::before,
+  :root[data-theme-family="crystal"] .edit-sheet--dialog::after { position: absolute; z-index: -1; inset: 0; background: var(--esd-frame); clip-path: var(--nk-chamfer); content: ''; pointer-events: none; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog::after { inset: 2px; background: var(--esd-fill); }
+  /* The grabber has no job in a centred dialog; it becomes the board's crimson accent bar. */
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-grabber { display: block; position: absolute; z-index: 2; top: 2px; left: 28px; width: 120px; height: 3px; margin: 0; border-radius: 0; background: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%); box-shadow: 0 0 12px rgb(255 42 77 / .8); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-form { clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-header { gap: 14px; padding: 22px 24px 14px 26px; border-bottom: 0; background: none; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-kicker { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 12px; letter-spacing: .16em; line-height: normal; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-kicker::before { width: 7px; height: 7px; flex: none; background: currentColor; box-shadow: 0 0 8px currentColor; content: ''; transform: rotate(45deg); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-title { margin-top: 6px; color: var(--sf-text-strong); font-size: 30px; line-height: 1.05; letter-spacing: .01em; text-transform: none; }
+  /* The close keeps its 44px target; the board's 38px chip is drawn inside it. */
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-close { margin: -3px -3px 0 0; color: var(--sf-text-muted); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-close::before { inset: 3px; border: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-close svg { width: 14px; height: 14px; stroke-width: 2.6; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-scroll { padding: 2px 26px 16px; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px 12px; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-field { gap: 5px; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-label { color: var(--sf-text-muted); font-size: 11.5px; letter-spacing: .12em; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-field--mnemonic .edit-sheet-label { color: var(--sf-warn); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog :is(.edit-sheet-input, .edit-sheet-word) { min-height: 42px; border: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); color: var(--sf-text-strong); font-size: 14px; font-weight: 700; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-input:not(textarea) { height: 42px; padding: 0 14px; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog textarea.edit-sheet-input { padding: 9px 14px; line-height: 1.4; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-word-input { padding: 0 14px; color: var(--sf-text-strong); font-size: 16px; font-style: italic; font-weight: 800; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-field--translation .edit-sheet-input { color: var(--sf-brand-text); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-field--phonetic .edit-sheet-input { font-family: var(--sf-font-mono); font-weight: 400; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog :is(.edit-sheet-field--exampleSentence, .edit-sheet-field--exampleTranslation, .edit-sheet-field--explanation, .edit-sheet-field--explanationTranslation) .edit-sheet-input { color: var(--esd-body); font-weight: 500; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-field--mnemonic .edit-sheet-input { background: var(--esd-gold-bg); box-shadow: inset 0 0 0 1px var(--esd-gold-line); font-weight: 600; }
+  /* The board's active field ring is the focus ring. */
+  :root[data-theme-family="crystal"] .edit-sheet--dialog :is(.edit-sheet-input:focus-visible, .edit-sheet-word:focus-within) { box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge); }
+  /* Difficulty chips: the 32px skewed chip is drawn on ::before inside each 40px target, so the label stays upright. */
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-segmented { gap: 6px; padding: 0; border: 0; background: none; clip-path: none; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-segment { isolation: isolate; gap: 6px; padding: 0 12px; border-radius: 0; background: none; clip-path: none; color: var(--sf-text-muted); font-size: 13px; font-weight: 800; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-segment::before { position: absolute; z-index: -1; inset: 4px 0; box-shadow: inset 0 0 0 1px var(--sf-border); content: ''; transform: skewX(-12deg); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-segment[data-selected] { background: none; color: var(--sf-text-strong); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-segment[data-selected]::before { background: var(--esd-chip-on); box-shadow: inset 0 0 0 1px var(--sf-panel-edge); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-segment-dot { border-radius: 0; transform: rotate(45deg); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-segment[data-difficulty="easy"] { --es-dot: var(--esd-good); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-segment[data-difficulty="medium"] { --es-dot: var(--esd-easy); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-segment[data-difficulty="hard"] { --es-dot: var(--esd-hard); }
+  /* Starred keeps its 44px target; the board's 32px gold chip is drawn inside it. */
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-star { position: relative; isolation: isolate; gap: 6px; padding: 0 12px; border: 0; background: none; clip-path: none; color: var(--sf-text-muted); font-size: 13px; letter-spacing: normal; text-transform: none; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-star::before { position: absolute; z-index: -1; inset: 6px 0; box-shadow: inset 0 0 0 1px var(--sf-border); clip-path: var(--nk-chamfer-sm); content: ''; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-star[aria-pressed="true"] { color: var(--sf-warn); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-star[aria-pressed="true"]::before { background: var(--esd-gold-bg); box-shadow: inset 0 0 0 1px var(--esd-gold-line); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-star svg { width: 13px; height: 13px; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-footer { position: relative; gap: 10px; padding: 14px 26px 18px; border-top: 0; background: var(--esd-foot); box-shadow: inset 0 1px 0 var(--sf-border); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-footer::after { position: absolute; right: 30px; bottom: 0; width: 70px; height: 3px; background: var(--sf-second); box-shadow: 0 0 10px rgb(94 242 255 / .8); content: ''; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog :is(.edit-sheet-button, .edit-sheet-delete) { height: 46px; min-height: 46px; gap: 7px; border: 0; border-radius: 0; font-family: var(--sf-font-display); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .05em; text-transform: none; }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-button:not(.edit-sheet-button--primary) { padding: 0 20px; background: var(--esd-secondary-bg); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm); color: var(--sf-text-strong); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-button--primary { padding: 0 26px; background: var(--sf-primary-bg); box-shadow: none; clip-path: var(--nk-chamfer); color: #fff; font-weight: 900; filter: drop-shadow(0 0 14px rgb(255 42 77 / .6)); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-delete { align-self: center; padding: 0 14px; background: transparent; box-shadow: inset 0 0 0 1px var(--sf-panel-edge); clip-path: var(--nk-chamfer-sm); color: var(--sf-brand-text); }
+  :root[data-theme-family="crystal"] .edit-sheet--dialog .edit-sheet-delete svg { display: none; }
+}
+
+/* Crystal review sheet fields, from the AnimeEditSheet aside: every field is a chamfered tile with the board's field
+   fill and a 1px strong inset line instead of a border, so the chamfer clips the line and the cut corners carry
+   none; the field being edited takes the 2px crimson inset ring. */
+:root[data-theme-family="crystal"].dark .edit-sheet--review { --esr-field: rgb(255 255 255 / .05); }
+:root[data-theme-family="crystal"]:not(.dark) .edit-sheet--review { --esr-field: rgb(255 255 255 / .75); }
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-scroll { padding: 16px 30px 20px 34px; }
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-fields { gap: 13px; }
+:root[data-theme-family="crystal"] .edit-sheet--review :is(.edit-sheet-input, .edit-sheet-word, .edit-sheet-tags) {
+  border: 0;
+  background: var(--esr-field);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+}
+:root[data-theme-family="crystal"] .edit-sheet--review select.edit-sheet-input { height: 42px; min-height: 42px; padding-block: 0; }
+:root[data-theme-family="crystal"] .edit-sheet--review :is(.edit-sheet-input:focus-visible, .edit-sheet-word:focus-within, .edit-sheet-tags:has(.edit-sheet-tag-input:focus-visible)) {
+  box-shadow: inset 0 0 0 2px #ff5470;
+}
+/* Tags: the 42px field holds 26px chips, each a chamfered chip face with a holo or crimson inset line. */
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-tags { min-height: 42px; padding: 8px; clip-path: var(--nk-chamfer-sm); }
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-tag { min-height: 26px; padding-left: 10px; border: 0; color: var(--sf-holo-text); font-family: var(--sf-font-body); font-size: 12.5px; font-style: normal; font-weight: 800; }
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-tag:nth-child(even) { color: var(--sf-brand-text); }
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-tag::after { inset: 0; border: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2); clip-path: var(--nk-chamfer-sm); }
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-tag:nth-child(even)::after { box-shadow: inset 0 0 0 1px var(--sf-panel-edge); }
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-tag-remove { width: 24px; height: 26px; }
+:root[data-theme-family="crystal"] .edit-sheet--review .edit-sheet-tag-input { min-height: 26px; }
+
+/* Crystal meaning suggestions: the board's 30px chamfered chip with the strong inset line, drawn on ::before inside
+   the 44px target; hovering previews the picked chip's crimson fill. */
+:root[data-theme-family="crystal"] .edit-sheet-meaning-choices { gap: 8px; }
+:root[data-theme-family="crystal"] .edit-sheet-meaning-choice {
+  position: relative;
+  isolation: isolate;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  clip-path: none;
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-body);
+  font-size: 12.5px;
+  font-style: normal;
+  font-weight: 800;
+}
+:root[data-theme-family="crystal"] .edit-sheet-meaning-choice::before {
+  position: absolute;
+  z-index: -1;
+  inset: 7px 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
+  clip-path: var(--nk-chamfer-sm);
+  content: '';
+}
+:root[data-theme-family="crystal"] .edit-sheet-meaning-choice:hover { background: none; color: #fff; }
+:root[data-theme-family="crystal"] .edit-sheet-meaning-choice:hover::before { background: var(--sf-primary-bg); box-shadow: none; }
+:root[data-theme-family="crystal"] .edit-sheet-meaning-choice:focus-visible { outline: 0; }
+:root[data-theme-family="crystal"] .edit-sheet-meaning-choice:focus-visible::before { box-shadow: inset 0 0 0 2px var(--sf-text-strong); }
+
+/* The board lifts its chips, close chip and footer buttons on hover (nk-lift); the primary keeps its own glow
+   filter, so it only rises. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) :is(.edit-sheet-meaning-choice, .edit-sheet--review .edit-sheet-close, .edit-sheet--review .edit-sheet-button:not(.edit-sheet-button--primary)):hover:not(:disabled) { transform: translateY(-3px); filter: brightness(1.06); }
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) .edit-sheet--review .edit-sheet-button--primary:hover:not(:disabled) { transform: translateY(-3px); }
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) :is(.edit-sheet-meaning-choice, .edit-sheet--review .edit-sheet-close, .edit-sheet--review .edit-sheet-button):active:not(:disabled) { transform: translateY(0) scale(.97); }
 }

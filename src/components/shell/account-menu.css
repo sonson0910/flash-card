@@ -290,126 +290,300 @@
   color: var(--sf-danger);
 }
 
+/* ANAV avatar: a flat crimson hex with the deep end in both modes; it glows only while its menu is open. */
 html[data-theme-family="crystal"] .claude-app-shell .account-menu-trigger {
   border: 0;
   border-radius: 0;
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-  background: var(--sf-avatar-bg);
+  background: linear-gradient(145deg, #ff5470, #7a0820);
   box-shadow: none;
-  color: var(--sf-avatar-text);
+  color: #ffffff;
   font-family: var(--sf-font-display);
   font-size: 14px;
   font-style: italic;
-  font-weight: 900;
-  filter: drop-shadow(0 0 9px color-mix(in srgb, var(--sf-brand) 42%, transparent));
+  font-weight: 800;
+  filter: none;
 }
 
+html[data-theme-family="crystal"] .claude-app-shell .account-menu-trigger[aria-expanded="true"] {
+  filter: drop-shadow(0 0 10px rgb(255 42 77 / 0.7));
+}
+
+/* AnimeFeedback account menu. The panel is the board's rim layer (a 1.5px gradient frame under the chamfer) and
+   the surface is its inner fill; the surface scrolls, not the panel, so a menu taller than the viewport keeps its
+   frame and cut corner in view. Tokens the board sets per mode live on the root so the parts below share them. */
+html[data-theme-family="crystal"].dark .account-menu-root {
+  --account-menu-fill: linear-gradient(170deg, #161c2e, #0b0e19);
+  --account-menu-fill-end: #0b0e19;
+  --account-menu-frame: linear-gradient(160deg, #ff5470, rgb(255 255 255 / 0.12) 40%, rgb(94 242 255 / 0.5));
+  --account-menu-drop: rgb(0 0 0 / 0.55);
+  --account-menu-hover: rgb(255 255 255 / 0.07);
+  --account-menu-ok-bg: rgb(94 242 255 / 0.1);
+  --account-menu-danger-bg: rgb(255 42 77 / 0.1);
+  --account-menu-info: #8fc4ff;
+  --account-menu-info-bg: rgb(90 150 255 / 0.15);
+  --account-menu-warn-bg: rgb(255 209 102 / 0.14);
+  --account-menu-danger: #ff6b85;
+  --account-menu-alert-bg: rgb(255 42 77 / 0.16);
+}
+
+html[data-theme-family="crystal"]:not(.dark) .account-menu-root {
+  --account-menu-fill: linear-gradient(170deg, #f7fcff, #dff0ff);
+  --account-menu-fill-end: #dff0ff;
+  --account-menu-frame: linear-gradient(160deg, #ff5470, rgb(13 40 80 / 0.12) 40%, #1aa7c9);
+  --account-menu-drop: rgb(20 70 130 / 0.22);
+  --account-menu-hover: rgb(255 255 255 / 0.9);
+  --account-menu-ok-bg: rgb(26 167 201 / 0.12);
+  --account-menu-danger-bg: rgb(224 23 63 / 0.08);
+  --account-menu-info: #1f5fc4;
+  --account-menu-info-bg: rgb(31 111 214 / 0.1);
+  --account-menu-warn-bg: rgb(255 190 60 / 0.22);
+  --account-menu-danger: #c40f35;
+  --account-menu-alert-bg: rgb(224 23 63 / 0.1);
+}
+
+/* The panel is the board's unclipped wrapper: it carries the drop shadow (a clip-path on the same element would cut
+   the shadow away), its ::before is the rim layer and the surface is the fill 1.5px inside it. */
 html[data-theme-family="crystal"] .claude-app-shell .account-menu-panel {
+  isolation: isolate;
+  width: min(376px, calc(100vw - 1.5rem));
   padding: 1.5px;
   border: 0;
   border-radius: 0;
-  background: linear-gradient(160deg, var(--sf-star-face), color-mix(in srgb, var(--sf-on-primary) 12%, transparent) 40%, #1aa7c9);
-  clip-path: var(--nk-chamfer, polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%));
-  filter: drop-shadow(0 18px 28px rgb(0 0 0 / 0.24));
+  background: none;
+  box-shadow: none;
+  clip-path: none;
+  filter: drop-shadow(0 18px 28px var(--account-menu-drop));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+html[data-theme-family="crystal"] .claude-app-shell .account-menu-panel::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: var(--account-menu-frame);
+  clip-path: var(--nk-chamfer, polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%));
+  content: "";
+  pointer-events: none;
 }
 
 html[data-theme-family="crystal"] .account-menu-surface {
-  min-height: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   padding: 8px;
-  /* The Crystal dialog fill is a translucent gradient; the opaque surface under it keeps the page from showing through. */
-  background: var(--sf-dialog-bg), var(--sf-surface);
-  clip-path: var(--nk-chamfer, polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%));
+  /* An opaque fill, so the page never shows through the menu. */
+  background: var(--account-menu-fill);
+  clip-path: var(--nk-chamfer, polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%));
+}
+
+/* More rows below the fold: the bottom of the list fades into the fill, so a row cut by the frame reads as
+   "scroll for more", not as a broken edge. The panel sets the attribute while the surface can scroll further. */
+html[data-theme-family="crystal"] .claude-app-shell .account-menu-panel[data-more-below="true"]::after {
+  position: absolute;
+  right: 1.5px;
+  bottom: 1.5px;
+  left: 1.5px;
+  height: 48px;
+  background: linear-gradient(180deg, transparent, var(--account-menu-fill-end) 85%);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16.5px), calc(100% - 16.5px) 100%, 0 100%);
+  content: "";
+  pointer-events: none;
 }
 
 html[data-theme-family="crystal"] .account-menu-identity {
+  gap: 10px;
   padding: 8px 8px 10px;
 }
 
 html[data-theme-family="crystal"] .account-menu-avatar {
+  width: 38px;
+  height: 38px;
+  flex-basis: 38px;
   border: 0;
   border-radius: 0;
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-  background: var(--sf-avatar-bg);
-  color: var(--sf-avatar-text);
+  background: var(--sf-crimson-gradient);
+  color: #ffffff;
   font-family: var(--sf-font-display);
+  font-size: 14px;
   font-style: italic;
   font-weight: 900;
 }
 
-html[data-theme-family="crystal"] .account-menu-status {
-  min-height: 42px;
-  border-radius: 0;
-  clip-path: var(--nk-chamfer-sm, polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%));
-  border-color: transparent;
-  background: color-mix(in srgb, var(--sf-brand) 8%, var(--sf-surface));
-}
-
-html[data-theme-family="crystal"] .account-menu-status[data-status-kind="synced"] {
-  background: var(--sf-success-soft);
-  color: var(--sf-success-text);
-}
-
 html[data-theme-family="crystal"] .account-menu-name {
+  color: var(--sf-text-strong);
   font-family: var(--sf-font-display);
   font-size: 15px;
   font-style: italic;
   font-weight: 800;
+  line-height: normal;
 }
 
 html[data-theme-family="crystal"] .account-menu-email {
-  font-family: inherit;
-  font-size: 12px;
+  margin-top: 0;
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-body);
+  font-size: 12.5px;
+  line-height: normal;
 }
 
-html[data-theme-family="crystal"] .account-menu-status[data-status-kind="session-lost"],
-html[data-theme-family="crystal"] .account-menu-status[data-status-kind="needs-attention"] {
-  background: var(--sf-danger-soft);
-  color: var(--sf-brand-text);
+/* One line, as on the board: a tone mark, "label · detail", and the card count in mono at the far end. A long
+   detail wraps inside the chip instead of being cut. */
+html[data-theme-family="crystal"] .account-menu-status {
+  min-height: 34px;
+  margin: 0 4px;
+  padding: 7px 10px;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--nk-chamfer-sm, polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%));
+  background: var(--account-menu-ok-bg);
+  color: var(--sf-holo-text);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
-html[data-theme-family="crystal"] .account-menu-status[data-status-kind="offline"],
-html[data-theme-family="crystal"] .account-menu-status[data-status-kind="cloud-paused"],
-html[data-theme-family="crystal"] .account-menu-status[data-status-kind="device"] {
-  background: var(--sf-warn-bg);
+html[data-theme-family="crystal"] .account-menu-status-copy {
+  display: block;
+}
+
+html[data-theme-family="crystal"] .account-menu-status-label {
+  white-space: normal;
+}
+
+html[data-theme-family="crystal"] .account-menu-status-detail {
+  display: inline;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+html[data-theme-family="crystal"] .account-menu-status-detail::before {
+  content: " · ";
+}
+
+html[data-theme-family="crystal"] .account-menu-status-icon > svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Synced shows the board's glowing holo diamond instead of an icon. */
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="synced"] .account-menu-status-icon > svg {
+  display: none;
+}
+
+html[data-theme-family="crystal"] .account-menu-status[data-status-kind="synced"] .account-menu-status-icon::before {
+  width: 7px;
+  height: 7px;
+  margin: 0 2px;
+  background: var(--sf-second);
+  box-shadow: 0 0 8px var(--sf-second);
+  content: "";
+  transform: rotate(45deg);
+}
+
+html[data-theme-family="crystal"] .account-menu-count {
+  max-width: 45%;
+  margin-left: auto;
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-mono);
+  font-size: 12.5px;
+  font-weight: 400;
+}
+
+html[data-theme-family="crystal"] .account-menu-count svg {
+  display: none;
+}
+
+/* The board's sync tones: danger for a lost session or a failed sync, warn while offline, info while working. */
+html[data-theme-family="crystal"] .account-menu-status:is([data-status-kind="session-lost"], [data-status-kind="needs-attention"]) {
+  background: var(--account-menu-alert-bg);
+  color: var(--account-menu-danger);
+}
+
+html[data-theme-family="crystal"] .account-menu-status:is([data-status-kind="offline"], [data-status-kind="cloud-paused"], [data-status-kind="device"]) {
+  background: var(--account-menu-warn-bg);
   color: var(--sf-warn);
 }
 
-html[data-theme-family="crystal"] .account-menu-status[data-status-kind="checking"],
-html[data-theme-family="crystal"] .account-menu-status[data-status-kind="syncing"],
-html[data-theme-family="crystal"] .account-menu-status[data-status-kind="queued"],
-html[data-theme-family="crystal"] .account-menu-status[data-status-kind="saving-offline"] {
-  background: var(--sf-info-bg);
-  color: var(--sf-info);
+html[data-theme-family="crystal"] .account-menu-status:is([data-status-kind="checking"], [data-status-kind="syncing"], [data-status-kind="queued"], [data-status-kind="saving-offline"]) {
+  background: var(--account-menu-info-bg);
+  color: var(--account-menu-info);
 }
 
 html[data-theme-family="crystal"] .account-menu-divider {
-  background: color-mix(in srgb, var(--sf-text) 13%, transparent);
+  margin: 8px 4px;
+  background: var(--sf-border);
+}
+
+/* The plan meter sits on the status chip's rail as a framed chip, inside the surface's padding. */
+html[data-theme-family="crystal"] .account-menu-plan {
+  margin: 8px 4px 0;
+}
+
+html[data-theme-family="crystal"] .account-menu-plan > [role="status"] {
+  border: 0;
+  border-radius: 0;
+  background: var(--sf-surface-control);
+  box-shadow: inset 0 0 0 1px var(--sf-edge-highlight);
 }
 
 html[data-theme-family="crystal"] .account-menu-item {
+  height: 40px;
+  min-height: 40px;
+  gap: 10px;
+  padding: 0 10px;
   border-radius: 0;
-  clip-path: var(--nk-chamfer-sm, polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%));
-  font-size: 13.5px;
-  font-weight: 600;
+  clip-path: var(--nk-chamfer-sm, polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%));
+  color: var(--sf-text);
+  font-family: var(--sf-font-body);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
 }
 
 html[data-theme-family="crystal"] .account-menu-item > svg {
+  width: 16px;
+  height: 16px;
   color: inherit;
+  stroke-width: 2;
 }
 
 html[data-theme-family="crystal"] .account-menu-item:hover:not(:disabled),
 html[data-theme-family="crystal"] .account-menu-item:focus-visible {
-  background: color-mix(in srgb, var(--sf-brand) 9%, var(--sf-surface));
-  box-shadow: inset 3px 0 0 var(--sf-brand);
+  background: var(--account-menu-hover);
+  box-shadow: inset 3px 0 0 #ff2a4d;
 }
 
-html[data-theme-family="crystal"] .account-menu-danger-action {
-  background: color-mix(in srgb, var(--sf-danger-soft) 80%, transparent);
+html[data-theme-family="crystal"] .account-menu-signout-action {
+  color: var(--sf-text-muted);
+}
+
+html[data-theme-family="crystal"] .account-menu-danger-action,
+html[data-theme-family="crystal"] .account-menu-danger-action:hover:not(:disabled) {
+  background: var(--account-menu-danger-bg);
   color: var(--sf-brand-text);
+  font-weight: 800;
 }
 
 html[data-theme-family="crystal"] .account-menu-danger-action > svg {
   color: inherit;
+}
+
+/* Touch layouts keep the 44px row target; the board's 40px rows are a pointer layout. */
+@media (max-width: 1023px) {
+  html[data-theme-family="crystal"] .account-menu-item {
+    height: 44px;
+    min-height: 44px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -440,4 +614,9 @@ html[data-theme-family="crystal"] .account-menu-danger-action > svg {
   flex-basis: 100%;
   width: 100%;
   margin-top: 0;
+}
+
+/* Popovers opened inside the menu sit in flow; their rim and fill pseudo-elements need them as the containing block. */
+html[data-theme-family="crystal"] .account-menu-preferences :is(.claude-theme-menu-popover, .claude-language-menu-popover) {
+  position: relative;
 }

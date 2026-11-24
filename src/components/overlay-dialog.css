@@ -284,6 +284,63 @@ html[data-theme-family="crystal"] .overlay-dialog-secondary {
   letter-spacing: .05em;
 }
 
+/* Text practice opened from the practice picker. Crystal gives it the same chrome as the text practice inside the
+   AI dialogue (the library board's frame): the content carries a 2px gradient rim on ::before and the body fill on
+   ::after, both under the large chamfer, and is itself left unclipped so the glow spreads past the cut corners.
+   The ribbon and tail sit just inside the rim. Classic keeps the shared modal look, so the ornaments stay hidden. */
+.app-text-practice-ribbon, .app-text-practice-tail { display: none; }
+html[data-theme-family="crystal"].dark .app-text-practice {
+  --tp-frame: linear-gradient(155deg, #ff5470, rgb(255 42 77 / .25) 28%, rgb(94 242 255 / .2) 72%, #5ef2ff);
+  --tp-fill: linear-gradient(170deg, #141a2b 0%, #0a0d17 100%);
+  --tp-glow: drop-shadow(0 0 36px rgb(255 42 77 / .3)) drop-shadow(0 30px 40px rgb(0 0 0 / .7));
+  --tp-inner: rgb(255 255 255 / .04);
+  --tp-pick-bg: rgb(255 42 77 / .07);
+}
+html[data-theme-family="crystal"]:not(.dark) .app-text-practice {
+  --tp-frame: linear-gradient(155deg, #ff5470, rgb(224 23 63 / .3) 28%, rgb(26 167 201 / .35) 72%, #1aa7c9);
+  --tp-fill: linear-gradient(170deg, #f5fbff 0%, #dbeeff 100%);
+  --tp-glow: drop-shadow(0 26px 40px rgb(20 70 130 / .35));
+  --tp-inner: rgb(255 255 255 / .7);
+  --tp-pick-bg: rgb(255 255 255 / .8);
+}
+html[data-theme-family="crystal"] .app-text-practice {
+  isolation: isolate;
+  max-width: 640px;
+  padding: 2px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  clip-path: none;
+  filter: var(--tp-glow);
+  line-height: normal;
+}
+html[data-theme-family="crystal"] .app-text-practice::before,
+html[data-theme-family="crystal"] .app-text-practice::after { position: absolute; z-index: -1; clip-path: var(--nk-chamfer); content: ""; pointer-events: none; }
+html[data-theme-family="crystal"] .app-text-practice::before { inset: 0; background: var(--tp-frame); }
+html[data-theme-family="crystal"] .app-text-practice::after { inset: 2px; background: var(--tp-fill); }
+html[data-theme-family="crystal"] .app-text-practice-ribbon { position: absolute; z-index: 1; top: 2px; left: 28px; display: block; width: 120px; height: 3px; background: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%); box-shadow: 0 0 12px rgb(255 42 77 / .8); pointer-events: none; }
+html[data-theme-family="crystal"] .app-text-practice-tail { position: absolute; z-index: 1; right: 32px; bottom: 2px; display: block; width: 70px; height: 3px; background: #5ef2ff; box-shadow: 0 0 10px rgb(94 242 255 / .8); pointer-events: none; }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-panel { max-height: calc(100dvh - 2rem - 4px); padding: 22px 26px 20px; border: 0; border-radius: 0; background: transparent; box-shadow: none; clip-path: var(--nk-chamfer); color: var(--sf-text); font-family: var(--font-sans); }
+html[data-theme-family="crystal"] .app-text-practice :is(.text-conversation-close, .text-conversation-back) { border: 0; border-radius: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm); color: var(--sf-text-muted); }
+html[data-theme-family="crystal"] .app-text-practice :is(.text-conversation-close, .text-conversation-back):hover { box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2); color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .app-text-practice :is(.text-conversation-close, .text-conversation-back):focus-visible { outline: 0; box-shadow: inset 0 0 0 2px var(--sf-brand); }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-close { width: 38px; height: 38px; }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-close > svg { width: 14px; height: 14px; stroke-width: 2.6; }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-back { min-height: 38px; padding: 0 14px; font-family: var(--sf-font-display); font-size: 13px; font-style: italic; font-weight: 800; }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-title { color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 24px; font-style: italic; font-weight: 900; letter-spacing: .01em; line-height: 1.1; }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-goal { color: var(--sf-text-muted); font-size: 13px; line-height: 1.5; }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-icon { border-radius: 0; background: var(--sf-primary-bg); clip-path: var(--nk-chamfer-sm); color: #fff; }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-chip { padding: 4px 10px; border: 0; border-radius: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-border); clip-path: var(--nk-chamfer-sm); color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 12px; font-style: italic; font-weight: 800; }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-log { padding: 12px; border: 0; border-radius: 0; background: var(--tp-inner); box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2); clip-path: var(--nk-chamfer); }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-bubble { border: 0; border-radius: 0; clip-path: var(--nk-chamfer-sm); }
+/* The learner's own lines use the picked-row colours: white on the crimson button fill stays under 4.5:1 at 14px. */
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-bubble--user { background: var(--tp-pick-bg); box-shadow: inset 0 0 0 1px var(--sf-panel-edge); color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-bubble--assistant { background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-border); color: var(--sf-text); }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-input { border: 0; border-radius: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge-2); clip-path: var(--nk-chamfer-sm); color: var(--sf-text-strong); }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-input:focus { box-shadow: inset 0 0 0 2px var(--sf-brand); }
+html[data-theme-family="crystal"] .app-text-practice .text-conversation-send { width: 48px; height: 48px; border-radius: 0; background: var(--sf-primary-bg); clip-path: var(--nk-chamfer-sm); color: #fff; filter: drop-shadow(0 0 14px rgb(255 42 77 / .6)); }
+
 @media (prefers-reduced-motion: reduce) {
   .overlay-dialog-close, .overlay-dialog-secondary { transition: none; }
 }

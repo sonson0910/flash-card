@@ -264,20 +264,26 @@ html[data-theme-family="classic"] .notification-toast-title {
 
 html[data-theme-family="classic"] .notification-toast-dismiss:hover { background: color-mix(in srgb, var(--sf-text) 5%, transparent); }
 
+/* As on the board, the toast itself is the unclipped wrapper that casts the drop shadow (a clip-path on the
+   same element would cut the shadow away); its ::after is the chamfered fill with the tone line, and the ::before
+   strip is clipped to the fill's cut corner so its glow stays inside the toast. */
 html[data-theme-family="crystal"] [data-notification-toast] {
   padding: 13px 14px 13px 18px;
-  clip-path: var(--nk-chamfer-sm);
-  box-shadow: inset 0 0 0 1px var(--notification-line);
+  background: none;
+  clip-path: none;
+  box-shadow: none;
   filter: var(--feedback-filter);
 }
 
 html[data-theme-family="crystal"] [data-notification-toast]::before {
   position: absolute;
+  z-index: -1;
   inset: 0 auto 0 0;
   width: 3px;
   border-radius: 0;
   background: var(--notification-fg);
   box-shadow: 0 0 10px var(--notification-fg);
+  clip-path: polygon(0 10px, 10px 0, 13px 0, 13px 100%, 0 100%);
   content: "";
 }
 
@@ -285,6 +291,21 @@ html[data-theme-family="crystal"] [data-notification-toast] .notification-toast-
   border-radius: 0;
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
 }
+
+html[data-theme-family="crystal"] .notification-toast-icon svg { stroke-width: 2.4; }
+
+html[data-theme-family="crystal"] .notification-toast-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2.5px solid var(--sf-border);
+  border-top-color: var(--notification-fg);
+}
+
+/* The 44px dismiss target is centred on the board's 26px button, with its 12px cross. */
+html[data-theme-family="crystal"] .notification-toast-dismiss { margin: -9px -9px 0 0; border-radius: 0; }
+html[data-theme-family="crystal"] .notification-toast-dismiss svg { width: 12px; height: 12px; stroke-width: 2.6; }
+
+html[data-theme-family="crystal"] .notification-toast-actions { margin-top: 1px; }
 
 html[data-theme-family] [data-notification-toast] .notification-toast-icon {
   box-shadow: none;
@@ -317,7 +338,7 @@ html[data-theme-family="crystal"] .notification-toast-action {
 html[data-theme-family="crystal"] .notification-toast-action-label {
   isolation: isolate;
   min-height: 30px;
-  padding: 0 14px;
+  padding: 0 12px;
   border: 0;
   border-radius: 0;
   background: none;
@@ -329,7 +350,6 @@ html[data-theme-family="crystal"] .notification-toast-action-label::before {
   inset: 0;
   background: var(--notification-icon-bg);
   box-shadow: inset 0 0 0 1px var(--notification-line);
-  clip-path: var(--nk-chamfer-sm);
   content: "";
   transform: skewX(-12deg);
 }
@@ -337,6 +357,22 @@ html[data-theme-family="crystal"] .notification-toast-action-label::before {
 html[data-theme-family="crystal"] .notification-toast-dismiss:hover { background: rgb(255 255 255 / .08); }
 
 html[data-theme-family] [data-notification-toast]::after { display: none; }
+
+html[data-theme-family="crystal"] [data-notification-toast]:not([data-undo-toast])::after {
+  display: block;
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  opacity: 1;
+  filter: none;
+  background: var(--feedback-panel);
+  box-shadow: inset 0 0 0 1px var(--notification-line);
+  clip-path: var(--nk-chamfer-sm);
+  content: "";
+}
 
 .undo-toast {
   display: flex;
@@ -363,7 +399,7 @@ html[data-theme-family] [data-notification-toast]::after { display: none; }
   opacity: .7;
 }
 
-html[data-theme-family="crystal"] .undo-toast-icon { opacity: .9; }
+html[data-theme-family="crystal"] .undo-toast-icon { opacity: 1; stroke-width: 2.2; }
 
 .undo-toast-message {
   min-width: 0;
@@ -457,7 +493,7 @@ html[data-theme-family="classic"] .undo-toast-action:hover,
 html[data-theme-family="classic"] .undo-toast-dismiss:hover { background: var(--undo-shortcut); }
 
 html[data-theme-family="crystal"] .undo-toast {
-  min-height: 56px;
+  min-height: 52px;
   padding-inline: 16px 8px;
   gap: 10px;
 }
@@ -474,18 +510,39 @@ html[data-theme-family="crystal"] .undo-toast-subject {
   font-weight: 800;
 }
 
+/* The button keeps a 44px touch target; its ::before draws the board's 36px chamfered chip behind the label. */
 html[data-theme-family="crystal"] .undo-toast-action {
+  position: relative;
+  isolation: isolate;
   min-height: 44px;
   padding: 0 12px;
-  clip-path: var(--nk-chamfer-sm);
   border-radius: 0;
-  background: var(--undo-action-bg);
+  background: none;
   color: #fff;
   font-family: var(--sf-font-display, Kanit, Nunito, sans-serif);
   font-style: italic;
   font-weight: 900;
   letter-spacing: .04em;
   text-transform: uppercase;
+}
+
+html[data-theme-family="crystal"] .undo-toast-action::before {
+  position: absolute;
+  z-index: -1;
+  inset: 4px 0;
+  background: var(--undo-action-bg);
+  clip-path: var(--nk-chamfer-sm);
+  content: "";
+}
+
+html[data-theme-family="crystal"] .undo-toast-shortcut {
+  padding: 1px 5px;
+  border-radius: 0;
+  background: rgb(255 255 255 / .2);
+  font-family: var(--sf-font-mono);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 html[data-theme-family="crystal"] .undo-toast-dismiss { color: var(--feedback-dismiss); }

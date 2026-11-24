@@ -49,8 +49,9 @@ export interface DesktopNavigationProps {
 
 type NavigationItem = { view: ShellViewMode; classic: ReactNode; crystal: ReactNode; action: () => void };
 
+/** The boards' faceted five-point star: each arm is a lit and a shaded facet meeting at the centre. */
 function CrystalStar() {
-  return <svg viewBox="0 0 100 100" width="36" height="36" aria-hidden="true" className="claude-brand-star"><path className="claude-brand-star-face" d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" /><path className="claude-brand-star-shade" d="M50 4 62 36 96 37 69 59 78 91 50 72Z" /></svg>;
+  return <svg viewBox="0 0 100 100" width="36" height="36" aria-hidden="true" className="claude-brand-star"><path className="claude-brand-star-face" d="M50 52 38.2 35.7 50 4ZM50 52 61.8 35.7 95.7 37.2ZM50 52 69.2 58.2 78.2 90.8ZM50 52 50 72.2 21.8 90.8ZM50 52 30.8 58.2 4.3 37.2Z" /><path className="claude-brand-star-shade" d="M50 52 50 4 61.8 35.7ZM50 52 95.7 37.2 69.2 58.2ZM50 52 78.2 90.8 50 72.2ZM50 52 21.8 90.8 30.8 58.2ZM50 52 4.3 37.2 38.2 35.7Z" /></svg>;
 }
 
 /** The boards' streak flame, filled with the chip's warm colour. */

@@ -81,12 +81,13 @@ html[data-theme-family="crystal"] .share-dialog-cover-initial { font-weight: 900
 html[data-theme-family="crystal"] .share-dialog-word-title { font-size: 21px; font-weight: 800; letter-spacing: -.01em; line-height: 1; }
 html[data-theme-family="crystal"] .share-dialog-card-count { font-size: 28px; font-weight: 900; line-height: 1; }
 html[data-theme-family="crystal"] .share-dialog-more-count { font-size: 22px; font-weight: 800; }
-html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-close-surface { width: 38px; height: 38px; border: 0; border-radius: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-border); clip-path: var(--nk-chamfer-sm); }
+html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-close-surface { width: 38px; height: 38px; border: 0; border-radius: 0; background: var(--sf-surface-control); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm); }
 html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-close-surface svg { width: 14px; height: 14px; stroke-width: 2.6px; }
 html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-action { min-height: 46px; border: 0; border-radius: 0; font-family: var(--sf-font-display, "Kanit", "Nunito", system-ui, sans-serif); font-size: 15px; font-style: italic; font-weight: 800; letter-spacing: .05em; }
 html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-action-primary { padding-inline: 26px; background: linear-gradient(180deg, #ff5470, var(--sf-brand) 45%, var(--sf-brand-hover)); color: var(--sf-on-primary); box-shadow: none; clip-path: var(--nk-chamfer); filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sf-brand) 60%, transparent)); }
 html[data-theme-family="crystal"]:not(.dark) [data-share-dialog-frame] .share-dialog-action-primary { background: linear-gradient(180deg, #ff5470, #e0173f 50%, #a30c2d); }
-html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-action-secondary { padding-inline: 20px; background: var(--sf-surface-raised); color: var(--sf-text); box-shadow: inset 0 0 0 1px var(--sf-border); clip-path: var(--nk-chamfer-sm); }
+html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-action-secondary { padding-inline: 20px; background: rgb(255 255 255 / .06); color: var(--sf-text-strong); box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); clip-path: var(--nk-chamfer-sm); }
+html[data-theme-family="crystal"]:not(.dark) [data-share-dialog-frame] .share-dialog-action-secondary { background: #e6f5ff; }
 html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-action:disabled { filter: none; }
 html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-copy-action { border-radius: 0; font-family: var(--sf-font-display, "Kanit", "Nunito", system-ui, sans-serif); font-style: italic; font-weight: 800; clip-path: var(--nk-chamfer-sm); }
 
@@ -126,8 +127,8 @@ html[data-theme-family="crystal"]:not(.dark) [data-share-dialog-body] {
 }
 .share-dialog-ornament { display: none; }
 html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-ornament { position: absolute; z-index: 10; display: block; height: 3px; pointer-events: none; }
-html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-ornament-top { top: 0; left: 26px; width: 7.5rem; background: linear-gradient(90deg, #ff5470, var(--sf-brand) 58%, var(--sf-second)); box-shadow: 0 0 12px color-mix(in srgb, var(--sf-brand) 60%, transparent); }
-html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-ornament-bottom { right: 26px; bottom: 0; width: 4.5rem; background: var(--sf-second); box-shadow: 0 0 10px color-mix(in srgb, var(--sf-second) 65%, transparent); }
+html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-ornament-top { top: 0; left: 26px; width: 120px; background: linear-gradient(180deg, #ff5470 0%, #ff2a4d 45%, #b30f33 100%); box-shadow: 0 0 12px rgb(255 42 77 / .8); }
+html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-ornament-bottom { right: 30px; bottom: 0; width: 70px; background: #5ef2ff; box-shadow: 0 0 10px rgb(94 242 255 / .8); }
 html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-header {
   gap: 12px;
   padding: 22px 24px 14px 26px;
@@ -280,7 +281,8 @@ html[data-theme-family="crystal"]:not(.dark) [data-share-dialog-frame] .share-di
   box-shadow: inset 0 0 0 1px var(--sf-border);
 }
 html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-metric-label,
-html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-sample-heading-label {
+html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-sample-heading-label,
+html[data-theme-family="crystal"] [data-share-dialog-frame] .share-dialog-link-label {
   color: var(--sf-text-muted);
   font-family: var(--sf-font-display, "Kanit", "Nunito", system-ui, sans-serif);
   font-size: 11.5px;

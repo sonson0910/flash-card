@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  AlertTriangle,
   BarChart3,
   BookOpen,
   CheckCircle2,
@@ -19,6 +20,7 @@ import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as Reac
 import { Trans, useLingui } from '@lingui/react';
 import { msg } from '@lingui/core/macro';
 import { useZenGlassMode } from '../../lib/useZenGlassMode';
+import { useTheme } from '../../features/theme/ThemeProvider';
 import { getActiveUiLocale, loadCatalog } from '../../i18n/loadCatalog';
 import { AccountAvatar, getIdentityInitials } from '../account/AccountAvatar';
 import type { SyncIdentityViewModel } from './shellTypes';
@@ -105,6 +107,7 @@ export function LibraryManagementMenu({
   preferences,
 }: LibraryManagementMenuProps) {
   const { _ } = useLingui();
+  const { family } = useTheme();
   const [isZenMode, setZenMode] = useZenGlassMode();
   const [isOpen, setIsOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
@@ -112,6 +115,34 @@ export function LibraryManagementMenu({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+
+  // Marks the panel while rows remain below the fold, so the stylesheet can hint that the menu scrolls.
+  useEffect(() => {
+    const panel = panelRef.current;
+    const surface = surfaceRef.current;
+    if (!isOpen || !panel || !surface) return;
+    const update = () => {
+      const scroller = surface.scrollHeight > surface.clientHeight + 1 ? surface : panel;
+      panel.dataset.moreBelow = String(scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 1);
+    };
+    update();
+    surface.addEventListener('scroll', update, { passive: true });
+    panel.addEventListener('scroll', update, { passive: true });
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null;
+    observer?.observe(surface);
+    observer?.observe(panel);
+    if (surface.firstElementChild) observer?.observe(surface.firstElementChild);
+    const content = new MutationObserver(update);
+    content.observe(surface, { childList: true, subtree: true });
+    return () => {
+      surface.removeEventListener('scroll', update);
+      panel.removeEventListener('scroll', update);
+      observer?.disconnect();
+      content.disconnect();
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -219,8 +250,8 @@ export function LibraryManagementMenu({
         <AccountAvatar identity={syncIdentity} compact imageClassName="account-menu-avatar-image" />
       </button>
       {isOpen && (
-        <div className="account-menu-panel absolute right-0 top-full z-50 mt-2 text-[var(--sf-text)]">
-          <div className="account-menu-surface">
+        <div ref={panelRef} className="account-menu-panel absolute right-0 top-full z-50 mt-2 text-[var(--sf-text)]">
+          <div ref={surfaceRef} className="account-menu-surface">
             <div className="account-menu-identity">
               <span className="account-menu-avatar" data-equipped-frame={equippedFrameId ?? undefined}><AccountAvatar identity={syncIdentity} imageClassName="account-menu-avatar-image" /></span>
               <div className="account-menu-identity-copy">
@@ -253,7 +284,7 @@ export function LibraryManagementMenu({
 
             {preferences && <div className="account-menu-preferences" role="group" aria-label={_(msg({ id: 'shell.library-menu.preferences', message: 'Theme and language' }))}>{preferences}</div>}
 
-            <Suspense fallback={null}><PlanUsageMeter source="menu" onOpenUpgrade={() => { setIsOpen(false); setUpgradeOpen(true); }} /></Suspense>
+            <div className="account-menu-plan"><Suspense fallback={null}><PlanUsageMeter source="menu" onOpenUpgrade={() => { setIsOpen(false); setUpgradeOpen(true); }} /></Suspense></div>
 
             <div
               ref={menuRef}
@@ -292,8 +323,9 @@ export function LibraryManagementMenu({
                 </button>
               )}
               {canSignOut && (
-                <button type="button" role="menuitem" className={menuItemClass} onClick={() => { setIsOpen(false); void onSignOut?.(); }}>
-                  <LogOut size={17} aria-hidden="true" />
+                <button type="button" role="menuitem" className={`${menuItemClass} account-menu-signout-action`} onClick={() => { setIsOpen(false); void onSignOut?.(); }}>
+                  {/* Crystal draws sign-out as the boards' arrow into the bracket. */}
+                  {family === 'crystal' ? <LogIn size={17} aria-hidden="true" /> : <LogOut size={17} aria-hidden="true" />}
                   <Trans {...msg({ context: 'shell.account.sign-out', message: 'Sign out of cloud sync' })} />
                 </button>
               )}
@@ -357,7 +389,7 @@ export function LibraryManagementMenu({
                     }}
                     className={`${menuItemClass} account-menu-danger-action`}
                   >
-                    <Trash2 size={17} aria-hidden="true" className="shrink-0" />
+                    {family === 'crystal' ? <AlertTriangle size={17} aria-hidden="true" className="shrink-0" /> : <Trash2 size={17} aria-hidden="true" className="shrink-0" />}
                     <span className="truncate"><Trans {...msg({ context: 'shell.menu.clear-library', message: 'Clear the entire library' })} /></span>
                   </button>
                 </>

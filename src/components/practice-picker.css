@@ -3,6 +3,9 @@
 
 .practice-picker { max-width: 35rem; }
 html[data-theme-family="crystal"] .practice-picker { max-width: 36.25rem; }
+/* The bottom holo strip belongs to the frame edge, under the footer veil: stacked above it, it read as a
+   cyan bar under the Cancel button. */
+html[data-theme-family="crystal"] .practice-picker .overlay-dialog-ornament-bottom { z-index: auto; }
 
 .practice-picker-grab,
 .practice-picker-count,
@@ -146,10 +149,15 @@ html[data-theme-family="crystal"] .practice-picker-row {
 }
 html[data-theme-family="crystal"] .practice-picker-row[data-state="loading"] {
   --sf-chamfer-fill: linear-gradient(var(--od-loading-bg), var(--od-loading-bg));
-  --sf-chamfer-edge: color-mix(in srgb, var(--sf-success) 45%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-success) 45%, transparent);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
 }
-html[data-theme-family="crystal"] .practice-picker-row:not(:disabled):hover { box-shadow: inset 0 0 0 1px var(--sf-edge-highlight); }
+/* The board's mode rows keep their edge on hover and rise instead (nk-lift). */
+html[data-theme-family="crystal"] .practice-picker-row { transition: transform 220ms cubic-bezier(.34, 1.56, .64, 1), filter 220ms ease; }
+html[data-theme-family="crystal"] .practice-picker-row:not(:disabled):hover { filter: brightness(1.06); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) .practice-picker-row:not(:disabled):hover { transform: translateY(-3px); }
+  html[data-theme-family="crystal"]:not([data-motion="reduced"]) .practice-picker-row:not(:disabled):active { transform: translateY(0) scale(.97); }
+}
 html[data-theme-family="crystal"] .practice-picker-row:focus-visible { outline-offset: -3px; }
 html[data-theme-family="crystal"] .practice-picker-row-strip {
   position: absolute;
@@ -174,6 +182,7 @@ html[data-theme-family="crystal"] .practice-picker-row[data-state="loading"] .pr
 html[data-theme-family="crystal"] .practice-picker-row[data-state="locked"] .practice-picker-row-icon { background: var(--sf-border); color: var(--od-subtle); }
 html[data-theme-family="crystal"] .practice-picker-row-head { gap: 10px; }
 html[data-theme-family="crystal"] .practice-picker-row-name {
+  color: var(--sf-text-strong);
   font-family: var(--sf-font-display);
   font-size: 19px;
   font-style: italic;
@@ -221,6 +230,8 @@ html[data-theme-family="crystal"] .practice-picker-keys {
 }
 html[data-theme-family="crystal"] .practice-picker-keys kbd { padding: 0; border: 0; }
 html[data-theme-family="crystal"] .practice-picker-note-press { display: none; }
+/* The board's secondary button text is the strong ink in both modes. */
+html[data-theme-family="crystal"] .practice-picker .overlay-dialog-secondary { color: var(--sf-text-strong); }
 
 /* Below 640px the picker is a bottom sheet: grab handle, short title, chevrons instead of key
    hints, and a tinted icon per mode. The footer's keyboard hint has no use on touch. */
