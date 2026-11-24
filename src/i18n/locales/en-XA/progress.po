@@ -324,7 +324,7 @@ msgid "stats.achievements"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:212
+#: src/components/stats/ActivityHeatmap.tsx:214
 msgid "stats.active-days"
 msgstr ""
 
@@ -354,7 +354,7 @@ msgid "stats.activity-title"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:199
+#: src/components/stats/ActivityHeatmap.tsx:201
 msgid "stats.activity-unavailable"
 msgstr ""
 
@@ -661,7 +661,7 @@ msgid "stats.not-reviewed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:199
+#: src/components/stats/ActivityHeatmap.tsx:201
 msgid "stats.outside-selected-range"
 msgstr ""
 
@@ -731,7 +731,7 @@ msgid "stats.reviewed"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:199
+#: src/components/stats/ActivityHeatmap.tsx:201
 #: src/components/stats/StatsCharts.tsx:62
 msgid "stats.reviews"
 msgstr ""
@@ -777,8 +777,8 @@ msgid "stats.star-keeper-description"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:190
-#: src/components/stats/ActivityHeatmap.tsx:191
+#: src/components/stats/ActivityHeatmap.tsx:192
+#: src/components/stats/ActivityHeatmap.tsx:193
 msgid "stats.study-activity"
 msgstr ""
 
@@ -823,12 +823,12 @@ msgid "stats.tier-star"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:213
+#: src/components/stats/ActivityHeatmap.tsx:215
 msgid "stats.total-reviews"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:213
+#: src/components/stats/ActivityHeatmap.tsx:215
 msgid "stats.total-xp"
 msgstr ""
 

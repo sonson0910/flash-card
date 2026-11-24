@@ -829,6 +829,12 @@ html:not([data-theme-family='crystal']).dark .onb-countdown {
 .onb-trial-card .flashcard-shell { max-width: 380px; height: 500px; }
 .onb-trial-card-loading { height: 500px; border-radius: var(--sf-card-radius); background: var(--onb-card); }
 
+/* While the starter cards are written, the trial's frame lays out the parts it cannot show yet, unseen, and
+   draws its own heading in the same place as the trial's, so nothing below moves when the cards arrive. */
+.onb-trial-reserve { visibility: hidden; }
+.onb-trial-intro { display: grid; }
+.onb-trial-intro > * { grid-area: 1 / 1; }
+
 .onb-trial-grade { display: flex; width: min(380px, 100%); margin-top: 14px; gap: 8px; }
 
 .onb-trial-grade > button {

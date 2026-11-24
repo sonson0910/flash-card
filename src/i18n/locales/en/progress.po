@@ -324,7 +324,7 @@ msgid "stats.achievements"
 msgstr "Achievements"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:212
+#: src/components/stats/ActivityHeatmap.tsx:214
 msgid "stats.active-days"
 msgstr "active days"
 
@@ -354,7 +354,7 @@ msgid "stats.activity-title"
 msgstr "Activity"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:199
+#: src/components/stats/ActivityHeatmap.tsx:201
 msgid "stats.activity-unavailable"
 msgstr "Activity unavailable before coverage began"
 
@@ -661,7 +661,7 @@ msgid "stats.not-reviewed"
 msgstr "Not reviewed"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:199
+#: src/components/stats/ActivityHeatmap.tsx:201
 msgid "stats.outside-selected-range"
 msgstr "Outside selected range"
 
@@ -731,7 +731,7 @@ msgid "stats.reviewed"
 msgstr "Reviewed"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:199
+#: src/components/stats/ActivityHeatmap.tsx:201
 #: src/components/stats/StatsCharts.tsx:62
 msgid "stats.reviews"
 msgstr "reviews"
@@ -777,8 +777,8 @@ msgid "stats.star-keeper-description"
 msgstr "Help fifty words shine as mastered."
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:190
-#: src/components/stats/ActivityHeatmap.tsx:191
+#: src/components/stats/ActivityHeatmap.tsx:192
+#: src/components/stats/ActivityHeatmap.tsx:193
 msgid "stats.study-activity"
 msgstr "Study activity"
 
@@ -823,12 +823,12 @@ msgid "stats.tier-star"
 msgstr "Star"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:213
+#: src/components/stats/ActivityHeatmap.tsx:215
 msgid "stats.total-reviews"
 msgstr "reviews"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:213
+#: src/components/stats/ActivityHeatmap.tsx:215
 msgid "stats.total-xp"
 msgstr "total XP"
 

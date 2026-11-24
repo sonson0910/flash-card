@@ -324,7 +324,7 @@ msgid "stats.achievements"
 msgstr "Thành tích"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:212
+#: src/components/stats/ActivityHeatmap.tsx:214
 msgid "stats.active-days"
 msgstr "ngày hoạt động"
 
@@ -354,7 +354,7 @@ msgid "stats.activity-title"
 msgstr "Hoạt động"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:199
+#: src/components/stats/ActivityHeatmap.tsx:201
 msgid "stats.activity-unavailable"
 msgstr "Chưa có dữ liệu hoạt động trước khi bắt đầu ghi nhận"
 
@@ -661,7 +661,7 @@ msgid "stats.not-reviewed"
 msgstr "Chưa ôn"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:199
+#: src/components/stats/ActivityHeatmap.tsx:201
 msgid "stats.outside-selected-range"
 msgstr "Ngoài khoảng thời gian đã chọn"
 
@@ -731,7 +731,7 @@ msgid "stats.reviewed"
 msgstr "Đã ôn"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:199
+#: src/components/stats/ActivityHeatmap.tsx:201
 #: src/components/stats/StatsCharts.tsx:62
 msgid "stats.reviews"
 msgstr "lượt ôn tập"
@@ -777,8 +777,8 @@ msgid "stats.star-keeper-description"
 msgstr "Giúp năm mươi từ tỏa sáng khi đã thành thạo."
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:190
-#: src/components/stats/ActivityHeatmap.tsx:191
+#: src/components/stats/ActivityHeatmap.tsx:192
+#: src/components/stats/ActivityHeatmap.tsx:193
 msgid "stats.study-activity"
 msgstr "Hoạt động học"
 
@@ -823,12 +823,12 @@ msgid "stats.tier-star"
 msgstr "Star"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:213
+#: src/components/stats/ActivityHeatmap.tsx:215
 msgid "stats.total-reviews"
 msgstr "lượt ôn tập"
 
 #. js-lingui-explicit-id
-#: src/components/stats/ActivityHeatmap.tsx:213
+#: src/components/stats/ActivityHeatmap.tsx:215
 msgid "stats.total-xp"
 msgstr "tổng XP"
 
