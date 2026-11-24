@@ -1,6 +1,6 @@
     const sfTokens = (dark) => dark ? {
       dark: true, light: false, toggleLabel: 'Switch to light theme',
-      fx: { enter: 'au-in', enter2: 'au-in-2', enter3: 'au-in-3', enter4: 'au-in-4', title: 'au-in', stagger: 'au-stagger', dialog: 'au-dialog', lift: 'au-lift', press: 'au-press', glint: 'au-glint', correct: 'au-correct', reward: 'au-pop' },
+      fx: { enter: 'au-in', enter2: 'au-in-2', enter3: 'au-in-3', enter4: 'au-in-4', title: 'au-in', stagger: 'au-stagger', dialog: 'au-dialog', lift: 'au-lift', press: 'au-press', pressDanger: 'au-press-danger', glint: 'au-glint', correct: 'au-correct', reward: 'au-pop' },
       pageBg: '#06161f', text: '#e5ecf1', textStrong: '#f1f6f9', body: '#b5c2ca', text2: '#99a7b0', text3: '#7d8e98',
       line: 'rgb(255 255 255 / 0.08)', lineStrong: 'rgb(255 255 255 / 0.14)', navLine: 'rgb(255 255 255 / 0.06)', chipBg: 'rgb(255 255 255 / 0.04)',
       accent: '#28d3f4', accentText: '#7ee6fa', accentSoft: 'rgb(40 211 244 / 0.12)', accentLine: 'rgb(40 211 244 / 0.35)',
@@ -33,7 +33,7 @@
       skeleton: 'linear-gradient(90deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.04))',
     } : {
       dark: false, light: true, toggleLabel: 'Switch to dark theme',
-      fx: { enter: 'ip-in', enter2: 'ip-in-2', enter3: 'ip-in-3', enter4: 'ip-in-4', title: 'ip-ink', stagger: 'ip-stagger', dialog: 'ip-dialog', lift: 'ip-lift', press: 'ip-press', glint: '', correct: 'ip-correct', reward: 'ip-stamp' },
+      fx: { enter: 'ip-in', enter2: 'ip-in-2', enter3: 'ip-in-3', enter4: 'ip-in-4', title: 'ip-ink', stagger: 'ip-stagger', dialog: 'ip-dialog', lift: 'ip-lift', press: 'ip-press', pressDanger: 'ip-press', glint: '', correct: 'ip-correct', reward: 'ip-stamp' },
       pageBg: 'radial-gradient(ellipse 70% 70% at 60% 40%, #f7f2e8 0%, #efe9dd 60%, #e6dfd0 100%)', text: '#1d1a16', textStrong: '#1d1a16', body: '#3d372f', text2: '#6b6255', text3: '#71675a',
       line: 'rgb(29 26 22 / 0.1)', lineStrong: 'rgb(29 26 22 / 0.18)', navLine: 'rgb(29 26 22 / 0.08)', chipBg: '#fbf8f2',
       accent: '#b4461a', accentText: '#97400d', accentSoft: 'rgb(180 70 26 / 0.08)', accentLine: 'rgb(151 64 13 / 0.25)',

@@ -164,6 +164,11 @@ SHARED_CSS = review_css + '''
 .au-press{transition:transform 180ms cubic-bezier(.16,1,.3,1), filter 180ms ease}
 .au-press:hover{transform:translateY(-2px);filter:brightness(1.08) drop-shadow(0 10px 18px rgb(40 211 244 / .35))}
 .au-press:active{transform:translateY(0) scale(.97);filter:brightness(.98)}
+.au-press-danger{transition:transform 180ms cubic-bezier(.16,1,.3,1), filter 180ms ease}
+.au-press-danger:hover{transform:translateY(-2px);filter:drop-shadow(0 8px 16px rgb(255 138 134 / .3))}
+.au-press-danger:active{transform:translateY(0) scale(.97)}
+@keyframes sf-drain-k{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.sf-drain{transform-origin:left;animation:sf-drain-k 6s linear both}
 .ip-press{transition:transform 160ms cubic-bezier(.16,1,.3,1), filter 160ms ease}
 .ip-press:hover{transform:translateY(-2px);filter:drop-shadow(0 8px 8px rgb(60 40 20 / .2))}
 .ip-press:active{transform:translateY(1px) scale(.98);filter:none}
@@ -190,7 +195,7 @@ SHARED_CSS = review_css + '''
 @keyframes sf-cells-k{from{opacity:0;scale:.6}to{opacity:1;scale:1}}
 .sf-cells>*{animation:sf-cells-k 360ms cubic-bezier(.16,1,.3,1) both}
 .sf-cells>:nth-child(7n+2){animation-delay:30ms}.sf-cells>:nth-child(7n+3){animation-delay:60ms}.sf-cells>:nth-child(7n+4){animation-delay:90ms}.sf-cells>:nth-child(7n+5){animation-delay:120ms}.sf-cells>:nth-child(7n+6){animation-delay:150ms}.sf-cells>:nth-child(7n){animation-delay:180ms}
-@media (prefers-reduced-motion: reduce){.au-in,.au-in-2,.au-in-3,.au-in-4,.ip-in,.ip-in-2,.ip-in-3,.ip-in-4,.au-stagger>*,.ip-stagger>*,.au-dialog,.ip-dialog,.sf-scrim,.sf-sheet-r,.sf-sheet-b,.sf-toast,.au-glint::after,.au-correct,.ip-correct,.au-pop,.ip-stamp,.sf-tick,.sf-bars>*,.sf-draw,.sf-cells>*{animation:none}.au-lift,.ip-lift,.au-press,.ip-press,.sf-ease{transition:none}}
+@media (prefers-reduced-motion: reduce){.sf-drain,.au-in,.au-in-2,.au-in-3,.au-in-4,.ip-in,.ip-in-2,.ip-in-3,.ip-in-4,.au-stagger>*,.ip-stagger>*,.au-dialog,.ip-dialog,.sf-scrim,.sf-sheet-r,.sf-sheet-b,.sf-toast,.au-glint::after,.au-correct,.ip-correct,.au-pop,.ip-stamp,.sf-tick,.sf-bars>*,.sf-draw,.sf-cells>*{animation:none}.au-lift,.ip-lift,.au-press,.ip-press,.sf-ease{transition:none}}
 '''
 COMPONENTS = sorted(f.name[:-len('.dc.html')] for f in SRC.glob('*.dc.html'))
 for name in COMPONENTS:
