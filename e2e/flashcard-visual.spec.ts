@@ -181,6 +181,9 @@ for (const theme of themes) {
       await expectCardPhotoReady(shell);
       // The Crystal card names the part of speech on its front; the back's source line then leaves it out.
       if (theme.family === 'crystal') await expect(shell.locator('.flashcard-face [data-card-metadata]').getByText('adjective', { exact: true })).toBeVisible();
+      // Same pointer race as the tier fronts below: the card opens under the pointer that clicked the row.
+      await page.mouse.move(0, 0);
+      await expect(shell).toHaveAttribute('data-card-hovered', 'false');
       await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-front.png`);
       await expectNoBlockingViolations(page);
 

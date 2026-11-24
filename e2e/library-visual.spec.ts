@@ -23,6 +23,16 @@ async function gotoFixture(page: Page, query = 'locale=en') {
   const root = page.locator('[data-library-visual-view]');
   await expect(root).toBeVisible({ timeout: 15_000 });
 }
+// LibraryScreen.tsx keeps LibraryTools inside a closed-by-default <details data-library-region="tools">.
+// The disclosure is uncontrolled and sits below the card grid, so a click sent while the fixture's cards
+// are still arriving can miss it or be undone by the re-render. Open it until the wanted tool is there.
+async function openLibraryTools(page: Page, tool: Locator) {
+  const tools = page.locator('[data-library-region="tools"]');
+  await expect(async () => {
+    if (!await tools.evaluate(element => (element as HTMLDetailsElement).open)) await tools.locator('summary').click();
+    await expect(tool).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
+}
 const viewports = [{ name: 'desktop', width: 1440, height: 900 }, { name: '390px', width: 390, height: 844 }] as const;
 
 let fixtureServer: ViteDevServer | undefined;
@@ -123,8 +133,8 @@ test('Library create input defers submit during IME composition', async ({ page 
   // a closed-by-default <details data-library-region="tools"> disclosure —
   // the primary create-card path is the dialog opened from LibraryOverview's
   // "Create card" button. Expand it before the input becomes visible.
-  await page.locator('[data-library-region="tools"] summary').click();
   const input = page.locator('#new-word');
+  await openLibraryTools(page, input);
   const count = page.locator('[data-library-generate-count]');
   await expect(input).toBeVisible({ timeout: 15_000 });
   await input.dispatchEvent('compositionstart');
@@ -197,7 +207,7 @@ for (const theme of themes) for (const viewport of viewports) {
     // LibraryScreen.tsx now tucks LibraryTools (and its "AI Dialogue"/"Scan
     // Text" buttons) inside a closed-by-default <details data-library-region="tools">
     // disclosure — see the IME test above for the same pattern.
-    await page.locator('[data-library-region="tools"] summary').click();
+    await openLibraryTools(page, page.getByRole('button', { name: 'AI Dialogue' }));
     await page.getByRole('button', { name: 'AI Dialogue' }).click();
     await expect(page.getByRole('heading', { name: 'Practice in context' })).toBeVisible();
     await expectAccessibleAndContained(page, `${name}-dialogue`);
@@ -368,7 +378,7 @@ for (const theme of themes) for (const viewport of viewports) for (const [group,
 
 async function scanExtractorPassage(page: Page) {
   await gotoFixture(page, 'locale=en&dialog=extract');
-  await page.locator('[data-library-region="tools"] summary').click();
+  await openLibraryTools(page, page.getByRole('button', { name: 'Scan Text' }));
   await page.getByRole('button', { name: 'Scan Text' }).click();
   const dialog = page.getByRole('dialog', { name: 'Scan text' });
   await dialog.getByRole('textbox', { name: 'Text to scan' }).fill(extractorPassage);
