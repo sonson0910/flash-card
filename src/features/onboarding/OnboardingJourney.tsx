@@ -29,7 +29,7 @@ import { clearStarterClaim, createStarterTrialGate, starterClaimStore } from './
 import { HangulPrimer } from './HangulPrimer';
 import { ReminderPhonePreview } from './ReminderPhonePreview';
 import { clearOnboardingDraft, readOnboardingDraft, writeOnboardingDraft } from './onboardingDraft';
-import { StarterCardTrial } from './StarterCardTrial';
+import { loadStarterCardFace, StarterCardTrial, StarterCardTrialLoading } from './StarterCardTrial';
 import { useStarterMeaningsLanguage } from './useStarterMeaningsLanguage';
 import { starterCardsFor } from './starterCardCatalog';
 import { useAccountProfileNativeLanguage } from '../profileCompletion/AccountProfileContext';
@@ -386,9 +386,16 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
   const startAha = async () => {
     if (!targetLanguage) return;
     setAhaOutcome('pending');
+    // WebKit drops the journey's scroll position when the trial lands while the card's stylesheet is still loading,
+    // moving the footer away from a tap in progress, so the card face loads beside the cards and the trial waits for it.
+    // A failed load is retried when the trial renders the card.
+    const cardFace = loadStarterCardFace().catch(() => undefined);
     try {
       const outcome = await starterTrialGate.run(targetLanguage, () => createOwnerStarterCards(ownerId, targetLanguage, nativeLanguage));
-      if (typeof outcome === 'object' && outcome.created.length > 0) rememberStarterMeaningsLanguage(nativeLanguage);
+      if (typeof outcome === 'object' && outcome.created.length > 0) {
+        rememberStarterMeaningsLanguage(nativeLanguage);
+        await cardFace;
+      }
       setAhaOutcome(outcome);
     } catch {
       setAhaOutcome('error');
@@ -652,20 +659,23 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
 
   if (step === 'aha') {
     const created = starterOutcome;
+    const heading = <Trans {...msg({ context: 'onboarding.aha.heading', message: 'Let\'s add your <0>first cards</0>' })} components={accent} />;
     content = created && created.created.length > 0
       ? <StarterCardTrial cards={created.created} eyebrow={eyebrow} meaningsFollowEarlierLanguage={starterMeaningsFollowEarlierLanguage} />
-      : <>
-        {eyebrow}
-        <h2 className={stepTitleClass}><Trans {...msg({ context: 'onboarding.aha.heading', message: 'Let\'s add your <0>first cards</0>' })} components={accent} /></h2>
-        {ahaOutcome === null && <>
-          <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.aha.subtitle', message: 'Five common words to get you started.' })} /></p>
-          {starterCount > 0 && <div className="onb-actions"><button type="button" className={responsivePrimaryButtonClass} onClick={() => void startAha()}><PrimaryLabel><Trans {...msg({ context: 'onboarding.aha.create', message: 'Add 5 starter cards' })} /></PrimaryLabel></button></div>}
-        </>}
-        {ahaOutcome === 'pending' && <p className={ahaNeutralMessageClass} role="status"><Trans {...msg({ context: 'onboarding.aha.pending', message: 'Adding your cards…' })} /></p>}
-        {ahaOutcome === 'already-added' && <p className={ahaNeutralMessageClass} role="status"><Trans {...msg({ context: 'onboarding.aha.already-added', message: 'Starter cards were already requested earlier in this setup, so no more were added. You can add cards from the library any time.' })} /></p>}
-        {ahaOutcome === 'error' && <p className="onb-message" data-tone="danger" role="alert"><Trans {...msg({ context: 'onboarding.aha.error', message: 'Something went wrong adding cards. You can add them later from the library.' })} /></p>}
-        {created && <p className={ahaNeutralMessageClass}><Trans {...msg({ context: 'onboarding.aha.none-added', message: 'No cards were added.' })} /></p>}
-      </>;
+      : ahaOutcome === 'pending'
+        ? <StarterCardTrialLoading count={starterCount} eyebrow={eyebrow} heading={heading}
+          status={<Trans {...msg({ context: 'onboarding.aha.pending', message: 'Adding your cards…' })} />} />
+        : <>
+          {eyebrow}
+          <h2 className={stepTitleClass}>{heading}</h2>
+          {ahaOutcome === null && <>
+            <p className={stepSubtitleClass}><Trans {...msg({ context: 'onboarding.aha.subtitle', message: 'Five common words to get you started.' })} /></p>
+            {starterCount > 0 && <div className="onb-actions"><button type="button" className={responsivePrimaryButtonClass} onClick={() => void startAha()}><PrimaryLabel><Trans {...msg({ context: 'onboarding.aha.create', message: 'Add 5 starter cards' })} /></PrimaryLabel></button></div>}
+          </>}
+          {ahaOutcome === 'already-added' && <p className={ahaNeutralMessageClass} role="status"><Trans {...msg({ context: 'onboarding.aha.already-added', message: 'Starter cards were already requested earlier in this setup, so no more were added. You can add cards from the library any time.' })} /></p>}
+          {ahaOutcome === 'error' && <p className="onb-message" data-tone="danger" role="alert"><Trans {...msg({ context: 'onboarding.aha.error', message: 'Something went wrong adding cards. You can add them later from the library.' })} /></p>}
+          {created && <p className={ahaNeutralMessageClass}><Trans {...msg({ context: 'onboarding.aha.none-added', message: 'No cards were added.' })} /></p>}
+        </>;
     footer = <>
       {backButton}
       {created && created.skippedForQuota > 0 && <p className="onb-footer-note onb-quota-note"><Trans {...msg({ context: 'onboarding.aha.quota-note', message: 'Your monthly Free card allowance is almost used up, so {count} card(s) were not added.' })} values={{ count: created.skippedForQuota }} /></p>}
@@ -691,7 +701,10 @@ export function OnboardingJourney({ ownerId }: OnboardingJourneyProps) {
     </>;
   }
 
-  return <div className="claude-onboarding-journey fixed inset-0 z-[70] overflow-y-auto" data-onboarding-step={step}>
+  // A full-screen modal takeover, layered like the runtime error screen: above the shell notification stack
+  // (z-70), so a toast raised by the workspace behind it never covers the setup actions, and below portaled
+  // dialogs (z-100 and up).
+  return <div className="claude-onboarding-journey fixed inset-0 z-[80] overflow-y-auto" data-onboarding-step={step}>
     {crystal && <div className="onb-backdrop" aria-hidden="true">
       <span className="onb-starfield crystal-ornament" />
       <span className="onb-beam onb-beam--left crystal-ornament" />

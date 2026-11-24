@@ -33,7 +33,7 @@ msgctxt "practice.match.verifying-reward"
 msgid "Verifying your result…"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:733
+#: src/features/practice/StudyView.tsx:734
 msgctxt "study.combo-name.sweet"
 msgid "Sweet"
 msgstr ""
@@ -93,7 +93,7 @@ msgctxt "practice.match.no-reward"
 msgid "This round did not award XP."
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:735
+#: src/features/practice/StudyView.tsx:736
 msgctxt "study.combo-name.sparkly"
 msgid "Sparkly"
 msgstr ""
@@ -143,7 +143,7 @@ msgctxt "recap.cheer"
 msgid "All done!"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:652
+#: src/features/practice/StudyView.tsx:653
 msgctxt "study.streak-unit"
 msgid "{count, plural, one {day} other {days}}"
 msgstr ""
@@ -158,7 +158,7 @@ msgctxt "practice.story.creating-progress"
 msgid "Creating your story…"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:498
+#: src/features/practice/StudyView.tsx:499
 msgctxt "study.recall-mode"
 msgid "Recall mode"
 msgstr ""
@@ -189,7 +189,7 @@ msgctxt "practice.match.close"
 msgid "Close word match"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:732
+#: src/features/practice/StudyView.tsx:733
 msgctxt "study.combo-name.nice"
 msgid "Nice"
 msgstr ""
@@ -234,7 +234,7 @@ msgctxt "practice.spelling.legend.wrong"
 msgid "Wrong letter"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:515
+#: src/features/practice/StudyView.tsx:516
 msgctxt "study.swipe.good"
 msgid "GOOD 👍"
 msgstr ""
@@ -275,7 +275,7 @@ msgctxt "practice.match.back"
 msgid "Back"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:501
+#: src/features/practice/StudyView.tsx:502
 msgctxt "study.recall-mode.adaptive"
 msgid "Adaptive difficulty"
 msgstr ""
@@ -356,7 +356,7 @@ msgctxt "languagePractice.ja.instruction"
 msgid "Read the word, then type it in Japanese."
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:529
+#: src/features/practice/StudyView.tsx:530
 msgctxt "study-view.meet-this-word"
 msgid "Meet this word"
 msgstr ""
@@ -398,7 +398,7 @@ msgctxt "recap.what-next-question"
 msgid "What next?"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:548
+#: src/features/practice/StudyView.tsx:549
 msgctxt "study-view.i-ve-reviewed-it-start-recall"
 msgid "I’ve reviewed it — start recall"
 msgstr ""
@@ -440,29 +440,29 @@ msgid "We could not verify your result. Your completed pairs are still here."
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:813
+#: src/features/practice/StudyView.tsx:816
 msgid "daily-goals.goal.study-cards"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:816
-#: src/features/practice/StudyView.tsx:817
+#: src/features/practice/StudyView.tsx:819
+#: src/features/practice/StudyView.tsx:820
 msgid "daily-goals.heading"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:835
+#: src/features/practice/StudyView.tsx:838
 msgid "daily-goals.not-counted"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:827
+#: src/features/practice/StudyView.tsx:830
 msgid "daily-goals.progress-value"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:782
-#: src/features/practice/StudyView.tsx:836
+#: src/features/practice/StudyView.tsx:783
+#: src/features/practice/StudyView.tsx:839
 msgid "daily-goals.xp"
 msgstr ""
 
@@ -564,12 +564,12 @@ msgid "Reveal"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:433
+#: src/features/practice/StudyView.tsx:434
 msgid "flashcard.audio.check-pronunciation"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:430
+#: src/features/practice/StudyView.tsx:431
 msgid "flashcard.audio.play-pronunciation"
 msgstr ""
 
@@ -588,7 +588,7 @@ msgctxt "languagePractice.ja.pack"
 msgid "Japanese pack · 日本語"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:736
+#: src/features/practice/StudyView.tsx:737
 msgctxt "study.combo-name.dreamy"
 msgid "Dreamy"
 msgstr ""
@@ -613,7 +613,7 @@ msgctxt "practice.match.instruction"
 msgid "Choose a word in {targetLanguageName}, then its meaning in {nativeLanguageName}."
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:625
+#: src/features/practice/StudyView.tsx:626
 msgctxt "study.shortcuts"
 msgid "Study shortcuts"
 msgstr ""
@@ -628,7 +628,7 @@ msgctxt "languagePractice.action.check"
 msgid "Check"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:504
+#: src/features/practice/StudyView.tsx:505
 msgctxt "study.recall-mode.listen-to-word"
 msgid "Listen → Word"
 msgstr ""
@@ -648,8 +648,8 @@ msgctxt "rich-story-view.grammar-transformation"
 msgid "Grammar transformation:"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:583
-#: src/features/practice/StudyView.tsx:716
+#: src/features/practice/StudyView.tsx:584
+#: src/features/practice/StudyView.tsx:717
 msgctxt "study.hint"
 msgid "Say it out loud first, then reveal <0>Space</0>"
 msgstr ""
@@ -689,7 +689,7 @@ msgctxt "practice.shadowing.take-recording"
 msgid "Take {take} · recording"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:482
+#: src/features/practice/StudyView.tsx:483
 msgctxt "study-view.summary"
 msgid "Summary"
 msgstr ""
@@ -774,13 +774,13 @@ msgctxt "practice.question-progress"
 msgid "Question {current} / {total}"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:505
+#: src/features/practice/StudyView.tsx:506
 msgctxt "study.recall-mode.cloze"
 msgid "Fill the sentence"
 msgstr ""
 
 #: src/features/practice/practice-board-parts.tsx:81
-#: src/features/practice/StudyView.tsx:458
+#: src/features/practice/StudyView.tsx:459
 msgctxt "practice.topbar.kicker"
 msgid "Practice"
 msgstr ""
@@ -852,7 +852,7 @@ msgstr ""
 
 #: src/features/practice/QuizView.tsx:468
 #: src/features/practice/SpellingView.tsx:470
-#: src/features/practice/StudyView.tsx:447
+#: src/features/practice/StudyView.tsx:448
 msgctxt "practice.learn-first"
 msgid "I don't know this — learn first"
 msgstr ""
@@ -1005,8 +1005,8 @@ msgstr ""
 
 #: src/features/practice/QuizView.tsx:307
 #: src/features/practice/SpellingView.tsx:252
-#: src/features/practice/StudyView.tsx:494
-#: src/features/practice/StudyView.tsx:781
+#: src/features/practice/StudyView.tsx:495
+#: src/features/practice/StudyView.tsx:782
 #: src/features/practice/WordMatchView.tsx:354
 msgctxt "study.combo"
 msgid "Combo ×{count}"
@@ -1017,7 +1017,7 @@ msgctxt "practice.spelling.letter-count"
 msgid "{count, plural, one {# letter} other {# letters}}"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:459
+#: src/features/practice/StudyView.tsx:460
 msgctxt "study.title"
 msgid "Review"
 msgstr ""
@@ -1033,7 +1033,7 @@ msgctxt "practice.quiz.lumi.right"
 msgid "That's it!"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:500
+#: src/features/practice/StudyView.tsx:501
 msgctxt "study.recall-mode.target-to-native"
 msgid "{targetLanguage} → {nativeLanguage}"
 msgstr ""
@@ -1043,7 +1043,7 @@ msgctxt "recap.tomorrow-loading"
 msgid "Checking cards due…"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:503
+#: src/features/practice/StudyView.tsx:504
 msgctxt "study.recall-mode.image-to-word"
 msgid "Image → Word"
 msgstr ""
@@ -1053,7 +1053,7 @@ msgctxt "languagePractice.ko.backspace"
 msgid "Delete"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:470
+#: src/features/practice/StudyView.tsx:471
 msgctxt "study.card-count"
 msgid "{current} / {total} saved"
 msgstr ""
@@ -1073,7 +1073,7 @@ msgctxt "recap.tomorrow-count"
 msgid "{count, plural, one {# card due} other {# cards due}}"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:502
+#: src/features/practice/StudyView.tsx:503
 msgctxt "study.recall-mode.native-to-target"
 msgid "{nativeLanguage} → {targetLanguage}"
 msgstr ""
@@ -1627,7 +1627,7 @@ msgid "recap.reminder-switch"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:715
+#: src/features/practice/StudyView.tsx:716
 msgid "review.prompt"
 msgstr ""
 
@@ -1662,7 +1662,7 @@ msgctxt "recap.description-promoted"
 msgid "You remembered {good} of {total}, and {promoted, plural, one {# word} other {# words}} moved up a level."
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:530
+#: src/features/practice/StudyView.tsx:531
 msgctxt "study-view.take-a-moment-to-review-the-card-before-recall-practice"
 msgid "Take a moment to review the card before recall practice."
 msgstr ""
@@ -1672,7 +1672,7 @@ msgctxt "practice.match.time-up-copy"
 msgid "You matched {matchesCount} of {pairCount} pairs."
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:520
+#: src/features/practice/StudyView.tsx:521
 msgctxt "study.swipe.again"
 msgid "AGAIN 👎"
 msgstr ""
@@ -1704,14 +1704,14 @@ msgid "shadowing-view.practice-target"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:650
+#: src/features/practice/StudyView.tsx:651
 msgid "shell.streak"
 msgstr ""
 
 #. js-lingui-explicit-id
 #: src/features/practice/practice-board-parts.tsx:111
 #: src/features/practice/SessionRecapModal.tsx:366
-#: src/features/practice/StudyView.tsx:647
+#: src/features/practice/StudyView.tsx:648
 msgid "shell.theme.quick-toggle"
 msgstr ""
 
@@ -1732,52 +1732,52 @@ msgid "Pronunciation assessment is unavailable in this build; browser transcript
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:454
+#: src/features/practice/StudyView.tsx:455
 msgid "study.close"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:474
+#: src/features/practice/StudyView.tsx:475
 msgid "study.elapsed-time"
 msgstr "[Ëľåþšëð šţųðÿ ţïmë: {time}]"
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:477
+#: src/features/practice/StudyView.tsx:478
 msgid "study.focus-mode"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:604
+#: src/features/practice/StudyView.tsx:605
 msgid "study.next-card"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:600
+#: src/features/practice/StudyView.tsx:601
 msgid "study.previous-card"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:462
+#: src/features/practice/StudyView.tsx:463
 msgid "study.progress"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:627
+#: src/features/practice/StudyView.tsx:628
 msgid "study.shortcut.flip-card"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:628
+#: src/features/practice/StudyView.tsx:629
 msgid "study.shortcut.previous-next"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:629
+#: src/features/practice/StudyView.tsx:630
 msgid "study.shortcut.rate-memory"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/features/practice/StudyView.tsx:630
+#: src/features/practice/StudyView.tsx:631
 msgid "study.shortcut.star-play-speak"
 msgstr ""
 
@@ -1826,7 +1826,7 @@ msgctxt "practice.loading.match"
 msgid "Loading word match"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:734
+#: src/features/practice/StudyView.tsx:735
 msgctxt "study.combo-name.lovely"
 msgid "Lovely"
 msgstr ""
@@ -1955,7 +1955,7 @@ msgid "{count, plural, one {seen # time} other {seen # times}}"
 msgstr ""
 
 #: src/features/practice/practice-board-parts.tsx:160
-#: src/features/practice/StudyView.tsx:713
+#: src/features/practice/StudyView.tsx:714
 msgctxt "practice.lumi.label"
 msgid "Lumi · Link"
 msgstr ""
@@ -1992,7 +1992,7 @@ msgctxt "practice.actions.view-results"
 msgid "View results"
 msgstr ""
 
-#: src/features/practice/StudyView.tsx:731
+#: src/features/practice/StudyView.tsx:732
 msgctxt "study.combo-name.ready"
 msgid "Ready"
 msgstr ""
