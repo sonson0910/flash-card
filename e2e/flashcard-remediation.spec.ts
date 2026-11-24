@@ -224,7 +224,9 @@ for (const theme of [
         const box = button.getBoundingClientRect();
         return { top: Math.round(box.top), width: box.width, height: box.height };
       }));
-      expect(new Set(ratingLayout.map(button => button.top)).size).toBe(viewport.ratingRows);
+      // The Crystal phone board lays the four grades out as a 2 x 2 grid; every other layout keeps one row.
+      const expectedRatingRows = theme.family === 'crystal' && viewport.width <= 640 ? 2 : viewport.ratingRows;
+      expect(new Set(ratingLayout.map(button => button.top)).size).toBe(expectedRatingRows);
       for (const button of ratingLayout) {
         expect(button.width).toBeGreaterThanOrEqual(44);
         expect(button.height).toBeGreaterThanOrEqual(44);

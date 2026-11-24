@@ -545,8 +545,9 @@ for (const theme of themes) for (const viewport of viewports) {
     expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
     await expectAccessibleAndContained(page, 'Weekly recap', dialog);
     await expectReducedMotion(page, 'Weekly recap');
+    // WebKit paints this full-window dialog slowly without a GPU; one capture can take most of the default 5 s.
     await expect(dialog).toHaveScreenshot(`weekly-recap-${theme.family}-${theme.mode}-${viewport.name}.png`, {
-      animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01,
+      animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01, timeout: 20_000,
     });
     const screenshot = testInfo.outputPath(`weekly-recap-${theme.family}-${theme.mode}-${viewport.name}.png`);
     await dialog.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
