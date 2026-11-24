@@ -2,14 +2,43 @@
    Controls keep a 45px hit box and draw the board's smaller visual inside a transparent border. */
 .claude-app-shell { background: var(--sf-canvas); }
 /* Midnight Aurora: the AMBIENT partial's violet and cyan glows (static; the board's 120px blur
-   is drawn as a soft radial falloff instead of a blurred layer). */
-:is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell {
+   is drawn as a soft radial falloff instead of a blurred layer). The session bridge and the recap
+   board cover the shell, so they paint the same two glows themselves. */
+:is(html[data-theme-family=classic], html:not([data-theme-family])).dark :is(.claude-app-shell, .session-bridge, .practice-recap-board) {
   --shell-aurora-violet-at: 60px 40px;
   --shell-aurora-cyan-at: 80.5% 78%;
-  background:
+  --shell-aurora:
     radial-gradient(circle at var(--shell-aurora-violet-at), color-mix(in srgb, var(--sf-second) 40%, transparent) 0, color-mix(in srgb, var(--sf-second) 34%, transparent) 140px, color-mix(in srgb, var(--sf-second) 19%, transparent) 270px, color-mix(in srgb, var(--sf-second) 4%, transparent) 420px, transparent 520px),
-    radial-gradient(circle at var(--shell-aurora-cyan-at), color-mix(in srgb, var(--sf-brand) 32%, transparent) 0, color-mix(in srgb, var(--sf-brand) 23%, transparent) 180px, color-mix(in srgb, var(--sf-brand) 14%, transparent) 265px, color-mix(in srgb, var(--sf-brand) 8%, transparent) 330px, color-mix(in srgb, var(--sf-brand) 3%, transparent) 440px, transparent 520px),
-    var(--sf-canvas);
+    radial-gradient(circle at var(--shell-aurora-cyan-at), color-mix(in srgb, var(--sf-brand) 32%, transparent) 0, color-mix(in srgb, var(--sf-brand) 23%, transparent) 180px, color-mix(in srgb, var(--sf-brand) 14%, transparent) 265px, color-mix(in srgb, var(--sf-brand) 8%, transparent) 330px, color-mix(in srgb, var(--sf-brand) 3%, transparent) 440px, transparent 520px);
+}
+:is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell { background: var(--shell-aurora), var(--sf-canvas); }
+/* Each board places the two glows itself. Its `amb` data is the corner of a 560px violet and a 520px
+   cyan disc on the 1440 by 900 frame; the disc centres are written as a share of the viewport. */
+@media (min-width: 641px) {
+  /* QuizScreen */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell[data-view=quiz] { --shell-aurora-violet-at: 11.1% 44.4%; --shell-aurora-cyan-at: 86.1% 11.1%; }
+  /* MatchScreen */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell[data-view=match] { --shell-aurora-violet-at: 50% 53.3%; --shell-aurora-cyan-at: 22.2% 2.2%; }
+  /* SpellingScreen */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell[data-view=spelling] { --shell-aurora-violet-at: 48.6% 2.2%; --shell-aurora-cyan-at: 80.6% 80%; }
+  /* StoryScreen */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell[data-view=story] { --shell-aurora-violet-at: 81.9% 8.9%; --shell-aurora-cyan-at: 4.2% 75.6%; }
+  /* ShadowingScreen */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell[data-view=shadowing] { --shell-aurora-violet-at: 68.1% 0%; --shell-aurora-cyan-at: 6.9% 75.6%; }
+  /* PathsScreen */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell[data-view=catalog] { --shell-aurora-violet-at: 40.3% 8.9%; --shell-aurora-cyan-at: 87.5% 75.6%; }
+  /* ProgressScreen */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell[data-view=progress] { --shell-aurora-violet-at: 72.2% 6.7%; --shell-aurora-cyan-at: 9.7% 86.7%; }
+  /* AchievementsScreen */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell:has([data-achievements-board]) { --shell-aurora-violet-at: 5.6% 6.7%; --shell-aurora-cyan-at: 86.1% 80%; }
+  /* LangSettings */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell[data-view=settings] { --shell-aurora-violet-at: 5.6% 6.7%; --shell-aurora-cyan-at: 87.5% 77.8%; }
+  /* WebWords */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell[data-view=web-words] { --shell-aurora-violet-at: 4.2% 4.4%; --shell-aurora-cyan-at: 86.1% 82.2%; }
+  /* LessonScreen */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell:has([data-session-shell=lesson]) { --shell-aurora-violet-at: 26.4% -2.2%; --shell-aurora-cyan-at: 80.6% 75.6%; }
+  /* PlacementScreen */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell:has([data-session-shell=placement]) { --shell-aurora-violet-at: 76.4% 2.2%; --shell-aurora-cyan-at: 26.4% 77.8%; }
 }
 /* Ink & Paper: the AMBIENT partial's dot grid, faded out toward the edges. */
 :is(html[data-theme-family=classic], html:not([data-theme-family])):not(.dark) .claude-app-shell::after {
@@ -323,10 +352,14 @@ html[data-theme-family=crystal] .claude-mobile-nav-item[data-shell-active=true] 
   /* AnimeMobile: screens sit on a 20px rail, 6px under the 54px header row. */
   html[data-theme-family=crystal] .claude-workspace-inner { padding: 6px 20px calc(92px + env(safe-area-inset-bottom, 0px)); }
   /* MobileToday places the violet glow behind the header and the cyan one beside the session card. */
-  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell {
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark :is(.claude-app-shell, .session-bridge, .practice-recap-board) {
     --shell-aurora-violet-at: 100px 120px;
     --shell-aurora-cyan-at: calc(100% - 50px) 560px;
   }
+  /* MobileQuiz */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell[data-view=quiz] { --shell-aurora-violet-at: 80px 80px; --shell-aurora-cyan-at: calc(100% - 10px) 680px; }
+  /* MobileReview */
+  :is(html[data-theme-family=classic], html:not([data-theme-family])).dark .claude-app-shell[data-view=study] { --shell-aurora-violet-at: 80px 180px; --shell-aurora-cyan-at: calc(100% - 70px) 740px; }
 }
 @media (max-width: 379px) {
   .claude-topbar-inner,html[data-theme-family=crystal] .claude-topbar-inner { padding: 0 14px; gap: 8px; }

@@ -110,7 +110,8 @@ html:not([data-theme-family='crystal']):not(.dark) :is(.lesson-canvas, .placemen
   pointer-events: none;
 }
 
-html:not([data-theme-family='crystal']):not(.dark) :is(.lesson-canvas, .placement-canvas)::before { background: none; }
+/* Classic draws the board's ambient on the shell, so the canvas adds no glow of its own. */
+html:not([data-theme-family='crystal']) :is(.lesson-canvas, .placement-canvas)::before { background: none; }
 
 .lesson-canvas > *,
 .placement-canvas > *,

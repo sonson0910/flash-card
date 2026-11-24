@@ -96,7 +96,12 @@
   --rc-img-margin: var(--sf-img-margin); --rc-img-radius: var(--sf-img-radius); --rc-img-mask: var(--sf-img-mask);
   --rc-gold: var(--sf-reward); --rc-gold-text: var(--sf-reward); --rc-learning-text: var(--sf-brand-text); --rc-foil-blend: screen;
   --rc-confetti-1: var(--sf-confetti-0); --rc-confetti-2: var(--sf-confetti-1); --rc-confetti-3: var(--sf-confetti-2); --rc-confetti-4: var(--sf-confetti-3); --rc-confetti-5: var(--sf-confetti-4); --rc-confetti-radius: 50%;
-  --rc-ambient: radial-gradient(circle 520px at 30% -60px, color-mix(in srgb, var(--sf-second) 30%, transparent), transparent), radial-gradient(circle 760px at 50% 110%, color-mix(in srgb, var(--sf-brand) 22%, transparent), transparent);
+  --rc-ambient: var(--shell-aurora);
+}
+/* RecapScreen and RecapNext place their two glows at their own spots (see the shell's Midnight Aurora rule). */
+@media (min-width: 641px) {
+  :root.dark:not([data-theme-family="crystal"]) .practice-recap-board { --shell-aurora-violet-at: 31.9% 17.8%; --shell-aurora-cyan-at: 77.8% 71.1%; }
+  :root.dark:not([data-theme-family="crystal"]) .practice-recap-board:has([data-recap-variant="next"]) { --shell-aurora-violet-at: 5.6% 2.2%; --shell-aurora-cyan-at: 87.5% 62.2%; }
 }
 .practice-recap-board::before { position: absolute; z-index: -1; inset: 0; background: var(--rc-ambient); content: ''; pointer-events: none; }
 .practice-recap-board :is(button, a):focus-visible { outline: 2px solid var(--rc-accent); outline-offset: 3px; }

@@ -50,7 +50,11 @@
   --sb-card-shadow: 0 0 60px -16px rgb(40 211 244 / .55), 0 40px 80px -30px rgb(0 0 0 / .95);
   --sb-primary-bg: #28d3f4; --sb-primary-text: #04141c; --sb-primary-shadow: 0 16px 40px -14px rgb(40 211 244 / .8), inset 0 1px 0 rgb(255 255 255 / .5); --sb-btn-radius: var(--sf-button-radius, 16px);
   --sb-secondary-bg: rgb(255 255 255 / .04);
-  --sb-ambient: radial-gradient(circle 280px at 480px -20px, rgb(150 108 215 / .32), transparent), radial-gradient(circle 260px at 1160px 680px, rgb(40 211 244 / .26), transparent);
+  --sb-ambient: var(--shell-aurora);
+}
+/* SessionBridge places its two glows at its own spots (see the shell's Midnight Aurora rule). */
+@media (min-width: 641px) {
+  :root.dark:not([data-theme-family="crystal"]) .session-bridge { --shell-aurora-violet-at: 33.3% -2.2%; --shell-aurora-cyan-at: 80.6% 75.6%; }
 }
 .session-bridge::before { position: absolute; z-index: -1; inset: 0; background: var(--sb-ambient); content: ''; pointer-events: none; }
 :root:not(.dark):not([data-theme-family="crystal"]) .session-bridge::before {
