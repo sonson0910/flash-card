@@ -4,6 +4,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { AppFeedback } from '../../components/shell/AppFeedback';
 import { CourseContext, type CourseGateValue } from '../courses/CourseGate';
 import { OnboardingGate } from './OnboardingGate';
 import { onboardingCourseInput, onboardingLatestScoreRequest, OnboardingJourney, useOnboardingReminderSaveLock } from './OnboardingJourney';
@@ -128,6 +129,26 @@ describe('OnboardingGate', () => {
     expect(html).toContain('Continue');
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain('min-h-20');
+  });
+
+  it('draws the journey above the shell notification stack so a workspace toast never covers its actions', () => {
+    const journey = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+      <CourseContext.Provider value={snapshot('absent')}><OnboardingJourney ownerId="owner-1" /></CourseContext.Provider>
+    </I18nProvider>);
+    const notifications = renderToStaticMarkup(<I18nProvider i18n={i18n}>
+      <AppFeedback error="Could not load the cloud queue. Practice is using cards cached on this device." onDismissError={vi.fn()} />
+    </I18nProvider>);
+    // Both are fixed layers in the same app shell; the higher z-index wins the pointer, whatever their order.
+    const layer = (html: string, marker: string) => {
+      const tag = html.match(new RegExp(`<[^>]*${marker}[^>]*>`))?.[0] ?? '';
+      return Number(tag.match(/\bz-\[(\d+)\]/)?.[1]);
+    };
+    const journeyLayer = layer(journey, 'claude-onboarding-journey');
+    const notificationLayer = layer(notifications, 'data-notification-viewport');
+
+    expect(notifications).toContain('Could not load the cloud queue.');
+    expect(Number.isFinite(journeyLayer) && Number.isFinite(notificationLayer)).toBe(true);
+    expect(journeyLayer).toBeGreaterThan(notificationLayer);
   });
 
   it('resumes at the saved reminder step with its owner-scoped reminder controls', () => {
