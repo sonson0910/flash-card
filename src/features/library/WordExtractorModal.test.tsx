@@ -111,9 +111,13 @@ describe('WordExtractorModal', () => {
     const css = readFileSync(fileURLToPath(new URL('./library-dialog-overlays.css', import.meta.url)), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     const markRules = [...css.matchAll(/([^{}]*\.word-extractor-mark[^{}]*)\{([^}]*)\}/g)].map(([, selector, body]) => ({ selector: selector.trim(), body }));
 
-    const base = markRules.find(rule => rule.selector === '.word-extractor-mark');
-    expect(base?.body).toContain('padding: 0 var(--we-mark-pad)');
-    expect(base?.body).toContain('margin: 0 calc(var(--we-mark-pad) * -1)');
+    // Each theme family carries its own copy of the base rule behind a zero-specificity :where() scope.
+    const base = markRules.filter(rule => rule.selector.replace(/^:where\((?:[^()]|\([^()]*\))*\)\s*/, '') === '.word-extractor-mark');
+    expect(base).toHaveLength(2);
+    for (const rule of base) {
+      expect(rule.body, rule.selector).toContain('padding: 0 var(--we-mark-pad)');
+      expect(rule.body, rule.selector).toContain('margin: 0 calc(var(--we-mark-pad) * -1)');
+    }
     for (const rule of markRules) {
       expect(rule.body, rule.selector).not.toMatch(/font(-weight|-family|-size|-style)?\s*:|letter-spacing|padding-inline|margin-inline/);
     }

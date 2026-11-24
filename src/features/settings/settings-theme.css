@@ -2,7 +2,28 @@
    Values come from canvas/src/tokens.js and anime-tokens.js. They are scoped to .sf-settings-scope so the
    onboarding reminders step and the settings page share one set of board tokens. */
 
-.sf-settings-scope {
+:where(html[data-theme-family=crystal]) .sf-settings-scope {
+  --ss-text-strong: var(--sf-text); --ss-text2: var(--sf-text-muted);
+  /* The board uses #8a8072 (3.8:1); this is the nearest tone that keeps AA on the surfaces. */
+  --ss-text3: #756b5e; --ss-body: #3d372f;
+  --ss-line: var(--sf-border); --ss-line-strong: rgb(29 26 22 / .18); --ss-nav-line: rgb(29 26 22 / .08);
+  --ss-surface: var(--sf-surface); --ss-surface-shadow: var(--sf-panel-shadow); --ss-blur: none; --ss-radius: 18px;
+  --ss-accent: var(--sf-brand); --ss-accent-text: var(--sf-brand-text); --ss-accent-soft: rgb(180 70 26 / .08); --ss-accent-line: rgb(151 64 13 / .25);
+  --ss-input-bg: var(--sf-surface); --ss-chip-bg: var(--sf-surface-raised);
+  --ss-primary-bg: var(--sf-text); --ss-primary-text: var(--sf-on-brand); --ss-primary-shadow: 0 14px 28px -14px rgb(29 26 22 / .9); --ss-btn-radius: 999px;
+  --ss-track: rgb(29 26 22 / .08); --ss-switch-on: var(--sf-text); --ss-knob-on: var(--sf-on-brand); --ss-knob-off: #fff;
+  --ss-em-color: var(--sf-brand); --ss-em-style: italic; --ss-em-glow: none; --ss-display-weight: 380;
+  --ss-focus-ring: 0 0 0 4px rgb(180 70 26 / .1);
+  --ss-info-bg: rgb(29 26 22 / .05); --ss-info-line: rgb(29 26 22 / .14);
+  --ss-danger: var(--sf-danger); --ss-success: var(--sf-success);
+  --ss-card-radius: 20px; --ss-card-border: 1.5px solid var(--sf-text); --ss-card-bg: var(--sf-surface);
+  --ss-card-shadow: 0 0 0 4px rgb(180 70 26 / .08), inset 0 1px 0 #fff, inset 0 0 0 1px rgb(29 26 22 / .06), 0 10px 20px -10px rgb(60 40 20 / .18), 0 50px 70px -40px rgb(60 40 20 / .45);
+  --ss-mono: 'Geist Mono', ui-monospace, monospace;
+  --ss-body-font: var(--font-sans);
+  color: var(--ss-text-strong);
+  font-family: var(--ss-body-font);
+}
+:where(html:not([data-theme-family=crystal])) .sf-settings-scope {
   --ss-text-strong: var(--sf-text-strong); --ss-text2: var(--sf-text-muted);
   /* The board uses #8a8072 (3.8:1); this is the nearest tone that keeps AA on the surfaces. */
   --ss-text3: #756b5e; --ss-body: var(--sf-text-body);
@@ -85,7 +106,8 @@
 :root[data-theme-family="crystal"] .ss-eyebrow--small { font-family: var(--sf-font-display); font-style: italic; font-weight: 800; font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ss-text2); }
 
 /* Panels. Crystal panels add the crystal-chamfer utility in markup; the fill comes from --sf-chamfer-fill. */
-.ss-panel { position: relative; padding: 18px 20px; border: 1px solid var(--ss-line); border-radius: var(--ss-radius); background-color: var(--ss-surface); box-shadow: var(--ss-surface-shadow); -webkit-backdrop-filter: var(--ss-blur); backdrop-filter: var(--ss-blur); }
+:where(html[data-theme-family=crystal]) .ss-panel { position: relative; padding: 18px 20px; border: 1px solid var(--ss-line); border-radius: var(--ss-radius); background-color: var(--ss-surface); box-shadow: var(--ss-surface-shadow); backdrop-filter: var(--ss-blur); }
+:where(html:not([data-theme-family=crystal])) .ss-panel { position: relative; padding: 18px 20px; border: 1px solid var(--ss-line); border-radius: var(--ss-radius); background-color: var(--ss-surface); box-shadow: var(--ss-surface-shadow); -webkit-backdrop-filter: var(--ss-blur); backdrop-filter: var(--ss-blur); }
 /* The board draws a Crystal panel's edge as a 1px inset line, which the chamfer cuts away at the two corners, so
    the cut corners stay open and the utility's corner lines are switched off. */
 :root[data-theme-family="crystal"] .ss-panel { padding: 18px 22px; border: 0; box-shadow: inset 0 0 0 1px var(--ss-panel-edge); --sf-chamfer-fill: var(--ss-panel); }

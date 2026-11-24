@@ -240,7 +240,26 @@ html[data-theme-family="crystal"] .overlay-dialog-footer {
 }
 html[data-theme-family="crystal"] .overlay-dialog-note { font-size: 12px; }
 
-.overlay-dialog-secondary {
+:where(html[data-theme-family=crystal]) .overlay-dialog-secondary {
+  display: flex;
+  min-height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 0 18px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--od-btn-radius, 999px);
+  background: var(--sf-surface-control);
+  box-shadow: var(--od-secondary-shadow, none);
+  color: var(--sf-text);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: border-color 150ms ease;
+}
+:where(html:not([data-theme-family=crystal])) .overlay-dialog-secondary {
   display: flex;
   min-height: 44px;
   flex-shrink: 0;
@@ -425,5 +444,9 @@ html[data-theme-family="crystal"] .app-text-practice .text-conversation-input:fo
 html[data-theme-family="crystal"] .app-text-practice .text-conversation-send { width: 48px; height: 48px; border-radius: 0; background: var(--sf-primary-bg); clip-path: var(--nk-chamfer-sm); color: #fff; filter: drop-shadow(0 0 14px rgb(255 42 77 / .6)); }
 
 @media (prefers-reduced-motion: reduce) {
-  .overlay-dialog-close, .overlay-dialog-secondary, .text-conversation-close { transition: none; }
+  :where(html[data-theme-family=crystal]) .overlay-dialog-close,
+:where(html[data-theme-family=crystal]) .overlay-dialog-secondary { transition: none; }
+:where(html:not([data-theme-family=crystal])) .overlay-dialog-close,
+:where(html:not([data-theme-family=crystal])) .overlay-dialog-secondary,
+:where(html:not([data-theme-family=crystal])) .text-conversation-close { transition: none; }
 }

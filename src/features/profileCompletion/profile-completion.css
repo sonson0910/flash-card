@@ -20,7 +20,16 @@
   .profile-gate__main,
   .profile-gate__footer { position: relative; z-index: 1; }
 
-  .profile-gate__bar {
+  :where(html[data-theme-family=crystal]) .profile-gate__bar {
+    display: flex;
+    height: 76px;
+    flex: none;
+    align-items: center;
+    gap: 16px;
+    padding: 0 56px;
+    border-bottom: 1px solid var(--sf-border);
+  }
+:where(html:not([data-theme-family=crystal])) .profile-gate__bar {
     display: flex;
     height: 76px;
     flex: none;
@@ -33,7 +42,19 @@
   .profile-gate__star path:first-child { fill: var(--sf-brand); }
   .profile-gate__star path:last-child { fill: color-mix(in srgb, var(--sf-brand) 45%, var(--sf-canvas)); }
 
-  .profile-gate__pill {
+  :where(html[data-theme-family=crystal]) .profile-gate__pill {
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--sf-brand) 35%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface));
+    color: var(--sf-brand-text);
+    font-size: 12px;
+    font-weight: 700;
+  }
+:where(html:not([data-theme-family=crystal])) .profile-gate__pill {
     display: inline-flex;
     min-height: 30px;
     align-items: center;
@@ -153,7 +174,18 @@
   .profile-gate__field { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
   .profile-gate__field > label { color: var(--sf-text-muted); font-size: 12px; font-weight: 600; }
 
-  .profile-gate__control {
+  :where(html[data-theme-family=crystal]) .profile-gate__control {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--sf-edge-highlight);
+    border-radius: 999px;
+    background-color: var(--sf-surface-control);
+    color: var(--sf-text);
+    font: inherit;
+    font-size: 14px;
+  }
+:where(html:not([data-theme-family=crystal])) .profile-gate__control {
     width: 100%;
     min-height: 44px;
     padding: 0 16px;

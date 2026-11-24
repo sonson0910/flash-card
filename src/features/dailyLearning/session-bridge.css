@@ -2,7 +2,24 @@
    canvas/src/tokens.js and anime-tokens.js. Small text uses the nearest tone that keeps AA on the page,
    where the board's own tone falls just short. */
 
-.session-bridge {
+:where(html[data-theme-family=crystal]) .session-bridge {
+  --sb-text-strong: #1d1a16; --sb-text2: #6b6255; --sb-text3: #6b6255; --sb-body: #3d372f;
+  --sb-line: rgb(29 26 22 / .1); --sb-chip: #fbf8f2; --sb-track: rgb(29 26 22 / .08);
+  --sb-accent: #b4461a; --sb-accent-text: #97400d; --sb-em: #b4461a; --sb-em-style: italic; --sb-em-glow: none; --sb-display-weight: 380;
+  --sb-bar: #b4461a; --sb-bar-glow: none; --sb-combo: #97400d; --sb-combo-glow: none; --sb-tick: #97400d; --sb-tick-glow: none;
+  --sb-warm: #97400d; --sb-warm-bg: #fbf8f2; --sb-warm-line: rgb(151 64 13 / .22);
+  --sb-aura: radial-gradient(circle, rgb(180 70 26 / .14), transparent 65%);
+  --sb-ghost-bg: #fffcf5; --sb-ghost-border: 1px solid rgb(29 26 22 / .12); --sb-trail: linear-gradient(90deg, transparent, rgb(180 70 26 / .5));
+  --sb-card-radius: 20px; --sb-card-border: 0; --sb-card-bg: #fffcf5;
+  --sb-card-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgb(29 26 22 / .06), 0 10px 20px -10px rgb(60 40 20 / .18), 0 50px 70px -40px rgb(60 40 20 / .45);
+  --sb-primary-bg: #1d1a16; --sb-primary-text: #fbf6ec; --sb-primary-shadow: 0 14px 28px -14px rgb(29 26 22 / .9); --sb-btn-radius: 999px;
+  --sb-secondary-bg: #fffcf5;
+  --sb-ambient: radial-gradient(rgb(29 26 22 / .08) 1px, transparent 1.2px) 0 0 / 28px 28px;
+  --sb-serif: var(--sf-font-display); --sb-mono: 'Geist Mono', ui-monospace, monospace;
+  position: relative; isolation: isolate; display: flex; width: 100%; min-height: 100dvh; flex-direction: column; overflow: hidden;
+  background: var(--sf-canvas); color: var(--sf-text);
+}
+:where(html:not([data-theme-family=crystal])) .session-bridge {
   --sb-text-strong: #1d1a16; --sb-text2: #6b6255; --sb-text3: var(--sf-text-subtle); --sb-body: #3d372f;
   --sb-line: rgb(29 26 22 / .1); --sb-chip: #fbf8f2; --sb-track: rgb(29 26 22 / .08);
   --sb-accent: #b4461a; --sb-accent-text: #97400d; --sb-em: #b4461a; --sb-em-style: italic; --sb-em-glow: none; --sb-display-weight: 380;
@@ -88,7 +105,8 @@
 .session-bridge-ghosts > span:nth-child(3) { opacity: .36; transform: translate(80px, 60px) rotate(4deg) scale(.94); filter: blur(1px); }
 .session-bridge-trails > span { position: absolute; top: 50%; left: 50%; height: 3px; border-radius: 3px; background: var(--sb-trail); transform: rotate(-24deg); filter: blur(1px); pointer-events: none; }
 .session-bridge-trails > span:nth-child(1) { width: 260px; margin: 40px 0 0 100px; }
-.session-bridge-trails > span:nth-child(2) { width: 180px; height: 2px; margin: 100px 0 0 140px; border-radius: 2px; opacity: .6; filter: none; }
+:where(html[data-theme-family=crystal]) .session-bridge-trails > span:nth-child(2) { width: 180px; height: 2px; margin: 100px 0 0 140px; opacity: .6; filter: none; }
+:where(html:not([data-theme-family=crystal])) .session-bridge-trails > span:nth-child(2) { width: 180px; height: 2px; margin: 100px 0 0 140px; border-radius: 2px; opacity: .6; filter: none; }
 
 .session-bridge-card { position: relative; display: block; width: 340px; height: 450px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; transform: rotate(-2deg); perspective: 1400px; }
 .session-bridge-card-rotor { position: absolute; inset: 0; display: block; transform-style: preserve-3d; transition: transform 640ms cubic-bezier(.2, .8, .2, 1); }
@@ -121,7 +139,8 @@
 .session-bridge-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 .session-bridge-actions button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 8px; padding: 0 20px; border-radius: var(--sb-btn-radius); font-size: 14px; font-weight: 650; cursor: pointer; }
 .session-bridge-primary { border: 0; background: var(--sb-primary-bg); color: var(--sb-primary-text); box-shadow: var(--sb-primary-shadow); }
-.session-bridge-secondary { border: 1px solid var(--sb-line); background: var(--sb-secondary-bg); box-shadow: var(--sf-secondary-shadow, none); color: var(--sf-text); }
+:where(html[data-theme-family=crystal]) .session-bridge-secondary { border: 1px solid var(--sb-line); background: var(--sb-secondary-bg); color: var(--sf-text); }
+:where(html:not([data-theme-family=crystal])) .session-bridge-secondary { border: 1px solid var(--sb-line); background: var(--sb-secondary-bg); box-shadow: var(--sf-secondary-shadow, none); color: var(--sf-text); }
 .session-bridge :is(button, a):focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 3px; }
 
 /* Crystal Star: AnimeBridge. */

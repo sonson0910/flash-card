@@ -1,7 +1,61 @@
 /* Upload flow and file shelf (UploadStates and AnimeUploadStates boards). Colours come from the
    theme tokens; each theme only swaps the --fl-* values below. */
 
-.sf-files-tokens {
+:where(html[data-theme-family=crystal]) .sf-files-tokens {
+  --fl-text-strong: var(--sf-text);
+  --fl-text: var(--sf-text);
+  --fl-text2: var(--sf-text-muted);
+  /* The board's #8a8072 is below AA on paper; this tone keeps the hierarchy and reaches 4.5:1. */
+  --fl-text3: color-mix(in srgb, var(--sf-text-muted) 94%, var(--sf-surface));
+  --fl-line: var(--sf-border);
+  --fl-line-strong: var(--sf-edge-highlight);
+  --fl-chip-bg: var(--sf-surface-raised);
+  --fl-secondary-bg: var(--sf-surface-control);
+  --fl-panel: var(--sf-surface-glass);
+  --fl-panel-solid: var(--sf-surface);
+  --fl-panel-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 1px 2px rgb(60 40 20 / 0.06), 0 14px 28px -18px rgb(60 40 20 / 0.3);
+  --fl-panel-blur: none;
+  --fl-track: color-mix(in srgb, var(--sf-text) 8%, transparent);
+  --fl-accent: var(--sf-brand);
+  --fl-accent-text: var(--sf-brand-text);
+  --fl-accent-soft: color-mix(in srgb, var(--sf-brand) 8%, transparent);
+  --fl-accent-line: color-mix(in srgb, var(--sf-brand-text) 25%, transparent);
+  --fl-primary-bg: var(--sf-text);
+  --fl-primary-text: var(--sf-on-brand);
+  --fl-primary-shadow: 0 14px 28px -14px color-mix(in srgb, var(--sf-text) 90%, transparent);
+  --fl-danger: var(--sf-danger);
+  --fl-danger-solid: var(--sf-danger);
+  --fl-danger-bg: color-mix(in srgb, var(--sf-danger) 7%, transparent);
+  --fl-danger-line: color-mix(in srgb, var(--sf-danger) 25%, transparent);
+  --fl-warn: color-mix(in srgb, var(--sf-reward) 62%, var(--sf-text));
+  --fl-warn-bg: color-mix(in srgb, var(--sf-reward) 10%, transparent);
+  --fl-warn-line: color-mix(in srgb, var(--sf-reward) 30%, transparent);
+  --fl-ok: color-mix(in srgb, var(--sf-success) 80%, var(--sf-text));
+  --fl-ok-bg: color-mix(in srgb, var(--sf-success) 9%, transparent);
+  --fl-ok-line: color-mix(in srgb, var(--sf-success) 25%, transparent);
+  --fl-info: var(--sf-text);
+  --fl-info-bg: color-mix(in srgb, var(--sf-text) 5%, transparent);
+  --fl-info-line: color-mix(in srgb, var(--sf-text) 14%, transparent);
+  --fl-bar: var(--sf-brand);
+  --fl-dialog-bg: var(--sf-surface);
+  --fl-dialog-line: var(--sf-border);
+  --fl-dialog-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 2px 6px rgb(60 40 20 / 0.08), 0 50px 90px -40px rgb(60 40 20 / 0.6);
+  --fl-scrim: color-mix(in srgb, var(--sf-text) 14%, transparent);
+  --fl-radius: 18px;
+  --fl-box-radius: 14px;
+  --fl-btn-radius: 999px;
+  --fl-dialog-radius: 18px;
+  --fl-display-weight: 380;
+  --fl-focus: var(--sf-text);
+  --fl-badge-pdf: var(--fl-danger);
+  --fl-badge-pdf-bg: var(--fl-danger-bg);
+  --fl-badge-epub: var(--fl-info);
+  --fl-badge-epub-bg: var(--fl-info-bg);
+  --fl-badge-image: var(--fl-accent-text);
+  --fl-badge-image-bg: var(--fl-accent-soft);
+  color: var(--fl-text);
+}
+:where(html:not([data-theme-family=crystal])) .sf-files-tokens {
   --fl-text-strong: var(--sf-text-strong);
   --fl-text: var(--sf-text);
   --fl-text2: var(--sf-text-muted);
@@ -68,10 +122,6 @@
 :root[data-theme-family="crystal"] .sf-files-tokens {
   --fl-text-strong: color-mix(in srgb, var(--sf-text) 60%, white);
   --fl-text3: color-mix(in srgb, var(--sf-text-muted) 85%, var(--sf-canvas));
-  --fl-body: var(--sf-text-muted);
-  --fl-secondary-shadow: none;
-  --fl-danger-solid-text: var(--sf-on-brand);
-  --fl-dialog-border: 1px solid var(--fl-dialog-line);
   --fl-chip-bg: var(--sf-surface-control);
   --fl-secondary-bg: var(--sf-surface-control);
   --fl-panel: var(--sf-surface-glass);
@@ -115,6 +165,7 @@
   --fl-badge-image: var(--fl-gold);
   --fl-badge-image-bg: var(--fl-warn-bg);
 }
+
 :root[data-theme-family="crystal"]:not(.dark) .sf-files-tokens {
   --fl-text-strong: color-mix(in srgb, var(--sf-text) 80%, black);
   --fl-text3: color-mix(in srgb, var(--sf-text-muted) 88%, var(--sf-text));
@@ -146,7 +197,8 @@
 .sf-files__kicker-accent::before { content: " / "; }
 .sf-files__title { margin: 6px 0 0; color: var(--fl-text-strong); font-family: var(--sf-font-display); font-weight: var(--fl-display-weight); font-size: 30px; line-height: 1.04; letter-spacing: -0.025em; }
 .sf-files__title em { font-style: normal; }
-.sf-files__lead { max-width: 640px; margin: 6px 0 0; color: var(--fl-body); font-size: 12.5px; line-height: 1.45; }
+:where(html[data-theme-family=crystal]) .sf-files__lead { max-width: 640px; margin: 6px 0 0; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.45; }
+:where(html:not([data-theme-family=crystal])) .sf-files__lead { max-width: 640px; margin: 6px 0 0; color: var(--fl-body); font-size: 12.5px; line-height: 1.45; }
 .sf-files__chip {
   flex-shrink: 0; display: inline-flex; align-items: center; height: 28px; padding: 0 11px;
   border: 1px solid var(--fl-line); border-radius: 999px; background: var(--fl-chip-bg); color: var(--fl-text2);
@@ -184,7 +236,12 @@
 .sf-files-panel__actions > :last-child { margin-left: auto; }
 .sf-files-panel__actions--end > :first-child { margin-left: 0; }
 .sf-files-panel__helper { color: var(--fl-text3); font-size: 12px; }
-.sf-files-panel__box {
+:where(html[data-theme-family=crystal]) .sf-files-panel__box {
+  margin: 14px 0 0; padding: 13px 14px; display: flex; gap: 9px; align-items: flex-start;
+  border: 1px solid var(--fl-line); border-radius: 12px; background: var(--fl-secondary-bg);
+  color: var(--fl-text2); font-size: 12.5px; line-height: 1.45;
+}
+:where(html:not([data-theme-family=crystal])) .sf-files-panel__box {
   margin: 14px 0 0; padding: 13px 14px; display: flex; gap: 9px; align-items: flex-start;
   border: 1px solid var(--fl-line); border-radius: 12px; background: var(--fl-secondary-bg);
   color: var(--fl-body); font-size: 12.5px; line-height: 1.45;
@@ -194,7 +251,13 @@
 .sf-files-panel__notice[data-tone="error"] { color: var(--fl-danger); }
 
 /* Buttons */
-.sf-files-button {
+:where(html[data-theme-family=crystal]) .sf-files-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px;
+  border: 1px solid var(--fl-line-strong); border-radius: var(--fl-btn-radius); background: var(--fl-secondary-bg);
+  color: var(--fl-text); font: inherit; font-size: 13.5px; font-weight: 650; cursor: pointer;
+  transition: background-color var(--motion-fast, 140ms) ease, border-color var(--motion-fast, 140ms) ease, transform var(--motion-fast, 140ms) ease;
+}
+:where(html:not([data-theme-family=crystal])) .sf-files-button {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px;
   border: 1px solid var(--fl-line-strong); border-radius: var(--fl-btn-radius); background: var(--fl-secondary-bg); box-shadow: var(--fl-secondary-shadow, none);
   color: var(--fl-text); font: inherit; font-size: 13.5px; font-weight: 650; cursor: pointer;
@@ -205,7 +268,8 @@
 .sf-files-button:disabled { cursor: not-allowed; opacity: 0.55; }
 .sf-files-button--primary { border-color: transparent; background: var(--fl-primary-bg); box-shadow: var(--fl-primary-shadow); color: var(--fl-primary-text); }
 .sf-files-button--primary:hover:not(:disabled) { border-color: transparent; filter: brightness(1.06); }
-.sf-files-button--danger { border-color: transparent; background: var(--fl-danger-solid); box-shadow: none; color: var(--fl-danger-solid-text); }
+:where(html[data-theme-family=crystal]) .sf-files-button--danger { border-color: transparent; background: var(--fl-danger-solid); color: var(--sf-on-brand); }
+:where(html:not([data-theme-family=crystal])) .sf-files-button--danger { border-color: transparent; background: var(--fl-danger-solid); box-shadow: none; color: var(--fl-danger-solid-text); }
 .sf-files-tokens :is(button, select, a, [tabindex]):focus-visible { outline: 2px solid var(--fl-focus); outline-offset: 2px; }
 
 /* Select */
@@ -253,7 +317,8 @@
 }
 .sf-files-status__icon .sf-files-spinner { width: 10px; height: 10px; border-color: var(--fl-panel-solid); border-right-color: transparent; }
 .sf-files-status strong { display: block; color: var(--fl-text-strong); font-size: 14px; font-weight: 650; }
-.sf-files-status__detail { display: block; margin-top: 3px; color: var(--fl-body); font-size: 12.5px; line-height: 1.45; }
+:where(html[data-theme-family=crystal]) .sf-files-status__detail { display: block; margin-top: 3px; color: var(--fl-text2); font-size: 12.5px; line-height: 1.45; }
+:where(html:not([data-theme-family=crystal])) .sf-files-status__detail { display: block; margin-top: 3px; color: var(--fl-body); font-size: 12.5px; line-height: 1.45; }
 .sf-files-status--transfer { margin-top: 22px; padding: 18px; display: block; }
 .sf-files-status--decision { margin-top: 20px; padding: 16px; }
 .sf-files-status--decision .sf-files-status__icon { width: 26px; height: 26px; }
@@ -310,7 +375,11 @@
 .sf-files-attach { display: block; }
 .sf-files-attach__row { display: flex; align-items: center; gap: 10px; }
 .sf-files-attach__row label { color: var(--fl-text); font-size: 12.5px; font-weight: 650; }
-.sf-files-attach__row select {
+:where(html[data-theme-family=crystal]) .sf-files-attach__row select {
+  flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 10px; border: 1px solid var(--fl-line-strong);
+  border-radius: 10px; background: var(--fl-panel-solid); color: var(--fl-text); font: inherit; font-size: 12.5px;
+}
+:where(html:not([data-theme-family=crystal])) .sf-files-attach__row select {
   flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 10px; border: 1px solid var(--fl-line-strong);
   border-radius: var(--sf-input-radius, 10px); background: var(--fl-panel-solid); color: var(--fl-text); font: inherit; font-size: 12.5px;
 }
@@ -382,7 +451,11 @@
 
 /* Delete dialog */
 .sf-files-dialog { position: absolute; z-index: 5; inset: 0; padding: 16px; display: flex; align-items: center; justify-content: center; background: var(--fl-scrim); }
-.sf-files-dialog__card {
+:where(html[data-theme-family=crystal]) .sf-files-dialog__card {
+  width: min(100%, 310px); box-sizing: border-box; padding: 18px; border: 1px solid var(--fl-dialog-line);
+  border-radius: var(--fl-dialog-radius); background: var(--fl-dialog-bg); box-shadow: var(--fl-dialog-shadow);
+}
+:where(html:not([data-theme-family=crystal])) .sf-files-dialog__card {
   width: min(100%, 310px); box-sizing: border-box; padding: 18px; border: var(--fl-dialog-border, 1px solid var(--fl-dialog-line));
   border-radius: var(--fl-dialog-radius); background: var(--fl-dialog-bg); box-shadow: var(--fl-dialog-shadow);
 }
@@ -392,7 +465,8 @@
 }
 .sf-files-dialog__icon svg { width: 18px; height: 18px; }
 .sf-files-dialog__card h3 { margin: 13px 0 0; color: var(--fl-text-strong); font-family: var(--sf-font-display); font-weight: var(--fl-display-weight); font-size: 22px; line-height: 1.1; }
-.sf-files-dialog__card p { margin: 6px 0 0; overflow-wrap: anywhere; color: var(--fl-body); font-size: 12.5px; line-height: 1.45; }
+:where(html[data-theme-family=crystal]) .sf-files-dialog__card p { margin: 6px 0 0; overflow-wrap: anywhere; color: var(--fl-text2); font-size: 12.5px; line-height: 1.45; }
+:where(html:not([data-theme-family=crystal])) .sf-files-dialog__card p { margin: 6px 0 0; overflow-wrap: anywhere; color: var(--fl-body); font-size: 12.5px; line-height: 1.45; }
 .sf-files-dialog__card p [data-mono] { color: var(--fl-text); }
 .sf-files-dialog__actions { margin-top: 16px; display: flex; gap: 8px; }
 .sf-files-dialog__actions .sf-files-button { flex: 1 1 0; padding: 0 10px; }
@@ -577,8 +651,9 @@
   .sf-files-badge svg { width: 11px; height: 11px; }
   .sf-files-list__text strong { font-size: 10px; }
   .sf-files-list__text span { display: none; }
-  .sf-files-pill,
-  :root:not([data-theme-family="crystal"]) .sf-files-pill { height: auto; padding: 0; border: 0; background: none; font-size: 9px; }
+  :where(html[data-theme-family=crystal]) .sf-files-pill { height: auto; padding: 0; background: none; font-size: 9px; }
+:where(html:not([data-theme-family=crystal])) .sf-files-pill,
+:root:not([data-theme-family="crystal"]) .sf-files-pill { height: auto; padding: 0; border: 0; background: none; font-size: 9px; }
   .sf-files-shelf__state { margin-top: 8px; padding: 12px; flex-direction: row; gap: 8px; text-align: left; }
   .sf-files-shelf__state-icon, .sf-files-shelf__state p { display: none; }
   .sf-files-shelf__state strong { margin-top: 0; flex: 1 1 auto; font-size: 11px; }

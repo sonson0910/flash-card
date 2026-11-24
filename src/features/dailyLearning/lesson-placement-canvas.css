@@ -1,9 +1,44 @@
 /* Immersive Lesson and Placement compositions (canvas boards LessonScreen, AnimeLesson,
    PlacementScreen and AnimePlacement). The data model stays in the TSX files; every color
    comes from the --sf-* theme tokens, with the board-only shades derived below. */
-.lesson-canvas,
-.placement-canvas,
-.lesson-complete-canvas {
+:where(html[data-theme-family=crystal]) .lesson-canvas,
+:where(html[data-theme-family=crystal]) .placement-canvas,
+:where(html[data-theme-family=crystal]) .lesson-complete-canvas {
+  --lp-text3: var(--sf-text-muted);
+  --lp-accent: var(--sf-brand);
+  --lp-accent-text: var(--sf-brand-text);
+  --lp-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent);
+  --lp-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
+  --lp-track: color-mix(in srgb, var(--sf-text) 8%, transparent);
+  --lp-line: var(--sf-border);
+  --lp-chip-bg: var(--sf-surface-raised);
+  --lp-panel-bg: var(--sf-surface-glass);
+  --lp-primary-bg: var(--sf-brand);
+  --lp-primary-text: var(--sf-on-brand);
+  --lp-primary-shadow: 0 16px 40px -14px color-mix(in srgb, var(--sf-brand) 80%, transparent), inset 0 1px 0 rgb(255 255 255 / .5);
+  --lp-kbd-bg: color-mix(in srgb, var(--lp-primary-text) 14%, transparent);
+  --lp-card-radius: 30px;
+  --lp-input-radius: 18px;
+  --lp-button-radius: 16px;
+  --lp-display-weight: 440;
+  --lp-em-style: normal;
+  --lp-glow: 0 0 8px color-mix(in srgb, var(--sf-brand) 55%, transparent);
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none !important;
+  min-height: 100dvh;
+  margin: 0 !important;
+  padding: 0 0 calc(56px + env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+  color: var(--sf-text);
+}
+:where(html:not([data-theme-family=crystal])) .lesson-canvas,
+:where(html:not([data-theme-family=crystal])) .placement-canvas,
+:where(html:not([data-theme-family=crystal])) .lesson-complete-canvas {
   --lp-text3: var(--sf-text-subtle);
   --lp-accent: var(--sf-brand);
   --lp-accent-text: var(--sf-brand-text);
@@ -260,7 +295,20 @@ html:not([data-theme-family='crystal']):not(.dark) .lesson-blank { box-shadow: n
 .lesson-help { margin: 0; color: var(--sf-text-muted); font-size: 15px; line-height: 1.6; }
 .lesson-field-label { margin: 0; color: var(--sf-text-muted); font-size: 12px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; }
 
-.lesson-input-row {
+:where(html[data-theme-family=crystal]) .lesson-input-row {
+  display: flex;
+  height: 60px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 10px;
+  margin-top: 34px;
+  padding: 0 8px 0 20px;
+  border: 1.5px solid var(--lp-accent-line);
+  border-radius: var(--lp-input-radius);
+  background: var(--sf-surface-control);
+  box-shadow: 0 0 0 4px var(--lp-accent-soft);
+}
+:where(html:not([data-theme-family=crystal])) .lesson-input-row {
   display: flex;
   height: 60px;
   box-sizing: border-box;
@@ -309,7 +357,13 @@ html:not([data-theme-family='crystal']):not(.dark) .lesson-blank { box-shadow: n
   text-align: center;
 }
 
-.lesson-secondary {
+:where(html[data-theme-family=crystal]) .lesson-secondary {
+  border: 1px solid var(--lp-line);
+  background: var(--lp-chip-bg);
+  box-shadow: none;
+  color: var(--sf-text);
+}
+:where(html:not([data-theme-family=crystal])) .lesson-secondary {
   border: 1px solid var(--lp-line);
   background: var(--lp-chip-bg);
   box-shadow: var(--sf-secondary-shadow, none);
@@ -367,7 +421,15 @@ html:not([data-theme-family='crystal']):not(.dark) .lesson-blank { box-shadow: n
 
 .lesson-link:hover { color: var(--sf-text); }
 
-.lesson-audio-error {
+:where(html[data-theme-family=crystal]) .lesson-audio-error {
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--sf-danger) 35%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--sf-danger) 10%, transparent);
+  color: var(--sf-text);
+}
+:where(html:not([data-theme-family=crystal])) .lesson-audio-error {
   margin: 16px 0 0;
   padding: 14px 16px;
   border: 1px solid color-mix(in srgb, var(--sf-danger) 35%, transparent);
@@ -380,7 +442,23 @@ html:not([data-theme-family='crystal']):not(.dark) .lesson-blank { box-shadow: n
 .lesson-choice-grid,
 .placement-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 
-.lesson-choice {
+:where(html[data-theme-family=crystal]) .lesson-choice {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  border: 1px solid var(--lp-line);
+  border-radius: 14px;
+  background: var(--lp-panel-bg);
+  box-shadow: var(--sf-panel-shadow);
+  color: var(--sf-text);
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: left;
+}
+:where(html:not([data-theme-family=crystal])) .lesson-choice {
   display: flex;
   min-height: 64px;
   align-items: center;
@@ -399,7 +477,13 @@ html:not([data-theme-family='crystal']):not(.dark) .lesson-blank { box-shadow: n
 
 .lesson-choice:hover { border-color: var(--lp-accent-line); }
 
-.lesson-choice[data-selected='true'] {
+:where(html[data-theme-family=crystal]) .lesson-choice[data-selected='true'] {
+  border: 2px solid var(--lp-accent);
+  padding: 9px 17px;
+  background: var(--lp-accent-soft);
+  box-shadow: 0 0 0 4px var(--lp-accent-soft), 0 0 30px -10px var(--lp-accent);
+}
+:where(html:not([data-theme-family=crystal])) .lesson-choice[data-selected='true'] {
   border: 2px solid var(--lp-accent);
   padding: 9px 17px;
   background: var(--lp-accent-soft);
@@ -429,7 +513,15 @@ html:not([data-theme-family='crystal']) .placement-choice .lesson-choice-index {
 .lesson-choice[data-selected='true'] .lesson-choice-index { border-color: var(--lp-accent-line); color: var(--lp-accent-text); }
 .lesson-choice:disabled { cursor: default; }
 
-.lesson-sentence-output {
+:where(html[data-theme-family=crystal]) .lesson-sentence-output {
+  min-height: 72px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px dashed var(--lp-line);
+  border-radius: 14px;
+  background: var(--lp-chip-bg);
+}
+:where(html:not([data-theme-family=crystal])) .lesson-sentence-output {
   min-height: 72px;
   margin-top: 18px;
   padding: 14px 16px;
@@ -455,7 +547,15 @@ html:not([data-theme-family='crystal']) .placement-choice .lesson-choice-index {
 
 .lesson-token[data-selected='true'] { border-color: var(--lp-accent); background: var(--lp-accent-soft); color: var(--lp-accent-text); }
 
-.lesson-feedback {
+:where(html[data-theme-family=crystal]) .lesson-feedback {
+  position: relative;
+  margin-top: 24px;
+  padding: 22px 24px;
+  border: 1px solid color-mix(in srgb, var(--sf-success) 40%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--sf-success) 9%, transparent);
+}
+:where(html:not([data-theme-family=crystal])) .lesson-feedback {
   position: relative;
   margin-top: 24px;
   padding: 22px 24px;
@@ -474,11 +574,24 @@ html:not([data-theme-family='crystal']) .placement-ladder {
 .lesson-feedback[data-outcome='incorrect'] { border-color: color-mix(in srgb, var(--sf-reward) 45%, transparent); background: color-mix(in srgb, var(--sf-reward) 9%, transparent); }
 .lesson-feedback-title { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; font-size: 22px; font-weight: 700; }
 .lesson-feedback-answer { margin: 10px 0 0; }
-.lesson-feedback-error { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--sf-danger); border-radius: 12px; background: var(--sf-surface); }
+:where(html[data-theme-family=crystal]) .lesson-feedback-error { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--sf-danger); border-radius: 14px; background: var(--sf-surface); }
+:where(html:not([data-theme-family=crystal])) .lesson-feedback-error { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--sf-danger); border-radius: 12px; background: var(--sf-surface); }
 .lesson-rating-legend { font-size: 17px; font-weight: 700; }
 .lesson-rating-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
 
-.lesson-rating {
+:where(html[data-theme-family=crystal]) .lesson-rating {
+  min-height: 64px;
+  padding: 10px 14px;
+  border: 1px solid var(--lp-line);
+  border-top: 3px solid var(--lp-rating, var(--lp-line));
+  border-radius: 14px;
+  background: var(--lp-panel-bg);
+  color: var(--sf-text);
+  cursor: pointer;
+  font-weight: 700;
+  text-align: left;
+}
+:where(html:not([data-theme-family=crystal])) .lesson-rating {
   min-height: 64px;
   padding: 10px 14px;
   border: 1px solid var(--lp-line);
@@ -498,7 +611,8 @@ html:not([data-theme-family='crystal']) .placement-ladder {
 .lesson-rating-note { display: block; margin-top: 4px; color: var(--sf-text-muted); font-size: 12px; font-weight: 400; line-height: 1.35; }
 
 /* Introduction and guided practice word panel ------------------------------------------ */
-.lesson-word-panel { margin-top: 22px; padding: 22px 24px; border: 1px solid var(--lp-line); border-radius: var(--lp-panel-radius); background: var(--lp-chip-bg); }
+:where(html[data-theme-family=crystal]) .lesson-word-panel { margin-top: 22px; padding: 22px 24px; border: 1px solid var(--lp-line); border-radius: 16px; background: var(--lp-chip-bg); }
+:where(html:not([data-theme-family=crystal])) .lesson-word-panel { margin-top: 22px; padding: 22px 24px; border: 1px solid var(--lp-line); border-radius: var(--lp-panel-radius); background: var(--lp-chip-bg); }
 .lesson-word { margin: 0; font-family: var(--sf-font-display); font-size: 40px; font-weight: var(--lp-display-weight); letter-spacing: -.02em; line-height: 1.15; overflow-wrap: anywhere; }
 .lesson-phonetic { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 14px; }
 .lesson-translation { margin: 10px 0 0; color: var(--lp-accent-text); font-size: 20px; font-weight: 650; }
@@ -597,9 +711,18 @@ html:not([data-theme-family='crystal']) .placement-accent { text-shadow: var(--l
 .placement-action-row .lesson-secondary { min-height: 52px; padding: 0 24px; font-size: 16px; }
 .placement-action-row .lesson-link { margin-left: 0; font-size: 14px; }
 .placement-guidance-copy { margin: 18px 0 0; color: var(--lp-text3); font-size: 14px; line-height: 1.55; }
-.placement-count-note { margin: 22px 0 0; padding: 14px 16px; border: 1px solid var(--lp-line); border-radius: var(--lp-input-radius); background: var(--lp-chip-bg); color: var(--sf-text); font-size: 14px; line-height: 1.55; }
+:where(html[data-theme-family=crystal]) .placement-count-note { margin: 22px 0 0; padding: 14px 16px; border: 1px solid var(--lp-line); border-radius: 14px; background: var(--lp-chip-bg); color: var(--sf-text); font-size: 14px; line-height: 1.55; }
+:where(html[data-theme-family=crystal]) .placement-ladder {
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid var(--lp-line);
+  border-radius: 22px;
+  background: var(--lp-panel-bg);
+  box-shadow: var(--sf-panel-shadow);
+}
+:where(html:not([data-theme-family=crystal])) .placement-count-note { margin: 22px 0 0; padding: 14px 16px; border: 1px solid var(--lp-line); border-radius: var(--lp-input-radius); background: var(--lp-chip-bg); color: var(--sf-text); font-size: 14px; line-height: 1.55; }
 
-.placement-ladder {
+:where(html:not([data-theme-family=crystal])) .placement-ladder {
   box-sizing: border-box;
   padding: 20px;
   border: 1px solid var(--lp-line);
@@ -612,7 +735,18 @@ html:not([data-theme-family='crystal']) .placement-accent { text-shadow: var(--l
 .placement-ladder-note { margin: 4px 0 0; color: var(--lp-text3); font-size: 12px; }
 .placement-rungs { display: grid; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
 
-.placement-rung {
+:where(html[data-theme-family=crystal]) .placement-rung {
+  display: flex;
+  min-height: 64px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 14px;
+  border: 1px solid var(--lp-line);
+  border-radius: 12px;
+}
+:where(html[data-theme-family=crystal]) .placement-rung-code { width: 30px; flex: none; color: var(--lp-text3); font-family: var(--sf-font-display); font-size: 30px; font-weight: 380; line-height: 1; text-align: center; }
+:where(html:not([data-theme-family=crystal])) .placement-rung {
   display: flex;
   min-height: 72px;
   box-sizing: border-box;
@@ -625,11 +759,13 @@ html:not([data-theme-family='crystal']) .placement-accent { text-shadow: var(--l
   box-shadow: none;
 }
 
-.placement-rung-code { width: 44px; flex: none; color: var(--lp-text3); font-family: var(--sf-font-display); font-size: 30px; font-weight: var(--lp-display-weight); line-height: 1; text-align: left; }
+:where(html:not([data-theme-family=crystal])) .placement-rung-code { width: 44px; flex: none; color: var(--lp-text3); font-family: var(--sf-font-display); font-size: 30px; font-weight: var(--lp-display-weight); line-height: 1; text-align: left; }
 .placement-rung-meter { display: none; }
 .placement-rung-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; }
-.placement-rung-name { color: var(--lp-text3); font-size: 14px; font-weight: 600; }
-.placement-rung-note { margin-top: 2px; color: var(--lp-text3); font-size: 12px; line-height: 1.35; }
+:where(html[data-theme-family=crystal]) .placement-rung-name { color: var(--sf-text-muted); font-size: 13.5px; font-weight: 600; }
+:where(html[data-theme-family=crystal]) .placement-rung-note { margin-top: 2px; color: var(--lp-text3); font-size: 11.5px; line-height: 1.35; }
+:where(html:not([data-theme-family=crystal])) .placement-rung-name { color: var(--lp-text3); font-size: 14px; font-weight: 600; }
+:where(html:not([data-theme-family=crystal])) .placement-rung-note { margin-top: 2px; color: var(--lp-text3); font-size: 12px; line-height: 1.35; }
 .placement-rung-flag { flex: none; color: var(--lp-accent-text); font-size: 11.5px; font-weight: 650; }
 .placement-rung-check { flex: none; color: var(--lp-accent); }
 html:not([data-theme-family='crystal']) .placement-rung[data-rung-state='below'] :is(.placement-rung-code, .placement-rung-name) { color: var(--sf-text-muted); }
@@ -646,11 +782,14 @@ html:not([data-theme-family='crystal']):not(.dark) .placement-rung[data-rung-sta
   background: var(--sf-card-bg);
   box-shadow: var(--sf-card-shadow);
 }
+:where(html[data-theme-family=crystal]) .placement-rung[data-rung-state='likely'] { border: 1.5px solid var(--lp-accent); padding: 7.5px 13.5px; background: var(--lp-accent-soft); }
 .placement-rung[data-rung-state='likely'] .placement-rung-code { color: var(--lp-accent); }
-.placement-rung[data-rung-state='likely'] .placement-rung-name { color: var(--sf-text-strong); }
+:where(html[data-theme-family=crystal]) .placement-rung[data-rung-state='likely'] .placement-rung-name { color: var(--sf-text); }
+:where(html:not([data-theme-family=crystal])) .placement-rung[data-rung-state='likely'] .placement-rung-name { color: var(--sf-text-strong); }
 .placement-confidence { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
 .placement-confidence-track { display: flex; min-width: 0; flex: 1; gap: 3px; }
-.placement-confidence-track > span { height: 6px; flex: 1; border-radius: 6px; background: var(--lp-track); }
+:where(html[data-theme-family=crystal]) .placement-confidence-track > span { height: 4px; flex: 1; border-radius: 4px; background: var(--lp-track); }
+:where(html:not([data-theme-family=crystal])) .placement-confidence-track > span { height: 6px; flex: 1; border-radius: 6px; background: var(--lp-track); }
 .placement-confidence-track > [data-filled='true'] { background: var(--lp-accent); }
 .placement-confidence-label { flex: none; color: var(--sf-text-muted); font-size: 12px; }
 .placement-lumi { display: none; }

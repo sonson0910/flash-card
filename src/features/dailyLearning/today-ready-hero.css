@@ -2,7 +2,25 @@
    Values come from canvas/src/tokens.js and anime-tokens.js; the hero sits outside .daily-canvas so the
    shared heading rules there do not override the board typography. */
 
-.today-ready-page {
+:where(html[data-theme-family=crystal]) .today-ready-page {
+  --td-text-strong: var(--sf-text-strong); --td-text2: var(--sf-text-muted); --td-text3: var(--sf-text-tertiary);
+  --td-line: var(--sf-border); --td-line-strong: var(--sf-edge-highlight); --td-chip: var(--sf-surface-muted);
+  --td-accent-line: color-mix(in srgb, var(--sf-brand-text) 25%, transparent); --td-accent-soft: color-mix(in srgb, var(--sf-brand) 8%, transparent); --td-accent-text: var(--sf-brand-text);
+  --td-em: var(--sf-brand); --td-em-style: italic; --td-em-glow: none; --td-warm: var(--sf-warm);
+  --td-primary-bg: var(--sf-primary-bg); --td-primary-text: var(--sf-on-primary); --td-primary-shadow: var(--sf-primary-shadow);
+  --td-kbd-bg: color-mix(in srgb, var(--sf-on-primary) 14%, transparent); --td-btn-radius: 999px; --td-display-weight: 380;
+  --td-card-radius: 20px; --td-card-border: 0; --td-card-bg: var(--sf-surface);
+  --td-card-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-text-strong) 6%, transparent), var(--sf-dialog-shadow);
+  --td-surface: var(--sf-surface-glass); --td-surface-shadow: var(--sf-panel-shadow);
+  --td-blur: none; --td-radius: 18px; --td-track: color-mix(in srgb, var(--sf-text-strong) 8%, transparent); --td-bar: var(--sf-brand); --td-bar-glow: none;
+  --td-link: repeating-linear-gradient(90deg, color-mix(in srgb, var(--sf-text-strong) 30%, transparent) 0 5px, transparent 5px 10px); --td-dot-glow: none;
+  --td-logo-bg: var(--sf-logo-bg); --td-logo-text: var(--sf-logo-text); --td-logo-shadow: var(--sf-logo-shadow);
+  --td-ghost: color-mix(in srgb, var(--sf-text-strong) 4%, var(--sf-surface)); --td-mini-radius: 16px; --td-image-margin: 9px 9px 0; --td-image-radius: 10px;
+  --td-front-border: 0; --td-front-bg: var(--sf-card-front); --td-front-shadow: var(--td-card-shadow);
+  --td-mono: var(--sf-font-mono); --td-serif: var(--sf-font-display);
+  display: grid; gap: 1.5rem; width: 100%; max-width: 82rem; margin-inline: auto; color: var(--sf-text);
+}
+:where(html:not([data-theme-family=crystal])) .today-ready-page {
   --td-text-strong: var(--sf-text-strong); --td-text2: var(--sf-text-muted); --td-text3: var(--sf-text-tertiary);
   --td-line: var(--sf-border); --td-line-strong: var(--sf-edge-highlight); --td-chip: var(--sf-surface-muted);
   --td-accent-line: var(--sf-accent-line, color-mix(in srgb, var(--sf-brand-text) 25%, transparent)); --td-accent-soft: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 8%, transparent)); --td-accent-text: var(--sf-brand-text);
@@ -133,7 +151,7 @@
 .today-stack-ghost--mid { transform: translate3d(-24px, 12px, 0) rotate(-6deg); }
 .today-stack-card { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; border: var(--td-front-border); border-radius: var(--td-mini-radius); background: var(--td-front-bg); box-shadow: var(--td-front-shadow); }
 .today-stack-image { display: block; flex: none; height: 140px; margin: var(--td-image-margin); border-radius: var(--td-image-radius); object-fit: cover; }
-img.today-stack-image { -webkit-mask-image: var(--td-image-mask, none); mask-image: var(--td-image-mask, none); }
+:where(html:not([data-theme-family=crystal])) img.today-stack-image { -webkit-mask-image: var(--td-image-mask, none); mask-image: var(--td-image-mask, none); }
 .today-stack-image--empty { display: flex; align-items: center; justify-content: center; background: var(--td-chip); color: var(--td-accent-text); }
 .today-stack-label { margin: 0; padding: 6px 18px 0; color: var(--td-text2); font-size: 10.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
 .today-stack-word { margin: 4px 0 0; padding: 0 18px; overflow: hidden; color: var(--td-text-strong); font-family: var(--td-serif); font-weight: var(--td-display-weight); font-size: 36px; line-height: 1; letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; }

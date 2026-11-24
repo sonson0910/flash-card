@@ -44,7 +44,26 @@
    that keeps AA on the page where the board's own tone falls just short. */
 .practice-recap-overlay { position: fixed; inset: 0; z-index: 50; background: var(--sf-dialog-veil); }
 .practice-recap-frame { position: fixed; inset: 0; z-index: 50; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; outline: 0; }
-.practice-recap-board {
+:where(html[data-theme-family=crystal]) .practice-recap-board {
+  --rc-strong: #1d1a16; --rc-body: #3d372f; --rc-text2: #6b6255; --rc-text3: #756b5e;
+  --rc-line: rgb(29 26 22 / .1); --rc-chip: #fbf8f2; --rc-track: rgb(29 26 22 / .08);
+  --rc-accent: #b4461a; --rc-accent-text: #97400d; --rc-accent-soft: rgb(180 70 26 / .08); --rc-accent-line: rgb(151 64 13 / .25);
+  --rc-em: #b4461a; --rc-em-style: italic; --rc-em-glow: none; --rc-weight: 380; --rc-segment-glow: none;
+  --rc-surface: #fffcf5; --rc-surface-shadow: inset 0 1px 0 #fff, 0 1px 2px rgb(60 40 20 / .06), 0 14px 28px -18px rgb(60 40 20 / .3); --rc-blur: none; --rc-radius: 18px;
+  --rc-again: #c53637; --rc-warm: #97400d; --rc-warm-bg: #fbf8f2; --rc-warm-line: rgb(151 64 13 / .22);
+  --rc-primary-bg: #1d1a16; --rc-primary-text: #fbf6ec; --rc-primary-shadow: 0 14px 28px -14px rgb(29 26 22 / .9); --rc-btn-radius: 999px;
+  --rc-secondary-bg: #fffcf5; --rc-secondary-shadow: 0 1px 2px rgb(60 40 20 / .08);
+  --rc-card-radius: 16px; --rc-card-border: 0; --rc-card-bg: #fffcf5;
+  --rc-card-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgb(29 26 22 / .06), 0 10px 20px -10px rgb(60 40 20 / .18), 0 50px 70px -40px rgb(60 40 20 / .45);
+  --rc-card-ring-learning: 0 0 0 2px rgb(51 115 68 / .5); --rc-card-ring-mastered: 0 0 0 2px #d9b76a;
+  --rc-img-margin: 12px 12px 0; --rc-img-radius: 10px; --rc-img-mask: none;
+  --rc-gold: #b8862b; --rc-gold-text: #7d5a12; --rc-learning-text: #2c6a3d; --rc-foil-blend: multiply;
+  --rc-confetti-1: #b4461a; --rc-confetti-2: #337344; --rc-confetti-3: #b8862b; --rc-confetti-4: #1d1a16; --rc-confetti-5: #e8a075; --rc-confetti-radius: 2px;
+  --rc-ambient: radial-gradient(rgb(29 26 22 / .07) 1px, transparent 1.2px) 0 0 / 28px 28px;
+  position: relative; isolation: isolate; display: flex; width: 100%; min-height: 100%; flex-direction: column; overflow-x: clip;
+  background: var(--sf-canvas); color: var(--rc-strong); outline: 0;
+}
+:where(html:not([data-theme-family=crystal])) .practice-recap-board {
   --rc-strong: var(--sf-text-strong); --rc-body: var(--sf-text-body); --rc-text2: var(--sf-text-muted); --rc-text3: var(--sf-text-subtle);
   --rc-line: var(--sf-border); --rc-chip: var(--sf-surface-raised); --rc-track: var(--sf-track, rgb(29 26 22 / .08));
   --rc-accent: var(--sf-brand); --rc-accent-text: var(--sf-brand-text); --rc-accent-soft: var(--sf-accent-soft, rgb(180 70 26 / .08)); --rc-accent-line: var(--sf-accent-line, rgb(151 64 13 / .25));

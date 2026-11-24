@@ -46,6 +46,8 @@ html[data-theme-family=crystal] .course-tile { border-radius: 0; font-family: va
   font: 600 12px/1 var(--font-mono);
   white-space: nowrap;
 }
-.course-due-pill[data-active='true'] { background: var(--sf-primary-bg, var(--sf-text)); color: var(--sf-on-primary, var(--sf-surface)); }
+:where(html[data-theme-family=crystal]) .course-due-pill[data-active='true'] { background: var(--sf-text); color: var(--sf-surface); }
+.dark:where(html[data-theme-family=crystal], html[data-theme-family=crystal] *) .course-due-pill[data-active='true'] { background: var(--sf-brand); color: var(--sf-on-brand); }
+:where(html:not([data-theme-family=crystal])) .course-due-pill[data-active='true'] { background: var(--sf-primary-bg, var(--sf-text)); color: var(--sf-on-primary, var(--sf-surface)); }
 html[data-theme-family=crystal] .course-due-pill { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; font-weight: 700; letter-spacing: .04em; }
 html[data-theme-family=crystal] .course-due-pill[data-active='true'] { background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover)); color: var(--sf-on-brand); }

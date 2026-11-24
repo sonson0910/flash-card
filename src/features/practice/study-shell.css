@@ -58,18 +58,19 @@ html:not([data-theme-family=crystal]):not(.dark) .study-shell :is(.study-shell-c
 .study-shell-progress [data-study-progress-segments] { display: flex; min-width: 0; flex: 1; align-items: center; gap: 3px; }
 .practice-board--study.study-shell [data-study-progress-segments] > span { height: 4px; flex: 1; transform: none; border-radius: 4px; background: color-mix(in srgb, var(--sf-border) 90%, transparent); box-shadow: none; }
 .practice-board--study.study-shell [data-study-progress-segment='complete'] { background: var(--sf-brand); }
-.practice-board--study.study-shell [data-study-progress-segment='current'] { background: var(--sf-brand-text); }
-.dark .practice-board--study.study-shell [data-study-progress-segment='complete'] { box-shadow: 0 0 8px color-mix(in srgb, var(--sf-brand) 55%, transparent); }
-.dark .practice-board--study.study-shell [data-study-progress-segment='current'] {
+.dark:where(html[data-theme-family=crystal], html[data-theme-family=crystal] *) .practice-board--study.study-shell [data-study-progress-segment='complete'] { box-shadow: 0 0 6px color-mix(in srgb, var(--sf-brand) 50%, transparent); }
+:where(html:not([data-theme-family=crystal])) .practice-board--study.study-shell [data-study-progress-segment='current'] { background: var(--sf-brand-text); }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='complete'] { box-shadow: 0 0 8px color-mix(in srgb, var(--sf-brand) 55%, transparent); }
+.dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='current'] {
   box-shadow: 0 0 10px color-mix(in srgb, var(--sf-brand-text) 65%, transparent);
   animation: study-seg-pulse 1.8s ease-in-out infinite;
 }
 @keyframes study-seg-pulse { 0%, 100% { opacity: .65; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-  .dark .practice-board--study.study-shell [data-study-progress-segment='current'] { animation: none; }
+  .dark:where(html:not([data-theme-family=crystal]), html:not([data-theme-family=crystal]) *) .practice-board--study.study-shell [data-study-progress-segment='current'] { animation: none; }
   html:not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step) { transition: none; transform: none; }
 }
-html[data-motion="reduced"] .dark .practice-board--study.study-shell [data-study-progress-segment='current'] { animation: none; }
+html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .dark .practice-board--study.study-shell [data-study-progress-segment='current'] { animation: none; }
 html[data-motion="reduced"]:not([data-theme-family=crystal]) .study-shell :is(.study-shell-close, .study-shell-tool, .study-shell-theme, .study-shell-nav__step) { transition: none; transform: none; }
 .study-shell-count { flex: none; color: var(--sf-text-muted); font: 700 12px/1 var(--sf-font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 

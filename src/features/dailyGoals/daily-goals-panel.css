@@ -1,5 +1,17 @@
 /* Daily goals: a classic card and the Crystal Star chamfered panel (AnimeToday "DAILY GOALS"). */
-.daily-goals-panel {
+:where(html[data-theme-family=crystal]) .daily-goals-panel {
+  --dg-track: color-mix(in srgb, var(--sf-text) 10%, transparent);
+  --dg-fill: var(--sf-brand);
+  --dg-accent: var(--sf-brand-text);
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 18px 22px 20px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-card-radius, 20px);
+  box-shadow: var(--sf-panel-shadow);
+  color: var(--sf-text);
+}
+:where(html:not([data-theme-family=crystal])) .daily-goals-panel {
   --dg-track: var(--sf-track, color-mix(in srgb, var(--sf-text) 10%, transparent));
   --dg-fill: var(--sf-brand);
   --dg-accent: var(--sf-brand-text);

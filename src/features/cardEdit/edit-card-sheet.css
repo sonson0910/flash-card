@@ -1,7 +1,41 @@
 /* Card editor. In a paused review it is a side sheet beside a live preview of
    the card; from the library it is a centred dialog. On phones both are a
    bottom sheet. */
-.edit-sheet {
+:where(html[data-theme-family=crystal]) .edit-sheet {
+  --es-text-3: var(--sf-text-muted);
+  --es-input-bg: var(--sf-surface);
+  --es-input-border: color-mix(in srgb, var(--sf-text) 14%, transparent);
+  --es-input-radius: 12px;
+  --es-primary-bg: var(--sf-text);
+  --es-primary-fg: var(--sf-on-brand);
+  --es-focus: var(--sf-text);
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 101;
+  display: flex;
+  width: 100%;
+  max-height: min(92dvh, 780px);
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--sf-border);
+  border-bottom: 0;
+  border-radius: 24px 24px 0 0;
+  background-color: var(--sf-surface);
+  background-image: var(--sf-dialog-bg, none);
+  color: var(--sf-text);
+  box-shadow: 0 -24px 60px -30px color-mix(in srgb, var(--sf-text) 55%, transparent);
+  outline: 0;
+}
+:root.dark:where([data-theme-family=crystal]) .edit-sheet { --es-text-3: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); }
+:root.dark:where([data-theme-family=crystal]) .edit-sheet {
+  --es-input-bg: var(--sf-surface-control);
+  --es-input-border: var(--sf-border);
+  --es-primary-bg: var(--sf-brand);
+  --es-primary-fg: var(--sf-on-brand);
+  --es-focus: var(--sf-brand);
+  box-shadow: 0 -24px 60px -20px rgb(0 0 0 / .7);
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet {
   --es-text-3: var(--sf-text-subtle);
   --es-input-bg: var(--sf-surface-control);
   --es-input-border: var(--sf-border);
@@ -74,7 +108,19 @@
   white-space: nowrap;
 }
 
-.edit-sheet-title {
+:where(html[data-theme-family=crystal]) .edit-sheet-title {
+  margin: 2px 0 0;
+  color: var(--sf-text);
+  font-family: var(--sf-font-display);
+  font-size: 1.75rem;
+  font-weight: 380;
+  letter-spacing: -.02em;
+  line-height: 1.15;
+}
+:root.dark:where([data-theme-family=crystal]) .edit-sheet-title {
+  font-weight: 440;
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-title {
   margin: 6px 0 0;
   color: var(--sf-text-strong);
   font-family: var(--sf-font-display);
@@ -99,7 +145,16 @@
   cursor: pointer;
 }
 
-.edit-sheet-close::before {
+:where(html[data-theme-family=crystal]) .edit-sheet-close::before {
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  border: 1px solid var(--sf-border);
+  border-radius: 50%;
+  background: var(--sf-surface);
+  content: '';
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-close::before {
   position: absolute;
   inset: 4px;
   z-index: -1;
@@ -147,7 +202,12 @@
   gap: 7px;
 }
 
-.edit-sheet-label {
+:where(html[data-theme-family=crystal]) .edit-sheet-label {
+  color: color-mix(in srgb, var(--sf-text) 70%, var(--sf-text-muted));
+  font-size: .8125rem;
+  font-weight: 600;
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-label {
   color: var(--sf-text-muted);
   font-size: .75rem;
   font-weight: 600;
@@ -172,8 +232,14 @@
   color: var(--es-text-3);
 }
 
-.edit-sheet-input:focus-visible,
-.edit-sheet-word:focus-within {
+:where(html[data-theme-family=crystal]) .edit-sheet-input:focus-visible,
+:where(html[data-theme-family=crystal]) .edit-sheet-word:focus-within {
+  border-color: var(--es-focus);
+  outline: 0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--es-focus) 14%, transparent);
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-input:focus-visible,
+:where(html:not([data-theme-family=crystal])) .edit-sheet-word:focus-within {
   border-color: var(--es-focus);
   outline: 0;
   box-shadow: 0 0 0 4px var(--sf-accent-soft, color-mix(in srgb, var(--es-focus) 14%, transparent));
@@ -224,7 +290,18 @@
   transition: border-color .15s ease, box-shadow .15s ease;
 }
 
-.edit-sheet-word-input {
+:where(html[data-theme-family=crystal]) .edit-sheet-word-input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--sf-text);
+  font-family: var(--sf-font-display);
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-word-input {
   min-width: 0;
   flex: 1;
   border: 0;
@@ -450,7 +527,35 @@
   text-underline-offset: 4px;
 }
 
-.edit-sheet-history {
+:where(html[data-theme-family=crystal]) .edit-sheet-history {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--sf-success) 35%, transparent);
+  border-radius: var(--es-input-radius);
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--sf-success) 9%, var(--sf-surface));
+  color: color-mix(in srgb, var(--sf-text) 80%, var(--sf-text-muted));
+  font-size: .8125rem;
+  line-height: 1.45;
+}
+:where(html[data-theme-family=crystal]) .edit-sheet-history svg {
+  margin-top: 1px;
+  flex-shrink: 0;
+  color: var(--sf-success);
+}
+:where(html[data-theme-family=crystal]) .edit-sheet-error {
+  margin: 0;
+  border: 1px solid var(--sf-danger);
+  border-radius: var(--es-input-radius);
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--sf-danger) 9%, var(--sf-surface));
+  color: var(--sf-danger);
+  font-size: .875rem;
+  font-weight: 600;
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-history {
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -464,13 +569,13 @@
   line-height: 1.45;
 }
 
-.edit-sheet-history svg {
+:where(html:not([data-theme-family=crystal])) .edit-sheet-history svg {
   margin-top: 1px;
   flex-shrink: 0;
   color: var(--sf-success-text);
 }
 
-.edit-sheet-error {
+:where(html:not([data-theme-family=crystal])) .edit-sheet-error {
   margin: 0;
   border: 1px solid var(--sf-danger-line);
   border-radius: var(--es-input-radius);
@@ -524,7 +629,33 @@
   white-space: nowrap;
 }
 
-.edit-sheet-esc kbd {
+:where(html[data-theme-family=crystal]) .edit-sheet-esc kbd,
+:where(html[data-theme-family=crystal]) .edit-sheet-button kbd {
+  border: 1px solid var(--sf-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: .625rem;
+}
+:where(html[data-theme-family=crystal]) .edit-sheet-button {
+  display: inline-flex;
+  min-height: 44px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--sf-border);
+  border-radius: 999px;
+  padding: 0 18px;
+  background: var(--es-input-bg);
+  color: var(--sf-text);
+  font-size: .9375rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-esc kbd {
   border: 1px solid var(--sf-border);
   border-radius: 5px;
   padding: 1px 5px;
@@ -532,7 +663,7 @@
   font-size: .625rem;
 }
 
-.edit-sheet-button kbd {
+:where(html:not([data-theme-family=crystal])) .edit-sheet-button kbd {
   border: 0;
   border-radius: 6px;
   padding: 2px 6px;
@@ -540,7 +671,7 @@
   font-size: .6875rem;
 }
 
-.edit-sheet-button {
+:where(html:not([data-theme-family=crystal])) .edit-sheet-button {
   display: inline-flex;
   min-height: 44px;
   flex: 1;
@@ -567,7 +698,17 @@
   border-color: color-mix(in srgb, var(--sf-text) 35%, transparent);
 }
 
-.edit-sheet-button--primary {
+:where(html[data-theme-family=crystal]) .edit-sheet-button--primary {
+  border-color: transparent;
+  background: var(--es-primary-bg);
+  color: var(--es-primary-fg);
+  font-weight: 650;
+  box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--sf-text) 70%, transparent);
+}
+:root.dark:where([data-theme-family=crystal]) .edit-sheet-button--primary {
+  box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--sf-brand) 70%, transparent);
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-button--primary {
   border-color: transparent;
   background: var(--es-primary-bg);
   color: var(--es-primary-fg);
@@ -594,6 +735,10 @@
   background: var(--sf-primary-kbd-bg);
 }
 
+:where(html[data-theme-family=crystal]) .edit-sheet-button--primary kbd {
+  border-color: color-mix(in srgb, var(--es-primary-fg) 35%, transparent);
+  background: color-mix(in srgb, var(--es-primary-fg) 14%, transparent);
+}
 .edit-sheet-button:disabled {
   cursor: wait;
   opacity: .6;
@@ -604,7 +749,25 @@
   outline-offset: 2px;
 }
 
-.edit-sheet-dirty {
+:where(html[data-theme-family=crystal]) .edit-sheet-dirty {
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--sf-reward) 55%, transparent);
+  border-radius: 6px;
+  padding: 1px 6px;
+  background: color-mix(in srgb, var(--sf-reward) 14%, var(--sf-surface));
+  color: color-mix(in srgb, var(--sf-reward) 75%, var(--sf-text));
+  font-size: .625rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+:where(html[data-theme-family=crystal]) .edit-sheet-stress {
+  color: var(--sf-brand);
+  font-style: italic;
+}
+:root.dark:where([data-theme-family=crystal]) .edit-sheet-stress {
+  font-style: normal;
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-dirty {
   flex-shrink: 0;
   border: 1px solid var(--sf-warn-line);
   border-radius: 6px;
@@ -616,7 +779,7 @@
   letter-spacing: .04em;
 }
 
-.edit-sheet-stress {
+:where(html:not([data-theme-family=crystal])) .edit-sheet-stress {
   color: var(--sf-brand);
   font-style: var(--sf-em-style, italic);
   text-shadow: var(--sf-em-glow, none);
@@ -749,11 +912,26 @@
     padding: 22px 26px 24px;
   }
 
-  .edit-sheet-footer {
+  :where(html[data-theme-family=crystal]) .edit-sheet-footer {
+    padding: 16px 22px 18px 26px;
+  }
+:where(html[data-theme-family=crystal]) .edit-sheet--review {
+    inset: 0 0 0 auto;
+    width: 440px;
+    max-height: none;
+    border: 0;
+    border-left: 1px solid var(--sf-border);
+    border-radius: 0;
+    box-shadow: -30px 0 60px -30px color-mix(in srgb, var(--sf-text) 45%, transparent);
+  }
+:root.dark:where([data-theme-family=crystal]) .edit-sheet--review {
+    box-shadow: -30px 0 60px -20px rgb(0 0 0 / .75);
+  }
+:where(html:not([data-theme-family=crystal])) .edit-sheet-footer {
     padding: 16px 22px 20px 26px;
   }
 
-  .edit-sheet--review {
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review {
     inset: 0 0 0 auto;
     width: 440px;
     max-height: none;
@@ -783,7 +961,22 @@
     pointer-events: none;
   }
 
-  .edit-sheet-preview-card {
+  :where(html[data-theme-family=crystal]) .edit-sheet-preview-card {
+    width: min(400px, 34vw);
+    overflow: hidden;
+    border-radius: 22px;
+    background: var(--sf-card-bg, var(--sf-surface));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 6%, transparent), 0 30px 70px -30px color-mix(in srgb, var(--sf-text) 50%, transparent);
+  }
+:where(html[data-theme-family=crystal]) .edit-sheet-preview-image {
+    display: block;
+    width: calc(100% - 24px);
+    height: 220px;
+    margin: 12px 12px 0;
+    border-radius: 14px;
+    object-fit: cover;
+  }
+:where(html:not([data-theme-family=crystal])) .edit-sheet-preview-card {
     width: min(400px, 34vw);
     overflow: hidden;
     border-radius: var(--sf-card-radius, 20px);
@@ -797,7 +990,7 @@
     box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.9), 0 0 60px -24px rgb(40 211 244 / 0.45);
   }
 
-  .edit-sheet-preview-image {
+  :where(html:not([data-theme-family=crystal])) .edit-sheet-preview-image {
     display: block;
     width: calc(100% - 24px);
     height: 220px;
@@ -828,11 +1021,29 @@
     font-style: italic;
   }
 
-  .edit-sheet-preview-body {
+  :where(html[data-theme-family=crystal]) .edit-sheet-preview-body {
+    padding: 18px 22px 28px;
+  }
+:where(html[data-theme-family=crystal]) .edit-sheet-preview-word {
+    margin: 10px 0 0;
+    color: var(--sf-text);
+    font-family: var(--sf-font-display);
+    font-size: 3.25rem;
+    font-weight: 380;
+    letter-spacing: -.02em;
+    line-height: 1;
+  }
+:where(html[data-theme-family=crystal]) .edit-sheet-preview-meaning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 22px;
+  }
+:where(html:not([data-theme-family=crystal])) .edit-sheet-preview-body {
     padding: 18px 28px 28px;
   }
 
-  .edit-sheet-preview-word {
+  :where(html:not([data-theme-family=crystal])) .edit-sheet-preview-word {
     margin: 6px 0 0;
     color: var(--sf-text-strong);
     font-family: var(--sf-font-display);
@@ -842,7 +1053,7 @@
     line-height: 1;
   }
 
-  .edit-sheet-preview-meaning {
+  :where(html:not([data-theme-family=crystal])) .edit-sheet-preview-meaning {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -861,7 +1072,20 @@
   }
 
   /* Library editing: a centred dialog with a two-column field grid. */
-  .edit-sheet--dialog {
+  :where(html[data-theme-family=crystal]) .edit-sheet--dialog {
+    inset: 50% auto auto 50%;
+    width: min(calc(100vw - 2rem), 38.75rem);
+    max-height: min(calc(100dvh - 3rem), 46rem);
+    border-bottom: 1px solid var(--sf-border);
+    border-radius: 18px;
+    transform: translate(-50%, -50%);
+    box-shadow: inset 0 1px 0 var(--sf-surface), 0 2px 6px color-mix(in srgb, var(--sf-text) 8%, transparent), 0 50px 90px -40px color-mix(in srgb, var(--sf-text) 55%, transparent);
+  }
+:root.dark:where([data-theme-family=crystal]) .edit-sheet--dialog {
+    border-radius: 26px;
+    box-shadow: 0 50px 100px -30px rgb(0 0 0 / .85);
+  }
+:where(html:not([data-theme-family=crystal])) .edit-sheet--dialog {
     inset: 50% auto auto 50%;
     width: min(calc(100vw - 2rem), 38.75rem);
     max-height: min(calc(100dvh - 3rem), 46rem);
@@ -1242,7 +1466,15 @@
   border-color: color-mix(in srgb, var(--sf-text) 35%, transparent);
 }
 
-.edit-sheet-star[aria-pressed="true"] {
+:where(html[data-theme-family=crystal]) .edit-sheet-star[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--sf-reward) 45%, transparent);
+  background: color-mix(in srgb, var(--sf-reward) 14%, var(--es-input-bg));
+  color: color-mix(in srgb, var(--sf-reward) 62%, var(--sf-text));
+}
+:root.dark:where([data-theme-family=crystal]) .edit-sheet-star[aria-pressed="true"] {
+  color: var(--sf-reward);
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-star[aria-pressed="true"] {
   border-color: color-mix(in srgb, var(--sf-reward) 45%, transparent);
   background: color-mix(in srgb, var(--sf-reward) 12%, transparent);
   color: var(--sf-warn);
@@ -1358,7 +1590,11 @@
   cursor: text;
 }
 
-.edit-sheet-tags:has(.edit-sheet-tag-input:focus-visible) {
+:where(html[data-theme-family=crystal]) .edit-sheet-tags:has(.edit-sheet-tag-input:focus-visible) {
+  border-color: var(--es-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--es-focus) 14%, transparent);
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-tags:has(.edit-sheet-tag-input:focus-visible) {
   border-color: var(--es-focus);
   box-shadow: 0 0 0 4px var(--sf-accent-soft, color-mix(in srgb, var(--es-focus) 14%, transparent));
 }
@@ -1487,7 +1723,28 @@
   gap: 6px 8px;
 }
 
-.edit-sheet-segmented {
+:where(html[data-theme-family=crystal]) .edit-sheet-segmented {
+  display: inline-flex;
+  border: 1px solid var(--es-input-border);
+  border-radius: 12px;
+  padding: 2px;
+  background: var(--es-input-bg);
+}
+:where(html[data-theme-family=crystal]) .edit-sheet-segment {
+  position: relative;
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 7px;
+  border-radius: 9px;
+  padding: 0 12px;
+  color: var(--sf-text-muted);
+  font-size: .8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+:where(html:not([data-theme-family=crystal])) .edit-sheet-segmented {
   display: inline-flex;
   gap: 4px;
   border: 1px solid var(--es-input-border);
@@ -1496,7 +1753,7 @@
   background: var(--sf-surface-raised);
 }
 
-.edit-sheet-segment {
+:where(html:not([data-theme-family=crystal])) .edit-sheet-segment {
   position: relative;
   display: inline-flex;
   min-height: 40px;

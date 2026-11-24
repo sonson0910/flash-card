@@ -59,7 +59,7 @@
   opacity: 0.82;
 }
 
-.flashcard-shell[data-card-look="aurora"] .flashcard-canvas-specular {
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"] .flashcard-canvas-specular {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14);
 }
 
@@ -127,7 +127,7 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   --flashcard-tier-color: var(--sf-reward);
 }
 
-.flashcard-shell[data-card-look="aurora"] {
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"] {
   --flashcard-radius: 34px;
 }
 
@@ -146,7 +146,7 @@ html[data-motion="reduced"] .flashcard-hover-wings {
     background: var(--flashcard-surface) padding-box, var(--flashcard-tier-rim) border-box;
   }
 
-  .flashcard-shell[data-card-tier] .flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier] .flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
     --flashcard-back-glow: rgb(40 211 244 / 0.14);
     background:
       radial-gradient(ellipse 75% 45% at 50% 0%, var(--flashcard-back-glow), transparent 70%) padding-box,
@@ -155,15 +155,15 @@ html[data-motion="reduced"] .flashcard-hover-wings {
       var(--flashcard-tier-rim) border-box;
   }
 
-  .flashcard-shell[data-card-tier="learning"] .flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier="learning"] .flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
     --flashcard-back-glow: rgb(40 211 244 / 0.24);
   }
 
-  .flashcard-shell[data-card-tier="mastered"] .flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier="mastered"] .flashcard-back[data-card-look="aurora"]:not(.zen-glass-slab) {
     --flashcard-back-glow: rgb(245 174 57 / 0.26);
   }
 
-  .flashcard-shell[data-card-tier] .flashcard-back[data-card-look="paper"]:not(.zen-glass-slab) {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier] .flashcard-back[data-card-look="paper"]:not(.zen-glass-slab) {
     background:
       radial-gradient(ellipse 80% 50% at 50% 12%, var(--flashcard-ink-glow), transparent 70%) padding-box,
       linear-gradient(var(--flashcard-ink), var(--flashcard-ink)) padding-box;
@@ -209,7 +209,12 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   color: var(--sf-on-brand);
 }
 
-.flashcard-shell[data-card-look="paper"] .flashcard-chrome-button {
+:where(html[data-theme-family=crystal]) .flashcard-shell[data-card-look="paper"] .flashcard-chrome-button {
+  background: var(--sf-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"] .flashcard-chrome-button {
   border-color: color-mix(in srgb, var(--sf-text) 14%, transparent);
   background: var(--sf-surface-raised, var(--sf-surface));
   box-shadow: 0 1px 2px rgb(60 40 20 / 0.08), 0 6px 14px -6px rgb(60 40 20 / 0.2);
@@ -245,7 +250,11 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   height: 48%;
 }
 
-.flashcard-face[data-card-look="aurora"] .flashcard-art-image {
+:where(html[data-theme-family=crystal]) .flashcard-face[data-card-look="aurora"] .flashcard-art-image {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 42%, rgb(0 0 0 / 0.35) 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 42%, rgb(0 0 0 / 0.35) 72%, transparent 100%);
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-look="aurora"] .flashcard-art-image {
   -webkit-mask-image: var(--sf-img-mask, linear-gradient(to bottom, #000 0%, #000 42%, rgb(0 0 0 / 0.35) 72%, transparent 100%));
   mask-image: var(--sf-img-mask, linear-gradient(to bottom, #000 0%, #000 42%, rgb(0 0 0 / 0.35) 72%, transparent 100%));
 }
@@ -254,7 +263,12 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   background: linear-gradient(to bottom, var(--sf-scrim), transparent 30%);
 }
 
-.flashcard-face[data-card-look="paper"] .flashcard-art {
+:where(html[data-theme-family=crystal]) .flashcard-face[data-card-look="paper"] .flashcard-art {
+  height: 38%;
+  margin: 16px 16px 0;
+  border-radius: 12px;
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-look="paper"] .flashcard-art {
   height: 38%;
   margin: var(--sf-img-margin, 16px 16px 0);
   border-radius: var(--sf-img-radius, 12px);
@@ -267,7 +281,7 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   mix-blend-mode: multiply;
 }
 
-.flashcard-face[data-card-look="aurora"] .flashcard-blind-pill {
+:where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-look="aurora"] .flashcard-blind-pill {
   border: 1px solid rgb(255 255 255 / 0.14);
   background: rgb(6 22 31 / 0.72);
   color: #e5ecf1;
@@ -276,7 +290,7 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   backdrop-filter: blur(10px);
 }
 
-.flashcard-face[data-card-look="paper"] .flashcard-blind-pill {
+:where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-look="paper"] .flashcard-blind-pill {
   border: 1px solid rgb(29 26 22 / 0.14);
   background: rgb(251 246 236 / 0.88);
   color: #1d1a16;
@@ -538,7 +552,13 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   color: var(--sf-success);
 }
 
-.flashcard-shell[data-card-tier="mastered"] .flashcard-seal {
+:where(html[data-theme-family=crystal]) .flashcard-shell[data-card-tier="mastered"] .flashcard-seal {
+  border: 1px solid color-mix(in srgb, var(--sf-reward) 80%, var(--sf-text));
+  background: var(--sf-gold-rim);
+  color: var(--sf-text);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--sf-reward) 45%, transparent), inset 0 1px 1px rgb(255 255 255 / 0.7);
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier="mastered"] .flashcard-seal {
   border: 1px solid #a8781f;
   background: var(--sf-gold-rim);
   color: #4a3208;
@@ -771,7 +791,7 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--sf-text) 80%, transparent);
 }
 
-.flashcard-face[data-card-look="paper"] .flashcard-action.flashcard-action-listen :is(svg, [data-audio-waves]) {
+:where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-look="paper"] .flashcard-action.flashcard-action-listen :is(svg, [data-audio-waves]) {
   color: #e8a075;
 }
 
@@ -838,8 +858,8 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   text-transform: none;
 }
 
-.flashcard-face[data-card-look="paper"] .flashcard-kbd,
-.flashcard-recall[data-card-look="paper"] .flashcard-kbd {
+:where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-look="paper"] .flashcard-kbd,
+:where(html:not([data-theme-family=crystal])) .flashcard-recall[data-card-look="paper"] .flashcard-kbd {
   border-radius: 5px;
 }
 
@@ -935,7 +955,25 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   --flashcard-radius: 0px;
 }
 
-.flashcard-shell[data-card-look="paper"] {
+:where(html[data-theme-family=crystal]) .flashcard-shell[data-card-look="paper"] {
+  --flashcard-radius: 22px;
+  --flashcard-ink: color-mix(in srgb, var(--sf-success) 22%, var(--sf-text));
+  --flashcard-ink-text: var(--sf-on-brand);
+  --flashcard-ink-muted: color-mix(in srgb, var(--sf-on-brand) 68%, var(--sf-text-muted));
+  --flashcard-ink-accent: color-mix(in srgb, var(--sf-brand) 55%, var(--sf-on-brand));
+  --flashcard-ink-glow: color-mix(in srgb, var(--sf-brand) 24%, transparent);
+}
+:where(html[data-theme-family=crystal]) .flashcard-shell[data-card-tier] .flashcard-back[data-card-look="paper"] {
+  --flashcard-surface: radial-gradient(ellipse 80% 50% at 50% 12%, var(--flashcard-ink-glow), transparent 70%), linear-gradient(var(--flashcard-ink), var(--flashcard-ink));
+  --sf-text: var(--flashcard-ink-text);
+  --sf-text-muted: var(--flashcard-ink-muted);
+  --sf-brand-text: var(--flashcard-ink-accent);
+  --sf-border: color-mix(in srgb, var(--flashcard-ink-text) 16%, transparent);
+  --sf-surface-muted: color-mix(in srgb, var(--flashcard-ink-text) 6%, transparent);
+  color-scheme: dark;
+  border-color: transparent;
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"] {
   --flashcard-radius: 22px;
   --flashcard-ink: #1c2a21;
   --flashcard-ink-text: #fbf6ec;
@@ -945,7 +983,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   --flashcard-ink-glow: rgb(180 70 26 / 0.24);
 }
 
-.flashcard-shell[data-card-tier] .flashcard-back[data-card-look="paper"] {
+:where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-tier] .flashcard-back[data-card-look="paper"] {
   --flashcard-surface: linear-gradient(var(--flashcard-ink), var(--flashcard-ink));
   --sf-text: var(--flashcard-ink-text);
   --sf-text-muted: var(--flashcard-ink-muted);
@@ -983,7 +1021,18 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   box-shadow: 0 0 8px var(--sf-brand);
 }
 
-.flashcard-back-due {
+:where(html[data-theme-family=crystal]) .flashcard-back-due {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-danger) 14%, transparent);
+  color: var(--sf-danger);
+  font-size: 12px;
+  font-weight: 600;
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-back-due {
   display: inline-flex;
   align-items: center;
   height: 26px;
@@ -1008,7 +1057,14 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   font-weight: 400;
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-back-due {
+:where(html[data-theme-family=crystal]) .flashcard-back[data-card-look="paper"] .flashcard-back-due {
+  height: 24px;
+  border: 1px solid color-mix(in srgb, var(--sf-brand-text) 40%, transparent);
+  background: transparent;
+  color: var(--sf-brand-text);
+  font-size: 11.5px;
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-due {
   height: 24px;
   border: 1px solid rgb(232 160 117 / 0.45);
   background: transparent;
@@ -1111,7 +1167,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
 }
 
 /* 32px play circle inside the 44px touch target on Classic dark and light card backs. */
-.flashcard-back:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-play {
+:where(html:not([data-theme-family=crystal])) .flashcard-back:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-play {
   position: relative;
   isolation: isolate;
   margin-block: -6px;
@@ -1119,7 +1175,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   background: none;
 }
 
-.flashcard-back:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-play::before {
+:where(html:not([data-theme-family=crystal])) .flashcard-back:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-play::before {
   position: absolute;
   inset: 6px;
   z-index: -1;
@@ -1130,7 +1186,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   transition: background-color 200ms ease, border-color 200ms ease;
 }
 
-.flashcard-back:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-play:is(:hover, [data-playing="true"])::before {
+:where(html:not([data-theme-family=crystal])) .flashcard-back:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-play:is(:hover, [data-playing="true"])::before {
   background: color-mix(in srgb, var(--sf-brand) 14%, transparent);
 }
 
@@ -1202,7 +1258,18 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   margin-top: 14px;
 }
 
-.flashcard-back-tool {
+:where(html[data-theme-family=crystal]) .flashcard-back-tool {
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--sf-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sf-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-back-tool {
   height: 48px;
   padding: 0 14px;
   border: 1px solid var(--sf-border);
@@ -1222,17 +1289,17 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   color: var(--sf-brand-text);
 }
 
-.flashcard-back[data-card-look="aurora"] .flashcard-back-tutor {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-back-tutor {
   border-color: rgb(143 107 212 / 0.4);
   background: rgb(143 107 212 / 0.14);
   color: #c9b3f0;
 }
 
-.flashcard-back[data-card-look="aurora"] .flashcard-back-tutor:hover {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-back-tutor:hover {
   background: rgb(143 107 212 / 0.22);
 }
 
-.flashcard-back[data-card-look="aurora"] .flashcard-back-tutor .flashcard-back-tutor-icon {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-back-tutor .flashcard-back-tutor-icon {
   color: #c9b3f0;
 }
 
@@ -1246,13 +1313,13 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   background: color-mix(in srgb, var(--sf-reward) 20%, transparent);
 }
 
-.flashcard-back[data-card-look="aurora"] .flashcard-hook-button {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-hook-button {
   border-color: rgb(245 174 57 / 0.35);
   background: rgb(245 174 57 / 0.1);
   color: #f6cb75;
 }
 
-.flashcard-back[data-card-look="aurora"] .flashcard-hook-button:hover {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="aurora"] .flashcard-hook-button:hover {
   background: rgb(245 174 57 / 0.18);
 }
 
@@ -1260,7 +1327,13 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   color: var(--sf-reward);
 }
 
-.flashcard-hook-panel {
+:where(html[data-theme-family=crystal]) .flashcard-hook-panel {
+  border: 1px solid color-mix(in srgb, var(--sf-reward) 35%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--sf-reward) 9%, transparent);
+  color: var(--sf-text);
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-hook-panel {
   border: 1px solid color-mix(in srgb, var(--sf-reward) 35%, transparent);
   border-radius: 14px;
   background: color-mix(in srgb, var(--sf-reward) 9%, transparent);
@@ -1382,17 +1455,21 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   font-size: 13px;
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-back-play {
+:where(html[data-theme-family=crystal]) .flashcard-back[data-card-look="paper"] .flashcard-back-play {
+  background: transparent;
+  color: var(--sf-text);
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-play {
   background: none;
   color: var(--sf-text);
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-back-play::before {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-play::before {
   border-color: rgb(239 232 218 / 0.2);
   background: rgb(239 232 218 / 0.06);
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-back-play:is(:hover, [data-playing="true"])::before {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-play:is(:hover, [data-playing="true"])::before {
   background: rgb(239 232 218 / 0.14);
 }
 
@@ -1424,7 +1501,26 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   margin-top: 18px;
 }
 
-.flashcard-back[data-card-look="paper"] :is(.flashcard-back-tool, .flashcard-back-translate) {
+:where(html[data-theme-family=crystal]) .flashcard-back[data-card-look="paper"] :is(.flashcard-back-tool, .flashcard-back-translate) {
+  height: 44px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sf-text) 5%, transparent);
+  color: var(--sf-text);
+}
+:where(html[data-theme-family=crystal]) .flashcard-back[data-card-look="paper"] .flashcard-back-tutor-icon {
+  color: var(--sf-brand-text);
+}
+:where(html[data-theme-family=crystal]) .flashcard-back[data-card-look="paper"] .flashcard-back-return {
+  gap: 8px;
+  min-height: 54px;
+  border-top: 1px dashed var(--sf-border);
+  color: var(--sf-text-muted);
+  font-family: var(--sf-font-display);
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 400;
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] :is(.flashcard-back-tool, .flashcard-back-translate) {
   height: 44px;
   border-color: rgb(239 232 218 / 0.16);
   border-radius: 12px;
@@ -1432,40 +1528,40 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   color: var(--flashcard-ink-body);
 }
 
-.flashcard-back[data-card-look="paper"] :is(.flashcard-back-tool, .flashcard-back-translate):hover {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] :is(.flashcard-back-tool, .flashcard-back-translate):hover {
   background: rgb(239 232 218 / 0.12);
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-back-tutor-icon {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-tutor-icon {
   color: #e8a075;
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-hook-button {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-hook-button {
   border-color: rgb(239 232 218 / 0.16);
   background: rgb(239 232 218 / 0.06);
   color: var(--flashcard-ink-body);
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-hook-button:hover {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-hook-button:hover {
   background: rgb(239 232 218 / 0.12);
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-hook-icon {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-hook-icon {
   color: #e8c16a;
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-hook-panel {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-hook-panel {
   border-color: rgb(239 232 218 / 0.18);
   border-radius: 12px;
   background: rgb(239 232 218 / 0.07);
   color: var(--flashcard-ink-body);
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-hook-title {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-hook-title {
   color: var(--flashcard-ink-text);
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-back-return {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-return {
   gap: 8px;
   min-height: 54px;
   border-top: 1px dashed rgb(239 232 218 / 0.14);
@@ -1476,7 +1572,7 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   font-weight: 400;
 }
 
-.flashcard-back[data-card-look="paper"] .flashcard-back-return:hover {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-look="paper"] .flashcard-back-return:hover {
   background: rgb(239 232 218 / 0.05);
   color: var(--flashcard-ink-text);
 }
@@ -1639,7 +1735,10 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   backdrop-filter: blur(20px);
 }
 
-.review-grades[data-card-look="aurora"] .review-grade {
+:where(html[data-theme-family=crystal]) .review-grades[data-card-look="aurora"] .review-grade {
+  min-height: 68px;
+}
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="aurora"] .review-grade {
   min-height: 68px;
   transition: transform 180ms var(--ease-out-expo), border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
@@ -1662,7 +1761,19 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   box-shadow: none;
 }
 
-.review-grades[data-card-look="paper"] .review-grade {
+:where(html[data-theme-family=crystal]) .review-grades[data-card-look="paper"] .review-grade {
+  min-height: 64px;
+  border-color: color-mix(in srgb, var(--sf-text) 12%, transparent);
+  border-radius: 14px;
+  background: var(--sf-surface);
+  box-shadow: 0 1px 2px var(--sf-scrim);
+}
+:where(html[data-theme-family=crystal]) .review-grades[data-card-look="paper"] .review-grade[data-rating="again"] {
+  border-color: color-mix(in srgb, var(--rating-color) 30%, transparent);
+  background: color-mix(in srgb, var(--rating-color) 5%, var(--sf-surface));
+  color: color-mix(in srgb, var(--rating-color) 70%, var(--sf-text));
+}
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade {
   min-height: 70px;
   border-color: color-mix(in srgb, var(--sf-text) 12%, transparent);
   border-radius: 16px;
@@ -1671,51 +1782,51 @@ html[data-motion="reduced"] :is(.flashcard-reveal-laser, .flashcard-reveal-rule,
   transition: transform 180ms var(--ease-out-expo), border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
-.review-grades[data-card-look="paper"] .review-grade-label {
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade-label {
   font-family: var(--sf-font-display);
   font-size: 19px;
   font-weight: 450;
 }
 
-.review-grades[data-card-look="paper"] .review-grade-dot {
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade-dot {
   width: 8px;
   height: 8px;
   box-shadow: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
+  :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
     transform: translateY(-3px);
   }
 
-  .review-grades[data-card-look="paper"] .review-grade:not(:disabled):hover {
+  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade:not(:disabled):hover {
     box-shadow: 0 10px 20px -12px rgb(60 40 20 / 0.45);
   }
 
-  .review-grades[data-card-look="paper"] .review-grade[data-rating="good"]:not(:disabled):hover {
+  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating="good"]:not(:disabled):hover {
     box-shadow: 0 14px 28px -12px rgb(29 26 22 / 0.85);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade {
+  :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade {
     transition: none;
   }
 
-  .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
+  :where(html:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
     transform: none;
   }
 }
 
-html[data-motion="reduced"] .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade {
+html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade {
   transition: none;
 }
 
-html[data-motion="reduced"] .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
+html[data-motion="reduced"]:where(:not([data-theme-family=crystal])) .review-grades:is([data-card-look="aurora"], [data-card-look="paper"]) .review-grade:not(:disabled):hover {
   transform: none;
 }
 
-.review-grades[data-card-look="paper"] .review-grade[data-rating="again"] {
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating="again"] {
   border-color: rgb(197 54 55 / 0.3);
   background: #fbf1ec;
   color: #8f2324;
@@ -1726,14 +1837,24 @@ html[data-motion="reduced"] .review-grades:is([data-card-look="aurora"], [data-c
   opacity: 1;
 }
 
-.review-grades[data-card-look="paper"] .review-grade[data-rating="good"] {
+:where(html[data-theme-family=crystal]) .review-grades[data-card-look="paper"] .review-grade[data-rating="good"] {
+  border-color: var(--sf-text);
+  background: var(--sf-text);
+  color: var(--sf-surface);
+  box-shadow: 0 12px 24px -12px color-mix(in srgb, var(--sf-text) 80%, transparent);
+}
+:where(html[data-theme-family=crystal]) .review-grades[data-card-look="paper"] .review-grade[data-rating="good"] .review-grade-dot {
+  background: color-mix(in srgb, var(--sf-brand) 55%, var(--sf-surface));
+  box-shadow: none;
+}
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating="good"] {
   border-color: #1d1a16;
   background: #1d1a16;
   color: #fbf6ec;
   box-shadow: 0 12px 24px -12px rgb(29 26 22 / 0.8);
 }
 
-.review-grades[data-card-look="paper"] .review-grade[data-rating="good"] .review-grade-dot {
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade[data-rating="good"] .review-grade-dot {
   background: #e8a075;
   box-shadow: none;
 }
@@ -1819,7 +1940,18 @@ html[data-motion="reduced"] .review-grades:is([data-card-look="aurora"], [data-c
    Active recall prompt: the review card before the answer is revealed.
    ------------------------------------------------------------------------ */
 
-.flashcard-recall {
+:where(html[data-theme-family=crystal]) .flashcard-recall {
+  border: 1px solid var(--sf-border);
+  border-radius: 32px;
+  background: var(--sf-card-bg);
+  color: var(--sf-text);
+  box-shadow: var(--sf-panel-shadow);
+}
+:where(html[data-theme-family=crystal]) .flashcard-recall[data-card-look="paper"] {
+  border-radius: 22px;
+  background: var(--sf-surface);
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-recall {
   --flashcard-radius: 34px;
   border: 1px solid var(--sf-border);
   border-radius: var(--flashcard-radius, 34px);
@@ -1828,13 +1960,13 @@ html[data-motion="reduced"] .review-grades:is([data-card-look="aurora"], [data-c
   box-shadow: var(--sf-panel-shadow);
 }
 
-.flashcard-recall[data-card-look="aurora"] {
+:where(html:not([data-theme-family=crystal])) .flashcard-recall[data-card-look="aurora"] {
   --flashcard-radius: 34px;
   border: 1.5px solid color-mix(in srgb, var(--sf-text) 10%, transparent);
   box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(0 0 0 / 0.3);
 }
 
-.flashcard-recall[data-card-look="paper"] {
+:where(html:not([data-theme-family=crystal])) .flashcard-recall[data-card-look="paper"] {
   --flashcard-radius: 22px;
   border: 0;
   border-radius: var(--flashcard-radius, 22px);
@@ -1915,7 +2047,10 @@ html[data-motion="reduced"] .review-grades:is([data-card-look="aurora"], [data-c
   font-size: 14px;
 }
 
-.flashcard-recall-image {
+:where(html[data-theme-family=crystal]) .flashcard-recall-image {
+  border-radius: 20px;
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-recall-image {
   border-radius: var(--sf-img-radius, 20px);
 }
 
@@ -1939,7 +2074,13 @@ html[data-motion="reduced"] .review-grades:is([data-card-look="aurora"], [data-c
   color: #fff;
 }
 
-.flashcard-recall-input {
+:where(html[data-theme-family=crystal]) .flashcard-recall-input {
+  border: 1px solid color-mix(in srgb, var(--sf-text) 16%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-text) 4%, transparent);
+  color: var(--sf-text);
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-recall-input {
   border: 1px solid color-mix(in srgb, var(--sf-text) 16%, transparent);
   border-radius: var(--sf-input-radius, 999px);
   background: color-mix(in srgb, var(--sf-text) 4%, transparent);
@@ -1954,7 +2095,14 @@ html[data-motion="reduced"] .review-grades:is([data-card-look="aurora"], [data-c
   border-color: var(--sf-brand);
 }
 
-.flashcard-recall-check {
+:where(html[data-theme-family=crystal]) .flashcard-recall-check {
+  border: 1px solid color-mix(in srgb, var(--sf-text) 16%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sf-text);
+  cursor: pointer;
+}
+:where(html:not([data-theme-family=crystal])) .flashcard-recall-check {
   border: 1px solid color-mix(in srgb, var(--sf-text) 16%, transparent);
   border-radius: var(--sf-button-radius, 999px);
   background: transparent;
@@ -1974,6 +2122,9 @@ html[data-motion="reduced"] .review-grades:is([data-card-look="aurora"], [data-c
 }
 
 /* Image tint keeps text over photos legible. */
+:where(html[data-theme-family=crystal]) .flashcard-recall[data-card-look="paper"] :is(.flashcard-recall-input, .flashcard-recall-check) {
+  border-radius: 12px;
+}
 .flashcard-image-tint {
   background: rgb(2 6 23 / 0.25);
 }
@@ -1983,44 +2134,90 @@ html[data-motion="reduced"] .review-grades:is([data-card-look="aurora"], [data-c
 }
 
 /* Phone layout and grade row: tighter radii/padding and four equal buttons without the glass tray. */
+@media (max-width: 560px) {
+:where(html[data-theme-family=crystal]) .review-grades {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+}
+@media (max-width: 560px) {
+:where(html[data-theme-family=crystal]) .review-grades-message {
+    font-size: 13px;
+  }
+}
+@media (max-width: 560px) {
+:where(html[data-theme-family=crystal]) .review-grades[data-card-look] .review-grades-row {
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (max-width: 560px) {
+:where(html[data-theme-family=crystal]) .review-grades[data-card-look] .review-grade {
+    min-height: 64px;
+    padding-inline: 4px;
+    border-radius: 16px;
+  }
+}
+@media (max-width: 560px) {
+:where(html[data-theme-family=crystal]) .review-grades[data-card-look="crystal"] .review-grade {
+    border-radius: 0;
+  }
+}
+@media (max-width: 560px) {
+:where(html[data-theme-family=crystal]) .review-grade-label {
+    gap: 5px;
+    font-size: 14px;
+  }
+}
+@media (max-width: 560px) {
+:where(html[data-theme-family=crystal]) .review-grade-dot {
+    width: 6px;
+    height: 6px;
+  }
+}
 @media (max-width: 640px) {
-  .flashcard-shell[data-card-look="aurora"],
-  .flashcard-recall[data-card-look="aurora"] {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="aurora"],
+:where(html:not([data-theme-family=crystal])) .flashcard-recall[data-card-look="aurora"] {
     --flashcard-radius: 28px;
   }
 
-  .flashcard-shell[data-card-look="paper"],
-  .flashcard-recall[data-card-look="paper"] {
+  :where(html:not([data-theme-family=crystal])) .flashcard-shell[data-card-look="paper"],
+:where(html:not([data-theme-family=crystal])) .flashcard-recall[data-card-look="paper"] {
     --flashcard-radius: 20px;
   }
 
-  .flashcard-face:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-body-scroll,
-  .flashcard-back:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-scroll {
+  :where(html:not([data-theme-family=crystal])) .flashcard-face:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-body-scroll,
+:where(html:not([data-theme-family=crystal])) .flashcard-back:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-scroll {
     padding-inline: 22px;
   }
 
-  .flashcard-back:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-header {
+  :where(html:not([data-theme-family=crystal])) .flashcard-back:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-header {
     padding: 18px 116px 0 22px;
   }
 
-  .flashcard-recall:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-recall-head {
+  :where(html:not([data-theme-family=crystal])) .flashcard-recall:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-recall-head {
     padding: 20px 22px 0;
   }
 
-  .flashcard-recall:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-recall-body {
+  :where(html:not([data-theme-family=crystal])) .flashcard-recall:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-recall-body {
     padding: 16px 22px 20px;
   }
 
-  .review-grades {
+  :where(html:not([data-theme-family=crystal])) .review-grades {
     gap: 8px;
     margin-bottom: 8px;
   }
 
-  .review-grades-message {
+  :where(html:not([data-theme-family=crystal])) .review-grades-message {
     font-size: 13px;
   }
 
-  .review-grades[data-card-look] .review-grades-row {
+  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look] .review-grades-row {
     gap: 8px;
     padding: 0;
     border: 0;
@@ -2030,26 +2227,26 @@ html[data-motion="reduced"] .review-grades:is([data-card-look="aurora"], [data-c
     backdrop-filter: none;
   }
 
-  .review-grades[data-card-look] .review-grade {
+  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look] .review-grade {
     min-height: 64px;
     padding-inline: 4px;
     border-radius: 16px;
   }
 
-  .review-grades[data-card-look="crystal"] .review-grade {
+  :where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="crystal"] .review-grade {
     border-radius: 0;
   }
 
-  .review-grade-label,
-  .review-grades[data-card-look="paper"] .review-grade-label {
+  :where(html:not([data-theme-family=crystal])) .review-grade-label,
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade-label {
     gap: 5px;
     font-family: var(--font-sans);
     font-size: 14px;
     font-weight: 650;
   }
 
-  .review-grade-dot,
-  .review-grades[data-card-look="paper"] .review-grade-dot {
+  :where(html:not([data-theme-family=crystal])) .review-grade-dot,
+:where(html:not([data-theme-family=crystal])) .review-grades[data-card-look="paper"] .review-grade-dot {
     width: 6px;
     height: 6px;
   }
@@ -3160,7 +3357,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   letter-spacing: 0.06em;
 }
 
-.flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-level-chip {
+:where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-level-chip {
   height: 28px;
   clip-path: none;
   border: 1px solid var(--lang-chip-line);
@@ -3204,7 +3401,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   text-shadow: 0 0 28px color-mix(in srgb, var(--flashcard-accent) 55%, transparent);
 }
 
-.flashcard-face[data-card-kind="language"][data-card-look="paper"] .flashcard-lang-word {
+:where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"][data-card-look="paper"] .flashcard-lang-word {
   font-weight: 500;
 }
 
@@ -3731,7 +3928,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   font-weight: 700;
 }
 
-.flashcard-back[data-card-kind="language"][data-card-look="paper"] .flashcard-back-example-word {
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-kind="language"][data-card-look="paper"] .flashcard-back-example-word {
   background: linear-gradient(transparent 62%, color-mix(in srgb, var(--sf-brand-text) 24%, transparent) 62%);
 }
 
@@ -3747,7 +3944,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 }
 
 @media (max-width: 640px) {
-  .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-body-scroll {
+  :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-body-scroll {
     padding: 0 22px;
   }
 }

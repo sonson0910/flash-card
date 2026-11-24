@@ -3,7 +3,24 @@
    separate component branches, so each is scoped by its board modifier class. Colors, rims and fonts
    are the --sf-* theme tokens; the shared stats variables (--st-*) come from stats-board.css. */
 
-.achievements-board {
+:where(html[data-theme-family=crystal]) .achievements-board {
+  --ach-ring-glow: none;
+  --ach-core-bg: var(--sf-surface-glass);
+  --ach-core-border: 1px solid var(--sf-border);
+  --ach-core-shadow: inset 0 0 0 5px var(--sf-gold-paper), 0 10px 20px -12px color-mix(in srgb, var(--sf-shadow-tint) 40%, transparent);
+  --ach-bar: var(--sf-brand);
+  --ach-bar-glow: none;
+  --ach-em-glow: none;
+  --ach-earned-dot: var(--sf-success);
+  --ach-earned-text: var(--sf-second-text);
+  --ach-star-text: var(--sf-warn);
+  --ach-sheen-blend: multiply;
+  width: 100%;
+  max-width: 1352px;
+  margin-inline: auto;
+  color: var(--sf-text);
+}
+:where(html:not([data-theme-family=crystal])) .achievements-board {
   --ach-ring-glow: none;
   --ach-core-bg: var(--sf-surface-glass);
   --ach-core-border: 1px solid var(--sf-border);
