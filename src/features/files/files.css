@@ -268,6 +268,22 @@
 .sf-files-button:disabled { cursor: not-allowed; opacity: 0.55; }
 .sf-files-button--primary { border-color: transparent; background: var(--fl-primary-bg); box-shadow: var(--fl-primary-shadow); color: var(--fl-primary-text); }
 .sf-files-button--primary:hover:not(:disabled) { border-color: transparent; filter: brightness(1.06); }
+/* UploadStates lines 65 and 92: the primary action carries the board's sf-press (shared.css); the reduced-motion
+   rules at the end of the file still clear the transition. */
+:where(html:not([data-theme-family=crystal])) .sf-files-button--primary { transition: background-color var(--motion-fast, 140ms) ease, border-color var(--motion-fast, 140ms) ease, transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
+@media (hover: hover) and (pointer: fine) {
+  :where(html:not([data-theme-family=crystal])) .sf-files-button--primary:hover:not(:disabled) { transform: translateY(-2px); }
+}
+:where(html:not([data-theme-family=crystal])) .sf-files-button--primary:active:not(:disabled) { transform: translateY(0) scale(.97); }
+/* UploadStates: text, the files list head included (line 62), keeps line-height normal (lines 35-113); the state chip is 28px plus its 1px border, padded 0 10px
+   (line 35); the drop tile is 58px plus its border (line 46); the primary has no border (line 65); "Manage all files" is
+   13px in a 42px box with the plain line colour and no shadow, and keeps a 44px hit area (line 113). */
+:where(html:not([data-theme-family=crystal])) :is(.sf-files__kicker, .sf-files__kicker-accent, .sf-files__chip, .sf-files__card h2 + p, .sf-files-drop h3, .sf-files-kind, .sf-files-shelf__kicker, .sf-files-shelf__list-head, .sf-files-shelf__list-head span, .sf-files-shelf__manage) { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .sf-files__chip:not(.sf-files__chip--small) { box-sizing: content-box; padding: 0 10px; }
+:where(html:not([data-theme-family=crystal])) .sf-files-drop__tile { box-sizing: content-box; }
+:where(html:not([data-theme-family=crystal])) .sf-files-button--primary { border: 0; }
+:where(html:not([data-theme-family=crystal])) .sf-files-shelf__manage { position: relative; min-height: 42px; height: 42px; border-color: var(--fl-line); font-size: 13px; box-shadow: none; }
+:where(html:not([data-theme-family=crystal])) .sf-files-shelf__manage::after { position: absolute; inset: -2px 0; content: ""; }
 :where(html[data-theme-family=crystal]) .sf-files-button--danger { border-color: transparent; background: var(--fl-danger-solid); color: var(--sf-on-brand); }
 :where(html:not([data-theme-family=crystal])) .sf-files-button--danger { border-color: transparent; background: var(--fl-danger-solid); box-shadow: none; color: var(--fl-danger-solid-text); }
 .sf-files-tokens :is(button, select, a, [tabindex]):focus-visible { outline: 2px solid var(--fl-focus); outline-offset: 2px; }
@@ -295,6 +311,8 @@
   color: var(--fl-text); font: inherit; font-size: 12px; font-weight: 650; cursor: pointer;
 }
 .sf-files-kind[aria-pressed="true"] { border-color: var(--fl-accent-line); background: var(--fl-accent-soft); color: var(--fl-accent-text); }
+/* UploadStates line 53: a kind button spaces its icon and label 7px apart. */
+:where(html:not([data-theme-family=crystal])) .sf-files-kind { gap: 7px; }
 .sf-files-kind__icon { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; }
 .sf-files-kind__icon svg { width: 14px; height: 14px; }
 .sf-files-kind[data-kind="pdf"] .sf-files-kind__icon { background: var(--fl-badge-pdf-bg); color: var(--fl-badge-pdf); }
@@ -394,6 +412,8 @@
 .sf-files-shelf__head .sf-files__chip { height: 25px; font-size: 10.5px; }
 .sf-files-shelf__list-head { margin-top: 14px; display: flex; align-items: center; color: var(--fl-text2); font-size: 12px; font-weight: 650; }
 .sf-files-shelf__list-head span + span { margin-left: auto; color: var(--fl-text3); font-size: 11px; font-weight: 500; }
+/* UploadStates line 103: the list head keeps 8px between its two labels. */
+:where(html:not([data-theme-family=crystal])) .sf-files-shelf__list-head { gap: 8px; }
 .sf-files-shelf__loading { margin: 16px 0 0; color: var(--fl-text3); font-size: 12px; }
 .sf-files-shelf__state {
   margin-top: 16px; flex: 1 1 auto; min-height: 0; padding: 20px 14px; display: flex; flex-direction: column;

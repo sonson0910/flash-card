@@ -23,10 +23,16 @@ html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-warnin
 html[data-theme-family="classic"] [data-share-dialog-frame] :is(.share-dialog-deck-summary, .share-dialog-metrics, .share-dialog-link-shell) { border-radius: var(--sd-fr); }
 html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-link-shell { background: var(--sf-surface-control); }
 html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-link-input { font-size: 13px; color: var(--sf-text-strong); }
+/* DlgShare line 6: the title sits 6px under the kicker; line 20: the card count is set in plain figures; line 24: the link glyph takes the shell's strong ink. */
+html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-title { margin-top: 6px; }
+html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-deck-meta { font-variant-numeric: normal; }
+html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-link-shell > svg { color: var(--sf-text-strong); }
+/* DlgShareIn line 18: the "+ 43 more" count is text3, read at the AA subtle ink. */
+html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-sample-heading > p:not(.share-dialog-sample-heading-label) { color: var(--sf-text-subtle); }
 html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-fact { color: var(--sf-text-body); font-size: 13.5px; }
 html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-fact-marker { background: var(--sf-accent-soft); color: var(--sf-brand-text); }
 html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-metric-value:not(.share-dialog-card-count) { min-height: 0; margin-top: 8px; font-size: 14px; font-weight: 600; }
-html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-card-count { margin-top: 2px; font-size: 28px; font-weight: 400; line-height: 1; }
+html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-card-count { min-height: 0; margin-top: 2px; font-size: 28px; font-weight: 400; line-height: normal; }
 html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-sample-card { height: 104px; border-radius: var(--sd-sample-radius); }
 html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-sample-item:nth-child(1) .share-dialog-sample-shell { transform: rotate(-1.5deg); }
 html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-sample-item:nth-child(2) .share-dialog-sample-shell { transform: rotate(1deg); }
@@ -53,12 +59,30 @@ html[data-theme-family="classic"].dark .share-dialog-cover-back { background: co
 html[data-theme-family="classic"].dark .share-dialog-cover-mid { background: var(--sf-info-line); }
 html[data-theme-family="classic"].dark .share-dialog-cover-initial { background: linear-gradient(150deg, var(--sf-brand-text), var(--sf-brand) 45%, var(--sf-second)); color: var(--sf-on-brand); box-shadow: 0 10px 24px -8px color-mix(in srgb, var(--sf-brand) 60%, transparent); }
 html[data-theme-family="classic"] .share-dialog-word-title { font-size: 21px; font-weight: var(--sf-display-weight, 380); letter-spacing: -.01em; line-height: 1; }
-html[data-theme-family="classic"] .share-dialog-card-count { font-size: 28px; font-weight: 400; line-height: 1; }
+html[data-theme-family="classic"] .share-dialog-card-count { font-size: 28px; font-weight: 400; line-height: normal; }
 html[data-theme-family="classic"] .share-dialog-more-count { color: var(--share-dialog-subtle); font-size: 22px; font-weight: 400; }
 html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-action { border-radius: var(--sf-button-radius, 999px); }
 html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-action-primary { padding-inline: 20px; background: var(--sf-primary-bg); color: var(--sf-on-primary); box-shadow: var(--sf-primary-shadow); font-weight: 650; }
-html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-action-primary:hover:not(:disabled) { opacity: .92; }
+/* The board's sf-press on Done and Add: lift 2px and brighten on hover, shrink to .97 while pressed. */
+html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-action-primary { transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-action-primary:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.06); }
+}
+html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-action-primary:active:not(:disabled) { transform: translateY(0) scale(.97); }
+@media (prefers-reduced-motion: reduce) { html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-action-primary { transition: none; } }
+html[data-theme-family="classic"][data-motion="reduced"] [data-share-dialog-frame] .share-dialog-action-primary { transition: none; }
 html[data-theme-family="classic"] [data-share-dialog-frame] .share-dialog-action-secondary { padding-inline: 18px; background: var(--sf-surface-control); color: var(--sf-text); box-shadow: var(--sf-secondary-shadow, none); }
+/* DlgShare and DlgShareIn: board text keeps the default line height; the deck meta sits 4px under the title;
+   the cover initial is padded 6px 8px; the sample heading and rail keep the 16px body gap; the "+ more" note
+   and the sample meanings are 12.5px body type. */
+:where(html:not([data-theme-family=crystal])) [data-share-dialog-frame] :is(.share-dialog-kicker, .share-dialog-deck-title, .share-dialog-deck-meta, .share-dialog-link-label, .share-dialog-copy-action, .share-dialog-metric-label, .share-dialog-metric-value, .share-dialog-sample-heading > p, .share-dialog-more-count, .share-dialog-sample-card > span:not(.share-dialog-word-title)) { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) [data-share-dialog-frame] .share-dialog-deck-meta { margin-top: 4px; }
+:where(html:not([data-theme-family=crystal])) [data-share-dialog-frame] .share-dialog-cover-initial { padding: 6px 8px; }
+:where(html:not([data-theme-family=crystal])) [data-share-dialog-frame] .share-dialog-sample-heading { margin-top: 16px; }
+:where(html:not([data-theme-family=crystal])) [data-share-dialog-frame] .share-dialog-sample-rail { margin-top: 16px; }
+:where(html:not([data-theme-family=crystal])) [data-share-dialog-frame] .share-dialog-sample-heading > p:last-child { font-family: inherit; font-size: 12.5px; }
+:where(html:not([data-theme-family=crystal])) [data-share-dialog-frame] .share-dialog-sample-card > span:not(.share-dialog-word-title) { font-size: 12.5px; }
+:where(html:not([data-theme-family=crystal])) [data-share-dialog-frame] .share-dialog-link-shell { color: var(--sf-text-strong); font-size: 14px; }
 
 html[data-theme-family="crystal"] :is(.share-dialog-kicker, .share-dialog-title, .share-dialog-empty-title, .share-dialog-deck-title, .share-dialog-cover-initial, .share-dialog-word-title, .share-dialog-card-count, .share-dialog-more-count) { font-family: var(--sf-font-display, "Kanit", "Nunito", system-ui, sans-serif); font-style: italic; }
 html[data-theme-family="crystal"] .share-dialog-kicker { font-size: 12px; font-weight: 800; letter-spacing: .16em; }

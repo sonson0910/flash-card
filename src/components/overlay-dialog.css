@@ -239,6 +239,10 @@ html[data-theme-family="crystal"] .overlay-dialog-footer {
   line-height: 1.5;
 }
 html[data-theme-family="crystal"] .overlay-dialog-note { font-size: 12px; }
+/* DlgPractice lines 5 and 32, DlgTutor lines 6 and 39: the kicker and the footer note are the board's quiet text3 ink.
+   The raw text3 misses AA on the dark dialog, so they take the tertiary text token, which keeps 4.5:1 on both modes'
+   dialog backgrounds where the kicker and note sit. */
+:where(html:not([data-theme-family=crystal])) :is(.overlay-dialog-kicker, .overlay-dialog-note) { color: var(--sf-text-tertiary); }
 
 :where(html[data-theme-family=crystal]) .overlay-dialog-secondary {
   display: flex;

@@ -176,6 +176,7 @@
 :where(html:not([data-theme-family=crystal])) .library-canvas-search input {
   min-width: 0;
   flex: 1;
+  padding: 1px 2px;
   border: 0;
   outline: 0;
   background: transparent;
@@ -186,9 +187,9 @@
 
 :where(html:not([data-theme-family=crystal])) .library-canvas-search kbd {
   display: inline-flex;
-  min-width: 1.5rem;
-  height: 1.5rem;
-  box-sizing: border-box;
+  min-width: 0;
+  height: 24px;
+  box-sizing: content-box;
   align-items: center;
   justify-content: center;
   padding: 0 .5rem;
@@ -402,7 +403,7 @@
 :where(html:not([data-theme-family=crystal])) .library-canvas-view-toggle {
   display: flex;
   flex: none;
-  gap: 2px;
+  gap: 0;
   border: 1px solid var(--sf-border);
   border-radius: 12px;
   padding: 3px;
@@ -1083,13 +1084,13 @@
 
 :where(html:not([data-theme-family=crystal])) .library-word-body h3 {
   overflow: hidden;
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   color: var(--sf-text-strong);
   font-family: var(--sf-font-display);
   font-size: 1.875rem;
   font-weight: var(--sf-display-weight, 380);
   letter-spacing: -.02em;
-  line-height: 1.15;
+  line-height: 1.02;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1118,7 +1119,7 @@
   white-space: nowrap;
 }
 :where(html:not([data-theme-family=crystal])) .library-word-body code {
-  margin-top: 4px;
+  margin-top: 6px;
   overflow: hidden;
   color: var(--library-card-text-3);
   font-family: var(--sf-font-mono);
@@ -2791,4 +2792,20 @@
   :root[data-theme-family="crystal"] .library-lumi-hint p { grid-area: bubble; justify-self: start; align-self: end; }
   :root[data-theme-family="crystal"] .library-canvas-search { grid-area: search; }
   :root[data-theme-family="crystal"] .library-canvas-create { grid-area: create; margin-left: 12px; }
+}
+
+/* LibraryScreen lines 53-112: the summary, search field and its key hint, the create button, the rail filters and
+   the card's meta line, meaning and next-review label set no line height on the board, so they sit at normal. The
+   search field keeps the input's 1px 2px padding and its "/" key is 24px plus its border (lines 59-60); the card's meta
+   parts sit 7px apart, the word is 30px at 1.02 line height 8px under them and the IPA 6px under the word (lines 105-109). */
+:where(html:not([data-theme-family=crystal])) :is(.library-canvas-summary, .library-canvas-search input, .library-canvas-search kbd, .library-canvas-create, .library-canvas-filters button, .library-word-meta, .library-word-translation, .library-word-translation-row > span) { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .library-word-meta { gap: 7px; }
+/* LibraryScreen lines 71, 76 and 79: a deck tab spaces its name and count 8px apart, a filter its dot and label 7px; the two
+   view buttons sit side by side with no gap inside the 3px padding. */
+:where(html:not([data-theme-family=crystal])) .library-canvas-decks button { gap: 8px; }
+:where(html:not([data-theme-family=crystal])) .library-canvas-filters button { gap: 7px; }
+/* LibraryScreen line 50: the page starts 36px under the top bar and 56px in from the window edge. The shell gives the
+   workspace 12px and 44px from 1024px up, so the library adds the difference, as Web Words does in .ww-inner. */
+@media (min-width: 1024px) {
+  :where(html:not([data-theme-family=crystal])) .library-canvas { padding: 24px 12px 0; }
 }

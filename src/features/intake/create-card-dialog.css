@@ -305,13 +305,13 @@ html:not([data-theme-family="crystal"]) .create-card-dialog__close:hover:not(:di
   background: radial-gradient(ellipse 70% 60% at 100% 0%, rgb(150 108 215 / 0.2), transparent 70%) padding-box, var(--sf-card-bg) padding-box, var(--sf-rim-learning) border-box;
   box-shadow: 0 20px 40px -24px rgb(0 0 0 / 0.9), 0 0 36px -16px rgb(40 211 244 / 0.5);
 }
+/* DlgCreate line 22: the cover is 128px wide and as tall as the draft beside it; line 25: the headword sits 10px under the badge row. */
 :where(html:not([data-theme-family=crystal])) .create-card-dialog__cover {
   position: relative;
   display: flex;
   width: 8rem;
-  height: 11rem;
   flex: 0 0 8rem;
-  align-self: flex-start;
+  align-self: stretch;
   align-items: flex-end;
   justify-content: flex-start;
   overflow: hidden;
@@ -337,7 +337,7 @@ html[data-theme-family="crystal"] .create-card-dialog__stress { font-style: inhe
 :where(html:not([data-theme-family=crystal])) .create-card-dialog__ai-badge { display: inline-flex; align-items: center; gap: .3125rem; color: var(--sf-brand-text); font-size: .6875rem; font-weight: 650; }
 html:not([data-theme-family="crystal"]) .create-card-dialog__ai-badge { height: 22px; padding: 0 8px; border-radius: 999px; background: var(--sf-accent-soft); }
 :where(html:not([data-theme-family=crystal])) .create-card-dialog__edit-note { color: var(--sf-text-subtle); font-size: .75rem; }
-:where(html:not([data-theme-family=crystal])) .create-card-dialog__headword-row { display: flex; align-items: center; gap: .625rem; margin-top: .5rem; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__headword-row { display: flex; align-items: center; gap: .625rem; margin-top: 10px; }
 :where(html:not([data-theme-family=crystal])) .create-card-dialog__headword-row h3 { min-width: 0; overflow: hidden; margin: 0; color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 2.125rem; font-weight: var(--sf-display-weight, 380); letter-spacing: -.02em; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
 :where(html:not([data-theme-family=crystal])) .create-card-dialog__stress { color: var(--sf-brand); font-style: var(--sf-em-style, italic); text-shadow: var(--sf-em-glow, none); }
 
@@ -439,6 +439,47 @@ html:not([data-theme-family="crystal"]) .create-card-dialog__ai-badge { height: 
   html:not([data-theme-family="crystal"]) .create-card-dialog__primary:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.06); }
 }
 html:not([data-theme-family="crystal"]) .create-card-dialog__primary:active:not(:disabled) { transform: translateY(0) scale(.97); }
+/* sf-press eases its lift over 180ms; reduced motion snaps. */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__primary { transition: transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
+@media (prefers-reduced-motion: reduce) { :where(html:not([data-theme-family=crystal])) .create-card-dialog__primary { transition: none; } }
+:where(html[data-motion="reduced"]:not([data-theme-family=crystal])) .create-card-dialog__primary { transition: none; }
+/* DlgCreate: header gap 14px (line 3); text at line-height normal (lines 5, 13, 24, 33-35, 39); labels 6px above
+   42px fields, the focused field's ring in accentLine + 4px accentSoft (line 13); 32px part-of-speech segments and a
+   30px play button, each with a 44px hit area (lines 18, 25); meta 6px under the headword in the body face with
+   only the phonetic in mono, meaning 10px under it (lines 26-27); the editable preview fields keep the board's text
+   height and take their 44px hit area from their label, drawn under the field so a click still places the caret. */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__header { gap: 14px; }
+:where(html:not([data-theme-family=crystal])) :is(.create-card-dialog__kicker, .create-card-dialog__label, .create-card-dialog__ai-badge, .create-card-dialog__edit-note, .create-card-dialog__request-count, .create-card-dialog__field input, .create-card-dialog__save-row p, .create-card-dialog__secondary, .create-card-dialog__primary) { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__input-grid label { gap: 6px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__field { min-height: 42px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__field:focus-within { border-color: var(--sf-accent-line); box-shadow: 0 0 0 4px var(--sf-accent-soft); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__pos button { position: relative; min-height: 32px; height: 32px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__pos button::after { position: absolute; inset: -6px 0; content: ""; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__audio { position: relative; width: 30px; height: 30px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__audio::after { position: absolute; inset: -7px; border-radius: 50%; content: ""; }
+/* DlgCreate line 25: the play button draws an 11px filled play triangle (path M8 5.5v13l11-6.5z on a 24 grid); the speaker
+   icon stays for Crystal. */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__audio svg { display: none; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__audio::before { width: 11px; height: 11px; background: currentColor; clip-path: polygon(33.333% 22.917%, 33.333% 77.083%, 79.167% 50%); content: ""; }
+/* DlgCreate lines 24 and 39: the AI badge and the request count lead with a 14px filled four-point star
+   (path M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z); the sparkles icon stays for Crystal. */
+:where(html:not([data-theme-family=crystal])) :is(.create-card-dialog__ai-badge, .create-card-dialog__request-count) svg { display: none; }
+:where(html:not([data-theme-family=crystal])) :is(.create-card-dialog__ai-badge, .create-card-dialog__request-count)::before { width: 14px; height: 14px; flex: none; background: currentColor; clip-path: polygon(50% 10.417%, 59.167% 36.667%, 85.417% 45.833%, 59.167% 55%, 50% 81.25%, 40.833% 55%, 14.583% 45.833%, 40.833% 36.667%); content: ""; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta { margin-top: 6px; font-family: inherit; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta > label,
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-meaning { position: relative; isolation: isolate; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta > label::after,
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-meaning::after { position: absolute; z-index: -1; inset: -13px 0; content: ""; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-meaning::after { inset: -8px 0; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta input { min-height: 0; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__meta input.create-card-dialog__cefr-input { font-family: inherit; }
+@supports (field-sizing: content) {
+  :where(html:not([data-theme-family=crystal])) .create-card-dialog__meta input { width: auto; min-width: 2ch; field-sizing: content; }
+}
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-meaning { margin-top: 10px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview-meaning input { min-height: 0; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__save-row { gap: 10px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__save-row select { box-shadow: none; }
 :where(html:not([data-theme-family=crystal])) .create-card-dialog__secondary:disabled,
 :where(html:not([data-theme-family=crystal])) .create-card-dialog__primary:disabled { cursor: not-allowed; opacity: .55; box-shadow: none; }
 .create-card-dialog__spinner-label { display: inline-flex; align-items: center; gap: .4rem; }
@@ -670,7 +711,7 @@ html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: 
 
 .create-card-dialog__preview--stream { margin-top: 0; gap: 16px; padding: 16px 18px; }
 :root:not(.dark):not([data-theme-family="crystal"]) .create-card-dialog__preview--stream {
-  border: 1px solid var(--sf-border);
+  border: var(--sf-dialog-border); /* AiStreaming line 74: 1px solid rgb(29 26 22 / .08) */
   border-radius: 14px;
   background: var(--sf-surface-raised);
   box-shadow: inset 0 1px 0 var(--sf-flare), 0 10px 20px -16px color-mix(in srgb, var(--sf-shadow-tint) 40%, transparent);
@@ -721,6 +762,28 @@ html[data-motion="reduced"] .create-card-dialog__spinner-label svg { animation: 
 .create-card-dialog__skeleton-lines { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .create-card-dialog__meta > .create-card-dialog__skeleton + .create-card-dialog__skeleton,
 .create-card-dialog__meta > span + .create-card-dialog__skeleton { margin-left: .45rem; }
+/* AiStreaming: word and deck chip at line-height normal, the chip 30px inside its 1px border (line 14); waiting step
+   in text3, AA subtle here (line 20); card body spacing meta 8px, meaning 14px, definition 4px with its two lines,
+   "Example" 14px, the sentence 5px below in strong ink and flush with the column (lines 31-36); image note and
+   progress label at line-height normal (lines 40-41, 47). */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-word > span:first-child { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-deck { box-sizing: content-box; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__step.is-waiting { color: var(--sf-text-subtle); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__meta { margin-top: 8px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__preview-meaning { margin-top: 14px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__preview-explanation { position: relative; isolation: isolate; margin-top: 4px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__preview-explanation::after { position: absolute; z-index: -1; inset: -3px 0; content: ""; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__preview-explanation textarea { display: block; min-height: 0; }
+/* AiStreaming lines 31-36: the meta row sits at line-height normal and the explanation and examples are plain blocks; a textarea left
+   inline-block adds a descender gap under it inside its label. */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__meta { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__examples textarea { display: block; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__example-label { margin-top: 14px; color: var(--sf-text-subtle); line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__examples { margin-top: 5px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__examples textarea { margin-left: 0; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview--stream .create-card-dialog__examples label:first-child textarea { color: var(--sf-text-strong); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__stream-image p,
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__progress-label { line-height: normal; }
 
 .create-card-dialog__stream-image { width: 130px; flex: none; }
 :where(html[data-theme-family=crystal]) .create-card-dialog__stream-image-slot { display: flex; height: 150px; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; background: color-mix(in srgb, var(--sf-text) 6%, transparent); color: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface)); }
@@ -869,3 +932,24 @@ html[data-theme-family="crystal"] .create-card-dialog :is(.create-card-dialog__m
 html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual-grid input { padding: 0 14px; }
 html[data-theme-family="crystal"] .create-card-dialog .create-card-dialog__manual-grid textarea { padding: 9px 14px; line-height: 1.4; }
 html[data-theme-family="crystal"] .create-card-dialog :is(.create-card-dialog__manual-grid input, .create-card-dialog__manual-grid textarea, .create-card-dialog__save-row select):focus-visible { outline: 0; box-shadow: inset 0 0 0 1.5px var(--sf-panel-edge); }
+
+/* DlgCreate lines 26-28 and AiStreaming line 32: the meta line joins its parts with " · " and the phonetic is as wide as
+   its text. In the draft preview the meta sits 6px under the headword at line-height normal, the meaning 10px under the
+   meta, and the example is a 13px italic line at 1.5, 6px under the meaning; the app's definition (no board line) keeps
+   the same 6px rhythm. These fields keep their text height and take their hit area from the gap above them, so a
+   neighbour never covers their text. The deck select is padded 12px like the board's chip (line 33). */
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview .create-card-dialog__meta { column-gap: 0; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview .create-card-dialog__meta > span::before,
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview .create-card-dialog__meta > span + label::before { margin-right: 0; content: "\a0·\a0"; }
+@supports (field-sizing: content) {
+  :where(html:not([data-theme-family=crystal])) .create-card-dialog__preview .create-card-dialog__meta input { width: auto; }
+}
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__meta { margin-top: 6px; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__preview-meaning { margin-top: 10px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__preview-explanation { position: relative; isolation: isolate; margin-top: 6px; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__preview-explanation::after { position: absolute; z-index: -1; inset: -3px 0 0; content: ""; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__preview-explanation textarea { display: block; min-height: 0; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__examples { margin-top: calc(6px - .2rem - 1px); }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__examples textarea { display: block; min-height: 0; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__preview:not(.create-card-dialog__preview--stream) .create-card-dialog__examples label:first-child textarea { line-height: 1.5; }
+:where(html:not([data-theme-family=crystal])) .create-card-dialog__save-row select { padding-left: 12px; }

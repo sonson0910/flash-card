@@ -945,6 +945,37 @@
     box-shadow: -40px 0 90px -30px rgb(0 0 0 / 0.9), inset 1px 0 0 rgb(255 255 255 / 0.04);
   }
 
+  /* EditSheet: header gap 12px, 11.5px kicker, title at 1.1 (lines 28-31); body 18px 26px (line 34); 6px between
+     a label and its field, the word box 46px with the word at line-height normal (line 36); fields at 14px in
+     strong ink, the meaning at 1.5 with a 74px floor, the example 13.5px at 1.5 in body ink (lines 38-44); image
+     96x72 inside its 1px rule (line 47); deck 42px, padding 0 12px (line 55); history note gap 8px (line 58);
+     footer transparent over the sheet fill, the Esc key at the hint's 12px, Discard padding 0 16px with no
+     shadow, the primary with no border (lines 60-63). */
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-header { gap: 12px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-kicker { font-size: 11.5px; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-title { line-height: 1.1; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-scroll { padding-top: 18px; padding-bottom: 18px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-field { gap: 6px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-label { line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-word { min-height: 46px; height: 46px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-word-input { padding: 0 14px; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-input { color: var(--sf-text-strong); font-size: 14px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-textarea { line-height: 1.5; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-field--translation .edit-sheet-textarea { min-height: 74px; }
+  /* The meaning box is 74px and grows with its text (EditSheet line 38); rows alone would draw it 87px. */
+  @supports (field-sizing: content) {
+    :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-field--translation .edit-sheet-textarea { field-sizing: content; }
+  }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-field--exampleSentence .edit-sheet-textarea { color: var(--sf-text-body); font-size: 13.5px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-image-thumb { box-sizing: content-box; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-select-input { min-height: 42px; height: 42px; padding-top: 0; padding-bottom: 0; padding-left: 12px; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-history { gap: 8px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-footer { background: none; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review :is(.edit-sheet-esc, .edit-sheet-esc kbd) { line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-esc kbd { font-size: inherit; }
+  :root:not([data-theme-family="crystal"]) .edit-sheet--review .edit-sheet-button:not(.edit-sheet-button--primary) { padding: 0 16px; box-shadow: none; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--review .edit-sheet-button--primary { border: 0; }
+
   .edit-sheet-overlay--review {
     background: transparent;
     backdrop-filter: none;
@@ -1120,6 +1151,40 @@
   .edit-sheet--dialog .edit-sheet-delete {
     margin-right: auto;
   }
+
+  /* DlgEdit: the dialog keeps the DLGOPEN shadow in dark too (partials.html line 61); header gap 14px and 18px
+     bottom padding, 11.5px kicker (lines 3, 5); body 16px top and bottom (line 10); 12px between grid rows, 5px
+     between a label and its 42px field, fields in strong ink at line-height normal, the word in 18px display face
+     (lines 11-15); example, example translation, IPA and hook at 13.5px, the example upright, the hook 52px tall
+     at 1.45 in body ink (lines 15-19); difficulty segments 30px, padding 0 14px, 12.5px, and a 34px star, each
+     with a 44px hit area (lines 24-31); footer transparent over the dialog fill, delete padding 0 4px, gap 7px,
+     weight 600, primary with no border and 20px padding (lines 34-37). */
+  :root.dark:not([data-theme-family="crystal"]) .edit-sheet--dialog { box-shadow: var(--sf-dialog-shadow); }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-header { gap: 14px; padding-bottom: 18px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-kicker { font-size: 11.5px; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-scroll { padding-top: 16px; padding-bottom: 16px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-grid { row-gap: 12px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-field { gap: 5px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-label { line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-input { min-height: 42px; color: var(--sf-text-strong); line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-input:not(textarea) { height: 42px; padding-top: 0; padding-bottom: 0; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-word { min-height: 42px; height: 42px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-word-input { padding: 0 14px; font-size: 18px; line-height: normal; }
+  :root:not([data-theme-family="crystal"]) .edit-sheet--dialog :is(.edit-sheet-field--phonetic, .edit-sheet-field--exampleSentence, .edit-sheet-field--exampleTranslation, .edit-sheet-field--mnemonic) .edit-sheet-input { font-size: 13.5px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-field--exampleSentence .edit-sheet-textarea { font-style: normal; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-field--mnemonic .edit-sheet-input { min-height: 52px; padding-top: 8px; padding-bottom: 8px; color: var(--sf-text-body); line-height: 1.45; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-flags { gap: 12px; }
+  /* The app adds a 44px "Clear" control and a hint under the segmented control, so the difficulty row is 44px and the
+     fieldset grows; the legend keeps its 44px line box and the star centres on that row (DlgEdit line 25 centres all three). */
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-difficulty-row { min-height: 44px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-star { align-self: flex-start; margin-top: 5px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-segment { min-height: 30px; height: 30px; justify-content: center; gap: 6px; padding: 0 14px; font-size: 12.5px; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-segment::after { position: absolute; inset: -7px 0; content: ""; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-star { position: relative; min-height: 34px; height: 34px; gap: 6px; padding: 0 12px; font-size: 12.5px; line-height: normal; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-star::after { position: absolute; inset: -5px 0; content: ""; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-footer { background: none; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-delete { align-self: center; gap: 7px; padding: 0 4px; font-weight: 600; }
+  :where(html:not([data-theme-family=crystal])) .edit-sheet--dialog .edit-sheet-button--primary { border: 0; padding: 0 20px; }
 }
 
 /* Crystal: chamfered glass panel, Kanit italic labels, red primary. */

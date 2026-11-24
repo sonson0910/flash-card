@@ -79,20 +79,27 @@
 :where(html:not([data-theme-family=crystal])) .library-dialog-frame--insights { display: flex; flex-direction: column; width: min(calc(100vw - 2rem), 40rem); overflow: hidden; }
 
 .library-dialog-header { display: flex; flex-shrink: 0; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--sf-border); padding: 22px 22px 18px 26px; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-header { gap: 14px; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-header > :first-child { min-width: 0; flex: 1 1 0; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-heading-with-icon { align-items: flex-start; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-heading-with-icon > div { min-width: 0; flex: 1 1 0; }
 .library-dialog-heading-with-icon { display: flex; min-width: 0; align-items: center; gap: 14px; }
 .library-dialog-kicker { margin: 0 0 4px; color: var(--ld-text-3); font-size: 11.5px; font-weight: 600; letter-spacing: .08em; line-height: 1.3; text-transform: uppercase; }
 .library-dialog-kicker--crystal-only { display: none; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-kicker { margin-bottom: 6px; line-height: normal; }
 :where(html[data-theme-family=crystal]) .library-dialog-title { margin: 0; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 28px; font-weight: var(--ld-title-weight); letter-spacing: -.02em; line-height: 1.12; text-wrap: balance; }
 :where(html:not([data-theme-family=crystal])) .library-dialog-title { margin: 0; color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 28px; font-weight: var(--ld-title-weight); letter-spacing: -.02em; line-height: 1.12; text-wrap: balance; }
 .library-dialog-description { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 14px; line-height: 1.5; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-description { font-size: 13.5px; }
 :where(html[data-theme-family=crystal]) .library-dialog-description code { color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: 13px; }
 :where(html:not([data-theme-family=crystal])) .library-dialog-description code { color: var(--sf-text-muted); font-family: var(--sf-font-mono); font-size: 13px; }
 .library-dialog-description--body { margin: 0; color: var(--ld-body); font-size: 15px; line-height: 1.55; }
 :where(html[data-theme-family=crystal]) .library-dialog-description--body strong { color: var(--sf-text); font-weight: 650; }
 :where(html[data-theme-family=crystal]) .library-dialog-description--body code { color: var(--sf-text); font-family: var(--font-mono, ui-monospace, monospace); font-size: 14px; }
 :where(html:not([data-theme-family=crystal])) .library-dialog-description--body strong { color: var(--sf-text-strong); font-weight: 650; }
-:where(html:not([data-theme-family=crystal])) .library-dialog-description--body code { color: var(--sf-text-strong); font-family: var(--sf-font-mono); font-size: 14px; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-description--body code { color: var(--sf-text-strong); font-family: var(--sf-font-mono); font-size: inherit; }
 .library-dialog-emphasis { color: var(--sf-danger); font-weight: 650; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-description--body .library-dialog-emphasis { color: var(--sf-danger); }
 
 /* 36px visual circle inside a 44px hit area. */
 .library-dialog-icon-button { position: relative; display: inline-flex; width: 44px; height: 44px; flex-shrink: 0; align-items: center; justify-content: center; margin: -4px -4px 0 0; border: 0; border-radius: 999px; background: transparent; color: var(--sf-text-muted); cursor: pointer; }
@@ -107,12 +114,14 @@
 .library-dialog-body--manage { gap: 18px; }
 .library-dialog-body--insights { min-height: min(20rem, 40dvh); flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; }
 .library-dialog-body--import { min-height: 0; flex: 1 1 auto; overflow-y: auto; }
+/* DlgImport's body gap. */
+:where(html:not([data-theme-family=crystal])) .library-dialog-body--import { gap: 14px; }
 .library-dialog-body--insights:focus-visible,.library-dialog-body--import:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: -2px; }
 
 :where(html[data-theme-family=crystal]) .library-dialog-field { display: flex; flex-direction: column; gap: 8px; color: var(--sf-text-muted); font-size: 13px; font-weight: 600; }
 :where(html[data-theme-family=crystal]) .library-dialog-field-label strong { color: var(--sf-danger); font-weight: 700; }
-:where(html:not([data-theme-family=crystal])) .library-dialog-field { display: flex; flex-direction: column; gap: 6px; color: var(--sf-text-muted); font-size: 12px; font-weight: 600; }
-:where(html:not([data-theme-family=crystal])) .library-dialog-field-label strong { color: var(--sf-danger); font-family: var(--sf-font-mono); font-weight: 700; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-field { display: flex; flex-direction: column; gap: 6px; color: var(--sf-text-muted); font-size: 12px; font-weight: 600; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-field-label strong { color: var(--sf-danger); font-family: var(--sf-font-mono); font-weight: inherit; }
 .library-dialog-field-control { position: relative; display: block; }
 :where(html[data-theme-family=crystal]) .library-dialog-field input { min-height: 48px; width: 100%; box-sizing: border-box; border: 1px solid var(--sf-border); border-radius: var(--ld-input-radius); background: var(--sf-surface-control, var(--sf-surface-raised)); padding: 0 16px; color: var(--sf-text); font: inherit; font-family: var(--sf-font-display); font-size: 19px; font-weight: 400; }
 :where(html:not([data-theme-family=crystal])) .library-dialog-field input { min-height: 48px; width: 100%; box-sizing: border-box; border: 1px solid var(--sf-border); border-radius: var(--ld-input-radius); background: var(--sf-surface-control); padding: 0 14px; color: var(--sf-text-strong); font: inherit; font-family: var(--sf-font-display); font-size: 19px; font-weight: 400; }
@@ -123,16 +132,19 @@
 :where(html:not([data-theme-family=crystal])) .library-dialog-field--token input { font-family: var(--sf-font-mono); font-size: 15px; font-weight: 400; letter-spacing: .12em; text-transform: uppercase; }
 .library-dialog-field--token input:not(:placeholder-shown) { border-color: var(--ld-danger-line); }
 .library-dialog-field-check { position: absolute; top: 50%; right: 16px; color: var(--sf-danger); transform: translateY(-50%); pointer-events: none; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-field-check { right: 15px; width: 12px; height: 12px; stroke-width: 3; }
 .library-dialog-field-error { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--sf-danger); font-size: 13px; font-weight: 600; }
 
 .library-deck-cover-picker { min-width: 0; margin: 0; border: 0; padding: 0; }
 .library-deck-cover-picker legend { margin-bottom: 8px; padding: 0; color: var(--sf-text-muted); font-size: 13px; font-weight: 600; }
+:where(html:not([data-theme-family=crystal])) .library-deck-cover-picker legend { font-size: 12px; line-height: normal; }
 .library-deck-cover-picker > div { display: flex; flex-wrap: wrap; gap: 10px; }
 .library-deck-cover-picker > div > span { min-width: 0; }
 :where(html[data-theme-family=crystal]) .library-deck-cover { position: relative; display: flex; width: 72px; height: 90px; align-items: flex-end; justify-content: flex-start; box-sizing: border-box; border: 1px solid transparent; border-radius: 8px; padding: 0 0 2px 10px; color: var(--ld-cover-ink, var(--sf-on-brand)); font-family: var(--sf-font-display); font-size: 40px; font-style: italic; font-weight: 400; line-height: 1; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; }
 :where(html[data-theme-family=crystal]) .library-deck-cover-picker input:checked + .library-deck-cover { box-shadow: 0 0 0 2px var(--sf-surface), 0 0 0 4px var(--sf-text); }
 :where(html:not([data-theme-family=crystal])) .library-deck-cover { position: relative; display: flex; width: 72px; height: 90px; align-items: flex-end; justify-content: flex-start; box-sizing: border-box; border: 0; border-radius: 12px; padding: 0 0 6px 9px; box-shadow: inset 0 0 0 1px var(--sf-border); color: var(--ld-cover-ink, var(--sf-on-brand)); font-family: var(--sf-font-display); font-size: 48px; font-style: italic; font-weight: 400; line-height: .8; overflow: hidden; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; }
 :where(html:not([data-theme-family=crystal])) .library-deck-cover-picker input:checked + .library-deck-cover { box-shadow: 0 0 0 2px var(--sf-surface), 0 0 0 4px var(--sf-brand); }
+:root.dark:not([data-theme-family="crystal"]) .library-deck-cover-picker input:checked + .library-deck-cover { box-shadow: 0 0 0 2px var(--sf-canvas), 0 0 0 4px var(--sf-brand); }
 .library-deck-cover-picker input:focus-visible + .library-deck-cover { outline: 2px solid var(--sf-brand); outline-offset: 5px; }
 :root.dark:not([data-theme-family="crystal"]) .library-deck-cover--aurora { background: linear-gradient(150deg, var(--sf-brand-text), var(--sf-brand) 45%, var(--sf-second)); --ld-cover-ink: var(--sf-on-brand); }
 :root.dark:not([data-theme-family="crystal"]) .library-deck-cover--violet { background: linear-gradient(160deg, #3a2a63, #1d1535); --ld-cover-ink: var(--sf-second-text); }
@@ -153,12 +165,15 @@
 :where(html[data-theme-family=crystal]) .library-deck-cover--moss { background: radial-gradient(90% 70% at 30% 0%, color-mix(in srgb, var(--sf-success) 40%, transparent), transparent), color-mix(in srgb, var(--sf-success) 22%, var(--sf-surface)); --ld-cover-ink: var(--sf-success); }
 :where(html[data-theme-family=crystal]) .library-dialog-suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--sf-text-muted); font-size: 13px; }
 :where(html[data-theme-family=crystal]) .library-dialog-suggestions > span:first-child { margin-right: 4px; }
-:where(html:not([data-theme-family=crystal])) .library-dialog-suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--ld-text-3); font-size: 12.5px; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--ld-text-3); font-size: 12.5px; line-height: normal; }
 :where(html:not([data-theme-family=crystal])) .library-dialog-suggestions > span:first-child { margin-right: 2px; }
 .library-dialog-chip { min-height: 2.75rem; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--ld-chip); padding: 0 12px; color: var(--sf-text); font-size: 13px; cursor: pointer; }
 .library-dialog-chip:hover { border-color: color-mix(in srgb, var(--sf-text) 30%, transparent); }
 .library-dialog-chip:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
 .library-dialog-chip:disabled { cursor: wait; opacity: .55; }
+/* The board's 30px suggestion chips; the pseudo-element extends the touch target to 44px. */
+:where(html:not([data-theme-family=crystal])) .library-dialog-chip { position: relative; min-height: 30px; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-chip::after { position: absolute; inset: -8px -1px; content: ''; }
 
 .library-dialog-footer { display: flex; flex-shrink: 0; align-items: center; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--sf-border); padding: 16px 22px 20px 26px; }
 .library-dialog-footer > :first-child:is(span:empty) { margin-right: auto; }
@@ -178,15 +193,29 @@
 :where(html[data-theme-family=crystal]) .library-dialog-button--danger { border: 0; background: var(--ld-danger-solid); color: var(--ld-on-danger); font-weight: 650; box-shadow: 0 12px 26px -14px var(--ld-danger-solid); }
 :where(html:not([data-theme-family=crystal])) .library-dialog-button--danger { border: 0; background: var(--ld-danger-solid); color: var(--ld-on-danger); font-weight: 650; box-shadow: 0 14px 30px -16px var(--ld-danger-solid); }
 .library-dialog-button--danger:disabled { opacity: .45; box-shadow: none; }
+/* The board's sf-press on the dialogs' primary and danger actions: lift 2px and brighten on hover, settle
+   and shrink to .97 while pressed (canvas/shared.css). */
+:where(html:not([data-theme-family=crystal])) :is(.library-dialog-button--primary, .library-dialog-button--danger) { transition: background-color .16s ease, border-color .16s ease, opacity .16s ease, transform 180ms cubic-bezier(.16, 1, .3, 1), filter 180ms ease; }
+@media (hover: hover) and (pointer: fine) {
+  :where(html:not([data-theme-family=crystal])) :is(.library-dialog-button--primary, .library-dialog-button--danger):hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.06); }
+}
+:where(html:not([data-theme-family=crystal])) :is(.library-dialog-button--primary, .library-dialog-button--danger):active:not(:disabled) { transform: translateY(0) scale(.97); }
+:where(html[data-motion="reduced"]:not([data-theme-family=crystal])) :is(.library-dialog-button--primary, .library-dialog-button--danger) { transition: none; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-frame--manage .library-dialog-button--primary > svg:not(.animate-spin) { display: none; }
 :where(html[data-theme-family=crystal]) .library-dialog-button--compact { min-height: 44px; border-radius: 10px; padding: 0 14px; font-size: 13.5px; }
-:where(html:not([data-theme-family=crystal])) .library-dialog-button--compact { min-height: 44px; border-radius: 10px; padding: 0 12px; font-size: 13px; }
+/* The board's 36px export button; the pseudo-element extends the touch target to 44px. */
+:where(html:not([data-theme-family=crystal])) .library-dialog-button--compact { position: relative; min-height: 36px; border-radius: 10px; padding: 0 12px; gap: 6px; box-shadow: none; font-size: 13px; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-button--compact::after { position: absolute; inset: -5px -1px; content: ''; }
 
 .library-dialog-status { display: flex; align-items: center; gap: 8px; margin: 0; border: 1px solid var(--sf-border); border-radius: var(--ld-tile-radius); background: var(--ld-chip); padding: 12px 14px; color: var(--sf-text-muted); font-size: 13.5px; font-weight: 600; }
 :where(html[data-theme-family=crystal]) .library-dialog-status--success { border-color: color-mix(in srgb, var(--sf-success) 45%, var(--sf-border)); color: var(--sf-success); }
 :where(html[data-theme-family=crystal]) .library-dialog-error { display: flex; align-items: flex-start; gap: 6px; margin: 0; color: var(--sf-danger); font-size: 13px; font-weight: 600; line-height: 1.45; }
 :where(html:not([data-theme-family=crystal])) .library-dialog-status--success { border-color: var(--sf-success-line); background: var(--sf-success-soft); color: var(--sf-success-text); }
-:where(html:not([data-theme-family=crystal])) .library-dialog-error { display: flex; align-items: flex-start; gap: 6px; margin: 0; color: var(--sf-danger); font-size: 12.5px; font-weight: 600; line-height: 1.45; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-error { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--sf-danger); font-size: 12.5px; font-weight: 600; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-error > svg { width: 16px; height: 16px; flex: none; }
 .library-dialog-danger-icon { display: inline-flex; width: 48px; height: 48px; flex-shrink: 0; align-items: center; justify-content: center; border: 1px solid var(--ld-danger-line); border-radius: 14px; background: var(--ld-danger-tint); color: var(--sf-danger); }
+:where(html:not([data-theme-family=crystal])) .library-dialog-danger-icon:not(.library-dialog-danger-icon--solid) { width: 50px; height: 50px; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-danger-icon:not(.library-dialog-danger-icon--solid) > svg { width: 22px; height: 22px; stroke-width: 1.8; }
 :where(html[data-theme-family=crystal]) .library-dialog-danger-icon--solid { border: 0; background: var(--ld-danger-solid); color: var(--ld-on-danger); box-shadow: 0 10px 24px -12px var(--ld-danger-solid); }
 :where(html:not([data-theme-family=crystal])) .library-dialog-danger-icon--solid { border: 0; background: var(--ld-danger-solid); color: var(--ld-on-danger); box-shadow: 0 10px 30px -10px var(--ld-danger-solid); }
 
@@ -197,13 +226,15 @@
 :where(html[data-theme-family=crystal]) .library-dialog-stat strong { overflow: hidden; color: var(--sf-text); font-family: var(--sf-font-display); font-size: 28px; font-weight: 400; letter-spacing: -.02em; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
 :where(html:not([data-theme-family=crystal])) .library-dialog-stat { display: flex; min-width: 0; flex-direction: column; gap: 4px; border: 1px solid var(--sf-border); border-radius: var(--ld-tile-radius); background: var(--ld-chip); padding: 12px 14px; }
 :where(html:not([data-theme-family=crystal])) .library-dialog-stat span { color: var(--sf-text-muted); font-size: 12px; }
-:where(html:not([data-theme-family=crystal])) .library-dialog-stat strong { overflow: hidden; color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 28px; font-weight: 400; letter-spacing: -.02em; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-stat strong { overflow: hidden; color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 28px; font-weight: 400; letter-spacing: normal; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
 :where(html:not([data-theme-family=crystal])) .library-dialog-stat-grid--four .library-dialog-stat strong { font-size: 30px; font-weight: var(--ld-title-weight); }
 .library-dialog-stat--accent strong { color: var(--sf-brand-text); }
 /* Clear-library counts read as one joined danger strip. */
 .library-dialog-body--danger .library-dialog-stat-grid { grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; grid-template-columns: none; gap: 0; overflow: hidden; border: 1px solid var(--ld-danger-line); border-radius: var(--ld-tile-radius); background: var(--ld-danger-tint); }
 .library-dialog-body--danger .library-dialog-stat { gap: 2px; border: 0; border-radius: 0; background: transparent; padding: 12px 16px; }
 .library-dialog-body--danger .library-dialog-stat + .library-dialog-stat { border-left: 1px solid var(--ld-danger-line); }
+:where(html:not([data-theme-family=crystal])) .library-dialog-body--danger .library-dialog-stat { gap: 0; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-body--danger .library-dialog-stat :is(strong, span) { line-height: normal; }
 :where(html[data-theme-family=crystal]) .library-dialog-export-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--sf-border); border-radius: var(--ld-tile-radius); background: var(--ld-chip); padding: 8px 8px 8px 14px; color: var(--ld-body); font-size: 14px; }
 :where(html[data-theme-family=crystal]) .library-deck-transfer { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; }
 :where(html:not([data-theme-family=crystal])) .library-dialog-export-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--sf-border); border-radius: 12px; background: var(--ld-chip); padding: 12px 14px; color: var(--ld-body); font-size: 13.5px; line-height: 1.4; }
@@ -211,17 +242,22 @@
 /* Delete deck: the deck's cards move to Unassigned. */
 :where(html:not([data-theme-family=crystal])) .library-deck-transfer { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; }
 .library-deck-transfer > div { display: flex; min-width: 0; flex-direction: column; gap: 2px; border: 1px solid var(--sf-border); border-radius: var(--ld-tile-radius); background: var(--ld-chip); padding: 14px 16px; }
+:where(html:not([data-theme-family=crystal])) .library-deck-transfer > div { gap: 0; line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .library-deck-transfer > div > strong { margin-top: 4px; }
+:where(html:not([data-theme-family=crystal])) .library-deck-transfer > div > small { margin-top: 2px; }
 :where(html[data-theme-family=crystal]) .library-deck-transfer span { overflow: hidden; color: var(--sf-text-muted); font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
 :where(html[data-theme-family=crystal]) .library-deck-transfer strong { color: var(--sf-text); font-family: var(--sf-font-display); font-size: 26px; font-weight: 400; letter-spacing: -.02em; line-height: 1.15; }
 :where(html:not([data-theme-family=crystal])) .library-deck-transfer span { overflow: hidden; color: var(--sf-text-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-:where(html:not([data-theme-family=crystal])) .library-deck-transfer strong { color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 26px; font-weight: 400; letter-spacing: -.02em; line-height: 1.1; }
+:where(html:not([data-theme-family=crystal])) .library-deck-transfer strong { color: var(--sf-text-strong); font-family: var(--sf-font-display); font-size: 26px; font-weight: 400; letter-spacing: normal; line-height: 1.1; }
 .library-deck-transfer s { text-decoration-color: var(--sf-danger); text-decoration-thickness: 2px; }
+:where(html:not([data-theme-family=crystal])) .library-deck-transfer s { text-decoration-thickness: auto; }
 :where(html[data-theme-family=crystal]) .library-deck-transfer small { color: var(--sf-text-muted); font-size: 12.5px; }
 :where(html[data-theme-family=crystal]) .library-deck-transfer > svg { color: var(--sf-text-muted); }
 :where(html[data-theme-family=crystal]) .library-dialog-footnote { margin: 0; color: var(--sf-text-muted); font-size: 13px; line-height: 1.45; }
 :where(html:not([data-theme-family=crystal])) .library-deck-transfer small { color: var(--ld-text-3); font-size: 12px; }
-:where(html:not([data-theme-family=crystal])) .library-deck-transfer > svg { color: var(--ld-text-3); }
-:where(html:not([data-theme-family=crystal])) .library-dialog-footnote { margin: 0; color: var(--ld-text-3); font-size: 13px; line-height: 1.45; }
+/* DlgDeckDelete line 15: the arrow is a decorative mark in the board's raw text3. */
+:where(html:not([data-theme-family=crystal])) .library-deck-transfer > svg { width: 20px; height: 20px; color: var(--sf-text-mark); }
+:where(html:not([data-theme-family=crystal])) .library-dialog-footnote { margin: 0; color: var(--ld-text-3); font-size: 13px; line-height: normal; }
 
 .library-dialog-loading,.library-dialog-empty { display: flex; min-height: 14rem; flex-direction: column; align-items: center; justify-content: center; gap: .75rem; color: var(--sf-text-muted); text-align: center; }
 .library-dialog-empty p { max-width: 25rem; margin: 0; }
@@ -289,7 +325,21 @@
 :where(html:not([data-theme-family=crystal])) .library-insights-spark-area { fill: var(--sf-spark-fill, color-mix(in srgb, var(--sf-brand) 14%, transparent)); }
 :where(html:not([data-theme-family=crystal])) .library-insights-spark-line { fill: none; stroke: var(--sf-brand); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.2; vector-effect: non-scaling-stroke; }
 :where(html:not([data-theme-family=crystal])) .library-insights-spark-end { fill: var(--sf-brand); }
-:where(html:not([data-theme-family=crystal])) .library-insights-spark-dates { display: flex; justify-content: space-between; margin-top: 2px; color: var(--ld-text-3); font-family: var(--sf-font-mono); font-size: 10.5px; }
+:where(html:not([data-theme-family=crystal])) .library-insights-spark-dates { display: flex; justify-content: space-between; margin-top: 0; color: var(--ld-text-3); font-family: var(--sf-font-mono); font-size: 10.5px; }
+/* DlgInsights: the board's header carries only the kicker and title, its body gap is 12px, its
+   legend rows read dot, label, percentage, and its text keeps the default line height. */
+:where(html:not([data-theme-family=crystal])) .library-dialog-frame--insights .library-dialog-header .library-dialog-description { position: absolute; width: 1px; height: 1px; overflow: hidden; margin: -1px; padding: 0; clip-path: inset(50%); white-space: nowrap; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-body--insights { gap: 12px; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-stat-grid--four .library-dialog-stat span,
+:where(html:not([data-theme-family=crystal])) .library-insights-panel h3,
+:where(html:not([data-theme-family=crystal])) .library-insights-bars li > div,
+:where(html:not([data-theme-family=crystal])) .library-insights-legend li,
+:where(html:not([data-theme-family=crystal])) .library-insights-panel-heading span,
+:where(html:not([data-theme-family=crystal])) .library-insights-spark-dates { line-height: normal; }
+:where(html:not([data-theme-family=crystal])) .library-insights-legend strong { display: none; }
+:where(html:not([data-theme-family=crystal])) .library-insights-grid + .library-insights-panel { padding-bottom: 10px; }
+:where(html:not([data-theme-family=crystal])) .library-insights-spark-end { r: 4px; }
+:where(html:not([data-theme-family=crystal])) .library-dialog-frame--insights .library-dialog-link { line-height: normal; text-align: start; }
 
 /* Scan text: the pasted passage, the extracted word grid and the save footer. */
 .library-dialog-frame--extract { display: flex; flex-direction: column; width: min(calc(100vw - 2rem), 38.75rem); overflow: hidden; }
@@ -316,24 +366,37 @@
 :where(html:not([data-theme-family=crystal])) .word-extractor-highlights { position: absolute; inset: 0; z-index: 1; overflow: hidden; box-sizing: border-box; border: 1px solid transparent; padding: 14px 16px 30px; color: var(--sf-text-strong); -webkit-text-fill-color: transparent; font: inherit; font-size: 14px; line-height: 1.75; letter-spacing: normal; word-spacing: normal; text-align: start; text-indent: 0; text-transform: none; white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; pointer-events: none; scrollbar-gutter: stable; }
 /* The tint reaches a little past each word; the matching negative margin hands the
    padding back, so every mark keeps its word's advance and the layer stays on the text. */
-:where(html:not([data-theme-family=crystal])) .word-extractor-mark { --we-mark-pad: 2px; margin: 0 calc(var(--we-mark-pad) * -1); border-radius: 3px; background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 16%, transparent)); padding: 0 var(--we-mark-pad); color: inherit; box-shadow: inset 0 -1.5px 0 var(--sf-brand); }
-:where(html:not([data-theme-family=crystal])) .word-extractor-mark.is-owned { background: transparent; box-shadow: inset 0 -1.5px 0 var(--sf-edge-highlight); }
+:where(html:not([data-theme-family=crystal])) .word-extractor-mark { --we-mark-pad: 2px; margin: 0 calc(var(--we-mark-pad) * -1); border-radius: 3px; background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 16%, transparent)); padding: 0 var(--we-mark-pad); color: inherit; border-bottom: 1.5px solid var(--sf-brand); }
+:where(html:not([data-theme-family=crystal])) .word-extractor-mark.is-owned { background: transparent; border-bottom-color: var(--sf-edge-highlight); }
 .word-extractor-results { display: flex; flex-direction: column; gap: 12px; }
 :where(html[data-theme-family=crystal]) .word-extractor-results-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 :where(html:not([data-theme-family=crystal])) .word-extractor-results-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .word-extractor-results-head p { display: flex; min-width: 0; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; }
+/* DlgExtract: a found word is underlined by a 1.5px bottom border, set on the Classic mark rules above (line 13); the count
+   inherits the passage's 1.75 line height (lines 12, 14); the results head, the rows' word, meaning and tag keep
+   line-height normal (lines 16-30). An inline border does not change the line box, so the mirror stays on the text. */
+:where(html:not([data-theme-family=crystal])) .word-extractor-count { line-height: 1.75; }
+:where(html:not([data-theme-family=crystal])) :is(.word-extractor-results-head strong, .word-extractor-results-head span, .word-extractor-toggle, .word-extractor-word, .word-extractor-meaning, .word-extractor-tag) { line-height: normal; }
 :where(html[data-theme-family=crystal]) .word-extractor-results-head strong { color: var(--sf-text); font-size: 14.5px; font-weight: 650; }
 :where(html[data-theme-family=crystal]) .word-extractor-results-head span { color: var(--ld-text-3); font-size: 13px; }
 :where(html[data-theme-family=crystal]) .word-extractor-toggle.library-dialog-link { margin-right: 0; font-size: 13px; }
 :where(html:not([data-theme-family=crystal])) .word-extractor-results-head strong { color: var(--sf-text-strong); font-size: 14px; font-weight: 650; }
 :where(html:not([data-theme-family=crystal])) .word-extractor-results-head span { color: var(--ld-text-3); font-size: 12.5px; }
-:where(html:not([data-theme-family=crystal])) .word-extractor-toggle.library-dialog-link { min-height: 24px; margin-right: 0; font-size: 12.5px; }
+:where(html:not([data-theme-family=crystal])) .word-extractor-toggle.library-dialog-link { position: relative; min-height: 0; margin-right: 0; font-size: 12.5px; }
+/* DlgExtract lines 16-30: the "Select all" link is a 17px text line, the results grid sits flush with the passage edge and
+   its rows are 42px. The link and rows keep a 44px hit area that stays inside the 14px and 6px gaps around them; the
+   grid keeps 2px of inner room for focus rings and pulls it back out with a negative margin. */
+:where(html:not([data-theme-family=crystal])) .word-extractor-toggle.library-dialog-link::after { position: absolute; inset: -13px 0; content: ""; }
+:where(html:not([data-theme-family=crystal])) .word-extractor-grid { margin: -2px; }
 .word-extractor-toggle:disabled { cursor: not-allowed; opacity: .5; }
 :where(html[data-theme-family=crystal]) .word-extractor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-height: 20rem; overflow-y: auto; padding: 2px; }
 :where(html:not([data-theme-family=crystal])) .word-extractor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; max-height: 20rem; overflow-y: auto; padding: 2px; }
 .word-extractor-row { display: flex; min-width: 0; min-height: 2.75rem; align-items: center; gap: 10px; border: 1px solid var(--sf-border); border-radius: var(--we-row-radius); background: var(--we-field-bg); padding: 0 12px 0 10px; color: var(--sf-text); font: inherit; text-align: left; cursor: pointer; }
 .word-extractor-row:hover:not(:disabled) { border-color: color-mix(in srgb, var(--sf-text) 30%, transparent); }
 .word-extractor-row:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+/* DlgExtract line 22: rows are 42px; the shared 2.75rem floor above is for Crystal. The 44px hit area stays inside the 6px row gap. */
+:where(html:not([data-theme-family=crystal])) .word-extractor-row { position: relative; min-height: 42px; }
+:where(html:not([data-theme-family=crystal])) .word-extractor-row::after { position: absolute; inset: -1px 0; content: ""; }
 :where(html[data-theme-family=crystal]) .word-extractor-row.is-selected { border-color: color-mix(in srgb, var(--sf-brand) 38%, var(--sf-border)); background: color-mix(in srgb, var(--sf-brand) 4%, var(--sf-surface)); }
 :root.dark:where([data-theme-family=crystal]) .word-extractor-row.is-selected { border-color: color-mix(in srgb, var(--sf-brand) 55%, transparent); background: color-mix(in srgb, var(--sf-brand) 8%, transparent); }
 :where(html[data-theme-family=crystal]) .word-extractor-row.is-owned { border-color: color-mix(in srgb, var(--sf-border) 60%, transparent); background: transparent; cursor: default; opacity: .55; }
