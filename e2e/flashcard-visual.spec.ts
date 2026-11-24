@@ -226,6 +226,10 @@ for (const tier of cardTiers) {
         await expect(shell.locator('[data-card-tier-label]')).toHaveText(tier.label[theme.family]);
         await expect(shell.getByText('New card', { exact: true })).toHaveCount(0);
         await expectCardPhotoReady(shell);
+        // The card opens under the pointer that clicked the library row, and whether the browser reports a
+        // hover before the screenshot is a race. The resting front is the subject; hover has its own tests.
+        await page.mouse.move(0, 0);
+        await expect(shell).toHaveAttribute('data-card-hovered', 'false');
         await expectCardScreenshot(shell, `flashcard-${theme.family}-${theme.mode}-${viewport.name}-${tier.name}-front.png`);
       });
     }
