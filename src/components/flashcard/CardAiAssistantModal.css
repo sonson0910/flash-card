@@ -1,7 +1,17 @@
 /* Card tutor dialog. The chrome comes from overlay-dialog.css; this file draws the tutor's header
    mark, the preset chips, the answer panels and the ask field for both theme families. */
 
-.overlay-dialog-frame.card-tutor { z-index: 111; max-width: 37.5rem; }
+.overlay-dialog-frame.card-tutor {
+  z-index: 111;
+  max-width: 37.5rem;
+  --card-tutor-fr: var(--od-fr, 10px);
+  --card-tutor-accent-line: var(--od-accent-line, var(--sf-accent-line, color-mix(in srgb, var(--sf-brand) 40%, transparent)));
+  --card-tutor-accent-soft: var(--od-accent-soft, var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 12%, transparent)));
+  --card-tutor-subtle: var(--od-subtle, var(--sf-text-subtle, var(--sf-text-muted)));
+}
+html:not([data-theme-family="crystal"]).dark .overlay-dialog-frame.card-tutor {
+  --card-tutor-fr: var(--od-fr, 14px);
+}
 html[data-theme-family="crystal"] .overlay-dialog-frame.card-tutor { max-width: 38.75rem; }
 .overlay-dialog-frame.card-tutor:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
 
@@ -13,13 +23,13 @@ html[data-theme-family="crystal"] .overlay-dialog-frame.card-tutor { max-width: 
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  background: var(--sf-text);
-  color: var(--sf-surface);
+  background: var(--sf-logo-bg, var(--sf-text));
+  color: var(--sf-logo-text, var(--sf-surface));
 }
-html[data-theme-family="classic"].dark .card-tutor-mark {
-  background: linear-gradient(135deg, #6bdbef 0%, #33c5f8 40%, #7f81e6 100%);
-  box-shadow: 0 8px 22px -10px rgb(40 211 244 / .7);
-  color: var(--sf-on-brand);
+html:not([data-theme-family="crystal"]).dark .card-tutor-mark {
+  background: var(--sf-logo-bg, linear-gradient(145deg, #7ee6fa, #28d3f4 45%, #966cd7));
+  box-shadow: var(--sf-logo-shadow, 0 0 20px -4px rgb(40 211 244 / .7));
+  color: var(--sf-logo-text, var(--sf-on-brand));
 }
 .card-tutor-mark svg { width: 16px; height: 16px; fill: currentColor; }
 .card-tutor-portrait,
@@ -49,7 +59,7 @@ html[data-theme-family="crystal"] .card-tutor-word {
 }
 
 .card-tutor-sense { margin-top: 6px; }
-.card-tutor-ipa { font-family: "Geist Mono", ui-monospace, monospace; font-size: 12.5px; }
+.card-tutor-ipa { font-family: var(--sf-font-mono, ui-monospace, monospace); font-size: 12.5px; }
 html[data-theme-family="crystal"] .card-tutor-meaning { color: var(--sf-brand-text); font-weight: 600; }
 
 .card-tutor-content {
@@ -82,10 +92,10 @@ html[data-theme-family="crystal"] .card-tutor-content { padding: 4px 26px 18px; 
   transition: border-color 150ms ease, color 150ms ease;
 }
 .card-tutor-preset::after { content: ""; position: absolute; inset: -5px 0; }
-.card-tutor-preset:not(:disabled):hover { border-color: var(--od-accent-line); color: var(--sf-brand-text); }
+.card-tutor-preset:not(:disabled):hover { border-color: var(--card-tutor-accent-line); color: var(--sf-brand-text); }
 .card-tutor-preset:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
 .card-tutor-preset:disabled { cursor: wait; opacity: .6; }
-.card-tutor-preset[data-active] { border-color: var(--od-accent-line); background: var(--od-accent-soft); color: var(--sf-brand-text); }
+.card-tutor-preset[data-active] { border-color: var(--card-tutor-accent-line); background: var(--card-tutor-accent-soft); color: var(--sf-brand-text); }
 html[data-theme-family="crystal"] .card-tutor-preset {
   border: 0;
   border-radius: 0;
@@ -104,7 +114,7 @@ html[data-theme-family="crystal"] .card-tutor-preset[data-active] { background: 
 .card-tutor-answer {
   padding: 18px 20px;
   border: 1px solid var(--sf-border);
-  border-radius: var(--od-fr, 14px);
+  border-radius: var(--card-tutor-fr, 10px);
   background: var(--sf-surface-raised);
 }
 html[data-theme-family="crystal"] .card-tutor-answer {
@@ -156,10 +166,10 @@ html[data-theme-family="crystal"] .card-tutor-spinner { border-color: var(--sf-b
   align-items: center;
   gap: 8px;
   padding: 0 3px 0 16px;
-  border: 1px solid var(--od-accent-line);
-  border-radius: var(--od-fr, 14px);
+  border: 1px solid var(--card-tutor-accent-line);
+  border-radius: var(--card-tutor-fr, 10px);
   background: var(--sf-surface-control);
-  box-shadow: 0 0 0 4px var(--od-accent-soft);
+  box-shadow: 0 0 0 4px var(--card-tutor-accent-soft);
 }
 .card-tutor-ask:focus-within { border-color: var(--sf-brand); }
 .card-tutor-input {
@@ -171,7 +181,7 @@ html[data-theme-family="crystal"] .card-tutor-spinner { border-color: var(--sf-b
   color: var(--sf-text);
   font-size: 14px;
 }
-.card-tutor-input::placeholder { color: var(--od-subtle); }
+.card-tutor-input::placeholder { color: var(--card-tutor-subtle); }
 .card-tutor-input:focus-visible { outline: 2px solid var(--sf-brand); outline-offset: 2px; border-radius: 6px; }
 .card-tutor-send {
   display: flex;
@@ -196,10 +206,9 @@ html[data-theme-family="crystal"] .card-tutor-spinner { border-color: var(--sf-b
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: var(--od-primary-bg, var(--sf-brand));
-  color: var(--sf-surface);
+  background: var(--od-primary-bg, var(--sf-primary-bg, var(--sf-brand)));
+  color: var(--sf-on-primary, var(--sf-on-brand));
 }
-html[data-theme-family="classic"].dark .card-tutor-send-surface { color: var(--sf-on-brand); }
 .card-tutor-send-surface svg { width: 17px; height: 17px; stroke-width: 2.4px; }
 html[data-theme-family="crystal"] .card-tutor-ask {
   height: 48px;
@@ -223,7 +232,7 @@ html[data-theme-family="crystal"] .card-tutor-send-surface {
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
 }
 
-.card-tutor-count { margin-left: auto; font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.card-tutor-count { margin-left: auto; font-family: var(--sf-font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
 
 @media (max-width: 639px) {
   .card-tutor .overlay-dialog-header { padding-right: 16px; padding-left: 20px; }

@@ -650,9 +650,9 @@ export default function AppRuntime({
           )}
           <div ref={viewStageRef} data-app-view-stage className="min-h-full">
             {!courseScopeReady && user ? (courseSession?.model.ownerId === user.uid && courseSession.model.status === 'error'
-              ? <div role="alert" className="rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)]">
+              ? <div role="alert" className="rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,1rem)] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)]">
                   <p><Trans {...msg({ context: 'course.error.read', message: 'Courses could not be loaded.' })} /></p>
-                  <button type="button" onClick={() => void courseSession.actions.retry()} className="liquid-control mt-3 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 font-bold"><Trans {...msg({ context: 'course.action.retry', message: 'Retry' })} /></button>
+                  <button type="button" onClick={() => void courseSession.actions.retry()} className="liquid-control mt-3 min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-border)] px-4 font-bold"><Trans {...msg({ context: 'course.action.retry', message: 'Retry' })} /></button>
                 </div>
               : <WorkspaceLoadingPanel><Trans {...msg({ context: 'course.loading', message: 'Preparing your courses…' })} /></WorkspaceLoadingPanel>) : <AppViewStage
               {...viewStageNavigationActions(setViewMode)}

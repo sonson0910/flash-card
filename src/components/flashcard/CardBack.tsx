@@ -88,8 +88,8 @@ export function CardBack({
       data-card-mode="standard"
       data-card-look={look}
       data-card-kind={isPackCard ? 'language' : undefined}
-      style={{ transformOrigin: 'center center', borderRadius: 'var(--flashcard-radius, 32px)' }}
-      className="flashcard-panel flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[var(--flashcard-radius,32px)]"
+      style={{ transformOrigin: 'center center', borderRadius: 'var(--flashcard-radius, 34px)' }}
+      className="flashcard-panel flashcard-back absolute inset-0 isolate box-border flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[var(--flashcard-radius,34px)]"
     >
       <CardEffectsLayer spotlightRef={spotlightRef} isHovered={isHovered} spotlightBackground={spotlightBackground} holo tier={tier} />
       {/* The Crystal board's back carries a slow light beam and a faint star mark behind the content. */}
@@ -264,9 +264,9 @@ export function CardBack({
         aria-label={cardReturnLabel(i18n, data)}
       >
         {look === 'aurora' && <span data-return-hover-edge className="flashcard-reveal-laser pointer-events-none absolute" aria-hidden="true" />}
-        {look === 'crystal' || isPackCard
-          ? <RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
-          : look === 'aurora' && <ChevronRight size={16} className="rotate-180" aria-hidden="true" />}
+        {(look === 'crystal' || look === 'aurora' || isPackCard) && (
+          <RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
+        )}
         <span>
           {cardTargetLanguageKey(data) === 'en'
             ? <Trans {...msg({ context: 'flashcard.back-to-english', message: 'Back to English' })} />

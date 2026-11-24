@@ -7,6 +7,80 @@
 
 .form-dialog-ribbon, .form-dialog-tail { display: none; }
 
+:root:not([data-theme-family="crystal"]) .form-dialog {
+  --fd-fr: 10px;
+  border: var(--sf-dialog-border, 1px solid var(--sf-border));
+  border-radius: var(--sf-dialog-radius, 18px);
+  background-color: var(--sf-surface);
+  background-image: var(--sf-dialog-bg);
+  box-shadow: var(--sf-dialog-shadow);
+}
+:root.dark:not([data-theme-family="crystal"]) .form-dialog { --fd-fr: 14px; }
+:root:not([data-theme-family="crystal"]) .form-dialog-title {
+  color: var(--sf-text-strong);
+  font-family: var(--sf-font-display);
+  font-weight: var(--sf-display-weight, 380);
+  letter-spacing: -.02em;
+}
+:root:not([data-theme-family="crystal"]) .form-dialog-close {
+  border: 1px solid var(--sf-border);
+  background: var(--sf-surface-raised);
+  color: var(--sf-text-muted);
+}
+:root:not([data-theme-family="crystal"]) .form-dialog-field {
+  border-radius: var(--fd-fr);
+  background: var(--sf-surface-control);
+  color: var(--sf-text-strong);
+}
+:root:not([data-theme-family="crystal"]) .form-dialog-field--danger { border-color: var(--sf-danger-line); }
+:root:not([data-theme-family="crystal"]) :is(.form-dialog-primary, .form-dialog-secondary, .form-dialog-ghost-danger, .form-dialog-danger) {
+  border-radius: var(--sf-button-radius, 999px);
+}
+:root:not([data-theme-family="crystal"]) .form-dialog-primary {
+  background: var(--sf-primary-bg);
+  color: var(--sf-on-primary);
+  box-shadow: var(--sf-primary-shadow);
+  font-weight: 650;
+}
+:root:not([data-theme-family="crystal"]) .form-dialog-primary:hover:not(:disabled) {
+  background: var(--sf-primary-bg);
+  opacity: .92;
+}
+:root:not([data-theme-family="crystal"]) .form-dialog-secondary {
+  border-color: var(--sf-border);
+  background: var(--sf-surface-control);
+  box-shadow: var(--sf-secondary-shadow, none);
+  color: var(--sf-text);
+}
+:root:not([data-theme-family="crystal"]) .form-dialog-ghost-danger {
+  border-color: var(--sf-danger-line);
+  background: var(--sf-danger-soft);
+  color: var(--sf-danger);
+}
+:root:not([data-theme-family="crystal"]) .form-dialog-danger {
+  background: var(--sf-danger-solid);
+  color: var(--sf-danger-solid-text);
+  box-shadow: 0 14px 30px -16px var(--sf-danger-solid);
+  font-weight: 650;
+}
+:root:not([data-theme-family="crystal"]) .form-dialog-danger-panel {
+  border-radius: var(--fd-fr);
+  border-color: var(--sf-danger-line);
+  background: var(--sf-danger-soft);
+}
+:root:not([data-theme-family="crystal"]) .form-dialog-note {
+  border-radius: var(--fd-fr);
+  border-color: var(--sf-success-line);
+  background: var(--sf-success-soft);
+  color: var(--sf-success-text);
+}
+:root:not([data-theme-family="crystal"]) .form-dialog-error {
+  border-radius: var(--fd-fr);
+  border-color: var(--sf-danger-line);
+  background: var(--sf-danger-soft);
+  color: var(--sf-danger);
+}
+
 html[data-theme-family="crystal"].dark .form-dialog {
   --fd-frame: linear-gradient(155deg, #ff5470, rgb(255 42 77 / .25) 28%, rgb(94 242 255 / .2) 72%, #5ef2ff);
   --fd-fill: linear-gradient(170deg, #141a2b 0%, #0a0d17 100%);

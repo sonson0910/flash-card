@@ -44,6 +44,16 @@ The four source sets are `classic-dark`, `classic-light`, `crystal-dark`, and
 | `--sf-book-face` | the dark Paths book face (`cardBg`) | AnimePaths book fill |
 | `--sf-holo-light`, `--sf-holo-pale`, `--sf-holo-deep`, `--sf-holo-ink`, `--sf-gold-light`, `--sf-gold-deep`, `--sf-blush`, `--sf-rose-light`, `--sf-pink-light` | not drawn: `--sf-second`, `--sf-holo-text`, `--sf-reward`, `--sf-brand`, `--sf-tier-bloom` | the holo, gold, crimson and pink stops of the Anime boards (AnimePaths `hue.*.spine`, `metal`, `holoText`, AnimeProgress tomorrow bar) |
 | `--sf-mark-crimson`, `--sf-mark-navy`, `--sf-veil` | not drawn: `--sf-crimson-gradient`, `--sf-primary-bg`, `--sf-scrim` | AnimeWebWords source marks and the locked-badge veil |
+| `--sf-button-radius`, `--sf-card-radius` | `btnRadius` (`999px` light / `16px` dark), `cardRadius` (`20px` light / `30px` dark) in `app-bootstrap.css` | `0`, `0` |
+| `--sf-panel-radius`, `--sf-input-radius`, `--sf-dialog-radius`, `--sf-dialog-border`, `--sf-panel-blur` | `radius` (`18px` / `22px`), `inputRadius` (`999px` / `14px`), `dlgRadius` (`18px` / `26px`), `dlgBorder`, `blur` | not drawn by Crystal |
+| `--sf-nav-line`, `--sf-nav-active-bg`, `--sf-nav-active-text` | `navLine`, `navActiveBg`, `navActiveText` (distinct from `--sf-tab-active*` mobile tab pills) | not drawn by Crystal |
+| `--sf-accent-soft`, `--sf-accent-line`, `--sf-primary-kbd-bg`, `--sf-secondary-shadow` | `accentSoft`, `accentLine`, `primaryKbdBg`, `secondaryShadow` | not drawn by Crystal |
+| `--sf-track`, `--sf-spark-fill`, `--sf-card-shadow`, `--sf-img-margin`, `--sf-img-radius`, `--sf-img-mask` | `track`, `sparkFill`, `cardShadow`, `imgMargin`, `imgRadius`, `imgMask` | not drawn by Crystal |
+| `--sf-danger-solid`, `--sf-danger-solid-text`, `--sf-skeleton` | `dangerSolid`, `dangerSolidText`, `skeleton` | not drawn by Crystal |
+| `--sf-em-style`, `--sf-em-glow`, `--sf-display-weight`, `--sf-grain-matrix` | `emStyle`, `emGlow`, `displayWeight`, `grainMatrix` | not drawn by Crystal |
+| `--sf-due-bg`, `--sf-due-text`, `--sf-due-line` | `dueBg`, `dueText`, `dueLine` | not drawn by Crystal |
+
+Classic-only additions beyond the shared `tokenParity.test.ts` keyset live in `:root:not([data-theme-family="crystal"])` and `:root.dark:not([data-theme-family="crystal"])` blocks at the bottom of `src/styles/themes/classic.css` and `src/styles/app-bootstrap.css` so `public/theme-crystal.css` stays untouched. `--sf-accent-soft` and `--sf-nav-active-text` are kept separate from `--sf-tab-active` and `--sf-tab-active-text` (the mobile tab-bar pills), and `text3` stays darkened (`--sf-text-subtle`, `--sf-text-tertiary`) for WCAG AA contrast.
 
 `--sf-grain-*` has no Crystal source equivalent, so Crystal uses a neutral no-grain
 fallback. `public/theme-crystal.css` is loaded from a stylesheet link before paint

@@ -11,7 +11,7 @@
   --st-display: var(--sf-font-display);
   --st-body-font: inherit;
   --st-mono: var(--sf-font-mono);
-  --st-weight: 380;
+  --st-weight: var(--sf-display-weight, 380);
   --st-title: var(--sf-text-strong);
   --st-body: var(--sf-text-body);
   --st-text2: var(--sf-text-muted);
@@ -19,18 +19,18 @@
   --st-line: var(--sf-border);
   --st-line-strong: var(--sf-edge-highlight);
   --st-chip: var(--sf-surface-raised);
-  --st-track: color-mix(in srgb, var(--sf-text-strong) 8%, transparent);
-  --st-radius: 18px;
-  --st-btn-radius: 999px;
+  --st-track: var(--sf-track, color-mix(in srgb, var(--sf-text-strong) 8%, transparent));
+  --st-radius: var(--sf-panel-radius, 18px);
+  --st-btn-radius: var(--sf-button-radius, 999px);
   --st-panel-bg: var(--sf-surface-glass);
   --st-panel-shadow: var(--sf-panel-shadow);
-  --st-blur: none;
+  --st-blur: var(--sf-panel-blur, none);
   --st-accent: var(--sf-brand);
   --st-accent-text: var(--sf-brand-text);
-  --st-em-style: italic;
+  --st-em-style: var(--sf-em-style, italic);
   --st-em-color: var(--sf-brand);
-  --st-nav-active-bg: var(--sf-primary-bg);
-  --st-nav-active-text: var(--sf-on-primary);
+  --st-nav-active-bg: var(--sf-nav-active-bg, var(--sf-primary-bg));
+  --st-nav-active-text: var(--sf-nav-active-text, var(--sf-on-primary));
   --st-mastered: var(--sf-reward);
   --st-learning: var(--sf-brand);
   --st-new: transparent;
@@ -45,14 +45,6 @@
 }
 
 :root.dark:not([data-theme-family='crystal']) :is(.progress-board, .achievements-board, .stats-canvas) {
-  --st-weight: 440;
-  --st-radius: 22px;
-  --st-btn-radius: 16px;
-  --st-blur: blur(18px);
-  --st-em-style: normal;
-  /* The dark board's selected range is a quiet lift, not the cyan primary fill. */
-  --st-nav-active-bg: color-mix(in srgb, var(--sf-text-strong) 8%, transparent);
-  --st-nav-active-text: var(--sf-text-strong);
   --st-heat-glow: 0 0 8px color-mix(in srgb, var(--sf-brand) 40%, transparent);
   --st-today-glow: 0 0 18px color-mix(in srgb, var(--sf-brand) 55%, transparent);
   --st-shelf-border: 1px solid transparent;
@@ -182,12 +174,14 @@
 .stats-heat-month { width: var(--heat-row); flex-shrink: 0; overflow: visible; white-space: nowrap; }
 .stats-heat-foot { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; font-size: 12px; color: var(--sf-text-muted); }
 .stats-heat-summary { display: flex; gap: 16px; }
-.stats-heat-legend { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--sf-text-muted); }
+.stats-heat-legend { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--st-text3); }
+.stats-panel-head > .stats-heat-legend { margin-left: auto; }
 .stats-heat-swatch { width: 12px; height: 12px; border-radius: 3px; }
 
 .stats-inspect { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--sf-border); display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; }
 .stats-inspect-label { font-size: 12px; font-weight: 600; color: var(--sf-text-muted); }
-.stats-inspect-input { border-radius: 12px; font-size: 14px; color: var(--sf-text); }
+.stats-inspect-input { border-radius: var(--sf-input-radius, 12px); font-size: 14px; color: var(--sf-text); }
+:root:not([data-theme-family='crystal']) .stats-inspect-input { padding-inline: 14px; }
 .stats-quiet-button {
   border: 1px solid var(--sf-border);
   border-radius: var(--st-btn-radius);
@@ -220,9 +214,12 @@
 .stats-mastery-legend li[data-kind='new'] .stats-legend-swatch { border: 1.5px solid var(--st-line-strong); }
 .stats-legend-label { min-width: 0; overflow-wrap: anywhere; color: var(--st-body); }
 .stats-legend-value { margin-left: auto; font-family: var(--sf-font-mono); font-size: 13px; color: var(--st-title); }
+:root:not([data-theme-family='crystal']) .stats-legend-label { color: var(--sf-text); }
+:root:not([data-theme-family='crystal']) .stats-legend-value { color: var(--st-text2); }
 .stats-mastery-foot { margin: auto 0 0; padding-top: 18px; border-top: 1px solid var(--sf-border); display: flex; justify-content: space-between; font-size: 13px; color: var(--sf-text-muted); }
 .stats-mastery-fact { display: flex; gap: 6px; }
 .stats-mastery-fact dd { margin: 0; font-weight: 600; color: var(--st-success); }
+:root:not([data-theme-family='crystal']) .stats-mastery-fact[data-fact='best-streak'] dd { color: var(--sf-text); }
 .stats-mastery-chart + .stats-mastery-foot { margin-top: 18px; }
 .stats-mastery > .stats-mastery-foot { margin-top: auto; }
 
@@ -237,7 +234,6 @@
 }
 :root[data-theme-family='crystal'] .stats-activity .stats-panel-title { display: inline-flex; align-items: center; gap: 8px; color: var(--st-holo-text); }
 :root[data-theme-family='crystal'] .stats-panel-head { gap: 6px 12px; }
-:root[data-theme-family='crystal'] .stats-panel-head > .stats-heat-legend { margin-left: auto; }
 :root[data-theme-family='crystal'] .stats-activity .stats-panel-title::before {
   content: '';
   width: 8px;

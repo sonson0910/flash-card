@@ -52,7 +52,7 @@ function forecastShare(count: number, maximum: number) {
 }
 
 function ChartsFallback() {
-  return <div className="crystal-chamfer skeleton-sheen min-h-72 rounded-2xl border border-[var(--sf-border)]" role="status"><span className="sr-only"><Trans {...msg({ context: 'progress.charts.loading', message: 'Loading progress charts…' })} /></span></div>;
+  return <div className="crystal-chamfer skeleton-sheen min-h-72 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)]" role="status"><span className="sr-only"><Trans {...msg({ context: 'progress.charts.loading', message: 'Loading progress charts…' })} /></span></div>;
 }
 
 export default function ProgressWorkspace({ ownerId, targetLanguage, darkMode, isOffline, headingRef, focusIntent = 0, stats, isStatsLoading, statsError, continueReview, openVocabulary, openMasteredVocabulary, weeklyRecapRequestOwnerId, weeklyRecapRequestSettled, onWeeklyRecapRequestConsumed }: ProgressWorkspaceProps) {
@@ -119,9 +119,9 @@ export default function ProgressWorkspace({ ownerId, targetLanguage, darkMode, i
         </div>
       </section>}
       {showsCharts && <Suspense fallback={<ChartsFallback />}><div className="async-content-enter"><StatsCharts darkMode={darkMode} data={stats} section="secondary" /></div></Suspense>}
-      {hasActivity && <div className="flex justify-end"><button type="button" onClick={() => showAchievements(true)} className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold text-[var(--sf-text)]"><Award size={16} aria-hidden="true" /><Trans {...msg({ context: 'progress.achievements.open', message: 'View achievements' })} /></button></div>}
+      {hasActivity && <div className="flex justify-end"><button type="button" onClick={() => showAchievements(true)} className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] px-4 py-2 text-sm font-bold text-[var(--sf-text)]"><Award size={16} aria-hidden="true" /><Trans {...msg({ context: 'progress.achievements.open', message: 'View achievements' })} /></button></div>}
       {hasActivity && <div className="flex justify-end">
-        <button type="button" onClick={() => { setOpenRecapScope(recapScope); setIsRecapOpen(true); }} className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-2xl border border-[var(--sf-border)] px-4 py-2 text-sm font-bold text-[var(--sf-text)]">
+        <button type="button" onClick={() => { setOpenRecapScope(recapScope); setIsRecapOpen(true); }} className="liquid-control crystal-chamfer-sm inline-flex min-h-11 items-center gap-2 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] px-4 py-2 text-sm font-bold text-[var(--sf-text)]">
           <CalendarDays size={16} aria-hidden="true" />
           <Trans {...msg({ context: 'progress.weeklyRecap.open', message: 'View weekly recap' })} />
         </button>

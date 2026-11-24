@@ -3,11 +3,11 @@
    tokens, renamed to local --pa-* variables so each theme only swaps values. */
 .catalog-canvas {
   --pa-display: var(--sf-font-display);
-  --pa-weight: 380;
+  --pa-weight: var(--sf-display-weight, 380);
   --pa-mono: var(--sf-font-mono);
-  --pa-title: var(--sf-text);
-  --pa-radius: 18px;
-  --pa-btn-radius: 999px;
+  --pa-title: var(--sf-text-strong);
+  --pa-radius: var(--sf-panel-radius, 18px);
+  --pa-btn-radius: var(--sf-button-radius, 999px);
   --pa-hero-bg: radial-gradient(ellipse 80% 70% at 80% 0%, var(--sf-hero-glow), transparent 60%), var(--sf-hero-sky);
   --pa-hero-border: 0;
   --pa-hero-shadow: var(--sf-hero-shadow);
@@ -43,10 +43,6 @@
   color: var(--sf-text);
 }
 :root.dark:not([data-theme-family='crystal']) .catalog-canvas {
-  --pa-weight: 440;
-  --pa-title: var(--sf-text-strong);
-  --pa-radius: 22px;
-  --pa-btn-radius: 16px;
   --pa-hero-bg: radial-gradient(ellipse 70% 60% at 85% 10%, var(--sf-hero-glow), transparent 70%) padding-box, radial-gradient(ellipse 80% 60% at 10% 100%, color-mix(in srgb, var(--sf-brand) 35%, transparent), transparent 70%) padding-box, var(--sf-hero-sky) padding-box, var(--sf-rim-learning) border-box;
   --pa-hero-border: 1.5px solid transparent;
   --pa-hero-title-shadow: 0 0 40px color-mix(in srgb, var(--sf-brand-text) 35%, transparent);
@@ -87,15 +83,16 @@
 .paths-mode-button[aria-pressed='true'] { background: var(--sf-brand); color: var(--sf-on-brand); }
 .paths-mode-button:focus-visible { outline: 2px solid var(--sf-brand-text); outline-offset: 2px; }
 .paths-language { display: inline-flex; align-items: center; gap: 10px; color: var(--sf-text-muted); font-size: 13px; font-weight: 600; }
-.paths-select { min-height: 44px; border-radius: 12px; padding: 0 12px; color: var(--sf-text); font-size: 14px; font-weight: 600; }
+.paths-select { min-height: 44px; border-radius: var(--sf-input-radius, 12px); padding: 0 12px; color: var(--sf-text); font-size: 14px; font-weight: 600; }
+:root:not([data-theme-family='crystal']) .paths-select { padding-inline: 16px; }
 .paths-select:focus-visible { outline: 2px solid var(--sf-brand-text); outline-offset: 2px; }
 
 /* Status notes */
-.catalog-note { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border: 1px solid var(--sf-border); border-radius: 14px; background: var(--sf-surface-glass); color: var(--sf-text); font-size: 13.5px; line-height: 1.5; }
+.catalog-note { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border: 1px solid var(--sf-border); border-radius: var(--pa-radius); background: var(--sf-surface-glass); color: var(--sf-text); font-size: 13.5px; line-height: 1.5; }
 .catalog-note-icon { width: 18px; height: 18px; flex: none; margin-top: 1px; color: var(--sf-text-muted); }
 .catalog-note-title { margin: 0; color: var(--pa-title); font-size: 14px; font-weight: 700; }
 .catalog-note-copy { margin: 2px 0 0; color: var(--sf-text-muted); }
-.catalog-note-detail { margin-top: 4px; overflow-wrap: anywhere; border-radius: 10px; background: var(--sf-surface-muted); padding: 10px 12px; font-size: 12px; }
+.catalog-note-detail { margin-top: 4px; overflow-wrap: anywhere; border-radius: calc(var(--pa-radius) - 8px); background: var(--sf-surface-muted); padding: 10px 12px; font-size: 12px; }
 .catalog-note--success { color: var(--sf-text-muted); }
 .catalog-note--success .catalog-note-icon { color: var(--sf-success); }
 .catalog-note--info .catalog-note-icon { color: var(--sf-brand-text); }

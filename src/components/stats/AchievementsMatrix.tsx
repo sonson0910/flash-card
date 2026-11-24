@@ -183,7 +183,7 @@ function BadgeCard({ shown, index, isCrystal, isNewlyUnlocked, now }: { readonly
   const { badge } = shown;
   const name = <div className="ach-badge-name"><h3 className="ach-badge-title">{shown.name}</h3><span className="ach-badge-tier">{shown.tierLabel}</span></div>;
   // Crystal puts the medal and a small lock chip on one row and the full name below them.
-  return <article data-badge-id={badge.id} data-newly-unlocked={isNewlyUnlocked || undefined} data-badge-state={badge.state} data-badge-tier={badge.tier} className={`ach-badge ${isNewlyUnlocked ? 'achievement-newly-unlocked' : ''}`}>
+  return <article data-badge-id={badge.id} data-newly-unlocked={isNewlyUnlocked || undefined} data-badge-state={badge.state} data-badge-tier={badge.tier} className={`ach-badge${!isCrystal ? ' sf-lift' : ''}${isNewlyUnlocked ? ' achievement-newly-unlocked' : ''}`}>
     <div className="ach-badge-head">
       <Medal shown={shown} index={index} isCrystal={isCrystal} />
       {isCrystal ? badge.state === 'locked' && <span className="ach-badge-lock" aria-hidden="true">{_(text.lockedChip)}</span> : name}
@@ -191,7 +191,7 @@ function BadgeCard({ shown, index, isCrystal, isNewlyUnlocked, now }: { readonly
     {isCrystal && name}
     <p className="ach-badge-desc">{shown.condition}</p>
     <div className="ach-badge-foot"><BadgeFoot shown={shown} isCrystal={isCrystal} now={now} /></div>
-    {!isCrystal && badge.state === 'earned' && badge.tier === 'star' && <span className="ach-badge-sheen" aria-hidden="true" />}
+    {!isCrystal && badge.state === 'earned' && badge.tier === 'star' && <span className="ach-badge-sheen sf-sheen" aria-hidden="true" />}
   </article>;
 }
 

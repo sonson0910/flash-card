@@ -20,7 +20,7 @@ const LanguagePracticeDrillResults = lazy(() => Promise.all([
 
 function PracticeFallback({ label, wide = false }: { label: ReactNode; wide?: boolean }) {
   return (
-    <div className={`skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)] mx-auto ${wide ? 'max-w-4xl' : 'max-w-2xl'}`} role="status">
+    <div className={`skeleton-sheen min-h-40 rounded-[26px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,22px)] border border-[var(--sf-border)] mx-auto ${wide ? 'max-w-4xl' : 'max-w-2xl'}`} role="status">
       <span className="sr-only">{label}</span>
     </div>
   );

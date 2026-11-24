@@ -319,7 +319,7 @@ export function WordMatchView({ cards, onClose, onComplete, onNewRound }: WordMa
               {tiles.filter(tile => tile.type === 'word').map(renderTile)}
             </div>
             <div className="practice-match__center">
-              <div className="practice-match__timer" data-low={timeLeft <= 10 || undefined} role="timer" aria-label={_({ ...msg({ id: 'practice.match.seconds-left', message: '{seconds, plural, one {# second left} other {# seconds left}}' }), values: { seconds: timeLeft } })}>
+              <div className={`practice-match__timer${timeLeft <= 10 ? ' sf-pulse' : ''}`} data-low={timeLeft <= 10 || undefined} role="timer" aria-label={_({ ...msg({ id: 'practice.match.seconds-left', message: '{seconds, plural, one {# second left} other {# seconds left}}' }), values: { seconds: timeLeft } })}>
                 <svg viewBox="0 0 220 220" aria-hidden="true">
                   <defs>
                     <linearGradient id="practice-match-ring-crystal" x1="0" y1="0" x2="1" y2="1">

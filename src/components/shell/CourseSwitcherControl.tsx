@@ -123,7 +123,7 @@ export function CourseSwitcherControl({ onOpenLanguageSettings, onStudyActiveCou
 
   if (model.status === 'error') return <div className="flex min-w-0 items-center gap-2">
     <p role="alert" className="text-xs font-semibold text-[var(--sf-danger)]"><Trans {...msg({ context: 'course.error.read', message: 'Courses could not be loaded.' })} /></p>
-    <button type="button" onClick={() => void actions.retry()} className="liquid-control min-h-11 shrink-0 rounded-xl border border-[var(--sf-border)] px-3 text-sm font-bold text-[var(--sf-text)]">
+    <button type="button" onClick={() => void actions.retry()} className="liquid-control min-h-11 shrink-0 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-border)] px-3 text-sm font-bold text-[var(--sf-text)]">
       <Trans {...msg({ context: 'course.action.retry', message: 'Retry' })} />
     </button>
   </div>;

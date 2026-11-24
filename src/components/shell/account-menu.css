@@ -27,6 +27,11 @@
   font-weight: 700;
 }
 
+html:not([data-theme-family="crystal"]) .claude-app-shell .account-menu-trigger[aria-expanded="true"]:not([data-equipped-frame="crimson-wing"]) {
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--sf-accent-line, var(--sf-brand)), 0 0 0 4px var(--sf-accent-soft, transparent);
+}
+
 .account-menu-trigger img,
 .account-menu-avatar-image {
   width: 100%;
@@ -288,6 +293,102 @@
 
 .account-menu-danger-action > svg {
   color: var(--sf-danger);
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-panel {
+  border: var(--sf-dialog-border, 1px solid var(--sf-border));
+  box-shadow: var(--sf-dialog-shadow, var(--sf-panel-shadow));
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-avatar:not([data-equipped-frame="crimson-wing"]) {
+  background: var(--sf-avatar-bg, color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)));
+  color: var(--sf-avatar-text, var(--sf-brand-text));
+  font-size: 14px;
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-name {
+  color: var(--sf-text-strong);
+  font-weight: 650;
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-email {
+  font-size: 12px;
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-status {
+  padding: 9px 12px;
+  font-size: 12.5px;
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-status[data-status-kind="synced"] {
+  border-color: var(--sf-success-line);
+  background: var(--sf-success-soft);
+  color: var(--sf-success-text);
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-status:is([data-status-kind="session-lost"], [data-status-kind="needs-attention"]) {
+  border-color: var(--sf-danger-line);
+  background: var(--sf-danger-soft);
+  color: var(--sf-danger);
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-status:is([data-status-kind="offline"], [data-status-kind="cloud-paused"], [data-status-kind="device"]) {
+  border-color: var(--sf-warn-line);
+  background: var(--sf-warn-bg);
+  color: var(--sf-warn);
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-status:is([data-status-kind="checking"], [data-status-kind="syncing"], [data-status-kind="queued"], [data-status-kind="saving-offline"]) {
+  border-color: var(--sf-info-line);
+  background: var(--sf-info-bg);
+  color: var(--sf-info);
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-count {
+  font-size: 11px;
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-divider {
+  margin: 4px 8px;
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-item {
+  padding: 4px 12px;
+  color: var(--sf-text);
+  font-size: 13.5px;
+  font-weight: 550;
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-item > svg {
+  width: 16px;
+  height: 16px;
+  color: currentColor;
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sf-text-strong) 5%, transparent);
+}
+
+html.dark:not([data-theme-family="crystal"]) .account-menu-item:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.06);
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-signout-action {
+  color: var(--sf-text-muted);
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-primary-action > svg {
+  color: var(--sf-brand-text);
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-danger-action {
+  background: var(--sf-danger-soft);
+  color: var(--sf-danger);
+  font-weight: 600;
+}
+
+html:not([data-theme-family="crystal"]) .account-menu-danger-action:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sf-danger) 14%, transparent);
 }
 
 /* ANAV avatar: a flat crimson hex with the deep end in both modes; it glows only while its menu is open. */

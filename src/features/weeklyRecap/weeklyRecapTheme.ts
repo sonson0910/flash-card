@@ -31,7 +31,7 @@ const CARD_PALETTES = {
     heatLevels: ['rgb(251 246 236 / .08)', 'rgb(232 160 117 / .3)', 'rgb(232 160 117 / .55)', '#e8a075', '#f3c7a4'] as const,
   },
   classicDark: {
-    cardBackground: '#1e2b46', cardBackgroundEnd: '#0d4656', cardText: '#f1f6f9', cardMuted: '#a9b7c0',
+    cardBackground: '#0f2a38', cardBackgroundEnd: '#07161f', cardText: '#f1f6f9', cardMuted: '#99a7b0',
     cardChip: 'rgb(255 255 255 / .05)', cardAccent: '#28d3f4',
     heatLevels: ['#13495a', '#1a6f84', '#1f8ca6', '#28d3f4', '#7ee6fa'] as const,
   },

@@ -104,7 +104,7 @@ interface AppOverlaysProps {
 }
 
 const overlayClass = 'crystal-starfield fixed inset-0 z-50 dialog-veil';
-const modalClass = 'crystal-chamfer fixed inset-0 z-50 m-auto h-fit w-[calc(100%-2rem)] rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]';
+const modalClass = 'crystal-chamfer fixed inset-0 z-50 m-auto h-fit w-[calc(100%-2rem)] rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-dialog-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] [background-image:var(--sf-dialog-bg)] text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]';
 
 const categoryTitle = (category: string, allLibraryLabel: string): string =>
   category === 'All' ? allLibraryLabel : category;
@@ -503,7 +503,7 @@ export function IncomingSharePreview({ preview, isSharing, error, onDismissError
 
   return (
     <div data-share-preview="incoming">
-      {isSharing ? <div role="status" className="mb-4 flex items-center gap-2 border border-[var(--sf-info-line,var(--sf-brand))] bg-[var(--sf-info-bg,color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface)))] px-3 py-2.5 text-sm font-semibold text-[var(--sf-text)]"><Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /><Trans {...msg({ context: 'shell.share.importing', message: 'Adding {count} cards to your new deck…' })} values={{ count: formatNumber(preview.cardCount) }} /></div> : null}
+      {isSharing ? <div role="status" className="mb-4 flex items-center gap-2 [html:not([data-theme-family=crystal])_&]:rounded-xl border border-[var(--sf-info-line,var(--sf-brand))] bg-[var(--sf-info-bg,color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface)))] px-3 py-2.5 text-sm font-semibold text-[var(--sf-text)]"><Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /><Trans {...msg({ context: 'shell.share.importing', message: 'Adding {count} cards to your new deck…' })} values={{ count: formatNumber(preview.cardCount) }} /></div> : null}
       {error && onDismissError ? <RecoverableActionFeedback message={error} dismissLabel={_(msg({ id: 'shell.share.dismiss-error', message: 'Dismiss share error' }))} onDismiss={onDismissError} className="mb-4 mt-0" /> : null}
       <div className="share-dialog-metrics grid grid-cols-3 overflow-hidden rounded-[var(--sf-card-radius,14px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)]">
         <ShareMetric isCardCount label={<Trans {...msg({ context: 'shell.share.cards', message: 'Cards' })} />} value={formatNumber(preview.cardCount)} />
@@ -535,7 +535,7 @@ export function IncomingSharePreview({ preview, isSharing, error, onDismissError
           </ul>
         </div>
       ) : (
-        <div className="mt-3 flex min-h-[104px] items-center justify-center rounded-[var(--sf-card-radius,14px)] border border-dashed border-[var(--sf-border)] px-4 text-center text-sm text-[var(--sf-text-muted)]" role="status">
+        <div className="share-dialog-empty-samples mt-3 flex min-h-[104px] items-center justify-center rounded-[var(--sf-card-radius,14px)] border border-dashed border-[var(--sf-border)] px-4 text-center text-sm text-[var(--sf-text-muted)]" role="status">
           {preview.cardCount > 0 ? <Trans {...msg({ context: 'shell.share.no-sample-preview', message: 'A card preview is not available for this shared deck.' })} /> : <Trans {...msg({ context: 'shell.share.no-cards', message: 'This shared deck has no cards to add.' })} />}
         </div>
       )}
@@ -625,7 +625,7 @@ export function OutgoingShareDetails({
   const languagePairs = useLanguagePairLabels(preview?.languagePairs ?? [], i18n.locale);
   return (
     <div data-share-preview="outgoing" className="space-y-4">
-      {isSharing ? <div role="status" className="flex items-center gap-2 border border-[var(--sf-info-line,var(--sf-brand))] bg-[var(--sf-info-bg,color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface)))] px-3 py-2.5 text-sm font-semibold text-[var(--sf-text)]"><Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /><Trans {...msg({ context: 'shell.share.updating', message: 'Updating this share link…' })} /></div> : null}
+      {isSharing ? <div role="status" className="flex items-center gap-2 [html:not([data-theme-family=crystal])_&]:rounded-xl border border-[var(--sf-info-line,var(--sf-brand))] bg-[var(--sf-info-bg,color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface)))] px-3 py-2.5 text-sm font-semibold text-[var(--sf-text)]"><Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /><Trans {...msg({ context: 'shell.share.updating', message: 'Updating this share link…' })} /></div> : null}
       <div className="share-dialog-deck-summary flex items-center gap-4 rounded-[var(--sf-card-radius,14px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3.5">
         <ShareDeckCover title={title} />
         <div className="min-w-0 flex-1">
@@ -728,7 +728,7 @@ export function ShareManagementButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="fixed bottom-24 right-4 z-40 flex min-h-11 items-center gap-2 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2.5 text-sm font-bold text-[var(--sf-text)] shadow-xl transition-transform hover:-translate-y-0.5 lg:bottom-6"
+      className="fixed bottom-24 right-4 z-40 flex min-h-11 items-center gap-2 rounded-full [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface)] px-4 py-2.5 text-sm font-bold text-[var(--sf-text)] shadow-xl transition-transform hover:-translate-y-0.5 lg:bottom-6"
     >
       <Share2 size={17} aria-hidden="true" />
       <Trans {...msg({ context: 'shell.share.manage', message: 'Manage shared link' })} />

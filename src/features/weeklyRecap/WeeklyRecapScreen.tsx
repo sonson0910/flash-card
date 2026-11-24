@@ -253,7 +253,7 @@ export function WeeklyRecapScreen({
             <button type="button" onClick={actions.download} disabled={isBusy}><span className="weekly-recap-controls__action-label"><BoardDownload />{downloadLabel}</span></button>
           </>
           : <>
-            <button type="button" onClick={actions.share} disabled={isBusy} className="brand-action"><Share2 size={16} aria-hidden="true" />{shareLabel}</button>
+            <button type="button" onClick={actions.share} disabled={isBusy} className="brand-action sf-press"><Share2 size={16} aria-hidden="true" />{shareLabel}</button>
             <button type="button" onClick={actions.download} disabled={isBusy}><Download size={16} aria-hidden="true" />{downloadLabel}</button>
           </>}
       </div>

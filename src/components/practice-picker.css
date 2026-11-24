@@ -74,6 +74,7 @@ html[data-theme-family="classic"].dark .practice-picker-row[data-state="loading"
 .practice-picker-row-text { display: flex; min-width: 0; flex: 1 1 auto; flex-direction: column; gap: 3px; }
 .practice-picker-row-head { display: flex; align-items: baseline; gap: 8px; }
 .practice-picker-row-name { color: var(--sf-text); font-size: 15px; font-weight: 650; }
+html[data-theme-family="classic"] .practice-picker-row-name { color: var(--sf-text-strong); }
 .practice-picker-row-time { color: var(--od-subtle); font-family: var(--sf-font-mono); font-size: 11.5px; white-space: nowrap; }
 .practice-picker-row-desc { color: var(--sf-text-muted); font-size: 13px; line-height: 1.4; text-wrap: pretty; }
 
@@ -293,6 +294,10 @@ html[data-theme-family="crystal"] .practice-picker .overlay-dialog-secondary { c
     white-space: nowrap;
     --sf-chamfer-fill: linear-gradient(var(--sf-surface-control), var(--sf-surface-control));
   }
+  html[data-theme-family="classic"] .practice-picker-scope {
+    background-color: var(--sf-surface-raised);
+    color: var(--sf-text-muted);
+  }
   html[data-theme-family="crystal"] .practice-picker-scope { border-radius: 0; font-family: var(--sf-font-display); font-style: italic; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
   .practice-picker-row-desc { display: none; }
   .practice-picker-row-desc-short { display: block; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.35; }
@@ -339,6 +344,13 @@ html[data-theme-family="crystal"] .practice-picker .overlay-dialog-secondary { c
   .practice-picker-row-status { font-size: 12px; }
 
   /* MobileSheet's per-mode icon tints. */
+  html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="quiz"] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-brand) 10%, transparent);
+    --pp-icon-fg: var(--sf-brand-text);
+  }
+  html[data-theme-family="classic"].dark .practice-picker-row[data-practice-choice="quiz"] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-brand) 14%, transparent);
+  }
   html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="spelling"],
   html[data-theme-family="classic"] .practice-picker-row[data-practice-choice="language-drill"] {
     --pp-icon-bg: color-mix(in srgb, var(--sf-second) 10%, transparent);
@@ -364,6 +376,9 @@ html[data-theme-family="crystal"] .practice-picker .overlay-dialog-secondary { c
   html[data-theme-family="classic"] .practice-picker-row[data-state="locked"][data-practice-choice] {
     --pp-icon-bg: color-mix(in srgb, var(--sf-text) 4%, transparent);
     --pp-icon-fg: var(--od-subtle);
+  }
+  html[data-theme-family="classic"].dark .practice-picker-row[data-state="locked"][data-practice-choice] {
+    --pp-icon-bg: color-mix(in srgb, var(--sf-flare) 5%, transparent);
   }
 
   html[data-theme-family="crystal"] .practice-picker-row { min-height: 70px; padding: 8px 14px 8px 12px; }

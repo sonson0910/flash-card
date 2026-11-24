@@ -444,7 +444,7 @@ export function StudyView({
 
   // Above the card in the classic shells; Crystal keeps the board's card slot clear and puts it in the session footer.
   const learnFirst = !needsIntroduction && onLearnFirst
-    ? <button type="button" onClick={onLearnFirst} className="study-shell-learn-first my-4 min-h-11 rounded-xl border border-[var(--sf-border)] px-4 py-2 font-bold"><Trans {...msg({ context: 'practice.learn-first', message: 'I don\'t know this — learn first' })} /></button>
+    ? <button type="button" onClick={onLearnFirst} className="study-shell-learn-first my-4 min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-border)] px-4 py-2 font-bold"><Trans {...msg({ context: 'practice.learn-first', message: 'I don\'t know this — learn first' })} /></button>
     : null;
 
   return (
@@ -474,10 +474,10 @@ export function StudyView({
           <span data-study-timer aria-label={_(msg({ id: 'study.elapsed-time', message: 'Elapsed study time: {time}' }).id, { time: elapsedTime })} className="study-shell-timer">
             {elapsedTime}
           </span>
-          <button type="button" data-study-focus-mode aria-label={_(msg({ id: 'study.focus-mode', message: 'Focus mode' }))} aria-pressed={focusModeEnabled} onClick={() => setFocusModeEnabled(!focusModeEnabled)} className={`study-shell-tool grid min-h-11 min-w-11 place-items-center rounded-xl border bg-[var(--sf-surface-control)] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusModeEnabled ? 'border-[var(--sf-brand)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text-muted)]'}`}>
+          <button type="button" data-study-focus-mode aria-label={_(msg({ id: 'study.focus-mode', message: 'Focus mode' }))} aria-pressed={focusModeEnabled} onClick={() => setFocusModeEnabled(!focusModeEnabled)} className={`study-shell-tool grid min-h-11 min-w-11 place-items-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-full border bg-[var(--sf-surface-control)] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusModeEnabled ? 'border-[var(--sf-brand)] text-[var(--sf-brand-text)]' : 'border-[var(--sf-border)] text-[var(--sf-text-muted)]'}`}>
             <Focus size={18} aria-hidden="true" />
           </button>
-          <button type="button" data-study-summary onClick={() => setSummaryOpen(true)} className="study-shell-summary min-h-11 min-w-11 rounded-xl px-3 text-sm font-bold focus-visible:outline-2">
+          <button type="button" data-study-summary onClick={() => setSummaryOpen(true)} className="study-shell-summary min-h-11 min-w-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] px-3 text-sm font-bold focus-visible:outline-2">
             <ListChecks size={18} aria-hidden="true" className="study-shell-summary__icon" />
             <span className="study-shell-summary__label"><Trans {...msg({ context: 'study-view.summary', message: 'Summary' })} /></span>
           </button>
@@ -491,12 +491,12 @@ export function StudyView({
       <div className="study-shell-aside" data-study-aside>
       <StudyBoardColumn combo={comboRun} xpPop={xpPop} showCombo={!focusModeEnabled} />
       <div className="study-shell-combo mb-2 flex min-h-7 w-full justify-end" aria-live="polite">
-        {!focusModeEnabled && comboCount >= 2 && <span data-study-combo={comboCount} className="rounded-xl border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1 font-display text-xs font-black uppercase tracking-wider text-[var(--sf-brand-text)]"><span className="study-shell-combo__text"><Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: comboCount }} /></span></span>}
+        {!focusModeEnabled && comboCount >= 2 && <span data-study-combo={comboCount} className="rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-brand)] bg-[var(--sf-surface-raised)] px-3 py-1 font-display text-xs font-black uppercase tracking-wider text-[var(--sf-brand-text)]"><span className="study-shell-combo__text"><Trans {...msg({ context: 'study.combo', message: 'Combo ×{count}' })} values={{ count: comboCount }} /></span></span>}
       </div>
 
       <label data-study-recall-mode className="mb-4 flex flex-wrap items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest text-[var(--sf-text-muted)]">
         <span className="study-shell-recall__label"><Trans {...msg({ context: 'study.recall-mode', message: 'Recall mode' })} /></span>
-        <select name="study-recall-mode" value={activeRecallMode} onChange={event => onRecallMode(resolveStudyRecallMode(card, event.target.value as RecallMode))} className="study-shell-recall__select min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2">
+        <select name="study-recall-mode" value={activeRecallMode} onChange={event => onRecallMode(resolveStudyRecallMode(card, event.target.value as RecallMode))} className="study-shell-recall__select min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-input-radius,999px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] px-3 py-2 text-sm normal-case tracking-normal text-[var(--sf-text)] focus-visible:outline-2 focus-visible:outline-offset-2">
           <option value="target-to-native"><Trans {...msg({ context: 'study.recall-mode.target-to-native', message: '{targetLanguage} → {nativeLanguage}' })} values={{ targetLanguage, nativeLanguage }} /></option>
           <option value="adaptive"><Trans {...msg({ context: 'study.recall-mode.adaptive', message: 'Adaptive difficulty' })} /></option>
           <option value="native-to-target"><Trans {...msg({ context: 'study.recall-mode.native-to-target', message: '{nativeLanguage} → {targetLanguage}' })} values={{ targetLanguage, nativeLanguage }} /></option>
@@ -511,12 +511,12 @@ export function StudyView({
       <div ref={studyCardRef} data-study-card className="relative mb-5 w-full max-w-3xl touch-pan-y select-none transition-transform duration-100 ease-out motion-reduce:transition-none" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={resetTouch}>
         {/* Swipe Feedback Badges */}
         {swipeBadge === 'good' && (
-          <div className="absolute left-6 top-6 z-50 rounded-2xl border-2 border-emerald-400 bg-emerald-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
+          <div className="absolute left-6 top-6 z-50 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border-2 border-emerald-400 bg-emerald-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
             <Trans {...msg({ context: 'study.swipe.good', message: 'GOOD 👍' })} />
           </div>
         )}
         {swipeBadge === 'again' && (
-          <div className="absolute right-6 top-6 z-50 rounded-2xl border-2 border-rose-400 bg-rose-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
+          <div className="absolute right-6 top-6 z-50 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border-2 border-rose-400 bg-rose-500/90 px-4 py-1.5 text-sm font-black uppercase tracking-widest text-white shadow-xl backdrop-blur-md">
             <Trans {...msg({ context: 'study.swipe.again', message: 'AGAIN 👎' })} />
           </div>
         )}
@@ -524,7 +524,7 @@ export function StudyView({
         <CrystalFamilySlot crystal={false}>{learnFirst}</CrystalFamilySlot>
         <GsapEntrance animationKey={index} direction={direction} variant="step">
           {needsIntroduction ? (
-            <section data-study-introduction className="study-shell-intro mx-auto w-full max-w-2xl rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 shadow-xl sm:p-5" aria-labelledby="study-introduction-heading">
+            <section data-study-introduction className="study-shell-intro mx-auto w-full max-w-2xl rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-card-radius,22px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 shadow-xl sm:p-5" aria-labelledby="study-introduction-heading">
               <div className="study-shell-intro__head mb-4 text-center">
                 <h2 id="study-introduction-heading" className="study-shell-intro__title text-lg font-black text-[var(--sf-text)]"><Trans {...msg({ context: 'study-view.meet-this-word', message: 'Meet this word' })} /></h2>
                 <p className="study-shell-intro__lede mt-1 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'study-view.take-a-moment-to-review-the-card-before-recall-practice', message: 'Take a moment to review the card before recall practice.' })} /></p>
@@ -544,7 +544,7 @@ export function StudyView({
                   recallTransitionPendingRef.current = true;
                   onBeginStudyRecall?.();
                 }}
-                className="study-shell-intro__begin mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-[var(--sf-brand)] px-4 py-3 text-sm font-black text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none"
+                className="study-shell-intro__begin mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] bg-[var(--sf-brand)] px-4 py-3 text-sm font-black text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] motion-reduce:transition-none"
               ><Trans {...msg({ context: 'study-view.i-ve-reviewed-it-start-recall', message: 'I’ve reviewed it — start recall' })} /></button>
             </section>
           ) : revealed ? (
@@ -597,11 +597,11 @@ export function StudyView({
       <CrystalFamilySlot crystal>{learnFirst}</CrystalFamilySlot>
 
       <div className="study-shell-nav flex items-center gap-4 sm:gap-6">
-        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={paused || index === 0} className="study-shell-nav__step crystal-chamfer-sm min-h-11 min-w-11 border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-3 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label={_(msg({ id: 'study.previous-card', message: 'Previous card' }))}>
+        <button type="button" onClick={() => onIndex(Math.max(0, index - 1))} disabled={paused || index === 0} className="study-shell-nav__step crystal-chamfer-sm min-h-11 min-w-11 [html:not([data-theme-family=crystal])_&]:rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-control)] p-3 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] transition hover:border-[var(--sf-brand)] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50" aria-label={_(msg({ id: 'study.previous-card', message: 'Previous card' }))}>
           <ChevronLeft size={24} aria-hidden="true" />
         </button>
-        <div className="study-shell-nav__position crystal-chamfer-sm border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-3 font-mono font-bold tabular-nums text-[var(--sf-brand-text)]">{index + 1} / {cards.length}</div>
-        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={paused || index === cards.length - 1} className="study-shell-nav__step crystal-chamfer-sm min-h-11 min-w-11 bg-[var(--sf-brand)] p-3 text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-50" aria-label={_(msg({ id: 'study.next-card', message: 'Next card' }))}>
+        <div className="study-shell-nav__position crystal-chamfer-sm [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-3 font-mono font-bold tabular-nums text-[var(--sf-brand-text)]">{index + 1} / {cards.length}</div>
+        <button data-color-role="primary" type="button" onClick={() => onIndex(Math.min(cards.length - 1, index + 1))} disabled={paused || index === cards.length - 1} className="study-shell-nav__step crystal-chamfer-sm min-h-11 min-w-11 [html:not([data-theme-family=crystal])_&]:rounded-full bg-[var(--sf-brand)] p-3 text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none motion-reduce:transition-none disabled:opacity-50" aria-label={_(msg({ id: 'study.next-card', message: 'Next card' }))}>
           <ChevronRight size={24} aria-hidden="true" />
         </button>
       </div>
@@ -621,7 +621,7 @@ export function StudyView({
         targetLanguage={cards[0]?.language ?? 'en'}
       />
 
-      <div className="study-shell-shortcuts mx-auto mt-8 hidden w-full max-w-sm rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-center shadow-xs md:block">
+      <div className="study-shell-shortcuts mx-auto mt-8 hidden w-full max-w-sm rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-center shadow-xs md:block">
         <div className="study-shell-shortcuts__title mb-3 flex items-center justify-center gap-1.5 text-xs font-black text-[var(--sf-text-muted)]"><Keyboard size={13} className="text-[var(--sf-brand-text)]" aria-hidden="true" /><span><Trans {...msg({ context: 'study.shortcuts', message: 'Study shortcuts' })} /></span></div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[10px] text-[var(--sf-text-muted)] font-medium text-left">
           <Shortcut keys="Space" label={_(msg({ id: 'study.shortcut.flip-card', message: 'Flip card' }))} />

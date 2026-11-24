@@ -173,7 +173,7 @@ export default function WeeklyRecapDialog({ open, onOpenChange, stats, showingSa
           <Dialog.Close aria-label={_(msg({ id: 'weeklyRecap.dialog.close', message: 'Close' }))} className="weekly-recap-dialog__close liquid-control"><X size={18} /></Dialog.Close>
         </div>
         <div className="weekly-recap-dialog__body">
-          {showingSavedStats && <p role="status" className="mb-3 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'weeklyRecap.saved-warning', message: 'Showing saved recap. Recent reviews may not be included.' })} /></p>}
+          {showingSavedStats && <p role="status" className="mb-3 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3 text-sm text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'weeklyRecap.saved-warning', message: 'Showing saved recap. Recent reviews may not be included.' })} /></p>}
           <WeeklyRecapScreen
             content={content}
             intro={{

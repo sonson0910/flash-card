@@ -254,7 +254,7 @@ function LevelRow({ model, actions, facts }: { readonly model: TodayScreenModel;
             {facts.sessionsToLevel !== null && <span>{_({ ...msg({ id: 'today.hero.level-eta', message: 'Level {level} after ≈ {sessions, plural, one {# session} other {# sessions}}' }), values: { level: level.level + 1, sessions: facts.sessionsToLevel } })}</span>}
           </div>
           <div className="today-level-track" role="progressbar" aria-label={_(msg({ id: 'today.hero.level-progress', message: 'Level progress' }))} aria-valuemin={0} aria-valuemax={100} aria-valuenow={level.percent}>
-            <span style={{ width: `${level.percent}%` }} />
+            <span className="sf-grow" style={{ width: `${level.percent}%` }} />
           </div>
         </div>
       )}
@@ -397,14 +397,14 @@ function ClassicDesktopHero({ model, actions, ownerId, targetLanguage, translati
           <GoalChip model={model} />
           {streakChip}
         </div>
-        <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title">
+        <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title sf-rise">
           <span className="today-hero-line">{greeting}</span>
           <span className="today-hero-line">
             <Trans {...msg({ id: 'today.hero.minutes', message: '<0>{minutes, plural, one {# minute} other {# minutes}}</0> today.' })} values={{ minutes: facts.minutes }} components={{ 0: <em /> }} />
           </span>
         </h1>
         <p className="sr-only" role="status" aria-live="polite">{model.message}</p>
-        <div className="today-session-card">
+        <div className="today-session-card sf-rise-2">
           <div className="today-session-head">
             <h2>{_(msg({ id: 'today.hero.session', message: "Today's session" }))}</h2>
             <span>{_({ ...msg({ id: 'today.hero.session-size', message: '{count, plural, one {# card} other {# cards}} planned' }), values: { count: facts.readyCount } })}</span>
@@ -416,7 +416,7 @@ function ClassicDesktopHero({ model, actions, ownerId, targetLanguage, translati
               actions={actions}
               facts={facts}
               shortcut="Space"
-              className="today-primary"
+              className="today-primary sf-press"
               label={_({ ...msg({ id: 'today.hero.start', message: "Start today's session · {minutes} min" }), values: { minutes: facts.minutes } })}
             />
             <p className="today-session-reward">
@@ -428,7 +428,7 @@ function ClassicDesktopHero({ model, actions, ownerId, targetLanguage, translati
         </div>
         <LevelRow model={model} actions={actions} facts={facts} />
       </div>
-      <aside className="today-words" aria-labelledby="today-words-heading" data-today-words="true">
+      <aside className="today-words sf-rise-2" aria-labelledby="today-words-heading" data-today-words="true">
         <WordsPanel
           model={model}
           actions={actions}
@@ -458,7 +458,7 @@ function ClassicCompactHero({ model, actions, streakChip }: TodayReadyHeroProps)
         <p className="today-compact-date">{dateLabel}</p>
         {streakChip}
       </div>
-      <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title">
+      <h1 id="daily-today-heading" ref={assignHeading} tabIndex={-1} className="today-hero-title sf-rise">
         <Trans {...msg({ id: 'today.hero.ready-words', message: '{count, plural, one {# word ready to <0>remember.</0>} other {# words ready to <0>remember.</0>}}' })} values={{ count: facts.readyCount }} components={{ 0: <em /> }} />
       </h1>
       <p className="sr-only" role="status" aria-live="polite">{model.message}</p>
@@ -482,7 +482,7 @@ function ClassicCompactHero({ model, actions, streakChip }: TodayReadyHeroProps)
         actions={actions}
         facts={facts}
         shortcut={null}
-        className="today-primary today-primary--wide"
+        className="today-primary today-primary--wide sf-press"
         label={_({ ...msg({ id: 'today.hero.start', message: "Start today's session · {minutes} min" }), values: { minutes: facts.minutes } })}
       />
       <div className="today-tiles">

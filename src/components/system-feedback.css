@@ -541,6 +541,47 @@ html[data-theme-family='classic'].dark .workspace-loading-panel .skeleton-sheen 
   background-size: 240% 100%;
 }
 
+:is(html[data-theme-family='classic'], html:not([data-theme-family])) .application-error-panel {
+  border-radius: var(--sf-panel-radius, 18px);
+  background: var(--sf-surface-glass);
+  -webkit-backdrop-filter: var(--sf-panel-blur, none);
+  backdrop-filter: var(--sf-panel-blur, none);
+}
+
+:is(html[data-theme-family='classic'], html:not([data-theme-family])) .application-error-warning-icon {
+  border-color: var(--sf-danger-line, color-mix(in srgb, var(--sf-danger) 28%, var(--sf-border)));
+  background: var(--sf-danger-soft, color-mix(in srgb, var(--sf-danger) 8%, var(--sf-surface)));
+}
+
+:is(html[data-theme-family='classic'], html:not([data-theme-family])) .application-error-panel h1 {
+  color: var(--sf-text-strong, var(--sf-text));
+  font-weight: var(--sf-display-weight, 380);
+}
+
+:is(html[data-theme-family='classic'], html:not([data-theme-family])) .application-error-title-emphasis {
+  font-style: var(--sf-em-style, italic);
+}
+
+:is(html[data-theme-family='classic'], html:not([data-theme-family])) .application-error-panel p {
+  color: var(--sf-text-body, var(--sf-text-muted));
+}
+
+:is(html[data-theme-family='classic'], html:not([data-theme-family])) .application-error-actions a {
+  background: var(--sf-surface-control);
+  box-shadow: var(--sf-secondary-shadow, none);
+}
+
+:is(html[data-theme-family='classic'], html:not([data-theme-family])) .workspace-loading-panel {
+  border-radius: var(--sf-panel-radius, 18px);
+  background: var(--sf-surface-glass);
+  -webkit-backdrop-filter: var(--sf-panel-blur, none);
+  backdrop-filter: var(--sf-panel-blur, none);
+}
+
+:is(html[data-theme-family='classic'], html:not([data-theme-family])) .workspace-loading-card {
+  border-radius: calc(var(--sf-panel-radius, 18px) - 4px);
+}
+
 @keyframes system-feedback-spin {
   to { transform: rotate(360deg); }
 }

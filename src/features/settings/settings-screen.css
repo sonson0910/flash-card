@@ -133,6 +133,7 @@
 .ss-lang-note { display: flex; gap: 10px; margin-top: 12px; padding: 12px 14px; border: 1px solid var(--ss-info-line); border-radius: 14px; background: var(--ss-info-bg); color: var(--ss-body); font-size: 12.5px; line-height: 1.5; }
 .ss-lang-note strong { font-weight: 650; color: var(--ss-text-strong); }
 .ss-lang-note svg { flex-shrink: 0; margin-top: 2px; color: var(--ss-accent-text); }
+:root:not([data-theme-family="crystal"]) .ss-lang-note svg { color: var(--sf-info, var(--ss-accent-text)); }
 :root[data-theme-family="crystal"] .ss-lang-meaning__option,
 :root[data-theme-family="crystal"] .ss-lang-preview,
 :root[data-theme-family="crystal"] .ss-lang-note { border-radius: 0; }

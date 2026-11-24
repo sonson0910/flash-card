@@ -178,7 +178,7 @@ export function applyLibraryFilter(actions: LibraryScreenActions, filter: Librar
 
 function DeferredLibraryFallback({ label }: { label: ReactNode }) {
   return (
-    <div className="skeleton-sheen min-h-40 rounded-[26px] border border-[var(--sf-border)]" role="status">
+    <div className="skeleton-sheen min-h-40 rounded-[26px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)]" role="status">
       <span className="sr-only">{label}</span>
     </div>
   );

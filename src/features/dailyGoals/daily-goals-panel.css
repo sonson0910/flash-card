@@ -1,6 +1,6 @@
 /* Daily goals: a classic card and the Crystal Star chamfered panel (AnimeToday "DAILY GOALS"). */
 .daily-goals-panel {
-  --dg-track: color-mix(in srgb, var(--sf-text) 10%, transparent);
+  --dg-track: var(--sf-track, color-mix(in srgb, var(--sf-text) 10%, transparent));
   --dg-fill: var(--sf-brand);
   --dg-accent: var(--sf-brand-text);
   box-sizing: border-box;
@@ -12,7 +12,12 @@
   color: var(--sf-text);
 }
 /* The chamfer utility draws the Crystal fill, so the plain card fill stays out of that family. */
-:root:not([data-theme-family="crystal"]) .daily-goals-panel { background: var(--sf-surface); }
+:root:not([data-theme-family="crystal"]) .daily-goals-panel {
+  border-radius: var(--sf-panel-radius, 18px);
+  background: var(--sf-surface-glass);
+  -webkit-backdrop-filter: var(--sf-panel-blur, none);
+  backdrop-filter: var(--sf-panel-blur, none);
+}
 .daily-goals-panel__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; color: var(--sf-text-muted); font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
 .daily-goals-panel__title { display: flex; align-items: center; gap: 8px; margin: 0; color: inherit; font: inherit; letter-spacing: inherit; }
 .daily-goals-panel__mark { display: none; }

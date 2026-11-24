@@ -209,8 +209,8 @@ function PersonalLibraryPaths({
               <span><Trans {...msg({ id: 'paths.personal.due-count', message: '{count} due for review today' })} values={{ count: formatNumber(library.dueToday) }} /></span>
             </p>
             <div className="paths-hero-actions">
-              {library.total > 0 && <button type="button" onClick={actions.continueReview} className="catalog-feature-continue paths-cta brand-action"><span className="paths-cta-shine" aria-hidden="true" /><span className="paths-btn-label"><Trans {...msg({ context: 'catalog.action.continue-review', message: 'Continue review' })} /></span></button>}
-              <button type="button" onClick={actions.openVocabulary} className="paths-ghost"><span className="paths-btn-label"><Trans {...msg({ context: 'catalog.action.open-vocabulary', message: 'Open vocabulary' })} /></span></button>
+              {library.total > 0 && <button type="button" onClick={actions.continueReview} className={`catalog-feature-continue paths-cta brand-action${!isCrystal ? ' sf-press' : ''}`}><span className="paths-cta-shine" aria-hidden="true" /><span className="paths-btn-label"><Trans {...msg({ context: 'catalog.action.continue-review', message: 'Continue review' })} /></span></button>}
+              <button type="button" onClick={actions.openVocabulary} className={`paths-ghost${!isCrystal ? ' sf-press' : ''}`}><span className="paths-btn-label"><Trans {...msg({ context: 'catalog.action.open-vocabulary', message: 'Open vocabulary' })} /></span></button>
             </div>
           </div>
           {showLumi && <LumiLink message={lumiMessage} />}
@@ -250,7 +250,7 @@ function TrackCard({ track, selected, progressAvailable, isCrystal, onSelect }: 
   const label = i18n._(copy.label);
   const progress = percentOf(track.mastered, track.total);
   return (
-    <button type="button" onClick={onSelect} aria-pressed={selected} className="catalog-track-card paths-book" data-hue={trackBookHue[track.id]}>
+    <button type="button" onClick={onSelect} aria-pressed={selected} className={`catalog-track-card paths-book${!isCrystal ? ' sf-lift' : ''}`} data-hue={trackBookHue[track.id]}>
       <span className="paths-book-spine" aria-hidden="true" />
       {isCrystal && <span className="paths-book-glyph" aria-hidden="true">{label.charAt(0)}</span>}
       {/* The kind chip follows the name in the DOM so the button is announced by its track name first; CSS shows the chip above it. */}
@@ -491,10 +491,10 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
               {pathUnits && pathUnits.length > 0 && <div className="paths-hero-actions">
                 {allUnitsComplete
                   ? <p className="paths-hero-done"><Trans {...msg({ context: 'paths.unit.all-complete', message: 'All units in this path are complete.' })} /></p>
-                  : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className="catalog-feature-continue paths-cta brand-action"><span className="paths-cta-shine" aria-hidden="true" /><span className="paths-btn-label">{featuredUnit
+                  : <button type="button" onClick={actions.openNextUnitPreview} disabled={continueDisabled} className={`catalog-feature-continue paths-cta brand-action${!isCrystal ? ' sf-press' : ''}`}><span className="paths-cta-shine" aria-hidden="true" /><span className="paths-btn-label">{featuredUnit
                     ? <Trans {...msg({ id: 'paths.hero.continue-unit', message: 'Continue unit {ordinal}' })} values={{ ordinal: featuredUnit.unit.ordinal }} />
                     : <Trans {...msg({ context: 'paths.action.continue', message: 'Continue' })} />}</span></button>}
-                <button type="button" onClick={() => revealSection('catalog-units-heading')} className="paths-ghost"><span className="paths-btn-label"><Trans {...msg({ id: 'paths.hero.see-all-units', message: 'See all units' })} /></span></button>
+                <button type="button" onClick={() => revealSection('catalog-units-heading')} className={`paths-ghost${!isCrystal ? ' sf-press' : ''}`}><span className="paths-btn-label"><Trans {...msg({ id: 'paths.hero.see-all-units', message: 'See all units' })} /></span></button>
               </div>}
             </div>
             {showLumi && <LumiLink message={lumiMessage} />}
@@ -529,7 +529,7 @@ export function CatalogScreen({ model, actions }: CatalogScreenProps) {
               </summary>
             <form className="mt-3" onSubmit={event => event.preventDefault()} role="search">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <label htmlFor="catalog-term" className="min-w-0 text-sm font-bold"><Trans {...msg({ context: 'catalog.filters.search', message: 'Search vocabulary' })} /><div className="glass-field mt-2 flex min-h-11 items-center rounded-xl px-3"><Search className="mr-2 size-4 shrink-0 text-[var(--sf-text-muted)]" aria-hidden="true" /><input id="catalog-term" name="catalog-term" type="search" autoComplete="off" value={model.filters.term} onChange={event => actions.changeTerm(event.target.value)} className="min-h-11 min-w-0 flex-1 bg-transparent py-2" placeholder={i18n._(msg({ id: 'catalog.filters.search-placeholder', message: 'e.g. analysis…' }))} /></div></label>
+                <label htmlFor="catalog-term" className="min-w-0 text-sm font-bold"><Trans {...msg({ context: 'catalog.filters.search', message: 'Search vocabulary' })} /><div className="glass-field mt-2 flex min-h-11 items-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-input-radius,12px)] px-3 [html:not([data-theme-family=crystal])_&]:px-3.5"><Search className="mr-2 size-4 shrink-0 text-[var(--sf-text-muted)]" aria-hidden="true" /><input id="catalog-term" name="catalog-term" type="search" autoComplete="off" value={model.filters.term} onChange={event => actions.changeTerm(event.target.value)} className="min-h-11 min-w-0 flex-1 bg-transparent py-2" placeholder={i18n._(msg({ id: 'catalog.filters.search-placeholder', message: 'e.g. analysis…' }))} /></div></label>
                 <SelectFilter id="catalog-cefr" label={i18n._(msg({ id: 'catalog.filters.cefr', message: 'CEFR level' }))} value={model.filters.cefr} options={model.filters.cefrOptions} onChange={actions.changeCefr} />
                 <SelectFilter id="catalog-topic" label={i18n._(msg({ id: 'catalog.filters.topic', message: 'Topic' }))} value={model.filters.topic} options={model.filters.topicOptions} onChange={actions.changeTopic} />
                 <SelectFilter id="catalog-pos" label={i18n._(msg({ id: 'catalog.filters.part-of-speech', message: 'Part of speech' }))} value={model.filters.partOfSpeech} options={model.filters.partOfSpeechOptions} onChange={actions.changePartOfSpeech} />

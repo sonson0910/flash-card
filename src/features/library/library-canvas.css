@@ -41,31 +41,23 @@
 
 .library-canvas-title h2 {
   margin: 0;
-  color: var(--sf-text);
+  color: var(--sf-text-strong);
   font-family: var(--sf-font-display);
   font-size: clamp(2.5rem, 5vw, 3.25rem);
-  font-weight: 380;
+  font-weight: var(--sf-display-weight, 380);
   letter-spacing: -.03em;
-  line-height: 1.05;
-}
-
-:root.dark .library-canvas-title h2 {
-  font-weight: 440;
+  line-height: 1;
 }
 
 .library-canvas-summary {
-  margin: .5rem 0 0;
-  color: color-mix(in srgb, var(--sf-text) 60%, var(--sf-text-muted));
+  margin: .625rem 0 0;
+  color: var(--sf-text-muted);
   font-size: .875rem;
-}
-
-:root.dark .library-canvas-summary {
-  color: color-mix(in srgb, var(--sf-text) 40%, var(--sf-text-muted));
 }
 
 .library-canvas-summary > span:first-child {
   color: var(--sf-text);
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--sf-font-mono);
 }
 
 .library-canvas-summary strong {
@@ -80,13 +72,17 @@
   height: 3rem;
   box-sizing: border-box;
   align-items: center;
-  gap: .6rem;
+  gap: .625rem;
   padding: 0 .75rem 0 1rem;
   border: 1px solid var(--sf-border);
-  border-radius: 999px;
+  border-radius: var(--sf-input-radius, 999px);
   background: var(--sf-surface-control);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sf-text) 4%, transparent);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--sf-shadow-tint) 6%, transparent);
   color: var(--sf-text-muted);
+}
+
+:root.dark:not([data-theme-family="crystal"]) .library-canvas-search {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sf-flare) 4%, transparent);
 }
 
 .library-canvas-search input {
@@ -97,25 +93,21 @@
   background: transparent;
   color: var(--sf-text);
   font: inherit;
-  font-size: .88rem;
+  font-size: .875rem;
 }
 
 .library-canvas-search kbd {
   display: inline-flex;
-  min-width: 1.3rem;
+  min-width: 1.5rem;
   height: 1.5rem;
   box-sizing: border-box;
   align-items: center;
   justify-content: center;
-  padding: 0 .35rem;
+  padding: 0 .5rem;
   border: 1px solid var(--sf-border);
-  border-radius: .35rem;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: .7rem;
-}
-
-:root.dark .library-canvas-search {
-  border-radius: 14px;
+  border-radius: 6px;
+  font-family: var(--sf-font-mono);
+  font-size: .6875rem;
 }
 
 .library-canvas-create,
@@ -125,22 +117,23 @@
   align-items: center;
   gap: .5rem;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--sf-button-radius, 999px);
   padding: 0 1.25rem 0 1rem;
-  /* Ink & Paper's primary action is ink; Midnight Aurora's is the brand cyan. */
-  background: var(--sf-text);
-  color: var(--sf-on-brand);
+  background: var(--sf-primary-bg);
+  color: var(--sf-on-primary);
   font-size: .875rem;
   font-weight: 650;
   white-space: nowrap;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--sf-text) 20%, transparent), 0 12px 24px -16px color-mix(in srgb, var(--sf-text) 70%, transparent);
+  box-shadow: 0 12px 24px -12px rgb(29 26 22 / .9);
 }
 
-:root.dark .library-canvas-create,
-:root.dark .library-canvas-study {
-  border-radius: 16px;
-  background: var(--sf-brand);
-  box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--sf-brand) 70%, transparent);
+:root.dark:not([data-theme-family="crystal"]) .library-canvas-create {
+  border-radius: 14px;
+  box-shadow: 0 14px 34px -14px rgb(40 211 244 / .8), inset 0 1px 0 rgb(255 255 255 / .5);
+}
+
+:root.dark:not([data-theme-family="crystal"]) .library-canvas-study {
+  box-shadow: var(--sf-primary-shadow);
 }
 
 .library-canvas-create:hover,
@@ -224,21 +217,23 @@
   color: var(--sf-text);
 }
 
-.library-canvas-rail button.is-active,
+.library-canvas-decks button.is-active {
+  border-color: transparent;
+  background: var(--sf-nav-active-bg, var(--sf-text));
+  color: var(--sf-nav-active-text, var(--sf-on-brand));
+}
+
+.library-canvas-filters button.is-active,
 .library-canvas-view-toggle button.is-active {
   border-color: transparent;
-  background: var(--sf-text);
-  color: var(--sf-on-brand);
+  background: var(--sf-nav-active-bg, var(--sf-text));
+  color: var(--sf-nav-active-text, var(--sf-on-brand));
 }
 
-:root.dark .library-canvas-rail button.is-active,
-:root.dark .library-canvas-view-toggle button.is-active {
-  background: color-mix(in srgb, var(--sf-text) 10%, transparent);
-  color: var(--sf-text);
-}
-
-:root.dark .library-canvas-decks button.is-active {
-  background: color-mix(in srgb, var(--sf-text) 8%, transparent);
+:root.dark:not([data-theme-family="crystal"]) .library-canvas-filters button.is-active,
+:root.dark:not([data-theme-family="crystal"]) .library-canvas-view-toggle button.is-active {
+  background: color-mix(in srgb, var(--sf-flare) 10%, transparent);
+  color: var(--sf-flare);
 }
 
 .library-canvas-rail button:focus-visible,
@@ -249,7 +244,7 @@
 
 .library-canvas-decks small {
   opacity: .65;
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--sf-font-mono);
   font-size: .71875rem;
   font-weight: 500;
 }
@@ -275,8 +270,8 @@
 .library-canvas-filters [data-library-filter="mastered"] { --library-filter-dot: var(--sf-reward); }
 :root.dark .library-canvas-filters [data-library-filter="learning"] { --library-filter-dot: var(--sf-brand); }
 
-:root.dark:not([data-theme-family="crystal"]) .library-canvas-filters button[data-library-filter]:not([data-library-filter="all"], [data-library-filter="new"], [data-library-filter="starred"])::before {
-  box-shadow: 0 0 8px var(--library-filter-dot);
+:root.dark:not([data-theme-family="crystal"]) .library-canvas-filters button[data-library-filter]:not([data-library-filter="new"], [data-library-filter="starred"])::before {
+  box-shadow: 0 0 6px var(--library-filter-dot);
 }
 
 .library-canvas-rail-divider {
@@ -294,7 +289,7 @@
   border: 1px solid var(--sf-border);
   border-radius: 12px;
   padding: 3px;
-  background: var(--sf-surface-control);
+  background: var(--sf-surface-raised);
 }
 
 .library-canvas-view-toggle button {
@@ -335,9 +330,10 @@
   align-items: center;
   gap: .4rem;
   border: 1px solid var(--sf-border);
-  border-radius: .7rem;
+  border-radius: var(--sf-button-radius, 999px);
   padding: 0 .85rem;
   background: var(--sf-surface-control);
+  box-shadow: var(--sf-secondary-shadow, none);
   color: var(--sf-text);
   font-size: .8rem;
   font-weight: 700;
@@ -350,11 +346,12 @@
 }
 
 /* Study stays the primary action inside the toolbar row: ink on paper,
-   on-brand text over the dark-theme brand fill. */
+   on-primary text over the dark-theme brand fill. */
 .library-canvas-actions .library-canvas-study {
   border: 0;
-  background: var(--sf-text);
-  color: var(--sf-on-brand);
+  background: var(--sf-primary-bg);
+  color: var(--sf-on-primary);
+  box-shadow: var(--sf-primary-shadow);
 }
 
 .library-canvas-collection-tools {
@@ -385,8 +382,8 @@
   min-height: 2rem;
   appearance: none;
   border: 1px solid var(--sf-border);
-  border-radius: .55rem;
-  padding: 0 1.7rem 0 .65rem;
+  border-radius: var(--sf-input-radius, 999px);
+  padding: 0 1.8rem 0 .85rem;
   background: var(--sf-surface-control);
   color: var(--sf-text);
   font: inherit;
@@ -396,7 +393,7 @@
 
 .library-canvas-sort > svg {
   position: absolute;
-  right: .45rem;
+  right: .6rem;
   pointer-events: none;
 }
 
@@ -412,10 +409,10 @@
   flex-wrap: wrap;
   gap: .5rem;
   margin-top: .75rem;
-  padding: .45rem .6rem;
-  border: 1px solid color-mix(in srgb, var(--sf-brand) 34%, var(--sf-border));
-  border-radius: .75rem;
-  background: color-mix(in srgb, var(--sf-brand) 7%, var(--sf-surface));
+  padding: .45rem .75rem;
+  border: 1px solid var(--sf-accent-line, color-mix(in srgb, var(--sf-brand) 34%, var(--sf-border)));
+  border-radius: var(--sf-panel-radius, 18px);
+  background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 7%, var(--sf-surface)));
   color: var(--sf-text);
   font-size: .76rem;
 }
@@ -430,9 +427,10 @@
   align-items: center;
   gap: .35rem;
   border: 1px solid var(--sf-border);
-  border-radius: .55rem;
-  padding: 0 .65rem;
+  border-radius: var(--sf-button-radius, 999px);
+  padding: 0 .75rem;
   background: var(--sf-surface-control);
+  box-shadow: var(--sf-secondary-shadow, none);
   color: var(--sf-text);
   font-size: .74rem;
   font-weight: 800;
@@ -460,8 +458,11 @@
 
 /* Ink & Paper: paper cards lifted by a warm hairline shadow. */
 .library-word-card {
-  --library-card-text-3: color-mix(in srgb, var(--sf-text-muted) 80%, var(--sf-surface));
-  --library-card-body: color-mix(in srgb, var(--sf-text) 60%, var(--sf-text-muted));
+  --library-card-text-3: var(--sf-text-subtle);
+  --library-card-body: var(--sf-text-body);
+  --lc-mini-radius: 16px;
+  --lc-img-margin: 10px 10px 0;
+  --lc-img-radius: 9px;
   position: relative;
   display: flex;
   min-width: 0;
@@ -469,33 +470,33 @@
   flex-direction: column;
   overflow: hidden;
   border: 0;
-  border-radius: 16px;
+  border-radius: var(--lc-mini-radius);
   background: var(--sf-card-bg, var(--sf-surface));
   color: var(--sf-text);
   box-shadow:
-    inset 0 1px 0 var(--sf-surface),
-    inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 6%, transparent),
-    0 1px 2px color-mix(in srgb, var(--sf-text) 8%, transparent),
-    0 16px 30px -20px color-mix(in srgb, var(--sf-text) 40%, transparent);
+    inset 0 1px 0 var(--sf-flare),
+    inset 0 0 0 1px rgb(29 26 22 / .06),
+    0 1px 2px rgb(60 40 20 / .08),
+    0 16px 30px -20px rgb(60 40 20 / .4);
   cursor: pointer;
   transition: transform .18s ease, box-shadow .18s ease, filter .22s ease;
 }
 
 /* Midnight Aurora: a 1.5px tier rim drawn as a border-box gradient. */
-:root.dark .library-word-card {
-  --library-card-text-3: color-mix(in srgb, var(--sf-text-muted) 70%, var(--sf-surface));
-  --library-card-body: color-mix(in srgb, var(--sf-text) 40%, var(--sf-text-muted));
+:root.dark:not([data-theme-family="crystal"]) .library-word-card {
+  --lc-mini-radius: 22px;
+  --lc-img-margin: 0;
+  --lc-img-radius: 0;
   border: 1.5px solid transparent;
-  border-radius: 22px;
   background:
     var(--sf-solid-card, var(--sf-card-bg, var(--sf-surface))) padding-box,
     var(--library-card-rim, linear-gradient(var(--sf-border), var(--sf-border))) border-box;
   box-shadow: 0 24px 50px -28px rgb(0 0 0 / .9), var(--library-card-glow, 0 0 0 0 transparent);
 }
 
-:root.dark .library-word-card--new { --library-card-rim: var(--sf-rim-new); }
-:root.dark .library-word-card--learning { --library-card-rim: var(--sf-rim-learning); --library-card-glow: 0 0 36px -14px color-mix(in srgb, var(--sf-brand) 50%, transparent); }
-:root.dark .library-word-card--mastered { --library-card-rim: var(--sf-gold-rim); --library-card-glow: 0 0 40px -14px color-mix(in srgb, var(--sf-reward) 50%, transparent); }
+:root.dark:not([data-theme-family="crystal"]) .library-word-card--new { --library-card-rim: var(--sf-rim-new); }
+:root.dark:not([data-theme-family="crystal"]) .library-word-card--learning { --library-card-rim: var(--sf-rim-learning); --library-card-glow: 0 0 36px -14px color-mix(in srgb, var(--sf-brand) 50%, transparent); }
+:root.dark:not([data-theme-family="crystal"]) .library-word-card--mastered { --library-card-rim: var(--sf-gold-rim); --library-card-glow: 0 0 40px -14px color-mix(in srgb, var(--sf-reward) 50%, transparent); }
 
 .library-word-card:hover,
 .library-word-card:focus-visible {
@@ -510,45 +511,46 @@
 /* Cover tones cycle per category: teal / violet / amber in Midnight Aurora,
    sage / paper / peach in Ink & Paper. */
 .library-word-cover {
-  --library-cover-accent: var(--sf-success);
-  --library-cover-fill: color-mix(in srgb, var(--sf-success) 12%, var(--sf-surface));
+  --library-cover-accent: var(--sf-second-text);
+  --library-cover-glyph: color-mix(in srgb, var(--sf-success) 22%, transparent);
+  --library-cover-fill: #e3ebe3;
   position: relative;
   height: 7.25rem;
   flex-shrink: 0;
   overflow: hidden;
-  margin: 10px 10px 0;
-  border-radius: 9px;
+  margin: var(--lc-img-margin);
+  border-radius: var(--lc-img-radius);
   background: var(--library-cover-fill);
 }
 
 .library-word-cover--violet {
   --library-cover-accent: var(--sf-text-muted);
-  --library-cover-fill: color-mix(in srgb, color-mix(in srgb, var(--sf-reward) 30%, var(--sf-text)) 12%, var(--sf-surface));
+  --library-cover-glyph: color-mix(in srgb, var(--sf-primary-bg) 14%, transparent);
+  --library-cover-fill: #ece4d6;
 }
 
 .library-word-cover--amber {
-  --library-cover-accent: var(--sf-brand);
-  --library-cover-fill: color-mix(in srgb, var(--sf-brand) 14%, var(--sf-surface));
+  --library-cover-accent: var(--sf-brand-text);
+  --library-cover-glyph: color-mix(in srgb, var(--sf-brand) 20%, transparent);
+  --library-cover-fill: #f3e1cf;
 }
 
 :root.dark .library-word-cover {
-  --library-cover-tone: var(--sf-brand);
-  --library-cover-accent: var(--sf-brand);
-  margin: 0;
-  border-radius: 0;
-  background:
-    radial-gradient(120% 95% at 22% 0%, color-mix(in srgb, var(--library-cover-tone) 35%, transparent), transparent 72%),
-    linear-gradient(to bottom, color-mix(in srgb, var(--library-cover-tone) 10%, var(--sf-surface)) 45%, transparent);
+  --library-cover-accent: var(--sf-brand-text);
+  --library-cover-glyph: rgb(126 230 250 / .22);
+  background: radial-gradient(circle at 20% 0%, rgb(40 211 244 / .35), transparent 60%), #0d2530;
 }
 
 :root.dark .library-word-cover--violet {
-  --library-cover-tone: var(--sf-second);
-  --library-cover-accent: color-mix(in srgb, var(--sf-second) 70%, var(--sf-text));
+  --library-cover-accent: var(--sf-second-text);
+  --library-cover-glyph: rgb(201 179 240 / .22);
+  background: radial-gradient(circle at 20% 0%, rgb(150 108 215 / .45), transparent 60%), #16203a;
 }
 
 :root.dark .library-word-cover--amber {
-  --library-cover-tone: var(--sf-reward);
   --library-cover-accent: var(--sf-reward);
+  --library-cover-glyph: rgb(255 214 140 / .2);
+  background: radial-gradient(circle at 20% 0%, rgb(245 174 57 / .35), transparent 60%), #241d14;
 }
 
 .library-word-cover img {
@@ -567,17 +569,13 @@
   position: absolute;
   right: 10px;
   bottom: -2.125rem;
-  color: color-mix(in srgb, var(--library-cover-accent) 24%, transparent);
+  color: var(--library-cover-glyph);
   font-family: var(--sf-font-display);
   font-size: 9.375rem;
   font-style: italic;
   font-weight: 400;
   line-height: 1;
   pointer-events: none;
-}
-
-:root.dark .library-word-cover > span:not(.library-filter-mark) {
-  color: color-mix(in srgb, var(--library-cover-accent) 30%, transparent);
 }
 
 .library-word-cover small {
@@ -608,8 +606,8 @@
   gap: .25rem;
   border-radius: 999px;
   padding: .22rem .5rem;
-  background: var(--sf-surface);
-  color: var(--sf-brand-text);
+  background: var(--sf-due-bg, var(--sf-surface));
+  color: var(--sf-due-text, var(--sf-brand-text));
   font-size: .66rem;
 }
 
@@ -617,15 +615,14 @@
   height: 24px;
   box-sizing: border-box;
   gap: 5px !important;
-  border: 1px solid color-mix(in srgb, var(--sf-brand-text) 25%, transparent);
+  border: 1px solid var(--sf-due-line, color-mix(in srgb, var(--sf-brand-text) 25%, transparent));
   padding: 0 9px 0 8px !important;
   font-size: .6875rem;
   font-weight: 650;
 }
 
 :root.dark .library-word-due {
-  border-color: color-mix(in srgb, var(--sf-brand-text) 35%, transparent);
-  background: color-mix(in srgb, var(--sf-surface) 60%, transparent);
+  background: color-mix(in srgb, var(--sf-canvas) 60%, transparent);
   backdrop-filter: blur(6px);
 }
 
@@ -655,13 +652,12 @@
   border-radius: 50%;
   padding: 6px;
   background: var(--sf-brand);
-  color: var(--sf-on-brand);
+  color: var(--sf-surface);
 }
 
 :root.dark .library-word-star {
   background: var(--sf-reward);
-  color: var(--sf-on-brand);
-  box-shadow: 0 0 14px -2px color-mix(in srgb, var(--sf-reward) 70%, transparent);
+  color: #1f1403;
 }
 
 .library-word-body {
@@ -721,19 +717,22 @@
 }
 
 .library-word-card--mastered .library-word-meta i {
-  background: conic-gradient(var(--sf-reward), color-mix(in srgb, var(--sf-reward) 50%, var(--sf-surface)), var(--sf-reward));
+  border: 1px solid var(--sf-warn);
+  background: var(--sf-gold-rim);
 }
 
 :root.dark .library-word-card--new .library-word-meta i {
-  border: 1.5px solid color-mix(in srgb, var(--sf-text) 75%, var(--sf-text-muted));
+  border: 1.5px solid #c3ced5;
 }
 
 :root.dark .library-word-card--learning .library-word-meta i {
+  border: 0;
   background: var(--sf-brand);
   box-shadow: 0 0 8px var(--sf-brand);
 }
 
 :root.dark .library-word-card--mastered .library-word-meta i {
+  border: 0;
   background: var(--sf-reward);
   box-shadow: 0 0 8px var(--sf-reward);
 }
@@ -741,29 +740,20 @@
 .library-word-body h3 {
   overflow: hidden;
   margin: 6px 0 0;
-  color: var(--sf-text);
+  color: var(--sf-text-strong);
   font-family: var(--sf-font-display);
   font-size: 1.875rem;
-  font-weight: 380;
+  font-weight: var(--sf-display-weight, 380);
   letter-spacing: -.02em;
   line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-:root.dark .library-word-body h3 {
-  font-weight: 440;
-}
-
 /* The stressed syllable: italic terracotta on paper, tier colour at night. */
 .library-word-stress {
   color: var(--sf-brand);
-  font-style: italic;
-}
-
-:root.dark .library-word-stress {
-  color: var(--sf-brand);
-  font-style: normal;
+  font-style: var(--sf-em-style, italic);
 }
 
 :root.dark .library-word-card--learning .library-word-stress {
@@ -778,7 +768,7 @@
   margin-top: 4px;
   overflow: hidden;
   color: var(--library-card-text-3);
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--sf-font-mono);
   font-size: .75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -809,7 +799,7 @@
 .library-word-translation-row > span {
   flex-shrink: 0;
   color: var(--library-card-text-3);
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--sf-font-mono);
   font-size: .71875rem;
   text-transform: lowercase;
 }
@@ -908,14 +898,15 @@
 .library-canvas-notice {
   margin-top: 1.15rem;
   border: 1px solid var(--sf-border);
-  border-radius: var(--sf-card-radius, 1rem);
+  border-radius: var(--sf-panel-radius, var(--sf-card-radius, 18px));
   background: var(--sf-surface);
+  backdrop-filter: var(--sf-panel-blur, none);
   padding: 1.5rem;
 }
 
 .library-canvas-empty h3 {
   margin: .7rem 0 0;
-  color: var(--sf-text);
+  color: var(--sf-text-strong);
   font-size: 1.15rem;
 }
 
@@ -930,11 +921,12 @@
 .library-canvas-notice button {
   min-height: 2.5rem;
   border: 0;
-  border-radius: .7rem;
-  padding: 0 .9rem;
-  background: var(--sf-brand);
-  color: var(--sf-on-brand);
-  font-weight: 700;
+  border-radius: var(--sf-button-radius, 999px);
+  padding: 0 1rem;
+  background: var(--sf-primary-bg);
+  color: var(--sf-on-primary);
+  box-shadow: var(--sf-primary-shadow);
+  font-weight: 650;
   cursor: pointer;
 }
 
@@ -946,7 +938,7 @@
 }
 
 .library-canvas-notice strong {
-  color: var(--sf-text);
+  color: var(--sf-text-strong);
 }
 
 .library-canvas-notice p {
@@ -974,8 +966,9 @@
   display: grid;
   place-items: center;
   border: 1px solid var(--sf-border);
-  border-radius: .65rem;
+  border-radius: var(--sf-button-radius, 999px);
   background: var(--sf-surface-control);
+  box-shadow: var(--sf-secondary-shadow, none);
   color: var(--sf-text);
   cursor: pointer;
 }
@@ -987,7 +980,7 @@
 
 .library-canvas-pages span {
   color: var(--sf-text-muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--sf-font-mono);
   font-size: .78rem;
 }
 
@@ -1013,14 +1006,14 @@
 }
 
 .library-canvas-tools #library-tools > section {
-  border-radius: 0;
+  border-radius: var(--sf-panel-radius, 0);
   background: var(--sf-surface);
   box-shadow: inset 0 0 0 1px var(--sf-border);
 }
 
 .library-canvas-tools #library-tools input,
 .library-canvas-tools #library-tools select {
-  border-radius: .45rem;
+  border-radius: var(--sf-input-radius, .45rem);
 }
 
 .library-card-detail-overlay,
@@ -1104,13 +1097,14 @@
   position: fixed;
   z-index: 101;
   inset: 50% auto auto 50%;
-  width: min(calc(100vw - 2rem), 25rem);
+  width: min(calc(100vw - 2rem), 26rem);
   transform: translate(-50%, -50%);
-  border: 1px solid var(--sf-border);
-  border-radius: 1rem;
-  background: var(--sf-dialog-bg, var(--sf-surface));
-  box-shadow: 0 24px 64px -22px var(--sf-shadow);
-  padding: 1.4rem;
+  border: var(--sf-dialog-border, 1px solid var(--sf-border));
+  border-radius: var(--sf-dialog-radius, 18px);
+  background-color: var(--sf-surface);
+  background-image: var(--sf-dialog-bg);
+  box-shadow: var(--sf-dialog-shadow);
+  padding: 1.5rem 1.625rem;
   color: var(--sf-text);
 }
 
@@ -1122,35 +1116,48 @@
 
 .library-delete-dialog h2 {
   margin: 0;
-  font-size: 1.15rem;
+  color: var(--sf-text-strong);
+  font-family: var(--sf-font-display);
+  font-size: 1.5rem;
+  font-weight: var(--sf-display-weight, 380);
+  letter-spacing: -.02em;
+  line-height: 1.15;
 }
 
 .library-delete-dialog p {
-  margin: .6rem 0 1.2rem;
-  color: var(--sf-text-muted);
-  font-size: .88rem;
+  margin: .625rem 0 1.25rem;
+  color: var(--sf-text-body);
+  font-size: .9rem;
+  line-height: 1.55;
 }
 
 .library-delete-dialog > div {
   display: flex;
   justify-content: flex-end;
-  gap: .5rem;
+  gap: .625rem;
 }
 
 .library-delete-dialog button {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   border: 1px solid var(--sf-border);
-  border-radius: .65rem;
-  padding: 0 .85rem;
+  border-radius: var(--sf-button-radius, 999px);
+  padding: 0 1.125rem;
   background: var(--sf-surface-control);
+  box-shadow: var(--sf-secondary-shadow, none);
   color: var(--sf-text);
-  font-weight: 700;
+  font-size: .875rem;
+  font-weight: 600;
 }
 
 .library-delete-dialog button:last-child {
   border: 0;
-  background: var(--sf-danger);
-  color: white;
+  background: var(--sf-danger-solid, var(--sf-danger));
+  color: var(--sf-danger-solid-text, white);
+  font-weight: 650;
+}
+
+:root:not([data-theme-family="crystal"]) .library-delete-dialog button:last-child {
+  box-shadow: 0 14px 30px -16px var(--sf-danger-solid);
 }
 
 /* Crystal Star keeps the Canvas shell and face as separate layers. */

@@ -38,8 +38,39 @@
 .ielts-goal-panel__link { display: inline-flex; min-height: 44px; align-items: center; padding: 0 2px; border: 0; background: none; color: var(--sf-brand-text); font: inherit; font-size: 13.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .ielts-goal-panel__link:hover { text-decoration-thickness: 2px; }
 .ielts-goal-panel__footnote { margin: 12px 0 0; color: var(--sf-text-muted); font-size: 12px; line-height: 1.45; }
+:root:not([data-theme-family="crystal"]) .ielts-goal-panel {
+  --ig-track: var(--sf-track);
+  --ig-good: var(--sf-success-text);
+  color: var(--sf-text-strong);
+}
+:root:not(.dark):not([data-theme-family="crystal"]) .ielts-goal-panel {
+  border: 0;
+  background: var(--sf-card-bg);
+  box-shadow: var(--sf-card-shadow);
+}
+:root.dark:not([data-theme-family="crystal"]) .ielts-goal-panel {
+  border: 1.5px solid transparent;
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, color-mix(in srgb, var(--sf-second) 26%, transparent), transparent 65%) padding-box,
+    var(--sf-card-bg) padding-box,
+    var(--sf-rim-learning) border-box;
+  box-shadow: 0 30px 60px -30px rgb(0 0 0 / .9), 0 0 50px -20px color-mix(in srgb, var(--sf-brand) 55%, transparent);
+}
+:root:not([data-theme-family="crystal"]) .ielts-goal-ring__percent { color: var(--sf-text-strong); }
+:root:not([data-theme-family="crystal"]) :is(.ielts-goal-panel__summary, .ielts-goal-panel__prompt p) { color: var(--sf-text-body); }
+:root:not([data-theme-family="crystal"]) :is(.ielts-goal-band__latest, .ielts-goal-band__arrow, .ielts-goal-band__date, .ielts-goal-panel__footnote) { color: var(--sf-text-subtle); }
+:root:not([data-theme-family="crystal"]) .ielts-goal-panel__button {
+  background: var(--sf-primary-bg);
+  box-shadow: var(--sf-primary-shadow);
+  color: var(--sf-on-primary);
+}
+:root:not([data-theme-family="crystal"]) .ielts-goal-panel__button:hover {
+  background: var(--sf-primary-bg);
+  color: var(--sf-on-primary);
+  filter: brightness(1.06);
+}
 :root[data-theme-family="classic"].dark .ielts-goal-ring__value { filter: drop-shadow(0 0 6px rgb(40 211 244 / .7)); }
-:root[data-theme-family="classic"].dark .ielts-goal-band__target { text-shadow: 0 0 24px rgb(40 211 244 / .45); }
+:root[data-theme-family="classic"].dark .ielts-goal-band__target { text-shadow: var(--sf-em-glow); }
 
 @media (prefers-reduced-motion: no-preference) {
   .ielts-goal-ring__value { transition: stroke-dasharray 600ms cubic-bezier(.2, .8, .2, 1); }

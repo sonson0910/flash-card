@@ -45,8 +45,8 @@ const EditCardDialog = lazy(() => Promise.all([
   import('../features/cardEdit/EditCardDialog'), loadCatalog(getActiveUiLocale(), 'library'),
 ]).then(([module]) => ({ default: module.EditCardDialog })));
 const HangulBreakdown = lazy(() => import('./flashcard/HangulBreakdown').then(module => ({ default: module.HangulBreakdown })));
-const detailsWidePanelClass = 'flex w-full flex-col items-start rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left shadow-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
-const detailsSplitPanelClass = 'flex flex-col items-start rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left shadow-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+const detailsWidePanelClass = 'flex w-full flex-col items-start rounded-[24px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left shadow-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
+const detailsSplitPanelClass = 'flex flex-col items-start rounded-[24px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4 text-left shadow-sm [html[data-theme-family=crystal]_&]:crystal-chamfer-sm';
 const detailsSectionHeaderClass = 'mb-2.5 flex w-full items-center gap-2 border-b border-[var(--sf-border)] pb-2.5';
 const detailsSectionIconClass = 'flex size-7 shrink-0 items-center justify-center rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-muted)] text-[var(--sf-brand-text)]';
 const detailsSectionTitleClass = 'text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--sf-text-muted)]';
@@ -381,7 +381,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
     <div className="relative mx-auto w-full max-w-[960px]">
     <div
       ref={shellRef}
-      className={`flashcard-shell group relative mx-auto w-full touch-pan-y overflow-visible rounded-[32px] bg-transparent transition-[max-width,height] duration-300 ${
+      className={`flashcard-shell group relative mx-auto w-full touch-pan-y overflow-visible rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--flashcard-radius,34px)] bg-transparent transition-[max-width,height] duration-300 ${
         isZenMode ? 'h-[460px] sm:h-[480px] max-w-[700px] [@media(max-height:500px)]:h-[320px]' : 'h-[clamp(560px,72dvh,620px)] max-w-[460px] [@media(max-height:500px)]:h-[320px]'
       }`}
       onMouseEnter={handleMouseEnter}
@@ -413,7 +413,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
       >
         <AlertDialog.Portal>
           <AlertDialog.Overlay className="fixed inset-0 z-[110] dialog-veil backdrop-blur-xs" />
-          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer" onClick={event => event.stopPropagation()} onCloseAutoFocus={event => {
+          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[111] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-dialog-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-2xl focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] [html[data-theme-family=crystal]_&]:crystal-chamfer" onClick={event => event.stopPropagation()} onCloseAutoFocus={event => {
             event.preventDefault();
             if (!deleteConfirmedRef.current) deleteButtonRef.current?.focus();
             deleteConfirmedRef.current = false;
@@ -421,11 +421,11 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
             <AlertDialog.Title className="text-balance text-lg font-black"><Trans {...msg({ context: 'flashcard.delete.title', message: 'Delete “{word}”?' })} values={{ word: data.word }} /></AlertDialog.Title>
             <AlertDialog.Description className="mt-2 text-pretty text-sm leading-relaxed text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'flashcard.delete.description', message: 'The card will be removed from your library and the change will sync to the shared store.' })} /></AlertDialog.Description>
             <div className="mt-6 flex justify-end gap-3">
-              <AlertDialog.Cancel className="min-h-11 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-2 text-sm font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"><Trans {...msg({ context: 'flashcard.delete.cancel', message: 'Keep card' })} /></AlertDialog.Cancel>
+              <AlertDialog.Cancel className="min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,16px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-4 py-2 text-sm font-semibold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)]"><Trans {...msg({ context: 'flashcard.delete.cancel', message: 'Keep card' })} /></AlertDialog.Cancel>
               <AlertDialog.Action onClick={() => {
                 deleteConfirmedRef.current = true;
                 void onDelete?.(data.id);
-              }} className="min-h-11 rounded-xl bg-[var(--sf-danger)] px-4 py-2 text-sm font-semibold text-[var(--sf-on-brand)] transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-danger)]"><Trans {...msg({ id: 'flashcard.delete.confirm', message: 'Delete card' })} /></AlertDialog.Action>
+              }} className="min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,16px)] bg-[var(--sf-danger)] px-4 py-2 text-sm font-semibold text-[var(--sf-on-brand)] transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-danger)]"><Trans {...msg({ id: 'flashcard.delete.confirm', message: 'Delete card' })} /></AlertDialog.Action>
             </div>
           </AlertDialog.Content>
         </AlertDialog.Portal>
@@ -437,7 +437,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-[110] dialog-veil backdrop-blur-xs" />
           <Dialog.Content
-            className="flashcard-panel flashcard-details-dialog fixed left-1/2 top-1/2 z-[111] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] sm:p-7 [html[data-theme-family=crystal]_&]:crystal-chamfer"
+            className="flashcard-panel flashcard-details-dialog fixed left-1/2 top-1/2 z-[111] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-dialog-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] sm:p-7 [html[data-theme-family=crystal]_&]:crystal-chamfer"
             aria-describedby={`learning-details-description-${data.id}`}
             onCloseAutoFocus={event => {
               event.preventDefault();
@@ -611,7 +611,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
 
               {/* Common Mistake / Usage Note */}
               {data.commonMistake && (
-                <div className="flex w-full flex-col items-start rounded-[24px] border border-[color-mix(in_srgb,var(--sf-reward)_45%,transparent)] bg-[color-mix(in_srgb,var(--sf-reward)_10%,transparent)] p-4 text-left [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
+                <div className="flex w-full flex-col items-start rounded-[24px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[color-mix(in_srgb,var(--sf-reward)_45%,transparent)] bg-[color-mix(in_srgb,var(--sf-reward)_10%,transparent)] p-4 text-left [html[data-theme-family=crystal]_&]:crystal-chamfer-sm">
                   <div className="mb-2.5 flex w-full items-center gap-2 border-b border-[color-mix(in_srgb,var(--sf-reward)_30%,transparent)] pb-2.5">
                     <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--sf-reward)_25%,transparent)] text-xs font-bold text-[var(--sf-text)]" aria-hidden="true">
                       ⚠️
@@ -738,7 +738,7 @@ export const Flashcard = React.memo(function Flashcard({ data, onDelete, onEditD
 
       <div
         data-flashcard-stage
-        className="relative z-10 h-full w-full overflow-visible rounded-[32px]"
+        className="relative z-10 h-full w-full overflow-visible rounded-[32px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--flashcard-radius,34px)]"
         style={{ perspective: reduceMotion ? 'none' : '1600px' }}
         onPointerDownCapture={handleCardPointerDown}
         onPointerMove={handleCardPointerMove}

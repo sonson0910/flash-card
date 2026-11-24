@@ -135,7 +135,7 @@ export function AiDialogueContent({
 
   return (
     <div
-      className="ai-dialogue-panel library-dialog-canvas max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none"
+      className="ai-dialogue-panel library-dialog-canvas max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[28px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-dialog-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text)] shadow-2xl outline-none"
     >
       <header className="ai-dialogue-header flex items-start justify-between gap-4 border-b border-[var(--sf-border)] px-5 py-5 sm:px-7">
         <div className="min-w-0">
@@ -184,13 +184,13 @@ export function AiDialogueContent({
                   type="button"
                   onClick={() => toggleWordSelection(c.id)}
                     aria-pressed={isSelected}
-                    className={`ai-dialogue-word flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] ${
+                    className={`ai-dialogue-word flex items-center gap-1.5 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--ad-fr)] border px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] ${
                       isSelected
                       ? 'border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,var(--sf-surface))] text-[var(--sf-brand-text)]'
                       : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] hover:border-[var(--sf-brand)]'
                   }`}
                 >
-                  {isSelected && <Check size={13} className="text-purple-500" />}
+                  {isSelected && <Check size={13} className="text-[var(--sf-brand-text)]" />}
                   <span lang={c.language || 'en'}>{c.word}</span>
                 </button>
               );
@@ -198,7 +198,7 @@ export function AiDialogueContent({
           </div>
 
           {error !== null && (
-            <p role="alert" className="ai-dialogue-error rounded-[14px] border border-rose-400/30 bg-rose-500/10 p-3 text-sm font-medium text-rose-700 dark:text-rose-200">
+            <p role="alert" className="ai-dialogue-error rounded-[14px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--ad-fr)] border border-rose-400/30 bg-rose-500/10 p-3 text-sm font-medium text-rose-700 dark:text-rose-200">
               {dialogueFailureMessage(error)}
             </p>
           )}
@@ -207,7 +207,7 @@ export function AiDialogueContent({
             type="button"
             onClick={handleGenerate}
             disabled={isLoading || availableCards.length === 0}
-            className="ai-dialogue-primary mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-5 text-sm font-semibold text-[var(--sf-on-brand)] shadow-[var(--sf-shadow)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50"
+            className="ai-dialogue-primary mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] bg-[var(--sf-brand)] px-5 text-sm font-semibold text-[var(--sf-on-brand)] shadow-[var(--sf-shadow)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:opacity-50"
           >
             {isLoading ? (
               <>
@@ -225,7 +225,7 @@ export function AiDialogueContent({
             type="button"
             onClick={() => setShowTextPractice(true)}
             disabled={isLoading || availableCards.length === 0}
-            className="ai-dialogue-secondary flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="ai-dialogue-secondary flex min-h-11 w-full items-center justify-center gap-2 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 text-sm font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <MessageSquare size={16} aria-hidden="true" />
             <span><Trans {...msg({ context: 'ai-dialogue-modal.practice-this-mission-by-text', message: 'Practice this mission by text' })} /></span>
@@ -235,7 +235,7 @@ export function AiDialogueContent({
 
       {dialogue && (
         <div className="ai-dialogue-body space-y-4 px-5 py-5 sm:px-7">
-          <div className="ai-dialogue-scene rounded-[14px] border border-[var(--sf-border)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface))] p-4">
+          <div className="ai-dialogue-scene rounded-[14px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--ad-fr)] border border-[var(--sf-border)] bg-[color-mix(in_srgb,var(--sf-brand)_8%,var(--sf-surface))] p-4">
             <h3 lang="en" className="ai-dialogue-scene-title font-display text-xl font-semibold text-[var(--sf-text)]">
               {dialogue.title}
             </h3>
@@ -248,7 +248,7 @@ export function AiDialogueContent({
             {dialogue.turns.map((turn, i) => (
               <div
                 key={i}
-                className="ai-dialogue-turn flex flex-col gap-1 rounded-[14px] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4"
+                className="ai-dialogue-turn flex flex-col gap-1 rounded-[14px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--ad-fr)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-4"
               >
                 <div className="flex items-center justify-between">
                   <span className="ai-dialogue-speaker text-[11px] font-black uppercase tracking-wider text-[var(--sf-brand-text)]">
@@ -257,7 +257,7 @@ export function AiDialogueContent({
                   <button
                     type="button"
                     onClick={() => playLine(turn.en)}
-                    className="ai-dialogue-listen flex size-8 items-center justify-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+                    className="ai-dialogue-listen flex size-8 items-center justify-center rounded-lg [html:not([data-theme-family=crystal])_&]:rounded-[10px] border border-[var(--sf-border)] bg-[var(--sf-surface)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
                     aria-label={translate(msg({ id: 'library.dialogue.listen', message: 'Listen to {speaker}’s line' }), { speaker: turn.speaker })}
                   >
                     <Volume2 size={13} />
@@ -276,7 +276,7 @@ export function AiDialogueContent({
           <button
             type="button"
             onClick={() => setDialogue(null)}
-            className="ai-dialogue-secondary mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-sm font-semibold text-[var(--sf-text)] hover:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+            className="ai-dialogue-secondary mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-sm font-semibold text-[var(--sf-text)] hover:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
           >
             <span>{translate(msg({ id: 'library.dialogue.reset', message: 'Create another dialogue' }))}</span>
           </button>

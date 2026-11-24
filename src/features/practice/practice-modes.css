@@ -69,6 +69,40 @@
     --pr-em-style: italic;
     --pr-em-glow: none;
   }
+  html:not([data-theme-family=crystal]) .practice-stage {
+    --pr-line: var(--sf-border);
+    --pr-line-strong: var(--sf-edge-highlight);
+    --pr-chip-bg: var(--sf-surface-raised);
+    --pr-track: var(--sf-track);
+    --pr-good: var(--sf-success);
+    --pr-again: var(--sf-rating-again);
+    --pr-ok-bg: var(--sf-success-soft);
+    --pr-ok-line: var(--sf-success-line);
+    --pr-danger: var(--sf-danger);
+    --pr-danger-bg: var(--sf-danger-soft);
+    --pr-danger-line: var(--sf-danger-line);
+    --pr-accent-soft: var(--sf-accent-soft);
+    --pr-accent-line: var(--sf-accent-line);
+    --pr-warm: var(--sf-warm);
+    --pr-warm-text: var(--sf-warm);
+    --pr-cyan-text: var(--sf-success-text);
+    --pr-radius-card: var(--sf-card-radius);
+    --pr-radius-opt: 20px;
+    --pr-radius-btn: var(--sf-button-radius);
+    --pr-radius-thumb: 14px;
+    --pr-opt-bg: var(--sf-surface-glass);
+    --pr-panel-bg: var(--sf-card-bg);
+    --pr-primary-bg: var(--sf-primary-bg);
+    --pr-primary-text: var(--sf-on-primary);
+    --pr-primary-shadow: var(--sf-primary-shadow);
+    --pr-display-weight: var(--sf-display-weight);
+    --pr-em-style: var(--sf-em-style);
+    --pr-em-glow: var(--sf-em-glow);
+  }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-stage {
+    --pr-radius-opt: 14px;
+    --pr-radius-thumb: 10px;
+  }
   html[data-theme-family=crystal] .practice-stage {
     --pr-radius-card: 0;
     --pr-radius-opt: 0;
@@ -131,11 +165,14 @@
     flex: 0 1 38px;
     min-width: 4px;
     height: 4px;
-    border-radius: 999px;
+    border-radius: 4px;
     background: var(--pr-track);
   }
   .practice-topbar__segments > i[data-state='correct'],
   .practice-topbar__segments > i[data-state='done'] { background: var(--sf-brand); }
+  html.dark:not([data-theme-family=crystal]) .practice-topbar__segments > i:is([data-state='correct'], [data-state='done']) {
+    box-shadow: 0 0 8px rgb(40 211 244 / .55);
+  }
   .practice-topbar__segments > i[data-state='wrong'] { background: var(--pr-again); }
   .practice-topbar__segments > i[data-state='current'] { background: var(--pr-accent-line); }
   .practice-topbar__count {
@@ -215,6 +252,33 @@
     text-underline-offset: 3px;
   }
 
+  /* Classic top bar and action overrides paired to classic.css tokens. */
+  html:not([data-theme-family=crystal]) .practice-topbar__close,
+  html:not([data-theme-family=crystal]) .practice-topbar__theme {
+    border-color: var(--sf-border);
+    background: var(--sf-surface-control);
+    box-shadow: var(--sf-secondary-shadow);
+  }
+  html:not([data-theme-family=crystal]) .practice-topbar__title strong { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-topbar__detail,
+  html:not([data-theme-family=crystal]) .practice-topbar__count > span { color: var(--sf-text-subtle); }
+  html:not([data-theme-family=crystal]) .practice-topbar__count b { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-chip {
+    border-color: var(--sf-warm-line);
+    background: var(--sf-warm-bg);
+    color: var(--pr-warm-text);
+    font-weight: 650;
+  }
+  html:not([data-theme-family=crystal]) .practice-kbd {
+    background: var(--sf-primary-kbd-bg);
+    font-size: 12px;
+  }
+  html:not([data-theme-family=crystal]) .practice-secondary {
+    border-color: var(--sf-border);
+    background: var(--sf-surface-control);
+    box-shadow: var(--sf-secondary-shadow);
+  }
+
   /* Quiz board: prompt card beside the answer column. */
   .practice-quiz {
     display: grid;
@@ -236,11 +300,18 @@
     box-shadow: var(--sf-panel-shadow);
     --sf-chamfer-fill: var(--pr-panel-bg);
   }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-prompt {
+    border: 0;
+    background: var(--sf-card-bg);
+    box-shadow: var(--sf-card-shadow);
+  }
   html.dark:not([data-theme-family=crystal]) .practice-prompt {
-    border-color: var(--pr-accent-line);
+    border: 1.5px solid transparent;
     background:
-      radial-gradient(ellipse 80% 55% at 20% 18%, color-mix(in srgb, var(--sf-second) 22%, transparent), transparent 70%),
-      var(--pr-panel-bg);
+      radial-gradient(ellipse 90% 60% at 100% 0%, color-mix(in srgb, var(--sf-second) 26%, transparent), transparent 65%) padding-box,
+      var(--sf-card-bg) padding-box,
+      var(--sf-rim-learning) border-box;
+    box-shadow: var(--sf-card-shadow), 0 0 50px -16px rgb(40 211 244 / .5);
   }
   .practice-prompt__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .practice-prompt__direction {
@@ -269,7 +340,7 @@
     text-align: center;
     text-transform: uppercase;
   }
-  .practice-prompt__image { width: 64px; height: 64px; margin-top: 16px; border-radius: 16px; object-fit: cover; }
+  .practice-prompt__image { width: 64px; height: 64px; margin-top: 16px; border-radius: var(--pr-radius-thumb, 16px); object-fit: cover; }
   .practice-prompt__word {
     margin-top: auto;
     padding-top: 28px;
@@ -379,7 +450,7 @@
     gap: 14px;
     padding: 16px 18px;
     border: 1px solid var(--pr-line);
-    border-radius: 16px;
+    border-radius: var(--pr-radius-opt);
     background: var(--pr-opt-bg);
     color: var(--sf-text-muted);
     font-size: 13.5px;
@@ -407,6 +478,37 @@
   .practice-quiz__continue { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 6px; }
   .practice-sheet__copy { display: none; }
   .practice-sheet__title { display: flex; align-items: center; gap: 8px; color: var(--pr-danger); font-family: var(--sf-font-display); font-size: 22px; font-weight: var(--pr-display-weight); }
+
+  /* Classic quiz card, option states, and explanation banner overrides. */
+  html:not([data-theme-family=crystal]) .practice-prompt__word { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-prompt__word em { color: var(--sf-brand); }
+  html:not([data-theme-family=crystal]) .practice-prompt__example { margin-top: 28px; padding-top: 18px; color: var(--sf-text-body); }
+  html:not([data-theme-family=crystal]) .practice-prompt__foot { margin-top: 20px; }
+  html:not([data-theme-family=crystal]) .practice-prompt__state,
+  html:not([data-theme-family=crystal]) .practice-prompt__progress { color: var(--sf-text-subtle); }
+  html:not([data-theme-family=crystal]) .practice-prompt__dot { width: 8px; height: 8px; box-shadow: 0 0 10px var(--sf-brand); }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-prompt__dot { box-shadow: none; }
+  html:not([data-theme-family=crystal]) .practice-prompt__state[data-tier='new'] .practice-prompt__dot { background: var(--sf-text-subtle); box-shadow: none; }
+  html:not([data-theme-family=crystal]) .practice-option { box-shadow: var(--sf-panel-shadow); color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-option[data-state='correct'] {
+    border-width: 1.5px;
+    border-color: var(--pr-good);
+    box-shadow: 0 0 40px -12px rgb(117 208 121 / .55);
+    color: var(--sf-text-strong);
+  }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-option[data-state='correct'] {
+    box-shadow: 0 0 0 3px rgb(51 115 68 / .12);
+  }
+  html:not([data-theme-family=crystal]) .practice-option[data-state='correct'] .practice-option__key {
+    border-color: var(--sf-success-line);
+    background: var(--sf-success-soft);
+    color: var(--sf-success-text);
+  }
+  html:not([data-theme-family=crystal]) .practice-option[data-state='correct'] .practice-option__tag { color: var(--sf-success-text); }
+  html:not([data-theme-family=crystal]) .practice-option[data-state='wrong'] { border-width: 1.5px; box-shadow: var(--sf-panel-shadow); }
+  html:not([data-theme-family=crystal]) .practice-explain { box-shadow: var(--sf-panel-shadow); color: var(--sf-text-body); }
+  html:not([data-theme-family=crystal]) .practice-explain b { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-explain__icon { width: 30px; height: 30px; font-size: 16px; }
 
   /* Crystal companion. */
   .practice-lumi { display: flex; flex-direction: column; gap: 14px; align-self: center; min-width: 0; }
@@ -449,12 +551,12 @@
   .practice-results__title { font-family: var(--sf-font-display); font-size: 34px; font-weight: var(--pr-display-weight); letter-spacing: -.01em; }
   .practice-results__subtitle { margin-top: 6px; color: var(--sf-text-muted); font-size: 14px; }
   .practice-results__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 24rem; margin: 24px auto; }
-  .practice-results__stats > div { padding: 16px; border: 1px solid var(--pr-line); border-radius: 16px; background: var(--pr-chip-bg); }
+  .practice-results__stats > div { padding: 16px; border: 1px solid var(--pr-line); border-radius: var(--pr-radius-opt); background: var(--pr-chip-bg); }
   .practice-results__stats span { display: block; color: var(--sf-text-muted); font-size: 12px; font-weight: 600; }
   .practice-results__stats b { display: block; margin-top: 4px; font-family: var(--sf-font-display); font-size: 32px; font-weight: var(--pr-display-weight); }
   .practice-results__stats b[data-tone='good'] { color: var(--pr-good); }
   .practice-results__stats b[data-tone='brand'] { color: var(--sf-brand-text); }
-  .practice-results__note { max-width: 28rem; margin: 0 auto 24px; padding: 16px; border: 1px solid var(--pr-line); border-radius: 16px; background: var(--pr-chip-bg); color: var(--sf-text-muted); font-size: 14px; }
+  .practice-results__note { max-width: 28rem; margin: 0 auto 24px; padding: 16px; border: 1px solid var(--pr-line); border-radius: var(--pr-radius-opt); background: var(--pr-chip-bg); color: var(--sf-text-muted); font-size: 14px; }
   .practice-results__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 
   /* Board-only parts: the tier ribbon on the prompt card is drawn by Crystal alone, and the combo text
@@ -881,6 +983,53 @@
       box-shadow: 0 -24px 50px -24px var(--sf-shadow);
     }
     html[data-theme-family=crystal] .practice-quiz__continue[data-outcome='wrong'] { border-radius: 0; }
+    html:not([data-theme-family=crystal]) .practice-board--quiz .practice-prompt { padding: 22px 22px 20px; border-radius: 22px; }
+    html:not(.dark):not([data-theme-family=crystal]) .practice-board--quiz .practice-prompt { border-radius: 16px; }
+    html.dark:not([data-theme-family=crystal]) .practice-board--quiz .practice-prompt {
+      background: var(--sf-card-bg) padding-box, var(--sf-rim-learning) border-box;
+      box-shadow: 0 24px 50px -24px rgb(0 0 0 / .9), 0 0 36px -14px rgb(40 211 244 / .5);
+    }
+    html:not([data-theme-family=crystal]) .practice-board--quiz .practice-prompt__word { padding-top: 18px; font-size: 46px; letter-spacing: -.03em; }
+    html:not([data-theme-family=crystal]) .practice-board--quiz .practice-option {
+      min-height: 60px;
+      border: 1.5px solid var(--sf-border);
+      border-radius: 16px;
+      background: var(--sf-surface-control);
+      box-shadow: var(--sf-secondary-shadow);
+    }
+    html:not([data-theme-family=crystal]) .practice-board--quiz .practice-option[data-state='correct'] {
+      border-color: var(--pr-good);
+      background: var(--pr-ok-bg);
+    }
+    html:not([data-theme-family=crystal]) .practice-board--quiz .practice-option[data-state='correct'] .practice-option__key {
+      border-color: var(--sf-success-line);
+      background: var(--sf-success-soft);
+      color: var(--sf-success-text);
+    }
+    html:not([data-theme-family=crystal]) .practice-board--quiz .practice-option[data-state='wrong'] {
+      border-color: var(--pr-again);
+      background: var(--pr-danger-bg);
+    }
+    html:not([data-theme-family=crystal]) .practice-board--quiz .practice-option[data-state='wrong'] .practice-option__key {
+      border-color: var(--pr-danger-line);
+      background: var(--pr-danger-bg);
+      color: var(--pr-danger);
+    }
+    html:not([data-theme-family=crystal]) .practice-board--quiz .practice-option__text {
+      font-family: var(--sf-font-body);
+      font-size: 15.5px;
+      font-weight: 500;
+      line-height: 1.35;
+    }
+    html:not([data-theme-family=crystal]) .practice-quiz__continue[data-outcome='wrong'] { border-radius: 24px; }
+    html:not(.dark):not([data-theme-family=crystal]) .practice-quiz__continue[data-outcome='wrong'] {
+      background: var(--sf-surface);
+      box-shadow: 0 -6px 30px -18px rgb(60 40 20 / .5);
+    }
+    html.dark:not([data-theme-family=crystal]) .practice-quiz__continue[data-outcome='wrong'] {
+      background: linear-gradient(180deg, #13222b, #0c1a22);
+      box-shadow: 0 -10px 40px -20px rgb(0 0 0 / .9), 0 0 40px -20px rgb(237 83 80 / .5);
+    }
     .practice-quiz__continue[data-outcome='wrong'] .practice-sheet__copy { display: grid; gap: 4px; color: var(--sf-text-muted); font-size: 14px; }
     .practice-quiz__continue[data-outcome='wrong'] .practice-primary { width: 100%; }
     .practice-stage:has(.practice-quiz__continue[data-outcome='wrong']) { padding-bottom: 230px; }
@@ -894,6 +1043,18 @@
     --pr-listen-bg: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--sf-brand) 45%, var(--sf-text)), var(--sf-brand) 55%, color-mix(in srgb, var(--sf-brand) 72%, var(--sf-surface)));
   }
   html:not(.dark) .practice-stage { --pr-tile-radius: 10px; --pr-listen-bg: var(--pr-primary-bg); }
+  html:not([data-theme-family=crystal]) .practice-stage {
+    --pr-tile-radius: 16px;
+    --pr-listen-bg: radial-gradient(circle at 35% 30%, #9ef0ff, var(--sf-brand) 55%, #1a9fbd);
+    --pr-tile-fill: var(--sf-surface-glass);
+    --pr-tile-shadow: var(--sf-panel-shadow);
+    --sf-pulse: rgb(40 211 244 / .45);
+  }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-stage {
+    --pr-tile-radius: 10px;
+    --pr-listen-bg: var(--pr-primary-bg);
+    --sf-pulse: rgb(29 26 22 / .25);
+  }
   html[data-theme-family=crystal] .practice-stage { --pr-tile-radius: 0; --pr-listen-bg: var(--pr-primary-bg); }
   .practice-topbar__accuracy { color: var(--sf-text-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: 14px; white-space: nowrap; }
   .practice-spelling {
@@ -947,7 +1108,7 @@
   .practice-spelling__hint { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 2px 6px; margin-top: 24px; color: var(--sf-text-muted); font-size: 15px; line-height: 1.4; }
   .practice-spelling__meaning { color: var(--sf-text); font-family: var(--sf-font-display); font-size: 22px; font-weight: var(--pr-display-weight); line-height: 1.25; }
   .practice-spelling__form { display: flex; flex-direction: column; align-items: center; width: 100%; }
-  .practice-tiles { position: relative; max-width: 100%; margin-top: 30px; border-radius: 12px; }
+  .practice-tiles { position: relative; max-width: 100%; margin-top: 30px; border-radius: var(--pr-tile-radius); }
   .practice-tiles:has(.practice-tiles__input:focus-visible) { outline: 2px solid var(--sf-brand); outline-offset: 8px; }
   .practice-tiles__row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0; padding: 0; list-style: none; }
   .practice-tile {
@@ -959,8 +1120,8 @@
     height: 78px;
     border: 1px solid var(--pr-line);
     border-radius: var(--pr-tile-radius);
-    background: var(--sf-surface);
-    box-shadow: 0 10px 24px -20px var(--sf-shadow);
+    background: var(--pr-tile-fill, var(--sf-surface));
+    box-shadow: var(--pr-tile-shadow, 0 10px 24px -20px var(--sf-shadow));
     color: var(--sf-text);
     font-family: var(--sf-font-display);
     font-size: 40px;
@@ -1008,6 +1169,22 @@
   .practice-ghost:hover { color: var(--sf-text); }
   .practice-spelling__learn { align-self: center; margin-top: 16px; }
   .practice-spelling__side { display: none; }
+
+  /* Classic spelling contrast, surface, and desktop progress sizing overrides. */
+  html:not([data-theme-family=crystal]) .practice-topbar__accuracy,
+  html:not([data-theme-family=crystal]) .practice-spelling__meta { color: var(--sf-text-subtle); }
+  html:not([data-theme-family=crystal]) .practice-speed__chip:not([aria-pressed='true']) .practice-speed__face {
+    border-color: var(--sf-border);
+    background: var(--sf-surface-control);
+    box-shadow: var(--sf-secondary-shadow);
+  }
+  html:not([data-theme-family=crystal]) .practice-spelling__meaning { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-tile:not([data-state='wrong']):not([data-state='missing']) { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-spelling__feedback { color: var(--sf-text-body); }
+  html:not([data-theme-family=crystal]) .practice-spelling__feedback b { color: var(--sf-text-strong); }
+  @media (min-width: 641px) {
+    html:not([data-theme-family=crystal]) .practice-board--spelling .practice-topbar__segments > i { flex-basis: 30px; }
+  }
 
   html[data-theme-family=crystal] .practice-listen { width: 210px; height: 210px; }
   html[data-theme-family=crystal] .practice-listen::before {
@@ -1241,6 +1418,11 @@
     background: var(--pr-accent-soft);
     color: var(--sf-brand-text);
     --sf-chamfer-fill: var(--pr-accent-soft-img);
+  }
+  html:not([data-theme-family=crystal]) .practice-topbar__action:not([data-variant='accent']) {
+    border-color: var(--sf-border);
+    background: var(--sf-surface-control);
+    box-shadow: var(--sf-secondary-shadow);
   }
   /* The board's chip buttons: a 1px inset rim that the corner cut leaves open, and the crimson primary with no rim. */
   html[data-theme-family=crystal] .practice-topbar__action {
@@ -1597,6 +1779,72 @@
   .practice-story__tip .practice-primary { width: 100%; min-height: 46px; font-size: 14.5px; }
   .practice-story__tip p + .practice-primary { margin-top: 12px; }
   .practice-story__lumi { display: none; }
+
+  /* Classic reading page, popover, and side-panel tokens paired to Ink & Paper / Midnight Aurora. */
+  html:not([data-theme-family=crystal]) .practice-board--story {
+    --pr-pop-radius: 20px;
+    --pr-pop-bg: #0f2430;
+  }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-board--story {
+    --pr-story-mark: color-mix(in srgb, var(--sf-brand) 18%, transparent);
+    --pr-pop-radius: 14px;
+    --pr-pop-bg: #fffcf5;
+  }
+  html:not([data-theme-family=crystal]) .practice-board--story [data-tier='new'] { --pr-tier: var(--sf-text-subtle); }
+  html:not([data-theme-family=crystal]) .practice-story__meta,
+  html:not([data-theme-family=crystal]) .practice-story__words-count { color: var(--sf-text-subtle); }
+  html:not([data-theme-family=crystal]) .practice-story__chip { color: var(--sf-text-muted); }
+  html:not([data-theme-family=crystal]) .practice-story__title { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-story__title em { color: var(--sf-brand); }
+  html:not([data-theme-family=crystal]) .practice-story__text { color: var(--sf-text-body); }
+  html:not([data-theme-family=crystal]) .practice-story__word { color: var(--sf-text-strong); }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-story__word {
+    background: linear-gradient(transparent 60%, var(--pr-story-mark) 60%);
+  }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-story__word[aria-expanded='true'] {
+    background: var(--pr-primary-bg);
+    box-shadow: none;
+    color: var(--pr-primary-text);
+  }
+  html.dark:not([data-theme-family=crystal]) .practice-story__word[aria-expanded='true'] {
+    background: #7ee6fa;
+    box-shadow: 0 0 24px -4px rgb(40 211 244 / .8);
+    color: #04141c;
+  }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-story__pop {
+    border: 1px solid var(--sf-border);
+    background: #fffcf5;
+    box-shadow: 0 2px 4px rgb(60 40 20 / .08), 0 30px 50px -24px rgb(60 40 20 / .45);
+  }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-story__caret {
+    border-top: 1px solid var(--sf-border);
+    border-left: 1px solid var(--sf-border);
+    background: #fffcf5;
+  }
+  html.dark:not([data-theme-family=crystal]) .practice-story__pop {
+    border: 1.5px solid transparent;
+    background: linear-gradient(180deg, #102733, #0a1a22) padding-box, var(--sf-rim-learning) border-box;
+    box-shadow: 0 30px 60px -20px rgb(0 0 0 / .9), 0 0 40px -12px rgb(40 211 244 / .45);
+  }
+  html.dark:not([data-theme-family=crystal]) .practice-story__caret {
+    border-top: 1.5px solid #7ee6fa;
+    border-left: 1.5px solid #7ee6fa;
+    background: #102733;
+  }
+  html:not([data-theme-family=crystal]) .practice-story__gloss-word { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-story__gloss-word em { color: var(--sf-brand); }
+  html:not([data-theme-family=crystal]) .practice-story__words,
+  html:not([data-theme-family=crystal]) .practice-story__exercise {
+    border-radius: var(--pr-radius-panel);
+    background: var(--sf-surface-glass);
+    backdrop-filter: var(--sf-panel-blur);
+  }
+  html:not([data-theme-family=crystal]) .practice-story__words-title,
+  html:not([data-theme-family=crystal]) .practice-story__row-word { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-story__tip {
+    border-radius: var(--pr-radius-panel);
+    color: var(--sf-text-body);
+  }
 
   /* Crystal: a bolder reading page, Lumi narrating below it and the meaning pinned to the side. The board's
      tier colours are literal and the same in both modes: a rim for frames and chips, a soft wash for marks. */
@@ -1978,6 +2226,41 @@
   .practice-shadowing > [class*='space-y'] { width: min(100%, 900px); }
   .practice-shadowing__lumi { display: none; }
 
+  /* Classic shadowing emphasis, glass waveform panel, and recording mic states. */
+  html:not([data-theme-family=crystal]) .practice-board--shadowing { --sf-pulse: rgb(40 211 244 / .45); }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-board--shadowing { --sf-pulse: rgb(29 26 22 / .25); }
+  html:not([data-theme-family=crystal]) .practice-shadowing__focus {
+    background: var(--sf-surface-control);
+    box-shadow: var(--sf-secondary-shadow);
+  }
+  html:not([data-theme-family=crystal]) .practice-shadowing__focus-word { color: var(--sf-text-strong); font-style: normal; }
+  html:not([data-theme-family=crystal]) .practice-shadowing__focus-stress { color: var(--sf-brand); font-style: var(--pr-em-style); }
+  html:not([data-theme-family=crystal]) .practice-shadowing__sentence { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-shadowing__word[data-focus] { color: var(--sf-brand); }
+  html:not([data-theme-family=crystal]) .practice-shadowing__waves {
+    border-radius: var(--pr-radius-panel);
+    background: var(--sf-surface-glass);
+    backdrop-filter: var(--sf-panel-blur);
+  }
+  html:not([data-theme-family=crystal]) .practice-shadowing__clock { color: var(--sf-text-subtle); }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-shadowing__rec[data-live] { box-shadow: none; }
+  html:not([data-theme-family=crystal]) .practice-shadowing__score-value { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-shadowing__mic[data-listening] { --sf-pulse: rgb(237 83 80 / .5); }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-shadowing__mic[data-listening] { --sf-pulse: rgb(197 54 55 / .35); }
+  html.dark:not([data-theme-family=crystal]) .practice-shadowing__mic[data-listening] .practice-shadowing__mic-face {
+    background: radial-gradient(circle at 35% 30%, #ff8f8c, #ed5350 60%, #b8302e);
+    box-shadow: 0 18px 40px -12px rgb(237 83 80 / .8);
+    color: #fff;
+  }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-shadowing__mic[data-listening] .practice-shadowing__mic-face {
+    background: #c53637;
+    box-shadow: 0 14px 28px -12px rgb(197 54 55 / .8);
+    color: #fff;
+  }
+  @media (min-width: 641px) {
+    html:not([data-theme-family=crystal]) .practice-board--shadowing .practice-topbar__segments > i { flex-basis: 44px; }
+  }
+
   /* Crystal: AnimeShadowing. The board's text3 grey misses AA on the light panel, so light uses the muted text. */
   html[data-theme-family=crystal] .practice-board--shadowing {
     --sh-text3: #7a8397;
@@ -2206,6 +2489,16 @@
   /* Word match: words and meanings either side of a countdown ring. */
   .practice-board--match { --pr-tile-radius: 20px; --pr-warm-soft: color-mix(in srgb, var(--pr-warm) 12%, transparent); --pr-warm-line: color-mix(in srgb, var(--pr-warm) 40%, transparent); }
   html:not(.dark) .practice-board--match { --pr-tile-radius: 12px; }
+  html:not([data-theme-family=crystal]) .practice-board--match {
+    --pr-tile-radius: 20px;
+    --pr-warm-soft: var(--sf-warm-bg);
+    --pr-warm-line: var(--sf-warm-line);
+    --sf-pulse: rgb(237 83 80 / .45);
+  }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-board--match {
+    --pr-tile-radius: 12px;
+    --sf-pulse: rgb(197 54 55 / .35);
+  }
   html[data-theme-family=crystal] .practice-board--match { --pr-tile-radius: 0; }
   .practice-match {
     display: grid;
@@ -2295,7 +2588,7 @@
     justify-content: center;
     width: 64px;
     height: 64px;
-    border-radius: 22px;
+    border-radius: var(--sf-panel-radius, 22px);
     background: var(--pr-primary-bg);
     color: var(--pr-primary-text);
     --sf-chamfer-fill: var(--pr-primary-bg);
@@ -2313,13 +2606,38 @@
     margin-top: 22px;
     padding: 10px 18px;
     border: 1px solid var(--pr-warm-line);
-    border-radius: 16px;
+    border-radius: var(--sf-input-radius, 16px);
     background: var(--pr-warm-soft);
     color: var(--pr-warm-text);
     font-size: 14px;
     font-weight: 800;
   }
   .practice-match__result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; }
+
+  /* Classic match tiles, 10px countdown ring, and result typography overrides. */
+  html:not([data-theme-family=crystal]) .practice-match__tile:not([data-state='wrong']):not([data-state='matched']) {
+    color: var(--sf-text-strong);
+  }
+  html:not([data-theme-family=crystal]) .practice-match__tile[data-state='selected'] {
+    border: 2px solid var(--sf-brand);
+    box-shadow: 0 0 36px -8px rgb(40 211 244 / .7);
+  }
+  html:not(.dark):not([data-theme-family=crystal]) .practice-match__tile[data-state='selected'] {
+    box-shadow: 0 0 0 4px rgb(180 70 26 / .12);
+  }
+  html:not([data-theme-family=crystal]) .practice-match__tile[data-state='matched'] .practice-match__tag {
+    color: var(--sf-success-text);
+  }
+  html:not([data-theme-family=crystal]) .practice-match__timer { border-radius: 50%; }
+  html:not([data-theme-family=crystal]) :is(.practice-match__ring-track, .practice-match__ring) { stroke-width: 10; }
+  html.dark:not([data-theme-family=crystal]) .practice-match__timer[data-low] .practice-match__ring {
+    filter: drop-shadow(0 0 8px rgb(237 83 80 / .8));
+  }
+  html:not([data-theme-family=crystal]) .practice-match__clock,
+  html:not([data-theme-family=crystal]) .practice-match__pairs-count,
+  html:not([data-theme-family=crystal]) .practice-match__result-title { color: var(--sf-text-strong); }
+  html:not([data-theme-family=crystal]) .practice-match__clock-label,
+  html:not([data-theme-family=crystal]) .practice-match__hint { color: var(--sf-text-subtle); }
 
   /* Crystal Star dressing, ported from the AnimeMatch board. The hex face and gradient ring of the timer and
      the combo text wrapper exist only for Crystal. */

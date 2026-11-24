@@ -45,38 +45,38 @@
 .practice-recap-overlay { position: fixed; inset: 0; z-index: 50; background: var(--sf-dialog-veil); }
 .practice-recap-frame { position: fixed; inset: 0; z-index: 50; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; outline: 0; }
 .practice-recap-board {
-  --rc-strong: #1d1a16; --rc-body: #3d372f; --rc-text2: #6b6255; --rc-text3: #756b5e;
-  --rc-line: rgb(29 26 22 / .1); --rc-chip: #fbf8f2; --rc-track: rgb(29 26 22 / .08);
-  --rc-accent: #b4461a; --rc-accent-text: #97400d; --rc-accent-soft: rgb(180 70 26 / .08); --rc-accent-line: rgb(151 64 13 / .25);
-  --rc-em: #b4461a; --rc-em-style: italic; --rc-em-glow: none; --rc-weight: 380; --rc-segment-glow: none;
-  --rc-surface: #fffcf5; --rc-surface-shadow: inset 0 1px 0 #fff, 0 1px 2px rgb(60 40 20 / .06), 0 14px 28px -18px rgb(60 40 20 / .3); --rc-blur: none; --rc-radius: 18px;
-  --rc-again: #c53637; --rc-warm: #97400d; --rc-warm-bg: #fbf8f2; --rc-warm-line: rgb(151 64 13 / .22);
-  --rc-primary-bg: #1d1a16; --rc-primary-text: #fbf6ec; --rc-primary-shadow: 0 14px 28px -14px rgb(29 26 22 / .9); --rc-btn-radius: 999px;
-  --rc-secondary-bg: #fffcf5; --rc-secondary-shadow: 0 1px 2px rgb(60 40 20 / .08);
-  --rc-card-radius: 16px; --rc-card-border: 0; --rc-card-bg: #fffcf5;
-  --rc-card-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgb(29 26 22 / .06), 0 10px 20px -10px rgb(60 40 20 / .18), 0 50px 70px -40px rgb(60 40 20 / .45);
-  --rc-card-ring-learning: 0 0 0 2px rgb(51 115 68 / .5); --rc-card-ring-mastered: 0 0 0 2px #d9b76a;
-  --rc-img-margin: 12px 12px 0; --rc-img-radius: 10px; --rc-img-mask: none;
-  --rc-gold: #b8862b; --rc-gold-text: #7d5a12; --rc-learning-text: #2c6a3d; --rc-foil-blend: multiply;
-  --rc-confetti-1: #b4461a; --rc-confetti-2: #337344; --rc-confetti-3: #b8862b; --rc-confetti-4: #1d1a16; --rc-confetti-5: #e8a075; --rc-confetti-radius: 2px;
+  --rc-strong: var(--sf-text-strong); --rc-body: var(--sf-text-body); --rc-text2: var(--sf-text-muted); --rc-text3: var(--sf-text-subtle);
+  --rc-line: var(--sf-border); --rc-chip: var(--sf-surface-raised); --rc-track: var(--sf-track, rgb(29 26 22 / .08));
+  --rc-accent: var(--sf-brand); --rc-accent-text: var(--sf-brand-text); --rc-accent-soft: var(--sf-accent-soft, rgb(180 70 26 / .08)); --rc-accent-line: var(--sf-accent-line, rgb(151 64 13 / .25));
+  --rc-em: var(--sf-brand); --rc-em-style: var(--sf-em-style, italic); --rc-em-glow: var(--sf-em-glow, none); --rc-weight: var(--sf-display-weight, 380); --rc-segment-glow: none;
+  --rc-surface: var(--sf-surface); --rc-surface-shadow: var(--sf-panel-shadow); --rc-blur: var(--sf-panel-blur, none); --rc-radius: var(--sf-panel-radius, 18px);
+  --rc-again: var(--sf-rating-again); --rc-warm: var(--sf-warm); --rc-warm-bg: var(--sf-warm-bg); --rc-warm-line: var(--sf-warm-line);
+  --rc-primary-bg: var(--sf-primary-bg); --rc-primary-text: var(--sf-on-primary); --rc-primary-shadow: var(--sf-primary-shadow); --rc-btn-radius: var(--sf-button-radius);
+  --rc-secondary-bg: var(--sf-surface-control); --rc-secondary-shadow: var(--sf-secondary-shadow, 0 1px 2px rgb(60 40 20 / .08));
+  --rc-card-radius: 16px; --rc-card-border: 0; --rc-card-bg: var(--sf-card-bg);
+  --rc-card-shadow: var(--sf-card-shadow, inset 0 1px 0 #fff, inset 0 0 0 1px rgb(29 26 22 / .06), 0 10px 20px -10px rgb(60 40 20 / .18), 0 50px 70px -40px rgb(60 40 20 / .45));
+  --rc-card-ring-learning: 0 0 0 2px rgb(51 115 68 / .5); --rc-card-ring-mastered: 0 0 0 2px var(--sf-gold-line);
+  --rc-img-margin: var(--sf-img-margin, 12px 12px 0); --rc-img-radius: var(--sf-img-radius, 10px); --rc-img-mask: var(--sf-img-mask, none);
+  --rc-gold: var(--sf-reward); --rc-gold-text: #7d5a12; --rc-learning-text: var(--sf-success-text); --rc-foil-blend: multiply;
+  --rc-confetti-1: var(--sf-confetti-0); --rc-confetti-2: var(--sf-confetti-1); --rc-confetti-3: var(--sf-confetti-2); --rc-confetti-4: var(--sf-confetti-3); --rc-confetti-5: var(--sf-confetti-4); --rc-confetti-radius: 2px;
   --rc-ambient: radial-gradient(rgb(29 26 22 / .07) 1px, transparent 1.2px) 0 0 / 28px 28px;
   position: relative; isolation: isolate; display: flex; width: 100%; min-height: 100%; flex-direction: column; overflow-x: clip;
   background: var(--sf-canvas); color: var(--rc-strong); outline: 0;
 }
 :root.dark:not([data-theme-family="crystal"]) .practice-recap-board {
-  --rc-strong: var(--sf-text-strong); --rc-body: var(--sf-text-body); --rc-text2: var(--sf-text-muted); --rc-text3: #8494a0;
-  --rc-line: var(--sf-border); --rc-chip: var(--sf-surface-raised); --rc-track: var(--sf-border);
-  --rc-accent: var(--sf-brand); --rc-accent-text: var(--sf-brand-text); --rc-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent); --rc-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
-  --rc-em: var(--sf-brand); --rc-em-style: normal; --rc-em-glow: 0 0 36px color-mix(in srgb, var(--sf-brand) 50%, transparent); --rc-weight: 440; --rc-segment-glow: 0 0 8px color-mix(in srgb, var(--sf-brand) 55%, transparent);
-  --rc-surface: var(--sf-surface-glass); --rc-surface-shadow: var(--sf-panel-shadow); --rc-blur: blur(18px); --rc-radius: 22px;
+  --rc-strong: var(--sf-text-strong); --rc-body: var(--sf-text-body); --rc-text2: var(--sf-text-muted); --rc-text3: var(--sf-text-subtle);
+  --rc-line: var(--sf-border); --rc-chip: var(--sf-surface-raised); --rc-track: var(--sf-track);
+  --rc-accent: var(--sf-brand); --rc-accent-text: var(--sf-brand-text); --rc-accent-soft: var(--sf-accent-soft); --rc-accent-line: var(--sf-accent-line);
+  --rc-em: var(--sf-brand); --rc-em-style: var(--sf-em-style); --rc-em-glow: var(--sf-em-glow); --rc-weight: var(--sf-display-weight); --rc-segment-glow: 0 0 8px color-mix(in srgb, var(--sf-brand) 55%, transparent);
+  --rc-surface: var(--sf-surface-glass); --rc-surface-shadow: var(--sf-panel-shadow); --rc-blur: var(--sf-panel-blur); --rc-radius: var(--sf-panel-radius);
   --rc-again: var(--sf-rating-again); --rc-warm: var(--sf-warm); --rc-warm-bg: var(--sf-warm-bg); --rc-warm-line: var(--sf-warm-line);
-  --rc-primary-bg: var(--sf-primary-bg); --rc-primary-text: var(--sf-on-primary); --rc-primary-shadow: var(--sf-primary-shadow); --rc-btn-radius: 16px;
-  --rc-secondary-bg: var(--sf-surface-raised); --rc-secondary-shadow: none;
+  --rc-primary-bg: var(--sf-primary-bg); --rc-primary-text: var(--sf-on-primary); --rc-primary-shadow: var(--sf-primary-shadow); --rc-btn-radius: var(--sf-button-radius);
+  --rc-secondary-bg: var(--sf-surface-control); --rc-secondary-shadow: var(--sf-secondary-shadow);
   --rc-card-radius: 22px; --rc-card-border: 1.5px solid transparent; --rc-card-bg: var(--sf-solid-card, var(--sf-card-bg));
-  --rc-card-shadow: 0 30px 70px -30px rgb(0 0 0 / .9);
-  --rc-img-margin: 0; --rc-img-radius: 0; --rc-img-mask: linear-gradient(to bottom, #000 42%, transparent 100%);
+  --rc-card-shadow: var(--sf-card-shadow);
+  --rc-img-margin: var(--sf-img-margin); --rc-img-radius: var(--sf-img-radius); --rc-img-mask: var(--sf-img-mask);
   --rc-gold: var(--sf-reward); --rc-gold-text: var(--sf-reward); --rc-learning-text: var(--sf-brand-text); --rc-foil-blend: screen;
-  --rc-confetti-1: var(--sf-brand); --rc-confetti-2: var(--sf-brand-text); --rc-confetti-3: var(--sf-second); --rc-confetti-4: var(--sf-reward); --rc-confetti-5: #fff; --rc-confetti-radius: 50%;
+  --rc-confetti-1: var(--sf-confetti-0); --rc-confetti-2: var(--sf-confetti-1); --rc-confetti-3: var(--sf-confetti-2); --rc-confetti-4: var(--sf-confetti-3); --rc-confetti-5: var(--sf-confetti-4); --rc-confetti-radius: 50%;
   --rc-ambient: radial-gradient(circle 520px at 30% -60px, color-mix(in srgb, var(--sf-second) 30%, transparent), transparent), radial-gradient(circle 760px at 50% 110%, color-mix(in srgb, var(--sf-brand) 22%, transparent), transparent);
 }
 .practice-recap-board::before { position: absolute; z-index: -1; inset: 0; background: var(--rc-ambient); content: ''; pointer-events: none; }

@@ -5,31 +5,22 @@
    visible around the cut corners. Values without a theme token (shadows, the Crystal frame and the
    Crystal body gradients) follow the board literals and are scoped to these classes. */
 
-html[data-theme-family="classic"] .overlay-dialog-frame {
+html:not([data-theme-family="crystal"]) .overlay-dialog-frame {
   --od-subtle: var(--sf-text-subtle);
-  --od-accent-soft: color-mix(in srgb, var(--sf-brand) 8%, transparent);
-  --od-accent-line: color-mix(in srgb, var(--sf-brand-text) 25%, transparent);
+  --od-accent-soft: var(--sf-accent-soft);
+  --od-accent-line: var(--sf-accent-line);
   --od-row-bg: var(--sf-surface-raised);
-  --od-radius: 18px;
+  --od-radius: var(--sf-dialog-radius, 18px);
   --od-fr: 10px;
-  --od-btn-radius: 999px;
-  --od-primary-bg: var(--sf-text);
-  --od-display-weight: 380;
+  --od-btn-radius: var(--sf-button-radius, 999px);
+  --od-primary-bg: var(--sf-primary-bg);
+  --od-display-weight: var(--sf-display-weight, 380);
   --od-shadow: var(--sf-dialog-shadow);
-  --od-secondary-shadow: 0 1px 2px rgb(60 40 20 / .08);
+  --od-secondary-shadow: var(--sf-secondary-shadow, none);
 }
-html[data-theme-family="classic"].dark .overlay-dialog-frame {
-  --od-subtle: var(--sf-text-subtle);
-  --od-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent);
-  --od-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
-  --od-row-bg: color-mix(in srgb, var(--sf-text) 2.5%, transparent);
-  --od-radius: 26px;
+html.dark:not([data-theme-family="crystal"]) .overlay-dialog-frame {
+  --od-row-bg: color-mix(in srgb, var(--sf-flare) 2.5%, transparent);
   --od-fr: 14px;
-  --od-btn-radius: 16px;
-  --od-primary-bg: var(--sf-brand);
-  --od-display-weight: 440;
-  --od-shadow: var(--sf-dialog-shadow);
-  --od-secondary-shadow: none;
 }
 html[data-theme-family="crystal"] .overlay-dialog-frame {
   --od-subtle: var(--sf-text-subtle);
@@ -85,7 +76,7 @@ html[data-theme-family="crystal"].dark .overlay-dialog-frame {
 }
 html[data-theme-family="classic"] .overlay-dialog-frame {
   overflow: hidden;
-  border: 1px solid var(--sf-border);
+  border: var(--sf-dialog-border, 1px solid var(--sf-border));
   border-radius: var(--od-radius);
   background-color: var(--sf-surface);
   background-image: var(--sf-dialog-bg);
@@ -167,6 +158,7 @@ html[data-theme-family="crystal"] .overlay-dialog-kicker-diamond {
   line-height: 1.12;
   overflow-wrap: anywhere;
 }
+html[data-theme-family="classic"] .overlay-dialog-title { color: var(--sf-text-strong); }
 html[data-theme-family="crystal"] .overlay-dialog-title {
   font-size: 30px;
   font-style: italic;
@@ -258,9 +250,9 @@ html[data-theme-family="crystal"] .overlay-dialog-note { font-size: 12px; }
   margin-left: auto;
   padding: 0 18px;
   border: 1px solid var(--sf-border);
-  border-radius: var(--od-btn-radius, 999px);
+  border-radius: var(--sf-button-radius, 999px);
   background: var(--sf-surface-control);
-  box-shadow: var(--od-secondary-shadow, none);
+  box-shadow: var(--od-secondary-shadow, var(--sf-secondary-shadow, none));
   color: var(--sf-text);
   cursor: pointer;
   font-size: 14px;
@@ -289,6 +281,97 @@ html[data-theme-family="crystal"] .overlay-dialog-secondary {
    ::after, both under the large chamfer, and is itself left unclipped so the glow spreads past the cut corners.
    The ribbon and tail sit just inside the rim. Classic keeps the shared modal look, so the ornaments stay hidden. */
 .app-text-practice-ribbon, .app-text-practice-tail { display: none; }
+:root:not([data-theme-family="crystal"]) .app-text-practice {
+  padding: 0;
+  overflow: hidden;
+  border: var(--sf-dialog-border, 1px solid var(--sf-border));
+  border-radius: var(--sf-dialog-radius, 18px);
+  background-color: var(--sf-surface);
+  background-image: var(--sf-dialog-bg);
+  box-shadow: var(--sf-dialog-shadow);
+}
+:root:not([data-theme-family="crystal"]) .app-text-practice .text-conversation-panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 22px 24px 20px;
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-panel {
+  --tc-fr: 10px;
+  color: var(--sf-text);
+  font-family: var(--sf-font-body);
+}
+:root.dark:not([data-theme-family="crystal"]) .text-conversation-panel { --tc-fr: 14px; }
+:root:not([data-theme-family="crystal"]) .text-conversation-icon {
+  border-radius: 12px;
+  background: var(--sf-primary-bg);
+  color: var(--sf-on-primary);
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-title {
+  color: var(--sf-text-strong);
+  font-family: var(--sf-font-display);
+  font-size: 26px;
+  font-weight: var(--sf-display-weight, 380);
+  letter-spacing: -.02em;
+  line-height: 1.12;
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-goal {
+  color: var(--sf-text-muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-back {
+  border-radius: var(--sf-button-radius, 999px);
+  border: 1px solid var(--sf-border);
+  background: var(--sf-surface-control);
+  box-shadow: var(--sf-secondary-shadow, none);
+  color: var(--sf-text);
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-close {
+  border-radius: 50%;
+  border: 1px solid var(--sf-border);
+  background: var(--sf-surface-raised);
+  color: var(--sf-text-muted);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-close:hover {
+  border-color: var(--sf-edge-highlight);
+  color: var(--sf-text-strong);
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-chip {
+  border-radius: 999px;
+  border: 1px solid var(--sf-border);
+  background: var(--sf-surface-raised);
+  color: var(--sf-text);
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-log {
+  border-radius: var(--sf-panel-radius, 18px);
+  border: 1px solid var(--sf-border);
+  background: var(--sf-surface-raised);
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-bubble { border-radius: var(--tc-fr); }
+:root:not([data-theme-family="crystal"]) .text-conversation-bubble--user {
+  background: var(--sf-primary-bg);
+  color: var(--sf-on-primary);
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-bubble--assistant {
+  border: 1px solid var(--sf-border);
+  background: var(--sf-surface);
+  color: var(--sf-text);
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-input {
+  border-radius: var(--tc-fr);
+  border: 1px solid var(--sf-border);
+  background: var(--sf-surface-control);
+  color: var(--sf-text-strong);
+}
+:root:not([data-theme-family="crystal"]) .text-conversation-send {
+  border-radius: var(--sf-button-radius, 999px);
+  background: var(--sf-primary-bg);
+  box-shadow: var(--sf-primary-shadow);
+  color: var(--sf-on-primary);
+}
 html[data-theme-family="crystal"].dark .app-text-practice {
   --tp-frame: linear-gradient(155deg, #ff5470, rgb(255 42 77 / .25) 28%, rgb(94 242 255 / .2) 72%, #5ef2ff);
   --tp-fill: linear-gradient(170deg, #141a2b 0%, #0a0d17 100%);
@@ -342,5 +425,5 @@ html[data-theme-family="crystal"] .app-text-practice .text-conversation-input:fo
 html[data-theme-family="crystal"] .app-text-practice .text-conversation-send { width: 48px; height: 48px; border-radius: 0; background: var(--sf-primary-bg); clip-path: var(--nk-chamfer-sm); color: #fff; filter: drop-shadow(0 0 14px rgb(255 42 77 / .6)); }
 
 @media (prefers-reduced-motion: reduce) {
-  .overlay-dialog-close, .overlay-dialog-secondary { transition: none; }
+  .overlay-dialog-close, .overlay-dialog-secondary, .text-conversation-close { transition: none; }
 }

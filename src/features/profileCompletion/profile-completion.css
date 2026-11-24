@@ -27,7 +27,7 @@
     align-items: center;
     gap: 16px;
     padding: 0 56px;
-    border-bottom: 1px solid var(--sf-border);
+    border-bottom: 1px solid var(--sf-nav-line, var(--sf-border));
   }
 
   .profile-gate__star path:first-child { fill: var(--sf-brand); }
@@ -38,9 +38,9 @@
     min-height: 30px;
     align-items: center;
     padding: 0 12px;
-    border: 1px solid color-mix(in srgb, var(--sf-brand) 35%, transparent);
+    border: 1px solid var(--sf-accent-line, color-mix(in srgb, var(--sf-brand) 35%, transparent));
     border-radius: 999px;
-    background: color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface));
+    background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 12%, var(--sf-surface)));
     color: var(--sf-brand-text);
     font-size: 12px;
     font-weight: 700;
@@ -158,7 +158,7 @@
     min-height: 44px;
     padding: 0 16px;
     border: 1px solid var(--sf-edge-highlight);
-    border-radius: 999px;
+    border-radius: var(--sf-input-radius, 999px);
     background-color: var(--sf-surface-control);
     color: var(--sf-text);
     font: inherit;
@@ -492,13 +492,42 @@
     --sf-chamfer-fill: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 72%, var(--sf-text)), var(--sf-brand) 55%);
   }
 
-  /* Classic dark keeps the brand colour for the main action, as on the dark boards. */
-  html[data-theme-family=classic].dark .profile-gate__primary {
-    background-color: var(--sf-brand);
-    box-shadow: 0 16px 40px -14px color-mix(in srgb, var(--sf-brand) 80%, transparent), inset 0 1px 0 color-mix(in srgb, var(--sf-text) 50%, transparent);
-    color: var(--sf-on-brand);
+  /* Classic matches the board primary, secondary, display weight and semantic surface tokens. */
+  html:not([data-theme-family=crystal]) .profile-gate__title,
+  html:not([data-theme-family=crystal]) .profile-gate__panel-title {
+    color: var(--sf-text-strong, var(--sf-text));
+    font-weight: var(--sf-display-weight, 380);
   }
-  html[data-theme-family=classic].dark .profile-gate__primary:hover { background-color: var(--sf-brand-hover); }
+
+  html:not([data-theme-family=crystal]) .profile-gate__primary {
+    background-color: var(--sf-primary-bg);
+    box-shadow: var(--sf-primary-shadow);
+    color: var(--sf-on-primary);
+  }
+
+  html:not([data-theme-family=crystal]).dark .profile-gate__primary:hover { background-color: var(--sf-brand-hover); }
+  html:not([data-theme-family=crystal]) .profile-gate__secondary { box-shadow: var(--sf-secondary-shadow, none); }
+
+  html:not([data-theme-family=crystal]) .profile-gate__note--warning,
+  html:not([data-theme-family=crystal]) .profile-gate__tile--warning {
+    border-color: var(--sf-warn-line);
+    background-color: var(--sf-warn-bg);
+  }
+  html:not([data-theme-family=crystal]) .profile-gate__tile--warning strong,
+  html:not([data-theme-family=crystal]) .profile-gate__tile--warning span { color: var(--sf-warn); }
+
+  html:not([data-theme-family=crystal]) .profile-gate__tile--success {
+    border-color: var(--sf-success-line);
+    background-color: var(--sf-success-soft);
+    color: var(--sf-success-text);
+  }
+
+  html:not([data-theme-family=crystal]) .profile-gate__tile--next {
+    border-color: var(--sf-info-line);
+    background-color: var(--sf-info-bg);
+  }
+  html:not([data-theme-family=crystal]) .profile-gate__tile--next strong,
+  html:not([data-theme-family=crystal]) .profile-gate__tile--next span { color: var(--sf-info); }
 
   @media (max-width: 767px) {
     .profile-gate__bar { height: 64px; gap: 10px; padding: 0 16px; border-bottom: 0; }

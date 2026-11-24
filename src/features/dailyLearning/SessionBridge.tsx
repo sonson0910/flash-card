@@ -204,7 +204,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
       </header>
 
       <GsapEntrance variant="view" className="session-bridge-main">
-        <div className="session-bridge-result">
+        <div className="session-bridge-result sf-rise">
           <p className="session-bridge-eyebrow">{crystal ? <EyebrowText text={model.completedLabel} /> : model.completedLabel}</p>
           {showCombo ? (
             <div className="session-bridge-combo" data-session-combo={model.comboCount}>
@@ -263,7 +263,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
           ) : <Sparkles className="session-bridge-finale" size={92} aria-hidden="true" />}
         </div>
 
-        <div className="session-bridge-next">
+        <div className="session-bridge-next sf-rise-2">
           <p className="session-bridge-step">{model.stepLabel}</p>
           <h1 id="session-bridge-heading" ref={model.headingRef} tabIndex={-1} aria-label={model.nextLabel}><StageTitle label={model.nextLabel} /></h1>
           {model.nextSummary && <p className="session-bridge-summary">{model.nextSummary}</p>}
@@ -271,7 +271,7 @@ export function SessionBridge({ model, actions }: SessionBridgeProps) {
           <p className="session-bridge-live" role="status" aria-live="polite">{model.liveMessage}</p>
           {model.skipReason && <p className="session-bridge-skip-reason" role="note">{model.skipReason}</p>}
           <div className="session-bridge-actions">
-            <button type="button" onClick={actions.continue} className="session-bridge-primary">
+            <button type="button" onClick={actions.continue} className="session-bridge-primary sf-press">
               <Trans {...msg({ context: 'session.bridge.continue', message: 'Continue' })} /> <ArrowRight size={18} aria-hidden="true" />
             </button>
             {model.canSkipNextStage && (

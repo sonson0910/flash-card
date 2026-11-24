@@ -47,8 +47,8 @@ const additionalLessonModes = [
   { id: 'sentence-building', label: msg({ id: 'today.mode.sentence-building.label', message: 'Sentence building' }), description: msg({ id: 'today.mode.sentence-building.description', message: 'Put every word occurrence in order.' }), Icon: Shuffle },
 ] as const satisfies ReadonlyArray<{ id: LessonMode; label: ReturnType<typeof msg>; description: ReturnType<typeof msg>; Icon: React.ComponentType<{ size?: number; className?: string }> }>;
 
-const primaryButton = 'brand-action shimmer-sweep min-h-11 rounded-full bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-[0_10px_24px_-14px_var(--sf-brand)] transition-[transform,filter] duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100';
-const secondaryButton = 'min-h-11 rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-2.5 font-bold text-[var(--sf-text)] transition-[transform,border-color,color] duration-200 hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
+const primaryButton = 'brand-action shimmer-sweep min-h-11 rounded-full [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] bg-[var(--sf-brand)] px-6 py-3 font-extrabold text-[var(--sf-on-brand)] shadow-[0_10px_24px_-14px_var(--sf-brand)] transition-[transform,filter] duration-300 hover:brightness-110 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100';
+const secondaryButton = 'min-h-11 rounded-full [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-2.5 font-bold text-[var(--sf-text)] transition-[transform,border-color,color] duration-200 hover:border-[var(--sf-brand)] hover:text-[var(--sf-brand-text)] hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none cursor-pointer';
 const headingClass = 'text-balance text-3xl font-black tracking-tight focus-visible:outline-2 sm:text-4xl';
 
 function PageHeading({ model }: Pick<TodayScreenProps, 'model'>) {
@@ -171,7 +171,7 @@ function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'act
   const { _ } = useLingui();
   const [target, setTarget] = useState<5 | 10 | 15>(10);
   return (
-    <section aria-labelledby="practice-mode-heading" className="rounded-[28px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
+    <section aria-labelledby="practice-mode-heading" className="rounded-[28px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 shadow-[0_18px_48px_-38px_var(--sf-shadow)] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-1.5">
@@ -181,7 +181,7 @@ function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'act
           <h2 id="practice-mode-heading" className="mt-1 text-xl font-black tracking-tight">{_(msg({ id: 'today.practice.title', message: 'Practice your way' }))}</h2>
           <p className="mt-1 text-sm text-[var(--sf-text-muted)]">{_(msg({ id: 'today.practice.description', message: 'Use another exercise when you want a different kind of recall.' }))}</p>
         </div>
-        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-11 rounded-full px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-[transform,border-color] hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer">{_(msg({ id: 'today.practice.more', message: 'More practice' }))}</button>
+        <button type="button" onClick={event => actions.openMorePractice(event.currentTarget)} className="liquid-control min-h-11 rounded-full [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] px-4 py-2 text-sm font-bold text-[var(--sf-text)] transition-[transform,border-color] hover:border-[var(--sf-brand)] hover:scale-105 active:scale-95 cursor-pointer">{_(msg({ id: 'today.practice.more', message: 'More practice' }))}</button>
       </div>
       {model.plan && (
         <fieldset className="today-length">
@@ -198,10 +198,10 @@ function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'act
               data-practice-mode="true"
               disabled={model.isOffline}
               onClick={() => actions.startLesson(mode.id)}
-              className="practice-bento-card min-h-24 rounded-xl group flex flex-col justify-between p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="practice-bento-card min-h-24 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[calc(var(--sf-panel-radius,18px)-4px)] group flex flex-col justify-between p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <div className="flex items-start justify-between gap-2">
-                <div className={`flex size-9 items-center justify-center rounded-xl border bg-gradient-to-br ${mode.accentColor} shadow-xs transition-transform duration-200 group-hover:scale-110`}>
+                <div className={`flex size-9 items-center justify-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[10px] border bg-gradient-to-br ${mode.accentColor} shadow-xs transition-transform duration-200 group-hover:scale-110`}>
                   <mode.Icon size={18} />
                 </div>
                 <span className="rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]">
@@ -216,7 +216,7 @@ function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'act
           ))}
       </div>
       <details className="group mt-3">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-xl px-2 text-sm font-bold text-[var(--sf-brand-text)] hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[12px] px-2 text-sm font-bold text-[var(--sf-brand-text)] hover:bg-[var(--sf-surface-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
           <span>{_(msg({ id: 'today.practice.more-modes', message: 'More lesson modes' }))}</span>
           <ChevronDown size={16} className="transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
         </summary>
@@ -228,7 +228,7 @@ function PracticeModes({ model, actions }: Pick<TodayScreenProps, 'model' | 'act
               data-practice-catalog-mode="true"
               disabled={model.isOffline}
               onClick={() => actions.startLesson(mode.id)}
-              className="practice-bento-card min-h-20 rounded-xl p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="practice-bento-card min-h-20 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[calc(var(--sf-panel-radius,18px)-4px)] p-4 text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="flex items-center gap-2 font-black text-[var(--sf-text)]"><mode.Icon size={17} className="text-[var(--sf-brand-text)]" />{_(mode.label)}</span>
               <span className="mt-1 block text-xs leading-5 text-[var(--sf-text-muted)]">{_(mode.description)}</span>
@@ -257,7 +257,7 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
   const unavailableLabel = i18n._(msg({ id: "today.journey.available-after-your-first-plan", message: "Available after your first plan" }));
 
   return (
-    <section data-learning-journey="true" aria-labelledby="learning-journey-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-6">
+    <section data-learning-journey="true" aria-labelledby="learning-journey-heading" className="liquid-glass rounded-[28px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] p-5 shadow-[0_28px_70px_-52px_var(--sf-shadow)] sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="premium-kicker uppercase tracking-[0.14em]"><Trans {...msg({ context: 'today-screen.one-learning-loop', message: 'One learning loop' })} /></p>
@@ -267,8 +267,8 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
       </div>
 
       <ol aria-label={i18n._(msg({ id: "today-screen.learning-journey", message: "Learning journey" }))} className="mt-5 grid gap-3 lg:grid-cols-3">
-        <li data-journey-stage="learn" className="flex min-w-0 flex-col rounded-2xl border border-[color-mix(in_srgb,var(--sf-brand)_25%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_5%,transparent)] p-4">
-          <span className="flex size-9 items-center justify-center rounded-xl border border-[color-mix(in_srgb,var(--sf-brand)_30%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] text-[var(--sf-brand-text)]" aria-hidden="true"><Brain size={18} /></span>
+        <li data-journey-stage="learn" className="flex min-w-0 flex-col rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[calc(var(--sf-panel-radius,18px)-4px)] border border-[color-mix(in_srgb,var(--sf-brand)_25%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_5%,transparent)] p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[10px] border border-[color-mix(in_srgb,var(--sf-brand)_30%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_10%,transparent)] text-[var(--sf-brand-text)]" aria-hidden="true"><Brain size={18} /></span>
           <h3 className="mt-4 text-lg font-black"><Trans {...msg({ context: 'today-screen.learn', message: 'Learn' })} /></h3>
           <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'today-screen.build-recall-with-the-next-scheduled-words', message: 'Build recall with the next scheduled words.' })} /></p>
           <button
@@ -286,8 +286,8 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
           </button>
         </li>
 
-        <li data-journey-stage="immerse" className="flex min-w-0 flex-col rounded-2xl border border-[color-mix(in_srgb,var(--sf-success)_25%,transparent)] bg-[color-mix(in_srgb,var(--sf-success)_5%,transparent)] p-4">
-          <span className="flex size-9 items-center justify-center rounded-xl border border-[color-mix(in_srgb,var(--sf-success)_30%,transparent)] bg-[color-mix(in_srgb,var(--sf-success)_10%,transparent)] text-[var(--sf-success)]" aria-hidden="true"><Headphones size={18} /></span>
+        <li data-journey-stage="immerse" className="flex min-w-0 flex-col rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[calc(var(--sf-panel-radius,18px)-4px)] border border-[color-mix(in_srgb,var(--sf-success)_25%,transparent)] bg-[color-mix(in_srgb,var(--sf-success)_5%,transparent)] p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[10px] border border-[color-mix(in_srgb,var(--sf-success)_30%,transparent)] bg-[color-mix(in_srgb,var(--sf-success)_10%,transparent)] text-[var(--sf-success)]" aria-hidden="true"><Headphones size={18} /></span>
           <h3 className="mt-4 text-lg font-black"><Trans {...msg({ context: 'today-screen.immerse', message: 'Immerse' })} /></h3>
           <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{canImmerse ? i18n._(msg({ id: "today.journey.train-your-ear-with-a-focused-listening-lesson", message: "Train your ear with a focused listening lesson." })) : isEmpty ? i18n._(msg({ id: "today.journey.build-a-plan-to-unlock-listening-practice", message: "Build a plan to unlock listening practice." })) : i18n._(msg({ id: "today.journey.a-listening-lesson-is-not-available-yet", message: "A listening lesson is not available yet." }))}</p>
           <button
@@ -302,8 +302,8 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
           </button>
         </li>
 
-        <li data-journey-stage="communicate" className="flex min-w-0 flex-col rounded-2xl border border-[color-mix(in_srgb,var(--sf-second)_25%,transparent)] bg-[color-mix(in_srgb,var(--sf-second)_5%,transparent)] p-4">
-          <span className="flex size-9 items-center justify-center rounded-xl border border-[color-mix(in_srgb,var(--sf-second)_30%,transparent)] bg-[color-mix(in_srgb,var(--sf-second)_10%,transparent)] text-[var(--sf-text)]" aria-hidden="true"><Sparkles size={18} /></span>
+        <li data-journey-stage="communicate" className="flex min-w-0 flex-col rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[calc(var(--sf-panel-radius,18px)-4px)] border border-[color-mix(in_srgb,var(--sf-second)_25%,transparent)] bg-[color-mix(in_srgb,var(--sf-second)_5%,transparent)] p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[10px] border border-[color-mix(in_srgb,var(--sf-second)_30%,transparent)] bg-[color-mix(in_srgb,var(--sf-second)_10%,transparent)] text-[var(--sf-text)]" aria-hidden="true"><Sparkles size={18} /></span>
           <h3 className="mt-4 text-lg font-black"><Trans {...msg({ context: 'today-screen.communicate', message: 'Communicate' })} /></h3>
           <p className="mt-1 flex-1 text-sm leading-6 text-[var(--sf-text-muted)]">{isEmpty ? i18n._(msg({ id: "today.journey.build-a-plan-to-unlock-story-shadowing-and-ai-dialogue", message: "Build a plan to unlock Story, Shadowing, and AI Dialogue." })) : i18n._(msg({ id: "today.journey.use-a-bounded-text-mission-story-or-shadowing-practice-with-your-", message: "Use a bounded text mission, story, or shadowing practice with your vocabulary." }))}</p>
           <button
@@ -322,7 +322,7 @@ function LearningJourney({ model, actions }: TodayScreenProps) {
             aria-label={isEmpty ? i18n._(msg({ id: "today.journey.communicate.aria", message: "Communicate: {action}" }).id, { action: unavailableLabel.toLowerCase() }) : i18n._(msg({ id: "today.journey.communicate-go-to-vocabulary-tools-for-ai-dialogue", message: "Communicate: go to Vocabulary tools for AI Dialogue" }))}
             disabled={isEmpty}
             onClick={actions.openVocabulary}
-            className="mt-2 min-h-11 rounded-xl px-3 py-2 text-xs font-bold text-[var(--sf-brand-text)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:no-underline"
+            className="mt-2 min-h-11 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius,999px)] px-3 py-2 text-xs font-bold text-[var(--sf-brand-text)] transition-colors hover:bg-[var(--sf-surface-raised)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:no-underline"
           >
             {isEmpty ? unavailableLabel : i18n._(msg({ id: "today.journey.go-to-vocabulary-tools-for-ai-dialogue", message: "Go to Vocabulary tools for AI Dialogue" }))}
           </button>
@@ -389,7 +389,7 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
     return (
       <section aria-labelledby="daily-today-heading" className="daily-canvas daily-canvas-today">
         <PageHeading model={model} />
-        <div className="mt-6 max-w-3xl rounded-[28px] border border-[color-mix(in_srgb,var(--sf-danger)_70%,transparent)] bg-[var(--sf-surface)] p-6 sm:p-8" role="alert" aria-live="assertive">
+        <div data-today-error="true" className="mt-6 max-w-3xl rounded-[28px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[color-mix(in_srgb,var(--sf-danger)_70%,transparent)] bg-[var(--sf-surface)] p-6 sm:p-8" role="alert" aria-live="assertive">
           <p className="premium-kicker uppercase tracking-[0.16em]">{_(msg({ id: 'today.error.kicker', message: 'Plan unavailable' }))}</p>
           <h2 className="mt-3 text-2xl font-black tracking-tight">{_(msg({ id: 'today.error.title', message: 'Today needs attention' }))}</h2>
           <p className="mt-2 max-w-xl text-[var(--sf-text-muted)]">{model.message}</p>
@@ -418,7 +418,7 @@ export function TodayScreen({ model, actions, ownerId, targetLanguage, translati
       <div className={`grid gap-5${model.placementAvailable ? ' lg:grid-cols-[minmax(0,1fr)_minmax(17rem,0.38fr)]' : ''}`}>
         <PracticeModes model={model} actions={actions} />
         {model.placementAvailable && (
-          <aside aria-labelledby="placement-invite-heading" className="liquid-glass rounded-[28px] border border-[var(--sf-border)] p-5 sm:p-6">
+          <aside aria-labelledby="placement-invite-heading" className="liquid-glass rounded-[28px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] p-5 sm:p-6">
             <p className="premium-kicker uppercase tracking-[0.14em]">{_(msg({ id: 'today.placement.kicker', message: 'Optional' }))}</p>
             <h2 id="placement-invite-heading" className="mt-2 text-xl font-black tracking-tight">{_(msg({ id: 'today.placement.title', message: 'Not sure where to begin?' }))}</h2>
             <p className="mt-2 text-pretty text-sm leading-6 text-[var(--sf-text-muted)]">{_(msg({ id: 'today.placement.description', message: 'Take a diagnostic check. It will not change your review history or unlock content.' }))}</p>

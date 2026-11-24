@@ -91,7 +91,7 @@ export function SpeechMatchFeedback({ value, target }: SpeechMatchFeedbackProps)
       </div>
 
       {/* Visual Diagnostic Display */}
-      <div className="flex max-w-[280px] flex-wrap items-center justify-center gap-1 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-1.5">
+      <div className="flex max-w-[280px] flex-wrap items-center justify-center gap-1 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,16px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-1.5">
         {compareWords(target, value.transcript).map((item, index) => (
           <span key={`${item.word}-${index}`} className={`text-xs font-black px-1.5 py-0.5 rounded transition-colors ${
             item.matched

@@ -14,6 +14,23 @@
 .latest-score-editor__status { min-height: 1.25rem; margin: 0; color: var(--sf-text-muted); font-size: 13px; }
 .latest-score-editor__error { margin: 0; color: var(--sf-danger); font-size: 13px; font-weight: 600; }
 
+:root:not([data-theme-family="crystal"]) .latest-score-editor__save {
+  background: var(--sf-primary-bg);
+  box-shadow: var(--sf-primary-shadow);
+  color: var(--sf-on-primary);
+}
+:root:not([data-theme-family="crystal"]) .latest-score-editor__save:hover:not(:disabled) {
+  background: var(--sf-primary-bg);
+  color: var(--sf-on-primary);
+  filter: brightness(1.06);
+}
+:root:not([data-theme-family="crystal"]) .latest-score-editor__clear {
+  border-color: var(--sf-border);
+  background: var(--sf-surface-control);
+  box-shadow: var(--sf-secondary-shadow);
+  color: var(--sf-text-strong);
+}
+
 :root[data-theme-family="crystal"] .latest-score-editor__save,
 :root[data-theme-family="crystal"] .latest-score-editor__clear { border-radius: 0; clip-path: var(--nk-chamfer-sm); font-family: var(--sf-font-display); font-style: italic; font-weight: 900; letter-spacing: .04em; }
 :root[data-theme-family="crystal"] .latest-score-editor__save { background: linear-gradient(180deg, #e0173f, #a30c2d); color: #fff; }

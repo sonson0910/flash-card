@@ -128,9 +128,9 @@ const partOfSpeechMessages = {
   phrase: msg({ id: 'library.part-of-speech.phrase', message: 'Phrase' }),
 } satisfies Record<(typeof PART_OF_SPEECH_OPTIONS)[number]['value'], ReturnType<typeof msg>>;
 
-const assistantButtonClass = 'flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-brand-text)] cursor-pointer';
+const assistantButtonClass = 'flex min-h-11 items-center justify-center gap-2 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-3 py-2 text-xs font-bold text-[var(--sf-text)] transition-colors hover:border-[var(--sf-brand)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-brand-text)] cursor-pointer';
 const filterLabelClass = 'mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--sf-text-muted)]';
-const filterSelectClass = 'min-h-11 w-full rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)]';
+const filterSelectClass = 'min-h-11 w-full rounded-lg [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-input-radius,12px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)]';
 
 type DeckDeletionOwnerId = string | null | undefined;
 type DeckDeletionIntent = { name: string; ownerId: DeckDeletionOwnerId };
@@ -257,12 +257,12 @@ export function DeckCreationForm({
           onChange={event => onChange(event.target.value)}
           placeholder={i18n._(msg({ id: "library-tools.ielts-travel", message: "IELTS, Travel…" }))}
           disabled={isCreating}
-          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
+          className="min-h-11 min-w-0 flex-1 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-input-radius,12px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
         />
         <button
           type="submit"
           disabled={isCreating || !value.trim()}
-          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--sf-brand)] px-3 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--sf-brand)] px-3 text-xs font-bold text-[var(--sf-on-brand)] transition-colors hover:bg-[var(--sf-brand-hover)] disabled:cursor-not-allowed disabled:opacity-50 [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)]"
           aria-label={isCreating ? i18n._(msg({ id: 'library.deck.creating-aria', message: 'Creating deck' })) : i18n._(msg({ context: 'library.deck.creation-submit', message: 'Create deck' }))}
         >
           {isCreating ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}
@@ -652,7 +652,7 @@ export function LibraryTools({
             ref={importRestoreRef}
             disabled={isLoading}
             data-tool-priority="secondary"
-            className="flex min-h-12 min-w-12 items-center justify-center rounded-xl border border-transparent bg-transparent text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-border)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-brand-text)] disabled:opacity-50"
+            className="flex min-h-12 min-w-12 items-center justify-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-transparent bg-transparent text-[var(--sf-text-muted)] transition-colors hover:border-[var(--sf-border)] hover:bg-[var(--sf-surface-raised)] hover:text-[var(--sf-brand-text)] disabled:opacity-50"
             title={isImporting ? i18n._(msg({ id: 'library.import.in-progress', message: 'Import in progress' })) : i18n._(msg({ id: 'library.import.action', message: 'Import cards from Excel or CSV' }))}
             aria-label={isImporting ? i18n._(msg({ id: 'library.import.in-progress', message: 'Import in progress' })) : i18n._(msg({ id: 'library.import.action', message: 'Import cards from Excel or CSV' }))}
           >
@@ -704,7 +704,7 @@ export function LibraryTools({
                 spellCheck={false}
                 placeholder={wordCopy.wordPlaceholder}
                 disabled={isLoading}
-                className={`min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-wait ${
+                className={`min-h-11 w-full rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-input-radius,12px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3.5 py-2.5 text-sm font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] disabled:cursor-wait ${
                   isLoading ? 'border-[var(--sf-brand)]' : ''
                 }`}
               />
@@ -728,7 +728,7 @@ export function LibraryTools({
               value={validGenerationDeck}
               onChange={event => setGenerationDeck(event.target.value)}
               disabled={isLoading}
-              className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
+              className="min-h-11 w-full rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-input-radius,12px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-sm font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)] disabled:cursor-wait disabled:opacity-70"
             >
               <option value=""><Trans {...msg({ context: 'library-tools.unassigned', message: 'Unassigned' })} /></option>
               {customDecks.map(deck => <option key={deck} value={deck}>{deck}</option>)}
@@ -741,7 +741,7 @@ export function LibraryTools({
             data-color-role="primary"
             disabled={!canSubmitWord}
             aria-describedby="smart-card-generation-help"
-              className="shimmer-sweep brand-action flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-[0_10px_24px_-14px_var(--sf-brand)] transition-[background-color,box-shadow,transform] duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
+              className="shimmer-sweep brand-action flex min-h-11 w-full items-center justify-center gap-2 rounded-full [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] bg-[var(--sf-brand)] py-3 text-xs font-black uppercase tracking-wider text-[var(--sf-on-brand)] shadow-md shadow-[0_10px_24px_-14px_var(--sf-brand)] transition-[background-color,box-shadow,transform] duration-300 hover:scale-[1.02] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             <span>
@@ -852,7 +852,7 @@ export function LibraryTools({
                 value={searchQuery}
                 onChange={event => setSearchQuery(event.target.value)}
                 placeholder={wordCopy.searchPlaceholder}
-                className="min-h-11 w-full rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] py-2 pl-9 pr-8 text-xs font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
+                className="min-h-11 w-full rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-input-radius,12px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] py-2 pl-9 pr-8 text-xs font-semibold text-[var(--sf-text)] placeholder:text-[var(--sf-text-muted)] focus:border-[var(--sf-brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)]"
               />
               {searchQuery && (
                 <button
@@ -871,23 +871,23 @@ export function LibraryTools({
                 type="button"
                 data-color-role="reward"
                 onClick={() => setShowStarredOnly(!showStarredOnly)}
-                className={`flex min-h-11 items-center justify-center gap-2 rounded-full border px-3 text-xs font-bold transition-colors duration-200 cursor-pointer ${
+                className={`flex min-h-11 items-center justify-center gap-2 rounded-full [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border px-3 text-xs font-bold transition-colors duration-200 cursor-pointer ${
                   showStarredOnly
-                    ? 'border-[color-mix(in_srgb,var(--sf-reward)_70%,transparent)] bg-[color-mix(in_srgb,var(--sf-reward)_15%,transparent)] text-[var(--sf-reward)] shadow-xs'
-                    : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-[color-mix(in_srgb,var(--sf-reward)_40%,transparent)] hover:text-[var(--sf-reward)]'
+                    ? 'border-[var(--sf-warn-line)] bg-[var(--sf-warn-bg)] text-[var(--sf-warn)] shadow-xs'
+                    : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-[var(--sf-warn-line)] hover:text-[var(--sf-warn)]'
                 }`}
                 role="switch"
                 aria-checked={showStarredOnly}
                 aria-label={i18n._(msg({ id: 'library.filters.starred-label', message: 'Show starred cards only' }))}
               >
-                <Star size={13} className={showStarredOnly ? 'fill-[var(--sf-reward)] text-[var(--sf-reward)]' : ''} />
+                <Star size={13} className={showStarredOnly ? 'fill-[var(--sf-reward)] text-[var(--sf-warn)]' : ''} />
                 <span><Trans {...msg({ context: 'library.filters.starred', message: 'Starred' })} /></span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-bold transition-colors duration-200 cursor-pointer ${
+                className={`flex min-h-11 items-center justify-center gap-1.5 rounded-full [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border px-3 text-xs font-bold transition-colors duration-200 cursor-pointer ${
                   activeAdvancedFilterCount > 0 || showAdvancedFilters
                     ? 'border-[color-mix(in_srgb,var(--sf-brand)_60%,transparent)] bg-[color-mix(in_srgb,var(--sf-brand)_15%,transparent)] text-[var(--sf-brand-text)] shadow-xs'
                     : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-[color-mix(in_srgb,var(--sf-brand)_40%,transparent)] hover:text-[var(--sf-brand-text)]'
@@ -907,7 +907,7 @@ export function LibraryTools({
 
             {/* Collapsible Advanced Filters Panel */}
             {showAdvancedFilters && (
-              <div className="space-y-3.5 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-3 text-xs">
+              <div className="space-y-3.5 rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-3 text-xs">
                 {/* Part of Speech */}
                 <div>
                   <label className={filterLabelClass}>
@@ -964,13 +964,13 @@ export function LibraryTools({
                         aria-label={i18n._(msg({ id: 'library.filters.cloud-date-label', message: 'Filter cloud cards by date created' }))}
                         value={activeDate === 'All' ? '' : dateLabelToQueryDate(activeDate) || ''}
                         onChange={event => setActiveDate(event.target.value || 'All')}
-                        className="min-h-11 min-w-0 flex-1 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)]"
+                        className="min-h-11 min-w-0 flex-1 rounded-lg [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-input-radius,12px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-2.5 text-xs font-semibold text-[var(--sf-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-brand)] focus:border-[var(--sf-brand)]"
                       />
                       <button
                         type="button"
                         onClick={() => setActiveDate('All')}
                         disabled={activeDate === 'All'}
-                        className="flex size-11 items-center justify-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] disabled:opacity-40"
+                        className="flex size-11 items-center justify-center rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] disabled:opacity-40 [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)]"
                         aria-label={i18n._(msg({ id: 'library.filters.clear-date', message: 'Clear date filter' }))}
                       >
                         <X size={14} />
@@ -1032,7 +1032,7 @@ export function LibraryTools({
                 {customDecks.map(deck => (
                   <div
                     key={deck}
-                    className={`flex min-h-11 items-center rounded-xl border pl-2.5 pr-1 text-xs font-bold transition-colors ${
+                    className={`flex min-h-11 items-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border pl-2.5 pr-1 text-xs font-bold transition-colors ${
                       activeCustomDeck.kind === 'deck' && activeCustomDeck.name === deck
                         ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:text-[var(--sf-text)]'
@@ -1083,7 +1083,7 @@ export function LibraryTools({
                     type="button"
                     aria-pressed={activeCategory === category}
                     onClick={() => setActiveCategory(category)}
-                    className={`flex min-h-11 min-w-11 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-colors ${
+                    className={`flex min-h-11 min-w-11 items-center gap-1.5 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border px-2.5 py-1 text-xs font-bold transition-colors ${
                       activeCategory === category
                         ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] shadow-xs'
                         : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-[color-mix(in_srgb,var(--sf-brand)_40%,transparent)] hover:text-[var(--sf-text)]'
@@ -1181,7 +1181,7 @@ function DeckButton({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors duration-200 cursor-pointer ${
+      className={`flex min-h-11 min-w-11 items-center gap-1.5 rounded-full border px-3 py-1 [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] text-xs font-semibold transition-colors duration-200 cursor-pointer ${
         active
           ? 'border-[var(--sf-brand)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] font-extrabold shadow-sm scale-[1.02]'
           : 'border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text-muted)] hover:border-[color-mix(in_srgb,var(--sf-brand)_50%,transparent)] hover:text-[var(--sf-text)]'
@@ -1189,7 +1189,7 @@ function DeckButton({
     >
       {icon}
       <span>{label}</span>
-      {count && <span className={`text-[10px] ${active ? 'text-[#071014]/80' : 'opacity-70'}`}>{count}</span>}
+      {count && <span className={`text-[10px] ${active ? 'opacity-85' : 'opacity-70'}`}>{count}</span>}
     </button>
   );
 }

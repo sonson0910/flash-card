@@ -98,3 +98,69 @@
   --sf-rating-easy-ink: var(--sf-on-brand); --sf-metal-gold: var(--sf-metal); --sf-metal-em: var(--sf-metal); --sf-metal-hot: var(--sf-metal); --sf-tier-bud-fill: var(--sf-tier-bud); --sf-tier-bud-fill-shadow: transparent; --sf-tier-bloom-fill: var(--sf-tier-bloom); --sf-tier-bloom-fill-shadow: transparent; --sf-tier-star-fill: var(--sf-tier-star); --sf-tier-star-fill-shadow: transparent; --sf-dialog-veil: var(--sf-scrim);
   --nk-chamfer: none; --nk-chamfer-sm: none; --nk-snap: cubic-bezier(0.16, 1, 0.3, 1); --nk-stars: none; --nk-wing-opacity: 0;
 }
+
+/* Additional Classic-only tokens from canvas/src/tokens.js that sit outside the cross-family
+   tokenParity.test.ts set so public/theme-crystal.css stays untouched. */
+:root:not([data-theme-family="crystal"]) {
+  --sf-nav-line: rgb(29 26 22 / 0.08);
+  --sf-accent-soft: rgb(180 70 26 / 0.08);
+  --sf-accent-line: rgb(151 64 13 / 0.25);
+  --sf-nav-active-bg: #1d1a16;
+  --sf-nav-active-text: #fbf6ec;
+  --sf-primary-kbd-bg: rgb(251 246 236 / 0.14);
+  --sf-secondary-shadow: 0 1px 2px rgb(60 40 20 / 0.08);
+  --sf-panel-blur: none;
+  --sf-panel-radius: 18px;
+  --sf-input-radius: 999px;
+  --sf-dialog-radius: 18px;
+  --sf-dialog-border: 1px solid rgb(29 26 22 / 0.08);
+  --sf-track: rgb(29 26 22 / 0.08);
+  --sf-spark-fill: rgb(180 70 26 / 0.1);
+  --sf-card-shadow: inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(29 26 22 / 0.06), 0 10px 20px -10px rgb(60 40 20 / 0.18), 0 50px 70px -40px rgb(60 40 20 / 0.45);
+  --sf-img-margin: 12px 12px 0;
+  --sf-img-radius: 10px;
+  --sf-img-mask: none;
+  --sf-danger-solid: #b3261e;
+  --sf-danger-solid-text: #fff8f0;
+  --sf-skeleton: linear-gradient(90deg, rgb(29 26 22 / 0.05), rgb(29 26 22 / 0.1), rgb(29 26 22 / 0.05));
+  --sf-em-style: italic;
+  --sf-em-glow: none;
+  --sf-display-weight: 380;
+  --sf-grain-matrix: 0 0 0 0 0.35 0 0 0 0 0.28 0 0 0 0 0.2 0 0 0 0.9 0;
+  --sf-due-bg: #fffcf5;
+  --sf-due-text: #97400d;
+  --sf-due-line: rgb(151 64 13 / 0.25);
+  --sf-pulse: rgb(29 26 22 / 0.25);
+}
+
+:root.dark:not([data-theme-family="crystal"]) {
+  --sf-nav-line: rgb(255 255 255 / 0.06);
+  --sf-accent-soft: rgb(40 211 244 / 0.12);
+  --sf-accent-line: rgb(40 211 244 / 0.35);
+  --sf-nav-active-bg: rgb(255 255 255 / 0.08);
+  --sf-nav-active-text: #ffffff;
+  --sf-primary-kbd-bg: rgb(4 20 28 / 0.14);
+  --sf-secondary-shadow: none;
+  --sf-panel-blur: blur(18px);
+  --sf-panel-radius: 22px;
+  --sf-input-radius: 14px;
+  --sf-dialog-radius: 26px;
+  --sf-dialog-border: 1px solid rgb(255 255 255 / 0.1);
+  --sf-track: rgb(255 255 255 / 0.08);
+  --sf-spark-fill: rgb(40 211 244 / 0.12);
+  --sf-card-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.9);
+  --sf-img-margin: 0;
+  --sf-img-radius: 0;
+  --sf-img-mask: linear-gradient(to bottom, #000 42%, transparent 100%);
+  --sf-danger-solid: #ed5350;
+  --sf-danger-solid-text: #1a0707;
+  --sf-skeleton: linear-gradient(90deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.04));
+  --sf-em-style: normal;
+  --sf-em-glow: 0 0 36px rgb(40 211 244 / 0.5);
+  --sf-display-weight: 440;
+  --sf-grain-matrix: 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.9 0;
+  --sf-due-bg: rgb(6 22 31 / 0.55);
+  --sf-due-text: #7ee6fa;
+  --sf-due-line: rgb(126 230 250 / 0.35);
+  --sf-pulse: rgb(40 211 244 / 0.45);
+}

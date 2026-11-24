@@ -1,56 +1,59 @@
 /* Body parts of the spreadsheet import dialog; the frame, header and footer
    come from the shared library dialog chrome. */
-.spreadsheet-import-progress { border: 1px solid color-mix(in srgb, var(--sf-brand) 40%, var(--sf-border)); border-radius: var(--ld-tile-radius, 14px); background: color-mix(in srgb, var(--sf-brand) 9%, transparent); padding: 16px; }
-.spreadsheet-import-progress-heading { display: flex; min-width: 0; align-items: center; gap: 10px; color: var(--sf-text); font-size: 14.5px; }
+.spreadsheet-import-progress { border: 1px solid var(--sf-accent-line, color-mix(in srgb, var(--sf-brand) 40%, var(--sf-border))); border-radius: var(--ld-tile-radius, 10px); background: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 9%, transparent)); padding: 16px; }
+.spreadsheet-import-progress-heading { display: flex; min-width: 0; align-items: center; gap: 10px; color: var(--sf-text-strong); font-size: 14px; }
 .spreadsheet-import-progress-heading strong { font-weight: 650; }
 .spreadsheet-import-current { overflow: hidden; margin-left: auto; color: var(--sf-text-muted); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-.spreadsheet-import-current b { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 16px; font-style: italic; font-weight: 500; }
+.spreadsheet-import-current b { color: var(--sf-brand-text); font-family: var(--sf-font-display); font-size: 15px; font-style: normal; font-weight: 400; }
 .spreadsheet-import-spinner { display: inline-flex; color: var(--sf-brand-text); }
 /* Drop the native control so Chromium and WebKit both draw the theme track and fill. */
-.spreadsheet-import-progress progress { display: block; width: 100%; height: 8px; margin-top: 14px; overflow: hidden; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--sf-text) 10%, transparent); color: var(--sf-brand); appearance: none; -webkit-appearance: none; }
+.spreadsheet-import-progress progress { display: block; width: 100%; height: 8px; margin-top: 12px; overflow: hidden; border: 0; border-radius: 999px; background: var(--sf-track, color-mix(in srgb, var(--sf-text) 10%, transparent)); color: var(--sf-brand); appearance: none; -webkit-appearance: none; }
 .spreadsheet-import-progress progress::-webkit-progress-bar { border-radius: 999px; background: transparent; }
-.spreadsheet-import-progress progress::-webkit-progress-value { border-radius: 999px; background: linear-gradient(90deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 45%, var(--sf-second))); }
-.spreadsheet-import-progress progress::-moz-progress-bar { border-radius: 999px; background: linear-gradient(90deg, var(--sf-brand), color-mix(in srgb, var(--sf-brand) 45%, var(--sf-second))); }
-.spreadsheet-import-indeterminate { height: 8px; margin-top: 14px; overflow: hidden; border-radius: 999px; background: linear-gradient(90deg, transparent, var(--sf-brand), transparent); background-size: 200% 100%; animation: spreadsheet-import-sheen 1.4s linear infinite; }
-.spreadsheet-import-progress p { margin: 10px 0 0; color: var(--sf-text-muted); font-size: 12.5px; }
+.spreadsheet-import-progress progress::-webkit-progress-value { border-radius: 999px; background: var(--sf-brand); }
+.spreadsheet-import-progress progress::-moz-progress-bar { border-radius: 999px; background: var(--sf-brand); }
+:root.dark:not([data-theme-family="crystal"]) .spreadsheet-import-progress progress::-webkit-progress-value { background: linear-gradient(90deg, var(--sf-brand), var(--sf-second)); }
+:root.dark:not([data-theme-family="crystal"]) .spreadsheet-import-progress progress::-moz-progress-bar { background: linear-gradient(90deg, var(--sf-brand), var(--sf-second)); }
+.spreadsheet-import-indeterminate { height: 8px; margin-top: 12px; overflow: hidden; border-radius: 999px; background: linear-gradient(90deg, transparent, var(--sf-brand), transparent); background-size: 200% 100%; animation: spreadsheet-import-sheen 1.4s linear infinite; }
+.spreadsheet-import-progress p { margin: 8px 0 0; color: var(--ld-text-3, var(--sf-text-subtle)); font-size: 12px; }
 .spreadsheet-import-result { display: flex; flex-direction: column; gap: 12px; }
-.spreadsheet-import-summary-heading { display: flex; align-items: center; gap: 10px; color: var(--sf-text); font-size: 14.5px; }
+.spreadsheet-import-summary-heading { display: flex; align-items: center; gap: 8px; color: var(--sf-text-strong); font-size: 14px; }
 .spreadsheet-import-summary-heading strong { font-weight: 650; }
 .spreadsheet-import-partial-chip { display: inline-flex; height: 24px; flex: none; align-items: center; padding: 0 9px; border: 1px solid var(--sf-warn-line); border-radius: 999px; background: var(--sf-warn-bg); color: var(--sf-warn); font-size: 11.5px; font-weight: 650; }
-.spreadsheet-import-summary-caption { margin-left: auto; color: var(--sf-text-muted); font-size: 12.5px; white-space: nowrap; }
+.spreadsheet-import-summary-caption { margin-left: auto; color: var(--ld-text-3, var(--sf-text-subtle)); font-size: 12.5px; white-space: nowrap; }
 .spreadsheet-import-result-heading { display: flex; align-items: center; gap: 8px; color: var(--sf-danger); font-size: 15px; }
 .spreadsheet-import-result-heading strong { font-weight: 650; }
-.spreadsheet-import-result-heading.is-completed { color: var(--sf-success); }
-.spreadsheet-import-result-heading.is-partial { color: var(--sf-reward); }
+.spreadsheet-import-result-heading.is-completed { color: var(--sf-success-text); }
+.spreadsheet-import-result-heading.is-partial { color: var(--sf-warn); }
 .spreadsheet-import-result-message { margin: 0; color: var(--sf-text-muted); font-size: 13.5px; line-height: 1.5; }
-.spreadsheet-import-summary { overflow: hidden; border: 1px solid var(--sf-border); border-radius: var(--ld-tile-radius, 14px); background: var(--ld-chip, var(--sf-surface-raised)); }
+.spreadsheet-import-summary { overflow: hidden; border: 1px solid var(--sf-border); border-radius: var(--ld-tile-radius, 10px); background: transparent; }
 .spreadsheet-import-summary dl { display: grid; margin: 0; }
-.spreadsheet-import-row { display: flex; min-width: 0; align-items: center; gap: 12px; padding: 13px 16px; }
+.spreadsheet-import-row { display: flex; min-width: 0; min-height: 46px; align-items: center; gap: 12px; padding: 10px 16px; }
 .spreadsheet-import-row + .spreadsheet-import-row { border-top: 1px solid var(--sf-border); }
-.spreadsheet-import-row dt { display: flex; min-width: 0; align-items: center; gap: 10px; color: var(--sf-text); font-size: 14px; font-weight: 500; }
-.spreadsheet-import-row dt::before { width: 7px; height: 7px; flex: none; margin-right: 6px; border-radius: 50%; background: var(--sf-text-muted); content: ''; }
-.spreadsheet-import-row.is-created dt::before { background: var(--sf-success); }
+.spreadsheet-import-row dt { display: flex; min-width: 0; align-items: center; gap: 10px; color: var(--sf-text); font-size: 14px; font-weight: 400; }
+.spreadsheet-import-row dt::before { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--ld-text-3, var(--sf-text-subtle)); content: ''; }
+.spreadsheet-import-row.is-created dt::before { background: var(--sf-rating-good); }
 .spreadsheet-import-row.is-reused dt::before { background: var(--sf-brand); }
-.spreadsheet-import-row.is-failed dt::before { background: var(--sf-danger); }
-.spreadsheet-import-row.is-pending dt::before { background: var(--sf-reward); }
-.spreadsheet-import-row dt small { overflow: hidden; color: var(--sf-text-muted); font-size: 12.5px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
-.spreadsheet-import-row dd { margin: 0 0 0 auto; color: var(--sf-text); font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 600; }
-.spreadsheet-import-row.has-issues { background: color-mix(in srgb, var(--sf-danger) 8%, transparent); }
+.spreadsheet-import-row.is-failed dt::before { background: var(--sf-danger-solid, var(--sf-danger)); }
+.spreadsheet-import-row.is-pending dt::before { background: var(--sf-warn); }
+.spreadsheet-import-row dt small { overflow: hidden; color: var(--ld-text-3, var(--sf-text-subtle)); font-size: 12.5px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.spreadsheet-import-row dd { margin: 0 0 0 auto; color: var(--sf-text-strong); font-family: var(--sf-font-mono); font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 400; }
+.spreadsheet-import-row.is-skipped dd { color: var(--sf-text-muted); }
+.spreadsheet-import-row.has-issues { background: var(--sf-danger-soft); }
 .spreadsheet-import-row.has-issues dd { color: var(--sf-danger); }
 /* Row issues sit directly under the counts, inside the same panel. */
-.spreadsheet-import-issues { border-top: 1px solid var(--sf-border); background: color-mix(in srgb, var(--sf-danger) 5%, transparent); padding: 12px 16px 14px 36px; }
+.spreadsheet-import-issues { border-top: 1px solid var(--sf-border); background: var(--sf-danger-soft); padding: 10px 16px 12px 36px; }
 .spreadsheet-import-issues ul { display: grid; margin: 0; padding: 0; gap: 6px; list-style: none; }
-.spreadsheet-import-issues li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.4; }
-.spreadsheet-import-issues li strong,.spreadsheet-import-issue-column { color: var(--sf-danger); font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; font-weight: 500; }
-.spreadsheet-import-issue-word { color: var(--sf-text); }
-.spreadsheet-import-issues p { margin: 8px 0 0; color: var(--sf-text-muted); font-size: 12px; }
-.spreadsheet-import-deck-note { margin: 0; border-left: 2px solid var(--sf-reward); padding-left: 10px; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.45; }
+.spreadsheet-import-issues li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; color: var(--sf-text-body); font-size: 12.5px; line-height: 1.45; }
+.spreadsheet-import-issues li strong,.spreadsheet-import-issue-column { color: var(--sf-danger); font-family: var(--sf-font-mono); font-size: 12px; font-weight: 400; }
+.spreadsheet-import-issue-word { color: var(--sf-text-strong); }
+.spreadsheet-import-issues p { margin: 8px 0 0; color: var(--ld-text-3, var(--sf-text-subtle)); font-size: 12px; }
+.spreadsheet-import-deck-note { margin: 0; border-left: 2px solid var(--sf-warn); padding-left: 10px; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.45; }
 .spreadsheet-import-result-guidance { margin: 0; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.45; }
-.spreadsheet-import-mapping { border: 1px solid var(--sf-border); border-radius: var(--ld-tile-radius, 14px); background: var(--ld-chip, var(--sf-surface-raised)); padding: 14px 16px; }
-.spreadsheet-import-mapping h3 { margin: 0; color: var(--ld-text-3, var(--sf-text-muted)); font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.spreadsheet-import-mapping { border: 1px solid var(--sf-border); border-radius: var(--ld-tile-radius, 10px); background: var(--ld-chip, var(--sf-surface-raised)); padding: 14px 16px; }
+.spreadsheet-import-mapping h3 { margin: 0; color: var(--ld-text-3, var(--sf-text-subtle)); font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
 .spreadsheet-import-mapping ul { display: grid; margin: 10px 0 0; padding: 0; gap: 6px; list-style: none; }
 .spreadsheet-import-mapping li { display: flex; align-items: center; gap: 6px; color: var(--sf-text-muted); font-size: 12.5px; }
-.spreadsheet-import-mapping code,.spreadsheet-import-mapping strong { color: var(--sf-text); font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; font-weight: 500; }
+.spreadsheet-import-mapping code,.spreadsheet-import-mapping strong { color: var(--sf-text-strong); font-family: var(--sf-font-mono); font-size: 12px; font-weight: 500; }
 .spreadsheet-import-mapping small { color: var(--sf-danger); font-weight: 600; }
 .spreadsheet-import-empty { display: flex; min-height: 10rem; align-items: center; justify-content: center; color: var(--sf-text-muted); font-size: 14px; text-align: center; }
 .spreadsheet-import-footer { justify-content: space-between; }

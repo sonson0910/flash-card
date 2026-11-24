@@ -289,7 +289,7 @@ export function SpellingView({
                 <button
                   type="button"
                   onClick={() => playPronunciation()}
-                  className="practice-listen__button transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none"
+                  className="practice-listen__button sf-press sf-pulse transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none"
                   aria-label={_(
                     msg({
                       id: "practice.spelling.play-pronunciation",
@@ -298,7 +298,14 @@ export function SpellingView({
                     { word: card.word },
                   )}
                 >
-                  {LISTEN_BARS.map(height => <i key={height} aria-hidden="true" style={{ height }} />)}
+                  {LISTEN_BARS.map((height, index) => (
+                    <i
+                      key={height}
+                      className="sf-wave"
+                      aria-hidden="true"
+                      style={{ height, animationDelay: `${index * 110}ms` }}
+                    />
+                  ))}
                 </button>
               </div>
               <div className="practice-speed" role="group" aria-label={_(msg({ id: "practice.spelling.speed", message: "Playback speed" }))}>

@@ -1,6 +1,6 @@
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react';
-import { CheckCircle2, ChevronRight, Gauge, Volume2, X, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Gauge, X, XCircle } from 'lucide-react';
 import { Fragment, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { playWordAudio } from '../../lib/audio';
 import { createImeSubmitGuard } from '../../lib/imeSubmitGuard';
@@ -39,7 +39,6 @@ export interface LanguagePracticeDrillProps {
 }
 
 const TONES = [1, 2, 3, 4, 5] as const;
-const TONE_MARKS = ['¯', 'ˊ', 'ˇ', 'ˋ', '˙'] as const;
 // Pitch contour icons for tones 1-4 and the neutral tone, drawn in a 36x24 box.
 const TONE_CONTOURS = ['M4 5h28', 'M4 17L32 4', 'M4 9Q13 25 21 18T32 5', 'M4 4L32 20', 'M18 12h.1'] as const;
 const HANGUL_KEYS = [
@@ -252,7 +251,7 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
       </header>
       <div className="language-practice-drill__panel">
         <div className="language-practice-drill__prompt-row">
-          <button type="button" className="language-practice-drill__listen" onClick={playAudio} disabled={!pack} aria-label={i18n._(msg({ id: 'languagePractice.action.listen', message: 'Play pronunciation' }))}>{crystal ? <span className="language-practice-drill__listen-bars" aria-hidden="true">{[0, 1, 2, 3, 4].map(bar => <i key={bar} />)}</span> : <Volume2 size={20} aria-hidden="true" />}</button>
+          <button type="button" className="language-practice-drill__listen sf-press sf-pulse" onClick={playAudio} disabled={!pack} aria-label={i18n._(msg({ id: 'languagePractice.action.listen', message: 'Play pronunciation' }))}><span className="language-practice-drill__listen-bars" aria-hidden="true">{[0, 1, 2, 3, 4].map(bar => <i key={bar} className="sf-wave" style={{ animationDelay: `${bar * 110}ms` }} />)}</span></button>
           <div><p className="language-practice-drill__instruction">{instruction}</p><p className="language-practice-drill__prompt" lang={card.translationLanguage || 'vi'}>{cloze ? card.exampleTranslation || model.prompt : model.prompt}</p></div>
           <button type="button" className="language-practice-drill__speed" onClick={() => setSlowAudio(value => !value)} aria-pressed={slowAudio} title={i18n._(msg({ id: 'languagePractice.action.slow', message: 'Toggle slow pronunciation' }))}><Gauge size={14} aria-hidden="true" />{slowAudio ? '0.75×' : '1×'}</button>
         </div>
@@ -271,12 +270,12 @@ export function LanguagePracticeDrill({ card, cards, onClose, onNext, currentInd
                     <p lang="zh-Latn" className="language-practice-drill__syllable">{crystal && checked ? syllable.text : toneSyllableLabel(syllable.text)}</p>
                     {showHanziSyllables && <p lang={card.language || 'zh'} className="language-practice-drill__hanzi">{hanziSyllables[index]}</p>}
                     <div className="language-practice-drill__tone-options">
-                      {TONES.map(tone => <button key={tone} type="button" onClick={() => selectTone(index, tone)} aria-pressed={selectedTones[index] === tone} data-tone-verdict={!checked ? undefined : selectedTones[index] === tone ? tone === syllable.tone ? 'right' : 'wrong' : tone === syllable.tone ? 'answer' : undefined} className={`language-practice-drill__tone-option language-practice-drill__tone-option--${tone}`}>{crystal ? <svg width="28" height="18" viewBox="0 0 36 24" aria-hidden="true"><path d={TONE_CONTOURS[tone - 1]} fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" /></svg> : <span aria-hidden="true">{TONE_MARKS[tone - 1]}</span>}<small>{tone}</small></button>)}
+                      {TONES.map(tone => <button key={tone} type="button" onClick={() => selectTone(index, tone)} aria-pressed={selectedTones[index] === tone} data-tone-verdict={!checked ? undefined : selectedTones[index] === tone ? tone === syllable.tone ? 'right' : 'wrong' : tone === syllable.tone ? 'answer' : undefined} className={`language-practice-drill__tone-option language-practice-drill__tone-option--${tone}`}><svg width="28" height="18" viewBox="0 0 36 24" aria-hidden="true"><path d={TONE_CONTOURS[tone - 1]} fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" /></svg><small>{tone}</small></button>)}
                     </div>
                   </div>
                 ))}
               </div>
-              {crystal && <div className="language-practice-drill__tone-legend" aria-hidden="true">{TONES.map(tone => <span key={tone} data-tone={tone}><i />{tone === 5 ? '·' : tone}</span>)}</div>}
+              <div className="language-practice-drill__tone-legend" aria-hidden="true">{TONES.map(tone => <span key={tone} data-tone={tone}><i />{tone === 5 ? '·' : tone}</span>)}</div>
             </fieldset>
           ) : model.kind === 'hangul-blocks' ? (
             <fieldset disabled={checked} className="language-practice-drill__hangul">

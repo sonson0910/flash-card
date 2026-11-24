@@ -6,6 +6,7 @@ import { Lumi } from '../../components/lumi/Lumi';
 import { displayCardDate } from '../library/libraryPresentation';
 import type { WebWordsReturnView } from '../navigation/useAppNavigation';
 import { useWebWordsPage } from './useWebWordsPage';
+import { splitStressedWord } from '../library/libraryCardFace';
 import { getLibraryCardTier, type LibraryCardTier } from '../library/libraryViewModel';
 import type { WebWordsArticleGroup } from './webWordsGrouping';
 import './web-words.css';
@@ -97,11 +98,13 @@ function StatusChip({ tier }: { readonly tier: LibraryCardTier }) {
 function ArticleGroupCard({
   group,
   edge,
+  targetLanguage,
   selectedCardIds,
   onToggleSelected,
 }: {
   readonly group: WebWordsArticleGroup;
   readonly edge: 'crimson' | 'holo';
+  readonly targetLanguage: string | null;
   readonly selectedCardIds: ReadonlySet<string>;
   readonly onToggleSelected: (cardId: string) => void;
 }) {
@@ -131,10 +134,13 @@ function ArticleGroupCard({
       <ul className="ww-article__rows">
         {group.cards.map(card => {
           const tier = getLibraryCardTier(card);
+          const stressed = splitStressedWord(card.word, card.phonetic, card.language || targetLanguage || 'en');
           return (
             <li key={card.id} className="ww-row" data-tier={tier}>
               <div className="ww-row__word">
-                <span className="ww-row__term">{card.word}</span>
+                <span className="ww-row__term">
+                  {stressed ? <>{stressed.before}<span className="ww-row__stress">{stressed.stressed}</span>{stressed.after}</> : card.word}
+                </span>
                 {card.translation && <span className="ww-row__meaning">{card.translation}</span>}
               </div>
               <div className="ww-row__context">
@@ -300,7 +306,7 @@ export function WebWordsPage({ ownerId, targetLanguage, translationLanguage, onC
             )}
             <ul className="ww-articles">
               {state.groups.map((group, index) => (
-                <ArticleGroupCard key={group.key} group={group} edge={index % 2 === 0 ? 'crimson' : 'holo'} selectedCardIds={state.selectedCardIds} onToggleSelected={actions.toggleSelected} />
+                <ArticleGroupCard key={group.key} group={group} edge={index % 2 === 0 ? 'crimson' : 'holo'} targetLanguage={targetLanguage} selectedCardIds={state.selectedCardIds} onToggleSelected={actions.toggleSelected} />
               ))}
             </ul>
             {state.hasNext && (

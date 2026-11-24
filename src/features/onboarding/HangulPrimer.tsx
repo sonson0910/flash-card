@@ -12,6 +12,7 @@ const HANGUL_VOWELS: readonly (readonly [jamo: string, sound: string])[] = [
 ];
 /** ㅎ + ㅏ + ㄴ stack into the block 한, the first syllable of 한국 (Korea). */
 const BLOCK_PARTS: readonly (readonly [jamo: string, sound: string])[] = [['ㅎ', 'h'], ['ㅏ', 'a'], ['ㄴ', 'n']];
+const DEMO_JAMO: ReadonlySet<string> = new Set(BLOCK_PARTS.map(([jamo]) => jamo));
 const BLOCK = '한';
 const BLOCK_SOUND = 'han';
 const BLOCK_WORD = '한국';
@@ -28,7 +29,7 @@ function JamoGrid({ items, label, count }: { readonly items: typeof HANGUL_CONSO
   return <section className="onb-primer-set" aria-label={label}>
     <p className="onb-primer-set-head"><span>{label}</span><span>{count}</span></p>
     <ul className="onb-primer-grid" data-count={count}>
-      {items.map(([jamo, sound]) => <li key={jamo} className="onb-primer-jamo crystal-chamfer-sm">
+      {items.map(([jamo, sound]) => <li key={jamo} className="onb-primer-jamo crystal-chamfer-sm" data-demo={DEMO_JAMO.has(jamo) ? 'true' : undefined}>
         <span lang="ko" className="onb-primer-jamo-glyph">{jamo}</span>
         <span className="onb-primer-jamo-sound">{sound}</span>
       </li>)}

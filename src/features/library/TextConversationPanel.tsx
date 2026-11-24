@@ -1,5 +1,6 @@
 import { ArrowLeft, Loader2, MessageCircle, Mic, MicOff, RotateCcw, Send, Volume2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import '../../components/overlay-dialog.css';
 import { cancelSpeech, speakText } from '../../lib/audio';
 import { sendTextConversationTurn } from '../../lib/gemini';
 import type { CardData } from '../../types/card';
@@ -234,7 +235,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
   if (!activeMission || !session) {
     return (
       <section
-        className="text-conversation-panel max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-xl outline-none sm:p-6"
+        className="text-conversation-panel max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[24px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-dialog-radius,24px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-xl outline-none sm:p-6"
         aria-labelledby="text-conversation-heading"
       >
         <div className="flex items-start justify-between gap-3">
@@ -243,7 +244,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
             type="button"
             onClick={onClose}
             aria-label="Close text practice"
-            className="text-conversation-close flex size-10 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)]"
+            className="text-conversation-close flex size-10 items-center justify-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)]"
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -255,7 +256,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
 
   return (
     <section
-      className="text-conversation-panel max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[24px] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-xl outline-none sm:p-6"
+      className="text-conversation-panel max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-[24px] [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-dialog-radius,24px)] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-5 text-[var(--sf-text)] shadow-xl outline-none sm:p-6"
       aria-labelledby="text-conversation-heading"
     >
       <div className="flex items-start justify-between gap-3">
@@ -274,7 +275,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
           <button
             type="button"
             onClick={onBack}
-            className="text-conversation-back flex min-h-10 items-center gap-1.5 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] hover:border-[var(--sf-brand)]"
+            className="text-conversation-back flex min-h-10 items-center gap-1.5 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] hover:border-[var(--sf-brand)]"
           >
             <ArrowLeft size={14} aria-hidden="true" />
             Back
@@ -283,7 +284,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
             type="button"
             onClick={onClose}
             aria-label="Close text practice"
-            className="text-conversation-close flex size-10 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] hover:border-[var(--sf-brand)]"
+            className="text-conversation-close flex size-10 items-center justify-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-full border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-[var(--sf-text)] hover:border-[var(--sf-brand)]"
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -299,7 +300,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
       </div>
 
       <div
-        className="text-conversation-log mt-4 max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3"
+        className="text-conversation-log mt-4 max-h-72 space-y-2 overflow-y-auto rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-panel-radius,18px)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] p-3"
         role="log"
         aria-label="Text conversation"
         aria-live="polite"
@@ -311,7 +312,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
         )}
         {session.messages.map((message, index) => (
           <div key={`${message.role}-${index}`} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`text-conversation-bubble text-conversation-bubble--${message.role} max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm ${message.role === 'user' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'border border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
+            <div className={`text-conversation-bubble text-conversation-bubble--${message.role} max-w-[88%] rounded-2xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--tc-fr)] px-3.5 py-2.5 text-sm ${message.role === 'user' ? 'bg-[var(--sf-brand)] text-[var(--sf-on-brand)]' : 'border border-[var(--sf-border)] bg-[var(--sf-surface)]'}`}>
               <p className="font-medium">{message.text}</p>
               {message.translation && (
                 <p className="mt-1 text-xs opacity-75">{message.translation}</p>
@@ -347,14 +348,14 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
       </p>
 
       {error && (
-        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-700 dark:text-rose-200" role="alert">
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--tc-fr)] border border-[var(--sf-danger-line)] bg-[var(--sf-danger-soft)] p-3 text-xs font-semibold text-[var(--sf-danger)]" role="alert">
           <span>{failureMessage(error)}</span>
           {pendingMessage && error !== 'session-complete' && (
             <button
               type="button"
               onClick={handleRetry}
               disabled={isLoading}
-              className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-lg border border-current px-2.5 text-[11px] font-bold disabled:opacity-50"
+              className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-lg [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-current px-2.5 text-[11px] font-bold disabled:opacity-50"
             >
               <RotateCcw size={12} aria-hidden="true" /> Retry
             </button>
@@ -363,7 +364,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
       )}
 
       {session.status === 'completed' ? (
-        <p className="mt-4 rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-center text-sm font-bold text-emerald-700 dark:text-emerald-200" role="status">
+        <p className="mt-4 rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--tc-fr)] border border-[var(--sf-success-line)] bg-[var(--sf-success-soft)] p-3 text-center text-sm font-bold text-[var(--sf-success-text)]" role="status">
           Mission complete. Your text practice stayed separate from review ratings.
         </p>
       ) : (
@@ -378,7 +379,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
               maxLength={500}
               rows={2}
               disabled={isLoading || session.status !== 'active'}
-              className="text-conversation-input min-h-12 w-full resize-none rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2.5 text-sm outline-none focus:border-[var(--sf-brand)] disabled:opacity-60"
+              className="text-conversation-input min-h-12 w-full resize-none rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--tc-fr)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 py-2.5 text-sm outline-none focus:border-[var(--sf-brand)] disabled:opacity-60"
             />
             {voiceAdapter && (
               <div className="space-y-1">
@@ -389,7 +390,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
                   aria-pressed={voiceState === 'listening'}
                   aria-label={voiceState === 'listening' ? 'Stop voice input' : 'Start voice input'}
                   aria-describedby="voice-input-help"
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] hover:border-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-lg [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-3 text-xs font-bold text-[var(--sf-text)] hover:border-[var(--sf-brand)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {voiceState === 'listening' ? <MicOff size={14} aria-hidden="true" /> : <Mic size={14} aria-hidden="true" />}
                   {voiceState === 'listening' ? 'Stop voice input' : 'Start voice input'}
@@ -398,7 +399,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
                   Voice input (transcript only). SonFlash does not store a recording; your browser's speech service may process audio. Typing is always available.
                 </p>
                 {voiceError && (
-                  <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-200" role="alert">
+                  <p className="text-[11px] font-semibold text-[var(--sf-warn)]" role="alert">
                     {voiceFailureMessage(voiceError)}
                   </p>
                 )}
@@ -409,7 +410,7 @@ export function TextConversationPanel({ cards, ownerId, voiceInput, onBack, onCl
             type="submit"
             disabled={isLoading || session.status !== 'active' || !draft.trim()}
             aria-label="Send message"
-            className="text-conversation-send flex size-12 shrink-0 items-center justify-center rounded-xl bg-[var(--sf-brand)] text-[var(--sf-on-brand)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="text-conversation-send flex size-12 shrink-0 items-center justify-center rounded-xl [html:not([data-theme-family=crystal])_&]:rounded-[var(--sf-button-radius)] bg-[var(--sf-brand)] text-[var(--sf-on-brand)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <Send size={18} aria-hidden="true" />}
           </button>

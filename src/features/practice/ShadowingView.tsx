@@ -258,7 +258,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
           <span className="practice-shadowing__focus-text">
             <span><Trans {...msg({ context: 'practice.shadowing.focus-word', message: 'Focus word' })} /></span>{' '}
             <span lang={targetLanguage} className="practice-shadowing__focus-word">
-              {crystal && stress ? <><span className="practice-shadowing__focus-stress">{stress.stressed}</span>{stress.rest}</> : card.word}
+              {stress ? <><span className="practice-shadowing__focus-stress">{stress.stressed}</span>{stress.rest}</> : card.word}
             </span>
             {card.phonetic && <span lang={targetLanguage} className="practice-shadowing__ipa">{card.phonetic}</span>}
           </span>
@@ -380,7 +380,7 @@ export function ShadowingView({ cards, onClose }: ShadowingViewProps) {
             type="button"
             onClick={isListening ? stopListening : startListening}
             data-listening={isListening || undefined}
-            className="practice-shadowing__mic focus-visible:outline-2 focus-visible:outline-offset-4"
+            className={`practice-shadowing__mic sf-press${isListening ? ' sf-pulse' : ''} focus-visible:outline-2 focus-visible:outline-offset-4`}
             aria-label={isListening ? _(msg({ id: 'practice.shadowing.stop-recording', message: 'Stop recording' })) : _(msg({ id: 'practice.shadowing.start-reading', message: 'Start reading' }))}
           >
             {crystal && <span className="practice-shadowing__mic-ring" aria-hidden="true"><span className="practice-shadowing__mic-ring-spin" /></span>}

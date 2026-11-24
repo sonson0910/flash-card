@@ -2,50 +2,54 @@
    theme tokens; each theme only swaps the --fl-* values below. */
 
 .sf-files-tokens {
-  --fl-text-strong: var(--sf-text);
+  --fl-text-strong: var(--sf-text-strong);
   --fl-text: var(--sf-text);
   --fl-text2: var(--sf-text-muted);
-  /* The board's #8a8072 is below AA on paper; this tone keeps the hierarchy and reaches 4.5:1. */
-  --fl-text3: color-mix(in srgb, var(--sf-text-muted) 94%, var(--sf-surface));
+  /* The board's faintest text misses AA on panels and usage tiles; --sf-text-subtle keeps hierarchy above 4.5:1. */
+  --fl-text3: var(--sf-text-subtle);
+  --fl-body: var(--sf-text-body);
   --fl-line: var(--sf-border);
   --fl-line-strong: var(--sf-edge-highlight);
   --fl-chip-bg: var(--sf-surface-raised);
   --fl-secondary-bg: var(--sf-surface-control);
   --fl-panel: var(--sf-surface-glass);
   --fl-panel-solid: var(--sf-surface);
-  --fl-panel-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 1px 2px rgb(60 40 20 / 0.06), 0 14px 28px -18px rgb(60 40 20 / 0.3);
-  --fl-panel-blur: none;
-  --fl-track: color-mix(in srgb, var(--sf-text) 8%, transparent);
+  --fl-panel-shadow: var(--sf-panel-shadow);
+  --fl-panel-blur: var(--sf-panel-blur, none);
+  --fl-track: var(--sf-track, color-mix(in srgb, var(--sf-text) 8%, transparent));
   --fl-accent: var(--sf-brand);
   --fl-accent-text: var(--sf-brand-text);
-  --fl-accent-soft: color-mix(in srgb, var(--sf-brand) 8%, transparent);
-  --fl-accent-line: color-mix(in srgb, var(--sf-brand-text) 25%, transparent);
-  --fl-primary-bg: var(--sf-text);
-  --fl-primary-text: var(--sf-on-brand);
-  --fl-primary-shadow: 0 14px 28px -14px color-mix(in srgb, var(--sf-text) 90%, transparent);
+  --fl-accent-soft: var(--sf-accent-soft, color-mix(in srgb, var(--sf-brand) 8%, transparent));
+  --fl-accent-line: var(--sf-accent-line, color-mix(in srgb, var(--sf-brand-text) 25%, transparent));
+  --fl-primary-bg: var(--sf-primary-bg);
+  --fl-primary-text: var(--sf-on-primary);
+  --fl-primary-shadow: var(--sf-primary-shadow);
+  --fl-secondary-shadow: var(--sf-secondary-shadow, none);
   --fl-danger: var(--sf-danger);
-  --fl-danger-solid: var(--sf-danger);
-  --fl-danger-bg: color-mix(in srgb, var(--sf-danger) 7%, transparent);
-  --fl-danger-line: color-mix(in srgb, var(--sf-danger) 25%, transparent);
-  --fl-warn: color-mix(in srgb, var(--sf-reward) 62%, var(--sf-text));
-  --fl-warn-bg: color-mix(in srgb, var(--sf-reward) 10%, transparent);
-  --fl-warn-line: color-mix(in srgb, var(--sf-reward) 30%, transparent);
-  --fl-ok: color-mix(in srgb, var(--sf-success) 80%, var(--sf-text));
-  --fl-ok-bg: color-mix(in srgb, var(--sf-success) 9%, transparent);
-  --fl-ok-line: color-mix(in srgb, var(--sf-success) 25%, transparent);
-  --fl-info: var(--sf-text);
-  --fl-info-bg: color-mix(in srgb, var(--sf-text) 5%, transparent);
-  --fl-info-line: color-mix(in srgb, var(--sf-text) 14%, transparent);
+  --fl-danger-solid: var(--sf-danger-solid, var(--sf-danger));
+  --fl-danger-solid-text: var(--sf-danger-solid-text, var(--sf-on-brand));
+  --fl-danger-bg: var(--sf-danger-soft);
+  --fl-danger-line: var(--sf-danger-line);
+  --fl-warn: var(--sf-warn);
+  --fl-warn-bg: var(--sf-warn-bg);
+  --fl-warn-line: var(--sf-warn-line);
+  --fl-ok: var(--sf-success-text);
+  --fl-ok-bg: var(--sf-success-soft);
+  --fl-ok-line: var(--sf-success-line);
+  --fl-info: var(--sf-info);
+  --fl-info-bg: var(--sf-info-bg);
+  --fl-info-line: var(--sf-info-line);
   --fl-bar: var(--sf-brand);
-  --fl-dialog-bg: var(--sf-surface);
+  --fl-dialog-bg: var(--sf-dialog-bg);
   --fl-dialog-line: var(--sf-border);
-  --fl-dialog-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 2px 6px rgb(60 40 20 / 0.08), 0 50px 90px -40px rgb(60 40 20 / 0.6);
-  --fl-scrim: color-mix(in srgb, var(--sf-text) 14%, transparent);
-  --fl-radius: 18px;
+  --fl-dialog-border: var(--sf-dialog-border, 1px solid var(--fl-dialog-line));
+  --fl-dialog-shadow: var(--sf-dialog-shadow);
+  --fl-scrim: var(--sf-scrim);
+  --fl-radius: var(--sf-panel-radius, 18px);
   --fl-box-radius: 14px;
-  --fl-btn-radius: 999px;
-  --fl-dialog-radius: 18px;
-  --fl-display-weight: 380;
+  --fl-btn-radius: var(--sf-button-radius);
+  --fl-dialog-radius: var(--sf-dialog-radius, 18px);
+  --fl-display-weight: var(--sf-display-weight, 380);
   --fl-focus: var(--sf-text);
   --fl-badge-pdf: var(--fl-danger);
   --fl-badge-pdf-bg: var(--fl-danger-bg);
@@ -58,40 +62,16 @@
 /* The page fills the viewport below the shell header; the host sets `--sf-files-offset` to that header's height. */
 .sf-files { box-sizing: border-box; min-height: calc(100dvh - var(--sf-files-offset, 0px)); padding: 14px 22px 18px; display: flex; }
 :root.dark:not([data-theme-family="crystal"]) .sf-files-tokens {
-  --fl-text-strong: color-mix(in srgb, var(--sf-text) 70%, white);
-  /* The faintest text sits on the usage box and the transfer card; this mix keeps it at 4.5:1 there. */
-  --fl-text3: color-mix(in srgb, var(--sf-text-muted) 92%, var(--sf-canvas));
-  --fl-panel-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
-  --fl-panel-blur: blur(18px);
-  --fl-track: rgb(255 255 255 / 0.08);
-  --fl-accent-soft: color-mix(in srgb, var(--sf-brand) 12%, transparent);
-  --fl-accent-line: color-mix(in srgb, var(--sf-brand) 35%, transparent);
-  --fl-primary-bg: var(--sf-brand);
-  --fl-primary-shadow: 0 16px 40px -14px color-mix(in srgb, var(--sf-brand) 80%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.5);
-  --fl-danger-solid: color-mix(in srgb, var(--sf-danger) 70%, #c02a28);
-  --fl-danger-bg: color-mix(in srgb, var(--sf-danger) 12%, transparent);
-  --fl-danger-line: color-mix(in srgb, var(--sf-danger) 35%, transparent);
-  --fl-warn: color-mix(in srgb, var(--sf-reward) 70%, var(--sf-text));
-  --fl-warn-line: color-mix(in srgb, var(--sf-reward) 32%, transparent);
-  --fl-ok: color-mix(in srgb, var(--sf-success) 70%, var(--sf-text));
-  --fl-ok-bg: color-mix(in srgb, var(--sf-success) 12%, transparent);
-  --fl-ok-line: color-mix(in srgb, var(--sf-success) 32%, transparent);
-  --fl-info: var(--sf-brand-text);
-  --fl-info-bg: color-mix(in srgb, var(--sf-brand) 10%, transparent);
-  --fl-info-line: color-mix(in srgb, var(--sf-brand) 30%, transparent);
   --fl-bar: linear-gradient(90deg, var(--sf-brand), var(--sf-second));
-  --fl-dialog-bg: radial-gradient(ellipse 70% 50% at 100% 0%, color-mix(in srgb, var(--sf-second) 14%, transparent), transparent 70%), linear-gradient(180deg, color-mix(in srgb, var(--sf-surface) 80%, white 4%), var(--sf-surface));
-  --fl-dialog-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.95), 0 0 70px -34px color-mix(in srgb, var(--sf-brand) 50%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.06);
-  --fl-scrim: color-mix(in srgb, var(--sf-canvas) 60%, transparent);
-  --fl-radius: 22px;
-  --fl-btn-radius: 16px;
-  --fl-dialog-radius: 26px;
-  --fl-display-weight: 440;
   --fl-focus: var(--sf-brand);
 }
 :root[data-theme-family="crystal"] .sf-files-tokens {
   --fl-text-strong: color-mix(in srgb, var(--sf-text) 60%, white);
   --fl-text3: color-mix(in srgb, var(--sf-text-muted) 85%, var(--sf-canvas));
+  --fl-body: var(--sf-text-muted);
+  --fl-secondary-shadow: none;
+  --fl-danger-solid-text: var(--sf-on-brand);
+  --fl-dialog-border: 1px solid var(--fl-dialog-line);
   --fl-chip-bg: var(--sf-surface-control);
   --fl-secondary-bg: var(--sf-surface-control);
   --fl-panel: var(--sf-surface-glass);
@@ -166,7 +146,7 @@
 .sf-files__kicker-accent::before { content: " / "; }
 .sf-files__title { margin: 6px 0 0; color: var(--fl-text-strong); font-family: var(--sf-font-display); font-weight: var(--fl-display-weight); font-size: 30px; line-height: 1.04; letter-spacing: -0.025em; }
 .sf-files__title em { font-style: normal; }
-.sf-files__lead { max-width: 640px; margin: 6px 0 0; color: var(--sf-text-muted); font-size: 12.5px; line-height: 1.45; }
+.sf-files__lead { max-width: 640px; margin: 6px 0 0; color: var(--fl-body); font-size: 12.5px; line-height: 1.45; }
 .sf-files__chip {
   flex-shrink: 0; display: inline-flex; align-items: center; height: 28px; padding: 0 11px;
   border: 1px solid var(--fl-line); border-radius: 999px; background: var(--fl-chip-bg); color: var(--fl-text2);
@@ -207,7 +187,7 @@
 .sf-files-panel__box {
   margin: 14px 0 0; padding: 13px 14px; display: flex; gap: 9px; align-items: flex-start;
   border: 1px solid var(--fl-line); border-radius: 12px; background: var(--fl-secondary-bg);
-  color: var(--fl-text2); font-size: 12.5px; line-height: 1.45;
+  color: var(--fl-body); font-size: 12.5px; line-height: 1.45;
 }
 .sf-files-panel__box > svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; color: var(--fl-text3); }
 .sf-files-panel__notice { margin: 10px 0 0; color: var(--fl-ok); font-size: 12.5px; font-weight: 600; }
@@ -216,7 +196,7 @@
 /* Buttons */
 .sf-files-button {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px;
-  border: 1px solid var(--fl-line-strong); border-radius: var(--fl-btn-radius); background: var(--fl-secondary-bg);
+  border: 1px solid var(--fl-line-strong); border-radius: var(--fl-btn-radius); background: var(--fl-secondary-bg); box-shadow: var(--fl-secondary-shadow, none);
   color: var(--fl-text); font: inherit; font-size: 13.5px; font-weight: 650; cursor: pointer;
   transition: background-color var(--motion-fast, 140ms) ease, border-color var(--motion-fast, 140ms) ease, transform var(--motion-fast, 140ms) ease;
 }
@@ -225,8 +205,7 @@
 .sf-files-button:disabled { cursor: not-allowed; opacity: 0.55; }
 .sf-files-button--primary { border-color: transparent; background: var(--fl-primary-bg); box-shadow: var(--fl-primary-shadow); color: var(--fl-primary-text); }
 .sf-files-button--primary:hover:not(:disabled) { border-color: transparent; filter: brightness(1.06); }
-.sf-files-button--danger { border-color: transparent; background: var(--fl-danger-solid); color: var(--sf-on-brand); }
-:root:not(.dark):not([data-theme-family="crystal"]) .sf-files-button--danger { color: var(--sf-surface); }
+.sf-files-button--danger { border-color: transparent; background: var(--fl-danger-solid); box-shadow: none; color: var(--fl-danger-solid-text); }
 .sf-files-tokens :is(button, select, a, [tabindex]):focus-visible { outline: 2px solid var(--fl-focus); outline-offset: 2px; }
 
 /* Select */
@@ -274,7 +253,7 @@
 }
 .sf-files-status__icon .sf-files-spinner { width: 10px; height: 10px; border-color: var(--fl-panel-solid); border-right-color: transparent; }
 .sf-files-status strong { display: block; color: var(--fl-text-strong); font-size: 14px; font-weight: 650; }
-.sf-files-status__detail { display: block; margin-top: 3px; color: var(--fl-text2); font-size: 12.5px; line-height: 1.45; }
+.sf-files-status__detail { display: block; margin-top: 3px; color: var(--fl-body); font-size: 12.5px; line-height: 1.45; }
 .sf-files-status--transfer { margin-top: 22px; padding: 18px; display: block; }
 .sf-files-status--decision { margin-top: 20px; padding: 16px; }
 .sf-files-status--decision .sf-files-status__icon { width: 26px; height: 26px; }
@@ -333,7 +312,7 @@
 .sf-files-attach__row label { color: var(--fl-text); font-size: 12.5px; font-weight: 650; }
 .sf-files-attach__row select {
   flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 10px; border: 1px solid var(--fl-line-strong);
-  border-radius: 10px; background: var(--fl-panel-solid); color: var(--fl-text); font: inherit; font-size: 12.5px;
+  border-radius: var(--sf-input-radius, 10px); background: var(--fl-panel-solid); color: var(--fl-text); font: inherit; font-size: 12.5px;
 }
 .sf-files-attach p { margin: 6px 0 0; color: var(--fl-text3); font-size: 12px; }
 
@@ -374,9 +353,13 @@
   flex-shrink: 0; height: 20px; padding: 0 7px; display: inline-flex; align-items: center; border-radius: 999px;
   background: var(--fl-ok-bg); color: var(--fl-ok); font-size: 10px; font-weight: 700;
 }
+:root:not([data-theme-family="crystal"]) .sf-files-pill { border: 1px solid var(--fl-ok-line); }
 .sf-files-pill[data-status="partial"] { background: var(--fl-warn-bg); color: var(--fl-warn); }
+:root:not([data-theme-family="crystal"]) .sf-files-pill[data-status="partial"] { border-color: var(--fl-warn-line); }
 .sf-files-pill[data-status="uploading"] { background: var(--fl-info-bg); color: var(--fl-info); }
+:root:not([data-theme-family="crystal"]) .sf-files-pill[data-status="uploading"] { border-color: var(--fl-info-line); }
 .sf-files-pill[data-status="rejected"] { background: var(--fl-danger-bg); color: var(--fl-danger); }
+:root:not([data-theme-family="crystal"]) .sf-files-pill[data-status="rejected"] { border-color: var(--fl-danger-line); }
 .sf-files-list__delete {
   width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 0;
   border: 0; border-radius: 12px; background: transparent; color: var(--fl-text3); cursor: pointer;
@@ -400,7 +383,7 @@
 /* Delete dialog */
 .sf-files-dialog { position: absolute; z-index: 5; inset: 0; padding: 16px; display: flex; align-items: center; justify-content: center; background: var(--fl-scrim); }
 .sf-files-dialog__card {
-  width: min(100%, 310px); box-sizing: border-box; padding: 18px; border: 1px solid var(--fl-dialog-line);
+  width: min(100%, 310px); box-sizing: border-box; padding: 18px; border: var(--fl-dialog-border, 1px solid var(--fl-dialog-line));
   border-radius: var(--fl-dialog-radius); background: var(--fl-dialog-bg); box-shadow: var(--fl-dialog-shadow);
 }
 .sf-files-dialog__icon {
@@ -409,7 +392,7 @@
 }
 .sf-files-dialog__icon svg { width: 18px; height: 18px; }
 .sf-files-dialog__card h3 { margin: 13px 0 0; color: var(--fl-text-strong); font-family: var(--sf-font-display); font-weight: var(--fl-display-weight); font-size: 22px; line-height: 1.1; }
-.sf-files-dialog__card p { margin: 6px 0 0; overflow-wrap: anywhere; color: var(--fl-text2); font-size: 12.5px; line-height: 1.45; }
+.sf-files-dialog__card p { margin: 6px 0 0; overflow-wrap: anywhere; color: var(--fl-body); font-size: 12.5px; line-height: 1.45; }
 .sf-files-dialog__card p [data-mono] { color: var(--fl-text); }
 .sf-files-dialog__actions { margin-top: 16px; display: flex; gap: 8px; }
 .sf-files-dialog__actions .sf-files-button { flex: 1 1 0; padding: 0 10px; }
@@ -594,7 +577,8 @@
   .sf-files-badge svg { width: 11px; height: 11px; }
   .sf-files-list__text strong { font-size: 10px; }
   .sf-files-list__text span { display: none; }
-  .sf-files-pill { height: auto; padding: 0; background: none; font-size: 9px; }
+  .sf-files-pill,
+  :root:not([data-theme-family="crystal"]) .sf-files-pill { height: auto; padding: 0; border: 0; background: none; font-size: 9px; }
   .sf-files-shelf__state { margin-top: 8px; padding: 12px; flex-direction: row; gap: 8px; text-align: left; }
   .sf-files-shelf__state-icon, .sf-files-shelf__state p { display: none; }
   .sf-files-shelf__state strong { margin-top: 0; flex: 1 1 auto; font-size: 11px; }

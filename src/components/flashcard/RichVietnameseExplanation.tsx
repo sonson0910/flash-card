@@ -64,7 +64,7 @@ export function RichVietnameseExplanation({ value, lang = 'vi' }: RichVietnamese
         index += 1;
       }
       blocks.push(
-        <blockquote key={`quote-${index}`} className="rounded-r-2xl border-l-2 border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-text)_5%,transparent)] px-4 py-3 text-[13px] font-medium leading-6 text-[var(--sf-text)] sm:text-sm">
+        <blockquote key={`quote-${index}`} className="rounded-r-2xl [html:not([data-theme-family=crystal])_&]:rounded-r-[var(--sf-panel-radius,16px)] border-l-2 border-[var(--sf-brand)] bg-[color-mix(in_srgb,var(--sf-text)_5%,transparent)] px-4 py-3 text-[13px] font-medium leading-6 text-[var(--sf-text)] sm:text-sm">
           {quoteLines.map((quote, quoteIndex) => <p key={`quote-line-${quoteIndex}`}>{renderInline(quote, `quote-${index}-${quoteIndex}`)}</p>)}
         </blockquote>,
       );
