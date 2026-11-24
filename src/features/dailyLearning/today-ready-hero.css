@@ -239,7 +239,8 @@
 .today-stage-rail--crystal .today-stage-sub { margin: -3px 0 0; color: var(--tc-text2); font-size: 13px; line-height: normal; }
 /* A skipped stage dims its text, not the node: the node must stay opaque so the rail behind it never shows through. */
 .today-stage-rail--crystal .today-stage--skipped :is(.today-stage-title, .today-stage-sub) { opacity: .55; }
-.today-stage-rail--crystal .today-stage--skipped .today-stage-num { color: color-mix(in srgb, var(--tc-num-idle) 55%, var(--tc-panel-solid)); }
+/* The numeral is large text: 85% keeps it above 3:1 on the node in both modes (55% fell to about 2:1). */
+.today-stage-rail--crystal .today-stage--skipped .today-stage-num { color: color-mix(in srgb, var(--tc-num-idle) 85%, var(--tc-panel-solid)); }
 
 .today-crystal-row { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 22px; min-height: 0; }
 .today-crystal-row--single { grid-template-columns: 1fr; }
