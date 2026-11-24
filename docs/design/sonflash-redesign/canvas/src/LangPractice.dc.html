@@ -2,30 +2,30 @@
 <div style="width: 720px; height: 780px; box-sizing: border-box; position: relative; overflow: hidden; color: {{t.text}}; font-family: Geist, 'Segoe UI', system-ui, sans-serif; background: {{t.pageBg}}; display: flex; flex-direction: column;">
 <!--#AMBIENT-->
   <header style="position: relative; z-index: 3; flex-shrink: 0; height: 76px; padding: 0 28px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid {{t.navLine}};">
-    <a href="#" aria-label="End practice" style="width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
+    <a href="#" aria-label="End practice" class="{{t.fx.press}}" style="width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text2}}; display: flex; align-items: center; justify-content: center;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
     </a>
     <div style="min-width: 0;">
       <div style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.text3}};">
         <span style="height: 20px; padding: 0 7px; border-radius: 6px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; font-family: 'Geist Mono', ui-monospace, monospace; letter-spacing: 0.04em; display: flex; align-items: center;">{{m.code}}</span>{{m.pack}}
       </div>
-      <h2 style="margin: 4px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 23px; line-height: 1.1; letter-spacing: -0.015em; color: {{t.textStrong}};">{{m.title}}</h2>
+      <h2 class="{{t.fx.title}}" style="margin: 4px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 23px; line-height: 1.1; letter-spacing: -0.015em; color: {{t.textStrong}};">{{m.title}}</h2>
     </div>
     <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
       <div style="display: flex; gap: 4px;" aria-label="{{m.progressLabel}}">
         <sc-for list="{{segments}}" as="s" hint-placeholder-count="8">
-          <span style="width: 16px; height: 4px; border-radius: 4px; background: {{s.bg}}; box-shadow: {{s.glow}};"></span>
+          <span class="{{s.cls}}" style="width: 16px; height: 4px; border-radius: 4px; background: {{s.bg}}; box-shadow: {{s.glow}};"></span>
         </sc-for>
       </div>
       <span style="height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid {{t.warmLine}}; background: {{t.warmBg}}; color: {{t.warm}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5-1.5 5.5-1.5 8.2 0 1.4 1 2.5 2.3 2.5 1.5 0 2.4-1.2 2.2-3 2.3 1.7 3.5 4.3 3.5 6.8C18.5 20 15.6 22 12 22s-6.5-2.3-6.5-5.9c0-4.7 4.3-7 6.5-14.1z"></path></svg>{{m.streak}}</span>
     </div>
   </header>
 
-  <main style="position: relative; z-index: 2; flex-grow: 1; min-height: 0; padding: 12px 32px 12px; display: flex; flex-direction: column; justify-content: center;">
+  <main class="{{t.fx.enter2}}" style="position: relative; z-index: 2; flex-grow: 1; min-height: 0; padding: 12px 32px 12px; display: flex; flex-direction: column; justify-content: center;">
 
     <sc-if value="{{isHangul}}" hint-placeholder-val="{{true}}">
       <div style="display: flex; align-items: center; gap: 14px;">
-        <button class="sf-press sf-pulse" aria-label="Play the word" style="--sf-pulse: {{t.pulse}}; width: 54px; height: 54px; flex-shrink: 0; border-radius: 50%; border: 0; background: {{t.playBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; justify-content: center; gap: 3px; cursor: pointer;">
+        <button class="{{t.fx.press}} sf-pulse" aria-label="Play the word" style="--sf-pulse: {{t.pulse}}; width: 54px; height: 54px; flex-shrink: 0; border-radius: 50%; border: 0; background: {{t.playBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; justify-content: center; gap: 3px; cursor: pointer;">
           <sc-for list="{{bars}}" as="b" hint-placeholder-count="5"><span class="sf-wave" style="width: 3.5px; height: {{b.h}}px; border-radius: 3px; background: currentColor; animation-delay: {{b.d}}ms;"></span></sc-for>
         </button>
         <div style="min-width: 0;">
@@ -59,7 +59,7 @@
         <sc-for list="{{keyRows}}" as="r" hint-placeholder-count="3">
           <div style="display: flex; gap: 5px; padding-left: {{r.indent}}px;">
             <sc-for list="{{r.keys}}" as="k" hint-placeholder-count="10">
-              <button onClick="{{k.press}}" class="sf-press" aria-label="{{k.ch}}" style="position: relative; width: 50px; height: 44px; border-radius: 10px; border: {{k.border}}; background: {{k.bg}}; color: {{k.color}}; box-shadow: {{k.shadow}}; font-family: {{t.fKR}}; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer;">{{k.ch}}<span style="position: absolute; right: 5px; bottom: 3px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 9px; font-weight: 500; color: {{t.text3}};">{{k.latin}}</span></button>
+              <button onClick="{{k.press}}" class="{{t.fx.press}}" aria-label="{{k.ch}}" style="position: relative; width: 50px; height: 44px; border-radius: 10px; border: {{k.border}}; background: {{k.bg}}; color: {{k.color}}; box-shadow: {{k.shadow}}; font-family: {{t.fKR}}; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer;">{{k.ch}}<span style="position: absolute; right: 5px; bottom: 3px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 9px; font-weight: 500; color: {{t.text3}};">{{k.latin}}</span></button>
             </sc-for>
           </div>
         </sc-for>
@@ -82,7 +82,7 @@
       <div style="margin-top: 8px; height: 64px; box-sizing: border-box; padding: 0 16px 0 20px; border-radius: {{t.fieldR}}px; border: 1.5px solid {{kana.fieldLine}}; background: {{t.inputBg}}; display: flex; align-items: center; gap: 14px;">
         <span style="font-family: {{t.fJP}}; font-size: 30px; font-weight: 700; color: {{t.textStrong}}; letter-spacing: 0.06em;">がっこう</span>
         <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: {{t.text3}};">g·a·<b style="color: {{t.accentText}};">kk</b>·o·<b style="color: {{t.accentText}};">u</b></span>
-        <span style="margin-left: auto; height: 30px; padding: 0 12px; border-radius: 999px; background: {{kana.verdictBg}}; color: {{kana.verdictColor}}; font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 6px;">{{kana.verdict}}</span>
+        <span class="{{kana.verdictCls}}" style="margin-left: auto; height: 30px; padding: 0 12px; border-radius: 999px; background: {{kana.verdictBg}}; color: {{kana.verdictColor}}; font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 6px;">{{kana.verdict}}</span>
       </div>
       <div style="margin-top: 10px; display: flex; gap: 8px;">
         <span style="padding: 7px 11px; border-radius: 10px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; font-size: 12.5px; color: {{t.body}};"><b style="font-family: {{t.fJP}}; color: {{t.textStrong}};">っ</b> small tsu doubles the next consonant — kk</span>
@@ -97,7 +97,7 @@
         </div>
         <div style="position: relative; margin-top: 12px; height: 86px;">
           <svg width="420" height="46" viewBox="0 0 420 46" style="position: absolute; left: 0; top: 0; overflow: visible;" aria-hidden="true">
-            <polyline points="{{kana.pitchLine}}" fill="none" stroke="{{t.accent}}" stroke-width="2.5" stroke-linejoin="round"></polyline>
+            <polyline class="{{kana.drawCls}}" pathLength="1" points="{{kana.pitchLine}}" fill="none" stroke="{{t.accent}}" stroke-width="2.5" stroke-linejoin="round"></polyline>
             <polyline points="{{kana.particleLine}}" fill="none" stroke="{{t.accent}}" stroke-width="2.5" stroke-dasharray="4 5"></polyline>
             <sc-for list="{{kana.mora}}" as="p" hint-placeholder-count="5"><circle cx="{{p.x}}" cy="{{p.y}}" r="6" fill="{{p.fill}}" stroke="{{t.accent}}" stroke-width="2.5"></circle></sc-for>
           </svg>
@@ -110,7 +110,7 @@
 
     <sc-if value="{{isTone}}" hint-placeholder-val="{{false}}">
       <div style="display: flex; align-items: center; gap: 18px;">
-        <button class="sf-press sf-pulse" aria-label="Play the word" style="--sf-pulse: {{t.pulse}}; width: 54px; height: 54px; flex-shrink: 0; border-radius: 50%; border: 0; background: {{t.playBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; justify-content: center; gap: 3px; cursor: pointer;">
+        <button class="{{t.fx.press}} sf-pulse" aria-label="Play the word" style="--sf-pulse: {{t.pulse}}; width: 54px; height: 54px; flex-shrink: 0; border-radius: 50%; border: 0; background: {{t.playBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; display: flex; align-items: center; justify-content: center; gap: 3px; cursor: pointer;">
           <sc-for list="{{bars}}" as="b" hint-placeholder-count="5"><span class="sf-wave" style="width: 3.5px; height: {{b.h}}px; border-radius: 3px; background: currentColor; animation-delay: {{b.d}}ms;"></span></sc-for>
         </button>
         <div>
@@ -126,7 +126,7 @@
             <span style="font-family: {{t.fSC}}; font-size: 76px; font-weight: 700; line-height: 1.1; color: {{t.textStrong}};">{{s.han}}</span>
             <div style="margin-top: 12px; display: flex; gap: 5px;">
               <sc-for list="{{s.tones}}" as="o" hint-placeholder-count="5">
-                <button onClick="{{o.pick}}" class="sf-press" aria-label="{{o.label}}" aria-pressed="{{o.pressed}}" style="width: 44px; height: 52px; border-radius: 10px; border: {{o.border}}; background: {{o.bg}}; box-shadow: {{o.shadow}}; color: {{o.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer;">
+                <button onClick="{{o.pick}}" class="{{t.fx.press}} {{o.cls}}" aria-label="{{o.label}}" aria-pressed="{{o.pressed}}" style="width: 44px; height: 52px; border-radius: 10px; border: {{o.border}}; background: {{o.bg}}; box-shadow: {{o.shadow}}; color: {{o.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer;">
                   <svg width="28" height="18" viewBox="0 0 36 24" aria-hidden="true"><path d="{{o.path}}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                   <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500;">{{o.n}}</span>
                 </button>
@@ -144,7 +144,7 @@
           <div style="margin-top: 3px; font-size: 13.5px; font-weight: 600; color: {{t.textStrong}};">Which one did you hear?</div>
         </div>
         <sc-for list="{{pairs}}" as="p" hint-placeholder-count="2">
-          <button class="sf-press" style="flex: 1; height: 58px; border-radius: 12px; border: {{p.border}}; background: {{p.bg}}; color: {{t.text}}; display: flex; align-items: center; gap: 10px; padding: 0 14px; cursor: pointer;">
+          <button class="{{t.fx.press}}" style="flex: 1; height: 58px; border-radius: 12px; border: {{p.border}}; background: {{p.bg}}; color: {{t.text}}; display: flex; align-items: center; gap: 10px; padding: 0 14px; cursor: pointer;">
             <span style="font-family: {{t.fSC}}; font-size: 28px; font-weight: 700; color: {{t.textStrong}};">{{p.han}}</span>
             <span style="text-align: left;"><span style="display: block; font-size: 16px; font-weight: 700; color: {{p.color}};">{{p.py}}</span><span style="font-size: 12.5px; color: {{t.text2}};">{{p.vi}}</span></span>
           </button>
@@ -163,12 +163,12 @@
           <div style="margin-top: 6px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 58px; line-height: 1; letter-spacing: -0.02em; color: {{t.textStrong}};"><span style="color: {{art.chosenColor}};">{{art.shown}}</span> Entschei<span style="font-style: {{t.emStyle}}; color: {{t.emColor}};">dung</span></div>
           <div style="margin-top: 8px; font-size: 14px; color: {{t.text2}};">quyết định · plural <b style="color: {{t.textStrong}};">die Entscheidungen</b></div>
         </div>
-        <span style="margin-bottom: 8px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.okLine}}; background: {{t.okBg}}; color: {{t.ok}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center;">7 in a row</span>
+        <span class="{{t.fx.reward}}" style="margin-bottom: 8px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid {{t.okLine}}; background: {{t.okBg}}; color: {{t.ok}}; font-size: 12.5px; font-weight: 650; display: flex; align-items: center;">7 in a row</span>
       </div>
 
       <div style="margin-top: 20px; display: flex; gap: 10px;">
         <sc-for list="{{articles}}" as="a" hint-placeholder-count="3">
-          <button onClick="{{a.pick}}" class="sf-press" aria-pressed="{{a.pressed}}" style="flex: 1; height: 86px; border-radius: {{t.panelR}}px; border: {{a.border}}; background: {{a.bg}}; box-shadow: {{a.shadow}}; color: {{a.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer;">
+          <button onClick="{{a.pick}}" class="{{t.fx.press}} {{a.cls}}" aria-pressed="{{a.pressed}}" style="flex: 1; height: 86px; border-radius: {{t.panelR}}px; border: {{a.border}}; background: {{a.bg}}; box-shadow: {{a.shadow}}; color: {{a.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer;">
             <span style="font-family: Fraunces, Georgia, serif; font-size: 32px; font-weight: 500;">{{a.word}}</span>
             <span style="font-size: 12px; color: {{a.sub}};">{{a.gender}} · <span style="font-family: 'Geist Mono', ui-monospace, monospace;">{{a.key}}</span></span>
           </button>
@@ -201,7 +201,7 @@
 
       <div style="margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
         <sc-for list="{{chunks}}" as="c" hint-placeholder-count="7">
-          <span style="position: relative; min-width: {{c.minW}}px; height: 68px; box-sizing: border-box; padding: 0 12px; border-radius: 12px; border: {{c.border}}; background: {{c.bg}}; color: {{c.color}}; font-family: {{t.fJP}}; font-size: 28px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{c.text}}
+          <span class="{{c.cls}}" style="position: relative; min-width: {{c.minW}}px; height: 68px; box-sizing: border-box; padding: 0 12px; border-radius: 12px; border: {{c.border}}; background: {{c.bg}}; color: {{c.color}}; font-family: {{t.fJP}}; font-size: 28px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{c.text}}
             <sc-if value="{{c.gloss}}" hint-placeholder-val="{{false}}">
               <span style="position: absolute; left: 50%; top: -38px; transform: translateX(-50%); white-space: nowrap; padding: 5px 10px; border-radius: 8px; background: {{t.tipBg}}; color: {{t.tipText}}; font-family: Geist, system-ui, sans-serif; font-size: 12px; font-weight: 600;">uống · lịch sự</span>
             </sc-if>
@@ -211,7 +211,7 @@
 
       <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
         <sc-for list="{{choices}}" as="o" hint-placeholder-count="4">
-          <button onClick="{{o.pick}}" class="sf-press" aria-pressed="{{o.pressed}}" style="height: 70px; border-radius: 12px; border: {{o.border}}; background: {{o.bg}}; box-shadow: {{o.shadow}}; color: {{t.textStrong}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer;">
+          <button onClick="{{o.pick}}" class="{{t.fx.press}}" aria-pressed="{{o.pressed}}" style="height: 70px; border-radius: 12px; border: {{o.border}}; background: {{o.bg}}; box-shadow: {{o.shadow}}; color: {{t.textStrong}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer;">
             <span style="font-family: {{t.fJP}}; font-size: 24px; font-weight: 700;">{{o.jp}}</span>
             <span style="font-size: 11.5px; color: {{t.text2}};">{{o.kana}} · {{o.vi}}</span>
           </button>
@@ -235,10 +235,10 @@
     </sc-if>
   </main>
 
-  <footer style="position: relative; z-index: 2; flex-shrink: 0; padding: 14px 28px 20px; display: flex; align-items: center; gap: 10px;">
+  <footer class="{{t.fx.enter3}}" style="position: relative; z-index: 2; flex-shrink: 0; padding: 14px 28px 20px; display: flex; align-items: center; gap: 10px;">
     <span style="font-size: 12.5px; color: {{t.text3}};">{{m.footNote}}</span>
-    <button class="sf-press" style="margin-left: auto; height: 46px; padding: 0 16px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; cursor: pointer;">Hint</button>
-    <button class="sf-press" onClick="{{primary}}" style="height: 46px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14.5px; font-weight: 650; display: flex; align-items: center; gap: 10px; cursor: pointer;">{{m.cta}} <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; padding: 2px 6px; border-radius: 5px; background: {{t.primaryKbdBg}};">Enter</span></button>
+    <button class="{{t.fx.press}}" style="margin-left: auto; height: 46px; padding: 0 16px; border-radius: {{t.btnRadius}}; border: 1px solid {{t.line}}; background: {{t.secondaryBg}}; color: {{t.text}}; box-shadow: {{t.secondaryShadow}}; font-size: 14px; font-weight: 600; cursor: pointer;">Hint</button>
+    <button class="{{t.fx.press}}" onClick="{{primary}}" style="height: 46px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 0; background: {{t.primaryBg}}; color: {{t.primaryText}}; box-shadow: {{t.primaryShadow}}; font-size: 14.5px; font-weight: 650; display: flex; align-items: center; gap: 10px; cursor: pointer;">{{m.cta}} <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; padding: 2px 6px; border-radius: 5px; background: {{t.primaryKbdBg}};">Enter</span></button>
   </footer>
 </div>
 </x-dc>
@@ -287,7 +287,7 @@ class Component extends DCLogic {
     const blocks = [
       { ch: '결', fix: 'gyeol', fixColor: t.text3, jamo: [J('ㄱ', 'initial', 'ok'), J('ㅕ', 'vowel', 'ok'), J('ㄹ', 'final', 'ok')], state: 'ok', cls: '' },
       s.hangulFixed
-        ? { ch: '심', fix: 'sim', fixColor: t.text3, jamo: [J('ㅅ', 'initial', 'ok'), J('ㅣ', 'vowel', 'ok'), J('ㅁ', 'final', 'hint')], state: 'ok', cls: 'nk-pop' }
+        ? { ch: '심', fix: 'sim', fixColor: t.text3, jamo: [J('ㅅ', 'initial', 'ok'), J('ㅣ', 'vowel', 'ok'), J('ㅁ', 'final', 'hint')], state: 'ok', cls: t.fx.correct }
         : { ch: '십', fix: '→ 심', fixColor: t.good, jamo: [J('ㅅ', 'initial', 'ok'), J('ㅣ', 'vowel', 'ok'), J('ㅂ', 'final', 'bad')], state: 'bad', cls: 'sf-shake' },
     ].map(b => ({ ...b, ...chip(b.state) }));
     const rows = [
@@ -311,6 +311,7 @@ class Component extends DCLogic {
       rubyColor: t.accentText,
       fieldLine: s.kanaChecked ? t.good : t.accentLine,
       verdict: s.kanaChecked ? '✓ Correct' : 'Enter to check',
+      verdictCls: s.kanaChecked ? t.fx.correct : '', drawCls: s.kanaChecked ? 'sf-draw' : '',
       verdictBg: s.kanaChecked ? t.okBg : t.chipBg, verdictColor: s.kanaChecked ? t.ok : t.text3,
       pitchOpacity: s.kanaChecked ? 1 : 0.35,
       pitchLine: moraX.slice(0, 4).map((x, i) => x + ',' + moraY[i]).join(' '),
@@ -320,22 +321,24 @@ class Component extends DCLogic {
 
     // Contours drawn in a 36×24 box: 1 high level (55), 2 rising (35), 3 dipping (214), 4 falling (51).
     const contour = ['M18 12h.1', 'M4 5h28', 'M4 17L32 4', 'M4 9Q13 25 21 18T32 5', 'M4 4L32 20'];
-    const toneRow = (answer, picked, pick) => [1, 2, 3, 4, 0].map(n => {
+    // Only the syllable being answered plays feedback; earlier answers stay still.
+    const toneRow = (answer, picked, pick, live) => [1, 2, 3, 4, 0].map(n => {
       const state = picked === n ? (n === answer ? 'hint' : 'bad') : (picked !== answer && n === answer ? 'hint' : 'idle');
       const st = chip(state);
       return { n: n === 0 ? '·' : String(n), label: n === 0 ? 'Neutral tone' : 'Tone ' + n, path: contour[n], pressed: picked === n ? 'true' : 'false',
+        cls: live && picked === n ? (n === answer ? t.fx.correct : 'sf-shake') : '',
         ...st, color: state === 'idle' ? tone[n] : st.color, pick: () => pick(n) };
     });
     const syllables = [
       { han: '汉', pinyin: 'hàn', pyColor: tone[4], line: t.okLine, tones: toneRow(4, 4, () => {}) },
       { han: '语', pinyin: s.tone2 === 3 ? 'yǔ' : 'yú ?', pyColor: s.tone2 === 3 ? tone[3] : t.danger, line: s.tone2 === 3 ? t.okLine : t.dangerLine,
-        tones: toneRow(3, s.tone2, n => this.setState({ tone2: n })) },
+        tones: toneRow(3, s.tone2, n => this.setState({ tone2: n }), true) },
     ];
 
     const artPick = (w) => () => this.setState({ article: w });
     const articles = [['der', 'masculine', '1'], ['die', 'feminine', '2'], ['das', 'neuter', '3']].map(([word, g, key]) => {
       const on = s.article === word, right = word === 'die';
-      return { word, gender: g, key, pressed: on ? 'true' : 'false', pick: artPick(word),
+      return { word, gender: g, key, pressed: on ? 'true' : 'false', pick: artPick(word), cls: on ? (right ? t.fx.correct : 'sf-shake') : '',
         border: on ? '2px solid ' + gender[word] : '1px solid ' + t.line,
         bg: on ? (right ? t.okBg : t.dangerBg) : t.surface,
         shadow: on && dark ? '0 0 30px -10px ' + gender[word] : t.surfaceShadow,
@@ -350,13 +353,14 @@ class Component extends DCLogic {
     const filled = s.choice === '毎朝';
     const chunks = [['私'], ['は'], [s.choice || '＿＿', 'slot'], ['コーヒー'], ['を'], ['飲みます', 'gloss'], ['。']].map(([text, role]) => {
       const st = role === 'slot' ? chip(filled ? 'hint' : 'bad') : chip('ok');
-      return { text, minW: role === 'slot' ? 110 : 0, gloss: role === 'gloss', ...st };
+      return { text, minW: role === 'slot' ? 110 : 0, gloss: role === 'gloss', ...st,
+        cls: role === 'slot' && s.choice ? (filled ? t.fx.correct : 'sf-shake') : '' };
     });
 
     return {
       t, m: meta, grainId: 'lang-practice-grain-' + kind + (dark ? 'd' : 'l'), amb: { ax: -200, ay: -240, bx: 360, by: 460 },
       isHangul: kind === 'hangul', isKana: kind === 'kana', isTone: kind === 'tone', isArticle: kind === 'article', isSegment: kind === 'segment',
-      segments: Array.from({ length: 8 }, (_, i) => ({ bg: i < done ? t.accent : i === done ? t.accentLine : t.track, glow: dark && i < done ? '0 0 8px rgb(40 211 244 / 0.55)' : 'none' })),
+      segments: Array.from({ length: 8 }, (_, i) => ({ bg: i < done ? t.accent : i === done ? t.accentLine : t.track, glow: dark && i < done ? '0 0 8px rgb(40 211 244 / 0.55)' : 'none', cls: i === done - 1 ? 'sf-grow' : '' })),
       bars: [12, 22, 30, 20, 12].map((h, i) => ({ h, d: i * 110 })),
       blocks, keyRows,
       hangul: s.hangulFixed

@@ -4,26 +4,26 @@
 <!--#NAV-->
 
   <main style="position: relative; z-index: 2; padding: 26px 56px 0; display: grid; grid-template-columns: 200px 560px minmax(0, 1fr); gap: 36px;">
-    <nav aria-label="Settings" style="display: flex; flex-direction: column; gap: 4px;">
+    <nav aria-label="Settings" class="{{t.fx.stagger}}" style="display: flex; flex-direction: column; gap: 4px;">
       <div style="margin: 0 0 10px 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">Settings</div>
       <sc-for list="{{menu}}" as="m" hint-placeholder-count="6">
-        <a href="#" aria-current="{{m.current}}" style="height: 42px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 11px; text-decoration: none; font-size: 14px; font-weight: 550; color: {{m.color}}; background: {{m.bg}}; box-shadow: {{m.shadow}};">
+        <a href="#" aria-current="{{m.current}}" class="sf-ease" style="height: 42px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 11px; text-decoration: none; font-size: 14px; font-weight: 550; color: {{m.color}}; background: {{m.bg}}; box-shadow: {{m.shadow}};">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.icon}}"></path></svg>{{m.label}}
         </a>
       </sc-for>
     </nav>
 
     <section aria-labelledby="lang-title">
-      <h1 id="lang-title" style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 40px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Language &amp; <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">courses</span></h1>
-      <p style="margin: 8px 0 0; font-size: 14px; color: {{t.text2}};">The app speaks one language. Each course teaches another.</p>
+      <h1 id="lang-title" class="{{t.fx.title}}" style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 40px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Language &amp; <span style="font-style: {{t.emStyle}}; color: {{t.emColor}}; text-shadow: {{t.emGlow}};">courses</span></h1>
+      <p class="{{t.fx.enter}}" style="margin: 8px 0 0; font-size: 14px; color: {{t.text2}};">The app speaks one language. Each course teaches another.</p>
 
-      <div style="margin-top: 18px; padding: 16px 18px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
+      <div class="{{t.fx.enter2}}" style="margin-top: 18px; padding: 16px 18px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}};">
         <div style="display: flex; align-items: center; gap: 16px;">
           <div style="flex-grow: 1;">
             <div style="font-size: 14.5px; font-weight: 650; color: {{t.textStrong}};">App language</div>
             <div style="margin-top: 2px; font-size: 12.5px; color: {{t.text2}};">Menus, buttons, emails and notifications</div>
           </div>
-          <span aria-label="App language" style="width: 230px; height: 46px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; border: 1px solid {{t.accentLine}}; background: {{t.inputBg}}; box-shadow: {{focusRing}}; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; color: {{t.textStrong}};">
+          <span aria-label="App language" class="sf-ease" style="width: 230px; height: 46px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; border: 1px solid {{t.accentLine}}; background: {{t.inputBg}}; box-shadow: {{focusRing}}; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; color: {{t.textStrong}};">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{t.text2}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"></path></svg>
             <span style="flex-grow: 1;">English</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{t.text2}}" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg>
@@ -31,7 +31,7 @@
         </div>
         <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; padding-left: 0;">
           <sc-for list="{{uiLangs}}" as="u" hint-placeholder-count="11">
-            <span lang="{{u.code}}" style="height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid {{u.line}}; background: {{u.bg}}; color: {{u.fg}}; font-size: 12.5px; font-weight: 550; display: flex; align-items: center;">{{u.name}}</span>
+            <span lang="{{u.code}}" class="sf-ease" style="height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid {{u.line}}; background: {{u.bg}}; color: {{u.fg}}; font-size: 12.5px; font-weight: 550; display: flex; align-items: center;">{{u.name}}</span>
           </sc-for>
         </div>
 
@@ -39,7 +39,7 @@
           <div style="font-size: 14.5px; font-weight: 650; color: {{t.textStrong}};">Meanings and explanations in</div>
           <div role="radiogroup" aria-label="Meaning language" style="margin-top: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
             <sc-for list="{{meaning}}" as="o" hint-placeholder-count="3">
-              <button role="radio" aria-checked="{{o.on}}" style="height: 58px; box-sizing: border-box; padding: 0 12px; border-radius: 12px; border: {{o.border}}; background: {{o.bg}}; color: {{o.fg}}; text-align: left; display: flex; flex-direction: column; justify-content: center; cursor: pointer;"><span style="font-size: 13.5px; font-weight: 650;">{{o.name}}</span><span style="margin-top: 2px; font-size: 11.5px; opacity: 0.78;">{{o.sub}}</span></button>
+              <button role="radio" aria-checked="{{o.on}}" class="sf-ease" style="height: 58px; box-sizing: border-box; padding: 0 12px; border-radius: 12px; border: {{o.border}}; background: {{o.bg}}; color: {{o.fg}}; text-align: left; display: flex; flex-direction: column; justify-content: center; cursor: pointer;"><span style="font-size: 13.5px; font-weight: 650;">{{o.name}}</span><span style="margin-top: 2px; font-size: 11.5px; opacity: 0.78;">{{o.sub}}</span></button>
             </sc-for>
           </div>
           <div style="margin-top: 10px; height: 48px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; border: 1px dashed {{t.lineStrong}}; display: flex; align-items: center; gap: 12px;">
@@ -52,20 +52,20 @@
         </div>
       </div>
 
-      <div style="margin-top: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid {{t.infoLine}}; background: {{t.infoBg}}; display: flex; gap: 10px; font-size: 12.5px; line-height: 1.5; color: {{t.body}};">
+      <div class="{{t.fx.enter2}}" style="margin-top: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid {{t.infoLine}}; background: {{t.infoBg}}; display: flex; gap: 10px; font-size: 12.5px; line-height: 1.5; color: {{t.body}};">
         <svg style="flex-shrink: 0; margin-top: 1px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{t.info}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg>
         <span><span style="font-weight: 650; color: {{t.textStrong}};">Switching the app language never changes your cards.</span> Meanings stay in the language they were written in. You can ask AI to rewrite a deck’s meanings later.</span>
       </div>
 
-      <h2 style="margin: 18px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">Pronunciation for other languages</h2>
-      <div style="border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; overflow: hidden;">
+      <h2 class="{{t.fx.enter3}}" style="margin: 18px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">Pronunciation for other languages</h2>
+      <div class="{{t.fx.enter3}}" style="border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; overflow: hidden;">
         <sc-for list="{{others}}" as="r" hint-placeholder-count="5">
           <div style="min-height: 46px; box-sizing: border-box; padding: 6px 14px; border-top: 1px solid {{r.top}}; display: flex; align-items: center; gap: 12px;">
             <span lang="{{r.code}}" style="width: 72px; flex-shrink: 0; font-family: {{r.font}}; font-size: 16px; font-weight: 600; color: {{t.textStrong}};">{{r.endo}}</span>
             <span style="width: 118px; flex-shrink: 0; font-size: 12.5px; color: {{t.text2}};">{{r.label}}</span>
             <span style="display: flex; flex-wrap: wrap; gap: 5px;">
               <sc-for list="{{r.opts}}" as="o" hint-placeholder-count="3">
-                <span style="height: 28px; padding: 0 10px; border-radius: 999px; border: {{o.border}}; background: {{o.bg}}; color: {{o.fg}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center;">{{o.name}}</span>
+                <span class="sf-ease" style="height: 28px; padding: 0 10px; border-radius: 999px; border: {{o.border}}; background: {{o.bg}}; color: {{o.fg}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center;">{{o.name}}</span>
               </sc-for>
             </span>
           </div>
@@ -73,10 +73,10 @@
       </div>
     </section>
 
-    <aside aria-label="Your courses" style="display: flex; flex-direction: column; gap: 12px;">
+    <aside aria-label="Your courses" class="{{t.fx.enter3}}" style="display: flex; flex-direction: column; gap: 12px;">
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">Your courses · 2</span>
-        <button class="sf-press" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 6px; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add a language</button>
+        <button class="{{t.fx.press}}" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.accentLine}}; background: {{t.accentSoft}}; color: {{t.accentText}}; font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 6px; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add a language</button>
       </div>
 
       <div style="position: relative; border-radius: {{t.cardRadius}}px; border: {{course.border}}; background: {{course.bg}}; box-shadow: {{course.shadow}}; padding: 18px 20px 14px;">
@@ -92,12 +92,12 @@
             <div style="min-height: 52px; box-sizing: border-box; padding: 8px 0; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 12px;">
               <div style="flex-grow: 1; min-width: 0;"><div style="font-size: 13.5px; font-weight: 600; color: {{t.textStrong}};">{{r.label}}</div><div style="margin-top: 1px; font-size: 12px; color: {{t.text2}};">{{r.sub}}</div></div>
               <sc-if value="{{r.isSwitch}}" hint-placeholder-val="{{true}}">
-                <span role="switch" aria-checked="{{r.on}}" aria-label="{{r.label}}" style="width: 42px; height: 24px; box-sizing: border-box; padding: 3px; border-radius: 999px; background: {{r.track}}; display: flex; justify-content: {{r.align}};"><span style="width: 18px; height: 18px; border-radius: 50%; background: {{r.knob}};"></span></span>
+                <span role="switch" class="sf-ease" aria-checked="{{r.on}}" aria-label="{{r.label}}" style="width: 42px; height: 24px; box-sizing: border-box; padding: 3px; border-radius: 999px; background: {{r.track}}; display: flex; justify-content: {{r.align}};"><span style="width: 18px; height: 18px; border-radius: 50%; background: {{r.knob}};"></span></span>
               </sc-if>
               <sc-if value="{{r.isChips}}" hint-placeholder-val="{{false}}">
                 <span style="display: flex; gap: 5px;">
                   <sc-for list="{{r.opts}}" as="o" hint-placeholder-count="2">
-                    <span style="height: 30px; padding: 0 11px; border-radius: 999px; border: {{o.border}}; background: {{o.bg}}; color: {{o.fg}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; white-space: nowrap;">{{o.name}}</span>
+                    <span class="sf-ease" style="height: 30px; padding: 0 11px; border-radius: 999px; border: {{o.border}}; background: {{o.bg}}; color: {{o.fg}}; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; white-space: nowrap;">{{o.name}}</span>
                   </sc-for>
                 </span>
               </sc-if>
@@ -108,13 +108,13 @@
           </sc-for>
         </div>
         <div style="margin-top: 4px; padding-top: 12px; border-top: 1px solid {{t.line}}; display: flex; align-items: center; gap: 16px; font-size: 13px; font-weight: 600;">
-          <a href="#" style="color: {{t.text2}}; text-decoration: none;">Archive course</a>
-          <a href="#" style="color: {{t.danger}}; text-decoration: none;">Remove course…</a>
+          <a href="#" class="sf-ease" style="color: {{t.text2}}; text-decoration: none;">Archive course</a>
+          <a href="#" class="sf-ease" style="color: {{t.danger}}; text-decoration: none;">Remove course…</a>
           <span style="margin-left: auto; font-size: 12px; font-weight: 500; color: {{t.text3}};">Your cards are kept for 30 days</span>
         </div>
       </div>
 
-      <div style="border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">
+      <div class="{{t.fx.lift}}" style="border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">
         <span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 14px; background: {{t.chipBg}}; border: 1px solid {{t.line}}; color: {{t.textStrong}}; font-family: Fraunces, Georgia, serif; font-size: 22px; display: flex; align-items: center; justify-content: center;">A</span>
         <div style="flex-grow: 1;"><div style="font-size: 16px; font-weight: 650; color: {{t.textStrong}};">English</div><div style="margin-top: 1px; font-size: 12.5px; color: {{t.text2}};">English ← Tiếng Việt · 1,284 cards · IPA · US voice</div></div>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{t.text2}}" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"></path></svg>
@@ -124,7 +124,7 @@
         <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{t.text3}};">Popular with Tiếng Việt speakers</div>
         <div style="margin-top: 10px; display: flex; gap: 8px;">
           <sc-for list="{{suggest}}" as="g" hint-placeholder-count="3">
-            <button class="sf-lift" style="flex: 1; height: 64px; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text}}; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 0 14px; cursor: pointer;"><span lang="{{g.code}}" style="font-family: {{g.font}}; font-size: 18px; font-weight: 700; color: {{t.textStrong}};">{{g.endo}}</span><span style="margin-top: 2px; font-size: 11.5px; color: {{t.text2}};">{{g.sub}}</span></button>
+            <button class="{{t.fx.lift}}" style="flex: 1; height: 64px; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.chipBg}}; color: {{t.text}}; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 0 14px; cursor: pointer;"><span lang="{{g.code}}" style="font-family: {{g.font}}; font-size: 18px; font-weight: 700; color: {{t.textStrong}};">{{g.endo}}</span><span style="margin-top: 2px; font-size: 11.5px; color: {{t.text2}};">{{g.sub}}</span></button>
           </sc-for>
         </div>
       </div>
