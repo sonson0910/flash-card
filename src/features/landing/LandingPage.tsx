@@ -76,14 +76,14 @@ const samplePronunciation = '/ɪˈmiːdiət/';
 const desktopNavItemClass = "inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-[var(--sf-text-muted)] hover:text-[var(--sf-text)] focus-visible:outline-2";
 const mobileNavItemClass = "rounded-xl px-4 py-3 font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2";
 const mobileNavButtonClass = "rounded-xl px-4 py-3 text-left font-bold hover:bg-[var(--sf-surface-muted)] focus-visible:outline-2";
-const iconTileClass = "flex size-12 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm";
+const iconTileClass = "landing-icon-tile flex size-12 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] text-[var(--sf-brand-text)] [html[data-theme-family=crystal]_&]:crystal-chamfer-sm";
 const utilityLinkClass = "rounded px-2 py-1 underline-offset-4 hover:underline focus-visible:outline-2";
 const sectionLeadClass = "mt-2 text-sm leading-6 text-[var(--sf-text-muted)]";
 const detailCopyClass = "mt-1 text-sm leading-6 text-[var(--sf-text-muted)]";
-const landingBandClass = "border-t border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-16 sm:px-8 lg:px-12";
-const brandTextClass = "text-sm font-bold text-[var(--sf-brand-text)]";
-const brandCalloutClass = "mt-6 text-sm font-bold text-[var(--sf-brand-text)]";
-const sectionTitleClass = "mt-3 text-3xl font-black tracking-tight sm:text-4xl";
+const landingBandClass = "landing-band border-t border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-16 sm:px-8 lg:px-12";
+const brandTextClass = "landing-kicker text-sm font-bold text-[var(--sf-brand-text)]";
+const brandCalloutClass = "landing-kicker mt-6 text-sm font-bold text-[var(--sf-brand-text)]";
+const sectionTitleClass = "landing-section-title mt-3 text-3xl font-black tracking-tight sm:text-4xl";
 
 const videos = [
   {
@@ -307,6 +307,9 @@ const crystalRibbonItems = [
   { id: 'tiers', label: <Trans {...msg({ context: 'landing.ribbon.tiers', message: 'Bud → Bloom → Star' })} /> },
   { id: 'ielts-band-goal', label: <Trans {...msg({ context: 'landing.ribbon.ielts-band-goal', message: 'IELTS band goal' })} /> },
 ];
+// The ribbon spans the viewport and its marquee loops by half the track, so each half (three copies of the
+// items, about 4,400px of English labels) must stay wider than the widest screen for the loop to stay seamless.
+const crystalRibbonCopies = [0, 1, 2, 3, 4, 5] as const;
 
 function CrystalLandingHero({ onEnterApp, onSignIn, signInBusy, user, showLumi }: Pick<LandingPageProps, 'onEnterApp' | 'onSignIn' | 'user'> & { readonly signInBusy: boolean; readonly showLumi: boolean }) {
   const { _ } = useLingui();
@@ -333,11 +336,11 @@ function CrystalLandingHero({ onEnterApp, onSignIn, signInBusy, user, showLumi }
         <article className="crystal-demo-card crystal-demo-right" data-tier="learning" aria-hidden="true"><span className="crystal-demo-rim" aria-hidden="true" /><div className="crystal-demo-face"><div className="crystal-demo-art"><img src={animeImmediate} width={1000} height={667} alt="" loading="lazy" decoding="async" /><span><i><Trans {...msg({ context: 'landing.demo.grade.bloom', message: 'Bloom' })} /></i>{' '}<Trans {...msg({ context: 'landing.demo.tier.learning', message: 'Learning' })} /></span></div><strong>{crystalDemoWords.immediate.word}</strong><small>{crystalDemoWords.immediate.ipa}</small><b><Trans {...msg({ context: 'landing.demo.meaning.immediate', message: 'without delay' })} /></b></div></article>
         <article className="crystal-demo-card crystal-demo-main" data-tier="mastered"><span className="crystal-demo-rim" aria-hidden="true" /><div className="crystal-demo-face"><div className="crystal-demo-art"><img src={animeInstant} width={1000} height={667} alt="" decoding="async" fetchPriority="high" /><span><i><Trans {...msg({ context: 'landing.demo.grade.star', message: 'Star' })} /></i>{' '}<Trans {...msg({ context: 'landing.demo.tier.mastered', message: 'Mastered' })} /></span></div><strong>{crystalDemoWords.instant.word}</strong><small>{crystalDemoWords.instant.ipa}</small><b><Trans {...msg({ context: 'landing.demo.meaning.instant', message: 'a moment' })} /></b></div></article>
       </div>
-      {showLumi && <Lumi pose="hero" eager className="crystal-hero-lumi" data-revealed={lumiRevealed ? 'true' : undefined} onLoad={revealLumi} />}
+      {showLumi && <div className="crystal-hero-lumi-wrap" aria-hidden="true"><Lumi pose="hero" eager className="crystal-hero-lumi" data-revealed={lumiRevealed ? 'true' : undefined} onLoad={revealLumi} /></div>}
     </div>
     <div className="crystal-ribbon" aria-hidden="true">
       <div className="crystal-ribbon-track">
-        {[0, 1].map((copy) => crystalRibbonItems.map((item) => <span key={`${copy}-${item.id}`}><Star size={16} fill="currentColor" strokeWidth={0} />{item.label}</span>))}
+        {crystalRibbonCopies.map((copy) => crystalRibbonItems.map((item) => <span key={`${copy}-${item.id}`}><Star size={16} fill="currentColor" strokeWidth={0} />{item.label}</span>))}
       </div>
     </div>
   </section>;
@@ -535,7 +538,8 @@ export function LandingPage({
   const prefersReducedMotion = useReducedMotion();
   const [saveData, setSaveData] = useState(false);
   const [compactDevice, setCompactDevice] = useState(true);
-  const videoEnabled = mode === 'dark' && !prefersReducedMotion && !saveData && !compactDevice;
+  // Crystal paints its own nebula art behind the hero, so the atmosphere videos belong to Classic only.
+  const videoEnabled = family === 'classic' && mode === 'dark' && !prefersReducedMotion && !saveData && !compactDevice;
   useEffect(() => {
     const media = matchMedia('(max-width: 767px), (pointer: coarse)');
     const update = () => setCompactDevice(media.matches);
@@ -581,10 +585,11 @@ export function LandingPage({
   const closeMobileNav = () => mobileNavRef.current?.removeAttribute("open");
   const showLumi = afterFirstPaint && family === "crystal" && readLumiEnabled();
   const actionClass =
-    "min-h-12 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-5 font-bold text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] transition hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm";
+    "landing-action min-h-12 rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-control)] px-5 font-bold text-[var(--sf-text)] shadow-[var(--sf-panel-shadow)] transition hover:border-[var(--sf-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none [html[data-theme-family=crystal]_&]:crystal-chamfer-sm";
 
   return (
     <div className="landing-canvas min-h-[100svh] overflow-x-clip bg-[var(--sf-canvas)] text-[var(--sf-text)] selection:bg-[var(--sf-brand)] selection:text-[var(--sf-on-brand)]">
+      {family === "crystal" && <div className="crystal-page-glow" aria-hidden="true"><div className="nk-starfield" /><div className="nk-beam" /><div className="nk-beam" /></div>}
       <main>
         {!user && <LandingSignInNotice {...signInState} />}
         {!user && accountDeletionStarted && <p role="status" className="mx-auto max-w-[92rem] px-5 pt-5 text-sm text-[var(--sf-success)] sm:px-8 lg:px-12"><Trans {...msg({ id: 'account.data.delete.started', message: 'We could not confirm whether account deletion finished. If you can still sign in later, contact support.' })} /></p>}
@@ -598,7 +603,7 @@ export function LandingPage({
             className="absolute inset-0 bg-[var(--sf-canvas)]"
             aria-hidden="true"
           />
-          <div
+          {family === "classic" && <div
             className="absolute inset-0 opacity-0 [html.dark_&]:opacity-100"
             aria-hidden="true"
           >
@@ -627,14 +632,10 @@ export function LandingPage({
               </video>
             ))}
             <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--sf-canvas)_0%,color-mix(in_srgb,var(--sf-canvas)_84%,transparent)_50%,color-mix(in_srgb,var(--sf-canvas)_30%,transparent)_100%)]" />
-          </div>
-          {family === "crystal" && <div className="crystal-backdrop" aria-hidden="true"><span className="crystal-beam" /><span className="crystal-beam" /><div className="crystal-backdrop-wings"><CrystalWings /></div><div className="crystal-backdrop-wings crystal-backdrop-wings-end"><CrystalWings /></div></div>}
+          </div>}
+          {family === "crystal" && <div className="crystal-backdrop" aria-hidden="true" />}
           <div className="landing-ambient" aria-hidden="true"><span /><span /></div>
           <div className="landing-grain" aria-hidden="true" />
-          <div
-            className="crystal-starfield pointer-events-none absolute inset-0 opacity-0 [html[data-theme-family=crystal]_&]:opacity-30"
-            aria-hidden="true"
-          />
           <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[92rem] flex-col px-5 py-5 sm:px-8 lg:px-12">
             <header className="landing-header flex items-center gap-3">
               <a
@@ -771,7 +772,7 @@ export function LandingPage({
                       message: "Mobile navigation",
                     }),
                   )}
-                  className="absolute right-0 top-14 z-20 flex w-64 flex-col gap-1 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-3 text-[var(--sf-text)] shadow-2xl [html[data-theme-family=crystal]_&]:crystal-chamfer"
+                  className="landing-mobile-menu absolute right-0 top-14 z-20 flex w-64 flex-col gap-1 rounded-2xl border border-[var(--sf-border)] bg-[var(--sf-surface)] p-3 text-[var(--sf-text)] shadow-2xl [html[data-theme-family=crystal]_&]:crystal-chamfer"
                 >
                   <a
                     href="#how-it-works"
@@ -876,7 +877,7 @@ export function LandingPage({
                 ))}
               </div>
             </fieldset>
-            ) : <p role="status" className="sr-only"><Trans {...msg({ context: 'landing.atmosphere.static', message: 'Static atmosphere is enabled for this device or motion preference.' })} /></p>}
+            ) : family === "classic" && <p role="status" className="sr-only"><Trans {...msg({ context: 'landing.atmosphere.static', message: 'Static atmosphere is enabled for this device or motion preference.' })} /></p>}
           </div>
         </section>
         {family === "crystal" && <section
@@ -890,7 +891,7 @@ export function LandingPage({
           <ol className="grid gap-5 border-t border-[var(--sf-border)] pt-6 sm:grid-cols-3">
             {learningFlow.map((item, index) => (
               <li key={item.id} className="flex gap-4">
-                <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--sf-border)] bg-[var(--sf-surface-raised)] text-xl text-[var(--sf-brand-text)]">{index + 1}</span>
+                <span aria-hidden="true" className="landing-step-badge flex size-11 shrink-0 items-center justify-center text-[var(--sf-brand-text)]">{index + 1}</span>
                 <div>
                   <h3 className="text-xl font-semibold">{item.title}</h3>
                   <p className={sectionLeadClass}>{item.description}</p>
@@ -904,7 +905,7 @@ export function LandingPage({
           aria-labelledby="extension-heading"
           className="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-12"
         >
-          <div className="grid gap-12 lg:grid-cols-[minmax(15rem,.7fr)_minmax(0,1.3fr)] lg:gap-24">
+          <div className="landing-extension-grid grid gap-12 lg:grid-cols-[minmax(15rem,.7fr)_minmax(0,1.3fr)] lg:gap-24">
             <header>
               <div
                 className={iconTileClass}
@@ -917,7 +918,7 @@ export function LandingPage({
               </p>
               <h2
                 id="extension-heading"
-                className="mt-4 max-w-md text-balance text-4xl font-black tracking-tight sm:text-5xl"
+                className="landing-section-title mt-4 max-w-md text-balance text-4xl font-black tracking-tight sm:text-5xl"
               >
                 <Trans {...msg({ context: 'landing.extension.title', message: 'Learn from the page you\'re already on.' })} />
               </h2>
@@ -942,7 +943,7 @@ export function LandingPage({
                       <Icon size={19} />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-[var(--sf-brand-text)]">0{index + 1}</p>
+                      <p className="landing-extension-index text-xs font-bold text-[var(--sf-brand-text)]">0{index + 1}</p>
                       <h3 className="mt-2 text-2xl font-black tracking-tight">{item.title}</h3>
                       <p className="mt-2 max-w-2xl leading-7 text-[var(--sf-text-muted)]">{item.description}</p>
                     </div>
@@ -978,7 +979,7 @@ export function LandingPage({
                 {...msg({ context: 'landing.languages.description', message: 'Start a course in any of these four languages, with meanings shown in English or Vietnamese. Each course keeps its own cards and progress.' })}
               />
             </p>
-            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+            <ul className="landing-language-list mt-6 grid gap-3 sm:grid-cols-2">
               {landingLanguageOffers.map(id => (
                 <li
                   key={id}
@@ -990,7 +991,7 @@ export function LandingPage({
                     {id === "ja" && <Trans {...msg({ context: 'landing.languages.pack.japanese', message: '日本語 · Japanese' })} />}
                     {id === "zh" && <Trans {...msg({ context: 'landing.languages.pack.chinese', message: '中文 · Chinese' })} />}
                   </span>
-                  <span className="rounded-full bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] px-2.5 py-1 text-xs font-bold text-[var(--sf-brand-text)]">
+                  <span className="landing-status-tag rounded-full bg-[color-mix(in_srgb,var(--sf-brand)_12%,transparent)] px-2.5 py-1 text-xs font-bold text-[var(--sf-brand-text)]">
                     <Trans {...msg({ context: 'landing.languages.status.available', message: 'Available now' })} />
                   </span>
                 </li>
@@ -1000,9 +1001,9 @@ export function LandingPage({
         </section>
         <section
           aria-labelledby="methods-heading"
-          className="border-y border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-20 sm:px-8 sm:py-28 lg:px-12"
+          className="landing-band border-y border-[var(--sf-border)] bg-[var(--sf-surface-raised)] px-5 py-20 sm:px-8 sm:py-28 lg:px-12"
         >
-          <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[minmax(0,.85fr)_minmax(20rem,1.15fr)]">
+          <div className="landing-methods-grid mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[minmax(0,.85fr)_minmax(20rem,1.15fr)]">
             <div>
               <div
                 className={iconTileClass}
@@ -1012,7 +1013,7 @@ export function LandingPage({
               </div>
               <h2
                 id="methods-heading"
-                className="mt-6 text-balance text-4xl font-black tracking-tight sm:text-5xl"
+                className="landing-section-title mt-6 text-balance text-4xl font-black tracking-tight sm:text-5xl"
               >
                 <Trans
                   {...msg({ context: 'landing.methods.title', message: 'Review what is ready.' })}
@@ -1023,7 +1024,7 @@ export function LandingPage({
                   {...msg({ context: 'landing.methods.description', message: 'Your feedback helps plan a useful next review with FSRS scheduling.' })}
                 />
               </p>
-              <dl className="mt-8 space-y-4 border-l border-[var(--sf-brand)] pl-5">
+              <dl className="landing-methods-points mt-8 space-y-4 border-l border-[var(--sf-brand)] pl-5">
                 <div>
                   <dt className="font-bold">
                     <Trans
@@ -1050,13 +1051,13 @@ export function LandingPage({
                 </div>
               </dl>
             </div>
-            <div className="crystal-chamfer rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-7 shadow-[var(--sf-panel-shadow)]">
+            <div className="landing-methods-panel crystal-chamfer rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-7 shadow-[var(--sf-panel-shadow)]">
               <p className={brandTextClass}>
                 <Trans
                   {...msg({ context: 'landing.methods.preview.caption', message: 'Built for the words you actually meet.' })}
                 />
               </p>
-              <p className="mt-4 font-serif-hero text-4xl leading-tight">
+              <p className="landing-methods-quote mt-4 font-serif-hero text-4xl leading-tight">
                 <Trans
                   {...msg({ context: 'landing.methods.preview.quote', message: 'A vocabulary is useful when you can reach for it.' })}
                 />
@@ -1079,7 +1080,7 @@ export function LandingPage({
           aria-labelledby="pricing-heading"
           className={landingBandClass}
         >
-          <div className="mx-auto max-w-5xl">
+          <div className="landing-pricing-layout mx-auto max-w-5xl">
             <p className={brandTextClass}>
               <Trans {...msg({ context: 'landing.pricing.eyebrow', message: 'Free to start, Pro when you want more' })} />
             </p>
@@ -1089,9 +1090,12 @@ export function LandingPage({
             >
               <Trans {...msg({ context: 'landing.pricing.title', message: 'Pricing & access' })} />
             </h2>
-            <div className="mt-8 grid gap-8 lg:grid-cols-2">
-              <div className="rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8 [html[data-theme-family=crystal]_&]:crystal-chamfer">
-                <div className="grid grid-cols-3 items-end gap-2 border-b border-[var(--sf-border)] pb-3">
+            <div className="landing-pricing-grid mt-8 grid gap-8 lg:grid-cols-2">
+              {/* Crystal draws the panel's glow on this wrapper, outside the panel's clip-path. As a one-cell grid it
+                  still stretches the panel to the row height, so the Classic layout is unchanged. */}
+              <div className="landing-pricing-glow grid">
+              <div className="landing-pricing-panel rounded-[2rem] border border-[var(--sf-border)] bg-[var(--sf-surface)] p-6 shadow-[var(--sf-panel-shadow)] sm:p-8 [html[data-theme-family=crystal]_&]:crystal-chamfer">
+                <div className="landing-pricing-head grid grid-cols-3 items-end gap-2 border-b border-[var(--sf-border)] pb-3">
                   <span className="font-serif-hero text-lg"><Trans {...msg({ context: 'landing.pricing.free-vs-pro.title', message: 'Free vs Pro' })} /></span>
                   <span className="text-center text-xs font-bold text-[var(--sf-text-muted)]"><Trans {...msg({ context: 'landing.pricing.free-vs-pro.free', message: 'Free' })} /></span>
                   <span className="text-center text-xs font-bold text-[var(--sf-brand-text)]"><Trans {...msg({ context: 'landing.pricing.free-vs-pro.pro', message: 'Pro' })} /></span>
@@ -1103,18 +1107,19 @@ export function LandingPage({
                     <span className="text-center font-mono text-xs font-semibold">{row.pro}</span>
                   </div>
                 ))}
-                <p className="mt-5 font-serif-hero text-2xl">
+                <p className="landing-pricing-price mt-5 font-serif-hero text-2xl">
                   <Trans {...msg({ context: 'landing.pricing.price', message: 'The final Pro price will be confirmed before sales open.' })} />
                 </p>
-                <p className={sectionLeadClass}>
+                <p className={`landing-pricing-note ${sectionLeadClass}`}>
                   <Trans
                     {...msg({ context: 'landing.pricing.purchase-note', message: 'Registering your interest does not charge you. Purchases are not open yet — we will follow up by email when they are.' })}
                   />
                 </p>
               </div>
-              <div>
-                <h3 className="text-xl font-black tracking-tight"><Trans {...msg({ context: 'landing.pricing.faq.title', message: 'Questions' })} /></h3>
-                <dl className="mt-4 space-y-4 border-l border-[var(--sf-border)] pl-5">
+              </div>
+              <div className="landing-pricing-faq">
+                <h3 className="landing-faq-title text-xl font-black tracking-tight"><Trans {...msg({ context: 'landing.pricing.faq.title', message: 'Questions' })} /></h3>
+                <dl className="landing-faq mt-4 space-y-4 border-l border-[var(--sf-border)] pl-5">
                   {pricingFaq.map(item => (
                     <div key={item.id}>
                       <dt className="font-bold">{item.question}</dt>
@@ -1137,7 +1142,7 @@ export function LandingPage({
           </p>
           <h2
             id="closing-heading"
-            className="mx-auto mt-4 max-w-3xl text-balance text-4xl font-black tracking-tight sm:text-6xl"
+            className="landing-section-title mx-auto mt-4 max-w-3xl text-balance text-4xl font-black tracking-tight sm:text-6xl"
           >
             <Trans
               {...msg({ context: 'landing.closing.title', message: 'Build a vocabulary you can reach for.' })}
@@ -1152,7 +1157,7 @@ export function LandingPage({
             <button
               type="button"
               onClick={onEnterApp}
-              className="brand-action inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-8 font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none sm:w-auto [html[data-theme-family=crystal]_&]:crystal-chamfer"
+              className="landing-closing-start brand-action inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sf-brand)] px-8 font-black text-[var(--sf-on-brand)] shadow-[var(--sf-panel-shadow)] transition hover:bg-[var(--sf-brand-hover)] focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none sm:w-auto [html[data-theme-family=crystal]_&]:crystal-chamfer"
             >
               <Trans {...msg({ context: 'landing.hero.start', message: 'Start learning' })} />
               <ArrowRight size={18} aria-hidden="true" />
@@ -1179,15 +1184,20 @@ export function LandingPage({
           </p>
         </section>
       </main>
-      <footer className="border-t border-[var(--sf-border)] px-5 py-7 text-sm text-[var(--sf-text-muted)] sm:px-8 lg:px-12">
+      <footer className="landing-footer border-t border-[var(--sf-border)] px-5 py-7 text-sm text-[var(--sf-text-muted)] sm:px-8 lg:px-12">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <p>
-            <span className="font-bold text-[var(--sf-text)]">
-              <Trans {...msg({ context: 'landing.brand.plain', message: 'SonFlash' })} />
+            {family === "crystal" && <svg className="landing-footer-mark" viewBox="0 0 100 100" width="26" height="26" aria-hidden="true"><path d="M50 4 62 36 96 37 69 59 78 91 50 72 22 91 31 59 4 37 38 36Z" fill="#ff5470"/><path d="M50 4 62 36 96 37 69 59 78 91 50 72Z" fill="#7a0820"/></svg>}
+            <span className="landing-footer-brand font-bold text-[var(--sf-text)]">
+              {family === "crystal"
+                ? <Trans {...msg({ context: 'landing.brand.crystal-wordmark', message: 'SON<0>FLASH</0>' })} components={{ 0: <em /> }} />
+                : <Trans {...msg({ context: 'landing.brand.plain', message: 'SonFlash' })} />}
             </span>{" "}
-            <Trans
-              {...msg({ context: 'landing.footer.description', message: 'for intentional vocabulary learning.' })}
-            />
+            <span className="landing-footer-tagline">
+              <Trans
+                {...msg({ context: 'landing.footer.description', message: 'for intentional vocabulary learning.' })}
+              />
+            </span>
           </p>
           <LocaleLinks />
           <p className="flex flex-wrap gap-x-4 gap-y-2">
