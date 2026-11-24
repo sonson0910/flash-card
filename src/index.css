@@ -690,22 +690,19 @@ html[data-save-data="true"] .zen-glass-slab {
   animation: async-content-enter 200ms var(--ease-out-expo) both;
 }
 
-/* Crystal panels are cut at the top-left and bottom-right corners. clip-path removes the border there,
-   so the two cut edges are redrawn as gradient lines in the panel's edge colour. The compound selector
-   outranks the rounded-* and background utilities on the same element; a panel with a gradient fill
-   passes it through --sf-chamfer-fill. Classic themes set --nk-chamfer to none and keep their radius. */
+/* Crystal panels are cut at the top-left and bottom-right corners. As on the design boards, the cut carries no
+   line of its own: a panel's 1px edge simply stops at the cut. The compound selector outranks the rounded-* and
+   background utilities on the same element; a panel with a gradient fill passes it through --sf-chamfer-fill.
+   Classic themes set --nk-chamfer to none and keep their radius. */
 @utility crystal-chamfer {
   clip-path: var(--nk-chamfer);
   &:is(html[data-theme-family=crystal] *) {
     border-radius: 0;
-    background-image:
-      linear-gradient(135deg, transparent 12.2px, var(--sf-chamfer-edge, var(--sf-border)) 12.2px 13.9px, transparent 13.9px),
-      linear-gradient(315deg, transparent 12.2px, var(--sf-chamfer-edge, var(--sf-border)) 12.2px 13.9px, transparent 13.9px),
-      var(--sf-chamfer-fill, linear-gradient(transparent, transparent));
-    background-position: left top, right bottom, center;
-    background-size: 36px 36px, 36px 36px, 100% 100%;
+    background-image: var(--sf-chamfer-fill, linear-gradient(transparent, transparent));
+    background-position: center;
+    background-size: 100% 100%;
     background-repeat: no-repeat;
-    background-origin: border-box, border-box, padding-box;
+    background-origin: padding-box;
   }
 }
 
@@ -713,14 +710,11 @@ html[data-save-data="true"] .zen-glass-slab {
   clip-path: var(--nk-chamfer-sm);
   &:is(html[data-theme-family=crystal] *) {
     border-radius: 0;
-    background-image:
-      linear-gradient(135deg, transparent 6.6px, var(--sf-chamfer-edge, var(--sf-border)) 6.6px 8.3px, transparent 8.3px),
-      linear-gradient(315deg, transparent 6.6px, var(--sf-chamfer-edge, var(--sf-border)) 6.6px 8.3px, transparent 8.3px),
-      var(--sf-chamfer-fill, linear-gradient(transparent, transparent));
-    background-position: left top, right bottom, center;
-    background-size: 20px 20px, 20px 20px, 100% 100%;
+    background-image: var(--sf-chamfer-fill, linear-gradient(transparent, transparent));
+    background-position: center;
+    background-size: 100% 100%;
     background-repeat: no-repeat;
-    background-origin: border-box, border-box, padding-box;
+    background-origin: padding-box;
   }
 }
 

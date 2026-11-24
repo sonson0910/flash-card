@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { useEffect, useState } from 'react';
 import '../../src/index.css';
+import '../../src/styles/themes/crystal-motion.css';
 import '../../src/styles/app-bootstrap.css';
 import '../../src/features/dailyLearning/today-ready-hero.css';
 import { StreakChip } from '../../src/features/dailyLearning/StreakDialog';

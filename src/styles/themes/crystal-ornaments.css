@@ -115,8 +115,6 @@ html.dark[data-theme-family=crystal] :is(.library-canvas-rail, .library-canvas-v
 html.dark[data-theme-family=crystal] :is(.library-canvas-search, .study-shell-kbd) { background: var(--sf-glass-surface); }
 /* An outline-only button on the backdrop takes the glass fill in both modes. */
 html[data-theme-family=crystal] .study-shell-learn-first { background: var(--sf-glass-surface); }
-/* The speech bubble sits next to the shards, where the light glass panel is too thin for its small accent kicker. */
-html:not(.dark)[data-theme-family=crystal] .today-crystal-bubble { --tc-panel: var(--sf-glass-card-front); }
 /* Light course cards carry small accent labels that the glass fill cannot back over the rose shards. */
 html:not(.dark)[data-theme-family=crystal] .course-card { --sf-chamfer-fill: var(--sf-solid-card); }
 /* The shelf count sits over the brightest part of the dark backdrop, where the subtle text colour falls short even with the halo. */

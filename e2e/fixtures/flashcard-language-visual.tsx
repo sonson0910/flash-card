@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { useEffect, useState } from 'react';
 import '../../src/index.css';
+import '../../src/styles/themes/crystal-motion.css';
 import '../../src/styles/app-bootstrap.css';
 import { Flashcard } from '../../src/components/Flashcard';
 import { ActiveRecallPrompt } from '../../src/components/flashcard/ActiveRecallPrompt';
