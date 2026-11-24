@@ -40,8 +40,13 @@ export const DEFAULT_BUNDLE_BUDGETS = {
   // capture failure copy, streak ended state, export of every course,
   // lazily started App Check): Linux measured 3,422,002 B raw /
   // 1,083,544 B gzip, again in lazily loaded chunks.
-  totalJavaScriptRaw: 3_460_000,
-  totalJavaScriptGzip: 1_095_000,
+  // Crystal surfaces ported from the design boards (study card front and its
+  // turn, recall prompt, weekly recap, lesson, onboarding and landing markup
+  // the boards need): Linux measured 3,474,105 B raw / 1,098,524 B gzip. The
+  // growth is in lazily loaded chunks; initial JavaScript is unchanged at
+  // 221,454 B raw.
+  totalJavaScriptRaw: 3_512_000,
+  totalJavaScriptGzip: 1_110_000,
   javaScriptChunkRaw: 650_000,
   javaScriptChunkGzip: 180_000,
   // Reviewed media baseline includes all supported media copied into dist.
