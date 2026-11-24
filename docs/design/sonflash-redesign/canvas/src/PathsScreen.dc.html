@@ -3,11 +3,11 @@
 <!--#AMBIENT-->
 <!--#NAV-->
   <main style="position: relative; z-index: 2; padding: 34px 56px 0;">
-    <h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Paths</h1>
-    <p style="margin: 10px 0 0; font-size: 14px; color: {{t.text2}};">Guided word sets, ordered so each word builds on the one before.</p>
+    <h1 class="{{t.fx.title}}" style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Paths</h1>
+    <p class="{{t.fx.enter}}" style="margin: 10px 0 0; font-size: 14px; color: {{t.text2}};">Guided word sets, ordered so each word builds on the one before.</p>
 
     <div style="margin-top: 28px; display: grid; grid-template-columns: 640px minmax(0, 1fr); gap: 28px;">
-      <section aria-label="Current path" style="position: relative; height: 610px; box-sizing: border-box; border-radius: {{t.radius}}px; overflow: hidden; border: {{hero.border}}; background: {{hero.bg}}; box-shadow: {{hero.shadow}}; color: {{hero.text}}; display: flex; flex-direction: column; padding: 32px 34px;">
+      <section aria-label="Current path" class="{{t.fx.enter2}}" style="position: relative; height: 610px; box-sizing: border-box; border-radius: {{t.radius}}px; overflow: hidden; border: {{hero.border}}; background: {{hero.bg}}; box-shadow: {{hero.shadow}}; color: {{hero.text}}; display: flex; flex-direction: column; padding: 32px 34px;">
         <svg aria-hidden="true" width="100%" height="100%" style="position: absolute; inset: 0; pointer-events: none; opacity: {{hero.grain}}; mix-blend-mode: overlay;"><filter id="{{heroGrainId}}"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"></feTurbulence></filter><rect width="100%" height="100%" filter="url(#{{heroGrainId}})"></rect></svg>
         <div style="position: relative; display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{hero.muted}};">
           <span style="width: 7px; height: 7px; border-radius: 50%; background: {{hero.dot}}; box-shadow: {{hero.dotGlow}};"></span>Continue · Unit 4 of 12
@@ -15,7 +15,7 @@
         <h2 style="position: relative; margin: 18px 0 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 68px; line-height: 0.98; letter-spacing: -0.03em; color: {{hero.title}}; text-shadow: {{hero.titleShadow}};">IELTS <span style="font-style: italic;">core</span></h2>
         <p style="position: relative; margin: 14px 0 0; max-width: 440px; font-size: 16px; line-height: 1.55; color: {{hero.body}};">The 120 words that show up most across IELTS reading and listening. This unit: <span style="color: {{hero.title}}; font-weight: 600;">Time &amp; change.</span></p>
 
-        <div style="position: relative; margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px;">
+        <div class="{{t.fx.stagger}}" style="position: relative; margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px;">
           <sc-for list="{{unitWords}}" as="w" hint-placeholder-count="8">
             <span style="height: 34px; padding: 0 13px; border-radius: 999px; border: 1px solid {{w.border}}; background: {{w.bg}}; color: {{w.color}}; font-family: Fraunces, Georgia, serif; font-size: 16px; display: flex; align-items: center; gap: 7px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{w.dot}};"></span>{{w.word}}</span>
           </sc-for>
@@ -29,26 +29,26 @@
           </div>
           <div style="margin-top: 12px; display: flex; justify-content: space-between; font-size: 13px; color: {{hero.muted}};"><span><span style="font-family: 'Geist Mono', ui-monospace, monospace; color: {{hero.title}};">34</span> of 120 words</span><span>About 9 days left at your pace</span></div>
           <div style="margin-top: 22px; display: flex; gap: 10px;">
-            <button class="sf-press" style="height: 54px; padding: 0 24px; border-radius: {{t.btnRadius}}; border: 0; background: {{hero.ctaBg}}; color: {{hero.ctaText}}; box-shadow: {{hero.ctaShadow}}; font-size: 15px; font-weight: 650; cursor: pointer;">Continue unit 4</button>
-            <button class="sf-press" style="height: 54px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 1px solid {{hero.ghostLine}}; background: transparent; color: {{hero.title}}; font-size: 15px; font-weight: 600; cursor: pointer;">See all units</button>
+            <button class="{{t.fx.press}}" style="height: 54px; padding: 0 24px; border-radius: {{t.btnRadius}}; border: 0; background: {{hero.ctaBg}}; color: {{hero.ctaText}}; box-shadow: {{hero.ctaShadow}}; font-size: 15px; font-weight: 650; cursor: pointer;">Continue unit 4</button>
+            <button class="{{t.fx.press}}" style="height: 54px; padding: 0 20px; border-radius: {{t.btnRadius}}; border: 1px solid {{hero.ghostLine}}; background: transparent; color: {{hero.title}}; font-size: 15px; font-weight: 600; cursor: pointer;">See all units</button>
           </div>
         </div>
       </section>
 
-      <section aria-label="More paths">
+      <section aria-label="More paths" class="{{t.fx.enter3}}">
         <div style="display: flex; align-items: baseline; justify-content: space-between;">
           <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 26px; color: {{t.textStrong}};">Your shelf</h2>
           <a href="#" style="font-size: 13px; font-weight: 600; color: {{t.accentText}}; text-decoration: none;">Browse catalog →</a>
         </div>
-        <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px;">
+        <div class="{{t.fx.stagger}}" style="margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px;">
           <sc-for list="{{books}}" as="b" hint-placeholder-count="6">
-            <a href="#" class="sf-lift" style="position: relative; height: 272px; box-sizing: border-box; border-radius: {{b.radius}}; overflow: hidden; text-decoration: none; border: {{b.border}}; background: {{b.bg}}; box-shadow: {{b.shadow}}; color: {{b.text}}; display: flex; flex-direction: column; padding: 20px 18px 16px 26px;">
+            <a href="#" class="{{t.fx.lift}}" style="position: relative; height: 272px; box-sizing: border-box; border-radius: {{b.radius}}; overflow: hidden; text-decoration: none; border: {{b.border}}; background: {{b.bg}}; box-shadow: {{b.shadow}}; color: {{b.text}}; display: flex; flex-direction: column; padding: 20px 18px 16px 26px;">
               <span aria-hidden="true" style="position: absolute; left: 0; top: 0; bottom: 0; width: 10px; background: {{b.spine}};"></span>
               <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: {{b.muted}};">{{b.kind}}</span>
               <span style="margin-top: 10px; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-size: 30px; font-weight: {{t.displayWeight}}; line-height: 1.02; letter-spacing: -0.02em; color: {{b.title}};">{{b.name}}</span>
               <span style="margin-top: 8px; font-size: 13px; line-height: 1.45; color: {{b.muted}};">{{b.blurb}}</span>
               <span style="margin-top: auto; display: flex; align-items: center; gap: 10px;">
-                <span style="flex-grow: 1; height: 4px; border-radius: 4px; background: {{b.track}}; overflow: hidden;"><span style="display: block; width: {{b.pct}}%; height: 100%; background: {{b.fill}};"></span></span>
+                <span style="flex-grow: 1; height: 4px; border-radius: 4px; background: {{b.track}}; overflow: hidden;"><span class="sf-grow" style="display: block; width: {{b.pct}}%; height: 100%; background: {{b.fill}};"></span></span>
                 <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; color: {{b.muted}};">{{b.count}}</span>
               </span>
             </a>

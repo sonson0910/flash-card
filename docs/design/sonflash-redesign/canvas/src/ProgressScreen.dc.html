@@ -5,18 +5,18 @@
   <main style="position: relative; z-index: 2; padding: 34px 56px 0;">
     <div style="display: flex; align-items: flex-end; gap: 20px;">
       <div>
-        <h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Progress</h1>
-        <p style="margin: 10px 0 0; font-size: 14px; color: {{t.text2}};">Learning since 2 June 2026 · <span style="color: {{t.text}};">2,418 reviews</span> · <span style="color: {{t.text}};">14 h 20 m</span> studied</p>
+        <h1 class="{{t.fx.title}}" style="margin: 0; font-family: Fraunces, Georgia, serif; font-optical-sizing: auto; font-weight: {{t.displayWeight}}; font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: {{t.textStrong}};">Progress</h1>
+        <p class="{{t.fx.enter}}" style="margin: 10px 0 0; font-size: 14px; color: {{t.text2}};">Learning since 2 June 2026 · <span style="color: {{t.text}};">2,418 reviews</span> · <span style="color: {{t.text}};">14 h 20 m</span> studied</p>
       </div>
-      <div role="group" aria-label="Range" style="margin-left: auto; display: flex; padding: 4px; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
+      <div role="group" aria-label="Range" class="{{t.fx.enter}}" style="margin-left: auto; display: flex; padding: 4px; border-radius: 14px; border: 1px solid {{t.line}}; background: {{t.chipBg}};">
         <sc-for list="{{ranges}}" as="r" hint-placeholder-count="3">
-          <button aria-pressed="{{r.on}}" onClick="{{r.pick}}" style="height: 36px; padding: 0 14px; border-radius: 10px; border: 0; background: {{r.bg}}; color: {{r.color}}; font-size: 13px; font-weight: 600; cursor: pointer;">{{r.label}}</button>
+          <button aria-pressed="{{r.on}}" onClick="{{r.pick}}" class="sf-ease" style="height: 36px; padding: 0 14px; border-radius: 10px; border: 0; background: {{r.bg}}; color: {{r.color}}; font-size: 13px; font-weight: 600; cursor: pointer;">{{r.label}}</button>
         </sc-for>
       </div>
     </div>
 
     <div style="margin-top: 26px; display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 20px;">
-      <section style="padding: 24px 26px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}};">
+      <section class="{{t.fx.enter2}}" style="padding: 24px 26px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}};">
         <div style="display: flex; align-items: baseline; gap: 12px;">
           <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 24px; color: {{t.textStrong}};">Activity</h2>
           <span style="font-size: 13px; color: {{t.text2}};">Reviews per day, last 26 weeks</span>
@@ -26,7 +26,7 @@
         </div>
         <div style="margin-top: 18px; display: flex; gap: 10px;">
           <div style="display: grid; grid-template-rows: repeat(7, 22px); gap: 5px; font-size: 11px; color: {{t.text3}}; line-height: 22px;"><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span><span>Sun</span></div>
-          <div role="img" aria-label="Activity heatmap, 13 days in a row active" style="display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 22px); grid-auto-columns: 22px; gap: 5px;">
+          <div role="img" aria-label="Activity heatmap, 13 days in a row active" class="sf-cells sf-late" style="display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 22px); grid-auto-columns: 22px; gap: 5px;">
             <sc-for list="{{heat}}" as="h" hint-placeholder-count="182">
               <span style="border-radius: 5px; background: {{h.bg}}; box-shadow: {{h.glow}};"></span>
             </sc-for>
@@ -35,21 +35,21 @@
         <div style="margin-top: 10px; margin-left: 42px; display: flex; justify-content: space-between; width: 697px; font-size: 11px; color: {{t.text3}};"><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span></div>
       </section>
 
-      <section style="padding: 24px 26px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}}; display: flex; flex-direction: column;">
+      <section class="{{t.fx.enter2}}" style="padding: 24px 26px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}}; display: flex; flex-direction: column;">
         <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 24px; color: {{t.textStrong}};">Mastery</h2>
         <div style="margin-top: 14px; display: flex; align-items: center; gap: 24px;">
           <div style="position: relative; width: 150px; height: 150px; flex-shrink: 0;">
             <svg width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="25 percent mastered">
               <circle cx="75" cy="75" r="62" fill="none" stroke="{{t.track}}" stroke-width="14"></circle>
-              <circle cx="75" cy="75" r="62" fill="none" stroke="{{t.accent}}" stroke-width="14" stroke-dasharray="{{ring.learning}} 400" stroke-dashoffset="{{ring.learningOffset}}" transform="rotate(-90 75 75)" stroke-linecap="butt"></circle>
-              <circle cx="75" cy="75" r="62" fill="none" stroke="{{t.gold}}" stroke-width="14" stroke-dasharray="{{ring.mastered}} 400" transform="rotate(-90 75 75)" stroke-linecap="butt"></circle>
+              <path class="sf-draw sf-late" pathLength="1" d="{{ring.learning}}" fill="none" stroke="{{t.accent}}" stroke-width="14" stroke-linecap="butt"></path>
+              <path class="sf-draw sf-late" pathLength="1" d="{{ring.mastered}}" fill="none" stroke="{{t.gold}}" stroke-width="14" stroke-linecap="butt"></path>
             </svg>
             <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-              <span style="font-family: Fraunces, Georgia, serif; font-size: 36px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">25<span style="font-size: 20px;">%</span></span>
+              <span class="sf-tick" style="font-family: Fraunces, Georgia, serif; font-size: 36px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">25<span style="font-size: 20px;">%</span></span>
               <span style="margin-top: 4px; font-size: 12px; color: {{t.text2}};">mastered</span>
             </div>
           </div>
-          <ul style="margin: 0; padding: 0; list-style: none; flex-grow: 1; display: flex; flex-direction: column; gap: 12px;">
+          <ul class="{{t.fx.stagger}}" style="margin: 0; padding: 0; list-style: none; flex-grow: 1; display: flex; flex-direction: column; gap: 12px;">
             <sc-for list="{{mastery}}" as="m" hint-placeholder-count="3">
               <li style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: {{m.color}}; border: {{m.border}}; box-sizing: border-box;"></span><span style="color: {{t.text}};">{{m.label}}</span><span style="margin-left: auto; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: {{t.text2}};">{{m.value}}</span></li>
             </sc-for>
@@ -61,28 +61,38 @@
         </div>
       </section>
 
-      <section style="padding: 22px 26px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}};">
+      <section class="{{t.fx.enter3}}" style="padding: 22px 26px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}};">
         <div style="display: flex; align-items: baseline; gap: 12px;">
           <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 24px; color: {{t.textStrong}};">Coming up</h2>
           <span style="font-size: 13px; color: {{t.text2}};">Cards due, next 14 days</span>
         </div>
-        <div role="img" aria-label="Forecast: 12 due today, 8 tomorrow" style="margin-top: 16px; height: 170px; display: flex; align-items: flex-end; gap: 12px;">
-          <sc-for list="{{forecast}}" as="f" hint-placeholder-count="14">
-            <div style="flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px;">
-              <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{f.numColor}};">{{f.n}}</span>
-              <span style="width: 100%; height: {{f.h}}px; border-radius: 8px 8px 3px 3px; background: {{f.bg}}; box-shadow: {{f.glow}};"></span>
-              <span style="font-size: 11px; color: {{f.labelColor}}; font-weight: {{f.weight}};">{{f.d}}</span>
+        <div role="img" aria-label="Forecast: 12 due today, 8 tomorrow" style="margin-top: 16px; height: 170px; display: flex; flex-direction: column;">
+          <div style="position: relative; height: 150px; flex-shrink: 0;">
+            <div class="sf-bars sf-late" style="position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 12px;">
+              <sc-for list="{{forecast}}" as="f" hint-placeholder-count="14">
+                <span style="flex: 1; height: {{f.h}}px; border-radius: 8px 8px 3px 3px; background: {{f.bg}}; box-shadow: {{f.glow}};"></span>
+              </sc-for>
             </div>
-          </sc-for>
+            <div class="{{t.fx.stagger}}" style="position: absolute; inset: 0; display: flex; gap: 12px;">
+              <sc-for list="{{forecast}}" as="f" hint-placeholder-count="14">
+                <span style="flex: 1; box-sizing: border-box; padding-bottom: {{f.numPad}}px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{f.numColor}};">{{f.n}}</span>
+              </sc-for>
+            </div>
+          </div>
+          <div style="margin-top: 6px; display: flex; gap: 12px;">
+            <sc-for list="{{forecast}}" as="f" hint-placeholder-count="14">
+              <span style="flex: 1; text-align: center; font-size: 11px; color: {{f.labelColor}}; font-weight: {{f.weight}};">{{f.d}}</span>
+            </sc-for>
+          </div>
         </div>
       </section>
 
-      <section style="padding: 22px 26px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}};">
+      <section class="{{t.fx.enter3}}" style="padding: 22px 26px; border-radius: {{t.radius}}px; border: 1px solid {{t.line}}; background: {{t.surface}}; box-shadow: {{t.surfaceShadow}}; backdrop-filter: {{t.blur}}; -webkit-backdrop-filter: {{t.blur}};">
         <div style="display: flex; align-items: baseline;">
           <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: {{t.displayWeight}}; font-size: 24px; color: {{t.textStrong}};">Recently <span style="font-style: {{t.emStyle}}; color: {{t.gold}};">mastered</span></h2>
           <a href="#" style="margin-left: auto; font-size: 13px; font-weight: 600; color: {{t.accentText}}; text-decoration: none;">All 312 →</a>
         </div>
-        <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+        <div class="{{t.fx.stagger}}" style="margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
           <sc-for list="{{shelf}}" as="w" hint-placeholder-count="4">
             <div style="height: 76px; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: {{w.border}}; background: {{w.bg}}; box-shadow: {{w.shadow}}; display: flex; flex-direction: column; justify-content: space-between;">
               <span style="font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: {{t.displayWeight}}; line-height: 1; color: {{t.textStrong}};">{{w.word}}</span>
@@ -106,9 +116,11 @@ class Component extends DCLogic {
     const dark = (this.props.theme ?? 'dark') === 'dark';
     const t = sfTokens(dark);
     const seed = (i) => { const x = Math.sin(i * 78.233) * 43758.5453; return x - Math.floor(x); };
-    const circ = 2 * Math.PI * 62;
-    const mastered = circ * 312 / 1228;
-    const learning = circ * 304 / 1228;
+    // Ring segments as arcs from 12 o'clock, clockwise, so each one can draw itself (sf-draw, pathLength 1).
+    const pt = (a) => (75 + 62 * Math.sin(a)).toFixed(2) + ' ' + (75 - 62 * Math.cos(a)).toFixed(2);
+    const arc = (a0, a1) => 'M' + pt(a0) + ' A62 62 0 ' + (a1 - a0 > Math.PI ? 1 : 0) + ' 1 ' + pt(a1);
+    const mastered = 2 * Math.PI * 312 / 1228;
+    const learning = 2 * Math.PI * 304 / 1228;
     const heat = Array.from({ length: 182 }, (_, i) => {
       const week = Math.floor(i / 7);
       const recent = i >= 182 - 13 - 4 && i < 182 - 4;
@@ -137,14 +149,14 @@ class Component extends DCLogic {
       })),
       legend: t.heat.map(bg => ({ bg })),
       heat,
-      ring: { mastered: mastered.toFixed(1), learning: learning.toFixed(1), learningOffset: (-mastered).toFixed(1) },
+      ring: { mastered: arc(0, mastered), learning: arc(mastered, mastered + learning) },
       mastery: [
         { label: 'Mastered', value: '312', color: t.gold, border: '0' },
         { label: 'Learning', value: '304', color: t.accent, border: '0' },
         { label: 'New', value: '612', color: 'transparent', border: '1.5px solid ' + t.lineStrong },
       ],
       forecast: f.map((n, i) => ({
-        n, d: days[i], h: Math.round(n / 17 * 120),
+        n, d: days[i], h: Math.round(n / 17 * 120), numPad: Math.round(n / 17 * 120) + 6,
         bg: i === 0 ? t.accent : i === 1 ? (dark ? 'rgb(40 211 244 / 0.45)' : 'rgb(180 70 26 / 0.45)') : t.track,
         glow: dark && i === 0 ? '0 0 18px rgb(40 211 244 / 0.55)' : 'none',
         numColor: i === 0 ? t.accentText : t.text3, labelColor: i === 0 ? t.text : t.text3, weight: i === 0 ? 650 : 400,
