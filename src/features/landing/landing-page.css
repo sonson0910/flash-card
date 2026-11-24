@@ -270,6 +270,7 @@ html.dark .crystal-copy h1 { background-image: linear-gradient(180deg, #ffffff 0
 .crystal-demo-face > b { margin-top: auto; padding: 0 16px 16px; color: var(--tier-text); font: italic 800 19px/1.2 var(--sf-font-display); }
 /* The wrapper places Lumi and carries her nk-float (crystal-motion.css), turning on its centre as on the board;
    the image keeps its own grow-in transform. */
+/* At rest her box starts just right of the headline's last letter and ends before the first demo word. */
 .crystal-hero-lumi-wrap { position: absolute; z-index: 5; top: 130px; left: -70px; width: 200px; height: 544px; }
 .crystal-hero-lumi { display: block; width: 100%; height: 100%; max-width: none; object-fit: contain; object-position: 50% 100%; -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 99%); mask-image: linear-gradient(180deg, #000 80%, transparent 99%); filter: drop-shadow(0 0 16px color-mix(in srgb, var(--sf-second) 35%, transparent)); transform: scale(.3); transform-origin: 50% 100%; transition: transform 700ms var(--nk-snap); }
 .crystal-hero-lumi[data-revealed] { transform: none; }
