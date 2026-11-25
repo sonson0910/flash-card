@@ -15,13 +15,18 @@ const themes = [
 ] as const;
 const viewports = [{ name: 'desktop', width: 1440, height: 900 }, { name: 'mobile', width: 390, height: 844 }] as const;
 
-// One card per script family; cards without a photo show the headword's first glyph as a watermark.
-// Language-pack cards (Korean, Japanese, Chinese) teach from the example and phrases on the front.
+// One card per language form; cards without a photo show the headword's first glyph as a watermark.
+// Language-pack cards (Korean, Japanese, Chinese) teach from the example and phrases on the front, Latin-script
+// cards from the stressed syllable, the pronunciation and the grammar chips. A card with a photo keeps the picture form.
 const languages = [
-  { kind: 'en', name: 'English', headword: 'immediate', translation: /ngay lập tức/i, art: 'image', glyph: null, pack: null },
-  { kind: 'ko', name: 'Korean', headword: '결심하다', translation: /quyết tâm/i, art: 'glyph', glyph: '결', pack: { exampleWord: '결심했어요', phrase: '굳게 결심하다', aid: '[data-reading-romanization]', switch: 'Romanization', backReading: 'gyeolsimhada' } },
-  { kind: 'ja', name: 'Japanese', headword: '経験', translation: /kinh nghiệm/i, art: 'glyph', glyph: '経', pack: { exampleWord: '経験', phrase: '経験を積む', aid: '[data-reading-romaji]', switch: 'Romaji', backReading: 'けいけん · keiken' } },
-  { kind: 'zh', name: 'Chinese', headword: '机会', translation: /cơ hội/i, art: 'glyph', glyph: '机', pack: { exampleWord: '机会', phrase: '抓住机会', aid: '[data-reading-pinyin]', switch: 'Pinyin', backReading: 'jī huì' } },
+  { kind: 'en', fixture: 'en-picture', name: 'English', showing: 'Showing the English word.', meaning: 'Vietnamese', headword: 'immediate', translation: /ngay lập tức/i, art: 'image', glyph: null, pack: null, latin: null },
+  { kind: 'ko', fixture: 'ko', name: 'Korean', showing: 'Showing the Korean word.', meaning: 'Vietnamese', headword: '결심하다', translation: /quyết tâm/i, art: 'glyph', glyph: '결', pack: { exampleWord: '결심했어요', phrase: '굳게 결심하다', aid: '[data-reading-romanization]', switch: 'Romanization', backReading: 'gyeolsimhada' }, latin: null },
+  { kind: 'ja', fixture: 'ja', name: 'Japanese', showing: 'Showing the Japanese word.', meaning: 'Vietnamese', headword: '経験', translation: /kinh nghiệm/i, art: 'glyph', glyph: '経', pack: { exampleWord: '経験', phrase: '経験を積む', aid: '[data-reading-romaji]', switch: 'Romaji', backReading: 'けいけん · keiken' }, latin: null },
+  { kind: 'zh', fixture: 'zh', name: 'Chinese', showing: 'Showing the Chinese word.', meaning: 'Vietnamese', headword: '机会', translation: /cơ hội/i, art: 'glyph', glyph: '机', pack: { exampleWord: '机会', phrase: '抓住机会', aid: '[data-reading-pinyin]', switch: 'Pinyin', backReading: 'jī huì' }, latin: null },
+  { kind: 'en-form', fixture: 'en', name: 'English', showing: 'Showing the English word.', meaning: 'Vietnamese', headword: 'immediate', translation: /ngay lập tức/i, art: 'glyph', glyph: 'I', pack: null, latin: { stress: 'me', chip: 'Stress syllable 2', gender: false } },
+  { kind: 'fr', fixture: 'fr', name: 'French', showing: 'Showing the word.', meaning: 'English', headword: 'la décision', translation: /decision/i, art: 'glyph', glyph: 'D', pack: null, latin: { stress: 'sion', chip: '-sion → feminine', gender: true } },
+  { kind: 'de', fixture: 'de', name: 'German', showing: 'Showing the word.', meaning: 'English', headword: 'die Entscheidung', translation: /decision/i, art: 'glyph', glyph: 'E', pack: null, latin: { stress: 'schei', chip: '-ung → always die', gender: true } },
+  { kind: 'es', fixture: 'es', name: 'Spanish', showing: 'Showing the word.', meaning: 'English', headword: 'la decisión', translation: /decision/i, art: 'glyph', glyph: 'D', pack: null, latin: { stress: 'sión', chip: 'Accent drops in plural', gender: true } },
 ] as const;
 
 type Theme = (typeof themes)[number];
@@ -96,7 +101,7 @@ async function expectBackFooterClear(shell: Locator) {
 for (const theme of themes) for (const viewport of viewports) for (const language of languages) {
   test(`${theme.family} ${theme.mode} ${language.kind} language card front and back at ${viewport.name}`, async ({ page }) => {
     const name = `flashcard-language-${language.kind}-${theme.family}-${theme.mode}-${viewport.name}`;
-    await openFixture(page, theme, viewport, `kind=${language.kind}&side=front`, `${language.kind}-front`);
+    await openFixture(page, theme, viewport, `kind=${language.fixture}&side=front`, `${language.fixture}-front`);
     const shell = page.locator('.flashcard-shell');
     const face = shell.locator('.flashcard-face');
     await expect(shell).toHaveAttribute('data-card-side', 'front');
@@ -119,8 +124,8 @@ for (const theme of themes) for (const viewport of viewports) for (const languag
     }
     if (theme.look === 'crystal') await expect(face).toHaveCSS('border-top-left-radius', '0px');
     await expect(face.locator('[data-card-actions]')).toBeVisible();
-    await expect(shell).toHaveAccessibleName(`${language.headword} flashcard. Showing the ${language.name} word.`);
-    await expect(face.getByRole('button', { name: `Reveal the Vietnamese meaning of ${language.headword}` })).toBeVisible();
+    await expect(shell).toHaveAccessibleName(`${language.headword} flashcard. ${language.showing}`);
+    await expect(face.getByRole('button', { name: `Reveal the ${language.meaning} meaning of ${language.headword}` })).toBeVisible();
     if (language.pack) {
       await expect(face).toHaveAttribute('data-card-kind', 'language');
       await expect(face.locator('.flashcard-definition')).toHaveCount(0);
@@ -129,6 +134,14 @@ for (const theme of themes) for (const viewport of viewports) for (const languag
       await expect(face.locator('[data-card-section="phrases"]')).toContainText(language.pack.phrase);
       await expect(face.locator(language.pack.aid).first()).toBeVisible();
       await expect(face.getByRole('button', { name: `Toggle ${language.pack.switch} for ${language.headword}` })).toHaveAttribute('aria-pressed', 'true');
+    } else if (language.latin) {
+      await expect(face).toHaveAttribute('data-card-kind', 'language');
+      await expect(face.locator('.flashcard-definition')).toHaveCount(0);
+      await expect(face.locator('[data-latin-headword="true"] [data-headword-accent]')).toHaveText(language.latin.stress);
+      await expect(face.locator('.flashcard-lang-ipa-pill').first()).toBeVisible();
+      await expect(face.locator('[data-card-section="chips"]')).toContainText(language.latin.chip);
+      await expect(face.locator('[data-card-section="genders"]')).toHaveCount(language.latin.gender ? 1 : 0);
+      await expect(face.locator('[data-card-section="example"] [data-example-word]')).toBeVisible();
     } else {
       await expect(face).not.toHaveAttribute('data-card-kind', 'language');
       await expect(face.locator('.flashcard-definition')).toBeVisible();
@@ -137,12 +150,12 @@ for (const theme of themes) for (const viewport of viewports) for (const languag
     await expectAccessibleAndContained(page, `${name} front`);
     await expect(page.locator('main')).toHaveScreenshot(`${name}-front.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
 
-    await openFixture(page, theme, viewport, `kind=${language.kind}&side=back`, `${language.kind}-back`);
+    await openFixture(page, theme, viewport, `kind=${language.fixture}&side=back`, `${language.fixture}-back`);
     const back = shell.locator('.flashcard-back');
     await expect(shell).toHaveAttribute('data-card-side', 'back');
     await expect(back).toHaveAttribute('data-card-look', theme.look);
     await expect(back.getByText(language.translation).first()).toBeVisible();
-    await expect(shell).toHaveAccessibleName(`${language.headword} flashcard. Showing the Vietnamese meaning.`);
+    await expect(shell).toHaveAccessibleName(`${language.headword} flashcard. Showing the ${language.meaning} meaning.`);
     await expect(back.getByRole('button', { name: `Return to the ${language.name} side of ${language.headword}` })).toBeVisible();
     if (language.pack) await expect(back.locator('[data-card-back-reading]')).toHaveText(language.pack.backReading);
     await expectBackFooterClear(shell);
@@ -207,7 +220,7 @@ test('a card hosted in a dialog turns on a tap on its face but not on its contro
 for (const theme of themes) for (const viewport of viewports) {
   test(`${theme.family} ${theme.mode} review prompt and grade row at ${viewport.name}`, async ({ page }) => {
     const name = `flashcard-review-${theme.family}-${theme.mode}-${viewport.name}`;
-    await openFixture(page, theme, viewport, 'kind=en&side=front&view=review', 'en-review-front');
+    await openFixture(page, theme, viewport, 'kind=en-picture&side=front&view=review', 'en-picture-review-front');
     const recall = page.locator('[data-active-recall]');
     const grades = page.locator('.review-grades');
     await expect(recall).toHaveAttribute('data-card-look', theme.look);
@@ -219,7 +232,7 @@ for (const theme of themes) for (const viewport of viewports) {
     await expectAccessibleAndContained(page, `${name} prompt`);
     await expect(page.locator('main')).toHaveScreenshot(`${name}-prompt.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 });
 
-    await openFixture(page, theme, viewport, 'kind=en&side=back&view=review', 'en-review-back');
+    await openFixture(page, theme, viewport, 'kind=en-picture&side=back&view=review', 'en-picture-review-back');
     await expect(page.locator('.flashcard-shell')).toHaveAttribute('data-card-side', 'back');
     await expect(grades).toHaveAttribute('data-review-state', 'ready');
     for (const grade of await grades.locator('[data-rating]').all()) await expect(grade).toBeEnabled();

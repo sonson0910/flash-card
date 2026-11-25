@@ -19,7 +19,7 @@ msgctxt "flashcard.visual-hint.hidden"
 msgid "Visual hint hidden"
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:352
+#: src/components/flashcard/LanguageCardFace.tsx:355
 msgctxt "flashcard.language.gender-m"
 msgid "masc."
 msgstr ""
@@ -122,7 +122,7 @@ msgctxt "flashcard.language.form-definite"
 msgid "definite"
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:312
+#: src/components/flashcard/LanguageCardFace.tsx:306
 msgctxt "flashcard.language.plural-prefix"
 msgid "pl. {plural}"
 msgstr ""
@@ -355,7 +355,7 @@ msgctxt "shell.share.outgoing-title"
 msgid "Share “{title}”"
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:255
+#: src/components/flashcard/LanguageCardFace.tsx:253
 msgctxt "flashcard.language.stress-syllable"
 msgid "Stress syllable {n}"
 msgstr ""
@@ -402,7 +402,7 @@ msgctxt "shell.share.done"
 msgid "Done"
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:289
+#: src/components/flashcard/LanguageCardFace.tsx:288
 msgctxt "flashcard.language.spoken-form"
 msgid "Spoken {form}"
 msgstr ""
@@ -690,7 +690,7 @@ msgid "flashcard.reading.pitch-type"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/LanguageCardFace.tsx:436
+#: src/components/flashcard/LanguageCardFace.tsx:439
 #: src/components/flashcard/ReadingToggle.tsx:89
 msgid "flashcard.reading.toggle-aria"
 msgstr ""
@@ -701,18 +701,18 @@ msgid "flashcard.reading.toggle-furigana"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/LanguageCardFace.tsx:429
+#: src/components/flashcard/LanguageCardFace.tsx:432
 #: src/components/flashcard/ReadingToggle.tsx:87
 msgid "flashcard.reading.toggle-pinyin"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/LanguageCardFace.tsx:428
+#: src/components/flashcard/LanguageCardFace.tsx:431
 msgid "flashcard.reading.toggle-romaji"
 msgstr ""
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/LanguageCardFace.tsx:426
+#: src/components/flashcard/LanguageCardFace.tsx:429
 #: src/components/flashcard/ReadingToggle.tsx:84
 msgid "flashcard.reading.toggle-romanization"
 msgstr ""
@@ -952,7 +952,7 @@ msgctxt "flashcard.image.unavailable"
 msgid "Image cue unavailable"
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:412
+#: src/components/flashcard/LanguageCardFace.tsx:415
 msgctxt "flashcard.language-card.phrases"
 msgid "Common phrases"
 msgstr ""
@@ -977,7 +977,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:281
+#: src/components/flashcard/LanguageCardFace.tsx:278
 msgctxt "flashcard.language.measure-word"
 msgid "Measure word {word}"
 msgstr ""
@@ -987,7 +987,7 @@ msgctxt "flashcard.return-to-english"
 msgid "Return to English"
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:267
+#: src/components/flashcard/LanguageCardFace.tsx:265
 msgctxt "flashcard.language.sino-traditional"
 msgid "Traditional <0>{source}</0>"
 msgstr ""
@@ -1050,7 +1050,7 @@ msgctxt "cardReport.kicker"
 msgid "Card quality"
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:269
+#: src/components/flashcard/LanguageCardFace.tsx:267
 msgctxt "flashcard.language.sino-hanja"
 msgid "Hanja <0>{source}</0>"
 msgstr ""
@@ -1065,7 +1065,7 @@ msgctxt "flashcard.speech.unsupported"
 msgid "This browser does not support speech recognition. Try Google Chrome."
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:384
+#: src/components/flashcard/LanguageCardFace.tsx:387
 msgctxt "flashcard.language-card.example"
 msgid "Example"
 msgstr ""
@@ -1086,7 +1086,7 @@ msgctxt "app-overlays.text-practice.description"
 msgid "Use your vocabulary in a bounded six-turn text mission."
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:355
+#: src/components/flashcard/LanguageCardFace.tsx:358
 msgctxt "flashcard.language.gender-n"
 msgid "neut."
 msgstr ""
@@ -1136,7 +1136,7 @@ msgctxt "shell.share.words-inside"
 msgid "A few words inside"
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:354
+#: src/components/flashcard/LanguageCardFace.tsx:357
 msgctxt "flashcard.language.gender-f"
 msgid "fem."
 msgstr ""
@@ -1517,7 +1517,7 @@ msgctxt "flashcard.language.pos-adjective-short"
 msgid "adj."
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:270
+#: src/components/flashcard/LanguageCardFace.tsx:268
 msgctxt "flashcard.language.sino-kanji"
 msgid "Kanji <0>{source}</0>"
 msgstr ""
@@ -1578,7 +1578,7 @@ msgctxt "flashcard.quiz.select-option"
 msgid "Select 1 option"
 msgstr ""
 
-#: src/components/flashcard/LanguageCardFace.tsx:338
+#: src/components/flashcard/LanguageCardFace.tsx:341
 msgctxt "flashcard.language.gender-aria"
 msgid "Grammatical gender"
 msgstr ""

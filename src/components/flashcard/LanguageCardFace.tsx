@@ -247,72 +247,75 @@ export function LanguageCardChips({ card }: { card: CardData }) {
   const details = card.languageDetails;
   if (!details) return null;
 
-  const chips: ReactNode[] = [];
-
-  if (targetLang === 'en' && details.stressIndex !== undefined) {
-    chips.push(
+  const stress = targetLang === 'en' && details.stressIndex !== undefined
+    ? (
       <span key="stress" className="flashcard-lang-chip">
         <Trans {...msg({ context: 'flashcard.language.stress-syllable', message: 'Stress syllable {n}' })} values={{ n: details.stressIndex + 1 }} />
-      </span>,
-    );
-  }
+      </span>
+    )
+    : null;
 
-  if (details.sinoForm?.source) {
-    // The Han characters behind the word: the traditional form for Chinese, hanja for Korean, kanji for Japanese.
-    const source = { source: details.sinoForm.source };
-    const glyphs = { 0: <span lang={pack === 'zh' ? 'zh-Hant' : lang} /> };
-    chips.push(
+  // The Han characters behind the word: the traditional form for Chinese, hanja for Korean, kanji for Japanese.
+  const sinoSource = details.sinoForm?.source ? { source: details.sinoForm.source } : null;
+  const glyphs = { 0: <span lang={pack === 'zh' ? 'zh-Hant' : lang} /> };
+  const sino = sinoSource
+    ? (
       <span key="sino" className="flashcard-lang-chip">
         {pack === 'zh'
-          ? <Trans {...msg({ context: 'flashcard.language.sino-traditional', message: 'Traditional <0>{source}</0>' })} values={source} components={glyphs} />
+          ? <Trans {...msg({ context: 'flashcard.language.sino-traditional', message: 'Traditional <0>{source}</0>' })} values={sinoSource} components={glyphs} />
           : pack === 'ko'
-            ? <Trans {...msg({ context: 'flashcard.language.sino-hanja', message: 'Hanja <0>{source}</0>' })} values={source} components={glyphs} />
-            : <Trans {...msg({ context: 'flashcard.language.sino-kanji', message: 'Kanji <0>{source}</0>' })} values={source} components={glyphs} />}
-      </span>,
-    );
-  }
+            ? <Trans {...msg({ context: 'flashcard.language.sino-hanja', message: 'Hanja <0>{source}</0>' })} values={sinoSource} components={glyphs} />
+            : <Trans {...msg({ context: 'flashcard.language.sino-kanji', message: 'Kanji <0>{source}</0>' })} values={sinoSource} components={glyphs} />}
+      </span>
+    )
+    : null;
 
-  if (pack === 'zh' && details.measureWord?.word) {
-    const labelWord = details.measureWord.reading
-      ? `${details.measureWord.word} ${details.measureWord.reading}`
-      : details.measureWord.word;
-    chips.push(
+  const measureWord = pack === 'zh' ? details.measureWord : undefined;
+  const measure = measureWord?.word
+    ? (
       <span key="measure" lang={lang} className="flashcard-lang-chip">
-        <Trans {...msg({ context: 'flashcard.language.measure-word', message: 'Measure word {word}' })} values={{ word: labelWord }} />
-      </span>,
-    );
-  }
+        <Trans
+          {...msg({ context: 'flashcard.language.measure-word', message: 'Measure word {word}' })}
+          values={{ word: measureWord.reading ? `${measureWord.word} ${measureWord.reading}` : measureWord.word }}
+        />
+      </span>
+    )
+    : null;
 
-  if (pack === 'ko' && details.spokenForm) {
-    chips.push(
+  const spoken = pack === 'ko' && details.spokenForm
+    ? (
       <span key="spoken" lang={lang} className="flashcard-lang-chip">
         <Trans {...msg({ context: 'flashcard.language.spoken-form', message: 'Spoken {form}' })} values={{ form: details.spokenForm }} />
-      </span>,
-    );
-  }
+      </span>
+    )
+    : null;
 
-  if (details.hints?.length) {
-    details.hints.forEach((hint, index) => {
-      const trimmed = hint.trim();
-      if (trimmed) {
-        chips.push(
-          <span key={`hint-${index}`} lang={lang} className="flashcard-lang-chip">{trimmed}</span>,
-        );
-      }
-    });
-  }
+  const hints = (details.hints ?? []).map((hint, index) => {
+    const trimmed = hint.trim();
+    return trimmed
+      ? <span key={`hint-${index}`} lang={lang} className="flashcard-lang-chip">{trimmed}</span>
+      : null;
+  });
 
-  if (details.plural?.trim()) {
-    const plural = details.plural.trim();
-    const alreadyPrefixed = /^pl\.\s+/i.test(plural);
-    chips.push(
+  const pluralText = details.plural?.trim();
+  const plural = pluralText
+    ? (
       <span key="plural" lang={lang} className="flashcard-lang-chip">
-        {alreadyPrefixed
-          ? plural
-          : <Trans {...msg({ context: 'flashcard.language.plural-prefix', message: 'pl. {plural}' })} values={{ plural }} />}
-      </span>,
-    );
-  }
+        {/^pl\.\s+/i.test(pluralText)
+          ? pluralText
+          : <Trans {...msg({ context: 'flashcard.language.plural-prefix', message: 'pl. {plural}' })} values={{ plural: pluralText }} />}
+      </span>
+    )
+    : null;
+
+  // Each language leads with the fact its learners reach for first: the verb class for Korean, the measure word for
+  // Chinese, the characters for Japanese, the stress for English.
+  const ordered: ReactNode[] = pack === 'ko'
+    ? [...hints, sino, spoken, plural]
+    : pack === 'zh'
+      ? [measure, sino, ...hints, plural]
+      : [stress, sino, ...hints, plural];
+  const chips = ordered.filter(Boolean);
 
   if (chips.length === 0) return null;
   return (

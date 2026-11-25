@@ -19,7 +19,7 @@ msgctxt "flashcard.visual-hint.hidden"
 msgid "Visual hint hidden"
 msgstr "Đã ẩn gợi ý hình ảnh"
 
-#: src/components/flashcard/LanguageCardFace.tsx:352
+#: src/components/flashcard/LanguageCardFace.tsx:355
 msgctxt "flashcard.language.gender-m"
 msgid "masc."
 msgstr "giống đực"
@@ -122,7 +122,7 @@ msgctxt "flashcard.language.form-definite"
 msgid "definite"
 msgstr "xác định"
 
-#: src/components/flashcard/LanguageCardFace.tsx:312
+#: src/components/flashcard/LanguageCardFace.tsx:306
 msgctxt "flashcard.language.plural-prefix"
 msgid "pl. {plural}"
 msgstr "pl. {plural}"
@@ -355,7 +355,7 @@ msgctxt "shell.share.outgoing-title"
 msgid "Share “{title}”"
 msgstr "Chia sẻ “{title}”"
 
-#: src/components/flashcard/LanguageCardFace.tsx:255
+#: src/components/flashcard/LanguageCardFace.tsx:253
 msgctxt "flashcard.language.stress-syllable"
 msgid "Stress syllable {n}"
 msgstr "Nhấn âm tiết {n}"
@@ -402,7 +402,7 @@ msgctxt "shell.share.done"
 msgid "Done"
 msgstr "Xong"
 
-#: src/components/flashcard/LanguageCardFace.tsx:289
+#: src/components/flashcard/LanguageCardFace.tsx:288
 msgctxt "flashcard.language.spoken-form"
 msgid "Spoken {form}"
 msgstr "Phát âm {form}"
@@ -690,7 +690,7 @@ msgid "flashcard.reading.pitch-type"
 msgstr "{type, select, heiban {Heiban} atamadaka {Atamadaka} nakadaka {Nakadaka} other {Odaka}}"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/LanguageCardFace.tsx:436
+#: src/components/flashcard/LanguageCardFace.tsx:439
 #: src/components/flashcard/ReadingToggle.tsx:89
 msgid "flashcard.reading.toggle-aria"
 msgstr "Hiện {label} cho {word}"
@@ -701,18 +701,18 @@ msgid "flashcard.reading.toggle-furigana"
 msgstr "Cách đọc"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/LanguageCardFace.tsx:429
+#: src/components/flashcard/LanguageCardFace.tsx:432
 #: src/components/flashcard/ReadingToggle.tsx:87
 msgid "flashcard.reading.toggle-pinyin"
 msgstr "Pinyin"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/LanguageCardFace.tsx:428
+#: src/components/flashcard/LanguageCardFace.tsx:431
 msgid "flashcard.reading.toggle-romaji"
 msgstr "Romaji"
 
 #. js-lingui-explicit-id
-#: src/components/flashcard/LanguageCardFace.tsx:426
+#: src/components/flashcard/LanguageCardFace.tsx:429
 #: src/components/flashcard/ReadingToggle.tsx:84
 msgid "flashcard.reading.toggle-romanization"
 msgstr "Phiên âm La-tinh"
@@ -952,7 +952,7 @@ msgctxt "flashcard.image.unavailable"
 msgid "Image cue unavailable"
 msgstr "Không có hình minh họa"
 
-#: src/components/flashcard/LanguageCardFace.tsx:412
+#: src/components/flashcard/LanguageCardFace.tsx:415
 msgctxt "flashcard.language-card.phrases"
 msgid "Common phrases"
 msgstr "Cụm hay gặp"
@@ -977,7 +977,7 @@ msgctxt "app-overlays.text-practice.title"
 msgid "Text practice"
 msgstr "Luyện hội thoại"
 
-#: src/components/flashcard/LanguageCardFace.tsx:281
+#: src/components/flashcard/LanguageCardFace.tsx:278
 msgctxt "flashcard.language.measure-word"
 msgid "Measure word {word}"
 msgstr "Lượng từ {word}"
@@ -987,7 +987,7 @@ msgctxt "flashcard.return-to-english"
 msgid "Return to English"
 msgstr "Trở về tiếng Anh"
 
-#: src/components/flashcard/LanguageCardFace.tsx:267
+#: src/components/flashcard/LanguageCardFace.tsx:265
 msgctxt "flashcard.language.sino-traditional"
 msgid "Traditional <0>{source}</0>"
 msgstr "Phồn thể <0>{source}</0>"
@@ -1050,7 +1050,7 @@ msgctxt "cardReport.kicker"
 msgid "Card quality"
 msgstr "Chất lượng thẻ"
 
-#: src/components/flashcard/LanguageCardFace.tsx:269
+#: src/components/flashcard/LanguageCardFace.tsx:267
 msgctxt "flashcard.language.sino-hanja"
 msgid "Hanja <0>{source}</0>"
 msgstr "Hán tự <0>{source}</0>"
@@ -1065,7 +1065,7 @@ msgctxt "flashcard.speech.unsupported"
 msgid "This browser does not support speech recognition. Try Google Chrome."
 msgstr "Trình duyệt này không hỗ trợ nhận diện giọng nói. Hãy thử Google Chrome."
 
-#: src/components/flashcard/LanguageCardFace.tsx:384
+#: src/components/flashcard/LanguageCardFace.tsx:387
 msgctxt "flashcard.language-card.example"
 msgid "Example"
 msgstr "Ví dụ"
@@ -1086,7 +1086,7 @@ msgctxt "app-overlays.text-practice.description"
 msgid "Use your vocabulary in a bounded six-turn text mission."
 msgstr "Dùng từ vựng của bạn trong một nhiệm vụ hội thoại gồm sáu lượt."
 
-#: src/components/flashcard/LanguageCardFace.tsx:355
+#: src/components/flashcard/LanguageCardFace.tsx:358
 msgctxt "flashcard.language.gender-n"
 msgid "neut."
 msgstr "giống trung"
@@ -1136,7 +1136,7 @@ msgctxt "shell.share.words-inside"
 msgid "A few words inside"
 msgstr "Một vài từ bên trong"
 
-#: src/components/flashcard/LanguageCardFace.tsx:354
+#: src/components/flashcard/LanguageCardFace.tsx:357
 msgctxt "flashcard.language.gender-f"
 msgid "fem."
 msgstr "giống cái"
@@ -1517,7 +1517,7 @@ msgctxt "flashcard.language.pos-adjective-short"
 msgid "adj."
 msgstr "tt."
 
-#: src/components/flashcard/LanguageCardFace.tsx:270
+#: src/components/flashcard/LanguageCardFace.tsx:268
 msgctxt "flashcard.language.sino-kanji"
 msgid "Kanji <0>{source}</0>"
 msgstr "Hán tự <0>{source}</0>"
@@ -1578,7 +1578,7 @@ msgctxt "flashcard.quiz.select-option"
 msgid "Select 1 option"
 msgstr "Chọn 1 đáp án"
 
-#: src/components/flashcard/LanguageCardFace.tsx:338
+#: src/components/flashcard/LanguageCardFace.tsx:341
 msgctxt "flashcard.language.gender-aria"
 msgid "Grammatical gender"
 msgstr "Giống ngữ pháp"

@@ -668,7 +668,7 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   border: 0;
   border-radius: 0;
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 72%, white), var(--sf-brand) 45%, var(--sf-brand-hover));
+  background: var(--sf-primary-bg);
   color: #fff;
 }
 
@@ -906,7 +906,7 @@ html[data-motion="reduced"] .flashcard-hover-wings {
   overflow: hidden;
   border: 0;
   clip-path: var(--nk-chamfer);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white) 0%, var(--sf-brand) 45%, var(--sf-brand-hover) 100%);
+  background: var(--sf-primary-bg);
   color: #fff;
   font-family: var(--sf-font-display);
   font-size: 20px;
@@ -1101,7 +1101,7 @@ html[data-motion="reduced"] .flashcard-shell[data-card-look="crystal"] .flashcar
   height: 32px;
   padding: 0 22px 0 24px;
   clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover));
+  background: var(--sf-primary-bg);
   color: #fff;
   font-family: var(--sf-font-display);
   font-size: 13px;
@@ -1633,7 +1633,7 @@ html[data-motion="reduced"] .flashcard-shell[data-card-look="crystal"] .flashcar
   border: 0;
   border-radius: 0;
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 70%, white), var(--sf-brand) 45%, var(--sf-brand-hover));
+  background: var(--sf-primary-bg);
   color: #fff;
 }
 
@@ -5201,7 +5201,8 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   --lang-gold-line: #ffd166;
   --lang-gold-text: #ffd166;
   --lang-hanviet-bg: linear-gradient(90deg, rgb(255 209 102 / 0.28), rgb(255 209 102 / 0.08));
-  --lang-watermark-latin: rgb(255 255 255 / 0.04);
+  --lang-watermark: rgb(255 255 255 / 0.04);
+  --lang-panel-work: linear-gradient(160deg, rgb(22 26 40 / 0.97), rgb(8 10 18 / 0.98));
 }
 
 :root[data-theme-family="crystal"]:not(.dark) .flashcard-shell[data-card-kind="language"][data-card-look="crystal"] {
@@ -5214,7 +5215,8 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   --lang-gold-line: #ffd166;
   --lang-gold-text: #8a5a00;
   --lang-hanviet-bg: linear-gradient(90deg, rgb(255 209 102 / 0.28), rgb(255 209 102 / 0.08));
-  --lang-watermark-latin: rgb(13 26 51 / 0.05);
+  --lang-watermark: rgb(13 26 51 / 0.05);
+  --lang-panel-work: linear-gradient(160deg, rgb(238 249 255 / 0.97), rgb(208 234 255 / 0.95));
 }
 
 /* ------------------------------------------------------------------------
@@ -5262,6 +5264,17 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   --lang-sans: "Noto Sans KR", "Noto Sans CJK KR", sans-serif;
 }
 
+/* The aurora front uses the brighter body ink and white-based chip fills of its board palette. */
+:where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"][data-card-look="aurora"] {
+  --sf-text-body: #c3ced5;
+  --lang-chip-bg: rgb(255 255 255 / 0.04);
+  --lang-chip-line: rgb(255 255 255 / 0.1);
+}
+
+:where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-kind="language"][data-card-look="aurora"] {
+  --lang-chip-bg: rgb(255 255 255 / 0.04);
+}
+
 .flashcard-face[data-card-kind="language"][data-card-look="paper"] {
   --lang-ruby: var(--sf-brand);
   --lang-mark: var(--sf-brand);
@@ -5276,8 +5289,8 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   --lang-ruby: var(--sf-tone-1);
   --lang-holo-text: var(--sf-tone-1);
   --lang-mark-bg: color-mix(in srgb, var(--sf-brand) 24%, transparent);
-  --lang-chip-bg: color-mix(in srgb, var(--sf-text) 8%, transparent);
-  --lang-chip-line: color-mix(in srgb, var(--sf-text) 16%, transparent);
+  --lang-chip-bg: var(--sf-surface-raised);
+  --lang-chip-line: var(--sf-edge-highlight);
 }
 
 :root[data-theme-family="crystal"]:not(.dark) .flashcard-face[data-card-kind="language"][data-card-look="crystal"] {
@@ -5303,8 +5316,11 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   font-weight: 900;
 }
 
+:root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-art-glyph {
+  color: var(--lang-watermark);
+}
+
 :root[data-theme-family="crystal"] .flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-art-glyph[data-watermark-script="latin"] {
-  color: var(--lang-watermark-latin);
   font-style: italic;
 }
 
@@ -5361,6 +5377,11 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   letter-spacing: 0.06em;
 }
 
+.flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-level-chip {
+  box-shadow: inset 0 0 0 1px var(--lang-chip-line);
+  color: var(--sf-text-strong);
+}
+
 :where(html:not([data-theme-family=crystal])) .flashcard-face[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-level-chip {
   height: 28px;
   clip-path: none;
@@ -5402,7 +5423,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 
 .flashcard-lang-accent {
   color: var(--flashcard-accent);
-  text-shadow: 0 0 28px color-mix(in srgb, var(--flashcard-accent) 55%, transparent);
+  text-shadow: 0 0 28px rgb(40 211 244 / 0.5);
 }
 
 .flashcard-face[data-card-look="paper"] .flashcard-lang-accent {
@@ -5412,16 +5433,18 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-word {
   margin-top: 4px;
+  color: var(--sf-text-strong);
   font-family: var(--lang-sans);
   font-weight: 900;
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-word:lang(ko) {
   margin-top: 8px;
+  letter-spacing: 0;
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-accent {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 55%, var(--sf-flare)), var(--sf-brand) 55%, var(--sf-brand-hover));
+  background: linear-gradient(180deg, #ff8fa3, var(--sf-brand) 55%, var(--sf-brand-hover));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -5540,8 +5563,8 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-headword .flashcard-play-button {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-brand) 72%, var(--sf-flare)), var(--sf-brand) 45%, var(--sf-brand-hover));
-  color: var(--sf-flare);
+  background: var(--sf-primary-bg);
+  color: var(--sf-on-primary);
 }
 
 [data-reading-aid] {
@@ -5598,10 +5621,11 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   border: 0;
   border-radius: 0;
   clip-path: var(--nk-chamfer-sm);
-  box-shadow: inset 0 0 0 1px var(--lang-chip-line);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-block-text {
+  color: var(--sf-text-strong);
   font-size: 19px;
   font-weight: 900;
 }
@@ -5633,6 +5657,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-mora {
   border-width: 3px 0 3px 3px;
+  color: var(--sf-text-strong);
   font-weight: 800;
 }
 
@@ -5693,7 +5718,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   border: 0;
   border-radius: 0;
   clip-path: var(--nk-chamfer-sm);
-  box-shadow: inset 0 0 0 1px var(--lang-chip-line);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
   font-size: 13px;
   font-weight: 900;
 }
@@ -5760,7 +5785,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 
 :root[data-theme-family="crystal"] .flashcard-face[data-card-look="crystal"] .flashcard-lang-ipa-pill[aria-pressed="true"] .flashcard-lang-ipa-pill-face {
   background: var(--sf-primary-bg);
-  color: var(--sf-on-brand);
+  color: var(--sf-on-primary);
 }
 
 .flashcard-lang-ipa {
@@ -5775,7 +5800,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-syllables {
-  color: var(--sf-text-subtle);
+  color: var(--sf-text-tertiary);
   font-size: 13px;
   letter-spacing: 0;
 }
@@ -5789,7 +5814,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 .flashcard-lang-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
+  min-height: 28px;
   padding: 0 10px;
   border: 1px solid var(--lang-chip-line);
   border-radius: 999px;
@@ -5810,11 +5835,12 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-chip {
+  min-height: 26px;
   padding: 0 11px;
   border: 0;
   border-radius: 0;
   clip-path: var(--nk-chamfer-sm);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 16%, transparent);
+  box-shadow: inset 0 0 0 1px var(--lang-chip-line);
   color: var(--sf-text-strong);
   font-size: 12.5px;
   font-weight: 800;
@@ -5830,7 +5856,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   --gender-soft: transparent;
   display: inline-flex;
   align-items: center;
-  height: 26px;
+  height: 28px;
   padding: 0 10px;
   border: 1.5px solid var(--gender-color);
   border-radius: 8px;
@@ -5960,8 +5986,8 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   border: 0;
   border-radius: 0;
   clip-path: var(--nk-chamfer-sm);
-  background: color-mix(in srgb, var(--sf-text) 5%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-success) 38%, transparent);
+  background: var(--lang-panel-work);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge-2);
 }
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-label {
@@ -5979,6 +6005,7 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-example-text {
   margin-top: 2px;
+  color: var(--sf-text-strong);
   font-family: var(--lang-sans);
   font-weight: 800;
 }
@@ -6018,6 +6045,12 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   margin-top: 12px;
 }
 
+.flashcard-face[data-card-kind="language"][data-card-look="crystal"] .flashcard-lang-say {
+  background: var(--lang-chip-bg);
+  box-shadow: inset 0 0 0 1px var(--lang-chip-line);
+  color: var(--sf-text-strong);
+}
+
 .flashcard-face[data-card-look="crystal"] .flashcard-lang-phrase-list {
   margin-top: 5px;
 }
@@ -6026,7 +6059,8 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
   border: 0;
   border-radius: 0;
   background: var(--lang-chip-bg);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-text) 12%, transparent);
+  box-shadow: inset 0 0 0 1px var(--sf-panel-edge);
+  color: var(--sf-text-strong);
   font-family: var(--lang-sans);
   font-size: 13.5px;
   font-weight: 800;
@@ -6197,6 +6231,10 @@ div:has(> .flashcard-recall[data-card-look="crystal"][data-card-tier="mastered"]
 
 :where(html:not([data-theme-family=crystal])) .flashcard-back[data-card-kind="language"]:is([data-card-look="aurora"], [data-card-look="paper"]) .flashcard-back-example-text[data-latin-example="true"] > span {
   font-style: normal;
+}
+
+:root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-example {
+  background: var(--lang-panel-work);
 }
 
 :root[data-theme-family="crystal"] .flashcard-shell[data-card-look="crystal"][data-card-mode="standard"] .flashcard-back[data-card-kind="language"][data-card-look="crystal"] .flashcard-back-example-text {
